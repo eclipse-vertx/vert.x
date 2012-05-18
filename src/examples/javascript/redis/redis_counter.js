@@ -19,9 +19,9 @@ function test_get () {
 	eb.send('vertx.redis-client', {command: "get", key: 'counter'},
 	function(reply) {
 		if (reply.status === 'ok') {
-			console.log('exists: ' + reply.value);
+			console.log('current value: ' + reply.value);
 		} else {
-			console.error('Failed exists: ' + reply.message);
+			console.error('Failed: ' + reply.message);
 		}
     }
 	);
@@ -33,7 +33,7 @@ function test_incr (oldvalue) {
 		if (reply.status === 'ok') {
 			console.log('value: ' + reply.value + " (" + oldvalue + ")");
 		} else {
-			console.error('Failed exists: ' + reply.message);
+			console.error('Failed: ' + reply.message);
 		}
     }
 	);
@@ -45,7 +45,7 @@ function test_decr (oldvalue) {
 		if (reply.status === 'ok') {
 			console.log('value: ' + reply.value + " (" + oldvalue + ")");
 		} else {
-			console.error('Failed exists: ' + reply.message);
+			console.error('Failed: ' + reply.message);
 		}
     }
 	);

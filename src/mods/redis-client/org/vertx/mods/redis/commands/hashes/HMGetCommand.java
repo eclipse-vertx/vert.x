@@ -49,7 +49,7 @@ public class HMGetCommand extends Command {
 		checkNull(key, "key can not be null");
 		
 		try {
-			List<String> values = context.getClient().hmget(key, (String[]) fields.toArray());
+			List<String> values = context.getClient().hmget(key, getStringArray(fields));
 			
 			JsonArray result;
 			if (values != null && !values.isEmpty()) {

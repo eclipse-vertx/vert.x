@@ -94,4 +94,17 @@ public abstract class Command extends BusModBase {
 		}
 	}
 	
+	protected String[] getStringArray (JsonArray json) throws CommandException {
+		String[] stringArray = new String[json.size()];
+		for (int i = 0; i < json.size(); i++) {
+			Object temp = json.toArray()[i];
+			if (!(temp instanceof String)) {
+				throw new CommandException("only strings are allowed as value");
+			}
+			stringArray[i] = (String) temp;
+		}
+		
+		return stringArray;
+	}
+	
 }

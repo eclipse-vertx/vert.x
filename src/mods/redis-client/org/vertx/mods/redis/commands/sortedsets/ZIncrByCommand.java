@@ -24,14 +24,14 @@ import org.vertx.mods.redis.commands.CommandException;
 import redis.clients.jedis.exceptions.JedisException;
 
 /**
- * HIncrByCommand
+ * ZIncrByCommand
  * <p>
  * 
  * @author <a href="http://marx-labs.de">Thorsten Marx</a>
  */
 public class ZIncrByCommand extends Command {
 
-	public static final String COMMAND = "incrby";
+	public static final String COMMAND = "zincrby";
 
 	public ZIncrByCommand () {
 		super(COMMAND);

@@ -15,10 +15,6 @@
  */
 package org.vertx.mods.redis.commands.hashes;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
@@ -56,20 +52,7 @@ public class HDelCommand extends Command {
 		}
 		
 		try {
-			
-			List<String> keyvalue = new ArrayList<String>();
-			
-			
-			Iterator<Object> values = fields.iterator();
-			while (values.hasNext()) {
-				Object temp = values.next();
-				if (!(temp instanceof String)) {
-					throw new CommandException("only string values are allowed");
-				}
-				keyvalue.add((String) temp);
-			}	
-			
-			Long response = context.getClient().hdel(key, keyvalue.toArray(new String[keyvalue.size()]));
+			Long response = context.getClient().hdel(key, getStringArray(fields));
 			
 
 			response(message, response);

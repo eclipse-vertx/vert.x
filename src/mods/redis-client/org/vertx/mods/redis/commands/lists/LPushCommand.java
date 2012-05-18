@@ -47,7 +47,7 @@ public class LPushCommand extends Command {
 		checkNull(values, "values can not be null");
 		
 		try {
-			Long value = context.getClient().lpush(key, (String[]) values.toArray());
+			Long value = context.getClient().lpush(key, getStringArray(values));
 			
 			response(message, value);
 		} catch (JedisException e) {

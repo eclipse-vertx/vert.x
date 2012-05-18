@@ -16,11 +16,6 @@
 package org.vertx.mods.redis.commands.sortedsets;
 
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
@@ -28,7 +23,6 @@ import org.vertx.mods.redis.CommandContext;
 import org.vertx.mods.redis.commands.Command;
 import org.vertx.mods.redis.commands.CommandException;
 
-import redis.clients.jedis.BinaryClient.LIST_POSITION;
 import redis.clients.jedis.ZParams;
 import redis.clients.jedis.ZParams.Aggregate;
 import redis.clients.jedis.exceptions.JedisException;
@@ -63,17 +57,6 @@ public class ZInterStoreCommand extends Command {
 		
 		
 		try {
-			List<String> keyvalues = new ArrayList<String>();
-			
-			
-			Iterator<Object> values = keys.iterator();
-			while (values.hasNext()) {
-				Object temp = values.next();
-				if (!(temp instanceof String)) {
-					throw new CommandException("only string values are allowed");
-				}
-				keyvalues.add((String) temp);
-			}
 			
 			ZParams params = new ZParams();
 			switch (aggregate.toLowerCase()) {
@@ -90,7 +73,7 @@ public class ZInterStoreCommand extends Command {
 					params.aggregate(Aggregate.SUM);
 			}
 			
-			Long response = context.getClient().zinterstore(destination, params, keyvalues.toArray(new String[keyvalues.size()]));
+			Long response = context.getClient().zinterstore(destination, params, getStringArray(keys));
 
 			response(message, response);
 		} catch (JedisException e) {

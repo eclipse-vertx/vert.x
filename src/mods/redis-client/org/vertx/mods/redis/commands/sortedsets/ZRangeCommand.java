@@ -16,9 +16,6 @@
 package org.vertx.mods.redis.commands.sortedsets;
 
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
 import org.vertx.java.core.eventbus.Message;
@@ -59,9 +56,6 @@ public class ZRangeCommand extends Command {
 		checkType(end, "end must be of type long", new Class[] {Long.class});
 		
 		try {
-			
-			List<String> membervalues = new ArrayList<String>();
-			
 			
 			Set<String> response_values = context.getClient().zrange(key, start.longValue(), end.longValue());
 			

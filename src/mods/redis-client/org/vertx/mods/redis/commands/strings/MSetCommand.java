@@ -16,13 +16,9 @@
 package org.vertx.mods.redis.commands.strings;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.redis.CommandContext;
 import org.vertx.mods.redis.commands.Command;

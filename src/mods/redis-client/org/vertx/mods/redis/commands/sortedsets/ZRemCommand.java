@@ -16,10 +16,6 @@
 package org.vertx.mods.redis.commands.sortedsets;
 
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
@@ -54,19 +50,7 @@ public class ZRemCommand extends Command {
 		
 		try {
 			
-			List<String> membervalues = new ArrayList<String>();
-			
-			
-			Iterator<Object> values = members.iterator();
-			while (values.hasNext()) {
-				Object temp = values.next();
-				if (!(temp instanceof String)) {
-					throw new CommandException("only string values are allowed");
-				}
-				membervalues.add((String) temp);
-			}	
-			
-			Long response = context.getClient().zrem(key, membervalues.toArray(new String[membervalues.size()]));
+			Long response = context.getClient().zrem(key, getStringArray(members));
 			
 
 			response(message, response);

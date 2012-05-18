@@ -31,7 +31,7 @@ import redis.clients.jedis.exceptions.JedisException;
  */
 public class HIncrByCommand extends Command {
 
-	public static final String COMMAND = "incrby";
+	public static final String COMMAND = "hincrby";
 
 	public HIncrByCommand () {
 		super(COMMAND);

@@ -27,7 +27,6 @@ import org.vertx.mods.redis.CommandContext;
 import org.vertx.mods.redis.commands.Command;
 import org.vertx.mods.redis.commands.CommandException;
 
-import redis.clients.jedis.BinaryClient.LIST_POSITION;
 import redis.clients.jedis.exceptions.JedisException;
 
 /**
@@ -67,7 +66,7 @@ public class SAddCommand extends Command {
 				membervalues.add((String) temp);
 			}	
 			
-			Long response = context.getClient().sadd(key, membervalues.toArray(new String[membervalues.size()]));
+			Long response = context.getClient().sadd(key,getStringArray(members));
 			
 
 			response(message, response);

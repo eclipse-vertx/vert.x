@@ -81,10 +81,10 @@ public class RedisClient extends BusModBase implements
 		String command = message.body.getString("command");
 
 		if (command == null) {
-			sendError(message, "action must be specified");
+			sendError(message, "command must be specified");
 			return;
 		}
-
+		
 		Command commandHandler = commands.get(command.toLowerCase());
 
 		if (commandHandler != null) {

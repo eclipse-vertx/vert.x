@@ -47,7 +47,7 @@ public class RPushCommand extends Command {
 		checkNull(values, "values can not be null");
 		
 		try {
-			Long value = context.getClient().rpush(key, (String[]) values.toArray());
+			Long value = context.getClient().rpush(key, getStringArray(values));
 			
 			response(message, value);
 		} catch (JedisException e) {

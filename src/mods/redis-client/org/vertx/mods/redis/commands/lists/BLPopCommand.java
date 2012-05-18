@@ -48,7 +48,7 @@ public class BLPopCommand extends Command {
 		Number timeout = message.body.getNumber("timeout", 0);
 		
 		try {
-			List<String> values = context.getClient().blpop(timeout.intValue(), (String[]) keys.toArray());
+			List<String> values = context.getClient().blpop(timeout.intValue(), getStringArray(keys));
 			
 			JsonArray result;
 			if (values != null && !values.isEmpty()) {

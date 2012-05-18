@@ -16,9 +16,6 @@
 package org.vertx.mods.redis.commands.sets;
 
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
 import org.vertx.java.core.eventbus.Message;
@@ -28,7 +25,6 @@ import org.vertx.mods.redis.CommandContext;
 import org.vertx.mods.redis.commands.Command;
 import org.vertx.mods.redis.commands.CommandException;
 
-import redis.clients.jedis.BinaryClient.LIST_POSITION;
 import redis.clients.jedis.exceptions.JedisException;
 
 /**

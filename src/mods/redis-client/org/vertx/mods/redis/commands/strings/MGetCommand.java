@@ -34,7 +34,7 @@ import redis.clients.jedis.exceptions.JedisException;
  */
 public class MGetCommand extends Command {
 
-	public static final String COMMAND = "get";
+	public static final String COMMAND = "mget";
 
 	public MGetCommand() {
 		super(COMMAND);
@@ -47,11 +47,8 @@ public class MGetCommand extends Command {
 		checkNull(keys, "keys can not be null");
 		
 		try {
-			String[] keyArray = new String[keys.size()];
-			for (int i = 0; i < keys.size(); i++) {
-				keyArray[i] = (String) keys.toArray()[i];
-			}
-			List<String> values = context.getClient().mget(keyArray);
+			
+			List<String> values = context.getClient().mget(getStringArray(keys));
 			
 			JsonArray result;
 			if (values != null && !values.isEmpty()) {

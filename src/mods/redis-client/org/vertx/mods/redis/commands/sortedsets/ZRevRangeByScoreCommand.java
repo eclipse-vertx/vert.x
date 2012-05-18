@@ -16,9 +16,6 @@
 package org.vertx.mods.redis.commands.sortedsets;
 
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
 import org.vertx.java.core.eventbus.Message;
