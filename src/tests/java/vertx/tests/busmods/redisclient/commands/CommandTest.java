@@ -30,4 +30,8 @@ public abstract class CommandTest {
 		}
 		
 	}
+	
+	protected long toUnixTimeStamp(long timestamp) {
+	    return timestamp / 1000L;
+	  }
 }
