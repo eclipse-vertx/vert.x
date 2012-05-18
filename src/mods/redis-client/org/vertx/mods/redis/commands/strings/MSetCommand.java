@@ -16,8 +16,10 @@
 package org.vertx.mods.redis.commands.strings;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
@@ -44,7 +46,7 @@ public class MSetCommand extends Command {
 
 	@Override
 	public void handle(Message<JsonObject> message, CommandContext context) throws CommandException {
-		JsonArray keyvalues = message.body.getArray("keyvalues");
+		JsonObject keyvalues = message.body.getObject("keyvalues");
 		
 		checkNull(keyvalues, "keyvalues can not be null");
 		
@@ -52,13 +54,14 @@ public class MSetCommand extends Command {
 			
 			List<String> keyvalue = new ArrayList<String>();
 			
-			Iterator<Object> values = keyvalues.iterator();
-			while (values.hasNext()) {
-				Object temp = values.next();
-				if (!(temp instanceof String)) {
-					throw new CommandException("only string values are allowed");
+		
+			for (String fn : keyvalues.getFieldNames()) {
+				Object fv = keyvalues.getField(fn);
+				if (!(fv instanceof String)) {
+					throw new CommandException("only stringvalues are allowed for field values");
 				}
-				keyvalue.add((String) temp);
+				keyvalue.add(fn);
+				keyvalue.add((String) fv);
 			}
 			
 			String response = context.getClient().mset(keyvalue.toArray(new String[keyvalue.size()]));

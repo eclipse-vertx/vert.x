@@ -47,7 +47,11 @@ public class MGetCommand extends Command {
 		checkNull(keys, "keys can not be null");
 		
 		try {
-			List<String> values = context.getClient().mget((String[]) keys.toArray());
+			String[] keyArray = new String[keys.size()];
+			for (int i = 0; i < keys.size(); i++) {
+				keyArray[i] = (String) keys.toArray()[i];
+			}
+			List<String> values = context.getClient().mget(keyArray);
 			
 			JsonArray result;
 			if (values != null && !values.isEmpty()) {

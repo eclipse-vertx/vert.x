@@ -48,7 +48,7 @@ public class HMSetCommand extends Command {
 		
 		JsonObject fields = message.body.getObject("fields");
 		
-		checkNull(fields, "fieldscan not be null");
+		checkNull(fields, "fields can not be null");
 		
 		try {
 			
