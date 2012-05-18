@@ -14,14 +14,31 @@
  * limitations under the License.
  */
 
-var tu = TestUtils.get();
+package org.vertx.java.tests.core.commonjs;
 
-function func2() {
-  try {
-    load('does-not-exist.js');
-    tu.azzert(false, 'Should throw exception');
-  } catch (err) {
-    // OK
+import org.junit.Test;
+import org.vertx.java.framework.TestBase;
+
+/**
+ * @author <a href="http://about.me/nelson.silva">Nelson Silva</a>
+ */
+public class JavaScriptModuleLoadingTest extends TestBase {
+
+  @Override
+  protected void setUp() throws Exception {
+    super.setUp();
   }
-  return "bar";
+
+  @Override
+  protected void tearDown() throws Exception {
+    super.tearDown();
+  }
+
+  @Test
+  public void testScriptLoading() throws Exception {
+    startApp("core/commonjs/test_client.js");
+    startTest(getMethodName());
+  }
+
+
 }

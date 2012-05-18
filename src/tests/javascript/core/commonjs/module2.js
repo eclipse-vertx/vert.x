@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+var tu = require("test_utils.js").get();
 
-var tu = TestUtils.get();
-
-function func2() {
+module.exports = function() {
   try {
-    load('does-not-exist.js');
+    require('does-not-exist');
     tu.azzert(false, 'Should throw exception');
   } catch (err) {
     // OK
