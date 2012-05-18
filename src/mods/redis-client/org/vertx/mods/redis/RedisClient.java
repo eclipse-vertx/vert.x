@@ -47,6 +47,9 @@ public class RedisClient extends BusModBase implements
 		find("org.vertx.mods.redis.commands.strings");
 		find("org.vertx.mods.redis.commands.keys");
 		find("org.vertx.mods.redis.commands.hashes");
+		find("org.vertx.mods.redis.commands.lists");
+		find("org.vertx.mods.redis.commands.sets");
+		find("org.vertx.mods.redis.commands.sortedsets");
 	}
 
 	private String address;
