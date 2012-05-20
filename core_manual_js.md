@@ -1,4 +1,3 @@
-
 [TOC]
 
 # Writing Verticles
@@ -567,7 +566,7 @@ To set a timer to fire once you use the `vertx.setTimer` function passing in the
 
 You can also set a timer to fire periodically by using the `setPeriodic` function. There will be an initial delay equal to the period. The return value of `setPeriodic` is a unique timer id (number). This can be later used if the timer needs to be cancelled. The argument passed into the timer event handler is also the unique timer id:
 
-    var id = vertx.setTimer(1000, function(id) {
+    var id = vertx.setPeriodic(1000, function(id) {
         log.info('And every second this is printed'); 
     });
     
@@ -577,7 +576,8 @@ You can also set a timer to fire periodically by using the `setPeriodic` functio
 
 To cancel a periodic timer, call the `cancelTimer` function specifying the timer id. For example:
 
-    var id = vertx.setPeriodic(1000, function(id) {        
+    var id = vertx.setPeriodic(1000, function(id) { 
+        log.info('This is not gonna be printed');
     });
     
     // And immediately cancel it
