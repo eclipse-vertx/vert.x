@@ -17,7 +17,7 @@
 load("test_utils.js")
 load("core/scriptloading/script1.js");
 
-var tu = new TestUtils();
+var tu = TestUtils.get();
 
 function testScriptLoading() {
   tu.azzert(func1() === 'foo');

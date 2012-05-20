@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-var tu = TestUtils.get();
+var tu = require("test_utils.js").get(),
+    func1 = require("./module1");
 
-function func2() {
-  try {
-    load('does-not-exist.js');
-    tu.azzert(false, 'Should throw exception');
-  } catch (err) {
-    // OK
-  }
-  return "bar";
+function testScriptLoading() {
+  tu.azzert(func1() === 'foo');
+  tu.testComplete();
+}
+
+tu.registerTests(this);
+tu.appReady();
+
+function vertxStop() {
+  tu.unregisterAll();
+  tu.appStopped();
 }
