@@ -20,6 +20,7 @@ import org.vertx.mods.redis.commands.keys.ExpireAtCommand;
 import org.vertx.mods.redis.commands.keys.ExpireCommand;
 import org.vertx.mods.redis.commands.keys.KeysCommand;
 import org.vertx.mods.redis.commands.keys.MoveCommand;
+import org.vertx.mods.redis.commands.keys.RenameCommand;
 import org.vertx.mods.redis.commands.strings.AppendCommand;
 import org.vertx.mods.redis.commands.strings.DecrByCommand;
 import org.vertx.mods.redis.commands.strings.DecrCommand;
@@ -221,5 +222,31 @@ public class KeyCommandsTest extends CommandTest {
 		context.getClient().select(5);
 		assertTrue(context.getClient().exists(k1));
 		context.getClient().select(0);
+	}
+	
+	@Test
+	public void testRenameCommand() throws CommandException {
+		
+		String k1 = getUniqueString();
+		String v1 = getUniqueString();
+		
+		String newKey = getUniqueString();
+		
+		context.getClient().set(k1, v1);
+		
+		assertTrue(context.getClient().exists(k1));
+		
+		RenameCommand cmd = new RenameCommand();
+		
+		JsonObject request = new JsonObject();
+		request.putString("key", k1);
+		request.putString("newkey", newKey);
+		
+		TestMessage msg = getMessage(request);
+		cmd.handle(msg, context);
+		
+		assertFalse(context.getClient().exists(k1));
+		assertTrue(context.getClient().exists(newKey));
+		
 	}
 }
