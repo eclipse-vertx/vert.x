@@ -36,6 +36,34 @@ public class ListCommandsTest extends CommandTest {
 		context.getClient().quit();
 	}
 	
+	@Test
+	public void testLSet () throws CommandException {
+		String key = getUniqueString();
+		String value = getUniqueString();
+		
+		context.getClient().lpush(key, "one");
+		context.getClient().lpush(key, "two");
+		context.getClient().lpush(key, "three");
+		
+		
+		JsonObject request = new JsonObject();
+		request.putString("key", key);
+		request.putString("value", value);
+		request.putNumber("index", 0);
+		
+		
+		TestMessage msg = getMessage(request); 
+		
+		LSetCommand cmd = new LSetCommand();
+		cmd.handle(msg, context);
+		
+		String response = msg.reply.getString("value");
+		assertEquals("OK", response);
+		
+		String ret_value = context.getClient().lindex(key, 0);
+		
+		assertEquals(value, ret_value);
+	}
 	
 	
 }
