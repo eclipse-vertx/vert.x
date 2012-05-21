@@ -153,16 +153,19 @@ public class ListCommandsTest extends CommandTest {
 		assertEquals(value2, msg.reply.getString("value"));
 	}
 	
+	
 	@Test 
 	public void testLPush () throws CommandException {
 		String key = getUniqueString();
 		String value = getUniqueString();
+//		String value2 = getUniqueString();
 		
 		
 		JsonObject request = new JsonObject();
 		request.putString("key", key);
 		JsonArray values = new JsonArray();
 		values.addString(value);
+//		values.addString(value2);
 		request.putArray("values", values);
 		
 		TestMessage msg = getMessage(request); 
@@ -174,4 +177,26 @@ public class ListCommandsTest extends CommandTest {
 		assertEquals(1, msg.reply.getNumber("value").intValue());
 	}
 	
+	@Test 
+	public void testRPush () throws CommandException {
+		String key = getUniqueString();
+		String value = getUniqueString();
+//		String value2 = getUniqueString();
+		
+		
+		JsonObject request = new JsonObject();
+		request.putString("key", key);
+		JsonArray values = new JsonArray();
+		values.addString(value);
+//		values.addString(value2);
+		request.putArray("values", values);
+		
+		TestMessage msg = getMessage(request); 
+		
+		RPushCommand cmd = new RPushCommand();
+		cmd.handle(msg, context);
+		
+		// the push command returns the length of the list after the operation
+		assertEquals(1, msg.reply.getNumber("value").intValue());
+	}
 }
