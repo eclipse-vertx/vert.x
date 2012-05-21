@@ -65,5 +65,113 @@ public class ListCommandsTest extends CommandTest {
 		assertEquals(value, ret_value);
 	}
 	
+	@Test 
+	public void testLInsert () throws CommandException {
+		String key = getUniqueString();
+		String value1 = getUniqueString();
+		String value2 = getUniqueString();
+		String value3 = getUniqueString();
+		
+		context.getClient().lpush(key, value1);
+		context.getClient().lpush(key, value2);
+		
+		long length = context.getClient().llen(key);
+		assertEquals(2, length);
+		
+		JsonObject request = new JsonObject();
+		request.putString("key", key);
+		request.putString("value", value3);
+		request.putString("pivot", value2);
+		request.putBoolean("before", true);
+		
+		TestMessage msg = getMessage(request); 
+		
+		LInsertCommand cmd = new LInsertCommand();
+		cmd.handle(msg, context);
+		
+		length = context.getClient().llen(key);
+		assertEquals(3, length);
+	}
+	
+	@Test 
+	public void testLLen () throws CommandException {
+		String key = getUniqueString();
+		String value1 = getUniqueString();
+		String value2 = getUniqueString();
+		
+		context.getClient().lpush(key, value1);
+		context.getClient().lpush(key, value2);
+		
+		JsonObject request = new JsonObject();
+		request.putString("key", key);
+		
+		TestMessage msg = getMessage(request); 
+		
+		LLenCommand cmd = new LLenCommand();
+		cmd.handle(msg, context);
+		
+		assertEquals(2, msg.reply.getNumber("value").intValue());
+	}
+	
+	@Test 
+	public void testLPop () throws CommandException {
+		String key = getUniqueString();
+		String value1 = getUniqueString();
+		String value2 = getUniqueString();
+		
+		context.getClient().rpush(key, value1);
+		context.getClient().rpush(key, value2);
+		
+		JsonObject request = new JsonObject();
+		request.putString("key", key);
+		
+		TestMessage msg = getMessage(request); 
+		
+		LPopCommand cmd = new LPopCommand();
+		cmd.handle(msg, context);
+		
+		assertEquals(value1, msg.reply.getString("value"));
+	}
+	
+	@Test 
+	public void testRPop () throws CommandException {
+		String key = getUniqueString();
+		String value1 = getUniqueString();
+		String value2 = getUniqueString();
+		
+		context.getClient().rpush(key, value1);
+		context.getClient().rpush(key, value2);
+		
+		JsonObject request = new JsonObject();
+		request.putString("key", key);
+		
+		TestMessage msg = getMessage(request); 
+		
+		RPopCommand cmd = new RPopCommand();
+		cmd.handle(msg, context);
+		
+		assertEquals(value2, msg.reply.getString("value"));
+	}
+	
+	@Test 
+	public void testLPush () throws CommandException {
+		String key = getUniqueString();
+		String value = getUniqueString();
+		
+		
+		JsonObject request = new JsonObject();
+		request.putString("key", key);
+		JsonArray values = new JsonArray();
+		values.addString(value);
+		request.putArray("values", values);
+		
+		TestMessage msg = getMessage(request); 
+		
+		LPushCommand cmd = new LPushCommand();
+		cmd.handle(msg, context);
+		
+		// the push command returns the length of the list after the operation
+		assertEquals(1, msg.reply.getNumber("value").intValue());
+	}
 	
 }
