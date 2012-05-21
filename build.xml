@@ -198,7 +198,6 @@
     <jar jarfile="${target}/${platform-jar-file}" basedir="${java-target}">
       <exclude name="**/core/**/*"/>
       <exclude name="**/core/"/>
-      <exclude name="**/core/"/>
     </jar>
   </target>
 
@@ -237,7 +236,6 @@
 
   <fileset id="main-tests.fs" dir="${tests-target}">
     <include name="org/vertx/java/tests/**/*Test.class"/>
-    <!-- <exclude name="**/busmods/**"/> -->
   </fileset>
 
   <fileset id="test-one.fs" dir="${tests-target}">
