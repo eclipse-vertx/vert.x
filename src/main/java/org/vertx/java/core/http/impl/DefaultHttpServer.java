@@ -266,6 +266,8 @@ public class DefaultHttpServer implements HttpServer {
         }
       }
     }
+    requestHandler = null;
+    wsHandler = null;
   }
 
   public HttpServer setSSL(boolean ssl) {
