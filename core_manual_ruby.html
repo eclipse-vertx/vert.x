@@ -1776,7 +1776,7 @@ httpServer.listen(8080)
 <p>The following example creates and starts a SockJS bridge which will bridge any events sent to the path <code>eventbus</code> on to the server side event bus.</p>
 <pre class="prettyprint">server = Vertx::HttpServer.new;
 
-sockJSServer = Vertx::SockJSServer.new(httpServer)
+sockJSServer = Vertx::SockJSServer.new(server)
 
 sockJSServer.bridge({'prefix' =&gt; '/eventbus'}, [] )
 
@@ -1785,29 +1785,35 @@ server.listen(8080)
 <p>The SockJS bridge currently only works with JSON event bus messages.</p>
 <h2 id="using-the-event-bus-from-client-side-javascript">Using the Event Bus from client side JavaScript</h2><br/>
 <p>Once you've set up a bridge, you can use the event bus from the client side as follows:</p>
-<p>In your web page, you need to load the script <code>vertxbus.js</code>, then you can access the vert.x event bus API. Here's an example:</p>
-<pre class="prettyprint">&lt;script type='text/javascript' src='vertxbus.js'&gt;&lt;/script&gt;
+<p>In your web page, you need to load the script <code>vertxbus.js</code>, then you can access the vert.x event bus API. Here's a rough idea of how to use it. For a full working examples, please consult the bundled examples.</p>
+<pre class="prettyprint">&lt;script src="http://cdn.sockjs.org/sockjs-0.2.1.min.js"&gt;&lt;/script&gt;
+&lt;script src='vertxbus.js'&gt;&lt;/script&gt;
 
 &lt;script&gt;
 
     var eb = new vertx.EventBus('http://localhost:8080/eventbus');
 
-    eb.registerHandler('some-address', function(message) {
+    eb.onopen = function() {
+
+      eb.registerHandler('some-address', function(message) {
 
         console.log('received a message: ' + JSON.stringify(message);
 
-    });
+      });
 
-    eb.send('some-address', {name: 'tim', age: 587});
+      eb.send('some-address', {name: 'tim', age: 587});
+
+    }
 
 &lt;/script&gt;
 </pre>
-<p>You can now communicate seamlessly between different browsers and server side components using the event bus.</p>
+<p>You can now communicate seamlessly between different browsers and server side components using the event bus [Read the section on securing the bridge!]</p>
 <p>You can find <code>vertxbus.js</code> in the <code>client</code> directory of the vert.x distribution.</p>
 <p>The first thing the example does is to create a instance of the event bus</p>
 <pre class="prettyprint">var eb = new vertx.EventBus('http://localhost:8080/eventbus');
 </pre>
 <p>The parameter to the constructor is the URI where to connect to the event bus. Since we create our bridge with the prefix <code>eventbus</code> we will connect there.</p>
+<p>You can't actually do anything with the bridge until it is opened. When it is open the <code>onopen</code> handler will be called.</p>
 <p>The client side event bus API for registering and unregistering handlers and for sending messages is exactly the same as the server side one. Please consult the JavaScript core manual chapter on the EventBus for a description of that API.</p>
 <h2 id="securing-the-bridge">Securing the Bridge</h2><br/>
 <p>If you started a bridge like in the above example without securing it, and attempted to send messages to it from the client side you'd find that the messages mysteriously disappeared. What happened to them?</p>
