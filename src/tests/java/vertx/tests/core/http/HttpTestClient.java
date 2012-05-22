@@ -26,6 +26,7 @@ import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
+import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.framework.TestClientBase;
 import org.vertx.java.framework.TestUtils;
@@ -1713,6 +1714,32 @@ public class HttpTestClient extends TestClientBase {
     out.write(content);
     out.close();
     return file;
+  }
+
+  public void testSetHandlersAfterListening() throws Exception {
+    startServer(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+      }
+    });
+    try {
+      server.requestHandler(new Handler<HttpServerRequest>() {
+        public void handle(HttpServerRequest req) {
+        }
+      });
+      tu.azzert(false, "Should throw exception");
+    } catch (IllegalStateException e) {
+      //Ok
+    }
+    try {
+      server.websocketHandler(new Handler<ServerWebSocket>() {
+        public void handle(ServerWebSocket ws) {
+        }
+      });
+      tu.azzert(false, "Should throw exception");
+    } catch (IllegalStateException e) {
+      //Ok
+    }
+    tu.testComplete();
   }
 
   public void test100ContinueDefault() throws Exception {
