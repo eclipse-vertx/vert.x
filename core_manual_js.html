@@ -694,7 +694,7 @@ log.info('First this is printed');
 </pre>
 <h2 id="periodic-timers">Periodic Timers</h2><br/>
 <p>You can also set a timer to fire periodically by using the <code>setPeriodic</code> function. There will be an initial delay equal to the period. The return value of <code>setPeriodic</code> is a unique timer id (number). This can be later used if the timer needs to be cancelled. The argument passed into the timer event handler is also the unique timer id:</p>
-<pre class="prettyprint">var id = vertx.setTimer(1000, function(id) {
+<pre class="prettyprint">var id = vertx.setPeriodic(1000, function(id) {
     log.info('And every second this is printed'); 
 });
 
@@ -702,7 +702,8 @@ log.info('First this is printed');
 </pre>
 <h2 id="cancelling-timers">Cancelling timers</h2><br/>
 <p>To cancel a periodic timer, call the <code>cancelTimer</code> function specifying the timer id. For example:</p>
-<pre class="prettyprint">var id = vertx.setPeriodic(1000, function(id) {        
+<pre class="prettyprint">var id = vertx.setPeriodic(1000, function(id) { 
+    log.info('This is not gonna be printed');
 });
 
 // And immediately cancel it
