@@ -112,12 +112,6 @@ echo "&lt;html&gt;&lt;body&gt;Hello World&lt;/body&gt;&lt;/html&gt;" &gt; web/in
 <p>Copy the client side application from the vert.x installation into our web directory as follows:</p>
 <pre class="prettyprint">cp -r $VERTX_HOME/examples/groovy/webapp/web/* web
 </pre>
-<p>Open the file <code>web/js/client_app.js</code> in your text editor, and edit the line:</p>
-<pre class="prettyprint">var eb = new vertx.EventBus('https://localhost:8080/eventbus');
-</pre>
-<p>So it reads:</p>
-<pre class="prettyprint">var eb = new vertx.EventBus('http://localhost:8080/eventbus');
-</pre>
 <p>Now, refresh your browser. The client application should now be served.</p>
 <p>Of course, it won't do anything useful yet, since we haven't connected it up to anything, but you should at least see the layout. It should look like this: </p>
 <p><img alt="Client Application" src="tutorial_1.png"/></p>
@@ -210,7 +204,7 @@ container.with {
 <h2 id="step-7-requesting-data-from-the-server">Step 7. Requesting data from the server</h2><br/>
 <p>As previously mentioned, this isn't a tutorial on how to write a knockout.js client-side application, but let's take a quick look at the code in the client side app that requests the catalogue data and populates the shop.</p>
 <p>The client side application JavaScript is contained in the file <code>web/js/client_app.js</code>. If you open this in your text editor you will see the following line, towards the top of the script:</p>
-<pre class="prettyprint">var eb = new vertx.EventBus('http://localhost:8080/eventbus');
+<pre class="prettyprint">var eb = new vertx.EventBus(window.location.protocol + '//' + window.location.hostname + ':' + window.location.port + '/eventbus');
 </pre>
 <p>This is using the <code>vertxbus.js</code> library to create an <code>EventBus</code> object. This object is then used to send and receive messages from the event bus.</p>
 <p>If you look a little further down the script, you will find the part which loads the catalogue data from the server and renders it:</p>
@@ -366,9 +360,6 @@ see the manual).</p>
 </p>
 <p>Copy the keystore from the distribution</p>
 <pre class="prettyprint">cp $VERTX_HOME/examples/javascript/webapp/server-keystore.jks .
-</pre>
-<p>You'll also need to edit <code>web/js/client_app.js</code> so the line which creates the client side event bus instance now connects using <code>https</code>, not <code>http</code>.</p>
-<pre class="prettyprint">var eb = new vertx.EventBus('https://localhost:8080/eventbus');
 </pre>
 <p>Now restart the app again.</p>
 <pre class="prettyprint">vertx run App.groovy
