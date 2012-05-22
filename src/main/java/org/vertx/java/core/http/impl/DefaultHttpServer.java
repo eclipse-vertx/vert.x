@@ -123,6 +123,9 @@ public class DefaultHttpServer implements HttpServer {
   }
 
   public HttpServer requestHandler(Handler<HttpServerRequest> requestHandler) {
+    if (listening) {
+      throw new IllegalStateException("Please set handler before server is listening");
+    }
     this.requestHandler = requestHandler;
     return this;
   }
@@ -132,6 +135,9 @@ public class DefaultHttpServer implements HttpServer {
   }
 
   public HttpServer websocketHandler(Handler<ServerWebSocket> wsHandler) {
+    if (listening) {
+      throw new IllegalStateException("Please set handler before server is listening");
+    }
     this.wsHandler = wsHandler;
     return this;
   }
@@ -260,6 +266,8 @@ public class DefaultHttpServer implements HttpServer {
         }
       }
     }
+    requestHandler = null;
+    wsHandler = null;
   }
 
   public HttpServer setSSL(boolean ssl) {

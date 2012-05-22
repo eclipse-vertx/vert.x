@@ -535,6 +535,9 @@ public class JavaHttpTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void testSetHandlersAfterListening() {
+    startTest(getMethodName());
+  }
 
   @Test
   public void testSharedServersMultipleInstances1() throws Exception {
