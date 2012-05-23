@@ -64,7 +64,7 @@ public class TestClient extends TestClientBase {
 	public void testPersistor() throws Exception {
 
 		// First delete everything
-		JsonObject json = new JsonObject().putString("action", "set")
+		JsonObject json = new JsonObject().putString("command", "set")
 				.putString("key", "name").putString("value", "thorsten");
 
 		eb.send("test.persistor", json, new Handler<Message<JsonObject>>() {
@@ -73,11 +73,11 @@ public class TestClient extends TestClientBase {
 			}
 		});
 
-		json = new JsonObject().putString("action", "exists")
+		json = new JsonObject().putString("command", "exists")
 				.putString("key", "name");
 		eb.send("test.persistor", json, new Handler<Message<JsonObject>>() {
 			public void handle(Message<JsonObject> reply) {
-				tu.azzert("true".equals(reply.body.getString("exists")));
+				tu.azzert("true".equals(reply.body.getString("value")));
 			}
 		});
 	}
