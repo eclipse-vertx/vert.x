@@ -31,13 +31,13 @@ import org.vertx.java.framework.TestClientBase;
  * 
  * @author <a href="http://marx-labs.de">Thorsten Marx</a>
  */
-public class TestClient extends TestClientBase {
+public class RedisClientTest extends TestClientBase {
 
 	private EventBus eb;
 
 	private String persistorID;
 	
-	public TestClient() {
+	public RedisClientTest() {
 		vertx = Vertx.newVertx();
 	}
 
@@ -61,7 +61,7 @@ public class TestClient extends TestClientBase {
 		super.stop();
 	}
 
-	public void testPersistor() throws Exception {
+	public void testClient() throws Exception {
 
 		// First delete everything
 		JsonObject json = new JsonObject().putString("command", "set")
