@@ -49,6 +49,10 @@ public class Args {
     }
   }
 
+  public String getString(String argName) {
+	return map.get(argName);
+  }
+  
   public int getInt(String argName) {
     String arg = map.get(argName);
     int val;
