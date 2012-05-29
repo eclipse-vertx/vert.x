@@ -419,7 +419,7 @@ For instance, in JavaScript you might do something like:
     }
 
     function createReplyHandler() {
-        return new function(reply, replier) {
+        return function(reply, replier) {
             // Got some results - process them
             processResults(reply.results);
             if (reply.status === 'more-exist') {

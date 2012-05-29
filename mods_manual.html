@@ -465,7 +465,7 @@ mods/my-web-app/web-root/index.html
 }
 
 function createReplyHandler() {
-    return new function(reply, replier) {
+    return function(reply, replier) {
         // Got some results - process them
         processResults(reply.results);
         if (reply.status === 'more-exist') {
