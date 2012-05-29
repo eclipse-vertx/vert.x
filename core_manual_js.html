@@ -645,9 +645,9 @@ buff.setString(pos, "hello", "UTF-16"); // Write the string in the specified enc
 </pre>
 <h2 id="reading-from-a-buffer">Reading from a Buffer</h2><br/>
 <p>Data is read from a buffer using the <code>getXXX</code> methods. Get methods exist for strings and numbers. The first argument to these methods is an index in the buffer from where to get the data.</p>
-<pre class="prettyprint">Buffer buff = ...;
-for (int i = 0; i &lt; buff.length(); i += 4) {
-    System.out.println("int value at " + i + " is " + buff.getInt(i));
+<pre class="prettyprint">var buff = ...;
+for (var i = 0; i &lt; buff.length(); i += 4) {
+    console.log("int value at " + i + " is " + buff.getInt(i));
 }
 </pre>
 <p>To read data as integers, you must specify how many bits you want to read:</p>

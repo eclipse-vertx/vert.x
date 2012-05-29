@@ -503,9 +503,9 @@ Use `setBuffer` to set another buffer:
 
 Data is read from a buffer using the `getXXX` methods. Get methods exist for strings and numbers. The first argument to these methods is an index in the buffer from where to get the data.
 
-    Buffer buff = ...;
-    for (int i = 0; i < buff.length(); i += 4) {
-        System.out.println("int value at " + i + " is " + buff.getInt(i));
+    var buff = ...;
+    for (var i = 0; i < buff.length(); i += 4) {
+        console.log("int value at " + i + " is " + buff.getInt(i));
     }
     
 To read data as integers, you must specify how many bits you want to read:
