@@ -252,7 +252,7 @@ The mongo-persistor busmod takes the following configuration:
     {
         "address": <address>,
         "host": <host>,
-        "port": <port>
+        "port": <port>,
         "db_name": <db_name>    
     }
     
@@ -300,9 +300,9 @@ An example would be:
         "document": {
             "name": "tim",
             "age": 1000,
-            "shoesize", 3.14159,
-            "username", "tim",
-            "password", "wibble"
+            "shoesize": 3.14159,
+            "username": "tim",
+            "password": "wibble"
         }
     }  
     
