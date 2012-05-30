@@ -349,6 +349,10 @@ public class DefaultEventBus implements EventBus {
     server.close(doneHandler);
   }
 
+  void sendReply(final ServerID dest, final BaseMessage message, final Handler replyHandler) {
+    sendOrPub(false, dest, message, replyHandler);
+  }
+
   private NetServer setServer() {
     return vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
@@ -386,54 +390,42 @@ public class DefaultEventBus implements EventBus {
     }
   }
 
-  void sendReply(final ServerID dest, final BaseMessage message, final Handler replyHandler) {
-    Context context = vertx.getOrAssignContext();
-    try {
-      message.sender = serverID;
-      if (replyHandler != null) {
-        message.replyAddress = UUID.randomUUID().toString();
-        registerHandler(message.replyAddress, replyHandler, null, true, false);
-      }
-      if (!dest.equals(this.serverID)) {
-        sendRemote(dest, message);
-      } else {
-        receiveMessage(message);
-      }
-    } finally {
-      // Reset the context id - send can cause messages to be delivered in different contexts so the context id
-      // of the current thread can change
-      if (context != null) {
-        Context.setContext(context);
-      }
-    }
+  private void sendOrPub(boolean send, final BaseMessage message, final Handler replyHandler) {
+    sendOrPub(send, null, message, replyHandler);
   }
 
-  private void sendOrPub(boolean send, final BaseMessage message, final Handler replyHandler) {
+  private void sendOrPub(boolean send, ServerID replyDest, final BaseMessage message, final Handler replyHandler) {
     Context context = vertx.getOrAssignContext();
     try {
       message.sender = serverID;
-
       if (replyHandler != null) {
         message.replyAddress = UUID.randomUUID().toString();
         registerHandler(message.replyAddress, replyHandler, null, true, false);
       }
-
-      if (subs != null) {
-        subs.get(message.address, new AsyncResultHandler<Collection<ServerID>>() {
-          public void handle(AsyncResult<Collection<ServerID>> event) {
-            if (event.exception == null) {
-              Collection<ServerID> serverIDs = event.result;
-              if (serverIDs != null) {
-                sendToSubs(serverIDs, message);
+      if (replyDest != null) {
+        if (!replyDest.equals(this.serverID)) {
+          sendRemote(replyDest, message);
+        } else {
+          receiveMessage(message);
+        }
+      } else {
+        if (subs != null) {
+          subs.get(message.address, new AsyncResultHandler<Collection<ServerID>>() {
+            public void handle(AsyncResult<Collection<ServerID>> event) {
+              if (event.exception == null) {
+                Collection<ServerID> serverIDs = event.result;
+                if (serverIDs != null) {
+                  sendToSubs(serverIDs, message);
+                }
+              } else {
+                log.error("Failed to send message", event.exception);
               }
-            } else {
-              log.error("Failed to send message", event.exception);
             }
-          }
-        });
+          });
+        }
+        //also send locally
+        receiveMessage(message);
       }
-      //also send locally
-      receiveMessage(message);
 
     } finally {
       // Reset the context id - send can cause messages to be delivered in different contexts so the context id
