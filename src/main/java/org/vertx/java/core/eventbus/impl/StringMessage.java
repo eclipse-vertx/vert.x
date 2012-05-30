@@ -80,8 +80,8 @@ class StringMessage extends BaseMessage<String> {
     return MessageFactory.TYPE_STRING;
   }
 
-  protected void handleReply(String reply, Handler<Message<String>> replyHandler) {
-    bus.send(replyAddress, reply, replyHandler);
+  protected BaseMessage createReplyMessage(String reply) {
+    return new StringMessage(replyAddress, reply);
   }
 
 }

@@ -70,4 +70,8 @@ class BooleanMessage extends BaseMessage<Boolean> {
     bus.send(replyAddress, reply, replyHandler);
   }
 
+  protected BaseMessage createReplyMessage(Boolean reply) {
+    return new BooleanMessage(replyAddress, reply);
+  }
+
 }

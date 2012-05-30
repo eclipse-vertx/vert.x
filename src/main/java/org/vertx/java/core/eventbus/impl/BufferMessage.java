@@ -74,8 +74,8 @@ class BufferMessage extends BaseMessage<Buffer> {
     return MessageFactory.TYPE_BUFFER;
   }
 
-  protected void handleReply(Buffer reply, Handler<Message<Buffer>> replyHandler) {
-    bus.send(replyAddress, reply, replyHandler);
+  protected BaseMessage createReplyMessage(Buffer reply) {
+    return new BufferMessage(replyAddress, reply);
   }
 
 }

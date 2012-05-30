@@ -80,8 +80,8 @@ class ByteArrayMessage extends BaseMessage<byte[]> {
     return MessageFactory.TYPE_BYTEARRAY;
   }
 
-  protected void handleReply(byte[] reply, Handler<Message<byte[]>> replyHandler) {
-    bus.send(replyAddress, reply, replyHandler);
+  protected BaseMessage createReplyMessage(byte[] reply) {
+    return new ByteArrayMessage(replyAddress, reply);
   }
 
 }

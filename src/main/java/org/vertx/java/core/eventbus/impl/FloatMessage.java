@@ -66,8 +66,8 @@ class FloatMessage extends BaseMessage<Float> {
     return MessageFactory.TYPE_FLOAT;
   }
 
-  protected void handleReply(Float reply, Handler<Message<Float>> replyHandler) {
-    bus.send(replyAddress, reply, replyHandler);
+  protected BaseMessage createReplyMessage(Float reply) {
+    return new FloatMessage(replyAddress, reply);
   }
 
 }

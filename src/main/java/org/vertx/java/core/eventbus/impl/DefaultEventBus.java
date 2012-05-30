@@ -62,16 +62,13 @@ public class DefaultEventBus implements EventBus {
   private SubsMap subs;
   private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, Map<HandlerHolder, String>> handlers = new ConcurrentHashMap<>();
-  private final Map<String, ServerID> replyAddressCache = new ConcurrentHashMap<>();
   private final Map<String, HandlerInfo> handlersByID = new ConcurrentHashMap<>();
 
   public void dump() {
     System.out.println("Handlers: " + this.handlers.size());
     System.out.println("Connections: " + this.connections.size());
-    System.out.println("Reply address cache: " + this.replyAddressCache.size());
     System.out.println("Handlers by id: " + this.handlersByID.size());
   }
-
 
   public DefaultEventBus(VertxInternal vertx) {
     // Just some dummy server ID
@@ -94,7 +91,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, JsonObject message, final Handler<Message<JsonObject>> replyHandler) {
-    send(new JsonMessage(address, message), replyHandler);
+    sendOrPub(true, new JsonMessage(address, message), replyHandler);
   }
 
   public void send(String address, JsonObject message) {
@@ -102,7 +99,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, Buffer message, final Handler<Message<Buffer>> replyHandler) {
-    send(new BufferMessage(address, message), replyHandler);
+    sendOrPub(true, new BufferMessage(address, message), replyHandler);
   }
 
   public void send(String address, Buffer message) {
@@ -110,7 +107,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, byte[] message, final Handler<Message<byte[]>> replyHandler) {
-    send(new ByteArrayMessage(address, message), replyHandler);
+    sendOrPub(true, new ByteArrayMessage(address, message), replyHandler);
   }
 
   public void send(String address, byte[] message) {
@@ -118,7 +115,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, String message, final Handler<Message<String>> replyHandler) {
-    send(new StringMessage(address, message), replyHandler);
+    sendOrPub(true, new StringMessage(address, message), replyHandler);
   }
 
   public void send(String address, String message) {
@@ -126,7 +123,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, Integer message, final Handler<Message<Integer>> replyHandler) {
-    send(new IntMessage(address, message), replyHandler);
+    sendOrPub(true, new IntMessage(address, message), replyHandler);
   }
 
   public void send(String address, Integer message) {
@@ -134,7 +131,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, Long message, final Handler<Message<Long>> replyHandler) {
-    send(new LongMessage(address, message), replyHandler);
+    sendOrPub(true, new LongMessage(address, message), replyHandler);
   }
 
   public void send(String address, Long message) {
@@ -142,7 +139,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, Float message, final Handler<Message<Float>> replyHandler) {
-    send(new FloatMessage(address, message), replyHandler);
+    sendOrPub(true, new FloatMessage(address, message), replyHandler);
   }
 
   public void send(String address, Float message) {
@@ -150,7 +147,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, Double message, final Handler<Message<Double>> replyHandler) {
-    send(new DoubleMessage(address, message), replyHandler);
+    sendOrPub(true, new DoubleMessage(address, message), replyHandler);
   }
 
   public void send(String address, Double message) {
@@ -158,7 +155,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, Boolean message, final Handler<Message<Boolean>> replyHandler) {
-    send(new BooleanMessage(address, message), replyHandler);
+    sendOrPub(true, new BooleanMessage(address, message), replyHandler);
   }
 
   public void send(String address, Boolean message) {
@@ -166,7 +163,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, Short message, final Handler<Message<Short>> replyHandler) {
-    send(new ShortMessage(address, message), replyHandler);
+    sendOrPub(true, new ShortMessage(address, message), replyHandler);
   }
 
   public void send(String address, Short message) {
@@ -174,7 +171,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, Character message, final Handler<Message<Character>> replyHandler) {
-    send(new CharacterMessage(address, message), replyHandler);
+    sendOrPub(true, new CharacterMessage(address, message), replyHandler);
   }
 
   public void send(String address, Character message) {
@@ -182,11 +179,107 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, Byte message, final Handler<Message<Byte>> replyHandler) {
-    send(new ByteMessage(address, message), replyHandler);
+    sendOrPub(true, new ByteMessage(address, message), replyHandler);
   }
 
   public void send(String address, Byte message) {
     send(address, message, null);
+  }
+  
+  public void publish(String address, JsonObject message, final Handler<Message<JsonObject>> replyHandler) {
+    sendOrPub(true, new JsonMessage(address, message), replyHandler);
+  }
+
+  public void publish(String address, JsonObject message) {
+    publish(address, message, null);
+  }
+
+  public void publish(String address, Buffer message, final Handler<Message<Buffer>> replyHandler) {
+    sendOrPub(false, new BufferMessage(address, message), replyHandler);
+  }
+
+  public void publish(String address, Buffer message) {
+    publish(address, message, null);
+  }
+
+  public void publish(String address, byte[] message, final Handler<Message<byte[]>> replyHandler) {
+    sendOrPub(false, new ByteArrayMessage(address, message), replyHandler);
+  }
+
+  public void publish(String address, byte[] message) {
+    publish(address, message, null);
+  }
+
+  public void publish(String address, String message, final Handler<Message<String>> replyHandler) {
+    sendOrPub(false, new StringMessage(address, message), replyHandler);
+  }
+
+  public void publish(String address, String message) {
+    publish(address, message, null);
+  }
+
+  public void publish(String address, Integer message, final Handler<Message<Integer>> replyHandler) {
+    sendOrPub(false, new IntMessage(address, message), replyHandler);
+  }
+
+  public void publish(String address, Integer message) {
+    publish(address, message, null);
+  }
+
+  public void publish(String address, Long message, final Handler<Message<Long>> replyHandler) {
+    sendOrPub(false, new LongMessage(address, message), replyHandler);
+  }
+
+  public void publish(String address, Long message) {
+    publish(address, message, null);
+  }
+
+  public void publish(String address, Float message, final Handler<Message<Float>> replyHandler) {
+    sendOrPub(false, new FloatMessage(address, message), replyHandler);
+  }
+
+  public void publish(String address, Float message) {
+    publish(address, message, null);
+  }
+
+  public void publish(String address, Double message, final Handler<Message<Double>> replyHandler) {
+    sendOrPub(false, new DoubleMessage(address, message), replyHandler);
+  }
+
+  public void publish(String address, Double message) {
+    publish(address, message, null);
+  }
+
+  public void publish(String address, Boolean message, final Handler<Message<Boolean>> replyHandler) {
+    sendOrPub(false, new BooleanMessage(address, message), replyHandler);
+  }
+
+  public void publish(String address, Boolean message) {
+    publish(address, message, null);
+  }
+
+  public void publish(String address, Short message, final Handler<Message<Short>> replyHandler) {
+    sendOrPub(false, new ShortMessage(address, message), replyHandler);
+  }
+
+  public void publish(String address, Short message) {
+    publish(address, message, null);
+  }
+
+  public void publish(String address, Character message, final Handler<Message<Character>> replyHandler) {
+    sendOrPub(false, new CharacterMessage(address, message), replyHandler);
+  }
+
+  public void publish(String address, Character message) {
+    publish(address, message, null);
+  }
+
+  public void publish(String address, Byte message, final Handler<Message<Byte>> replyHandler) {
+    sendOrPub(false, new ByteMessage(address, message), replyHandler);
+  }
+
+  public void publish(String address, Byte message) {
+    publish(address, message, null);
   }
 
   public void unregisterHandler(String address, Handler<? extends Message> handler,
@@ -293,8 +386,7 @@ public class DefaultEventBus implements EventBus {
     }
   }
 
-  private void send(final BaseMessage message, final Handler replyHandler) {
-    try {
+  void sendReply(final ServerID dest, final BaseMessage message, final Handler replyHandler) {
     Context context = vertx.getOrAssignContext();
     try {
       message.sender = serverID;
@@ -302,33 +394,9 @@ public class DefaultEventBus implements EventBus {
         message.replyAddress = UUID.randomUUID().toString();
         registerHandler(message.replyAddress, replyHandler, null, true, false);
       }
-
-      // First check if sender is in response address cache - it will be if it's a reply
-      ServerID theServerID = replyAddressCache.remove(message.address);
-
-      if (theServerID != null) {
-        // Yes, it's a response to a particular server
-        if (!theServerID.equals(this.serverID)) {
-          sendRemote(theServerID, message);
-        } else {
-          receiveMessage(message);
-        }
+      if (!dest.equals(this.serverID)) {
+        sendRemote(dest, message);
       } else {
-        if (subs != null) {
-          subs.get(message.address, new AsyncResultHandler<Collection<ServerID>>() {
-            public void handle(AsyncResult<Collection<ServerID>> event) {
-              if (event.exception == null) {
-                Collection<ServerID> serverIDs = event.result;
-                if (serverIDs != null) {
-                  sendToSubs(serverIDs, message);
-                }
-              } else {
-                log.error("Failed to send message", event.exception);
-              }
-            }
-          });
-        }
-        //also send locally
         receiveMessage(message);
       }
     } finally {
@@ -338,12 +406,41 @@ public class DefaultEventBus implements EventBus {
         Context.setContext(context);
       }
     }
-    } catch (ConcurrentModificationException e) {
-      e.printStackTrace();
-      throw e;
-    } catch (NullPointerException e) {
-      e.printStackTrace();
-      throw e;
+  }
+
+  private void sendOrPub(boolean send, final BaseMessage message, final Handler replyHandler) {
+    Context context = vertx.getOrAssignContext();
+    try {
+      message.sender = serverID;
+
+      if (replyHandler != null) {
+        message.replyAddress = UUID.randomUUID().toString();
+        registerHandler(message.replyAddress, replyHandler, null, true, false);
+      }
+
+      if (subs != null) {
+        subs.get(message.address, new AsyncResultHandler<Collection<ServerID>>() {
+          public void handle(AsyncResult<Collection<ServerID>> event) {
+            if (event.exception == null) {
+              Collection<ServerID> serverIDs = event.result;
+              if (serverIDs != null) {
+                sendToSubs(serverIDs, message);
+              }
+            } else {
+              log.error("Failed to send message", event.exception);
+            }
+          }
+        });
+      }
+      //also send locally
+      receiveMessage(message);
+
+    } finally {
+      // Reset the context id - send can cause messages to be delivered in different contexts so the context id
+      // of the current thread can change
+      if (context != null) {
+        Context.setContext(context);
+      }
     }
   }
 
@@ -491,9 +588,6 @@ public class DefaultEventBus implements EventBus {
 
   // Called when a message is incoming
   private void receiveMessage(BaseMessage msg) {
-    if (msg.replyAddress != null) {
-      replyAddressCache.put(msg.replyAddress, msg.sender);
-    }
     msg.bus = this;
     final Map<HandlerHolder, String> map = handlers.get(msg.address);
     if (map != null) {
