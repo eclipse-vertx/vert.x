@@ -4,7 +4,7 @@ import org.vertx.java.core.Handler
 import org.vertx.java.core.buffer.Buffer
 import org.vertx.java.core.net.NetSocket
 import org.vertx.java.deploy.Verticle
-import org.vertx.scala.deploy.NetSockets
+import org.vertx.scala.core.NetSockets
 
 class EchoClient extends Verticle with NetSockets {
 

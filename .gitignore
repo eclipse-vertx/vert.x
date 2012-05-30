@@ -15,6 +15,9 @@ ScratchTest.java
 .gradle
 src/examples/java/classes
 src/examples/java/quux-out
+src/examples/scala/classes
+src/examples/scala/quux-out
+src/examples/scala/resourceload
 test-results
 test-tmp
 .history
