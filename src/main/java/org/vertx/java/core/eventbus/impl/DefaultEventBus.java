@@ -65,6 +65,14 @@ public class DefaultEventBus implements EventBus {
   private final Map<String, ServerID> replyAddressCache = new ConcurrentHashMap<>();
   private final Map<String, HandlerInfo> handlersByID = new ConcurrentHashMap<>();
 
+  public void dump() {
+    System.out.println("Handlers: " + this.handlers.size());
+    System.out.println("Connections: " + this.connections.size());
+    System.out.println("Reply address cache: " + this.replyAddressCache.size());
+    System.out.println("Handlers by id: " + this.handlersByID.size());
+  }
+
+
   public DefaultEventBus(VertxInternal vertx) {
     // Just some dummy server ID
     this.vertx = vertx;
@@ -347,7 +355,9 @@ public class DefaultEventBus implements EventBus {
     if (address == null) {
       address = id;
     }
-    handlersByID.put(id, new HandlerInfo(address, handler));
+    if (!replyHandler) {
+      handlersByID.put(id, new HandlerInfo(address, handler));
+    }
     Map<HandlerHolder, String> map = handlers.get(address);
     if (map == null) {
       map = new ConcurrentHashMap<>();
