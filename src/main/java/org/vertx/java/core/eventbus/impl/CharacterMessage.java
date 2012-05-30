@@ -66,8 +66,8 @@ class CharacterMessage extends BaseMessage<Character> {
     return MessageFactory.TYPE_CHARACTER;
   }
 
-  protected void handleReply(Character reply, Handler<Message<Character>> replyHandler) {
-    bus.send(replyAddress, reply, replyHandler);
+  protected BaseMessage createReplyMessage(Character reply) {
+    return new CharacterMessage(replyAddress, reply);
   }
 
 }

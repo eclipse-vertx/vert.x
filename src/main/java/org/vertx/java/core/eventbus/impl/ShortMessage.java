@@ -66,8 +66,8 @@ class ShortMessage extends BaseMessage<Short> {
     return MessageFactory.TYPE_SHORT;
   }
 
-  protected void handleReply(Short reply, Handler<Message<Short>> replyHandler) {
-    bus.send(replyAddress, reply, replyHandler);
+  protected BaseMessage createReplyMessage(Short reply) {
+    return new ShortMessage(replyAddress, reply);
   }
 
 }

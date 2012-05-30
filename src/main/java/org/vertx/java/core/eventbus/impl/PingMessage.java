@@ -36,4 +36,5 @@ public class PingMessage extends StringMessage {
   protected byte type() {
     return MessageFactory.TYPE_PING;
   }
+
 }

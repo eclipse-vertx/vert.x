@@ -66,8 +66,8 @@ class IntMessage extends BaseMessage<Integer> {
     return MessageFactory.TYPE_INT;
   }
 
-  protected void handleReply(Integer reply, Handler<Message<Integer>> replyHandler) {
-    bus.send(replyAddress, reply, replyHandler);
+  protected BaseMessage createReplyMessage(Integer reply) {
+    return new IntMessage(replyAddress, reply);
   }
 
 }

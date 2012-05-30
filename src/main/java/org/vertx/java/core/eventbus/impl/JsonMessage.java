@@ -88,8 +88,8 @@ class JsonMessage extends BaseMessage<JsonObject> {
     return MessageFactory.TYPE_JSON;
   }
 
-  protected void handleReply(JsonObject reply, Handler<Message<JsonObject>> replyHandler) {
-    bus.send(replyAddress, reply, replyHandler);
+  protected BaseMessage createReplyMessage(JsonObject reply) {
+    return new JsonMessage(replyAddress, reply);
   }
 
 }

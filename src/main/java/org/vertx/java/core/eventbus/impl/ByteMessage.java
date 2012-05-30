@@ -66,8 +66,8 @@ class ByteMessage extends BaseMessage<Byte> {
     return MessageFactory.TYPE_BYTE;
   }
 
-  protected void handleReply(Byte reply, Handler<Message<Byte>> replyHandler) {
-    bus.send(replyAddress, reply, replyHandler);
+  protected BaseMessage createReplyMessage(Byte reply) {
+    return new ByteMessage(replyAddress, reply);
   }
 
 }

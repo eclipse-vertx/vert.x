@@ -34,7 +34,7 @@ public abstract class BaseMessage<T> extends Message<T> {
   private static final Logger log = LoggerFactory.getLogger(BaseMessage.class);
 
   protected ServerID sender;
-  protected EventBus bus;
+  protected DefaultEventBus bus;
   protected String address;
 
   protected BaseMessage(String address, T body) {
@@ -48,7 +48,8 @@ public abstract class BaseMessage<T> extends Message<T> {
 
   public void reply(T message, Handler<Message<T>> replyHandler) {
     if (bus != null && replyAddress != null) {
-      handleReply(message, replyHandler);
+      BaseMessage<T> replyMessage = createReplyMessage(message);
+      bus.sendReply(sender, replyMessage, replyHandler);
     }
   }
 
@@ -107,7 +108,7 @@ public abstract class BaseMessage<T> extends Message<T> {
 
   protected abstract byte type();
 
-  protected abstract Message copy();
+  protected abstract Message<T> copy();
 
   protected abstract void readBody(int pos, Buffer readBuff);
 
@@ -115,6 +116,6 @@ public abstract class BaseMessage<T> extends Message<T> {
 
   protected abstract int getBodyLength();
 
-  protected abstract void handleReply(T reply, Handler<Message<T>> replyHandler);
+  protected abstract BaseMessage createReplyMessage(T reply);
 
 }

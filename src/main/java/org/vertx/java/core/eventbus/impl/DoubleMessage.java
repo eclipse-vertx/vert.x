@@ -66,8 +66,8 @@ class DoubleMessage extends BaseMessage<Double> {
     return MessageFactory.TYPE_DOUBLE;
   }
 
-  protected void handleReply(Double reply, Handler<Message<Double>> replyHandler) {
-    bus.send(replyAddress, reply, replyHandler);
+  protected BaseMessage createReplyMessage(Double reply) {
+    return new DoubleMessage(replyAddress, reply);
   }
 
 }
