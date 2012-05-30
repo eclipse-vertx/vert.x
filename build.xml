@@ -29,6 +29,7 @@
   <property name="dist-build-base" value="${target}/dist-build"/>
   <property name="dist-build" value="${dist-build-base}/vert.x-${version-number}"/>
   <property name="java-src-root" value="src/main/java"/>
+  <property name="scala-src-root" value="src/main/scala"/>
   <property name="groovy-src-root" value="src/main/groovy"/>
   <property name="java-target" value="${target}/java/classes"/>
   <property name="mods-src-root" value="src/mods"/>
@@ -99,6 +100,13 @@
          classname="org.codehaus.groovy.ant.Groovydoc"
          classpathref="core-lib-classpath"/>
 
+  <taskdef resource="scala/tools/ant/antlib.xml">
+    <classpath>
+      <pathelement location="${core-lib}/scala-compiler-2.9.2.jar"   />
+      <pathelement location="${core-lib}/scala-library-2.9.2.jar"   />
+    </classpath>
+  </taskdef>
+
   <target name="init">
     <!-- Create the time stamp -->
     <tstamp/>
@@ -117,6 +125,12 @@
       </classpath>
       <include name="org/vertx/groovy/core/**/*.groovy"/>
     </groovyc>
+    <scalac srcdir="${scala-src-root}" destdir="${java-target}" classpathref="core-lib-classpath">
+      <classpath>
+        <pathelement location="${java-target}"/>
+      </classpath>
+      <include name="org/vertx/scala/core/**/*.scala"/>
+    </scalac>
   </target>
 
   <target name="compile-platform" depends="compile-core" description="compile the source for the platform">
