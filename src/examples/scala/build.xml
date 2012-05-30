@@ -1,0 +1,73 @@
+<!--
+  ~ Copyright 2011 the original author or authors.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<project name="vert.x.scala.examples" default="all" basedir=".">
+
+  <description>
+    Build script for vert.x Java examples
+  </description>
+
+  <property name="src" value="."/>
+  <property name="output" value="classes"/>
+  <property name="libs" value="../../../lib/main"/>
+  <property name="vertx-classes" value="../../../target/java/classes"/>
+
+  <property name="quux-output" value="quux-out"/>
+
+  <taskdef resource="scala/tools/ant/antlib.xml">
+    <classpath>
+      <pathelement location="${libs}/scala-compiler-2.9.2.jar"   />
+      <pathelement location="${libs}/scala-library-2.9.2.jar"   />
+    </classpath>
+  </taskdef>
+
+
+  <path id="compile-classpath">
+    <fileset dir="${libs}">
+      <include name="*.jar"/>
+    </fileset>
+    <pathelement location="${vertx-classes}"/>
+  </path>
+
+  <target name="init">
+    <!-- Create the time stamp -->
+    <tstamp/>
+  </target>
+
+  <target name="compile" depends="init" description="compile the source for the examples">
+    <mkdir dir="${output}"/>
+    <scalac srcdir="${src}" destdir="${output}" classpathref="compile-classpath">
+      <exclude name="**/Quux.java"/>
+    </scalac>
+  </target>
+
+  <target name="clean" description="clean up">
+    <delete dir="${output}"/>
+    <delete dir="${quux-output}"/>
+  </target>
+
+  <!-- This jar contains a single file and is used in the resource loading example -->
+  <target name="build-quux-jar">
+    <mkdir dir="${quux-output}"/>
+    <scalac srcdir="${src}" destdir="${quux-output}" classpathref="compile-classpath">
+      <include name="**/Quux.java"/>
+    </scalac>
+    <jar jarfile="resourceload/quux.jar" basedir="${quux-output}" includes="**/Quux.class"/>
+  </target>
+
+  <target name="all" depends="compile, build-quux-jar"/>
+
+</project>

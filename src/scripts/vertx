@@ -31,6 +31,7 @@ $DIRNAME/../lib/jars/hazelcast.jar:\
 $JRUBY_HOME/lib/jruby.jar:\
 $DIRNAME/../lib/jars/groovy.jar:\
 $DIRNAME/../lib/jars/js.jar:\
+$DIRNAME/../lib/jars/scala-library-2.9.2.jar:\
 $DIRNAME/../lib/ruby:\
 $DIRNAME/../lib/javascript
 

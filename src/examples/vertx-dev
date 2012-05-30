@@ -33,6 +33,7 @@ $DIRNAME/../../lib/main/hazelcast.jar:\
 $DIRNAME/../../lib/main/jruby.jar:\
 $DIRNAME/../../lib/main/js.jar:\
 $DIRNAME/../../lib/main/groovy-all.jar:\
+$DIRNAME/../../lib/main/scala-library-2.9.2.jar:\
 $DIRNAME/../../src/main/ruby:\
 $DIRNAME/../../src/main/javascript
 
