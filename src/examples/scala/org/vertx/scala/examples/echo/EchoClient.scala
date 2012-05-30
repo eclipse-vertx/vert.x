@@ -17,8 +17,8 @@ class EchoClient extends Verticle with NetSockets {
       })
 
       for (i <- 0 until 10) {
-        val str: String = "hello" + i + "\n"
-        System.out.print("Net client sending: " + str)
+        val str = "hello" + i + "\n"
+        println("Net client sending: " + str)
         socket.write(new Buffer(str))
       }
     })
