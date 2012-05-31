@@ -29,7 +29,7 @@ public interface SubsMap {
 
   void put(String subName, ServerID serverID, AsyncResultHandler<Void> completionHandler);
 
-  void get(String subName, AsyncResultHandler<Collection<ServerID>> completionHandler);
+  void get(String subName, AsyncResultHandler<ServerIDs> completionHandler);
 
   void remove(String subName, ServerID serverID, AsyncResultHandler<Boolean> completionHandler);
 }

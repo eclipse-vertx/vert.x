@@ -20,6 +20,7 @@ load('vertx.js')
 var tu = new TestUtils();
 var eb = vertx.eventBus;
 
+
 function testLoginDeniedEmptyDB() {
   deleteAll();
   eb.send('test.authMgr.login', {username: 'tim', password: 'foo'}, function(reply) {

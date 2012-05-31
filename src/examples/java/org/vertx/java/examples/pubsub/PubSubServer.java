@@ -45,7 +45,7 @@ public class PubSubServer extends Verticle {
               Set<String> actorIDs = vertx.sharedData().getSet(parts[1]);
               for (String actorID : actorIDs) {
                 System.out.println("Sending to verticle");
-                vertx.eventBus().send(actorID, new Buffer(parts[2]));
+                vertx.eventBus().publish(actorID, new Buffer(parts[2]));
               }
             }
           }

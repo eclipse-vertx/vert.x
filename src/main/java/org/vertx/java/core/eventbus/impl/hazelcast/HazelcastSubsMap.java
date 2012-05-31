@@ -22,7 +22,7 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.eventbus.impl.SubsMap;
 import org.vertx.java.core.impl.BlockingAction;
-import org.vertx.java.core.impl.ConcurrentHashSet;
+import org.vertx.java.core.eventbus.impl.ServerIDs;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -71,33 +71,33 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
   }
 
   @Override
-  public void get(final String subName, final AsyncResultHandler<Collection<ServerID>> completionHandler) {
+  public void get(final String subName, final AsyncResultHandler<ServerIDs> completionHandler) {
     ServerIDs entries = cache.get(subName);
-    if (entries != null && entries.initialised) {
-      completionHandler.handle(new AsyncResult<>(entries.ids));
+    if (entries != null && entries.isInitialised()) {
+      completionHandler.handle(new AsyncResult<>(entries));
     } else {
       new BlockingAction<Collection<HazelcastServerID>>(vertx, new AsyncResultHandler<Collection<HazelcastServerID>>() {
         public void handle(AsyncResult<Collection<HazelcastServerID>> result) {
-          AsyncResult<Collection<ServerID>> sresult;
+          AsyncResult<ServerIDs> sresult;
           if (result.succeeded()) {
             Collection<HazelcastServerID> entries = result.result;
             ServerIDs sids;
             if (entries != null) {
               sids = new ServerIDs(entries.size());
               for (HazelcastServerID hid: entries) {
-                sids.ids.add(hid.serverID);
+                sids.add(hid.serverID);
               }
               ServerIDs prev = cache.putIfAbsent(subName, sids);
               if (prev != null) {
                 // Merge them
-                prev.ids.addAll(sids.ids);
+                prev.merge(sids);
                 sids = prev;
               }
-              sids.initialised = true;
+              sids.setInitialised();
             } else {
               sids = null;
             }
-            sresult = new AsyncResult<>(sids == null ? null : sids.ids);
+            sresult = new AsyncResult<>(sids == null ? null : sids);
           } else {
             sresult = new AsyncResult<>(result.exception);
           }
@@ -126,7 +126,7 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
   }
 
   private void addEntry(String key, ServerID value) {
-     ServerIDs entries = cache.get(key);
+    ServerIDs entries = cache.get(key);
     if (entries == null) {
       entries = new ServerIDs();
       ServerIDs prev = cache.putIfAbsent(key, entries);
@@ -134,7 +134,7 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
         entries = prev;
       }
     }
-    entries.ids.add(value);
+    entries.add(value);
   }
 
   @Override
@@ -145,8 +145,8 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
   private void removeEntry(String key, ServerID value) {
     ServerIDs entries = cache.get(key);
     if (entries != null) {
-      entries.ids.remove(value);
-      if (entries.ids.isEmpty()) {
+      entries.remove(value);
+      if (entries.isEmpty()) {
         cache.remove(key);
       }
     }
@@ -157,7 +157,7 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
     String key = entry.getKey();
     ServerIDs entries = cache.get(key);
     if (entries != null) {
-      entries.ids.add(entry.getValue().serverID);
+      entries.add(entry.getValue().serverID);
     }
   }
 
@@ -166,15 +166,6 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
     entryRemoved(entry);
   }
 
-  private static class ServerIDs {
-    final Collection<ServerID> ids;
-    ServerIDs(int initialSize) {
-      ids = new ConcurrentHashSet<>(initialSize);
-    }
-    ServerIDs() {
-      ids = new ConcurrentHashSet<>();
-    }
-    volatile boolean initialised;
-  }
+
 
 }

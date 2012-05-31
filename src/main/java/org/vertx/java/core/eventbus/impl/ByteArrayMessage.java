@@ -29,8 +29,8 @@ class ByteArrayMessage extends BaseMessage<byte[]> {
 
   private static final Logger log = LoggerFactory.getLogger(ByteArrayMessage.class);
 
-  ByteArrayMessage(String address, byte[] body) {
-    super(address, body);
+  ByteArrayMessage(boolean send, String address, byte[] body) {
+    super(send, address, body);
   }
 
   public ByteArrayMessage(Buffer readBuff) {
@@ -69,7 +69,7 @@ class ByteArrayMessage extends BaseMessage<byte[]> {
     } else {
       bod = null;
     }
-    ByteArrayMessage copied = new ByteArrayMessage(address, bod);
+    ByteArrayMessage copied = new ByteArrayMessage(send, address, bod);
     copied.replyAddress = this.replyAddress;
     copied.bus = this.bus;
     copied.sender = this.sender;
@@ -81,7 +81,7 @@ class ByteArrayMessage extends BaseMessage<byte[]> {
   }
 
   protected BaseMessage createReplyMessage(byte[] reply) {
-    return new ByteArrayMessage(replyAddress, reply);
+    return new ByteArrayMessage(true, replyAddress, reply);
   }
 
 }

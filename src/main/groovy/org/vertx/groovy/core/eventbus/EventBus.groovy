@@ -78,6 +78,23 @@ class EventBus {
   }
 
   /**
+   * Publish a message on the event bus.
+   * Message can be a java.util.Map (Representing a JSON message), a String, boolean,
+   * byte, short, int, long, float, double or {@link org.vertx.java.core.buffer.Buffer}
+   * @param address The address to publish it to
+   * @param message The message
+   */
+  void publish(String address, message) {
+    if (message != null) {
+      message = convertMessage(message)
+      jEventBus.publish(address, convertMessage(message))
+    } else {
+      // Just choose an overloaded method...
+      jEventBus.publish(address, (String)null)
+    }
+  }
+
+  /**
    * Registers a handler against the specified address. When a message arrives the handler
    * will receive an instance of {@link Message}
    * @param address The address to register it at

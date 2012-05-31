@@ -49,7 +49,7 @@ public class FanoutServer extends Verticle {
           public void handle(Buffer buffer) {
             tu.checkContext();
             for (String actorID : connections) {
-              vertx.eventBus().send(actorID, buffer);
+              vertx.eventBus().publish(actorID, buffer);
             }
           }
         });

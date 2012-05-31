@@ -133,6 +133,14 @@ if (!vertx.eventBus) {
     It should have a property "address"
      */
     that.send = function(address, message, replyHandler) {
+      sendOrPub(true, address, message, replyHandler);
+    };
+
+    that.publish = function(address, message) {
+      sendOrPub(false, address, message);
+    };
+
+    function sendOrPub(send, address, message, replyHandler) {
       if (!address) {
         throw "address must be specified";
       }
@@ -143,13 +151,17 @@ if (!vertx.eventBus) {
         throw "replyHandler must be a function";
       }
       message = convertMessage(message);
-      if (replyHandler) {
-        var wrapped = wrappedHandler(replyHandler);
-        jEventBus.send(address, message, wrapped);
+      if (send) {
+        if (replyHandler) {
+          var wrapped = wrappedHandler(replyHandler);
+          jEventBus.send(address, message, wrapped);
+        } else {
+          jEventBus.send(address, message);
+        }
       } else {
-        jEventBus.send(address, message);
+        jEventBus.publish(address, message);
       }
-    };
+    }
 
   })();
 
