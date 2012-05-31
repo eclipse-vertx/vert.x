@@ -235,6 +235,14 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
     }
   }
 
+  private boolean contentTypeSet() {
+    if (headers != null) {
+      return headers.containsKey(Names.CONTENT_TYPE);
+    } else {
+      return false;
+    }
+  }
+
   public DefaultHttpServerResponse sendFile(String filename) {
     if (headWritten) {
       throw new IllegalStateException("Head already written");
@@ -248,14 +256,16 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
       if (!contentLengthSet()) {
         response.setHeader(Names.CONTENT_LENGTH, String.valueOf(file.length()));
       }
-      try {
-        String contentType = Files.probeContentType(Paths.get(filename));
-        if (contentType != null) {
-          response.setHeader(Names.CONTENT_TYPE, contentType);
+      if (!contentTypeSet()) {
+        try {
+          String contentType = Files.probeContentType(Paths.get(filename));
+          if (contentType != null) {
+            response.setHeader(Names.CONTENT_TYPE, contentType);
+          }
+        } catch (IOException e) {
+          log.error("Failed to get content type", e);
+          sendNotFound();
         }
-      } catch (IOException e) {
-        log.error("Failed to get content type", e);
-        sendNotFound();
       }
 
       conn.write(response);
