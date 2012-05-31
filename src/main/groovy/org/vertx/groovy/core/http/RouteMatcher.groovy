@@ -228,7 +228,7 @@ class RouteMatcher {
    * @param handler
    */
   void noMatch(Closure handler) {
-    jRM.noMatch(handler)    
+    jRM.noMatch(wrapHandler(handler))    
   }
 
   /**

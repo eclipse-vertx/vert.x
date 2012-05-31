@@ -1,4 +1,4 @@
-netty: 3.4.5.final
+netty: 3.4.6.final
 js.jar - currently built from rhino master since require some fixes not in release yet
 hazelcast.jar - 2.0.2.final
 jruby.jar - 1.6.7
