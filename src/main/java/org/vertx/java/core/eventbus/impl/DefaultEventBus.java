@@ -407,9 +407,7 @@ public class DefaultEventBus implements EventBus {
     if (address == null) {
       address = id;
     }
-    if (!replyHandler) {
-      handlersByID.put(id, new HandlerInfo(address, handler));
-    }
+    handlersByID.put(id, new HandlerInfo(address, handler));
     Handlers handlers = handlerMap.get(address);
     if (handlers == null) {
       handlers = new Handlers();
