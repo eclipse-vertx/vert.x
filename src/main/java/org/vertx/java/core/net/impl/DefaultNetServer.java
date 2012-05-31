@@ -82,7 +82,7 @@ public class DefaultNetServer implements NetServer {
     if (vertx.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
-    ctx.addCloseHook(new Runnable() {
+    ctx.putCloseHook(this, new Runnable() {
       public void run() {
         close();
       }

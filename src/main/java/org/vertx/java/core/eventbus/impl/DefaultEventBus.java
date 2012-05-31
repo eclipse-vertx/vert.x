@@ -36,6 +36,8 @@ import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.parsetools.RecordParser;
 
 import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Queue;
@@ -236,6 +238,7 @@ public class DefaultEventBus implements EventBus {
       String handlerID = handlers.map.remove(new HandlerHolder(handler, false, context));
       if (handlerID != null) {
         handlersByID.remove(handlerID);
+        getHandlerCloseHook(context).ids.remove(handlerID);
       }
       if (handlers.map.isEmpty()) {
         handlerMap.remove(address);
@@ -438,14 +441,18 @@ public class DefaultEventBus implements EventBus {
         callCompletionHandler(completionHandler);
       }
     }
-
-    context.addCloseHook(new Runnable() {
-      public void run() {
-        // Unregister handlers automatically when undeployed
-        unregisterHandler(id);
-      }
-    });
+    HandlerCloseHook hcl = getHandlerCloseHook(context);
+    hcl.ids.add(id);
     return id;
+  }
+
+  private HandlerCloseHook getHandlerCloseHook(Context context) {
+    HandlerCloseHook hcl = (HandlerCloseHook)context.getCloseHook(this);
+    if (hcl == null) {
+      hcl = new HandlerCloseHook();
+      context.putCloseHook(this, hcl);
+    }
+    return hcl;
   }
 
   private void callCompletionHandler(AsyncResultHandler<Void> completionHandler) {
@@ -539,7 +546,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   // Called when a message is incoming
-  private void receiveMessage(BaseMessage msg) {
+  private void receiveMessage(final BaseMessage msg) {
     msg.bus = this;
     final Handlers handlers = handlerMap.get(msg.address);
     if (handlers != null) {
@@ -558,7 +565,7 @@ public class DefaultEventBus implements EventBus {
     }
   }
 
-  private void doReceive(final Handlers handlers, BaseMessage msg, final HandlerHolder holder) {
+  private void doReceive(final Handlers handlers, final BaseMessage msg, final HandlerHolder holder) {
     // Each handler gets a fresh copy
     final Message copied = msg.copy();
 
@@ -567,7 +574,13 @@ public class DefaultEventBus implements EventBus {
         // Need to check handler is still there - the handler might have been removed after the message were sent but
         // before it was received
         if (handlers.map.containsKey(holder)) {
-          holder.handler.handle(copied);
+          try {
+            holder.handler.handle(copied);
+          } finally {
+            if (holder.replyHandler) {
+              unregisterHandler(msg.address, holder.handler);
+            }
+          }
         }
       }
     });
@@ -693,6 +706,15 @@ public class DefaultEventBus implements EventBus {
     private HandlerInfo(String address, Handler<? extends Message> handler) {
       this.address = address;
       this.handler = handler;
+    }
+  }
+
+  private class HandlerCloseHook implements Runnable {
+    final List<String> ids = new ArrayList<>();
+    public void run() {
+      for (String id: new ArrayList<>(ids)) {
+        unregisterHandler(id);
+      }
     }
   }
 
