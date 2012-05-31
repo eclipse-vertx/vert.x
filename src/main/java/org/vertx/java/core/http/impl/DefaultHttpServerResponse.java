@@ -244,7 +244,6 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
     if (!file.exists()) {
       sendNotFound();
     } else {
-      HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
       writeHeaders();
       if (!contentLengthSet()) {
         response.setHeader(Names.CONTENT_LENGTH, String.valueOf(file.length()));
