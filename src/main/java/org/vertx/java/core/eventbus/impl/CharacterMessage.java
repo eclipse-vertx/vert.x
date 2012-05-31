@@ -29,8 +29,8 @@ class CharacterMessage extends BaseMessage<Character> {
 
   private static final Logger log = LoggerFactory.getLogger(CharacterMessage.class);
 
-  CharacterMessage(String address, Character body) {
-    super(address, body);
+  CharacterMessage(boolean send, String address, Character body) {
+    super(send, address, body);
   }
 
   public CharacterMessage(Buffer readBuff) {
@@ -67,7 +67,7 @@ class CharacterMessage extends BaseMessage<Character> {
   }
 
   protected BaseMessage createReplyMessage(Character reply) {
-    return new CharacterMessage(replyAddress, reply);
+    return new CharacterMessage(true, replyAddress, reply);
   }
 
 }

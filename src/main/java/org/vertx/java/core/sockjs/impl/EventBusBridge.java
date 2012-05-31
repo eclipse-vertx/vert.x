@@ -146,10 +146,10 @@ public class EventBusBridge implements Handler<SockJSSocket> {
         String address = getMandatoryString(msg, "address");
         switch (type) {
           case "send":
-            JsonObject body = getMandatoryObject(msg, "body");
-            String replyAddress = msg.getString("replyAddress");
-            doSend(sock, address, body, replyAddress);
+            sendOrPub(true, msg, address);
             break;
+          case "publish":
+            sendOrPub(false, msg, address);
           case "register":
             handleRegister(address);
             break;
@@ -160,8 +160,16 @@ public class EventBusBridge implements Handler<SockJSSocket> {
             throw new IllegalStateException("Invalid type: " + type);
         }
       }
+
+      private void sendOrPub(boolean send, JsonObject msg, String address) {
+        JsonObject body = getMandatoryObject(msg, "body");
+        String replyAddress = msg.getString("replyAddress");
+        doSendOrPub(send, sock, address, body, replyAddress);
+      }
     });
   }
+
+
 
   private String getMandatoryString(JsonObject json, String field) {
     String value = json.getString(field);
@@ -187,7 +195,8 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     sock.writeBuffer(new Buffer(envelope.encode()));
   }
 
-  private void doSend(final SockJSSocket sock, final String address, final JsonObject jsonObject, final String replyAddress) {
+  private void doSendOrPub(final boolean send, final SockJSSocket sock, final String address,
+                           final JsonObject jsonObject, final String replyAddress) {
     if (log.isDebugEnabled()) {
       log.debug("Received msg from client in bridge. address:"  + address + " message:" + jsonObject.encode());
     }
@@ -200,18 +209,19 @@ public class EventBusBridge implements Handler<SockJSSocket> {
             if (res.result) {
               cacheAuthorisation(sessionID, sock);
             }
-            checkAndSend(address, jsonObject, res.result, sock, replyAddress);
+            checkAndSend(send, address, jsonObject, res.result, sock, replyAddress);
           } else {
             log.error("Error in performing authorisation", res.exception);
           }
         }
       });
     } else {
-      checkAndSend(address, jsonObject, false, sock, replyAddress);
+      checkAndSend(send, address, jsonObject, false, sock, replyAddress);
     }
   }
 
-  private void checkAndSend(String address, JsonObject jsonObject, boolean authed,
+  private void checkAndSend(boolean send, String address, JsonObject jsonObject,
+                            boolean authed,
                             final SockJSSocket sock,
                             final String replyAddress) {
     jsonObject = checkMatches(address, jsonObject, authed);
@@ -226,7 +236,11 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       } else {
         replyHandler = null;
       }
-      eb.send(address, jsonObject, replyHandler);
+      if (send) {
+        eb.send(address, jsonObject, replyHandler);
+      } else {
+        eb.publish(address, jsonObject);
+      }
     } else {
       log.debug("Message rejected because there is no permitted match");
     }
@@ -253,9 +267,6 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   this means that specifying one match with a JSON empty object means everything is accepted
    */
   private JsonObject checkMatches(String address, JsonObject message, boolean authed) {
-//    if (address.equals(loginAddress) || address.equals(logoutAddress)) {
-//      return message;
-//    }
 
     for (JsonObject matchHolder: permitted) {
       String matchAddress = matchHolder.getString("address");

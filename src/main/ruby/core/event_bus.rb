@@ -55,13 +55,28 @@ module Vertx
     # @param reply_handler [Block] replyHandler An optional reply handler.
     # It will be called when the reply from a receiver is received.
     def EventBus.send(address, message, &reply_handler)
+      EventBus.send_or_pub(true, address, message, reply_handler)
+    end
+
+    # Publish a message on the event bus
+    # @param message [Hash] The message to publish
+    def EventBus.publish(address, message)
+      EventBus.send_or_pub(false, address, message)
+    end
+
+    # @private
+    def EventBus.send_or_pub(send, address, message, reply_handler = nil)
       raise "An address must be specified" if !address
       raise "A message must be specified" if message == nil
       message = convert_msg(message)
-      if reply_handler != nil
-        @@j_eventbus.send(address, message, InternalHandler.new(reply_handler))
+      if send
+        if reply_handler != nil
+          @@j_eventbus.send(address, message, InternalHandler.new(reply_handler))
+        else
+          @@j_eventbus.send(address, message)
+        end
       else
-        @@j_eventbus.send(address, message)
+        @@j_eventbus.publish(address, message)
       end
     end
 

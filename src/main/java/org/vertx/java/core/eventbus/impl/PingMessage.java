@@ -25,7 +25,7 @@ import org.vertx.java.core.net.impl.ServerID;
 public class PingMessage extends StringMessage {
 
   public PingMessage(ServerID sender) {
-    super("ping", "ping");
+    super(true, "ping", "ping");
     this.sender = sender;
   }
 

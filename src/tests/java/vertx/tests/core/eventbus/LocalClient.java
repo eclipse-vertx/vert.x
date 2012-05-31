@@ -48,13 +48,13 @@ public class LocalClient extends EventBusAppBase {
   public void testPubSub() {
     Buffer buff = TestUtils.generateRandomBuffer(1000);
     data.put("buffer", buff);
-    eb.send("some-address", buff);
+    eb.publish("some-address", buff);
   }
 
   public void testPubSubMultipleHandlers() {
     Buffer buff = TestUtils.generateRandomBuffer(1000);
     data.put("buffer", buff);
-    eb.send("some-address", buff);
+    eb.publish("some-address", buff);
   }
 
   public void testPointToPoint() {
@@ -105,7 +105,7 @@ public class LocalClient extends EventBusAppBase {
       });
     }
 
-    eb.send(address, buff);
+    eb.publish(address, buff);
   }
 
   public void testRegisterNoAddress() {

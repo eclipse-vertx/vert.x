@@ -29,8 +29,8 @@ class BufferMessage extends BaseMessage<Buffer> {
 
   private static final Logger log = LoggerFactory.getLogger(BufferMessage.class);
 
-  BufferMessage(String address, Buffer body) {
-    super(address, body);
+  BufferMessage(boolean send, String address, Buffer body) {
+    super(send, address, body);
   }
 
   public BufferMessage(Buffer readBuff) {
@@ -63,7 +63,7 @@ class BufferMessage extends BaseMessage<Buffer> {
   }
 
   protected Message copy() {
-    BufferMessage copied = new BufferMessage(address, body == null ? null : body.copy());
+    BufferMessage copied = new BufferMessage(send, address, body == null ? null : body.copy());
     copied.replyAddress = this.replyAddress;
     copied.bus = this.bus;
     copied.sender = this.sender;
@@ -75,7 +75,7 @@ class BufferMessage extends BaseMessage<Buffer> {
   }
 
   protected BaseMessage createReplyMessage(Buffer reply) {
-    return new BufferMessage(replyAddress, reply);
+    return new BufferMessage(true, replyAddress, reply);
   }
 
 }

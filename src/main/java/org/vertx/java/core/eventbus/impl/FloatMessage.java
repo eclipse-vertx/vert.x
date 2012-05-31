@@ -29,8 +29,8 @@ class FloatMessage extends BaseMessage<Float> {
 
   private static final Logger log = LoggerFactory.getLogger(FloatMessage.class);
 
-  FloatMessage(String address, Float body) {
-    super(address, body);
+  FloatMessage(boolean send, String address, Float body) {
+    super(send, address, body);
   }
 
   public FloatMessage(Buffer readBuff) {
@@ -67,7 +67,7 @@ class FloatMessage extends BaseMessage<Float> {
   }
 
   protected BaseMessage createReplyMessage(Float reply) {
-    return new FloatMessage(replyAddress, reply);
+    return new FloatMessage(true, replyAddress, reply);
   }
 
 }

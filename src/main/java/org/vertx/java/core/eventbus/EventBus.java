@@ -234,24 +234,8 @@ public interface EventBus {
    * Publish a JSON object as a message
    * @param address The address to publish it to
    * @param message The message
-   * @param replyHandler Reply handler will be called when any reply from the recipient is received
-   */
-  void publish(String address, JsonObject message, Handler<Message<JsonObject>> replyHandler);
-
-  /**
-   * Publish a JSON object as a message
-   * @param address The address to publish it to
-   * @param message The message
    */
   void publish(String address, JsonObject message);
-
-  /**
-   * Publish a Buffer as a message
-   * @param address The address to publish it to
-   * @param message The message
-   * @param replyHandler Reply handler will be called when any reply from the recipient is received
-   */
-  void publish(String address, Buffer message, Handler<Message<Buffer>> replyHandler);
 
   /**
    * Publish a Buffer as a message
@@ -264,24 +248,8 @@ public interface EventBus {
    * Publish a byte[] as a message
    * @param address The address to publish it to
    * @param message The message
-   * @param replyHandler Reply handler will be called when any reply from the recipient is received
-   */
-  void publish(String address, byte[] message, Handler<Message<byte[]>> replyHandler);
-
-  /**
-   * Publish a byte[] as a message
-   * @param address The address to publish it to
-   * @param message The message
    */
   void publish(String address, byte[] message);
-
-  /**
-   * Publish a String as a message
-   * @param address The address to publish it to
-   * @param message The message
-   * @param replyHandler Reply handler will be called when any reply from the recipient is received
-   */
-  void publish(String address, String message, Handler<Message<String>> replyHandler);
 
   /**
    * Publish a String as a message
@@ -294,24 +262,8 @@ public interface EventBus {
    * Publish an Integer as a message
    * @param address The address to publish it to
    * @param message The message
-   * @param replyHandler Reply handler will be called when any reply from the recipient is received
-   */
-  void publish(String address, Integer message, Handler<Message<Integer>> replyHandler);
-
-  /**
-   * Publish an Integer as a message
-   * @param address The address to publish it to
-   * @param message The message
    */
   void publish(String address, Integer message);
-
-  /**
-   * Publish a Long as a message
-   * @param address The address to publish it to
-   * @param message The message
-   * @param replyHandler Reply handler will be called when any reply from the recipient is received
-   */
-  void publish(String address, Long message, Handler<Message<Long>> replyHandler);
 
   /**
    * Publish a Long as a message
@@ -324,24 +276,8 @@ public interface EventBus {
    * Publish a Float as a message
    * @param address The address to publish it to
    * @param message The message
-   * @param replyHandler Reply handler will be called when any reply from the recipient is received
-   */
-  void publish(String address, Float message, Handler<Message<Float>> replyHandler);
-
-  /**
-   * Publish a Float as a message
-   * @param address The address to publish it to
-   * @param message The message
    */
   void publish(String address, Float message);
-
-  /**
-   * Publish a Double as a message
-   * @param address The address to publish it to
-   * @param message The message
-   * @param replyHandler Reply handler will be called when any reply from the recipient is received
-   */
-  void publish(String address, Double message, Handler<Message<Double>> replyHandler);
 
   /**
    * Publish a Double as a message
@@ -354,24 +290,8 @@ public interface EventBus {
    * Publish a Boolean as a message
    * @param address The address to publish it to
    * @param message The message
-   * @param replyHandler Reply handler will be called when any reply from the recipient is received
-   */
-  void publish(String address, Boolean message, Handler<Message<Boolean>> replyHandler) ;
-
-  /**
-   * Publish a Boolean as a message
-   * @param address The address to publish it to
-   * @param message The message
    */
   void publish(String address, Boolean message);
-
-  /**
-   * Publish a Short as a message
-   * @param address The address to publish it to
-   * @param message The message
-   * @param replyHandler Reply handler will be called when any reply from the recipient is received
-   */
-  void publish(String address, Short message, Handler<Message<Short>> replyHandler);
 
   /**
    * Publish a Short as a message
@@ -384,24 +304,8 @@ public interface EventBus {
    * Publish a Character as a message
    * @param address The address to publish it to
    * @param message The message
-   * @param replyHandler Reply handler will be called when any reply from the recipient is received
-   */
-  void publish(String address, Character message, Handler<Message<Character>> replyHandler);
-
-  /**
-   * Publish a Character as a message
-   * @param address The address to publish it to
-   * @param message The message
    */
   void publish(String address, Character message);
-
-  /**
-   * Publish a Byte as a message
-   * @param address The address to publish it to
-   * @param message The message
-   * @param replyHandler Reply handler will be called when any reply from the recipient is received
-   */
-  void publish(String address, Byte message, Handler<Message<Byte>> replyHandler);
 
   /**
    * Publish a Byte as a message

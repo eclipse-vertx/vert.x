@@ -29,8 +29,8 @@ class IntMessage extends BaseMessage<Integer> {
 
   private static final Logger log = LoggerFactory.getLogger(IntMessage.class);
 
-  IntMessage(String address, Integer body) {
-    super(address, body);
+  IntMessage(boolean send, String address, Integer body) {
+    super(send, address, body);
   }
 
   public IntMessage(Buffer readBuff) {
@@ -67,7 +67,7 @@ class IntMessage extends BaseMessage<Integer> {
   }
 
   protected BaseMessage createReplyMessage(Integer reply) {
-    return new IntMessage(replyAddress, reply);
+    return new IntMessage(true, replyAddress, reply);
   }
 
 }

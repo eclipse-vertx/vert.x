@@ -29,8 +29,8 @@ class ByteMessage extends BaseMessage<Byte> {
 
   private static final Logger log = LoggerFactory.getLogger(ByteMessage.class);
 
-  ByteMessage(String address, Byte body) {
-    super(address, body);
+  ByteMessage(boolean send, String address, Byte body) {
+    super(send, address, body);
   }
 
   public ByteMessage(Buffer readBuff) {
@@ -67,7 +67,7 @@ class ByteMessage extends BaseMessage<Byte> {
   }
 
   protected BaseMessage createReplyMessage(Byte reply) {
-    return new ByteMessage(replyAddress, reply);
+    return new ByteMessage(true, replyAddress, reply);
   }
 
 }

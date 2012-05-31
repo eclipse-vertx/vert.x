@@ -407,7 +407,7 @@ public class DefaultSockJSServer implements SockJSServer {
         sock.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
             for (String actorID : connections) {
-              vertx.eventBus().send(actorID, buffer);
+              vertx.eventBus().publish(actorID, buffer);
             }
           }
         });
