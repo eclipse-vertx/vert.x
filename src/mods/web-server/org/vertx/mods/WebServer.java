@@ -58,9 +58,11 @@ public class WebServer extends BusModBase implements Handler<HttpServerRequest> 
     boolean bridge = getOptionalBooleanConfig("bridge", false);
     if (bridge) {
       SockJSServer sjsServer = vertx.createSockJSServer(server);
-      JsonArray permitted = getOptionalArrayConfig("permitted", new JsonArray());
+      JsonArray inboundPermitted = getOptionalArrayConfig("inbound_permitted", new JsonArray());
+      JsonArray outboundPermitted = getOptionalArrayConfig("outbound_permitted", new JsonArray());
 
-      sjsServer.bridge(getOptionalObjectConfig("sjs_config", new JsonObject().putString("prefix", "/eventbus")), permitted,
+      sjsServer.bridge(getOptionalObjectConfig("sjs_config", new JsonObject().putString("prefix", "/eventbus")),
+                       inboundPermitted, outboundPermitted,
                        getOptionalLongConfig("auth_timeout", 5 * 60 * 1000),
                        getOptionalStringConfig("auth_address", "vertx.basicauthmanager.authorise"));
     }

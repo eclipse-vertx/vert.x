@@ -27,7 +27,7 @@ public class BridgeServer extends Verticle {
     JsonArray permitted = new JsonArray();
     permitted.add(new JsonObject()); // Let everything through
     SockJSServer sockJSServer = vertx.createSockJSServer(server);
-    sockJSServer.bridge(new JsonObject().putString("prefix", "/eventbus"), permitted);
+    sockJSServer.bridge(new JsonObject().putString("prefix", "/eventbus"), permitted, permitted);
 
     server.listen(8080);
   }
