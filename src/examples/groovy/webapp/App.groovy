@@ -35,7 +35,7 @@ def webServerConf = [
 
   // This defines which messages from the client we will let through
   // to the server side
-  permitted: [
+  inbound_permitted: [
     // Allow calls to login
     [
       address: 'vertx.basicauthmanager.login'
@@ -57,6 +57,11 @@ def webServerConf = [
         collection : 'orders'
       ]
     ]
+  ],
+
+  // This defines which messages from the server we will let through to the client
+  outbound_permitted: [
+    [:]
   ]
 ]
 
