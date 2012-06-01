@@ -128,7 +128,7 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
   private void addEntry(String key, ServerID value) {
     ServerIDs entries = cache.get(key);
     if (entries == null) {
-      entries = new ServerIDs();
+      entries = new ServerIDs(1);
       ServerIDs prev = cache.putIfAbsent(key, entries);
       if (prev != null) {
         entries = prev;
