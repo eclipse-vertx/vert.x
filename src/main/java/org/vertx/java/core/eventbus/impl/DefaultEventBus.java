@@ -681,7 +681,7 @@ public class DefaultEventBus implements EventBus {
   private static class Handlers {
     final Map<HandlerHolder, String> map = new ConcurrentHashMap<>();
     private Iterator<HandlerHolder> iter;
-    HandlerHolder choose() {
+    synchronized HandlerHolder choose() {
       if (map.isEmpty()) {
         return null;
       } else {

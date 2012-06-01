@@ -36,9 +36,6 @@ public class ServerIDs implements Iterable<ServerID> {
   public ServerIDs(int initialSize) {
     ids = new ConcurrentHashSet<>(initialSize);
   }
-  public ServerIDs() {
-    ids = new ConcurrentHashSet<>();
-  }
 
   public boolean isInitialised() {
     return initialised;
@@ -69,7 +66,7 @@ public class ServerIDs implements Iterable<ServerID> {
     return ids.iterator();
   }
 
-  public ServerID choose() {
+  public synchronized ServerID choose() {
     if (!ids.isEmpty()) {
       if (iter == null || !iter.hasNext()) {
         iter = ids.iterator();
