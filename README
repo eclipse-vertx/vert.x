@@ -1,8 +1,10 @@
-Pre-requisities: python markdown, xsltproc, vert.x (for the web server)
+Pre-requisities:
+
+For building: python markdown, xsltproc
+
+For viewing: vert.x (for the web server)
 
 To build user manual:
-
-cd into version directory
 
 ./gen_site.sh
 

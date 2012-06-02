@@ -1,6 +1,6 @@
 load('vertx.js')
 
-var server = new vertx.HttpServer();
+var server = vertx.createHttpServer();
 
 // Also serve the static resources
 server.requestHandler(function(req) {
@@ -10,8 +10,4 @@ server.requestHandler(function(req) {
     req.response.sendFile("." + req.path);
   }
 }).listen(8181, 'localhost');
-
-function vertxStop() {
-  server.close();
-}
 

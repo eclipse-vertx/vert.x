@@ -2,12 +2,11 @@
     "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-  <link rel="stylesheet/less" href="wsver-0002/bootstrap/less/bootstrap.less">
-  <script src="wsver-0002/less-1.2.1.min.js"></script>
-  <link href="wsver-0002/google-code-prettify/prettify.css" type="text/css" rel="stylesheet"/>
-  <script type="text/javascript" src="wsver-0002/google-code-prettify/prettify.js"></script>
-  <link href="wsver-0002/css/vertx.css" type="text/css" rel="stylesheet"/>
-  <link href="wsver-0002/css/sunburst.css" type="text/css" rel="stylesheet"/>
+  <link href="bootstrap/bootstrap.css" type="text/css" rel="stylesheet"/>
+  <link href="google-code-prettify/prettify.css" type="text/css" rel="stylesheet"/>
+  <script type="text/javascript" src="google-code-prettify/prettify.js"></script>
+  <link href="css/vertx.css" type="text/css" rel="stylesheet"/>
+  <link href="css/sunburst.css" type="text/css" rel="stylesheet"/>
   <title>Vert.x- Effortless asynchronous application development for the modern
           web and enterprise</title>
   <script>
@@ -41,14 +40,15 @@
       <div class="nav-collapse">
         <ul class="nav">
           <li class="active"><a href="/">Home</a></li>
-          <li><a href="https://github.com/purplefox/vert.x/downloads">Download</a></li>
-          <li><a href="wsver-0002/install.html">Install</a></li>
-          <li><a href="wsver-0002/tutorials.html">Tutorials</a></li>
-          <li><a href="wsver-0002/examples.html">Examples</a></li>
-          <li><a href="wsver-0002/docs.html">Documentation</a></li>
+          <li><a href="downloads.html">Download</a></li>
+          <li><a href="install.html">Install</a></li>
+          <li><a href="tutorials.html">Tutorials</a></li>
+          <li><a href="examples.html">Examples</a></li>
+          <li><a href="docs.html">Documentation</a></li>
           <li><a href="https://github.com/purplefox/vert.x">Source</a></li>
           <li><a href="http://groups.google.com/group/vertx">Google Group</a></li>
-          <li><a href="wsver-0002/community.html">Community</a></li>
+          <li><a href="community.html">Community</a></li>
+          <li><a href="http://vertxproject.wordpress.com/">Blog</a></li>
         </ul>
       </div>
     </div>
@@ -61,9 +61,8 @@
     <div class="span12">
       <div class="hero-unit" style="padding: 30px;">
         <h1>vert.x</h1>
-
         <p class="title">Effortless asynchronous application development for the modern
-          web and enterprise</p>
+          web and enterprise</p>          
       </div>
     </div>
   </div>
@@ -76,8 +75,7 @@
         <h3 class="title">Polyglot</h3>
         <br/>
         <p>Write your application components in <strong>JavaScript</strong>,
-          <strong>Ruby</strong> or <strong>Java</strong>. Or mix and match several programming languages in a single
-          application.</p>
+          <strong>Ruby</strong>, <strong>Groovy</strong> or <strong>Java</strong>. Or mix and match several programming languages in a single application.</p>
       </div>
     </div>
     <div class="span3">
@@ -86,7 +84,7 @@
         <br/>
         <p>...without being simplistic. Create real, scalable applications in
           just a
-          few lines of code. No boilerplate or sprawling xml config.</p>
+          few lines of code. No sprawling xml config.</p>
         <br/>
       </div>
     </div>
@@ -94,9 +92,9 @@
       <div class="well">
         <h3 class="title">Scalability</h3>
         <br/>
-        <p>Natural scalability using messaging passing and immutable shared
+        <p>Scale using messaging passing and immutable shared
           data to efficiently utilise your server cores.</p>
-        <br/>
+        <br/><br/>
       </div>
     </div>
     <div class="span3">
@@ -113,16 +111,20 @@
 
     <div class="span3">
       <div class="well">
+        <h3 class="title"><a href="manual.html">Find out more...</a></h3>
+      </div>
+      <div class="well">
         <h3 class="title">Features</h3>
         <br/>
         <ul>
           <li>
             <p><strong>Distributed Event Bus</strong> which spans the server
-              and even penetrates into client side JavaScript.</p>
+              and even penetrates into client side JavaScript for effortless 'real-time'
+              web applications.</p>
           </li>
           <li>
             <p><strong>Out of the box event bus modules </strong>including
-            persistor, mailer, authentication manager, and work queues.</p>
+            a web-server, persistor, mailer and work queues.</p>
           </li>
           <li>
             <p><strong>TCP/SSL</strong> servers and clients</p>
@@ -137,13 +139,13 @@
             <p><strong>SockJS</strong> support</p>
           </li>
           <li>
-            <p><strong>Extensive <a href="wsver-0002/docs.html">documentation</a></strong></p>
+            <p><strong>Extensive <a href="docs.html">documentation</a></strong></p>
           </li>
           <li>
             <p><strong>Open Source.</strong> Licenced under the ASL 2.0</p>
           </li>
           <li>
-            <p><strong>Embeddable.</strong> If you don't want to run the whole vert.x platform, you can use vert.x embedded in your own pre-existing Spring Framework or other application.
+            <p><strong>Embeddable.</strong> If you don't want to run the whole vert.x platform, you can use vert.x embedded as a library in your own Java or Groovy application.
           </li>
           <li>
             <p><strong>Many other features.</strong> See the documentation for full details.</a></p>
@@ -151,7 +153,7 @@
 
         </ul>
         
-      </div>      
+      </div>     
     </div>
 
     <div class="span9">
@@ -170,6 +172,7 @@
             <ul class="nav nav-tabs">              
               <li class="active"><a href="#ws_js" data-toggle="tab">JavaScript</a></li>
               <li><a href="#ws_ruby" data-toggle="tab">Ruby</a></li>
+              <li><a href="#ws_groovy" data-toggle="tab">Groovy</a></li>
               <li><a href="#ws_java" data-toggle="tab">Java</a></li>              
             </ul>
 
@@ -180,11 +183,10 @@
                 <pre class="prettyprint">
 load('vertx.js')
 
-new vertx.HttpServer().requestHandler(function(req) {
+vertx.createHttpServer().requestHandler(function(req) {
     var file = req.path === '/' ? 'index.html' : req.path;
     req.response.sendFile('webroot/' + file);
 }).listen(8080)
-
                 </pre>
                 <p>Run it with:</p>
                 <p><code>vertx run server.js</code></p>
@@ -201,13 +203,11 @@ new vertx.HttpServer().requestHandler(function(req) {
                 <p>Save the following in <code>server.rb</code></p>
                 <pre class="prettyprint">
 require "vertx"
-include Vertx
 
-HttpServer.new.request_handler do |req|
-  file = req.uri == "/" ? "index.html" : req.uri
-  req.response.send_file('webroot/' << file)
+Vertx::HttpServer.new.request_handler do |req|
+    file = req.uri == "/" ? "index.html" : req.uri
+    req.response.send_file "webroot/#{file}"
 end.listen(8080)
-
                 </pre>
 
                 <p>Run it with:</p>
@@ -220,31 +220,47 @@ end.listen(8080)
             
 
               </div>
+              <div class="tab-pane" id="ws_groovy">
+
+                <p>Save the following in <code>Server.groovy</code></p>
+                <pre class="prettyprint">
+vertx.createHttpServer().requestHandler { req ->
+    def file = req.uri == "/" ? "index.html" : req.uri
+    req.response.sendFile "webroot/$file"
+}.listen(8080)
+                </pre>
+
+                <p>Run it with:</p>
+                <p><code>vertx run Server.groovy</code></p>
+
+                <p><strong>Have lots of cores on your server and want to use them all?</strong></p>
+                <p>Just spin up more instances:</p>
+                <p><code>vertx run Server.groovy -instances 32</code></p>
+                <p>Vert.x will do the magic to ensure the requests are distributed amongst the instances:</p>
+            
+
+              </div>
               <div class="tab-pane" id="ws_java">
                 <p>Save the following in <code>Server.java</code></p>
                 <pre class="prettyprint">
-import org.vertx.java.core.*;
-import org.vertx.java.core.http.*;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.java.deploy.Verticle;
 
-public class Server implements Verticle {
-
-  public void start() {
-    new HttpServer().requestHandler(new Handler&lt;HttpServerRequest&gt;() {
-      public void handle(HttpServerRequest req) {
-        String file = req.path.equals("/") ? "index.html" : req.path;
-        req.response.sendFile("webroot/" + file);
-      }
-    }).listen(8080);
-  }
-
-  public void stop() {
-  }
+public class Server extends Verticle {
+    public void start() {
+        vertx.createHttpServer().requestHandler(new Handler&lt;HttpServerRequest&gt;() {
+            public void handle(HttpServerRequest req) {
+                String file = req.path.equals("/") ? "index.html" : req.path;
+                req.response.sendFile("webroot/" + file);
+            }
+        }).listen(8080);
+    }
 }
-
                 </pre>
 
                 <p>Compile it:</p>
-                <p><code>javac Server.java -cp $VERTX_HOME/lib/jars/vert.x.jar</code></p>
+                <p><code>javac Server.java -cp $VERTX_HOME/lib/jars/vert.x-core.jar:$VERTX_HOME/lib/jars/vert.x-platform.jar</code></p>
 
                 <p>Run it with:</p>
                 <p><code>vertx run Server</code></p>
@@ -263,7 +279,7 @@ public class Server implements Verticle {
 
           <div class="well">
             <p>OK, that's pretty cool, but it's just a Hello World.</p>
-            <p>For something more substantial take a look at the <a href="wsver-0002/tutorials.html">tutorials</a></p>.
+            <p>For something more substantial take a look at the <a href="tutorials.html">tutorials</a></p>.
           </div>
                     
         </div>
@@ -272,8 +288,8 @@ public class Server implements Verticle {
   </div>
 </div>
 
-<script src="wsver-0002/js/jquery-1.7.1.min.js"></script>
-<script src="wsver-0002/bootstrap/js/bootstrap-tab.js"></script>
+<script src="js/jquery-1.7.1.min.js"></script>
+<script src="bootstrap/js/bootstrap-tab.js"></script>
 <script>
   $(function () {
     $('.tabs a:last').tab('show')
