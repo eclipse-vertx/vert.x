@@ -84,7 +84,9 @@
 <p>We're going to need a web server to serve the static resources. Let's get one running. With Vert.x you can write a web server in just a few lines of code, but we're not going to do that. Instead Vert.x ships with an out-of-the-box web server module, so we'll just use that.</p>
 <p>We'll create a script which starts the web server module and also contains the configuration.</p>
 <p>Open a text editor and copy the following into it:</p>
-<pre class="prettyprint">web_server_conf = {
+<pre class="prettyprint">require "vertx"
+
+web_server_conf = {
   'port' =&gt; 8080,
   'host' =&gt; 'localhost'
 }
