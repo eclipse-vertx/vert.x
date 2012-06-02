@@ -33,7 +33,8 @@ $JYTHON_HOME/jython.jar:\
 $DIRNAME/../lib/jars/groovy.jar:\
 $DIRNAME/../lib/jars/js.jar:\
 $DIRNAME/../lib/ruby:\
+$DIRNAME/../lib/python:\
 $DIRNAME/../lib/javascript
 
-java -Djava.util.logging.config.file=$DIRNAME/../conf/logging.properties -Djruby.home=$JRUBY_HOME -Djython.home=$JYTHON_HOME \
+java -Djava.util.logging.config.file=$DIRNAME/../conf/logging.properties -Djruby.home=$JRUBY_HOME -Djython.home=$JYTHON_HOME -Dpython.path=$DIRNAME/../lib/python \
 -Dvertx.mods=$VERTX_MODS -Dvertx.install=$SCRIPTDIR/.. -cp $CLASSPATH org.vertx.java.deploy.impl.cli.VertxMgr "$@"
