@@ -92,16 +92,15 @@ public class SortCommand extends Command {
 			params.alpha();
 			hasParams = true;
 		}
-		boolean asc = message.body.getBoolean("asc", false);
-		if (asc) {
+		String order = message.body.getString("order", null);
+		if (order != null && order.equalsIgnoreCase("asc")) {
 			params.asc();
 			hasParams = true;
-		}
-		boolean desc = message.body.getBoolean("desc", false);
-		if (desc) {
+		} else if (order != null && order.equalsIgnoreCase("desc")) {
 			params.desc();
 			hasParams = true;
 		}
+		
 		String by = message.body.getString("by", null);
 		if (by != null) {
 			params.by(by);
@@ -113,7 +112,7 @@ public class SortCommand extends Command {
 			params.limit(start.intValue(), count.intValue());
 			hasParams = true;
 		}
-		boolean nosort = message.body.getBoolean("by", false);
+		boolean nosort = message.body.getBoolean("nosort", false);
 		if (nosort) {
 			params.nosort();
 			hasParams = true;
