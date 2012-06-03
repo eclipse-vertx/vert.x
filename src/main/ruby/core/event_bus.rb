@@ -22,23 +22,30 @@ module Vertx
   #
   # Messages sent over the event bus are JSON objects represented as Ruby Hash instances.
   #
-  # The event bus implements a distributed publish / subscribe network.
+  # The event bus implements both publish / subscribe network and point to point messaging.
   #
-  # Messages are sent to an address.
-  #
-  # There can be multiple handlers registered against that address.
-  # Any handlers with a matching name will receive the message irrespective of what vert.x application instance and
-  # what vert.x instance they are located in.
+  # For publish / subscribe, messages can be published to an address using one of the publish methods. An
+  # address is a simple String instance. Handlers are registered against an address. There can be multiple handlers
+  # registered against each address, and a particular handler can be registered against multiple addresses.
+  # The event bus will route a sent message to all handlers which are registered against that address.
+
+  # For point to point messaging, messages can be sent to an address using the send method.
+  # The messages will be delivered to a single handler, if one is registered on that address. If more than one
+  # handler is registered on the same address, Vert.x will choose one and deliver the message to that. Vert.x will
+  # aim to fairly distribute messages in a round-robin way, but does not guarantee strict round-robin under all
+  # circumstances.
   #
   # All messages sent over the bus are transient. On event of failure of all or part of the event bus messages
-  # may be lost. Applications should be coded to cope with lost messages, e.g. by resending them, and making application
-  # services idempotent.
+  # may be lost. Applications should be coded to cope with lost messages, e.g. by resending them,
+  # and making application services idempotent.
   #
-  # The order of messages received by any specific handler from a specific sender will match the order of messages
+  # The order of messages received by any specific handler from a specific sender should match the order of messages
   # sent from that sender.
   #
   # When sending a message, a reply handler can be provided. If so, it will be called when the reply from the receiver
-  # has been received.
+  # has been received. Reply messages can also be replied to, etc, ad infinitum.
+  #
+  # Different event bus instances can be clustered together over a network, to give a single logical event bus.
   #
   # When receiving a message in a handler the received object is an instance of EventBus::Message - this contains
   # the actual Hash of the message plus a reply method which can be used to reply to it.
