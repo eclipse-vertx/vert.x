@@ -12,7 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+""" 
+This module provides the entry point to the vert.x platform 
+"""
+
 from core.http import HttpServer
 
+__author__ = "Scott Horn"
+__email__ = "scott@hornmicro.com"
+
 def create_http_server():
-        return HttpServer()
+    """ Return an HttpServer """
+    return HttpServer()
