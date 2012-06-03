@@ -26,15 +26,24 @@ import org.vertx.java.core.json.JsonObject
 
 /**
  * A distributed lightweight event bus which can encompass multiple vert.x instances.
- * The event bus implements a distributed publish / subscribe network.<p>
+ * The event bus implements both publish / subscribe network and point to point messaging.<p>
  *
- * Messages sent over the event bus can be all primitive types, {@code String}. {@code Buffer}, or {@code Map} representing a JSON object.<p>
+ * Messages sent over the event bus are represented by instances of the {@link Message} class.
+ * Subclasses of Message exist for messages that represent all primitive types as well as {@code String},
+ * {@link Buffer}, byte[] and {@link JsonObject}<p>
  *
- * Messages can be sent to an address. An address is a simple {@code String} instance. Handlers are registered against
- * an address. There can be multiple handlers registered against each address, and a particular handler can
- * be registered against multiple addresses. The event bus will route a sent message to any handlers which are
+ * For publish / subscribe, messages can be published to an address using one of the {@code publish} methods. An
+ * address is a simple {@code String} instance.
+ * Handlers are registered against an address. There can be multiple handlers registered against each address, and a particular handler can
+ * be registered against multiple addresses. The event bus will route a sent message to all handlers which are
  * registered against that address.<p>
- * Messages received in a handler are instances of {@link Message}<p>
+ *
+ * For point to point messaging, messages can be sent to an address using one of the {@code send} methods.
+ * The messages will be delivered to a single handler, if one is registered on that address. If more than one
+ * handler is registered on the same address, Vert.x will choose one and deliver the message to that. Vert.x will
+ * aim to fairly distribute messages in a round-robin way, but does not guarantee strict round-robin under all
+ * circumstances.<p>
+ *
  * All messages sent over the bus are transient. On event of failure of all or part of the event bus messages
  * may be lost. Applications should be coded to cope with lost messages, e.g. by resending them, and making application
  * services idempotent.<p>
