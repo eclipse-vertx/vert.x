@@ -399,21 +399,21 @@ mods/my-web-app/web-root/index.html
 <pre class="prettyprint">{
     "action": "find",
     "collection": &lt;collection&gt;,
-    "match": &lt;match&gt;,
+    "matcher": &lt;matcher&gt;,
     "limit": &lt;limit&gt;,
     "batch_size": &lt;batch_size&gt;
 }
 </pre>
 <p>Where:
 <em> <code>collection</code> is the name of the MongoDB collection that you wish to search in in. This field is mandatory.
-</em> <code>match</code> is a JSON object that you want to match against to find matching documents. This obeys the normal MongoDB matching rues.
+</em> <code>matcher</code> is a JSON object that you want to match against to find matching documents. This obeys the normal MongoDB matching rues.
 <em> <code>limit</code> is a number which determines the maximum total number of documents to return. This is optional. By default all documents are returned.
 </em> <code>batch_size</code> is a number which determines how many documents to return in each reply JSON message. It's optional and the default value is <code>100</code>. Batching is discussed in more detail below.</p>
 <p>An example would be:</p>
 <pre class="prettyprint">{
     "action": "find",
     "collection": "orders",
-    "match": {
+    "matcher": {
         "item": "cheese"
     }
 }
@@ -490,18 +490,18 @@ eb.send('foo.myPersistor', {
 <pre class="prettyprint">{
     "action": "findone",
     "collection": &lt;collection&gt;,
-    "match": &lt;match&gt;
+    "matcher": &lt;matcher&gt;
 }
 </pre>
 <p>Where:
 <em> <code>collection</code> is the name of the MongoDB collection that you wish to search in in. This field is mandatory.
-</em> <code>match</code> is a JSON object that you want to match against to find a matching document. This obeys the normal MongoDB matching rues.</p>
+</em> <code>matcher</code> is a JSON object that you want to match against to find a matching document. This obeys the normal MongoDB matching rues.</p>
 <p>If more than one document matches, just the first one will be returned.</p>
 <p>An example would be:</p>
 <pre class="prettyprint">{
     "action": "findone",
     "collection": "items",
-    "match": {
+    "matcher": {
         "_id": "ffeef2a7-5658-4905-a37c-cfb19f70471d"
     }
 }
@@ -526,18 +526,18 @@ eb.send('foo.myPersistor', {
 <pre class="prettyprint">{
     "action": "delete",
     "collection": &lt;collection&gt;,
-    "match": &lt;match&gt;
+    "matcher": &lt;matcher&gt;
 }
 </pre>
 <p>Where:
 <em> <code>collection</code> is the name of the MongoDB collection that you wish to delete from. This field is mandatory.
-</em> <code>match</code> is a JSON object that you want to match against to delete matching documents. This obeys the normal MongoDB matching rues.</p>
+</em> <code>matcher</code> is a JSON object that you want to match against to delete matching documents. This obeys the normal MongoDB matching rues.</p>
 <p>All documents that match will be deleted.</p>
 <p>An example would be:</p>
 <pre class="prettyprint">{
     "action": "delete",
     "collection": "items",
-    "match": {
+    "matcher": {
         "_id": "ffeef2a7-5658-4905-a37c-cfb19f70471d"
     }
 }

@@ -340,14 +340,14 @@ To find documents send a JSON message to the busmod main address:
     {
         "action": "find",
         "collection": <collection>,
-        "match": <match>,
+        "matcher": <matcher>,
         "limit": <limit>,
         "batch_size": <batch_size>
     }     
     
 Where:
 * `collection` is the name of the MongoDB collection that you wish to search in in. This field is mandatory.
-* `match` is a JSON object that you want to match against to find matching documents. This obeys the normal MongoDB matching rues.
+* `matcher` is a JSON object that you want to match against to find matching documents. This obeys the normal MongoDB matching rues.
 * `limit` is a number which determines the maximum total number of documents to return. This is optional. By default all documents are returned.
 * `batch_size` is a number which determines how many documents to return in each reply JSON message. It's optional and the default value is `100`. Batching is discussed in more detail below.
 
@@ -356,7 +356,7 @@ An example would be:
     {
         "action": "find",
         "collection": "orders",
-        "match": {
+        "matcher": {
             "item": "cheese"
         }
     }  
@@ -448,12 +448,12 @@ To find a document send a JSON message to the busmod main address:
     {
         "action": "findone",
         "collection": <collection>,
-        "match": <match>
+        "matcher": <matcher>
     }     
     
 Where:
 * `collection` is the name of the MongoDB collection that you wish to search in in. This field is mandatory.
-* `match` is a JSON object that you want to match against to find a matching document. This obeys the normal MongoDB matching rues.
+* `matcher` is a JSON object that you want to match against to find a matching document. This obeys the normal MongoDB matching rues.
 
 If more than one document matches, just the first one will be returned.
 
@@ -462,7 +462,7 @@ An example would be:
     {
         "action": "findone",
         "collection": "items",
-        "match": {
+        "matcher": {
             "_id": "ffeef2a7-5658-4905-a37c-cfb19f70471d"
         }
     }  
@@ -494,12 +494,12 @@ To delete documents send a JSON message to the busmod main address:
     {
         "action": "delete",
         "collection": <collection>,
-        "match": <match>
+        "matcher": <matcher>
     }     
     
 Where:
 * `collection` is the name of the MongoDB collection that you wish to delete from. This field is mandatory.
-* `match` is a JSON object that you want to match against to delete matching documents. This obeys the normal MongoDB matching rues.
+* `matcher` is a JSON object that you want to match against to delete matching documents. This obeys the normal MongoDB matching rues.
 
 All documents that match will be deleted.
 
@@ -508,7 +508,7 @@ An example would be:
     {
         "action": "delete",
         "collection": "items",
-        "match": {
+        "matcher": {
             "_id": "ffeef2a7-5658-4905-a37c-cfb19f70471d"
         }
     }  
