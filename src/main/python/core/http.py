@@ -19,14 +19,16 @@ This module adds the http support to the python vert.x platform
 import org.vertx.java.deploy.impl.VertxLocator
 import org.vertx.java.core.Handler
 import core.javautils
+import core.tcp_support
+import core.ssl_support
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
 
-class HttpServer:
+class HttpServer(core.tcp_support.TCPSupport, core.ssl_support.SSLSupport, object):
     """ An HTTP and websockets server """
     def __init__(self):
-        self.http_server = org.vertx.java.deploy.impl.VertxLocator.vertx.createHttpServer()
+        self.java_obj = org.vertx.java.deploy.impl.VertxLocator.vertx.createHttpServer()
 
     def request_handler(self, handler):
         """Set the HTTP request handler for the server.
@@ -36,7 +38,7 @@ class HttpServer:
         handler -- the function used to handle the request. 
 
         """
-        self.http_server.requestHandler(HttpServerRequestHandler(handler))
+        self.java_obj.requestHandler(HttpServerRequestHandler(handler))
 
     def websocket_handler(self, handler):
         """Set the websocket handler for the server.
@@ -46,7 +48,7 @@ class HttpServer:
         handler -- the function used to handle the request. 
 
         """
-        self.http_server.websocketHandler(ServerWebSocketHandler(handler))
+        self.java_obj.websocketHandler(ServerWebSocketHandler(handler))
 
     def listen(self, port, host=None):
         """Instruct the server to listen for incoming connections. If host is None listens on all.
@@ -57,9 +59,9 @@ class HttpServer:
     
         """
         if host is None:
-            self.http_server.listen(port)
+            self.java_obj.listen(port)
         else:
-            self.http_server.listen(port, host)
+            self.java_obj.listen(port, host)
 
     def client_auth_required(self, val):
         """ Client authentication is an extra level of security in SSL, and requires clients to provide client certificates.
@@ -70,7 +72,7 @@ class HttpServer:
         do not authenticate then they will not make a connection.
 
         """
-        self.http_server.setClientAuthRequired(val)
+        self.java_obj.setClientAuthRequired(val)
         return self
 
     def close(self, handler=None):
@@ -81,11 +83,415 @@ class HttpServer:
 
         """
         if handler is None:
-            self.http_server.close()
+            self.java_obj.close()
         else:
-            self.http_server.close(CloseHandler(handler))
+            self.java_obj.close(CloseHandler(handler))
 
-class HttpServerRequest:
+    def _to_java_server():
+        """ private """
+        return self.java_obj
+
+class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, object):
+    """ An HTTP client.
+     A client maintains a pool of connections to a specific host, at a specific port. The HTTP connections can act
+     as pipelines for HTTP requests.
+     It is used as a factory for HttpClientRequest instances which encapsulate the actual HTTP requests. It is also
+     used as a factory for HTML5 WebSocket websockets.
+    """
+    def __init__(self):
+        self.java_obj = org.vertx.java.deploy.impl.VertxLocator.vertx.createHttpClient()
+
+    def exception_handler(self, handler):
+        """ Set the exception handler.
+
+        Keyword arguments
+        handler -- function to be used as the handler
+        """
+        self.java_obj.exceptionHandler(ExceptionHandler(handler))
+        return self
+    
+    def get_max_pool_size(self):
+        """The maxium number of connections this client will pool."""
+        return self.java_obj.getMaxPoolSize
+
+    def set_max_pool_size(self, val):
+        """ Set the maximum pool size.
+        The client will maintain up to this number of HTTP connections in an internal pool
+
+        Keyword arguments
+        val -- The maximum number of connections (default to 1).
+        """
+        self.java_obj.setMaxPoolSize(val)
+        return self
+
+    max_pool_size = property(get_max_pool_size, set_max_pool_size)
+
+    def set_keep_alive(self, val):
+        """If val is true then, after the request has ended the connection will be returned to the pool
+        where it can be used by another request. In this manner, many HTTP requests can be pipe-lined over an HTTP connection.
+        Keep alive connections will not be closed until the close method is invoked.
+        If val is false then a new connection will be created for each request and it won't ever go in the pool,
+        the connection will closed after the response has been received. Even with no keep alive, the client will not allow more
+        than max_pool_size connections to be created at any one time.
+
+        Keyword arguments
+        val -- The value to use for keep_alive
+        """
+        self.java_obj.setTCPKeepAlive(val)
+        return self
+
+    keep_alive = property(fset=set_keep_alive)
+
+    def set_trust_all(self, val):
+        """Should the client trust ALL server certificates?
+
+        Keyword arguments
+        val -- If val is set to true then the client will trust ALL server certificates and will not attempt to authenticate them
+        against it's local client trust store. The default value is false.
+        Use this method with caution!
+        """
+        self.java_obj.setTrustAll(val)
+        return self
+
+    trust_all = property(fset=set_trust_all)
+
+    def set_port(self, val):
+        """Set the port that the client will attempt to connect to on the server on. The default value is 80
+
+        Keyword arguments
+        val -- The port value.
+        """
+        self.java_obj.setPort(val)
+        return self
+
+    port = property(fset=set_port)
+
+    def host(self, val):
+        """Set the host name or ip address that the client will attempt to connect to on the server on.
+
+        Keyword arguments
+        val -- The host name or ip address to connect to.
+        """
+        self.java_obj.setHost(val)
+        return self
+
+    def connect_web_socket(self, uri, handler):
+        """Attempt to connect an HTML5 websocket to the specified URI.
+        The connect is done asynchronously and the handler is called with a WebSocket on success.
+
+        Keyword arguments
+        uri -- A relative URI where to connect the websocket on the host, e.g. /some/path
+        handler -- The handler to be called with the WebSocket
+        """
+        self.java_obj.connectWebsocket(uri, WebSocketHandler(handler))
+
+    def get_now(self, uri, handler, **headers):
+        """This is a quick version of the get method where you do not want to do anything with the request
+        before sing.
+        With this method the request is immediately sent.
+        When an HTTP response is received from the server the handler is called passing in the response.
+
+        Keyword arguments
+         uri -- A relative URI where to perform the GET on the server.
+         handler -- The handler to be called with the HttpClientResponse
+         headers -- A dictionary of headers to pass with the request.
+        """
+        if headers is None:
+            self.java_obj.getNow(uri, HttpClientResponseHandler(handler))    
+        else:
+            self.java_obj.getNow(uri, map_to_java(headers), HttpClientResponseHandler(handler))    
+        
+    def options(self, uri, handler):
+        """This method returns an HttpClientRequest instance which represents an HTTP OPTIONS request with the specified uri.
+        When an HTTP response is received from the server the handler is called passing in the response.
+
+        Keyword arguments
+        uri -- A relative URI where to perform the OPTIONS on the server.
+        handler -- The handler to be called with the HttpClientResponse
+        """
+        return HttpClientRequest(self.java_obj.options(uri, HttpClientResponseHandler(handler)))
+
+    def get(self, uri, handler):
+        """This method returns an HttpClientRequest instance which represents an HTTP GET request with the specified uri.
+        When an HTTP response is received from the server the handler is called passing in the response.
+
+        Keyword arguments
+        uri -- A relative URI where to perform the GET on the server.
+        handler -- The handler to be called with the HttpClientResponse
+        """
+        return HttpClientRequest(self.java_obj.get(uri, HttpClientResponseHandler(handler)))
+
+    def head(self, uri, handler):
+        """This method returns an HttpClientRequest instance which represents an HTTP HEAD request with the specified uri.
+        When an HTTP response is received from the server the handler is called passing in the response.
+
+        Keyword arguments
+        uri -- A relative URI where to perform the HEAD on the server.
+        handler -- The handler to be called with the HttpClientResponse
+        """
+        return HttpClientRequest(self.java_obj.head(uri, HttpClientResponseHandler(handler)))
+
+    def post(self, uri, handler):
+        """This method returns an HttpClientRequest instance which represents an HTTP POST request with the specified uri.
+        When an HTTP response is received from the server the handler is called passing in the response.
+
+        Keyword arguments
+        uri -- A relative URI where to perform the POST on the server.
+        handler -- The handler to be called with the HttpClientResponse
+        """
+        return HttpClientRequest(self.java_obj.post(uri, HttpClientResponseHandler(handler)))
+
+    def put(self, uri, handler):
+        """This method returns an HttpClientRequest instance which represents an HTTP PUT request with the specified uri.
+        When an HTTP response is received from the server the handler is called passing in the response.
+        
+        Keyword arguments
+        uri -- A relative URI where to perform the PUT on the server.
+        handler -- The handler to be called with the HttpClientResponse
+        """
+        return HttpClientRequest(self.java_obj.put(uri, HttpClientResponseHandler(handler)))
+
+    def delete(self, uri, handler):
+        """This method returns an HttpClientRequest instance which represents an HTTP DELETE request with the specified uri.
+        When an HTTP response is received from the server the handler is called passing in the response.
+
+        Keyword arguments
+        uri -- A relative URI where to perform the DELETE on the server.
+        handler -- The handler to be called with the HttpClientResponse
+        """
+        return HttpClientRequest.new(self.java_obj.delete(uri, HttpClientResponseHandler(handler)))
+
+    def trace(self, uri, handler):
+        """ This method returns an HttpClientRequest instance which represents an HTTP TRACE request with the specified uri.
+        When an HTTP response is received from the server the handler is called passing in the response.
+
+        Keyword arguments
+        uri -- A relative URI where to perform the TRACE on the server.
+        handler. The handler to be called with the HttpClientResponse
+        """
+        return HttpClientRequest(self.java_obj.trace(uri, HttpClientResponseHandler(handler)))
+
+    def connect(self, uri, handler):
+        """ This method returns an HttpClientRequest instance which represents an HTTP CONNECT request with the specified uri.
+        When an HTTP response is received from the server the handler is called passing in the response.
+        
+        Keyword arguments
+        uri -- A relative URI where to perform the CONNECT on the server.
+        handler -- The handler to be called with the HttpClientResponse
+        """
+        return HttpClientRequest(self.java_obj.connect(uri, HttpClientResponseHandler(handler)))
+
+    def patch(self, uri, handler):
+        """ This method returns an HttpClientRequest instance which represents an HTTP PATCH request with the specified uri.
+        When an HTTP response is received from the server the handler is called passing in the response.
+
+        Keyword arguments
+        uri -- A relative URI where to perform the PATCH on the server.
+        handler -- The handler to be called with the HttpClientResponse
+        """
+        return HttpClientRequest(self.java_obj.patch(uri, HttpClientResponseHandler(handler)))
+
+    def request(self, method, uri, handler):
+        """This method returns an HttpClientRequest instance which represents an HTTP request with the specified method and uri.
+        When an HTTP response is received from the server the handler is called passing in the response.
+        method. The HTTP method. Can be one of OPTIONS, HEAD, GET, POST, PUT, DELETE, TRACE, CONNECT.
+
+        Keyword arguments
+        uri -- A relative URI where to perform the OPTIONS on the server.
+        handler -- The handler to be called with the HttpClientResponse
+        """
+        return HttpClientRequest(self.java_obj.request(method, uri, HttpClientResponseHandler(handler)))
+
+    def close():
+        """Close the client. Any unclosed connections will be closed."""
+        self.java_obj.close()
+
+class HttpClientRequest(core.streams.WriteStream, object):
+    """Instances of this class are created by an HttpClient instance, via one of the methods corresponding to the
+     specific HTTP methods, or the generic HttpClient request method.
+
+     Once an instance of this class has been obtained, headers can be set on it, and data can be written to its body,
+     if required. Once you are ready to send the request, the end method must called.
+
+     Nothing is sent until the request has been internally assigned an HTTP connection. The HttpClient instance
+     will return an instance of this class immediately, even if there are no HTTP connections available in the pool. Any requests
+     sent before a connection is assigned will be queued internally and actually sent when an HTTP connection becomes
+     available from the pool.
+
+     The headers of the request are actually sent either when the end method is called, or, when the first
+     part of the body is written, whichever occurs first.
+
+     This class supports both chunked and non-chunked HTTP.
+    """
+    def __init__(self, java_obj):
+        self.java_obj = java_obj
+
+    @property
+    def headers(self):
+        """ Hash of headers for the request"""
+        if not self.headers:
+            self.headers = map_from_java(self.java_obj.headers())
+        return self.headers
+     
+    def put_header(self, key, value):
+        """Inserts a header into the request.
+
+        Keyword arguments
+        key -- The header key
+        value -- The header value. to_s will be called on the value to determine the actual String value to insert.
+        returns  self So multiple operations can be chained.
+        """
+        self.java_obj.putHeader(key, value)
+        return self
+     
+    def write_buffer(self, chunk, handler):
+        """Write a to the request body.
+
+        Keyword arguments
+        chunk -- The buffer to write.
+        handler -- The handler will be called when the buffer has actually been written to the wire.
+        returns  self So multiple operations can be chained.
+        """
+        self.java_obj.writeBuffer(chunk._to_java_buffer)
+        return self
+
+    def write_str(self, str, enc="UTF-8", handler=None):
+        """Write a to the request body.
+
+        Keyword arguments
+        str -- The string to write.
+        enc -- The encoding to use.
+        handler -- The handler will be called when the buffer has actually been written to the wire.
+
+        returns self So multiple operations can be chained.
+        """
+        if handler is None:
+            self.java_obj.write(str, enc)
+        else:
+            self.java_obj.write(str, enc, DoneHandler(handler))
+        return self
+
+    def send_head(self):
+        """Forces the head of the request to be written before end is called on the request. This is normally used
+        to implement HTTP 100-continue handling, see continue_handler for more information.
+
+        returns self So multiple operations can be chained.
+        """
+        self.java_obj.sendHead()
+        return self
+
+    def end(self):
+        """Ends the request. If no data has been written to the request body, and send_head has not been called then
+        the actual request won't get written until this method gets called.
+        Once the request has ended, it cannot be used any more, and if keep alive is true the underlying connection will
+        be returned to the HttpClient pool so it can be assigned to another request.
+        """
+        self.java_obj.end()
+
+    def write_str_and_end(self, str, enc="UTF-8"):
+        """Same as write_buffer_and_end but writes a String
+
+        Keyword arguments
+        str -- The String to write
+        enc -- The encoding
+        """
+        self.java_obj.end(str, enc)
+
+    def write_buffer_and_end(self, chunk):
+        """Same as end but writes some data to the response body before ending. If the response is not chunked and
+        no other data has been written then the Content-Length header will be automatically set
+
+        Keyword arguments
+        chunk -- The Buffer to write
+        """
+        self.java_obj.end(chunk._to_java_buffer)
+
+    def set_chunked(self, val):
+        """Sets whether the request should used HTTP chunked encoding or not.
+
+        Keyword arguments
+        val -- If val is true, this request will use HTTP chunked encoding, and each call to write to the body
+        will correspond to a new HTTP chunk sent on the wire. If chunked encoding is used the HTTP header
+        'Transfer-Encoding' with a value of 'Chunked' will be automatically inserted in the request.
+
+        If chunked is false, this request will not use HTTP chunked encoding, and therefore if any data is written the
+        body of the request, the total size of that data must be set in the 'Content-Length' header before any
+        data is written to the request body.
+
+        returns self So multiple operations can be chained.
+        """
+        self.java_obj.setChunked(val)
+        return self
+
+    chucked = property(fset=set_chunked)
+
+    def continue_handler(self, handler):
+        """If you send an HTTP request with the header 'Expect' set to the value '100-continue'
+        and the server responds with an interim HTTP response with a status code of '100' and a continue handler
+        has been set using this method, then the handler will be called.
+        You can then continue to write data to the request body and later end it. This is normally used in conjunction with
+        the send_head method to force the request header to be written before the request has ended.
+
+        Keyword arguments
+        handler -- The handler
+        """
+        self.java_obj.continueHandler(ContinueHandler(handler))
+
+   
+class HttpClientResponse(core.streams.ReadStream):
+    """Encapsulates a client-side HTTP response.
+
+    An instance of this class is provided to the user via a handler that was specified when one of the
+    HTTP method operations, or the generic HttpClientrequest method was called on an instance of HttpClient.
+    """
+    def __init__(self, java_obj):
+        self.java_obj = java_obj
+   
+    def status_code(self):
+        """return the HTTP status code of the response."""
+        return self.java_obj.statusCode
+  
+    def header(self, key):
+        """Get a header value
+
+        Keyword arguments
+        key -- The key of the header.
+
+        return the header value.
+        """
+        return self.java_obj.getHeader(key)
+  
+
+    def headers(self):
+        """Get all the headers in the response.
+        If the response contains multiple headers with the same key, the values
+        will be concatenated together into a single header with the same key value, with each value separated by a comma,
+        as specified by {http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.htmlsec4.2}.
+        return a dictionary of headers.
+        """
+        if not self.headers:
+            self.headers = map_from_java(self.java_obj.headers())
+        return self.headers
+  
+    def trailers(self):
+        """Get all the trailers in the response.
+        If the response contains multiple trailers with the same key, the values
+        will be concatenated together into a single header with the same key value, with each value separated by a comma,
+        as specified by {http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.htmlsec4.2}.
+        Trailers will only be available in the response if the server has sent a HTTP chunked response where headers have
+        been inserted by the server on the last chunk. In such a case they won't be available on the client until the last chunk has
+        been received.
+        
+        return a dictionary of trailers."""
+        if not self.trailers:
+          self.trailers = map_from_java(self.java_obj.trailers())
+        return self.trailers
+
+    def body_handler(self, handler):
+        """Set a handler to receive the entire body in one go - do not use this for large bodies"""
+        self.java_obj.bodyHandler(BodyHandler(handler))
+  
+class HttpServerRequest(object):
     """ Encapsulates a server-side HTTP request.
   
     An instance of this class is created for each request that is handled by the server and is passed to the user via the
@@ -148,7 +554,7 @@ class HttpServerRequest:
         """
         self.http_server_request.bodyHandler(BufferHandler(handler))
 
-class HttpServerResponse:
+class HttpServerResponse(object):
     """Encapsulates a server-side HTTP response.
 
     An instance of this class is created and associated to every instance of HttpServerRequest that is created.
@@ -262,7 +668,6 @@ class HttpServerResponse:
 
         returns a HttpServerResponse so multiple operations can be chained.
         """
-
         self.http_server_response.sendFile(path)
         return self
 
@@ -311,7 +716,6 @@ class HttpServerResponse:
 class BufferHandler(org.vertx.java.core.Handler):
     def __init__(self, handler):
         self.handler = handler
-        return
 
     def handle(self, buffer):
         self.handler(Buffer(buffer))
@@ -320,27 +724,42 @@ class HttpServerRequestHandler(org.vertx.java.core.Handler):
     """ A handler for Http Server Requests"""
     def __init__(self, handler):
         self.handler = handler
-        return
 
     def handle(self, req):
         """ Called when a request is being handled. Argument is a HttpServerRequest object """
         self.handler(HttpServerRequest(req))
 
+class HttpClientResponseHandler(org.vertx.java.core.Handler):
+    """ A handler for Http Client Responses"""
+    def __init__(self, handler):
+        self.handler = handler
+
+    def handle(self, res):
+        """ Called when a response is being handled. Argument is a HttpClientResponse object """
+        self.handler(HttpClientResponse(res))
+
 class ServerWebSocketHandler(org.vertx.java.core.Handler):
     """ A handler for WebSocket Server Requests"""
     def __init__(self, handler):
         self.handler = handler
-        return
 
     def handle(self, req):
         """ Calls the Handler with the ServerWebSocket when connected """
         self.handler(ServerWebSocket(req))
 
+class WebSocketHandler(org.vertx.java.core.Handler):
+    """ A handler for WebSocket  Requests"""
+    def __init__(self, handler):
+        self.handler = handler
+
+    def handle(self, req):
+        """ Calls the Handler with the WebSocket when connected """
+        self.handler(WebSocket(req))
+
 class ClosedHandler(org.vertx.java.core.Handler):
     """ Closed connection handler """
     def __init__(self, handler):
         self.handler = handler
-        return
 
     def handle(self):
         """ Call the handler when a connection is closed """
@@ -350,17 +769,35 @@ class DoneHandler(org.vertx.java.core.Handler):
     """ Done handler """
     def __init__(self, handler):
         self.handler = handler
-        return
 
     def handle(self):
         """ Call the handler when done """
         self.handler()
 
-class WebSocket:
+class ExceptionHandler(org.vertx.java.core.Handler):
+    """ Exception handler """
+    def __init__(self, handler):
+        self.handler = handler
+
+    def handle(self, exception):
+        """ Call the handler when there is an exception """
+        self.handler(exception)        
+
+
+class DrainHandler(org.vertx.java.core.Handler):
+    """ Drain handler """
+    def __init__(self, handler):
+        self.handler = handler
+
+    def handle(self, exception):
+        """ Call the handler after stream has been drained"""
+        self.handler()                
+
+class WebSocket(object):
     """ Encapsulates an HTML 5 Websocket.
 
-    Instances of this class are createde by an {HttpClient} instance when a client succeeds in a websocket handshake with a server.
-    Once an instance has been obtained it can be used to send or receive buffers of data from the connection,
+    Instances of this class are created by an HttpClient instance when a client succeeds in a websocket handshake with a server.
+    Once an instance has been obtained it can be used to s or receive buffers of data from the connection,
     a bit like a TCP socket.
     """
     def __init__(self, websocket):
@@ -396,7 +833,6 @@ class WebSocket:
         Keyword arguments
         handler - The handler to be called when writing has been completed. It is wrapped in a ClosedHandler.
         """
-
         self.websocket.closedHandler(ClosedHandler(handler))
 
 class ServerWebSocket(WebSocket):
@@ -416,6 +852,3 @@ class ServerWebSocket(WebSocket):
     def path(self):
         """ The path the websocket connect was attempted at. """
         return self.websocket.path
-
-
-
