@@ -21,7 +21,7 @@ import org.vertx.java.core.buffer.Buffer
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
 
-class Buffer:
+class Buffer(object):
     """A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands
     as necessary to accomodate any bytes written to it.
 
