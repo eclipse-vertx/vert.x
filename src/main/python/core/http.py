@@ -17,12 +17,15 @@ This module adds the http support to the python vert.x platform
 """
 
 import org.vertx.java.deploy.impl.VertxLocator
-import org.vertx.java.core.Handler
 import core.tcp_support
 import core.ssl_support
 import core.buffer
+import core.streams
 
 from core.javautils import map_from_java, map_to_java
+from core.handlers import CloseHandler, ClosedHandler, ExceptionHandler
+from core.handlers import DoneHandler, ContinueHandler, BufferHandler
+
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
@@ -726,86 +729,6 @@ class HttpServerResponse(object):
         """ Close the underlying TCP connection """
         self.http_server_response.close()
 
-class BufferHandler(org.vertx.java.core.Handler):
-    def __init__(self, handler):
-        self.handler = handler
-
-    def handle(self, buffer):
-        self.handler(core.buffer.Buffer(buffer))
-
-class HttpServerRequestHandler(org.vertx.java.core.Handler):
-    """ A handler for Http Server Requests"""
-    def __init__(self, handler):
-        self.handler = handler
-
-    def handle(self, req):
-        """ Called when a request is being handled. Argument is a HttpServerRequest object """
-        self.handler(HttpServerRequest(req))
-
-class HttpClientResponseHandler(org.vertx.java.core.Handler):
-    """ A handler for Http Client Responses"""
-    def __init__(self, handler):
-        self.handler = handler
-
-    def handle(self, res):
-        """ Called when a response is being handled. Argument is a HttpClientResponse object """
-        self.handler(HttpClientResponse(res))
-
-class ServerWebSocketHandler(org.vertx.java.core.Handler):
-    """ A handler for WebSocket Server Requests"""
-    def __init__(self, handler):
-        self.handler = handler
-
-    def handle(self, req):
-        """ Calls the Handler with the ServerWebSocket when connected """
-        self.handler(ServerWebSocket(req))
-
-class WebSocketHandler(org.vertx.java.core.Handler):
-    """ A handler for WebSocket  Requests"""
-    def __init__(self, handler):
-        self.handler = handler
-
-    def handle(self, req):
-        """ Calls the Handler with the WebSocket when connected """
-        self.handler(WebSocket(req))
-
-class ClosedHandler(org.vertx.java.core.Handler):
-    """ Closed connection handler """
-    def __init__(self, handler):
-        self.handler = handler
-
-    def handle(self):
-        """ Call the handler when a connection is closed """
-        self.handler()
-
-class DoneHandler(org.vertx.java.core.Handler):
-    """ Done handler """
-    def __init__(self, handler):
-        self.handler = handler
-
-    def handle(self):
-        """ Call the handler when done """
-        self.handler()
-
-class ExceptionHandler(org.vertx.java.core.Handler):
-    """ Exception handler """
-    def __init__(self, handler):
-        self.handler = handler
-
-    def handle(self, exception):
-        """ Call the handler when there is an exception """
-        self.handler(exception)        
-
-
-class DrainHandler(org.vertx.java.core.Handler):
-    """ Drain handler """
-    def __init__(self, handler):
-        self.handler = handler
-
-    def handle(self, exception):
-        """ Call the handler after stream has been drained"""
-        self.handler()                
-
 class WebSocket(object):
     """ Encapsulates an HTML 5 Websocket.
 
@@ -865,3 +788,39 @@ class ServerWebSocket(WebSocket):
     def path(self):
         """ The path the websocket connect was attempted at. """
         return self.websocket.path
+
+class HttpServerRequestHandler(org.vertx.java.core.Handler):
+    """ A handler for Http Server Requests"""
+    def __init__(self, handler):
+        self.handler = handler
+
+    def handle(self, req):
+        """ Called when a request is being handled. Argument is a HttpServerRequest object """
+        self.handler(HttpServerRequest(req))
+
+class HttpClientResponseHandler(org.vertx.java.core.Handler):
+    """ A handler for Http Client Responses"""
+    def __init__(self, handler):
+        self.handler = handler
+
+    def handle(self, res):
+        """ Called when a response is being handled. Argument is a HttpClientResponse object """
+        self.handler(HttpClientResponse(res))
+
+class ServerWebSocketHandler(org.vertx.java.core.Handler):
+    """ A handler for WebSocket Server Requests"""
+    def __init__(self, handler):
+        self.handler = handler
+
+    def handle(self, req):
+        """ Calls the Handler with the ServerWebSocket when connected """
+        self.handler(ServerWebSocket(req))
+
+class WebSocketHandler(org.vertx.java.core.Handler):
+    """ A handler for WebSocket  Requests"""
+    def __init__(self, handler):
+        self.handler = handler
+
+    def handle(self, req):
+        """ Calls the Handler with the WebSocket when connected """
+        self.handler(WebSocket(req))

@@ -14,6 +14,8 @@
 
 import org.vertx.java.core.streams.Pump
 
+from core.handlers import BufferHandler
+
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
 
@@ -60,7 +62,7 @@ class WriteStream(object):
         Keyword arguments
         handler -- The drain handler
         """
-        self.java_obj.drainHandler(DrainHandler(handler))
+        self.java_obj.drainHandler(BufferHandler(handler))
     
     def exception_handler(self, handler):
         """Set an execption handler on the stream.
@@ -72,8 +74,7 @@ class WriteStream(object):
     
     def _to_write_stream(self):
         return self.java_obj
-    
-   
+
 class ReadStream(object):
     """A mixin module which represents a stream of data that can be read from.
 
@@ -86,7 +87,7 @@ class ReadStream(object):
         Keyword arguments
         handler -- The data handler
         """
-        self.java_obj.dataHandler(DataHandler(handler))
+        self.java_obj.dataHandler(BufferHandler(handler))
     
     def pause(self):
         """Pause the ReadStream. After calling this, the ReadStream will aim to send no more data to the """
