@@ -18,17 +18,21 @@ This module adds the http support to the python vert.x platform
 
 import org.vertx.java.deploy.impl.VertxLocator
 import org.vertx.java.core.Handler
-import core.javautils
 import core.tcp_support
 import core.ssl_support
+import core.buffer
+
+from core.javautils import map_from_java, map_to_java
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
 
 class HttpServer(core.tcp_support.TCPSupport, core.ssl_support.SSLSupport, object):
     """ An HTTP and websockets server """
-    def __init__(self):
+    def __init__(self, kwargs={}):
         self.java_obj = org.vertx.java.deploy.impl.VertxLocator.vertx.createHttpServer()
+        for item in kwargs.keys():
+           setattr(self, item, kwargs[item])
 
     def request_handler(self, handler):
         """Set the HTTP request handler for the server.
@@ -98,8 +102,10 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
      It is used as a factory for HttpClientRequest instances which encapsulate the actual HTTP requests. It is also
      used as a factory for HTML5 WebSocket websockets.
     """
-    def __init__(self):
+    def __init__(self, kwargs={}):
         self.java_obj = org.vertx.java.deploy.impl.VertxLocator.vertx.createHttpClient()
+        for item in kwargs.keys():
+           setattr(self, item, kwargs[item])
 
     def exception_handler(self, handler):
         """ Set the exception handler.
@@ -166,7 +172,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
 
     port = property(fset=set_port)
 
-    def host(self, val):
+    def set_host(self, val):
         """Set the host name or ip address that the client will attempt to connect to on the server on.
 
         Keyword arguments
@@ -174,6 +180,8 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
         """
         self.java_obj.setHost(val)
         return self
+    
+    host = property(fset=set_host)
 
     def connect_web_socket(self, uri, handler):
         """Attempt to connect an HTML5 websocket to the specified URI.
@@ -196,7 +204,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
          handler -- The handler to be called with the HttpClientResponse
          headers -- A dictionary of headers to pass with the request.
         """
-        if headers is None:
+        if len(headers) == 0:
             self.java_obj.getNow(uri, HttpClientResponseHandler(handler))    
         else:
             self.java_obj.getNow(uri, map_to_java(headers), HttpClientResponseHandler(handler))    
@@ -325,13 +333,14 @@ class HttpClientRequest(core.streams.WriteStream, object):
     """
     def __init__(self, java_obj):
         self.java_obj = java_obj
+        self.headers_dict = None
 
     @property
     def headers(self):
         """ Hash of headers for the request"""
-        if not self.headers:
-            self.headers = map_from_java(self.java_obj.headers())
-        return self.headers
+        if self.headers_dict is None:
+            self.headers_dict = map_from_java(self.java_obj.headers())
+        return self.headers_dict
      
     def put_header(self, key, value):
         """Inserts a header into the request.
@@ -446,7 +455,10 @@ class HttpClientResponse(core.streams.ReadStream):
     """
     def __init__(self, java_obj):
         self.java_obj = java_obj
+        self.headers_dict = None
+        self.trailers_dict = None
    
+    @property
     def status_code(self):
         """return the HTTP status code of the response."""
         return self.java_obj.statusCode
@@ -461,7 +473,7 @@ class HttpClientResponse(core.streams.ReadStream):
         """
         return self.java_obj.getHeader(key)
   
-
+    @property
     def headers(self):
         """Get all the headers in the response.
         If the response contains multiple headers with the same key, the values
@@ -469,10 +481,11 @@ class HttpClientResponse(core.streams.ReadStream):
         as specified by {http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.htmlsec4.2}.
         return a dictionary of headers.
         """
-        if not self.headers:
-            self.headers = map_from_java(self.java_obj.headers())
-        return self.headers
-  
+        if self.headers_dict is None:
+            self.headers_dict = map_from_java(self.java_obj.headers())
+        return self.headers_dict
+    
+    @property
     def trailers(self):
         """Get all the trailers in the response.
         If the response contains multiple trailers with the same key, the values
@@ -483,13 +496,13 @@ class HttpClientResponse(core.streams.ReadStream):
         been received.
         
         return a dictionary of trailers."""
-        if not self.trailers:
-          self.trailers = map_from_java(self.java_obj.trailers())
-        return self.trailers
+        if self.trailers_dict is None:
+          self.trailers_dict = map_from_java(self.java_obj.trailers())
+        return self.trailers_dict
 
     def body_handler(self, handler):
         """Set a handler to receive the entire body in one go - do not use this for large bodies"""
-        self.java_obj.bodyHandler(BodyHandler(handler))
+        self.java_obj.bodyHandler(BufferHandler(handler))
   
 class HttpServerRequest(object):
     """ Encapsulates a server-side HTTP request.
@@ -502,7 +515,7 @@ class HttpServerRequest(object):
     def __init__(self, http_server_request):
         self.http_server_request = http_server_request
         self.http_server_response = HttpServerResponse(http_server_request.response)
-        self.header_dict = None
+        self.headers_dict = None
         self.params_dict = None
     
     @property
@@ -528,8 +541,8 @@ class HttpServerRequest(object):
     @property
     def params(self):
         """ The request parameters as a dictionary """
-        if not self.params_dict:
-            self.params_dict = core.javautils.map_from_java(self.http_server_request.params())
+        if self.params_dict is None:
+            self.params_dict = map_from_java(self.http_server_request.params())
         return self.params_dict
 
     @property
@@ -540,9 +553,9 @@ class HttpServerRequest(object):
     @property
     def headers(self):
         """ The request headers as a dictionary """
-        if not self.header_dict:
-            self.header_dict = core.javautils.map_from_java(self.http_server_request.headers())
-        return self.header_dict
+        if self.headers_dict is None:
+            self.headers_dict = map_from_java(self.http_server_request.headers())
+        return self.headers_dict
 
     def body_handler(self, handler):
         """ Set the body handler for this request, the handler receives a single Buffer object as a parameter. 
@@ -595,7 +608,7 @@ class HttpServerResponse(object):
     @property
     def headers(self):
         """ Get a copy of the reponse headers as a dictionary """
-        return core.javautils.map_from_java(self.http_server_response.headers())
+        return map_from_java(self.http_server_response.headers())
 
     def put_header(self, key, value):
         """ Inserts a header into the response.
@@ -612,7 +625,7 @@ class HttpServerResponse(object):
     @property
     def trailers(self):
         """ Get a copy of the trailers as a dictionary """
-        return core.javautils.map_from_java(self.http_server_response.trailers())
+        return map_from_java(self.http_server_response.trailers())
 
     def put_trailer(self, key, value):
         """ Inserts a trailer into the response. 
@@ -718,7 +731,7 @@ class BufferHandler(org.vertx.java.core.Handler):
         self.handler = handler
 
     def handle(self, buffer):
-        self.handler(Buffer(buffer))
+        self.handler(core.buffer.Buffer(buffer))
 
 class HttpServerRequestHandler(org.vertx.java.core.Handler):
     """ A handler for Http Server Requests"""

@@ -16,11 +16,15 @@
 This module provides the entry point to the vert.x platform 
 """
 
-from core.http import HttpServer
+from core.http import HttpServer, HttpClient
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
 
-def create_http_server():
+def create_http_server(**kwargs):
     """ Return an HttpServer """
-    return HttpServer()
+    return HttpServer(kwargs)
+
+def create_http_client(**kwargs):
+    """ Return an HttpClient """
+    return HttpClient(kwargs)
