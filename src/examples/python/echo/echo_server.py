@@ -12,28 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-""" 
-This module provides the entry point to the vert.x platform 
-"""
+import vertx
+from core.streams import Pump
 
-from core.http import HttpServer, HttpClient
-from core.net import NetServer, NetClient
+server = vertx.create_net_server()
 
-__author__ = "Scott Horn"
-__email__ = "scott@hornmicro.com"
+@server.connect_handler
+def connect_handler(socket):
+    Pump(socket, socket).start()
 
-def create_http_server(**kwargs):
-    """ Return a HttpServer """
-    return HttpServer(kwargs)
-
-def create_http_client(**kwargs):
-    """ Return a HttpClient """
-    return HttpClient(kwargs)
-
-def create_net_server(**kwargs):
-    """ Return a NetServer """
-    return NetServer(kwargs)
-
-def create_net_client(**kwargs):
-    """ Return a NetClient """
-    return NetClient(kwargs)
+server.listen(1234)

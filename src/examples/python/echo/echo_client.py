@@ -13,14 +13,16 @@
 # limitations under the License.
 
 import vertx
+from core.buffer import Buffer
 
-client = vertx.create_http_client(port=8080, host="localhost")
+client = vertx.create_net_client(port=1234, host="localhost")
 
-def handle_body(body):
-    print "Got data %s"% body
+def connect_handler(socket):
+    @socket.data_handler
+    def data_handler(data):
+        print "Echo client received %s"% data
+    for i in range(10):
+        print "Echo client sending %d"% i
+        socket.write_buffer(Buffer.create_from_str("%d"% i))
 
-def handle_response(resp):
-    print "Got response %s\n" % resp.status_code
-    resp.body_handler(handle_body)
-
-client.get_now("/", handle_response)
+client.connect(1234, "localhost", connect_handler)
