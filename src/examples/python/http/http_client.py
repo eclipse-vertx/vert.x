@@ -17,9 +17,11 @@ import vertx
 
 client = vertx.create_http_client(port=8080, host="localhost")
 
-@client.response_handler
-def handle(resp):
-    print "Got response %s\n" % resp.status_code
-    resp.body_handler(lambda buffer: sys.stderr.write("Got data %s\n" % buffer))
+def handle_body(body):
+    print "Got data %s"% body
 
-client.get_now("/")
+def handle_response(resp):
+    print "Got response %s\n" % resp.status_code
+    resp.body_handler(handle_body)
+
+client.get_now("/", handle_response)
