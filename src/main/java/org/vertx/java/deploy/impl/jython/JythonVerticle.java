@@ -19,6 +19,8 @@ package org.vertx.java.deploy.impl.jython;
 import org.python.util.PythonInterpreter;
 import org.python.core.PyException;
 import org.python.core.PySystemState;
+import org.python.core.Options;
+
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Verticle;
@@ -39,6 +41,7 @@ public class JythonVerticle extends Verticle {
   private final String scriptName;
 
   JythonVerticle(String scriptName, ClassLoader cl) {
+    Options.includeJavaStackInExceptions = false;
     pySysState = new PySystemState();
     pySysState.setClassLoader(cl); 
     this.py = new PythonInterpreter(null, pySysState);
