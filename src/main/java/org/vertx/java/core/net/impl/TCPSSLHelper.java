@@ -312,7 +312,7 @@ public class TCPSSLHelper {
       return context;
     } catch (Exception e) {
       //TODO better logging
-      log.error("Failed to create conext", e);
+      log.error("Failed to create context", e);
       throw new RuntimeException(e.getMessage());
     }
   }
@@ -330,7 +330,7 @@ public class TCPSSLHelper {
 
       @Override
       public X509Certificate[] getAcceptedIssuers() {
-        return null;
+        return new X509Certificate[0];
       }
     };
   }
