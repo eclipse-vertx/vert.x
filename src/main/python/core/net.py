@@ -32,7 +32,7 @@ class NetServer(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, object
     they are supplied to the user in the form of a NetSocket instance that is passed via the handler
     set using connect_handler.
     """
-    def __init__(self, kwargs={}):
+    def __init__(self, **kwargs):
         self.java_obj = org.vertx.java.deploy.impl.VertxLocator.vertx.createNetServer()
         for item in kwargs.keys():
            setattr(self, item, kwargs[item])
@@ -85,7 +85,7 @@ class NetClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, object
 
     Multiple connections to different servers can be made using the same instance.
     """
-    def __init__(self, kwargs={}):
+    def __init__(self, **kwargs):
         self.java_obj = org.vertx.java.deploy.impl.VertxLocator.vertx.createNetClient()
         for item in kwargs.keys():
            setattr(self, item, kwargs[item])
@@ -119,12 +119,9 @@ class NetClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, object
         self.java_obj.connect(port, host, ConnectHandler(handler))
         return self
 
-
     def close(self):
         """Close the NetClient. Any open connections will be closed."""
         self.java_obj.close()
-
-
 
 class NetSocket(core.streams.ReadStream, core.streams.WriteStream, object):
     """NetSocket is a socket-like abstraction used for reading from or writing

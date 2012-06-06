@@ -32,7 +32,7 @@ __email__ = "scott@hornmicro.com"
 
 class HttpServer(core.tcp_support.TCPSupport, core.ssl_support.SSLSupport, object):
     """ An HTTP and websockets server """
-    def __init__(self, kwargs={}):
+    def __init__(self, **kwargs):
         self.java_obj = org.vertx.java.deploy.impl.VertxLocator.vertx.createHttpServer()
         for item in kwargs.keys():
            setattr(self, item, kwargs[item])
@@ -105,7 +105,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
      It is used as a factory for HttpClientRequest instances which encapsulate the actual HTTP requests. It is also
      used as a factory for HTML5 WebSocket websockets.
     """
-    def __init__(self, kwargs={}):
+    def __init__(self, **kwargs):
         self.java_obj = org.vertx.java.deploy.impl.VertxLocator.vertx.createHttpClient()
         for item in kwargs.keys():
            setattr(self, item, kwargs[item])
