@@ -24,16 +24,16 @@ __email__ = "scott@hornmicro.com"
 
 def create_http_server(**kwargs):
     """ Return a HttpServer """
-    return HttpServer(kwargs)
+    return HttpServer(**kwargs)
 
 def create_http_client(**kwargs):
     """ Return a HttpClient """
-    return HttpClient(kwargs)
+    return HttpClient(**kwargs)
 
 def create_net_server(**kwargs):
     """ Return a NetServer """
-    return NetServer(kwargs)
+    return NetServer(**kwargs)
 
 def create_net_client(**kwargs):
     """ Return a NetClient """
-    return NetClient(kwargs)
+    return NetClient(**kwargs)
