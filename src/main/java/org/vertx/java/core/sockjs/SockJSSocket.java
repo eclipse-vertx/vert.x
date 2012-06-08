@@ -20,9 +20,11 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
 
+import java.net.SocketAddress;
 import java.util.UUID;
 
 /**
@@ -38,6 +40,7 @@ import java.util.UUID;
 public abstract class SockJSSocket implements ReadStream, WriteStream {
 
   private final Handler<Message<Buffer>> writeHandler;
+  public final SocketAddress remoteHost;
   protected final Vertx vertx;
 
   /**
@@ -49,7 +52,8 @@ public abstract class SockJSSocket implements ReadStream, WriteStream {
    */
   public final String writeHandlerID;
 
-  protected SockJSSocket(Vertx vertx) {
+
+  protected SockJSSocket(Vertx vertx,SocketAddress remoteHost) {
     this.vertx = vertx;
     this.writeHandler = new Handler<Message<Buffer>>() {
       public void handle(Message<Buffer> buff) {
@@ -57,9 +61,9 @@ public abstract class SockJSSocket implements ReadStream, WriteStream {
       }
     };
     this.writeHandlerID = UUID.randomUUID().toString();
+    this.remoteHost = remoteHost;
     vertx.eventBus().registerLocalHandler(writeHandlerID, writeHandler);
   }
-
   public void close() {
     vertx.eventBus().unregisterHandler(writeHandlerID, writeHandler);
   }

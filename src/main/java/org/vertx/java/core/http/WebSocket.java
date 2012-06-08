@@ -21,6 +21,8 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
 
+import java.net.SocketAddress;
+
 /**
  * Represents an HTML 5 Websocket<p>
  * Instances of this class are created and provided to the handler of an
@@ -34,9 +36,10 @@ import org.vertx.java.core.streams.WriteStream;
  */
 public abstract class WebSocket implements ReadStream, WriteStream {
 
-  protected WebSocket(String binaryHandlerID, String textHandlerID) {
+  protected WebSocket(String binaryHandlerID, String textHandlerID, SocketAddress remoteHost) {
     this.binaryHandlerID = binaryHandlerID;
     this.textHandlerID = textHandlerID;
+    this.remoteHost = remoteHost;
   }
 
   /**
@@ -56,6 +59,8 @@ public abstract class WebSocket implements ReadStream, WriteStream {
    * allows you to write data to other websockets which are owned by different event loops.
    */
   public final String textHandlerID;
+
+  public final SocketAddress remoteHost;
 
   /**
    * Write {@code data} to the websocket as a binary frame

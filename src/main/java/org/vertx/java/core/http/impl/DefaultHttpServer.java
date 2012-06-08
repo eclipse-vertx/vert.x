@@ -517,7 +517,7 @@ public class DefaultHttpServer implements HttpServer {
                 }
               }
             };
-            DefaultWebSocket ws = new DefaultWebSocket(vertx, theURI.getPath(), wsConn, connectRunnable);
+            DefaultWebSocket ws = new DefaultWebSocket(vertx, theURI.getPath(), wsConn, connectRunnable,ch.getRemoteAddress());
             wsConn.handleWebsocketConnect(ws);
             if (ws.rejected) {
               if (firstHandler == null) {

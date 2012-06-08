@@ -19,6 +19,8 @@ package org.vertx.java.core.http;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
+import java.net.SocketAddress;
+
 /**
  * Represents a server side WebSocket that is passed into a the websocketHandler of an {@link HttpServer}<p>
  * Instances of this class are not thread-safe<p>
@@ -29,8 +31,8 @@ public abstract class ServerWebSocket extends WebSocket {
 
   private static final Logger log = LoggerFactory.getLogger(ServerWebSocket.class);
 
-  protected ServerWebSocket(String path, String binaryHandlerID, String textHandlerID) {
-    super(binaryHandlerID, textHandlerID);
+  protected ServerWebSocket(String path, String binaryHandlerID, String textHandlerID, SocketAddress remoteHost) {
+    super(binaryHandlerID, textHandlerID, remoteHost);
     this.path = path;
   }
 

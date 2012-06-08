@@ -39,7 +39,7 @@ class RawWebSocketTransport {
     private WebSocket ws;
 
     RawWSSockJSSocket(Vertx vertx, WebSocket ws) {
-      super(vertx);
+      super(vertx,ws.remoteHost);
       this.ws = ws;
     }
 

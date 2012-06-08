@@ -91,7 +91,7 @@ class XhrTransport extends BaseTransport {
       public void handle(final HttpServerRequest req) {
         if (log.isTraceEnabled()) log.trace("XHR, post, " + req.uri);
         String sessionID = req.params().get("param0");
-        Session session = getSession((Long)config.getNumber("session_timeout"), (Long)config.getNumber("heartbeat_period"), sessionID, sockHandler);
+        Session session = getSession((Long)config.getNumber("session_timeout"), (Long)config.getNumber("heartbeat_period"), sessionID, sockHandler,req.remoteHost);
 
         session.register(streaming? new XhrStreamingListener((Integer)config.getNumber("max_bytes_streaming"), req, session) : new XhrPollingListener(req, session));
       }
