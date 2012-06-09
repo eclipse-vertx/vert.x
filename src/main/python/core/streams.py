@@ -14,7 +14,7 @@
 
 import org.vertx.java.core.streams.Pump
 
-from core.handlers import BufferHandler
+from core.handlers import BufferHandler, StreamEndHandler
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
@@ -108,7 +108,7 @@ class ReadStream(object):
 
         Keyword arguments
         handler -- The exception handler"""
-        self.java_obj.endHandler(EndHandler(handler))
+        self.java_obj.endHandler(StreamEndHandler(handler))
         
     def _to_read_stream(self):
         return self.java_obj
