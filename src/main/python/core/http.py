@@ -45,7 +45,11 @@ class HttpServer(core.tcp_support.TCPSupport, core.ssl_support.SSLSupport, objec
         handler -- the function used to handle the request. 
 
         """
-        self.java_obj.requestHandler(HttpServerRequestHandler(handler))
+        if isinstance(handler, object):
+            self.java_obj.requestHandler(HttpServerRequestHandler(handler.call))
+        else:
+            self.java_obj.requestHandler(HttpServerRequestHandler(handler))
+        return self
 
     def websocket_handler(self, handler):
         """Set the websocket handler for the server.
@@ -55,7 +59,11 @@ class HttpServer(core.tcp_support.TCPSupport, core.ssl_support.SSLSupport, objec
         handler -- the function used to handle the request. 
 
         """
-        self.java_obj.websocketHandler(ServerWebSocketHandler(handler))
+        if isinstance(handler, object):
+            self.java_obj.requestHandler(ServerWebSocketHandler(handler.call))
+        else:
+            self.java_obj.requestHandler(ServerWebSocketHandler(handler))
+        return self
 
     def listen(self, port, host=None):
         """Instruct the server to listen for incoming connections. If host is None listens on all.
@@ -570,6 +578,9 @@ class HttpServerRequest(core.streams.ReadStream):
         """
         self.java_obj.bodyHandler(BufferHandler(handler))
 
+    def _to_java_request(self):
+        return self.java_obj
+
 class HttpServerResponse(core.streams.WriteStream):
     """Encapsulates a server-side HTTP response.
 
@@ -824,3 +835,225 @@ class WebSocketHandler(org.vertx.java.core.Handler):
     def handle(self, req):
         """ Calls the Handler with the WebSocket when connected """
         self.handler(WebSocket(req))
+
+class RouteMatcher(object):
+    """This class allows you to do route requests based on the HTTP verb and the request URI, in a manner similar
+    to <a href="http://www.sinatrarb.com/">Sinatra</a> or <a href="http://expressjs.com/">Express</a>.
+
+    RouteMatcher also lets you extract paramaters from the request URI either a simple pattern or using
+    regular expressions for more complex matches. Any parameters extracted will be added to the requests parameters
+    which will be available to you in your request handler.
+
+    It's particularly useful when writing REST-ful web applications.
+
+    To use a simple pattern to extract parameters simply prefix the parameter name in the pattern with a ':' (colon).
+
+    Different handlers can be specified for each of the HTTP verbs, GET, POST, PUT, DELETE etc.
+
+    For more complex matches regular expressions can be used in the pattern. When regular expressions are used, the extracted
+    parameters do not have a name, so they are put into the HTTP request with names of param0, param1, param2 etc.
+
+    Multiple matches can be specified for each HTTP verb. In the case there are more than one matching patterns for
+    a particular request, the first matching one will be used.
+    """
+    def __init__(self):
+        self.java_obj = org.vertx.java.core.http.RouteMatcher()
+
+    def call(self, data):
+        self.input(data)
+
+    def input(self, request):
+        """This method is called to provide the matcher with data.
+
+        Keyword arguments
+        request -- input request to the parser.
+        """
+        self.java_obj.handle(request._to_java_request())
+
+    def get(self, pattern, handler):
+        """Specify a handler that will be called for a matching HTTP GET
+
+        Keyword arguments
+        pattern -- pattern to match
+        handler -- handler for match
+        """
+        self.java_obj.get(pattern, HttpServerRequestHandler(handler))
+
+    def put(self, pattern, handler):
+        """Specify a handler that will be called for a matching HTTP PUT
+
+        Keyword arguments
+        pattern -- pattern to match
+        handler -- http server request handler
+        """
+        self.java_obj.put(pattern, HttpServerRequestHandler(handler))
+
+    def post(self, pattern, handler):
+        """Specify a handler that will be called for a matching HTTP POST
+           
+        Keyword arguments
+        pattern -- pattern to match
+        handler -- http server request handler
+        """
+        self.java_obj.post(pattern, HttpServerRequestHandler(handler))
+    
+    def delete(self, pattern, handler):
+        """Specify a handler that will be called for a matching HTTP DELETE
+               
+        Keyword arguments
+        pattern -- pattern to match
+        handler -- http server request handler
+        """
+        self.java_obj.delete(pattern, HttpServerRequestHandler(handler))
+
+    def options(self, pattern, handler):
+        """Specify a handler that will be called for a matching HTTP OPTIONS
+           
+        Keyword arguments
+        pattern -- pattern to match
+        handler -- http server request handler"""
+        self.java_obj.options(pattern, HttpServerRequestHandler(handler))
+
+    def head(self, pattern, handler):
+        """Specify a handler that will be called for a matching HTTP HEAD
+           
+        Keyword arguments
+        pattern -- pattern to match
+        handler -- http server request handler
+        """
+        self.java_obj.head(pattern, HttpServerRequestHandler(handler))
+
+    def trace(self, pattern, handler):
+        """Specify a handler that will be called for a matching HTTP TRACE
+           
+        Keyword arguments
+        pattern -- pattern to match
+        handler -- http server request handler
+        """  
+        self.java_obj.trace(pattern, HttpServerRequestHandler(handler))
+
+    def patch(self, pattern, handler):
+        """Specify a handler that will be called for a matching HTTP PATCH
+           
+        Keyword arguments
+        pattern -- pattern to match
+        handler -- http server request handler
+        """
+        self.java_obj.patch(pattern, HttpServerRequestHandler(handler))
+
+    def connect(self, pattern, handler):
+        """Specify a handler that will be called for a matching HTTP CONNECT
+           
+        Keyword arguments
+        pattern -- pattern to match
+        handler -- http server request handler
+        """
+        self.java_obj.connect(pattern, HttpServerRequestHandler(handler))
+
+    def all(self, pattern, handler):
+        """Specify a handler that will be called for any matching HTTP request
+           
+        Keyword arguments
+        pattern -- pattern to match
+        handler -- http server request handler"""
+        self.java_obj.all(pattern, HttpServerRequestHandler(handler))
+
+    def get_re(self, pattern, handler):
+        """Specify a handler that will be called for a matching HTTP GET
+           
+
+        Keyword arguments
+        pattern -- pattern to match
+        handler -- http server request handler
+        """
+        self.java_obj.getWithRegEx(pattern, HttpServerRequestHandler(handler))
+
+    def put_re(self, pattern, handler):
+        """Specify a handler that will be called for a matching HTTP PUT
+    
+        Keyword arguments
+        pattern -- pattern to match
+        handler -- http server request handler
+        """
+        self.java_obj.putWithRegEx(pattern, HttpServerRequestHandler(handler))
+
+    def post_re(self, pattern, handler):
+        """Specify a handler that will be called for a matching HTTP POST
+
+        Keyword arguments
+        pattern -- pattern to match
+        handler -- http server request handler
+        """
+        self.java_obj.postWithRegEx(pattern, HttpServerRequestHandler(handler))
+
+    def delete_re(self, pattern, handler):
+        """Specify a handler that will be called for a matching HTTP DELETE
+           
+        Keyword arguments
+        pattern -- pattern to match
+        handler -- http server request handler
+        """
+        self.java_obj.deleteWithRegEx(pattern, HttpServerRequestHandler(handler))
+
+
+    def options_re(self, pattern, handler):
+        """Specify a handler that will be called for a matching HTTP OPTIONS
+           
+        Keyword arguments
+        pattern -- pattern to match
+        handler -- http server request handler
+        """  
+        self.java_obj.optionsWithRegEx(pattern, HttpServerRequestHandler(handler))
+
+    def head_re(self, pattern, handler):
+        """Specify a handler that will be called for a matching HTTP HEAD
+           
+        Keyword arguments
+        pattern -- pattern to match
+        handler -- http server request handler
+        """
+        self.java_obj.headWithRegEx(pattern, HttpServerRequestHandler(handler))
+
+    def trace_re(self, pattern, handler):
+        """Specify a handler that will be called for a matching HTTP TRACE
+           
+        Keyword arguments
+        pattern -- pattern to match
+        handler -- http server request handler
+        """  
+        self.java_obj.traceWithRegEx(pattern, HttpServerRequestHandler(handler))
+
+    def patch_re(self, pattern, handler):
+        """Specify a handler that will be called for a matching HTTP PATCH
+           
+        Keyword arguments
+        pattern -- pattern to match
+        handler -- http server request handler
+        """
+        self.java_obj.patchWithRegEx(pattern, HttpServerRequestHandler(handler))
+
+    def connect_re(self, pattern, handler):
+        """Specify a handler that will be called for a matching HTTP CONNECT
+           
+        Keyword arguments
+        pattern -- pattern to match
+        handler -- http server request handler
+        """
+        self.java_obj.connectWithRegEx(pattern, HttpServerRequestHandler(handler))
+
+    def all_re(self, pattern, handler):
+        """Specify a handler that will be called for any matching HTTP request
+           
+        Keyword arguments
+        pattern -- pattern to match
+        handler -- http server request handler
+        """  
+        self.java_obj.allWithRegEx(pattern, HttpServerRequestHandler(handler))
+
+    def no_match(self, handler):
+        """Specify a handler that will be called when nothing matches
+        Default behaviour is to return a 404
+
+        Keyword arguments
+        handler -- http server request handler"""
+        self.java_obj.noMatch(HttpServerRequestHandler(handler))
