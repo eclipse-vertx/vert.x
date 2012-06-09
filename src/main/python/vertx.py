@@ -18,6 +18,7 @@ This module provides the entry point to the vert.x platform
 
 from core.http import HttpServer, HttpClient
 from core.net import NetServer, NetClient
+from core.sock_js import SockJSServer
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
@@ -37,3 +38,7 @@ def create_net_server(**kwargs):
 def create_net_client(**kwargs):
     """ Return a NetClient """
     return NetClient(**kwargs)
+
+def create_sockjs_server(http_server):
+    """ Return a SockJSServer """
+    return SockJSServer(http_server)
