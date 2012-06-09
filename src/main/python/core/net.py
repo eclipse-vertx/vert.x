@@ -90,8 +90,7 @@ class NetClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, object
         for item in kwargs.keys():
            setattr(self, item, kwargs[item])
 
-    @property
-    def trust_all(self, val):
+    def set_trust_all(self, val):
         """Should the client trust ALL server certificates
 
         Keyword arguments
@@ -105,6 +104,7 @@ class NetClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, object
         self.java_obj.setTrustAll(val)
         return self
 
+    trust_all = property(fset=set_trust_all)
 
     def connect(self, port, host, handler ):
         """Attempt to open a connection to a server. The connection is opened asynchronously and the result returned in the

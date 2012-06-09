@@ -317,7 +317,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
         """Close the client. Any unclosed connections will be closed."""
         self.java_obj.close()
 
-class HttpClientRequest(core.streams.WriteStream, object):
+class HttpClientRequest(core.streams.WriteStream):
     """Instances of this class are created by an HttpClient instance, via one of the methods corresponding to the
      specific HTTP methods, or the generic HttpClient request method.
 
@@ -364,7 +364,7 @@ class HttpClientRequest(core.streams.WriteStream, object):
         handler -- The handler will be called when the buffer has actually been written to the wire.
         returns  self So multiple operations can be chained.
         """
-        self.java_obj.writeBuffer(chunk._to_java_buffer)
+        self.java_obj.writeBuffer(chunk._to_java_buffer, DoneHandler(handler))
         return self
 
     def write_str(self, str, enc="UTF-8", handler=None):
@@ -435,7 +435,7 @@ class HttpClientRequest(core.streams.WriteStream, object):
         self.java_obj.setChunked(val)
         return self
 
-    chucked = property(fset=set_chunked)
+    chunked = property(fset=set_chunked)
 
     def continue_handler(self, handler):
         """If you send an HTTP request with the header 'Expect' set to the value '100-continue'
@@ -507,7 +507,7 @@ class HttpClientResponse(core.streams.ReadStream):
         """Set a handler to receive the entire body in one go - do not use this for large bodies"""
         self.java_obj.bodyHandler(BufferHandler(handler))
   
-class HttpServerRequest(object):
+class HttpServerRequest(core.streams.ReadStream):
     """ Encapsulates a server-side HTTP request.
   
     An instance of this class is created for each request that is handled by the server and is passed to the user via the
@@ -515,37 +515,37 @@ class HttpServerRequest(object):
 
     Each instance of this class is associated with a corresponding HttpServerResponse instance via the property response.
     """
-    def __init__(self, http_server_request):
-        self.http_server_request = http_server_request
-        self.http_server_response = HttpServerResponse(http_server_request.response)
+    def __init__(self, java_obj):
+        self.java_obj = java_obj
+        self.http_server_response = HttpServerResponse(java_obj.response)
         self.headers_dict = None
         self.params_dict = None
     
     @property
     def method(self):
         """ The HTTP method, one of HEAD, OPTIONS, GET, POST, PUT, DELETE, CONNECT, TRACE """
-        return self.http_server_request.method
+        return self.java_obj.method
 
     @property
     def uri(self):
         """ The uri of the request. For example 'http://www.somedomain.com/somepath/somemorepath/somresource.foo?someparam=32&someotherparam=x """
-        return self.http_server_request.uri   
+        return self.java_obj.uri   
 
     @property
     def path(self):
         """ The path part of the uri. For example /somepath/somemorepath/somresource.foo """
-        return self.http_server_request.path    
+        return self.java_obj.path    
 
     @property
     def query(self):
         """ The query part of the uri. For example someparam=32&someotherparam=x """
-        return self.http_server_request.query
+        return self.java_obj.query
 
     @property
     def params(self):
         """ The request parameters as a dictionary """
         if self.params_dict is None:
-            self.params_dict = map_from_java(self.http_server_request.params())
+            self.params_dict = map_from_java(self.java_obj.params())
         return self.params_dict
 
     @property
@@ -557,7 +557,7 @@ class HttpServerRequest(object):
     def headers(self):
         """ The request headers as a dictionary """
         if self.headers_dict is None:
-            self.headers_dict = map_from_java(self.http_server_request.headers())
+            self.headers_dict = map_from_java(self.java_obj.headers())
         return self.headers_dict
 
     def body_handler(self, handler):
@@ -568,9 +568,9 @@ class HttpServerRequest(object):
         handler -- a handler that is called when the body has been received. The handler is wrapped in a BufferHandler.
 
         """
-        self.http_server_request.bodyHandler(BufferHandler(handler))
+        self.java_obj.bodyHandler(BufferHandler(handler))
 
-class HttpServerResponse(object):
+class HttpServerResponse(core.streams.WriteStream):
     """Encapsulates a server-side HTTP response.
 
     An instance of this class is created and associated to every instance of HttpServerRequest that is created.
@@ -585,33 +585,33 @@ class HttpServerResponse(object):
     socket. 
 
     """
-    def __init__(self, http_server_response):
-        self.http_server_response = http_server_response
+    def __init__(self, java_obj):
+        self.java_obj = java_obj
 
     def get_status_code(self):
         """ Get the status code of the response. """
-        return self.http_server_response.statusCode
+        return self.java_obj.statusCode
 
     def set_status_code(self, code):
         """ Set the status code of the response. Default is 200 """
-        self.http_server_response.statusCode = code
+        self.java_obj.statusCode = code
 
     status_code = property(get_status_code, set_status_code)
 
     def get_status_message(self):
         """ Get the status message the goes with status code """
-        return self.http_server_response.statusMessage
+        return self.java_obj.statusMessage
 
     def set_status_message(self, message):
         """ Set the status message for a response """
-        self.http_server_response.statusMessage = message
+        self.java_obj.statusMessage = message
 
     status_message = property(get_status_message, set_status_message)
 
     @property
     def headers(self):
         """ Get a copy of the reponse headers as a dictionary """
-        return map_from_java(self.http_server_response.headers())
+        return map_from_java(self.java_obj.headers())
 
     def put_header(self, key, value):
         """ Inserts a header into the response.
@@ -622,13 +622,13 @@ class HttpServerResponse(object):
         
         returns HttpServerResponse so multiple operations can be chained.
         """
-        self.http_server_response.putHeader(key, value)
+        self.java_obj.putHeader(key, value)
         return self
 
     @property
     def trailers(self):
         """ Get a copy of the trailers as a dictionary """
-        return map_from_java(self.http_server_response.trailers())
+        return map_from_java(self.java_obj.trailers())
 
     def put_trailer(self, key, value):
         """ Inserts a trailer into the response. 
@@ -640,7 +640,7 @@ class HttpServerResponse(object):
         returns HttpServerResponse so multiple operations can be chained.
 
         """
-        self.http_server_response.putTrailer(key, value)
+        self.java_obj.putTrailer(key, value)
         return self
 
     def write_buffer(self, buffer, handler=None):
@@ -653,9 +653,9 @@ class HttpServerResponse(object):
         returns a HttpServerResponse so multiple operations can be chained.
         """
         if handler is None:
-            self.http_server_response.writeBuffer(buffer._to_java_buffer())
+            self.java_obj.writeBuffer(buffer._to_java_buffer())
         else:
-            self.http_server_response.writeBuffer(buffer._to_java_buffer(), DoneHandler(handler))
+            self.java_obj.writeBuffer(buffer._to_java_buffer(), DoneHandler(handler))
         return self
 
     def write_str(self, str, enc="UTF-8", handler=None):
@@ -670,9 +670,9 @@ class HttpServerResponse(object):
         returns a HttpServerResponse so multiple operations can be chained.
         """
         if handler is None:
-            self.http_server_response.write(str, enc)
+            self.java_obj.write(str, enc)
         else:
-            self.http_server_response.write(str, enc, DoneHandler(handler)) 
+            self.java_obj.write(str, enc, DoneHandler(handler)) 
         return self
 
     def send_file(self, path):
@@ -684,7 +684,7 @@ class HttpServerResponse(object):
 
         returns a HttpServerResponse so multiple operations can be chained.
         """
-        self.http_server_response.sendFile(path)
+        self.java_obj.sendFile(path)
         return self
 
     def set_chunked(self, val):
@@ -702,12 +702,12 @@ class HttpServerResponse(object):
         
         returns a HttpServerResponse so multiple operations can be chained.
         """
-        self.http_server_response.setChunked(val)
+        self.java_obj.setChunked(val)
         return self
 
     def get_chunked(self):
         """ Get whether this response uses HTTP chunked encoding or not. """
-        return self.http_server_response.getChunked()        
+        return self.java_obj.getChunked()        
 
     chunked = property(get_chunked, set_chunked)
 
@@ -721,13 +721,13 @@ class HttpServerResponse(object):
 
         """
         if data is None:
-            self.http_server_response.end()
+            self.java_obj.end()
         else:
-            self.http_server_response.end(data)
+            self.java_obj.end(data)
 
     def close(self):
         """ Close the underlying TCP connection """
-        self.http_server_response.close()
+        self.java_obj.close()
 
 class WebSocket(object):
     """ Encapsulates an HTML 5 Websocket.
