@@ -45,7 +45,7 @@ class HttpServer(core.tcp_support.TCPSupport, core.ssl_support.SSLSupport, objec
         handler -- the function used to handle the request. 
 
         """
-        if isinstance(handler, object):
+        if isinstance(handler, RouteMatcher):
             self.java_obj.requestHandler(HttpServerRequestHandler(handler.call))
         else:
             self.java_obj.requestHandler(HttpServerRequestHandler(handler))
@@ -59,10 +59,7 @@ class HttpServer(core.tcp_support.TCPSupport, core.ssl_support.SSLSupport, objec
         handler -- the function used to handle the request. 
 
         """
-        if isinstance(handler, object):
-            self.java_obj.requestHandler(ServerWebSocketHandler(handler.call))
-        else:
-            self.java_obj.requestHandler(ServerWebSocketHandler(handler))
+        self.java_obj.requestHandler(ServerWebSocketHandler(handler))
         return self
 
     def listen(self, port, host=None):
@@ -102,7 +99,7 @@ class HttpServer(core.tcp_support.TCPSupport, core.ssl_support.SSLSupport, objec
         else:
             self.java_obj.close(CloseHandler(handler))
 
-    def _to_java_server():
+    def _to_java_server(self):
         """ private """
         return self.java_obj
 
