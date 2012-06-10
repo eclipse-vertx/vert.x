@@ -45,10 +45,7 @@ class HttpServer(core.tcp_support.TCPSupport, core.ssl_support.SSLSupport, objec
         handler -- the function used to handle the request. 
 
         """
-        if isinstance(handler, RouteMatcher):
-            self.java_obj.requestHandler(HttpServerRequestHandler(handler.call))
-        else:
-            self.java_obj.requestHandler(HttpServerRequestHandler(handler))
+        self.java_obj.requestHandler(HttpServerRequestHandler(handler))
         return self
 
     def websocket_handler(self, handler):
@@ -59,7 +56,7 @@ class HttpServer(core.tcp_support.TCPSupport, core.ssl_support.SSLSupport, objec
         handler -- the function used to handle the request. 
 
         """
-        self.java_obj.requestHandler(ServerWebSocketHandler(handler))
+        self.java_obj.websocketHandler(ServerWebSocketHandler(handler))
         return self
 
     def listen(self, port, host=None):
@@ -737,7 +734,7 @@ class HttpServerResponse(core.streams.WriteStream):
         """ Close the underlying TCP connection """
         self.java_obj.close()
 
-class WebSocket(object):
+class WebSocket(core.streams.ReadStream, core.streams.WriteStream):
     """ Encapsulates an HTML 5 Websocket.
 
     Instances of this class are created by an HttpClient instance when a client succeeds in a websocket handshake with a server.
@@ -745,7 +742,7 @@ class WebSocket(object):
     a bit like a TCP socket.
     """
     def __init__(self, websocket):
-        self.websocket = websocket
+        self.java_obj = websocket
 
     def write_binary_frame(self, buffer):
         """ 
@@ -755,7 +752,7 @@ class WebSocket(object):
         buffer -- Buffer data to write to socket.
 
         """
-        self.websocket.writeBinaryFrame(buffer)
+        self.java_obj.writeBinaryFrame(buffer)
 
     def write_text_frame(self, text):
         """ 
@@ -764,11 +761,11 @@ class WebSocket(object):
         Keyword arguments
         text -- text to write to socket
         """
-        self.websocket.writeTextFrame(text)
+        self.java_obj.writeTextFrame(text)
 
     def close(self):
         """ Close the websocket """
-        self.websocket.close()
+        self.java_obj.close()
 
     def closed_handler(self, handler):
         """ Set a closed handler on the connection, the handler receives a no parameters. 
@@ -777,7 +774,7 @@ class WebSocket(object):
         Keyword arguments
         handler - The handler to be called when writing has been completed. It is wrapped in a ClosedHandler.
         """
-        self.websocket.closedHandler(ClosedHandler(handler))
+        self.java_obj.closedHandler(ClosedHandler(handler))
 
 class ServerWebSocket(WebSocket):
     """ Instances of this class are created when a WebSocket is accepted on the server.
@@ -786,16 +783,16 @@ class ServerWebSocket(WebSocket):
 
     """
     def __init__(self, websocket):
-        self.websocket = websocket
+        self.java_obj = websocket
 
     def reject(self):
         """ Reject the WebSocket. Sends 404 to client """
-        self.websocket.reject()
+        self.java_obj.reject()
 
     @property
     def path(self):
         """ The path the websocket connect was attempted at. """
-        return self.websocket.path
+        return self.java_obj.path
 
 class HttpServerRequestHandler(org.vertx.java.core.Handler):
     """ A handler for Http Server Requests"""
@@ -856,7 +853,7 @@ class RouteMatcher(object):
     def __init__(self):
         self.java_obj = org.vertx.java.core.http.RouteMatcher()
 
-    def call(self, data):
+    def __call__(self, data):
         self.input(data)
 
     def input(self, request):
