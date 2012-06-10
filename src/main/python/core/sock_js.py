@@ -20,6 +20,9 @@ import org.vertx.java.deploy.impl
 
 from core.javautils import map_to_java
 
+__author__ = "Scott Horn"
+__email__ = "scott@hornmicro.com"
+
 class SockJSServer(object):
     """This is an implementation of the server side part of https://github.com/sockjs
 
@@ -79,8 +82,7 @@ class SockJSSocket(core.streams.ReadStream, core.streams.WriteStream):
       #  write_buffer(msg.body)
       #}
 
-    
-    def close():
+    def close(self):
         """Close the socket"""
         #EventBus.unregister_handler(@handler_id)
         self.java_obj.close()
