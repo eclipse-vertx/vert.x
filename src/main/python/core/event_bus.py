@@ -19,6 +19,7 @@ import org.vertx.java.core.json
 import java.lang
 
 from core.javautils import map_to_java, map_from_java
+from core.buffer import Buffer
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"            
@@ -50,12 +51,7 @@ class EventBus(object):
     When receiving a message in a handler the received object is an instance of EventBus::Message - this contains
     the actual Hash of the message plus a reply method which can be used to reply to it.
     """
-    
-    @staticmethod
-    def handler_dict():
-        if EventBus.handler is None:
-            EventBus.handler = {}
-        return EventBus.handler
+    handler_dict = {}
 
     @staticmethod
     def java_eventbus():
@@ -86,7 +82,7 @@ class EventBus(object):
         else:
           id = EventBus.java_eventbus().registerHandler(address, internal)
 
-        EventBus.handler_dict()[id] = internal
+        EventBus.handler_dict[id] = internal
         return id
 
     @staticmethod
@@ -106,7 +102,7 @@ class EventBus(object):
             id = EventBus.java_eventbus().registerLocalHandler(internal)
         else:
             id = EventBus.java_eventbus().registerHandler(internal)
-        EventBus.handler_dict()[id]  = internal
+        EventBus.handler_dict[id] = internal
         return id
 
     @staticmethod
@@ -116,9 +112,8 @@ class EventBus(object):
         Keyword arguments
         handler_id -- the id of the handler to unregister. Returned from EventBus.register_handler
         """
-        handler = EventBus.handler_dict().pop(handler_id)
-        EventBus.java_eventbus().unregisterHandler(handler_id)
-
+        handler = EventBus.handler_dict.pop("%s"% handler_id)
+        EventBus.java_eventbus().unregisterHandler("%s"% handler_id)
 
     @staticmethod
     def convert_msg(message):
@@ -137,7 +132,7 @@ class InternalHandler(org.vertx.java.core.Handler):
         self.handler = handler
 
     def handle(self, message):
-        handler(Message(message))
+        self.handler(Message(message))
   
 class Message(object):
     """Represents a message received from the event bus"""
@@ -150,10 +145,6 @@ class Message(object):
         else:
             self.body = message.body
     
-    @property
-    def body(self):
-        return self.body
-
     def reply(self, reply, handler=None):
         """Reply to this message. If the message was sent specifying a receipt handler, that handler will be
         called when it has received a reply. If the message wasn't sent specifying a receipt handler
