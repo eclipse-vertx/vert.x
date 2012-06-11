@@ -110,7 +110,7 @@ public abstract class ConnectionBase {
     this.closedHandler = handler;
   }
 
-  protected Context getContext() {
+  protected final Context getContext() {
     return context;
   }
 
