@@ -66,7 +66,7 @@ class FileProps(object):
     @property
     def size(self):
         """returnsthe size of the file, in bytes."""
-        return self.java_obj.size()
+        return self.java_obj.size
 
 class FSProps(object):
     """Represents the properties of a file system"""
@@ -164,10 +164,10 @@ class FSWrappedHandler(org.vertx.java.core.AsyncResultHandler):
     def handle(self, async_result):
         if not (self.handler is None):
             if async_result.exception is None:
-                if not (self.result_converter is None):
-                    self.handler(None, self.result_converter(async_result.result))
-                else:
+                if self.result_converter is None:
                     self.handler(None, async_result.result)
+                else:
+                    self.handler(None, self.result_converter(async_result.result))
             else:
                 self.handler(async_result.exception, None)
 
