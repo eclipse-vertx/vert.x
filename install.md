@@ -28,11 +28,15 @@ As a temporary measure, we are unable to distributed Mozilla Rhino with the Vert
 
 This should be resolved in the next few days/weeks.
 
-In the mean-time, if you want to use JavaScript with Vert.x you will need to download and build Rhino from source. We include a script which does this automatically for Linux/OSX users.
+In the mean-time you will need to download and build Rhino from source. We include a script which does this automatically for Linux/OSX users.
 
 Please `cd` into the distribution folder and run the script `install_rhino.sh`.
 
+**Please note that the script in the distribution is currently trying to download a non-existent version of ant, please manually edit this to version 1.8.4**
+
 Windows users will have to manually clone the Rhino repository `git clone https://github.com/mozilla/rhino.git`. Build the jar `ant jar`. And copy the resulting jar `js.jar` into the `lib/jars` directory of the Vert.x distribution.
+
+
 
 Apologies for the inconvenience.
 
