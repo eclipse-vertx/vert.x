@@ -26,7 +26,6 @@ from core.javautils import map_from_java, map_to_java
 from core.handlers import CloseHandler, ClosedHandler, ExceptionHandler
 from core.handlers import DoneHandler, ContinueHandler, BufferHandler
 
-
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
 

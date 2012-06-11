@@ -21,6 +21,7 @@ import core.streams
 
 from core.javautils import map_from_java, map_to_java
 from core.handlers import CloseHandler, DoneHandler, ClosedHandler
+from core.event_bus import EventBus
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
@@ -129,16 +130,16 @@ class NetSocket(core.streams.ReadStream, core.streams.WriteStream, object):
     """      
     def __init__(self, j_socket):
         self.java_obj = j_socket
+        def simple_handler(msg):
+            self.write_buffer(msg.body)
+        self.write_handler_id = EventBus.register_simple_handler(simple_handler)
 
-        #@write_handler_id = EventBus.register_simple_handler  |msg|
-        #write_buffer(msg.body)
-      
-        # self.java_obj.closedHandler(Proc.new 
-        # EventBus.unregister_handler(@write_handler_id)
-        # @closed_handler.call if @closed_handler
-        # )
-
-
+        def closed_handler():
+            EventBus.unregister_handler(self.write_handler_id)
+            if self.closed_handler != None:
+                self.closed_handler()
+        self.java_obj.closedHandler(ClosedHandler(closed_handler))
+        
     def write_buffer(self, buffer, handler=None):
         """Write a Buffer to the socket. The handler will be called when the buffer has actually been written to the wire.
 
@@ -172,7 +173,7 @@ class NetSocket(core.streams.ReadStream, core.streams.WriteStream, object):
         Keyword arguments
         handler -- A block to be used as the handler
         """
-        self.java_obj.closedHandler(ClosedHandler(handler))        
+        self.closed_handler = handler
 
 
     def send_file(self, file_path):
@@ -189,13 +190,14 @@ class NetSocket(core.streams.ReadStream, core.streams.WriteStream, object):
         """Close the socket"""
         self.java_obj.close()
 
-# def write_handler_id(self):
-#     """When a NetSocket is created it automatically registers an event handler with the system. The address of that
-#     handler is given by write_handler_id.
-#     Given this ID, a different event loop can send a buffer to that event handler using the event bus. This
-#     allows you to write data to other connections which are owned by different event loops.
-#     """
-#     @write_handler_id
+    @property
+    def write_handler_id(self):
+        """When a NetSocket is created it automatically registers an event handler with the system. The address of that
+        handler is given by write_handler_id.
+        Given this ID, a different event loop can send a buffer to that event handler using the event bus. This
+        allows you to write data to other connections which are owned by different event loops.
+        """
+        return self.write_handler_id
 
 
 class ConnectHandler(org.vertx.java.core.Handler):
