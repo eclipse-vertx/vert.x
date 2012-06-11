@@ -89,6 +89,9 @@
     <pathelement location="${tests-base}/framework/groovy"/>
     <pathelement location="src/main/groovy"/>
     <pathelement location="${conf-dir}"/>
+  	
+  	<pathelement location="target/mods/redis-client"/>
+  	<pathelement location="src/mods/redis-client/lib/jedis-2.1.0.jar"/>
   </path>
 
   <taskdef name="groovyc"
@@ -166,6 +169,9 @@
     </antcall>
     <antcall target="compile-java-mod">
       <param name="mod-name" value="web-server"/>
+    </antcall>
+	<antcall target="compile-java-mod">
+      <param name="mod-name" value="redis-client"/>
     </antcall>
   </target>
 
@@ -292,7 +298,9 @@
   jruby -S gem install rdiscount
   -->
   <target name="yardoc">
+  	
     <exec executable="yardoc"/>
+    
   </target>
 
 
@@ -349,18 +357,12 @@
     <mkdir dir="${dist-build}/bin"/>
 
     <!-- We use cp so we can preserve file attributes. No shell so can't use wildcards :( -->
-    <exec executable="cp">
-      <arg value="src/scripts/vertx"/>
-      <arg value="${dist-build}/bin/vertx"/>
-    </exec>
-    <exec executable="cp">
-      <arg value="src/scripts/vertx.bat"/>
-      <arg value="${dist-build}/bin/vertx.bat"/>
-    </exec>
-    <exec executable="cp">
-      <arg value="src/scripts/install_rhino.sh"/>
-      <arg value="${dist-build}/install-rhino.sh"/>
-    </exec>
+	
+	<copy file="src/scripts/vertx.bat" todir="${dist-build}/bin/"/>
+	<copy file="src/scripts/vertx" todir="${dist-build}/bin/"/>
+	<chmod file="${dist-build}/bin/vertx" perm="ugo+rx"/>
+	<copy file="src/scripts/install_rhino.sh" todir="${dist-build}/"/>
+	<chmod file="${dist-build}/install_rhino.sh" perm="ugo+rx"/>
 
     <copy todir="${dist-build}/examples">
       <fileset dir="src/examples">
