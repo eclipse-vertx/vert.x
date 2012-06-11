@@ -376,7 +376,7 @@ public class DefaultEventBus implements EventBus {
             public void handle(AsyncResult<ServerIDs> event) {
               if (event.exception == null) {
                 ServerIDs serverIDs = event.result;
-                if (serverIDs != null) {
+                if (!serverIDs.isEmpty()) {
                   sendToSubs(serverIDs, message);
                 }
               } else {
@@ -424,6 +424,7 @@ public class DefaultEventBus implements EventBus {
           }
         };
       }
+
       handlers.map.put(new HandlerHolder(handler, replyHandler, context), id);
       if (subs != null && !replyHandler && !localOnly) {
         // Propagate the information
@@ -458,7 +459,18 @@ public class DefaultEventBus implements EventBus {
     completionHandler.handle(f);
   }
 
-  private void cleanupConnection(String address, ServerID serverID, ConnectionHolder holder) {
+  private void cleanSubsForServerID(ServerID theServerID) {
+    if (subs != null) {
+      subs.removeAllForServerID(theServerID, new AsyncResultHandler<Void>() {
+        public void handle(AsyncResult<Void> event) {
+        }
+      });
+    }
+  }
+
+  private void cleanupConnection(ServerID theServerID,
+                                 ConnectionHolder holder,
+                                 boolean failed) {
     if (holder.timeoutID != -1) {
       vertx.cancelTimer(holder.timeoutID);
     }
@@ -473,41 +485,41 @@ public class DefaultEventBus implements EventBus {
     // The holder can be null or different if the target server is restarted with same serverid
     // before the cleanup for the previous one has been processed
     // So we only actually remove the entry if no new entry has been added
-    if (connections.remove(serverID, holder)) {
-      log.debug("Cluster connection closed: " + serverID + " holder " + holder);
-      if (subs != null) {
-        removeSub(address, serverID, null);
+    if (connections.remove(theServerID, holder)) {
+      log.debug("Cluster connection closed: " + theServerID + " holder " + holder);
+
+      if (failed) {
+        cleanSubsForServerID(theServerID);
       }
     }
   }
 
-
-  private void sendRemote(final ServerID serverID, final BaseMessage message) {
+  private void sendRemote(final ServerID theServerID, final BaseMessage message) {
     // We need to deal with the fact that connecting can take some time and is async, and we cannot
     // block to wait for it. So we add any sends to a pending list if not connected yet.
     // Once we connect we send them.
     // This can also be invoked concurrently from different threads, so it gets a little
     // tricky
-    ConnectionHolder holder = connections.get(serverID);
+    ConnectionHolder holder = connections.get(theServerID);
     if (holder == null) {
       NetClient client = vertx.createNetClient();
       // When process is creating a lot of connections this can take some time
       // so increase the timeout
       client.setConnectTimeout(60 * 1000);
       holder = new ConnectionHolder(client);
-      ConnectionHolder prevHolder = connections.putIfAbsent(serverID, holder);
+      ConnectionHolder prevHolder = connections.putIfAbsent(theServerID, holder);
       if (prevHolder != null) {
         // Another one sneaked in
         holder = prevHolder;
       }
       else {
-        holder.connect(client, serverID, message.address);
+        holder.connect(client, theServerID);
       }
     }
     holder.writeMessage(message);
   }
 
-  private void schedulePing(final String address, final ConnectionHolder holder) {
+  private void schedulePing(final ConnectionHolder holder) {
     holder.pingTimeoutID = vertx.setTimer(PING_INTERVAL, new Handler<Long>() {
       public void handle(Long ignore) {
         // If we don't get a pong back in time we close the connection
@@ -515,7 +527,7 @@ public class DefaultEventBus implements EventBus {
           public void handle(Long timerID) {
             // Didn't get pong in time - consider connection dead
             log.info("No pong from server " + serverID + " - will consider it dead, timerID: " + timerID + " holder " + holder);
-            cleanupConnection(address, serverID, holder);
+            cleanupConnection(holder.theServerID, holder, true);
           }
         });
         new PingMessage(serverID).write(holder.socket);
@@ -523,8 +535,8 @@ public class DefaultEventBus implements EventBus {
     });
   }
 
-  private void removeSub(String subName, ServerID serverID, final AsyncResultHandler<Void> completionHandler) {
-    subs.remove(subName, serverID, new AsyncResultHandler<Boolean>() {
+  private void removeSub(String subName, ServerID theServerID, final AsyncResultHandler<Void> completionHandler) {
+    subs.remove(subName, theServerID, new AsyncResultHandler<Boolean>() {
       public void handle(AsyncResult<Boolean> event) {
         if (completionHandler != null) {
           AsyncResult<Void> result;
@@ -616,6 +628,7 @@ public class DefaultEventBus implements EventBus {
     volatile boolean connected;
     long timeoutID = -1;
     long pingTimeoutID = -1;
+    ServerID theServerID;
 
     private ConnectionHolder(NetClient client) {
       this.client = client;
@@ -635,43 +648,44 @@ public class DefaultEventBus implements EventBus {
       }
     }
 
-    synchronized void connected(NetSocket socket, final String address) {
+    synchronized void connected(final ServerID theServerID, NetSocket socket) {
       this.socket = socket;
+      this.theServerID = theServerID;
       connected = true;
       socket.exceptionHandler(new Handler<Exception>() {
         public void handle(Exception e) {
-          cleanupConnection(address, serverID, ConnectionHolder.this);
+          cleanupConnection(theServerID, ConnectionHolder.this, true);
         }
       });
       socket.closedHandler(new SimpleHandler() {
         public void handle() {
-          cleanupConnection(address, serverID, ConnectionHolder.this);
+          cleanupConnection(theServerID, ConnectionHolder.this, false);
         }
       });
       socket.dataHandler(new Handler<Buffer>() {
         public void handle(Buffer data) {
           // Got a pong back
           vertx.cancelTimer(timeoutID);
-          schedulePing(address, ConnectionHolder.this);
+          schedulePing(ConnectionHolder.this);
         }
       });
       // Start a pinger
-      schedulePing(address, ConnectionHolder.this);
+      schedulePing(ConnectionHolder.this);
       for (BaseMessage message : pending) {
         message.write(socket);
       }
       pending.clear();
     }
 
-    void connect(NetClient client, final ServerID serverID, final String address) {
-      client.connect(serverID.port, serverID.host, new Handler<NetSocket>() {
+    void connect(NetClient client, final ServerID theServerID) {
+      client.connect(theServerID.port, theServerID.host, new Handler<NetSocket>() {
         public void handle(final NetSocket socket) {
-          connected(socket, address);
+          connected(theServerID, socket);
         }
       });
       client.exceptionHandler(new Handler<Exception>() {
         public void handle(Exception e) {
-          cleanupConnection(address, serverID, ConnectionHolder.this);
+          cleanupConnection(theServerID, ConnectionHolder.this, true);
         }
       });
     }
