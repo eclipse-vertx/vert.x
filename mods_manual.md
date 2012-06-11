@@ -184,7 +184,7 @@ The web-server configuration is as follows:
         "auth_address": <auth_address>
     }
     
-* `web-root`. This is the root directory from where files will be served. *Anything that you place here or in sub directories will be externally accessible*. Default is `web`.
+* `web_root`. This is the root directory from where files will be served. *Anything that you place here or in sub directories will be externally accessible*. Default is `web`.
 * `index_page`. The page to serve when the root `/` is requested. Default is `index.html`.
 * `host`. The host or ip address to listen at for connections. `0.0.0.0` means listen at all available addresses. Default is `0.0.0.0`.
 * `port`. The port to listen at for connections. Default is `80`.
