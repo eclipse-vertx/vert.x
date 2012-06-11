@@ -157,4 +157,4 @@ class Pump(object):
     @property
     def bytes_pumped(self):
         """return the total number of bytes pumped by this pump."""
-        self.j_pump.getBytesPumped()
+        return self.j_pump.getBytesPumped()
