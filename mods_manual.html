@@ -245,10 +245,11 @@ mods/my-web-app/web-root/index.html
 <pre class="prettyprint">vertx run mongo-persistor -conf my_conf.json
 </pre>
 <p>Or programmatically (e.g. in JavaScript)</p>
-<pre class="prettyprint">vertx.deployVerticle(&lt;bus_mode_name&gt;, &lt;config&gt;);
+<pre class="prettyprint">container.deployVerticle(&lt;bus_mode_name&gt;, &lt;config&gt;);        
+container.deployWorkerVerticle(&lt;bus_mode_name&gt;, &lt;config&gt;);
 </pre>
 <p>For example:</p>
-<pre class="prettyprint">vertx.deployVerticle('mongo-persistor', {address: 'test.mypersistor', db_name: 'mydb'});
+<pre class="prettyprint">container.deployWorkerVerticle('mongo-persistor', {address: 'test.mypersistor', db_name: 'mydb'});
 </pre>
 <h3 id="web-server">Web Server</h3><br/>
 <p>This is a simple web server which efficiently serves files from the file system.</p>
@@ -291,7 +292,7 @@ mods/my-web-app/web-root/index.html
 <li><code>auth_address</code>. The bridge can also call an authorisation manager to do authorisation. This is the address to which it will send authorisation messages. Default value is <code>vertx.basicauthmanager.authorise</code>. </li>
 </ul>
 <h5 id="examples">Examples</h5><br/>
-<p>Here are some example:</p>
+<p>Here are some examples:</p>
 <h5 id="simple-static-file-web-server">Simple static file web server</h5><br/>
 <p>This serves files from the web directory </p>
 <pre class="prettyprint">{
@@ -316,7 +317,7 @@ mods/my-web-app/web-root/index.html
 }
 </pre>
 <h3 id="mongodb-persistor">MongoDB Persistor</h3><br/>
-<p>This busmod allows data to be saved, retrieved, searched for, and deleted in a MongoDB instance. MongoDB is a great match for persisting vert.x data since it natively handles JSON (BSON) documents. To use this busmod you must be have a MongoDB instance running on your network.</p>
+<p>This busmod allows data to be saved, retrieved, searched for, and deleted in a MongoDB instance. MongoDB is a great match for persisting vert.x data since it natively handles JSON (BSON) documents. To use this busmod you must have a MongoDB instance running on your network.</p>
 <p>This is a worker busmod and must be started as a worker verticle.</p>
 <h4 id="dependencies">Dependencies</h4><br/>
 <p>This busmod requires a MongoDB server to be available on the network.</p>
