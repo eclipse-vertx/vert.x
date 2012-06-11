@@ -16,6 +16,7 @@
 This module provides the entry point to the vert.x platform 
 """
 
+import org.vertx.java.deploy.impl.VertxLocator
 from core.http import HttpServer, HttpClient
 from core.net import NetServer, NetClient
 from core.sock_js import SockJSServer
@@ -42,3 +43,7 @@ def create_net_client(**kwargs):
 def create_sockjs_server(http_server):
     """ Return a SockJSServer """
     return SockJSServer(http_server)
+
+def get_logger():
+    """ Get the logger for the verticle"""
+    return org.vertx.java.deploy.impl.VertxLocator.container.getLogger()
