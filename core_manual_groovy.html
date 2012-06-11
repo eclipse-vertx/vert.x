@@ -91,13 +91,18 @@
 <li><a href="#the-theory">The Theory</a><ul>
 <li><a href="#addressing">Addressing</a></li>
 <li><a href="#handlers">Handlers</a></li>
-<li><a href="#sending-messages">Sending messages</a></li>
+<li><a href="#publish-subscribe-messaging">Publish / subscribe messaging</a></li>
+<li><a href="#point-to-point-messaging">Point to point messaging</a></li>
+<li><a href="#transient">Transient</a></li>
+<li><a href="#types-of-messages">Types of messages</a></li>
 </ul>
 </li>
 <li><a href="#event-bus-api">Event Bus API</a><ul>
 <li><a href="#registering-and-unregistering-handlers">Registering and Unregistering Handlers</a></li>
-<li><a href="#sending-messages_1">Sending messages</a></li>
+<li><a href="#publishing-messages">Publishing messages</a></li>
+<li><a href="#sending-messages">Sending messages</a></li>
 <li><a href="#replying-to-messages">Replying to messages</a></li>
+<li><a href="#message-types">Message types</a></li>
 </ul>
 </li>
 <li><a href="#distributed-event-bus">Distributed event bus</a></li>
@@ -407,7 +412,7 @@ container.undeployVerticle(deploymentID)
 <p>The event bus is the nervous system of vert.x.</p>
 <p>It allows verticles to communicate with each other irrespective of what language they are written in, and whether they're in the same vert.x instance, or in a different vert.x instance. It even allows client side JavaScript running in a browser to communicate on the same event bus. (More on that later).</p>
 <p>It creates a distributed polyglot overlay network spanning multiple server nodes and multiple browsers.</p>
-<p>The event bus API is incredibly simple. It basically involves registering handlers, unregistering handlers and sending messages.</p>
+<p>The event bus API is incredibly simple. It basically involves registering handlers, unregistering handlers and sending, or publishing, messages.</p>
 <p>First some theory:</p>
 <h2 id="the-theory">The Theory</h2><br/>
 <h3 id="addressing">Addressing</h3><br/>
@@ -416,23 +421,23 @@ container.undeployVerticle(deploymentID)
 <p>Some examples of valid addresses are <code>europe.news.feed1</code>, <code>acme.games.pacman</code>, <code>sausages</code>, and <code>X</code>.</p>
 <h3 id="handlers">Handlers</h3><br/>
 <p>A handler is a thing that receives messages from the bus. You register a handler at an address.</p>
-<p>The handler will receive any messages that are sent to the address. Many different handlers from the same or different verticles can be registered at the same address. A single handler can be registered by the verticle at many different addresses.</p>
-<p>Since many handlers can subscribe to the address, this is an implementation of the messaging pattern called <em>Publish-Subscribe Messaging</em>.</p>
-<p>When a message is received in a handler, and has been <em>processed</em>, the receiver can optionally decide to reply to the message. If they do so, and the message was sent specifying a reply handler, that reply handler will be called.</p>
-<p>When the reply is received back at the sender, it too can be replied to. This can be repeated ad-infinitum, and allows a dialog to be set-up between two different verticles.</p>
-<p>This is a common messaging pattern called the <em>Request-Response</em> pattern.</p>
-<h3 id="sending-messages">Sending messages</h3><br/>
-<p>You send a message by specifying the address and telling the event bus to send it there. The event bus will then deliver the message to any handlers registered at that address.</p>
-<p>If multiple vert.x instances are clustered together, the message will be delivered to any matching handlers irrespective of what vert.x instance they reside on.</p>
-<p>As previously mentioned, when sending a message you can specify an optional reply handler which will be invoked once the message has reached a handler and the recipient has replied to it.</p>
+<p>Many different handlers from the same or different verticles can be registered at the same address. A single handler can be registered by the verticle at many different addresses.</p>
+<h3 id="publish-subscribe-messaging">Publish / subscribe messaging</h3><br/>
+<p>The event bus supports <em>publishing</em> messages. Messages are published to an address. Publishing means delivering the message to all handlers that are registered at that address. This is the familiar <em>publish/subscribe</em> messaging pattern.</p>
+<h3 id="point-to-point-messaging">Point to point messaging</h3><br/>
+<p>The event bus supports <em>point to point</em> messaging. Messages are sent to an address. This means a message is delivered to <em>at most</em> one of the handlers registered at that address. If there is more than one handler regsitered at the address, one will be chosen using a non-strict round-robin algorithm.</p>
+<p>With point to point messaging, an optional reply handler can be specified when sending the message. When a message is received by a recipient, and has been <em>processed</em>, the recipient can optionally decide to reply to the message. If they do so that reply handler will be called.</p>
+<p>When the reply is received back at the sender, it too can be replied to. This can be repeated ad-infinitum, and allows a dialog to be set-up between two different verticles. This is a common messaging pattern called the <em>Request-Response</em> pattern.</p>
+<h3 id="transient">Transient</h3><br/>
 <p><em>All messages in the event bus are transient, and in case of failure of all or parts of the event bus, there is a possibility messages will be lost. If your application cares about lost messages, you should code your handlers to be idempotent, and your senders to retry after recovery.</em></p>
 <p>If you want to persist your messages you can use a persistent work queue busmod for that.</p>
+<h3 id="types-of-messages">Types of messages</h3><br/>
 <p>Messages that you send on the event bus can be as simple as a string, a number or a boolean. You can also send vert.x buffers or JSON messages.</p>
 <p>It's highly recommended you use JSON messages to communicate between verticles. JSON is easy to create and parse in all the languages that vert.x supports.</p>
 <h2 id="event-bus-api">Event Bus API</h2><br/>
 <p>Let's jump into the API.</p>
 <p>To get a reference to the event bus use the <code>eventBus</code> property on the <code>vertx</code> instance that is injected into the
-verticle script.</p>
+verticle script (or that you created if running embedded).</p>
 <h3 id="registering-and-unregistering-handlers">Registering and Unregistering Handlers</h3><br/>
 <p>To set a message handler on the address <code>test.address</code>, you specify the handler as a Closure to the <code>registerHandler</code>
  method.</p>
@@ -455,11 +460,35 @@ eb.registerHandler("test.address", myHandler) { println "The handler has been re
 <pre class="prettyprint">eb.unregisterHandler("test.address", myHandler) { println "The handler has been unregistered across the cluster" }
 </pre>
 <p>If you want your handler to live for the full lifetime of your verticle there is no need to unregister it explicitly - vert.x will automatically unregister any handlers when the verticle is stopped.</p>
-<h3 id="sending-messages_1">Sending messages</h3><br/>
-<p>Sending a message is also trivially easy. Just send it specifying the address you want to send it to, for example:</p>
+<h3 id="publishing-messages">Publishing messages</h3><br/>
+<p>Publishing a message is also trivially easy. Just publish it specifying the address, for example:</p>
+<pre class="prettyprint">eb.publish("test.address", "hello world")
+</pre>
+<p>That message will then be delivered to any handlers registered against the address "test.address".</p>
+<h3 id="sending-messages">Sending messages</h3><br/>
+<p>Sending a message will result in at most one handler registered at the address receiving the message. This is the point to point messaging pattern.</p>
 <pre class="prettyprint">eb.send("test.address", "hello world")
 </pre>
-<p>That message will then be delivered to any handlers registered against the address "test.address". If you are running vert.x in cluster mode then it will also be delivered to any handlers on that address irrespective of what vert.x instance they are in.</p>
+<h3 id="replying-to-messages">Replying to messages</h3><br/>
+<p>Sometimes after you send a message you want to receive a reply from the recipient. This is known as the <em>request-response pattern</em>.</p>
+<p>To do this you send a message, and specify a reply handler as the third argument. When the receiver receives the message they can reply to it by calling the <code>reply</code> method on the message. When this method is invoked it causes a reply to be sent back to the sender where the reply handler is invoked. An example will make this clear:</p>
+<p>The receiver:</p>
+<pre class="prettyprint">def myHandler = { message -&gt;
+    println "I received a message ${message.body}"
+
+    message.reply "This is a reply"  // Reply to it
+}
+
+eb.registerHandler("test.address", myHandler)
+</pre>
+<p>The sender:</p>
+<pre class="prettyprint">eb.send("test.address", "This is a message") { message -&gt;
+    println "I received a reply ${message.body}"
+}
+</pre>
+<p>It is legal also to send an empty reply or a null reply.</p>
+<p>The replies themselves can also be replied to so you can create a dialog between two different verticles consisting of multiple rounds.</p>
+<h3 id="message-types">Message types</h3><br/>
 <p>The message you send can be any of the following types (or their matching boxed type):</p>
 <ul>
 <li>boolean</li>
@@ -491,25 +520,6 @@ eb.send("test.address", 3.14159)
 <pre class="prettyprint">eb.send("test.address", null)
 </pre>
 <p>It's a good convention to have your verticles communicating using JSON.</p>
-<h3 id="replying-to-messages">Replying to messages</h3><br/>
-<p>Sometimes after you send a message you want to receive a reply from the recipient. This is known as the <em>request-response pattern</em>.</p>
-<p>To do this you send a message, and specify a reply handler as the third argument. When the receiver receives the message they can reply to it by calling the <code>reply</code> method on the message. When this method is invoked it causes a reply to be sent back to the sender where the reply handler is invoked. An example will make this clear:</p>
-<p>The receiver:</p>
-<pre class="prettyprint">def myHandler = { message -&gt;
-    println "I received a message ${message.body}"
-
-    message.reply "This is a reply"  // Reply to it
-}
-
-eb.registerHandler("test.address", myHandler)
-</pre>
-<p>The sender:</p>
-<pre class="prettyprint">eb.send("test.address", "This is a message") { message -&gt;
-    println "I received a reply ${message.body}"
-}
-</pre>
-<p>It is legal also to send an empty reply or a null reply.</p>
-<p>The replies themselves can also be replied to so you can create a dialog between two different verticles consisting of multiple rounds.</p>
 <h2 id="distributed-event-bus">Distributed event bus</h2><br/>
 <p>To make each vert.x instance on your network participate on the same event bus, start each vert.x instance with the <code>-cluster</code> command line switch.</p>
 <p>See the chapter in the main manual on <em>running vert.x</em> for more information on this.</p>
@@ -1663,7 +1673,6 @@ server.listen(8080)
 
 &lt;/script&gt;
 </pre>
-<p>You can now communicate seamlessly between different browsers and server side components using the event bus. [Read the section on securing the bridge!]</p>
 <p>You can find <code>vertxbus.js</code> in the <code>client</code> directory of the vert.x distribution.</p>
 <p>The first thing the example does is to create a instance of the event bus</p>
 <pre class="prettyprint">var eb = new vertx.EventBus('http://localhost:8080/eventbus');
@@ -1671,19 +1680,21 @@ server.listen(8080)
 <p>The parameter to the constructor is the URI where to connect to the event bus. Since we create our bridge with the prefix <code>eventbus</code> we will connect there.</p>
 <p>You can't actually do anything with the bridge until it is opened. When it is open the <code>onopen</code> handler will be called.</p>
 <p>The client side event bus API for registering and unregistering handlers and for sending messages is exactly the same as the server side one. Please consult the chapter on the event bus for full information.</p>
+<p><strong>There is one more thing to do before getting this working, please read the following section....</strong></p>
 <h2 id="securing-the-bridge">Securing the Bridge</h2><br/>
-<p>If you started a bridge like in the above example without securing it, and attempted to send messages to it from the client side you'd find that the messages mysteriously disappeared. What happened to them?</p>
+<p>If you started a bridge like in the above example without securing it, and attempted to send messages through it you'd find that the messages mysteriously disappeared. What happened to them?</p>
 <p>For most applications you probably don't want client side JavaScript being able to send just any message to any verticle on the server side or to all other browsers.</p>
-<p>For example, you may have a persistor verticle on the event bus which allows data to be accessed or deleted. We don't want badly behaved or malicious clients being able to delete all the data in your database!</p>
-<p>To deal with this, a SockJS bridge will, by default refuse to forward any messages from the client side. It's up to you to tell the bridge what messages are ok for it to pass through.</p>
+<p>For example, you may have a persistor verticle on the event bus which allows data to be accessed or deleted. We don't want badly behaved or malicious clients being able to delete all the data in your database! Also, we don't necessarily want any client to be able to listen in on any topic.</p>
+<p>To deal with this, a SockJS bridge will, by default refuse to let through any messages. It's up to you to tell the bridge what messages are ok for it to pass through. (There is an exception for reply messages which are always allowed through).</p>
 <p>In other words the bridge acts like a kind of firewall which has a default <em>deny-all</em> policy.</p>
-<p>Configuring the bridge to tell it what messages it should pass through is easy. You pass in a list of JSON objects (represented as maps) that represent <em>matches</em>, as the final argument in the call to <code>bridge</code>.</p>
+<p>Configuring the bridge to tell it what messages it should pass through is easy. You pass in two lists of JSON objects (represented as maps) that represent <em>matches</em>, as the final argument in the call to <code>bridge</code>.</p>
+<p>The first list is the <em>inbound</em> list and represents the messages that you want to allow through from the client to the server. The second list is the <em>outbound</em> list and represents the messages that you want to allow through from the server to the client.</p>
 <p>Each match has two fields:</p>
 <ol>
 <li><code>address</code>: This represents the address the message is being sent to. If you want to filter messages based on address you will use this field.</li>
 <li><code>match</code>: This allows you to filter messages based on their structure. Any fields in the match must exist in the message with the same values for them to be passed. This currently only works with JSON messages.</li>
 </ol>
-<p>When a message arrives from the client, the bridge will look through the available permitted entries.</p>
+<p>When a message arrives at the bridge, it will look through the available permitted entries.</p>
 <ul>
 <li>
 <p>If an address has been specified then the address must match with the address in the message for it to be considered matched.</p>
@@ -1697,29 +1708,36 @@ server.listen(8080)
 
 def config = ["prefix": "/eventbus"]
 
-def permitted = []
+// This defines the matches for client --&gt; server traffic
+def inboundPermitted = []
 
 // Let through any messages sent to 'demo.orderMgr'
-permitted &lt;&lt; ["address": "demo.orderMgr"]
+inboundPermitted &lt;&lt; ["address": "demo.orderMgr"]
 
-// Allow calls to the address 'demo.persistor' as long as the messages
+// Allow messages to the address 'demo.persistor' as long as the messages
 // have an action field with value 'find' and a collection field with value
 // 'albums'
-permitted &lt;&lt; ["address": "demo.persistor",
+inboundPermitted &lt;&lt; ["address": "demo.persistor",
               "match": [ "action": "find",
                          "collection": "albums"]]
 
 // Allow through any message with a field `wibble` with value `foo`.
-permitted &lt;&lt; ["match", ["wibble": "foo"]]
+inboundPermitted &lt;&lt; ["match", ["wibble": "foo"]]
 
-vertx.createSockJSBridge(server).bridge(config, permitted)
+// This defines the matches for server --&gt; client traffic
+def outboundPermitted = []
+
+// Let through any messages coming from address "ticker.mystock"
+outboundPermitted &lt;&lt; ["address": "ticker.mystock"]
+
+vertx.createSockJSBridge(server).bridge(config, inboundPermitted, outboundPermitted)
 
 server.listen(8080)
 </pre>
 <p>To let all messages through you can specify a list with a single empty map which will match all messages.</p>
 <pre class="prettyprint">...
 
-vertx.createSockJSBridge(server).bridge(config, [[:])
+vertx.createSockJSBridge(server).bridge(config, [[:]], [[:]])
 
 ...
 </pre>
