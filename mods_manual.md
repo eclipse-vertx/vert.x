@@ -146,11 +146,12 @@ For example:
     
 Or programmatically (e.g. in JavaScript)
 
-    vertx.deployVerticle(<bus_mode_name>, <config>);        
+    container.deployVerticle(<bus_mode_name>, <config>);        
+    container.deployWorkerVerticle(<bus_mode_name>, <config>);        
     
 For example:
 
-    vertx.deployVerticle('mongo-persistor', {address: 'test.mypersistor', db_name: 'mydb'});    
+    container.deployWorkerVerticle('mongo-persistor', {address: 'test.mypersistor', db_name: 'mydb'});    
 
 ### Web Server
 
@@ -184,7 +185,7 @@ The web-server configuration is as follows:
         "auth_address": <auth_address>
     }
     
-* `web-root`. This is the root directory from where files will be served. *Anything that you place here or in sub directories will be externally accessible*. Default is `web`.
+* `web_root`. This is the root directory from where files will be served. *Anything that you place here or in sub directories will be externally accessible*. Default is `web`.
 * `index_page`. The page to serve when the root `/` is requested. Default is `index.html`.
 * `host`. The host or ip address to listen at for connections. `0.0.0.0` means listen at all available addresses. Default is `0.0.0.0`.
 * `port`. The port to listen at for connections. Default is `80`.
@@ -201,7 +202,7 @@ The web-server configuration is as follows:
 
 ##### Examples
 
-Here are some example:
+Here are some examples:
 
 ##### Simple static file web server
 
@@ -233,7 +234,7 @@ Pure event bus bridge that doesn't serve static files
     
 ### MongoDB Persistor
 
-This busmod allows data to be saved, retrieved, searched for, and deleted in a MongoDB instance. MongoDB is a great match for persisting vert.x data since it natively handles JSON (BSON) documents. To use this busmod you must be have a MongoDB instance running on your network.
+This busmod allows data to be saved, retrieved, searched for, and deleted in a MongoDB instance. MongoDB is a great match for persisting vert.x data since it natively handles JSON (BSON) documents. To use this busmod you must have a MongoDB instance running on your network.
 
 This is a worker busmod and must be started as a worker verticle.
 
