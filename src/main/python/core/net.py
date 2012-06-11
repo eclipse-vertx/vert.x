@@ -26,7 +26,7 @@ from core.event_bus import EventBus
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
 
-class NetServer(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, object):    
+class NetServer(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport):    
     """Represents a TCP or SSL Server
 
     When connections are accepted by the server
@@ -81,7 +81,7 @@ class NetServer(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, object
 
 
 
-class NetClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, object):
+class NetClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport):
     """NetClient is an asynchronous factory for TCP or SSL connections.
 
     Multiple connections to different servers can be made using the same instance.
@@ -107,7 +107,7 @@ class NetClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, object
 
     trust_all = property(fset=set_trust_all)
 
-    def connect(self, port, host, handler ):
+    def connect(self, port, host, handler):
         """Attempt to open a connection to a server. The connection is opened asynchronously and the result returned in the
         handler.
 
@@ -124,21 +124,23 @@ class NetClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, object
         """Close the NetClient. Any open connections will be closed."""
         self.java_obj.close()
 
-class NetSocket(core.streams.ReadStream, core.streams.WriteStream, object):
+class NetSocket(core.streams.ReadStream, core.streams.WriteStream):
     """NetSocket is a socket-like abstraction used for reading from or writing
     to TCP connections.
     """      
     def __init__(self, j_socket):
         self.java_obj = j_socket
+
         def simple_handler(msg):
             self.write_buffer(msg.body)
-        self.write_handler_id = EventBus.register_simple_handler(simple_handler)
 
-        def closed_handler():
+        self.write_handler_id = EventBus.register_simple_handler(False, simple_handler)
+        
+        def wrapped_closed_handler():
             EventBus.unregister_handler(self.write_handler_id)
-            if self.closed_handler != None:
-                self.closed_handler()
-        self.java_obj.closedHandler(ClosedHandler(closed_handler))
+            if hasattr(self, "_closed_handler"):
+                self._closed_handler()
+        self.java_obj.closedHandler(ClosedHandler(wrapped_closed_handler))
         
     def write_buffer(self, buffer, handler=None):
         """Write a Buffer to the socket. The handler will be called when the buffer has actually been written to the wire.
@@ -166,15 +168,13 @@ class NetSocket(core.streams.ReadStream, core.streams.WriteStream, object):
         else:
             self.java_obj.write(str, enc, DoneHandler(handler))
       
-
     def closed_handler(self, handler):
         """Set a closed handler on the socket.
 
         Keyword arguments
         handler -- A block to be used as the handler
         """
-        self.closed_handler = handler
-
+        self._closed_handler = handler
 
     def send_file(self, file_path):
         """Tell the kernel to stream a file directly from disk to the outgoing connection, bypassing userspace altogether
@@ -184,21 +184,10 @@ class NetSocket(core.streams.ReadStream, core.streams.WriteStream, object):
         file_path -- Path to file to send.
         """
         self.java_obj.sendFile(file_path)
-
      
     def close(self):
         """Close the socket"""
         self.java_obj.close()
-
-    @property
-    def write_handler_id(self):
-        """When a NetSocket is created it automatically registers an event handler with the system. The address of that
-        handler is given by write_handler_id.
-        Given this ID, a different event loop can send a buffer to that event handler using the event bus. This
-        allows you to write data to other connections which are owned by different event loops.
-        """
-        return self.write_handler_id
-
 
 class ConnectHandler(org.vertx.java.core.Handler):
     """ Connection handler """

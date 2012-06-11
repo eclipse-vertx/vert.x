@@ -25,7 +25,7 @@ class DoneHandler(org.vertx.java.core.Handler):
     def __init__(self, handler):
         self.handler = handler
 
-    def handle(self):
+    def handle(self, nothing=None):
         """ Call the handler when done """
         self.handler()
 
@@ -34,7 +34,7 @@ class ContinueHandler(org.vertx.java.core.Handler):
     def __init__(self, handler):
         self.handler = handler
 
-    def handle(self):
+    def handle(self, nothing=None):
         """ Call the handler to continue """
         self.handler()        
 
@@ -50,7 +50,7 @@ class ClosedHandler(org.vertx.java.core.Handler):
     def __init__(self, handler):
         self.handler = handler
 
-    def handle(self):
+    def handle(self, nothing=None):
         """ Call the handler when a connection is closed """
         self.handler()
 
@@ -59,7 +59,7 @@ class CloseHandler(org.vertx.java.core.Handler):
     def __init__(self, handler):
         self.handler = handler
 
-    def handle(self):
+    def handle(self, nothing=None):
         """ Call the handler when a connection is closed """
         self.handler()        
 
@@ -77,7 +77,7 @@ class DrainHandler(org.vertx.java.core.Handler):
     def __init__(self, handler):
         self.handler = handler
 
-    def handle(self):
+    def handle(self, nothing=None):
         """ Call the handler after stream has been drained"""
         self.handler()                
 
