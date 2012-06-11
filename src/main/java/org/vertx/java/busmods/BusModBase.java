@@ -105,7 +105,7 @@ public abstract class BusModBase extends Verticle {
     return b == null ? defaultValue : b.intValue();
   }
 
-  protected long getOptionalLongConfig(String fieldName, int defaultValue) {
+  protected long getOptionalLongConfig(String fieldName, long defaultValue) {
     Long l = (Long)config.getNumber(fieldName);
     return l == null ? defaultValue : l.longValue();
   }
