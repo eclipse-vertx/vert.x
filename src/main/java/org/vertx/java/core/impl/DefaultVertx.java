@@ -126,13 +126,13 @@ public class DefaultVertx extends VertxInternal {
 
   public Context startOnEventLoop(final Runnable runnable) {
     Context context  = createEventLoopContext();
-    runOnContext(context, runnable);
+    context.execute(runnable);
     return context;
   }
 
   public Context startInBackground(final Runnable runnable) {
     Context context  = createWorkerContext();
-    runOnContext(context, runnable);
+    context.execute(runnable);
     return context;
   }
 
@@ -241,14 +241,6 @@ public class DefaultVertx extends VertxInternal {
 
   public Map<ServerID, DefaultNetServer> sharedNetServers() {
     return sharedNetServers;
-  }
-
-  private void runOnContext(final Context context, final Runnable runnable) {
-    context.execute(new Runnable() {
-      public void run() {
-        runnable.run();
-      }
-    });
   }
 
   private long setTimeout(final long delay, boolean periodic, final Handler<Long> handler) {

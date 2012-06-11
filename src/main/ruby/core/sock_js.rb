@@ -63,9 +63,11 @@ module Vertx
       }
     end
 
-    def bridge(config, permitted, auth_timeout = 5 * 60 * 1000, auth_address = nil)
-      a_json = org.vertx.java.core.json.JsonArray.new(permitted)
-      @j_server.bridge(org.vertx.java.core.json.JsonObject.new(config), a_json, auth_timeout, auth_address)
+    def bridge(config, inbound_permitted, outbound_permitted, auth_timeout = 5 * 60 * 1000, auth_address = nil)
+      j_inbound_permitted = org.vertx.java.core.json.JsonArray.new(inbound_permitted)
+      j_outbound_permitted = org.vertx.java.core.json.JsonArray.new(outbound_permitted)
+      @j_server.bridge(org.vertx.java.core.json.JsonObject.new(config), j_inbound_permitted,
+                       j_outbound_permitted, auth_timeout, auth_address)
     end
 
   end
