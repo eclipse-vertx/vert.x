@@ -119,10 +119,6 @@ public class DefaultNetSocket extends NetSocket {
     super.sendFile(f);
   }
 
-  protected Context getContext() {
-    return super.getContext();
-  }
-
   protected void handleClosed() {
     setContext();
 
