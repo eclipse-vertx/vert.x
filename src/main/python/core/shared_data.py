@@ -18,6 +18,9 @@ import org.vertx.java.core.buffer
 from core.javautils import map_from_java
 from core.buffer import Buffer
 
+__author__ = "Scott Horn"
+__email__ = "scott@hornmicro.com"            
+
 class SharedData(object):
     """Sometimes it is desirable to share immutable data between different event loops, for example to implement a
     cache of data.
@@ -176,7 +179,6 @@ class SharedSet(object):
     def empty(self):
         """returns True if the set is empty"""
         return self.java_obj.isEmpty()
-
 
     def include(self, obj):
         """Does the set contain an element?
