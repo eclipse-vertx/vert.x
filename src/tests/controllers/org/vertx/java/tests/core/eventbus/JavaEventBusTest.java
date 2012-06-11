@@ -95,6 +95,11 @@ public class JavaEventBusTest extends TestBase {
   }
 
   @Test
+  public void testPointToPointRoundRobin() {
+    runPeerTest(getMethodName());
+  }
+
+  @Test
   public void testReply() {
     runPeerTest(getMethodName());
   }

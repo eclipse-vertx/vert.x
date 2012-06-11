@@ -150,6 +150,49 @@ public class LocalPeer extends EventBusAppBase {
     );
   }
 
+  public void testPointToPointRoundRobinInitialise() {
+    final String address = "some-address";
+    eb.registerHandler(address, new Handler<Message<Buffer>>() {
+          int count;
+          public void handle(Message<Buffer> msg) {
+            tu.checkContext();
+            tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
+            count++;
+            if (count == 2) {
+              final Handler<Message<Buffer>> hndlr = this;
+              //Finish on a timer to allow any more messages to arrive
+              vertx.setTimer(200, new Handler<Long>() {
+                public void handle(Long id) {
+                  eb.unregisterHandler("some-address", hndlr, new AsyncResultHandler<Void>() {
+                    public void handle(AsyncResult<Void> event) {
+                      if (event.exception == null) {
+                        tu.testComplete();
+                      } else {
+                        tu.azzert(false, "Failed to unregister");
+                      }
+                    }
+                  });
+                }
+              });
+
+            } else if (count > 2) {
+              tu.azzert(false, "Too many messages");
+            }
+          }
+        }, new AsyncResultHandler<Void>() {
+      public void handle(AsyncResult<Void> event) {
+        if (event.exception == null) {
+          tu.testComplete();
+          System.out.println("Registered");
+        } else {
+          tu.azzert(false, "Failed to register");
+        }
+      }
+    }
+    );
+
+  }
+
   public void testReplyInitialise() {
     final String address = UUID.randomUUID().toString();
     Set<String> addresses = vertx.sharedData().getSet("addresses");

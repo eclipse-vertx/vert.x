@@ -29,8 +29,8 @@ class BooleanMessage extends BaseMessage<Boolean> {
 
   private static final Logger log = LoggerFactory.getLogger(BooleanMessage.class);
 
-  BooleanMessage(String address, Boolean body) {
-    super(address, body);
+  BooleanMessage(boolean send, String address, Boolean body) {
+    super(send, address, body);
   }
 
   public BooleanMessage(Buffer readBuff) {
@@ -68,6 +68,10 @@ class BooleanMessage extends BaseMessage<Boolean> {
 
   protected void handleReply(Boolean reply, Handler<Message<Boolean>> replyHandler) {
     bus.send(replyAddress, reply, replyHandler);
+  }
+
+  protected BaseMessage createReplyMessage(Boolean reply) {
+    return new BooleanMessage(true, replyAddress, reply);
   }
 
 }
