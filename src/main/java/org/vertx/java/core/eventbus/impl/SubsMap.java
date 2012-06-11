@@ -32,4 +32,6 @@ public interface SubsMap {
   void get(String subName, AsyncResultHandler<ServerIDs> completionHandler);
 
   void remove(String subName, ServerID serverID, AsyncResultHandler<Boolean> completionHandler);
+
+  void removeAllForServerID(ServerID serverID, AsyncResultHandler<Void> completionHandler);
 }

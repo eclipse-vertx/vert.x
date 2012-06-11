@@ -423,7 +423,6 @@ public class DefaultNetClient implements NetClient {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final NetSocket sock = socketMap.remove(ch);
       final Throwable t = e.getCause();
-      log.error("Exception on netclient", t);
       if (sock != null && t instanceof Exception) {
         tcpHelper.runOnCorrectThread(ch, new Runnable() {
           public void run() {
