@@ -29,8 +29,8 @@ class ShortMessage extends BaseMessage<Short> {
 
   private static final Logger log = LoggerFactory.getLogger(ShortMessage.class);
 
-  ShortMessage(String address, Short body) {
-    super(address, body);
+  ShortMessage(boolean send, String address, Short body) {
+    super(send, address, body);
   }
 
   public ShortMessage(Buffer readBuff) {
@@ -66,8 +66,8 @@ class ShortMessage extends BaseMessage<Short> {
     return MessageFactory.TYPE_SHORT;
   }
 
-  protected void handleReply(Short reply, Handler<Message<Short>> replyHandler) {
-    bus.send(replyAddress, reply, replyHandler);
+  protected BaseMessage createReplyMessage(Short reply) {
+    return new ShortMessage(true, replyAddress, reply);
   }
 
 }

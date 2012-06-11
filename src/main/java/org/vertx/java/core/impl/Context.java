@@ -21,7 +21,9 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 
 /**
@@ -36,7 +38,7 @@ public abstract class Context {
   private DeploymentHandle deploymentContext;
   private Path pathAdjustment;
 
-  private List<Runnable> closeHooks;
+  private Map<Object, Runnable> closeHooks;
 
   protected Context(Executor bgExec) {
     this.bgExec = bgExec;
@@ -76,16 +78,20 @@ public abstract class Context {
     }
   }
 
-  public void addCloseHook(Runnable hook) {
+  public Runnable getCloseHook(Object key) {
+    return closeHooks == null ? null : closeHooks.get(key);
+  }
+
+  public void putCloseHook(Object key, Runnable hook) {
     if (closeHooks == null) {
-      closeHooks = new ArrayList<>();
+      closeHooks = new HashMap<>();
     }
-    closeHooks.add(hook);
+    closeHooks.put(key, hook);
   }
 
   public void runCloseHooks() {
     if (closeHooks != null) {
-      for (Runnable hook: closeHooks) {
+      for (Runnable hook: closeHooks.values()) {
         try {
           hook.run();
         } catch (Throwable t) {
