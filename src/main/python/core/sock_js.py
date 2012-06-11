@@ -19,6 +19,7 @@ import org.vertx.java.core.json
 import org.vertx.java.deploy.impl
 
 from core.javautils import map_to_java
+from core.event_bus import EventBus
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
@@ -77,14 +78,16 @@ class SockJSSocket(core.streams.ReadStream, core.streams.WriteStream):
     """
     
     def __init__(self, java_sock):
-      self.java_obj = java_sock
-      #@handler_id = EventBus.register_simple_handler { |msg|
-      #  write_buffer(msg.body)
-      #}
+        self.java_obj = java_sock
+
+        def simple_handler(msg):
+            self.write_buffer(msg.body)
+        
+        self.handler_id = EventBus.register_simple_handler(simple_handler)
 
     def close(self):
         """Close the socket"""
-        #EventBus.unregister_handler(@handler_id)
+        EventBus.unregister_handler(self.handler_id)
         self.java_obj.close()
 
     def handler_id(self):
@@ -95,7 +98,6 @@ class SockJSSocket(core.streams.ReadStream, core.streams.WriteStream):
         """
         return self.handler_id
 
-    # @private
     def _to_java_socket(self):
       return self.java_obj
 
