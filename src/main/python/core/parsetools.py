@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import org.vertx.java.core.parsetools
+from core.buffer import Buffer
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"            
@@ -54,7 +55,7 @@ class RecordParser(object):
         """This method is called to provide the parser with data.
         data -- Input buffer  to the parser.
         """
-        self.java_parser.handle(data._to_java_buffer)
+        self.java_parser.handle(data._to_java_buffer())
 
     @staticmethod
     def new_delimited(delim, handler):
@@ -64,6 +65,7 @@ class RecordParser(object):
         Keyword arguments
         delim -- The delimiter string.
         handler -- the output handler
+
         returns a new RecordParser
         """        
         return RecordParser(org.vertx.java.core.parsetools.RecordParser.newDelimited(delim, RecordParserHandler(handler)))
@@ -104,4 +106,4 @@ class RecordParserHandler(org.vertx.java.core.Handler):
 
     def handle(self, buffer):
         """ Call the handler after buffer parsed"""
-        self.handler(buffer)
+        self.handler(Buffer(buffer))
