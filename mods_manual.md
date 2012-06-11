@@ -146,11 +146,12 @@ For example:
     
 Or programmatically (e.g. in JavaScript)
 
-    vertx.deployVerticle(<bus_mode_name>, <config>);        
+    container.deployVerticle(<bus_mode_name>, <config>);        
+    container.deployWorkerVerticle(<bus_mode_name>, <config>);        
     
 For example:
 
-    vertx.deployVerticle('mongo-persistor', {address: 'test.mypersistor', db_name: 'mydb'});    
+    container.deployWorkerVerticle('mongo-persistor', {address: 'test.mypersistor', db_name: 'mydb'});    
 
 ### Web Server
 
@@ -201,7 +202,7 @@ The web-server configuration is as follows:
 
 ##### Examples
 
-Here are some example:
+Here are some examples:
 
 ##### Simple static file web server
 
@@ -233,7 +234,7 @@ Pure event bus bridge that doesn't serve static files
     
 ### MongoDB Persistor
 
-This busmod allows data to be saved, retrieved, searched for, and deleted in a MongoDB instance. MongoDB is a great match for persisting vert.x data since it natively handles JSON (BSON) documents. To use this busmod you must be have a MongoDB instance running on your network.
+This busmod allows data to be saved, retrieved, searched for, and deleted in a MongoDB instance. MongoDB is a great match for persisting vert.x data since it natively handles JSON (BSON) documents. To use this busmod you must have a MongoDB instance running on your network.
 
 This is a worker busmod and must be started as a worker verticle.
 
