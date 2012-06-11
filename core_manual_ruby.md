@@ -202,27 +202,27 @@ Some examples of valid addresses are `europe.news.feed1`, `acme.games.pacman`, `
 
 A handler is a thing that receives messages from the bus. You register a handler at an address.
 
-The handler will receive any messages that are sent to the address. Many different handlers from the same or different verticles can be registered at the same address. A single handler can be registered by the verticle at many different addresses.
+Many different handlers from the same or different verticles can be registered at the same address. A single handler can be registered by the verticle at many different addresses.
 
-Since many handlers can subscribe to the address, this is an implementation of the messaging pattern called *Publish-Subscribe Messaging*.
+### Publish / subscribe messaging
 
-When a message is received in a handler, and has been *processed*, the receiver can optionally decide to reply to the message. If they do so, and the message was sent specifying a reply handler, that reply handler will be called.
+The event bus supports *publishing* messages. Messages are published to an address. Publishing means delivering the message to all handlers that are registered at that address. This is the familiar *publish/subscribe* messaging pattern.
 
-When the reply is received back at the sender, it too can be replied to. This can be repeated ad-infinitum, and allows a dialog to be set-up between two different verticles.
+### Point to point messaging
 
-This is a common messaging pattern called the *Request-Response* pattern.
+The event bus supports *point to point* messaging. Messages are sent to an address. This means a message is delivered to *at most* one of the handlers registered at that address. If there is more than one handler regsitered at the address, one will be chosen using a non-strict round-robin algorithm.
 
-### Sending messages
+With point to point messaging, an optional reply handler can be specified when sending the message. When a message is received by a recipient, and has been *processed*, the recipient can optionally decide to reply to the message. If they do so that reply handler will be called.
 
-You send a message by specifying the address and telling the event bus to send it there. The event bus will then deliver the message to any handlers registered at that address.
+When the reply is received back at the sender, it too can be replied to. This can be repeated ad-infinitum, and allows a dialog to be set-up between two different verticles. This is a common messaging pattern called the *Request-Response* pattern.
 
-If multiple vert.x instances are clustered together, the message will be delivered to any matching handlers irrespective of what vert.x instance they reside on.
-
-As previously mentioned, when sending a message you can specify an optional reply handler which will be invoked once the message has reached a handler and the recipient has replied to it.
+### Transient
 
 *All messages in the event bus are transient, and in case of failure of all or parts of the event bus, there is a possibility messages will be lost. If your application cares about lost messages, you should code your handlers to be idempotent, and your senders to retry after recovery.*
 
 If you want to persist your messages you can use a persistent work queue busmod for that.
+
+### Types of messages
 
 Messages that you send on the event bus can be as simple as a string, a number or a boolean. You can also send vert.x buffers or JSON messages.
 
@@ -262,15 +262,50 @@ As with registering, when you unregister a handler and you're in a cluster it ca
 
 If you want your handler to live for the full lifetime of your verticle there is no need to unregister it explicitly - vert.x will automatically unregister any handlers when the verticle is stopped.  
 
+### Publishing messages
+
+Publishing a message is also trivially easy. Just publish it specifying the address, for example:
+
+    Vertx::EventBus.send('test.address", 'hello world')
+
+That message will then be delivered to any handlers registered against the address "test.address".
+
 ### Sending messages
 
-Sending a message is also trivially easy. Just send it specifying the address you want to send it to, for example:
+Sending a message will result in at most one handler registered at the address receiving the message. This is the point to point messaging pattern.
 
+    Vertx::EventBus.send('test.address", 'hello world')
 
-    Vertx::EventBus.send('test.address', 'hello world')
+### Replying to messages
 
-    
-That message will then be delivered to any handlers registered against the address `test.address`. If you are running vert.x in cluster mode then it will also be delivered to any handlers on that address irrespective of what vert.x instance they are in.
+Sometimes after you send a message you want to receive a reply from the recipient. This is known as the *request-response pattern*.
+
+To do this you send a message, and specify a block as a reply handler. When the receiver receives the message there is a method `reply` on the `Message` instance that is passed into the handler.
+
+When this function is invoked it causes a reply to be sent back to the sender where the reply handler is invoked. An example will make this clear:
+
+The receiver:
+
+    Vertx::EventBus.registerHandler('test.address') do |message|
+      puts("I received a message #{message.body}")
+
+      # Do some stuff...
+      # Now reply to it
+
+      message.reply('This is a reply')
+    end
+
+The sender:
+
+    Vertx::EventBus.send('test.address', 'This is a message') do |message|
+      puts("I received a reply #{message.body}")    
+    end
+
+It is legal also to send an empty reply or null reply.
+
+The replies themselves can also be replied to so you can create a dialog between two different verticles consisting of multiple rounds.
+
+### Message types
 
 The message you send can be any of the following types:
 
@@ -307,35 +342,6 @@ Nil messages can also be sent:
     Vertx::EventBus.send('test.address', nil)
 
 It's a good convention to have your verticles communicating using JSON.
-
-### Replying to messages
-
-Sometimes after you send a message you want to receive a reply from the recipient. This is known as the *request-response pattern*.
-
-To do this you send a message, and specify a block as a reply handler. When the receiver receives the message there is a method `reply` on the `Message` instance that is passed into the handler.
-
-When this function is invoked it causes a reply to be sent back to the sender where the reply handler is invoked. An example will make this clear:
-
-The receiver:
-
-    Vertx::EventBus.registerHandler('test.address') do |message|
-      puts("I received a message #{message.body}")
-
-      # Do some stuff...
-      # Now reply to it
-
-      message.reply('This is a reply')
-    end
-
-The sender:
-
-    Vertx::EventBus.send('test.address', 'This is a message') do |message|
-      puts("I received a reply #{message.body}")    
-    end
-
-It is legal also to send an empty reply or null reply.
-
-The replies themselves can also be replied to so you can create a dialog between two different verticles consisting of multiple rounds.
 
 ## Distributed event bus
 
@@ -2082,8 +2088,6 @@ In your web page, you need to load the script `vertxbus.js`, then you can access
         }
        
     </script>
-        
-You can now communicate seamlessly between different browsers and server side components using the event bus [Read the section on securing the bridge!]
 
 You can find `vertxbus.js` in the `client` directory of the vert.x distribution.
 
@@ -2097,30 +2101,35 @@ You can't actually do anything with the bridge until it is opened. When it is op
 
 The client side event bus API for registering and unregistering handlers and for sending messages is exactly the same as the server side one. Please consult the JavaScript core manual chapter on the EventBus for a description of that API.
 
+**There is one more thing to do before getting this working, please read the following section....**
+
 ## Securing the Bridge
 
-If you started a bridge like in the above example without securing it, and attempted to send messages to it from the client side you'd find that the messages mysteriously disappeared. What happened to them?
+If you started a bridge like in the above example without securing it, and attempted to send messages through it you'd find that the messages mysteriously disappeared. What happened to them?
 
 For most applications you probably don't want client side JavaScript being able to send just any message to any verticle on the server side or to all other browsers.
 
-For example, you may have a persistor verticle on the event bus which allows data to be accessed or deleted. We don't want badly behaved or malicious clients being able to delete all the data in your database!
+For example, you may have a persistor verticle on the event bus which allows data to be accessed or deleted. We don't want badly behaved or malicious clients being able to delete all the data in your database! Also, we don't necessarily want any client to be able to listen in on any topic.
 
-To deal with this, a SockJS bridge will, by default refuse to forward any messages from the client side. It's up to you to tell the bridge what messages are ok for it to pass through.
+To deal with this, a SockJS bridge will, by default refuse to let through any messages. It's up to you to tell the bridge what messages are ok for it to pass through. (There is an exception for reply messages which are always allowed through).
 
 In other words the bridge acts like a kind of firewall which has a default *deny-all* policy.
 
-Configuring the bridge to tell it what messages it should pass through is easy. You pass in an array of JSON objects that represent *matches*, as the final argument to the `bridge` method.
+Configuring the bridge to tell it what messages it should pass through is easy. You pass in two arrays of JSON objects that represent *matches*, as the final argument in the call to `bridge`.
+
+The first array is the *inbound* list and represents the messages that you want to allow through from the client to the server. The second array is the *outbound* list and represents the messages that you want to allow through from the server to the client.
 
 Each match has two fields:
 
-1. `address`. This represents the address the message is being sent to. If you want to filter messages based on address you will use this field.
-2. `match`. This allows you to filter messages based on their structure. Any fields in the match must exist in the message with the same values for them to be passed. This currently only works with JSON messages.
+1. `address`: This represents the address the message is being sent to. If you want to filter messages based on address you will use this field.
+2. `match`: This allows you to filter messages based on their structure. Any fields in the match must exist in the message with the same values for them to be passed. This currently only works with JSON messages.
 
-When a message arrives from the client, the bridge will look through the available permitted entries.
+When a message arrives at the bridge, it will look through the available permitted entries.
 
 * If an address has been specified then the address must match with the address in the message for it to be considered matched.
 
 * If a match has been specified, then also the structure of the message must match.
+
 
 Here is an example:
 
@@ -2150,14 +2159,20 @@ Here is an example:
             'wibble' => 'foo'
           }
         }
+      ],
+      [
+        # Let through any messages coming from address 'ticker.mystock'
+        {
+          'address' => 'ticker.mystock'
+        }
       ])
 
 
     server.listen(8080)
 
-To let all messages through you can specify an array with a single empty JSON object which will match all messages.
+To let all messages through you can specify two arrays with a single empty JSON object which will match all messages.
 
-     sockJSServer.bridge({'prefix' => '/eventbus'}, [{}])
+     sockJSServer.bridge({'prefix' => '/eventbus'}, [{}], [{}])
 
 **Be very careful!**
 

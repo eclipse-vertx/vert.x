@@ -226,33 +226,33 @@ Messages are sent on the event bus to an *address*.
 
 Vert.x doesn't bother with any fancy addressing schemes. In vert.x an address is simply a string, any string is valid. However it is wise to use some kind of scheme, e.g. using periods to demarcate a namespace.
 
-Some examples of valid addresses are `europe.news.feed1`, `acme.games.pacman`, `sausages`, and `X`. 
+Some examples of valid addresses are `europe.news.feed1`, `acme.games.pacman`, `sausages`, and `X`.
 
 ### Handlers
 
 A handler is a thing that receives messages from the bus. You register a handler at an address.
 
-The handler will receive any messages that are sent to the address. Many different handlers from the same or different verticles can be registered at the same address. A single handler can be registered by the verticle at many different addresses.
+Many different handlers from the same or different verticles can be registered at the same address. A single handler can be registered by the verticle at many different addresses.
 
-Since many handlers can subscribe to the address, this is an implementation of the messaging pattern called *Publish-Subscribe Messaging*.
+### Publish / subscribe messaging
 
-When a message is received in a handler, and has been *processed*, the receiver can optionally decide to reply to the message. If they do so, and the message was sent specifying a reply handler, that reply handler will be called.
+The event bus supports *publishing* messages. Messages are published to an address. Publishing means delivering the message to all handlers that are registered at that address. This is the familiar *publish/subscribe* messaging pattern.
 
-When the reply is received back at the sender, it too can be replied to. This can be repeated ad-infinitum, and allows a dialog to be set-up between two different verticles.
+### Point to point messaging
 
-This is a common messaging pattern called the *Request-Response* pattern.
+The event bus supports *point to point* messaging. Messages are sent to an address. This means a message is delivered to *at most* one of the handlers registered at that address. If there is more than one handler regsitered at the address, one will be chosen using a non-strict round-robin algorithm.
 
-### Sending messages
+With point to point messaging, an optional reply handler can be specified when sending the message. When a message is received by a recipient, and has been *processed*, the recipient can optionally decide to reply to the message. If they do so that reply handler will be called.
 
-You send a message by specifying the address and telling the event bus to send it there. The event bus will then deliver the message to any handlers registered at that address.
+When the reply is received back at the sender, it too can be replied to. This can be repeated ad-infinitum, and allows a dialog to be set-up between two different verticles. This is a common messaging pattern called the *Request-Response* pattern.
 
-If multiple vert.x instances are clustered together, the message will be delivered to any matching handlers irrespective of what vert.x instance they reside on.  
-
-As previously mentioned, when sending a message you can specify an optional reply handler which will be invoked once the message has reached a handler and the recipient has replied to it.
+### Transient
 
 *All messages in the event bus are transient, and in case of failure of all or parts of the event bus, there is a possibility messages will be lost. If your application cares about lost messages, you should code your handlers to be idempotent, and your senders to retry after recovery.*
 
 If you want to persist your messages you can use a persistent work queue busmod for that.
+
+### Types of messages
 
 Messages that you send on the event bus can be as simple as a string, a number or a boolean. You can also send vert.x buffers or JSON messages.
 
@@ -314,55 +314,21 @@ As with registering, when you unregister a handler and you're in a cluster it ca
         }
     });
     
-If you want your handler to live for the full lifetime of your verticle there is no need to unregister it explicitly - vert.x will automatically unregister any handlers when the verticle is stopped.   
+If you want your handler to live for the full lifetime of your verticle there is no need to unregister it explicitly - vert.x will automatically unregister any handlers when the verticle is stopped.
+
+### Publishing messages
+
+Publishing a message is also trivially easy. Just publish it specifying the address, for example:
+
+    eb.publish("test.address", "hello world");
+
+That message will then be delivered to any handlers registered against the address "test.address".
 
 ### Sending messages
 
-Sending a message is also trivially easy. Just send it specifying the address you want to send it to, for example:
+Sending a message will result in at most one handler registered at the address receiving the message. This is the point to point messaging pattern.
 
     eb.send("test.address", "hello world");
-    
-That message will then be delivered to any handlers registered against the address "test.address". If you are running vert.x in cluster mode then it will also be delivered to any handlers on that address irrespective of what vert.x instance they are in.
-
-The message you send can be any of the following types (or their matching boxed type):
-
-* boolean
-* byte[]
-* byte
-* char
-* double
-* float
-* int
-* long
-* short
-* java.lang.String
-* org.vertx.java.core.json.JsonObject
-* org.vertx.java.core.buffer.Buffer
-
-Vert.x buffers and JSON objects are copied before delivery if they are delivered in the same JVM, so different verticles can't access the exact same object instance.
-
-Here are some more examples:
-
-Send some numbers:
-
-    eb.send("test.address", 1234);    
-    eb.send("test.address", 3.14159);        
-    
-Send a boolean:
-
-    eb.send("test.address", true);        
-    
-Send a JSON object:
-
-    JsonObject obj = new JsonObject();
-    obj.putString("foo", "wibble");
-    eb.send("test.address", obj); 
-    
-Null messages can also be sent:
-
-    eb.send("test.address", null);  
-    
-It's a good convention to have your verticles communicating using JSON.
 
 ### Replying to messages
 
@@ -397,6 +363,48 @@ The sender:
 It is legal also to send an empty reply or a null reply.
 
 The replies themselves can also be replied to so you can create a dialog between two different verticles consisting of multiple rounds.
+
+### Message types
+
+The message you send can be any of the following types (or their matching boxed type):
+
+* boolean
+* byte[]
+* byte
+* char
+* double
+* float
+* int
+* long
+* short
+* java.lang.String
+* org.vertx.java.core.json.JsonObject
+* org.vertx.java.core.buffer.Buffer
+
+Vert.x buffers and JSON objects are copied before delivery if they are delivered in the same JVM, so different verticles can't access the exact same object instance.
+
+Here are some more examples:
+
+Send some numbers:
+
+    eb.send("test.address", 1234);
+    eb.send("test.address", 3.14159);
+
+Send a boolean:
+
+    eb.send("test.address", true);
+
+Send a JSON object:
+
+    JsonObject obj = new JsonObject();
+    obj.putString("foo", "wibble");
+    eb.send("test.address", obj);
+
+Null messages can also be sent:
+
+    eb.send("test.address", null);
+
+It's a good convention to have your verticles communicating using JSON.
 
 ## Distributed event bus
 
@@ -2211,8 +2219,6 @@ In your web page, you need to load the script `vertxbus.js`, then you can access
         }
        
     </script>
-    
-You can now communicate seamlessly between different browsers and server side components using the event bus. [Read the section on securing the bridge!]
 
 You can find `vertxbus.js` in the `client` directory of the vert.x distribution.
 
@@ -2225,27 +2231,31 @@ The parameter to the constructor is the URI where to connect to the event bus. S
 You can't actually do anything with the bridge until it is opened. When it is open the `onopen` handler will be called.
 
 The client side event bus API for registering and unregistering handlers and for sending messages is exactly the same as the server side one. Please consult the chapter on the event bus for full information.    
-        
+
+**There is one more thing to do before getting this working, please read the following section....**
+
 ## Securing the Bridge
 
-If you started a bridge like in the above example without securing it, and attempted to send messages to it from the client side you'd find that the messages mysteriously disappeared. What happened to them?
+If you started a bridge like in the above example without securing it, and attempted to send messages through it you'd find that the messages mysteriously disappeared. What happened to them?
 
 For most applications you probably don't want client side JavaScript being able to send just any message to any verticle on the server side or to all other browsers.
 
-For example, you may have a persistor verticle on the event bus which allows data to be accessed or deleted. We don't want badly behaved or malicious clients being able to delete all the data in your database!
+For example, you may have a persistor verticle on the event bus which allows data to be accessed or deleted. We don't want badly behaved or malicious clients being able to delete all the data in your database! Also, we don't necessarily want any client to be able to listen in on any topic.
 
-To deal with this, a SockJS bridge will, by default refuse to forward any messages from the client side. It's up to you to tell the bridge what messages are ok for it to pass through.
+To deal with this, a SockJS bridge will, by default refuse to let through any messages. It's up to you to tell the bridge what messages are ok for it to pass through. (There is an exception for reply messages which are always allowed through).
 
 In other words the bridge acts like a kind of firewall which has a default *deny-all* policy.
 
-Configuring the bridge to tell it what messages it should pass through is easy. You pass in a JSON array which contains JSON objects that represent *matches*, as the final argument to the `bridge` method.
+Configuring the bridge to tell it what messages it should pass through is easy. You pass in two Json arrays that represent *matches*, as the final argument in the call to `bridge`.
+
+The first array is the *inbound* list and represents the messages that you want to allow through from the client to the server. The second array is the *outbound* list and represents the messages that you want to allow through from the server to the client.
 
 Each match has two fields:
 
-1. `address`. This represents the address the message is being sent to. If you want to filter messages based on address you will use this field.
-2. `match`. This allows you to filter messages based on their structure. Any fields in the match must exist in the message with the same values for them to be passed. This currently only works with JSON messages.
+1. `address`: This represents the address the message is being sent to. If you want to filter messages based on address you will use this field.
+2. `match`: This allows you to filter messages based on their structure. Any fields in the match must exist in the message with the same values for them to be passed. This currently only works with JSON messages.
 
-When a message arrives from the client, the bridge will look through the available permitted entries.
+When a message arrives at the bridge, it will look through the available permitted entries.
 
 * If an address has been specified then the address must match with the address in the message for it to be considered matched.
 
@@ -2257,37 +2267,43 @@ Here is an example:
     
     JsonObject config = new JsonObject().putString("prefix", "/echo");
     
-    JsonArray permitted = new JsonArray();
+    JsonArray inboundPermitted = new JsonArray();
     
     // Let through any messages sent to 'demo.orderMgr'
-    JsonObject permitted1 = new JsonObject().putString("address", "demo.orderMgr");
-    permitted.add(permitted1);
+    JsonObject inboundPermitted1 = new JsonObject().putString("address", "demo.orderMgr");
+    inboundPermitted.add(inboundPermitted1);
     
     // Allow calls to the address 'demo.persistor' as long as the messages
     // have an action field with value 'find' and a collection field with value
     // 'albums'
-    JsonObject permitted2 = new JsonObject().putString("address", "demo.persistor")
+    JsonObject inboundPermitted2 = new JsonObject().putString("address", "demo.persistor")
         .putObject("match", new JsonObject().putString("action", "find")
                                             .putString("collection", "albums"));
-    permitted.add(permitted2);                                            
+    inboundPermitted.add(inboundPermitted2);
               
     // Allow through any message with a field `wibble` with value `foo`.                                            
-    JsonObject permitted3 = new JsonObject().putObject("match", new JsonObject().putString("wibble", "foo"));
-    permitted.add(permitted3);
+    JsonObject inboundPermitted3 = new JsonObject().putObject("match", new JsonObject().putString("wibble", "foo"));
+    inboundPermitted.add(inboundPermitted3);
 
-    vertx.createSockJSBridge(server).bridge(config, permitted);
+    JsonArray outboundPermitted = new JsonArray();
+
+    // Let through any messages coming from address 'ticker.mystock'
+    JsonObject outboundPermitted1 = new JsonObject().putString("address", "ticker.mystock");
+    outboundPermitted.add(outboundPermitted1);
+
+    vertx.createSockJSBridge(server).bridge(config, inboundPermitted, outboundPermitted);
     
     server.listen(8080);
    
     
-To let all messages through you can specify an array with a single empty JSON object which will match all messages.
+To let all messages through you can specify two JSON array with a single empty JSON object which will match all messages.
 
     ...
 
     JsonArray permitted = new JsonArray();
     permitted.add(new JsonObject());
 
-    vertx.createSockJSBridge(server).bridge(config, permitted);
+    vertx.createSockJSBridge(server).bridge(config, permitted, permitted);
     
     ...
      
