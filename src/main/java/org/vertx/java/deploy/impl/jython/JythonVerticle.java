@@ -68,7 +68,7 @@ public class JythonVerticle extends Verticle {
 
   public void stop() throws Exception {
     try {
-      py.exec("vertx_stop");
+      py.exec("vertx_stop()");
     } catch (org.python.core.PyException e) {
       // OK - method is not mandatory :)
     }

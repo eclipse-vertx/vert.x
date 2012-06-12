@@ -174,7 +174,7 @@ public class TestBase extends TestCase {
 
   protected String startApp(boolean worker, String main, JsonObject config, int instances, boolean await) throws Exception {
     URL url;
-    if (main.endsWith(".js") || main.endsWith(".rb") || main.endsWith(".groovy")) {
+    if (main.endsWith(".js") || main.endsWith(".rb") || main.endsWith(".groovy") || main.endsWith(".py")) {
       url = getClass().getClassLoader().getResource(main);
     } else {
       String classDir = main.replace('.', '/') + ".class";
