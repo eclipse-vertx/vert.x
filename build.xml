@@ -349,11 +349,11 @@
     <mkdir dir="${dist-build}/bin"/>
 
     <!-- We use cp so we can preserve file attributes. No shell so can't use wildcards :( -->
-	<copy file="src/scripts/vertx.bat" todir="${dist-build}/bin/"/>
-	<copy file="src/scripts/vertx" todir="${dist-build}/bin/"/>
-	<chmod file="${dist-build}/bin/vertx" perm="ugo+rx"/>
-	<copy file="src/scripts/install_rhino.sh" todir="${dist-build}/"/>
-	<chmod file="${dist-build}/install_rhino.sh" perm="ugo+rx"/>
+  	<copy file="src/scripts/vertx.bat" todir="${dist-build}/bin/"/>
+  	<copy file="src/scripts/vertx" todir="${dist-build}/bin/"/>
+  	<chmod file="${dist-build}/bin/vertx" perm="ugo+rx"/>
+  	<copy file="src/scripts/install_rhino.sh" todir="${dist-build}/"/>
+  	<chmod file="${dist-build}/install_rhino.sh" perm="ugo+rx"/>
 
     <copy todir="${dist-build}/examples">
       <fileset dir="src/examples">
