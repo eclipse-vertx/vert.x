@@ -44,6 +44,14 @@ function testUndeploy() {
   });
 }
 
+function testDeployModule() {
+  eb.registerHandler("foo", function(message) {
+    tu.azzert("hello" === message);
+    tu.testComplete();
+  });
+  vertx.deployVerticle("test-mod");
+}
+
 tu.registerTests(this);
 tu.appReady();
 

@@ -45,4 +45,9 @@ public class JavaScriptDeployTest extends TestBase {
     startTest(getMethodName());
   }
 
+  @Test
+  public void testDeployModule() throws Exception {
+    startTest(getMethodName());
+  }
+
 }
