@@ -146,7 +146,7 @@ public class TestUtils {
 
   private void sendMessage(JsonObject msg) {
     try {
-      vertx.eventBus().send(TestBase.EVENTS_ADDRESS, msg);
+      vertx.eventBus().publish(TestBase.EVENTS_ADDRESS, msg);
     } catch (Exception e) {
       log.error("Failed to send message", e);
     }

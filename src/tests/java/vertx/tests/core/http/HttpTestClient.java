@@ -1681,7 +1681,7 @@ public class HttpTestClient extends TestClientBase {
 
   public void testSendFile() throws Exception {
     final String content = TestUtils.randomUnicodeString(10000);
-    final File file = setupFile("test-send-file.dat", content);
+    final File file = setupFile("test-send-file.html", content);
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
@@ -1693,6 +1693,34 @@ public class HttpTestClient extends TestClientBase {
       public void handle(final HttpClientResponse response) {
         tu.azzert(response.statusCode == 200);
         tu.azzert(file.length() == Long.valueOf(response.headers().get("Content-Length")));
+        tu.azzert("text/html".equals(response.headers().get("Content-Type")));
+        response.bodyHandler(new Handler<Buffer>() {
+          public void handle(Buffer buff) {
+            tu.azzert(content.equals(buff.toString()));
+            file.delete();
+            tu.testComplete();
+          }
+        });
+      }
+    });
+  }
+
+  public void testSendFileOverrideHeaders() throws Exception {
+    final String content = TestUtils.randomUnicodeString(10000);
+    final File file = setupFile("test-send-file.html", content);
+
+    startServer(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+        req.response.putHeader("Content-Type", "wibble");
+        req.response.sendFile(file.getAbsolutePath());
+      }
+    });
+
+    client.getNow("some-uri", new Handler<HttpClientResponse>() {
+      public void handle(final HttpClientResponse response) {
+        tu.azzert(response.statusCode == 200);
+        tu.azzert(file.length() == Long.valueOf(response.headers().get("Content-Length")));
+        tu.azzert("wibble".equals(response.headers().get("Content-Type")));
         response.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(content.equals(buff.toString()));

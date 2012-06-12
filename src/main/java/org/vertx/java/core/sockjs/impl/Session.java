@@ -17,6 +17,7 @@
 package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.shareddata.Shareable;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.DecodeException;
@@ -29,12 +30,15 @@ import java.util.Map;
 import java.util.Queue;
 
 /**
- * Unfortunately the SockJS close behaviour is badly spec'd so this is kind of
- * ugly
+ * The SockJS session implementation.
+ *
+ * If multiple instances of the SockJS server are used then instances of this
+ * class can be accessed by different threads (not concurrently), so we store
+ * it in a shared data map
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class Session extends SockJSSocket {
+class Session extends SockJSSocket implements Shareable {
 
   private static final Logger log = LoggerFactory.getLogger(Session.class);
 
@@ -79,7 +83,7 @@ class Session extends SockJSSocket {
     });
   }
 
-  public void write(Buffer buffer) {
+  public synchronized void write(Buffer buffer) {
     String msgStr = buffer.toString();
     pendingWrites.add(msgStr);
     this.messagesSize += msgStr.length();
@@ -88,15 +92,15 @@ class Session extends SockJSSocket {
     }
   }
 
-  public void dataHandler(Handler<Buffer> handler) {
+  public synchronized void dataHandler(Handler<Buffer> handler) {
     this.dataHandler = handler;
   }
 
-  public void pause() {
+  public synchronized void pause() {
     paused = true;
   }
 
-  public void resume() {
+  public synchronized void resume() {
     paused = false;
 
     if (dataHandler != null) {
@@ -106,33 +110,33 @@ class Session extends SockJSSocket {
     }
   }
 
-  public void writeBuffer(Buffer data) {
+  public synchronized void writeBuffer(Buffer data) {
     write(data);
   }
 
-  public void setWriteQueueMaxSize(int maxQueueSize) {
+  public synchronized void setWriteQueueMaxSize(int maxQueueSize) {
     if (maxQueueSize < 1) {
       throw new IllegalArgumentException("maxQueueSize must be >= 1");
     }
     this.maxQueueSize = maxQueueSize;
   }
 
-  public boolean writeQueueFull() {
+  public synchronized boolean writeQueueFull() {
     return messagesSize >= maxQueueSize;
   }
 
-  public void drainHandler(Handler<Void> handler) {
+  public synchronized void drainHandler(Handler<Void> handler) {
     this.drainHandler = handler;
   }
 
-  public void exceptionHandler(Handler<Exception> handler) {
+  public synchronized void exceptionHandler(Handler<Exception> handler) {
   }
 
-  public void endHandler(Handler<Void> endHandler) {
+  public synchronized void endHandler(Handler<Void> endHandler) {
     this.endHandler = endHandler;
   }
 
-  public void shutdown() {
+  public synchronized void shutdown() {
     if (heartbeatID != -1) {
       vertx.cancelTimer(heartbeatID);
     }
@@ -145,7 +149,7 @@ class Session extends SockJSSocket {
     }
   }
 
-  public void close() {
+  public synchronized void close() {
     if (endHandler != null) {
       endHandler.handle(null);
     }
@@ -155,11 +159,11 @@ class Session extends SockJSSocket {
     }
   }
 
-  boolean isClosed() {
+  synchronized boolean isClosed() {
     return closed;
   }
 
-  void resetListener() {
+  synchronized void resetListener() {
     listener = null;
 
     if (timeout != -1) {
@@ -177,7 +181,7 @@ class Session extends SockJSSocket {
     }
   }
 
-  void writePendingMessages() {
+  synchronized void writePendingMessages() {
     String json = JsonCodec.encode(pendingWrites.toArray());
     listener.sendFrame("a" + json);
     pendingWrites.clear();
@@ -188,7 +192,7 @@ class Session extends SockJSSocket {
     }
   }
 
-  void register(final TransportListener lst) {
+  synchronized void register(final TransportListener lst) {
 
     if (closed) {
       // Closed by the application

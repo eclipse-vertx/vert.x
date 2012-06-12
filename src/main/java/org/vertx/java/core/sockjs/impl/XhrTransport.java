@@ -71,9 +71,7 @@ class XhrTransport extends BaseTransport {
       public void handle(final HttpServerRequest req) {
         if (log.isTraceEnabled()) log.trace("XHR send, post, " + req.uri);
         String sessionID = req.params().get("param0");
-
         final Session session = sessions.get(sessionID);
-
         if (session != null) {
           handleSend(req, session);
         } else {

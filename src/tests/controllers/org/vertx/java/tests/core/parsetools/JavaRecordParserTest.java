@@ -252,4 +252,17 @@ public class JavaRecordParserTest extends TestCase {
     }
     return chunkSizes;
   }
+
+  @Test
+  /*
+   * test issue-209
+   */
+  public void testSpreadDelimiter() {
+    doTestDelimited(new Buffer("start-a-b-c-dddabc"), "abc".getBytes(),
+            new Integer[] { 18 }, new Buffer("start-a-b-c-ddd"));
+    doTestDelimited(new Buffer("start-abc-dddabc"), "abc".getBytes(),
+            new Integer[] { 18 }, new Buffer("start-"), new Buffer("-ddd"));
+    doTestDelimited(new Buffer("start-ab-c-dddabc"), "abc".getBytes(),
+            new Integer[] { 18 }, new Buffer("start-ab-c-ddd"));
+  }
 }

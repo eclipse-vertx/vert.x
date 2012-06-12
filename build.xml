@@ -236,7 +236,7 @@
     <include name="**/${test.name}.class"/>
   </fileset>
 
-  <target name="tests" depends="dist">
+  <target name="tests">
     <antcall target="internal-tests">
       <param name="tests-fs" value="main-tests.fs"/>
     </antcall>
@@ -251,7 +251,7 @@
 
   <!-- We depend on dist since the busmod tests need the distro to be built to
   access the mods -->
-  <target name="internal-tests" depends="compile-test-framework,compile-tests,dist">
+  <target name="internal-tests" depends="compile-tests">
     <delete dir="${test-results}"/>
     <mkdir dir="${test-results}"/>
     <junit printsummary="yes" timeout="120000" showoutput="true">
@@ -312,7 +312,7 @@
     <copy file="${core-lib}/jackson-core-asl.jar" tofile="${dist-build}/lib/jars/jackson-core.jar"/>
     <copy file="${core-lib}/jackson-mapper-asl.jar" tofile="${dist-build}/lib/jars/jackson-mapper.jar"/>
     <copy file="${core-lib}/hazelcast.jar" tofile="${dist-build}/lib/jars/hazelcast.jar"/>
-    <!-- <copy file="${core-lib}/js.jar" tofile="${dist-build}/lib/jars/js.jar"/> -->
+    <copy file="${core-lib}/js.jar" tofile="${dist-build}/lib/jars/js.jar"/>
     <copy file="${core-lib}/groovy-all.jar" tofile="${dist-build}/lib/jars/groovy.jar"/>
     <copy file="${core-lib}/README_RUNTIME_JARS" tofile="${dist-build}/lib/jars/README_JARS"/>
 
@@ -349,18 +349,9 @@
     <mkdir dir="${dist-build}/bin"/>
 
     <!-- We use cp so we can preserve file attributes. No shell so can't use wildcards :( -->
-    <exec executable="cp">
-      <arg value="src/scripts/vertx"/>
-      <arg value="${dist-build}/bin/vertx"/>
-    </exec>
-    <exec executable="cp">
-      <arg value="src/scripts/vertx.bat"/>
-      <arg value="${dist-build}/bin/vertx.bat"/>
-    </exec>
-    <exec executable="cp">
-      <arg value="src/scripts/install_rhino.sh"/>
-      <arg value="${dist-build}/install-rhino.sh"/>
-    </exec>
+  	<copy file="src/scripts/vertx.bat" todir="${dist-build}/bin/"/>
+  	<copy file="src/scripts/vertx" todir="${dist-build}/bin/"/>
+  	<chmod file="${dist-build}/bin/vertx" perm="ugo+rx"/>
 
     <copy todir="${dist-build}/examples">
       <fileset dir="src/examples">

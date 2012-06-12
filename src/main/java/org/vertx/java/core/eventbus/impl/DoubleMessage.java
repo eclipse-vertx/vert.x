@@ -29,8 +29,8 @@ class DoubleMessage extends BaseMessage<Double> {
 
   private static final Logger log = LoggerFactory.getLogger(DoubleMessage.class);
 
-  DoubleMessage(String address, Double body) {
-    super(address, body);
+  DoubleMessage(boolean send, String address, Double body) {
+    super(send, address, body);
   }
 
   public DoubleMessage(Buffer readBuff) {
@@ -66,8 +66,8 @@ class DoubleMessage extends BaseMessage<Double> {
     return MessageFactory.TYPE_DOUBLE;
   }
 
-  protected void handleReply(Double reply, Handler<Message<Double>> replyHandler) {
-    bus.send(replyAddress, reply, replyHandler);
+  protected BaseMessage createReplyMessage(Double reply) {
+    return new DoubleMessage(true, replyAddress, reply);
   }
 
 }
