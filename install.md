@@ -22,20 +22,6 @@ Once you've got the pre-requisites installed, you install vert.x as follows:
 1. Unzip the distro somewhere sensible (e.g. your home directory)
 2. Add the vert.x `bin` directory to your `PATH`.
 
-### Important note:
-
-As a temporary measure, we are unable to distributed Mozilla Rhino with the Vert.x distribution.
-
-This should be resolved in the next few days/weeks.
-
-In the mean-time, if you want to use JavaScript with Vert.x you will need to download and build Rhino from source. We include a script which does this automatically for Linux/OSX users.
-
-Please `cd` into the distribution folder and run the script `install_rhino.sh`.
-
-Windows users will have to manually clone the Rhino repository `git clone https://github.com/mozilla/rhino.git`. Build the jar `ant jar`. And copy the resulting jar `js.jar` into the `lib/jars` directory of the Vert.x distribution.
-
-Apologies for the inconvenience.
-
 ## Check the version
 
 To make sure you've installed it correctly, open another console and type:
