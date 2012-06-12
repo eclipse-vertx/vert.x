@@ -17,12 +17,18 @@ This module provides the entry point to the vert.x platform
 """
 
 import org.vertx.java.deploy.impl.VertxLocator
+import org.vertx.java.core.json
+
 from core.http import HttpServer, HttpClient
 from core.net import NetServer, NetClient
 from core.sock_js import SockJSServer
+from core.javautils import map_to_java
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
+
+class Vertx(object):
+    config = None
 
 def create_http_server(**kwargs):
     """ Return a HttpServer """
@@ -47,3 +53,50 @@ def create_sockjs_server(http_server):
 def get_logger():
     """ Get the logger for the verticle"""
     return org.vertx.java.deploy.impl.VertxLocator.container.getLogger()
+
+def deploy_verticle(main, config=None, instances=1, handler=None):
+    """Deploy a verticle. The actual deploy happens asynchronously
+
+    Keyword arguments
+    main -- the main of the verticle to deploy
+    config -- dict configuration for the verticle
+    instances -- number of instances to deploy
+    handler -- will be executed when deploy has completed
+
+    returns Unique id of deployment
+    """
+    if config != None:
+        config = org.vertx.java.core.json.JsonObject(map_to_java(config))
+  
+    org.vertx.java.deploy.impl.VertxLocator.container.deployVerticle(main, config, instances, handler)
+
+def deploy_worker_verticle(main, config=None, instances=1, handler=None):
+    """Deploy a workerverticle. The actual deploy happens asynchronously
+
+    Keyword arguments
+    main -- the main of the verticle to deploy
+    config -- dict configuration for the verticle
+    instances -- the number of instances to deploy
+    handler -- handler will be executed when deploy has completed
+    """
+    if config != None:
+        config = org.vertx.java.core.json.JsonObject(map_to_java(config))
+    org.vertx.java.deploy.impl.VertxLocator.container.deployWorkerVerticle(main, config, instances, handler)
+
+def undeploy_verticle(id):
+    """Undeploy a verticle
+
+    Keyword arguments
+    id -- the unique id of the deployment
+    """
+    org.vertx.java.deploy.impl.VertxLocator.container.undeployVerticle(id)
+
+def config():
+    """Get config for the verticle
+
+    returns dict config for the verticle
+    """
+    if Vertx.config is None:
+        Vertx.config = map_from_java(org.vertx.java.deploy.impl.VertxLocator.container.getConfig())
+    return Vertx.config
+
