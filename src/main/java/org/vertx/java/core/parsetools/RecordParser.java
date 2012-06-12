@@ -179,6 +179,11 @@ public class RecordParser implements Handler<Buffer> {
           delimPos = 0;
           output.handle(ret);
         }
+      } else {
+        if (delimPos > 0) {
+          pos -= delimPos;
+          delimPos = 0;
+        }
       }
     }
   }
