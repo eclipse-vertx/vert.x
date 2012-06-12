@@ -1833,18 +1833,22 @@ server.listen(8080)
 <p>In other words the bridge acts like a kind of firewall which has a default <em>deny-all</em> policy.</p>
 <p>Configuring the bridge to tell it what messages it should pass through is easy. You pass in two arrays of JSON objects that represent <em>matches</em>, as the final argument in the call to <code>bridge</code>.</p>
 <p>The first array is the <em>inbound</em> list and represents the messages that you want to allow through from the client to the server. The second array is the <em>outbound</em> list and represents the messages that you want to allow through from the server to the client.</p>
-<p>Each match has two fields:</p>
+<p>Each match can have up to three fields:</p>
 <ol>
-<li><code>address</code>: This represents the address the message is being sent to. If you want to filter messages based on address you will use this field.</li>
+<li><code>address</code>: This represents the exact address the message is being sent to. If you want to filter messages based on an exact address you use this field.</li>
+<li><code>address_re</code>: This is a regular expression that will be matched against the address. If you want to filter messages based on a regular expression you use this field. If the <code>address</code> field is specified this field will be ignored.</li>
 <li><code>match</code>: This allows you to filter messages based on their structure. Any fields in the match must exist in the message with the same values for them to be passed. This currently only works with JSON messages.</li>
 </ol>
 <p>When a message arrives at the bridge, it will look through the available permitted entries.</p>
 <ul>
 <li>
-<p>If an address has been specified then the address must match with the address in the message for it to be considered matched.</p>
+<p>If an <code>address</code> field has been specified then the <code>address</code> must match exactly with the address of the message for it to be considered matched.</p>
 </li>
 <li>
-<p>If a match has been specified, then also the structure of the message must match.</p>
+<p>If an <code>address</code> field has not been specified and an <code>address_re</code> field has been specified then the regular expression in <code>address_re</code> must match with the address of the message for it to be considered matched.</p>
+</li>
+<li>
+<p>If a <code>match</code> field has been specified, then also the structure of the message must match.</p>
 </li>
 </ul>
 <p>Here is an example:</p>
@@ -1879,6 +1883,10 @@ sockJSServer.bridge({'prefix' =&gt; '/eventbus'},
     # Let through any messages coming from address 'ticker.mystock'
     {
       'address' =&gt; 'ticker.mystock'
+    },
+    # Let through any messages from addresses starting with "news." (e.g. news.europe, news.usa, etc)
+    {
+      'address_re' =&gt; 'news\\..+'
     }
   ])
 

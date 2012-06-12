@@ -2250,16 +2250,19 @@ Configuring the bridge to tell it what messages it should pass through is easy. 
 
 The first array is the *inbound* list and represents the messages that you want to allow through from the client to the server. The second array is the *outbound* list and represents the messages that you want to allow through from the server to the client.
 
-Each match has two fields:
+Each match can have up to three fields:
 
-1. `address`: This represents the address the message is being sent to. If you want to filter messages based on address you will use this field.
-2. `match`: This allows you to filter messages based on their structure. Any fields in the match must exist in the message with the same values for them to be passed. This currently only works with JSON messages.
+1. `address`: This represents the exact address the message is being sent to. If you want to filter messages based on an exact address you use this field.
+2. `address_re`: This is a regular expression that will be matched against the address. If you want to filter messages based on a regular expression you use this field. If the `address` field is specified this field will be ignored.
+3. `match`: This allows you to filter messages based on their structure. Any fields in the match must exist in the message with the same values for them to be passed. This currently only works with JSON messages.
 
 When a message arrives at the bridge, it will look through the available permitted entries.
 
-* If an address has been specified then the address must match with the address in the message for it to be considered matched.
+* If an `address` field has been specified then the `address` must match exactly with the address of the message for it to be considered matched.
 
-* If a match has been specified, then also the structure of the message must match.
+* If an `address` field has not been specified and an `address_re` field has been specified then the regular expression in `address_re` must match with the address of the message for it to be considered matched.
+
+* If a `match` field has been specified, then also the structure of the message must match.
 
 Here is an example:
 
@@ -2290,6 +2293,10 @@ Here is an example:
     // Let through any messages coming from address 'ticker.mystock'
     JsonObject outboundPermitted1 = new JsonObject().putString("address", "ticker.mystock");
     outboundPermitted.add(outboundPermitted1);
+
+    // Let through any messages from addresses starting with "news." (e.g. news.europe, news.usa, etc)
+    JsonObject outboundPermitted2 = new JsonObject().putString("address_re", "news\\..+");
+    outboundPermitted.add(outboundPermitted2);
 
     vertx.createSockJSBridge(server).bridge(config, inboundPermitted, outboundPermitted);
     
