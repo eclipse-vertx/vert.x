@@ -56,10 +56,11 @@ public class DefaultSockJSServer implements SockJSServer {
   private final VertxInternal vertx;
   private RouteMatcher rm = new RouteMatcher();
   private WebSocketMatcher wsMatcher = new WebSocketMatcher();
-  private final Map<String, Session> sessions = new HashMap<>();
+  private final Map<String, Session> sessions;
 
   public DefaultSockJSServer(final VertxInternal vertx, final HttpServer httpServer) {
     this.vertx = vertx;
+    this.sessions = vertx.sharedData().getMap("_vertx.sockjssessions");
     // Any previous request and websocket handlers will become default handlers
     // if nothing else matches
     rm.noMatch(httpServer.requestHandler());

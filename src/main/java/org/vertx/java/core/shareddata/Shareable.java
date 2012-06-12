@@ -14,34 +14,19 @@
  * limitations under the License.
  */
 
-package org.vertx.java.tests.core.deploy;
-
-import org.junit.Test;
-import org.vertx.java.framework.TestBase;
+package org.vertx.java.core.shareddata;
 
 /**
+ * Marker interface.
+ *
+ * If a class implements this it means it can be put into shared data maps
+ * and sets.
+ *
+ * All classes that implement this MUST be threadsafe.
+ *
+ * Use this class with caution.
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JavaScriptDeployTest extends TestBase {
-
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-    startApp("core/deploy/test_client.js");
-  }
-
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
-  }
-
-  @Test
-  public void testDeploy() throws Exception {
-    startTest(getMethodName());
-  }
-
-  @Test
-  public void testUndeploy() throws Exception {
-    startTest(getMethodName());
-  }
+public interface Shareable {
 }
