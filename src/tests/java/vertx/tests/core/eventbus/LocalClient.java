@@ -48,13 +48,13 @@ public class LocalClient extends EventBusAppBase {
   public void testPubSub() {
     Buffer buff = TestUtils.generateRandomBuffer(1000);
     data.put("buffer", buff);
-    eb.send("some-address", buff);
+    eb.publish("some-address", buff);
   }
 
   public void testPubSubMultipleHandlers() {
-    Buffer buff = TestUtils.generateRandomBuffer(1000);
+    Buffer buff = TestUtils.generateRandomBuffer(1000);                                                                    eb.send("some-address", buff);
     data.put("buffer", buff);
-    eb.send("some-address", buff);
+    eb.publish("some-address", buff);
   }
 
   public void testPointToPoint() {
@@ -64,7 +64,15 @@ public class LocalClient extends EventBusAppBase {
     for (String address: addresses) {
       eb.send(address, buff);
     }
+  }
 
+  public void testPointToPointRoundRobin() {
+    final Buffer buff = TestUtils.generateRandomBuffer(1000);
+    data.put("buffer", buff);
+    //Each peer should get two messages
+    for (int i = 0; i < 8; i++) {
+      eb.send("some-address", buff);
+    }
   }
 
   public void testReply() {
@@ -105,7 +113,7 @@ public class LocalClient extends EventBusAppBase {
       });
     }
 
-    eb.send(address, buff);
+    eb.publish(address, buff);
   }
 
   public void testRegisterNoAddress() {

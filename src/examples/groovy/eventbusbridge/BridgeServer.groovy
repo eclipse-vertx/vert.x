@@ -22,6 +22,6 @@ server.requestHandler { req ->
   if (req.uri == '/vertxbus.js') req.response.sendFile('eventbusbridge/vertxbus.js')
 }
 
-vertx.createSockJSServer(server).bridge(prefix: '/eventbus', [[:]])
+vertx.createSockJSServer(server).bridge(prefix: '/eventbus', [[:]], [[:]])
 
 server.listen(8080)

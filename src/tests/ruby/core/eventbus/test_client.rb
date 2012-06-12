@@ -133,7 +133,7 @@ def test_send_multiple_matching_handlers
     end
   end
 
-  EventBus.send(address, json)
+  EventBus.publish(address, json)
 end
 
 def test_echo_string
