@@ -312,7 +312,7 @@
     <copy file="${core-lib}/jackson-core-asl.jar" tofile="${dist-build}/lib/jars/jackson-core.jar"/>
     <copy file="${core-lib}/jackson-mapper-asl.jar" tofile="${dist-build}/lib/jars/jackson-mapper.jar"/>
     <copy file="${core-lib}/hazelcast.jar" tofile="${dist-build}/lib/jars/hazelcast.jar"/>
-    <!-- <copy file="${core-lib}/js.jar" tofile="${dist-build}/lib/jars/js.jar"/> -->
+    <copy file="${core-lib}/js.jar" tofile="${dist-build}/lib/jars/js.jar"/>
     <copy file="${core-lib}/groovy-all.jar" tofile="${dist-build}/lib/jars/groovy.jar"/>
     <copy file="${core-lib}/README_RUNTIME_JARS" tofile="${dist-build}/lib/jars/README_JARS"/>
 
@@ -352,8 +352,6 @@
   	<copy file="src/scripts/vertx.bat" todir="${dist-build}/bin/"/>
   	<copy file="src/scripts/vertx" todir="${dist-build}/bin/"/>
   	<chmod file="${dist-build}/bin/vertx" perm="ugo+rx"/>
-  	<copy file="src/scripts/install_rhino.sh" todir="${dist-build}/"/>
-  	<chmod file="${dist-build}/install_rhino.sh" perm="ugo+rx"/>
 
     <copy todir="${dist-build}/examples">
       <fileset dir="src/examples">
