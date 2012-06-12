@@ -37,6 +37,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -61,6 +63,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   private final Vertx vertx;
   private final EventBus eb;
   private Set<String> acceptedReplyAddresses = new HashSet<>();
+  private Map<String, Pattern> compiledREs = new HashMap<>();
 
   private List<JsonObject> convertArray(JsonArray permitted) {
     List<JsonObject> l = new ArrayList<>();
@@ -309,7 +312,25 @@ public class EventBusBridge implements Handler<SockJSSocket> {
 
     for (JsonObject matchHolder: matches) {
       String matchAddress = matchHolder.getString("address");
-      if (matchAddress == null || matchAddress.equals(address)) {
+      String matchRegex;
+      if (matchAddress == null) {
+        matchRegex = matchHolder.getString("address_re");
+      } else {
+        matchRegex = null;
+      }
+
+      boolean addressOK;
+      if (matchAddress == null) {
+        if (matchRegex == null) {
+          addressOK = true;
+        } else {
+          addressOK = regexMatches(matchRegex, address);
+        }
+      } else {
+        addressOK = matchAddress.equals(address);
+      }
+
+      if (addressOK) {
         Boolean b = matchHolder.getBoolean("requires_auth");
         boolean requiresAuth = b != null && b;
         if (requiresAuth && !authed) {
@@ -334,6 +355,17 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     }
     return false;
   }
+
+  private boolean regexMatches(String matchRegex, String address) {
+    Pattern pattern = compiledREs.get(matchRegex);
+    if (pattern == null) {
+      pattern = Pattern.compile(matchRegex);
+      compiledREs.put(matchRegex, pattern);
+    }
+    Matcher m = pattern.matcher(address);
+    return m.matches();
+  }
+
 
   private void cacheAuthorisation(String sessionID, SockJSSocket sock) {
     authCache.put(sessionID, new Auth(sessionID, sock));
