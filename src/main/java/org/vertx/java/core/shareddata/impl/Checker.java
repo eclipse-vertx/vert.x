@@ -16,6 +16,7 @@
 
 package org.vertx.java.core.shareddata.impl;
 
+import org.vertx.java.core.shareddata.Shareable;
 import org.vertx.java.core.buffer.Buffer;
 
 /**
@@ -34,7 +35,8 @@ public class Checker {
         obj instanceof Byte ||
         obj instanceof Character ||
         obj instanceof byte[] ||
-        obj instanceof Buffer) {
+        obj instanceof Buffer ||
+        obj instanceof Shareable) {
     } else {
       throw new IllegalArgumentException("Invalid type for shareddata data structure: " + obj.getClass().getName());
     }

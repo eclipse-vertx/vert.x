@@ -86,14 +86,14 @@ public class RhinoVerticle extends Verticle {
         new SoftCachingModuleScriptProvider(new UrlModuleSourceProvider(null, null)) {
 
           @Override
-          public ModuleScript getModuleScript(Context cx, String moduleId, URI uri, Scriptable paths) throws Exception {
+          public ModuleScript getModuleScript(Context cx, String moduleId, URI uri, URI base, Scriptable paths) throws Exception {
 
             // Check for cached version
             CachedModuleScript cachedModule = getLoadedModule(moduleId);
             if (cachedModule != null) {
               // cachedModule.getModule() is not public
               // super.getModuleScript uses moduleSourceProvider.loadSource to check for modifications
-              return super.getModuleScript(cx, moduleId, uri, paths);
+              return super.getModuleScript(cx, moduleId, uri, uri, paths);
             }
 
             // If loading from classpath get a proper URI
@@ -156,7 +156,7 @@ public class RhinoVerticle extends Verticle {
 
             }
 
-            return super.getModuleScript(cx, moduleId, uri, paths);
+            return super.getModuleScript(cx, moduleId, uri, uri, paths);
           }
         });
 

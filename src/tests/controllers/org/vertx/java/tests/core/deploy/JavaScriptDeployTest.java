@@ -44,5 +44,4 @@ public class JavaScriptDeployTest extends TestBase {
   public void testUndeploy() throws Exception {
     startTest(getMethodName());
   }
-
 }

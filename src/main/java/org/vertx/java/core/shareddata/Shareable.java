@@ -14,24 +14,19 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.eventbus.impl;
-
-import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.net.impl.ServerID;
-
-import java.util.Collection;
+package org.vertx.java.core.shareddata;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ * Marker interface.
  *
+ * If a class implements this it means it can be put into shared data maps
+ * and sets.
+ *
+ * All classes that implement this MUST be threadsafe.
+ *
+ * Use this class with caution.
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface SubsMap {
-
-  void put(String subName, ServerID serverID, AsyncResultHandler<Void> completionHandler);
-
-  void get(String subName, AsyncResultHandler<ServerIDs> completionHandler);
-
-  void remove(String subName, ServerID serverID, AsyncResultHandler<Boolean> completionHandler);
-
-  void removeAllForServerID(ServerID serverID, AsyncResultHandler<Void> completionHandler);
+public interface Shareable {
 }

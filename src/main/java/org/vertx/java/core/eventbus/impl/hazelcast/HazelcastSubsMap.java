@@ -22,13 +22,15 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.eventbus.impl.SubsMap;
 import org.vertx.java.core.impl.BlockingAction;
-import org.vertx.java.core.impl.ConcurrentHashSet;
+import org.vertx.java.core.eventbus.impl.ServerIDs;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.impl.ServerID;
 
 import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -60,6 +62,20 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
     map.addEntryListener(this, true);
   }
 
+  public void removeAllForServerID(final ServerID serverID, final AsyncResultHandler<Void> completionHandler) {
+    new BlockingAction<Void>(vertx, completionHandler) {
+      public Void action() throws Exception {
+        for (Map.Entry<String, HazelcastServerID> entry: map.entrySet()) {
+          HazelcastServerID hid = entry.getValue();
+          if (hid.serverID.equals(serverID)) {
+            map.remove(entry.getKey(), hid);
+          }
+        }
+        return null;
+      }
+    }.run();
+  }
+
   @Override
   public void put(final String subName, final ServerID serverID, final AsyncResultHandler<Void> completionHandler) {
     new BlockingAction<Void>(vertx, completionHandler) {
@@ -71,33 +87,33 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
   }
 
   @Override
-  public void get(final String subName, final AsyncResultHandler<Collection<ServerID>> completionHandler) {
+  public void get(final String subName, final AsyncResultHandler<ServerIDs> completionHandler) {
     ServerIDs entries = cache.get(subName);
-    if (entries != null && entries.initialised) {
-      completionHandler.handle(new AsyncResult<>(entries.ids));
+    if (entries != null && entries.isInitialised()) {
+      completionHandler.handle(new AsyncResult<>(entries));
     } else {
       new BlockingAction<Collection<HazelcastServerID>>(vertx, new AsyncResultHandler<Collection<HazelcastServerID>>() {
         public void handle(AsyncResult<Collection<HazelcastServerID>> result) {
-          AsyncResult<Collection<ServerID>> sresult;
+          AsyncResult<ServerIDs> sresult;
           if (result.succeeded()) {
             Collection<HazelcastServerID> entries = result.result;
             ServerIDs sids;
             if (entries != null) {
               sids = new ServerIDs(entries.size());
               for (HazelcastServerID hid: entries) {
-                sids.ids.add(hid.serverID);
+                sids.add(hid.serverID);
               }
-              ServerIDs prev = cache.putIfAbsent(subName, sids);
-              if (prev != null) {
-                // Merge them
-                prev.ids.addAll(sids.ids);
-                sids = prev;
-              }
-              sids.initialised = true;
             } else {
-              sids = null;
+              sids = new ServerIDs(0);
             }
-            sresult = new AsyncResult<>(sids == null ? null : sids.ids);
+            ServerIDs prev = cache.putIfAbsent(subName, sids);
+            if (prev != null) {
+              // Merge them
+              prev.merge(sids);
+              sids = prev;
+            }
+            sids.setInitialised();
+            sresult = new AsyncResult<>(sids);
           } else {
             sresult = new AsyncResult<>(result.exception);
           }
@@ -122,19 +138,19 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
 
   @Override
   public void entryAdded(EntryEvent<String, HazelcastServerID> entry) {
-     addEntry(entry.getKey(), entry.getValue().serverID);
+    addEntry(entry.getKey(), entry.getValue().serverID);
   }
 
   private void addEntry(String key, ServerID value) {
-     ServerIDs entries = cache.get(key);
+    ServerIDs entries = cache.get(key);
     if (entries == null) {
-      entries = new ServerIDs();
+      entries = new ServerIDs(1);
       ServerIDs prev = cache.putIfAbsent(key, entries);
       if (prev != null) {
         entries = prev;
       }
     }
-    entries.ids.add(value);
+    entries.add(value);
   }
 
   @Override
@@ -145,8 +161,8 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
   private void removeEntry(String key, ServerID value) {
     ServerIDs entries = cache.get(key);
     if (entries != null) {
-      entries.ids.remove(value);
-      if (entries.ids.isEmpty()) {
+      entries.remove(value);
+      if (entries.isEmpty()) {
         cache.remove(key);
       }
     }
@@ -157,7 +173,7 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
     String key = entry.getKey();
     ServerIDs entries = cache.get(key);
     if (entries != null) {
-      entries.ids.add(entry.getValue().serverID);
+      entries.add(entry.getValue().serverID);
     }
   }
 
@@ -166,15 +182,6 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
     entryRemoved(entry);
   }
 
-  private static class ServerIDs {
-    final Collection<ServerID> ids;
-    ServerIDs(int initialSize) {
-      ids = new ConcurrentHashSet<>(initialSize);
-    }
-    ServerIDs() {
-      ids = new ConcurrentHashSet<>();
-    }
-    volatile boolean initialised;
-  }
+
 
 }

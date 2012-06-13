@@ -189,7 +189,7 @@ def httpMethod(ssl, method, chunked)  {
 
   server.requestHandler { req ->
     tu.checkContext()
-    tu.azzert(req.uri == uri)
+    tu.azzert(req.uri.equals(uri))
     tu.azzert(req.method == method)
     tu.azzert(req.path == path)
     tu.azzert(req.query == query)

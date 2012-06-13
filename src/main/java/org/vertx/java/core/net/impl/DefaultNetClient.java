@@ -71,7 +71,7 @@ public class DefaultNetClient implements NetClient {
     if (vertx.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
-    ctx.addCloseHook(new Runnable() {
+    ctx.putCloseHook(this, new Runnable() {
       public void run() {
         close();
       }
@@ -423,7 +423,6 @@ public class DefaultNetClient implements NetClient {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final NetSocket sock = socketMap.remove(ch);
       final Throwable t = e.getCause();
-      log.error("Exception on netclient", t);
       if (sock != null && t instanceof Exception) {
         tcpHelper.runOnCorrectThread(ch, new Runnable() {
           public void run() {

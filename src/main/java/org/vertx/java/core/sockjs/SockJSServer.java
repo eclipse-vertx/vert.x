@@ -64,27 +64,33 @@ public interface SockJSServer {
   /**
    * Install an app which bridges the SockJS server to the event bus
    * @param sjsConfig The config for the app
-   * @param permitted A list of JSON objects which define permitted matches
+   * @param inboundPermitted A list of JSON objects which define permitted matches for inbound (client->server) traffic
+   * @param outboundPermitted A list of JSON objects which define permitted matches for outbound (server->client)
+   * traffic
    */
-  void bridge(JsonObject sjsConfig, JsonArray permitted);
+  void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted);
 
   /**
    * Install an app which bridges the SockJS server to the event bus
    * @param sjsConfig The config for the app
-   * @param permitted A list of JSON objects which define permitted matches
+   * @param inboundPermitted A list of JSON objects which define permitted matches for inbound (client->server) traffic
+   * @param outboundPermitted A list of JSON objects which define permitted matches for outbound (server->client)
+   * traffic
    * @param authTimeout Default time an authorisation will be cached for in the bridge (defaults to 5 minutes)
    */
-  void bridge(JsonObject sjsConfig, JsonArray permitted,
+  void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
               long authTimeout);
 
   /**
    * Install an app which bridges the SockJS server to the event bus
    * @param sjsConfig The config for the app
-   * @param permitted A list of JSON objects which define permitted matches
+   * @param inboundPermitted A list of JSON objects which define permitted matches for inbound (client->server) traffic
+   * @param outboundPermitted A list of JSON objects which define permitted matches for outbound (server->client)
+   * traffic
    * @param authTimeout Default time an authorisation will be cached for in the bridge (defaults to 5 minutes)
    * @param authAddress Address of auth manager. Defaults to 'vertx.basicauthmanager.authorise'
    */
-  void bridge(JsonObject sjsConfig, JsonArray permitted,
+  void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
               long authTimeout, String authAddress);
 
 }
