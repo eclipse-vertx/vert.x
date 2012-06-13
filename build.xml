@@ -107,7 +107,7 @@
   <target name="compile-core" depends="init" description="compile the source for the core">
     <mkdir dir="${java-target}"/>
     <javac srcdir="${java-src-root}" destdir="${java-target}" classpathref="core-lib-classpath" debug="on"
-           includeantruntime="false" target="1.7" source="1.7">
+           includeantruntime="false" target="1.7" source="1.7" encoding="UTF8">
       <include name="org/vertx/java/core/**/*.java"/>
     </javac>
     <groovyc srcdir="${groovy-src-root}" destdir="${java-target}">
@@ -132,7 +132,7 @@
       <include name="org/vertx/groovy/deploy/Container.groovy"/>
     </groovyc>
     <javac srcdir="${java-src-root}" destdir="${java-target}" classpathref="core-lib-classpath" debug="on"
-           includeantruntime="false" target="1.7" source="1.7">
+           includeantruntime="false" target="1.7" source="1.7" encoding="UTF8">
       <include name="org/vertx/java/deploy/**/*.java"/>
       <include name="org/vertx/java/busmods/**/*.java"/>
     </javac>
@@ -172,7 +172,7 @@
   <target name="compile-java-mod" depends="compile-platform" description="compile the out of the box java mods">
     <mkdir dir="${mods-target}/${mod-name}"/>
     <javac srcdir="${mods-src-root}/${mod-name}" destdir="${mods-target}/${mod-name}" debug="on"
-           includeantruntime="false" target="1.7" source="1.7">
+           includeantruntime="false" target="1.7" source="1.7" encoding="UTF8">
       <classpath>
         <pathelement path="core-lib-classpath"/>
         <pathelement path="${java-target}"/>

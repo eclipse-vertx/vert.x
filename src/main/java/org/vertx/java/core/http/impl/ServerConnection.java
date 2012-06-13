@@ -40,7 +40,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
+import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 /**
@@ -61,6 +63,7 @@ class ServerConnection extends AbstractConnection {
   private boolean paused;
   private boolean sentCheck;
   private final Queue<Object> pending = new LinkedList<>();
+  private final List<String> passIOException = Arrays.asList("Connection reset by peer","既存の接続はリモート ホストに強制的に切断されました。");
 
   ServerConnection(VertxInternal vertx, Channel channel, Context context) {
     super(vertx, channel, context);
@@ -216,7 +219,7 @@ class ServerConnection extends AbstractConnection {
     //On HTTP server we want to swallow Connection reset by peer exceptions since this is normal if the client
     //closes the HTTP connection
 
-    if (!(t instanceof IOException && "Connection reset by peer".equals(t.getMessage()))
+    if (!(t instanceof IOException && passIOException.contains(t.getMessage()))
         && !(t instanceof ClosedChannelException)) {
       super.handleHandlerException(t);
     }
