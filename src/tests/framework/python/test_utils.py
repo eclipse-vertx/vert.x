@@ -4,6 +4,8 @@ import org.vertx.java.framework
 import org.vertx.java.core.Handler
 import java.lang
 
+from core.buffer import Buffer
+
 class TestUtils(object):
     def __init__(self):
         self.java_obj = org.vertx.java.framework.TestUtils(org.vertx.java.deploy.impl.VertxLocator.vertx)
