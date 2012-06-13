@@ -178,7 +178,8 @@ The web-server configuration is as follows:
         "key_store_path": <key_store_path>,
         
         "bridge": <bridge>,
-        "permitted": <permitted>,
+        "inbound_permitted": <inbound_permitted>,
+        "outbound_permitted": <outbound_permitted>,
         "sjs_config": <sjs_config>,
         "auth_timeout": <auth_timeout>,
         "auth_address": <auth_address>
@@ -193,7 +194,8 @@ The web-server configuration is as follows:
 * `key_store_password`. Password of Java keystore which holds the server certificate. Only used if `ssl` is `true`. Default is `wibble`.
 * `key_store_path`. Path to keystore which holds the server certificate. Default is `server-keystore.jks`. Only used if `ssl` is `true`. *Don't put the keystore under your webroot!*.
 * `bridge`. Should the server also act as an event bus bridge. This is used when you want to bridge the event bus into client side JavaScript. Default is `false`.
-* `permitted`. This is an array of JSON objects representing the permitted matches on the bridge. Only used if `bridge` is `true`. See the core manual for a full description of what these are. Defaults to `[]`.
+* `inbound_permitted`. This is an array of JSON objects representing the inbound permitted matches on the bridge. Only used if `bridge` is `true`. See the core manual for a full description of what these are. Defaults to `[]`.
+* `outbound_permitted`. This is an array of JSON objects representing the outbound permitted matches on the bridge. Only used if `bridge` is `true`. See the core manual for a full description of what these are. Defaults to `[]`.
 * `sjs_config`. This is a JSON object representing the configuration of the SockJS bridging application. You'd normally use this for specifying the url at which SockJS will connect to bridge from client side JS to the server. Only used if `bridge` is `true`. Default to `{"prefix": "/eventbus"}`.
 * `auth_timeout`. The bridge can also cache authorisations. This determines how long the bridge will cache one for. Default value is five minutes.
 * `auth_address`. The bridge can also call an authorisation manager to do authorisation. This is the address to which it will send authorisation messages. Default value is `vertx.basicauthmanager.authorise`. 
@@ -228,7 +230,8 @@ Pure event bus bridge that doesn't serve static files
        "host": "bridgeserver.mycompany.com",
        "static_files": false,
        "bridge": true,
-       "permitted": [{"address":"myservice"}]       
+       "inbound_permitted": [{"address":"myservice"}],
+       "outbound_permitted": [{"address":"topic.foo"}]
     }
     
 ### MongoDB Persistor
