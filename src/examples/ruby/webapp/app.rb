@@ -19,7 +19,7 @@ web_server_conf = {
 
   # This defines which messages from the client we will let through
   # to the server side
-  'permitted' => [
+  'inbound_permitted' => [
     # Allow calls to login
     {
       'address' => 'vertx.basicauthmanager.login'
@@ -41,6 +41,11 @@ web_server_conf = {
         'collection' => 'orders'
       }
     }
+  ],
+
+  # This defines which messages from the server we will let through to the client
+  'outbound_permitted' => [
+    {}
   ]
 }
 

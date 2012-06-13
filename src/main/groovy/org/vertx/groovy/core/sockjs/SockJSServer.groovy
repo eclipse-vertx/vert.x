@@ -112,13 +112,14 @@ abstract class SockJSServer {
   /**
    * Install an app which bridges the SockJS server to the event bus.
    * @param sjsConfig The config for the app
-   * @param permitted A list of JSON objects which define permitted matches
+   * @param permitted A list of JSON objects which define inboundPermitted matches
    * @param authAddress The address of an authentication/authorisation busmod
    * @param bridgeAddress The address the bridge will listen at for login and lougout.
    */
-  void bridge(Map sjsConfig, List<Map<String, Object>> permitted = [[:]],
+  void bridge(Map sjsConfig, List<Map<String, Object>> inboundPermitted = [[:]],
+              List<Map<String, Object>> outboundPermitted = [[:]],
               long authTimeout = 5 * 60 * 1000, String authAddress = null) {
-    jServer.bridge(new JsonObject(sjsConfig), new JsonArray(permitted),
+    jServer.bridge(new JsonObject(sjsConfig), new JsonArray(inboundPermitted), new JsonArray(outboundPermitted),
                    authTimeout, authAddress)
   }
 

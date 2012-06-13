@@ -56,10 +56,11 @@ public class DefaultSockJSServer implements SockJSServer {
   private final VertxInternal vertx;
   private RouteMatcher rm = new RouteMatcher();
   private WebSocketMatcher wsMatcher = new WebSocketMatcher();
-  private final Map<String, Session> sessions = new HashMap<>();
+  private final Map<String, Session> sessions;
 
   public DefaultSockJSServer(final VertxInternal vertx, final HttpServer httpServer) {
     this.vertx = vertx;
+    this.sessions = vertx.sharedData().getMap("_vertx.sockjssessions");
     // Any previous request and websocket handlers will become default handlers
     // if nothing else matches
     rm.noMatch(httpServer.requestHandler());
@@ -179,18 +180,18 @@ public class DefaultSockJSServer implements SockJSServer {
     });
   }
 
-  public void bridge(JsonObject sjsConfig, JsonArray permitted) {
-    new EventBusBridge(vertx, this, sjsConfig, permitted);
+  public void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted) {
+    new EventBusBridge(vertx, this, sjsConfig, inboundPermitted, outboundPermitted);
   }
 
-  public void bridge(JsonObject sjsConfig, JsonArray permitted,
+  public void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
                      long authTimeout) {
-    new EventBusBridge(vertx, this, sjsConfig, permitted, authTimeout);
+    new EventBusBridge(vertx, this, sjsConfig, inboundPermitted, outboundPermitted, authTimeout);
   }
 
-  public void bridge(JsonObject sjsConfig, JsonArray permitted,
+  public void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
                      long authTimeout, String authAddress) {
-    new EventBusBridge(vertx, this, sjsConfig, permitted, authTimeout, authAddress);
+    new EventBusBridge(vertx, this, sjsConfig, inboundPermitted, outboundPermitted, authTimeout, authAddress);
   }
 
   private Handler<HttpServerRequest> createChunkingTestHandler() {
@@ -407,7 +408,7 @@ public class DefaultSockJSServer implements SockJSServer {
         sock.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
             for (String actorID : connections) {
-              vertx.eventBus().send(actorID, buffer);
+              vertx.eventBus().publish(actorID, buffer);
             }
           }
         });

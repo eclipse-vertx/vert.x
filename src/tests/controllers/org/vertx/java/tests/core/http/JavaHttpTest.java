@@ -445,6 +445,10 @@ public class JavaHttpTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void testSendFileOverrideHeaders() {
+    startTest(getMethodName());
+  }
+
   public void test100ContinueDefault() {
     startTest(getMethodName());
   }

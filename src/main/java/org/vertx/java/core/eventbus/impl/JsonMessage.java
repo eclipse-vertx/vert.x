@@ -33,12 +33,12 @@ class JsonMessage extends BaseMessage<JsonObject> {
 
   private byte[] encoded;
 
-  JsonMessage(String address, JsonObject body) {
-    super(address, body);
+  JsonMessage(boolean send, String address, JsonObject body) {
+    super(send, address, body);
   }
 
   private JsonMessage(JsonMessage other) {
-    super(other.address, other.body == null ? null : other.body.copy());
+    super(other.send, other.address, other.body == null ? null : other.body.copy());
     this.replyAddress = other.replyAddress;
     this.bus = other.bus;
     this.sender = other.sender;
@@ -88,8 +88,8 @@ class JsonMessage extends BaseMessage<JsonObject> {
     return MessageFactory.TYPE_JSON;
   }
 
-  protected void handleReply(JsonObject reply, Handler<Message<JsonObject>> replyHandler) {
-    bus.send(replyAddress, reply, replyHandler);
+  protected BaseMessage createReplyMessage(JsonObject reply) {
+    return new JsonMessage(true, replyAddress, reply);
   }
 
 }

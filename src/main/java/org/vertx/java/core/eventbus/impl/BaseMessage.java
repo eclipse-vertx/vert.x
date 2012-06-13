@@ -34,10 +34,12 @@ public abstract class BaseMessage<T> extends Message<T> {
   private static final Logger log = LoggerFactory.getLogger(BaseMessage.class);
 
   protected ServerID sender;
-  protected EventBus bus;
+  protected DefaultEventBus bus;
   protected String address;
+  boolean send; // Is it a send or a publish?
 
-  protected BaseMessage(String address, T body) {
+  protected BaseMessage(boolean send, String address, T body) {
+    this.send = send;
     this.body = body;
     if (address == null) {
       throw new IllegalArgumentException("address must be specified");
@@ -48,12 +50,16 @@ public abstract class BaseMessage<T> extends Message<T> {
 
   public void reply(T message, Handler<Message<T>> replyHandler) {
     if (bus != null && replyAddress != null) {
-      handleReply(message, replyHandler);
+      BaseMessage<T> replyMessage = createReplyMessage(message);
+      bus.sendReply(sender, replyMessage, replyHandler);
     }
   }
 
   protected BaseMessage(Buffer readBuff) {
     int pos = 1;
+    byte bsend = readBuff.getByte(pos);
+    send = bsend == 0;
+    pos += 1;
     int addressLength = readBuff.getInt(pos);
     pos += 4;
     byte[] addressBytes = readBuff.getBytes(pos, pos + addressLength);
@@ -80,12 +86,13 @@ public abstract class BaseMessage<T> extends Message<T> {
   }
 
   protected void write(NetSocket socket) {
-    int length = 1 + 4 + address.length() + 1 + 4 * sender.host.length() +
+    int length = 1 + 1 + 4 + address.length() + 1 + 4 * sender.host.length() +
         4 + (replyAddress == null ? 0 : replyAddress.length()) +
         getBodyLength();
     Buffer totBuff = new Buffer(length);
     totBuff.appendInt(0);
     totBuff.appendByte(type());
+    totBuff.appendByte(send ? (byte)0 : (byte)1);
     writeString(totBuff, address);
     totBuff.appendInt(sender.port);
     writeString(totBuff, sender.host);
@@ -107,7 +114,7 @@ public abstract class BaseMessage<T> extends Message<T> {
 
   protected abstract byte type();
 
-  protected abstract Message copy();
+  protected abstract Message<T> copy();
 
   protected abstract void readBody(int pos, Buffer readBuff);
 
@@ -115,6 +122,6 @@ public abstract class BaseMessage<T> extends Message<T> {
 
   protected abstract int getBodyLength();
 
-  protected abstract void handleReply(T reply, Handler<Message<T>> replyHandler);
+  protected abstract BaseMessage createReplyMessage(T reply);
 
 }

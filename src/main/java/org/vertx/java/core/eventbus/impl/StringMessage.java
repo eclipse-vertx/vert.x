@@ -32,8 +32,8 @@ class StringMessage extends BaseMessage<String> {
 
   private byte[] encoded;
 
-  StringMessage(String address, String body) {
-    super(address, body);
+  StringMessage(boolean send, String address, String body) {
+    super(send, address, body);
   }
 
   public StringMessage(Buffer readBuff) {
@@ -80,8 +80,8 @@ class StringMessage extends BaseMessage<String> {
     return MessageFactory.TYPE_STRING;
   }
 
-  protected void handleReply(String reply, Handler<Message<String>> replyHandler) {
-    bus.send(replyAddress, reply, replyHandler);
+  protected BaseMessage createReplyMessage(String reply) {
+    return new StringMessage(true, replyAddress, reply);
   }
 
 }
