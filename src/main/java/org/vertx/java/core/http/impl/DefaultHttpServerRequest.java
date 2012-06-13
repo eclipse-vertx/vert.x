@@ -25,6 +25,7 @@ import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
+import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,10 +48,10 @@ public class DefaultHttpServerRequest extends HttpServerRequest {
   private Map<String, String> headers;
 
   DefaultHttpServerRequest(ServerConnection conn,
-                           String method, String uri, String path, String query,
+                           String method, String uri, String path, String query,SocketAddress remoteHost,
                            HttpServerResponse response,
                            HttpRequest request) {
-    super(method, uri, path, query, response);
+    super(method, uri, path, query, remoteHost, response);
     this.conn = conn;
     this.request = request;
   }
