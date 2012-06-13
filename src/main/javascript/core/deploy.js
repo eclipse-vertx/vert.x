@@ -50,6 +50,10 @@ if (!vertx.deployVerticle) {
       org.vertx.java.deploy.impl.VertxLocator.container.undeployVerticle(name, doneHandler);
     }
 
+    vertx.exit = function() {
+      org.vertx.java.deploy.impl.VertxLocator.container.exit();
+    }
+
     var j_conf = org.vertx.java.deploy.impl.VertxLocator.container.getConfig();
     vertx.config =  j_conf == null ? null : JSON.parse(j_conf.encode());
 
