@@ -22,7 +22,8 @@ import org.vertx.java.core.json
 from core.http import HttpServer, HttpClient
 from core.net import NetServer, NetClient
 from core.sock_js import SockJSServer
-from core.javautils import map_to_java
+from core.handlers import DoneHandler
+from core.javautils import map_to_java, map_from_java
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
@@ -68,7 +69,7 @@ def deploy_verticle(main, config=None, instances=1, handler=None):
     if config != None:
         config = org.vertx.java.core.json.JsonObject(map_to_java(config))
   
-    org.vertx.java.deploy.impl.VertxLocator.container.deployVerticle(main, config, instances, handler)
+    return org.vertx.java.deploy.impl.VertxLocator.container.deployVerticle(main, config, instances, DoneHandler(handler))
 
 def deploy_worker_verticle(main, config=None, instances=1, handler=None):
     """Deploy a workerverticle. The actual deploy happens asynchronously
@@ -81,7 +82,7 @@ def deploy_worker_verticle(main, config=None, instances=1, handler=None):
     """
     if config != None:
         config = org.vertx.java.core.json.JsonObject(map_to_java(config))
-    org.vertx.java.deploy.impl.VertxLocator.container.deployWorkerVerticle(main, config, instances, handler)
+    return org.vertx.java.deploy.impl.VertxLocator.container.deployWorkerVerticle(main, config, instances, DoneHandler(handler))
 
 def undeploy_verticle(id):
     """Undeploy a verticle
@@ -97,6 +98,6 @@ def config():
     returns dict config for the verticle
     """
     if Vertx.config is None:
-        Vertx.config = map_from_java(org.vertx.java.deploy.impl.VertxLocator.container.getConfig())
+        Vertx.config = map_from_java(org.vertx.java.deploy.impl.VertxLocator.container.getConfig().toMap())
     return Vertx.config
 
