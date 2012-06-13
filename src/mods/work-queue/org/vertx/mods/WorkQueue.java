@@ -185,6 +185,7 @@ public class WorkQueue extends BusModBase {
           if (reply.body.getString("status").equals("ok")) {
             actualSend(message);
           } else {
+            sendAcceptedReply(message.body, "error", reply.body.getString("message"));
             sendError(message, reply.body.getString("message"));
           }
         }
@@ -194,13 +195,21 @@ public class WorkQueue extends BusModBase {
     }
   }
 
+  private void sendAcceptedReply(JsonObject body, String status, String message) {
+    String acceptedReply = body.getString("accepted-reply");
+    if (acceptedReply != null) {
+      JsonObject repl = new JsonObject().putString("status", status);
+      if (message != null) {
+        repl.putString("message", message);
+      }
+      eb.send(acceptedReply, repl);
+    }
+  }
+
   private void actualSend(Message<JsonObject> message) {
     messages.add(new NonLoadedHolder(message));
     //Been added to the queue so reply if appropriate
-    String acceptedReply = message.body.getString("accepted-reply");
-    if (acceptedReply != null) {
-      eb.send(acceptedReply, new JsonObject().putString("status", "accepted"));
-    }
+    sendAcceptedReply(message.body, "accepted", null);
     checkWork();
   }
 
