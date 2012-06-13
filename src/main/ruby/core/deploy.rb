@@ -47,6 +47,11 @@ module Vertx
     org.vertx.java.deploy.impl.VertxLocator.container.undeployVerticle(id)
   end
 
+  # Cause the container to exit
+  def Vertx.exit
+    org.vertx.java.deploy.impl.VertxLocator.container.exit
+  end
+
   # Get config for the verticle
   # @return [Hash] The JSON config for the verticle
   def Vertx.config

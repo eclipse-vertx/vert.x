@@ -183,4 +183,11 @@ public class Container {
     return mgr.getLogger();
   }
 
+  /**
+   * Cause the container to exit
+   */
+  public void exit() {
+    mgr.unblock();
+  }
+
 }

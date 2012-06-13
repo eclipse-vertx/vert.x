@@ -194,4 +194,11 @@ class Container {
   Logger getLogger() {
     jContainer.getLogger()
   }
+
+  /**
+   * Cause the container to exit
+   */
+  void exit() {
+    jContainer.exit()
+  }
 }
