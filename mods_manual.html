@@ -269,7 +269,8 @@ mods/my-web-app/web-root/index.html
     "key_store_path": &lt;key_store_path&gt;,
 
     "bridge": &lt;bridge&gt;,
-    "permitted": &lt;permitted&gt;,
+    "inbound_permitted": &lt;inbound_permitted&gt;,
+    "outbound_permitted": &lt;outbound_permitted&gt;,
     "sjs_config": &lt;sjs_config&gt;,
     "auth_timeout": &lt;auth_timeout&gt;,
     "auth_address": &lt;auth_address&gt;
@@ -285,7 +286,8 @@ mods/my-web-app/web-root/index.html
 <li><code>key_store_password</code>. Password of Java keystore which holds the server certificate. Only used if <code>ssl</code> is <code>true</code>. Default is <code>wibble</code>.</li>
 <li><code>key_store_path</code>. Path to keystore which holds the server certificate. Default is <code>server-keystore.jks</code>. Only used if <code>ssl</code> is <code>true</code>. <em>Don't put the keystore under your webroot!</em>.</li>
 <li><code>bridge</code>. Should the server also act as an event bus bridge. This is used when you want to bridge the event bus into client side JavaScript. Default is <code>false</code>.</li>
-<li><code>permitted</code>. This is an array of JSON objects representing the permitted matches on the bridge. Only used if <code>bridge</code> is <code>true</code>. See the core manual for a full description of what these are. Defaults to <code>[]</code>.</li>
+<li><code>inbound_permitted</code>. This is an array of JSON objects representing the inbound permitted matches on the bridge. Only used if <code>bridge</code> is <code>true</code>. See the core manual for a full description of what these are. Defaults to <code>[]</code>.</li>
+<li><code>outbound_permitted</code>. This is an array of JSON objects representing the outbound permitted matches on the bridge. Only used if <code>bridge</code> is <code>true</code>. See the core manual for a full description of what these are. Defaults to <code>[]</code>.</li>
 <li><code>sjs_config</code>. This is a JSON object representing the configuration of the SockJS bridging application. You'd normally use this for specifying the url at which SockJS will connect to bridge from client side JS to the server. Only used if <code>bridge</code> is <code>true</code>. Default to <code>{"prefix": "/eventbus"}</code>.</li>
 <li><code>auth_timeout</code>. The bridge can also cache authorisations. This determines how long the bridge will cache one for. Default value is five minutes.</li>
 <li><code>auth_address</code>. The bridge can also call an authorisation manager to do authorisation. This is the address to which it will send authorisation messages. Default value is <code>vertx.basicauthmanager.authorise</code>. </li>
@@ -312,7 +314,8 @@ mods/my-web-app/web-root/index.html
    "host": "bridgeserver.mycompany.com",
    "static_files": false,
    "bridge": true,
-   "permitted": [{"address":"myservice"}]       
+   "inbound_permitted": [{"address":"myservice"}],
+   "outbound_permitted": [{"address":"topic.foo"}]
 }
 </pre>
 <h3 id="mongodb-persistor">MongoDB Persistor</h3><br/>
