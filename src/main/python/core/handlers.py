@@ -27,7 +27,8 @@ class DoneHandler(org.vertx.java.core.Handler):
 
     def handle(self, nothing=None):
         """ Call the handler when done """
-        self.handler()
+        if self.handler != None:
+            self.handler()
 
 class ContinueHandler(org.vertx.java.core.Handler):
     """ Continue handler """

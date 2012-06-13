@@ -112,8 +112,8 @@ class EventBus(object):
         Keyword arguments
         handler_id -- the id of the handler to unregister. Returned from EventBus.register_handler
         """
-        handler = EventBus.handler_dict.pop("%s"% handler_id)
-        EventBus.java_eventbus().unregisterHandler("%s"% handler_id)
+        handler = EventBus.handler_dict.pop(handler_id)
+        EventBus.java_eventbus().unregisterHandler(handler_id)
 
     @staticmethod
     def convert_msg(message):
