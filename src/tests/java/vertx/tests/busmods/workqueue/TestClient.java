@@ -49,16 +49,17 @@ public class TestClient extends TestClientBase {
     super.stop();
   }
 
-  int count;
+  int processedCount;
 
-  public void test1() throws Exception {
+  int acceptedCount;
+
+  public void testSimple() throws Exception {
 
     final int numMessages = 30;
 
     eb.registerHandler("done", new Handler<Message<JsonObject>>() {
       public void handle(Message<JsonObject> message) {
-        if (++count == numMessages) {
-          eb.unregisterHandler("done", this);
+        if (++processedCount == numMessages) {
           tu.testComplete();
         }
       }
@@ -66,6 +67,31 @@ public class TestClient extends TestClientBase {
 
     for (int i = 0; i < numMessages; i++) {
       JsonObject obj = new JsonObject().putString("blah", "wibble" + i);
+      eb.send("test.orderQueue", obj);
+    }
+  }
+
+  public void testWithAcceptedReply() throws Exception {
+
+    final int numMessages = 30;
+
+    eb.registerHandler("accepted", new Handler<Message<JsonObject>>() {
+      public void handle(Message<JsonObject> message) {
+        acceptedCount++;
+      }
+    });
+
+    eb.registerHandler("done", new Handler<Message<JsonObject>>() {
+      public void handle(Message<JsonObject> message) {
+        if (++processedCount == numMessages) {
+          tu.azzert(acceptedCount == numMessages);
+          tu.testComplete();
+        }
+      }
+    });
+
+    for (int i = 0; i < numMessages; i++) {
+      JsonObject obj = new JsonObject().putString("blah", "wibble" + i).putString("accepted-reply", "accepted");
       eb.send("test.orderQueue", obj);
     }
   }
