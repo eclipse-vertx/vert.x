@@ -36,12 +36,11 @@ public class WorkQueue extends BusModBase {
 
   // LHS is typed as ArrayList to ensure high perf offset based index operations
   private final Queue<String> processors = new LinkedList<>();
-  private final Queue<JsonObject> messages = new LinkedList<>();
+  private final Queue<MessageHolder> messages = new LinkedList<>();
 
   private long processTimeout;
   private String persistorAddress;
   private String collection;
-  private String address;
 
   /**
    * Start the busmod
@@ -49,7 +48,7 @@ public class WorkQueue extends BusModBase {
   public void start() {
     super.start();
 
-    address = getMandatoryStringConfig("address");
+    String address = getMandatoryStringConfig("address");
     processTimeout = super.getOptionalLongConfig("process_timeout", 5 * 60 * 1000);
     persistorAddress = super.getOptionalStringConfig("persistor_address", null);
     collection = super.getOptionalStringConfig("collection", null);
@@ -87,14 +86,18 @@ public class WorkQueue extends BusModBase {
   }
 
   private void processLoadBatch(JsonArray toLoad) {
-    Iterator iter = toLoad.iterator();
-    while (iter.hasNext()) {
-      Object obj = iter.next();
+    for (Object obj: toLoad) {
       if (obj instanceof JsonObject) {
-        messages.add((JsonObject)obj);
+        messages.add(new LoadedHolder((JsonObject)obj));
       }
     }
     checkWork();
+  }
+
+  private interface MessageHolder {
+    Message<JsonObject> getMessage();
+    JsonObject getBody();
+    void reply(JsonObject reply);
   }
 
   private Handler<Message<JsonObject>> createLoadReplyHandler() {
@@ -112,7 +115,7 @@ public class WorkQueue extends BusModBase {
 
   private void checkWork() {
     if (!messages.isEmpty() && !processors.isEmpty()) {
-      final JsonObject message = messages.poll();
+      final MessageHolder message = messages.poll();
       final String address = processors.poll();
       final long timeoutID = vertx.setTimer(processTimeout, new Handler<Long>() {
         public void handle(Long id) {
@@ -121,27 +124,37 @@ public class WorkQueue extends BusModBase {
           messages.add(message);
         }
       });
-      eb.send(address, message, new Handler<Message<JsonObject>>() {
+      eb.send(address, message.getBody(), new Handler<Message<JsonObject>>() {
         public void handle(Message<JsonObject> reply) {
           vertx.cancelTimer(timeoutID);
           processors.add(address);
           if (persistorAddress != null) {
             JsonObject msg = new JsonObject().putString("action", "delete").putString("collection", collection)
-                                             .putObject("matcher", message);
+                                             .putObject("matcher", message.getBody());
             eb.send(persistorAddress, msg, new Handler<Message<JsonObject>>() {
               public void handle(Message<JsonObject> reply) {
                 if (!reply.body.getString("status").equals("ok"))                 {
                   logger.error("Failed to delete document from queue: " + reply.body.getString("message"));
                 }
-                checkWork();
+                messageProcessed(reply.body, message);
               }
             });
           } else {
-            checkWork();
+            messageProcessed(reply.body, message);
           }
         }
       });
     }
+  }
+
+  private void messageProcessed(JsonObject reply, MessageHolder holder) {
+    checkWork();
+    forwardReply(reply, holder);
+  }
+
+  // Forward the reply back to the sender
+  private void forwardReply(JsonObject reply, MessageHolder holder) {
+    holder.reply(reply);
   }
 
   private void doRegister(Message<JsonObject> message) {
@@ -170,22 +183,68 @@ public class WorkQueue extends BusModBase {
       eb.send(persistorAddress, msg, new Handler<Message<JsonObject>>() {
         public void handle(Message<JsonObject> reply) {
           if (reply.body.getString("status").equals("ok")) {
-            actualSend(message, message.body);
+            actualSend(message);
           } else {
             sendError(message, reply.body.getString("message"));
           }
         }
       });
     } else {
-      actualSend(message, message.body);
+      actualSend(message);
     }
   }
 
-  private void actualSend(Message<JsonObject> message, JsonObject work) {
-    messages.add(work);
-    //Been added to the queue so reply
-    sendOK(message);
+  private void actualSend(Message<JsonObject> message) {
+    messages.add(new NonLoadedHolder(message));
+    //Been added to the queue so reply if appropriate
+    String acceptedReply = message.body.getString("accepted-reply");
+    if (acceptedReply != null) {
+      eb.send(acceptedReply, new JsonObject().putString("status", "accepted"));
+    }
     checkWork();
   }
+
+  private static class LoadedHolder implements MessageHolder {
+
+    private final JsonObject body;
+
+    private LoadedHolder(JsonObject body) {
+      this.body = body;
+    }
+
+    public Message<JsonObject> getMessage() {
+      return null;
+    }
+
+    public JsonObject getBody() {
+      return body;
+    }
+
+    public void reply(JsonObject reply) {
+      //Do nothing - we are loaded from storage so the sender has long gone
+    }
+  }
+
+  private static class NonLoadedHolder implements MessageHolder {
+
+    private final Message<JsonObject> message;
+
+    private NonLoadedHolder(Message<JsonObject> message) {
+      this.message = message;
+    }
+
+    public Message<JsonObject> getMessage() {
+      return message;
+    }
+
+    public JsonObject getBody() {
+      return message.body;
+    }
+
+    public void reply(JsonObject reply) {
+      message.reply(reply);
+    }
+  }
+
 
 }

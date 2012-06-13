@@ -29,7 +29,6 @@ public class JavaWorkQueueTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-
   }
 
   @Override
@@ -38,14 +37,22 @@ public class JavaWorkQueueTest extends TestBase {
   }
 
   @Test
-  public void test1() throws Exception {
+  public void testSimple() throws Exception {
+    start(getMethodName());
+  }
+
+  @Test
+  public void testWithAcceptedReply() throws Exception {
+    start(getMethodName());
+  }
+
+  private void start(String methName) throws Exception {
     startApp(TestClient.class.getName());
     int numProcessors = 10;
     for (int i = 0; i < numProcessors; i++) {
       startApp(OrderProcessor.class.getName());
     }
-    startTest(getMethodName());
+    startTest(methName);
   }
-
 
 }
