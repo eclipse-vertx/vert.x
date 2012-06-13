@@ -118,7 +118,7 @@ class Buffer(object):
         if bytes == 4:
           self.buffer.appendFloat(num)
         elif bytes == 8:
-          seff.buffer.appendDouble(num)
+          self.buffer.appendDouble(num)
         else:
           raise Exception("bytes must be 4 or 8")
       
@@ -168,7 +168,7 @@ class Buffer(object):
 
     def copy(self):
         """ Get a copy of the entire buffer. """
-        return Buffer.new(self.buffer.copy())
+        return Buffer(self.buffer.copy())
 
     def _to_java_buffer(self):
         """ private """
