@@ -736,7 +736,8 @@ eb.send('foo.myPersistor', {
 </pre>
 <h3 id="work-queue">Work Queue</h3><br/>
 <p>This busmod queues messages (work) sent to it, and then forwards the work to one of many processors that may be attached to it, if available.</p>
-<p>Once a processor has processed the work, it replies to the message and when the work queue receives the reply it removes the work from the queue. The processor can time out in processing a message, in which case the message becomes available again for other processors to consume.</p>
+<p>Once a processor has processed the work, it replies to the message and when the work queue receives the reply it removes the work from the queue. The reply is then forwarded back to the original sender. The processor can time out in processing a message, in which case the message becomes available again for other processors to consume.</p>
+<p>The sender can also receive an optional reply when the work has been accepted by the work queue.</p>
 <p>Multiple processors can register for work with the work queue.</p>
 <p>The work queue is useful for use cases where you have a lot of work to process and want to share this work out amongst many processors.</p>
 <p>One example would be processing an order queue - each order must only be processed once, but we can have many processors (potentially on different machines) processing each order.</p>
@@ -778,12 +779,13 @@ eb.send('foo.myPersistor', {
 <h4 id="operations_2">Operations</h4><br/>
 <h5 id="send">Send</h5><br/>
 <p>To send data to the work queue, just send a JSON message to the main address of the busmod. The JSON message can have any structure you like - the work queue does not look at it.</p>
-<p>Once the send has been accepted, and queued a reply message will be sent:</p>
+<p>Once the work has been sent out to a worker, and processed, and that worker has replied, the reply will be forwarded back to the sender.</p>
+<p>You can optionally receive a reply when the work has been accepted (i.e. queued, but not yet processed), to do this add a field <code>accepted_reply</code> with a value holding the address where you want the reply sent. Once the send has been accepted, and queued a message will be sent to that address:</p>
 <pre class="prettyprint">{
-    "status": "ok"
+    "status": "accepted"
 }
 </pre>
-<p>If a problem occurs with the queueing, an error reply will be sent:</p>
+<p>If a problem occurs with the queueing, an error reply will be sent to the <code>accepted_reply</code> address (if any).</p>
 <pre class="prettyprint">{
     "status": "error"
     "message": &lt;message&gt;
