@@ -28,6 +28,7 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
+import java.net.SocketAddress;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
@@ -55,10 +56,10 @@ class BaseTransport {
   }
 
   protected Session getSession(final long timeout, final long heartbeatPeriod, final String sessionID,
-                               Handler<SockJSSocket> sockHandler) {
+                               Handler<SockJSSocket> sockHandler, SocketAddress remoteHost) {
     Session session = sessions.get(sessionID);
     if (session == null) {
-      session = new Session(vertx, sessions, sessionID, timeout, heartbeatPeriod, sockHandler);
+      session = new Session(vertx, sessions, sessionID, timeout, heartbeatPeriod, sockHandler , remoteHost);
       sessions.put(sessionID, session);
     }
     return session;

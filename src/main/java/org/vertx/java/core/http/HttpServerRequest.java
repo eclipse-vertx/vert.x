@@ -20,6 +20,7 @@ import org.vertx.java.core.http.impl.HttpReadStreamBase;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
+import java.net.SocketAddress;
 import java.util.Map;
 
 /**
@@ -39,11 +40,12 @@ public abstract class HttpServerRequest extends HttpReadStreamBase {
 
   private static final Logger log = LoggerFactory.getLogger(HttpServerRequest.class);
 
-  protected HttpServerRequest(String method, String uri, String path, String query, HttpServerResponse response) {
+  protected HttpServerRequest(String method, String uri, String path, String query, SocketAddress remoteHost, HttpServerResponse response) {
     this.method = method;
     this.uri = uri;
     this.path = path;
     this.query = query;
+    this.remoteHost = remoteHost;
     this.response = response;
   }
 
@@ -67,6 +69,11 @@ public abstract class HttpServerRequest extends HttpReadStreamBase {
    * The query part of the uri. For example someparam=32&someotherparam=x
    */
   public final String query;
+
+  /**
+   * Thre address of the remote
+   */
+  public final SocketAddress remoteHost;
 
   /**
    * The response. Each instance of this class has an {@link HttpServerResponse} instance attached to it. This is used

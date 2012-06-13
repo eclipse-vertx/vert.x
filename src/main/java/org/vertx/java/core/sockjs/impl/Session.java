@@ -19,12 +19,14 @@ package org.vertx.java.core.sockjs.impl;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.shareddata.Shareable;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
+import java.net.SocketAddress;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
@@ -61,12 +63,12 @@ class Session extends SockJSSocket implements Shareable {
   private Handler<Void> endHandler;
   private boolean handleCalled;
 
-  Session(VertxInternal vertx, Map<String, Session> sessions, long heartbeatPeriod, Handler<SockJSSocket> sockHandler) {
-    this(vertx, sessions, null, -1, heartbeatPeriod, sockHandler);
+  Session(VertxInternal vertx, Map<String, Session> sessions, long heartbeatPeriod, Handler<SockJSSocket> sockHandler, SocketAddress remoteHost) {
+    this(vertx, sessions, null, -1, heartbeatPeriod, sockHandler, remoteHost);
   }
 
-  Session(VertxInternal vertx, Map<String, Session> sessions, String id, long timeout, long heartbeatPeriod, Handler<SockJSSocket> sockHandler) {
-    super(vertx);
+  Session(VertxInternal vertx, Map<String, Session> sessions, String id, long timeout, long heartbeatPeriod, Handler<SockJSSocket> sockHandler, SocketAddress remoteHost) {
+    super(vertx,remoteHost);
     this.sessions = sessions;
     this.id = id;
     this.timeout = timeout;

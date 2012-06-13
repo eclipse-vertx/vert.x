@@ -49,7 +49,7 @@ class WebSocketTransport extends BaseTransport {
 
       public void handle(final WebSocketMatcher.Match match) {
         if (log.isTraceEnabled()) log.trace("WS, handler");
-        final Session session = new Session(vertx, sessions, (Long)config.getNumber("heartbeat_period"), sockHandler);
+        final Session session = new Session(vertx, sessions, (Long)config.getNumber("heartbeat_period"), sockHandler,match.ws.remoteHost);
         session.register(new WebSocketListener(match.ws, session));
       }
     });
