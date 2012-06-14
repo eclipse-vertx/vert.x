@@ -65,7 +65,7 @@ public class MessageFactory {
       case TYPE_STRING:
         return new StringMessage(buff);
       case TYPE_JSON:
-        return new JsonMessage(buff);
+        return new JsonObjectMessage(buff);
       default:
         throw new IllegalStateException("Invalid type " + type);
     }

@@ -26,6 +26,7 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -87,10 +88,18 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, JsonObject message, final Handler<Message<JsonObject>> replyHandler) {
-    sendOrPub(new JsonMessage(true, address, message), replyHandler);
+    sendOrPub(new JsonObjectMessage(true, address, message), replyHandler);
   }
 
   public void send(String address, JsonObject message) {
+    send(address, message, null);
+  }
+
+  public void send(String address, JsonArray message, final Handler<Message<JsonArray>> replyHandler) {
+    sendOrPub(new JsonArrayMessage(true, address, message), replyHandler);
+  }
+
+  public void send(String address, JsonArray message) {
     send(address, message, null);
   }
 
@@ -183,7 +192,11 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void publish(String address, JsonObject message) {
-    sendOrPub(new JsonMessage(false, address, message), null);
+    sendOrPub(new JsonObjectMessage(false, address, message), null);
+  }
+
+  public void publish(String address, JsonArray message) {
+    sendOrPub(new JsonArrayMessage(false, address, message), null);
   }
 
   public void publish(String address, Buffer message) {
