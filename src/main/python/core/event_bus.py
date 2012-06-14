@@ -59,14 +59,44 @@ class EventBus(object):
 
     @staticmethod
     def send(address, message, reply_handler=None):
-        message = EventBus.convert_msg(message)
-        if reply_handler != None:
-            EventBus.java_eventbus().send(address, message, InternalHandler(reply_handler))
-        else:
-            EventBus.java_eventbus().send(address, message)
+        """Send a message on the event bus
+
+        Keyword arguments
+        address -- the address to publish to
+        message -- The message to send
+        reply_handler -- An optional reply handler.
+        It will be called when the reply from a receiver is received.
+        """
+        EventBus.send_or_pub(True, address, message, reply_handler)
 
     @staticmethod
-    def register_handler(address, local_only, handler):
+    def publish(address, message):
+        """Publish a message on the event bus
+
+        Keyword arguments
+        address -- the address to publish to
+        message -- The message to publish
+        """
+        EventBus.send_or_pub(False, address, message)
+
+    @staticmethod
+    def send_or_pub(send, address, message, reply_handler=None):
+        if not address:
+            raise RuntimeError("An address must be specified")
+        if message is None:
+            raise RuntimeError("A message must be specified")
+        message = EventBus.convert_msg(message)
+        if send:
+            if reply_handler != None:
+                EventBus.java_eventbus().send(address, message, InternalHandler(reply_handler))
+            else:
+                EventBus.java_eventbus().send(address, message)
+        else:
+            EventBus.java_eventbus().publish(address, message)
+
+
+    @staticmethod
+    def register_handler(address, local_only=False, handler=None):
         """ Register a handler.
 
         Keyword arguments
@@ -76,17 +106,18 @@ class EventBus(object):
         handler -- The handler
         returns id of the handler which can be used in EventBus.unregister_handler
         """
+        if handler is None:
+            raise RuntimeError("handler is required")
         internal = InternalHandler(handler)
         if local_only:
           id = EventBus.java_eventbus().registerLocalHandler(address, internal)
         else:
           id = EventBus.java_eventbus().registerHandler(address, internal)
-
         EventBus.handler_dict[id] = internal
         return id
 
     @staticmethod
-    def register_simple_handler(local_only, handler):
+    def register_simple_handler(local_only=False, handler=None):
         """
         Registers a handler against a uniquely generated address, the address is returned as the id
         received by the handler. A single handler can be registered against many addresses.
@@ -97,6 +128,8 @@ class EventBus(object):
 
         returns id of the handler which can be used in EventBus.unregister_handler
         """
+        if handler is None:
+            raise RuntimeError("Handler is required")
         internal = InternalHandler(handler)
         if local_only:
             id = EventBus.java_eventbus().registerLocalHandler(internal)
@@ -125,6 +158,8 @@ class EventBus(object):
             message = java.lang.Long(message)
         elif isinstance(message, float):
             message = java.lang.Double(message)
+        elif isinstance(message, int):
+            message = java.lang.Integer(message)
         return message
         
 class InternalHandler(org.vertx.java.core.Handler):
@@ -157,8 +192,8 @@ class Message(object):
         handler -- the reply handler 
         """
         reply = EventBus.convert_msg(reply)
-        if reply_handler is None:
+        if handler is None:
             self.java_obj.reply(reply)
         else:
-            self.java_obj.reply(reply, InternalHandler(reply_handler))
+            self.java_obj.reply(reply, InternalHandler(handler))
       
