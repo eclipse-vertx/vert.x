@@ -17,9 +17,9 @@
 package org.vertx.java.core.eventbus.impl;
 
 import org.jboss.netty.util.CharsetUtil;
-import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -27,24 +27,24 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class JsonMessage extends BaseMessage<JsonObject> {
+class JsonArrayMessage extends BaseMessage<JsonArray> {
 
-  private static final Logger log = LoggerFactory.getLogger(JsonMessage.class);
+  private static final Logger log = LoggerFactory.getLogger(JsonArrayMessage.class);
 
   private byte[] encoded;
 
-  JsonMessage(boolean send, String address, JsonObject body) {
+  JsonArrayMessage(boolean send, String address, JsonArray body) {
     super(send, address, body);
   }
 
-  private JsonMessage(JsonMessage other) {
+  private JsonArrayMessage(JsonArrayMessage other) {
     super(other.send, other.address, other.body == null ? null : other.body.copy());
     this.replyAddress = other.replyAddress;
     this.bus = other.bus;
     this.sender = other.sender;
   }
 
-  public JsonMessage(Buffer readBuff) {
+  public JsonArrayMessage(Buffer readBuff) {
     super(readBuff);
   }
 
@@ -56,7 +56,7 @@ class JsonMessage extends BaseMessage<JsonObject> {
       pos += 4;
       byte[] bytes = readBuff.getBytes(pos, pos + strLength);
       String str = new String(bytes, CharsetUtil.UTF_8);
-      body = new JsonObject(str);
+      body = new JsonArray(str);
     }
   }
 
@@ -81,15 +81,15 @@ class JsonMessage extends BaseMessage<JsonObject> {
   }
 
   protected Message copy() {
-    return new JsonMessage(this);
+    return new JsonArrayMessage(this);
   }
 
   protected byte type() {
     return MessageFactory.TYPE_JSON;
   }
 
-  protected BaseMessage createReplyMessage(JsonObject reply) {
-    return new JsonMessage(true, replyAddress, reply);
+  protected BaseMessage createReplyMessage(JsonArray reply) {
+    return new JsonArrayMessage(true, replyAddress, reply);
   }
 
 }
