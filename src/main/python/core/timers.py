@@ -13,12 +13,13 @@
 # limitations under the License.
 
 import org.vertx.java.deploy.impl
+from core.handlers import DoneHandler
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
 
 def java_vertx():
-  return org.vertx.java.deploy.impl.VertxLocator.vertx()
+  return org.vertx.java.deploy.impl.VertxLocator.vertx
 
 def set_timer(delay, handler):
     """Sets a one-shot timer that will fire after a certain delay.
@@ -28,7 +29,7 @@ def set_timer(delay, handler):
     delay -- the delay, in milliseconds
     handler -- a block representing the code that will be run after the delay the unique id of the timer
     """
-    java_vertx().setTimer(delay, handler)
+    java_vertx().setTimer(delay, DoneHandler(handler))
 
 def set_periodic(delay, handler):
     """Sets a periodic timer.
@@ -37,7 +38,7 @@ def set_periodic(delay, handler):
     delay -- the period of the timer, in milliseconds
     handler -- a block representing the code that will be when the timer fires the unique id of the timer
     """
-    java_vertx().setPeriodic(delay, handler)
+    java_vertx().setPeriodic(delay, DoneHandler(handler))
 
 
 def cancel_timer(id):
@@ -58,4 +59,4 @@ def run_on_loop(handler):
     Keyword arguments
     handler -- a block representing the code that will be run ASAP
     """
-    java_vertx().runOnLoop(handler)
+    java_vertx().runOnLoop(DoneHandler(handler))
