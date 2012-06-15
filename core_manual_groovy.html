@@ -74,6 +74,7 @@
 <li><a href="#verticle-clean-up">Verticle clean-up</a></li>
 <li><a href="#getting-configuration-in-a-verticle">Getting Configuration in a Verticle</a></li>
 <li><a href="#logging-from-a-verticle">Logging from a Verticle</a></li>
+<li><a href="#accessing-environment-variables-from-a-verticle">Accessing environment variables from a Verticle</a></li>
 </ul>
 </li>
 <li><a href="#deploying-and-undeploying-verticles-programmatically">Deploying and Undeploying Verticles Programmatically</a><ul>
@@ -329,6 +330,8 @@ logger.info "I am logging something"
 <p>Which have the normal meanings you would expect.</p>
 <p>The log files by default go in a file called <code>vertx.log</code> in the system temp directory. On my Linux box this is <code>\tmp</code>.</p>
 <p>For more information on configuring logging, please see the main manual.</p>
+<h2 id="accessing-environment-variables-from-a-verticle">Accessing environment variables from a Verticle</h2><br/>
+<p>You can access the map of environment variables from a Verticle with the <code>getEnv()</code> method on the <code>container</code> object.</p>
 <h1 id="deploying-and-undeploying-verticles-programmatically">Deploying and Undeploying Verticles Programmatically</h1><br/>
 <p>You can deploy and undeploy verticles programmatically from inside another verticle. Any verticles deployed programmatically inherit the path of the parent verticle.</p>
 <h2 id="deploying-a-simple-verticle">Deploying a simple verticle</h2><br/>

@@ -75,6 +75,10 @@ The log files by default go in a file called `vertx.log` in the system temp dire
 
 For more information on configuring logging, please see the main manual.
 
+## Accessing environment variables from a Verticle
+
+You can access environment variables from a Verticle with the variable `vertx.env`.
+
 ## stdout and stderr in a Verticle
 
 The variables `stdout` and `stderr` are injected into all verticles. Unsurprisingly, you use these to print to stdout and stderr.

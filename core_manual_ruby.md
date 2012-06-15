@@ -58,9 +58,9 @@ The config returned is a Ruby Hash. You can use this object to configure the ver
 
 Each verticle is given its own logger. To get a reference to it invoke the `Vertx.logger` method:
 
-    var logger = vertx.logger;
+    logger = Vertx.logger
 
-    logger.info("I am logging something");
+    logger.info 'I am logging something'
 
 The logger has the functions:
 
@@ -76,6 +76,10 @@ Which have the normal meanings you would expect.
 The log files by default go in a file called `vertx.log` in the system temp directory. On my Linux box this is `\tmp`.
 
 For more information on configuring logging, please see the main manual.
+
+## Accessing environment variables from a Verticle
+
+You can access environment variables from a Verticle with the method `Vertx.env`.
 
 # Deploying and Undeploying Verticles Programmatically
 
