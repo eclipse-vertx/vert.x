@@ -201,4 +201,12 @@ class Container {
   void exit() {
     jContainer.exit()
   }
+
+  /**
+   * Get an umodifiable map of system, environment variables.
+   * @return The map
+   */
+  Map<String, String> getEnv() {
+    jContainer.getEnv()
+  }
 }

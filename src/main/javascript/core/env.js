@@ -14,20 +14,14 @@
  * limitations under the License.
  */
 
-(function(){
-    load('core/buffer.js');
-    load('core/event_bus.js');
-    load('core/net.js');
-    load('core/http.js');
-    load('core/streams.js');
-    load('core/timers.js');
-    load('core/utils.js');
-    load('core/sockjs.js');
-    load('core/parse_tools.js');
-    load('core/shared_data.js');
-    load('core/filesystem.js');
-    load('core/deploy.js');
-    load('core/logger.js');
-    load('core/env.js');
-    (this.module && module.exports) ? module.exports = vertx : this.vertx = vertx;
-})();
+var vertx = vertx || {};
+
+if (!vertx.env) {
+  vertx.env = {};
+  var j_map = org.vertx.java.deploy.impl.VertxLocator.container.getEnv();
+  var j_iter = j_map.entrySet().iterator();
+  while (j_iter.hasNext()) {
+    var entry = j_iter.next();
+    vertx.env[entry.getKey()] = entry.getValue();
+  }
+}
