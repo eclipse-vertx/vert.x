@@ -43,6 +43,7 @@ import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.parsetools.RecordParser;
 import org.vertx.java.deploy.impl.VerticleManager;
+import org.vertx.java.deploy.impl.Args;
 
 /**
  * CLI interface. Entry point for standalone vert.x application.
