@@ -292,7 +292,7 @@
   jruby -S gem install rdiscount
   -->
   <target name="yardoc">
-    <exec executable="yardoc"/>
+    <!-- exec executable="yardoc"/ -->
   </target>
 
 
@@ -349,6 +349,7 @@
     <mkdir dir="${dist-build}/bin"/>
 
     <!-- We use cp so we can preserve file attributes. No shell so can't use wildcards :( -->
+	<!--
     <exec executable="cp">
       <arg value="src/scripts/vertx"/>
       <arg value="${dist-build}/bin/vertx"/>
@@ -361,6 +362,10 @@
       <arg value="src/scripts/install_rhino.sh"/>
       <arg value="${dist-build}/install-rhino.sh"/>
     </exec>
+	-->
+    <copy file="src/scripts/vertx" todir="${dist-build}/bin"/>
+    <copy file="src/scripts/vertx.bat" todir="${dist-build}/bin"/>
+    <copy file="src/scripts/install_rhino.sh" todir="${dist-build}/bin"/>
 
     <copy todir="${dist-build}/examples">
       <fileset dir="src/examples">
