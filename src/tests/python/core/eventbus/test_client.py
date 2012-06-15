@@ -82,17 +82,18 @@ class EventBusTest(object):
 
         json = {'message' : 'hello world!'}
         address = "some-address"
-        received = [False] # use an array to ensure pass by ref
+        self.received = False
 
         def handler(msg):
-            if received[0]:
+            if self.received:
                 tu.azzert(False, "handler already called") 
             tu.azzert(msg.body['message'] == json['message'])
             EventBus.unregister_handler(id)
-            received[0] = True 
+            self.received = True 
 
             def timer_complete():
                 tu.test_complete()
+            
             # End test on a timer to give time for other messages to arrive
             set_timer(100, timer_complete)
         id = EventBus.register_handler(address, handler=handler)
