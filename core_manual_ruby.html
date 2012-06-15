@@ -75,6 +75,7 @@
 <li><a href="#verticle-clean-up">Verticle clean-up</a></li>
 <li><a href="#getting-configuration-in-a-verticle">Getting Configuration in a Verticle</a></li>
 <li><a href="#logging-from-a-verticle">Logging from a Verticle</a></li>
+<li><a href="#accessing-environment-variables-from-a-verticle">Accessing environment variables from a Verticle</a></li>
 </ul>
 </li>
 <li><a href="#deploying-and-undeploying-verticles-programmatically">Deploying and Undeploying Verticles Programmatically</a><ul>
@@ -325,9 +326,9 @@ puts "number of wibbles is #{config.wibble_number}"
 <p>The config returned is a Ruby Hash. You can use this object to configure the verticle. Allowing verticles to be configured in a consistent way like this allows configuration to be easily passed to them irrespective of the language.</p>
 <h2 id="logging-from-a-verticle">Logging from a Verticle</h2><br/>
 <p>Each verticle is given its own logger. To get a reference to it invoke the <code>Vertx.logger</code> method:</p>
-<pre class="prettyprint">var logger = vertx.logger;
+<pre class="prettyprint">logger = Vertx.logger
 
-logger.info("I am logging something");
+logger.info 'I am logging something'
 </pre>
 <p>The logger has the functions:</p>
 <ul>
@@ -341,6 +342,8 @@ logger.info("I am logging something");
 <p>Which have the normal meanings you would expect.</p>
 <p>The log files by default go in a file called <code>vertx.log</code> in the system temp directory. On my Linux box this is <code>\tmp</code>.</p>
 <p>For more information on configuring logging, please see the main manual.</p>
+<h2 id="accessing-environment-variables-from-a-verticle">Accessing environment variables from a Verticle</h2><br/>
+<p>You can access environment variables from a Verticle with the method <code>Vertx.env</code>.</p>
 <h1 id="deploying-and-undeploying-verticles-programmatically">Deploying and Undeploying Verticles Programmatically</h1><br/>
 <p>You can deploy and undeploy verticles programmatically from inside another verticle. Any verticles deployed programmatically inherit the path of the parent verticle.</p>
 <h2 id="deploying-a-simple-verticle">Deploying a simple verticle</h2><br/>

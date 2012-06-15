@@ -64,6 +64,10 @@ The log files by default go in a file called `vertx.log` in the system temp dire
 
 For more information on configuring logging, please see the main manual.
 
+## Accessing environment variables from a Verticle
+
+You can access the map of environment variables from a Verticle with the `getEnv()` method on the `container` object.
+
 # Deploying and Undeploying Verticles Programmatically
 
 You can deploy and undeploy verticles programmatically from inside another verticle. Any verticles deployed programmatically inherit the path of the parent verticle.

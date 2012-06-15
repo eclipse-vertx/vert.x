@@ -81,6 +81,10 @@ Which have the normal meanings you would expect.
 The log files by default go in a file called `vertx.log` in the system temp directory. On my Linux box this is `\tmp`.
 
 For more information on configuring logging, please see the main manual.
+
+## Accessing environment variables from a Verticle
+
+You can access the map of environment variables from a Verticle with the `getEnv()` method on the `container` object.
    
 # Deploying and Undeploying Verticles Programmatically
 
