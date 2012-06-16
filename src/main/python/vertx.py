@@ -18,11 +18,12 @@ This module provides the entry point to the vert.x platform
 
 import org.vertx.java.deploy.impl.VertxLocator
 import org.vertx.java.core.json
+import org.vertx.java.deploy.impl
 
 from core.http import HttpServer, HttpClient
 from core.net import NetServer, NetClient
 from core.sock_js import SockJSServer
-from core.handlers import DoneHandler
+from core.handlers import TimerHandler, DoneHandler
 from core.javautils import map_to_java, map_from_java
 
 __author__ = "Scott Horn"
@@ -100,4 +101,47 @@ def config():
     if Vertx.config is None:
         Vertx.config = map_from_java(org.vertx.java.deploy.impl.VertxLocator.container.getConfig().toMap())
     return Vertx.config
+
+def java_vertx():
+    return org.vertx.java.deploy.impl.VertxLocator.vertx
+
+def set_timer(delay, handler):
+    """Sets a one-shot timer that will fire after a certain delay.
+    This method will accept either a Proc or a block.
+
+    Keyword arguments
+    delay -- the delay, in milliseconds
+    handler -- a block representing the code that will be run after the delay the unique id of the timer
+    """
+    java_vertx().setTimer(delay, TimerHandler(handler))
+
+def set_periodic(delay, handler):
+    """Sets a periodic timer.
+
+    Keyword arguments
+    delay -- the period of the timer, in milliseconds
+    handler -- a block representing the code that will be when the timer fires the unique id of the timer
+    """
+    java_vertx().setPeriodic(delay, TimerHandler(handler))
+
+
+def cancel_timer(id):
+    """Cancels a timer.
+
+    Keyword arguments
+    id -- the id of the timer, as returned from set_timer or set_periodic
+
+    returns true if the timer was cancelled, false if it wasn't found.
+    """
+    java_vertx().cancelTimer(id)
+
+
+def run_on_loop(handler):
+    """Put the handler on the event queue for this loop so it will be run asynchronously
+    ASAP after this event has been processed
+
+    Keyword arguments
+    handler -- a block representing the code that will be run ASAP
+    """
+    java_vertx().runOnLoop(DoneHandler(handler))
 
