@@ -52,7 +52,7 @@ class TestUtils(object):
         return Buffer(j_buff)
 
     @staticmethod
-    def random_unicode_string(self, size):
+    def random_unicode_string(size):
         return org.vertx.java.framework.TestUtils.randomUnicodeString(size)
 
     @staticmethod
