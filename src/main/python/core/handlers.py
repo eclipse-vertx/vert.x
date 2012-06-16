@@ -91,3 +91,13 @@ class StreamEndHandler(org.vertx.java.core.Handler):
     def handle(self, stream):
         """ Call the handler after stream has been ended"""
         self.handler(stream)                
+
+class TimerHandler(org.vertx.java.core.Handler):
+    """ Timer handler """
+    def __init__(self, handler):
+        self.handler = handler
+
+    def handle(self, timer_id):
+        """ Call the handler """
+        if self.handler != None:
+            self.handler(timer_id)
