@@ -12,19 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include Java
 
-require 'core/timers'
-require 'core/buffer'
-require 'core/file_system'
-require 'core/http'
-require 'core/net'
-require 'core/parsetools'
-require 'core/streams'
-require 'core/shared_data'
-require 'core/logger'
-require 'core/event_bus'
-require 'core/sock_js'
-require 'core/deploy'
-require 'core/env'
+module Vertx
 
+  # @return [Hash] Get the environment for the verticle
+  def Vertx.env
+    org.vertx.java.deploy.impl.VertxLocator.container.getEnv
+  end
+
+end

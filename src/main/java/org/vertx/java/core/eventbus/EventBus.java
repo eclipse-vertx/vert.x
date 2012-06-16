@@ -19,6 +19,7 @@ package org.vertx.java.core.eventbus;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
 /**
@@ -71,6 +72,21 @@ public interface EventBus {
    * @param message The message
    */
   void send(String address, JsonObject message);
+
+  /**
+   * Send a JSON array as a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
+  void send(String address, JsonArray message, Handler<Message<JsonArray>> replyHandler);
+
+  /**
+   * Send a JSON array as a message
+   * @param address The address to send it to
+   * @param message The message
+   */
+  void send(String address, JsonArray message);
 
   /**
    * Send a Buffer as a message
@@ -243,6 +259,13 @@ public interface EventBus {
    * @param message The message
    */
   void publish(String address, JsonObject message);
+
+  /**
+   * Publish a JSON array as a message
+   * @param address The address to publish it to
+   * @param message The message
+   */
+  void publish(String address, JsonArray message);
 
   /**
    * Publish a Buffer as a message

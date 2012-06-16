@@ -257,14 +257,13 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
         response.setHeader(Names.CONTENT_LENGTH, String.valueOf(file.length()));
       }
       if (!contentTypeSet()) {
-        try {
-          String contentType = Files.probeContentType(Paths.get(filename));
+        int li = filename.lastIndexOf('.');
+        if (li != -1 && li != filename.length() - 1) {
+          String ext = filename.substring(li + 1, filename.length());
+          String contentType = MimeMapping.getMimeTypeForExtension(ext);
           if (contentType != null) {
             response.setHeader(Names.CONTENT_TYPE, contentType);
           }
-        } catch (IOException e) {
-          log.error("Failed to get content type", e);
-          sendNotFound();
         }
       }
 

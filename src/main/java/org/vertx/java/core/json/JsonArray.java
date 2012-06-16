@@ -135,6 +135,10 @@ public class JsonArray implements Iterable<Object> {
     return Json.encode(this.list);
   }
 
+  public JsonArray copy() {
+    return new JsonArray(encode());
+  }
+
   public boolean equals(Object o) {
     if (this == o) return true;
 

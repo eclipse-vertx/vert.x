@@ -194,4 +194,19 @@ class Container {
   Logger getLogger() {
     jContainer.getLogger()
   }
+
+  /**
+   * Cause the container to exit
+   */
+  void exit() {
+    jContainer.exit()
+  }
+
+  /**
+   * Get an umodifiable map of system, environment variables.
+   * @return The map
+   */
+  Map<String, String> getEnv() {
+    jContainer.getEnv()
+  }
 }
