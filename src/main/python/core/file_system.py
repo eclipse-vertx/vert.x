@@ -46,22 +46,22 @@ class FileProps(object):
     @property 
     def directory(self):
         """return is the file a directory"""
-        return self.java_obj.isDirectory()
+        return self.java_obj.isDirectory
 
     @property
     def other(self):
         """return Is the file some other file type?"""
-        return self.java_obj.isOther()
+        return self.java_obj.isOther
 
     @property
     def regular_file(self):
         """returns   Is it a regular file?"""
-        return self.java_obj.isRegularFile()
+        return self.java_obj.isRegularFile
 
     @property
     def symbolic_link(self): 
         """returns is it a symbolic link?"""
-        return self.java_obj.isSymbolicLink()
+        return self.java_obj.isSymbolicLink
 
     @property
     def size(self):
