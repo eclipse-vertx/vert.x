@@ -23,6 +23,7 @@ import org.vertx.java.deploy.impl.VerticleManager;
 
 import java.io.File;
 import java.net.URL;
+import java.util.Map;
 
 /**
  * This class represents the container in which a verticle runs.<p>
@@ -181,6 +182,21 @@ public class Container {
    */
   public Logger getLogger() {
     return mgr.getLogger();
+  }
+
+  /**
+   * Cause the container to exit
+   */
+  public void exit() {
+    mgr.unblock();
+  }
+
+  /**
+   * Get an umodifiable map of system, environment variables.
+   * @return The map
+   */
+  public Map<String, String> getEnv() {
+    return System.getenv();
   }
 
 }
