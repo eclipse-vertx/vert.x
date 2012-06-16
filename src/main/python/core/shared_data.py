@@ -63,7 +63,8 @@ class SharedData(object):
 
         returns the shared set.
         """
-        return SharedSet(SharedData.shared_data().getSet(key))
+        set_ = SharedData.shared_data().getSet(key)
+        return SharedSet(set_)
 
     @staticmethod
     def remove_hash(key):
@@ -72,7 +73,7 @@ class SharedData(object):
         Keyword arguments
         key -- The key of the hash.
         """
-        SharedData.shared_data().removeMap(key)
+        return SharedData.shared_data().removeMap(key)
 
     @staticmethod
     def remove_set(key):
@@ -81,7 +82,7 @@ class SharedData(object):
         Keyword arguments
         key -- The key of the set.
         """
-        SharedData.shared_data().removeSet(key)
+        return SharedData.shared_data().removeSet(key)
 
     @staticmethod
     def check_obj(obj):
@@ -98,22 +99,25 @@ class SharedHash(object):
     def __init__(self, hash):
       self.java_obj = hash
 
-    def __setitem(self, key, val):
+    def __setitem__(self, key, val):
         key = SharedData.check_obj(key)
         val = SharedData.check_obj(val)
         self.java_obj.put(key, val)
     
-    def __getitem(self, key):
+    def __getitem__(self, key):
         obj = self.java_obj.get(key)
         if isinstance(obj, org.vertx.java.core.buffer.Buffer):
             obj = Buffer(obj)
         return obj
     
-    def __eq__(self, other):
+    def __eq__(self, other):        
         if isinstance(other, SharedHash):
-            return self.java_obj.equal(other.to_java_map())
+            return self.java_obj.equals(other._to_java_map())
         else:
             return False
+    
+    def __str__(self):
+        return map_from_java(self.java_obj).__str__()
 
     def keys(self):
         return map_from_java(self.java_obj).keys()
@@ -134,10 +138,19 @@ class SharedSet(object):
 
     def __eq__(self, other):
         if isinstance(other, SharedSet):
-            return self.java_obj.equal(other.to_java_set())
+            return self.java_obj.hashCode() == other._to_java_set().hashCode()
         else:
             return False
-    
+
+    def __len__(self):
+        return self.size()
+
+    def __str__(self):
+        return map_from_java(self.java_obj).__str__()
+
+    def __iter__(self):
+        return map_from_java(self.java_obj).__iter__()
+
     def add(self, obj):
         """ Add an object to the set
         
@@ -197,4 +210,4 @@ class SharedSet(object):
         return self.java_obj.size()
 
     def _to_java_set(self):
-        self.java_obj
+        return self.java_obj

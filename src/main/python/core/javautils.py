@@ -37,10 +37,18 @@ def map_map_from_java (map):
         result[map_from_java(key)] = map_from_java(map.get(key))
     return result
 
+def map_set_from_java (set_):
+    """ Convert a Set to a set. """
+    result = set()
+    iter = set_.iterator()
+    while iter.hasNext():
+        result.add(map_from_java(iter.next()))
+    return result
+
 def map_collection_from_java (coll):
     """ Convert a Collection to a List. """
     result = []
-    iter = coll.iterator();
+    iter = coll.iterator()
     while iter.hasNext():
         result.append(map_from_java(iter.next()))
     return result
@@ -49,6 +57,7 @@ def map_from_java (object):
     """ Convert a Java type to a Jython type. """
     if object is None: return object
     if   isinstance(object, util.Map):        result = map_map_from_java(object)
+    if   isinstance(object, util.Set):        result = map_set_from_java(object)
     elif isinstance(object, util.Collection): result = map_collection_from_java(object)
     else:                                     result = object
     return result
