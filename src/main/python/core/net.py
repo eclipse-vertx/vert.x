@@ -38,8 +38,7 @@ class NetServer(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport):
         for item in kwargs.keys():
            setattr(self, item, kwargs[item])
 
-    @property
-    def client_auth_required(self, val):
+    def set_client_auth_required(self, val):
         """Client authentication is an extra level of security in SSL, and requires clients to provide client certificates.
         Those certificates must be added to the server trust store.
         val --  If true then the server will request client authentication from any connecting clients, if they
@@ -47,6 +46,7 @@ class NetServer(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport):
         """
         self.java_obj.setClientAuthRequired(val)
         return self
+    client_auth_required = property(fset=set_client_auth_required)
 
     def connect_handler(self, handler):
         """Supply a connect handler for this server. The server can only have at most one connect handler at any one time.
@@ -75,7 +75,7 @@ class NetServer(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport):
         return self
 
 
-    def close(self, handler):
+    def close(self, handler=None):
         """Close the server. The handler will be called when the close is complete."""
         self.java_obj.close(CloseHandler(handler))
 

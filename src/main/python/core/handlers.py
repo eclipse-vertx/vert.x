@@ -62,7 +62,8 @@ class CloseHandler(org.vertx.java.core.Handler):
 
     def handle(self, nothing=None):
         """ Call the handler when a connection is closed """
-        self.handler()        
+        if self.handler != None:
+            self.handler()        
 
 class ExceptionHandler(org.vertx.java.core.Handler):
     """ Exception handler """
