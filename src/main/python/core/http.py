@@ -271,7 +271,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
         uri -- A relative URI where to perform the DELETE on the server.
         handler -- The handler to be called with the HttpClientResponse
         """
-        return HttpClientRequest.new(self.java_obj.delete(uri, HttpClientResponseHandler(handler)))
+        return HttpClientRequest(self.java_obj.delete(uri, HttpClientResponseHandler(handler)))
 
     def trace(self, uri, handler):
         """ This method returns an HttpClientRequest instance which represents an HTTP TRACE request with the specified uri.
