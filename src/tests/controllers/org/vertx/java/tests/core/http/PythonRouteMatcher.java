@@ -3,7 +3,7 @@ package org.vertx.java.tests.core.http;
 import org.vertx.java.framework.TestBase;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author <a href="https://github.com/sjhorn">Scott Horn</a>
  */
 public class PythonRouteMatcher extends TestBase {
 
