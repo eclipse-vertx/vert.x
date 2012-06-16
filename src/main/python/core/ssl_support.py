@@ -61,7 +61,7 @@ class SSLSupport(object):
 
   key_store_password = property(fset=set_key_store_password)
 
-  def set_trust_store_path(self, val):
+  def set_trust_store_path(self, path):
     """Set the path to the SSL trust store. This method should only be used with the client/server in SSL mode, i.e. after {#ssl=}
     has been set to true.
     The SSL trust store is a standard Java Key Store, and should contain the certificate(s) of the clients/servers that the server/client trusts. The SSL

@@ -314,7 +314,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
         """
         return HttpClientRequest(self.java_obj.request(method, uri, HttpClientResponseHandler(handler)))
 
-    def close():
+    def close(self):
         """Close the client. Any unclosed connections will be closed."""
         self.java_obj.close()
 
@@ -357,7 +357,7 @@ class HttpClientRequest(core.streams.WriteStream):
         self.java_obj.putHeader(key, value)
         return self
      
-    def write_buffer(self, chunk, handler):
+    def write_buffer(self, chunk, handler=None):
         """Write a to the request body.
 
         Keyword arguments
@@ -365,7 +365,7 @@ class HttpClientRequest(core.streams.WriteStream):
         handler -- The handler will be called when the buffer has actually been written to the wire.
         returns  self So multiple operations can be chained.
         """
-        self.java_obj.writeBuffer(chunk._to_java_buffer, DoneHandler(handler))
+        self.java_obj.write(chunk._to_java_buffer(), DoneHandler(handler))
         return self
 
     def write_str(self, str, enc="UTF-8", handler=None):
@@ -417,7 +417,7 @@ class HttpClientRequest(core.streams.WriteStream):
         Keyword arguments
         chunk -- The Buffer to write
         """
-        self.java_obj.end(chunk._to_java_buffer)
+        self.java_obj.end(chunk._to_java_buffer())
 
     def set_chunked(self, val):
         """Sets whether the request should used HTTP chunked encoding or not.
