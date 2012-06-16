@@ -19,7 +19,7 @@ from core.event_bus import EventBus
 
 tu = TestUtils()
 
-tu.check_context
+tu.check_context()
 
 class EventBusTest(object):
     def test_simple_send(self):
