@@ -751,7 +751,7 @@ class WebSocket(core.streams.ReadStream, core.streams.WriteStream):
         buffer -- Buffer data to write to socket.
 
         """
-        self.java_obj.writeBinaryFrame(buffer)
+        self.java_obj.writeBinaryFrame(buffer._to_java_buffer())
 
     def write_text_frame(self, text):
         """ 
