@@ -264,6 +264,8 @@
       <sysproperty key="java.util.logging.config.file" value="${conf-dir}/logging.properties"/>
       <sysproperty key="jruby.home" value="${env.JRUBY_HOME}"/>
       <sysproperty key="jython.home" value="${env.JYTHON_HOME}"/>
+      <sysproperty key="python.path" value="src/main/python:src/tests/python:src/tests/framework/python:${env.JYTHON_HOME}/Lib"/>
+
       <sysproperty key="vertx.mods" value="${dist-build}/mods"/>
       <classpath refid="test-classpath"/>
       <batchtest haltonfailure="yes" haltonerror="yes" fork="yes" todir="${test-results}">
