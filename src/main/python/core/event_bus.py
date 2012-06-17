@@ -22,7 +22,8 @@ from core.javautils import map_to_java, map_from_java
 from core.buffer import Buffer
 
 __author__ = "Scott Horn"
-__email__ = "scott@hornmicro.com"            
+__email__ = "scott@hornmicro.com"
+__credits__ = "Based entirely on work by Tim Fox http://tfox.org"
 
 class EventBus(object):
     """This class represents a distributed lightweight event bus which can encompass multiple vert.x instances.
@@ -61,7 +62,7 @@ class EventBus(object):
     def send(address, message, reply_handler=None):
         """Send a message on the event bus
 
-        Keyword arguments
+        Keyword arguments:
         address -- the address to publish to
         message -- The message to send
         reply_handler -- An optional reply handler.
@@ -73,7 +74,7 @@ class EventBus(object):
     def publish(address, message):
         """Publish a message on the event bus
 
-        Keyword arguments
+        Keyword arguments:
         address -- the address to publish to
         message -- The message to publish
         """
@@ -99,7 +100,7 @@ class EventBus(object):
     def register_handler(address, local_only=False, handler=None):
         """ Register a handler.
 
-        Keyword arguments
+        Keyword arguments:
         address -- the address to register for. Any messages sent to that address will be
         received by the handler. A single handler can be registered against many addresses.
         local_only -- if True then handler won't be propagated across cluster
@@ -122,7 +123,7 @@ class EventBus(object):
         Registers a handler against a uniquely generated address, the address is returned as the id
         received by the handler. A single handler can be registered against many addresses.
 
-        Keyword arguments
+        Keyword arguments:
         local_only -- If Rrue then handler won't be propagated across cluster
         handler -- The handler
 
@@ -142,7 +143,7 @@ class EventBus(object):
     def unregister_handler(handler_id):
         """Unregisters a handler
 
-        Keyword arguments
+        Keyword arguments:
         handler_id -- the id of the handler to unregister. Returned from EventBus.register_handler
         """
         handler = EventBus.handler_dict.pop(handler_id)
@@ -187,7 +188,7 @@ class Message(object):
         Replying to a message this way is equivalent to sending a message to an address which is the same as the message id
         of the original message.
 
-        Keyword arguments
+        Keyword arguments:
         reply -- message to send as reply
         handler -- the reply handler 
         """

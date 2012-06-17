@@ -23,6 +23,7 @@ from core.event_bus import EventBus
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
+__credits__ = "Based entirely on work by Tim Fox http://tfox.org"
 
 class SockJSServer(object):
     """This is an implementation of the server side part of https://github.com/sockjs
@@ -58,7 +59,7 @@ class SockJSServer(object):
     def install_app(self, config, handler):
         """Install an application
 
-        Keyword arguments
+        Keyword arguments:
         config -- Configuration for the application
         proc -- Proc representing the handler
         handler -- Handler to call when a new SockJSSocket is created

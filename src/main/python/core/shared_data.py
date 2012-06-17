@@ -19,7 +19,8 @@ from core.javautils import map_from_java
 from core.buffer import Buffer
 
 __author__ = "Scott Horn"
-__email__ = "scott@hornmicro.com"            
+__email__ = "scott@hornmicro.com"
+__credits__ = "Based entirely on work by Tim Fox http://tfox.org"
 
 class SharedData(object):
     """Sometimes it is desirable to share immutable data between different event loops, for example to implement a
@@ -45,7 +46,7 @@ class SharedData(object):
         """Return a Hash with the specific name. All invocations of this method with the same value of name
         are guaranteed to return the same Hash instance.
 
-        Keyword arguments
+        Keyword arguments:
         key -- Get the hash with the key.
 
         returns the hash.
@@ -58,7 +59,7 @@ class SharedData(object):
         """Return a Set with the specific name. All invocations of this method with the same value of name
         are guaranteed to return the same Set instance.
 
-        Keyword arguments
+        Keyword arguments:
         key -- Get the set with the key.
 
         returns the shared set.
@@ -70,7 +71,7 @@ class SharedData(object):
     def remove_hash(key):
         """Remove the hash
 
-        Keyword arguments
+        Keyword arguments:
         key -- The key of the hash.
         """
         return SharedData.shared_data().removeMap(key)
@@ -79,7 +80,7 @@ class SharedData(object):
     def remove_set(key):
         """Remove the set
 
-        Keyword arguments
+        Keyword arguments:
         key -- The key of the set.
         """
         return SharedData.shared_data().removeSet(key)
@@ -154,7 +155,7 @@ class SharedSet(object):
     def add(self, obj):
         """ Add an object to the set
         
-        Keyword arguments
+        Keyword arguments:
         obj -- The object to add
         
         returns self
@@ -170,7 +171,7 @@ class SharedSet(object):
     def delete(self, obj):
         """Delete an object from the set
 
-        Keyword arguments
+        Keyword arguments:
         obj -- the object to delete
         """
         self.java_obj.remove(obj)
@@ -179,7 +180,7 @@ class SharedSet(object):
     def each(self, func):
         """Call the func for every element of the set
 
-        Keyword arguments
+        Keyword arguments:
         func -- The function to call.
         """
         iter = self.java_obj.iterator()
@@ -196,7 +197,7 @@ class SharedSet(object):
     def include(self, obj):
         """Does the set contain an element?
     
-        Keyword arguments
+        Keyword arguments:
         obj -- the object to check if the set contains
 
         returns True if the object is contained in the set

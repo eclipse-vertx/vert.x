@@ -27,6 +27,7 @@ from java import io
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
+__credits__ = "Based entirely on work by Tim Fox http://tfox.org"
 
 def map_map_from_java (map):
     """ Convert a Map to a Dictionary. """

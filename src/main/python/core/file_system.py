@@ -21,6 +21,7 @@ from core.buffer import Buffer
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
+__credits__ = "Based entirely on work by Tim Fox http://tfox.org"
 
 class FileProps(object):
     """Represents the properties of a file on the file system"""
@@ -107,7 +108,7 @@ class AsyncFile(object):
         When multiple writes are invoked on the same file
         there are no guarantees as to order in which those writes actually occur.
 
-        Keyword arguments
+        Keyword arguments:
         buffer -- the buffer to write
         position -- the position in the file where to write the buffer. Position is measured in bytes and
         starts with zero at the beginning of the file.
@@ -142,7 +143,7 @@ class AsyncFile(object):
     def flush(self): 
         """Flush any writes made to this file to underlying persistent storage, asynchronously.
         If the file was opened with flush set to true then calling this method will have no effect.
-        Keyword arguments
+        Keyword arguments:
 
         handler -- the handler which is called on completion.
         """
@@ -189,7 +190,7 @@ class FileSystem(object):
     def copy(frm, to, handler):
         """Copy a file, asynchronously. The copy will fail if from does not exist, or if to already exists.
 
-        Keyword arguments
+        Keyword arguments:
         frm -- path of file to copy
         to -- path of file to copy to
         handler -- the handler which is called on completion."""
@@ -206,7 +207,7 @@ class FileSystem(object):
         If the source is a directory all contents of the directory will be copied recursively, i.e. the entire directory
         tree is copied.
 
-        Keyword arguments
+        Keyword arguments:
         frm -- path of file to copy
         to -- path of file to copy to
         handler -- the function to call when complete
@@ -222,7 +223,7 @@ class FileSystem(object):
     def move(frm, to, handler):
         """Move a file, asynchronously. The move will fail if from does not exist, or if to already exists.
 
-        Keyword arguments
+        Keyword arguments:
         frm -- Path of file to move
         to -- Path of file to move to
         handler -- the function to call when complete
@@ -238,7 +239,7 @@ class FileSystem(object):
     def truncate(path, len, handler):
         """Truncate a file, asynchronously. The move will fail if path does not exist.
 
-        Keyword arguments
+        Keyword arguments:
         path -- Path of file to truncate
         len -- Length to truncate file to. Will fail if len < 0. If len > file size then will do nothing.
         handler -- the function to call when complete
@@ -254,7 +255,7 @@ class FileSystem(object):
     def chmod(path, perms, dir_perms=None, handler=None):
         """Change the permissions on a file, asynchronously. If the file is directory then all contents will also have their permissions changed recursively.
 
-        Keyword arguments
+        Keyword arguments:
           path Path of file to change permissions
           perms A permission string of the form rwxr-x--- as specified in http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html}. This is
         used to set the permissions for any regular files (not directories).
@@ -272,7 +273,7 @@ class FileSystem(object):
     def props(path, handler):
         """Get file properties for a file, asynchronously.
 
-        Keyword arguments
+        Keyword arguments:
         path -- path to file
         handler -- the function to call when complete
         """
@@ -290,7 +291,7 @@ class FileSystem(object):
     def link(link, existing, handler):
         """Create a hard link, asynchronously..
 
-        Keyword arguments
+        Keyword arguments:
         link -- path of the link to create.
         existing -- path of where the link points to.
         handler -- the function to call when complete
@@ -307,7 +308,7 @@ class FileSystem(object):
     def sym_link(link, existing, handler):
         """Create a symbolic link, asynchronously.
 
-        Keyword arguments
+        Keyword arguments:
         link -- Path of the link to create.
         existing -- Path of where the link points to.
         handler -- the function to call when complete
@@ -323,7 +324,7 @@ class FileSystem(object):
     def unlink(link, handler):
         """Unlink a hard link.
 
-        Keyword arguments
+        Keyword arguments:
         link -- path of the link to unlink.
         """
         FileSystem.java_file_system().unlink(link, FSWrappedHandler(handler))
@@ -337,7 +338,7 @@ class FileSystem(object):
     def read_sym_link(link, handler):
         """Read a symbolic link, asynchronously. I.e. tells you where the symbolic link points.
 
-        Keyword arguments
+        Keyword arguments:
         link -- path of the link to read.
         handler -- the function to call when complete
         """
@@ -353,7 +354,7 @@ class FileSystem(object):
         """Delete a file on the file system, asynchronously.
         The delete will fail if the file does not exist, or is a directory and is not empty.
 
-        Keyword arguments
+        Keyword arguments:
         path -- path of the file to delete.
         handler -- the function to call when complete
         """
@@ -370,7 +371,7 @@ class FileSystem(object):
         The delete will fail if the file does not exist. If the file is a directory the entire directory contents
         will be deleted recursively.
 
-        Keyword arguments
+        Keyword arguments:
         path -- path of the file to delete.
         handler -- the function to call when complete
         """
@@ -387,7 +388,7 @@ class FileSystem(object):
         The create will fail if the directory already exists, or if it contains parent directories which do not already
         exist.
 
-        Keyword arguments
+        Keyword arguments:
         path -- path of the directory to create.
         perms -- a permission string of the form rwxr-x--- to give directory.
         handler -- the function to call when complete
@@ -404,7 +405,7 @@ class FileSystem(object):
         """Create a directory, and create all it's parent directories if they do not already exist, asynchronously.
         The create will fail if the directory already exists.
 
-        Keyword arguments
+        Keyword arguments:
         path -- path of the directory to create.
         perms -- a permission string of the form rwxr-x--- to give the created directory(ies).
         """
@@ -420,7 +421,7 @@ class FileSystem(object):
         """Read a directory, i.e. list it's contents, asynchronously.
         The read will fail if the directory does not exist.
 
-        Keyword arguments
+        Keyword arguments:
         path -- path of the directory to read.
         filter -- a regular expression to filter out the contents of the directory. If the filter is not nil
         then only files which match the filter will be returned.
@@ -437,7 +438,7 @@ class FileSystem(object):
     def read_file_as_buffer(path, handler):
         """Read the contents of an entire file as a Buffer, asynchronously.
 
-        Keyword arguments
+        Keyword arguments:
         path -- path of the file to read.
         handler -- the function to call when complete
         """
@@ -454,7 +455,7 @@ class FileSystem(object):
     def write_buffer_to_file(path, buffer, handler):
         """Write a  as the entire contents of a file, asynchronously.
 
-        Keyword arguments
+        Keyword arguments:
         path -- path of the file to write.
         buffer -- the Buffer to write
         handler -- the function to call when complete
@@ -470,7 +471,7 @@ class FileSystem(object):
     def open(path, perms=None, read=True, write=True, create_new=True, flush=False, handler=None):
         """Open a file on the file system, asynchronously.
 
-        Keyword arguments
+        Keyword arguments:
         path -- path of the file to open.
         perms -- if the file does not exist and create_new is true, then the file will be created with these permissions.
         read -- open the file for reading?
@@ -493,7 +494,7 @@ class FileSystem(object):
     def create_file(path, perms=None, handler=None):
         """Create a new empty file, asynchronously.
 
-        Keyword arguments
+        Keyword arguments:
         path -- path of the file to create.
         perms -- the file will be created with these permissions.
         handler -- the function to call when complete
@@ -509,7 +510,7 @@ class FileSystem(object):
     def exists(path, handler):
         """Check if  a file exists, asynchronously.
 
-        Keyword arguments
+        Keyword arguments:
         path -- Path of the file to check.
         handler -- the function to call when complete
         """
@@ -524,7 +525,7 @@ class FileSystem(object):
     def fs_props(path, handler):
         """Get properties for the file system, asynchronously.
 
-        Keyword arguments
+        Keyword arguments:
         path -- Path in the file system.
         handler -- the function to call when complete
         """

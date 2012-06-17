@@ -14,6 +14,7 @@
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
+__credits__ = "Based entirely on work by Tim Fox http://tfox.org"
 
 class TCPSupport(object):
   """ Mixin module that provides all the common TCP params that can be set. """
@@ -21,7 +22,7 @@ class TCPSupport(object):
   def set_send_buffer_size(self, bytes):
     """Set the TCP send buffer size.
 
-    Keyword arguments
+    Keyword arguments:
     bytes -- The size in bytes.
 
     return a reference to self so invocations can be chained
@@ -34,7 +35,7 @@ class TCPSupport(object):
   def set_receive_buffer_size(self, bytes):
     """Set the TCP receive buffer size.
     
-    Keyword arguments
+    Keyword arguments:
     bytes -- The size in bytes.
   
     return a reference to self so invocations can be chained
@@ -47,7 +48,7 @@ class TCPSupport(object):
   def set_tcp_keep_alive(self, val):
     """Set the TCP keep alive setting.
 
-    Keyword arguments
+    Keyword arguments:
     val -- If true, then TCP keep alive will be enabled.
     
     return a reference to self so invocations can be chained
@@ -60,7 +61,7 @@ class TCPSupport(object):
   def set_reuse_address(self, val):
     """Set the TCP reuse address setting.
 
-    Keyword arguments
+    Keyword arguments:
     val -- If true, then TCP reuse address will be enabled.
     
     returns a reference to self so invocations can be chained
@@ -73,7 +74,7 @@ class TCPSupport(object):
   def set_so_linger(self, val):
     """Set the TCP so linger setting.
 
-    Keyword arguments
+    Keyword arguments:
     val -- If true, then TCP so linger will be enabled.
     
     return a reference to self so invocations can be chained
@@ -86,7 +87,7 @@ class TCPSupport(object):
   def set_traffic_class(self, val):
     """Set the TCP traffic class setting.
 
-    Keyword arguments
+    Keyword arguments:
     val -- The TCP traffic class setting.
     
     return a reference to self so invocations can be chained

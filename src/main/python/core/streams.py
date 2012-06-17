@@ -18,6 +18,7 @@ from core.handlers import BufferHandler, StreamEndHandler
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
+__credits__ = "Based entirely on work by Tim Fox http://tfox.org"
 
 class WriteStream(object):
     """
@@ -40,7 +41,7 @@ class WriteStream(object):
         if there is more data than this in the write queue. This is used as an indicator by classes such as
         to provide flow control.
 
-        Keyword arguments
+        Keyword arguments:
         size -- The maximum size, in bytes.
         """
         self.java_obj.setWriteQueueMaxSize(size)
@@ -59,7 +60,7 @@ class WriteStream(object):
         """Set a drain handler on the stream. If the write queue is full, then the handler will be called when the write
         queue has been reduced to maxSize / 2. See  for an example of this being used.
 
-        Keyword arguments
+        Keyword arguments:
         handler -- The drain handler
         """
         self.java_obj.drainHandler(BufferHandler(handler))
@@ -67,7 +68,7 @@ class WriteStream(object):
     def exception_handler(self, handler):
         """Set an execption handler on the stream.
 
-        Keyword arguments
+        Keyword arguments:
         handler -- The exception handler
         """  
         self.java_obj.exceptionHandler(ExceptionHandler(handler))
@@ -84,7 +85,7 @@ class ReadStream(object):
     def data_handler(self, handler):
         """Set a data handler. As data is read, the handler will be called with the data.
 
-        Keyword arguments
+        Keyword arguments:
         handler -- The data handler
         """
         self.java_obj.dataHandler(BufferHandler(handler))
@@ -106,7 +107,7 @@ class ReadStream(object):
     def end_handler(self, handler):
         """Set an end handler on the stream. Once the stream has ended, and there is no more data to be read, this handler will be called.
 
-        Keyword arguments
+        Keyword arguments:
         handler -- The exception handler"""
         self.java_obj.endHandler(StreamEndHandler(handler))
         
@@ -139,7 +140,7 @@ class Pump(object):
     def set_write_queue_max_size(self, val):
         """Set the write queue max size
 
-        Keyword arguments
+        Keyword arguments:
         val -- The write queue max size
         """  
         self.j_pump.setWriteQueueMaxSize(val)

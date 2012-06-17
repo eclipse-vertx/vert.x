@@ -28,6 +28,7 @@ from core.handlers import DoneHandler, ContinueHandler, BufferHandler
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
+__credits__ = "Based entirely on work by Tim Fox http://tfox.org"
 
 class HttpServer(core.tcp_support.TCPSupport, core.ssl_support.SSLSupport, object):
     """ An HTTP and websockets server """
@@ -114,7 +115,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
     def exception_handler(self, handler):
         """ Set the exception handler.
 
-        Keyword arguments
+        Keyword arguments:
         handler -- function to be used as the handler
         """
         self.java_obj.exceptionHandler(ExceptionHandler(handler))
@@ -128,7 +129,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
         """ Set the maximum pool size.
         The client will maintain up to this number of HTTP connections in an internal pool
 
-        Keyword arguments
+        Keyword arguments:
         val -- The maximum number of connections (default to 1).
         """
         self.java_obj.setMaxPoolSize(val)
@@ -144,7 +145,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
         the connection will closed after the response has been received. Even with no keep alive, the client will not allow more
         than max_pool_size connections to be created at any one time.
 
-        Keyword arguments
+        Keyword arguments:
         val -- The value to use for keep_alive
         """
         self.java_obj.setTCPKeepAlive(val)
@@ -155,7 +156,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
     def set_trust_all(self, val):
         """Should the client trust ALL server certificates?
 
-        Keyword arguments
+        Keyword arguments:
         val -- If val is set to true then the client will trust ALL server certificates and will not attempt to authenticate them
         against it's local client trust store. The default value is false.
         Use this method with caution!
@@ -168,7 +169,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
     def set_port(self, val):
         """Set the port that the client will attempt to connect to on the server on. The default value is 80
 
-        Keyword arguments
+        Keyword arguments:
         val -- The port value.
         """
         self.java_obj.setPort(val)
@@ -179,7 +180,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
     def set_host(self, val):
         """Set the host name or ip address that the client will attempt to connect to on the server on.
 
-        Keyword arguments
+        Keyword arguments:
         val -- The host name or ip address to connect to.
         """
         self.java_obj.setHost(val)
@@ -191,7 +192,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
         """Attempt to connect an HTML5 websocket to the specified URI.
         The connect is done asynchronously and the handler is called with a WebSocket on success.
 
-        Keyword arguments
+        Keyword arguments:
         uri -- A relative URI where to connect the websocket on the host, e.g. /some/path
         handler -- The handler to be called with the WebSocket
         """
@@ -203,7 +204,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
         With this method the request is immediately sent.
         When an HTTP response is received from the server the handler is called passing in the response.
 
-        Keyword arguments
+        Keyword arguments:
          uri -- A relative URI where to perform the GET on the server.
          handler -- The handler to be called with the HttpClientResponse
          headers -- A dictionary of headers to pass with the request.
@@ -217,7 +218,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
         """This method returns an HttpClientRequest instance which represents an HTTP OPTIONS request with the specified uri.
         When an HTTP response is received from the server the handler is called passing in the response.
 
-        Keyword arguments
+        Keyword arguments:
         uri -- A relative URI where to perform the OPTIONS on the server.
         handler -- The handler to be called with the HttpClientResponse
         """
@@ -227,7 +228,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
         """This method returns an HttpClientRequest instance which represents an HTTP GET request with the specified uri.
         When an HTTP response is received from the server the handler is called passing in the response.
 
-        Keyword arguments
+        Keyword arguments:
         uri -- A relative URI where to perform the GET on the server.
         handler -- The handler to be called with the HttpClientResponse
         """
@@ -237,7 +238,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
         """This method returns an HttpClientRequest instance which represents an HTTP HEAD request with the specified uri.
         When an HTTP response is received from the server the handler is called passing in the response.
 
-        Keyword arguments
+        Keyword arguments:
         uri -- A relative URI where to perform the HEAD on the server.
         handler -- The handler to be called with the HttpClientResponse
         """
@@ -247,7 +248,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
         """This method returns an HttpClientRequest instance which represents an HTTP POST request with the specified uri.
         When an HTTP response is received from the server the handler is called passing in the response.
 
-        Keyword arguments
+        Keyword arguments:
         uri -- A relative URI where to perform the POST on the server.
         handler -- The handler to be called with the HttpClientResponse
         """
@@ -257,7 +258,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
         """This method returns an HttpClientRequest instance which represents an HTTP PUT request with the specified uri.
         When an HTTP response is received from the server the handler is called passing in the response.
         
-        Keyword arguments
+        Keyword arguments:
         uri -- A relative URI where to perform the PUT on the server.
         handler -- The handler to be called with the HttpClientResponse
         """
@@ -267,7 +268,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
         """This method returns an HttpClientRequest instance which represents an HTTP DELETE request with the specified uri.
         When an HTTP response is received from the server the handler is called passing in the response.
 
-        Keyword arguments
+        Keyword arguments:
         uri -- A relative URI where to perform the DELETE on the server.
         handler -- The handler to be called with the HttpClientResponse
         """
@@ -277,7 +278,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
         """ This method returns an HttpClientRequest instance which represents an HTTP TRACE request with the specified uri.
         When an HTTP response is received from the server the handler is called passing in the response.
 
-        Keyword arguments
+        Keyword arguments:
         uri -- A relative URI where to perform the TRACE on the server.
         handler. The handler to be called with the HttpClientResponse
         """
@@ -287,7 +288,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
         """ This method returns an HttpClientRequest instance which represents an HTTP CONNECT request with the specified uri.
         When an HTTP response is received from the server the handler is called passing in the response.
         
-        Keyword arguments
+        Keyword arguments:
         uri -- A relative URI where to perform the CONNECT on the server.
         handler -- The handler to be called with the HttpClientResponse
         """
@@ -297,7 +298,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
         """ This method returns an HttpClientRequest instance which represents an HTTP PATCH request with the specified uri.
         When an HTTP response is received from the server the handler is called passing in the response.
 
-        Keyword arguments
+        Keyword arguments:
         uri -- A relative URI where to perform the PATCH on the server.
         handler -- The handler to be called with the HttpClientResponse
         """
@@ -308,7 +309,7 @@ class HttpClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport, objec
         When an HTTP response is received from the server the handler is called passing in the response.
         method. The HTTP method. Can be one of OPTIONS, HEAD, GET, POST, PUT, DELETE, TRACE, CONNECT.
 
-        Keyword arguments
+        Keyword arguments:
         uri -- A relative URI where to perform the OPTIONS on the server.
         handler -- The handler to be called with the HttpClientResponse
         """
@@ -349,7 +350,7 @@ class HttpClientRequest(core.streams.WriteStream):
     def put_header(self, key, value):
         """Inserts a header into the request.
 
-        Keyword arguments
+        Keyword arguments:
         key -- The header key
         value -- The header value. to_s will be called on the value to determine the actual String value to insert.
         returns  self So multiple operations can be chained.
@@ -360,7 +361,7 @@ class HttpClientRequest(core.streams.WriteStream):
     def write_buffer(self, chunk, handler=None):
         """Write a to the request body.
 
-        Keyword arguments
+        Keyword arguments:
         chunk -- The buffer to write.
         handler -- The handler will be called when the buffer has actually been written to the wire.
         returns  self So multiple operations can be chained.
@@ -371,7 +372,7 @@ class HttpClientRequest(core.streams.WriteStream):
     def write_str(self, str, enc="UTF-8", handler=None):
         """Write a to the request body.
 
-        Keyword arguments
+        Keyword arguments:
         str -- The string to write.
         enc -- The encoding to use.
         handler -- The handler will be called when the buffer has actually been written to the wire.
@@ -404,7 +405,7 @@ class HttpClientRequest(core.streams.WriteStream):
     def write_str_and_end(self, str, enc="UTF-8"):
         """Same as write_buffer_and_end but writes a String
 
-        Keyword arguments
+        Keyword arguments:
         str -- The String to write
         enc -- The encoding
         """
@@ -414,7 +415,7 @@ class HttpClientRequest(core.streams.WriteStream):
         """Same as end but writes some data to the response body before ending. If the response is not chunked and
         no other data has been written then the Content-Length header will be automatically set
 
-        Keyword arguments
+        Keyword arguments:
         chunk -- The Buffer to write
         """
         self.java_obj.end(chunk._to_java_buffer())
@@ -422,7 +423,7 @@ class HttpClientRequest(core.streams.WriteStream):
     def set_chunked(self, val):
         """Sets whether the request should used HTTP chunked encoding or not.
 
-        Keyword arguments
+        Keyword arguments:
         val -- If val is true, this request will use HTTP chunked encoding, and each call to write to the body
         will correspond to a new HTTP chunk sent on the wire. If chunked encoding is used the HTTP header
         'Transfer-Encoding' with a value of 'Chunked' will be automatically inserted in the request.
@@ -445,7 +446,7 @@ class HttpClientRequest(core.streams.WriteStream):
         You can then continue to write data to the request body and later end it. This is normally used in conjunction with
         the send_head method to force the request header to be written before the request has ended.
 
-        Keyword arguments
+        Keyword arguments:
         handler -- The handler
         """
         self.java_obj.continueHandler(ContinueHandler(handler))
@@ -470,7 +471,7 @@ class HttpClientResponse(core.streams.ReadStream):
     def header(self, key):
         """Get a header value
 
-        Keyword arguments
+        Keyword arguments:
         key -- The key of the header.
 
         return the header value.
@@ -620,7 +621,7 @@ class HttpServerResponse(core.streams.WriteStream):
     def put_header(self, key, value):
         """ Inserts a header into the response.
 
-        Keyword arguments
+        Keyword arguments:
         key -- The header key
         value -- The header value.
         
@@ -637,7 +638,7 @@ class HttpServerResponse(core.streams.WriteStream):
     def put_trailer(self, key, value):
         """ Inserts a trailer into the response. 
 
-        Keyword arguments
+        Keyword arguments:
         key -- The header key
         value -- The header value.
         
@@ -650,7 +651,7 @@ class HttpServerResponse(core.streams.WriteStream):
     def write_buffer(self, buffer, handler=None):
         """ Write a buffer to the response. The handler (if supplied) will be called when the buffer has actually been written to the wire.
 
-        Keyword arguments
+        Keyword arguments:
         buffer -- The buffer to write
         handler -- The handler to be called when writing has been completed. It is wrapped in a DoneHandler (default None)
         
@@ -665,7 +666,7 @@ class HttpServerResponse(core.streams.WriteStream):
     def write_str(self, str, enc="UTF-8", handler=None):
         """ Write a String to the response. The handler will be called when the String has actually been written to the wire.
 
-        Keyword arguments
+        Keyword arguments:
         str -- The string to write
         enc -- Encoding to use.
 
@@ -683,7 +684,7 @@ class HttpServerResponse(core.streams.WriteStream):
         """ Tell the kernel to stream a file directly from disk to the outgoing connection, bypassing userspace altogether
         (where supported by the underlying operating system. This is a very efficient way to serve files.
 
-        Keyword arguments
+        Keyword arguments:
         path -- Path to file to send.
 
         returns a HttpServerResponse so multiple operations can be chained.
@@ -694,7 +695,7 @@ class HttpServerResponse(core.streams.WriteStream):
     def set_chunked(self, val):
         """ Sets whether this response uses HTTP chunked encoding or not.
 
-        Keyword arguments
+        Keyword arguments:
         val -- If val is true, this response will use HTTP chunked encoding, and each call to write to the body
         will correspond to a new HTTP chunk sent on the wire. If chunked encoding is used the HTTP header
         'Transfer-Encoding' with a value of 'Chunked' will be automatically inserted in the response.
@@ -747,7 +748,7 @@ class WebSocket(core.streams.ReadStream, core.streams.WriteStream):
         """ 
         Write data to the websocket as a binary frame 
 
-        Keyword arguments
+        Keyword arguments:
         buffer -- Buffer data to write to socket.
 
         """
@@ -757,7 +758,7 @@ class WebSocket(core.streams.ReadStream, core.streams.WriteStream):
         """ 
         Write data to the websocket as a text frame 
 
-        Keyword arguments
+        Keyword arguments:
         text -- text to write to socket
         """
         self.java_obj.writeTextFrame(text)
@@ -770,7 +771,7 @@ class WebSocket(core.streams.ReadStream, core.streams.WriteStream):
         """ Set a closed handler on the connection, the handler receives a no parameters. 
         This can be used as a decorator. 
 
-        Keyword arguments
+        Keyword arguments:
         handler - The handler to be called when writing has been completed. It is wrapped in a ClosedHandler.
         """
         self.java_obj.closedHandler(ClosedHandler(handler))
@@ -858,7 +859,7 @@ class RouteMatcher(object):
     def input(self, request):
         """This method is called to provide the matcher with data.
 
-        Keyword arguments
+        Keyword arguments:
         request -- input request to the parser.
         """
         self.java_obj.handle(request._to_java_request())
@@ -866,7 +867,7 @@ class RouteMatcher(object):
     def get(self, pattern, handler):
         """Specify a handler that will be called for a matching HTTP GET
 
-        Keyword arguments
+        Keyword arguments:
         pattern -- pattern to match
         handler -- handler for match
         """
@@ -875,7 +876,7 @@ class RouteMatcher(object):
     def put(self, pattern, handler):
         """Specify a handler that will be called for a matching HTTP PUT
 
-        Keyword arguments
+        Keyword arguments:
         pattern -- pattern to match
         handler -- http server request handler
         """
@@ -884,7 +885,7 @@ class RouteMatcher(object):
     def post(self, pattern, handler):
         """Specify a handler that will be called for a matching HTTP POST
            
-        Keyword arguments
+        Keyword arguments:
         pattern -- pattern to match
         handler -- http server request handler
         """
@@ -893,7 +894,7 @@ class RouteMatcher(object):
     def delete(self, pattern, handler):
         """Specify a handler that will be called for a matching HTTP DELETE
                
-        Keyword arguments
+        Keyword arguments:
         pattern -- pattern to match
         handler -- http server request handler
         """
@@ -902,7 +903,7 @@ class RouteMatcher(object):
     def options(self, pattern, handler):
         """Specify a handler that will be called for a matching HTTP OPTIONS
            
-        Keyword arguments
+        Keyword arguments:
         pattern -- pattern to match
         handler -- http server request handler"""
         self.java_obj.options(pattern, HttpServerRequestHandler(handler))
@@ -910,7 +911,7 @@ class RouteMatcher(object):
     def head(self, pattern, handler):
         """Specify a handler that will be called for a matching HTTP HEAD
            
-        Keyword arguments
+        Keyword arguments:
         pattern -- pattern to match
         handler -- http server request handler
         """
@@ -919,7 +920,7 @@ class RouteMatcher(object):
     def trace(self, pattern, handler):
         """Specify a handler that will be called for a matching HTTP TRACE
            
-        Keyword arguments
+        Keyword arguments:
         pattern -- pattern to match
         handler -- http server request handler
         """  
@@ -928,7 +929,7 @@ class RouteMatcher(object):
     def patch(self, pattern, handler):
         """Specify a handler that will be called for a matching HTTP PATCH
            
-        Keyword arguments
+        Keyword arguments:
         pattern -- pattern to match
         handler -- http server request handler
         """
@@ -937,7 +938,7 @@ class RouteMatcher(object):
     def connect(self, pattern, handler):
         """Specify a handler that will be called for a matching HTTP CONNECT
            
-        Keyword arguments
+        Keyword arguments:
         pattern -- pattern to match
         handler -- http server request handler
         """
@@ -946,7 +947,7 @@ class RouteMatcher(object):
     def all(self, pattern, handler):
         """Specify a handler that will be called for any matching HTTP request
            
-        Keyword arguments
+        Keyword arguments:
         pattern -- pattern to match
         handler -- http server request handler"""
         self.java_obj.all(pattern, HttpServerRequestHandler(handler))
@@ -955,7 +956,7 @@ class RouteMatcher(object):
         """Specify a handler that will be called for a matching HTTP GET
            
 
-        Keyword arguments
+        Keyword arguments:
         pattern -- pattern to match
         handler -- http server request handler
         """
@@ -964,7 +965,7 @@ class RouteMatcher(object):
     def put_re(self, pattern, handler):
         """Specify a handler that will be called for a matching HTTP PUT
     
-        Keyword arguments
+        Keyword arguments:
         pattern -- pattern to match
         handler -- http server request handler
         """
@@ -973,7 +974,7 @@ class RouteMatcher(object):
     def post_re(self, pattern, handler):
         """Specify a handler that will be called for a matching HTTP POST
 
-        Keyword arguments
+        Keyword arguments:
         pattern -- pattern to match
         handler -- http server request handler
         """
@@ -982,7 +983,7 @@ class RouteMatcher(object):
     def delete_re(self, pattern, handler):
         """Specify a handler that will be called for a matching HTTP DELETE
            
-        Keyword arguments
+        Keyword arguments:
         pattern -- pattern to match
         handler -- http server request handler
         """
@@ -992,7 +993,7 @@ class RouteMatcher(object):
     def options_re(self, pattern, handler):
         """Specify a handler that will be called for a matching HTTP OPTIONS
            
-        Keyword arguments
+        Keyword arguments:
         pattern -- pattern to match
         handler -- http server request handler
         """  
@@ -1001,7 +1002,7 @@ class RouteMatcher(object):
     def head_re(self, pattern, handler):
         """Specify a handler that will be called for a matching HTTP HEAD
            
-        Keyword arguments
+        Keyword arguments:
         pattern -- pattern to match
         handler -- http server request handler
         """
@@ -1010,7 +1011,7 @@ class RouteMatcher(object):
     def trace_re(self, pattern, handler):
         """Specify a handler that will be called for a matching HTTP TRACE
            
-        Keyword arguments
+        Keyword arguments:
         pattern -- pattern to match
         handler -- http server request handler
         """  
@@ -1019,7 +1020,7 @@ class RouteMatcher(object):
     def patch_re(self, pattern, handler):
         """Specify a handler that will be called for a matching HTTP PATCH
            
-        Keyword arguments
+        Keyword arguments:
         pattern -- pattern to match
         handler -- http server request handler
         """
@@ -1028,7 +1029,7 @@ class RouteMatcher(object):
     def connect_re(self, pattern, handler):
         """Specify a handler that will be called for a matching HTTP CONNECT
            
-        Keyword arguments
+        Keyword arguments:
         pattern -- pattern to match
         handler -- http server request handler
         """
@@ -1037,7 +1038,7 @@ class RouteMatcher(object):
     def all_re(self, pattern, handler):
         """Specify a handler that will be called for any matching HTTP request
            
-        Keyword arguments
+        Keyword arguments:
         pattern -- pattern to match
         handler -- http server request handler
         """  
@@ -1047,6 +1048,6 @@ class RouteMatcher(object):
         """Specify a handler that will be called when nothing matches
         Default behaviour is to return a 404
 
-        Keyword arguments
+        Keyword arguments:
         handler -- http server request handler"""
         self.java_obj.noMatch(HttpServerRequestHandler(handler))

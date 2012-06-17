@@ -28,6 +28,7 @@ from core.javautils import map_to_java, map_from_java
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
+__credits__ = "Based entirely on work by Tim Fox http://tfox.org"
 
 class Vertx(object):
     config = None
@@ -59,7 +60,7 @@ def get_logger():
 def deploy_verticle(main, config=None, instances=1, handler=None):
     """Deploy a verticle. The actual deploy happens asynchronously
 
-    Keyword arguments
+    Keyword arguments:
     main -- the main of the verticle to deploy
     config -- dict configuration for the verticle
     instances -- number of instances to deploy
@@ -75,7 +76,7 @@ def deploy_verticle(main, config=None, instances=1, handler=None):
 def deploy_worker_verticle(main, config=None, instances=1, handler=None):
     """Deploy a workerverticle. The actual deploy happens asynchronously
 
-    Keyword arguments
+    Keyword arguments:
     main -- the main of the verticle to deploy
     config -- dict configuration for the verticle
     instances -- the number of instances to deploy
@@ -88,7 +89,7 @@ def deploy_worker_verticle(main, config=None, instances=1, handler=None):
 def undeploy_verticle(id):
     """Undeploy a verticle
 
-    Keyword arguments
+    Keyword arguments:
     id -- the unique id of the deployment
     """
     org.vertx.java.deploy.impl.VertxLocator.container.undeployVerticle(id)
@@ -109,7 +110,7 @@ def set_timer(delay, handler):
     """Sets a one-shot timer that will fire after a certain delay.
     This method will accept either a Proc or a block.
 
-    Keyword arguments
+    Keyword arguments:
     delay -- the delay, in milliseconds
     handler -- a block representing the code that will be run after the delay the unique id of the timer
     """
@@ -118,7 +119,7 @@ def set_timer(delay, handler):
 def set_periodic(delay, handler):
     """Sets a periodic timer.
 
-    Keyword arguments
+    Keyword arguments:
     delay -- the period of the timer, in milliseconds
     handler -- a block representing the code that will be when the timer fires the unique id of the timer
     """
@@ -128,7 +129,7 @@ def set_periodic(delay, handler):
 def cancel_timer(id):
     """Cancels a timer.
 
-    Keyword arguments
+    Keyword arguments:
     id -- the id of the timer, as returned from set_timer or set_periodic
 
     returns true if the timer was cancelled, false if it wasn't found.
@@ -140,7 +141,7 @@ def run_on_loop(handler):
     """Put the handler on the event queue for this loop so it will be run asynchronously
     ASAP after this event has been processed
 
-    Keyword arguments
+    Keyword arguments:
     handler -- a block representing the code that will be run ASAP
     """
     java_vertx().runOnLoop(DoneHandler(handler))
