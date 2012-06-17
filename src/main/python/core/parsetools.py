@@ -16,7 +16,8 @@ import org.vertx.java.core.parsetools
 from core.buffer import Buffer
 
 __author__ = "Scott Horn"
-__email__ = "scott@hornmicro.com"            
+__email__ = "scott@hornmicro.com"
+__credits__ = "Based entirely on work by Tim Fox http://tfox.org"
 
 class RecordParser(object):
     """A helper class which allows you to easily parse protocols which are delimited by a sequence of bytes, or fixed
@@ -62,7 +63,7 @@ class RecordParser(object):
         """Create a new RecordParser instance, initially in delimited mode, and where the delimiter can be represented
         by a delimiter string endcoded in latin-1 . Don't use this if your String contains other than latin-1 characters.
 
-        Keyword arguments
+        Keyword arguments:
         delim -- The delimiter string.
         handler -- the output handler
 
@@ -74,7 +75,7 @@ class RecordParser(object):
     def new_fixed(size, handler):
         """Create a new RecordParser instance, initially in fixed size mode.
 
-        Keyword arguments
+        Keyword arguments:
         size -- the initial record size.
         handler -- the output handler
         returns a new RecordParser
@@ -85,7 +86,7 @@ class RecordParser(object):
         """Flip the parser into delimited mode. This method can be called multiple times with different values
         of delim while data is being parsed.
 
-        Keyword arguments
+        Keyword arguments:
         delim -- the delimiter string.
         """
         self.java_parser.delimitedMode(delim)
@@ -94,7 +95,7 @@ class RecordParser(object):
         """Flip the parser into fixed size mode. This method can be called multiple times with different values
         of size while data is being parsed.
 
-        Keyword arguments
+        Keyword arguments:
         size -- the record size.
         """
         self.java_parser.fixedSizeMode(size)

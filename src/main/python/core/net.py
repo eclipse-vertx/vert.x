@@ -25,6 +25,7 @@ from core.event_bus import EventBus
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
+__credits__ = "Based entirely on work by Tim Fox http://tfox.org"
 
 class NetServer(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport):    
     """Represents a TCP or SSL Server
@@ -53,7 +54,7 @@ class NetServer(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport):
         As the server accepts TCP or SSL connections it creates an instance of NetSocket and passes it to the
         connect handler.
 
-        Keyword arguments
+        Keyword arguments:
         handler -- connection handler
 
         returns a reference to self so invocations can be chained
@@ -65,7 +66,7 @@ class NetServer(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport):
     def listen(self, port, host="0.0.0.0"):
         """Instruct the server to listen for incoming connections.
 
-        Keyword arguments
+        Keyword arguments:
         port -- The port to listen on.
         host -- The host name or ip address to listen on.
 
@@ -94,7 +95,7 @@ class NetClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport):
     def set_trust_all(self, val):
         """Should the client trust ALL server certificates
 
-        Keyword arguments
+        Keyword arguments:
         val --  If val is set to true then the client will trust ALL server certificates and will not attempt to authenticate them
         against it's local client trust store. The default value is false.
 
@@ -111,7 +112,7 @@ class NetClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport):
         """Attempt to open a connection to a server. The connection is opened asynchronously and the result returned in the
         handler.
 
-        Keyword arguments
+        Keyword arguments:
         port -- The port to connect to.
         host -- The host or ip address to connect to.
         handler -- The connection handler
@@ -145,7 +146,7 @@ class NetSocket(core.streams.ReadStream, core.streams.WriteStream):
     def write_buffer(self, buffer, handler=None):
         """Write a Buffer to the socket. The handler will be called when the buffer has actually been written to the wire.
 
-        Keyword arguments
+        Keyword arguments:
         buffer -- The buffer to write.
         handler -- The handler to call on completion.
         """
@@ -158,7 +159,7 @@ class NetSocket(core.streams.ReadStream, core.streams.WriteStream):
     def write_str(self, str, enc="UTF-8", handler=None):
         """Write a String to the socket. The handler will be called when the string has actually been written to the wire.
 
-        Keyword arguments
+        Keyword arguments:
         str -- The string to write.
         enc -- The encoding to use.
         handler -- The handler to call on completion.
@@ -171,7 +172,7 @@ class NetSocket(core.streams.ReadStream, core.streams.WriteStream):
     def closed_handler(self, handler):
         """Set a closed handler on the socket.
 
-        Keyword arguments
+        Keyword arguments:
         handler -- A block to be used as the handler
         """
         self._closed_handler = handler
@@ -180,7 +181,7 @@ class NetSocket(core.streams.ReadStream, core.streams.WriteStream):
         """Tell the kernel to stream a file directly from disk to the outgoing connection, bypassing userspace altogether
         (where supported by the underlying operating system. This is a very efficient way to stream files.
 
-        Keyword arguments
+        Keyword arguments:
         file_path -- Path to file to send.
         """
         self.java_obj.sendFile(file_path)

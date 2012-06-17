@@ -18,9 +18,12 @@ from core.buffer import Buffer
 from core.javautils import map_from_java, map_to_java
 
 __author__ = "Scott Horn"
-__email__ = "scott@hornmicro.com"            
+__email__ = "scott@hornmicro.com"
+__credits__ = "Based entirely on work by Tim Fox http://tfox.org"
 
-class DoneHandler(org.vertx.java.core.Handler):
+class JavaHandler(org.vertx.java.core.Handler): pass
+
+class DoneHandler(JavaHandler):
     """ Done handler """
     def __init__(self, handler):
         self.handler = handler

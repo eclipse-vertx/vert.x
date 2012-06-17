@@ -14,6 +14,7 @@
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
+__credits__ = "Based entirely on work by Tim Fox http://tfox.org"
 
 class SSLSupport(object):
   """ A mixin module allowing SSL attributes to be set on classes """
@@ -21,7 +22,7 @@ class SSLSupport(object):
   def set_ssl(self, val):
     """ Set whether the server or client will use SSL.
 
-    Keyword arguments
+    Keyword arguments:
     val -- If true then ssl will be used.
     
     return self. So multiple invocations can be chained.
@@ -37,7 +38,7 @@ class SSLSupport(object):
     The SSL key store is a standard Java Key Store, and should contain the client/server certificate. For a client, it's only necessary to supply
     a client key store if the server requires client authentication via client certificates.
     
-    Keyword arguments
+    Keyword arguments:
     path -- The path to the key store
     
     return self. So multiple invocations can be chained.
@@ -51,7 +52,7 @@ class SSLSupport(object):
     """Set the password for the SSL key store. This method should only be used with the client in SSL mode, i.e. after ssl
     has been set to true.
     
-    Keyword arguments
+    Keyword arguments:
     password -- The password.
     
     return self. So multiple invocations can be chained.
@@ -68,7 +69,7 @@ class SSLSupport(object):
     handshake will fail if the server provides a certificate that the client does not trust, or if client authentication is used,
     if the client provides a certificate the server does not trust.
 
-    Keyword arguments
+    Keyword arguments:
     path -- The path to the trust store
     
     return self. So multiple invocations can be chained.
@@ -82,7 +83,7 @@ class SSLSupport(object):
     """Set the password for the SSL trust store. This method should only be used with the client in SSL mode, i.e. after {#ssl=}
     has been set to true.
 
-    Keyword arguments
+    Keyword arguments:
     password -- The password.
      
     return self. So multiple invocations can be chained.
