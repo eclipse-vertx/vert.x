@@ -57,6 +57,7 @@
   <property name="javadoc-dir" value="docs/java/api"/>
   <property name="rubydoc-dir" value="docs/ruby/api"/>
   <property name="groovydoc-dir" value="docs/groovy/api"/>
+  <property name="pythondoc-dir" value="docs/python/api"/>
 
   <property environment="env"/>
 
@@ -65,6 +66,7 @@
       <include name="*.jar"/>
     </fileset>
     <pathelement location="${env.JRUBY_HOME}/lib/jruby"/>
+    <pathelement location="${env.JYTHON_HOME}"/>
   </path>
 
   <path id="test-classpath">
@@ -84,6 +86,10 @@
     <pathelement location="${tests-base}/ruby"/>
     <pathelement location="${tests-base}/framework/ruby"/>
     <pathelement location="src/main/ruby"/>
+
+    <pathelement location="${tests-base}/python"/>
+    <pathelement location="${tests-base}/framework/python"/>
+    <pathelement location="src/main/python"/>
 
     <pathelement location="${tests-base}/groovy"/>
     <pathelement location="${tests-base}/framework/groovy"/>
@@ -257,6 +263,7 @@
     <junit printsummary="yes" timeout="120000" showoutput="true">
       <sysproperty key="java.util.logging.config.file" value="${conf-dir}/logging.properties"/>
       <sysproperty key="jruby.home" value="${env.JRUBY_HOME}"/>
+      <sysproperty key="jython.home" value="${env.JYTHON_HOME}"/>
       <sysproperty key="vertx.mods" value="${dist-build}/mods"/>
       <classpath refid="test-classpath"/>
       <batchtest haltonfailure="yes" haltonerror="yes" fork="yes" todir="${test-results}">
@@ -295,8 +302,12 @@
     <exec executable="yardoc"/>
   </target>
 
+  <target name="pydoc">
+    <exec executable="./pydocx"/>
+  </target>
 
-  <target name="dist" depends="groovydoc,javadoc,yardoc,jar-core,jar-platform,jar-test-framework,compile-java-mods">
+
+  <target name="dist" depends="groovydoc,javadoc,yardoc,pydoc,jar-core,jar-platform,jar-test-framework,compile-java-mods">
     <mkdir dir="${dist-build}"/>
 
     <copy file="${target}/${core-jar-file}" todir="${dist-build}/lib/jars"/>
@@ -324,6 +335,12 @@
       </fileset>
     </copy>
 
+    <copy todir="${dist-build}/lib/python">
+      <fileset dir="src/main/python">
+        <include name="**/*.py"/>
+      </fileset>
+    </copy>
+
     <copy todir="${dist-build}/lib/javascript">
       <fileset dir="src/main/javascript">
         <include name="**/*.js"/>
@@ -338,6 +355,11 @@
     <mkdir dir="${target}/${rubydoc-dir}"/>
     <copy todir="${dist-build}/${rubydoc-dir}">
         <fileset dir="${target}/${rubydoc-dir}"/>
+    </copy>
+
+    <mkdir dir="${target}/${pythondoc-dir}"/>
+    <copy todir="${dist-build}/${pythondoc-dir}">
+        <fileset dir="${target}/${pythondoc-dir}"/>
     </copy>
 
     <mkdir dir="${target}/${groovydoc-dir}"/>
@@ -367,9 +389,11 @@
 
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/java/eventbusbridge"/>
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/ruby/eventbusbridge"/>
+    <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/python/eventbusbridge"/>
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/javascript/eventbusbridge"/>
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/groovy/eventbusbridge"/>
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/ruby/webapp/web/js"/>
+    <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/python/webapp/web/js"/>
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/javascript/webapp/web/js"/>
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/groovy/webapp/web/js"/>
 
