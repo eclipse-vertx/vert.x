@@ -21,9 +21,7 @@ __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
 __credits__ = "Based entirely on work by Tim Fox http://tfox.org"
 
-class JavaHandler(org.vertx.java.core.Handler): pass
-
-class DoneHandler(JavaHandler):
+class DoneHandler(org.vertx.java.core.Handler):
     """ Done handler """
     def __init__(self, handler):
         self.handler = handler
