@@ -445,9 +445,7 @@ public class DefaultEventBus implements EventBus {
         // Propagate the information
         subs.put(address, serverID, completionHandler);
       } else {
-        if (completionHandler != null) {
-          callCompletionHandler(completionHandler);
-        }
+        callCompletionHandler(completionHandler);
       }
     } else {
       handlers.map.put(new HandlerHolder(handler, replyHandler, context), id);
