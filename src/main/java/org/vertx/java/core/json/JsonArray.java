@@ -159,22 +159,20 @@ public class JsonArray implements Iterable<Object> {
   }
 
   public Object[] toArray() {
-    return convertList(list);
+    return convertList(list).toArray();
   }
 
   @SuppressWarnings("unchecked")
-  static Object[] convertList(List<?> list) {
-    Object[] arr = new Object[list.size()];
-    int index = 0;
+  static List<Object> convertList(List<?> list) {
+    List<Object> arr = new ArrayList<>(list.size());
     for (Object obj: list) {
       if (obj instanceof Map) {
-        arr[index] = JsonObject.convertMap((Map<String, Object>) obj);
+        arr.add(JsonObject.convertMap((Map<String, Object>) obj));
       } else if (obj instanceof List) {
-        arr[index] = convertList((List<?>) obj);
+          arr.add(convertList((List<?>) obj));
       } else {
-        arr[index] = obj;
+          arr.add(obj);
       }
-      index++;
     }
     return arr;
   }
