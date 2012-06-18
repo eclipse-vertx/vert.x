@@ -278,7 +278,7 @@ public class DefaultEventBus implements EventBus {
     HandlerInfo info = handlersByID.get(id);
     if (info != null) {
       unregisterHandler(info.address, info.handler, completionHandler);
-    } else {
+    } else if (completionHandler != null) {
       callCompletionHandler(completionHandler);
     }
   }
