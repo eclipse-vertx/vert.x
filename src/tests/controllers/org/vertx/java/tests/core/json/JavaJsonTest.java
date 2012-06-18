@@ -17,6 +17,7 @@
 package org.vertx.java.tests.core.json;
 
 import org.junit.Test;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -48,6 +49,19 @@ public class JavaJsonTest extends TestBase {
     String str = obj.encode();
     JsonObject obj2 = new JsonObject(str);
     assertEquals("bar", obj2.getString("foo"));
+  }
+
+  @Test
+  public void testJsonArrayToClone() {
+    JsonArray array = new JsonArray();
+    array.add("test");
+    JsonObject object = new JsonObject();
+    object.putArray("array", array);
+
+    //want to clone
+    JsonObject object2 = new JsonObject(object.toMap());
+    //this shouldn't throw an exception, it does before patch
+    JsonArray array2 = object2.getArray("array");
   }
 
 }
