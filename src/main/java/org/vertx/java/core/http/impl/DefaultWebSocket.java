@@ -24,6 +24,7 @@ import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.VertxInternal;
 
+import java.net.SocketAddress;
 import java.util.UUID;
 
 /**
@@ -49,8 +50,8 @@ public class DefaultWebSocket extends ServerWebSocket {
   boolean rejected;
   private boolean connected;
 
-  protected DefaultWebSocket(VertxInternal vertx, String path, AbstractConnection conn, Runnable connectRunnable) {
-    super(path, UUID.randomUUID().toString(), UUID.randomUUID().toString());
+  protected DefaultWebSocket(VertxInternal vertx, String path, AbstractConnection conn, Runnable connectRunnable, SocketAddress remoteHost) {
+    super(path, UUID.randomUUID().toString(), UUID.randomUUID().toString(),remoteHost);
     this.vertx = vertx;
     this.conn = conn;
     binaryHandler = new Handler<Message<Buffer>>() {

@@ -37,6 +37,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.SocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
@@ -238,11 +239,12 @@ class ServerConnection extends AbstractConnection {
       String uri = request.getUri();
       String path = theURI.getPath();
       String query = theURI.getQuery();
+      SocketAddress remoteHost = channel.getRemoteAddress();
       HttpVersion ver = request.getProtocolVersion();
       boolean keepAlive = ver == HttpVersion.HTTP_1_1 ||
           (ver == HttpVersion.HTTP_1_0 && "Keep-Alive".equalsIgnoreCase(request.getHeader("Connection")));
       DefaultHttpServerResponse resp = new DefaultHttpServerResponse(this, request.getProtocolVersion(), keepAlive);
-      DefaultHttpServerRequest req = new DefaultHttpServerRequest(this, method, uri, path, query, resp, request);
+      DefaultHttpServerRequest req = new DefaultHttpServerRequest(this, method, uri, path, query, remoteHost, resp, request);
       handleRequest(req, resp);
 
       ChannelBuffer requestBody = request.getContent();

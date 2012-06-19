@@ -108,7 +108,7 @@ class ClientConnection extends AbstractConnection {
                   if (fut.succeeded()) {
                     //We upgraded ok
                     p.replace("encoder", "wsencoder", shake.getEncoder(false));
-                    ws = new DefaultWebSocket(vertx, null, ClientConnection.this, null);
+                    ws = new DefaultWebSocket(vertx, null, ClientConnection.this, null,channel.getRemoteAddress());
                     wsConnect.handle(ws);
                   } else {
                     client.handleException(fut.exception);
