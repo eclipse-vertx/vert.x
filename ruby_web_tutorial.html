@@ -281,6 +281,10 @@ Vertx.deploy_verticle('auth-mgr')
   'bridge' =&gt; true,
 
   'permitted' =&gt; [
+    # Allow calls to login
+    {
+      'address' =&gt; 'vertx.basicauthmanager.login'
+    },
     # Allow calls to get static album data from the persistor
     {
       'address' =&gt; 'vertx.mongopersistor',

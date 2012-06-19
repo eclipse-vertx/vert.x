@@ -306,6 +306,10 @@ Edit the web server configuration so it looks like:
       'bridge' => true,
 
       'permitted' => [
+        # Allow calls to login
+        {
+          'address' => 'vertx.basicauthmanager.login'
+        },
         # Allow calls to get static album data from the persistor
         {
           'address' => 'vertx.mongopersistor',
