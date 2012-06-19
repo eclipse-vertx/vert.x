@@ -29,7 +29,7 @@ import java.util.Random;
 
 public class WebSocketChallenge08 {
 
-  private static Logger log = LoggerFactory.getLogger(WebSocketChallenge08.class);
+  private static final Logger log = LoggerFactory.getLogger(WebSocketChallenge08.class);
 
   public static final String GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
   public static final String SHA1 = "SHA1";
