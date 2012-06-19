@@ -27,7 +27,7 @@ Once you've got the pre-requisites installed, you install vert.x as follows:
 To make sure you've installed it correctly, open another console and type:
 
     tim@Ethel:~/example$ vertx version
-    vert.x 1.0.0.beta.1
+    vert.x 1.1.0.final
 
 You should see output something like the above.
 
