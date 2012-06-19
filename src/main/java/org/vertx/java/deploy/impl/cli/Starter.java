@@ -100,6 +100,7 @@ public class Starter {
     addShutdownHook();
     if (sargs.length < 2) {
       displaySyntax();
+      return;
     }
     String main = sargs[1];
 
@@ -247,13 +248,13 @@ public class Starter {
 "    valid options are:\n" +
 "        -conf <config_file>    Specifies configuration that should be provided \n" +
 "                               to the verticle. <config_file> should reference \n" +
-"                               a text file containing a valid JSON object.\n" +
+"                               a text file containing a valid JSON object\n" +
+"                               which represents the configuration.\n" +
 "        -cp <path>             specifies the path on which to search for <main>\n" +
 "                               and any referenced resources.\n" +
 "                               Defaults to '.' (current directory).\n" +
 "        -instances <instances> specifies how many instances of the verticle will\n" +       // 80 chars at will
-"                               be deployed. Defaults to the number of available\n" +
-"                               cores on the system.\n" +
+"                               be deployed. Defaults to 1\n" +
 "        -worker                if specified then the verticle is a worker\n" +
 "                               verticle.\n" +
 "        -cluster               if specified then the vert.x instance will form a\n" +
@@ -262,7 +263,8 @@ public class Starter {
 "        -cluster-port          port to use for cluster communication.\n" +
 "                               Default is 25500.\n" +
 "        -cluster-host          host to bind to for cluster communication.\n" +
-"                               Default is 0.0.0.0 (all interfaces).\n\n\n" +
+"                               If this is not specified vert.x will attempt\n" +
+"                               to choose one from the available interfaces.\n\n" +
 
 "    vertx version\n" +
 "        displays the version";

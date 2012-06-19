@@ -50,6 +50,7 @@ abstract class HttpClient {
    */
   HttpClient setMaxPoolSize(int maxConnections) {
     jClient.setMaxPoolSize(maxConnections)
+    this
   }
 
   /**
