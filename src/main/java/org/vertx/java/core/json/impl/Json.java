@@ -17,6 +17,7 @@
 package org.vertx.java.core.json.impl;
 
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.EncodeException;
 import org.vertx.java.core.logging.Logger;
@@ -30,6 +31,7 @@ public class Json {
   private static final Logger log = LoggerFactory.getLogger(Json.class);
 
   private final static ObjectMapper mapper = new ObjectMapper();
+  private final static ObjectMapper prettyMapper = new ObjectMapper();
 
   public static String encode(Object obj) throws EncodeException {
     try {
@@ -38,6 +40,15 @@ public class Json {
     catch (Exception e) {
       throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
     }
+  }
+  
+  public static String encodePretty(Object obj) throws EncodeException {
+	try {
+	  return prettyMapper.writeValueAsString(obj);
+	}
+	catch (Exception e) {
+	  throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
+	}
   }
 
   public static Object decodeValue(String str, Class<?> clazz) throws DecodeException {
@@ -49,4 +60,7 @@ public class Json {
     }
   }
 
+  static {
+	  prettyMapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
+    }
 }
