@@ -63,7 +63,7 @@ public class VertxStarter {
     } else {
       String command = sargs[0].toLowerCase();
       if (command.equals("version")) {
-        System.out.println("vert.x 1.0.1.final");
+        System.out.println("vert.x 1.1.0.final");
       } else if (command.equals("run")) {
         runVerticle(sargs);
       } else {
