@@ -43,21 +43,21 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class VertxStarter {
+public class Starter {
 
-  private static final Logger log = LoggerFactory.getLogger(VertxStarter.class);
+  private static final Logger log = LoggerFactory.getLogger(Starter.class);
 
   private static final String CP_SEPARATOR =
       System.getProperty("os.name").startsWith("Windows") ? ";" : ":";
 
   public static void main(String[] args) {
-    new VertxStarter(args);
+    new Starter(args);
   }
 
   private VertxInternal vertx = new DefaultVertx();
   private VerticleManager mgr;
 
-  private VertxStarter(String[] sargs) {
+  private Starter(String[] sargs) {
     if (sargs.length == 0) {
       displaySyntax();
     } else {
