@@ -34,7 +34,7 @@ class RawWebSocketTransport {
 
   private static final Logger log = LoggerFactory.getLogger(WebSocketTransport.class);
 
-  private class RawWSSockJSSocket extends SockJSSocket {
+  private static class RawWSSockJSSocket extends SockJSSocket {
 
     private WebSocket ws;
 

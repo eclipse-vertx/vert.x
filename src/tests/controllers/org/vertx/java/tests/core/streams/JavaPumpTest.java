@@ -91,7 +91,7 @@ public class JavaPumpTest extends TestCase {
     }
   }
 
-  private class FakeReadStream implements ReadStream {
+  private static class FakeReadStream implements ReadStream {
 
     private Handler<Buffer> dataHandler;
     private boolean paused;
@@ -125,7 +125,7 @@ public class JavaPumpTest extends TestCase {
     }
   }
 
-  private class FakeWriteStream implements WriteStream {
+  private static class FakeWriteStream implements WriteStream {
 
     int maxSize;
     Buffer received = new Buffer();

@@ -210,7 +210,7 @@ public class JavaSharedDataTest extends TestCase {
     assert (set4 != set3);
   }
 
-  class SomeOtherClass {
+  static class SomeOtherClass {
   }
 
 }
