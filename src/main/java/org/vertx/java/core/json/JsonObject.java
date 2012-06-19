@@ -181,7 +181,7 @@ public class JsonObject {
   }
   
   public String encodePretty() {
-	return Json.encodePretty(this.map);
+    return Json.encodePretty(this.map);
   }
 
   public JsonObject copy() {

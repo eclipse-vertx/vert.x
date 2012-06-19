@@ -43,12 +43,12 @@ public class Json {
   }
   
   public static String encodePretty(Object obj) throws EncodeException {
-	try {
-	  return prettyMapper.writeValueAsString(obj);
-	}
-	catch (Exception e) {
-	  throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
-	}
+    try {
+      return prettyMapper.writeValueAsString(obj);
+    }
+    catch (Exception e) {
+      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
+    }
   }
 
   public static Object decodeValue(String str, Class<?> clazz) throws DecodeException {
@@ -61,6 +61,6 @@ public class Json {
   }
 
   static {
-	  prettyMapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
-    }
+    prettyMapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
+  }
 }
