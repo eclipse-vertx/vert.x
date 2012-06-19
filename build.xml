@@ -251,7 +251,7 @@
 
   <!-- We depend on dist since the busmod tests need the distro to be built to
   access the mods -->
-  <target name="internal-tests" depends="compile-tests">
+  <target name="internal-tests" depends="compile-tests,dist">
     <delete dir="${test-results}"/>
     <mkdir dir="${test-results}"/>
     <junit printsummary="yes" timeout="120000" showoutput="true">
