@@ -170,7 +170,7 @@ and configuration is described in a Hash.
         <li class="public ">
   <span class="summary_signature">
     
-      <a href="#bridge-instance_method" title="#bridge (instance method)">- (Object) <strong>bridge</strong>(config, permitted, auth_timeout = 5*60*1000, auth_address = nil) </a>
+      <a href="#bridge-instance_method" title="#bridge (instance method)">- (Object) <strong>bridge</strong>(config, inbound_permitted, outbound_permitted, auth_timeout = 5*60*1000, auth_address = nil) </a>
     
 
     
@@ -316,7 +316,7 @@ You must pass in an instance of <span class='object_link'><a href="HttpServer.ht
       <div class="method_details first">
   <p class="signature first" id="bridge-instance_method">
   
-    - (<tt>Object</tt>) <strong>bridge</strong>(config, permitted, auth_timeout = 5*60*1000, auth_address = nil) 
+    - (<tt>Object</tt>) <strong>bridge</strong>(config, inbound_permitted, outbound_permitted, auth_timeout = 5*60*1000, auth_address = nil) 
   
 
   
@@ -329,14 +329,18 @@ You must pass in an instance of <span class='object_link'><a href="HttpServer.ht
 66
 67
 68
-69</pre>
+69
+70
+71</pre>
     </td>
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby/core/sock_js.rb', line 66</span>
 
-<span class='rubyid_def def kw'>def</span> <span class='rubyid_bridge identifier id'>bridge</span><span class='lparen token'>(</span><span class='rubyid_config identifier id'>config</span><span class='comma token'>,</span> <span class='rubyid_permitted identifier id'>permitted</span><span class='comma token'>,</span> <span class='rubyid_auth_timeout identifier id'>auth_timeout</span> <span class='assign token'>=</span> <span class='integer val'>5</span> <span class='mult op'>*</span> <span class='integer val'>60</span> <span class='mult op'>*</span> <span class='integer val'>1000</span><span class='comma token'>,</span> <span class='rubyid_auth_address identifier id'>auth_address</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='rparen token'>)</span>
-  <span class='rubyid_a_json identifier id'>a_json</span> <span class='assign token'>=</span> <span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_core identifier id'>core</span><span class='dot token'>.</span><span class='rubyid_json identifier id'>json</span><span class='dot token'>.</span><span class='rubyid_JsonArray constant id'>JsonArray</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_permitted identifier id'>permitted</span><span class='rparen token'>)</span>
-  <span class='rubyid_@j_server ivar id'>@j_server</span><span class='dot token'>.</span><span class='rubyid_bridge identifier id'>bridge</span><span class='lparen token'>(</span><span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_core identifier id'>core</span><span class='dot token'>.</span><span class='rubyid_json identifier id'>json</span><span class='dot token'>.</span><span class='rubyid_JsonObject constant id'>JsonObject</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_config identifier id'>config</span><span class='rparen token'>)</span><span class='comma token'>,</span> <span class='rubyid_a_json identifier id'>a_json</span><span class='comma token'>,</span> <span class='rubyid_auth_timeout identifier id'>auth_timeout</span><span class='comma token'>,</span> <span class='rubyid_auth_address identifier id'>auth_address</span><span class='rparen token'>)</span>
+<span class='rubyid_def def kw'>def</span> <span class='rubyid_bridge identifier id'>bridge</span><span class='lparen token'>(</span><span class='rubyid_config identifier id'>config</span><span class='comma token'>,</span> <span class='rubyid_inbound_permitted identifier id'>inbound_permitted</span><span class='comma token'>,</span> <span class='rubyid_outbound_permitted identifier id'>outbound_permitted</span><span class='comma token'>,</span> <span class='rubyid_auth_timeout identifier id'>auth_timeout</span> <span class='assign token'>=</span> <span class='integer val'>5</span> <span class='mult op'>*</span> <span class='integer val'>60</span> <span class='mult op'>*</span> <span class='integer val'>1000</span><span class='comma token'>,</span> <span class='rubyid_auth_address identifier id'>auth_address</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='rparen token'>)</span>
+  <span class='rubyid_j_inbound_permitted identifier id'>j_inbound_permitted</span> <span class='assign token'>=</span> <span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_core identifier id'>core</span><span class='dot token'>.</span><span class='rubyid_json identifier id'>json</span><span class='dot token'>.</span><span class='rubyid_JsonArray constant id'>JsonArray</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_inbound_permitted identifier id'>inbound_permitted</span><span class='rparen token'>)</span>
+  <span class='rubyid_j_outbound_permitted identifier id'>j_outbound_permitted</span> <span class='assign token'>=</span> <span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_core identifier id'>core</span><span class='dot token'>.</span><span class='rubyid_json identifier id'>json</span><span class='dot token'>.</span><span class='rubyid_JsonArray constant id'>JsonArray</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_outbound_permitted identifier id'>outbound_permitted</span><span class='rparen token'>)</span>
+  <span class='rubyid_@j_server ivar id'>@j_server</span><span class='dot token'>.</span><span class='rubyid_bridge identifier id'>bridge</span><span class='lparen token'>(</span><span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_core identifier id'>core</span><span class='dot token'>.</span><span class='rubyid_json identifier id'>json</span><span class='dot token'>.</span><span class='rubyid_JsonObject constant id'>JsonObject</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_config identifier id'>config</span><span class='rparen token'>)</span><span class='comma token'>,</span> <span class='rubyid_j_inbound_permitted identifier id'>j_inbound_permitted</span><span class='comma token'>,</span>
+                   <span class='rubyid_j_outbound_permitted identifier id'>j_outbound_permitted</span><span class='comma token'>,</span> <span class='rubyid_auth_timeout identifier id'>auth_timeout</span><span class='comma token'>,</span> <span class='rubyid_auth_address identifier id'>auth_address</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
 </pre>
     </td>
@@ -455,7 +459,7 @@ Handler to call when a new <span class='object_link'><a href="SockJSSocket.html"
 </div>
     
     <div id="footer">
-  Generated on Wed May 09 11:25:36 2012 by 
+  Generated on Tue Jun 19 16:38:26 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.5 (ruby-1.8.7).
 </div>

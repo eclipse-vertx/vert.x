@@ -73,7 +73,7 @@
   
     <dt class="r1 last">Defined in:</dt>
     <dd class="r1 last">src/main/ruby/core/deploy.rb<span class="defines">,<br />
-  src/main/ruby/core/net.rb,<br /> src/main/ruby/core/http.rb,<br /> src/main/ruby/core/buffer.rb,<br /> src/main/ruby/core/timers.rb,<br /> src/main/ruby/core/logger.rb,<br /> src/main/ruby/core/sock_js.rb,<br /> src/main/ruby/core/streams.rb,<br /> src/main/ruby/core/event_bus.rb,<br /> src/main/ruby/core/parsetools.rb,<br /> src/main/ruby/core/tcp_support.rb,<br /> src/main/ruby/core/shared_data.rb,<br /> src/main/ruby/core/file_system.rb,<br /> src/main/ruby/core/ssl_support.rb</span>
+  src/main/ruby/core/net.rb,<br /> src/main/ruby/core/env.rb,<br /> src/main/ruby/core/http.rb,<br /> src/main/ruby/core/buffer.rb,<br /> src/main/ruby/core/timers.rb,<br /> src/main/ruby/core/logger.rb,<br /> src/main/ruby/core/sock_js.rb,<br /> src/main/ruby/core/streams.rb,<br /> src/main/ruby/core/event_bus.rb,<br /> src/main/ruby/core/parsetools.rb,<br /> src/main/ruby/core/tcp_support.rb,<br /> src/main/ruby/core/shared_data.rb,<br /> src/main/ruby/core/file_system.rb,<br /> src/main/ruby/core/ssl_support.rb</span>
 </dd>
   
 </dl>
@@ -236,6 +236,54 @@ Deploy a verticle.
   
     <span class="summary_desc"><div class='inline'><p>
 Deploy a workerverticle.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#env-class_method" title="env (class method)">+ (Hash) <strong>env</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Get the environment for the verticle.
+</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#exit-class_method" title="exit (class method)">+ (Object) <strong>exit</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>
+Cause the container to exit.
 </p>
 </div></span>
   
@@ -498,16 +546,16 @@ The JSON config for the verticle
       <pre class="lines">
 
 
-52
-53
-54
-55
-56
 57
-58</pre>
+58
+59
+60
+61
+62
+63</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/deploy.rb', line 52</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/deploy.rb', line 57</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='rubyid_config identifier id'>config</span>
   <span class='rubyid_if if kw'>if</span> <span class='notop op'>!</span><span class='rubyid_defined? defined kw'>defined?</span> <span class='rubyid_@@j_conf ivar id'>@@j_conf</span>
@@ -784,6 +832,107 @@ Block will be executed when deploy has completed
     <span class='rubyid_config identifier id'>config</span> <span class='assign token'>=</span> <span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_core identifier id'>core</span><span class='dot token'>.</span><span class='rubyid_json identifier id'>json</span><span class='dot token'>.</span><span class='rubyid_JsonObject constant id'>JsonObject</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_json_str identifier id'>json_str</span><span class='rparen token'>)</span>
   <span class='rubyid_end end kw'>end</span>
   <span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='rubyid_impl identifier id'>impl</span><span class='dot token'>.</span><span class='rubyid_VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='rubyid_container identifier id'>container</span><span class='dot token'>.</span><span class='rubyid_deployWorkerVerticle identifier id'>deployWorkerVerticle</span><span class='lparen token'>(</span><span class='rubyid_main identifier id'>main</span><span class='comma token'>,</span> <span class='rubyid_config identifier id'>config</span><span class='comma token'>,</span> <span class='rubyid_instances identifier id'>instances</span><span class='comma token'>,</span> <span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
+<span class='rubyid_end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="env-class_method">
+  
+    + (<tt>Hash</tt>) <strong>env</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Get the environment for the verticle
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+<h3>Returns:</h3>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Hash</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>
+Get the environment for the verticle
+</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+19
+20
+21</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/env.rb', line 19</span>
+
+<span class='rubyid_def def kw'>def</span> <span class='rubyid_Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='rubyid_env identifier id'>env</span>
+  <span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='rubyid_impl identifier id'>impl</span><span class='dot token'>.</span><span class='rubyid_VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='rubyid_container identifier id'>container</span><span class='dot token'>.</span><span class='rubyid_getEnv identifier id'>getEnv</span>
+<span class='rubyid_end end kw'>end</span>
+</pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="exit-class_method">
+  
+    + (<tt>Object</tt>) <strong>exit</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    <p>
+Cause the container to exit
+</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+51
+52
+53</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/main/ruby/core/deploy.rb', line 51</span>
+
+<span class='rubyid_def def kw'>def</span> <span class='rubyid_Vertx constant id'>Vertx</span><span class='dot token'>.</span><span class='rubyid_exit identifier id'>exit</span>
+  <span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='rubyid_impl identifier id'>impl</span><span class='dot token'>.</span><span class='rubyid_VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='rubyid_container identifier id'>container</span><span class='dot token'>.</span><span class='rubyid_exit identifier id'>exit</span>
 <span class='rubyid_end end kw'>end</span>
 </pre>
     </td>
@@ -1241,7 +1390,7 @@ The unique id of the deployment
 </div>
     
     <div id="footer">
-  Generated on Wed May 09 11:25:33 2012 by 
+  Generated on Tue Jun 19 16:38:23 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.7.5 (ruby-1.8.7).
 </div>
