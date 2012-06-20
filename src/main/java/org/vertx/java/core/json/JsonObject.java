@@ -179,6 +179,10 @@ public class JsonObject {
   public String encode() {
     return Json.encode(this.map);
   }
+  
+  public String encodePretty() {
+    return Json.encodePretty(this.map);
+  }
 
   public JsonObject copy() {
     return new JsonObject(encode());
