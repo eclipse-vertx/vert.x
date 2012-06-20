@@ -239,7 +239,7 @@ public class Starter {
   private void displaySyntax() {
 
     String usage =
-"Usage: vertx [run|deploy|undeploy|start|stop] [main] [-options]\n\n" +
+"Usage: vertx [run|version] [main] [-options]\n\n" +
 
 "    vertx run <main> [-options]\n" +
 "        runs a verticle called <main> in its own instance of vert.x.\n" +
