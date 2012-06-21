@@ -20,6 +20,8 @@ import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyCodeSource;
 import groovy.lang.Script;
+import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.customizers.ImportCustomizer;
 import org.vertx.groovy.core.Vertx;
 import org.vertx.groovy.deploy.Container;
 import org.vertx.java.core.impl.VertxInternal;
@@ -64,7 +66,15 @@ public class GroovyVerticleFactory implements VerticleFactory {
 
     URL url = cl.getResource(main);
     GroovyCodeSource gcs = new GroovyCodeSource(url);
-    GroovyClassLoader gcl = new GroovyClassLoader(cl);
+
+    CompilerConfiguration config = new CompilerConfiguration();
+
+    ImportCustomizer imports = new ImportCustomizer();
+    imports.addImport("RouteMatcher","org.vertx.groovy.core.http.RouteMatcher");
+
+    config.addCompilationCustomizers(imports);
+
+    GroovyClassLoader gcl = new GroovyClassLoader(cl, config);
     Class clazz = gcl.parseClass(gcs);
 
     Method stop;
@@ -93,6 +103,7 @@ public class GroovyVerticleFactory implements VerticleFactory {
     Binding binding = new Binding();
     binding.setVariable("vertx", new Vertx((VertxInternal) VertxLocator.vertx));
     binding.setVariable("container", new Container(new org.vertx.java.deploy.Container((mgr))));
+
     verticle.setBinding(binding);
 
     return new Verticle() {
