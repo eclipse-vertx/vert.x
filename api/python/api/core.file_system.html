@@ -1,0 +1,622 @@
+
+<!doctype html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module core.file_system</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="core.html"><font color="#ffffff">core</font></a>.file_system</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href="index.html">index</a><br></font></td></tr></table>
+    <p><tt>#&nbsp;Copyright&nbsp;2011&nbsp;the&nbsp;original&nbsp;author&nbsp;or&nbsp;authors.<br>
+#<br>
+#&nbsp;Licensed&nbsp;under&nbsp;the&nbsp;Apache&nbsp;License,&nbsp;Version&nbsp;2.0&nbsp;(the&nbsp;"License");<br>
+#&nbsp;you&nbsp;may&nbsp;not&nbsp;use&nbsp;this&nbsp;file&nbsp;except&nbsp;in&nbsp;compliance&nbsp;with&nbsp;the&nbsp;License.<br>
+#&nbsp;You&nbsp;may&nbsp;obtain&nbsp;a&nbsp;copy&nbsp;of&nbsp;the&nbsp;License&nbsp;at<br>
+#<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a><br>
+#<br>
+#&nbsp;Unless&nbsp;required&nbsp;by&nbsp;applicable&nbsp;law&nbsp;or&nbsp;agreed&nbsp;to&nbsp;in&nbsp;writing,&nbsp;software<br>
+#&nbsp;distributed&nbsp;under&nbsp;the&nbsp;License&nbsp;is&nbsp;distributed&nbsp;on&nbsp;an&nbsp;"AS&nbsp;IS"&nbsp;BASIS,<br>
+#&nbsp;WITHOUT&nbsp;WARRANTIES&nbsp;OR&nbsp;CONDITIONS&nbsp;OF&nbsp;ANY&nbsp;KIND,&nbsp;either&nbsp;express&nbsp;or&nbsp;implied.<br>
+#&nbsp;See&nbsp;the&nbsp;License&nbsp;for&nbsp;the&nbsp;specific&nbsp;language&nbsp;governing&nbsp;permissions&nbsp;and<br>
+#&nbsp;limitations&nbsp;under&nbsp;the&nbsp;License.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#fffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="core.html">core</a><br>
+</td><td width="25%" valign=top><a href="datetime.html">datetime</a><br>
+</td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial">__builtin__.object
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.file_system.html#AsyncFile">AsyncFile</a>
+</font></dt><dt><font face="helvetica, arial"><a href="core.file_system.html#FSProps">FSProps</a>
+</font></dt><dt><font face="helvetica, arial"><a href="core.file_system.html#FileProps">FileProps</a>
+</font></dt><dt><font face="helvetica, arial"><a href="core.file_system.html#FileSystem">FileSystem</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="core.streams.html#ReadStream">core.streams.ReadStream</a>(__builtin__.object)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.file_system.html#AsyncFileReadStream">AsyncFileReadStream</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="core.streams.html#WriteStream">core.streams.WriteStream</a>(__builtin__.object)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.file_system.html#AsyncFileWriteStream">AsyncFileWriteStream</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial">org.vertx.java.core.AsyncResultHandler(org.vertx.java.core.Handler, java.lang.Object)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial">org.python.proxies.core.file_system$FSWrappedHandler$10(org.vertx.java.core.AsyncResultHandler, java.lang.Object)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.file_system.html#FSWrappedHandler">FSWrappedHandler</a>
+</font></dt></dl>
+</dd>
+</dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="AsyncFile">class <strong>AsyncFile</strong></a>(__builtin__.object)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Represents&nbsp;a&nbsp;file&nbsp;on&nbsp;the&nbsp;file-system&nbsp;which&nbsp;can&nbsp;be&nbsp;read&nbsp;from,&nbsp;or&nbsp;written&nbsp;to&nbsp;asynchronously.<br>
+Methods&nbsp;also&nbsp;exist&nbsp;to&nbsp;get&nbsp;a&nbsp;read&nbsp;stream&nbsp;or&nbsp;a&nbsp;write&nbsp;stream&nbsp;on&nbsp;the&nbsp;file.&nbsp;This&nbsp;allows&nbsp;the&nbsp;data&nbsp;to&nbsp;be&nbsp;pumped&nbsp;to&nbsp;and&nbsp;from<br>
+other&nbsp;streams,&nbsp;e.g.&nbsp;an&nbsp;HttpClientRequest&nbsp;instance,&nbsp;using&nbsp;the&nbsp;Pump&nbsp;class<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="AsyncFile-__init__"><strong>__init__</strong></a>(self, java_obj)</dt></dl>
+
+<dl><dt><a name="AsyncFile-close"><strong>close</strong></a>(self, handler)</dt><dd><tt>Close&nbsp;the&nbsp;file,&nbsp;asynchronously.</tt></dd></dl>
+
+<dl><dt><a name="AsyncFile-flush"><strong>flush</strong></a>(self)</dt><dd><tt>Flush&nbsp;any&nbsp;writes&nbsp;made&nbsp;to&nbsp;this&nbsp;file&nbsp;to&nbsp;underlying&nbsp;persistent&nbsp;storage,&nbsp;asynchronously.<br>
+If&nbsp;the&nbsp;file&nbsp;was&nbsp;opened&nbsp;with&nbsp;flush&nbsp;set&nbsp;to&nbsp;true&nbsp;then&nbsp;calling&nbsp;this&nbsp;method&nbsp;will&nbsp;have&nbsp;no&nbsp;effect.<br>
+Keyword&nbsp;arguments:<br>
+&nbsp;<br>
+handler&nbsp;--&nbsp;the&nbsp;handler&nbsp;which&nbsp;is&nbsp;called&nbsp;on&nbsp;completion.</tt></dd></dl>
+
+<dl><dt><a name="AsyncFile-read"><strong>read</strong></a>(self, buffer, offset, position, length, handler)</dt><dd><tt>Reads&nbsp;some&nbsp;data&nbsp;from&nbsp;a&nbsp;file&nbsp;into&nbsp;a&nbsp;buffer,&nbsp;asynchronously.<br>
+When&nbsp;multiple&nbsp;reads&nbsp;are&nbsp;invoked&nbsp;on&nbsp;the&nbsp;same&nbsp;file<br>
+there&nbsp;are&nbsp;no&nbsp;guarantees&nbsp;as&nbsp;to&nbsp;order&nbsp;in&nbsp;which&nbsp;those&nbsp;reads&nbsp;actually&nbsp;occur.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments&nbsp;&nbsp;<br>
+buffer&nbsp;--&nbsp;the&nbsp;buffer&nbsp;into&nbsp;which&nbsp;the&nbsp;data&nbsp;which&nbsp;is&nbsp;read&nbsp;is&nbsp;written.<br>
+offset&nbsp;--&nbsp;the&nbsp;position&nbsp;in&nbsp;the&nbsp;buffer&nbsp;where&nbsp;to&nbsp;start&nbsp;writing&nbsp;the&nbsp;data.<br>
+position&nbsp;--&nbsp;the&nbsp;position&nbsp;in&nbsp;the&nbsp;file&nbsp;where&nbsp;to&nbsp;read&nbsp;the&nbsp;data.<br>
+length&nbsp;--&nbsp;the&nbsp;number&nbsp;of&nbsp;bytes&nbsp;to&nbsp;read.</tt></dd></dl>
+
+<dl><dt><a name="AsyncFile-write"><strong>write</strong></a>(self, buffer, position, handler)</dt><dd><tt>Write&nbsp;a&nbsp;Buffer&nbsp;to&nbsp;the&nbsp;file,&nbsp;asynchronously.<br>
+When&nbsp;multiple&nbsp;writes&nbsp;are&nbsp;invoked&nbsp;on&nbsp;the&nbsp;same&nbsp;file<br>
+there&nbsp;are&nbsp;no&nbsp;guarantees&nbsp;as&nbsp;to&nbsp;order&nbsp;in&nbsp;which&nbsp;those&nbsp;writes&nbsp;actually&nbsp;occur.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+buffer&nbsp;--&nbsp;the&nbsp;buffer&nbsp;to&nbsp;write<br>
+position&nbsp;--&nbsp;the&nbsp;position&nbsp;in&nbsp;the&nbsp;file&nbsp;where&nbsp;to&nbsp;write&nbsp;the&nbsp;buffer.&nbsp;Position&nbsp;is&nbsp;measured&nbsp;in&nbsp;bytes&nbsp;and<br>
+starts&nbsp;with&nbsp;zero&nbsp;at&nbsp;the&nbsp;beginning&nbsp;of&nbsp;the&nbsp;file.</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>read_stream</strong></dt>
+<dd><tt>returns&nbsp;&nbsp;[ReadStream]&nbsp;A&nbsp;read&nbsp;stream&nbsp;operating&nbsp;on&nbsp;the&nbsp;file.</tt></dd>
+</dl>
+<dl><dt><strong>write_stream</strong></dt>
+<dd><tt>returns&nbsp;a&nbsp;write&nbsp;stream&nbsp;operating&nbsp;on&nbsp;the&nbsp;file.</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="AsyncFileReadStream">class <strong>AsyncFileReadStream</strong></a>(<a href="core.streams.html#ReadStream">core.streams.ReadStream</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="core.file_system.html#AsyncFileReadStream">AsyncFileReadStream</a></dd>
+<dd><a href="core.streams.html#ReadStream">core.streams.ReadStream</a></dd>
+<dd>__builtin__.object</dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="AsyncFileReadStream-__init__"><strong>__init__</strong></a>(self, java_obj)</dt></dl>
+
+<hr>
+Methods inherited from <a href="core.streams.html#ReadStream">core.streams.ReadStream</a>:<br>
+<dl><dt><a name="AsyncFileReadStream-data_handler"><strong>data_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;data&nbsp;handler.&nbsp;As&nbsp;data&nbsp;is&nbsp;read,&nbsp;the&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;data.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+handler&nbsp;--&nbsp;The&nbsp;data&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="AsyncFileReadStream-end_handler"><strong>end_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;end&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.&nbsp;Once&nbsp;the&nbsp;stream&nbsp;has&nbsp;ended,&nbsp;and&nbsp;there&nbsp;is&nbsp;no&nbsp;more&nbsp;data&nbsp;to&nbsp;be&nbsp;read,&nbsp;this&nbsp;handler&nbsp;will&nbsp;be&nbsp;called.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+handler&nbsp;--&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="AsyncFileReadStream-exception_handler"><strong>exception_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;execption&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.<br>
+param&nbsp;[Block]&nbsp;hndlr.&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="AsyncFileReadStream-pause"><strong>pause</strong></a>(self)</dt><dd><tt>Pause&nbsp;the&nbsp;<a href="core.streams.html#ReadStream">ReadStream</a>.&nbsp;After&nbsp;calling&nbsp;this,&nbsp;the&nbsp;<a href="core.streams.html#ReadStream">ReadStream</a>&nbsp;will&nbsp;aim&nbsp;to&nbsp;send&nbsp;no&nbsp;more&nbsp;data&nbsp;to&nbsp;the</tt></dd></dl>
+
+<dl><dt><a name="AsyncFileReadStream-resume"><strong>resume</strong></a>(self)</dt><dd><tt>Resume&nbsp;reading.&nbsp;If&nbsp;the&nbsp;<a href="core.streams.html#ReadStream">ReadStream</a>&nbsp;has&nbsp;been&nbsp;paused,&nbsp;reading&nbsp;will&nbsp;recommence&nbsp;on&nbsp;it.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="core.streams.html#ReadStream">core.streams.ReadStream</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="AsyncFileWriteStream">class <strong>AsyncFileWriteStream</strong></a>(<a href="core.streams.html#WriteStream">core.streams.WriteStream</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="core.file_system.html#AsyncFileWriteStream">AsyncFileWriteStream</a></dd>
+<dd><a href="core.streams.html#WriteStream">core.streams.WriteStream</a></dd>
+<dd>__builtin__.object</dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="AsyncFileWriteStream-__init__"><strong>__init__</strong></a>(self, java_obj)</dt></dl>
+
+<hr>
+Methods inherited from <a href="core.streams.html#WriteStream">core.streams.WriteStream</a>:<br>
+<dl><dt><a name="AsyncFileWriteStream-drain_handler"><strong>drain_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;drain&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.&nbsp;If&nbsp;the&nbsp;write&nbsp;queue&nbsp;is&nbsp;full,&nbsp;then&nbsp;the&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;the&nbsp;write<br>
+queue&nbsp;has&nbsp;been&nbsp;reduced&nbsp;to&nbsp;maxSize&nbsp;/&nbsp;2.&nbsp;See&nbsp;&nbsp;for&nbsp;an&nbsp;example&nbsp;of&nbsp;this&nbsp;being&nbsp;used.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+handler&nbsp;--&nbsp;The&nbsp;drain&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="AsyncFileWriteStream-exception_handler"><strong>exception_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;execption&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+handler&nbsp;--&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="AsyncFileWriteStream-set_write_queue_max_size"><strong>set_write_queue_max_size</strong></a>(self, size)</dt><dd><tt>Set&nbsp;the&nbsp;maximum&nbsp;size&nbsp;of&nbsp;the&nbsp;write&nbsp;queue.&nbsp;You&nbsp;will&nbsp;still&nbsp;be&nbsp;able&nbsp;to&nbsp;write&nbsp;to&nbsp;the&nbsp;stream&nbsp;even<br>
+if&nbsp;there&nbsp;is&nbsp;more&nbsp;data&nbsp;than&nbsp;this&nbsp;in&nbsp;the&nbsp;write&nbsp;queue.&nbsp;This&nbsp;is&nbsp;used&nbsp;as&nbsp;an&nbsp;indicator&nbsp;by&nbsp;classes&nbsp;such&nbsp;as<br>
+to&nbsp;provide&nbsp;flow&nbsp;control.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+size&nbsp;--&nbsp;The&nbsp;maximum&nbsp;size,&nbsp;in&nbsp;bytes.</tt></dd></dl>
+
+<dl><dt><a name="AsyncFileWriteStream-write_buffer"><strong>write_buffer</strong></a>(self, buff)</dt><dd><tt>Write&nbsp;some&nbsp;data&nbsp;to&nbsp;the&nbsp;stream.&nbsp;The&nbsp;data&nbsp;is&nbsp;put&nbsp;on&nbsp;an&nbsp;internal&nbsp;write&nbsp;queue,&nbsp;and&nbsp;the&nbsp;write&nbsp;actually&nbsp;happens<br>
+asynchronously.&nbsp;To&nbsp;avoid&nbsp;running&nbsp;out&nbsp;of&nbsp;memory&nbsp;by&nbsp;putting&nbsp;too&nbsp;much&nbsp;on&nbsp;the&nbsp;write&nbsp;queue,<br>
+check&nbsp;the&nbsp;&nbsp;method&nbsp;before&nbsp;writing.&nbsp;This&nbsp;is&nbsp;done&nbsp;automatically&nbsp;if&nbsp;using&nbsp;a&nbsp;.<br>
+param&nbsp;[Buffer].&nbsp;The&nbsp;buffer&nbsp;to&nbsp;write.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="core.streams.html#WriteStream">core.streams.WriteStream</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>write_queue_full</strong></dt>
+<dd><tt>Is&nbsp;the&nbsp;write&nbsp;queue&nbsp;full?<br>
+&nbsp;<br>
+return&nbsp;True&nbsp;if&nbsp;there&nbsp;are&nbsp;more&nbsp;bytes&nbsp;in&nbsp;the&nbsp;write&nbsp;queue&nbsp;than&nbsp;the&nbsp;max&nbsp;write&nbsp;queue&nbsp;size.</tt></dd>
+</dl>
+<dl><dt><strong>write_queue_max_size</strong></dt>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="FSProps">class <strong>FSProps</strong></a>(__builtin__.object)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Represents&nbsp;the&nbsp;properties&nbsp;of&nbsp;a&nbsp;file&nbsp;system<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="FSProps-__init__"><strong>__init__</strong></a>(self, java_obj)</dt></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>total_space</strong></dt>
+<dd><tt>returns&nbsp;&nbsp;the&nbsp;total&nbsp;space&nbsp;on&nbsp;the&nbsp;file&nbsp;system,&nbsp;in&nbsp;bytes.</tt></dd>
+</dl>
+<dl><dt><strong>unallocated_space</strong></dt>
+<dd><tt>returns&nbsp;unallocated&nbsp;space&nbsp;on&nbsp;the&nbsp;file&nbsp;system,&nbsp;in&nbsp;bytes.</tt></dd>
+</dl>
+<dl><dt><strong>usable_space</strong></dt>
+<dd><tt>returns&nbsp;usable&nbsp;space&nbsp;on&nbsp;the&nbsp;file&nbsp;system,&nbsp;in&nbsp;bytes.</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="FSWrappedHandler">class <strong>FSWrappedHandler</strong></a>(org.python.proxies.core.file_system$FSWrappedHandler$10)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="core.file_system.html#FSWrappedHandler">FSWrappedHandler</a></dd>
+<dd>org.python.proxies.core.file_system$FSWrappedHandler$10</dd>
+<dd>org.vertx.java.core.AsyncResultHandler</dd>
+<dd>org.vertx.java.core.Handler</dd>
+<dd>java.lang.Object</dd>
+<dd>__builtin__.object</dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="FSWrappedHandler-__init__"><strong>__init__</strong></a>(self, handler, result_converter<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="FSWrappedHandler-handle"><strong>handle</strong></a>(self, async_result)</dt></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>__initProxy__</strong> = &lt;java function __initProxy__ 0xf&gt;</dl>
+
+<dl><dt><strong>__supernames__</strong> = array('java.lang.String', [u'clone', u'finalize'])</dl>
+
+<dl><dt><strong>classDictInit</strong> = &lt;java function classDictInit 0x10&gt;</dl>
+
+<dl><dt><strong>clone</strong> = &lt;java function clone 0x11&gt;</dl>
+
+<dl><dt><strong>finalize</strong> = &lt;java function finalize 0x12&gt;</dl>
+
+<hr>
+Methods inherited from java.lang.Object:<br>
+<dl><dt><a name="FSWrappedHandler-__copy__"><strong>__copy__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="FSWrappedHandler-__deepcopy__"><strong>__deepcopy__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="FSWrappedHandler-__eq__"><strong>__eq__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="FSWrappedHandler-__hash__"><strong>__hash__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="FSWrappedHandler-__ne__"><strong>__ne__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="FSWrappedHandler-__repr__"><strong>__repr__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="FSWrappedHandler-__unicode__"><strong>__unicode__</strong></a>(...)</dt></dl>
+
+<hr>
+Data and other attributes inherited from java.lang.Object:<br>
+<dl><dt><strong>equals</strong> = &lt;java function equals 0x13&gt;</dl>
+
+<dl><dt><strong>getClass</strong> = &lt;java function getClass 0x14&gt;</dl>
+
+<dl><dt><strong>hashCode</strong> = &lt;java function hashCode 0x15&gt;</dl>
+
+<dl><dt><strong>notify</strong> = &lt;java function notify 0x16&gt;</dl>
+
+<dl><dt><strong>notifyAll</strong> = &lt;java function notifyAll 0x17&gt;</dl>
+
+<dl><dt><strong>toString</strong> = &lt;java function toString 0x18&gt;</dl>
+
+<dl><dt><strong>wait</strong> = &lt;java function wait 0x19&gt;</dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="FileProps">class <strong>FileProps</strong></a>(__builtin__.object)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Represents&nbsp;the&nbsp;properties&nbsp;of&nbsp;a&nbsp;file&nbsp;on&nbsp;the&nbsp;file&nbsp;system<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="FileProps-__init__"><strong>__init__</strong></a>(self, java_obj)</dt></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>creation_time</strong></dt>
+<dd><tt>return&nbsp;[Time]&nbsp;The&nbsp;creation&nbsp;time&nbsp;of&nbsp;the&nbsp;file.</tt></dd>
+</dl>
+<dl><dt><strong>directory</strong></dt>
+<dd><tt>return&nbsp;is&nbsp;the&nbsp;file&nbsp;a&nbsp;directory</tt></dd>
+</dl>
+<dl><dt><strong>last_access_time</strong></dt>
+<dd><tt>return&nbsp;[Time]&nbsp;The&nbsp;last&nbsp;access&nbsp;time&nbsp;of&nbsp;the&nbsp;file.</tt></dd>
+</dl>
+<dl><dt><strong>last_modified_time</strong></dt>
+<dd><tt>return&nbsp;The&nbsp;last&nbsp;modified&nbsp;time&nbsp;of&nbsp;the&nbsp;file.</tt></dd>
+</dl>
+<dl><dt><strong>other</strong></dt>
+<dd><tt>return&nbsp;Is&nbsp;the&nbsp;file&nbsp;some&nbsp;other&nbsp;file&nbsp;type?</tt></dd>
+</dl>
+<dl><dt><strong>regular_file</strong></dt>
+<dd><tt>returns&nbsp;&nbsp;&nbsp;Is&nbsp;it&nbsp;a&nbsp;regular&nbsp;file?</tt></dd>
+</dl>
+<dl><dt><strong>size</strong></dt>
+<dd><tt>returnsthe&nbsp;size&nbsp;of&nbsp;the&nbsp;file,&nbsp;in&nbsp;bytes.</tt></dd>
+</dl>
+<dl><dt><strong>symbolic_link</strong></dt>
+<dd><tt>returns&nbsp;is&nbsp;it&nbsp;a&nbsp;symbolic&nbsp;link?</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="FileSystem">class <strong>FileSystem</strong></a>(__builtin__.object)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Represents&nbsp;the&nbsp;file-system&nbsp;and&nbsp;contains&nbsp;a&nbsp;broad&nbsp;set&nbsp;of&nbsp;operations&nbsp;for&nbsp;manipulating&nbsp;files.<br>
+An&nbsp;asynchronous&nbsp;and&nbsp;a&nbsp;synchronous&nbsp;version&nbsp;of&nbsp;each&nbsp;operation&nbsp;is&nbsp;provided.<br>
+The&nbsp;asynchronous&nbsp;versions&nbsp;take&nbsp;a&nbsp;handler&nbsp;as&nbsp;a&nbsp;final&nbsp;argument&nbsp;which&nbsp;is<br>
+called&nbsp;when&nbsp;the&nbsp;operation&nbsp;completes&nbsp;or&nbsp;an&nbsp;error&nbsp;occurs.&nbsp;The&nbsp;handler&nbsp;is&nbsp;called<br>
+with&nbsp;two&nbsp;arguments;&nbsp;the&nbsp;first&nbsp;an&nbsp;exception,&nbsp;this&nbsp;will&nbsp;be&nbsp;nil&nbsp;if&nbsp;the&nbsp;operation&nbsp;has<br>
+succeeded.&nbsp;The&nbsp;second&nbsp;is&nbsp;the&nbsp;result&nbsp;-&nbsp;this&nbsp;will&nbsp;be&nbsp;nil&nbsp;if&nbsp;the&nbsp;operation&nbsp;failed&nbsp;or<br>
+there&nbsp;was&nbsp;no&nbsp;result&nbsp;to&nbsp;return.<br>
+The&nbsp;synchronous&nbsp;versions&nbsp;return&nbsp;the&nbsp;results,&nbsp;or&nbsp;throw&nbsp;exceptions&nbsp;directly.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Static methods defined here:<br>
+<dl><dt><a name="FileSystem-chmod"><strong>chmod</strong></a>(path, perms, dir_perms<font color="#909090">=None</font>, handler<font color="#909090">=None</font>)</dt><dd><tt>Change&nbsp;the&nbsp;permissions&nbsp;on&nbsp;a&nbsp;file,&nbsp;asynchronously.&nbsp;If&nbsp;the&nbsp;file&nbsp;is&nbsp;directory&nbsp;then&nbsp;all&nbsp;contents&nbsp;will&nbsp;also&nbsp;have&nbsp;their&nbsp;permissions&nbsp;changed&nbsp;recursively.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+&nbsp;&nbsp;path&nbsp;Path&nbsp;of&nbsp;file&nbsp;to&nbsp;change&nbsp;permissions<br>
+&nbsp;&nbsp;perms&nbsp;A&nbsp;permission&nbsp;string&nbsp;of&nbsp;the&nbsp;form&nbsp;rwxr-x---&nbsp;as&nbsp;specified&nbsp;in&nbsp;<a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html</a>}.&nbsp;This&nbsp;is<br>
+used&nbsp;to&nbsp;set&nbsp;the&nbsp;permissions&nbsp;for&nbsp;any&nbsp;regular&nbsp;files&nbsp;(not&nbsp;directories).<br>
+&nbsp;&nbsp;dir_perms&nbsp;A&nbsp;permission&nbsp;string&nbsp;of&nbsp;the&nbsp;form&nbsp;rwxr-x---.&nbsp;Used&nbsp;to&nbsp;set&nbsp;permissions&nbsp;for&nbsp;regular&nbsp;files.<br>
+&nbsp;&nbsp;handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-chmod_sync"><strong>chmod_sync</strong></a>(path, perms, dir_perms<font color="#909090">=None</font>)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.chmod</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-copy"><strong>copy</strong></a>(frm, to, handler)</dt><dd><tt>Copy&nbsp;a&nbsp;file,&nbsp;asynchronously.&nbsp;The&nbsp;copy&nbsp;will&nbsp;fail&nbsp;if&nbsp;from&nbsp;does&nbsp;not&nbsp;exist,&nbsp;or&nbsp;if&nbsp;to&nbsp;already&nbsp;exists.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+frm&nbsp;--&nbsp;path&nbsp;of&nbsp;file&nbsp;to&nbsp;copy<br>
+to&nbsp;--&nbsp;path&nbsp;of&nbsp;file&nbsp;to&nbsp;copy&nbsp;to<br>
+handler&nbsp;--&nbsp;the&nbsp;handler&nbsp;which&nbsp;is&nbsp;called&nbsp;on&nbsp;completion.</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-copy_recursive"><strong>copy_recursive</strong></a>(frm, to, handler)</dt><dd><tt>Copy&nbsp;a&nbsp;file&nbsp;recursively,&nbsp;asynchronously.&nbsp;The&nbsp;copy&nbsp;will&nbsp;fail&nbsp;if&nbsp;from&nbsp;does&nbsp;not&nbsp;exist,&nbsp;or&nbsp;if&nbsp;to&nbsp;already&nbsp;exists&nbsp;and&nbsp;is&nbsp;not&nbsp;empty.<br>
+If&nbsp;the&nbsp;source&nbsp;is&nbsp;a&nbsp;directory&nbsp;all&nbsp;contents&nbsp;of&nbsp;the&nbsp;directory&nbsp;will&nbsp;be&nbsp;copied&nbsp;recursively,&nbsp;i.e.&nbsp;the&nbsp;entire&nbsp;directory<br>
+tree&nbsp;is&nbsp;copied.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+frm&nbsp;--&nbsp;path&nbsp;of&nbsp;file&nbsp;to&nbsp;copy<br>
+to&nbsp;--&nbsp;path&nbsp;of&nbsp;file&nbsp;to&nbsp;copy&nbsp;to<br>
+handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-copy_recursive_sync"><strong>copy_recursive_sync</strong></a>(frm, to)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.copy_recursive</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-copy_sync"><strong>copy_sync</strong></a>(frm, to)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.copy</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-create_file"><strong>create_file</strong></a>(path, perms<font color="#909090">=None</font>, handler<font color="#909090">=None</font>)</dt><dd><tt>Create&nbsp;a&nbsp;new&nbsp;empty&nbsp;file,&nbsp;asynchronously.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+path&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;file&nbsp;to&nbsp;create.<br>
+perms&nbsp;--&nbsp;the&nbsp;file&nbsp;will&nbsp;be&nbsp;created&nbsp;with&nbsp;these&nbsp;permissions.<br>
+handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-create_file_sync"><strong>create_file_sync</strong></a>(path, perms<font color="#909090">=None</font>)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.create_file</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-delete"><strong>delete</strong></a>(path, handler)</dt><dd><tt>Delete&nbsp;a&nbsp;file&nbsp;on&nbsp;the&nbsp;file&nbsp;system,&nbsp;asynchronously.<br>
+The&nbsp;delete&nbsp;will&nbsp;fail&nbsp;if&nbsp;the&nbsp;file&nbsp;does&nbsp;not&nbsp;exist,&nbsp;or&nbsp;is&nbsp;a&nbsp;directory&nbsp;and&nbsp;is&nbsp;not&nbsp;empty.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+path&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;file&nbsp;to&nbsp;delete.<br>
+handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-delete_recursive"><strong>delete_recursive</strong></a>(path, handler)</dt><dd><tt>Delete&nbsp;a&nbsp;file&nbsp;on&nbsp;the&nbsp;file&nbsp;system&nbsp;recursively,&nbsp;asynchronously.<br>
+The&nbsp;delete&nbsp;will&nbsp;fail&nbsp;if&nbsp;the&nbsp;file&nbsp;does&nbsp;not&nbsp;exist.&nbsp;If&nbsp;the&nbsp;file&nbsp;is&nbsp;a&nbsp;directory&nbsp;the&nbsp;entire&nbsp;directory&nbsp;contents<br>
+will&nbsp;be&nbsp;deleted&nbsp;recursively.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+path&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;file&nbsp;to&nbsp;delete.<br>
+handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-delete_recursive_sync"><strong>delete_recursive_sync</strong></a>(path)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.delete_recursive</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-delete_sync"><strong>delete_sync</strong></a>(path)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.delete</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-exists"><strong>exists</strong></a>(path, handler)</dt><dd><tt>Check&nbsp;if&nbsp;&nbsp;a&nbsp;file&nbsp;exists,&nbsp;asynchronously.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+path&nbsp;--&nbsp;Path&nbsp;of&nbsp;the&nbsp;file&nbsp;to&nbsp;check.<br>
+handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-exists_sync"><strong>exists_sync</strong></a>(path)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.exists</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-fs_props"><strong>fs_props</strong></a>(path, handler)</dt><dd><tt>Get&nbsp;properties&nbsp;for&nbsp;the&nbsp;file&nbsp;system,&nbsp;asynchronously.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+path&nbsp;--&nbsp;Path&nbsp;in&nbsp;the&nbsp;file&nbsp;system.<br>
+handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-fs_props_sync"><strong>fs_props_sync</strong></a>(path)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.fs_props</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-java_file_system"><strong>java_file_system</strong></a>()</dt></dl>
+
+<dl><dt><a name="FileSystem-link"><strong>link</strong></a>(link, existing, handler)</dt><dd><tt>Create&nbsp;a&nbsp;hard&nbsp;link,&nbsp;asynchronously..<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+link&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;link&nbsp;to&nbsp;create.<br>
+existing&nbsp;--&nbsp;path&nbsp;of&nbsp;where&nbsp;the&nbsp;link&nbsp;points&nbsp;to.<br>
+handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-link_sync"><strong>link_sync</strong></a>(link, existing)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.link</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-mkdir"><strong>mkdir</strong></a>(path, perms<font color="#909090">=None</font>, handler<font color="#909090">=None</font>)</dt><dd><tt>Create&nbsp;a&nbsp;directory,&nbsp;asynchronously.<br>
+The&nbsp;create&nbsp;will&nbsp;fail&nbsp;if&nbsp;the&nbsp;directory&nbsp;already&nbsp;exists,&nbsp;or&nbsp;if&nbsp;it&nbsp;contains&nbsp;parent&nbsp;directories&nbsp;which&nbsp;do&nbsp;not&nbsp;already<br>
+exist.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+path&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;directory&nbsp;to&nbsp;create.<br>
+perms&nbsp;--&nbsp;a&nbsp;permission&nbsp;string&nbsp;of&nbsp;the&nbsp;form&nbsp;rwxr-x---&nbsp;to&nbsp;give&nbsp;directory.<br>
+handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-mkdir_sync"><strong>mkdir_sync</strong></a>(path, perms<font color="#909090">=None</font>)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.mkdir</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-mkdir_with_parents"><strong>mkdir_with_parents</strong></a>(path, perms<font color="#909090">=None</font>, handler<font color="#909090">=None</font>)</dt><dd><tt>Create&nbsp;a&nbsp;directory,&nbsp;and&nbsp;create&nbsp;all&nbsp;it's&nbsp;parent&nbsp;directories&nbsp;if&nbsp;they&nbsp;do&nbsp;not&nbsp;already&nbsp;exist,&nbsp;asynchronously.<br>
+The&nbsp;create&nbsp;will&nbsp;fail&nbsp;if&nbsp;the&nbsp;directory&nbsp;already&nbsp;exists.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+path&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;directory&nbsp;to&nbsp;create.<br>
+perms&nbsp;--&nbsp;a&nbsp;permission&nbsp;string&nbsp;of&nbsp;the&nbsp;form&nbsp;rwxr-x---&nbsp;to&nbsp;give&nbsp;the&nbsp;created&nbsp;directory(ies).</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-mkdir_with_parents_sync"><strong>mkdir_with_parents_sync</strong></a>(path, perms<font color="#909090">=None</font>)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.mkdir_with_parents</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-move"><strong>move</strong></a>(frm, to, handler)</dt><dd><tt>Move&nbsp;a&nbsp;file,&nbsp;asynchronously.&nbsp;The&nbsp;move&nbsp;will&nbsp;fail&nbsp;if&nbsp;from&nbsp;does&nbsp;not&nbsp;exist,&nbsp;or&nbsp;if&nbsp;to&nbsp;already&nbsp;exists.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+frm&nbsp;--&nbsp;Path&nbsp;of&nbsp;file&nbsp;to&nbsp;move<br>
+to&nbsp;--&nbsp;Path&nbsp;of&nbsp;file&nbsp;to&nbsp;move&nbsp;to<br>
+handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-move_sync"><strong>move_sync</strong></a>(frm, to)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.move</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-open"><strong>open</strong></a>(path, perms<font color="#909090">=None</font>, read<font color="#909090">=True</font>, write<font color="#909090">=True</font>, create_new<font color="#909090">=True</font>, flush<font color="#909090">=False</font>, handler<font color="#909090">=None</font>)</dt><dd><tt>Open&nbsp;a&nbsp;file&nbsp;on&nbsp;the&nbsp;file&nbsp;system,&nbsp;asynchronously.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+path&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;file&nbsp;to&nbsp;open.<br>
+perms&nbsp;--&nbsp;if&nbsp;the&nbsp;file&nbsp;does&nbsp;not&nbsp;exist&nbsp;and&nbsp;create_new&nbsp;is&nbsp;true,&nbsp;then&nbsp;the&nbsp;file&nbsp;will&nbsp;be&nbsp;created&nbsp;with&nbsp;these&nbsp;permissions.<br>
+read&nbsp;--&nbsp;open&nbsp;the&nbsp;file&nbsp;for&nbsp;reading?<br>
+write&nbsp;--&nbsp;open&nbsp;the&nbsp;file&nbsp;for&nbsp;writing?<br>
+create_new&nbsp;--&nbsp;Create&nbsp;the&nbsp;file&nbsp;if&nbsp;it&nbsp;doesn't&nbsp;already&nbsp;exist?<br>
+flush&nbsp;--&nbsp;whenever&nbsp;any&nbsp;data&nbsp;is&nbsp;written&nbsp;to&nbsp;the&nbsp;file,&nbsp;flush&nbsp;all&nbsp;changes&nbsp;to&nbsp;permanent&nbsp;storage&nbsp;immediately?<br>
+handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-open_sync"><strong>open_sync</strong></a>(path, perms<font color="#909090">=None</font>, read<font color="#909090">=True</font>, write<font color="#909090">=True</font>, create_new<font color="#909090">=True</font>, flush<font color="#909090">=False</font>)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.open</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-props"><strong>props</strong></a>(path, handler)</dt><dd><tt>Get&nbsp;file&nbsp;properties&nbsp;for&nbsp;a&nbsp;file,&nbsp;asynchronously.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+path&nbsp;--&nbsp;path&nbsp;to&nbsp;file<br>
+handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-props_sync"><strong>props_sync</strong></a>(path)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.props</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-read_dir"><strong>read_dir</strong></a>(path, filter<font color="#909090">=None</font>, handler<font color="#909090">=None</font>)</dt><dd><tt>Read&nbsp;a&nbsp;directory,&nbsp;i.e.&nbsp;list&nbsp;it's&nbsp;contents,&nbsp;asynchronously.<br>
+The&nbsp;read&nbsp;will&nbsp;fail&nbsp;if&nbsp;the&nbsp;directory&nbsp;does&nbsp;not&nbsp;exist.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+path&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;directory&nbsp;to&nbsp;read.<br>
+filter&nbsp;--&nbsp;a&nbsp;regular&nbsp;expression&nbsp;to&nbsp;filter&nbsp;out&nbsp;the&nbsp;contents&nbsp;of&nbsp;the&nbsp;directory.&nbsp;If&nbsp;the&nbsp;filter&nbsp;is&nbsp;not&nbsp;nil<br>
+then&nbsp;only&nbsp;files&nbsp;which&nbsp;match&nbsp;the&nbsp;filter&nbsp;will&nbsp;be&nbsp;returned.<br>
+handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-read_dir_sync"><strong>read_dir_sync</strong></a>(path, filter<font color="#909090">=None</font>)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.read_dir</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-read_file_as_buffer"><strong>read_file_as_buffer</strong></a>(path, handler)</dt><dd><tt>Read&nbsp;the&nbsp;contents&nbsp;of&nbsp;an&nbsp;entire&nbsp;file&nbsp;as&nbsp;a&nbsp;Buffer,&nbsp;asynchronously.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+path&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;file&nbsp;to&nbsp;read.<br>
+handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-read_file_as_buffer_sync"><strong>read_file_as_buffer_sync</strong></a>(path)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.read_file_as_buffer</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-read_sym_link"><strong>read_sym_link</strong></a>(link, handler)</dt><dd><tt>Read&nbsp;a&nbsp;symbolic&nbsp;link,&nbsp;asynchronously.&nbsp;I.e.&nbsp;tells&nbsp;you&nbsp;where&nbsp;the&nbsp;symbolic&nbsp;link&nbsp;points.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+link&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;link&nbsp;to&nbsp;read.<br>
+handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-read_sym_link_sync"><strong>read_sym_link_sync</strong></a>(link)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.read_sym_link</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-sym_link"><strong>sym_link</strong></a>(link, existing, handler)</dt><dd><tt>Create&nbsp;a&nbsp;symbolic&nbsp;link,&nbsp;asynchronously.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+link&nbsp;--&nbsp;Path&nbsp;of&nbsp;the&nbsp;link&nbsp;to&nbsp;create.<br>
+existing&nbsp;--&nbsp;Path&nbsp;of&nbsp;where&nbsp;the&nbsp;link&nbsp;points&nbsp;to.<br>
+handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-sym_link_sync"><strong>sym_link_sync</strong></a>(link, existing)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.sym_link</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-truncate"><strong>truncate</strong></a>(path, len, handler)</dt><dd><tt>Truncate&nbsp;a&nbsp;file,&nbsp;asynchronously.&nbsp;The&nbsp;move&nbsp;will&nbsp;fail&nbsp;if&nbsp;path&nbsp;does&nbsp;not&nbsp;exist.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+path&nbsp;--&nbsp;Path&nbsp;of&nbsp;file&nbsp;to&nbsp;truncate<br>
+len&nbsp;--&nbsp;Length&nbsp;to&nbsp;truncate&nbsp;file&nbsp;to.&nbsp;Will&nbsp;fail&nbsp;if&nbsp;len&nbsp;&lt;&nbsp;0.&nbsp;If&nbsp;len&nbsp;&gt;&nbsp;file&nbsp;size&nbsp;then&nbsp;will&nbsp;do&nbsp;nothing.<br>
+handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-truncate_sync"><strong>truncate_sync</strong></a>(path, len)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.truncate</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-unlink"><strong>unlink</strong></a>(link, handler)</dt><dd><tt>Unlink&nbsp;a&nbsp;hard&nbsp;link.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+link&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;link&nbsp;to&nbsp;unlink.</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-unlinkSync"><strong>unlinkSync</strong></a>(link)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.unlink</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-write_buffer_to_file"><strong>write_buffer_to_file</strong></a>(path, buffer, handler)</dt><dd><tt>Write&nbsp;a&nbsp;&nbsp;as&nbsp;the&nbsp;entire&nbsp;contents&nbsp;of&nbsp;a&nbsp;file,&nbsp;asynchronously.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+path&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;file&nbsp;to&nbsp;write.<br>
+buffer&nbsp;--&nbsp;the&nbsp;Buffer&nbsp;to&nbsp;write<br>
+handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+
+<dl><dt><a name="FileSystem-write_buffer_to_file_sync"><strong>write_buffer_to_file_sync</strong></a>(path, buffer)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.write_buffer_to_file</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Scott Horn'<br>
+<strong>__credits__</strong> = 'Based entirely on work by Tim Fox http://tfox.org'<br>
+<strong>__email__</strong> = 'scott@hornmicro.com'<br>
+<strong>org</strong> = &lt;java package org 0x2&gt;</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Scott&nbsp;Horn</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Credits</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Based&nbsp;entirely&nbsp;on&nbsp;work&nbsp;by&nbsp;Tim&nbsp;Fox&nbsp;<a href="http://tfox.org">http://tfox.org</a></td></tr></table>
+</body></html>

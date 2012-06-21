@@ -1,0 +1,308 @@
+
+<!doctype html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module core.sock_js</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="core.html"><font color="#ffffff">core</font></a>.sock_js</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href="index.html">index</a><br></font></td></tr></table>
+    <p><tt>#&nbsp;Copyright&nbsp;2011&nbsp;the&nbsp;original&nbsp;author&nbsp;or&nbsp;authors.<br>
+#<br>
+#&nbsp;Licensed&nbsp;under&nbsp;the&nbsp;Apache&nbsp;License,&nbsp;Version&nbsp;2.0&nbsp;(the&nbsp;"License");<br>
+#&nbsp;you&nbsp;may&nbsp;not&nbsp;use&nbsp;this&nbsp;file&nbsp;except&nbsp;in&nbsp;compliance&nbsp;with&nbsp;the&nbsp;License.<br>
+#&nbsp;You&nbsp;may&nbsp;obtain&nbsp;a&nbsp;copy&nbsp;of&nbsp;the&nbsp;License&nbsp;at<br>
+#<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a><br>
+#<br>
+#&nbsp;Unless&nbsp;required&nbsp;by&nbsp;applicable&nbsp;law&nbsp;or&nbsp;agreed&nbsp;to&nbsp;in&nbsp;writing,&nbsp;software<br>
+#&nbsp;distributed&nbsp;under&nbsp;the&nbsp;License&nbsp;is&nbsp;distributed&nbsp;on&nbsp;an&nbsp;"AS&nbsp;IS"&nbsp;BASIS,<br>
+#&nbsp;WITHOUT&nbsp;WARRANTIES&nbsp;OR&nbsp;CONDITIONS&nbsp;OF&nbsp;ANY&nbsp;KIND,&nbsp;either&nbsp;express&nbsp;or&nbsp;implied.<br>
+#&nbsp;See&nbsp;the&nbsp;License&nbsp;for&nbsp;the&nbsp;specific&nbsp;language&nbsp;governing&nbsp;permissions&nbsp;and<br>
+#&nbsp;limitations&nbsp;under&nbsp;the&nbsp;License.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#fffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="core.html">core</a><br>
+</td><td width="25%" valign=top></td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial">__builtin__.object
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.sock_js.html#SockJSServer">SockJSServer</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="core.streams.html#ReadStream">core.streams.ReadStream</a>(__builtin__.object)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.sock_js.html#SockJSSocket">SockJSSocket</a>(<a href="core.streams.html#ReadStream">core.streams.ReadStream</a>, <a href="core.streams.html#WriteStream">core.streams.WriteStream</a>)
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="core.streams.html#WriteStream">core.streams.WriteStream</a>(__builtin__.object)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.sock_js.html#SockJSSocket">SockJSSocket</a>(<a href="core.streams.html#ReadStream">core.streams.ReadStream</a>, <a href="core.streams.html#WriteStream">core.streams.WriteStream</a>)
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial">org.vertx.java.core.Handler(java.lang.Object)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial">org.python.proxies.core.sock_js$SockJSSocketHandler$17(org.vertx.java.core.Handler, java.lang.Object)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.sock_js.html#SockJSSocketHandler">SockJSSocketHandler</a>
+</font></dt></dl>
+</dd>
+</dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="SockJSServer">class <strong>SockJSServer</strong></a>(__builtin__.object)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>This&nbsp;is&nbsp;an&nbsp;implementation&nbsp;of&nbsp;the&nbsp;server&nbsp;side&nbsp;part&nbsp;of&nbsp;https://github.com/sockjs<br>
+&nbsp;<br>
+SockJS&nbsp;enables&nbsp;browsers&nbsp;to&nbsp;communicate&nbsp;with&nbsp;the&nbsp;server&nbsp;using&nbsp;a&nbsp;simple&nbsp;WebSocket-like&nbsp;api&nbsp;for&nbsp;sending<br>
+and&nbsp;receiving&nbsp;messages.&nbsp;Under&nbsp;the&nbsp;bonnet&nbsp;SockJS&nbsp;chooses&nbsp;to&nbsp;use&nbsp;one&nbsp;of&nbsp;several&nbsp;protocols&nbsp;depending&nbsp;on&nbsp;browser<br>
+capabilities&nbsp;and&nbsp;what&nbsp;apppears&nbsp;to&nbsp;be&nbsp;working&nbsp;across&nbsp;the&nbsp;network.<br>
+&nbsp;<br>
+Available&nbsp;protocols&nbsp;include:<br>
+&nbsp;<br>
+WebSockets<br>
+xhr-polling<br>
+xhr-streaming<br>
+json-polling<br>
+event-source<br>
+html-file<br>
+&nbsp;<br>
+This&nbsp;means,&nbsp;it&nbsp;should&nbsp;just&nbsp;work&nbsp;irrespective&nbsp;of&nbsp;what&nbsp;browser&nbsp;is&nbsp;being&nbsp;used,&nbsp;and&nbsp;whether&nbsp;there&nbsp;are&nbsp;nasty<br>
+things&nbsp;like&nbsp;proxies&nbsp;and&nbsp;load&nbsp;balancers&nbsp;between&nbsp;the&nbsp;client&nbsp;and&nbsp;the&nbsp;server.<br>
+&nbsp;<br>
+For&nbsp;more&nbsp;detailed&nbsp;information&nbsp;on&nbsp;SockJS,&nbsp;see&nbsp;their&nbsp;website.<br>
+&nbsp;<br>
+On&nbsp;the&nbsp;server&nbsp;side,&nbsp;you&nbsp;interact&nbsp;using&nbsp;instances&nbsp;of&nbsp;<a href="#SockJSSocket">SockJSSocket</a>&nbsp;-&nbsp;this&nbsp;allows&nbsp;you&nbsp;to&nbsp;send&nbsp;data&nbsp;to&nbsp;the<br>
+client&nbsp;or&nbsp;receive&nbsp;data&nbsp;via&nbsp;the&nbsp;<a href="core.streams.html#ReadStream">ReadStream</a>&nbsp;data_handler.<br>
+&nbsp;<br>
+You&nbsp;can&nbsp;register&nbsp;multiple&nbsp;applications&nbsp;with&nbsp;the&nbsp;same&nbsp;<a href="#SockJSServer">SockJSServer</a>,&nbsp;each&nbsp;using&nbsp;different&nbsp;path&nbsp;prefixes,&nbsp;each<br>
+application&nbsp;will&nbsp;have&nbsp;its&nbsp;own&nbsp;handler,&nbsp;and&nbsp;configuration&nbsp;is&nbsp;described&nbsp;in&nbsp;a&nbsp;Hash.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="SockJSServer-__init__"><strong>__init__</strong></a>(self, http_server)</dt></dl>
+
+<dl><dt><a name="SockJSServer-bridge"><strong>bridge</strong></a>(self, config, permitted, auth_timeout<font color="#909090">=300000</font>, auth_address<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="SockJSServer-install_app"><strong>install_app</strong></a>(self, config, handler)</dt><dd><tt>Install&nbsp;an&nbsp;application<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+config&nbsp;--&nbsp;Configuration&nbsp;for&nbsp;the&nbsp;application<br>
+proc&nbsp;--&nbsp;Proc&nbsp;representing&nbsp;the&nbsp;handler<br>
+handler&nbsp;--&nbsp;Handler&nbsp;to&nbsp;call&nbsp;when&nbsp;a&nbsp;new&nbsp;<a href="#SockJSSocket">SockJSSocket</a>&nbsp;is&nbsp;created</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="SockJSSocket">class <strong>SockJSSocket</strong></a>(<a href="core.streams.html#ReadStream">core.streams.ReadStream</a>, <a href="core.streams.html#WriteStream">core.streams.WriteStream</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>You&nbsp;interact&nbsp;with&nbsp;SockJS&nbsp;clients&nbsp;through&nbsp;instances&nbsp;of&nbsp;SockJS&nbsp;socket.<br>
+The&nbsp;API&nbsp;is&nbsp;very&nbsp;similar&nbsp;to&nbsp;WebSocket.&nbsp;It&nbsp;implements&nbsp;both<br>
+<a href="core.streams.html#ReadStream">ReadStream</a>&nbsp;and&nbsp;<a href="core.streams.html#WriteStream">WriteStream</a>&nbsp;so&nbsp;it&nbsp;can&nbsp;be&nbsp;used&nbsp;with&nbsp;Pump&nbsp;to&nbsp;enable<br>
+flow&nbsp;control.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="core.sock_js.html#SockJSSocket">SockJSSocket</a></dd>
+<dd><a href="core.streams.html#ReadStream">core.streams.ReadStream</a></dd>
+<dd><a href="core.streams.html#WriteStream">core.streams.WriteStream</a></dd>
+<dd>__builtin__.object</dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="SockJSSocket-__init__"><strong>__init__</strong></a>(self, java_sock)</dt></dl>
+
+<dl><dt><a name="SockJSSocket-close"><strong>close</strong></a>(self)</dt><dd><tt>Close&nbsp;the&nbsp;socket</tt></dd></dl>
+
+<dl><dt><a name="SockJSSocket-handler_id"><strong>handler_id</strong></a>(self)</dt><dd><tt>When&nbsp;a&nbsp;<a href="#SockJSSocket">SockJSSocket</a>&nbsp;is&nbsp;created&nbsp;it&nbsp;automatically&nbsp;registers&nbsp;an&nbsp;event&nbsp;handler&nbsp;with&nbsp;the&nbsp;system,&nbsp;the&nbsp;ID&nbsp;of&nbsp;that<br>
+handler&nbsp;is&nbsp;given&nbsp;by&nbsp;handler_id.<br>
+Given&nbsp;this&nbsp;ID,&nbsp;a&nbsp;different&nbsp;event&nbsp;loop&nbsp;can&nbsp;send&nbsp;a&nbsp;buffer&nbsp;to&nbsp;that&nbsp;event&nbsp;handler&nbsp;using&nbsp;the&nbsp;event&nbsp;bus.&nbsp;This<br>
+allows&nbsp;you&nbsp;to&nbsp;write&nbsp;data&nbsp;to&nbsp;other&nbsp;SockJSSockets&nbsp;which&nbsp;are&nbsp;owned&nbsp;by&nbsp;different&nbsp;event&nbsp;loops.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="core.streams.html#ReadStream">core.streams.ReadStream</a>:<br>
+<dl><dt><a name="SockJSSocket-data_handler"><strong>data_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;data&nbsp;handler.&nbsp;As&nbsp;data&nbsp;is&nbsp;read,&nbsp;the&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;data.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+handler&nbsp;--&nbsp;The&nbsp;data&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="SockJSSocket-end_handler"><strong>end_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;end&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.&nbsp;Once&nbsp;the&nbsp;stream&nbsp;has&nbsp;ended,&nbsp;and&nbsp;there&nbsp;is&nbsp;no&nbsp;more&nbsp;data&nbsp;to&nbsp;be&nbsp;read,&nbsp;this&nbsp;handler&nbsp;will&nbsp;be&nbsp;called.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+handler&nbsp;--&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="SockJSSocket-exception_handler"><strong>exception_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;execption&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.<br>
+param&nbsp;[Block]&nbsp;hndlr.&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="SockJSSocket-pause"><strong>pause</strong></a>(self)</dt><dd><tt>Pause&nbsp;the&nbsp;<a href="core.streams.html#ReadStream">ReadStream</a>.&nbsp;After&nbsp;calling&nbsp;this,&nbsp;the&nbsp;<a href="core.streams.html#ReadStream">ReadStream</a>&nbsp;will&nbsp;aim&nbsp;to&nbsp;send&nbsp;no&nbsp;more&nbsp;data&nbsp;to&nbsp;the</tt></dd></dl>
+
+<dl><dt><a name="SockJSSocket-resume"><strong>resume</strong></a>(self)</dt><dd><tt>Resume&nbsp;reading.&nbsp;If&nbsp;the&nbsp;<a href="core.streams.html#ReadStream">ReadStream</a>&nbsp;has&nbsp;been&nbsp;paused,&nbsp;reading&nbsp;will&nbsp;recommence&nbsp;on&nbsp;it.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="core.streams.html#ReadStream">core.streams.ReadStream</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Methods inherited from <a href="core.streams.html#WriteStream">core.streams.WriteStream</a>:<br>
+<dl><dt><a name="SockJSSocket-drain_handler"><strong>drain_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;drain&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.&nbsp;If&nbsp;the&nbsp;write&nbsp;queue&nbsp;is&nbsp;full,&nbsp;then&nbsp;the&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;the&nbsp;write<br>
+queue&nbsp;has&nbsp;been&nbsp;reduced&nbsp;to&nbsp;maxSize&nbsp;/&nbsp;2.&nbsp;See&nbsp;&nbsp;for&nbsp;an&nbsp;example&nbsp;of&nbsp;this&nbsp;being&nbsp;used.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+handler&nbsp;--&nbsp;The&nbsp;drain&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="SockJSSocket-set_write_queue_max_size"><strong>set_write_queue_max_size</strong></a>(self, size)</dt><dd><tt>Set&nbsp;the&nbsp;maximum&nbsp;size&nbsp;of&nbsp;the&nbsp;write&nbsp;queue.&nbsp;You&nbsp;will&nbsp;still&nbsp;be&nbsp;able&nbsp;to&nbsp;write&nbsp;to&nbsp;the&nbsp;stream&nbsp;even<br>
+if&nbsp;there&nbsp;is&nbsp;more&nbsp;data&nbsp;than&nbsp;this&nbsp;in&nbsp;the&nbsp;write&nbsp;queue.&nbsp;This&nbsp;is&nbsp;used&nbsp;as&nbsp;an&nbsp;indicator&nbsp;by&nbsp;classes&nbsp;such&nbsp;as<br>
+to&nbsp;provide&nbsp;flow&nbsp;control.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+size&nbsp;--&nbsp;The&nbsp;maximum&nbsp;size,&nbsp;in&nbsp;bytes.</tt></dd></dl>
+
+<dl><dt><a name="SockJSSocket-write_buffer"><strong>write_buffer</strong></a>(self, buff)</dt><dd><tt>Write&nbsp;some&nbsp;data&nbsp;to&nbsp;the&nbsp;stream.&nbsp;The&nbsp;data&nbsp;is&nbsp;put&nbsp;on&nbsp;an&nbsp;internal&nbsp;write&nbsp;queue,&nbsp;and&nbsp;the&nbsp;write&nbsp;actually&nbsp;happens<br>
+asynchronously.&nbsp;To&nbsp;avoid&nbsp;running&nbsp;out&nbsp;of&nbsp;memory&nbsp;by&nbsp;putting&nbsp;too&nbsp;much&nbsp;on&nbsp;the&nbsp;write&nbsp;queue,<br>
+check&nbsp;the&nbsp;&nbsp;method&nbsp;before&nbsp;writing.&nbsp;This&nbsp;is&nbsp;done&nbsp;automatically&nbsp;if&nbsp;using&nbsp;a&nbsp;.<br>
+param&nbsp;[Buffer].&nbsp;The&nbsp;buffer&nbsp;to&nbsp;write.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="core.streams.html#WriteStream">core.streams.WriteStream</a>:<br>
+<dl><dt><strong>write_queue_full</strong></dt>
+<dd><tt>Is&nbsp;the&nbsp;write&nbsp;queue&nbsp;full?<br>
+&nbsp;<br>
+return&nbsp;True&nbsp;if&nbsp;there&nbsp;are&nbsp;more&nbsp;bytes&nbsp;in&nbsp;the&nbsp;write&nbsp;queue&nbsp;than&nbsp;the&nbsp;max&nbsp;write&nbsp;queue&nbsp;size.</tt></dd>
+</dl>
+<dl><dt><strong>write_queue_max_size</strong></dt>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="SockJSSocketHandler">class <strong>SockJSSocketHandler</strong></a>(org.python.proxies.core.sock_js$SockJSSocketHandler$17)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>SockJS&nbsp;Socket&nbsp;handler<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="core.sock_js.html#SockJSSocketHandler">SockJSSocketHandler</a></dd>
+<dd>org.python.proxies.core.sock_js$SockJSSocketHandler$17</dd>
+<dd>org.vertx.java.core.Handler</dd>
+<dd>java.lang.Object</dd>
+<dd>__builtin__.object</dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="SockJSSocketHandler-__init__"><strong>__init__</strong></a>(self, handler)</dt></dl>
+
+<dl><dt><a name="SockJSSocketHandler-handle"><strong>handle</strong></a>(self, sock)</dt><dd><tt>Call&nbsp;the&nbsp;handler&nbsp;after&nbsp;SockJS&nbsp;Socket&nbsp;is&nbsp;ready</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>__initProxy__</strong> = &lt;java function __initProxy__ 0xc2&gt;</dl>
+
+<dl><dt><strong>__supernames__</strong> = array('java.lang.String', [u'clone', u'finalize'])</dl>
+
+<dl><dt><strong>classDictInit</strong> = &lt;java function classDictInit 0xc3&gt;</dl>
+
+<dl><dt><strong>clone</strong> = &lt;java function clone 0xc4&gt;</dl>
+
+<dl><dt><strong>finalize</strong> = &lt;java function finalize 0xc5&gt;</dl>
+
+<hr>
+Methods inherited from java.lang.Object:<br>
+<dl><dt><a name="SockJSSocketHandler-__copy__"><strong>__copy__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="SockJSSocketHandler-__deepcopy__"><strong>__deepcopy__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="SockJSSocketHandler-__eq__"><strong>__eq__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="SockJSSocketHandler-__hash__"><strong>__hash__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="SockJSSocketHandler-__ne__"><strong>__ne__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="SockJSSocketHandler-__repr__"><strong>__repr__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="SockJSSocketHandler-__unicode__"><strong>__unicode__</strong></a>(...)</dt></dl>
+
+<hr>
+Data and other attributes inherited from java.lang.Object:<br>
+<dl><dt><strong>equals</strong> = &lt;java function equals 0xc6&gt;</dl>
+
+<dl><dt><strong>getClass</strong> = &lt;java function getClass 0xc7&gt;</dl>
+
+<dl><dt><strong>hashCode</strong> = &lt;java function hashCode 0xc8&gt;</dl>
+
+<dl><dt><strong>notify</strong> = &lt;java function notify 0xc9&gt;</dl>
+
+<dl><dt><strong>notifyAll</strong> = &lt;java function notifyAll 0xca&gt;</dl>
+
+<dl><dt><strong>toString</strong> = &lt;java function toString 0xcb&gt;</dl>
+
+<dl><dt><strong>wait</strong> = &lt;java function wait 0xcc&gt;</dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Scott Horn'<br>
+<strong>__credits__</strong> = 'Based entirely on work by Tim Fox http://tfox.org'<br>
+<strong>__email__</strong> = 'scott@hornmicro.com'<br>
+<strong>org</strong> = &lt;java package org 0x2&gt;</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Scott&nbsp;Horn</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Credits</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Based&nbsp;entirely&nbsp;on&nbsp;work&nbsp;by&nbsp;Tim&nbsp;Fox&nbsp;<a href="http://tfox.org">http://tfox.org</a></td></tr></table>
+</body></html>
