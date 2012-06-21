@@ -1,0 +1,60 @@
+
+<!doctype html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module core.timers</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="core.html"><font color="#ffffff">core</font></a>.timers</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href="index.html">index</a><br></font></td></tr></table>
+    <p></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-cancel_timer"><strong>cancel_timer</strong></a>(id)</dt><dd><tt>Cancels&nbsp;a&nbsp;timer.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments<br>
+id&nbsp;--&nbsp;the&nbsp;id&nbsp;of&nbsp;the&nbsp;timer,&nbsp;as&nbsp;returned&nbsp;from&nbsp;set_timer&nbsp;or&nbsp;set_periodic<br>
+&nbsp;<br>
+returns&nbsp;true&nbsp;if&nbsp;the&nbsp;timer&nbsp;was&nbsp;cancelled,&nbsp;false&nbsp;if&nbsp;it&nbsp;wasn't&nbsp;found.</tt></dd></dl>
+ <dl><dt><a name="-java_vertx"><strong>java_vertx</strong></a>()</dt></dl>
+ <dl><dt><a name="-run_on_loop"><strong>run_on_loop</strong></a>(handler)</dt><dd><tt>Put&nbsp;the&nbsp;handler&nbsp;on&nbsp;the&nbsp;event&nbsp;queue&nbsp;for&nbsp;this&nbsp;loop&nbsp;so&nbsp;it&nbsp;will&nbsp;be&nbsp;run&nbsp;asynchronously<br>
+ASAP&nbsp;after&nbsp;this&nbsp;event&nbsp;has&nbsp;been&nbsp;processed<br>
+&nbsp;<br>
+Keyword&nbsp;arguments<br>
+handler&nbsp;--&nbsp;a&nbsp;block&nbsp;representing&nbsp;the&nbsp;code&nbsp;that&nbsp;will&nbsp;be&nbsp;run&nbsp;ASAP</tt></dd></dl>
+ <dl><dt><a name="-set_periodic"><strong>set_periodic</strong></a>(delay, handler)</dt><dd><tt>Sets&nbsp;a&nbsp;periodic&nbsp;timer.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments<br>
+delay&nbsp;--&nbsp;the&nbsp;period&nbsp;of&nbsp;the&nbsp;timer,&nbsp;in&nbsp;milliseconds<br>
+handler&nbsp;--&nbsp;a&nbsp;block&nbsp;representing&nbsp;the&nbsp;code&nbsp;that&nbsp;will&nbsp;be&nbsp;when&nbsp;the&nbsp;timer&nbsp;fires&nbsp;the&nbsp;unique&nbsp;id&nbsp;of&nbsp;the&nbsp;timer</tt></dd></dl>
+ <dl><dt><a name="-set_timer"><strong>set_timer</strong></a>(delay, handler)</dt><dd><tt>Sets&nbsp;a&nbsp;one-shot&nbsp;timer&nbsp;that&nbsp;will&nbsp;fire&nbsp;after&nbsp;a&nbsp;certain&nbsp;delay.<br>
+This&nbsp;method&nbsp;will&nbsp;accept&nbsp;either&nbsp;a&nbsp;Proc&nbsp;or&nbsp;a&nbsp;block.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments<br>
+delay&nbsp;--&nbsp;the&nbsp;delay,&nbsp;in&nbsp;milliseconds<br>
+handler&nbsp;--&nbsp;a&nbsp;block&nbsp;representing&nbsp;the&nbsp;code&nbsp;that&nbsp;will&nbsp;be&nbsp;run&nbsp;after&nbsp;the&nbsp;delay&nbsp;the&nbsp;unique&nbsp;id&nbsp;of&nbsp;the&nbsp;timer</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Scott Horn'<br>
+<strong>__email__</strong> = 'scott@hornmicro.com'<br>
+<strong>org</strong> = &lt;java package org 0x2&gt;</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Scott&nbsp;Horn</td></tr></table>
+</body></html>

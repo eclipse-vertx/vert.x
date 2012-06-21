@@ -1,0 +1,232 @@
+
+<!doctype html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module core.parsetools</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="core.html"><font color="#ffffff">core</font></a>.parsetools</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href="index.html">index</a><br></font></td></tr></table>
+    <p><tt>#&nbsp;Copyright&nbsp;2011&nbsp;the&nbsp;original&nbsp;author&nbsp;or&nbsp;authors.<br>
+#<br>
+#&nbsp;Licensed&nbsp;under&nbsp;the&nbsp;Apache&nbsp;License,&nbsp;Version&nbsp;2.0&nbsp;(the&nbsp;"License");<br>
+#&nbsp;you&nbsp;may&nbsp;not&nbsp;use&nbsp;this&nbsp;file&nbsp;except&nbsp;in&nbsp;compliance&nbsp;with&nbsp;the&nbsp;License.<br>
+#&nbsp;You&nbsp;may&nbsp;obtain&nbsp;a&nbsp;copy&nbsp;of&nbsp;the&nbsp;License&nbsp;at<br>
+#<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a><br>
+#<br>
+#&nbsp;Unless&nbsp;required&nbsp;by&nbsp;applicable&nbsp;law&nbsp;or&nbsp;agreed&nbsp;to&nbsp;in&nbsp;writing,&nbsp;software<br>
+#&nbsp;distributed&nbsp;under&nbsp;the&nbsp;License&nbsp;is&nbsp;distributed&nbsp;on&nbsp;an&nbsp;"AS&nbsp;IS"&nbsp;BASIS,<br>
+#&nbsp;WITHOUT&nbsp;WARRANTIES&nbsp;OR&nbsp;CONDITIONS&nbsp;OF&nbsp;ANY&nbsp;KIND,&nbsp;either&nbsp;express&nbsp;or&nbsp;implied.<br>
+#&nbsp;See&nbsp;the&nbsp;License&nbsp;for&nbsp;the&nbsp;specific&nbsp;language&nbsp;governing&nbsp;permissions&nbsp;and<br>
+#&nbsp;limitations&nbsp;under&nbsp;the&nbsp;License.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial">__builtin__.object
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.parsetools.html#RecordParser">RecordParser</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial">org.vertx.java.core.Handler(java.lang.Object)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial">org.python.proxies.core.parsetools$RecordParserHandler$16(org.vertx.java.core.Handler, java.lang.Object)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.parsetools.html#RecordParserHandler">RecordParserHandler</a>
+</font></dt></dl>
+</dd>
+</dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="RecordParser">class <strong>RecordParser</strong></a>(__builtin__.object)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;helper&nbsp;class&nbsp;which&nbsp;allows&nbsp;you&nbsp;to&nbsp;easily&nbsp;parse&nbsp;protocols&nbsp;which&nbsp;are&nbsp;delimited&nbsp;by&nbsp;a&nbsp;sequence&nbsp;of&nbsp;bytes,&nbsp;or&nbsp;fixed<br>
+&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;records.<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Instances&nbsp;of&nbsp;this&nbsp;class&nbsp;take&nbsp;as&nbsp;input&nbsp;{Buffer}&nbsp;instances&nbsp;containing&nbsp;raw&nbsp;bytes,&nbsp;and&nbsp;output&nbsp;records.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;For&nbsp;example,&nbsp;if&nbsp;I&nbsp;had&nbsp;a&nbsp;simple&nbsp;ASCII&nbsp;text&nbsp;protocol&nbsp;delimited&nbsp;by&nbsp;'<br>
+'&nbsp;and&nbsp;the&nbsp;input&nbsp;was&nbsp;the&nbsp;following:<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;buffer1:HELLO<br>
+HOW&nbsp;ARE&nbsp;Y<br>
+&nbsp;&nbsp;&nbsp;&nbsp;buffer2:OU?<br>
+I&nbsp;AM<br>
+&nbsp;&nbsp;&nbsp;&nbsp;buffer3:&nbsp;DOING&nbsp;OK<br>
+&nbsp;&nbsp;&nbsp;&nbsp;buffer4:<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Then&nbsp;the&nbsp;output&nbsp;would&nbsp;be:<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;buffer1:HELLO<br>
+&nbsp;&nbsp;&nbsp;&nbsp;buffer2:HOW&nbsp;ARE&nbsp;YOU?<br>
+&nbsp;&nbsp;&nbsp;&nbsp;buffer3:I&nbsp;AM&nbsp;DOING&nbsp;OK<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Instances&nbsp;of&nbsp;this&nbsp;class&nbsp;can&nbsp;be&nbsp;changed&nbsp;between&nbsp;delimited&nbsp;mode&nbsp;and&nbsp;fixed&nbsp;size&nbsp;record&nbsp;mode&nbsp;on&nbsp;the&nbsp;fly&nbsp;as<br>
+&nbsp;&nbsp;&nbsp;&nbsp;individual&nbsp;records&nbsp;are&nbsp;read,&nbsp;this&nbsp;allows&nbsp;you&nbsp;to&nbsp;parse&nbsp;protocols&nbsp;where,&nbsp;for&nbsp;example,&nbsp;the&nbsp;first&nbsp;5&nbsp;records&nbsp;might<br>
+&nbsp;&nbsp;&nbsp;&nbsp;all&nbsp;be&nbsp;fixed&nbsp;size&nbsp;(of&nbsp;potentially&nbsp;different&nbsp;sizes),&nbsp;followed&nbsp;by&nbsp;some&nbsp;delimited&nbsp;records,&nbsp;followed&nbsp;by&nbsp;more&nbsp;fixed<br>
+&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;records.<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Instances&nbsp;of&nbsp;this&nbsp;class&nbsp;can't&nbsp;currently&nbsp;be&nbsp;used&nbsp;for&nbsp;protocols&nbsp;where&nbsp;the&nbsp;text&nbsp;is&nbsp;encoded&nbsp;with&nbsp;something&nbsp;other&nbsp;than<br>
+&nbsp;&nbsp;&nbsp;&nbsp;a&nbsp;1-1&nbsp;byte-char&nbsp;mapping.&nbsp;TODO&nbsp;extend&nbsp;this&nbsp;class&nbsp;to&nbsp;cope&nbsp;with&nbsp;arbitrary&nbsp;character&nbsp;encodings.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="RecordParser-__call__"><strong>__call__</strong></a>(self, data)</dt></dl>
+
+<dl><dt><a name="RecordParser-__init__"><strong>__init__</strong></a>(self, java_parser)</dt></dl>
+
+<dl><dt><a name="RecordParser-delimited_mode"><strong>delimited_mode</strong></a>(self, delim)</dt><dd><tt>Flip&nbsp;the&nbsp;parser&nbsp;into&nbsp;delimited&nbsp;mode.&nbsp;This&nbsp;method&nbsp;can&nbsp;be&nbsp;called&nbsp;multiple&nbsp;times&nbsp;with&nbsp;different&nbsp;values<br>
+of&nbsp;delim&nbsp;while&nbsp;data&nbsp;is&nbsp;being&nbsp;parsed.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+delim&nbsp;--&nbsp;the&nbsp;delimiter&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="RecordParser-fixed_size_mode"><strong>fixed_size_mode</strong></a>(self, size)</dt><dd><tt>Flip&nbsp;the&nbsp;parser&nbsp;into&nbsp;fixed&nbsp;size&nbsp;mode.&nbsp;This&nbsp;method&nbsp;can&nbsp;be&nbsp;called&nbsp;multiple&nbsp;times&nbsp;with&nbsp;different&nbsp;values<br>
+of&nbsp;size&nbsp;while&nbsp;data&nbsp;is&nbsp;being&nbsp;parsed.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+size&nbsp;--&nbsp;the&nbsp;record&nbsp;size.</tt></dd></dl>
+
+<dl><dt><a name="RecordParser-input"><strong>input</strong></a>(self, data)</dt><dd><tt>This&nbsp;method&nbsp;is&nbsp;called&nbsp;to&nbsp;provide&nbsp;the&nbsp;parser&nbsp;with&nbsp;data.<br>
+data&nbsp;--&nbsp;Input&nbsp;buffer&nbsp;&nbsp;to&nbsp;the&nbsp;parser.</tt></dd></dl>
+
+<hr>
+Static methods defined here:<br>
+<dl><dt><a name="RecordParser-new_delimited"><strong>new_delimited</strong></a>(delim, handler)</dt><dd><tt>Create&nbsp;a&nbsp;new&nbsp;<a href="#RecordParser">RecordParser</a>&nbsp;instance,&nbsp;initially&nbsp;in&nbsp;delimited&nbsp;mode,&nbsp;and&nbsp;where&nbsp;the&nbsp;delimiter&nbsp;can&nbsp;be&nbsp;represented<br>
+by&nbsp;a&nbsp;delimiter&nbsp;string&nbsp;endcoded&nbsp;in&nbsp;latin-1&nbsp;.&nbsp;Don't&nbsp;use&nbsp;this&nbsp;if&nbsp;your&nbsp;String&nbsp;contains&nbsp;other&nbsp;than&nbsp;latin-1&nbsp;characters.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+delim&nbsp;--&nbsp;The&nbsp;delimiter&nbsp;string.<br>
+handler&nbsp;--&nbsp;the&nbsp;output&nbsp;handler<br>
+&nbsp;<br>
+returns&nbsp;a&nbsp;new&nbsp;<a href="#RecordParser">RecordParser</a></tt></dd></dl>
+
+<dl><dt><a name="RecordParser-new_fixed"><strong>new_fixed</strong></a>(size, handler)</dt><dd><tt>Create&nbsp;a&nbsp;new&nbsp;<a href="#RecordParser">RecordParser</a>&nbsp;instance,&nbsp;initially&nbsp;in&nbsp;fixed&nbsp;size&nbsp;mode.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+size&nbsp;--&nbsp;the&nbsp;initial&nbsp;record&nbsp;size.<br>
+handler&nbsp;--&nbsp;the&nbsp;output&nbsp;handler<br>
+returns&nbsp;a&nbsp;new&nbsp;<a href="#RecordParser">RecordParser</a></tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="RecordParserHandler">class <strong>RecordParserHandler</strong></a>(org.python.proxies.core.parsetools$RecordParserHandler$16)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Record&nbsp;Parser&nbsp;handler<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="core.parsetools.html#RecordParserHandler">RecordParserHandler</a></dd>
+<dd>org.python.proxies.core.parsetools$RecordParserHandler$16</dd>
+<dd>org.vertx.java.core.Handler</dd>
+<dd>java.lang.Object</dd>
+<dd>__builtin__.object</dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="RecordParserHandler-__init__"><strong>__init__</strong></a>(self, handler)</dt></dl>
+
+<dl><dt><a name="RecordParserHandler-handle"><strong>handle</strong></a>(self, buffer)</dt><dd><tt>Call&nbsp;the&nbsp;handler&nbsp;after&nbsp;buffer&nbsp;parsed</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>__initProxy__</strong> = &lt;java function __initProxy__ 0xb7&gt;</dl>
+
+<dl><dt><strong>__supernames__</strong> = array('java.lang.String', [u'clone', u'finalize'])</dl>
+
+<dl><dt><strong>classDictInit</strong> = &lt;java function classDictInit 0xb8&gt;</dl>
+
+<dl><dt><strong>clone</strong> = &lt;java function clone 0xb9&gt;</dl>
+
+<dl><dt><strong>finalize</strong> = &lt;java function finalize 0xba&gt;</dl>
+
+<hr>
+Methods inherited from java.lang.Object:<br>
+<dl><dt><a name="RecordParserHandler-__copy__"><strong>__copy__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="RecordParserHandler-__deepcopy__"><strong>__deepcopy__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="RecordParserHandler-__eq__"><strong>__eq__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="RecordParserHandler-__hash__"><strong>__hash__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="RecordParserHandler-__ne__"><strong>__ne__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="RecordParserHandler-__repr__"><strong>__repr__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="RecordParserHandler-__unicode__"><strong>__unicode__</strong></a>(...)</dt></dl>
+
+<hr>
+Data and other attributes inherited from java.lang.Object:<br>
+<dl><dt><strong>equals</strong> = &lt;java function equals 0xbb&gt;</dl>
+
+<dl><dt><strong>getClass</strong> = &lt;java function getClass 0xbc&gt;</dl>
+
+<dl><dt><strong>hashCode</strong> = &lt;java function hashCode 0xbd&gt;</dl>
+
+<dl><dt><strong>notify</strong> = &lt;java function notify 0xbe&gt;</dl>
+
+<dl><dt><strong>notifyAll</strong> = &lt;java function notifyAll 0xbf&gt;</dl>
+
+<dl><dt><strong>toString</strong> = &lt;java function toString 0xc0&gt;</dl>
+
+<dl><dt><strong>wait</strong> = &lt;java function wait 0xc1&gt;</dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Scott Horn'<br>
+<strong>__credits__</strong> = 'Based entirely on work by Tim Fox http://tfox.org'<br>
+<strong>__email__</strong> = 'scott@hornmicro.com'<br>
+<strong>org</strong> = &lt;java package org 0x2&gt;</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Scott&nbsp;Horn</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Credits</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Based&nbsp;entirely&nbsp;on&nbsp;work&nbsp;by&nbsp;Tim&nbsp;Fox&nbsp;<a href="http://tfox.org">http://tfox.org</a></td></tr></table>
+</body></html>
