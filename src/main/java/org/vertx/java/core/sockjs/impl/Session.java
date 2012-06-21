@@ -143,7 +143,10 @@ class Session extends SockJSSocket implements Shareable {
     if (timeoutTimerID != -1) {
       vertx.cancelTimer(timeoutTimerID);
     }
-    sessions.remove(id);
+    if (id != null) {
+      // Can be null if websocket session
+      sessions.remove(id);
+    }
     if (endHandler != null) {
       endHandler.handle(null);
     }

@@ -28,5 +28,6 @@
     load('core/filesystem.js');
     load('core/deploy.js');
     load('core/logger.js');
+    load('core/env.js');
     (this.module && module.exports) ? module.exports = vertx : this.vertx = vertx;
 })();

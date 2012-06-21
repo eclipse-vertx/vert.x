@@ -14,22 +14,14 @@
  * limitations under the License.
  */
 
-package org.vertx.java.deploy.impl.cli;
+var vertx = vertx || {};
 
-import org.vertx.java.deploy.impl.VerticleManager;
-
-/**
- * @author <a href="http://tfox.org">Tim Fox</a>
- */
-public class StopCommand extends VertxCommand {
-
-  public String execute(VerticleManager appMgr) {
-    appMgr.unblock();
-    return "OK";
-  }
-
-  @Override
-  public boolean isBlock() {
-    return false;
+if (!vertx.env) {
+  vertx.env = {};
+  var j_map = org.vertx.java.deploy.impl.VertxLocator.container.getEnv();
+  var j_iter = j_map.entrySet().iterator();
+  while (j_iter.hasNext()) {
+    var entry = j_iter.next();
+    vertx.env[entry.getKey()] = entry.getValue();
   }
 }

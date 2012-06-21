@@ -25,7 +25,7 @@
   <property name="core-jar-file" value="vert.x-core.jar"/>
   <property name="platform-jar-file" value="vert.x-platform.jar"/>
   <property name="test-framework-jar-file" value="vert.x-testframework.jar"/>
-  <property name="version-number" value="1.0.1.final"/>
+  <property name="version-number" value="1.1.0.final"/>
   <property name="dist-build-base" value="${target}/dist-build"/>
   <property name="dist-build" value="${dist-build-base}/vert.x-${version-number}"/>
   <property name="java-src-root" value="src/main/java"/>
@@ -251,7 +251,7 @@
 
   <!-- We depend on dist since the busmod tests need the distro to be built to
   access the mods -->
-  <target name="internal-tests" depends="compile-tests">
+  <target name="internal-tests" depends="compile-tests,dist">
     <delete dir="${test-results}"/>
     <mkdir dir="${test-results}"/>
     <junit printsummary="yes" timeout="120000" showoutput="true">
