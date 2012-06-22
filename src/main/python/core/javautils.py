@@ -58,7 +58,7 @@ def map_from_java (object):
     """ Convert a Java type to a Jython type. """
     if object is None: return object
     if   isinstance(object, util.Map):        result = map_map_from_java(object)
-    if   isinstance(object, util.Set):        result = map_set_from_java(object)
+    elif isinstance(object, util.Set):        result = map_set_from_java(object)
     elif isinstance(object, util.Collection): result = map_collection_from_java(object)
     else:                                     result = object
     return result
