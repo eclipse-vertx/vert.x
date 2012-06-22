@@ -308,6 +308,10 @@ Edit the web server configuration so it looks like:
       bridge: true,
 
       permitted: [
+        // Allow calls to login
+        [
+          address: 'vertx.basicauthmanager.login'
+        ],
         // Allow calls to get static album data from the persistor
         [
           address : 'vertx.mongopersistor',
@@ -402,7 +406,7 @@ You'll also need to provide a key store. The keystore is just a Java keystore wh
         
 Copy the keystore from the distribution
 
-    cp $VERTX_HOME/examples/javascript/webapp/server-keystore.jks . 
+    cp $VERTX_HOME/examples/groovy/webapp/server-keystore.jks . 
                       
     
 Now restart the app again.

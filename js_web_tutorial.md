@@ -310,6 +310,10 @@ Edit the web server configuration so it looks like:
       // This defines which messages from the client we will let through
       // from the client
       permitted: [
+        // Allow calls to login and authorise
+        {
+          address: 'vertx.basicauthmanager.login'
+        },
         // Allow calls to get static album data from the persistor
         {
           address : 'vertx.mongopersistor',

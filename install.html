@@ -38,9 +38,9 @@
 
       <div class="nav-collapse">
         <ul class="nav">
-          <li class="active"><a href="/">Home</a></li>
+          <li><a href="/">Home</a></li>
           <li><a href="downloads.html">Download</a></li>
-          <li><a href="install.html">Install</a></li>
+          <li class="active"><a href="install.html">Install</a></li>
           <li><a href="tutorials.html">Tutorials</a></li>
           <li><a href="examples.html">Examples</a></li>
           <li><a href="docs.html">Documentation</a></li>
@@ -93,17 +93,10 @@ Alternatively you can build from source. To do that see the instructions on the 
 <li>Unzip the distro somewhere sensible (e.g. your home directory)</li>
 <li>Add the vert.x <code>bin</code> directory to your <code>PATH</code>.</li>
 </ol>
-<h3 id="important-note">Important note:</h3><br/>
-<p>As a temporary measure, we are unable to distributed Mozilla Rhino with the Vert.x distribution.</p>
-<p>This should be resolved in the next few days/weeks.</p>
-<p>In the mean-time, if you want to use JavaScript with Vert.x you will need to download and build Rhino from source. We include a script which does this automatically for Linux/OSX users.</p>
-<p>Please <code>cd</code> into the distribution folder and run the script <code>install_rhino.sh</code>.</p>
-<p>Windows users will have to manually clone the Rhino repository <code>git clone https://github.com/mozilla/rhino.git</code>. Build the jar <code>ant jar</code>. And copy the resulting jar <code>js.jar</code> into the <code>lib/jars</code> directory of the Vert.x distribution.</p>
-<p>Apologies for the inconvenience.</p>
 <h2 id="check-the-version">Check the version</h2><br/>
 <p>To make sure you've installed it correctly, open another console and type:</p>
 <pre class="prettyprint">tim@Ethel:~/example$ vertx version
-vert.x 1.0.0.beta.1
+vert.x 1.1.0.final
 </pre>
 <p>You should see output something like the above.</p>
 <h1 id="testing-the-install">Testing the install</h1><br/>
