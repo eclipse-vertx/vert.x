@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 
 import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.handler.codec.http.multipart.MemoryFileUpload;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpFileUpload;
-import org.vertx.java.core.http.impl.netty.codec.http.MemoryFileUpload;
 
 public class NettyFileUpload extends MemoryFileUpload {
 

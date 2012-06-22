@@ -4,13 +4,13 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 
 import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.multipart.Attribute;
+import org.jboss.netty.handler.codec.http.multipart.FileUpload;
+import org.jboss.netty.handler.codec.http.multipart.HttpDataFactory;
+import org.jboss.netty.handler.codec.http.multipart.InterfaceHttpData;
 import org.vertx.java.core.http.HttpAttribute;
 import org.vertx.java.core.http.HttpFileUpload;
 import org.vertx.java.core.http.HttpMultipartFormElementHandler;
-import org.vertx.java.core.http.impl.netty.codec.http.Attribute;
-import org.vertx.java.core.http.impl.netty.codec.http.FileUpload;
-import org.vertx.java.core.http.impl.netty.codec.http.HttpDataFactory;
-import org.vertx.java.core.http.impl.netty.codec.http.InterfaceHttpData;
 
 public class NettyHttpDataFactory implements HttpDataFactory {
 

@@ -3,9 +3,9 @@ package org.vertx.java.core.http.impl;
 import java.io.IOException;
 
 import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.handler.codec.http.multipart.MemoryAttribute;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpAttribute;
-import org.vertx.java.core.http.impl.netty.codec.http.MemoryAttribute;
 
 public class NettyHttpAttribute extends MemoryAttribute {
 

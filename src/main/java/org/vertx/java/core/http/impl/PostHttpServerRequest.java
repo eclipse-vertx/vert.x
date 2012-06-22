@@ -18,14 +18,14 @@ package org.vertx.java.core.http.impl;
 
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
+import org.jboss.netty.handler.codec.http.multipart.HttpPostRequestDecoder.ErrorDataDecoderException;
+import org.jboss.netty.handler.codec.http.multipart.HttpPostRequestDecoder.IncompatibleDataDecoderException;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpDataHandler;
 import org.vertx.java.core.http.HttpMultipartFormDataHandler;
 import org.vertx.java.core.http.HttpMultipartFormElementHandler;
 import org.vertx.java.core.http.HttpServerResponse;
-import org.vertx.java.core.http.impl.netty.codec.http.HttpPostRequestDecoder;
-import org.vertx.java.core.http.impl.netty.codec.http.HttpPostRequestDecoder.ErrorDataDecoderException;
-import org.vertx.java.core.http.impl.netty.codec.http.HttpPostRequestDecoder.IncompatibleDataDecoderException;
 
 public class PostHttpServerRequest extends DefaultHttpServerRequest {
 
