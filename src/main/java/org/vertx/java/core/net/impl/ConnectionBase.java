@@ -93,6 +93,8 @@ public abstract class ConnectionBase {
    * Close the connection
    */
   public void close() {
+    //new Exception().printStackTrace();
+    //System.out.println("Closing connection");
     channel.close();
   }
 
