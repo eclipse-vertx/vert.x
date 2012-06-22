@@ -91,7 +91,7 @@ class EventBusTest(object):
             EventBus.unregister_handler(id)
             self.received = True 
 
-            def timer_complete():
+            def timer_complete(id):
                 tu.test_complete()
             
             # End test on a timer to give time for other messages to arrive

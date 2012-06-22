@@ -161,6 +161,8 @@ class EventBus(object):
             message = java.lang.Double(message)
         elif isinstance(message, int):
             message = java.lang.Integer(message)
+        else:
+            message = map_to_java(message)
         return message
         
 class InternalHandler(org.vertx.java.core.Handler):
@@ -179,7 +181,7 @@ class Message(object):
         elif isinstance(message.body, org.vertx.java.core.buffer.Buffer):
             self.body = Buffer(message.body) 
         else:
-            self.body = message.body
+            self.body = map_from_java(message.body)
     
     def reply(self, reply, handler=None):
         """Reply to this message. If the message was sent specifying a receipt handler, that handler will be
