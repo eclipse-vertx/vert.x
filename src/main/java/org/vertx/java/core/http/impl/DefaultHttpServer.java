@@ -50,6 +50,7 @@ import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.java.core.http.SSLConfigureInterceptor;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.impl.ws.Handshake;
@@ -108,6 +109,7 @@ public class DefaultHttpServer implements HttpServer {
   private VertxWorkerPool availableWorkers = new VertxWorkerPool();
   private HandlerManager<HttpServerRequest> reqHandlerManager = new HandlerManager<>(availableWorkers);
   private HandlerManager<ServerWebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
+  private SSLConfigureInterceptor sslConfig;
 
   public DefaultHttpServer(VertxInternal vertx) {
     this.vertx = vertx;
@@ -179,6 +181,7 @@ public class DefaultHttpServer implements HttpServer {
 
             if (tcpHelper.isSSL()) {
               SSLEngine engine = tcpHelper.getSSLContext().createSSLEngine();
+              if ( this.sslConfig != null ) sslConfig.configure( engine );
               engine.setUseClientMode(false);
               switch (tcpHelper.getClientAuth()) {
                 case REQUEST: {
@@ -389,6 +392,10 @@ public class DefaultHttpServer implements HttpServer {
 
   public String getTrustStorePassword() {
     return tcpHelper.getTrustStorePassword();
+  }
+  
+  public void setSSLConfigureInterceptor( SSLConfigureInterceptor cfg ) {
+	  this.sslConfig = cfg;
   }
 
   private void actualClose(final Context closeContext, final Handler<Void> done) {
