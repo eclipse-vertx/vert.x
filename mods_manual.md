@@ -146,11 +146,12 @@ For example:
     
 Or programmatically (e.g. in JavaScript)
 
-    vertx.deployVerticle(<bus_mode_name>, <config>);        
+    container.deployVerticle(<bus_mode_name>, <config>);        
+    container.deployWorkerVerticle(<bus_mode_name>, <config>);        
     
 For example:
 
-    vertx.deployVerticle('mongo-persistor', {address: 'test.mypersistor', db_name: 'mydb'});    
+    container.deployWorkerVerticle('mongo-persistor', {address: 'test.mypersistor', db_name: 'mydb'});    
 
 ### Web Server
 
@@ -178,13 +179,14 @@ The web-server configuration is as follows:
         "key_store_path": <key_store_path>,
         
         "bridge": <bridge>,
-        "permitted": <permitted>,
+        "inbound_permitted": <inbound_permitted>,
+        "outbound_permitted": <outbound_permitted>,
         "sjs_config": <sjs_config>,
         "auth_timeout": <auth_timeout>,
         "auth_address": <auth_address>
     }
     
-* `web-root`. This is the root directory from where files will be served. *Anything that you place here or in sub directories will be externally accessible*. Default is `web`.
+* `web_root`. This is the root directory from where files will be served. *Anything that you place here or in sub directories will be externally accessible*. Default is `web`.
 * `index_page`. The page to serve when the root `/` is requested. Default is `index.html`.
 * `host`. The host or ip address to listen at for connections. `0.0.0.0` means listen at all available addresses. Default is `0.0.0.0`.
 * `port`. The port to listen at for connections. Default is `80`.
@@ -193,7 +195,8 @@ The web-server configuration is as follows:
 * `key_store_password`. Password of Java keystore which holds the server certificate. Only used if `ssl` is `true`. Default is `wibble`.
 * `key_store_path`. Path to keystore which holds the server certificate. Default is `server-keystore.jks`. Only used if `ssl` is `true`. *Don't put the keystore under your webroot!*.
 * `bridge`. Should the server also act as an event bus bridge. This is used when you want to bridge the event bus into client side JavaScript. Default is `false`.
-* `permitted`. This is an array of JSON objects representing the permitted matches on the bridge. Only used if `bridge` is `true`. See the core manual for a full description of what these are. Defaults to `[]`.
+* `inbound_permitted`. This is an array of JSON objects representing the inbound permitted matches on the bridge. Only used if `bridge` is `true`. See the core manual for a full description of what these are. Defaults to `[]`.
+* `outbound_permitted`. This is an array of JSON objects representing the outbound permitted matches on the bridge. Only used if `bridge` is `true`. See the core manual for a full description of what these are. Defaults to `[]`.
 * `sjs_config`. This is a JSON object representing the configuration of the SockJS bridging application. You'd normally use this for specifying the url at which SockJS will connect to bridge from client side JS to the server. Only used if `bridge` is `true`. Default to `{"prefix": "/eventbus"}`.
 * `auth_timeout`. The bridge can also cache authorisations. This determines how long the bridge will cache one for. Default value is five minutes.
 * `auth_address`. The bridge can also call an authorisation manager to do authorisation. This is the address to which it will send authorisation messages. Default value is `vertx.basicauthmanager.authorise`. 
@@ -201,7 +204,7 @@ The web-server configuration is as follows:
 
 ##### Examples
 
-Here are some example:
+Here are some examples:
 
 ##### Simple static file web server
 
@@ -228,12 +231,13 @@ Pure event bus bridge that doesn't serve static files
        "host": "bridgeserver.mycompany.com",
        "static_files": false,
        "bridge": true,
-       "permitted": [{"address":"myservice"}]       
+       "inbound_permitted": [{"address":"myservice"}],
+       "outbound_permitted": [{"address":"topic.foo"}]
     }
     
 ### MongoDB Persistor
 
-This busmod allows data to be saved, retrieved, searched for, and deleted in a MongoDB instance. MongoDB is a great match for persisting vert.x data since it natively handles JSON (BSON) documents. To use this busmod you must be have a MongoDB instance running on your network.
+This busmod allows data to be saved, retrieved, searched for, and deleted in a MongoDB instance. MongoDB is a great match for persisting vert.x data since it natively handles JSON (BSON) documents. To use this busmod you must have a MongoDB instance running on your network.
 
 This is a worker busmod and must be started as a worker verticle.
 
@@ -252,7 +256,7 @@ The mongo-persistor busmod takes the following configuration:
     {
         "address": <address>,
         "host": <host>,
-        "port": <port>
+        "port": <port>,
         "db_name": <db_name>    
     }
     
@@ -300,9 +304,9 @@ An example would be:
         "document": {
             "name": "tim",
             "age": 1000,
-            "shoesize", 3.14159,
-            "username", "tim",
-            "password", "wibble"
+            "shoesize": 3.14159,
+            "username": "tim",
+            "password": "wibble"
         }
     }  
     
@@ -340,14 +344,14 @@ To find documents send a JSON message to the busmod main address:
     {
         "action": "find",
         "collection": <collection>,
-        "match": <match>,
+        "matcher": <matcher>,
         "limit": <limit>,
         "batch_size": <batch_size>
     }     
     
 Where:
 * `collection` is the name of the MongoDB collection that you wish to search in in. This field is mandatory.
-* `match` is a JSON object that you want to match against to find matching documents. This obeys the normal MongoDB matching rues.
+* `matcher` is a JSON object that you want to match against to find matching documents. This obeys the normal MongoDB matching rues.
 * `limit` is a number which determines the maximum total number of documents to return. This is optional. By default all documents are returned.
 * `batch_size` is a number which determines how many documents to return in each reply JSON message. It's optional and the default value is `100`. Batching is discussed in more detail below.
 
@@ -356,7 +360,7 @@ An example would be:
     {
         "action": "find",
         "collection": "orders",
-        "match": {
+        "matcher": {
             "item": "cheese"
         }
     }  
@@ -448,12 +452,12 @@ To find a document send a JSON message to the busmod main address:
     {
         "action": "findone",
         "collection": <collection>,
-        "match": <match>
+        "matcher": <matcher>
     }     
     
 Where:
 * `collection` is the name of the MongoDB collection that you wish to search in in. This field is mandatory.
-* `match` is a JSON object that you want to match against to find a matching document. This obeys the normal MongoDB matching rues.
+* `matcher` is a JSON object that you want to match against to find a matching document. This obeys the normal MongoDB matching rues.
 
 If more than one document matches, just the first one will be returned.
 
@@ -462,7 +466,7 @@ An example would be:
     {
         "action": "findone",
         "collection": "items",
-        "match": {
+        "matcher": {
             "_id": "ffeef2a7-5658-4905-a37c-cfb19f70471d"
         }
     }  
@@ -494,12 +498,12 @@ To delete documents send a JSON message to the busmod main address:
     {
         "action": "delete",
         "collection": <collection>,
-        "match": <match>
+        "matcher": <matcher>
     }     
     
 Where:
 * `collection` is the name of the MongoDB collection that you wish to delete from. This field is mandatory.
-* `match` is a JSON object that you want to match against to delete matching documents. This obeys the normal MongoDB matching rues.
+* `matcher` is a JSON object that you want to match against to delete matching documents. This obeys the normal MongoDB matching rues.
 
 All documents that match will be deleted.
 
@@ -508,7 +512,7 @@ An example would be:
     {
         "action": "delete",
         "collection": "items",
-        "match": {
+        "matcher": {
             "_id": "ffeef2a7-5658-4905-a37c-cfb19f70471d"
         }
     }  
@@ -763,7 +767,9 @@ Otherwise, if the session is not valid. I.e. it has expired or never existed in 
 
 This busmod queues messages (work) sent to it, and then forwards the work to one of many processors that may be attached to it, if available.
 
-Once a processor has processed the work, it replies to the message and when the work queue receives the reply it removes the work from the queue. The processor can time out in processing a message, in which case the message becomes available again for other processors to consume.
+Once a processor has processed the work, it replies to the message and when the work queue receives the reply it removes the work from the queue. The reply is then forwarded back to the original sender. The processor can time out in processing a message, in which case the message becomes available again for other processors to consume.
+
+The sender can also receive an optional reply when the work has been accepted by the work queue.
 
 Multiple processors can register for work with the work queue.
 
@@ -821,13 +827,15 @@ An example, persistent configuration would be:
 
 To send data to the work queue, just send a JSON message to the main address of the busmod. The JSON message can have any structure you like - the work queue does not look at it.
 
-Once the send has been accepted, and queued a reply message will be sent:
+Once the work has been sent out to a worker, and processed, and that worker has replied, the reply will be forwarded back to the sender.
+
+You can optionally receive a reply when the work has been accepted (i.e. queued, but not yet processed), to do this add a field `accepted_reply` with a value holding the address where you want the reply sent. Once the send has been accepted, and queued a message will be sent to that address:
 
     {
-        "status": "ok"
+        "status": "accepted"
     }
     
-If a problem occurs with the queueing, an error reply will be sent:
+If a problem occurs with the queueing, an error reply will be sent to the `accepted_reply` address (if any).
 
     {
         "status": "error"

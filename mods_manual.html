@@ -38,12 +38,12 @@
 
       <div class="nav-collapse">
         <ul class="nav">
-          <li class="active"><a href="/">Home</a></li>
+          <li><a href="/">Home</a></li>
           <li><a href="downloads.html">Download</a></li>
           <li><a href="install.html">Install</a></li>
           <li><a href="tutorials.html">Tutorials</a></li>
           <li><a href="examples.html">Examples</a></li>
-          <li><a href="docs.html">Documentation</a></li>
+          <li class="active"><a href="docs.html">Documentation</a></li>
           <li><a href="https://github.com/purplefox/vert.x">Source</a></li>
           <li><a href="http://groups.google.com/group/vertx">Google Group</a></li>
           <li><a href="community.html">Community</a></li>
@@ -245,10 +245,11 @@ mods/my-web-app/web-root/index.html
 <pre class="prettyprint">vertx run mongo-persistor -conf my_conf.json
 </pre>
 <p>Or programmatically (e.g. in JavaScript)</p>
-<pre class="prettyprint">vertx.deployVerticle(&lt;bus_mode_name&gt;, &lt;config&gt;);
+<pre class="prettyprint">container.deployVerticle(&lt;bus_mode_name&gt;, &lt;config&gt;);        
+container.deployWorkerVerticle(&lt;bus_mode_name&gt;, &lt;config&gt;);
 </pre>
 <p>For example:</p>
-<pre class="prettyprint">vertx.deployVerticle('mongo-persistor', {address: 'test.mypersistor', db_name: 'mydb'});
+<pre class="prettyprint">container.deployWorkerVerticle('mongo-persistor', {address: 'test.mypersistor', db_name: 'mydb'});
 </pre>
 <h3 id="web-server">Web Server</h3><br/>
 <p>This is a simple web server which efficiently serves files from the file system.</p>
@@ -269,14 +270,15 @@ mods/my-web-app/web-root/index.html
     "key_store_path": &lt;key_store_path&gt;,
 
     "bridge": &lt;bridge&gt;,
-    "permitted": &lt;permitted&gt;,
+    "inbound_permitted": &lt;inbound_permitted&gt;,
+    "outbound_permitted": &lt;outbound_permitted&gt;,
     "sjs_config": &lt;sjs_config&gt;,
     "auth_timeout": &lt;auth_timeout&gt;,
     "auth_address": &lt;auth_address&gt;
 }
 </pre>
 <ul>
-<li><code>web-root</code>. This is the root directory from where files will be served. <em>Anything that you place here or in sub directories will be externally accessible</em>. Default is <code>web</code>.</li>
+<li><code>web_root</code>. This is the root directory from where files will be served. <em>Anything that you place here or in sub directories will be externally accessible</em>. Default is <code>web</code>.</li>
 <li><code>index_page</code>. The page to serve when the root <code>/</code> is requested. Default is <code>index.html</code>.</li>
 <li><code>host</code>. The host or ip address to listen at for connections. <code>0.0.0.0</code> means listen at all available addresses. Default is <code>0.0.0.0</code>.</li>
 <li><code>port</code>. The port to listen at for connections. Default is <code>80</code>.</li>
@@ -285,13 +287,14 @@ mods/my-web-app/web-root/index.html
 <li><code>key_store_password</code>. Password of Java keystore which holds the server certificate. Only used if <code>ssl</code> is <code>true</code>. Default is <code>wibble</code>.</li>
 <li><code>key_store_path</code>. Path to keystore which holds the server certificate. Default is <code>server-keystore.jks</code>. Only used if <code>ssl</code> is <code>true</code>. <em>Don't put the keystore under your webroot!</em>.</li>
 <li><code>bridge</code>. Should the server also act as an event bus bridge. This is used when you want to bridge the event bus into client side JavaScript. Default is <code>false</code>.</li>
-<li><code>permitted</code>. This is an array of JSON objects representing the permitted matches on the bridge. Only used if <code>bridge</code> is <code>true</code>. See the core manual for a full description of what these are. Defaults to <code>[]</code>.</li>
+<li><code>inbound_permitted</code>. This is an array of JSON objects representing the inbound permitted matches on the bridge. Only used if <code>bridge</code> is <code>true</code>. See the core manual for a full description of what these are. Defaults to <code>[]</code>.</li>
+<li><code>outbound_permitted</code>. This is an array of JSON objects representing the outbound permitted matches on the bridge. Only used if <code>bridge</code> is <code>true</code>. See the core manual for a full description of what these are. Defaults to <code>[]</code>.</li>
 <li><code>sjs_config</code>. This is a JSON object representing the configuration of the SockJS bridging application. You'd normally use this for specifying the url at which SockJS will connect to bridge from client side JS to the server. Only used if <code>bridge</code> is <code>true</code>. Default to <code>{"prefix": "/eventbus"}</code>.</li>
 <li><code>auth_timeout</code>. The bridge can also cache authorisations. This determines how long the bridge will cache one for. Default value is five minutes.</li>
 <li><code>auth_address</code>. The bridge can also call an authorisation manager to do authorisation. This is the address to which it will send authorisation messages. Default value is <code>vertx.basicauthmanager.authorise</code>. </li>
 </ul>
 <h5 id="examples">Examples</h5><br/>
-<p>Here are some example:</p>
+<p>Here are some examples:</p>
 <h5 id="simple-static-file-web-server">Simple static file web server</h5><br/>
 <p>This serves files from the web directory </p>
 <pre class="prettyprint">{
@@ -312,11 +315,12 @@ mods/my-web-app/web-root/index.html
    "host": "bridgeserver.mycompany.com",
    "static_files": false,
    "bridge": true,
-   "permitted": [{"address":"myservice"}]       
+   "inbound_permitted": [{"address":"myservice"}],
+   "outbound_permitted": [{"address":"topic.foo"}]
 }
 </pre>
 <h3 id="mongodb-persistor">MongoDB Persistor</h3><br/>
-<p>This busmod allows data to be saved, retrieved, searched for, and deleted in a MongoDB instance. MongoDB is a great match for persisting vert.x data since it natively handles JSON (BSON) documents. To use this busmod you must be have a MongoDB instance running on your network.</p>
+<p>This busmod allows data to be saved, retrieved, searched for, and deleted in a MongoDB instance. MongoDB is a great match for persisting vert.x data since it natively handles JSON (BSON) documents. To use this busmod you must have a MongoDB instance running on your network.</p>
 <p>This is a worker busmod and must be started as a worker verticle.</p>
 <h4 id="dependencies">Dependencies</h4><br/>
 <p>This busmod requires a MongoDB server to be available on the network.</p>
@@ -327,7 +331,7 @@ mods/my-web-app/web-root/index.html
 <pre class="prettyprint">{
     "address": &lt;address&gt;,
     "host": &lt;host&gt;,
-    "port": &lt;port&gt;
+    "port": &lt;port&gt;,
     "db_name": &lt;db_name&gt;    
 }
 </pre>
@@ -367,9 +371,9 @@ mods/my-web-app/web-root/index.html
     "document": {
         "name": "tim",
         "age": 1000,
-        "shoesize", 3.14159,
-        "username", "tim",
-        "password", "wibble"
+        "shoesize": 3.14159,
+        "username": "tim",
+        "password": "wibble"
     }
 }
 </pre>
@@ -399,21 +403,21 @@ mods/my-web-app/web-root/index.html
 <pre class="prettyprint">{
     "action": "find",
     "collection": &lt;collection&gt;,
-    "match": &lt;match&gt;,
+    "matcher": &lt;matcher&gt;,
     "limit": &lt;limit&gt;,
     "batch_size": &lt;batch_size&gt;
 }
 </pre>
 <p>Where:
 <em> <code>collection</code> is the name of the MongoDB collection that you wish to search in in. This field is mandatory.
-</em> <code>match</code> is a JSON object that you want to match against to find matching documents. This obeys the normal MongoDB matching rues.
+</em> <code>matcher</code> is a JSON object that you want to match against to find matching documents. This obeys the normal MongoDB matching rues.
 <em> <code>limit</code> is a number which determines the maximum total number of documents to return. This is optional. By default all documents are returned.
 </em> <code>batch_size</code> is a number which determines how many documents to return in each reply JSON message. It's optional and the default value is <code>100</code>. Batching is discussed in more detail below.</p>
 <p>An example would be:</p>
 <pre class="prettyprint">{
     "action": "find",
     "collection": "orders",
-    "match": {
+    "matcher": {
         "item": "cheese"
     }
 }
@@ -490,18 +494,18 @@ eb.send('foo.myPersistor', {
 <pre class="prettyprint">{
     "action": "findone",
     "collection": &lt;collection&gt;,
-    "match": &lt;match&gt;
+    "matcher": &lt;matcher&gt;
 }
 </pre>
 <p>Where:
 <em> <code>collection</code> is the name of the MongoDB collection that you wish to search in in. This field is mandatory.
-</em> <code>match</code> is a JSON object that you want to match against to find a matching document. This obeys the normal MongoDB matching rues.</p>
+</em> <code>matcher</code> is a JSON object that you want to match against to find a matching document. This obeys the normal MongoDB matching rues.</p>
 <p>If more than one document matches, just the first one will be returned.</p>
 <p>An example would be:</p>
 <pre class="prettyprint">{
     "action": "findone",
     "collection": "items",
-    "match": {
+    "matcher": {
         "_id": "ffeef2a7-5658-4905-a37c-cfb19f70471d"
     }
 }
@@ -526,18 +530,18 @@ eb.send('foo.myPersistor', {
 <pre class="prettyprint">{
     "action": "delete",
     "collection": &lt;collection&gt;,
-    "match": &lt;match&gt;
+    "matcher": &lt;matcher&gt;
 }
 </pre>
 <p>Where:
 <em> <code>collection</code> is the name of the MongoDB collection that you wish to delete from. This field is mandatory.
-</em> <code>match</code> is a JSON object that you want to match against to delete matching documents. This obeys the normal MongoDB matching rues.</p>
+</em> <code>matcher</code> is a JSON object that you want to match against to delete matching documents. This obeys the normal MongoDB matching rues.</p>
 <p>All documents that match will be deleted.</p>
 <p>An example would be:</p>
 <pre class="prettyprint">{
     "action": "delete",
     "collection": "items",
-    "match": {
+    "matcher": {
         "_id": "ffeef2a7-5658-4905-a37c-cfb19f70471d"
     }
 }
@@ -736,7 +740,8 @@ eb.send('foo.myPersistor', {
 </pre>
 <h3 id="work-queue">Work Queue</h3><br/>
 <p>This busmod queues messages (work) sent to it, and then forwards the work to one of many processors that may be attached to it, if available.</p>
-<p>Once a processor has processed the work, it replies to the message and when the work queue receives the reply it removes the work from the queue. The processor can time out in processing a message, in which case the message becomes available again for other processors to consume.</p>
+<p>Once a processor has processed the work, it replies to the message and when the work queue receives the reply it removes the work from the queue. The reply is then forwarded back to the original sender. The processor can time out in processing a message, in which case the message becomes available again for other processors to consume.</p>
+<p>The sender can also receive an optional reply when the work has been accepted by the work queue.</p>
 <p>Multiple processors can register for work with the work queue.</p>
 <p>The work queue is useful for use cases where you have a lot of work to process and want to share this work out amongst many processors.</p>
 <p>One example would be processing an order queue - each order must only be processed once, but we can have many processors (potentially on different machines) processing each order.</p>
@@ -778,12 +783,13 @@ eb.send('foo.myPersistor', {
 <h4 id="operations_2">Operations</h4><br/>
 <h5 id="send">Send</h5><br/>
 <p>To send data to the work queue, just send a JSON message to the main address of the busmod. The JSON message can have any structure you like - the work queue does not look at it.</p>
-<p>Once the send has been accepted, and queued a reply message will be sent:</p>
+<p>Once the work has been sent out to a worker, and processed, and that worker has replied, the reply will be forwarded back to the sender.</p>
+<p>You can optionally receive a reply when the work has been accepted (i.e. queued, but not yet processed), to do this add a field <code>accepted_reply</code> with a value holding the address where you want the reply sent. Once the send has been accepted, and queued a message will be sent to that address:</p>
 <pre class="prettyprint">{
-    "status": "ok"
+    "status": "accepted"
 }
 </pre>
-<p>If a problem occurs with the queueing, an error reply will be sent:</p>
+<p>If a problem occurs with the queueing, an error reply will be sent to the <code>accepted_reply</code> address (if any).</p>
 <pre class="prettyprint">{
     "status": "error"
     "message": &lt;message&gt;

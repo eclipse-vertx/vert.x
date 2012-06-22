@@ -38,10 +38,10 @@
 
       <div class="nav-collapse">
         <ul class="nav">
-          <li class="active"><a href="/">Home</a></li>
+          <li><a href="/">Home</a></li>
           <li><a href="downloads.html">Download</a></li>
           <li><a href="install.html">Install</a></li>
-          <li><a href="tutorials.html">Tutorials</a></li>
+          <li class="active"><a href="tutorials.html">Tutorials</a></li>
           <li><a href="examples.html">Examples</a></li>
           <li><a href="docs.html">Documentation</a></li>
           <li><a href="https://github.com/purplefox/vert.x">Source</a></li>
@@ -282,6 +282,10 @@ deployVerticle('auth-mgr')
   bridge: true,
 
   permitted: [
+    // Allow calls to login
+    [
+      address: 'vertx.basicauthmanager.login'
+    ],
     // Allow calls to get static album data from the persistor
     [
       address : 'vertx.mongopersistor',
@@ -359,7 +363,7 @@ see the manual).</p>
 <p>You'll also need to provide a key store. The keystore is just a Java keystore which contains the certificate for the server. It can be manipulated using the Java <code>keytool</code> command.      <br/>
 </p>
 <p>Copy the keystore from the distribution</p>
-<pre class="prettyprint">cp $VERTX_HOME/examples/javascript/webapp/server-keystore.jks .
+<pre class="prettyprint">cp $VERTX_HOME/examples/groovy/webapp/server-keystore.jks .
 </pre>
 <p>Now restart the app again.</p>
 <pre class="prettyprint">vertx run App.groovy

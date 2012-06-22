@@ -190,15 +190,11 @@ For more information on busmods please see the modules manual.
 
 # Running vert.x
 
-There are various ways vert.x verticles can be run, let's describe them.
-
-## Running a verticle in its own vert.x instance
-
-The `vertx` command is used to interact with vert.x from the command line. It's used to run vert.x verticles as well as start and stop vert.x standalone servers and deploy and undeploy verticles to standalone servers (we'll get to the standalone server stuff a bit later on).
+The `vertx` command is used to interact with vert.x from the command line. It's main use is to run vert.x verticles.
 
 If you just type `vertx` at a command line you can see the different options the command takes.
 
-The command `vertx run` is used to start a vert.x verticle in *its own instance* of a vert.x server. This is the simplest way to run a verticle.
+The command `vertx run` is used to start a vert.x verticle.
 
 At minimum `vertx run` takes a single parameter - the name of the main or module to run.
 
@@ -263,113 +259,6 @@ Run an installed module called `my-mod`
 Run an installed module called `other-mod` specifying number of instances and some config
 
     vertx run other-mod -instances 10 -conf other-mod.conf
-    
-## Running a verticle in a standalone vert.x server
-
-Often you may have several verticles that make up your application - you could just start up each one in its own vert.x instance by using a separate `vertx run` for each verticle and have them communicate using the distributed event bus, but it might be a bit wasteful to have each one running in its own JVM instance.
-
-In such cases it often makes sense to start up a standalone vert.x instance and deploy multiple verticles to that instance.
-
-This can be done using the `vertx start` and `vertx deploy` commands.
-
-### Starting a Standalone vert.x server
-
-In most cases it's simpler to just use `vertx run` to run your application but if you want to deploy multiple isolated application inside the same JVM instance you can use a standalone vert.x server.
-
-To start a standalone vert.x server you simply type the command:
-
-    vertx start    
-    
-The `vertx start` command also takes a few optional parameters, some of which have the same meaning as the corresponding parameter in the `vertx run` command:
-
-* `-deploy-port` This specifies which port the server will listen to for deployments. Default is `25571`. You'd want to change this if you had multiple standalone vert.x servers running on the same host. 
-
-* `-cluster` This has the same meaning of the `-cluster` parameter in `vertx run`. 
-
-* `-cluster-port` This has the same meaning of the `-cluster-port` parameter in `vertx run`. 
-
-* `-cluster-host` This has the same meaning of the `-cluster-host` parameter in `vertx run`. 
-
-Here are some examples:
-
-Start a clustered vert.x server:
-
-    vertx start -cluster
-    
-Start two unclustered vert.x servers on the same host - they need to be given unique deployment ports
-
-    vertx start
-    vertx start -deploy-port 25572
-    
-Start two clustered vert.x servers on the same host - they need to be given unique deployment and clustering ports 
-
-    vertx start -cluster
-    vertx start -cluster -deploy-port 25572 -cluster-port 25501    
-    
-Once the vert.x server has started, the `vertx start` command will block until the server is stopped.       
-
-### Deploying a Verticle to a Standalone server
-
-Once you have a vert.x standalone server running, you can deploy verticles to it. This is done using the `vertx deploy` command.
-
-Any verticles deployed to a standalone server are transient and only last as long as the server is running. You can have as many verticles as you like (subject to available RAM) deployed in the same instance at the same time. The verticles can be in a mixture of languages.
-
-Each verticle instance runs in its own classloader so is isolated from any other verticles running in the instance at the same time. You'll hear about how verticles can communicate with each other using shared data and the event bus later on.
-
-The `vertx deploy` command can take a few optional parameters, (some have the same meaning as the parameter with the same name in `vertx run`), they are:
-
-* `-name`. A name to give the deployment. This is subsequently used when undeploying the deployment. If you don't specify a name one will be generated for you, and displayed when you deploy.
-
-* `-port` This specifies which port it will attempt to connect to the server on, to deploy the verticle. Default is `25571`.  
-
-* `-cp <path>` This has the same meaning as the `-cp` parameter in `vertx run`.
-    
-* `-instances <instances>` This has the same meaning of the `-instances` parameter in `vertx run`.
-
-* `-worker` This has the same meaning of the `-worker` parameter in `vertx run`.
-
-Here are some examples:
-
-Deploy a JavaScript verticle server.js
-
-    vertx deploy server.js
-    
-Deploy 10 instances of a Java verticle specifying classpath, to a vert.x server instance on port 25600
-    
-    vertx deploy com.acme.MyVerticle -cp "classes:lib/myjar.jar" -instances 10 -port 25600
-    
-Deploy 20 instances of a ruby worker verticle    
-    
-    vertx deploy order_worker.rb -instances 20 -worker
-    
-Deploy a Ruby verticle specifying a name, then undeploy it
-
-    vertx deploy my_verticle.rb -name my_app
-    vertx undeploy my_app    
-
-
-### Undeploying Verticles
-
-To undeploy verticles previously deployed using `vertx deploy` you simply use: `vertx undeploy <name>`, where `name` is the name of the deployment that you specified using the `-name` parameter, or was generated for you, at deployment time.
-
-Examples:
-
-Undeploy using name specified when deploying
-
-    vertx undeploy my_app
-    
-Undeploy using generated name which was displayed when deploying    
-    
-    vertx undeploy app-132855b0-a4ef-4fcf-ad3c-9c6762d2e518
-       
-    
-### Stopping a Standalone vert.x server
-
-To stop a vert.x standalone server you use the command `vertx stop`. This will cause the server to exit.
-
-The `vertx stop` command can take an optional parameter:
-
-* `-port` This specifies which port it will attempt to connect to the server on, to stop the server. Default is `25571`. If you have more than one vert.x server on localhost then you use this parameter to determine which one to stop.
 
 # Logging
 

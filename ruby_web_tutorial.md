@@ -30,6 +30,8 @@ We'll create a script which starts the web server module and also contains the c
 
 Open a text editor and copy the following into it:
 
+    require "vertx"
+
     web_server_conf = {
       'port' => 8080,
       'host' => 'localhost'
@@ -304,6 +306,10 @@ Edit the web server configuration so it looks like:
       'bridge' => true,
 
       'permitted' => [
+        # Allow calls to login
+        {
+          'address' => 'vertx.basicauthmanager.login'
+        },
         # Allow calls to get static album data from the persistor
         {
           'address' => 'vertx.mongopersistor',

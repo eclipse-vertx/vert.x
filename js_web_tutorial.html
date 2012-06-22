@@ -38,10 +38,10 @@
 
       <div class="nav-collapse">
         <ul class="nav">
-          <li class="active"><a href="/">Home</a></li>
+          <li><a href="/">Home</a></li>
           <li><a href="downloads.html">Download</a></li>
           <li><a href="install.html">Install</a></li>
-          <li><a href="tutorials.html">Tutorials</a></li>
+          <li class="active"><a href="tutorials.html">Tutorials</a></li>
           <li><a href="examples.html">Examples</a></li>
           <li><a href="docs.html">Documentation</a></li>
           <li><a href="https://github.com/purplefox/vert.x">Source</a></li>
@@ -283,6 +283,10 @@ vertx.deployVerticle('auth-mgr');
   // This defines which messages from the client we will let through
   // from the client
   permitted: [
+    // Allow calls to login and authorise
+    {
+      address: 'vertx.basicauthmanager.login'
+    },
     // Allow calls to get static album data from the persistor
     {
       address : 'vertx.mongopersistor',

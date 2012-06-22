@@ -38,12 +38,12 @@
 
       <div class="nav-collapse">
         <ul class="nav">
-          <li class="active"><a href="/">Home</a></li>
+          <li><a href="/">Home</a></li>
           <li><a href="downloads.html">Download</a></li>
           <li><a href="install.html">Install</a></li>
           <li><a href="tutorials.html">Tutorials</a></li>
           <li><a href="examples.html">Examples</a></li>
-          <li><a href="docs.html">Documentation</a></li>
+          <li class="active"><a href="docs.html">Documentation</a></li>
           <li><a href="https://github.com/purplefox/vert.x">Source</a></li>
           <li><a href="http://groups.google.com/group/vertx">Google Group</a></li>
           <li><a href="community.html">Community</a></li>
@@ -92,17 +92,7 @@
 </li>
 </ul>
 </li>
-<li><a href="#running-vertx">Running vert.x</a><ul>
-<li><a href="#running-a-verticle-in-its-own-vertx-instance">Running a verticle in its own vert.x instance</a></li>
-<li><a href="#running-a-verticle-in-a-standalone-vertx-server">Running a verticle in a standalone vert.x server</a><ul>
-<li><a href="#starting-a-standalone-vertx-server">Starting a Standalone vert.x server</a></li>
-<li><a href="#deploying-a-verticle-to-a-standalone-server">Deploying a Verticle to a Standalone server</a></li>
-<li><a href="#undeploying-verticles">Undeploying Verticles</a></li>
-<li><a href="#stopping-a-standalone-vertx-server">Stopping a Standalone vert.x server</a></li>
-</ul>
-</li>
-</ul>
-</li>
+<li><a href="#running-vertx">Running vert.x</a></li>
 <li><a href="#logging">Logging</a></li>
 <li><a href="#configuring-clustering">Configuring clustering</a></li>
 <li><a href="#performance-tuning">Performance Tuning</a></li>
@@ -234,11 +224,9 @@ vertx.createHttpServer().requestHandler { req -&gt;
 <p>We also encourage the community to create and contribute their own busmods for others to use.</p>
 <p>For more information on busmods please see the modules manual.</p>
 <h1 id="running-vertx">Running vert.x</h1><br/>
-<p>There are various ways vert.x verticles can be run, let's describe them.</p>
-<h2 id="running-a-verticle-in-its-own-vertx-instance">Running a verticle in its own vert.x instance</h2><br/>
-<p>The <code>vertx</code> command is used to interact with vert.x from the command line. It's used to run vert.x verticles as well as start and stop vert.x standalone servers and deploy and undeploy verticles to standalone servers (we'll get to the standalone server stuff a bit later on).</p>
+<p>The <code>vertx</code> command is used to interact with vert.x from the command line. It's main use is to run vert.x verticles.</p>
 <p>If you just type <code>vertx</code> at a command line you can see the different options the command takes.</p>
-<p>The command <code>vertx run</code> is used to start a vert.x verticle in <em>its own instance</em> of a vert.x server. This is the simplest way to run a verticle.</p>
+<p>The command <code>vertx run</code> is used to start a vert.x verticle.</p>
 <p>At minimum <code>vertx run</code> takes a single parameter - the name of the main or module to run.</p>
 <p>If you're running a local verticle written in JavaScript, Ruby, or Groovy then it's just the name of the script, e.g. <code>server.js</code>, <code>server.rb</code>, or <code>server.groovy</code>. (It doesn't have to be called <code>server</code>, you can name it anything as long as it has the right extension). If the verticle is written in Java the name is the fully qualified class name of the Main class.</p>
 <p>If you're running an installed module (see the modules manual for more information on modules), then <code>vertx run</code> takes the name of the module to run.</p>
@@ -301,98 +289,6 @@ vertx run handler1.js -cluster -cluster-port 25501
 <p>Run an installed module called <code>other-mod</code> specifying number of instances and some config</p>
 <pre class="prettyprint">vertx run other-mod -instances 10 -conf other-mod.conf
 </pre>
-<h2 id="running-a-verticle-in-a-standalone-vertx-server">Running a verticle in a standalone vert.x server</h2><br/>
-<p>Often you may have several verticles that make up your application - you could just start up each one in its own vert.x instance by using a separate <code>vertx run</code> for each verticle and have them communicate using the distributed event bus, but it might be a bit wasteful to have each one running in its own JVM instance.</p>
-<p>In such cases it often makes sense to start up a standalone vert.x instance and deploy multiple verticles to that instance.</p>
-<p>This can be done using the <code>vertx start</code> and <code>vertx deploy</code> commands.</p>
-<h3 id="starting-a-standalone-vertx-server">Starting a Standalone vert.x server</h3><br/>
-<p>In most cases it's simpler to just use <code>vertx run</code> to run your application but if you want to deploy multiple isolated application inside the same JVM instance you can use a standalone vert.x server.</p>
-<p>To start a standalone vert.x server you simply type the command:</p>
-<pre class="prettyprint">vertx start
-</pre>
-<p>The <code>vertx start</code> command also takes a few optional parameters, some of which have the same meaning as the corresponding parameter in the <code>vertx run</code> command:</p>
-<ul>
-<li>
-<p><code>-deploy-port</code> This specifies which port the server will listen to for deployments. Default is <code>25571</code>. You'd want to change this if you had multiple standalone vert.x servers running on the same host. </p>
-</li>
-<li>
-<p><code>-cluster</code> This has the same meaning of the <code>-cluster</code> parameter in <code>vertx run</code>. </p>
-</li>
-<li>
-<p><code>-cluster-port</code> This has the same meaning of the <code>-cluster-port</code> parameter in <code>vertx run</code>. </p>
-</li>
-<li>
-<p><code>-cluster-host</code> This has the same meaning of the <code>-cluster-host</code> parameter in <code>vertx run</code>. </p>
-</li>
-</ul>
-<p>Here are some examples:</p>
-<p>Start a clustered vert.x server:</p>
-<pre class="prettyprint">vertx start -cluster
-</pre>
-<p>Start two unclustered vert.x servers on the same host - they need to be given unique deployment ports</p>
-<pre class="prettyprint">vertx start
-vertx start -deploy-port 25572
-</pre>
-<p>Start two clustered vert.x servers on the same host - they need to be given unique deployment and clustering ports </p>
-<pre class="prettyprint">vertx start -cluster
-vertx start -cluster -deploy-port 25572 -cluster-port 25501
-</pre>
-<p>Once the vert.x server has started, the <code>vertx start</code> command will block until the server is stopped.     <br/>
-</p>
-<h3 id="deploying-a-verticle-to-a-standalone-server">Deploying a Verticle to a Standalone server</h3><br/>
-<p>Once you have a vert.x standalone server running, you can deploy verticles to it. This is done using the <code>vertx deploy</code> command.</p>
-<p>Any verticles deployed to a standalone server are transient and only last as long as the server is running. You can have as many verticles as you like (subject to available RAM) deployed in the same instance at the same time. The verticles can be in a mixture of languages.</p>
-<p>Each verticle instance runs in its own classloader so is isolated from any other verticles running in the instance at the same time. You'll hear about how verticles can communicate with each other using shared data and the event bus later on.</p>
-<p>The <code>vertx deploy</code> command can take a few optional parameters, (some have the same meaning as the parameter with the same name in <code>vertx run</code>), they are:</p>
-<ul>
-<li>
-<p><code>-name</code>. A name to give the deployment. This is subsequently used when undeploying the deployment. If you don't specify a name one will be generated for you, and displayed when you deploy.</p>
-</li>
-<li>
-<p><code>-port</code> This specifies which port it will attempt to connect to the server on, to deploy the verticle. Default is <code>25571</code>.<br/>
-</p>
-</li>
-<li>
-<p><code>-cp &lt;path&gt;</code> This has the same meaning as the <code>-cp</code> parameter in <code>vertx run</code>.</p>
-</li>
-<li>
-<p><code>-instances &lt;instances&gt;</code> This has the same meaning of the <code>-instances</code> parameter in <code>vertx run</code>.</p>
-</li>
-<li>
-<p><code>-worker</code> This has the same meaning of the <code>-worker</code> parameter in <code>vertx run</code>.</p>
-</li>
-</ul>
-<p>Here are some examples:</p>
-<p>Deploy a JavaScript verticle server.js</p>
-<pre class="prettyprint">vertx deploy server.js
-</pre>
-<p>Deploy 10 instances of a Java verticle specifying classpath, to a vert.x server instance on port 25600</p>
-<pre class="prettyprint">vertx deploy com.acme.MyVerticle -cp "classes:lib/myjar.jar" -instances 10 -port 25600
-</pre>
-<p>Deploy 20 instances of a ruby worker verticle  <br/>
-</p>
-<pre class="prettyprint">vertx deploy order_worker.rb -instances 20 -worker
-</pre>
-<p>Deploy a Ruby verticle specifying a name, then undeploy it</p>
-<pre class="prettyprint">vertx deploy my_verticle.rb -name my_app
-vertx undeploy my_app
-</pre>
-<h3 id="undeploying-verticles">Undeploying Verticles</h3><br/>
-<p>To undeploy verticles previously deployed using <code>vertx deploy</code> you simply use: <code>vertx undeploy &lt;name&gt;</code>, where <code>name</code> is the name of the deployment that you specified using the <code>-name</code> parameter, or was generated for you, at deployment time.</p>
-<p>Examples:</p>
-<p>Undeploy using name specified when deploying</p>
-<pre class="prettyprint">vertx undeploy my_app
-</pre>
-<p>Undeploy using generated name which was displayed when deploying  <br/>
-</p>
-<pre class="prettyprint">vertx undeploy app-132855b0-a4ef-4fcf-ad3c-9c6762d2e518
-</pre>
-<h3 id="stopping-a-standalone-vertx-server">Stopping a Standalone vert.x server</h3><br/>
-<p>To stop a vert.x standalone server you use the command <code>vertx stop</code>. This will cause the server to exit.</p>
-<p>The <code>vertx stop</code> command can take an optional parameter:</p>
-<ul>
-<li><code>-port</code> This specifies which port it will attempt to connect to the server on, to stop the server. Default is <code>25571</code>. If you have more than one vert.x server on localhost then you use this parameter to determine which one to stop.</li>
-</ul>
 <h1 id="logging">Logging</h1><br/>
 <p>Each verticle gets its own logger which can be retrieved from inside the verticle. For information on how to get the logger please see the core guide for the language you are using.</p>
 <p>The log files by default go in a file called <code>vertx.log</code> in the system temp directory. On my Linux box this is <code>\tmp</code>.</p>
