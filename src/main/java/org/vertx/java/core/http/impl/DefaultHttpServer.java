@@ -76,6 +76,7 @@ import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Values.WEBSOCKET;
@@ -423,6 +424,8 @@ public class DefaultHttpServer implements HttpServer {
     });
   }
 
+  private static final AtomicInteger count = new AtomicInteger(0);
+
   public class ServerHandler extends SimpleChannelUpstreamHandler {
 
     private void sendError(String err, HttpResponseStatus status, Channel ch) {
@@ -531,6 +534,7 @@ public class DefaultHttpServer implements HttpServer {
           ch.write(new DefaultHttpResponse(HTTP_1_1, NOT_FOUND));
         } else {
           //HTTP request
+          //System.out.println("Got request: " + ((HttpRequest)msg).getUri());
           if (conn == null) {
             HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.getWorker());
             if (reqHandler != null) {
@@ -571,8 +575,9 @@ public class DefaultHttpServer implements HttpServer {
         throws Exception {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final ServerConnection conn = connectionMap.get(ch);
-      ch.close();
       final Throwable t = e.getCause();
+      t.printStackTrace();
+      ch.close();
       if (conn != null && t instanceof Exception) {
         conn.getContext().execute(new Runnable() {
           public void run() {
@@ -585,13 +590,17 @@ public class DefaultHttpServer implements HttpServer {
       }
     }
 
+
+
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
+      //System.out.println("Channel connected " + count.incrementAndGet());
       //NOOP
     }
 
     @Override
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
+      //System.out.println("Channel closed");
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final ServerConnection conn = connectionMap.remove(ch);
       if (conn != null) {

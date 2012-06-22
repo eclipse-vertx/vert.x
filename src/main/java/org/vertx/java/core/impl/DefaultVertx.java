@@ -73,7 +73,7 @@ public class DefaultVertx extends VertxInternal {
   //For now we use a hashed wheel with it's own thread for timeouts - ideally the event loop would have
   //it's own hashed wheel
   private final HashedWheelTimer timer = new HashedWheelTimer(new VertxThreadFactory("vert.x-timer-thread"), 20,
-      TimeUnit.MILLISECONDS);
+      TimeUnit.MILLISECONDS, 8192);
   {
     timer.start();
   }

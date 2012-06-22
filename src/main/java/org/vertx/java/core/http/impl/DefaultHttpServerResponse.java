@@ -219,6 +219,8 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
       }
     }
 
+    //System.out.println("end response - keep alive " + keepAlive);
+
     if (!keepAlive) {
       closeConnAfterWrite();
     }
