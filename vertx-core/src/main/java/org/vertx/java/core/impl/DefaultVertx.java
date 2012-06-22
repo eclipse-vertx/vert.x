@@ -23,7 +23,6 @@ import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.TimerTask;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.file.impl.DefaultFileSystem;
 import org.vertx.java.core.http.HttpClient;
@@ -81,15 +80,15 @@ public class DefaultVertx extends VertxInternal {
   private final Map<Long, TimeoutHolder> timeouts = new ConcurrentHashMap<>();
 
   public DefaultVertx() {
-    this.eventBus = new DefaultEventBus(this);
+    this.eventBus = loadEventBusFactory().createEventBus(this);
   }
 
   public DefaultVertx(String hostname) {
-    this.eventBus = new DefaultEventBus(this, hostname);
+    this.eventBus = loadEventBusFactory().createEventBus(this, hostname);
   }
 
   public DefaultVertx(int port, String hostname) {
-    this.eventBus = new DefaultEventBus(this, port, hostname);
+    this.eventBus = loadEventBusFactory().createEventBus(this, port, hostname);
   }
 
   public NetServer createNetServer() {
