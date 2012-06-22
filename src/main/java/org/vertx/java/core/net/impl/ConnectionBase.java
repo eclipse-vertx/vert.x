@@ -122,8 +122,6 @@ public abstract class ConnectionBase {
       } catch (Throwable t) {
         handleHandlerException(t);
       }
-    } else {
-      handleHandlerException(e);
     }
   }
 
