@@ -278,6 +278,8 @@ public class DefaultEventBus implements EventBus {
     HandlerInfo info = handlersByID.get(id);
     if (info != null) {
       unregisterHandler(info.address, info.handler, completionHandler);
+    } else if (completionHandler != null) {
+      callCompletionHandler(completionHandler);
     }
   }
 
@@ -443,9 +445,7 @@ public class DefaultEventBus implements EventBus {
         // Propagate the information
         subs.put(address, serverID, completionHandler);
       } else {
-        if (completionHandler != null) {
-          callCompletionHandler(completionHandler);
-        }
+        callCompletionHandler(completionHandler);
       }
     } else {
       handlers.map.put(new HandlerHolder(handler, replyHandler, context), id);

@@ -211,18 +211,6 @@ class ServerConnection extends AbstractConnection {
     }
   }
 
-  @Override
-  protected void handleHandlerException(Throwable t) {
-    //On HTTP server we want to swallow Connection reset by peer exceptions since this is normal if the client
-    //closes the HTTP connection
-
-    if (!(t instanceof IOException && "Connection reset by peer".equals(t.getMessage()))
-        && !(t instanceof ClosedChannelException)) {
-      super.handleHandlerException(t);
-    }
-  }
-
-
   protected void addFuture(Handler<Void> doneHandler, ChannelFuture future) {
     super.addFuture(doneHandler, future);
   }

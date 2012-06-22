@@ -207,13 +207,13 @@ public class VerticleManager {
   {
 
     // Infer the main type
-	String language = "java";
-	LOOP: for (VerticleFactory vf : factories.values()) {
-		if (vf.isFactoryFor(main)) {
-			language = vf.getLanguage();
-			break LOOP;
-		}
-	}
+    String language = "java";
+    for (VerticleFactory vf : factories.values()) {
+      if (vf.isFactoryFor(main)) {
+        language = vf.getLanguage();
+        break;
+      }
+    }
 
     final String deploymentName = name == null ?  "deployment-" + UUID.randomUUID().toString() : name;
 
