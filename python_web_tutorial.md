@@ -307,25 +307,37 @@ Edit the web server configuration so it looks like:
       'host' : 'localhost',
       'bridge' : true,
 
-      'permitted' => [
+      # This defines which messages from the client we will let through
+      # to the server side
+      'inbound_permitted':  [
+        # Allow calls to login
+        {
+            'address': 'vertx.basicauthmanager.login'
+        },
         # Allow calls to get static album data from the persistor
         {
-          'address' : 'vertx.mongopersistor',
-          'match' : {
-            'action' : 'find',
-            'collection' : 'albums'
-          }
+            'address': 'vertx.mongopersistor',
+            'match': {
+                'action': 'find',
+                'collection': 'albums'
+            }
         },
         # And to place orders
         {
-          'address' : 'vertx.mongopersistor',
-          'requires_auth' : True,  # User must be logged in to send let these through
-          'match' : {
-            'action' : 'save',
-            'collection' : 'orders'
-          }
+            'address': 'vertx.mongopersistor',
+            'requires_auth': True,  # User must be logged in to send let these through
+            'match': {
+                'action': 'save',
+                'collection': 'orders'
+            }
         }
+      ],
+
+      # This defines which messages from the server we will let through to the client
+      'outbound_permitted': [
+        {}
       ]
+      
     }
     
 Setting the `requires_auth` field to `True` means the bridge will only let through the message if the user is logged in.
