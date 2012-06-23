@@ -20,7 +20,7 @@ DIRNAME=`dirname "$PRG"`
 
 CURRDIR=`pwd`
 SCRIPTDIR=`cd $DIRNAME;pwd`
-cd $CURRDIR
+cd "$CURRDIR"
 
 CLASSPATH=\
 $DIRNAME/conf:\
