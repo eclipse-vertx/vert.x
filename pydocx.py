@@ -132,7 +132,9 @@ def custom_getclasstree(classes, unique=0):
 
 # Remove and recreate the output docs directory
 APIDOC_DIR = os.getcwd()+"/target/docs/python/api/"
-shutil.rmtree("target/docs/python")
+try:
+    shutil.rmtree("target/docs/python")
+except: pass
 os.makedirs(APIDOC_DIR)
 os.chdir("src/main/python")
 
