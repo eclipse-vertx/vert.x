@@ -20,7 +20,7 @@ DIRNAME=`dirname "$PRG"`
 
 CURRDIR=`pwd`
 SCRIPTDIR=`cd $DIRNAME;pwd`
-cd $CURRDIR
+cd "$CURRDIR"
 
 CLASSPATH=\
 $DIRNAME/../../conf:\
@@ -38,8 +38,7 @@ $DIRNAME/../../src/main/ruby:\
 $DIRNAME/../../src/main/javascript
 
 MODS_DIR=$SCRIPTDIR/../../target/dist-build/vert.x-1.1.0.final/mods
-
 java -Djava.util.logging.config.file=$DIRNAME/../../conf/logging.properties \
 -Djruby.home=$JRUBY_HOME -Djython.home=$JYTHON_HOME \
 -Dpython.path=$JYTHON_HOME/Lib:$DIRNAME/../../src/main/python \
--Dvertx.mods=$MODS_DIR -cp $CLASSPATH org.vertx.java.deploy.impl.cli.Starter "$@"
+-Dvertx.mods="$MODS_DIR" -cp $CLASSPATH org.vertx.java.deploy.impl.cli.Starter "$@"
