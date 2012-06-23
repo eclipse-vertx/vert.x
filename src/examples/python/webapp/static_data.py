@@ -36,11 +36,11 @@ eb.send(pa, {'action': 'delete', 'collection': 'albums', 'matcher': {}});
 eb.send(pa, {'action': 'delete', 'collection': 'users', 'matcher': {}});
 
 # Insert albums - in real life 'price' would probably be stored in a different collection, but, hey, this is a demo.
-for i in range(1, len(albums)):
+for i in range(0, len(albums)):
     eb.send(pa, {
         'action': 'save',
         'collection': 'albums',
-        'document': albums[i - 1]
+        'document': albums[i]
     })
 
 # And a user
