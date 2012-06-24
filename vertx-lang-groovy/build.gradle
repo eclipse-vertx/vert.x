@@ -1,3 +1,4 @@
+apply from: "$rootDir/gradle/maven.gradle"
 apply plugin: 'groovy'
 
 dependencies {

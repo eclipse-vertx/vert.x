@@ -30,7 +30,6 @@ subprojects {
 	apply plugin: 'java'
 	apply plugin: 'eclipse'
 	apply plugin: 'idea'
-	apply from: "$rootDir/gradle/maven.gradle"
 
 	sourceCompatibility = '1.7'
 	targetCompatibility = '1.7'
@@ -125,7 +124,7 @@ task cleanRelease() {
 		boolean deleted = releases.delete() 
 		if (!deleted) {
 			// TODO check why this doesn't clear the dir sometimes
-			println "dir: " + releases + " was not deleted"
+			println "WARNING: directory '$releases' was not deleted"
 		}
 	}
 }
@@ -156,6 +155,10 @@ task dist(type: Tar, dependsOn: ['prepareRelease']) {
 	include "$rootProject.name-$version/**"
 
 	compression = org.gradle.api.tasks.bundling.Compression.GZIP
+	
+	doLast {
+		println "Distribution packaged: $destinationDir/$archiveName"
+	}
 }
 
 task installApp(type: Sync, dependsOn: ['prepareRelease']) {

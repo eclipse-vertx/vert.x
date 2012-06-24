@@ -1,3 +1,5 @@
+apply from: "$rootDir/gradle/maven.gradle"
+
 dependencies {
 	compile project(':vertx-core')
 }

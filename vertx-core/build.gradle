@@ -1,3 +1,5 @@
+apply from: "$rootDir/gradle/maven.gradle"
+
 dependencies {
 	compile "log4j:log4j:$log4jVersion"
 	compile "org.slf4j:slf4j-api:$slf4jVersion"
