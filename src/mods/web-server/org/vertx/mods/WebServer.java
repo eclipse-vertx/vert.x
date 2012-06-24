@@ -64,9 +64,9 @@ public class WebServer extends BusModBase implements Handler<HttpServerRequest> 
       JsonArray outboundPermitted = getOptionalArrayConfig("outbound_permitted", new JsonArray());
 
       sjsServer.bridge(getOptionalObjectConfig("sjs_config", new JsonObject().putString("prefix", "/eventbus")),
-              inboundPermitted, outboundPermitted,
-              getOptionalLongConfig("auth_timeout", 5 * 60 * 1000),
-              getOptionalStringConfig("auth_address", "vertx.basicauthmanager.authorise"));
+                       inboundPermitted, outboundPermitted,
+                       getOptionalLongConfig("auth_timeout", 5 * 60 * 1000),
+                       getOptionalStringConfig("auth_address", "vertx.basicauthmanager.authorise"));
     }
 
     String webRoot = getOptionalStringConfig("web_root", "web");
