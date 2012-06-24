@@ -3,6 +3,7 @@
 .project
 .settings
 bin
+build
 target
 out
 *.iml
@@ -12,6 +13,7 @@ test-output
 Scratch.java
 ScratchTest.java
 .yardoc
+.yaropts
 .gradle
 src/examples/java/classes
 src/examples/java/quux-out
