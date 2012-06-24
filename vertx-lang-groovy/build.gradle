@@ -1,0 +1,8 @@
+apply plugin: 'groovy'
+
+dependencies {
+	compile project(':vertx-core')
+	compile project(':vertx-core-platform')
+	groovy "org.codehaus.groovy:groovy-all:$groovyVersion"
+}
+artifacts { platform jar }

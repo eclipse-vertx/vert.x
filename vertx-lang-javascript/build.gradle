@@ -1,0 +1,8 @@
+apply plugin: 'vertx-rhino'
+
+dependencies {
+	compile project(':vertx-core')
+	compile project(':vertx-core-platform')
+	rhino "org.mozilla:rhino:$rhinoVersion"
+}
+artifacts { platform jar }

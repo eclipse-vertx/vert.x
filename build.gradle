@@ -30,6 +30,7 @@ subprojects {
 	apply plugin: 'java'
 	apply plugin: 'eclipse'
 	apply plugin: 'idea'
+	apply from: "$rootDir/gradle/maven.gradle"
 
 	sourceCompatibility = '1.7'
 	targetCompatibility = '1.7'
@@ -48,6 +49,8 @@ subprojects {
 		systemProperty "java.util.logging.config.file", "conf/logging.properties"
 	}
 }
+
+ext.releaseDir = file("$rootProject.buildDir/releases/$rootProject.name-$version")
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // vert.x core tasks
@@ -108,9 +111,23 @@ def distSpec = copySpec {
 	}
 }
 
-task clean() << {
-	File releaseDir = file("$buildDir/releases/$rootProject.name-$version")
-	releaseDir.delete()
+task clean(dependsOn: 'cleanRelease') {
+	group = 'vert.x'
+	description = 'Perform a full clean of the main project and subprojects'
+}
+
+task cleanRelease() {
+	group = 'vert.x'
+	description = 'Clean only the release directory'
+	
+	def releases = file("build/releases")
+	if (releases.exists()) { 
+		boolean deleted = releases.delete() 
+		if (!deleted) {
+			// TODO check why this doesn't clear the dir sometimes
+			println "dir: " + releases + " was not deleted"
+		}
+	}
 }
 
 task prepareRelease(type: Sync) {
@@ -128,200 +145,35 @@ task prepareRelease(type: Sync) {
 	}
 }
 
-task packageZip(type: Zip, dependsOn: ['prepareRelease']) {
-//	group = 'vert.x'
-//	description = 'Builds the distribution.'
-
-	from "$buildDir/releases/$project.name-$version"
-	into "$buildDir/distributions"
-}
-
-task packageTarball(type: Tar, dependsOn: ['prepareRelease']) {
+task dist(type: Tar, dependsOn: ['prepareRelease']) {
 	group = 'vert.x'
-	description = 'Build the release package'
+	description = 'Build the tarball distribution.'
+
+	destinationDir = file('build/distributions')
+	baseName = rootProject.name
+	version = rootProject.version
+	from 'build/releases'
+	include "$rootProject.name-$version/**"
 
 	compression = org.gradle.api.tasks.bundling.Compression.GZIP
-
-	from "$buildDir/releases/$project.name-$version"
-	into "$buildDir/distributions"
-}
-
-task dist(dependsOn: ['packageTarball', 'packageZip']) {
-	group = 'vert.x'
-	description = 'Build the release packages'
 }
 
 task installApp(type: Sync, dependsOn: ['prepareRelease']) {
 	group = 'vert.x'
 	description = 'install a local version of this build'
+	from 'build/releases'
+	include "$rootProject.name-$version/**"
+
+	if (System.getenv()['VERTX_HOME']) {
+	  into System.getenv()['VERTX_HOME']
+	}
+	else {
+	  into System.getProperty('java.io.tmpdir') + "/$rootProject.name-$version"
+	}
 }
 
 task wrapper(type: Wrapper) {
 	group = 'setup'
 	description = 'Configures a Gradle wrapper'
 	gradleVersion = "$gradleVersion"
-}
-
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// vert.x core projects
-
-project(':vertx-boot') {
-	jar {
-		version = ''
-		manifest {
-			attributes(
-				'Main-Class': 'org.vertx.java.boot.VertxBoot'
-			)
-		}
-	}
-}
-
-project(':vertx-core') {
-	dependencies {
-		compile "log4j:log4j:$log4jVersion"
-		compile "org.slf4j:slf4j-api:$slf4jVersion"
-		compile "org.codehaus.jackson:jackson-core-asl:$jacksonVersion"
-		compile "org.codehaus.jackson:jackson-mapper-asl:$jacksonVersion"
-		compile "com.hazelcast:hazelcast:$hazelcastVersion"
-		compile "io.netty:netty:$nettyVersion"
-	}
-	artifacts {
-		platform jar
-	}
-}
-
-project(':vertx-core-platform') {
-	dependencies {
-		compile project(':vertx-core')
-	}
-	artifacts {
-		platform jar
-	}
-	jar {
-		manifest {
-			attributes(
-				'Main-Class': 'org.vertx.java.deploy.impl.cli.Starter'
-			)
-		}
-	}
-}
-
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// vert.x language implementations
-
-project(':vertx-lang-groovy') {
-	apply plugin: 'groovy'
-
-	dependencies {
-		compile project(':vertx-core')
-		compile project(':vertx-core-platform')
-		groovy "org.codehaus.groovy:groovy-all:$groovyVersion"
-	}
-	artifacts {
-		platform jar
-	}
-}
-
-project(':vertx-lang-javascript') {
-	apply plugin: 'vertx-rhino'
-
-	dependencies {
-		compile project(':vertx-core')
-		compile project(':vertx-core-platform')
-		rhino "org.mozilla:rhino:$rhinoVersion"
-	}
-	artifacts {
-		platform jar
-	}
-}
-
-project(':vertx-lang-ruby') {
-	apply plugin: 'vertx-jruby'
-
-	dependencies {
-		compile project(':vertx-core')
-		compile project(':vertx-core-platform')
-		jruby "org.jruby:jruby:$jrubyVersion"
-	}
-	artifacts {
-		platform jar
-	}
-}
-
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// vert.x bus mods
-
-project(':vertx-mods-auth-mgr') {
-	dependencies {
-		compile project(path: ':vertx-core', transitive: false, configuration: 'platform')
-		compile project(path: ':vertx-core-platform', transitive: false, configuration: 'platform')
-	}
-}
-
-project(':vertx-mods-mailer') {
-	dependencies {
-		compile project(path: ':vertx-core', transitive: false, configuration: 'platform')
-		compile project(path: ':vertx-core-platform', transitive: false, configuration: 'platform')
-		compile "javax.mail:mail:$javamailVersion"
-	}
-}
-
-project(':vertx-mods-mongo-persistor') {
-	dependencies {
-		compile project(path: ':vertx-core', transitive: false, configuration: 'platform')
-		compile project(path: ':vertx-core-platform', transitive: false, configuration: 'platform')
-		compile "org.mongodb:mongo-java-driver:$mongoVersion"
-	}
-}
-
-project(':vertx-mods-webserver') {
-	dependencies {
-		compile project(path: ':vertx-core', transitive: false, configuration: 'platform')
-		compile project(path: ':vertx-core-platform', transitive: false, configuration: 'platform')
-	}
-}
-
-project(':vertx-mods-work-queue') {
-	dependencies {
-		compile project(path: ':vertx-core', transitive: false, configuration: 'platform')
-		compile project(path: ':vertx-core-platform', transitive: false, configuration: 'platform')
-	}
-}
-
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// vert.x extra projects
-
-project(':vertx-examples') {
-	apply plugin: 'groovy'
-	apply plugin: 'vertx-jruby'
-	apply plugin: 'vertx-rhino'
-
-	dependencies {
-		compile project(path: ':vertx-core')
-		compile project(path: ':vertx-core-platform')
-		compile project(path: ':vertx-lang-groovy')
-		compile project(path: ':vertx-lang-javascript')
-		compile project(path: ':vertx-lang-ruby')
-		groovy "org.codehaus.groovy:groovy-all:$groovyVersion"
-		jruby "org.jruby:jruby:$jrubyVersion"
-		rhino "org.mozilla:rhino:$rhinoVersion"
-	}
-}
-
-
-project(':vertx-test-framework') {
-	apply plugin: 'groovy'
-	apply plugin: 'vertx-jruby'
-	apply plugin: 'vertx-rhino'
-
-	dependencies {
-		testCompile project(path: ':vertx-core', configuration: 'testCompile')
-		testCompile project(path: ':vertx-core-platform', configuration: 'testCompile')
-		testCompile project(path: ':vertx-lang-groovy', configuration: 'testCompile')
-		testCompile project(path: ':vertx-lang-javascript', configuration: 'testCompile')
-		testCompile project(path: ':vertx-lang-ruby', configuration: 'testCompile')
-		groovy "org.codehaus.groovy:groovy-all:$groovyVersion"
-		jruby "org.jruby:jruby:$jrubyVersion"
-		rhino "org.mozilla:rhino:$rhinoVersion"
-	}
 }

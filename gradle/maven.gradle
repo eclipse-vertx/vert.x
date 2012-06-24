@@ -57,12 +57,12 @@ uploadArchives {
 		mavenDeployer {
 			configuration = configurations.archives
 
-			repository(url: "http://oss.sonatype.org/service/local/staging/deploy/maven2") {
-				authentication(userName: nexusUsername, password: nexusPassword)
+			repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+				authentication(userName: sonatypeUsername, password: sonatypePassword)
 			}
 
-			snapshotRepository(url: "http://oss.sonatype.org/service/local/snapshot/deploy/maven2") {
-				authentication(userName: nexusUsername, password: nexusPassword)
+			snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+				authentication(userName: sonatypeUsername, password: sonatypePassword)
 			}
 
 			if (isReleaseVersion) {

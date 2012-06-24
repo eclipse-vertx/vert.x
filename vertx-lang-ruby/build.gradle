@@ -1,0 +1,10 @@
+apply plugin: 'vertx-jruby'
+
+dependencies {
+	compile project(':vertx-core')
+	compile project(':vertx-core-platform')
+	jruby "org.jruby:jruby:$jrubyVersion"
+}
+artifacts { 
+	platform jar
+}
