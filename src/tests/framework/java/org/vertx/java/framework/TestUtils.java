@@ -67,7 +67,6 @@ public class TestUtils {
     }
     sendMessage(jsonObject);
     if (!result) {
-      testComplete();
       
       // We throw a RTE not an AssertFailedError since Rhino cannot catch errors in
       // test_utils.js
