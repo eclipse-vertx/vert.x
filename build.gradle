@@ -70,6 +70,7 @@ def distSpec = copySpec {
 		from file('vertx-examples/src/main')
 	}
 
+// TODO find elegant method for including this
 //	into("$release/docs/groovy/api") {
 //		from subprojects.groovydoc
 //	}
@@ -78,10 +79,12 @@ def distSpec = copySpec {
 		from subprojects.javadoc
 	}
 
+// TODO find elegant method for including this
 //	into("$release/docs/javascript/api") {
 //		from subprojects.rhinodoc
 //	}
 
+// TODO find elegant method for including this
 //	into("$release/docs/ruby/api") {
 //		from subprojects.yardoc
 //	}
