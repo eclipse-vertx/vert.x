@@ -46,11 +46,11 @@ class RhinoPlugin extends AbstractProjectPlugin {
 						srcDirs "src/main/$SOURCE_DIR", "src/main/resources"
 					}
 				}
-				test {
-					resources {
-						srcDirs "src/test/$SOURCE_DIR", "src/test/resources"
-					}
-				}
+//				test {
+//					resources {
+//						srcDirs ["src/test/$SOURCE_DIR", "src/test/resources"]
+//					}
+//				}
 			}
 		}
 	}

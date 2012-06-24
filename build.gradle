@@ -44,8 +44,8 @@ subprojects {
 
 	test {
 		useTestNG()
-		include "**/*Test.class"
-		systemProperty "java.util.logging.config.file", "conf/logging.properties"
+//		include "**/*Test.class"
+//		systemProperty "java.util.logging.config.file", "src/conf/logging.properties"
 	}
 }
 
