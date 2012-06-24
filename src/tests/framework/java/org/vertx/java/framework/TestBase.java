@@ -200,7 +200,7 @@ public class TestBase extends TestCase {
 
     startedApps.add(deploymentName);
 
-    if (!doneLatch.await(10, TimeUnit.SECONDS)) {
+    if (!doneLatch.await(30, TimeUnit.SECONDS)) {
       throw new IllegalStateException("Timedout waiting for apps to start");
     }
 
@@ -221,7 +221,7 @@ public class TestBase extends TestCase {
         latch.countDown();
       }
     });
-    if (!latch.await(10, TimeUnit.SECONDS)) {
+    if (!latch.await(30, TimeUnit.SECONDS)) {
         throw new IllegalStateException("Timedout waiting for app to stop");
     }
     for (int i = 0; i < instances; i++) {
