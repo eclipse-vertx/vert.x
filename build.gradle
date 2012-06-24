@@ -41,12 +41,6 @@ subprojects {
 	dependencies {
 		testCompile "junit:junit:$junitVersion"
 	}
-
-	test {
-		useTestNG()
-//		include "**/*Test.class"
-//		systemProperty "java.util.logging.config.file", "src/conf/logging.properties"
-	}
 }
 
 ext.releaseDir = file("$rootProject.buildDir/releases/$rootProject.name-$version")
