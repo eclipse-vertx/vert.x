@@ -15,7 +15,11 @@ done
 
 # The path to this script from the place it was called
 DIRNAME=`dirname "$PRG"`
+
+# The absolute path of this script
+
 CURRDIR=`pwd`
+SCRIPTDIR=`cd $DIRNAME;pwd`
 cd "$CURRDIR"
 
 CLASSPATH=\
@@ -26,6 +30,13 @@ $DIRNAME/lib/main/netty.jar:\
 $DIRNAME/lib/main/jackson-core-asl.jar:\
 $DIRNAME/lib/main/jackson-mapper-asl.jar:\
 $DIRNAME/lib/main/hazelcast.jar:\
+$DIRNAME/lib/main/jruby.jar:\
+$DIRNAME/lib/main/js.jar:\
+$DIRNAME/lib/main/groovy-all.jar:\
+$DIRNAME/src/main/ruby:\
 $DIRNAME/src/main/python:\
+$DIRNAME/src/main/javascript
+
+MODS_DIR=$SCRIPTDIR/../../target/dist-build/vert.x-1.0.1.final/mods
 
 jython -J-classpath $CLASSPATH -Dpython.path=src/main/python pydocx.py
