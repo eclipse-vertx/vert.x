@@ -21,17 +21,10 @@ apply plugin: 'vertx-rhino'
 dependencies {
 	compile project(path: ':vertx-core')
 	compile project(path: ':vertx-core-platform')
-
 	compile project(path: ':vertx-lang:vertx-lang-groovy')
 	compile project(path: ':vertx-lang:vertx-lang-javascript')
 	compile project(path: ':vertx-lang:vertx-lang-ruby')
 
-	compile project(path: ':vertx-mods:vertx-auth-mgr')
-	compile project(path: ':vertx-mods:vertx-mailer')
-	compile project(path: ':vertx-mods:vertx-mongo-persistor')
-	compile project(path: ':vertx-mods:vertx-webserver')
-	compile project(path: ':vertx-mods:vertx-work-queue')
-	
 	groovy "org.codehaus.groovy:groovy-all:$groovyVersion"
 	jruby "org.jruby:jruby:$jrubyVersion"
 	rhino "org.mozilla:rhino:$rhinoVersion"
