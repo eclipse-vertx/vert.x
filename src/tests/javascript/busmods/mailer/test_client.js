@@ -21,7 +21,7 @@ var tu = new TestUtils();
 
 var eb = vertx.eventBus;
 
-var user = 'tim@localhost';
+var user = java.lang.System.getProperty("user.name") + '@localhost';
 
 function testMailer() {
 

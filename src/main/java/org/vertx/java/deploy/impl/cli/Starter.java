@@ -66,10 +66,46 @@ public class Starter {
         System.out.println("vert.x 1.1.0.final");
       } else if (command.equals("run")) {
         runVerticle(sargs);
+      } else if (command.equals("install")) {
+        installModule(sargs);
+      } else if (command.equals("uninstall")) {
+        uninstallModule(sargs);
       } else {
         displaySyntax();
       }
     }
+  }
+
+  private void installModule(String[] sargs) {
+    if (sargs.length < 2) {
+      displaySyntax();
+      return;
+    }
+    String modName = sargs[1];
+
+    if (modName == null) {
+      displaySyntax();
+      return;
+    }
+
+    mgr = new VerticleManager(vertx);
+    mgr.install("vert-x.github.com", "/vertx-mods/mods/", modName);
+  }
+
+  private void uninstallModule(String[] sargs) {
+    if (sargs.length < 2) {
+      displaySyntax();
+      return;
+    }
+    String modName = sargs[1];
+
+    if (modName == null) {
+      displaySyntax();
+      return;
+    }
+
+    mgr = new VerticleManager(vertx);
+    mgr.uninstallModule(modName);
   }
 
   private void runVerticle(String[] sargs) {

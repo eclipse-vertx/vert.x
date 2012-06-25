@@ -18,6 +18,10 @@ package org.vertx.java.deploy.impl;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.http.HttpClient;
+import org.vertx.java.core.http.HttpClientRequest;
+import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.DeploymentHandle;
 import org.vertx.java.core.impl.VertxInternal;
@@ -29,8 +33,15 @@ import org.vertx.java.deploy.Container;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.deploy.VerticleFactory;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -42,7 +53,10 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -54,10 +68,8 @@ public class VerticleManager {
   private final VertxInternal vertx;
   // deployment name --> deployment
   private final Map<String, Deployment> deployments = new HashMap<>();
-  // The out of the box busmods dirs
-  private final File systemModRoot;
   // The user mods dir
-  private final File userModRoot;
+  private final File modRoot;
 
   private CountDownLatch stopLatch = new CountDownLatch(1);
   
@@ -71,15 +83,12 @@ public class VerticleManager {
     if (installDir == null) {
       installDir = ".";
     }
-    systemModRoot = new File(installDir, "mods");
     String modDir = System.getProperty("vertx.mods");
     if (modDir != null && !modDir.trim().equals("")) {
-      userModRoot = new File(modDir);
-      if (!userModRoot.exists()) {
-        throw new IllegalStateException("Module directory " + userModRoot + " does not exist");
-      }
+      modRoot = new File(modDir);
     } else {
-      userModRoot = null;
+      // Default to local module directory called 'mods'
+      modRoot = new File("./mods");
     }
 
     this.factories = new HashMap<String, VerticleFactory>();
@@ -187,6 +196,109 @@ public class VerticleManager {
     return map;
   }
 
+  public void install(String repoHost, String repoURIRoot, final String moduleName) {
+    HttpClient client = vertx.createHttpClient();
+    client.setHost(repoHost);
+    client.exceptionHandler(new Handler<Exception>() {
+      public void handle(Exception e) {
+        e.printStackTrace();
+      }
+    });
+    final CountDownLatch latch = new CountDownLatch(1);
+    String uri = repoURIRoot + moduleName + "/mod.zip";
+    System.out.println("Attempting to install module " + moduleName + " from http://" + uri);
+    HttpClientRequest req = client.get(uri, new Handler<HttpClientResponse>() {
+      public void handle(HttpClientResponse resp) {
+        if (resp.statusCode == 200) {
+          System.out.print("Downloading module...");
+          resp.bodyHandler(new Handler<Buffer>() {
+            public void handle(Buffer buffer) {
+              System.out.println("Done");
+              unzipModule(moduleName, buffer);
+              latch.countDown();
+            }
+          });
+        } else if (resp.statusCode == 404) {
+          System.out.println("Can't find module " + moduleName);
+          latch.countDown();
+        } else {
+          System.out.println("Error from server: " + resp.statusCode);
+          latch.countDown();
+        }
+      }
+    });
+    req.putHeader("host", "vert-x.github.com");
+    req.putHeader("user-agent", "Vert.x Module Installer");
+    req.end();
+    try {
+      latch.await(10, TimeUnit.SECONDS);
+    } catch (Exception ignore) {
+    }
+  }
+
+  public void uninstallModule(String moduleName) {
+    System.out.println("Removing module " + moduleName + " from directory " + modRoot);
+    File modDir = new File(modRoot, moduleName);
+    if (!modDir.exists()) {
+      System.err.println("Module does not exist");
+    } else {
+      try {
+        vertx.fileSystem().deleteSync(modDir.getAbsolutePath(), true);
+      } catch (Exception e) {
+        System.err.println("Failed to delete directory: " + e.getMessage());
+      }
+    }
+  }
+
+  private static final int BUFFER_SIZE = 4096;
+
+  private void unzipModule(String modName, Buffer data) {
+    if (!modRoot.exists()) {
+      modRoot.mkdir();
+    }
+    System.out.println("Installing module into directory '" + modRoot + "'");
+    File fdest = new File(modRoot, modName);
+    if (fdest.exists()) {
+      System.err.println("Module is already installed");
+      return;
+    }
+    try {
+      InputStream is = new ByteArrayInputStream(data.getBytes());
+      ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
+      ZipEntry entry;
+      while ((entry = zis.getNextEntry()) != null) {
+        if (!entry.getName().startsWith(modName)) {
+          System.err.println("Module must contain zipped directory with same name as module");
+          fdest.delete();
+          return;
+        }
+        if (entry.isDirectory()) {
+          new File(modRoot, entry.getName()).mkdir();
+        } else {
+          int count;
+          byte[] buff = new byte[BUFFER_SIZE];
+          BufferedOutputStream dest = null;
+          try {
+            OutputStream fos = new FileOutputStream(new File(modRoot, entry.getName()));
+            dest = new BufferedOutputStream(fos, BUFFER_SIZE);
+            while ((count = zis.read(buff, 0, BUFFER_SIZE)) != -1) {
+               dest.write(buff, 0, count);
+            }
+            dest.flush();
+          } finally {
+            if (dest != null) {
+              dest.close();
+            }
+          }
+        }
+      }
+      zis.close();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    System.out.println("Module successfully installed");
+  }
+
   // We calculate a path adjustment that can be used by the fileSystem object
   // so that the *effective* working directory can be the module directory
   // this allows modules to read and write the file system as if they were
@@ -218,7 +330,7 @@ public class VerticleManager {
     final String deploymentName = name == null ?  "deployment-" + UUID.randomUUID().toString() : name;
 
     log.debug("Deploying name : " + deploymentName  + " main: " + main +
-                 " instances: " + instances);
+              " instances: " + instances);
 
     if (!factories.containsKey(language))
     	throw new IllegalArgumentException("Unsupported language: " + language);
@@ -308,11 +420,7 @@ public class VerticleManager {
   private String deployMod(String deployName, String modName, JsonObject config,
                            int instances, File currentModDir, Handler<Void> doneHandler) {
     // First we look in the system mod dir then in the user mod dir (if any)
-    String res = doDeployMod(systemModRoot, deployName, modName, config, instances, currentModDir, doneHandler);
-    if (res == null && userModRoot != null) {
-      res = doDeployMod(userModRoot, deployName, modName, config, instances, currentModDir, doneHandler);
-    }
-    return res;
+    return doDeployMod(modRoot, deployName, modName, config, instances, currentModDir, doneHandler);
   }
 
   // TODO execute this as a blocking action so as not to block the caller
