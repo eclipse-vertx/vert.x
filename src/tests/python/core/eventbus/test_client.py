@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import vertx
-from core.timers import set_timer
 from test_utils import TestUtils
 from core.event_bus import EventBus
 
@@ -95,7 +94,7 @@ class EventBusTest(object):
                 tu.test_complete()
             
             # End test on a timer to give time for other messages to arrive
-            set_timer(100, timer_complete)
+            vertx.set_timer(100, timer_complete)
         id = EventBus.register_handler(address, handler=handler)
         tu.azzert(id != None)
 
