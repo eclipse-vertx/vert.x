@@ -308,8 +308,7 @@
     <exec executable="./pydocx"/>
   </target>
 
-  <!-- groovydoc,javadoc,yardoc,pydoc, -->
-  <target name="dist" depends="jar-core,jar-platform,jar-test-framework,compile-java-mods">
+  <target name="dist" depends="groovydoc,javadoc,yardoc,pydoc,jar-core,jar-platform,jar-test-framework,compile-java-mods">
     <mkdir dir="${dist-build}"/>
 
     <copy file="${target}/${core-jar-file}" todir="${dist-build}/lib/jars"/>
