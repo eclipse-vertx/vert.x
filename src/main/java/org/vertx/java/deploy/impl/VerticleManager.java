@@ -140,26 +140,12 @@ public class VerticleManager {
     return holder == null ? null : holder.logger;
   }
 
-  public synchronized String deploy(boolean worker, String name, final String main,
+  public synchronized String deploy(boolean worker, final String main,
                                     final JsonObject config, final URL[] urls,
                                     int instances, File currentModDir,
                                     final Handler<Void> doneHandler) {
-  
-    if (deployments.containsKey(name)) {
-      throw new IllegalStateException("There is already a deployment with name: " + name);
-    }
 
-    // We first check if there is a module with the name, if so we deploy that
-
-    String deployID = deployMod(name, main, config, instances, currentModDir, doneHandler);
-    if (deployID == null) {
-      if (urls == null) {
-        throw new IllegalStateException("urls cannot be null");
-      }
-      return doDeploy(worker, name, main, config, urls, instances, currentModDir, doneHandler);
-    } else {
-      return deployID;
-    }
+    return doDeploy(worker, main, config, urls, instances, currentModDir, doneHandler);
   }
 
   public synchronized void undeployAll(final Handler<Void> doneHandler) {
@@ -196,7 +182,71 @@ public class VerticleManager {
     return map;
   }
 
-  public void install(String repoHost, String repoURIRoot, final String moduleName) {
+  public String deployMod(String modName, JsonObject config,
+                          int instances, File currentModDir, Handler<Void> doneHandler) {
+    File modDir = new File(modRoot, modName);
+    if (modDir.exists()) {
+      String conf;
+      try {
+        conf = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A").next();
+      } catch (FileNotFoundException e) {
+        throw new IllegalStateException("Module " + modName + " does not contain a mod.json file");
+      }
+      JsonObject json;
+      try {
+        json = new JsonObject(conf);
+      } catch (DecodeException e) {
+        throw new IllegalStateException("Module " + modName + " mod.json contains invalid json");
+      }
+
+      List<URL> urls = new ArrayList<>();
+      try {
+        urls.add(modDir.toURI().toURL());
+        File libDir = new File(modDir, "lib");
+        if (libDir.exists()) {
+          File[] jars = libDir.listFiles();
+          for (File jar: jars) {
+            urls.add(jar.toURI().toURL());
+          }
+        }
+      } catch (MalformedURLException e) {
+        //Won't happen
+        log.error("malformed url", e);
+      }
+
+      String main = json.getString("main");
+      if (main == null) {
+        throw new IllegalStateException("Module " + modName + " mod.json must contain a \"main\" field");
+      }
+      Boolean worker = json.getBoolean("worker");
+      if (worker == null) {
+        worker = Boolean.FALSE;
+      }
+      Boolean preserveCwd = json.getBoolean("preserve-cwd");
+      if (preserveCwd == null) {
+        preserveCwd = Boolean.FALSE;
+      }
+      if (preserveCwd) {
+        // Use the current module directory instead, or the cwd if not in a module
+        modDir = currentModDir;
+      }
+      return doDeploy(worker, main, config,
+                      urls.toArray(new URL[urls.size()]), instances, modDir, doneHandler);
+    }
+    else {
+      // Try and install it
+      installMod(null, modName);
+    }
+    TODO need to make this all async
+  }
+
+  private static final String REPO_URI_ROOT = "/vertx-mods/mods/";
+  private static final String DEFAULT_REPO_HOST = "vert-x.github.com";
+
+  public void installMod(String repoHost, final String moduleName) {
+    if (repoHost == null) {
+      repoHost = DEFAULT_REPO_HOST;
+    }
     HttpClient client = vertx.createHttpClient();
     client.setHost(repoHost);
     client.exceptionHandler(new Handler<Exception>() {
@@ -205,7 +255,7 @@ public class VerticleManager {
       }
     });
     final CountDownLatch latch = new CountDownLatch(1);
-    String uri = repoURIRoot + moduleName + "/mod.zip";
+    String uri = REPO_URI_ROOT + moduleName + "/mod.zip";
     System.out.println("Attempting to install module " + moduleName + " from http://" + uri);
     HttpClientRequest req = client.get(uri, new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
@@ -236,7 +286,7 @@ public class VerticleManager {
     }
   }
 
-  public void uninstallModule(String moduleName) {
+  public void uninstallMod(String moduleName) {
     System.out.println("Removing module " + moduleName + " from directory " + modRoot);
     File modDir = new File(modRoot, moduleName);
     if (!modDir.exists()) {
@@ -311,7 +361,7 @@ public class VerticleManager {
     Context.getContext().setPathAdjustment(relative);
   }
 
-  private String doDeploy(boolean worker, String name, final String main,
+  private String doDeploy(boolean worker, final String main,
                           final JsonObject config, final URL[] urls,
                           int instances,
                           final File modDir,
@@ -327,7 +377,7 @@ public class VerticleManager {
       }
     }
 
-    final String deploymentName = name == null ?  "deployment-" + UUID.randomUUID().toString() : name;
+    final String deploymentName = "deployment-" + UUID.randomUUID().toString();
 
     log.debug("Deploying name : " + deploymentName  + " main: " + main +
               " instances: " + instances);
@@ -415,70 +465,6 @@ public class VerticleManager {
     }
 
     return deploymentName;
-  }
-
-  private String deployMod(String deployName, String modName, JsonObject config,
-                           int instances, File currentModDir, Handler<Void> doneHandler) {
-    // First we look in the system mod dir then in the user mod dir (if any)
-    return doDeployMod(modRoot, deployName, modName, config, instances, currentModDir, doneHandler);
-  }
-
-  // TODO execute this as a blocking action so as not to block the caller
-  // TODO cache mod info?
-  private String doDeployMod(File dir, String deployName, String modName, JsonObject config,
-                             int instances, File currentModDir, Handler<Void> doneHandler) {
-    File modDir = new File(dir, modName);
-    if (modDir.exists()) {
-      String conf;
-      try {
-        conf = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A").next();
-      } catch (FileNotFoundException e) {
-        throw new IllegalStateException("Module " + modName + " does not contain a mod.json file");
-      }
-      JsonObject json;
-      try {
-        json = new JsonObject(conf);
-      } catch (DecodeException e) {
-        throw new IllegalStateException("Module " + modName + " mod.json contains invalid json");
-      }
-
-      List<URL> urls = new ArrayList<>();
-      try {
-        urls.add(modDir.toURI().toURL());
-        File libDir = new File(modDir, "lib");
-        if (libDir.exists()) {
-          File[] jars = libDir.listFiles();
-          for (File jar: jars) {
-            urls.add(jar.toURI().toURL());
-          }
-        }
-      } catch (MalformedURLException e) {
-        //Won't happen
-        log.error("malformed url", e);
-      }
-
-      String main = json.getString("main");
-      if (main == null) {
-        throw new IllegalStateException("Module " + modName + " mod.json must contain a \"main\" field");
-      }
-      Boolean worker = json.getBoolean("worker");
-      if (worker == null) {
-        worker = Boolean.FALSE;
-      }
-      Boolean preserveCwd = json.getBoolean("preserve-cwd");
-      if (preserveCwd == null) {
-        preserveCwd = Boolean.FALSE;
-      }
-      if (preserveCwd) {
-        // Use the current module directory instead, or the cwd if not in a module
-        modDir = currentModDir;
-      }
-      return doDeploy(worker, deployName, main, config,
-                      urls.toArray(new URL[urls.size()]), instances, modDir, doneHandler);
-    }
-    else {
-      return null;
-    }
   }
 
   // Must be synchronized since called directly from different thread

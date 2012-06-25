@@ -30,7 +30,7 @@ import java.util.Map;
  * An instance of this class will be created by the system and made available to
  * a running Verticle.
  * It contains methods to programmatically deploy other verticles, undeploy
- * verticles, get the configuration for a verticle and get the logger for a
+ * verticles, deploy modules, get the configuration for a verticle and get the logger for a
  * verticle.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -94,7 +94,60 @@ public class Container {
   public String deployWorkerVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler) {
     URL[] currURLs = mgr.getDeploymentURLs();
     File modDir = mgr.getDeploymentModDir();
-    return mgr.deploy(true, null, main, config, currURLs, instances, modDir, doneHandler);
+    return mgr.deploy(true, main, config, currURLs, instances, modDir, doneHandler);
+  }
+
+  /**
+   * Deploy a module programmatically
+   * @param moduleName The main of the module to deploy
+   * @return Unique deployment id
+   */
+  public String deployModule(String moduleName) {
+    return deployModule(moduleName, null, 1);
+  }
+
+  /**
+   * Deploy a module programmatically
+   * @param moduleName The main of the module to deploy
+   * @param instances The number of instances to deploy (defaults to 1)
+   * @return Unique deployment id
+   */
+  public String deployModule(String moduleName, int instances) {
+    return deployModule(moduleName, null, instances);
+  }
+
+  /**
+   * Deploy a module programmatically
+   * @param moduleName The main of the module to deploy
+   * @param config JSON config to provide to the module
+   * @return Unique deployment id
+   */
+  public String deployModule(String moduleName, JsonObject config) {
+    return deployModule(moduleName, config, 1);
+  }
+
+  /**
+   * Deploy a module programmatically
+   * @param moduleName The main of the module to deploy
+   * @param config JSON config to provide to the module
+   * @param instances The number of instances to deploy (defaults to 1)
+   * @return Unique deployment id
+   */
+  public String deployModule(String moduleName, JsonObject config, int instances) {
+    return deployModule(moduleName, config, instances, null);
+  }
+
+  /**
+   * Deploy a module programmatically
+   * @param moduleName The main of the module to deploy
+   * @param config JSON config to provide to the module
+   * @param instances The number of instances to deploy (defaults to 1)
+   * @param doneHandler The handler will be called when deployment is complete
+   * @return Unique deployment id
+   */
+  public String deployModule(String moduleName, JsonObject config, int instances, Handler<Void> doneHandler) {
+    File modDir = mgr.getDeploymentModDir();
+    return mgr.deployMod(moduleName, config, instances, modDir, doneHandler);
   }
 
   /**
@@ -148,7 +201,7 @@ public class Container {
   public String deployVerticle(String main, JsonObject config, int instances, Handler<Void> doneHandler) {
     URL[] currURLs = mgr.getDeploymentURLs();
     File modDir = mgr.getDeploymentModDir();
-    return mgr.deploy(false, null, main, config, currURLs, instances, modDir, doneHandler);
+    return mgr.deploy(false, main, config, currURLs, instances, modDir, doneHandler);
   }
 
   /**
@@ -160,11 +213,28 @@ public class Container {
   }
 
   /**
-   * Undeploy a verticle
+   * Undeploy a module
    * @param deploymentID The deployment ID
    * @param doneHandler The handler will be called when undeployment is complete
    */
   public void undeployVerticle(String deploymentID, Handler<Void> doneHandler) {
+    mgr.undeploy(deploymentID, doneHandler);
+  }
+
+  /**
+   * Undeploy a module
+   * @param deploymentID The deployment ID
+   */
+  public void undeployModule(String deploymentID) {
+    undeployModule(deploymentID, null);
+  }
+
+  /**
+   * Undeploy a module
+   * @param deploymentID The deployment ID
+   * @param doneHandler The handler will be called when undeployment is complete
+   */
+  public void undeployModule(String deploymentID, Handler<Void> doneHandler) {
     mgr.undeploy(deploymentID, doneHandler);
   }
 

@@ -162,6 +162,68 @@ class Container {
     jContainer.deployVerticle(main, new JsonObject(config), instances, doneHandler as Handler)
   }
 
+    /**
+   * Deploy a module programmatically
+   * @param moduleName The main of the module
+   * @return Unique deployment id
+   */
+  String deployModule(String moduleName) {
+    jContainer.deployModule(moduleName)
+  }
+
+  /**
+   * Deploy a module programmatically
+   * @param moduleName The main of the module
+   * @param doneHandler The handler will be called when deployment is complete
+   * @return Unique deployment id
+   */
+  String deployModule(String moduleName, Closure doneHandler) {
+    jContainer.deployModule(moduleName, null, 1, doneHandler as Handler)
+  }
+
+  /**
+   * Deploy a module programmatically
+   * @param moduleName The main of the module
+   * @param instances The number of instances to deploy (defaults to 1)
+   * @return Unique deployment id
+   */
+  String deployModule(String moduleName, int instances) {
+    jContainer.deployModule(moduleName, instances)
+  }
+
+  /**
+   * Deploy a module programmatically
+   * @param moduleName The main of the module
+   * @param config JSON config to provide to the module
+   * @return Unique deployment id
+   */
+  String deployModule(String moduleName, Map<String, Object> config) {
+    jContainer.deployModule(moduleName, new JsonObject(config))
+  }
+
+  /**
+   * Deploy a module programmatically
+   * @param moduleName The main of the module
+   * @param config JSON config to provide to the module
+   * @param instances The number of instances to deploy (defaults to 1)
+   * @return Unique deployment id
+   */
+  String deployModule(String moduleName, Map<String, Object> config, int instances) {
+    jContainer.deployModule(moduleName, new JsonObject(config), instances)
+  }
+
+  /**
+   * Deploy a module programmatically
+   * @param moduleName The main of the module
+   * @param config JSON config to provide to the module
+   * @param instances The number of instances to deploy (defaults to 1)
+   * @param doneHandler The handler will be called when deployment is complete
+   * @return Unique deployment id
+   */
+  String deployModule(String moduleName, Map<String, Object> config, int instances, Closure doneHandler) {
+    jContainer.deployModule(moduleName, new JsonObject(config), instances, doneHandler as Handler)
+  }
+
   /**
    * Undeploy a verticle
    * @param deploymentID The deployment ID
@@ -177,6 +239,23 @@ class Container {
    */
   void undeployVerticle(String deploymentID, Closure doneHandler) {
     jContainer.undeployVerticle(deploymentID, doneHandler as Handler)
+  }
+
+  /**
+   * Undeploy a module
+   * @param deploymentID The deployment ID
+   */
+  void undeployModule(String deploymentID) {
+    jContainer.undeployModule(deploymentID)
+  }
+
+  /**
+   * Undeploy a module
+   * @param deploymentID The deployment ID
+   * @param doneHandler The handler will be called when undeployment is complete
+   */
+  void undeployModule(String deploymentID, Closure doneHandler) {
+    jContainer.undeployModule(deploymentID, doneHandler as Handler)
   }
 
   /**

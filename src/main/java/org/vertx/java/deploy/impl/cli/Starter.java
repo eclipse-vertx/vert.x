@@ -89,7 +89,11 @@ public class Starter {
     }
 
     mgr = new VerticleManager(vertx);
-    mgr.install("vert-x.github.com", "/vertx-mods/mods/", modName);
+
+    Args args = new Args(sargs);
+    String repo = args.map.get("-repo");
+
+    mgr.installMod(repo, modName);
   }
 
   private void uninstallModule(String[] sargs) {
@@ -105,7 +109,7 @@ public class Starter {
     }
 
     mgr = new VerticleManager(vertx);
-    mgr.uninstallModule(modName);
+    mgr.uninstallMod(modName);
   }
 
   private void runVerticle(String[] sargs) {
@@ -146,8 +150,6 @@ public class Starter {
     }
 
     boolean worker = args.map.get("-worker") != null;
-
-    String name = args.map.get("-name");
 
     String cp = args.map.get("-cp");
     if (cp == null) {
@@ -213,7 +215,7 @@ public class Starter {
       conf = null;
     }
 
-    mgr.deploy(worker, name, main, conf, urls, instances, null, new SimpleHandler() {
+    mgr.deploy(worker, main, conf, urls, instances, null, new SimpleHandler() {
       public void handle() {
         System.out.println("Started");
       }
