@@ -42,15 +42,15 @@ class RhinoPlugin extends AbstractProjectPlugin {
 		project.configure(project) {
 			sourceSets {
 				main {
-					resources {
-						srcDirs "src/main/$SOURCE_DIR", "src/main/resources"
+					java {
+						srcDirs "src/main/$SOURCE_DIR"
 					}
 				}
-//				test {
-//					resources {
-//						srcDirs ["src/test/$SOURCE_DIR", "src/test/resources"]
-//					}
-//				}
+				test {
+					resources {
+						srcDirs "src/test/$SOURCE_DIR", "src/test/resources"
+					}
+				}
 			}
 		}
 	}

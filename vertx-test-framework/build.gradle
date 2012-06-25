@@ -8,9 +8,17 @@ dependencies {
 	compile project(path: ':vertx-lang-groovy')
 	compile project(path: ':vertx-lang-javascript')
 	compile project(path: ':vertx-lang-ruby')
+	compile project(path: ':vertx-mods-auth-mgr')
+	compile project(path: ':vertx-mods-mailer')
+	compile project(path: ':vertx-mods-mongo-persistor')
+	compile project(path: ':vertx-mods-webserver')
+	compile project(path: ':vertx-mods-work-queue')
+	
 	groovy "org.codehaus.groovy:groovy-all:$groovyVersion"
 	jruby "org.jruby:jruby:$jrubyVersion"
 	rhino "org.mozilla:rhino:$rhinoVersion"
+	
+	compile "junit:junit:$junitVersion"
 }
 
 sourceSets {
