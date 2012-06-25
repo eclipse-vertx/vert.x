@@ -14,11 +14,7 @@
  * limitations under the License.
  */
 
-classes.enabled false
-compileJava.enabled false
 jar.enabled false
-javadoc.enabled false
-processResources.enabled false
 
 task busmods(type: Sync, dependsOn: subprojects.assemble) {
 	destinationDir file("$buildDir/mods")
@@ -39,9 +35,9 @@ task busmods(type: Sync, dependsOn: subprojects.assemble) {
 	}
 }
 
-// Oh my, this is ugly
 assemble.dependsOn busmods
-build.dependsOn subprojects.build
-check.dependsOn subprojects.check
-clean.dependsOn subprojects.clean
-test.dependsOn subprojects.test
+
+// Oh my, this is ugly
+project.tasks.each { task->
+	if (task.name != 'busmods') task.dependsOn subprojects."$task.name"
+}

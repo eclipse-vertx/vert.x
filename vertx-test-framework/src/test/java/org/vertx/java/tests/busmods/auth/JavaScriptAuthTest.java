@@ -37,13 +37,6 @@ public class JavaScriptAuthTest extends TestBase {
   }
 
   private void startApps() throws Exception {
-	  
-	  Enumeration<URL> resources = getClass().getClassLoader().getResources("vertx.js");
-	  while (resources.hasMoreElements()) {
-		  URL url = resources.nextElement();
-		  System.out.println(url);
-	  }
-	  
     startApp("busmods/auth/test_client.js");
   }
 

@@ -39,10 +39,10 @@ dependencies {
 	compile "junit:junit:$junitVersion"
 }
 
-def moduleBuild = project(':vertx-mods').buildDir
-def modsDir = file("$moduleBuild/mods")
 
 test {
-	systemProperty "vertx.mods", modsDir
+	def moduleBuild = project(':vertx-mods').buildDir
+	systemProperty "vertx.mods", file("$moduleBuild/mods")
 }
+
 test.dependsOn project(":vertx-mods").tasks.findByName('busmods')

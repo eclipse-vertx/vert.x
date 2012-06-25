@@ -14,17 +14,12 @@
  * limitations under the License.
  */
 
-classes.enabled false
-compileJava.enabled false
+subprojects {
+	apply from: "$rootDir/gradle/maven.gradle"
+}
+
 jar.enabled false
-javadoc.enabled false
-processResources.enabled false
 
-// Oh my, this is ugly
-assemble.dependsOn subprojects.assemble
-build.dependsOn subprojects.build
-check.dependsOn subprojects.check
-clean.dependsOn subprojects.clean
-test.dependsOn subprojects.test
-
-
+project.tasks.each { task->
+	task.dependsOn subprojects."$task.name"
+}

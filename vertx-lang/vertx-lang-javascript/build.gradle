@@ -1,4 +1,3 @@
-apply from: "$rootDir/gradle/maven.gradle"
 apply plugin: 'vertx-rhino'
 
 dependencies {

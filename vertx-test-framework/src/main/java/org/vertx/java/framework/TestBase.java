@@ -18,6 +18,7 @@ package org.vertx.java.framework;
 
 import junit.framework.TestCase;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.eventbus.Message;
@@ -40,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+//@RunWith(org.vertx.java.framework.VertxTestRunner.class)
 public class TestBase extends TestCase {
 
   private static final Logger log = LoggerFactory.getLogger(TestBase.class);
