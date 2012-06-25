@@ -17,6 +17,7 @@ This module adds the http support to the python vert.x platform
 """
 
 import org.vertx.java.deploy.impl.VertxLocator
+import org.vertx.java.core.http
 import core.tcp_support
 import core.ssl_support
 import core.buffer

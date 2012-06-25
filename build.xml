@@ -268,7 +268,7 @@
 
       <sysproperty key="vertx.mods" value="${dist-build}/mods"/>
       <classpath refid="test-classpath"/>
-      <batchtest haltonfailure="yes" haltonerror="yes" fork="no" todir="${test-results}">
+      <batchtest haltonfailure="yes" haltonerror="yes" fork="yes" todir="${test-results}">
         <formatter type="plain" usefile="yes"/>
         <fileset refid="${tests-fs}"/>
       </batchtest>
