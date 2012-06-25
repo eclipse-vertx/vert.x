@@ -49,7 +49,6 @@ ext.releaseDir = file("$rootProject.buildDir/releases/$rootProject.name-$version
 // vert.x core tasks
 
 def distSpec = copySpec {
-	def busmods = subprojects.findAll { p-> p.name.matches('vertx-mods-.*') }
 	def release = "$rootProject.name-$version"
 
 	into("$release") {
@@ -83,27 +82,22 @@ def distSpec = copySpec {
 //		from subprojects.yardoc
 //	}
 
+	// could do better...
 	subprojects.findAll { p-> p.name.matches('vertx-core.*') }.each { proj->
 		into("$release/lib") {
 			from proj.jar, proj.configurations.compile
 		}
 	}
 
-	subprojects.findAll { p-> p.name.matches('vertx-lang-.*') }.each { proj->
+	project(':vertx-lang').subprojects.each { proj->
 		into("$release/lib") {
 			from proj.jar, proj.configurations.compile
 		}
 	}
-
-	subprojects.findAll { p-> p.name.matches('vertx-mods-.*') }.each { mod->
-		def name = mod.name.replaceFirst('vertx-mods-', '')
-		into("$release/mods/$name") {
-			from "$mod.projectDir/src/main/conf"
-			into('lib') {
-				from mod.jar, mod.configurations.compile
-				exclude 'vertx-core*'
-			}
-		}
+	
+	def moduleBuild = project(':vertx-mods').buildDir
+	into("$release/mods") {
+		from "$moduleBuild/mods"
 	}
 }
 
@@ -116,32 +110,44 @@ task cleanRelease() {
 	group = 'vert.x'
 	description = 'Clean only the release directory'
 	
-	def releases = file("build/releases")
-	if (releases.exists()) { 
-		boolean deleted = releases.delete() 
-		if (!deleted) {
-			// TODO check why this doesn't clear the dir sometimes
-			println "WARNING: directory '$releases' was not deleted"
+	doLast {
+		def releases = file("build/releases")
+		if (releases.exists()) { 
+			boolean deleted = releases.delete() 
+			if (!deleted) {
+				// TODO check why this doesn't clear the dir sometimes
+				println "WARNING: directory '$releases' was not deleted"
+			}
 		}
 	}
 }
 
-task prepareRelease(type: Sync) {
+task prepareRelease(type: Sync, dependsOn: subprojects.assemble) {
 	group = 'vert.x'
 	description = 'Prepare the release directory'
+
+	def releaseDir = mkdir("$buildDir/releases/$rootProject.name-$version")
+
+	// enable caching of outputs
+	inputs.files 'src'
+	outputs.dir releaseDir
 
 	into "$buildDir/releases"
 	with distSpec
 
 	doLast {
-		def releaseDir = mkdir("$buildDir/releases/$rootProject.name-$version")
 		['logs', 'temp'].each { dir->
 			new File(releaseDir, dir).mkdirs()
 		}
 	}
 }
 
-task dist(type: Tar, dependsOn: ['prepareRelease']) {
+task testRelease(dependsOn: subprojects.test) {
+	group = 'vert.x'
+	description = 'Test the release'
+}
+
+task dist(type: Tar, dependsOn: ['prepareRelease', 'testRelease']) {
 	group = 'vert.x'
 	description = 'Build the tarball distribution.'
 
@@ -177,3 +183,5 @@ task wrapper(type: Wrapper) {
 	description = 'Configures a Gradle wrapper'
 	gradleVersion = "$gradleVersion"
 }
+
+

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 apply plugin: 'groovy'
 apply plugin: 'vertx-jruby'
 apply plugin: 'vertx-rhino'
@@ -5,14 +21,16 @@ apply plugin: 'vertx-rhino'
 dependencies {
 	compile project(path: ':vertx-core')
 	compile project(path: ':vertx-core-platform')
-	compile project(path: ':vertx-lang-groovy')
-	compile project(path: ':vertx-lang-javascript')
-	compile project(path: ':vertx-lang-ruby')
-	compile project(path: ':vertx-mods-auth-mgr')
-	compile project(path: ':vertx-mods-mailer')
-	compile project(path: ':vertx-mods-mongo-persistor')
-	compile project(path: ':vertx-mods-webserver')
-	compile project(path: ':vertx-mods-work-queue')
+
+	compile project(path: ':vertx-lang:vertx-lang-groovy')
+	compile project(path: ':vertx-lang:vertx-lang-javascript')
+	compile project(path: ':vertx-lang:vertx-lang-ruby')
+
+	compile project(path: ':vertx-mods:vertx-auth-mgr')
+	compile project(path: ':vertx-mods:vertx-mailer')
+	compile project(path: ':vertx-mods:vertx-mongo-persistor')
+	compile project(path: ':vertx-mods:vertx-webserver')
+	compile project(path: ':vertx-mods:vertx-work-queue')
 	
 	groovy "org.codehaus.groovy:groovy-all:$groovyVersion"
 	jruby "org.jruby:jruby:$jrubyVersion"
@@ -20,3 +38,11 @@ dependencies {
 	
 	compile "junit:junit:$junitVersion"
 }
+
+def moduleBuild = project(':vertx-mods').buildDir
+def modsDir = file("$moduleBuild/mods")
+
+test {
+	systemProperty "vertx.mods", modsDir
+}
+test.dependsOn project(":vertx-mods").tasks.findByName('busmods')

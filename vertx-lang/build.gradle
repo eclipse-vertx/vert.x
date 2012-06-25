@@ -14,21 +14,17 @@
  * limitations under the License.
  */
 
-rootProject.name='vert.x'
+classes.enabled false
+compileJava.enabled false
+jar.enabled false
+javadoc.enabled false
+processResources.enabled false
 
-include 'vertx-boot'
-include 'vertx-core'
-include 'vertx-core-platform'
+// Oh my, this is ugly
+assemble.dependsOn subprojects.assemble
+build.dependsOn subprojects.build
+check.dependsOn subprojects.check
+clean.dependsOn subprojects.clean
+test.dependsOn subprojects.test
 
-include 'vertx-lang:vertx-lang-groovy'
-include 'vertx-lang:vertx-lang-javascript'
-include 'vertx-lang:vertx-lang-ruby'
 
-include 'vertx-mods:vertx-auth-mgr'
-include 'vertx-mods:vertx-mailer'
-include 'vertx-mods:vertx-mongo-persistor'
-include 'vertx-mods:vertx-webserver'
-include 'vertx-mods:vertx-work-queue'
-
-include 'vertx-examples'
-include 'vertx-test-framework'

@@ -1,0 +1,47 @@
+/*
+ * Copyright 2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+classes.enabled false
+compileJava.enabled false
+jar.enabled false
+javadoc.enabled false
+processResources.enabled false
+
+task busmods(type: Sync, dependsOn: subprojects.assemble) {
+	destinationDir file("$buildDir/mods")
+	
+	// enable caching of outputs
+	inputs.files 'src' // TODO find a better solution for this
+	outputs.dir destinationDir
+	
+	subprojects.each { mod->
+		def name = mod.name.replaceFirst('vertx-', '')
+		into("$name") {
+			from "$mod.projectDir/src/main/conf"
+			into('lib') {
+				from mod.jar, mod.configurations.compile
+				exclude 'vertx-core*'
+			}
+		}
+	}
+}
+
+// Oh my, this is ugly
+assemble.dependsOn busmods
+build.dependsOn subprojects.build
+check.dependsOn subprojects.check
+clean.dependsOn subprojects.clean
+test.dependsOn subprojects.test

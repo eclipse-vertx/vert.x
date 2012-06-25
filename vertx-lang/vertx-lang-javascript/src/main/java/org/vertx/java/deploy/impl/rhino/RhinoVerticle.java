@@ -40,6 +40,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URL;
+import java.util.Enumeration;
 import java.util.Scanner;
 
 /**
@@ -177,6 +178,7 @@ public class RhinoVerticle extends Verticle {
   }
 
   private static void loadScript(ClassLoader cl, Context cx, ScriptableObject scope, String scriptName) throws Exception {
+
     InputStream is = cl.getResourceAsStream(scriptName);
     if (is == null) {
       throw new FileNotFoundException("Cannot find script: " + scriptName);
