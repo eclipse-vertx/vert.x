@@ -19,7 +19,11 @@ var vertx = vertx || {};
 if (!vertx.deployVerticle) {
   (function() {
 
-    function deploy(worker, main, config, instances, doneHandler) {
+    var VERTICLE = 0;
+    var WORKER = 1;
+    var MODULE = 2;
+
+    function deploy(deployType, name, config, instances, doneHandler) {
       if (!instances) instances = 1;
       if (config) {
         // Convert to Java Json Object
@@ -29,11 +33,16 @@ if (!vertx.deployVerticle) {
         config = null;
       }
       if (!doneHandler) doneHandler = null;
-
-      if (worker) {
-        return org.vertx.java.deploy.impl.VertxLocator.container.deployWorkerVerticle(main, config, instances, doneHandler);
-      } else {
-        return org.vertx.java.deploy.impl.VertxLocator.container.deployVerticle(main, config, instances, doneHandler);
+      switch (deployType) {
+        case VERTICLE: {
+          return org.vertx.java.deploy.impl.VertxLocator.container.deployVerticle(name, config, instances, doneHandler);
+        }
+        case WORKER: {
+          return org.vertx.java.deploy.impl.VertxLocator.container.deployWorkerVerticle(name, config, instances, doneHandler);
+        }
+        case MODULE: {
+          return org.vertx.java.deploy.impl.VertxLocator.container.deployModule(name, config, instances, doneHandler);
+        }
       }
     }
 
@@ -45,9 +54,18 @@ if (!vertx.deployVerticle) {
       return deploy(true, main, config, instances, doneHandler);
     }
 
+    vertx.deployModule = function(moduleName, config, instances, doneHandler) {
+      return deploy(true, moduleName, config, instances, doneHandler);
+    }
+
     vertx.undeployVerticle = function(name, doneHandler) {
       if (!doneHandler) doneHandler = null;
       org.vertx.java.deploy.impl.VertxLocator.container.undeployVerticle(name, doneHandler);
+    }
+
+    vertx.undeployModule = function(name, doneHandler) {
+      if (!doneHandler) doneHandler = null;
+      org.vertx.java.deploy.impl.VertxLocator.container.undeployModule(name, doneHandler);
     }
 
     vertx.exit = function() {
