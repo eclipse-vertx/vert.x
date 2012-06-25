@@ -46,12 +46,12 @@ class JRubyPlugin extends AbstractProjectPlugin {
 			sourceSets {
 				main {
 					resources {
-						srcDirs "src/main/$SOURCE_DIR", "src/main/resources"
+						srcDirs "src/main/$SOURCE_DIR"
 					}
 				}
 				test {
 					resources {
-						srcDirs "src/test/$SOURCE_DIR", "src/test/resources"
+						srcDirs "src/test/$SOURCE_DIR"
 					}
 				}
 			}

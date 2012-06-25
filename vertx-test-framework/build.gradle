@@ -20,15 +20,3 @@ dependencies {
 	
 	compile "junit:junit:$junitVersion"
 }
-
-sourceSets {
-	test {
-		java {
-			srcDirs 'src/tests/java', 'src/tests/controllers', 'src/tests/framework/java'
-		}
-		groovy {
-			srcDirs 'src/tests/groovy', 'src/tests/framework/groovy'
-		}
-		// jruby.srcDirs 'src/tests/ruby'
-	}
-}

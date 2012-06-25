@@ -34,6 +34,8 @@ class RhinoPlugin extends AbstractProjectPlugin {
 	
 	public static final String SOURCE_DIR = 'javascript'
 	
+	public static final String DOCUMENTATION_TASK = 'jsdoc'
+	
 	public RhinoPlugin() {
 		super(CONFIGURATION)
 	}
@@ -42,13 +44,13 @@ class RhinoPlugin extends AbstractProjectPlugin {
 		project.configure(project) {
 			sourceSets {
 				main {
-					java {
+					resources { 
 						srcDirs "src/main/$SOURCE_DIR"
 					}
 				}
 				test {
-					resources {
-						srcDirs "src/test/$SOURCE_DIR", "src/test/resources"
+					resources { 
+						srcDirs "src/test/$SOURCE_DIR"
 					}
 				}
 			}
