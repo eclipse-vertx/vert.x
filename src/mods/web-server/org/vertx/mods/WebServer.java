@@ -42,6 +42,7 @@ public class WebServer extends BusModBase implements Handler<HttpServerRequest> 
 
   private String webRootPrefix;
   private String indexPage;
+  private boolean gzipFiles;
 
   public void start() {
     super.start();
@@ -69,6 +70,7 @@ public class WebServer extends BusModBase implements Handler<HttpServerRequest> 
                        getOptionalStringConfig("auth_address", "vertx.basicauthmanager.authorise"));
     }
 
+    gzipFiles = getOptionalBooleanConfig("gzip_files", false);
     String webRoot = getOptionalStringConfig("web_root", "web");
     String index = getOptionalStringConfig("index_page", "index.html");
     webRootPrefix = webRoot + File.separator;
@@ -87,7 +89,7 @@ public class WebServer extends BusModBase implements Handler<HttpServerRequest> 
       req.response.sendFile(indexPage);
     } else if (!req.path.contains("..")) {
       // try to send *.gz file
-      if (getOptionalBooleanConfig("gzip_files", false) && acceptEncodingGzip) {
+      if (gzipFiles && acceptEncodingGzip) {
         File file = new File(PathAdjuster.adjust(fileName + ".gz"));
         if (file.exists()) {
           // found file with gz extension
