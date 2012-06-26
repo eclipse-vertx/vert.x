@@ -228,7 +228,8 @@ public class Starter {
     }
 
     if (module) {
-      mgr.deployMod(main, conf, instances, null, null);
+      String repo = args.map.get("-repo");
+      mgr.deployMod(repo, main, conf, instances, null, null);
     } else {
       mgr.deploy(worker, main, conf, urls, instances, null, null);
     }

@@ -306,7 +306,7 @@ function testDelete() {
 
 tu.registerTests(this);
 var persistorConfig = {address: 'test.persistor', db_name: 'test_db'}
-vertx.deployModule('mongo-persistor', persistorConfig, 1, function() {
+vertx.deployModule('mongo-persistor-v1.0', persistorConfig, 1, function() {
   deleteAll();
   tu.appReady();
 });

@@ -55,7 +55,7 @@ function testMailerError() {
 tu.registerTests(this);
 
 var mailerConfig = {address: 'test.mailer'}
-var mailerID = vertx.deployModule('mailer', mailerConfig, 1, function() {
+var mailerID = vertx.deployModule('mailer-v1.0', mailerConfig, 1, function() {
   tu.appReady();
 });
 

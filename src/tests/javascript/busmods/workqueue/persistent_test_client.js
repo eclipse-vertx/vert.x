@@ -56,10 +56,10 @@ function deleteAll() {
 tu.registerTests(this);
 
 var persistorConfig = {address: 'test.persistor', db_name: 'test_db'}
-vertx.deployModule('mongo-persistor', persistorConfig, 1, function() {
+vertx.deployModule('mongo-persistor-v1.0', persistorConfig, 1, function() {
   deleteAll();
   var queueConfig = {address: 'test.orderQueue', persistor_address: 'test.persistor', collection: 'work'}
-  vertx.deployModule('work-queue', queueConfig, 1, function() {
+  vertx.deployModule('work-queue-v1.0', queueConfig, 1, function() {
     tu.appReady();
   });
 });
