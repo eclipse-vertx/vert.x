@@ -19,7 +19,6 @@ package org.vertx.java.core.eventbus.impl;
 import org.vertx.java.core.impl.ConcurrentHashSet;
 import org.vertx.java.core.net.impl.ServerID;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;

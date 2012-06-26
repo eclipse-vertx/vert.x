@@ -55,21 +55,26 @@ public class TestClient extends TestClientBase {
 
   public void testUndeploy() {
 
-    final String id = container.deployVerticle("vertx.tests.core.deploy.ChildVerticle");
-
-    vertx.setTimer(100, new Handler<Long>() {
-      public void handle(Long tid) {
-        eb.registerHandler("test-handler", new Handler<Message<String>>() {
-          public void handle(Message<String> message) {
-            if ("stopped".equals(message.body)) {
-              eb.unregisterHandler("test-handler", this);
-              tu.testComplete();
+    container.deployVerticle("vertx.tests.core.deploy.ChildVerticle", null, 1,
+      new Handler<String>() {
+        public void handle(final String deploymentID) {
+          vertx.setTimer(100, new Handler<Long>() {
+            public void handle(Long tid) {
+              eb.registerHandler("test-handler", new Handler<Message<String>>() {
+                public void handle(Message<String> message) {
+                  if ("stopped".equals(message.body)) {
+                    eb.unregisterHandler("test-handler", this);
+                    tu.testComplete();
+                  }
+                }
+              });
+              container.undeployVerticle(deploymentID);
             }
-          }
-        });
-        container.undeployVerticle(id);
-      }
-    });
+          });
+        }
+      });
+
+
 
   }
 }

@@ -36,11 +36,11 @@ function testPersistentReloadWorkQueue() {
   eb.registerHandler("done", doneHandler);
 
   var persistorConfig = {address: 'test.persistor', db_name: 'test_db'}
-  vertx.deployWorkerVerticle('mongo-persistor', persistorConfig, 1, function() {
+  vertx.deployModule('mongo-persistor', persistorConfig, 1, function() {
     insertWork();
     var queueConfig = {address: 'test.orderQueue', persistor_address: 'test.persistor', collection: 'work'}
-    vertx.deployWorkerVerticle('work-queue', queueConfig, 1, function() {
-      vertx.deployVerticle('busmods/workqueue/order_processor.js', {dont_send_app_lifecycle: true}, 10);
+    vertx.deployModule('work-queue', queueConfig, 1, function() {
+      vertx.deployWorkerVerticle('busmods/workqueue/order_processor.js', {dont_send_app_lifecycle: true}, 10);
     });
   });
 }

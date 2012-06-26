@@ -16,12 +16,15 @@
 
 package org.vertx.java.deploy.impl;
 
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
+import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.DeploymentHandle;
 import org.vertx.java.core.impl.VertxInternal;
@@ -53,7 +56,6 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -64,6 +66,9 @@ import java.util.zip.ZipInputStream;
 public class VerticleManager {
 
   private static final Logger log = LoggerFactory.getLogger(VerticleManager.class);
+  private static final String REPO_URI_ROOT = "/vertx-mods/mods/";
+  private static final String DEFAULT_REPO_HOST = "vert-x.github.com";
+  private static final int BUFFER_SIZE = 4096;
 
   private final VertxInternal vertx;
   // deployment name --> deployment
@@ -140,12 +145,12 @@ public class VerticleManager {
     return holder == null ? null : holder.logger;
   }
 
-  public synchronized String deploy(boolean worker, final String main,
-                                    final JsonObject config, final URL[] urls,
-                                    int instances, File currentModDir,
-                                    final Handler<Void> doneHandler) {
-
-    return doDeploy(worker, main, config, urls, instances, currentModDir, doneHandler);
+  public void deploy(boolean worker, final String main,
+                     final JsonObject config, final URL[] urls,
+                     int instances, File currentModDir,
+                     final Handler<String> doneHandler) {
+    Context ctx = vertx.getOrAssignContext();
+    doDeploy(worker, main, config, urls, instances, currentModDir, ctx, doneHandler);
   }
 
   public synchronized void undeployAll(final Handler<Void> doneHandler) {
@@ -182,68 +187,101 @@ public class VerticleManager {
     return map;
   }
 
-  public String deployMod(String modName, JsonObject config,
-                          int instances, File currentModDir, Handler<Void> doneHandler) {
-    File modDir = new File(modRoot, modName);
-    if (modDir.exists()) {
-      String conf;
-      try {
-        conf = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A").next();
-      } catch (FileNotFoundException e) {
-        throw new IllegalStateException("Module " + modName + " does not contain a mod.json file");
-      }
-      JsonObject json;
-      try {
-        json = new JsonObject(conf);
-      } catch (DecodeException e) {
-        throw new IllegalStateException("Module " + modName + " mod.json contains invalid json");
-      }
+  public void deployMod(final String modName, final JsonObject config,
+                        final int instances, final File currentModDir, final Handler<String> doneHandler) {
 
-      List<URL> urls = new ArrayList<>();
-      try {
-        urls.add(modDir.toURI().toURL());
-        File libDir = new File(modDir, "lib");
-        if (libDir.exists()) {
-          File[] jars = libDir.listFiles();
-          for (File jar: jars) {
-            urls.add(jar.toURI().toURL());
+    final Context ctx = vertx.getOrAssignContext();
+
+    AsyncResultHandler<Boolean> handler = new AsyncResultHandler<Boolean>() {
+      public void handle(AsyncResult<Boolean> res) {
+        if (res.succeeded()) {
+          if (!res.result) {
+            System.out.println("Module is not installed");
+            // Try and install it
+            installMod(null, modName, new Handler<Boolean>() {
+              public void handle(Boolean res) {
+                if (res) {
+                  // Now deploy it
+                  deployMod(modName, config, instances, currentModDir, doneHandler);
+                } else {
+                  if (doneHandler != null) {
+                    doneHandler.handle(null);
+                  }
+                }
+              }
+            });
           }
+        } else {
+          res.exception.printStackTrace();
         }
-      } catch (MalformedURLException e) {
-        //Won't happen
-        log.error("malformed url", e);
       }
+    };
 
-      String main = json.getString("main");
-      if (main == null) {
-        throw new IllegalStateException("Module " + modName + " mod.json must contain a \"main\" field");
+    // Need to run this on the background pool since it does potentially long running stuff
+    BlockingAction<Boolean> deployModuleAction = new BlockingAction<Boolean>(vertx, handler) {
+
+      @Override
+      public Boolean action() throws Exception {
+        System.out.println("Attempting to deploy module " + modName);
+        File modDir = new File(modRoot, modName);
+        if (modDir.exists()) {
+          String conf;
+          try {
+            conf = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A").next();
+          } catch (FileNotFoundException e) {
+            throw new IllegalStateException("Module " + modName + " does not contain a mod.json file");
+          }
+          JsonObject json;
+          try {
+            json = new JsonObject(conf);
+          } catch (DecodeException e) {
+            throw new IllegalStateException("Module " + modName + " mod.json contains invalid json");
+          }
+
+          List<URL> urls = new ArrayList<>();
+          try {
+            urls.add(modDir.toURI().toURL());
+            File libDir = new File(modDir, "lib");
+            if (libDir.exists()) {
+              File[] jars = libDir.listFiles();
+              for (File jar: jars) {
+                urls.add(jar.toURI().toURL());
+              }
+            }
+          } catch (MalformedURLException e) {
+            //Won't happen
+            log.error("malformed url", e);
+          }
+
+          String main = json.getString("main");
+          if (main == null) {
+            throw new IllegalStateException("Module " + modName + " mod.json must contain a \"main\" field");
+          }
+          Boolean worker = json.getBoolean("worker");
+          if (worker == null) {
+            worker = Boolean.FALSE;
+          }
+          Boolean preserveCwd = json.getBoolean("preserve-cwd");
+          if (preserveCwd == null) {
+            preserveCwd = Boolean.FALSE;
+          }
+          if (preserveCwd) {
+            // Use the current module directory instead, or the cwd if not in a module
+            modDir = currentModDir;
+          }
+          doDeploy(worker, main, config,
+                   urls.toArray(new URL[urls.size()]), instances, modDir, ctx, doneHandler);
+          return true;
+        } else {
+          return false;
+        }
       }
-      Boolean worker = json.getBoolean("worker");
-      if (worker == null) {
-        worker = Boolean.FALSE;
-      }
-      Boolean preserveCwd = json.getBoolean("preserve-cwd");
-      if (preserveCwd == null) {
-        preserveCwd = Boolean.FALSE;
-      }
-      if (preserveCwd) {
-        // Use the current module directory instead, or the cwd if not in a module
-        modDir = currentModDir;
-      }
-      return doDeploy(worker, main, config,
-                      urls.toArray(new URL[urls.size()]), instances, modDir, doneHandler);
-    }
-    else {
-      // Try and install it
-      installMod(null, modName);
-    }
-    TODO need to make this all async
+    };
+
+    deployModuleAction.run();
   }
 
-  private static final String REPO_URI_ROOT = "/vertx-mods/mods/";
-  private static final String DEFAULT_REPO_HOST = "vert-x.github.com";
-
-  public void installMod(String repoHost, final String moduleName) {
+  public void installMod(String repoHost, final String moduleName, final Handler<Boolean> doneHandler) {
     if (repoHost == null) {
       repoHost = DEFAULT_REPO_HOST;
     }
@@ -252,11 +290,11 @@ public class VerticleManager {
     client.exceptionHandler(new Handler<Exception>() {
       public void handle(Exception e) {
         e.printStackTrace();
+        doneHandler.handle(false);
       }
     });
-    final CountDownLatch latch = new CountDownLatch(1);
     String uri = REPO_URI_ROOT + moduleName + "/mod.zip";
-    System.out.println("Attempting to install module " + moduleName + " from http://" + uri);
+    System.out.println("Attempting to install module " + moduleName + " from http://" + repoHost + uri);
     HttpClientRequest req = client.get(uri, new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         if (resp.statusCode == 200) {
@@ -265,25 +303,21 @@ public class VerticleManager {
             public void handle(Buffer buffer) {
               System.out.println("Done");
               unzipModule(moduleName, buffer);
-              latch.countDown();
+              doneHandler.handle(true);
             }
           });
         } else if (resp.statusCode == 404) {
           System.out.println("Can't find module " + moduleName);
-          latch.countDown();
+          doneHandler.handle(false);
         } else {
           System.out.println("Error from server: " + resp.statusCode);
-          latch.countDown();
+          doneHandler.handle(false);
         }
       }
     });
     req.putHeader("host", "vert-x.github.com");
     req.putHeader("user-agent", "Vert.x Module Installer");
     req.end();
-    try {
-      latch.await(10, TimeUnit.SECONDS);
-    } catch (Exception ignore) {
-    }
   }
 
   public void uninstallMod(String moduleName) {
@@ -299,8 +333,6 @@ public class VerticleManager {
       }
     }
   }
-
-  private static final int BUFFER_SIZE = 4096;
 
   private void unzipModule(String modName, Buffer data) {
     if (!modRoot.exists()) {
@@ -361,11 +393,12 @@ public class VerticleManager {
     Context.getContext().setPathAdjustment(relative);
   }
 
-  private String doDeploy(boolean worker, final String main,
-                          final JsonObject config, final URL[] urls,
-                          int instances,
-                          final File modDir,
-                          final Handler<Void> doneHandler)
+  private synchronized void doDeploy(boolean worker, final String main,
+                                     final JsonObject config, final URL[] urls,
+                                     int instances,
+                                     final File modDir,
+                                     final Context context,
+                                     final Handler<String> doneHandler)
   {
 
     // Infer the main type
@@ -393,16 +426,12 @@ public class VerticleManager {
     class AggHandler {
       AtomicInteger count = new AtomicInteger(0);
 
-      // We need a context on which to execute the done Handler
-      // We use the current calling context (if any) or assign a new one
-      Context doneContext = vertx.getOrAssignContext();
-
       void started() {
         if (count.incrementAndGet() == instCount) {
           if (doneHandler != null) {
-            doneContext.execute(new Runnable() {
+            context.execute(new Runnable() {
               public void run() {
-                doneHandler.handle(null);
+                doneHandler.handle(deploymentName);
               }
             });
           }
@@ -434,7 +463,11 @@ public class VerticleManager {
                 .getClassLoader()));
           } catch (Throwable t) {
             log.error("Failed to create verticle", t);
-            doUndeploy(deploymentName, doneHandler);
+            doUndeploy(deploymentName, new SimpleHandler() {
+              public void handle() {
+                doneHandler.handle(null);
+              }
+            });
             return;
           }
 
@@ -450,7 +483,11 @@ public class VerticleManager {
             verticle.start();
           } catch (Throwable t) {
             vertx.reportException(t);
-            doUndeploy(deploymentName, doneHandler);
+            doUndeploy(deploymentName, new SimpleHandler() {
+              public void handle() {
+                doneHandler.handle(null);
+              }
+            });
           }
           aggHandler.started();
         }
@@ -461,10 +498,7 @@ public class VerticleManager {
       } else {
         vertx.startOnEventLoop(runner);
       }
-
     }
-
-    return deploymentName;
   }
 
   // Must be synchronized since called directly from different thread

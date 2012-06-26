@@ -43,7 +43,7 @@ function testWorkQueue() {
 
 tu.registerTests(this);
 var queueConfig = {address: 'test.orderQueue'}
-vertx.deployWorkerVerticle('work-queue', queueConfig, 1, function() {
+vertx.deployModule('work-queue', queueConfig, 1, function() {
   tu.appReady();
 });
 

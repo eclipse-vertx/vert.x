@@ -231,14 +231,12 @@ function deleteAll() {
   });
 }
 
-
 tu.registerTests(this);
 
 var persistorConfig = {address: 'test.persistor', 'db_name' : 'test_db'}
 var authMgrConfig = {address: 'test.authMgr', 'persistor_address' : 'test.persistor', 'user_collection': 'users'}
-var authMgrID = null
-vertx.deployVerticle('mongo-persistor', persistorConfig, 1, function() {
-  authMgrID = vertx.deployVerticle('auth-mgr', authMgrConfig, 1, function() {
+vertx.deployModule('mongo-persistor', persistorConfig, 1, function() {
+  vertx.deployModule('auth-mgr', authMgrConfig, 1, function() {
     tu.appReady();
   });
 });

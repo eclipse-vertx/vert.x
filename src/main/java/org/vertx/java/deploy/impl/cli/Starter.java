@@ -16,6 +16,7 @@
 
 package org.vertx.java.deploy.impl.cli;
 
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.impl.VertxInternal;
@@ -62,16 +63,24 @@ public class Starter {
       displaySyntax();
     } else {
       String command = sargs[0].toLowerCase();
-      if (command.equals("version")) {
-        System.out.println("vert.x 1.1.0.final");
-      } else if (command.equals("run")) {
-        runVerticle(sargs);
-      } else if (command.equals("install")) {
-        installModule(sargs);
-      } else if (command.equals("uninstall")) {
-        uninstallModule(sargs);
-      } else {
-        displaySyntax();
+      switch (command) {
+        case "version":
+          System.out.println("vert.x 1.1.0.final");
+          break;
+        case "run":
+          runVerticle(false, sargs);
+          break;
+        case "runmod":
+          runVerticle(true, sargs);
+          break;
+        case "install":
+          installModule(sargs);
+          break;
+        case "uninstall":
+          uninstallModule(sargs);
+          break;
+        default:
+          displaySyntax();
       }
     }
   }
@@ -93,7 +102,10 @@ public class Starter {
     Args args = new Args(sargs);
     String repo = args.map.get("-repo");
 
-    mgr.installMod(repo, modName);
+    mgr.installMod(repo, modName, new Handler<Boolean>() {
+      public void handle(Boolean res) {
+      }
+    });
   }
 
   private void uninstallModule(String[] sargs) {
@@ -112,7 +124,7 @@ public class Starter {
     mgr.uninstallMod(modName);
   }
 
-  private void runVerticle(String[] sargs) {
+  private void runVerticle(boolean module, String[] sargs) {
 
     Args args = new Args(sargs);
 
@@ -215,11 +227,11 @@ public class Starter {
       conf = null;
     }
 
-    mgr.deploy(worker, main, conf, urls, instances, null, new SimpleHandler() {
-      public void handle() {
-        System.out.println("Started");
-      }
-    });
+    if (module) {
+      mgr.deployMod(main, conf, instances, null, null);
+    } else {
+      mgr.deploy(worker, main, conf, urls, instances, null, null);
+    }
     mgr.block();
   }
 
@@ -277,7 +289,7 @@ public class Starter {
   private void displaySyntax() {
 
     String usage =
-"Usage: vertx [run|version] [main] [-options]\n\n" +
+"Usage: vertx [run|runmod|install|uninstall|version] [main] [-options]\n\n" +
 
 "    vertx run <main> [-options]\n" +
 "        runs a verticle called <main> in its own instance of vert.x.\n" +
@@ -303,6 +315,43 @@ public class Starter {
 "        -cluster-host          host to bind to for cluster communication.\n" +
 "                               If this is not specified vert.x will attempt\n" +
 "                               to choose one from the available interfaces.\n\n" +
+
+"    vertx runmod <modname> [-options]\n" +
+"        runs a module called <modname> in its own instance of vert.x.\n" +
+"        If the module is not already installed, Vert.x will attempt to install it\n" +
+"        Java class.\n\n" +
+"    valid options are:\n" +
+"        -conf <config_file>    Specifies configuration that should be provided \n" +
+"                               to the module. <config_file> should reference \n" +
+"                               a text file containing a valid JSON object\n" +
+"                               which represents the configuration.\n" +
+"        -instances <instances> specifies how many instances of the verticle will\n" +       // 80 chars at will
+"                               be deployed. Defaults to 1\n" +
+"        -repo <repo_host>      specifies the repository to use to get the module\n" +
+"                               from if it is not already installed.\n" +
+"                               Default is vert-x.github.com/vertx-mods\n" +
+"        -cluster               if specified then the vert.x instance will form a\n" +
+"                               cluster with any other vert.x instances on the\n" +
+"                               network.\n" +
+"        -cluster-port          port to use for cluster communication.\n" +
+"                               Default is 25500.\n" +
+"        -cluster-host          host to bind to for cluster communication.\n" +
+"                               If this is not specified vert.x will attempt\n" +
+"                               to choose one from the available interfaces.\n\n" +
+
+"    vertx install <modname> [-options]\n" +
+"        attempts to install a module from a remote repository.\n" +
+"        Module will be installed into a local 'mods' directory unless the\n" +
+"        environment variable VERTX_MODS specifies a different location.\n\n" +
+"    valid options are:\n" +
+"        -repo <repo_host>      specifies the repository to use to get the module\n" +
+"                               from if it is not already installed.\n" +
+"                               Default is vert-x.github.com/vertx-mods\n\n" +
+
+"    vertx uninstall <modname>\n" +
+"        attempts to uninstall a module from a remote repository.\n" +
+"        Module will be uninstalled from the local 'mods' directory unless the\n" +
+"        environment variable VERTX_MODS specifies a different location.\n\n" +
 
 "    vertx version\n" +
 "        displays the version";

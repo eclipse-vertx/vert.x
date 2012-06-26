@@ -17,7 +17,6 @@
 package vertx.tests.busmods.persistor;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
@@ -43,8 +42,9 @@ public class TestClient extends TestClientBase {
     JsonObject config = new JsonObject();
     config.putString("address", "test.persistor");
     config.putString("db_name", "test_db");
-    persistorID = container.deployVerticle("mongo-persistor", config, 1, new SimpleHandler() {
-      public void handle() {
+    container.deployModule("mongo-persistor", config, 1, new Handler<String>() {
+      public void handle(String res) {
+        persistorID = res;
         tu.appReady();
       }
     });

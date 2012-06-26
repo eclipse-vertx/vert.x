@@ -70,9 +70,8 @@ tu.registerTests(this);
 var persistorConfig = {address: 'test.persistor', 'db_name' : 'test_db'}
 var authMgrConfig = {address: 'test.authMgr', 'persistor_address' : 'test.persistor', 'user_collection': 'users',
                      session_timeout: 500}
-var authMgrID = null
-vertx.deployWorkerVerticle('mongo-persistor', persistorConfig, 1, function() {
-  authMgrID = vertx.deployWorkerVerticle('auth-mgr', authMgrConfig, 1, function() {
+vertx.deployModule('mongo-persistor', persistorConfig, 1, function() {
+  vertx.deployModule('auth-mgr', authMgrConfig, 1, function() {
     tu.appReady();
   });
 });

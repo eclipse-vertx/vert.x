@@ -32,7 +32,7 @@ function testDeploy() {
 }
 
 function testUndeploy() {
-  var id = vertx.deployVerticle("core/deploy/child.js", null, 1, function() {
+  vertx.deployVerticle("core/deploy/child.js", null, 1, function(id) {
     tu.checkContext();
     eb.registerHandler("test-handler", function MyHandler(message) {
       if ("stopped" === message) {
