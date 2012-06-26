@@ -41,7 +41,9 @@ test {
 	systemProperty 'vertx.mods', file("$moduleBuild/mods")
 	systemProperty 'jruby.home', System.getenv('JRUBY_HOME')
 
-	jvmArgs '-Xms128m', '-Xmx512m', '-XX:MaxPermSize=128m'
+	jvmArgs '-Xms128m', '-Xmx1024m', '-XX:MaxPermSize=128m', '-XX:NewRatio=3'
+	
+	forkEvery 50 // FIXME This may not be necessary
 }
 
 // test.dependsOn project(':vertx-mods').tasks.getByPath('busmods')
