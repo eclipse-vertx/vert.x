@@ -41,11 +41,11 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-//@RunWith(org.vertx.java.framework.VertxTestRunner.class)
+// @RunWith(org.vertx.java.framework.VertxTestRunner.class)
 public class TestBase extends TestCase {
 
   private static final Logger log = LoggerFactory.getLogger(TestBase.class);
-  private static final int DEFAULT_TIMEOUT = 30;
+  private static final int DEFAULT_TIMEOUT = Integer.getInteger("vertx.test.timeout", 30);
 
   public static final String EVENTS_ADDRESS = "__test_events";
 

@@ -619,11 +619,11 @@ public class TestClient extends TestClientBase {
     }
 
     if (params.clientTrust) {
-      client.setTrustStorePath("./src/tests/keystores/client-truststore.jks")
+      client.setTrustStorePath("src/main/resources/keystores/client-truststore.jks")
           .setTrustStorePassword("wibble");
     }
     if (params.clientCert) {
-      client.setKeyStorePath("./src/tests/keystores/client-keystore.jks")
+      client.setKeyStorePath("src/main/resources/keystores/client-keystore.jks")
           .setKeyStorePassword("wibble");
     }
 

@@ -2,6 +2,7 @@
 .classpath
 .project
 .settings
+.DS_Store
 bin
 build
 target

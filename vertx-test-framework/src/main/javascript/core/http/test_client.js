@@ -175,9 +175,9 @@ function httpMethod(ssl, method, chunked) {
 
   if (ssl) {
     server.setSSL(true);
-    server.setKeyStorePath('./src/tests/keystores/server-keystore.jks');
+    server.setKeyStorePath('src/main/resources/keystores/server-keystore.jks');
     server.setKeyStorePassword('wibble');
-    server.setTrustStorePath('./src/tests/keystores/server-truststore.jks');
+    server.setTrustStorePath('src/main/resources/keystores/server-truststore.jks');
     server.setTrustStorePassword('wibble');
     server.setClientAuthRequired(true);
   }
@@ -222,9 +222,9 @@ function httpMethod(ssl, method, chunked) {
 
   if (ssl) {
     client.setSSL(true);
-    client.setKeyStorePath('./src/tests/keystores/client-keystore.jks');
+    client.setKeyStorePath('src/main/resources/keystores/client-keystore.jks');
     client.setKeyStorePassword('wibble');
-    client.setTrustStorePath('./src/tests/keystores/client-truststore.jks');
+    client.setTrustStorePath('src/main/resources/keystores/client-truststore.jks');
     client.setTrustStorePassword('wibble');
   }
 

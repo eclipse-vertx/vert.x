@@ -176,9 +176,9 @@ def httpMethod(ssl, method, chunked)  {
 
   if (ssl) {
     server.SSL = true
-    server.keyStorePath = "./src/tests/keystores/server-keystore.jks"
+    server.keyStorePath = "src/main/resources/keystores/server-keystore.jks"
     server.keyStorePassword = "wibble"
-    server.trustStorePath = "./src/tests/keystores/server-truststore.jks"
+    server.trustStorePath = "src/main/resources/keystores/server-truststore.jks"
     server.trustStorePassword = "wibble"
     server.clientAuthRequired = true
   }
@@ -222,9 +222,9 @@ def httpMethod(ssl, method, chunked)  {
 
   if (ssl) {
     client.SSL = true
-    client.keyStorePath = "./src/tests/keystores/client-keystore.jks"
+    client.keyStorePath = "src/main/resources/keystores/client-keystore.jks"
     client.keyStorePassword = "wibble"
-    client.trustStorePath = "./src/tests/keystores/client-truststore.jks"
+    client.trustStorePath = "src/main/resources/keystores/client-truststore.jks"
     client.trustStorePassword = "wibble"
   }
 

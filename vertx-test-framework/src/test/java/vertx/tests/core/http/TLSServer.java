@@ -42,11 +42,11 @@ public class TLSServer extends Verticle {
     server.setSSL(true);
 
     if (params.serverTrust) {
-      server.setTrustStorePath("./src/tests/keystores/server-truststore.jks").setTrustStorePassword
+      server.setTrustStorePath("src/main/resources/keystores/server-truststore.jks").setTrustStorePassword
           ("wibble");
     }
     if (params.serverCert) {
-      server.setKeyStorePath("./src/tests/keystores/server-keystore.jks").setKeyStorePassword("wibble");
+      server.setKeyStorePath("src/main/resources/keystores/server-keystore.jks").setKeyStorePassword("wibble");
     }
     if (params.requireClientAuth) {
       server.setClientAuthRequired(true);
