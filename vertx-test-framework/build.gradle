@@ -14,21 +14,9 @@
  * limitations under the License.
  */
 
-buildscript {
-	repositories {
-		mavenCentral()
-	}
-
-	dependencies {
-		classpath "com.icegreen:greenmail:1.3.1b"
-	}
-}
-
 apply plugin: 'groovy'
 apply plugin: 'vertx-jruby'
 apply plugin: 'vertx-rhino'
-
-import com.icegreen.greenmail.util.GreenMail
 
 dependencies {
 
@@ -45,22 +33,17 @@ dependencies {
 	compile "junit:junit:$junitVersion"
 }
 
-def greenMail = new GreenMail()
-
-task startGreenmail() {
-	greenMail.start()
-}
-
 test {
 	def moduleBuild = project(':vertx-mods').buildDir
 
-	systemProperty "vertx.test.timeout", 5
-	systemProperty "vertx.mods", file("$moduleBuild/mods")
-	systemProperty "jruby.home", System.getenv('JRUBY_HOME')
-	
-	doLast {
-		greenMail.stop()
-	}
+	systemProperty 'vertx.test.timeout', 10
+	systemProperty 'vertx.mods', file("$moduleBuild/mods")
+	systemProperty 'jruby.home', System.getenv('JRUBY_HOME')	
 }
 
-test.dependsOn startGreenmail, project(":vertx-mods").tasks.findByName('busmods')
+test.dependsOn project(':vertx-mods').tasks.getByPath('busmods')
+
+
+
+
+
