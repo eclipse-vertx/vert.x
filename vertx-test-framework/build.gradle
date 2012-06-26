@@ -1,0 +1,51 @@
+/*
+ * Copyright 2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+apply plugin: 'groovy'
+apply plugin: 'vertx-jruby'
+apply plugin: 'vertx-rhino'
+
+dependencies {
+
+	compile project(path: ':vertx-core')
+	compile project(path: ':vertx-core-platform')
+	compile project(path: ':vertx-lang:vertx-lang-groovy')
+	compile project(path: ':vertx-lang:vertx-lang-javascript')
+	compile project(path: ':vertx-lang:vertx-lang-ruby')
+
+	groovy "org.codehaus.groovy:groovy-all:$groovyVersion"
+	jruby "org.jruby:jruby:$jrubyVersion"
+	rhino "org.mozilla:rhino:$rhinoVersion"
+	
+	compile "junit:junit:$junitVersion"
+	compile fileTree("$rootDir/src/conf")
+}
+
+test {
+	def moduleBuild = project(':vertx-mods').buildDir
+
+	systemProperty 'vertx.test.timeout', 30
+	systemProperty 'vertx.mods', file("$moduleBuild/mods")
+	systemProperty 'jruby.home', System.getenv('JRUBY_HOME')
+
+	jvmArgs '-Xms128m', '-Xmx1024m', '-XX:MaxPermSize=128m', '-XX:NewRatio=3'
+	
+	forkEvery 50 // FIXME This may not be necessary
+}
+
+// test.dependsOn project(':vertx-mods').tasks.getByPath('busmods')
+test.dependsOn ':vertx-mods:busmods'
+

@@ -1,0 +1,16 @@
+apply plugin: 'groovy'
+apply plugin: 'vertx-jruby'
+apply plugin: 'vertx-rhino'
+
+dependencies {
+	compile project(path: ':vertx-core')
+	compile project(path: ':vertx-core-platform')
+
+	compile project(path: ':vertx-lang:vertx-lang-groovy')
+	compile project(path: ':vertx-lang:vertx-lang-javascript')
+	compile project(path: ':vertx-lang:vertx-lang-ruby')
+
+	groovy "org.codehaus.groovy:groovy-all:$groovyVersion"
+	jruby "org.jruby:jruby:$jrubyVersion"
+	rhino "org.mozilla:rhino:$rhinoVersion"
+}
