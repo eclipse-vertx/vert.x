@@ -31,19 +31,19 @@ dependencies {
 	rhino "org.mozilla:rhino:$rhinoVersion"
 	
 	compile "junit:junit:$junitVersion"
+	compile fileTree("$rootDir/src/conf")
 }
 
 test {
 	def moduleBuild = project(':vertx-mods').buildDir
 
-	systemProperty 'vertx.test.timeout', 10
+	systemProperty 'vertx.test.timeout', 30
 	systemProperty 'vertx.mods', file("$moduleBuild/mods")
-	systemProperty 'jruby.home', System.getenv('JRUBY_HOME')	
+	systemProperty 'jruby.home', System.getenv('JRUBY_HOME')
+
+	jvmArgs '-Xms128m', '-Xmx512m', '-XX:MaxPermSize=128m'
 }
 
-test.dependsOn project(':vertx-mods').tasks.getByPath('busmods')
-
-
-
-
+// test.dependsOn project(':vertx-mods').tasks.getByPath('busmods')
+test.dependsOn ':vertx-mods:busmods'
 
