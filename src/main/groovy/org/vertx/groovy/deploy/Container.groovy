@@ -50,10 +50,9 @@ class Container {
   /**
    * Deploy a worker verticle programmatically
    * @param main The main of the verticle
-   * @param doneHandler The handler will be called when deployment is complete
-   * @return Unique deployment id
+   * @param doneHandler The handler will be called passing in the unique deployment id when deployment is complete
    */
-  String deployWorkerVerticle(String main, Closure doneHandler) {
+  void deployWorkerVerticle(String main, Closure doneHandler) {
     jContainer.deployWorkerVerticle(main, null, 1, doneHandler as Handler)
   }
 
@@ -61,9 +60,8 @@ class Container {
    * Deploy a worker verticle programmatically
    * @param main The main of the verticle
    * @param instances The number of instances to deploy (defaults to 1)
-   * @return Unique deployment id
    */
-  String deployWorkerVerticle(String main, int instances) {
+  void deployWorkerVerticle(String main, int instances) {
     jContainer.deployWorkerVerticle(main, instances)
   }
 
@@ -71,9 +69,8 @@ class Container {
    * Deploy a worker verticle programmatically
    * @param main The main of the verticle
    * @param config JSON config to provide to the verticle
-   * @return Unique deployment id
    */
-  String deployWorkerVerticle(String main, Map<String, Object> config) {
+  void deployWorkerVerticle(String main, Map<String, Object> config) {
     jContainer.deployWorkerVerticle(main, new JsonObject(config))
   }
 
@@ -82,9 +79,8 @@ class Container {
    * @param main The main of the verticle
    * @param config JSON config to provide to the verticle
    * @param instances The number of instances to deploy (defaults to 1)
-   * @return Unique deployment id
    */
-  String deployWorkerVerticle(String main, Map<String, Object> config, int instances) {
+  void deployWorkerVerticle(String main, Map<String, Object> config, int instances) {
     jContainer.deployWorkerVerticle(main, new JsonObject(config), instances)
   }
 
@@ -93,19 +89,17 @@ class Container {
    * @param main The main of the verticle
    * @param config JSON config to provide to the verticle
    * @param instances The number of instances to deploy (defaults to 1)
-   * @param doneHandler The handler will be called when deployment is complete
-   * @return Unique deployment id
+   * @param doneHandler The handler will be called passing in the unique deployment id when deployment is complete
    */
-  String deployWorkerVerticle(String main, Map<String, Object> config, int instances, Closure doneHandler) {
+  void deployWorkerVerticle(String main, Map<String, Object> config, int instances, Closure doneHandler) {
     jContainer.deployWorkerVerticle(main, new JsonObject(config), instances, doneHandler as Handler)
   }
 
   /**
    * Deploy a verticle programmatically
    * @param main The main of the verticle
-   * @return Unique deployment id
    */
-  String deployVerticle(String main) {
+  void deployVerticle(String main) {
     jContainer.deployVerticle(main)
   }
 
@@ -113,9 +107,8 @@ class Container {
    * Deploy a verticle programmatically
    * @param main The main of the verticle
    * @param doneHandler The handler will be called when deployment is complete
-   * @return Unique deployment id
    */
-  String deployVerticle(String main, Closure doneHandler) {
+  void deployVerticle(String main, Closure doneHandler) {
     jContainer.deployVerticle(main, null, 1, doneHandler as Handler)
   }
 
@@ -123,9 +116,8 @@ class Container {
    * Deploy a verticle programmatically
    * @param main The main of the verticle
    * @param instances The number of instances to deploy (defaults to 1)
-   * @return Unique deployment id
    */
-  String deployVerticle(String main, int instances) {
+  void deployVerticle(String main, int instances) {
     jContainer.deployVerticle(main, instances)
   }
 
@@ -133,9 +125,8 @@ class Container {
    * Deploy a verticle programmatically
    * @param main The main of the verticle
    * @param config JSON config to provide to the verticle
-   * @return Unique deployment id
    */
-  String deployVerticle(String main, Map<String, Object> config) {
+  void deployVerticle(String main, Map<String, Object> config) {
     jContainer.deployVerticle(main, new JsonObject(config))
   }
 
@@ -144,9 +135,8 @@ class Container {
    * @param main The main of the verticle
    * @param config JSON config to provide to the verticle
    * @param instances The number of instances to deploy (defaults to 1)
-   * @return Unique deployment id
    */
-  String deployVerticle(String main, Map<String, Object> config, int instances) {
+  void deployVerticle(String main, Map<String, Object> config, int instances) {
     jContainer.deployVerticle(main, new JsonObject(config), instances)
   }
 
@@ -155,19 +145,17 @@ class Container {
    * @param main The main of the verticle
    * @param config JSON config to provide to the verticle
    * @param instances The number of instances to deploy (defaults to 1)
-   * @param doneHandler The handler will be called when deployment is complete
-   * @return Unique deployment id
+   * @param doneHandler The handler will be called passing in the unique deployment id when deployment is complete
    */
-  String deployVerticle(String main, Map<String, Object> config, int instances, Closure doneHandler) {
+  void deployVerticle(String main, Map<String, Object> config, int instances, Closure doneHandler) {
     jContainer.deployVerticle(main, new JsonObject(config), instances, doneHandler as Handler)
   }
 
-    /**
+  /**
    * Deploy a module programmatically
    * @param moduleName The main of the module
-   * @return Unique deployment id
    */
-  String deployModule(String moduleName) {
+  void deployModule(String moduleName) {
     jContainer.deployModule(moduleName)
   }
 
@@ -175,9 +163,8 @@ class Container {
    * Deploy a module programmatically
    * @param moduleName The main of the module
    * @param doneHandler The handler will be called when deployment is complete
-   * @return Unique deployment id
    */
-  String deployModule(String moduleName, Closure doneHandler) {
+  void deployModule(String moduleName, Closure doneHandler) {
     jContainer.deployModule(moduleName, null, 1, doneHandler as Handler)
   }
 
@@ -185,9 +172,8 @@ class Container {
    * Deploy a module programmatically
    * @param moduleName The main of the module
    * @param instances The number of instances to deploy (defaults to 1)
-   * @return Unique deployment id
    */
-  String deployModule(String moduleName, int instances) {
+  void deployModule(String moduleName, int instances) {
     jContainer.deployModule(moduleName, instances)
   }
 
@@ -195,9 +181,8 @@ class Container {
    * Deploy a module programmatically
    * @param moduleName The main of the module
    * @param config JSON config to provide to the module
-   * @return Unique deployment id
    */
-  String deployModule(String moduleName, Map<String, Object> config) {
+  void deployModule(String moduleName, Map<String, Object> config) {
     jContainer.deployModule(moduleName, new JsonObject(config))
   }
 
@@ -206,9 +191,8 @@ class Container {
    * @param moduleName The main of the module
    * @param config JSON config to provide to the module
    * @param instances The number of instances to deploy (defaults to 1)
-   * @return Unique deployment id
    */
-  String deployModule(String moduleName, Map<String, Object> config, int instances) {
+  void deployModule(String moduleName, Map<String, Object> config, int instances) {
     jContainer.deployModule(moduleName, new JsonObject(config), instances)
   }
 
@@ -217,10 +201,9 @@ class Container {
    * @param moduleName The main of the module
    * @param config JSON config to provide to the module
    * @param instances The number of instances to deploy (defaults to 1)
-   * @param doneHandler The handler will be called when deployment is complete
-   * @return Unique deployment id
+   * @param doneHandler The handler will be called passing in the unique deployment id when deployment is complete
    */
-  String deployModule(String moduleName, Map<String, Object> config, int instances, Closure doneHandler) {
+  void deployModule(String moduleName, Map<String, Object> config, int instances, Closure doneHandler) {
     jContainer.deployModule(moduleName, new JsonObject(config), instances, doneHandler as Handler)
   }
 

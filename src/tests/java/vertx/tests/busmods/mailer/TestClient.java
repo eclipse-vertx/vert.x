@@ -17,7 +17,6 @@
 package vertx.tests.busmods.mailer;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
@@ -33,8 +32,8 @@ public class TestClient extends TestClientBase {
     super.start();
     JsonObject config = new JsonObject();
     config.putString("address", "test.mailer");
-    container.deployVerticle("mailer", config, 1, new SimpleHandler() {
-      public void handle() {
+    container.deployModule("mailer", config, 1, new Handler<String>() {
+      public void handle(String res) {
         tu.appReady();
       }
     });

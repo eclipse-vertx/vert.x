@@ -35,27 +35,30 @@ if (!vertx.deployVerticle) {
       if (!doneHandler) doneHandler = null;
       switch (deployType) {
         case VERTICLE: {
-          return org.vertx.java.deploy.impl.VertxLocator.container.deployVerticle(name, config, instances, doneHandler);
+          org.vertx.java.deploy.impl.VertxLocator.container.deployVerticle(name, config, instances, doneHandler);
+          break;
         }
         case WORKER: {
-          return org.vertx.java.deploy.impl.VertxLocator.container.deployWorkerVerticle(name, config, instances, doneHandler);
+          org.vertx.java.deploy.impl.VertxLocator.container.deployWorkerVerticle(name, config, instances, doneHandler);
+          break;
         }
         case MODULE: {
-          return org.vertx.java.deploy.impl.VertxLocator.container.deployModule(name, config, instances, doneHandler);
+          org.vertx.java.deploy.impl.VertxLocator.container.deployModule(name, config, instances, doneHandler);
+          break;
         }
       }
     }
 
     vertx.deployVerticle = function(main, config, instances, doneHandler) {
-      return deploy(false, main, config, instances, doneHandler);
+      deploy(VERTICLE, main, config, instances, doneHandler);
     }
 
     vertx.deployWorkerVerticle = function(main, config, instances, doneHandler) {
-      return deploy(true, main, config, instances, doneHandler);
+      deploy(WORKER, main, config, instances, doneHandler);
     }
 
     vertx.deployModule = function(moduleName, config, instances, doneHandler) {
-      return deploy(true, moduleName, config, instances, doneHandler);
+      deploy(MODULE, moduleName, config, instances, doneHandler);
     }
 
     vertx.undeployVerticle = function(name, doneHandler) {
