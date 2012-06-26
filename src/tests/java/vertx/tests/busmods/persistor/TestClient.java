@@ -42,7 +42,7 @@ public class TestClient extends TestClientBase {
     JsonObject config = new JsonObject();
     config.putString("address", "test.persistor");
     config.putString("db_name", "test_db");
-    container.deployModule("mongo-persistor", config, 1, new Handler<String>() {
+    container.deployModule("mongo-persistor-v1.0", config, 1, new Handler<String>() {
       public void handle(String res) {
         persistorID = res;
         tu.appReady();

@@ -32,7 +32,7 @@ public class TestClient extends TestClientBase {
     super.start();
     JsonObject config = new JsonObject();
     config.putString("address", "test.mailer");
-    container.deployModule("mailer", config, 1, new Handler<String>() {
+    container.deployModule("mailer-v1.0", config, 1, new Handler<String>() {
       public void handle(String res) {
         tu.appReady();
       }

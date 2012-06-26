@@ -235,8 +235,8 @@ tu.registerTests(this);
 
 var persistorConfig = {address: 'test.persistor', 'db_name' : 'test_db'}
 var authMgrConfig = {address: 'test.authMgr', 'persistor_address' : 'test.persistor', 'user_collection': 'users'}
-vertx.deployModule('mongo-persistor', persistorConfig, 1, function() {
-  vertx.deployModule('auth-mgr', authMgrConfig, 1, function() {
+vertx.deployModule('mongo-persistor-v1.0', persistorConfig, 1, function() {
+  vertx.deployModule('auth-mgr-v1.0', authMgrConfig, 1, function() {
     tu.appReady();
   });
 });

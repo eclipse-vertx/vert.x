@@ -31,8 +31,10 @@
   <property name="java-src-root" value="src/main/java"/>
   <property name="groovy-src-root" value="src/main/groovy"/>
   <property name="java-target" value="${target}/java/classes"/>
+  <!--
   <property name="mods-src-root" value="src/mods"/>
   <property name="mods-target" value="${target}/mods"/>
+  -->
   <property name="conf-dir" value="conf"/>
   <property name="lib-dir" value="lib"/>
   <property name="core-lib" value="${lib-dir}/main"/>
@@ -151,6 +153,7 @@
   	</copy>
   </target>
 
+  <!--
   <target name="compile-java-mods">
     <antcall target="compile-java-mod">
       <param name="mod-name" value="auth-mgr"/>
@@ -183,6 +186,7 @@
       <include name="org/vertx/mods/**/*.java"/>
     </javac>
   </target>
+  -->
 
   <target name="jar-core" depends="compile-core" description="generate the core jar">
     <jar jarfile="${target}/${core-jar-file}" basedir="${java-target}" includes="**/core/**/*.class"/>
@@ -257,7 +261,6 @@
     <junit printsummary="yes" timeout="120000" showoutput="true">
       <sysproperty key="java.util.logging.config.file" value="${conf-dir}/logging.properties"/>
       <sysproperty key="jruby.home" value="${env.JRUBY_HOME}"/>
-      <sysproperty key="vertx.mods" value="${dist-build}/mods"/>
       <classpath refid="test-classpath"/>
       <batchtest haltonfailure="yes" haltonerror="yes" fork="yes" todir="${test-results}">
         <formatter type="plain" usefile="yes"/>
@@ -296,7 +299,7 @@
   </target>
 
 
-  <target name="dist" depends="groovydoc,javadoc,yardoc,jar-core,jar-platform,jar-test-framework,compile-java-mods">
+  <target name="dist" depends="groovydoc,javadoc,yardoc,jar-core,jar-platform,jar-test-framework">
     <mkdir dir="${dist-build}"/>
 
     <copy file="${target}/${core-jar-file}" todir="${dist-build}/lib/jars"/>
@@ -373,6 +376,7 @@
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/javascript/webapp/web/js"/>
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/groovy/webapp/web/js"/>
 
+    <!--
     <copy todir="${dist-build}/mods" includeEmptyDirs="false">
       <fileset dir="${mods-src-root}">
         <include name="**/*"/>
@@ -384,6 +388,7 @@
         <include name="**/*.class"/>
       </fileset>
     </copy>
+    -->
 
     <copy file="LICENSE.txt" todir="${dist-build}"/>
     <copy file="README.md" todir="${dist-build}"/>

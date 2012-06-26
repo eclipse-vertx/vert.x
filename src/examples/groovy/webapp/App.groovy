@@ -71,7 +71,7 @@ container.with {
 
   // Deploy a MongoDB persistor module
 
-  deployVerticle('mongo-persistor') {
+  deployVerticle('mongo-persistor-v1.0') {
 
     // And when it's deployed run a script to load it with some reference
     // data for the demo
@@ -80,10 +80,10 @@ container.with {
 
   // Deploy an auth manager to handle the authentication
 
-  deployVerticle('auth-mgr')
+  deployVerticle('auth-mgr-v1.0')
 
   // Start the web server, with the config we defined above
 
-  deployVerticle('web-server', webServerConf)
+  deployVerticle('web-server-v1.0', webServerConf)
 
 }

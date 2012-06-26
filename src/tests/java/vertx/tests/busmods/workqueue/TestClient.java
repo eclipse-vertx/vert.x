@@ -36,7 +36,7 @@ public class TestClient extends TestClientBase {
     eb = vertx.eventBus();
     JsonObject config = new JsonObject();
     config.putString("address", "test.orderQueue");
-    container.deployModule("work-queue", config, 1, new Handler<String>() {
+    container.deployModule("work-queue-v1.0", config, 1, new Handler<String>() {
       public void handle(String res) {
         tu.appReady();
       }

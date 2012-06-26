@@ -187,7 +187,7 @@ public class VerticleManager {
     return map;
   }
 
-  public void deployMod(final String modName, final JsonObject config,
+  public void deployMod(final String repo, final String modName, final JsonObject config,
                         final int instances, final File currentModDir, final Handler<String> doneHandler) {
 
     final Context ctx = vertx.getOrAssignContext();
@@ -198,11 +198,11 @@ public class VerticleManager {
           if (!res.result) {
             System.out.println("Module is not installed");
             // Try and install it
-            installMod(null, modName, new Handler<Boolean>() {
+            installMod(repo, modName, new Handler<Boolean>() {
               public void handle(Boolean res) {
                 if (res) {
                   // Now deploy it
-                  deployMod(modName, config, instances, currentModDir, doneHandler);
+                  deployMod(repo, modName, config, instances, currentModDir, doneHandler);
                 } else {
                   if (doneHandler != null) {
                     doneHandler.handle(null);
@@ -294,7 +294,7 @@ public class VerticleManager {
       }
     });
     String uri = REPO_URI_ROOT + moduleName + "/mod.zip";
-    System.out.println("Attempting to install module " + moduleName + " from http://" + repoHost + uri);
+    log.info("Attempting to install module " + moduleName + " from http://" + repoHost + uri);
     HttpClientRequest req = client.get(uri, new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         if (resp.statusCode == 200) {

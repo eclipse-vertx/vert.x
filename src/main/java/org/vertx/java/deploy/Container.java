@@ -137,7 +137,7 @@ public class Container {
    */
   public void deployModule(String moduleName, JsonObject config, int instances, Handler<String> doneHandler) {
     File modDir = mgr.getDeploymentModDir();
-    mgr.deployMod(moduleName, config, instances, modDir, doneHandler);
+    mgr.deployMod(null, moduleName, config, instances, modDir, doneHandler);
   }
 
   /**
