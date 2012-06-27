@@ -29,3 +29,5 @@ dependencies {
 	// runtime "org.jsdoctoolkit:jsdoc:2.1.0"
 }
 
+jar.enabled = false
+assemble.enabled = false
