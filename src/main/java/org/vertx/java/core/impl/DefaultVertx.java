@@ -231,7 +231,7 @@ public class DefaultVertx extends VertxInternal {
     if (ctx != null) {
       ctx.reportException(t);
     } else {
-      log.error("Unhandled exception ", t);
+      log.error(" default vertx Unhandled exception ", t);
     }
   }
 
