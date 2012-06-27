@@ -1,0 +1,57 @@
+Regression Testing for Zope 2 support
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+:RequireModule: ExtensionClass
+
+    >>> from epydoc.test.util import runintrospecter
+
+We treat extension classes as if they were classes:
+
+    >>> from ExtensionClass import ExtensionClass
+
+    >>> runintrospecter(s='''
+    ...     from ExtensionClass import ExtensionClass
+    ...     ''', attribs='variables value pyval',
+    ...     introspect='ExtensionClass')
+    ClassDoc [0]
+     +- pyval = <extension class ExtensionClass at 40...
+     +- variables
+        +- __basicnew__ => VariableDoc for __basicnew__ [1]
+        |  +- value
+        |     +- RoutineDoc [2]
+        |        +- pyval = <CMethod object at ...>
+        +- __call__ => VariableDoc for __call__ [3]
+        |  +- value
+        |     +- RoutineDoc [4]
+        |        +- pyval = <CMethod object at ...>
+        +- __delattr__ => VariableDoc for __delattr__ [5]
+        |  +- value
+        |     +- RoutineDoc [6]
+        |        +- pyval = <CMethod object at ...>
+        +- __getattr__ => VariableDoc for __getattr__ [7]
+        |  +- value
+        |     +- RoutineDoc [8]
+        |        +- pyval = <CMethod object at ...>
+        +- __init__ => VariableDoc for __init__ [9]
+        |  +- value
+        |     +- RoutineDoc [10]
+        |        +- pyval = <CMethod object at ...>
+        +- __reduce__ => VariableDoc for __reduce__ [11]
+        |  +- value
+        |     +- RoutineDoc [12]
+        |        +- pyval = <CMethod object at ...>
+        +- __repr__ => VariableDoc for __repr__ [13]
+        |  +- value
+        |     +- RoutineDoc [14]
+        |        +- pyval = <CMethod object at ...>
+        +- __setattr__ => VariableDoc for __setattr__ [15]
+        |  +- value
+        |     +- RoutineDoc [16]
+        |        +- pyval = <CMethod object at ...>
+        +- inheritedAttribute => VariableDoc for inheritedAttribute [17]
+           +- value
+              +- RoutineDoc [18]
+                 +- pyval = <CMethod object at ...>
+
+(If we didn't add special support, ``ExtensionClass`` would be a
+`GenericValueDoc`.)
+

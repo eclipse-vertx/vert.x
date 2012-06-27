@@ -26,4 +26,4 @@ $DIRNAME/lib/main/jackson-core-asl.jar:\
 $DIRNAME/lib/main/jackson-mapper-asl.jar:\
 $DIRNAME/lib/main/hazelcast.jar
 
-$JYTHON_HOME/jython -J-classpath $CLASSPATH -Dpython.path=src/main/python pydocx.py
+$JYTHON_HOME/jython -J-classpath $CLASSPATH -Dpython.path=src/main/python:lib/docs/python pydocx.py

@@ -1,0 +1,70 @@
+Regression Testing for plaintext
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    >>> from epydoc.test.util import print_warnings
+    >>> print_warnings()
+
+Summary
+=======
+The implementation of the summaization function works as expected.
+
+>>> from epydoc.markup import plaintext
+>>> def getsummary(s):
+...     p = plaintext.parse_docstring(s, [])
+...     s, o = p.summary()
+...     s = s.to_plaintext(None).strip()
+...     return s, o
+
+Let's not lose anything!
+
+>>> getsummary("Single line")
+('Single line', False)
+
+>>> getsummary("Single line.")
+('Single line.', False)
+
+>>> getsummary("""
+... Single line with period.
+... """)
+('Single line with period.', False)
+
+>>> getsummary("""
+... Other lines with period.
+... This is attached
+... """)
+('Other lines with period.', True)
+
+>>> getsummary("""
+... Other lines with period.
+...
+... This is detached
+... """)
+('Other lines with period.', True)
+
+>>> getsummary("""
+... Other lines without period
+... This is attached
+... """)
+('Other lines without period...', True)
+
+>>> getsummary("""
+... Other lines without period
+...
+... This is detached
+... """)
+('Other lines without period...', True)
+
+In 3.0beta1 docstrings such this were not correctly summarized.
+
+>>> getsummary("""A user-defined wrapper around string objects
+...
+... Note: string objects have grown methods in Python 1.6
+... This module requires Python 1.6 or later.
+... """)
+('A user-defined wrapper around string objects', True)
+
+>>> getsummary("""This is more tricky
+... than the test before
+...
+... but i am looking for the same bug.
+... """)
+('This is more tricky\nthan the test before', True)

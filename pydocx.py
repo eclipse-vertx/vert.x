@@ -46,10 +46,10 @@ class CustomHTMLDoc(pydoc.HTMLDoc):
         
         page = self.page("vert.x: Index of Modules", contents)
         page = page.replace('<strong>.</strong>', '<strong>API</strong>')
-        file = open(APIDOC_DIR+'index.html', 'w')
+        file = open(PYDOC_OUTPUT_DIR+'index.html', 'w')
         file.write(page)
         file.close()
-        print 'wrote', APIDOC_DIR+'index.html'
+        print 'wrote', PYDOC_OUTPUT_DIR+'index.html'
 
     def classlink(self, object, modname):
         """Make a link for a class."""
@@ -69,10 +69,10 @@ def custom_writedoc(thing, forceload=0):
     try:
         object, name = pydoc.resolve(thing, forceload)
         page = pydoc.html.page(pydoc.describe(object), pydoc.html.document(object, name))
-        file = open(APIDOC_DIR + name + '.html', 'w')
+        file = open(PYDOC_OUTPUT_DIR + name + '.html', 'w')
         file.write(page)
         file.close()
-        print 'wrote', APIDOC_DIR + name + '.html'
+        print 'wrote', PYDOC_OUTPUT_DIR + name + '.html'
     except (ImportError, pydoc.ErrorDuringImport), value:
         print value
 
@@ -154,13 +154,15 @@ def custom_getclasstree(classes, unique=0):
     return pydoc.inspect.walktree(roots, children, None)
 
 # Remove and recreate the output docs directory
-APIDOC_DIR = os.getcwd()+"/target/docs/python/api/"
+PYDOC_OUTPUT_DIR = os.getcwd()+"/target/docs/python/api/"
+EYDOC_OUTPUT_DIR = os.getcwd()+"/target/docs/python/epydoc/"
 try:
     shutil.rmtree("target/docs/python")
 except: pass
-os.makedirs(APIDOC_DIR)
+os.makedirs(PYDOC_OUTPUT_DIR)
 os.chdir("src/main/python")
 
+# pydoc 
 # Replace some of the pydoc methods to all them to work with java inheritance
 pydoc.html = CustomHTMLDoc()
 pydoc.inspect.classify_class_attrs = custom_classify_class_attrs
@@ -168,3 +170,21 @@ pydoc.inspect.getclasstree = custom_getclasstree
 pydoc.writedoc = custom_writedoc
 pydoc.writedocs("./")
 pydoc.html.write_index()
+
+print "\n\n"
+
+# epydoc
+import epydoc.cli
+class Options(object):
+    def __init__(self, defaults):
+        for (attr, val) in defaults.items():
+            setattr(self, attr, val)
+    def __getattr__(self, name): return None
+
+options = Options(epydoc.cli.option_defaults())
+options.introspect = False
+options.default_target = EYDOC_OUTPUT_DIR
+options.names = ['vertx', 'core']
+os.makedirs(EYDOC_OUTPUT_DIR)
+print "Writing epydoc docs to %s"%EYDOC_OUTPUT_DIR
+epydoc.cli.main(options)

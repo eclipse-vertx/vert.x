@@ -1,0 +1,56 @@
+Regression Testing for epydoc.cli
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A helper function to check the behavior of parse_arguments:
+
+    >>> import sys, epydoc.cli
+    >>> def parse_arguments(argv):
+    ...     defaults = epydoc.cli.option_defaults()
+    ...     if isinstance(argv, basestring): argv = argv.split()
+    ...     sys.argv = list(argv)
+    ...     options = epydoc.cli.parse_arguments()
+    ...     for opt, val in sorted(options.__dict__.items()):
+    ...         if val != defaults.get(opt):
+    ...             if isinstance(val, dict):
+    ...                 val = '{%s}' % ', '.join(sorted(
+    ...                     ['%r: %r' % pair for pair in val.items()]))
+    ...             print '%20s: %s' % (opt, val)
+
+Basic test:
+    >>> parse_arguments('epydoc sys')
+                   names: ['sys']
+
+The -o option now sets the default_target option if it comes *before*
+any action values:
+
+    >>> parse_arguments('epydoc -o foo sys')
+          default_target: foo
+                   names: ['sys']
+    >>> parse_arguments('epydoc -o foo --html sys')
+                 actions: ['html']
+          default_target: foo
+                   names: ['sys']
+
+But it modifies the target option if it comes *after* any action
+values.  This allows the user to specify an output location for each
+action:
+
+    >>> parse_arguments('epydoc --html -o foo sys')
+                 actions: ['html']
+                   names: ['sys']
+                  target: {'html': 'foo'}
+
+    >>> parse_arguments('epydoc --html -o myhtml --pdf -o mypdf sys')
+                 actions: ['html', 'pdf']
+                   names: ['sys']
+                  target: {'html': 'myhtml', 'pdf': 'mypdf'}
+
+The user can specify a default and then override it for select output
+formats:
+
+    >>> parse_arguments('epydoc -o foo --pdf --dvi -o bar.dvi --html sys')
+                 actions: ['pdf', 'dvi', 'html']
+          default_target: foo
+                   names: ['sys']
+                  target: {'dvi': 'bar.dvi'}
+
