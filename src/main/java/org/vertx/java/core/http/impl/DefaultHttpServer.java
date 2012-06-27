@@ -534,7 +534,6 @@ public class DefaultHttpServer implements HttpServer {
           ch.write(new DefaultHttpResponse(HTTP_1_1, NOT_FOUND));
         } else {
           //HTTP request
-          //System.out.println("Got request: " + ((HttpRequest)msg).getUri());
           if (conn == null) {
             HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.getWorker());
             if (reqHandler != null) {
@@ -594,13 +593,11 @@ public class DefaultHttpServer implements HttpServer {
 
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
-      //System.out.println("Channel connected " + count.incrementAndGet());
       //NOOP
     }
 
     @Override
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
-      //System.out.println("Channel closed");
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final ServerConnection conn = connectionMap.remove(ch);
       if (conn != null) {

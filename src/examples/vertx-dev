@@ -36,10 +36,5 @@ $DIRNAME/../../lib/main/groovy-all.jar:\
 $DIRNAME/../../src/main/ruby:\
 $DIRNAME/../../src/main/javascript
 
-if [ -z "$VERTX_MODS" ]
-then
-   VERTX_MODS=$SCRIPTDIR/../../target/dist-build/vert.x-1.1.0.final/mods
-fi
-
 java -Djava.util.logging.config.file=$DIRNAME/../../conf/logging.properties -Djruby.home=$JRUBY_HOME \
 -Dvertx.mods=$VERTX_MODS -cp $CLASSPATH org.vertx.java.deploy.impl.cli.Starter "$@"
