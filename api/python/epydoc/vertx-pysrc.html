@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>vertx</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        Module&nbsp;vertx
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="vertx-pysrc.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<h1 class="epydoc">Source Code for <a href="vertx-module.html">Module vertx</a></h1>
+<pre class="py-src">
+<a name="L1"></a><tt class="py-lineno">  1</tt>  <tt class="py-line"><tt class="py-comment"># Copyright 2011 the original author or authors.</tt> </tt>
+<a name="L2"></a><tt class="py-lineno">  2</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L3"></a><tt class="py-lineno">  3</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># Licensed under the Apache License, Version 2.0 (the "License");</tt> </tt>
+<a name="L4"></a><tt class="py-lineno">  4</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># you may not use this file except in compliance with the License.</tt> </tt>
+<a name="L5"></a><tt class="py-lineno">  5</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># You may obtain a copy of the License at</tt> </tt>
+<a name="L6"></a><tt class="py-lineno">  6</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L7"></a><tt class="py-lineno">  7</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#      http://www.apache.org/licenses/LICENSE-2.0</tt> </tt>
+<a name="L8"></a><tt class="py-lineno">  8</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L9"></a><tt class="py-lineno">  9</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># Unless required by applicable law or agreed to in writing, software</tt> </tt>
+<a name="L10"></a><tt class="py-lineno"> 10</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># distributed under the License is distributed on an "AS IS" BASIS,</tt> </tt>
+<a name="L11"></a><tt class="py-lineno"> 11</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</tt> </tt>
+<a name="L12"></a><tt class="py-lineno"> 12</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># See the License for the specific language governing permissions and</tt> </tt>
+<a name="L13"></a><tt class="py-lineno"> 13</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># limitations under the License.</tt> </tt>
+<a name="L14"></a><tt class="py-lineno"> 14</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt>
+<a name="L15"></a><tt class="py-lineno"> 15</tt>  <tt class="py-line"><tt class="py-docstring">""" </tt> </tt>
+<a name="L16"></a><tt class="py-lineno"> 16</tt>  <tt class="py-line"><tt class="py-docstring">This module provides the entry point to the vert.x platform </tt> </tt>
+<a name="L17"></a><tt class="py-lineno"> 17</tt>  <tt class="py-line"><tt class="py-docstring">"""</tt> </tt>
+<a name="L18"></a><tt class="py-lineno"> 18</tt>  <tt class="py-line"> </tt>
+<a name="L19"></a><tt class="py-lineno"> 19</tt>  <tt class="py-line"><tt class="py-keyword">import</tt> <tt class="py-name">org</tt><tt class="py-op">.</tt><tt id="link-0" class="py-name" targets="Module vertx=vertx-module.html"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-0', 'vertx', 'link-0');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">java</tt><tt class="py-op">.</tt><tt class="py-name">deploy</tt><tt class="py-op">.</tt><tt class="py-name">impl</tt><tt class="py-op">.</tt><tt class="py-name">VertxLocator</tt> </tt>
+<a name="L20"></a><tt class="py-lineno"> 20</tt>  <tt class="py-line"><tt class="py-keyword">import</tt> <tt class="py-name">org</tt><tt class="py-op">.</tt><tt id="link-1" class="py-name"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-1', 'vertx', 'link-0');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">java</tt><tt class="py-op">.</tt><tt id="link-2" class="py-name" targets="Package core=core-module.html"><a title="core" class="py-name" href="#" onclick="return doclink('link-2', 'core', 'link-2');">core</a></tt><tt class="py-op">.</tt><tt class="py-name">json</tt> </tt>
+<a name="L21"></a><tt class="py-lineno"> 21</tt>  <tt class="py-line"><tt class="py-keyword">import</tt> <tt class="py-name">org</tt><tt class="py-op">.</tt><tt id="link-3" class="py-name"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-3', 'vertx', 'link-0');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">java</tt><tt class="py-op">.</tt><tt class="py-name">deploy</tt><tt class="py-op">.</tt><tt class="py-name">impl</tt> </tt>
+<a name="L22"></a><tt class="py-lineno"> 22</tt>  <tt class="py-line"> </tt>
+<a name="L23"></a><tt class="py-lineno"> 23</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt id="link-4" class="py-name"><a title="core" class="py-name" href="#" onclick="return doclink('link-4', 'core', 'link-2');">core</a></tt><tt class="py-op">.</tt><tt id="link-5" class="py-name" targets="Module core.http=core.http-module.html"><a title="core.http" class="py-name" href="#" onclick="return doclink('link-5', 'http', 'link-5');">http</a></tt> <tt class="py-keyword">import</tt> <tt id="link-6" class="py-name" targets="Class core.http.HttpServer=core.http.HttpServer-class.html"><a title="core.http.HttpServer" class="py-name" href="#" onclick="return doclink('link-6', 'HttpServer', 'link-6');">HttpServer</a></tt><tt class="py-op">,</tt> <tt id="link-7" class="py-name" targets="Class core.http.HttpClient=core.http.HttpClient-class.html"><a title="core.http.HttpClient" class="py-name" href="#" onclick="return doclink('link-7', 'HttpClient', 'link-7');">HttpClient</a></tt> </tt>
+<a name="L24"></a><tt class="py-lineno"> 24</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt id="link-8" class="py-name"><a title="core" class="py-name" href="#" onclick="return doclink('link-8', 'core', 'link-2');">core</a></tt><tt class="py-op">.</tt><tt class="py-name">net</tt> <tt class="py-keyword">import</tt> <tt class="py-name">NetServer</tt><tt class="py-op">,</tt> <tt class="py-name">NetClient</tt> </tt>
+<a name="L25"></a><tt class="py-lineno"> 25</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt id="link-9" class="py-name"><a title="core" class="py-name" href="#" onclick="return doclink('link-9', 'core', 'link-2');">core</a></tt><tt class="py-op">.</tt><tt id="link-10" class="py-name" targets="Module core.sock_js=core.sock_js-module.html"><a title="core.sock_js" class="py-name" href="#" onclick="return doclink('link-10', 'sock_js', 'link-10');">sock_js</a></tt> <tt class="py-keyword">import</tt> <tt id="link-11" class="py-name" targets="Class core.sock_js.SockJSServer=core.sock_js.SockJSServer-class.html"><a title="core.sock_js.SockJSServer" class="py-name" href="#" onclick="return doclink('link-11', 'SockJSServer', 'link-11');">SockJSServer</a></tt> </tt>
+<a name="L26"></a><tt class="py-lineno"> 26</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt id="link-12" class="py-name"><a title="core" class="py-name" href="#" onclick="return doclink('link-12', 'core', 'link-2');">core</a></tt><tt class="py-op">.</tt><tt id="link-13" class="py-name" targets="Module core.handlers=core.handlers-module.html"><a title="core.handlers" class="py-name" href="#" onclick="return doclink('link-13', 'handlers', 'link-13');">handlers</a></tt> <tt class="py-keyword">import</tt> <tt id="link-14" class="py-name" targets="Class core.handlers.TimerHandler=core.handlers.TimerHandler-class.html"><a title="core.handlers.TimerHandler" class="py-name" href="#" onclick="return doclink('link-14', 'TimerHandler', 'link-14');">TimerHandler</a></tt><tt class="py-op">,</tt> <tt id="link-15" class="py-name" targets="Class core.handlers.DoneHandler=core.handlers.DoneHandler-class.html"><a title="core.handlers.DoneHandler" class="py-name" href="#" onclick="return doclink('link-15', 'DoneHandler', 'link-15');">DoneHandler</a></tt> </tt>
+<a name="L27"></a><tt class="py-lineno"> 27</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt id="link-16" class="py-name"><a title="core" class="py-name" href="#" onclick="return doclink('link-16', 'core', 'link-2');">core</a></tt><tt class="py-op">.</tt><tt id="link-17" class="py-name" targets="Module core.javautils=core.javautils-module.html"><a title="core.javautils" class="py-name" href="#" onclick="return doclink('link-17', 'javautils', 'link-17');">javautils</a></tt> <tt class="py-keyword">import</tt> <tt id="link-18" class="py-name" targets="Function core.javautils.map_to_java()=core.javautils-module.html#map_to_java"><a title="core.javautils.map_to_java" class="py-name" href="#" onclick="return doclink('link-18', 'map_to_java', 'link-18');">map_to_java</a></tt><tt class="py-op">,</tt> <tt id="link-19" class="py-name" targets="Function core.javautils.map_from_java()=core.javautils-module.html#map_from_java"><a title="core.javautils.map_from_java" class="py-name" href="#" onclick="return doclink('link-19', 'map_from_java', 'link-19');">map_from_java</a></tt> </tt>
+<a name="L28"></a><tt class="py-lineno"> 28</tt>  <tt class="py-line"> </tt>
+<a name="L29"></a><tt class="py-lineno"> 29</tt>  <tt class="py-line"><tt class="py-name">__author__</tt> <tt class="py-op">=</tt> <tt class="py-string">"Scott Horn"</tt> </tt>
+<a name="L30"></a><tt class="py-lineno"> 30</tt>  <tt class="py-line"><tt id="link-20" class="py-name" targets="Variable core.buffer.__email__=core.buffer-module.html#__email__,Variable core.event_bus.__email__=core.event_bus-module.html#__email__,Variable core.file_system.__email__=core.file_system-module.html#__email__,Variable core.handlers.__email__=core.handlers-module.html#__email__,Variable core.http.__email__=core.http-module.html#__email__,Variable core.javautils.__email__=core.javautils-module.html#__email__,Variable core.parsetools.__email__=core.parsetools-module.html#__email__,Variable core.shared_data.__email__=core.shared_data-module.html#__email__,Variable core.sock_js.__email__=core.sock_js-module.html#__email__,Variable core.ssl_support.__email__=core.ssl_support-module.html#__email__,Variable core.streams.__email__=core.streams-module.html#__email__,Variable core.tcp_support.__email__=core.tcp_support-module.html#__email__,Variable vertx.__email__=vertx-module.html#__email__"><a title="core.buffer.__email__
+core.event_bus.__email__
+core.file_system.__email__
+core.handlers.__email__
+core.http.__email__
+core.javautils.__email__
+core.parsetools.__email__
+core.shared_data.__email__
+core.sock_js.__email__
+core.ssl_support.__email__
+core.streams.__email__
+core.tcp_support.__email__
+vertx.__email__" class="py-name" href="#" onclick="return doclink('link-20', '__email__', 'link-20');">__email__</a></tt> <tt class="py-op">=</tt> <tt class="py-string">"scott@hornmicro.com"</tt> </tt>
+<a name="L31"></a><tt class="py-lineno"> 31</tt>  <tt class="py-line"><tt id="link-21" class="py-name" targets="Variable core.buffer.__credits__=core.buffer-module.html#__credits__,Variable core.event_bus.__credits__=core.event_bus-module.html#__credits__,Variable core.file_system.__credits__=core.file_system-module.html#__credits__,Variable core.handlers.__credits__=core.handlers-module.html#__credits__,Variable core.http.__credits__=core.http-module.html#__credits__,Variable core.javautils.__credits__=core.javautils-module.html#__credits__,Variable core.parsetools.__credits__=core.parsetools-module.html#__credits__,Variable core.shared_data.__credits__=core.shared_data-module.html#__credits__,Variable core.sock_js.__credits__=core.sock_js-module.html#__credits__,Variable core.ssl_support.__credits__=core.ssl_support-module.html#__credits__,Variable core.streams.__credits__=core.streams-module.html#__credits__,Variable core.tcp_support.__credits__=core.tcp_support-module.html#__credits__,Variable vertx.__credits__=vertx-module.html#__credits__"><a title="core.buffer.__credits__
+core.event_bus.__credits__
+core.file_system.__credits__
+core.handlers.__credits__
+core.http.__credits__
+core.javautils.__credits__
+core.parsetools.__credits__
+core.shared_data.__credits__
+core.sock_js.__credits__
+core.ssl_support.__credits__
+core.streams.__credits__
+core.tcp_support.__credits__
+vertx.__credits__" class="py-name" href="#" onclick="return doclink('link-21', '__credits__', 'link-21');">__credits__</a></tt> <tt class="py-op">=</tt> <tt class="py-string">"Based entirely on work by Tim Fox http://tfox.org"</tt> </tt>
+<a name="L32"></a><tt class="py-lineno"> 32</tt>  <tt class="py-line"> </tt>
+<a name="Vertx"></a><div id="Vertx-def"><a name="L33"></a><tt class="py-lineno"> 33</tt> <a class="py-toggle" href="#" id="Vertx-toggle" onclick="return toggle('Vertx');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="vertx.Vertx-class.html">Vertx</a><tt class="py-op">(</tt><tt class="py-base-class">object</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Vertx-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="Vertx-expanded"><a name="L34"></a><tt class="py-lineno"> 34</tt>  <tt class="py-line">    <tt id="link-22" class="py-name" targets="Variable vertx.Vertx.config=vertx.Vertx-class.html#config,Function vertx.config()=vertx-module.html#config"><a title="vertx.Vertx.config
+vertx.config" class="py-name" href="#" onclick="return doclink('link-22', 'config', 'link-22');">config</a></tt> <tt class="py-op">=</tt> <tt class="py-name">None</tt> </tt>
+</div><a name="L35"></a><tt class="py-lineno"> 35</tt>  <tt class="py-line"> </tt>
+<a name="create_http_server"></a><div id="create_http_server-def"><a name="L36"></a><tt class="py-lineno"> 36</tt> <a class="py-toggle" href="#" id="create_http_server-toggle" onclick="return toggle('create_http_server');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="vertx-module.html#create_http_server">create_http_server</a><tt class="py-op">(</tt><tt class="py-op">**</tt><tt class="py-param">kwargs</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="create_http_server-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="create_http_server-expanded"><a name="L37"></a><tt class="py-lineno"> 37</tt>  <tt class="py-line">    <tt class="py-docstring">""" Return a HttpServer """</tt> </tt>
+<a name="L38"></a><tt class="py-lineno"> 38</tt>  <tt class="py-line">    <tt class="py-keyword">return</tt> <tt id="link-23" class="py-name"><a title="core.http.HttpServer" class="py-name" href="#" onclick="return doclink('link-23', 'HttpServer', 'link-6');">HttpServer</a></tt><tt class="py-op">(</tt><tt class="py-op">**</tt><tt class="py-name">kwargs</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L39"></a><tt class="py-lineno"> 39</tt>  <tt class="py-line"> </tt>
+<a name="create_http_client"></a><div id="create_http_client-def"><a name="L40"></a><tt class="py-lineno"> 40</tt> <a class="py-toggle" href="#" id="create_http_client-toggle" onclick="return toggle('create_http_client');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="vertx-module.html#create_http_client">create_http_client</a><tt class="py-op">(</tt><tt class="py-op">**</tt><tt class="py-param">kwargs</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="create_http_client-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="create_http_client-expanded"><a name="L41"></a><tt class="py-lineno"> 41</tt>  <tt class="py-line">    <tt class="py-docstring">""" Return a HttpClient """</tt> </tt>
+<a name="L42"></a><tt class="py-lineno"> 42</tt>  <tt class="py-line">    <tt class="py-keyword">return</tt> <tt id="link-24" class="py-name"><a title="core.http.HttpClient" class="py-name" href="#" onclick="return doclink('link-24', 'HttpClient', 'link-7');">HttpClient</a></tt><tt class="py-op">(</tt><tt class="py-op">**</tt><tt class="py-name">kwargs</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L43"></a><tt class="py-lineno"> 43</tt>  <tt class="py-line"> </tt>
+<a name="create_net_server"></a><div id="create_net_server-def"><a name="L44"></a><tt class="py-lineno"> 44</tt> <a class="py-toggle" href="#" id="create_net_server-toggle" onclick="return toggle('create_net_server');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="vertx-module.html#create_net_server">create_net_server</a><tt class="py-op">(</tt><tt class="py-op">**</tt><tt class="py-param">kwargs</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="create_net_server-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="create_net_server-expanded"><a name="L45"></a><tt class="py-lineno"> 45</tt>  <tt class="py-line">    <tt class="py-docstring">""" Return a NetServer """</tt> </tt>
+<a name="L46"></a><tt class="py-lineno"> 46</tt>  <tt class="py-line">    <tt class="py-keyword">return</tt> <tt class="py-name">NetServer</tt><tt class="py-op">(</tt><tt class="py-op">**</tt><tt class="py-name">kwargs</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L47"></a><tt class="py-lineno"> 47</tt>  <tt class="py-line"> </tt>
+<a name="create_net_client"></a><div id="create_net_client-def"><a name="L48"></a><tt class="py-lineno"> 48</tt> <a class="py-toggle" href="#" id="create_net_client-toggle" onclick="return toggle('create_net_client');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="vertx-module.html#create_net_client">create_net_client</a><tt class="py-op">(</tt><tt class="py-op">**</tt><tt class="py-param">kwargs</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="create_net_client-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="create_net_client-expanded"><a name="L49"></a><tt class="py-lineno"> 49</tt>  <tt class="py-line">    <tt class="py-docstring">""" Return a NetClient """</tt> </tt>
+<a name="L50"></a><tt class="py-lineno"> 50</tt>  <tt class="py-line">    <tt class="py-keyword">return</tt> <tt class="py-name">NetClient</tt><tt class="py-op">(</tt><tt class="py-op">**</tt><tt class="py-name">kwargs</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L51"></a><tt class="py-lineno"> 51</tt>  <tt class="py-line"> </tt>
+<a name="create_sockjs_server"></a><div id="create_sockjs_server-def"><a name="L52"></a><tt class="py-lineno"> 52</tt> <a class="py-toggle" href="#" id="create_sockjs_server-toggle" onclick="return toggle('create_sockjs_server');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="vertx-module.html#create_sockjs_server">create_sockjs_server</a><tt class="py-op">(</tt><tt class="py-param">http_server</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="create_sockjs_server-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="create_sockjs_server-expanded"><a name="L53"></a><tt class="py-lineno"> 53</tt>  <tt class="py-line">    <tt class="py-docstring">""" Return a SockJSServer """</tt> </tt>
+<a name="L54"></a><tt class="py-lineno"> 54</tt>  <tt class="py-line">    <tt class="py-keyword">return</tt> <tt id="link-25" class="py-name"><a title="core.sock_js.SockJSServer" class="py-name" href="#" onclick="return doclink('link-25', 'SockJSServer', 'link-11');">SockJSServer</a></tt><tt class="py-op">(</tt><tt class="py-name">http_server</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L55"></a><tt class="py-lineno"> 55</tt>  <tt class="py-line"> </tt>
+<a name="get_logger"></a><div id="get_logger-def"><a name="L56"></a><tt class="py-lineno"> 56</tt> <a class="py-toggle" href="#" id="get_logger-toggle" onclick="return toggle('get_logger');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="vertx-module.html#get_logger">get_logger</a><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="get_logger-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="get_logger-expanded"><a name="L57"></a><tt class="py-lineno"> 57</tt>  <tt class="py-line">    <tt class="py-docstring">""" Get the logger for the verticle"""</tt> </tt>
+<a name="L58"></a><tt class="py-lineno"> 58</tt>  <tt class="py-line">    <tt class="py-keyword">return</tt> <tt class="py-name">org</tt><tt class="py-op">.</tt><tt id="link-26" class="py-name"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-26', 'vertx', 'link-0');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">java</tt><tt class="py-op">.</tt><tt class="py-name">deploy</tt><tt class="py-op">.</tt><tt class="py-name">impl</tt><tt class="py-op">.</tt><tt class="py-name">VertxLocator</tt><tt class="py-op">.</tt><tt class="py-name">container</tt><tt class="py-op">.</tt><tt class="py-name">getLogger</tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L59"></a><tt class="py-lineno"> 59</tt>  <tt class="py-line"> </tt>
+<a name="deploy_verticle"></a><div id="deploy_verticle-def"><a name="L60"></a><tt class="py-lineno"> 60</tt> <a class="py-toggle" href="#" id="deploy_verticle-toggle" onclick="return toggle('deploy_verticle');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="vertx-module.html#deploy_verticle">deploy_verticle</a><tt class="py-op">(</tt><tt class="py-param">main</tt><tt class="py-op">,</tt> <tt class="py-param">config</tt><tt class="py-op">=</tt><tt class="py-name">None</tt><tt class="py-op">,</tt> <tt class="py-param">instances</tt><tt class="py-op">=</tt><tt class="py-number">1</tt><tt class="py-op">,</tt> <tt class="py-param">handler</tt><tt class="py-op">=</tt><tt class="py-name">None</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="deploy_verticle-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="deploy_verticle-expanded"><a name="L61"></a><tt class="py-lineno"> 61</tt>  <tt class="py-line">    <tt class="py-docstring">"""Deploy a verticle. The actual deploy happens asynchronously</tt> </tt>
+<a name="L62"></a><tt class="py-lineno"> 62</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L63"></a><tt class="py-lineno"> 63</tt>  <tt class="py-line"><tt class="py-docstring">    Keyword arguments:</tt> </tt>
+<a name="L64"></a><tt class="py-lineno"> 64</tt>  <tt class="py-line"><tt class="py-docstring">    main -- the main of the verticle to deploy</tt> </tt>
+<a name="L65"></a><tt class="py-lineno"> 65</tt>  <tt class="py-line"><tt class="py-docstring">    config -- dict configuration for the verticle</tt> </tt>
+<a name="L66"></a><tt class="py-lineno"> 66</tt>  <tt class="py-line"><tt class="py-docstring">    instances -- number of instances to deploy</tt> </tt>
+<a name="L67"></a><tt class="py-lineno"> 67</tt>  <tt class="py-line"><tt class="py-docstring">    handler -- will be executed when deploy has completed</tt> </tt>
+<a name="L68"></a><tt class="py-lineno"> 68</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L69"></a><tt class="py-lineno"> 69</tt>  <tt class="py-line"><tt class="py-docstring">    returns Unique id of deployment</tt> </tt>
+<a name="L70"></a><tt class="py-lineno"> 70</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L71"></a><tt class="py-lineno"> 71</tt>  <tt class="py-line">    <tt class="py-keyword">if</tt> <tt id="link-27" class="py-name"><a title="vertx.Vertx.config
+vertx.config" class="py-name" href="#" onclick="return doclink('link-27', 'config', 'link-22');">config</a></tt> <tt class="py-op">!=</tt> <tt class="py-name">None</tt><tt class="py-op">:</tt> </tt>
+<a name="L72"></a><tt class="py-lineno"> 72</tt>  <tt class="py-line">        <tt id="link-28" class="py-name"><a title="vertx.Vertx.config
+vertx.config" class="py-name" href="#" onclick="return doclink('link-28', 'config', 'link-22');">config</a></tt> <tt class="py-op">=</tt> <tt class="py-name">org</tt><tt class="py-op">.</tt><tt id="link-29" class="py-name"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-29', 'vertx', 'link-0');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">java</tt><tt class="py-op">.</tt><tt id="link-30" class="py-name"><a title="core" class="py-name" href="#" onclick="return doclink('link-30', 'core', 'link-2');">core</a></tt><tt class="py-op">.</tt><tt class="py-name">json</tt><tt class="py-op">.</tt><tt class="py-name">JsonObject</tt><tt class="py-op">(</tt><tt id="link-31" class="py-name"><a title="core.javautils.map_to_java" class="py-name" href="#" onclick="return doclink('link-31', 'map_to_java', 'link-18');">map_to_java</a></tt><tt class="py-op">(</tt><tt id="link-32" class="py-name"><a title="vertx.Vertx.config
+vertx.config" class="py-name" href="#" onclick="return doclink('link-32', 'config', 'link-22');">config</a></tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L73"></a><tt class="py-lineno"> 73</tt>  <tt class="py-line">   </tt>
+<a name="L74"></a><tt class="py-lineno"> 74</tt>  <tt class="py-line">    <tt class="py-keyword">return</tt> <tt class="py-name">org</tt><tt class="py-op">.</tt><tt id="link-33" class="py-name"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-33', 'vertx', 'link-0');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">java</tt><tt class="py-op">.</tt><tt class="py-name">deploy</tt><tt class="py-op">.</tt><tt class="py-name">impl</tt><tt class="py-op">.</tt><tt class="py-name">VertxLocator</tt><tt class="py-op">.</tt><tt class="py-name">container</tt><tt class="py-op">.</tt><tt class="py-name">deployVerticle</tt><tt class="py-op">(</tt><tt class="py-name">main</tt><tt class="py-op">,</tt> <tt id="link-34" class="py-name"><a title="vertx.Vertx.config
+vertx.config" class="py-name" href="#" onclick="return doclink('link-34', 'config', 'link-22');">config</a></tt><tt class="py-op">,</tt> <tt class="py-name">instances</tt><tt class="py-op">,</tt> <tt id="link-35" class="py-name"><a title="core.handlers.DoneHandler" class="py-name" href="#" onclick="return doclink('link-35', 'DoneHandler', 'link-15');">DoneHandler</a></tt><tt class="py-op">(</tt><tt class="py-name">handler</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L75"></a><tt class="py-lineno"> 75</tt>  <tt class="py-line"> </tt>
+<a name="deploy_worker_verticle"></a><div id="deploy_worker_verticle-def"><a name="L76"></a><tt class="py-lineno"> 76</tt> <a class="py-toggle" href="#" id="deploy_worker_verticle-toggle" onclick="return toggle('deploy_worker_verticle');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="vertx-module.html#deploy_worker_verticle">deploy_worker_verticle</a><tt class="py-op">(</tt><tt class="py-param">main</tt><tt class="py-op">,</tt> <tt class="py-param">config</tt><tt class="py-op">=</tt><tt class="py-name">None</tt><tt class="py-op">,</tt> <tt class="py-param">instances</tt><tt class="py-op">=</tt><tt class="py-number">1</tt><tt class="py-op">,</tt> <tt class="py-param">handler</tt><tt class="py-op">=</tt><tt class="py-name">None</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="deploy_worker_verticle-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="deploy_worker_verticle-expanded"><a name="L77"></a><tt class="py-lineno"> 77</tt>  <tt class="py-line">    <tt class="py-docstring">"""Deploy a workerverticle. The actual deploy happens asynchronously</tt> </tt>
+<a name="L78"></a><tt class="py-lineno"> 78</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L79"></a><tt class="py-lineno"> 79</tt>  <tt class="py-line"><tt class="py-docstring">    Keyword arguments:</tt> </tt>
+<a name="L80"></a><tt class="py-lineno"> 80</tt>  <tt class="py-line"><tt class="py-docstring">    main -- the main of the verticle to deploy</tt> </tt>
+<a name="L81"></a><tt class="py-lineno"> 81</tt>  <tt class="py-line"><tt class="py-docstring">    config -- dict configuration for the verticle</tt> </tt>
+<a name="L82"></a><tt class="py-lineno"> 82</tt>  <tt class="py-line"><tt class="py-docstring">    instances -- the number of instances to deploy</tt> </tt>
+<a name="L83"></a><tt class="py-lineno"> 83</tt>  <tt class="py-line"><tt class="py-docstring">    handler -- handler will be executed when deploy has completed</tt> </tt>
+<a name="L84"></a><tt class="py-lineno"> 84</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L85"></a><tt class="py-lineno"> 85</tt>  <tt class="py-line">    <tt class="py-keyword">if</tt> <tt id="link-36" class="py-name"><a title="vertx.Vertx.config
+vertx.config" class="py-name" href="#" onclick="return doclink('link-36', 'config', 'link-22');">config</a></tt> <tt class="py-op">!=</tt> <tt class="py-name">None</tt><tt class="py-op">:</tt> </tt>
+<a name="L86"></a><tt class="py-lineno"> 86</tt>  <tt class="py-line">        <tt id="link-37" class="py-name"><a title="vertx.Vertx.config
+vertx.config" class="py-name" href="#" onclick="return doclink('link-37', 'config', 'link-22');">config</a></tt> <tt class="py-op">=</tt> <tt class="py-name">org</tt><tt class="py-op">.</tt><tt id="link-38" class="py-name"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-38', 'vertx', 'link-0');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">java</tt><tt class="py-op">.</tt><tt id="link-39" class="py-name"><a title="core" class="py-name" href="#" onclick="return doclink('link-39', 'core', 'link-2');">core</a></tt><tt class="py-op">.</tt><tt class="py-name">json</tt><tt class="py-op">.</tt><tt class="py-name">JsonObject</tt><tt class="py-op">(</tt><tt id="link-40" class="py-name"><a title="core.javautils.map_to_java" class="py-name" href="#" onclick="return doclink('link-40', 'map_to_java', 'link-18');">map_to_java</a></tt><tt class="py-op">(</tt><tt id="link-41" class="py-name"><a title="vertx.Vertx.config
+vertx.config" class="py-name" href="#" onclick="return doclink('link-41', 'config', 'link-22');">config</a></tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L87"></a><tt class="py-lineno"> 87</tt>  <tt class="py-line">    <tt class="py-keyword">return</tt> <tt class="py-name">org</tt><tt class="py-op">.</tt><tt id="link-42" class="py-name"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-42', 'vertx', 'link-0');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">java</tt><tt class="py-op">.</tt><tt class="py-name">deploy</tt><tt class="py-op">.</tt><tt class="py-name">impl</tt><tt class="py-op">.</tt><tt class="py-name">VertxLocator</tt><tt class="py-op">.</tt><tt class="py-name">container</tt><tt class="py-op">.</tt><tt class="py-name">deployWorkerVerticle</tt><tt class="py-op">(</tt><tt class="py-name">main</tt><tt class="py-op">,</tt> <tt id="link-43" class="py-name"><a title="vertx.Vertx.config
+vertx.config" class="py-name" href="#" onclick="return doclink('link-43', 'config', 'link-22');">config</a></tt><tt class="py-op">,</tt> <tt class="py-name">instances</tt><tt class="py-op">,</tt> <tt id="link-44" class="py-name"><a title="core.handlers.DoneHandler" class="py-name" href="#" onclick="return doclink('link-44', 'DoneHandler', 'link-15');">DoneHandler</a></tt><tt class="py-op">(</tt><tt class="py-name">handler</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L88"></a><tt class="py-lineno"> 88</tt>  <tt class="py-line"> </tt>
+<a name="undeploy_verticle"></a><div id="undeploy_verticle-def"><a name="L89"></a><tt class="py-lineno"> 89</tt> <a class="py-toggle" href="#" id="undeploy_verticle-toggle" onclick="return toggle('undeploy_verticle');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="vertx-module.html#undeploy_verticle">undeploy_verticle</a><tt class="py-op">(</tt><tt class="py-param">id</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="undeploy_verticle-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="undeploy_verticle-expanded"><a name="L90"></a><tt class="py-lineno"> 90</tt>  <tt class="py-line">    <tt class="py-docstring">"""Undeploy a verticle</tt> </tt>
+<a name="L91"></a><tt class="py-lineno"> 91</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L92"></a><tt class="py-lineno"> 92</tt>  <tt class="py-line"><tt class="py-docstring">    Keyword arguments:</tt> </tt>
+<a name="L93"></a><tt class="py-lineno"> 93</tt>  <tt class="py-line"><tt class="py-docstring">    id -- the unique id of the deployment</tt> </tt>
+<a name="L94"></a><tt class="py-lineno"> 94</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L95"></a><tt class="py-lineno"> 95</tt>  <tt class="py-line">    <tt class="py-name">org</tt><tt class="py-op">.</tt><tt id="link-45" class="py-name"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-45', 'vertx', 'link-0');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">java</tt><tt class="py-op">.</tt><tt class="py-name">deploy</tt><tt class="py-op">.</tt><tt class="py-name">impl</tt><tt class="py-op">.</tt><tt class="py-name">VertxLocator</tt><tt class="py-op">.</tt><tt class="py-name">container</tt><tt class="py-op">.</tt><tt class="py-name">undeployVerticle</tt><tt class="py-op">(</tt><tt class="py-name">id</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L96"></a><tt class="py-lineno"> 96</tt>  <tt class="py-line"> </tt>
+<a name="config"></a><div id="config-def"><a name="L97"></a><tt class="py-lineno"> 97</tt> <a class="py-toggle" href="#" id="config-toggle" onclick="return toggle('config');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="vertx-module.html#config">config</a><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="config-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="config-expanded"><a name="L98"></a><tt class="py-lineno"> 98</tt>  <tt class="py-line">    <tt class="py-docstring">"""Get config for the verticle</tt> </tt>
+<a name="L99"></a><tt class="py-lineno"> 99</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L100"></a><tt class="py-lineno">100</tt>  <tt class="py-line"><tt class="py-docstring">    returns dict config for the verticle</tt> </tt>
+<a name="L101"></a><tt class="py-lineno">101</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L102"></a><tt class="py-lineno">102</tt>  <tt class="py-line">    <tt class="py-keyword">if</tt> <tt id="link-46" class="py-name" targets="Class vertx.Vertx=vertx.Vertx-class.html"><a title="vertx.Vertx" class="py-name" href="#" onclick="return doclink('link-46', 'Vertx', 'link-46');">Vertx</a></tt><tt class="py-op">.</tt><tt id="link-47" class="py-name"><a title="vertx.Vertx.config
+vertx.config" class="py-name" href="#" onclick="return doclink('link-47', 'config', 'link-22');">config</a></tt> <tt class="py-keyword">is</tt> <tt class="py-name">None</tt><tt class="py-op">:</tt> </tt>
+<a name="L103"></a><tt class="py-lineno">103</tt>  <tt class="py-line">        <tt id="link-48" class="py-name"><a title="vertx.Vertx" class="py-name" href="#" onclick="return doclink('link-48', 'Vertx', 'link-46');">Vertx</a></tt><tt class="py-op">.</tt><tt id="link-49" class="py-name"><a title="vertx.Vertx.config
+vertx.config" class="py-name" href="#" onclick="return doclink('link-49', 'config', 'link-22');">config</a></tt> <tt class="py-op">=</tt> <tt id="link-50" class="py-name"><a title="core.javautils.map_from_java" class="py-name" href="#" onclick="return doclink('link-50', 'map_from_java', 'link-19');">map_from_java</a></tt><tt class="py-op">(</tt><tt class="py-name">org</tt><tt class="py-op">.</tt><tt id="link-51" class="py-name"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-51', 'vertx', 'link-0');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">java</tt><tt class="py-op">.</tt><tt class="py-name">deploy</tt><tt class="py-op">.</tt><tt class="py-name">impl</tt><tt class="py-op">.</tt><tt class="py-name">VertxLocator</tt><tt class="py-op">.</tt><tt class="py-name">container</tt><tt class="py-op">.</tt><tt class="py-name">getConfig</tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">.</tt><tt class="py-name">toMap</tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L104"></a><tt class="py-lineno">104</tt>  <tt class="py-line">    <tt class="py-keyword">return</tt> <tt id="link-52" class="py-name"><a title="vertx.Vertx" class="py-name" href="#" onclick="return doclink('link-52', 'Vertx', 'link-46');">Vertx</a></tt><tt class="py-op">.</tt><tt id="link-53" class="py-name"><a title="vertx.Vertx.config
+vertx.config" class="py-name" href="#" onclick="return doclink('link-53', 'config', 'link-22');">config</a></tt> </tt>
+</div><a name="L105"></a><tt class="py-lineno">105</tt>  <tt class="py-line"> </tt>
+<a name="java_vertx"></a><div id="java_vertx-def"><a name="L106"></a><tt class="py-lineno">106</tt> <a class="py-toggle" href="#" id="java_vertx-toggle" onclick="return toggle('java_vertx');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="vertx-module.html#java_vertx">java_vertx</a><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="java_vertx-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="java_vertx-expanded"><a name="L107"></a><tt class="py-lineno">107</tt>  <tt class="py-line">    <tt class="py-keyword">return</tt> <tt class="py-name">org</tt><tt class="py-op">.</tt><tt id="link-54" class="py-name"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-54', 'vertx', 'link-0');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">java</tt><tt class="py-op">.</tt><tt class="py-name">deploy</tt><tt class="py-op">.</tt><tt class="py-name">impl</tt><tt class="py-op">.</tt><tt class="py-name">VertxLocator</tt><tt class="py-op">.</tt><tt id="link-55" class="py-name"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-55', 'vertx', 'link-0');">vertx</a></tt> </tt>
+</div><a name="L108"></a><tt class="py-lineno">108</tt>  <tt class="py-line"> </tt>
+<a name="set_timer"></a><div id="set_timer-def"><a name="L109"></a><tt class="py-lineno">109</tt> <a class="py-toggle" href="#" id="set_timer-toggle" onclick="return toggle('set_timer');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="vertx-module.html#set_timer">set_timer</a><tt class="py-op">(</tt><tt class="py-param">delay</tt><tt class="py-op">,</tt> <tt class="py-param">handler</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="set_timer-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="set_timer-expanded"><a name="L110"></a><tt class="py-lineno">110</tt>  <tt class="py-line">    <tt class="py-docstring">"""Sets a one-shot timer that will fire after a certain delay.</tt> </tt>
+<a name="L111"></a><tt class="py-lineno">111</tt>  <tt class="py-line"><tt class="py-docstring">    This method will accept either a Proc or a block.</tt> </tt>
+<a name="L112"></a><tt class="py-lineno">112</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L113"></a><tt class="py-lineno">113</tt>  <tt class="py-line"><tt class="py-docstring">    Keyword arguments:</tt> </tt>
+<a name="L114"></a><tt class="py-lineno">114</tt>  <tt class="py-line"><tt class="py-docstring">    delay -- the delay, in milliseconds</tt> </tt>
+<a name="L115"></a><tt class="py-lineno">115</tt>  <tt class="py-line"><tt class="py-docstring">    handler -- a block representing the code that will be run after the delay the unique id of the timer</tt> </tt>
+<a name="L116"></a><tt class="py-lineno">116</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L117"></a><tt class="py-lineno">117</tt>  <tt class="py-line">    <tt id="link-56" class="py-name" targets="Function vertx.java_vertx()=vertx-module.html#java_vertx"><a title="vertx.java_vertx" class="py-name" href="#" onclick="return doclink('link-56', 'java_vertx', 'link-56');">java_vertx</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">.</tt><tt class="py-name">setTimer</tt><tt class="py-op">(</tt><tt class="py-name">delay</tt><tt class="py-op">,</tt> <tt id="link-57" class="py-name"><a title="core.handlers.TimerHandler" class="py-name" href="#" onclick="return doclink('link-57', 'TimerHandler', 'link-14');">TimerHandler</a></tt><tt class="py-op">(</tt><tt class="py-name">handler</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L118"></a><tt class="py-lineno">118</tt>  <tt class="py-line"> </tt>
+<a name="set_periodic"></a><div id="set_periodic-def"><a name="L119"></a><tt class="py-lineno">119</tt> <a class="py-toggle" href="#" id="set_periodic-toggle" onclick="return toggle('set_periodic');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="vertx-module.html#set_periodic">set_periodic</a><tt class="py-op">(</tt><tt class="py-param">delay</tt><tt class="py-op">,</tt> <tt class="py-param">handler</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="set_periodic-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="set_periodic-expanded"><a name="L120"></a><tt class="py-lineno">120</tt>  <tt class="py-line">    <tt class="py-docstring">"""Sets a periodic timer.</tt> </tt>
+<a name="L121"></a><tt class="py-lineno">121</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L122"></a><tt class="py-lineno">122</tt>  <tt class="py-line"><tt class="py-docstring">    Keyword arguments:</tt> </tt>
+<a name="L123"></a><tt class="py-lineno">123</tt>  <tt class="py-line"><tt class="py-docstring">    delay -- the period of the timer, in milliseconds</tt> </tt>
+<a name="L124"></a><tt class="py-lineno">124</tt>  <tt class="py-line"><tt class="py-docstring">    handler -- a block representing the code that will be when the timer fires the unique id of the timer</tt> </tt>
+<a name="L125"></a><tt class="py-lineno">125</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L126"></a><tt class="py-lineno">126</tt>  <tt class="py-line">    <tt id="link-58" class="py-name"><a title="vertx.java_vertx" class="py-name" href="#" onclick="return doclink('link-58', 'java_vertx', 'link-56');">java_vertx</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">.</tt><tt class="py-name">setPeriodic</tt><tt class="py-op">(</tt><tt class="py-name">delay</tt><tt class="py-op">,</tt> <tt id="link-59" class="py-name"><a title="core.handlers.TimerHandler" class="py-name" href="#" onclick="return doclink('link-59', 'TimerHandler', 'link-14');">TimerHandler</a></tt><tt class="py-op">(</tt><tt class="py-name">handler</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L127"></a><tt class="py-lineno">127</tt>  <tt class="py-line"> </tt>
+<a name="L128"></a><tt class="py-lineno">128</tt>  <tt class="py-line"> </tt>
+<a name="cancel_timer"></a><div id="cancel_timer-def"><a name="L129"></a><tt class="py-lineno">129</tt> <a class="py-toggle" href="#" id="cancel_timer-toggle" onclick="return toggle('cancel_timer');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="vertx-module.html#cancel_timer">cancel_timer</a><tt class="py-op">(</tt><tt class="py-param">id</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="cancel_timer-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="cancel_timer-expanded"><a name="L130"></a><tt class="py-lineno">130</tt>  <tt class="py-line">    <tt class="py-docstring">"""Cancels a timer.</tt> </tt>
+<a name="L131"></a><tt class="py-lineno">131</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L132"></a><tt class="py-lineno">132</tt>  <tt class="py-line"><tt class="py-docstring">    Keyword arguments:</tt> </tt>
+<a name="L133"></a><tt class="py-lineno">133</tt>  <tt class="py-line"><tt class="py-docstring">    id -- the id of the timer, as returned from set_timer or set_periodic</tt> </tt>
+<a name="L134"></a><tt class="py-lineno">134</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L135"></a><tt class="py-lineno">135</tt>  <tt class="py-line"><tt class="py-docstring">    returns true if the timer was cancelled, false if it wasn't found.</tt> </tt>
+<a name="L136"></a><tt class="py-lineno">136</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L137"></a><tt class="py-lineno">137</tt>  <tt class="py-line">    <tt id="link-60" class="py-name"><a title="vertx.java_vertx" class="py-name" href="#" onclick="return doclink('link-60', 'java_vertx', 'link-56');">java_vertx</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">.</tt><tt class="py-name">cancelTimer</tt><tt class="py-op">(</tt><tt class="py-name">id</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L138"></a><tt class="py-lineno">138</tt>  <tt class="py-line"> </tt>
+<a name="L139"></a><tt class="py-lineno">139</tt>  <tt class="py-line"> </tt>
+<a name="run_on_loop"></a><div id="run_on_loop-def"><a name="L140"></a><tt class="py-lineno">140</tt> <a class="py-toggle" href="#" id="run_on_loop-toggle" onclick="return toggle('run_on_loop');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="vertx-module.html#run_on_loop">run_on_loop</a><tt class="py-op">(</tt><tt class="py-param">handler</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="run_on_loop-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="run_on_loop-expanded"><a name="L141"></a><tt class="py-lineno">141</tt>  <tt class="py-line">    <tt class="py-docstring">"""Put the handler on the event queue for this loop so it will be run asynchronously</tt> </tt>
+<a name="L142"></a><tt class="py-lineno">142</tt>  <tt class="py-line"><tt class="py-docstring">    ASAP after this event has been processed</tt> </tt>
+<a name="L143"></a><tt class="py-lineno">143</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L144"></a><tt class="py-lineno">144</tt>  <tt class="py-line"><tt class="py-docstring">    Keyword arguments:</tt> </tt>
+<a name="L145"></a><tt class="py-lineno">145</tt>  <tt class="py-line"><tt class="py-docstring">    handler -- a block representing the code that will be run ASAP</tt> </tt>
+<a name="L146"></a><tt class="py-lineno">146</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L147"></a><tt class="py-lineno">147</tt>  <tt class="py-line">    <tt id="link-61" class="py-name"><a title="vertx.java_vertx" class="py-name" href="#" onclick="return doclink('link-61', 'java_vertx', 'link-56');">java_vertx</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">.</tt><tt class="py-name">runOnLoop</tt><tt class="py-op">(</tt><tt id="link-62" class="py-name"><a title="core.handlers.DoneHandler" class="py-name" href="#" onclick="return doclink('link-62', 'DoneHandler', 'link-15');">DoneHandler</a></tt><tt class="py-op">(</tt><tt class="py-name">handler</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L148"></a><tt class="py-lineno">148</tt>  <tt class="py-line"> </tt><script type="text/javascript">
+<!--
+expandto(location.href);
+// -->
+</script>
+</pre>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1
+    on Wed Jun 27 09:06:30 2012
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>

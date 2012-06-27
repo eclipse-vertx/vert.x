@@ -1,0 +1,1478 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>core.file_system.FileSystem</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="core-module.html">Package&nbsp;core</a> ::
+        <a href="core.file_system-module.html">Module&nbsp;file_system</a> ::
+        Class&nbsp;FileSystem
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="core.file_system.FileSystem-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class FileSystem</h1><p class="nomargin-top"><span class="codelink"><a href="core.file_system-pysrc.html#FileSystem">source&nbsp;code</a></span></p>
+<pre class="base-tree">
+object --+
+         |
+        <strong class="uidshort">FileSystem</strong>
+</pre>
+
+<hr />
+<p>Represents the file-system and contains a broad set of operations for 
+  manipulating files. An asynchronous and a synchronous version of each 
+  operation is provided. The asynchronous versions take a handler as a 
+  final argument which is called when the operation completes or an error 
+  occurs. The handler is called with two arguments; the first an exception,
+  this will be nil if the operation has succeeded. The second is the result
+  - this will be nil if the operation failed or there was no result to 
+  return. The synchronous versions return the results, or throw exceptions 
+  directly.</p>
+
+<!-- ==================== STATIC METHODS ==================== -->
+<a name="section-StaticMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Static Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-StaticMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="java_file_system"></a><span class="summary-sig-name">java_file_system</span>()</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.java_file_system">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.file_system.FileSystem-class.html#copy" class="summary-sig-name">copy</a>(<span class="summary-sig-arg">frm</span>,
+        <span class="summary-sig-arg">to</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Copy a file, asynchronously.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.copy">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="copy_sync"></a><span class="summary-sig-name">copy_sync</span>(<span class="summary-sig-arg">frm</span>,
+        <span class="summary-sig-arg">to</span>)</span><br />
+      Synchronous version of FileSystem.copy</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.copy_sync">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.file_system.FileSystem-class.html#copy_recursive" class="summary-sig-name">copy_recursive</a>(<span class="summary-sig-arg">frm</span>,
+        <span class="summary-sig-arg">to</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Copy a file recursively, asynchronously.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.copy_recursive">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="copy_recursive_sync"></a><span class="summary-sig-name">copy_recursive_sync</span>(<span class="summary-sig-arg">frm</span>,
+        <span class="summary-sig-arg">to</span>)</span><br />
+      Synchronous version of FileSystem.copy_recursive</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.copy_recursive_sync">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.file_system.FileSystem-class.html#move" class="summary-sig-name">move</a>(<span class="summary-sig-arg">frm</span>,
+        <span class="summary-sig-arg">to</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Move a file, asynchronously.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.move">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="move_sync"></a><span class="summary-sig-name">move_sync</span>(<span class="summary-sig-arg">frm</span>,
+        <span class="summary-sig-arg">to</span>)</span><br />
+      Synchronous version of FileSystem.move</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.move_sync">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.file_system.FileSystem-class.html#truncate" class="summary-sig-name">truncate</a>(<span class="summary-sig-arg">path</span>,
+        <span class="summary-sig-arg">len</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Truncate a file, asynchronously.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.truncate">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="truncate_sync"></a><span class="summary-sig-name">truncate_sync</span>(<span class="summary-sig-arg">path</span>,
+        <span class="summary-sig-arg">len</span>)</span><br />
+      Synchronous version of FileSystem.truncate</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.truncate_sync">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.file_system.FileSystem-class.html#chmod" class="summary-sig-name">chmod</a>(<span class="summary-sig-arg">path</span>,
+        <span class="summary-sig-arg">perms</span>,
+        <span class="summary-sig-arg">dir_perms</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">handler</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Change the permissions on a file, asynchronously.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.chmod">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="chmod_sync"></a><span class="summary-sig-name">chmod_sync</span>(<span class="summary-sig-arg">path</span>,
+        <span class="summary-sig-arg">perms</span>,
+        <span class="summary-sig-arg">dir_perms</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Synchronous version of FileSystem.chmod</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.chmod_sync">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.file_system.FileSystem-class.html#props" class="summary-sig-name">props</a>(<span class="summary-sig-arg">path</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Get file properties for a file, asynchronously.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.props">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="props_sync"></a><span class="summary-sig-name">props_sync</span>(<span class="summary-sig-arg">path</span>)</span><br />
+      Synchronous version of FileSystem.props</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.props_sync">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.file_system.FileSystem-class.html#link" class="summary-sig-name">link</a>(<span class="summary-sig-arg">link</span>,
+        <span class="summary-sig-arg">existing</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Create a hard link, asynchronously..</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.link">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="link_sync"></a><span class="summary-sig-name">link_sync</span>(<span class="summary-sig-arg">link</span>,
+        <span class="summary-sig-arg">existing</span>)</span><br />
+      Synchronous version of FileSystem.link</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.link_sync">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.file_system.FileSystem-class.html#sym_link" class="summary-sig-name">sym_link</a>(<span class="summary-sig-arg">link</span>,
+        <span class="summary-sig-arg">existing</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Create a symbolic link, asynchronously.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.sym_link">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="sym_link_sync"></a><span class="summary-sig-name">sym_link_sync</span>(<span class="summary-sig-arg">link</span>,
+        <span class="summary-sig-arg">existing</span>)</span><br />
+      Synchronous version of FileSystem.sym_link</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.sym_link_sync">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.file_system.FileSystem-class.html#unlink" class="summary-sig-name">unlink</a>(<span class="summary-sig-arg">link</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Unlink a hard link.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.unlink">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="unlinkSync"></a><span class="summary-sig-name">unlinkSync</span>(<span class="summary-sig-arg">link</span>)</span><br />
+      Synchronous version of FileSystem.unlink</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.unlinkSync">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.file_system.FileSystem-class.html#read_sym_link" class="summary-sig-name">read_sym_link</a>(<span class="summary-sig-arg">link</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Read a symbolic link, asynchronously.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.read_sym_link">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="read_sym_link_sync"></a><span class="summary-sig-name">read_sym_link_sync</span>(<span class="summary-sig-arg">link</span>)</span><br />
+      Synchronous version of FileSystem.read_sym_link</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.read_sym_link_sync">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.file_system.FileSystem-class.html#delete" class="summary-sig-name">delete</a>(<span class="summary-sig-arg">path</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Delete a file on the file system, asynchronously.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.delete">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="delete_sync"></a><span class="summary-sig-name">delete_sync</span>(<span class="summary-sig-arg">path</span>)</span><br />
+      Synchronous version of FileSystem.delete</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.delete_sync">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.file_system.FileSystem-class.html#delete_recursive" class="summary-sig-name">delete_recursive</a>(<span class="summary-sig-arg">path</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Delete a file on the file system recursively, asynchronously.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.delete_recursive">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="delete_recursive_sync"></a><span class="summary-sig-name">delete_recursive_sync</span>(<span class="summary-sig-arg">path</span>)</span><br />
+      Synchronous version of FileSystem.delete_recursive</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.delete_recursive_sync">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.file_system.FileSystem-class.html#mkdir" class="summary-sig-name">mkdir</a>(<span class="summary-sig-arg">path</span>,
+        <span class="summary-sig-arg">perms</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">handler</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Create a directory, asynchronously.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.mkdir">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="mkdir_sync"></a><span class="summary-sig-name">mkdir_sync</span>(<span class="summary-sig-arg">path</span>,
+        <span class="summary-sig-arg">perms</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Synchronous version of FileSystem.mkdir</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.mkdir_sync">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.file_system.FileSystem-class.html#mkdir_with_parents" class="summary-sig-name">mkdir_with_parents</a>(<span class="summary-sig-arg">path</span>,
+        <span class="summary-sig-arg">perms</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">handler</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Create a directory, and create all it's parent directories if they do
+      not already exist, asynchronously.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.mkdir_with_parents">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="mkdir_with_parents_sync"></a><span class="summary-sig-name">mkdir_with_parents_sync</span>(<span class="summary-sig-arg">path</span>,
+        <span class="summary-sig-arg">perms</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Synchronous version of FileSystem.mkdir_with_parents</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.mkdir_with_parents_sync">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.file_system.FileSystem-class.html#read_dir" class="summary-sig-name">read_dir</a>(<span class="summary-sig-arg">path</span>,
+        <span class="summary-sig-arg">filter</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">handler</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Read a directory, i.e.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.read_dir">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="read_dir_sync"></a><span class="summary-sig-name">read_dir_sync</span>(<span class="summary-sig-arg">path</span>,
+        <span class="summary-sig-arg">filter</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Synchronous version of FileSystem.read_dir</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.read_dir_sync">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.file_system.FileSystem-class.html#read_file_as_buffer" class="summary-sig-name">read_file_as_buffer</a>(<span class="summary-sig-arg">path</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Read the contents of an entire file as a Buffer, asynchronously.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.read_file_as_buffer">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="read_file_as_buffer_sync"></a><span class="summary-sig-name">read_file_as_buffer_sync</span>(<span class="summary-sig-arg">path</span>)</span><br />
+      Synchronous version of FileSystem.read_file_as_buffer</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.read_file_as_buffer_sync">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.file_system.FileSystem-class.html#write_buffer_to_file" class="summary-sig-name">write_buffer_to_file</a>(<span class="summary-sig-arg">path</span>,
+        <span class="summary-sig-arg">buffer</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Write a  as the entire contents of a file, asynchronously.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.write_buffer_to_file">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="write_buffer_to_file_sync"></a><span class="summary-sig-name">write_buffer_to_file_sync</span>(<span class="summary-sig-arg">path</span>,
+        <span class="summary-sig-arg">buffer</span>)</span><br />
+      Synchronous version of FileSystem.write_buffer_to_file</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.write_buffer_to_file_sync">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.file_system.FileSystem-class.html#open" class="summary-sig-name">open</a>(<span class="summary-sig-arg">path</span>,
+        <span class="summary-sig-arg">perms</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">read</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">write</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">create_new</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">flush</span>=<span class="summary-sig-default">False</span>,
+        <span class="summary-sig-arg">handler</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Open a file on the file system, asynchronously.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.open">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="open_sync"></a><span class="summary-sig-name">open_sync</span>(<span class="summary-sig-arg">path</span>,
+        <span class="summary-sig-arg">perms</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">read</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">write</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">create_new</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">flush</span>=<span class="summary-sig-default">False</span>)</span><br />
+      Synchronous version of FileSystem.open</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.open_sync">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.file_system.FileSystem-class.html#create_file" class="summary-sig-name">create_file</a>(<span class="summary-sig-arg">path</span>,
+        <span class="summary-sig-arg">perms</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">handler</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Create a new empty file, asynchronously.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.create_file">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="create_file_sync"></a><span class="summary-sig-name">create_file_sync</span>(<span class="summary-sig-arg">path</span>,
+        <span class="summary-sig-arg">perms</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Synchronous version of FileSystem.create_file</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.create_file_sync">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.file_system.FileSystem-class.html#exists" class="summary-sig-name">exists</a>(<span class="summary-sig-arg">path</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Check if  a file exists, asynchronously.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.exists">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="exists_sync"></a><span class="summary-sig-name">exists_sync</span>(<span class="summary-sig-arg">path</span>)</span><br />
+      Synchronous version of FileSystem.exists</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.exists_sync">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.file_system.FileSystem-class.html#fs_props" class="summary-sig-name">fs_props</a>(<span class="summary-sig-arg">path</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Get properties for the file system, asynchronously.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.fs_props">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="fs_props_sync"></a><span class="summary-sig-name">fs_props_sync</span>(<span class="summary-sig-arg">path</span>)</span><br />
+      Synchronous version of FileSystem.fs_props</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.fs_props_sync">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="copy"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">copy</span>(<span class="sig-arg">frm</span>,
+        <span class="sig-arg">to</span>,
+        <span class="sig-arg">handler</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.copy">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Copy a file, asynchronously. The copy will fail if from does not 
+  exist, or if to already exists.</p>
+  <p>Keyword arguments: frm -- path of file to copy to -- path of file to 
+  copy to handler -- the handler which is called on completion.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="copy_recursive"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">copy_recursive</span>(<span class="sig-arg">frm</span>,
+        <span class="sig-arg">to</span>,
+        <span class="sig-arg">handler</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.copy_recursive">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Copy a file recursively, asynchronously. The copy will fail if from 
+  does not exist, or if to already exists and is not empty. If the source 
+  is a directory all contents of the directory will be copied recursively, 
+  i.e. the entire directory tree is copied.</p>
+  <p>Keyword arguments: frm -- path of file to copy to -- path of file to 
+  copy to handler -- the function to call when complete</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="move"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">move</span>(<span class="sig-arg">frm</span>,
+        <span class="sig-arg">to</span>,
+        <span class="sig-arg">handler</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.move">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Move a file, asynchronously. The move will fail if from does not 
+  exist, or if to already exists.</p>
+  <p>Keyword arguments: frm -- Path of file to move to -- Path of file to 
+  move to handler -- the function to call when complete</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="truncate"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">truncate</span>(<span class="sig-arg">path</span>,
+        <span class="sig-arg">len</span>,
+        <span class="sig-arg">handler</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.truncate">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Truncate a file, asynchronously. The move will fail if path does not 
+  exist.</p>
+  <p>Keyword arguments: path -- Path of file to truncate len -- Length to 
+  truncate file to. Will fail if len &lt; 0. If len &gt; file size then 
+  will do nothing. handler -- the function to call when complete</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="chmod"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">chmod</span>(<span class="sig-arg">path</span>,
+        <span class="sig-arg">perms</span>,
+        <span class="sig-arg">dir_perms</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">handler</span>=<span class="sig-default">None</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.chmod">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <pre class="literalblock">
+Change the permissions on a file, asynchronously. If the file is directory then all contents will also have their permissions changed recursively.
+
+Keyword arguments:
+  path Path of file to change permissions
+  perms A permission string of the form rwxr-x--- as specified in http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html}. This is
+used to set the permissions for any regular files (not directories).
+  dir_perms A permission string of the form rwxr-x---. Used to set permissions for regular files.
+  handler -- the function to call when complete
+
+</pre>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="props"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">props</span>(<span class="sig-arg">path</span>,
+        <span class="sig-arg">handler</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.props">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Get file properties for a file, asynchronously.</p>
+  <p>Keyword arguments: path -- path to file handler -- the function to 
+  call when complete</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="link"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">link</span>(<span class="sig-arg">link</span>,
+        <span class="sig-arg">existing</span>,
+        <span class="sig-arg">handler</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.link">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Create a hard link, asynchronously..</p>
+  <p>Keyword arguments: link -- path of the link to create. existing -- 
+  path of where the link points to. handler -- the function to call when 
+  complete</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="sym_link"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">sym_link</span>(<span class="sig-arg">link</span>,
+        <span class="sig-arg">existing</span>,
+        <span class="sig-arg">handler</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.sym_link">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Create a symbolic link, asynchronously.</p>
+  <p>Keyword arguments: link -- Path of the link to create. existing -- 
+  Path of where the link points to. handler -- the function to call when 
+  complete</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="unlink"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">unlink</span>(<span class="sig-arg">link</span>,
+        <span class="sig-arg">handler</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.unlink">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Unlink a hard link.</p>
+  <p>Keyword arguments: link -- path of the link to unlink.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="read_sym_link"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">read_sym_link</span>(<span class="sig-arg">link</span>,
+        <span class="sig-arg">handler</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.read_sym_link">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Read a symbolic link, asynchronously. I.e. tells you where the 
+  symbolic link points.</p>
+  <p>Keyword arguments: link -- path of the link to read. handler -- the 
+  function to call when complete</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="delete"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">delete</span>(<span class="sig-arg">path</span>,
+        <span class="sig-arg">handler</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.delete">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Delete a file on the file system, asynchronously. The delete will fail
+  if the file does not exist, or is a directory and is not empty.</p>
+  <p>Keyword arguments: path -- path of the file to delete. handler -- the 
+  function to call when complete</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="delete_recursive"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">delete_recursive</span>(<span class="sig-arg">path</span>,
+        <span class="sig-arg">handler</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.delete_recursive">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Delete a file on the file system recursively, asynchronously. The 
+  delete will fail if the file does not exist. If the file is a directory 
+  the entire directory contents will be deleted recursively.</p>
+  <p>Keyword arguments: path -- path of the file to delete. handler -- the 
+  function to call when complete</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="mkdir"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">mkdir</span>(<span class="sig-arg">path</span>,
+        <span class="sig-arg">perms</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">handler</span>=<span class="sig-default">None</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.mkdir">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Create a directory, asynchronously. The create will fail if the 
+  directory already exists, or if it contains parent directories which do 
+  not already exist.</p>
+  <p>Keyword arguments: path -- path of the directory to create. perms -- a
+  permission string of the form rwxr-x--- to give directory. handler -- the
+  function to call when complete</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="mkdir_with_parents"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">mkdir_with_parents</span>(<span class="sig-arg">path</span>,
+        <span class="sig-arg">perms</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">handler</span>=<span class="sig-default">None</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.mkdir_with_parents">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Create a directory, and create all it's parent directories if they do 
+  not already exist, asynchronously. The create will fail if the directory 
+  already exists.</p>
+  <p>Keyword arguments: path -- path of the directory to create. perms -- a
+  permission string of the form rwxr-x--- to give the created 
+  directory(ies).</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="read_dir"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">read_dir</span>(<span class="sig-arg">path</span>,
+        <span class="sig-arg">filter</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">handler</span>=<span class="sig-default">None</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.read_dir">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Read a directory, i.e. list it's contents, asynchronously. The read 
+  will fail if the directory does not exist.</p>
+  <p>Keyword arguments: path -- path of the directory to read. filter -- a 
+  regular expression to filter out the contents of the directory. If the 
+  filter is not nil then only files which match the filter will be 
+  returned. handler -- the function to call when complete</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="read_file_as_buffer"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">read_file_as_buffer</span>(<span class="sig-arg">path</span>,
+        <span class="sig-arg">handler</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.read_file_as_buffer">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Read the contents of an entire file as a Buffer, asynchronously.</p>
+  <p>Keyword arguments: path -- path of the file to read. handler -- the 
+  function to call when complete</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="write_buffer_to_file"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">write_buffer_to_file</span>(<span class="sig-arg">path</span>,
+        <span class="sig-arg">buffer</span>,
+        <span class="sig-arg">handler</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.write_buffer_to_file">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Write a  as the entire contents of a file, asynchronously.</p>
+  <p>Keyword arguments: path -- path of the file to write. buffer -- the 
+  Buffer to write handler -- the function to call when complete</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="open"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">open</span>(<span class="sig-arg">path</span>,
+        <span class="sig-arg">perms</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">read</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">write</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">create_new</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">flush</span>=<span class="sig-default">False</span>,
+        <span class="sig-arg">handler</span>=<span class="sig-default">None</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.open">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Open a file on the file system, asynchronously.</p>
+  <p>Keyword arguments: path -- path of the file to open. perms -- if the 
+  file does not exist and create_new is true, then the file will be created
+  with these permissions. read -- open the file for reading? write -- open 
+  the file for writing? create_new -- Create the file if it doesn't already
+  exist? flush -- whenever any data is written to the file, flush all 
+  changes to permanent storage immediately? handler -- the function to call
+  when complete</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="create_file"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">create_file</span>(<span class="sig-arg">path</span>,
+        <span class="sig-arg">perms</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">handler</span>=<span class="sig-default">None</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.create_file">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Create a new empty file, asynchronously.</p>
+  <p>Keyword arguments: path -- path of the file to create. perms -- the 
+  file will be created with these permissions. handler -- the function to 
+  call when complete</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="exists"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">exists</span>(<span class="sig-arg">path</span>,
+        <span class="sig-arg">handler</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.exists">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Check if  a file exists, asynchronously.</p>
+  <p>Keyword arguments: path -- Path of the file to check. handler -- the 
+  function to call when complete</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="fs_props"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">fs_props</span>(<span class="sig-arg">path</span>,
+        <span class="sig-arg">handler</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.file_system-pysrc.html#FileSystem.fs_props">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Get properties for the file system, asynchronously.</p>
+  <p>Keyword arguments: path -- Path in the file system. handler -- the 
+  function to call when complete</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1
+    on Wed Jun 27 09:06:28 2012
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>

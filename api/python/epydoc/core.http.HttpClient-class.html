@@ -1,0 +1,1169 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>core.http.HttpClient</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="core-module.html">Package&nbsp;core</a> ::
+        <a href="core.http-module.html">Module&nbsp;http</a> ::
+        Class&nbsp;HttpClient
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="core.http.HttpClient-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class HttpClient</h1><p class="nomargin-top"><span class="codelink"><a href="core.http-pysrc.html#HttpClient">source&nbsp;code</a></span></p>
+<pre class="base-tree">
+            object --+    
+                     |    
+<a href="core.ssl_support.SSLSupport-class.html">ssl_support.SSLSupport</a> --+
+                         |
+            object --+   |
+                     |   |
+<a href="core.tcp_support.TCPSupport-class.html">tcp_support.TCPSupport</a> --+
+                         |
+                object --+
+                         |
+                        <strong class="uidshort">HttpClient</strong>
+</pre>
+
+<hr />
+<p>An HTTP client. A client maintains a pool of connections to a specific
+  host, at a specific port. The HTTP connections can act as pipelines for 
+  HTTP requests. It is used as a factory for HttpClientRequest instances 
+  which encapsulate the actual HTTP requests. It is also used as a factory 
+  for HTML5 WebSocket websockets.</p>
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpClient-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">**kwargs</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpClient.__init__">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpClient-class.html#exception_handler" class="summary-sig-name">exception_handler</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Set the exception handler.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpClient.exception_handler">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="get_max_pool_size"></a><span class="summary-sig-name">get_max_pool_size</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      The maxium number of connections this client will pool.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpClient.get_max_pool_size">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpClient-class.html#set_max_pool_size" class="summary-sig-name">set_max_pool_size</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">val</span>)</span><br />
+      Set the maximum pool size.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpClient.set_max_pool_size">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpClient-class.html#set_keep_alive" class="summary-sig-name">set_keep_alive</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">val</span>)</span><br />
+      If val is true then, after the request has ended the connection will 
+      be returned to the pool where it can be used by another request.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpClient.set_keep_alive">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpClient-class.html#set_trust_all" class="summary-sig-name">set_trust_all</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">val</span>)</span><br />
+      Should the client trust ALL server certificates?</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpClient.set_trust_all">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpClient-class.html#set_port" class="summary-sig-name">set_port</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">val</span>)</span><br />
+      Set the port that the client will attempt to connect to on the server
+      on.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpClient.set_port">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpClient-class.html#set_host" class="summary-sig-name">set_host</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">val</span>)</span><br />
+      Set the host name or ip address that the client will attempt to 
+      connect to on the server on.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpClient.set_host">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpClient-class.html#connect_web_socket" class="summary-sig-name">connect_web_socket</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">uri</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Attempt to connect an HTML5 websocket to the specified URI.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpClient.connect_web_socket">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpClient-class.html#get_now" class="summary-sig-name">get_now</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">uri</span>,
+        <span class="summary-sig-arg">handler</span>,
+        <span class="summary-sig-arg">**headers</span>)</span><br />
+      This is a quick version of the get method where you do not want to do anything with the request
+before sing.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpClient.get_now">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpClient-class.html#options" class="summary-sig-name">options</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">uri</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      This method returns an HttpClientRequest instance which represents an
+      HTTP OPTIONS request with the specified uri.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpClient.options">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpClient-class.html#get" class="summary-sig-name">get</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">uri</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      This method returns an HttpClientRequest instance which represents an
+      HTTP GET request with the specified uri.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpClient.get">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpClient-class.html#head" class="summary-sig-name">head</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">uri</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      This method returns an HttpClientRequest instance which represents an
+      HTTP HEAD request with the specified uri.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpClient.head">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpClient-class.html#post" class="summary-sig-name">post</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">uri</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      This method returns an HttpClientRequest instance which represents an
+      HTTP POST request with the specified uri.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpClient.post">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpClient-class.html#put" class="summary-sig-name">put</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">uri</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      This method returns an HttpClientRequest instance which represents an
+      HTTP PUT request with the specified uri.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpClient.put">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpClient-class.html#delete" class="summary-sig-name">delete</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">uri</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      This method returns an HttpClientRequest instance which represents an
+      HTTP DELETE request with the specified uri.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpClient.delete">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpClient-class.html#trace" class="summary-sig-name">trace</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">uri</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      This method returns an HttpClientRequest instance which represents an
+      HTTP TRACE request with the specified uri.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpClient.trace">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpClient-class.html#connect" class="summary-sig-name">connect</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">uri</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      This method returns an HttpClientRequest instance which represents an
+      HTTP CONNECT request with the specified uri.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpClient.connect">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpClient-class.html#patch" class="summary-sig-name">patch</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">uri</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      This method returns an HttpClientRequest instance which represents an
+      HTTP PATCH request with the specified uri.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpClient.patch">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpClient-class.html#request" class="summary-sig-name">request</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">method</span>,
+        <span class="summary-sig-arg">uri</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      This method returns an HttpClientRequest instance which represents an
+      HTTP request with the specified method and uri.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpClient.request">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpClient-class.html#close" class="summary-sig-name">close</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Close the client.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpClient.close">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="core.ssl_support.SSLSupport-class.html">ssl_support.SSLSupport</a></code></b>:
+      <code><a href="core.ssl_support.SSLSupport-class.html#set_key_store_password">set_key_store_password</a></code>,
+      <code><a href="core.ssl_support.SSLSupport-class.html#set_key_store_path">set_key_store_path</a></code>,
+      <code><a href="core.ssl_support.SSLSupport-class.html#set_ssl">set_ssl</a></code>,
+      <code><a href="core.ssl_support.SSLSupport-class.html#set_trust_store_password">set_trust_store_password</a></code>,
+      <code><a href="core.ssl_support.SSLSupport-class.html#set_trust_store_path">set_trust_store_path</a></code>
+      </p>
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="core.tcp_support.TCPSupport-class.html">tcp_support.TCPSupport</a></code></b>:
+      <code><a href="core.tcp_support.TCPSupport-class.html#set_receive_buffer_size">set_receive_buffer_size</a></code>,
+      <code><a href="core.tcp_support.TCPSupport-class.html#set_reuse_address">set_reuse_address</a></code>,
+      <code><a href="core.tcp_support.TCPSupport-class.html#set_send_buffer_size">set_send_buffer_size</a></code>,
+      <code><a href="core.tcp_support.TCPSupport-class.html#set_so_linger">set_so_linger</a></code>,
+      <code><a href="core.tcp_support.TCPSupport-class.html#set_tcp_keep_alive">set_tcp_keep_alive</a></code>,
+      <code><a href="core.tcp_support.TCPSupport-class.html#set_traffic_class">set_traffic_class</a></code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="max_pool_size"></a><span class="summary-name">max_pool_size</span> = <code title="property(get_max_pool_size, set_max_pool_size)">property(get_max_pool_size, set_max_pool_size)</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="keep_alive"></a><span class="summary-name">keep_alive</span> = <code title="property(fset= set_keep_alive)">property(fset= set_keep_alive)</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="trust_all"></a><span class="summary-name">trust_all</span> = <code title="property(fset= set_trust_all)">property(fset= set_trust_all)</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="port"></a><span class="summary-name">port</span> = <code title="property(fset= set_port)">property(fset= set_port)</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="host"></a><span class="summary-name">host</span> = <code title="property(fset= set_host)">property(fset= set_host)</code>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="core.ssl_support.SSLSupport-class.html">ssl_support.SSLSupport</a></code></b>:
+      <code><a href="core.ssl_support.SSLSupport-class.html#key_store_password">key_store_password</a></code>,
+      <code><a href="core.ssl_support.SSLSupport-class.html#key_store_path">key_store_path</a></code>,
+      <code><a href="core.ssl_support.SSLSupport-class.html#ssl">ssl</a></code>,
+      <code><a href="core.ssl_support.SSLSupport-class.html#trust_store_password">trust_store_password</a></code>,
+      <code><a href="core.ssl_support.SSLSupport-class.html#trust_store_path">trust_store_path</a></code>
+      </p>
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="core.tcp_support.TCPSupport-class.html">tcp_support.TCPSupport</a></code></b>:
+      <code><a href="core.tcp_support.TCPSupport-class.html#receive_buffer_size">receive_buffer_size</a></code>,
+      <code><a href="core.tcp_support.TCPSupport-class.html#reuse_address">reuse_address</a></code>,
+      <code><a href="core.tcp_support.TCPSupport-class.html#send_buffer_size">send_buffer_size</a></code>,
+      <code><a href="core.tcp_support.TCPSupport-class.html#so_linger">so_linger</a></code>,
+      <code><a href="core.tcp_support.TCPSupport-class.html#tcp_keep_alive">tcp_keep_alive</a></code>,
+      <code><a href="core.tcp_support.TCPSupport-class.html#traffic_class">traffic_class</a></code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="__init__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">**kwargs</span>)</span>
+    <br /><em class="fname">(Constructor)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpClient.__init__">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  
+  <dl class="fields">
+    <dt>Overrides:
+        object.__init__
+        <dd><em class="note">(inherited documentation)</em></dd>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="exception_handler"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">exception_handler</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpClient.exception_handler">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Set the exception handler.</p>
+  <p>Keyword arguments: handler -- function to be used as the handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="set_max_pool_size"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">set_max_pool_size</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">val</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpClient.set_max_pool_size">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Set the maximum pool size. The client will maintain up to this number 
+  of HTTP connections in an internal pool</p>
+  <p>Keyword arguments: val -- The maximum number of connections (default 
+  to 1).</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="set_keep_alive"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">set_keep_alive</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">val</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpClient.set_keep_alive">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>If val is true then, after the request has ended the connection will 
+  be returned to the pool where it can be used by another request. In this 
+  manner, many HTTP requests can be pipe-lined over an HTTP connection. 
+  Keep alive connections will not be closed until the close method is 
+  invoked. If val is false then a new connection will be created for each 
+  request and it won't ever go in the pool, the connection will closed 
+  after the response has been received. Even with no keep alive, the client
+  will not allow more than max_pool_size connections to be created at any 
+  one time.</p>
+  <p>Keyword arguments: val -- The value to use for keep_alive</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="set_trust_all"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">set_trust_all</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">val</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpClient.set_trust_all">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Should the client trust ALL server certificates?</p>
+  <p>Keyword arguments: val -- If val is set to true then the client will 
+  trust ALL server certificates and will not attempt to authenticate them 
+  against it's local client trust store. The default value is false. Use 
+  this method with caution!</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="set_port"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">set_port</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">val</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpClient.set_port">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Set the port that the client will attempt to connect to on the server 
+  on. The default value is 80</p>
+  <p>Keyword arguments: val -- The port value.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="set_host"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">set_host</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">val</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpClient.set_host">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Set the host name or ip address that the client will attempt to 
+  connect to on the server on.</p>
+  <p>Keyword arguments: val -- The host name or ip address to connect 
+  to.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="connect_web_socket"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">connect_web_socket</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">uri</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpClient.connect_web_socket">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Attempt to connect an HTML5 websocket to the specified URI. The 
+  connect is done asynchronously and the handler is called with a WebSocket
+  on success.</p>
+  <p>Keyword arguments: uri -- A relative URI where to connect the 
+  websocket on the host, e.g. /some/path handler -- The handler to be 
+  called with the WebSocket</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="get_now"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">get_now</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">uri</span>,
+        <span class="sig-arg">handler</span>,
+        <span class="sig-arg">**headers</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpClient.get_now">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <pre class="literalblock">
+This is a quick version of the get method where you do not want to do anything with the request
+before sing.
+With this method the request is immediately sent.
+When an HTTP response is received from the server the handler is called passing in the response.
+
+Keyword arguments:
+ uri -- A relative URI where to perform the GET on the server.
+ handler -- The handler to be called with the HttpClientResponse
+ headers -- A dictionary of headers to pass with the request.
+
+</pre>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="options"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">options</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">uri</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpClient.options">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>This method returns an HttpClientRequest instance which represents an 
+  HTTP OPTIONS request with the specified uri. When an HTTP response is 
+  received from the server the handler is called passing in the 
+  response.</p>
+  <p>Keyword arguments: uri -- A relative URI where to perform the OPTIONS 
+  on the server. handler -- The handler to be called with the 
+  HttpClientResponse</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="get"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">get</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">uri</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpClient.get">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>This method returns an HttpClientRequest instance which represents an 
+  HTTP GET request with the specified uri. When an HTTP response is 
+  received from the server the handler is called passing in the 
+  response.</p>
+  <p>Keyword arguments: uri -- A relative URI where to perform the GET on 
+  the server. handler -- The handler to be called with the 
+  HttpClientResponse</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="head"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">head</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">uri</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpClient.head">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>This method returns an HttpClientRequest instance which represents an 
+  HTTP HEAD request with the specified uri. When an HTTP response is 
+  received from the server the handler is called passing in the 
+  response.</p>
+  <p>Keyword arguments: uri -- A relative URI where to perform the HEAD on 
+  the server. handler -- The handler to be called with the 
+  HttpClientResponse</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="post"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">post</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">uri</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpClient.post">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>This method returns an HttpClientRequest instance which represents an 
+  HTTP POST request with the specified uri. When an HTTP response is 
+  received from the server the handler is called passing in the 
+  response.</p>
+  <p>Keyword arguments: uri -- A relative URI where to perform the POST on 
+  the server. handler -- The handler to be called with the 
+  HttpClientResponse</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="put"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">put</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">uri</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpClient.put">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>This method returns an HttpClientRequest instance which represents an 
+  HTTP PUT request with the specified uri. When an HTTP response is 
+  received from the server the handler is called passing in the 
+  response.</p>
+  <p>Keyword arguments: uri -- A relative URI where to perform the PUT on 
+  the server. handler -- The handler to be called with the 
+  HttpClientResponse</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="delete"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">delete</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">uri</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpClient.delete">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>This method returns an HttpClientRequest instance which represents an 
+  HTTP DELETE request with the specified uri. When an HTTP response is 
+  received from the server the handler is called passing in the 
+  response.</p>
+  <p>Keyword arguments: uri -- A relative URI where to perform the DELETE 
+  on the server. handler -- The handler to be called with the 
+  HttpClientResponse</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="trace"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">trace</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">uri</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpClient.trace">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>This method returns an HttpClientRequest instance which represents an 
+  HTTP TRACE request with the specified uri. When an HTTP response is 
+  received from the server the handler is called passing in the 
+  response.</p>
+  <p>Keyword arguments: uri -- A relative URI where to perform the TRACE on
+  the server. handler. The handler to be called with the 
+  HttpClientResponse</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="connect"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">connect</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">uri</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpClient.connect">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>This method returns an HttpClientRequest instance which represents an 
+  HTTP CONNECT request with the specified uri. When an HTTP response is 
+  received from the server the handler is called passing in the 
+  response.</p>
+  <p>Keyword arguments: uri -- A relative URI where to perform the CONNECT 
+  on the server. handler -- The handler to be called with the 
+  HttpClientResponse</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="patch"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">patch</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">uri</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpClient.patch">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>This method returns an HttpClientRequest instance which represents an 
+  HTTP PATCH request with the specified uri. When an HTTP response is 
+  received from the server the handler is called passing in the 
+  response.</p>
+  <p>Keyword arguments: uri -- A relative URI where to perform the PATCH on
+  the server. handler -- The handler to be called with the 
+  HttpClientResponse</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="request"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">request</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">method</span>,
+        <span class="sig-arg">uri</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpClient.request">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>This method returns an HttpClientRequest instance which represents an 
+  HTTP request with the specified method and uri. When an HTTP response is 
+  received from the server the handler is called passing in the response. 
+  method. The HTTP method. Can be one of OPTIONS, HEAD, GET, POST, PUT, 
+  DELETE, TRACE, CONNECT.</p>
+  <p>Keyword arguments: uri -- A relative URI where to perform the OPTIONS 
+  on the server. handler -- The handler to be called with the 
+  HttpClientResponse</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="close"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">close</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpClient.close">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Close the client. Any unclosed connections will be closed.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1
+    on Wed Jun 27 09:06:28 2012
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>

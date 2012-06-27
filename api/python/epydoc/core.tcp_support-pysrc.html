@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>core.tcp_support</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="core-module.html">Package&nbsp;core</a> ::
+        Module&nbsp;tcp_support
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="core.tcp_support-pysrc.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<h1 class="epydoc">Source Code for <a href="core.tcp_support-module.html">Module core.tcp_support</a></h1>
+<pre class="py-src">
+<a name="L1"></a><tt class="py-lineno">  1</tt>  <tt class="py-line"><tt class="py-comment"># Copyright 2011-2012 the original author or authors.</tt> </tt>
+<a name="L2"></a><tt class="py-lineno">  2</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L3"></a><tt class="py-lineno">  3</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># Licensed under the Apache License, Version 2.0 (the "License");</tt> </tt>
+<a name="L4"></a><tt class="py-lineno">  4</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># you may not use this file except in compliance with the License.</tt> </tt>
+<a name="L5"></a><tt class="py-lineno">  5</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># You may obtain a copy of the License at</tt> </tt>
+<a name="L6"></a><tt class="py-lineno">  6</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L7"></a><tt class="py-lineno">  7</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#      http://www.apache.org/licenses/LICENSE-2.0</tt> </tt>
+<a name="L8"></a><tt class="py-lineno">  8</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L9"></a><tt class="py-lineno">  9</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># Unless required by applicable law or agreed to in writing, software</tt> </tt>
+<a name="L10"></a><tt class="py-lineno"> 10</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># distributed under the License is distributed on an "AS IS" BASIS,</tt> </tt>
+<a name="L11"></a><tt class="py-lineno"> 11</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</tt> </tt>
+<a name="L12"></a><tt class="py-lineno"> 12</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># See the License for the specific language governing permissions and</tt> </tt>
+<a name="L13"></a><tt class="py-lineno"> 13</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># limitations under the License.</tt> </tt>
+<a name="L14"></a><tt class="py-lineno"> 14</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt>
+<a name="L15"></a><tt class="py-lineno"> 15</tt>  <tt class="py-line"><tt class="py-name">__author__</tt> <tt class="py-op">=</tt> <tt class="py-docstring">"Scott Horn"</tt> </tt>
+<a name="L16"></a><tt class="py-lineno"> 16</tt>  <tt class="py-line"><tt id="link-0" class="py-name" targets="Variable core.buffer.__email__=core.buffer-module.html#__email__,Variable core.event_bus.__email__=core.event_bus-module.html#__email__,Variable core.file_system.__email__=core.file_system-module.html#__email__,Variable core.handlers.__email__=core.handlers-module.html#__email__,Variable core.http.__email__=core.http-module.html#__email__,Variable core.javautils.__email__=core.javautils-module.html#__email__,Variable core.parsetools.__email__=core.parsetools-module.html#__email__,Variable core.shared_data.__email__=core.shared_data-module.html#__email__,Variable core.sock_js.__email__=core.sock_js-module.html#__email__,Variable core.ssl_support.__email__=core.ssl_support-module.html#__email__,Variable core.streams.__email__=core.streams-module.html#__email__,Variable core.tcp_support.__email__=core.tcp_support-module.html#__email__,Variable vertx.__email__=vertx-module.html#__email__"><a title="core.buffer.__email__
+core.event_bus.__email__
+core.file_system.__email__
+core.handlers.__email__
+core.http.__email__
+core.javautils.__email__
+core.parsetools.__email__
+core.shared_data.__email__
+core.sock_js.__email__
+core.ssl_support.__email__
+core.streams.__email__
+core.tcp_support.__email__
+vertx.__email__" class="py-name" href="#" onclick="return doclink('link-0', '__email__', 'link-0');">__email__</a></tt> <tt class="py-op">=</tt> <tt class="py-string">"scott@hornmicro.com"</tt> </tt>
+<a name="L17"></a><tt class="py-lineno"> 17</tt>  <tt class="py-line"><tt id="link-1" class="py-name" targets="Variable core.buffer.__credits__=core.buffer-module.html#__credits__,Variable core.event_bus.__credits__=core.event_bus-module.html#__credits__,Variable core.file_system.__credits__=core.file_system-module.html#__credits__,Variable core.handlers.__credits__=core.handlers-module.html#__credits__,Variable core.http.__credits__=core.http-module.html#__credits__,Variable core.javautils.__credits__=core.javautils-module.html#__credits__,Variable core.parsetools.__credits__=core.parsetools-module.html#__credits__,Variable core.shared_data.__credits__=core.shared_data-module.html#__credits__,Variable core.sock_js.__credits__=core.sock_js-module.html#__credits__,Variable core.ssl_support.__credits__=core.ssl_support-module.html#__credits__,Variable core.streams.__credits__=core.streams-module.html#__credits__,Variable core.tcp_support.__credits__=core.tcp_support-module.html#__credits__,Variable vertx.__credits__=vertx-module.html#__credits__"><a title="core.buffer.__credits__
+core.event_bus.__credits__
+core.file_system.__credits__
+core.handlers.__credits__
+core.http.__credits__
+core.javautils.__credits__
+core.parsetools.__credits__
+core.shared_data.__credits__
+core.sock_js.__credits__
+core.ssl_support.__credits__
+core.streams.__credits__
+core.tcp_support.__credits__
+vertx.__credits__" class="py-name" href="#" onclick="return doclink('link-1', '__credits__', 'link-1');">__credits__</a></tt> <tt class="py-op">=</tt> <tt class="py-string">"Based entirely on work by Tim Fox http://tfox.org"</tt> </tt>
+<a name="L18"></a><tt class="py-lineno"> 18</tt>  <tt class="py-line"> </tt>
+<a name="TCPSupport"></a><div id="TCPSupport-def"><a name="L19"></a><tt class="py-lineno"> 19</tt> <a class="py-toggle" href="#" id="TCPSupport-toggle" onclick="return toggle('TCPSupport');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="core.tcp_support.TCPSupport-class.html">TCPSupport</a><tt class="py-op">(</tt><tt class="py-base-class">object</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="TCPSupport-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="TCPSupport-expanded"><a name="L20"></a><tt class="py-lineno"> 20</tt>  <tt class="py-line">  <tt class="py-docstring">""" Mixin module that provides all the common TCP params that can be set. """</tt> </tt>
+<a name="L21"></a><tt class="py-lineno"> 21</tt>  <tt class="py-line">   </tt>
+<a name="TCPSupport.set_send_buffer_size"></a><div id="TCPSupport.set_send_buffer_size-def"><a name="L22"></a><tt class="py-lineno"> 22</tt> <a class="py-toggle" href="#" id="TCPSupport.set_send_buffer_size-toggle" onclick="return toggle('TCPSupport.set_send_buffer_size');">-</a><tt class="py-line">  <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.tcp_support.TCPSupport-class.html#set_send_buffer_size">set_send_buffer_size</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">bytes</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="TCPSupport.set_send_buffer_size-collapsed" style="display:none;" pad="+++" indent="++++++"></div><div id="TCPSupport.set_send_buffer_size-expanded"><a name="L23"></a><tt class="py-lineno"> 23</tt>  <tt class="py-line">    <tt class="py-docstring">"""Set the TCP send buffer size.</tt> </tt>
+<a name="L24"></a><tt class="py-lineno"> 24</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L25"></a><tt class="py-lineno"> 25</tt>  <tt class="py-line"><tt class="py-docstring">    Keyword arguments:</tt> </tt>
+<a name="L26"></a><tt class="py-lineno"> 26</tt>  <tt class="py-line"><tt class="py-docstring">    bytes -- The size in bytes.</tt> </tt>
+<a name="L27"></a><tt class="py-lineno"> 27</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L28"></a><tt class="py-lineno"> 28</tt>  <tt class="py-line"><tt class="py-docstring">    return a reference to self so invocations can be chained</tt> </tt>
+<a name="L29"></a><tt class="py-lineno"> 29</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L30"></a><tt class="py-lineno"> 30</tt>  <tt class="py-line">    <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt><tt class="py-op">.</tt><tt class="py-name">setSendBufferSize</tt><tt class="py-op">(</tt><tt class="py-name">bytes</tt><tt class="py-op">)</tt> </tt>
+<a name="L31"></a><tt class="py-lineno"> 31</tt>  <tt class="py-line">    <tt class="py-keyword">return</tt> <tt class="py-name">self</tt> </tt>
+</div><a name="L32"></a><tt class="py-lineno"> 32</tt>  <tt class="py-line"> </tt>
+<a name="L33"></a><tt class="py-lineno"> 33</tt>  <tt class="py-line">  <tt id="link-2" class="py-name" targets="Variable core.tcp_support.TCPSupport.send_buffer_size=core.tcp_support.TCPSupport-class.html#send_buffer_size"><a title="core.tcp_support.TCPSupport.send_buffer_size" class="py-name" href="#" onclick="return doclink('link-2', 'send_buffer_size', 'link-2');">send_buffer_size</a></tt> <tt class="py-op">=</tt> <tt class="py-name">property</tt><tt class="py-op">(</tt><tt class="py-name">fset</tt><tt class="py-op">=</tt><tt id="link-3" class="py-name" targets="Method core.tcp_support.TCPSupport.set_send_buffer_size()=core.tcp_support.TCPSupport-class.html#set_send_buffer_size"><a title="core.tcp_support.TCPSupport.set_send_buffer_size" class="py-name" href="#" onclick="return doclink('link-3', 'set_send_buffer_size', 'link-3');">set_send_buffer_size</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L34"></a><tt class="py-lineno"> 34</tt>  <tt class="py-line"> </tt>
+<a name="TCPSupport.set_receive_buffer_size"></a><div id="TCPSupport.set_receive_buffer_size-def"><a name="L35"></a><tt class="py-lineno"> 35</tt> <a class="py-toggle" href="#" id="TCPSupport.set_receive_buffer_size-toggle" onclick="return toggle('TCPSupport.set_receive_buffer_size');">-</a><tt class="py-line">  <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.tcp_support.TCPSupport-class.html#set_receive_buffer_size">set_receive_buffer_size</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">bytes</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="TCPSupport.set_receive_buffer_size-collapsed" style="display:none;" pad="+++" indent="++++++"></div><div id="TCPSupport.set_receive_buffer_size-expanded"><a name="L36"></a><tt class="py-lineno"> 36</tt>  <tt class="py-line">    <tt class="py-docstring">"""Set the TCP receive buffer size.</tt> </tt>
+<a name="L37"></a><tt class="py-lineno"> 37</tt>  <tt class="py-line"><tt class="py-docstring">    </tt> </tt>
+<a name="L38"></a><tt class="py-lineno"> 38</tt>  <tt class="py-line"><tt class="py-docstring">    Keyword arguments:</tt> </tt>
+<a name="L39"></a><tt class="py-lineno"> 39</tt>  <tt class="py-line"><tt class="py-docstring">    bytes -- The size in bytes.</tt> </tt>
+<a name="L40"></a><tt class="py-lineno"> 40</tt>  <tt class="py-line"><tt class="py-docstring">  </tt> </tt>
+<a name="L41"></a><tt class="py-lineno"> 41</tt>  <tt class="py-line"><tt class="py-docstring">    return a reference to self so invocations can be chained</tt> </tt>
+<a name="L42"></a><tt class="py-lineno"> 42</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L43"></a><tt class="py-lineno"> 43</tt>  <tt class="py-line">    <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt><tt class="py-op">.</tt><tt class="py-name">setReceiveBufferSize</tt><tt class="py-op">(</tt><tt class="py-name">bytes</tt><tt class="py-op">)</tt> </tt>
+<a name="L44"></a><tt class="py-lineno"> 44</tt>  <tt class="py-line">    <tt class="py-keyword">return</tt> <tt class="py-name">self</tt> </tt>
+</div><a name="L45"></a><tt class="py-lineno"> 45</tt>  <tt class="py-line"> </tt>
+<a name="L46"></a><tt class="py-lineno"> 46</tt>  <tt class="py-line">  <tt id="link-4" class="py-name" targets="Variable core.tcp_support.TCPSupport.receive_buffer_size=core.tcp_support.TCPSupport-class.html#receive_buffer_size"><a title="core.tcp_support.TCPSupport.receive_buffer_size" class="py-name" href="#" onclick="return doclink('link-4', 'receive_buffer_size', 'link-4');">receive_buffer_size</a></tt> <tt class="py-op">=</tt> <tt class="py-name">property</tt><tt class="py-op">(</tt><tt class="py-name">fset</tt><tt class="py-op">=</tt><tt id="link-5" class="py-name" targets="Method core.tcp_support.TCPSupport.set_receive_buffer_size()=core.tcp_support.TCPSupport-class.html#set_receive_buffer_size"><a title="core.tcp_support.TCPSupport.set_receive_buffer_size" class="py-name" href="#" onclick="return doclink('link-5', 'set_receive_buffer_size', 'link-5');">set_receive_buffer_size</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L47"></a><tt class="py-lineno"> 47</tt>  <tt class="py-line"> </tt>
+<a name="TCPSupport.set_tcp_keep_alive"></a><div id="TCPSupport.set_tcp_keep_alive-def"><a name="L48"></a><tt class="py-lineno"> 48</tt> <a class="py-toggle" href="#" id="TCPSupport.set_tcp_keep_alive-toggle" onclick="return toggle('TCPSupport.set_tcp_keep_alive');">-</a><tt class="py-line">  <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.tcp_support.TCPSupport-class.html#set_tcp_keep_alive">set_tcp_keep_alive</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">val</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="TCPSupport.set_tcp_keep_alive-collapsed" style="display:none;" pad="+++" indent="++++++"></div><div id="TCPSupport.set_tcp_keep_alive-expanded"><a name="L49"></a><tt class="py-lineno"> 49</tt>  <tt class="py-line">    <tt class="py-docstring">"""Set the TCP keep alive setting.</tt> </tt>
+<a name="L50"></a><tt class="py-lineno"> 50</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L51"></a><tt class="py-lineno"> 51</tt>  <tt class="py-line"><tt class="py-docstring">    Keyword arguments:</tt> </tt>
+<a name="L52"></a><tt class="py-lineno"> 52</tt>  <tt class="py-line"><tt class="py-docstring">    val -- If true, then TCP keep alive will be enabled.</tt> </tt>
+<a name="L53"></a><tt class="py-lineno"> 53</tt>  <tt class="py-line"><tt class="py-docstring">    </tt> </tt>
+<a name="L54"></a><tt class="py-lineno"> 54</tt>  <tt class="py-line"><tt class="py-docstring">    return a reference to self so invocations can be chained</tt> </tt>
+<a name="L55"></a><tt class="py-lineno"> 55</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L56"></a><tt class="py-lineno"> 56</tt>  <tt class="py-line">    <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt><tt class="py-op">.</tt><tt class="py-name">setTCPKeepAlive</tt><tt class="py-op">(</tt><tt class="py-name">val</tt><tt class="py-op">)</tt> </tt>
+<a name="L57"></a><tt class="py-lineno"> 57</tt>  <tt class="py-line">    <tt class="py-keyword">return</tt> <tt class="py-name">self</tt> </tt>
+</div><a name="L58"></a><tt class="py-lineno"> 58</tt>  <tt class="py-line"> </tt>
+<a name="L59"></a><tt class="py-lineno"> 59</tt>  <tt class="py-line">  <tt id="link-6" class="py-name" targets="Variable core.tcp_support.TCPSupport.tcp_keep_alive=core.tcp_support.TCPSupport-class.html#tcp_keep_alive"><a title="core.tcp_support.TCPSupport.tcp_keep_alive" class="py-name" href="#" onclick="return doclink('link-6', 'tcp_keep_alive', 'link-6');">tcp_keep_alive</a></tt> <tt class="py-op">=</tt> <tt class="py-name">property</tt><tt class="py-op">(</tt><tt class="py-name">fset</tt><tt class="py-op">=</tt><tt id="link-7" class="py-name" targets="Method core.tcp_support.TCPSupport.set_tcp_keep_alive()=core.tcp_support.TCPSupport-class.html#set_tcp_keep_alive"><a title="core.tcp_support.TCPSupport.set_tcp_keep_alive" class="py-name" href="#" onclick="return doclink('link-7', 'set_tcp_keep_alive', 'link-7');">set_tcp_keep_alive</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L60"></a><tt class="py-lineno"> 60</tt>  <tt class="py-line"> </tt>
+<a name="TCPSupport.set_reuse_address"></a><div id="TCPSupport.set_reuse_address-def"><a name="L61"></a><tt class="py-lineno"> 61</tt> <a class="py-toggle" href="#" id="TCPSupport.set_reuse_address-toggle" onclick="return toggle('TCPSupport.set_reuse_address');">-</a><tt class="py-line">  <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.tcp_support.TCPSupport-class.html#set_reuse_address">set_reuse_address</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">val</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="TCPSupport.set_reuse_address-collapsed" style="display:none;" pad="+++" indent="++++++"></div><div id="TCPSupport.set_reuse_address-expanded"><a name="L62"></a><tt class="py-lineno"> 62</tt>  <tt class="py-line">    <tt class="py-docstring">"""Set the TCP reuse address setting.</tt> </tt>
+<a name="L63"></a><tt class="py-lineno"> 63</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L64"></a><tt class="py-lineno"> 64</tt>  <tt class="py-line"><tt class="py-docstring">    Keyword arguments:</tt> </tt>
+<a name="L65"></a><tt class="py-lineno"> 65</tt>  <tt class="py-line"><tt class="py-docstring">    val -- If true, then TCP reuse address will be enabled.</tt> </tt>
+<a name="L66"></a><tt class="py-lineno"> 66</tt>  <tt class="py-line"><tt class="py-docstring">    </tt> </tt>
+<a name="L67"></a><tt class="py-lineno"> 67</tt>  <tt class="py-line"><tt class="py-docstring">    returns a reference to self so invocations can be chained</tt> </tt>
+<a name="L68"></a><tt class="py-lineno"> 68</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L69"></a><tt class="py-lineno"> 69</tt>  <tt class="py-line">    <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt><tt class="py-op">.</tt><tt class="py-name">setReuseAddress</tt><tt class="py-op">(</tt><tt class="py-name">val</tt><tt class="py-op">)</tt> </tt>
+<a name="L70"></a><tt class="py-lineno"> 70</tt>  <tt class="py-line">    <tt class="py-keyword">return</tt> <tt class="py-name">self</tt> </tt>
+</div><a name="L71"></a><tt class="py-lineno"> 71</tt>  <tt class="py-line"> </tt>
+<a name="L72"></a><tt class="py-lineno"> 72</tt>  <tt class="py-line">  <tt id="link-8" class="py-name" targets="Variable core.tcp_support.TCPSupport.reuse_address=core.tcp_support.TCPSupport-class.html#reuse_address"><a title="core.tcp_support.TCPSupport.reuse_address" class="py-name" href="#" onclick="return doclink('link-8', 'reuse_address', 'link-8');">reuse_address</a></tt> <tt class="py-op">=</tt> <tt class="py-name">property</tt><tt class="py-op">(</tt><tt class="py-name">fset</tt><tt class="py-op">=</tt><tt id="link-9" class="py-name" targets="Method core.tcp_support.TCPSupport.set_reuse_address()=core.tcp_support.TCPSupport-class.html#set_reuse_address"><a title="core.tcp_support.TCPSupport.set_reuse_address" class="py-name" href="#" onclick="return doclink('link-9', 'set_reuse_address', 'link-9');">set_reuse_address</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L73"></a><tt class="py-lineno"> 73</tt>  <tt class="py-line"> </tt>
+<a name="TCPSupport.set_so_linger"></a><div id="TCPSupport.set_so_linger-def"><a name="L74"></a><tt class="py-lineno"> 74</tt> <a class="py-toggle" href="#" id="TCPSupport.set_so_linger-toggle" onclick="return toggle('TCPSupport.set_so_linger');">-</a><tt class="py-line">  <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.tcp_support.TCPSupport-class.html#set_so_linger">set_so_linger</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">val</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="TCPSupport.set_so_linger-collapsed" style="display:none;" pad="+++" indent="++++++"></div><div id="TCPSupport.set_so_linger-expanded"><a name="L75"></a><tt class="py-lineno"> 75</tt>  <tt class="py-line">    <tt class="py-docstring">"""Set the TCP so linger setting.</tt> </tt>
+<a name="L76"></a><tt class="py-lineno"> 76</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L77"></a><tt class="py-lineno"> 77</tt>  <tt class="py-line"><tt class="py-docstring">    Keyword arguments:</tt> </tt>
+<a name="L78"></a><tt class="py-lineno"> 78</tt>  <tt class="py-line"><tt class="py-docstring">    val -- If true, then TCP so linger will be enabled.</tt> </tt>
+<a name="L79"></a><tt class="py-lineno"> 79</tt>  <tt class="py-line"><tt class="py-docstring">    </tt> </tt>
+<a name="L80"></a><tt class="py-lineno"> 80</tt>  <tt class="py-line"><tt class="py-docstring">    return a reference to self so invocations can be chained</tt> </tt>
+<a name="L81"></a><tt class="py-lineno"> 81</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L82"></a><tt class="py-lineno"> 82</tt>  <tt class="py-line">    <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt><tt class="py-op">.</tt><tt class="py-name">setSoLinger</tt><tt class="py-op">(</tt><tt class="py-name">val</tt><tt class="py-op">)</tt> </tt>
+<a name="L83"></a><tt class="py-lineno"> 83</tt>  <tt class="py-line">    <tt class="py-keyword">return</tt> <tt class="py-name">self</tt> </tt>
+</div><a name="L84"></a><tt class="py-lineno"> 84</tt>  <tt class="py-line"> </tt>
+<a name="L85"></a><tt class="py-lineno"> 85</tt>  <tt class="py-line">  <tt id="link-10" class="py-name" targets="Variable core.tcp_support.TCPSupport.so_linger=core.tcp_support.TCPSupport-class.html#so_linger"><a title="core.tcp_support.TCPSupport.so_linger" class="py-name" href="#" onclick="return doclink('link-10', 'so_linger', 'link-10');">so_linger</a></tt> <tt class="py-op">=</tt> <tt class="py-name">property</tt><tt class="py-op">(</tt><tt class="py-name">fset</tt><tt class="py-op">=</tt><tt id="link-11" class="py-name" targets="Method core.tcp_support.TCPSupport.set_so_linger()=core.tcp_support.TCPSupport-class.html#set_so_linger"><a title="core.tcp_support.TCPSupport.set_so_linger" class="py-name" href="#" onclick="return doclink('link-11', 'set_so_linger', 'link-11');">set_so_linger</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L86"></a><tt class="py-lineno"> 86</tt>  <tt class="py-line"> </tt>
+<a name="TCPSupport.set_traffic_class"></a><div id="TCPSupport.set_traffic_class-def"><a name="L87"></a><tt class="py-lineno"> 87</tt> <a class="py-toggle" href="#" id="TCPSupport.set_traffic_class-toggle" onclick="return toggle('TCPSupport.set_traffic_class');">-</a><tt class="py-line">  <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.tcp_support.TCPSupport-class.html#set_traffic_class">set_traffic_class</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">val</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="TCPSupport.set_traffic_class-collapsed" style="display:none;" pad="+++" indent="++++++"></div><div id="TCPSupport.set_traffic_class-expanded"><a name="L88"></a><tt class="py-lineno"> 88</tt>  <tt class="py-line">    <tt class="py-docstring">"""Set the TCP traffic class setting.</tt> </tt>
+<a name="L89"></a><tt class="py-lineno"> 89</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L90"></a><tt class="py-lineno"> 90</tt>  <tt class="py-line"><tt class="py-docstring">    Keyword arguments:</tt> </tt>
+<a name="L91"></a><tt class="py-lineno"> 91</tt>  <tt class="py-line"><tt class="py-docstring">    val -- The TCP traffic class setting.</tt> </tt>
+<a name="L92"></a><tt class="py-lineno"> 92</tt>  <tt class="py-line"><tt class="py-docstring">    </tt> </tt>
+<a name="L93"></a><tt class="py-lineno"> 93</tt>  <tt class="py-line"><tt class="py-docstring">    return a reference to self so invocations can be chained</tt> </tt>
+<a name="L94"></a><tt class="py-lineno"> 94</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L95"></a><tt class="py-lineno"> 95</tt>  <tt class="py-line">    <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt><tt class="py-op">.</tt><tt class="py-name">setTrafficClass</tt><tt class="py-op">(</tt><tt class="py-name">val</tt><tt class="py-op">)</tt> </tt>
+<a name="L96"></a><tt class="py-lineno"> 96</tt>  <tt class="py-line">    <tt class="py-keyword">return</tt> <tt class="py-name">self</tt> </tt>
+</div><a name="L97"></a><tt class="py-lineno"> 97</tt>  <tt class="py-line"> </tt>
+<a name="L98"></a><tt class="py-lineno"> 98</tt>  <tt class="py-line">  <tt id="link-12" class="py-name" targets="Variable core.tcp_support.TCPSupport.traffic_class=core.tcp_support.TCPSupport-class.html#traffic_class"><a title="core.tcp_support.TCPSupport.traffic_class" class="py-name" href="#" onclick="return doclink('link-12', 'traffic_class', 'link-12');">traffic_class</a></tt> <tt class="py-op">=</tt> <tt class="py-name">property</tt><tt class="py-op">(</tt><tt class="py-name">fset</tt><tt class="py-op">=</tt><tt id="link-13" class="py-name" targets="Method core.tcp_support.TCPSupport.set_traffic_class()=core.tcp_support.TCPSupport-class.html#set_traffic_class"><a title="core.tcp_support.TCPSupport.set_traffic_class" class="py-name" href="#" onclick="return doclink('link-13', 'set_traffic_class', 'link-13');">set_traffic_class</a></tt><tt class="py-op">)</tt> </tt>
+</div><a name="L99"></a><tt class="py-lineno"> 99</tt>  <tt class="py-line"> </tt><script type="text/javascript">
+<!--
+expandto(location.href);
+// -->
+</script>
+</pre>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1
+    on Wed Jun 27 09:06:30 2012
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>

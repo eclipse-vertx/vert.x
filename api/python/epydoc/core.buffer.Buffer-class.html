@@ -1,0 +1,820 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>core.buffer.Buffer</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="core-module.html">Package&nbsp;core</a> ::
+        <a href="core.buffer-module.html">Module&nbsp;buffer</a> ::
+        Class&nbsp;Buffer
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="core.buffer.Buffer-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class Buffer</h1><p class="nomargin-top"><span class="codelink"><a href="core.buffer-pysrc.html#Buffer">source&nbsp;code</a></span></p>
+<pre class="base-tree">
+object --+
+         |
+        <strong class="uidshort">Buffer</strong>
+</pre>
+
+<hr />
+<p>A Buffer represents a sequence of zero or more bytes that can be 
+  written to or read from, and which expands as necessary to accomodate any
+  bytes written to it.</p>
+  <p>Buffers are used in many places in vert.x, for example to read/write 
+  data to/from NetSocket, AsyncFile, WebSocket, HttpClientRequest, 
+  HttpClientResponse, HttpServerRequest, HttpServerResponse etc.</p>
+  <p>There are two ways to write data to a Buffer: The first method 
+  involves methods that take the form set_XXX. These methods write data 
+  into the buffer starting at the specified position. The position does not
+  have to be inside data that has already been written to the buffer; the 
+  buffer will automatically expand to encompass the position plus any data 
+  that needs to be written. All positions are measured in bytes and start 
+  with zero.</p>
+  <p>The second method involves methods that take the form append-XXX; 
+  these methods append data at the end of the buffer. Methods exist to both
+  set and append all primitive types, String and  other instances of 
+  Buffer.</p>
+  <p>Data can be read from a buffer by invoking methods which take the form
+  get_XXX. These methods take a parameter representing the position in the 
+  Buffer from where to read data.</p>
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.buffer.Buffer-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">buffer</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.buffer-pysrc.html#Buffer.__init__">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.buffer.Buffer-class.html#__repr__" class="summary-sig-name">__repr__</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      String representation of buffer</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.buffer-pysrc.html#Buffer.__repr__">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="to_string"></a><span class="summary-sig-name">to_string</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">enc</span>=<span class="summary-sig-default">&quot;UTF-8&quot;</span>)</span><br />
+      Buffer in enc encoding</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.buffer-pysrc.html#Buffer.to_string">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="get_byte"></a><span class="summary-sig-name">get_byte</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pos</span>)</span><br />
+      Get the byte at position pos in the buffer.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.buffer-pysrc.html#Buffer.get_byte">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="get_fixnum"></a><span class="summary-sig-name">get_fixnum</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pos</span>,
+        <span class="summary-sig-arg">bytes</span>)</span><br />
+      Get the fixnum represented by a sequence of bytes starting at 
+      position pos in the buffer.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.buffer-pysrc.html#Buffer.get_fixnum">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="get_float"></a><span class="summary-sig-name">get_float</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pos</span>,
+        <span class="summary-sig-arg">bytes</span>)</span><br />
+      Get the float represented by a sequence of bytes starting at position
+      pos in the buffer.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.buffer-pysrc.html#Buffer.get_float">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="get_string"></a><span class="summary-sig-name">get_string</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pos</span>,
+        <span class="summary-sig-arg">end_pos</span>,
+        <span class="summary-sig-arg">enc</span>=<span class="summary-sig-default">'UTF-8'</span>)</span><br />
+      Return bytes from the buffer interpreted as a String</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.buffer-pysrc.html#Buffer.get_string">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="get_buffer"></a><span class="summary-sig-name">get_buffer</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pos</span>,
+        <span class="summary-sig-arg">end_pos</span>)</span><br />
+      Return bytes in the buffer as a Buffer</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.buffer-pysrc.html#Buffer.get_buffer">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.buffer.Buffer-class.html#append_buffer" class="summary-sig-name">append_buffer</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">buff</span>)</span><br />
+      Appends a buffer to the end of this buffer.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.buffer-pysrc.html#Buffer.append_buffer">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.buffer.Buffer-class.html#append_fixnum" class="summary-sig-name">append_fixnum</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">num</span>,
+        <span class="summary-sig-arg">bytes</span>)</span><br />
+      Appends a fixnum to the end of this buffer.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.buffer-pysrc.html#Buffer.append_fixnum">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.buffer.Buffer-class.html#append_float" class="summary-sig-name">append_float</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">num</span>,
+        <span class="summary-sig-arg">bytes</span>)</span><br />
+      Appends a float to the end of this buffer.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.buffer-pysrc.html#Buffer.append_float">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.buffer.Buffer-class.html#append_str" class="summary-sig-name">append_str</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">str</span>,
+        <span class="summary-sig-arg">enc</span>=<span class="summary-sig-default">&quot;UTF-8&quot;</span>)</span><br />
+      Appends a string to the end of this buffer.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.buffer-pysrc.html#Buffer.append_str">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.buffer.Buffer-class.html#set_fixnum" class="summary-sig-name">set_fixnum</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pos</span>,
+        <span class="summary-sig-arg">num</span>,
+        <span class="summary-sig-arg">bytes</span>)</span><br />
+      Sets bytes in the buffer to a representation of a fixnum.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.buffer-pysrc.html#Buffer.set_fixnum">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.buffer.Buffer-class.html#set_float" class="summary-sig-name">set_float</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pos</span>,
+        <span class="summary-sig-arg">num</span>,
+        <span class="summary-sig-arg">bytes</span>)</span><br />
+      Sets bytes in the buffer to a representation of a float.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.buffer-pysrc.html#Buffer.set_float">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.buffer.Buffer-class.html#set_buffer" class="summary-sig-name">set_buffer</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pos</span>,
+        <span class="summary-sig-arg">buff</span>)</span><br />
+      Sets bytes in this buffer to the bytes of the specified buffer.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.buffer-pysrc.html#Buffer.set_buffer">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="set_string"></a><span class="summary-sig-name">set_string</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pos</span>,
+        <span class="summary-sig-arg">str</span>,
+        <span class="summary-sig-arg">enc</span>=<span class="summary-sig-default">&quot;UTF-8&quot;</span>)</span><br />
+      Set bytes in the buffer to the string encoding in the specified 
+      encoding</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.buffer-pysrc.html#Buffer.set_string">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.buffer.Buffer-class.html#length" class="summary-sig-name">length</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      The length of this buffer, in bytes.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.buffer-pysrc.html#Buffer.length">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="copy"></a><span class="summary-sig-name">copy</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Get a copy of the entire buffer.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.buffer-pysrc.html#Buffer.copy">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="_to_java_buffer"></a><span class="summary-sig-name">_to_java_buffer</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      private</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.buffer-pysrc.html#Buffer._to_java_buffer">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+</table>
+<!-- ==================== STATIC METHODS ==================== -->
+<a name="section-StaticMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Static Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-StaticMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="create_from_str"></a><span class="summary-sig-name">create_from_str</span>(<span class="summary-sig-arg">str</span>,
+        <span class="summary-sig-arg">enc</span>=<span class="summary-sig-default">&quot;UTF-8&quot;</span>)</span><br />
+      Create a buffer from a string in the enc encoding</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.buffer-pysrc.html#Buffer.create_from_str">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.buffer.Buffer-class.html#create" class="summary-sig-name">create</a>(<span class="summary-sig-arg">initial_size_hint</span>=<span class="summary-sig-default">0</span>)</span><br />
+      Creates a new empty buffer.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.buffer-pysrc.html#Buffer.create">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="__init__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">buffer</span>)</span>
+    <br /><em class="fname">(Constructor)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.buffer-pysrc.html#Buffer.__init__">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  
+  <dl class="fields">
+    <dt>Overrides:
+        object.__init__
+        <dd><em class="note">(inherited documentation)</em></dd>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="__repr__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__repr__</span>(<span class="sig-arg">self</span>)</span>
+    <br /><em class="fname">(Representation operator)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.buffer-pysrc.html#Buffer.__repr__">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>String representation of buffer</p>
+  <dl class="fields">
+    <dt>Overrides:
+        object.__repr__
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="create"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">create</span>(<span class="sig-arg">initial_size_hint</span>=<span class="sig-default">0</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.buffer-pysrc.html#Buffer.create">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Creates a new empty buffer. initial_size_hint is a hint to the system 
+  for how much memory to initially allocate.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="append_buffer"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">append_buffer</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">buff</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.buffer-pysrc.html#Buffer.append_buffer">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Appends a buffer to the end of this buffer. The buffer will expand as 
+  necessary to accomodate any bytes written.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="append_fixnum"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">append_fixnum</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">num</span>,
+        <span class="sig-arg">bytes</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.buffer-pysrc.html#Buffer.append_fixnum">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Appends a fixnum to the end of this buffer. The buffer will expand as 
+  necessary to accomodate any bytes written.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="append_float"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">append_float</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">num</span>,
+        <span class="sig-arg">bytes</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.buffer-pysrc.html#Buffer.append_float">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Appends a float to the end of this buffer. The buffer will expand as 
+  necessary to accomodate any bytes written.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="append_str"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">append_str</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">str</span>,
+        <span class="sig-arg">enc</span>=<span class="sig-default">&quot;UTF-8&quot;</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.buffer-pysrc.html#Buffer.append_str">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Appends a string to the end of this buffer. The buffer will expand as 
+  necessary to accomodate any bytes written.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="set_fixnum"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">set_fixnum</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">pos</span>,
+        <span class="sig-arg">num</span>,
+        <span class="sig-arg">bytes</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.buffer-pysrc.html#Buffer.set_fixnum">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Sets bytes in the buffer to a representation of a fixnum. The buffer 
+  will expand as necessary to accomodate any bytes written.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="set_float"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">set_float</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">pos</span>,
+        <span class="sig-arg">num</span>,
+        <span class="sig-arg">bytes</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.buffer-pysrc.html#Buffer.set_float">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Sets bytes in the buffer to a representation of a float. The buffer 
+  will expand as necessary to accomodate any bytes written.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="set_buffer"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">set_buffer</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">pos</span>,
+        <span class="sig-arg">buff</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.buffer-pysrc.html#Buffer.set_buffer">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Sets bytes in this buffer to the bytes of the specified buffer. The 
+  buffer will expand as necessary to accomodate any bytes written.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="length"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">length</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.buffer-pysrc.html#Buffer.length">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>The length of this buffer, in bytes.</p>
+  <dl class="fields">
+    <dt>Decorators:</dt>
+    <dd><ul class="nomargin-top">
+        <li><code>@property</code></li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1
+    on Wed Jun 27 09:06:28 2012
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>

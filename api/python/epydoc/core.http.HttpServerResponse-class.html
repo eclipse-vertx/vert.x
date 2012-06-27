@@ -1,0 +1,788 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>core.http.HttpServerResponse</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="core-module.html">Package&nbsp;core</a> ::
+        <a href="core.http-module.html">Module&nbsp;http</a> ::
+        Class&nbsp;HttpServerResponse
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="core.http.HttpServerResponse-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class HttpServerResponse</h1><p class="nomargin-top"><span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse">source&nbsp;code</a></span></p>
+<pre class="base-tree">
+         object --+    
+                  |    
+<a href="core.streams.WriteStream-class.html">streams.WriteStream</a> --+
+                      |
+                     <strong class="uidshort">HttpServerResponse</strong>
+</pre>
+
+<hr />
+<p>Encapsulates a server-side HTTP response.</p>
+  <p>An instance of this class is created and associated to every instance 
+  of HttpServerRequest that is created.</p>
+  <p>It allows the developer to control the HTTP response that is sent back
+  to the client for the corresponding HTTP request. It contains methods 
+  that allow HTTP headers and trailers to be set, and for a body to be 
+  written out to the response.</p>
+  <p>It also allows a file to be streamed by the kernel directly from disk 
+  to the outgoing HTTP connection, bypassing user space altogether (where 
+  supported by the underlying operating system). This is a very efficient 
+  way of serving files from the server since buffers do not have to be read
+  one by one from the file and written to the outgoing socket.</p>
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpServerResponse-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">java_obj</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.__init__">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="get_status_code"></a><span class="summary-sig-name">get_status_code</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Get the status code of the response.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.get_status_code">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpServerResponse-class.html#set_status_code" class="summary-sig-name">set_status_code</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">code</span>)</span><br />
+      Set the status code of the response.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.set_status_code">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="get_status_message"></a><span class="summary-sig-name">get_status_message</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Get the status message the goes with status code</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.get_status_message">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="set_status_message"></a><span class="summary-sig-name">set_status_message</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">message</span>)</span><br />
+      Set the status message for a response</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.set_status_message">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpServerResponse-class.html#headers" class="summary-sig-name">headers</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Get a copy of the reponse headers as a dictionary</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.headers">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpServerResponse-class.html#put_header" class="summary-sig-name">put_header</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">key</span>,
+        <span class="summary-sig-arg">value</span>)</span><br />
+      Inserts a header into the response.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.put_header">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpServerResponse-class.html#trailers" class="summary-sig-name">trailers</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Get a copy of the trailers as a dictionary</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.trailers">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpServerResponse-class.html#put_trailer" class="summary-sig-name">put_trailer</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">key</span>,
+        <span class="summary-sig-arg">value</span>)</span><br />
+      Inserts a trailer into the response.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.put_trailer">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpServerResponse-class.html#write_buffer" class="summary-sig-name">write_buffer</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">buffer</span>,
+        <span class="summary-sig-arg">handler</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Write a buffer to the response.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.write_buffer">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpServerResponse-class.html#write_str" class="summary-sig-name">write_str</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">str</span>,
+        <span class="summary-sig-arg">enc</span>=<span class="summary-sig-default">&quot;UTF-8&quot;</span>,
+        <span class="summary-sig-arg">handler</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Write a String to the response.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.write_str">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpServerResponse-class.html#send_file" class="summary-sig-name">send_file</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">path</span>)</span><br />
+      Tell the kernel to stream a file directly from disk to the outgoing 
+      connection, bypassing userspace altogether (where supported by the 
+      underlying operating system.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.send_file">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpServerResponse-class.html#set_chunked" class="summary-sig-name">set_chunked</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">val</span>)</span><br />
+      Sets whether this response uses HTTP chunked encoding or not.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.set_chunked">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="get_chunked"></a><span class="summary-sig-name">get_chunked</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Get whether this response uses HTTP chunked encoding or not.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.get_chunked">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.HttpServerResponse-class.html#end" class="summary-sig-name">end</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">data</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Ends the response.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.end">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="close"></a><span class="summary-sig-name">close</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Close the underlying TCP connection</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.close">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="core.streams.WriteStream-class.html">streams.WriteStream</a></code></b>:
+      <code><a href="core.streams.WriteStream-class.html#drain_handler">drain_handler</a></code>,
+      <code><a href="core.streams.WriteStream-class.html#exception_handler">exception_handler</a></code>,
+      <code><a href="core.streams.WriteStream-class.html#set_write_queue_max_size">set_write_queue_max_size</a></code>,
+      <code><a href="core.streams.WriteStream-class.html#write_queue_full">write_queue_full</a></code>
+      </p>
+    <div class="private">    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="core.streams.WriteStream-class.html">streams.WriteStream</a></code></b> (private):
+      <code><a href="core.streams.WriteStream-class.html#_to_write_stream" onclick="show_private();">_to_write_stream</a></code>
+      </p></div>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="status_code"></a><span class="summary-name">status_code</span> = <code title="property(get_status_code, set_status_code)">property(get_status_code, set_status_code)</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="status_message"></a><span class="summary-name">status_message</span> = <code title="property(get_status_message, set_status_message)">property(get_status_message, set_status_message)</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="chunked"></a><span class="summary-name">chunked</span> = <code title="property(get_chunked, set_chunked)">property(get_chunked, set_chunked)</code>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="core.streams.WriteStream-class.html">streams.WriteStream</a></code></b>:
+      <code><a href="core.streams.WriteStream-class.html#write_queue_max_size">write_queue_max_size</a></code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="__init__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">java_obj</span>)</span>
+    <br /><em class="fname">(Constructor)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.__init__">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  
+  <dl class="fields">
+    <dt>Overrides:
+        object.__init__
+        <dd><em class="note">(inherited documentation)</em></dd>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="set_status_code"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">set_status_code</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">code</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.set_status_code">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Set the status code of the response. Default is 200</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="headers"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">headers</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.headers">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Get a copy of the reponse headers as a dictionary</p>
+  <dl class="fields">
+    <dt>Decorators:</dt>
+    <dd><ul class="nomargin-top">
+        <li><code>@property</code></li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="put_header"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">put_header</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">key</span>,
+        <span class="sig-arg">value</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.put_header">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Inserts a header into the response.</p>
+  <p>Keyword arguments: key -- The header key value -- The header 
+  value.</p>
+  <p>returns HttpServerResponse so multiple operations can be chained.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="trailers"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">trailers</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.trailers">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Get a copy of the trailers as a dictionary</p>
+  <dl class="fields">
+    <dt>Decorators:</dt>
+    <dd><ul class="nomargin-top">
+        <li><code>@property</code></li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="put_trailer"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">put_trailer</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">key</span>,
+        <span class="sig-arg">value</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.put_trailer">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Inserts a trailer into the response.</p>
+  <p>Keyword arguments: key -- The header key value -- The header 
+  value.</p>
+  <p>returns HttpServerResponse so multiple operations can be chained.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="write_buffer"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">write_buffer</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">buffer</span>,
+        <span class="sig-arg">handler</span>=<span class="sig-default">None</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.write_buffer">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Write a buffer to the response. The handler (if supplied) will be 
+  called when the buffer has actually been written to the wire.</p>
+  <p>Keyword arguments: buffer -- The buffer to write handler -- The 
+  handler to be called when writing has been completed. It is wrapped in a 
+  DoneHandler (default None)</p>
+  <p>returns a HttpServerResponse so multiple operations can be 
+  chained.</p>
+  <dl class="fields">
+    <dt>Overrides:
+        <a href="core.streams.WriteStream-class.html#write_buffer">streams.WriteStream.write_buffer</a>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="write_str"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">write_str</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">str</span>,
+        <span class="sig-arg">enc</span>=<span class="sig-default">&quot;UTF-8&quot;</span>,
+        <span class="sig-arg">handler</span>=<span class="sig-default">None</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.write_str">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Write a String to the response. The handler will be called when the 
+  String has actually been written to the wire.</p>
+  <p>Keyword arguments: str -- The string to write enc -- Encoding to 
+  use.</p>
+  <p>handler -- The handler to be called when writing has been completed. 
+  It is wrapped in a DoneHandler (default None)</p>
+  <p>returns a HttpServerResponse so multiple operations can be 
+  chained.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="send_file"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">send_file</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">path</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.send_file">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Tell the kernel to stream a file directly from disk to the outgoing 
+  connection, bypassing userspace altogether (where supported by the 
+  underlying operating system. This is a very efficient way to serve 
+  files.</p>
+  <p>Keyword arguments: path -- Path to file to send.</p>
+  <p>returns a HttpServerResponse so multiple operations can be 
+  chained.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="set_chunked"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">set_chunked</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">val</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.set_chunked">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Sets whether this response uses HTTP chunked encoding or not.</p>
+  <p>Keyword arguments: val -- If val is true, this response will use HTTP 
+  chunked encoding, and each call to write to the body will correspond to a
+  new HTTP chunk sent on the wire. If chunked encoding is used the HTTP 
+  header 'Transfer-Encoding' with a value of 'Chunked' will be 
+  automatically inserted in the response.</p>
+  <p>If chunked is false, this response will not use HTTP chunked encoding,
+  and therefore if any data is written the body of the response, the total 
+  size of that data must be set in the 'Content-Length' header before any 
+  data is written to the response body. An HTTP chunked response is 
+  typically used when you do not know the total size of the request body up
+  front.</p>
+  <p>returns a HttpServerResponse so multiple operations can be 
+  chained.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="end"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">end</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">data</span>=<span class="sig-default">None</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#HttpServerResponse.end">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Ends the response. If no data has been written to the response body, 
+  the actual response won't get written until this method gets called. Once
+  the response has ended, it cannot be used any more, and if keep alive is 
+  true the underlying connection will be closed.</p>
+  <p>Keywords arguments data -- Optional String or Buffer to write before 
+  ending the response</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1
+    on Wed Jun 27 09:06:29 2012
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>

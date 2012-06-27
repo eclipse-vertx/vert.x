@@ -1,0 +1,1144 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>core.http.RouteMatcher</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="core-module.html">Package&nbsp;core</a> ::
+        <a href="core.http-module.html">Module&nbsp;http</a> ::
+        Class&nbsp;RouteMatcher
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="core.http.RouteMatcher-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class RouteMatcher</h1><p class="nomargin-top"><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher">source&nbsp;code</a></span></p>
+<pre class="base-tree">
+object --+
+         |
+        <strong class="uidshort">RouteMatcher</strong>
+</pre>
+
+<hr />
+<p>This class allows you to do route requests based on the HTTP verb and 
+  the request URI, in a manner similar to &lt;a 
+  href=&quot;http://www.sinatrarb.com/&quot;&gt;Sinatra&lt;/a&gt; or &lt;a 
+  href=&quot;http://expressjs.com/&quot;&gt;Express&lt;/a&gt;.</p>
+  <p>RouteMatcher also lets you extract paramaters from the request URI 
+  either a simple pattern or using regular expressions for more complex 
+  matches. Any parameters extracted will be added to the requests 
+  parameters which will be available to you in your request handler.</p>
+  <p>It's particularly useful when writing REST-ful web applications.</p>
+  <p>To use a simple pattern to extract parameters simply prefix the 
+  parameter name in the pattern with a ':' (colon).</p>
+  <p>Different handlers can be specified for each of the HTTP verbs, GET, 
+  POST, PUT, DELETE etc.</p>
+  <p>For more complex matches regular expressions can be used in the 
+  pattern. When regular expressions are used, the extracted parameters do 
+  not have a name, so they are put into the HTTP request with names of 
+  param0, param1, param2 etc.</p>
+  <p>Multiple matches can be specified for each HTTP verb. In the case 
+  there are more than one matching patterns for a particular request, the 
+  first matching one will be used.</p>
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.RouteMatcher-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.__init__">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="__call__"></a><span class="summary-sig-name">__call__</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">data</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.__call__">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.RouteMatcher-class.html#input" class="summary-sig-name">input</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">request</span>)</span><br />
+      This method is called to provide the matcher with data.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.input">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.RouteMatcher-class.html#get" class="summary-sig-name">get</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pattern</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Specify a handler that will be called for a matching HTTP GET</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.get">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.RouteMatcher-class.html#put" class="summary-sig-name">put</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pattern</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Specify a handler that will be called for a matching HTTP PUT</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.put">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.RouteMatcher-class.html#post" class="summary-sig-name">post</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pattern</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Specify a handler that will be called for a matching HTTP POST</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.post">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.RouteMatcher-class.html#delete" class="summary-sig-name">delete</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pattern</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Specify a handler that will be called for a matching HTTP DELETE</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.delete">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.RouteMatcher-class.html#options" class="summary-sig-name">options</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pattern</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Specify a handler that will be called for a matching HTTP OPTIONS</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.options">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.RouteMatcher-class.html#head" class="summary-sig-name">head</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pattern</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Specify a handler that will be called for a matching HTTP HEAD</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.head">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.RouteMatcher-class.html#trace" class="summary-sig-name">trace</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pattern</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Specify a handler that will be called for a matching HTTP TRACE</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.trace">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.RouteMatcher-class.html#patch" class="summary-sig-name">patch</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pattern</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Specify a handler that will be called for a matching HTTP PATCH</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.patch">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.RouteMatcher-class.html#connect" class="summary-sig-name">connect</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pattern</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Specify a handler that will be called for a matching HTTP CONNECT</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.connect">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.RouteMatcher-class.html#all" class="summary-sig-name">all</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pattern</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Specify a handler that will be called for any matching HTTP request</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.all">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.RouteMatcher-class.html#get_re" class="summary-sig-name">get_re</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pattern</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Specify a handler that will be called for a matching HTTP GET</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.get_re">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.RouteMatcher-class.html#put_re" class="summary-sig-name">put_re</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pattern</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Specify a handler that will be called for a matching HTTP PUT</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.put_re">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.RouteMatcher-class.html#post_re" class="summary-sig-name">post_re</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pattern</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Specify a handler that will be called for a matching HTTP POST</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.post_re">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.RouteMatcher-class.html#delete_re" class="summary-sig-name">delete_re</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pattern</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Specify a handler that will be called for a matching HTTP DELETE</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.delete_re">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.RouteMatcher-class.html#options_re" class="summary-sig-name">options_re</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pattern</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Specify a handler that will be called for a matching HTTP OPTIONS</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.options_re">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.RouteMatcher-class.html#head_re" class="summary-sig-name">head_re</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pattern</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Specify a handler that will be called for a matching HTTP HEAD</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.head_re">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.RouteMatcher-class.html#trace_re" class="summary-sig-name">trace_re</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pattern</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Specify a handler that will be called for a matching HTTP TRACE</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.trace_re">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.RouteMatcher-class.html#patch_re" class="summary-sig-name">patch_re</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pattern</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Specify a handler that will be called for a matching HTTP PATCH</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.patch_re">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.RouteMatcher-class.html#connect_re" class="summary-sig-name">connect_re</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pattern</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Specify a handler that will be called for a matching HTTP CONNECT</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.connect_re">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.RouteMatcher-class.html#all_re" class="summary-sig-name">all_re</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">pattern</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Specify a handler that will be called for any matching HTTP request</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.all_re">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.http.RouteMatcher-class.html#no_match" class="summary-sig-name">no_match</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Specify a handler that will be called when nothing matches Default 
+      behaviour is to return a 404</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.no_match">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="__init__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>)</span>
+    <br /><em class="fname">(Constructor)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.__init__">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  
+  <dl class="fields">
+    <dt>Overrides:
+        object.__init__
+        <dd><em class="note">(inherited documentation)</em></dd>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="input"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">input</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">request</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.input">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>This method is called to provide the matcher with data.</p>
+  <p>Keyword arguments: request -- input request to the parser.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="get"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">get</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">pattern</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.get">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Specify a handler that will be called for a matching HTTP GET</p>
+  <p>Keyword arguments: pattern -- pattern to match handler -- handler for 
+  match</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="put"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">put</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">pattern</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.put">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Specify a handler that will be called for a matching HTTP PUT</p>
+  <p>Keyword arguments: pattern -- pattern to match handler -- http server 
+  request handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="post"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">post</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">pattern</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.post">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Specify a handler that will be called for a matching HTTP POST</p>
+  <p>Keyword arguments: pattern -- pattern to match handler -- http server 
+  request handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="delete"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">delete</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">pattern</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.delete">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Specify a handler that will be called for a matching HTTP DELETE</p>
+  <p>Keyword arguments: pattern -- pattern to match handler -- http server 
+  request handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="options"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">options</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">pattern</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.options">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Specify a handler that will be called for a matching HTTP OPTIONS</p>
+  <p>Keyword arguments: pattern -- pattern to match handler -- http server 
+  request handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="head"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">head</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">pattern</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.head">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Specify a handler that will be called for a matching HTTP HEAD</p>
+  <p>Keyword arguments: pattern -- pattern to match handler -- http server 
+  request handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="trace"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">trace</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">pattern</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.trace">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Specify a handler that will be called for a matching HTTP TRACE</p>
+  <p>Keyword arguments: pattern -- pattern to match handler -- http server 
+  request handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="patch"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">patch</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">pattern</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.patch">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Specify a handler that will be called for a matching HTTP PATCH</p>
+  <p>Keyword arguments: pattern -- pattern to match handler -- http server 
+  request handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="connect"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">connect</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">pattern</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.connect">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Specify a handler that will be called for a matching HTTP CONNECT</p>
+  <p>Keyword arguments: pattern -- pattern to match handler -- http server 
+  request handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="all"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">all</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">pattern</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.all">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Specify a handler that will be called for any matching HTTP 
+  request</p>
+  <p>Keyword arguments: pattern -- pattern to match handler -- http server 
+  request handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="get_re"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">get_re</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">pattern</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.get_re">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Specify a handler that will be called for a matching HTTP GET</p>
+  <p>Keyword arguments: pattern -- pattern to match handler -- http server 
+  request handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="put_re"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">put_re</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">pattern</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.put_re">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Specify a handler that will be called for a matching HTTP PUT</p>
+  <p>Keyword arguments: pattern -- pattern to match handler -- http server 
+  request handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="post_re"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">post_re</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">pattern</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.post_re">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Specify a handler that will be called for a matching HTTP POST</p>
+  <p>Keyword arguments: pattern -- pattern to match handler -- http server 
+  request handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="delete_re"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">delete_re</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">pattern</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.delete_re">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Specify a handler that will be called for a matching HTTP DELETE</p>
+  <p>Keyword arguments: pattern -- pattern to match handler -- http server 
+  request handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="options_re"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">options_re</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">pattern</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.options_re">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Specify a handler that will be called for a matching HTTP OPTIONS</p>
+  <p>Keyword arguments: pattern -- pattern to match handler -- http server 
+  request handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="head_re"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">head_re</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">pattern</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.head_re">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Specify a handler that will be called for a matching HTTP HEAD</p>
+  <p>Keyword arguments: pattern -- pattern to match handler -- http server 
+  request handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="trace_re"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">trace_re</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">pattern</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.trace_re">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Specify a handler that will be called for a matching HTTP TRACE</p>
+  <p>Keyword arguments: pattern -- pattern to match handler -- http server 
+  request handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="patch_re"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">patch_re</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">pattern</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.patch_re">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Specify a handler that will be called for a matching HTTP PATCH</p>
+  <p>Keyword arguments: pattern -- pattern to match handler -- http server 
+  request handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="connect_re"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">connect_re</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">pattern</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.connect_re">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Specify a handler that will be called for a matching HTTP CONNECT</p>
+  <p>Keyword arguments: pattern -- pattern to match handler -- http server 
+  request handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="all_re"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">all_re</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">pattern</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.all_re">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Specify a handler that will be called for any matching HTTP 
+  request</p>
+  <p>Keyword arguments: pattern -- pattern to match handler -- http server 
+  request handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="no_match"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">no_match</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">handler</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.http-pysrc.html#RouteMatcher.no_match">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Specify a handler that will be called when nothing matches Default 
+  behaviour is to return a 404</p>
+  <p>Keyword arguments: handler -- http server request handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1
+    on Wed Jun 27 09:06:29 2012
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>
