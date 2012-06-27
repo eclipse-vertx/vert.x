@@ -1,0 +1,70 @@
+Regression Testing for javadoc
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    >>> from epydoc.test.util import print_warnings
+    >>> print_warnings()
+
+Summary
+=======
+The implementation of the summaization function works as expected.
+
+>>> from epydoc.markup import javadoc
+>>> def getsummary(s):
+...     p = javadoc.parse_docstring(s, [])
+...     s, o = p.summary()
+...     s = s.to_plaintext(None).strip()
+...     return s, o
+
+#Let's not lose anything!
+
+>>> getsummary("Single line")
+('Single line', False)
+
+>>> getsummary("Single line.")
+('Single line.', False)
+
+>>> getsummary("""
+... Single line <i>with</i> period.
+... """)
+('Single line <i>with</i> period.', False)
+
+>>> getsummary("""
+... Single line <i>with</i> period.
+...
+... @type Also with a tag.
+... """)
+('Single line <i>with</i> period.', False)
+
+>>> getsummary("""
+... Other lines <i>with</i> period.
+... This is attached
+... """)
+('Other lines <i>with</i> period.', True)
+
+>>> getsummary("""
+... Other lines <i>with</i> period.
+...
+... This is detached
+...
+... @type Also with a tag.
+... """)
+('Other lines <i>with</i> period.', True)
+
+>>> getsummary("""
+... Other lines without period
+... This is attached
+... """)
+('Other lines without period...', True)
+
+>>> getsummary("""
+... Other lines without period
+...
+... This is detached
+... """)
+('Other lines without period...', True)
+
+>>> getsummary("""
+... Single line <i>without</i> period
+...
+... @type Also with a tag.
+... """)
+('Single line <i>without</i> period', False)

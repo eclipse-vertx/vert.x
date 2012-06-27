@@ -1,0 +1,266 @@
+Regression Testing for epydoc.apidoc
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This file serves to provide both documentation and regression tests
+for the epydoc.apidoc module.  The main purpose of this module is to
+define the `APIDoc` class hierarchy, which is used to encode API
+documentation about Python programs.  The API documentation for a
+Python program is encoded using a graph of `APIDoc` objects, each of
+which encodes information about a single Python variable or value.
+
+    >>> import epydoc; epydoc.DEBUG = True
+
+    >>> from epydoc.apidoc import *
+
+    >>> from epydoc.test.util import print_warnings
+    >>> print_warnings()
+
+Unknown Value
+=============
+Epydoc defines a special object, epydoc.apidoc.UNKNOWN, which is used
+as the value of attributes when their real value is not (yet) known.
+
+    >>> UNKNOWN
+    <UNKNOWN>
+    
+This object only compares equal to itself:
+
+    >>> UNKNOWN == False
+    False
+    >>> UNKNOWN == True
+    False
+    >>> UNKNOWN == 'UNKNOWN'
+    False
+    >>> UNKNOWN == 0
+    False
+    >>> UNKNOWN == []
+    False
+    >>> UNKNOWN == object()
+    False
+    >>> UNKNOWN == UNKNOWN
+    True
+
+If UNKNOWN is used in a context where it is cast to bool, then it will
+raise an exception.  This helps prevent acidentally interpreting an
+UNKNOWN value as true or false:
+
+    >>> if UNKNOWN:
+    ...     print 'ok'
+    Traceback (most recent call last):
+    ValueError: Sentinel value <UNKNOWN> can not be used as a boolean
+
+To test an attribute whose value might be UNKNOWN, you should
+explicitly compare that value to True or False.  E.g.:
+
+    >>> x = UNKNOWN
+    >>> if x is True:
+    ...     print 'we know x is true, and not unknown'
+    >>> if x is not False:
+    ...     print 'x might be true or unknown.'
+    x might be true or unknown.
+    >>> if x in (True, UNKNOWN):
+    ...     print 'x might be true or unknown.'
+    x might be true or unknown.
+
+Dotted Names
+============
+The DottedName class is used to encode dotted names, such as
+'epydoc.apidoc.DottedName', and make them easier to work with.
+Conceptually, a dotted name consists of a sequence of identifiers,
+separated by periods.
+
+Dotted names can be constructed from strings:
+
+    >>> name1 = DottedName('foo.bar')
+    >>> name1
+    DottedName('foo', 'bar')
+
+Note that the given name is split on periods.  You may also pass
+multiple strings to the constructor; they will be combined together
+into a single sequence:
+
+    >>> name2 = DottedName('x.y', 'z')
+    >>> name2
+    DottedName('x', 'y', 'z')
+
+Each string can be a single identifier or a sequence of identifiers
+joined py periods.  You may also pass DottedName objects to the
+constructor; their sequence of identifiers will be used:
+
+    >>> name3 = DottedName(name1, name2)
+    >>> name3
+    DottedName('foo', 'bar', 'x', 'y', 'z')
+
+The string representation of a dotted name is formed by joining the
+identifiers with periods:
+
+    >>> str(name1)
+    'foo.bar'
+    >>> str(name2)
+    'x.y.z'
+    >>> str(name3)
+    'foo.bar.x.y.z'
+
+The individual identifiers of a dotted name can be accessed via
+indexing; and the number of identifiers is returned by the len
+operator:
+
+    >>> name1[0], name1[1]
+    ('foo', 'bar')
+    >>> name3[-1]
+    'z'
+    >>> name3[1:3]
+    DottedName('bar', 'x')
+    >>> len(name2)
+    3
+
+As a result, you can iterate over the identifiers in a dotted name:
+
+    >>> for ident in name1:
+    ...     print ident
+    foo
+    bar
+
+Two dotted names compare equal if they have the same number of
+identifies and they are pairwise equal:
+
+    >>> DottedName('foo.bar') == DottedName('foo', 'bar')
+    True
+    >>> DottedName('foo.bar') == DottedName('foo.baz')
+    False
+    >>> DottedName('foo.bar') == DottedName('foo.bar.baz')
+    False
+    
+Dotted names may be combined with the addition operator:
+
+    >>> name1 + name2
+    DottedName('foo', 'bar', 'x', 'y', 'z')
+    >>> name1 + name2 == name3
+    True
+    >>> name2 + name1 == name3
+    False
+
+The container method may be used to construct a new dotted name with the
+last identifier stripped off:
+
+    >>> name1.container()
+    DottedName('foo')
+    >>> name3.container()
+    DottedName('foo', 'bar', 'x', 'y')
+
+If a dotted name has only one identifier, then its container is None:
+
+    >>> print DottedName('baz').container()
+    None
+    >>> print name1.container().container()
+    None
+
+It is an error to create an empty dotted name; or a dotted name that
+contains a string that's not a valid python identifier:
+
+    >>> DottedName()
+    Traceback (most recent call last):
+    InvalidDottedName: Empty DottedName
+    >>> DottedName('1+2', strict=True)
+    Traceback (most recent call last):
+    InvalidDottedName: Bad identifier '1+2'
+    >>> DottedName({})
+    Traceback (most recent call last):
+    TypeError: Bad identifier {}: expected DottedName or str
+    >>> DottedName('1+2', strict=False)
+    Identifier '1+2' looks suspicious; using it anyway.
+    DottedName('1+2')
+
+The one exception is that '??' is treated as if it were a valid python
+identifier:
+
+    >>> DottedName('??', 'foo')
+    DottedName('??', 'foo')
+
+This is used when we can't find any name for an object (e.g., if
+there's a class that was used as the base class, but is not contained
+in any module or class).
+    
+A dotted name can be queried into a context to obtain a reduced version:
+
+    >>> DottedName('foo.bar').contextualize(DottedName('foo'))
+    DottedName('bar')
+    >>> DottedName('foo.bar.baz.qux').contextualize(DottedName('foo.bar'))
+    DottedName('baz', 'qux')
+    >>> DottedName('foo.bar').contextualize(DottedName('baz'))
+    DottedName('foo', 'bar')
+    >>> DottedName('foo.bar').contextualize(DottedName('foo').container())
+    DottedName('foo', 'bar')
+    >>> DottedName('foo.bar').contextualize(UNKNOWN)
+    DottedName('foo', 'bar')
+    
+But a contextualization can't reduce to an empty DottedName:
+
+    >>> DottedName('foo').contextualize(DottedName('foo'))
+    DottedName('foo')
+
+APIDoc Objects
+==============
+API documentation about Python programs is broken into small pieces,
+each of which is encoded using a single APIDoc object.  Each APIDoc
+object describes a single value, variable, or function argument.
+
+The APIDoc base class has 2 direct subclasses, for the 2 basic types
+of entity that it can record information about: ValueDoc and
+VariableDoc.  ValueDoc is further subclassed to specify the different
+pieces of information that should be recorded about each value type.
+
+APIDoc objects record information about each entity using attributes.
+Attribute values may be specified in the constructor.  Any attributes
+that are not specified will be given a default value (usually
+UNKNOWN).  The APIDoc base class defines the attributes shared by all
+APIDoc objects: docstring, docstring_lineno, descr, summary, metadata,
+and extra_docstring_fields.
+
+    >>> api_doc = APIDoc(docstring='foo')
+    >>> api_doc.docstring
+    'foo'
+    >>> api_doc.summary
+    <UNKNOWN>
+
+The constructor does not accept positional arguments; and any keyword
+argument that does not correspond to a valid attribute will generate a
+TypeError (but only if epydoc.DEBUG is true):
+
+    >>> APIDoc('foo')
+    Traceback (most recent call last):
+    TypeError: __init__() takes exactly 1 argument (2 given)
+    >>> APIDoc(foo='foo')
+    Traceback (most recent call last):
+    TypeError: APIDoc got unexpected arg 'foo'
+
+Any assignment to an attribute that's not valid will also generate a
+TypeError (but only if epydoc.DEBUG is true):
+
+    >>> api_doc = APIDoc(docstring='ds')
+    >>> api_doc.foo = 0
+    Traceback (most recent call last):
+    AttributeError: APIDoc does not define attribute 'foo'
+
+APIDoc defines a pretty-print method, pp(), which can be used to
+display the information that an APIDoc contains:
+
+    >>> val_doc = ValueDoc(pyval=3)
+    >>> var_doc = VariableDoc(name='x', value=val_doc)
+    >>> class_doc = ClassDoc(bases=(), variables={'x':var_doc})
+    >>> print class_doc.pp()
+    ClassDoc [0]
+     +- bases = ()
+     +- variables
+        +- x => VariableDoc for x [1]
+           +- is_public = True
+           +- name = 'x'
+           +- value
+              +- ValueDoc [2]
+                 +- pyval = 3
+
+This is mainly intended to be used as a debugging and testing tool.
+The attributes that will be pretty-printed for an APIDoc object are
+determined by its class's _STR_FIELDS variable.  (But any attribute
+whose value is UNKNOWN will not be displayed.)  Attributes are listed
+in alphabetical order.
+
