@@ -59,30 +59,38 @@ public class Starter {
   private VerticleManager mgr;
 
   private Starter(String[] sargs) {
-    if (sargs.length < 2) {
+    if (sargs.length < 1) {
       displaySyntax();
     } else {
       String command = sargs[0].toLowerCase();
-      String operand = sargs[1];
       Args args = new Args(sargs);
-      switch (command) {
-        case "version":
-          log.info("vert.x 1.1.0.final");
-          break;
-        case "run":
-          runVerticle(false, operand, args);
-          break;
-        case "runmod":
-          runVerticle(true, operand, args);
-          break;
-        case "install":
-          installModule(operand, args);
-          break;
-        case "uninstall":
-          uninstallModule(operand);
-          break;
-        default:
+      if ("version".equals(command)) {
+        log.info("vert.x 1.1.0.final");
+      } else {
+        if (sargs.length < 2) {
           displaySyntax();
+        } else {
+          String operand = sargs[1];
+          switch (command) {
+            case "version":
+              log.info("vert.x 1.1.0.final");
+              break;
+            case "run":
+              runVerticle(false, operand, args);
+              break;
+            case "runmod":
+              runVerticle(true, operand, args);
+              break;
+            case "install":
+              installModule(operand, args);
+              break;
+            case "uninstall":
+              uninstallModule(operand);
+              break;
+            default:
+              displaySyntax();
+          }
+        }
       }
     }
   }
@@ -197,10 +205,18 @@ public class Starter {
       conf = null;
     }
 
+    Handler<String> doneHandler = new Handler<String>() {
+      public void handle(String id) {
+        if (id == null) {
+          // Failed to deploy
+          mgr.unblock();
+        }
+      }
+    };
     if (module) {
-      mgr.deployMod(main, conf, instances, null, null);
+      mgr.deployMod(main, conf, instances, null, doneHandler);
     } else {
-      mgr.deploy(worker, main, conf, urls, instances, null, null);
+      mgr.deploy(worker, main, conf, urls, instances, null, doneHandler);
     }
 
     addShutdownHook();
@@ -261,7 +277,6 @@ public class Starter {
   private void displaySyntax() {
 
     String usage =
-"Usage: vertx [run|runmod|install|uninstall|version] [main] [-options]\n\n" +
 
 "    vertx run <main> [-options]\n" +
 "        runs a verticle called <main> in its own instance of vert.x.\n" +

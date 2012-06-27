@@ -322,7 +322,7 @@ public class VerticleManager {
     log.info("Removing module " + moduleName + " from directory " + modRoot);
     File modDir = new File(modRoot, moduleName);
     if (!modDir.exists()) {
-      log.error("Module is not installed");
+      log.error("Cannot find module to uninstall");
     } else {
       try {
         vertx.fileSystem().deleteSync(modDir.getAbsolutePath(), true);
@@ -462,15 +462,24 @@ public class VerticleManager {
       Runnable runner = new Runnable() {
         public void run() {
 
-          Verticle verticle;
+          Verticle verticle = null;
+          boolean error = true;
           try {
             verticle = verticleFactory.createVerticle(main, new ParentLastURLClassLoader(urls, getClass()
                 .getClassLoader()));
+            error = false;
+          } catch (ClassNotFoundException e) {
+            log.error("Cannot find verticle " + main);
           } catch (Throwable t) {
             log.error("Failed to create verticle", t);
+          }
+
+          if (error) {
             doUndeploy(deploymentName, new SimpleHandler() {
               public void handle() {
-                doneHandler.handle(null);
+                if (doneHandler != null) {
+                  doneHandler.handle(null);
+                }
               }
             });
             return;
