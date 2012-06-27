@@ -75,13 +75,17 @@ public class VerticleManager {
   private final Map<String, Deployment> deployments = new HashMap<>();
   // The user mods dir
   private final File modRoot;
-
-  private CountDownLatch stopLatch = new CountDownLatch(1);
-  
+  private final CountDownLatch stopLatch = new CountDownLatch(1);
   private Map<String, VerticleFactory> factories;
+  private final String defaultRepo;
 
   public VerticleManager(VertxInternal vertx) {
+    this(vertx, null);
+  }
+
+  public VerticleManager(VertxInternal vertx, String defaultRepo) {
     this.vertx = vertx;
+    this.defaultRepo = defaultRepo == null ? DEFAULT_REPO_HOST : defaultRepo;
     VertxLocator.vertx = vertx;
     VertxLocator.container = new Container(this);
     String installDir = System.getProperty("vertx.install");
@@ -187,7 +191,7 @@ public class VerticleManager {
     return map;
   }
 
-  public void deployMod(final String repo, final String modName, final JsonObject config,
+  public void deployMod(final String modName, final JsonObject config,
                         final int instances, final File currentModDir, final Handler<String> doneHandler) {
 
     final Context ctx = vertx.getOrAssignContext();
@@ -196,13 +200,12 @@ public class VerticleManager {
       public void handle(AsyncResult<Boolean> res) {
         if (res.succeeded()) {
           if (!res.result) {
-            System.out.println("Module is not installed");
             // Try and install it
-            installMod(repo, modName, new Handler<Boolean>() {
+            installMod(modName, new Handler<Boolean>() {
               public void handle(Boolean res) {
                 if (res) {
                   // Now deploy it
-                  deployMod(repo, modName, config, instances, currentModDir, doneHandler);
+                  deployMod(modName, config, instances, currentModDir, doneHandler);
                 } else {
                   if (doneHandler != null) {
                     doneHandler.handle(null);
@@ -222,7 +225,7 @@ public class VerticleManager {
 
       @Override
       public Boolean action() throws Exception {
-        System.out.println("Attempting to deploy module " + modName);
+        log.debug("Attempting to deploy module " + modName);
         File modDir = new File(modRoot, modName);
         if (modDir.exists()) {
           String conf;
@@ -281,36 +284,31 @@ public class VerticleManager {
     deployModuleAction.run();
   }
 
-  public void installMod(String repoHost, final String moduleName, final Handler<Boolean> doneHandler) {
-    if (repoHost == null) {
-      repoHost = DEFAULT_REPO_HOST;
-    }
+  public void installMod(final String moduleName, final Handler<Boolean> doneHandler) {
     HttpClient client = vertx.createHttpClient();
-    client.setHost(repoHost);
+    client.setHost(defaultRepo);
     client.exceptionHandler(new Handler<Exception>() {
       public void handle(Exception e) {
-        e.printStackTrace();
+        log.error("Unable to connect to repository");
         doneHandler.handle(false);
       }
     });
     String uri = REPO_URI_ROOT + moduleName + "/mod.zip";
-    log.info("Attempting to install module " + moduleName + " from http://" + repoHost + uri);
+    log.info("Attempting to install module " + moduleName + " from http://" + defaultRepo + uri);
     HttpClientRequest req = client.get(uri, new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         if (resp.statusCode == 200) {
-          System.out.print("Downloading module...");
+          log.info("Downloading module...");
           resp.bodyHandler(new Handler<Buffer>() {
             public void handle(Buffer buffer) {
-              System.out.println("Done");
-              unzipModule(moduleName, buffer);
-              doneHandler.handle(true);
+              doneHandler.handle(unzipModule(moduleName, buffer));
             }
           });
         } else if (resp.statusCode == 404) {
-          System.out.println("Can't find module " + moduleName);
+          log.error("Can't find module " + moduleName + " in repository");
           doneHandler.handle(false);
         } else {
-          System.out.println("Error from server: " + resp.statusCode);
+          log.error("Failed to download module: " + resp.statusCode);
           doneHandler.handle(false);
         }
       }
@@ -321,28 +319,32 @@ public class VerticleManager {
   }
 
   public void uninstallMod(String moduleName) {
-    System.out.println("Removing module " + moduleName + " from directory " + modRoot);
+    log.info("Removing module " + moduleName + " from directory " + modRoot);
     File modDir = new File(modRoot, moduleName);
     if (!modDir.exists()) {
-      System.err.println("Module does not exist");
+      log.error("Module is not installed");
     } else {
       try {
         vertx.fileSystem().deleteSync(modDir.getAbsolutePath(), true);
+        log.info("Module " + moduleName + " successfully uninstalled");
       } catch (Exception e) {
-        System.err.println("Failed to delete directory: " + e.getMessage());
+        log.error("Failed to delete directory: " + e.getMessage());
       }
     }
   }
 
-  private void unzipModule(String modName, Buffer data) {
+  private boolean unzipModule(String modName, Buffer data) {
     if (!modRoot.exists()) {
-      modRoot.mkdir();
+      if (!modRoot.mkdir()) {
+        log.error("Failed to create directory " + modRoot);
+        return false;
+      }
     }
-    System.out.println("Installing module into directory '" + modRoot + "'");
+    log.info("Installing module into directory '" + modRoot + "'");
     File fdest = new File(modRoot, modName);
     if (fdest.exists()) {
-      System.err.println("Module is already installed");
-      return;
+      log.error("Module is already installed");
+      return false;
     }
     try {
       InputStream is = new ByteArrayInputStream(data.getBytes());
@@ -350,9 +352,9 @@ public class VerticleManager {
       ZipEntry entry;
       while ((entry = zis.getNextEntry()) != null) {
         if (!entry.getName().startsWith(modName)) {
-          System.err.println("Module must contain zipped directory with same name as module");
+          log.error("Module must contain zipped directory with same name as module");
           fdest.delete();
-          return;
+          return false;
         }
         if (entry.isDirectory()) {
           new File(modRoot, entry.getName()).mkdir();
@@ -376,9 +378,11 @@ public class VerticleManager {
       }
       zis.close();
     } catch (IOException e) {
-      e.printStackTrace();
+      log.error("Failed to unzip module", e);
+      return false;
     }
-    System.out.println("Module successfully installed");
+    log.info("Module " + modName +" successfully installed");
+    return true;
   }
 
   // We calculate a path adjustment that can be used by the fileSystem object
@@ -415,8 +419,9 @@ public class VerticleManager {
     log.debug("Deploying name : " + deploymentName  + " main: " + main +
               " instances: " + instances);
 
-    if (!factories.containsKey(language))
+    if (!factories.containsKey(language)) {
     	throw new IllegalArgumentException("Unsupported language: " + language);
+    }
 
     final VerticleFactory verticleFactory = factories.get(language);
     verticleFactory.init(this);
@@ -521,7 +526,6 @@ public class VerticleManager {
       return null;
     }
   }
-
 
   private void doUndeploy(String name, final Handler<Void> doneHandler) {
     UndeployCount count = new UndeployCount();

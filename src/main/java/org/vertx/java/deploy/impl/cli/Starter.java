@@ -49,7 +49,7 @@ public class Starter {
   private static final Logger log = LoggerFactory.getLogger(Starter.class);
 
   private static final String CP_SEPARATOR =
-      System.getProperty("os.name").startsWith("Windows") ? ";" : ":";
+    System.getProperty("os.name").startsWith("Windows") ? ";" : ":";
 
   public static void main(String[] args) {
     new Starter(args);
@@ -59,25 +59,27 @@ public class Starter {
   private VerticleManager mgr;
 
   private Starter(String[] sargs) {
-    if (sargs.length == 0) {
+    if (sargs.length < 2) {
       displaySyntax();
     } else {
       String command = sargs[0].toLowerCase();
+      String operand = sargs[1];
+      Args args = new Args(sargs);
       switch (command) {
         case "version":
-          System.out.println("vert.x 1.1.0.final");
+          log.info("vert.x 1.1.0.final");
           break;
         case "run":
-          runVerticle(false, sargs);
+          runVerticle(false, operand, args);
           break;
         case "runmod":
-          runVerticle(true, sargs);
+          runVerticle(true, operand, args);
           break;
         case "install":
-          installModule(sargs);
+          installModule(operand, args);
           break;
         case "uninstall":
-          uninstallModule(sargs);
+          uninstallModule(operand);
           break;
         default:
           displaySyntax();
@@ -85,52 +87,31 @@ public class Starter {
     }
   }
 
-  private void installModule(String[] sargs) {
-    if (sargs.length < 2) {
-      displaySyntax();
-      return;
-    }
-    String modName = sargs[1];
-
-    if (modName == null) {
-      displaySyntax();
-      return;
-    }
-
-    mgr = new VerticleManager(vertx);
-
-    Args args = new Args(sargs);
+  private void installModule(String modName, Args args) {
     String repo = args.map.get("-repo");
-
-    mgr.installMod(repo, modName, new Handler<Boolean>() {
+    final CountDownLatch latch = new CountDownLatch(1);
+    new VerticleManager(vertx, repo).installMod(modName, new Handler<Boolean>() {
       public void handle(Boolean res) {
+        latch.countDown();
       }
     });
+    while (true) {
+      try {
+        latch.await(30, TimeUnit.SECONDS);
+        break;
+      } catch (InterruptedException e) {
+      }
+    }
   }
 
-  private void uninstallModule(String[] sargs) {
-    if (sargs.length < 2) {
-      displaySyntax();
-      return;
-    }
-    String modName = sargs[1];
-
-    if (modName == null) {
-      displaySyntax();
-      return;
-    }
-
-    mgr = new VerticleManager(vertx);
-    mgr.uninstallMod(modName);
+  private void uninstallModule(String modName) {
+    new VerticleManager(vertx).uninstallMod(modName);
   }
 
-  private void runVerticle(boolean module, String[] sargs) {
-
-    Args args = new Args(sargs);
-
+  private void runVerticle(boolean module, String main, Args args) {
     boolean clustered = args.map.get("-cluster") != null;
     if (clustered) {
-      System.out.print("Starting clustering...");
+      log.info("Starting clustering...");
       int clusterPort = args.getInt("-cluster-port");
       if (clusterPort == -1) {
         clusterPort = 25500;
@@ -139,27 +120,16 @@ public class Starter {
       if (clusterHost == null) {
         clusterHost = getDefaultAddress();
         if (clusterHost == null) {
-          System.err.println("Unable to find a default network interface for clustering. Please specify one using -cluster-host");
+          log.error("Unable to find a default network interface for clustering. Please specify one using -cluster-host");
           return;
         } else {
-          System.out.println("No cluster-host specified so using address " + clusterHost);
+          log.info("No cluster-host specified so using address " + clusterHost);
         }
       }
       vertx = new DefaultVertx(clusterPort, clusterHost);
     }
-    mgr = new VerticleManager(vertx);
-
-    addShutdownHook();
-    if (sargs.length < 2) {
-      displaySyntax();
-      return;
-    }
-    String main = sargs[1];
-
-    if (main == null) {
-      displaySyntax();
-      return;
-    }
+    String repo = args.map.get("-repo");
+    mgr = new VerticleManager(vertx, repo);
 
     boolean worker = args.map.get("-worker") != null;
 
@@ -195,7 +165,7 @@ public class Starter {
         instances = Integer.parseInt(sinstances);
 
         if (instances != -1 && instances < 1) {
-          System.err.println("Invalid number of instances");
+          log.error("Invalid number of instances");
           displaySyntax();
           return;
         }
@@ -216,11 +186,11 @@ public class Starter {
         try {
           conf = new JsonObject(sconf);
         } catch (DecodeException e) {
-          System.err.println("Configuration file does not contain a valid JSON object");
+          log.error("Configuration file does not contain a valid JSON object");
           return;
         }
       } catch (FileNotFoundException e) {
-        System.err.println("Config file " + configFile + " does not exist");
+        log.error("Config file " + configFile + " does not exist");
         return;
       }
     } else {
@@ -228,11 +198,12 @@ public class Starter {
     }
 
     if (module) {
-      String repo = args.map.get("-repo");
-      mgr.deployMod(repo, main, conf, instances, null, null);
+      mgr.deployMod(main, conf, instances, null, null);
     } else {
       mgr.deploy(worker, main, conf, urls, instances, null, null);
     }
+
+    addShutdownHook();
     mgr.block();
   }
 
@@ -306,6 +277,9 @@ public class Starter {
 "                               Defaults to '.' (current directory).\n" +
 "        -instances <instances> specifies how many instances of the verticle will\n" +       // 80 chars at will
 "                               be deployed. Defaults to 1\n" +
+"        -repo <repo_host>      specifies the repository to use to install\n" +
+"                               any modules.\n" +
+"                               Default is vert-x.github.com/vertx-mods\n" +
 "        -worker                if specified then the verticle is a worker\n" +
 "                               verticle.\n" +
 "        -cluster               if specified then the vert.x instance will form a\n" +
@@ -357,7 +331,7 @@ public class Starter {
 "    vertx version\n" +
 "        displays the version";
 
-     System.out.println(usage);
+     log.info(usage);
   }
 
 }
