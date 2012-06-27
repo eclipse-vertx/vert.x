@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>core.streams</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="core-module.html">Package&nbsp;core</a> ::
+        Module&nbsp;streams
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="core.streams-pysrc.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<h1 class="epydoc">Source Code for <a href="core.streams-module.html">Module core.streams</a></h1>
+<pre class="py-src">
+<a name="L1"></a><tt class="py-lineno">  1</tt>  <tt class="py-line"><tt class="py-comment"># Copyright 2011 the original author or authors.</tt> </tt>
+<a name="L2"></a><tt class="py-lineno">  2</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L3"></a><tt class="py-lineno">  3</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># Licensed under the Apache License, Version 2.0 (the "License");</tt> </tt>
+<a name="L4"></a><tt class="py-lineno">  4</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># you may not use this file except in compliance with the License.</tt> </tt>
+<a name="L5"></a><tt class="py-lineno">  5</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># You may obtain a copy of the License at</tt> </tt>
+<a name="L6"></a><tt class="py-lineno">  6</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L7"></a><tt class="py-lineno">  7</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#      http://www.apache.org/licenses/LICENSE-2.0</tt> </tt>
+<a name="L8"></a><tt class="py-lineno">  8</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L9"></a><tt class="py-lineno">  9</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># Unless required by applicable law or agreed to in writing, software</tt> </tt>
+<a name="L10"></a><tt class="py-lineno"> 10</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># distributed under the License is distributed on an "AS IS" BASIS,</tt> </tt>
+<a name="L11"></a><tt class="py-lineno"> 11</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</tt> </tt>
+<a name="L12"></a><tt class="py-lineno"> 12</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># See the License for the specific language governing permissions and</tt> </tt>
+<a name="L13"></a><tt class="py-lineno"> 13</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># limitations under the License.</tt> </tt>
+<a name="L14"></a><tt class="py-lineno"> 14</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt>
+<a name="L15"></a><tt class="py-lineno"> 15</tt>  <tt class="py-line"><tt class="py-keyword">import</tt> <tt class="py-name">org</tt><tt class="py-op">.</tt><tt id="link-0" class="py-name" targets="Module vertx=vertx-module.html"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-0', 'vertx', 'link-0');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">java</tt><tt class="py-op">.</tt><tt id="link-1" class="py-name" targets="Package core=core-module.html"><a title="core" class="py-name" href="#" onclick="return doclink('link-1', 'core', 'link-1');">core</a></tt><tt class="py-op">.</tt><tt id="link-2" class="py-name" targets="Module core.streams=core.streams-module.html"><a title="core.streams" class="py-name" href="#" onclick="return doclink('link-2', 'streams', 'link-2');">streams</a></tt><tt class="py-op">.</tt><tt id="link-3" class="py-name" targets="Class core.streams.Pump=core.streams.Pump-class.html"><a title="core.streams.Pump" class="py-name" href="#" onclick="return doclink('link-3', 'Pump', 'link-3');">Pump</a></tt> </tt>
+<a name="L16"></a><tt class="py-lineno"> 16</tt>  <tt class="py-line"> </tt>
+<a name="L17"></a><tt class="py-lineno"> 17</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt id="link-4" class="py-name"><a title="core" class="py-name" href="#" onclick="return doclink('link-4', 'core', 'link-1');">core</a></tt><tt class="py-op">.</tt><tt id="link-5" class="py-name" targets="Module core.handlers=core.handlers-module.html"><a title="core.handlers" class="py-name" href="#" onclick="return doclink('link-5', 'handlers', 'link-5');">handlers</a></tt> <tt class="py-keyword">import</tt> <tt id="link-6" class="py-name" targets="Class core.handlers.BufferHandler=core.handlers.BufferHandler-class.html"><a title="core.handlers.BufferHandler" class="py-name" href="#" onclick="return doclink('link-6', 'BufferHandler', 'link-6');">BufferHandler</a></tt><tt class="py-op">,</tt> <tt id="link-7" class="py-name" targets="Class core.handlers.StreamEndHandler=core.handlers.StreamEndHandler-class.html"><a title="core.handlers.StreamEndHandler" class="py-name" href="#" onclick="return doclink('link-7', 'StreamEndHandler', 'link-7');">StreamEndHandler</a></tt> </tt>
+<a name="L18"></a><tt class="py-lineno"> 18</tt>  <tt class="py-line"> </tt>
+<a name="L19"></a><tt class="py-lineno"> 19</tt>  <tt class="py-line"><tt class="py-name">__author__</tt> <tt class="py-op">=</tt> <tt class="py-string">"Scott Horn"</tt> </tt>
+<a name="L20"></a><tt class="py-lineno"> 20</tt>  <tt class="py-line"><tt id="link-8" class="py-name" targets="Variable core.buffer.__email__=core.buffer-module.html#__email__,Variable core.event_bus.__email__=core.event_bus-module.html#__email__,Variable core.file_system.__email__=core.file_system-module.html#__email__,Variable core.handlers.__email__=core.handlers-module.html#__email__,Variable core.http.__email__=core.http-module.html#__email__,Variable core.javautils.__email__=core.javautils-module.html#__email__,Variable core.parsetools.__email__=core.parsetools-module.html#__email__,Variable core.shared_data.__email__=core.shared_data-module.html#__email__,Variable core.sock_js.__email__=core.sock_js-module.html#__email__,Variable core.ssl_support.__email__=core.ssl_support-module.html#__email__,Variable core.streams.__email__=core.streams-module.html#__email__,Variable core.tcp_support.__email__=core.tcp_support-module.html#__email__,Variable vertx.__email__=vertx-module.html#__email__"><a title="core.buffer.__email__
+core.event_bus.__email__
+core.file_system.__email__
+core.handlers.__email__
+core.http.__email__
+core.javautils.__email__
+core.parsetools.__email__
+core.shared_data.__email__
+core.sock_js.__email__
+core.ssl_support.__email__
+core.streams.__email__
+core.tcp_support.__email__
+vertx.__email__" class="py-name" href="#" onclick="return doclink('link-8', '__email__', 'link-8');">__email__</a></tt> <tt class="py-op">=</tt> <tt class="py-string">"scott@hornmicro.com"</tt> </tt>
+<a name="L21"></a><tt class="py-lineno"> 21</tt>  <tt class="py-line"><tt id="link-9" class="py-name" targets="Variable core.buffer.__credits__=core.buffer-module.html#__credits__,Variable core.event_bus.__credits__=core.event_bus-module.html#__credits__,Variable core.file_system.__credits__=core.file_system-module.html#__credits__,Variable core.handlers.__credits__=core.handlers-module.html#__credits__,Variable core.http.__credits__=core.http-module.html#__credits__,Variable core.javautils.__credits__=core.javautils-module.html#__credits__,Variable core.parsetools.__credits__=core.parsetools-module.html#__credits__,Variable core.shared_data.__credits__=core.shared_data-module.html#__credits__,Variable core.sock_js.__credits__=core.sock_js-module.html#__credits__,Variable core.ssl_support.__credits__=core.ssl_support-module.html#__credits__,Variable core.streams.__credits__=core.streams-module.html#__credits__,Variable core.tcp_support.__credits__=core.tcp_support-module.html#__credits__,Variable vertx.__credits__=vertx-module.html#__credits__"><a title="core.buffer.__credits__
+core.event_bus.__credits__
+core.file_system.__credits__
+core.handlers.__credits__
+core.http.__credits__
+core.javautils.__credits__
+core.parsetools.__credits__
+core.shared_data.__credits__
+core.sock_js.__credits__
+core.ssl_support.__credits__
+core.streams.__credits__
+core.tcp_support.__credits__
+vertx.__credits__" class="py-name" href="#" onclick="return doclink('link-9', '__credits__', 'link-9');">__credits__</a></tt> <tt class="py-op">=</tt> <tt class="py-string">"Based entirely on work by Tim Fox http://tfox.org"</tt> </tt>
+<a name="WriteStream"></a><div id="WriteStream-def"><a name="L22"></a><tt class="py-lineno"> 22</tt>  <tt class="py-line"> </tt>
+<a name="L23"></a><tt class="py-lineno"> 23</tt> <a class="py-toggle" href="#" id="WriteStream-toggle" onclick="return toggle('WriteStream');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="core.streams.WriteStream-class.html">WriteStream</a><tt class="py-op">(</tt><tt class="py-base-class">object</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="WriteStream-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="WriteStream-expanded"><a name="L24"></a><tt class="py-lineno"> 24</tt>  <tt class="py-line">    <tt class="py-docstring">"""</tt> </tt>
+<a name="L25"></a><tt class="py-lineno"> 25</tt>  <tt class="py-line"><tt class="py-docstring">     A mixin module which represents a stream of data that can be written to.</tt> </tt>
+<a name="L26"></a><tt class="py-lineno"> 26</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L27"></a><tt class="py-lineno"> 27</tt>  <tt class="py-line"><tt class="py-docstring">     Any class that mixes in this module can be used by a  to pump data from a  to it.</tt> </tt>
+<a name="L28"></a><tt class="py-lineno"> 28</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L29"></a><tt class="py-lineno"> 29</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L30"></a><tt class="py-lineno"> 30</tt>  <tt class="py-line"> </tt>
+<a name="WriteStream.write_buffer"></a><div id="WriteStream.write_buffer-def"><a name="L31"></a><tt class="py-lineno"> 31</tt> <a class="py-toggle" href="#" id="WriteStream.write_buffer-toggle" onclick="return toggle('WriteStream.write_buffer');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.streams.WriteStream-class.html#write_buffer">write_buffer</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">buff</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="WriteStream.write_buffer-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="WriteStream.write_buffer-expanded"><a name="L32"></a><tt class="py-lineno"> 32</tt>  <tt class="py-line">        <tt class="py-docstring">"""Write some data to the stream. The data is put on an internal write queue, and the write actually happens</tt> </tt>
+<a name="L33"></a><tt class="py-lineno"> 33</tt>  <tt class="py-line"><tt class="py-docstring">        asynchronously. To avoid running out of memory by putting too much on the write queue,</tt> </tt>
+<a name="L34"></a><tt class="py-lineno"> 34</tt>  <tt class="py-line"><tt class="py-docstring">        check the  method before writing. This is done automatically if using a .</tt> </tt>
+<a name="L35"></a><tt class="py-lineno"> 35</tt>  <tt class="py-line"><tt class="py-docstring">        param [Buffer]. The buffer to write.</tt> </tt>
+<a name="L36"></a><tt class="py-lineno"> 36</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L37"></a><tt class="py-lineno"> 37</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt><tt class="py-op">.</tt><tt class="py-name">writeBuffer</tt><tt class="py-op">(</tt><tt class="py-name">buff</tt><tt class="py-op">.</tt><tt id="link-10" class="py-name" targets="Method core.buffer.Buffer._to_java_buffer()=core.buffer.Buffer-class.html#_to_java_buffer"><a title="core.buffer.Buffer._to_java_buffer" class="py-name" href="#" onclick="return doclink('link-10', '_to_java_buffer', 'link-10');">_to_java_buffer</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L38"></a><tt class="py-lineno"> 38</tt>  <tt class="py-line">     </tt>
+<a name="WriteStream.set_write_queue_max_size"></a><div id="WriteStream.set_write_queue_max_size-def"><a name="L39"></a><tt class="py-lineno"> 39</tt> <a class="py-toggle" href="#" id="WriteStream.set_write_queue_max_size-toggle" onclick="return toggle('WriteStream.set_write_queue_max_size');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.streams.WriteStream-class.html#set_write_queue_max_size">set_write_queue_max_size</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">size</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="WriteStream.set_write_queue_max_size-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="WriteStream.set_write_queue_max_size-expanded"><a name="L40"></a><tt class="py-lineno"> 40</tt>  <tt class="py-line">        <tt class="py-docstring">"""Set the maximum size of the write queue. You will still be able to write to the stream even</tt> </tt>
+<a name="L41"></a><tt class="py-lineno"> 41</tt>  <tt class="py-line"><tt class="py-docstring">        if there is more data than this in the write queue. This is used as an indicator by classes such as</tt> </tt>
+<a name="L42"></a><tt class="py-lineno"> 42</tt>  <tt class="py-line"><tt class="py-docstring">        to provide flow control.</tt> </tt>
+<a name="L43"></a><tt class="py-lineno"> 43</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L44"></a><tt class="py-lineno"> 44</tt>  <tt class="py-line"><tt class="py-docstring">        Keyword arguments:</tt> </tt>
+<a name="L45"></a><tt class="py-lineno"> 45</tt>  <tt class="py-line"><tt class="py-docstring">        size -- The maximum size, in bytes.</tt> </tt>
+<a name="L46"></a><tt class="py-lineno"> 46</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L47"></a><tt class="py-lineno"> 47</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt><tt class="py-op">.</tt><tt class="py-name">setWriteQueueMaxSize</tt><tt class="py-op">(</tt><tt id="link-11" class="py-name" targets="Method core.file_system.FileProps.size()=core.file_system.FileProps-class.html#size,Method core.shared_data.SharedSet.size()=core.shared_data.SharedSet-class.html#size"><a title="core.file_system.FileProps.size
+core.shared_data.SharedSet.size" class="py-name" href="#" onclick="return doclink('link-11', 'size', 'link-11');">size</a></tt><tt class="py-op">)</tt> </tt>
+</div><a name="L48"></a><tt class="py-lineno"> 48</tt>  <tt class="py-line"> </tt>
+<a name="L49"></a><tt class="py-lineno"> 49</tt>  <tt class="py-line">    <tt id="link-12" class="py-name" targets="Variable core.streams.Pump.write_queue_max_size=core.streams.Pump-class.html#write_queue_max_size,Variable core.streams.WriteStream.write_queue_max_size=core.streams.WriteStream-class.html#write_queue_max_size"><a title="core.streams.Pump.write_queue_max_size
+core.streams.WriteStream.write_queue_max_size" class="py-name" href="#" onclick="return doclink('link-12', 'write_queue_max_size', 'link-12');">write_queue_max_size</a></tt> <tt class="py-op">=</tt> <tt class="py-name">property</tt><tt class="py-op">(</tt><tt class="py-name">fset</tt><tt class="py-op">=</tt><tt id="link-13" class="py-name" targets="Method core.streams.Pump.set_write_queue_max_size()=core.streams.Pump-class.html#set_write_queue_max_size,Method core.streams.WriteStream.set_write_queue_max_size()=core.streams.WriteStream-class.html#set_write_queue_max_size"><a title="core.streams.Pump.set_write_queue_max_size
+core.streams.WriteStream.set_write_queue_max_size" class="py-name" href="#" onclick="return doclink('link-13', 'set_write_queue_max_size', 'link-13');">set_write_queue_max_size</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L50"></a><tt class="py-lineno"> 50</tt>  <tt class="py-line">     </tt>
+<a name="L51"></a><tt class="py-lineno"> 51</tt>  <tt class="py-line">    <tt class="py-decorator">@</tt><tt class="py-decorator">property</tt> </tt>
+<a name="WriteStream.write_queue_full"></a><div id="WriteStream.write_queue_full-def"><a name="L52"></a><tt class="py-lineno"> 52</tt> <a class="py-toggle" href="#" id="WriteStream.write_queue_full-toggle" onclick="return toggle('WriteStream.write_queue_full');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.streams.WriteStream-class.html#write_queue_full">write_queue_full</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="WriteStream.write_queue_full-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="WriteStream.write_queue_full-expanded"><a name="L53"></a><tt class="py-lineno"> 53</tt>  <tt class="py-line">        <tt class="py-docstring">"""Is the write queue full?</tt> </tt>
+<a name="L54"></a><tt class="py-lineno"> 54</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L55"></a><tt class="py-lineno"> 55</tt>  <tt class="py-line"><tt class="py-docstring">        return True if there are more bytes in the write queue than the max write queue size.</tt> </tt>
+<a name="L56"></a><tt class="py-lineno"> 56</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L57"></a><tt class="py-lineno"> 57</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt><tt class="py-op">.</tt><tt class="py-name">writeQueueFull</tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L58"></a><tt class="py-lineno"> 58</tt>  <tt class="py-line">     </tt>
+<a name="WriteStream.drain_handler"></a><div id="WriteStream.drain_handler-def"><a name="L59"></a><tt class="py-lineno"> 59</tt> <a class="py-toggle" href="#" id="WriteStream.drain_handler-toggle" onclick="return toggle('WriteStream.drain_handler');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.streams.WriteStream-class.html#drain_handler">drain_handler</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">handler</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="WriteStream.drain_handler-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="WriteStream.drain_handler-expanded"><a name="L60"></a><tt class="py-lineno"> 60</tt>  <tt class="py-line">        <tt class="py-docstring">"""Set a drain handler on the stream. If the write queue is full, then the handler will be called when the write</tt> </tt>
+<a name="L61"></a><tt class="py-lineno"> 61</tt>  <tt class="py-line"><tt class="py-docstring">        queue has been reduced to maxSize / 2. See  for an example of this being used.</tt> </tt>
+<a name="L62"></a><tt class="py-lineno"> 62</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L63"></a><tt class="py-lineno"> 63</tt>  <tt class="py-line"><tt class="py-docstring">        Keyword arguments:</tt> </tt>
+<a name="L64"></a><tt class="py-lineno"> 64</tt>  <tt class="py-line"><tt class="py-docstring">        handler -- The drain handler</tt> </tt>
+<a name="L65"></a><tt class="py-lineno"> 65</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L66"></a><tt class="py-lineno"> 66</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt><tt class="py-op">.</tt><tt class="py-name">drainHandler</tt><tt class="py-op">(</tt><tt id="link-14" class="py-name"><a title="core.handlers.BufferHandler" class="py-name" href="#" onclick="return doclink('link-14', 'BufferHandler', 'link-6');">BufferHandler</a></tt><tt class="py-op">(</tt><tt class="py-name">handler</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L67"></a><tt class="py-lineno"> 67</tt>  <tt class="py-line">     </tt>
+<a name="WriteStream.exception_handler"></a><div id="WriteStream.exception_handler-def"><a name="L68"></a><tt class="py-lineno"> 68</tt> <a class="py-toggle" href="#" id="WriteStream.exception_handler-toggle" onclick="return toggle('WriteStream.exception_handler');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.streams.WriteStream-class.html#exception_handler">exception_handler</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">handler</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="WriteStream.exception_handler-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="WriteStream.exception_handler-expanded"><a name="L69"></a><tt class="py-lineno"> 69</tt>  <tt class="py-line">        <tt class="py-docstring">"""Set an execption handler on the stream.</tt> </tt>
+<a name="L70"></a><tt class="py-lineno"> 70</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L71"></a><tt class="py-lineno"> 71</tt>  <tt class="py-line"><tt class="py-docstring">        Keyword arguments:</tt> </tt>
+<a name="L72"></a><tt class="py-lineno"> 72</tt>  <tt class="py-line"><tt class="py-docstring">        handler -- The exception handler</tt> </tt>
+<a name="L73"></a><tt class="py-lineno"> 73</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt>   </tt>
+<a name="L74"></a><tt class="py-lineno"> 74</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt><tt class="py-op">.</tt><tt class="py-name">exceptionHandler</tt><tt class="py-op">(</tt><tt id="link-15" class="py-name" targets="Class core.handlers.ExceptionHandler=core.handlers.ExceptionHandler-class.html"><a title="core.handlers.ExceptionHandler" class="py-name" href="#" onclick="return doclink('link-15', 'ExceptionHandler', 'link-15');">ExceptionHandler</a></tt><tt class="py-op">(</tt><tt class="py-name">handler</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L75"></a><tt class="py-lineno"> 75</tt>  <tt class="py-line">     </tt>
+<a name="WriteStream._to_write_stream"></a><div id="WriteStream._to_write_stream-def"><a name="L76"></a><tt class="py-lineno"> 76</tt> <a class="py-toggle" href="#" id="WriteStream._to_write_stream-toggle" onclick="return toggle('WriteStream._to_write_stream');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.streams.WriteStream-class.html#_to_write_stream">_to_write_stream</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="WriteStream._to_write_stream-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="WriteStream._to_write_stream-expanded"><a name="L77"></a><tt class="py-lineno"> 77</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt> </tt>
+</div></div><a name="L78"></a><tt class="py-lineno"> 78</tt>  <tt class="py-line"> </tt>
+<a name="ReadStream"></a><div id="ReadStream-def"><a name="L79"></a><tt class="py-lineno"> 79</tt> <a class="py-toggle" href="#" id="ReadStream-toggle" onclick="return toggle('ReadStream');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="core.streams.ReadStream-class.html">ReadStream</a><tt class="py-op">(</tt><tt class="py-base-class">object</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ReadStream-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="ReadStream-expanded"><a name="L80"></a><tt class="py-lineno"> 80</tt>  <tt class="py-line">    <tt class="py-docstring">"""A mixin module which represents a stream of data that can be read from.</tt> </tt>
+<a name="L81"></a><tt class="py-lineno"> 81</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L82"></a><tt class="py-lineno"> 82</tt>  <tt class="py-line"><tt class="py-docstring">    Any class that mixes in this module can be used by a  to pump data from a  to it.</tt> </tt>
+<a name="L83"></a><tt class="py-lineno"> 83</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L84"></a><tt class="py-lineno"> 84</tt>  <tt class="py-line"> </tt>
+<a name="ReadStream.data_handler"></a><div id="ReadStream.data_handler-def"><a name="L85"></a><tt class="py-lineno"> 85</tt> <a class="py-toggle" href="#" id="ReadStream.data_handler-toggle" onclick="return toggle('ReadStream.data_handler');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.streams.ReadStream-class.html#data_handler">data_handler</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">handler</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ReadStream.data_handler-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ReadStream.data_handler-expanded"><a name="L86"></a><tt class="py-lineno"> 86</tt>  <tt class="py-line">        <tt class="py-docstring">"""Set a data handler. As data is read, the handler will be called with the data.</tt> </tt>
+<a name="L87"></a><tt class="py-lineno"> 87</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L88"></a><tt class="py-lineno"> 88</tt>  <tt class="py-line"><tt class="py-docstring">        Keyword arguments:</tt> </tt>
+<a name="L89"></a><tt class="py-lineno"> 89</tt>  <tt class="py-line"><tt class="py-docstring">        handler -- The data handler</tt> </tt>
+<a name="L90"></a><tt class="py-lineno"> 90</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L91"></a><tt class="py-lineno"> 91</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt><tt class="py-op">.</tt><tt class="py-name">dataHandler</tt><tt class="py-op">(</tt><tt id="link-16" class="py-name"><a title="core.handlers.BufferHandler" class="py-name" href="#" onclick="return doclink('link-16', 'BufferHandler', 'link-6');">BufferHandler</a></tt><tt class="py-op">(</tt><tt class="py-name">handler</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L92"></a><tt class="py-lineno"> 92</tt>  <tt class="py-line">     </tt>
+<a name="ReadStream.pause"></a><div id="ReadStream.pause-def"><a name="L93"></a><tt class="py-lineno"> 93</tt> <a class="py-toggle" href="#" id="ReadStream.pause-toggle" onclick="return toggle('ReadStream.pause');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.streams.ReadStream-class.html#pause">pause</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ReadStream.pause-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ReadStream.pause-expanded"><a name="L94"></a><tt class="py-lineno"> 94</tt>  <tt class="py-line">        <tt class="py-docstring">"""Pause the ReadStream. After calling this, the ReadStream will aim to send no more data to the """</tt> </tt>
+<a name="L95"></a><tt class="py-lineno"> 95</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt><tt class="py-op">.</tt><tt id="link-17" class="py-name" targets="Method core.streams.ReadStream.pause()=core.streams.ReadStream-class.html#pause"><a title="core.streams.ReadStream.pause" class="py-name" href="#" onclick="return doclink('link-17', 'pause', 'link-17');">pause</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L96"></a><tt class="py-lineno"> 96</tt>  <tt class="py-line">         </tt>
+<a name="ReadStream.resume"></a><div id="ReadStream.resume-def"><a name="L97"></a><tt class="py-lineno"> 97</tt> <a class="py-toggle" href="#" id="ReadStream.resume-toggle" onclick="return toggle('ReadStream.resume');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.streams.ReadStream-class.html#resume">resume</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ReadStream.resume-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ReadStream.resume-expanded"><a name="L98"></a><tt class="py-lineno"> 98</tt>  <tt class="py-line">        <tt class="py-docstring">"""Resume reading. If the ReadStream has been paused, reading will recommence on it."""</tt> </tt>
+<a name="L99"></a><tt class="py-lineno"> 99</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt><tt class="py-op">.</tt><tt id="link-18" class="py-name" targets="Method core.streams.ReadStream.resume()=core.streams.ReadStream-class.html#resume"><a title="core.streams.ReadStream.resume" class="py-name" href="#" onclick="return doclink('link-18', 'resume', 'link-18');">resume</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L100"></a><tt class="py-lineno">100</tt>  <tt class="py-line">         </tt>
+<a name="ReadStream.exception_handler"></a><div id="ReadStream.exception_handler-def"><a name="L101"></a><tt class="py-lineno">101</tt> <a class="py-toggle" href="#" id="ReadStream.exception_handler-toggle" onclick="return toggle('ReadStream.exception_handler');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.streams.ReadStream-class.html#exception_handler">exception_handler</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">handler</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ReadStream.exception_handler-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ReadStream.exception_handler-expanded"><a name="L102"></a><tt class="py-lineno">102</tt>  <tt class="py-line">        <tt class="py-docstring">"""Set an execption handler on the stream.</tt> </tt>
+<a name="L103"></a><tt class="py-lineno">103</tt>  <tt class="py-line"><tt class="py-docstring">        param [Block] hndlr. The exception handler</tt> </tt>
+<a name="L104"></a><tt class="py-lineno">104</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L105"></a><tt class="py-lineno">105</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt><tt class="py-op">.</tt><tt class="py-name">exceptionHandler</tt><tt class="py-op">(</tt><tt id="link-19" class="py-name"><a title="core.handlers.ExceptionHandler" class="py-name" href="#" onclick="return doclink('link-19', 'ExceptionHandler', 'link-15');">ExceptionHandler</a></tt><tt class="py-op">(</tt><tt class="py-name">handler</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L106"></a><tt class="py-lineno">106</tt>  <tt class="py-line">         </tt>
+<a name="ReadStream.end_handler"></a><div id="ReadStream.end_handler-def"><a name="L107"></a><tt class="py-lineno">107</tt> <a class="py-toggle" href="#" id="ReadStream.end_handler-toggle" onclick="return toggle('ReadStream.end_handler');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.streams.ReadStream-class.html#end_handler">end_handler</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">handler</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ReadStream.end_handler-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ReadStream.end_handler-expanded"><a name="L108"></a><tt class="py-lineno">108</tt>  <tt class="py-line">        <tt class="py-docstring">"""Set an end handler on the stream. Once the stream has ended, and there is no more data to be read, this handler will be called.</tt> </tt>
+<a name="L109"></a><tt class="py-lineno">109</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L110"></a><tt class="py-lineno">110</tt>  <tt class="py-line"><tt class="py-docstring">        Keyword arguments:</tt> </tt>
+<a name="L111"></a><tt class="py-lineno">111</tt>  <tt class="py-line"><tt class="py-docstring">        handler -- The exception handler"""</tt> </tt>
+<a name="L112"></a><tt class="py-lineno">112</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt><tt class="py-op">.</tt><tt class="py-name">endHandler</tt><tt class="py-op">(</tt><tt id="link-20" class="py-name"><a title="core.handlers.StreamEndHandler" class="py-name" href="#" onclick="return doclink('link-20', 'StreamEndHandler', 'link-7');">StreamEndHandler</a></tt><tt class="py-op">(</tt><tt class="py-name">handler</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L113"></a><tt class="py-lineno">113</tt>  <tt class="py-line">         </tt>
+<a name="ReadStream._to_read_stream"></a><div id="ReadStream._to_read_stream-def"><a name="L114"></a><tt class="py-lineno">114</tt> <a class="py-toggle" href="#" id="ReadStream._to_read_stream-toggle" onclick="return toggle('ReadStream._to_read_stream');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.streams.ReadStream-class.html#_to_read_stream">_to_read_stream</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ReadStream._to_read_stream-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="ReadStream._to_read_stream-expanded"><a name="L115"></a><tt class="py-lineno">115</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt> </tt>
+</div></div><a name="L116"></a><tt class="py-lineno">116</tt>  <tt class="py-line">         </tt>
+<a name="Pump"></a><div id="Pump-def"><a name="L117"></a><tt class="py-lineno">117</tt> <a class="py-toggle" href="#" id="Pump-toggle" onclick="return toggle('Pump');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="core.streams.Pump-class.html">Pump</a><tt class="py-op">(</tt><tt class="py-base-class">object</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Pump-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="Pump-expanded"><a name="L118"></a><tt class="py-lineno">118</tt>  <tt class="py-line">    <tt class="py-docstring">"""Pumps data from a ReadStream to a WriteStream and performs flow control where necessary to</tt> </tt>
+<a name="L119"></a><tt class="py-lineno">119</tt>  <tt class="py-line"><tt class="py-docstring">    prevent the write stream from getting overloaded.</tt> </tt>
+<a name="L120"></a><tt class="py-lineno">120</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L121"></a><tt class="py-lineno">121</tt>  <tt class="py-line"><tt class="py-docstring">    Instances of this class read bytes from a ReadStream and write them to a WriteStream. If data</tt> </tt>
+<a name="L122"></a><tt class="py-lineno">122</tt>  <tt class="py-line"><tt class="py-docstring">    can be read faster than it can be written this could result in the write queue of the WriteStream growing</tt> </tt>
+<a name="L123"></a><tt class="py-lineno">123</tt>  <tt class="py-line"><tt class="py-docstring">    without bound, eventually causing it to exhaust all available RAM.</tt> </tt>
+<a name="L124"></a><tt class="py-lineno">124</tt>  <tt class="py-line"><tt class="py-docstring">    To prevent this, after each write, instances of this class check whether the write queue of the WriteStream</tt> </tt>
+<a name="L125"></a><tt class="py-lineno">125</tt>  <tt class="py-line"><tt class="py-docstring">    is full, and if so, the ReadStream is paused, and a WriteStreamdrain_handler is set on the WriteStream.</tt> </tt>
+<a name="L126"></a><tt class="py-lineno">126</tt>  <tt class="py-line"><tt class="py-docstring">    When the WriteStream has processed half of its backlog, the drain_handler will be called,</tt> </tt>
+<a name="L127"></a><tt class="py-lineno">127</tt>  <tt class="py-line"><tt class="py-docstring">    which results in the pump resuming the ReadStream.</tt> </tt>
+<a name="L128"></a><tt class="py-lineno">128</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L129"></a><tt class="py-lineno">129</tt>  <tt class="py-line"><tt class="py-docstring">    This class can be used to pump from any ReadStream to any  WriteStream,</tt> </tt>
+<a name="L130"></a><tt class="py-lineno">130</tt>  <tt class="py-line"><tt class="py-docstring">    e.g. from an HttpServerRequest to an AsyncFile, or from NetSocket to a WebSocket.</tt> </tt>
+<a name="L131"></a><tt class="py-lineno">131</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L132"></a><tt class="py-lineno">132</tt>  <tt class="py-line"> </tt>
+<a name="Pump.__init__"></a><div id="Pump.__init__-def"><a name="L133"></a><tt class="py-lineno">133</tt> <a class="py-toggle" href="#" id="Pump.__init__-toggle" onclick="return toggle('Pump.__init__');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.streams.Pump-class.html#__init__">__init__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">read_stream</tt><tt class="py-op">,</tt> <tt class="py-param">write_stream</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Pump.__init__-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Pump.__init__-expanded"><a name="L134"></a><tt class="py-lineno">134</tt>  <tt class="py-line">        <tt class="py-comment">#raise "read_stream is not a ReadStream" if !read_stream.is_a? ReadStream</tt> </tt>
+<a name="L135"></a><tt class="py-lineno">135</tt>  <tt class="py-line"><tt class="py-comment"></tt>        <tt class="py-comment">#raise "write_stream is not a WriteStream" if !write_stream.is_a? WriteStream</tt> </tt>
+<a name="L136"></a><tt class="py-lineno">136</tt>  <tt class="py-line"><tt class="py-comment"></tt>        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">j_rs</tt> <tt class="py-op">=</tt> <tt id="link-21" class="py-name" targets="Method core.file_system.AsyncFile.read_stream()=core.file_system.AsyncFile-class.html#read_stream"><a title="core.file_system.AsyncFile.read_stream" class="py-name" href="#" onclick="return doclink('link-21', 'read_stream', 'link-21');">read_stream</a></tt><tt class="py-op">.</tt><tt id="link-22" class="py-name" targets="Method core.streams.ReadStream._to_read_stream()=core.streams.ReadStream-class.html#_to_read_stream"><a title="core.streams.ReadStream._to_read_stream" class="py-name" href="#" onclick="return doclink('link-22', '_to_read_stream', 'link-22');">_to_read_stream</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L137"></a><tt class="py-lineno">137</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">j_ws</tt> <tt class="py-op">=</tt> <tt id="link-23" class="py-name" targets="Method core.file_system.AsyncFile.write_stream()=core.file_system.AsyncFile-class.html#write_stream"><a title="core.file_system.AsyncFile.write_stream" class="py-name" href="#" onclick="return doclink('link-23', 'write_stream', 'link-23');">write_stream</a></tt><tt class="py-op">.</tt><tt id="link-24" class="py-name" targets="Method core.streams.WriteStream._to_write_stream()=core.streams.WriteStream-class.html#_to_write_stream"><a title="core.streams.WriteStream._to_write_stream" class="py-name" href="#" onclick="return doclink('link-24', '_to_write_stream', 'link-24');">_to_write_stream</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L138"></a><tt class="py-lineno">138</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">j_pump</tt> <tt class="py-op">=</tt> <tt class="py-name">org</tt><tt class="py-op">.</tt><tt id="link-25" class="py-name"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-25', 'vertx', 'link-0');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">java</tt><tt class="py-op">.</tt><tt id="link-26" class="py-name"><a title="core" class="py-name" href="#" onclick="return doclink('link-26', 'core', 'link-1');">core</a></tt><tt class="py-op">.</tt><tt id="link-27" class="py-name"><a title="core.streams" class="py-name" href="#" onclick="return doclink('link-27', 'streams', 'link-2');">streams</a></tt><tt class="py-op">.</tt><tt id="link-28" class="py-name"><a title="core.streams.Pump" class="py-name" href="#" onclick="return doclink('link-28', 'Pump', 'link-3');">Pump</a></tt><tt class="py-op">.</tt><tt class="py-name">createPump</tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">j_rs</tt><tt class="py-op">,</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">j_ws</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L139"></a><tt class="py-lineno">139</tt>  <tt class="py-line"> </tt>
+<a name="Pump.set_write_queue_max_size"></a><div id="Pump.set_write_queue_max_size-def"><a name="L140"></a><tt class="py-lineno">140</tt> <a class="py-toggle" href="#" id="Pump.set_write_queue_max_size-toggle" onclick="return toggle('Pump.set_write_queue_max_size');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.streams.Pump-class.html#set_write_queue_max_size">set_write_queue_max_size</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">val</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Pump.set_write_queue_max_size-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Pump.set_write_queue_max_size-expanded"><a name="L141"></a><tt class="py-lineno">141</tt>  <tt class="py-line">        <tt class="py-docstring">"""Set the write queue max size</tt> </tt>
+<a name="L142"></a><tt class="py-lineno">142</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L143"></a><tt class="py-lineno">143</tt>  <tt class="py-line"><tt class="py-docstring">        Keyword arguments:</tt> </tt>
+<a name="L144"></a><tt class="py-lineno">144</tt>  <tt class="py-line"><tt class="py-docstring">        val -- The write queue max size</tt> </tt>
+<a name="L145"></a><tt class="py-lineno">145</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt>   </tt>
+<a name="L146"></a><tt class="py-lineno">146</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">j_pump</tt><tt class="py-op">.</tt><tt class="py-name">setWriteQueueMaxSize</tt><tt class="py-op">(</tt><tt class="py-name">val</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L147"></a><tt class="py-lineno">147</tt>  <tt class="py-line"> </tt>
+<a name="L148"></a><tt class="py-lineno">148</tt>  <tt class="py-line">    <tt id="link-29" class="py-name"><a title="core.streams.Pump.write_queue_max_size
+core.streams.WriteStream.write_queue_max_size" class="py-name" href="#" onclick="return doclink('link-29', 'write_queue_max_size', 'link-12');">write_queue_max_size</a></tt> <tt class="py-op">=</tt> <tt class="py-name">property</tt><tt class="py-op">(</tt><tt class="py-name">fset</tt><tt class="py-op">=</tt><tt id="link-30" class="py-name"><a title="core.streams.Pump.set_write_queue_max_size
+core.streams.WriteStream.set_write_queue_max_size" class="py-name" href="#" onclick="return doclink('link-30', 'set_write_queue_max_size', 'link-13');">set_write_queue_max_size</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L149"></a><tt class="py-lineno">149</tt>  <tt class="py-line"> </tt>
+<a name="Pump.start"></a><div id="Pump.start-def"><a name="L150"></a><tt class="py-lineno">150</tt> <a class="py-toggle" href="#" id="Pump.start-toggle" onclick="return toggle('Pump.start');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.streams.Pump-class.html#start">start</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Pump.start-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Pump.start-expanded"><a name="L151"></a><tt class="py-lineno">151</tt>  <tt class="py-line">        <tt class="py-docstring">"""Start the Pump. The Pump can be started and stopped multiple times."""</tt> </tt>
+<a name="L152"></a><tt class="py-lineno">152</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">j_pump</tt><tt class="py-op">.</tt><tt id="link-31" class="py-name" targets="Method core.streams.Pump.start()=core.streams.Pump-class.html#start"><a title="core.streams.Pump.start" class="py-name" href="#" onclick="return doclink('link-31', 'start', 'link-31');">start</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L153"></a><tt class="py-lineno">153</tt>  <tt class="py-line"> </tt>
+<a name="Pump.stop"></a><div id="Pump.stop-def"><a name="L154"></a><tt class="py-lineno">154</tt> <a class="py-toggle" href="#" id="Pump.stop-toggle" onclick="return toggle('Pump.stop');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.streams.Pump-class.html#stop">stop</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Pump.stop-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Pump.stop-expanded"><a name="L155"></a><tt class="py-lineno">155</tt>  <tt class="py-line">        <tt class="py-docstring">"""Stop the Pump. The Pump can be started and stopped multiple times."""</tt>   </tt>
+<a name="L156"></a><tt class="py-lineno">156</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">j_pump</tt><tt class="py-op">.</tt><tt id="link-32" class="py-name" targets="Method core.streams.Pump.stop()=core.streams.Pump-class.html#stop"><a title="core.streams.Pump.stop" class="py-name" href="#" onclick="return doclink('link-32', 'stop', 'link-32');">stop</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L157"></a><tt class="py-lineno">157</tt>  <tt class="py-line"> </tt>
+<a name="L158"></a><tt class="py-lineno">158</tt>  <tt class="py-line">    <tt class="py-decorator">@</tt><tt class="py-decorator">property</tt> </tt>
+<a name="Pump.bytes_pumped"></a><div id="Pump.bytes_pumped-def"><a name="L159"></a><tt class="py-lineno">159</tt> <a class="py-toggle" href="#" id="Pump.bytes_pumped-toggle" onclick="return toggle('Pump.bytes_pumped');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.streams.Pump-class.html#bytes_pumped">bytes_pumped</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Pump.bytes_pumped-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Pump.bytes_pumped-expanded"><a name="L160"></a><tt class="py-lineno">160</tt>  <tt class="py-line">        <tt class="py-docstring">"""return the total number of bytes pumped by this pump."""</tt> </tt>
+<a name="L161"></a><tt class="py-lineno">161</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">j_pump</tt><tt class="py-op">.</tt><tt class="py-name">getBytesPumped</tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+</div></div><a name="L162"></a><tt class="py-lineno">162</tt>  <tt class="py-line"> </tt><script type="text/javascript">
+<!--
+expandto(location.href);
+// -->
+</script>
+</pre>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1
+    on Wed Jun 27 09:06:30 2012
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>

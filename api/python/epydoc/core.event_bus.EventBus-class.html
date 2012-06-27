@@ -1,0 +1,461 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>core.event_bus.EventBus</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="core-module.html">Package&nbsp;core</a> ::
+        <a href="core.event_bus-module.html">Module&nbsp;event_bus</a> ::
+        Class&nbsp;EventBus
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="core.event_bus.EventBus-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class EventBus</h1><p class="nomargin-top"><span class="codelink"><a href="core.event_bus-pysrc.html#EventBus">source&nbsp;code</a></span></p>
+<pre class="base-tree">
+object --+
+         |
+        <strong class="uidshort">EventBus</strong>
+</pre>
+
+<hr />
+<p>This class represents a distributed lightweight event bus which can 
+  encompass multiple vert.x instances. It is very useful for otherwise 
+  isolated vert.x application instances to communicate with each other.</p>
+  <p>Messages sent over the event bus are JSON objects represented as Ruby 
+  Hash instances.</p>
+  <p>The event bus implements a distributed publish / subscribe 
+  network.</p>
+  <p>Messages are sent to an address.</p>
+  <p>There can be multiple handlers registered against that address. Any 
+  handlers with a matching name will receive the message irrespective of 
+  what vert.x application instance and what vert.x instance they are 
+  located in.</p>
+  <p>All messages sent over the bus are transient. On event of failure of 
+  all or part of the event bus messages may be lost. Applications should be
+  coded to cope with lost messages, e.g. by resending them, and making 
+  application services idempotent.</p>
+  <p>The order of messages received by any specific handler from a specific
+  sender will match the order of messages sent from that sender.</p>
+  <p>When sending a message, a reply handler can be provided. If so, it 
+  will be called when the reply from the receiver has been received.</p>
+  <p>When receiving a message in a handler the received object is an 
+  instance of EventBus::Message - this contains the actual Hash of the 
+  message plus a reply method which can be used to reply to it.</p>
+
+<!-- ==================== STATIC METHODS ==================== -->
+<a name="section-StaticMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Static Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-StaticMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="java_eventbus"></a><span class="summary-sig-name">java_eventbus</span>()</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.event_bus-pysrc.html#EventBus.java_eventbus">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.event_bus.EventBus-class.html#send" class="summary-sig-name">send</a>(<span class="summary-sig-arg">address</span>,
+        <span class="summary-sig-arg">message</span>,
+        <span class="summary-sig-arg">reply_handler</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Send a message on the event bus</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.event_bus-pysrc.html#EventBus.send">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.event_bus.EventBus-class.html#publish" class="summary-sig-name">publish</a>(<span class="summary-sig-arg">address</span>,
+        <span class="summary-sig-arg">message</span>)</span><br />
+      Publish a message on the event bus</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.event_bus-pysrc.html#EventBus.publish">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="send_or_pub"></a><span class="summary-sig-name">send_or_pub</span>(<span class="summary-sig-arg">send</span>,
+        <span class="summary-sig-arg">address</span>,
+        <span class="summary-sig-arg">message</span>,
+        <span class="summary-sig-arg">reply_handler</span>=<span class="summary-sig-default">None</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.event_bus-pysrc.html#EventBus.send_or_pub">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.event_bus.EventBus-class.html#register_handler" class="summary-sig-name">register_handler</a>(<span class="summary-sig-arg">address</span>,
+        <span class="summary-sig-arg">local_only</span>=<span class="summary-sig-default">False</span>,
+        <span class="summary-sig-arg">handler</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Register a handler.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.event_bus-pysrc.html#EventBus.register_handler">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.event_bus.EventBus-class.html#register_simple_handler" class="summary-sig-name">register_simple_handler</a>(<span class="summary-sig-arg">local_only</span>=<span class="summary-sig-default">False</span>,
+        <span class="summary-sig-arg">handler</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Registers a handler against a uniquely generated address, the address
+      is returned as the id received by the handler.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.event_bus-pysrc.html#EventBus.register_simple_handler">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.event_bus.EventBus-class.html#unregister_handler" class="summary-sig-name">unregister_handler</a>(<span class="summary-sig-arg">handler_id</span>)</span><br />
+      Unregisters a handler</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.event_bus-pysrc.html#EventBus.unregister_handler">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="convert_msg"></a><span class="summary-sig-name">convert_msg</span>(<span class="summary-sig-arg">message</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.event_bus-pysrc.html#EventBus.convert_msg">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="handler_dict"></a><span class="summary-name">handler_dict</span> = <code title="{}">{}</code>
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="send"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">send</span>(<span class="sig-arg">address</span>,
+        <span class="sig-arg">message</span>,
+        <span class="sig-arg">reply_handler</span>=<span class="sig-default">None</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.event_bus-pysrc.html#EventBus.send">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Send a message on the event bus</p>
+  <p>Keyword arguments: address -- the address to publish to message -- The
+  message to send reply_handler -- An optional reply handler. It will be 
+  called when the reply from a receiver is received.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="publish"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">publish</span>(<span class="sig-arg">address</span>,
+        <span class="sig-arg">message</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.event_bus-pysrc.html#EventBus.publish">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Publish a message on the event bus</p>
+  <p>Keyword arguments: address -- the address to publish to message -- The
+  message to publish</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="register_handler"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">register_handler</span>(<span class="sig-arg">address</span>,
+        <span class="sig-arg">local_only</span>=<span class="sig-default">False</span>,
+        <span class="sig-arg">handler</span>=<span class="sig-default">None</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.event_bus-pysrc.html#EventBus.register_handler">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Register a handler.</p>
+  <p>Keyword arguments: address -- the address to register for. Any 
+  messages sent to that address will be received by the handler. A single 
+  handler can be registered against many addresses. local_only -- if True 
+  then handler won't be propagated across cluster handler -- The handler 
+  returns id of the handler which can be used in 
+  EventBus.unregister_handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="register_simple_handler"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">register_simple_handler</span>(<span class="sig-arg">local_only</span>=<span class="sig-default">False</span>,
+        <span class="sig-arg">handler</span>=<span class="sig-default">None</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.event_bus-pysrc.html#EventBus.register_simple_handler">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Registers a handler against a uniquely generated address, the address 
+  is returned as the id received by the handler. A single handler can be 
+  registered against many addresses.</p>
+  <p>Keyword arguments: local_only -- If Rrue then handler won't be 
+  propagated across cluster handler -- The handler</p>
+  <p>returns id of the handler which can be used in 
+  EventBus.unregister_handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="unregister_handler"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">unregister_handler</span>(<span class="sig-arg">handler_id</span>)</span>
+    <br /><em class="fname">Static Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="core.event_bus-pysrc.html#EventBus.unregister_handler">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Unregisters a handler</p>
+  <p>Keyword arguments: handler_id -- the id of the handler to unregister. 
+  Returned from EventBus.register_handler</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1
+    on Wed Jun 27 09:06:28 2012
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>
