@@ -286,7 +286,22 @@ In particular when running clustered, and you have more than one network interfa
 
 # Performance Tuning
 
-[TODO]
+## Improving connection time
+
+If you're creating a lot of connections to a Vert.x server in a short period of time, you need to tweak some settings in order to avoid the TCP accept queue getting full which can result in connections being refused or packets being dropped during the handshake which can cause the client to retry.
+
+A classic symptom of this is if you see long connection times just over 3000ms at your client.#
+
+In Linux you need to increase a couple of settings in the TCP / Net config (10000 is an arbitrarily large number)
+
+    sudo sysctl -w net.core.somaxconn=10000
+    sudo sysctl -w net.ipv4.tcp_max_syn_backlog=10000
+
+And you also need to set the accept backlog in your server code, (e.g. in Java:)
+
+    HttpServer server = vertx.createHttpServer();
+    server.setAcceptBacklog(10000);
+
 
 # Internals
 

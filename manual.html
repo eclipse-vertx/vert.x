@@ -95,7 +95,10 @@
 <li><a href="#running-vertx">Running vert.x</a></li>
 <li><a href="#logging">Logging</a></li>
 <li><a href="#configuring-clustering">Configuring clustering</a></li>
-<li><a href="#performance-tuning">Performance Tuning</a></li>
+<li><a href="#performance-tuning">Performance Tuning</a><ul>
+<li><a href="#improving-connection-time">Improving connection time</a></li>
+</ul>
+</li>
 <li><a href="#internals">Internals</a></li>
 </ul>
 </div>
@@ -304,7 +307,17 @@ vertx run handler1.js -cluster -cluster-port 25501
 <p>If you want to receive more info on cluster setup etc, then edit <code>conf/logging.properties</code> to read <code>com.hazelcast.level=INFO</code></p>
 <p>In particular when running clustered, and you have more than one network interface to choose from, make sure Hazelcast is using the correct interface by editing the <code>interfaces-enabled</code> element.</p>
 <h1 id="performance-tuning">Performance Tuning</h1><br/>
-<p>[TODO]</p>
+<h2 id="improving-connection-time">Improving connection time</h2><br/>
+<p>If you're creating a lot of connections to a Vert.x server in a short period of time, you need to tweak some settings in order to avoid the TCP accept queue getting full which can result in connections being refused or packets being dropped during the handshake which can cause the client to retry.</p>
+<p>A classic symptom of this is if you see long connection times just over 3000ms at your client.#</p>
+<p>In Linux you need to increase a couple of settings in the TCP / Net config (10000 is an arbitrarily large number)</p>
+<pre class="prettyprint">sudo sysctl -w net.core.somaxconn=10000
+sudo sysctl -w net.ipv4.tcp_max_syn_backlog=10000
+</pre>
+<p>And you also need to set the accept backlog in your server code, (e.g. in Java:)</p>
+<pre class="prettyprint">HttpServer server = vertx.createHttpServer();
+server.setAcceptBacklog(10000);
+</pre>
 <h1 id="internals">Internals</h1><br/>
 <p>Vert.x uses the following amazing open source projects:</p>
 <ul>
