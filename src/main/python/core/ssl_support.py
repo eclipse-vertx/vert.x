@@ -23,7 +23,7 @@ class SSLSupport(object):
     """ Set whether the server or client will use SSL.
 
     Keyword arguments:
-    val -- If true then ssl will be used.
+    @param val: If true then ssl will be used.
     
     return self. So multiple invocations can be chained.
     """
@@ -39,7 +39,7 @@ class SSLSupport(object):
     a client key store if the server requires client authentication via client certificates.
     
     Keyword arguments:
-    path -- The path to the key store
+    @param path: The path to the key store
     
     return self. So multiple invocations can be chained.
     """
@@ -53,7 +53,7 @@ class SSLSupport(object):
     has been set to true.
     
     Keyword arguments:
-    password -- The password.
+    @param password: The password.
     
     return self. So multiple invocations can be chained.
     """
@@ -70,7 +70,7 @@ class SSLSupport(object):
     if the client provides a certificate the server does not trust.
 
     Keyword arguments:
-    path -- The path to the trust store
+    @param path: The path to the trust store
     
     return self. So multiple invocations can be chained.
     """
@@ -84,7 +84,7 @@ class SSLSupport(object):
     has been set to true.
 
     Keyword arguments:
-    password -- The password.
+    @param password: The password.
      
     return self. So multiple invocations can be chained.
     """

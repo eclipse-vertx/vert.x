@@ -32,10 +32,10 @@ class SharedData(object):
 
     The following types can be stored in a shareddata data structure:
 
-      String
-      FixNum
-      Float
-      Buffer - this will be automatically copied, and the copy will be stored in the structure.
+    String
+    FixNum
+    Float
+    Buffer - this will be automatically copied, and the copy will be stored in the structure.
     """
     @staticmethod
     def shared_data():
@@ -47,9 +47,9 @@ class SharedData(object):
         are guaranteed to return the same Hash instance.
 
         Keyword arguments:
-        key -- Get the hash with the key.
-
-        returns the hash.
+        @param key: Get the hash with the key.
+        
+        @return: the hash.
         """
         map = SharedData.shared_data().getMap(key)
         return SharedHash(map)
@@ -60,9 +60,9 @@ class SharedData(object):
         are guaranteed to return the same Set instance.
 
         Keyword arguments:
-        key -- Get the set with the key.
-
-        returns the shared set.
+        @param key: Get the set with the key.
+        
+        @return: the shared set.
         """
         set_ = SharedData.shared_data().getSet(key)
         return SharedSet(set_)
@@ -72,7 +72,7 @@ class SharedData(object):
         """Remove the hash
 
         Keyword arguments:
-        key -- The key of the hash.
+        @param key: The key of the hash.
         """
         return SharedData.shared_data().removeMap(key)
 
@@ -81,7 +81,7 @@ class SharedData(object):
         """Remove the set
 
         Keyword arguments:
-        key -- The key of the set.
+        @param key: The key of the set.
         """
         return SharedData.shared_data().removeSet(key)
 
@@ -156,9 +156,8 @@ class SharedSet(object):
         """ Add an object to the set
         
         Keyword arguments:
-        obj -- The object to add
-        
-        returns self
+        @param obj: The object to add
+        @return: self
         """
         obj = SharedData.check_obj(obj)
         self.java_obj.add(obj)
@@ -172,7 +171,7 @@ class SharedSet(object):
         """Delete an object from the set
 
         Keyword arguments:
-        obj -- the object to delete
+        @param obj: the object to delete
         """
         self.java_obj.remove(obj)
 
@@ -181,7 +180,7 @@ class SharedSet(object):
         """Call the func for every element of the set
 
         Keyword arguments:
-        func -- The function to call.
+        @param func: The function to call.
         """
         iter = self.java_obj.iterator()
         while iter.hasNext():
@@ -198,9 +197,9 @@ class SharedSet(object):
         """Does the set contain an element?
     
         Keyword arguments:
-        obj -- the object to check if the set contains
-
-        returns True if the object is contained in the set
+        @param obj: the object to check if the set contains
+        
+        @return: True if the object is contained in the set
         """
         if isinstance(obj, Buffer):
             obj = obj._to_java_buffer()
