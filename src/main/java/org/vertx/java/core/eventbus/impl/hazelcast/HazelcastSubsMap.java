@@ -20,9 +20,9 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.eventbus.impl.ServerIDs;
 import org.vertx.java.core.eventbus.impl.SubsMap;
 import org.vertx.java.core.impl.BlockingAction;
-import org.vertx.java.core.eventbus.impl.ServerIDs;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -30,7 +30,6 @@ import org.vertx.java.core.net.impl.ServerID;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 

@@ -38,7 +38,7 @@ def test_undeploy
   end
 
   conf = {'foo' => 'bar'}
-  id = Vertx.deploy_verticle("core/deploy/child.rb", conf) {
+  Vertx.deploy_verticle("core/deploy/child.rb", conf) { |id|
     Vertx.undeploy_verticle(id)
   }
 

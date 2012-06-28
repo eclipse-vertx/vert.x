@@ -31,8 +31,6 @@
   <property name="java-src-root" value="src/main/java"/>
   <property name="groovy-src-root" value="src/main/groovy"/>
   <property name="java-target" value="${target}/java/classes"/>
-  <property name="mods-src-root" value="src/mods"/>
-  <property name="mods-target" value="${target}/mods"/>
   <property name="conf-dir" value="conf"/>
   <property name="lib-dir" value="lib"/>
   <property name="core-lib" value="${lib-dir}/main"/>
@@ -51,7 +49,9 @@
   <property name="tests-target" value="${target}/newtests/classes"/>
   <property name="tests-base" value="src/tests"/>
   <property name="test-java-tests-src" value="${tests-base}/java"/>
-  <property name="test-framework-src-java" value="${tests-base}/framework/java"/>
+  <property name="test-framework-src" value="${tests-base}/framework"/>
+  <property name="test-framework-src-java" value="${test-framework-src}/java"/>
+  <property name="test-framework-src-javascript" value="${test-framework-src}/javascript"/>
   <property name="test-controllers-src" value="${tests-base}/controllers"/>
 
   <property name="javadoc-dir" value="docs/java/api"/>
@@ -157,39 +157,6 @@
   	</copy>
   </target>
 
-  <target name="compile-java-mods">
-    <antcall target="compile-java-mod">
-      <param name="mod-name" value="auth-mgr"/>
-    </antcall>
-    <antcall target="compile-java-mod">
-      <param name="mod-name" value="mailer"/>
-    </antcall>
-    <antcall target="compile-java-mod">
-      <param name="mod-name" value="mongo-persistor"/>
-    </antcall>
-    <antcall target="compile-java-mod">
-      <param name="mod-name" value="work-queue"/>
-    </antcall>
-    <antcall target="compile-java-mod">
-      <param name="mod-name" value="web-server"/>
-    </antcall>
-  </target>
-
-  <target name="compile-java-mod" depends="compile-platform" description="compile the out of the box java mods">
-    <mkdir dir="${mods-target}/${mod-name}"/>
-    <javac srcdir="${mods-src-root}/${mod-name}" destdir="${mods-target}/${mod-name}" debug="on"
-           includeantruntime="false" target="1.7" source="1.7">
-      <classpath>
-        <pathelement path="core-lib-classpath"/>
-        <pathelement path="${java-target}"/>
-        <fileset dir="${mods-src-root}/${mod-name}/lib" erroronmissingdir="false">
-          <include name="*.jar"/>
-        </fileset>
-      </classpath>
-      <include name="org/vertx/mods/**/*.java"/>
-    </javac>
-  </target>
-
   <target name="jar-core" depends="compile-core" description="generate the core jar">
     <jar jarfile="${target}/${core-jar-file}" basedir="${java-target}" includes="**/core/**/*.class"/>
   </target>
@@ -202,7 +169,12 @@
   </target>
 
   <target name="jar-test-framework" depends="compile-test-framework" description="generate the test framework jar">
-    <jar jarfile="${target}/${test-framework-jar-file}" basedir="${tests-target}" includes="**/framework/**/*.class"/>
+    <jar jarfile="${target}/${test-framework-jar-file}" basedir="${tests-target}">
+      <include name="**/framework/**/*.class"/>
+      <include name="**/*.js"/>
+      <include name="**/*.groovy"/>
+      <include name="**/*.rb"/>
+    </jar>
   </target>
 
   <target name="jars" depends="jar-core,jar-platform,jar-test-framework"/>
@@ -215,7 +187,13 @@
 
   <target name="compile-test-framework" depends="jar-core,jar-platform">
     <mkdir dir="${tests-target}"/>
-
+    <copy todir="${tests-target}">
+  	  <fileset dir="${test-framework-src}">
+  	    <include name="javascript/**/*.js"/>
+        <include name="groovy/**/*.groovy"/>
+        <include name="ruby/**/*.rb"/>
+  	  </fileset>
+  	</copy>
     <javac destdir="${tests-target}" classpathref="test-classpath"
            debug="on"
            includeantruntime="false">
@@ -255,9 +233,8 @@
     </antcall>
   </target>
 
-  <!-- We depend on dist since the busmod tests need the distro to be built to
-  access the mods -->
-  <target name="internal-tests" depends="compile-tests,dist">
+
+  <target name="internal-tests" depends="compile-tests">
     <delete dir="${test-results}"/>
     <mkdir dir="${test-results}"/>
     <junit printsummary="yes" timeout="120000" showoutput="true">
@@ -265,7 +242,6 @@
       <sysproperty key="jruby.home" value="${env.JRUBY_HOME}"/>
       <sysproperty key="jython.home" value="${env.JYTHON_HOME}"/>
       <sysproperty key="python.path" value="src/main/python:src/tests/python:src/tests/framework/python:${env.JYTHON_HOME}/Lib"/>
-
       <sysproperty key="vertx.mods" value="${dist-build}/mods"/>
       <classpath refid="test-classpath"/>
       <batchtest haltonfailure="yes" haltonerror="yes" fork="yes" todir="${test-results}">
@@ -295,11 +271,6 @@
     </groovydoc>
   </target>
 
-  <!--
-  Needs:
-  jruby -S gem install yard
-  jruby -S gem install rdiscount
-  -->
   <target name="yardoc">
     <exec executable="yardoc"/>
   </target>
@@ -397,18 +368,6 @@
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/python/webapp/web/js"/>
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/javascript/webapp/web/js"/>
     <copy file="src/client/vertxbus.js" todir="${dist-build}/examples/groovy/webapp/web/js"/>
-
-    <copy todir="${dist-build}/mods" includeEmptyDirs="false">
-      <fileset dir="${mods-src-root}">
-        <include name="**/*"/>
-      </fileset>
-    </copy>
-
-    <copy todir="${dist-build}/mods">
-      <fileset dir="${mods-target}">
-        <include name="**/*.class"/>
-      </fileset>
-    </copy>
 
     <copy file="LICENSE.txt" todir="${dist-build}"/>
     <copy file="README.md" todir="${dist-build}"/>

@@ -14,34 +14,33 @@
  * limitations under the License.
  */
 
-package org.vertx.java.tests.busmods.persistor;
+package org.vertx.java.examples.timeoutperf;
 
-import org.junit.Test;
-import org.vertx.java.framework.TestBase;
-import vertx.tests.busmods.persistor.TestClient;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.net.NetServer;
+import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.deploy.Verticle;
 
 /**
- *
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JavaPersistorTest extends TestBase {
+public class Server3 extends Verticle {
+
+  volatile long last;
 
   @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-    startApp(TestClient.class.getName());
+  public void start() throws Exception {
+    NetServer server = vertx.createNetServer();
+    server.setAcceptBacklog(100000);
+    server.connectHandler(new Handler<NetSocket>() {
+      public void handle(NetSocket sock) {
+        long now = System.currentTimeMillis();
+        if (last != 0) {
+          System.out.println("Connect gap: " + (now - last));
+        }
+        last = now;
+      }
+    });
+    server.listen(8080);
   }
-
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
-  }
-
-  @Test
-  public void testPersistor() throws Exception {
-    startTest(getMethodName());
-  }
-
-
 }
