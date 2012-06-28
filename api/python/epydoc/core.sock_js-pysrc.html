@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>core.sock_js</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="core-module.html">Package&nbsp;core</a> ::
+        Module&nbsp;sock_js
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="core.sock_js-pysrc.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<h1 class="epydoc">Source Code for <a href="core.sock_js-module.html">Module core.sock_js</a></h1>
+<pre class="py-src">
+<a name="L1"></a><tt class="py-lineno">  1</tt>  <tt class="py-line"><tt class="py-comment"># Copyright 2011 the original author or authors.</tt> </tt>
+<a name="L2"></a><tt class="py-lineno">  2</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L3"></a><tt class="py-lineno">  3</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># Licensed under the Apache License, Version 2.0 (the "License");</tt> </tt>
+<a name="L4"></a><tt class="py-lineno">  4</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># you may not use this file except in compliance with the License.</tt> </tt>
+<a name="L5"></a><tt class="py-lineno">  5</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># You may obtain a copy of the License at</tt> </tt>
+<a name="L6"></a><tt class="py-lineno">  6</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L7"></a><tt class="py-lineno">  7</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#      http://www.apache.org/licenses/LICENSE-2.0</tt> </tt>
+<a name="L8"></a><tt class="py-lineno">  8</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L9"></a><tt class="py-lineno">  9</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># Unless required by applicable law or agreed to in writing, software</tt> </tt>
+<a name="L10"></a><tt class="py-lineno"> 10</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># distributed under the License is distributed on an "AS IS" BASIS,</tt> </tt>
+<a name="L11"></a><tt class="py-lineno"> 11</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</tt> </tt>
+<a name="L12"></a><tt class="py-lineno"> 12</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># See the License for the specific language governing permissions and</tt> </tt>
+<a name="L13"></a><tt class="py-lineno"> 13</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># limitations under the License.</tt> </tt>
+<a name="L14"></a><tt class="py-lineno"> 14</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt>
+<a name="L15"></a><tt class="py-lineno"> 15</tt>  <tt class="py-line"><tt class="py-keyword">import</tt> <tt id="link-0" class="py-name" targets="Package core=core-module.html"><a title="core" class="py-name" href="#" onclick="return doclink('link-0', 'core', 'link-0');">core</a></tt><tt class="py-op">.</tt><tt id="link-1" class="py-name" targets="Module core.streams=core.streams-module.html"><a title="core.streams" class="py-name" href="#" onclick="return doclink('link-1', 'streams', 'link-1');">streams</a></tt> </tt>
+<a name="L16"></a><tt class="py-lineno"> 16</tt>  <tt class="py-line"><tt class="py-keyword">import</tt> <tt id="link-2" class="py-name"><a title="core" class="py-name" href="#" onclick="return doclink('link-2', 'core', 'link-0');">core</a></tt><tt class="py-op">.</tt><tt id="link-3" class="py-name" targets="Module core.ssl_support=core.ssl_support-module.html"><a title="core.ssl_support" class="py-name" href="#" onclick="return doclink('link-3', 'ssl_support', 'link-3');">ssl_support</a></tt> </tt>
+<a name="L17"></a><tt class="py-lineno"> 17</tt>  <tt class="py-line"><tt class="py-keyword">import</tt> <tt class="py-name">org</tt><tt class="py-op">.</tt><tt id="link-4" class="py-name" targets="Module vertx=vertx-module.html"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-4', 'vertx', 'link-4');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">java</tt><tt class="py-op">.</tt><tt id="link-5" class="py-name"><a title="core" class="py-name" href="#" onclick="return doclink('link-5', 'core', 'link-0');">core</a></tt> </tt>
+<a name="L18"></a><tt class="py-lineno"> 18</tt>  <tt class="py-line"><tt class="py-keyword">import</tt> <tt class="py-name">org</tt><tt class="py-op">.</tt><tt id="link-6" class="py-name"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-6', 'vertx', 'link-4');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">java</tt><tt class="py-op">.</tt><tt id="link-7" class="py-name"><a title="core" class="py-name" href="#" onclick="return doclink('link-7', 'core', 'link-0');">core</a></tt><tt class="py-op">.</tt><tt class="py-name">json</tt> </tt>
+<a name="L19"></a><tt class="py-lineno"> 19</tt>  <tt class="py-line"><tt class="py-keyword">import</tt> <tt class="py-name">org</tt><tt class="py-op">.</tt><tt id="link-8" class="py-name"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-8', 'vertx', 'link-4');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">java</tt><tt class="py-op">.</tt><tt class="py-name">deploy</tt><tt class="py-op">.</tt><tt class="py-name">impl</tt> </tt>
+<a name="L20"></a><tt class="py-lineno"> 20</tt>  <tt class="py-line"> </tt>
+<a name="L21"></a><tt class="py-lineno"> 21</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt id="link-9" class="py-name"><a title="core" class="py-name" href="#" onclick="return doclink('link-9', 'core', 'link-0');">core</a></tt><tt class="py-op">.</tt><tt id="link-10" class="py-name" targets="Module core.javautils=core.javautils-module.html"><a title="core.javautils" class="py-name" href="#" onclick="return doclink('link-10', 'javautils', 'link-10');">javautils</a></tt> <tt class="py-keyword">import</tt> <tt id="link-11" class="py-name" targets="Function core.javautils.map_to_java()=core.javautils-module.html#map_to_java"><a title="core.javautils.map_to_java" class="py-name" href="#" onclick="return doclink('link-11', 'map_to_java', 'link-11');">map_to_java</a></tt> </tt>
+<a name="L22"></a><tt class="py-lineno"> 22</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt id="link-12" class="py-name"><a title="core" class="py-name" href="#" onclick="return doclink('link-12', 'core', 'link-0');">core</a></tt><tt class="py-op">.</tt><tt id="link-13" class="py-name" targets="Module core.event_bus=core.event_bus-module.html"><a title="core.event_bus" class="py-name" href="#" onclick="return doclink('link-13', 'event_bus', 'link-13');">event_bus</a></tt> <tt class="py-keyword">import</tt> <tt id="link-14" class="py-name" targets="Class core.event_bus.EventBus=core.event_bus.EventBus-class.html"><a title="core.event_bus.EventBus" class="py-name" href="#" onclick="return doclink('link-14', 'EventBus', 'link-14');">EventBus</a></tt> </tt>
+<a name="L23"></a><tt class="py-lineno"> 23</tt>  <tt class="py-line"> </tt>
+<a name="L24"></a><tt class="py-lineno"> 24</tt>  <tt class="py-line"><tt class="py-name">__author__</tt> <tt class="py-op">=</tt> <tt class="py-string">"Scott Horn"</tt> </tt>
+<a name="L25"></a><tt class="py-lineno"> 25</tt>  <tt class="py-line"><tt id="link-15" class="py-name" targets="Variable core.buffer.__email__=core.buffer-module.html#__email__,Variable core.event_bus.__email__=core.event_bus-module.html#__email__,Variable core.file_system.__email__=core.file_system-module.html#__email__,Variable core.handlers.__email__=core.handlers-module.html#__email__,Variable core.http.__email__=core.http-module.html#__email__,Variable core.javautils.__email__=core.javautils-module.html#__email__,Variable core.net.__email__=core.net-module.html#__email__,Variable core.parsetools.__email__=core.parsetools-module.html#__email__,Variable core.shared_data.__email__=core.shared_data-module.html#__email__,Variable core.sock_js.__email__=core.sock_js-module.html#__email__,Variable core.ssl_support.__email__=core.ssl_support-module.html#__email__,Variable core.streams.__email__=core.streams-module.html#__email__,Variable core.tcp_support.__email__=core.tcp_support-module.html#__email__,Variable vertx.__email__=vertx-module.html#__email__"><a title="core.buffer.__email__
+core.event_bus.__email__
+core.file_system.__email__
+core.handlers.__email__
+core.http.__email__
+core.javautils.__email__
+core.net.__email__
+core.parsetools.__email__
+core.shared_data.__email__
+core.sock_js.__email__
+core.ssl_support.__email__
+core.streams.__email__
+core.tcp_support.__email__
+vertx.__email__" class="py-name" href="#" onclick="return doclink('link-15', '__email__', 'link-15');">__email__</a></tt> <tt class="py-op">=</tt> <tt class="py-string">"scott@hornmicro.com"</tt> </tt>
+<a name="L26"></a><tt class="py-lineno"> 26</tt>  <tt class="py-line"><tt id="link-16" class="py-name" targets="Variable core.buffer.__credits__=core.buffer-module.html#__credits__,Variable core.event_bus.__credits__=core.event_bus-module.html#__credits__,Variable core.file_system.__credits__=core.file_system-module.html#__credits__,Variable core.handlers.__credits__=core.handlers-module.html#__credits__,Variable core.http.__credits__=core.http-module.html#__credits__,Variable core.javautils.__credits__=core.javautils-module.html#__credits__,Variable core.net.__credits__=core.net-module.html#__credits__,Variable core.parsetools.__credits__=core.parsetools-module.html#__credits__,Variable core.shared_data.__credits__=core.shared_data-module.html#__credits__,Variable core.sock_js.__credits__=core.sock_js-module.html#__credits__,Variable core.ssl_support.__credits__=core.ssl_support-module.html#__credits__,Variable core.streams.__credits__=core.streams-module.html#__credits__,Variable core.tcp_support.__credits__=core.tcp_support-module.html#__credits__,Variable vertx.__credits__=vertx-module.html#__credits__"><a title="core.buffer.__credits__
+core.event_bus.__credits__
+core.file_system.__credits__
+core.handlers.__credits__
+core.http.__credits__
+core.javautils.__credits__
+core.net.__credits__
+core.parsetools.__credits__
+core.shared_data.__credits__
+core.sock_js.__credits__
+core.ssl_support.__credits__
+core.streams.__credits__
+core.tcp_support.__credits__
+vertx.__credits__" class="py-name" href="#" onclick="return doclink('link-16', '__credits__', 'link-16');">__credits__</a></tt> <tt class="py-op">=</tt> <tt class="py-string">"Based entirely on work by Tim Fox http://tfox.org"</tt> </tt>
+<a name="L27"></a><tt class="py-lineno"> 27</tt>  <tt class="py-line"> </tt>
+<a name="SockJSServer"></a><div id="SockJSServer-def"><a name="L28"></a><tt class="py-lineno"> 28</tt> <a class="py-toggle" href="#" id="SockJSServer-toggle" onclick="return toggle('SockJSServer');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="core.sock_js.SockJSServer-class.html">SockJSServer</a><tt class="py-op">(</tt><tt class="py-base-class">object</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="SockJSServer-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="SockJSServer-expanded"><a name="L29"></a><tt class="py-lineno"> 29</tt>  <tt class="py-line">    <tt class="py-docstring">"""This is an implementation of the server side part of https://github.com/sockjs</tt> </tt>
+<a name="L30"></a><tt class="py-lineno"> 30</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L31"></a><tt class="py-lineno"> 31</tt>  <tt class="py-line"><tt class="py-docstring">    SockJS enables browsers to communicate with the server using a simple WebSocket-like api for sending</tt> </tt>
+<a name="L32"></a><tt class="py-lineno"> 32</tt>  <tt class="py-line"><tt class="py-docstring">    and receiving messages. Under the bonnet SockJS chooses to use one of several protocols depending on browser</tt> </tt>
+<a name="L33"></a><tt class="py-lineno"> 33</tt>  <tt class="py-line"><tt class="py-docstring">    capabilities and what apppears to be working across the network.</tt> </tt>
+<a name="L34"></a><tt class="py-lineno"> 34</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L35"></a><tt class="py-lineno"> 35</tt>  <tt class="py-line"><tt class="py-docstring">    Available protocols include:</tt> </tt>
+<a name="L36"></a><tt class="py-lineno"> 36</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L37"></a><tt class="py-lineno"> 37</tt>  <tt class="py-line"><tt class="py-docstring">    WebSockets</tt> </tt>
+<a name="L38"></a><tt class="py-lineno"> 38</tt>  <tt class="py-line"><tt class="py-docstring">    xhr-polling</tt> </tt>
+<a name="L39"></a><tt class="py-lineno"> 39</tt>  <tt class="py-line"><tt class="py-docstring">    xhr-streaming</tt> </tt>
+<a name="L40"></a><tt class="py-lineno"> 40</tt>  <tt class="py-line"><tt class="py-docstring">    json-polling</tt> </tt>
+<a name="L41"></a><tt class="py-lineno"> 41</tt>  <tt class="py-line"><tt class="py-docstring">    event-source</tt> </tt>
+<a name="L42"></a><tt class="py-lineno"> 42</tt>  <tt class="py-line"><tt class="py-docstring">    html-file</tt> </tt>
+<a name="L43"></a><tt class="py-lineno"> 43</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L44"></a><tt class="py-lineno"> 44</tt>  <tt class="py-line"><tt class="py-docstring">    This means, it should just work irrespective of what browser is being used, and whether there are nasty</tt> </tt>
+<a name="L45"></a><tt class="py-lineno"> 45</tt>  <tt class="py-line"><tt class="py-docstring">    things like proxies and load balancers between the client and the server.</tt> </tt>
+<a name="L46"></a><tt class="py-lineno"> 46</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L47"></a><tt class="py-lineno"> 47</tt>  <tt class="py-line"><tt class="py-docstring">    For more detailed information on SockJS, see their website.</tt> </tt>
+<a name="L48"></a><tt class="py-lineno"> 48</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L49"></a><tt class="py-lineno"> 49</tt>  <tt class="py-line"><tt class="py-docstring">    On the server side, you interact using instances of SockJSSocket - this allows you to send data to the</tt> </tt>
+<a name="L50"></a><tt class="py-lineno"> 50</tt>  <tt class="py-line"><tt class="py-docstring">    client or receive data via the ReadStream data_handler.</tt> </tt>
+<a name="L51"></a><tt class="py-lineno"> 51</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L52"></a><tt class="py-lineno"> 52</tt>  <tt class="py-line"><tt class="py-docstring">    You can register multiple applications with the same SockJSServer, each using different path prefixes, each</tt> </tt>
+<a name="L53"></a><tt class="py-lineno"> 53</tt>  <tt class="py-line"><tt class="py-docstring">    application will have its own handler, and configuration is described in a Hash.</tt> </tt>
+<a name="L54"></a><tt class="py-lineno"> 54</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L55"></a><tt class="py-lineno"> 55</tt>  <tt class="py-line"> </tt>
+<a name="SockJSServer.__init__"></a><div id="SockJSServer.__init__-def"><a name="L56"></a><tt class="py-lineno"> 56</tt> <a class="py-toggle" href="#" id="SockJSServer.__init__-toggle" onclick="return toggle('SockJSServer.__init__');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.sock_js.SockJSServer-class.html#__init__">__init__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">http_server</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="SockJSServer.__init__-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="SockJSServer.__init__-expanded"><a name="L57"></a><tt class="py-lineno"> 57</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt> <tt class="py-op">=</tt> <tt class="py-name">org</tt><tt class="py-op">.</tt><tt id="link-17" class="py-name"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-17', 'vertx', 'link-4');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">java</tt><tt class="py-op">.</tt><tt class="py-name">deploy</tt><tt class="py-op">.</tt><tt class="py-name">impl</tt><tt class="py-op">.</tt><tt class="py-name">VertxLocator</tt><tt class="py-op">.</tt><tt id="link-18" class="py-name"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-18', 'vertx', 'link-4');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">createSockJSServer</tt><tt class="py-op">(</tt><tt class="py-name">http_server</tt><tt class="py-op">.</tt><tt id="link-19" class="py-name" targets="Method core.http.HttpServer._to_java_server()=core.http.HttpServer-class.html#_to_java_server"><a title="core.http.HttpServer._to_java_server" class="py-name" href="#" onclick="return doclink('link-19', '_to_java_server', 'link-19');">_to_java_server</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L58"></a><tt class="py-lineno"> 58</tt>  <tt class="py-line"> </tt>
+<a name="SockJSServer.install_app"></a><div id="SockJSServer.install_app-def"><a name="L59"></a><tt class="py-lineno"> 59</tt> <a class="py-toggle" href="#" id="SockJSServer.install_app-toggle" onclick="return toggle('SockJSServer.install_app');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.sock_js.SockJSServer-class.html#install_app">install_app</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">config</tt><tt class="py-op">,</tt> <tt class="py-param">handler</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="SockJSServer.install_app-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="SockJSServer.install_app-expanded"><a name="L60"></a><tt class="py-lineno"> 60</tt>  <tt class="py-line">        <tt class="py-docstring">"""Install an application</tt> </tt>
+<a name="L61"></a><tt class="py-lineno"> 61</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L62"></a><tt class="py-lineno"> 62</tt>  <tt class="py-line"><tt class="py-docstring">        Keyword arguments:</tt> </tt>
+<a name="L63"></a><tt class="py-lineno"> 63</tt>  <tt class="py-line"><tt class="py-docstring">        @param config: Configuration for the application</tt> </tt>
+<a name="L64"></a><tt class="py-lineno"> 64</tt>  <tt class="py-line"><tt class="py-docstring">        @param proc: Proc representing the handler</tt> </tt>
+<a name="L65"></a><tt class="py-lineno"> 65</tt>  <tt class="py-line"><tt class="py-docstring">        @param handler: Handler to call when a new SockJSSocket is created</tt> </tt>
+<a name="L66"></a><tt class="py-lineno"> 66</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L67"></a><tt class="py-lineno"> 67</tt>  <tt class="py-line">        <tt class="py-name">java_config</tt> <tt class="py-op">=</tt> <tt class="py-name">org</tt><tt class="py-op">.</tt><tt id="link-20" class="py-name"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-20', 'vertx', 'link-4');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">java</tt><tt class="py-op">.</tt><tt id="link-21" class="py-name"><a title="core" class="py-name" href="#" onclick="return doclink('link-21', 'core', 'link-0');">core</a></tt><tt class="py-op">.</tt><tt class="py-name">json</tt><tt class="py-op">.</tt><tt class="py-name">JsonObject</tt><tt class="py-op">(</tt><tt id="link-22" class="py-name"><a title="core.javautils.map_to_java" class="py-name" href="#" onclick="return doclink('link-22', 'map_to_java', 'link-11');">map_to_java</a></tt><tt class="py-op">(</tt><tt id="link-23" class="py-name" targets="Variable vertx.Vertx.config=vertx.Vertx-class.html#config,Function vertx.config()=vertx-module.html#config"><a title="vertx.Vertx.config
+vertx.config" class="py-name" href="#" onclick="return doclink('link-23', 'config', 'link-23');">config</a></tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L68"></a><tt class="py-lineno"> 68</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt><tt class="py-op">.</tt><tt class="py-name">installApp</tt><tt class="py-op">(</tt><tt class="py-name">java_config</tt><tt class="py-op">,</tt> <tt id="link-24" class="py-name" targets="Class core.sock_js.SockJSSocketHandler=core.sock_js.SockJSSocketHandler-class.html"><a title="core.sock_js.SockJSSocketHandler" class="py-name" href="#" onclick="return doclink('link-24', 'SockJSSocketHandler', 'link-24');">SockJSSocketHandler</a></tt><tt class="py-op">(</tt><tt class="py-name">handler</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L69"></a><tt class="py-lineno"> 69</tt>  <tt class="py-line"> </tt>
+<a name="SockJSServer.bridge"></a><div id="SockJSServer.bridge-def"><a name="L70"></a><tt class="py-lineno"> 70</tt> <a class="py-toggle" href="#" id="SockJSServer.bridge-toggle" onclick="return toggle('SockJSServer.bridge');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.sock_js.SockJSServer-class.html#bridge">bridge</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">config</tt><tt class="py-op">,</tt> <tt class="py-param">permitted</tt><tt class="py-op">,</tt> <tt class="py-param">auth_timeout</tt><tt class="py-op">=</tt><tt class="py-number">5</tt><tt class="py-op">*</tt><tt class="py-number">60</tt><tt class="py-op">*</tt><tt class="py-number">1000</tt><tt class="py-op">,</tt> <tt class="py-param">auth_address</tt><tt class="py-op">=</tt><tt class="py-name">None</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="SockJSServer.bridge-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="SockJSServer.bridge-expanded"><a name="L71"></a><tt class="py-lineno"> 71</tt>  <tt class="py-line">        <tt class="py-name">a_json</tt> <tt class="py-op">=</tt> <tt class="py-name">org</tt><tt class="py-op">.</tt><tt id="link-25" class="py-name"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-25', 'vertx', 'link-4');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">java</tt><tt class="py-op">.</tt><tt id="link-26" class="py-name"><a title="core" class="py-name" href="#" onclick="return doclink('link-26', 'core', 'link-0');">core</a></tt><tt class="py-op">.</tt><tt class="py-name">json</tt><tt class="py-op">.</tt><tt class="py-name">JsonArray</tt><tt class="py-op">(</tt><tt id="link-27" class="py-name"><a title="core.javautils.map_to_java" class="py-name" href="#" onclick="return doclink('link-27', 'map_to_java', 'link-11');">map_to_java</a></tt><tt class="py-op">(</tt><tt class="py-name">permitted</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L72"></a><tt class="py-lineno"> 72</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt><tt class="py-op">.</tt><tt id="link-28" class="py-name" targets="Method core.sock_js.SockJSServer.bridge()=core.sock_js.SockJSServer-class.html#bridge"><a title="core.sock_js.SockJSServer.bridge" class="py-name" href="#" onclick="return doclink('link-28', 'bridge', 'link-28');">bridge</a></tt><tt class="py-op">(</tt><tt class="py-name">org</tt><tt class="py-op">.</tt><tt id="link-29" class="py-name"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-29', 'vertx', 'link-4');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">java</tt><tt class="py-op">.</tt><tt id="link-30" class="py-name"><a title="core" class="py-name" href="#" onclick="return doclink('link-30', 'core', 'link-0');">core</a></tt><tt class="py-op">.</tt><tt class="py-name">json</tt><tt class="py-op">.</tt><tt class="py-name">JsonObject</tt><tt class="py-op">(</tt><tt id="link-31" class="py-name"><a title="core.javautils.map_to_java" class="py-name" href="#" onclick="return doclink('link-31', 'map_to_java', 'link-11');">map_to_java</a></tt><tt class="py-op">(</tt><tt id="link-32" class="py-name"><a title="vertx.Vertx.config
+vertx.config" class="py-name" href="#" onclick="return doclink('link-32', 'config', 'link-23');">config</a></tt><tt class="py-op">)</tt><tt class="py-op">)</tt><tt class="py-op">,</tt> <tt class="py-name">a_json</tt><tt class="py-op">,</tt> <tt class="py-name">auth_timeout</tt><tt class="py-op">,</tt> <tt class="py-name">auth_address</tt><tt class="py-op">)</tt> </tt>
+</div></div><a name="L73"></a><tt class="py-lineno"> 73</tt>  <tt class="py-line"> </tt>
+<a name="SockJSSocket"></a><div id="SockJSSocket-def"><a name="L74"></a><tt class="py-lineno"> 74</tt> <a class="py-toggle" href="#" id="SockJSSocket-toggle" onclick="return toggle('SockJSSocket');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="core.sock_js.SockJSSocket-class.html">SockJSSocket</a><tt class="py-op">(</tt><tt class="py-base-class">core</tt><tt class="py-op">.</tt><tt class="py-base-class">streams</tt><tt class="py-op">.</tt><tt class="py-base-class">ReadStream</tt><tt class="py-op">,</tt> <tt class="py-base-class">core</tt><tt class="py-op">.</tt><tt class="py-base-class">streams</tt><tt class="py-op">.</tt><tt class="py-base-class">WriteStream</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="SockJSSocket-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="SockJSSocket-expanded"><a name="L75"></a><tt class="py-lineno"> 75</tt>  <tt class="py-line">    <tt class="py-docstring">"""You interact with SockJS clients through instances of SockJS socket.</tt> </tt>
+<a name="L76"></a><tt class="py-lineno"> 76</tt>  <tt class="py-line"><tt class="py-docstring">    The API is very similar to WebSocket. It implements both</tt> </tt>
+<a name="L77"></a><tt class="py-lineno"> 77</tt>  <tt class="py-line"><tt class="py-docstring">    ReadStream and WriteStream so it can be used with Pump to enable</tt> </tt>
+<a name="L78"></a><tt class="py-lineno"> 78</tt>  <tt class="py-line"><tt class="py-docstring">    flow control.</tt> </tt>
+<a name="L79"></a><tt class="py-lineno"> 79</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L80"></a><tt class="py-lineno"> 80</tt>  <tt class="py-line">     </tt>
+<a name="SockJSSocket.__init__"></a><div id="SockJSSocket.__init__-def"><a name="L81"></a><tt class="py-lineno"> 81</tt> <a class="py-toggle" href="#" id="SockJSSocket.__init__-toggle" onclick="return toggle('SockJSSocket.__init__');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.sock_js.SockJSSocket-class.html#__init__">__init__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">java_sock</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="SockJSSocket.__init__-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="SockJSSocket.__init__-expanded"><a name="L82"></a><tt class="py-lineno"> 82</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt> <tt class="py-op">=</tt> <tt class="py-name">java_sock</tt> </tt>
+<a name="L83"></a><tt class="py-lineno"> 83</tt>  <tt class="py-line"> </tt>
+<a name="L84"></a><tt class="py-lineno"> 84</tt>  <tt class="py-line">        <tt class="py-keyword">def</tt> <tt class="py-def-name">simple_handler</tt><tt class="py-op">(</tt><tt class="py-param">msg</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+<a name="L85"></a><tt class="py-lineno"> 85</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-33" class="py-name" targets="Method core.http.HttpClientRequest.write_buffer()=core.http.HttpClientRequest-class.html#write_buffer,Method core.http.HttpServerResponse.write_buffer()=core.http.HttpServerResponse-class.html#write_buffer,Method core.net.NetSocket.write_buffer()=core.net.NetSocket-class.html#write_buffer,Method core.streams.WriteStream.write_buffer()=core.streams.WriteStream-class.html#write_buffer"><a title="core.http.HttpClientRequest.write_buffer
+core.http.HttpServerResponse.write_buffer
+core.net.NetSocket.write_buffer
+core.streams.WriteStream.write_buffer" class="py-name" href="#" onclick="return doclink('link-33', 'write_buffer', 'link-33');">write_buffer</a></tt><tt class="py-op">(</tt><tt class="py-name">msg</tt><tt class="py-op">.</tt><tt class="py-name">body</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L86"></a><tt class="py-lineno"> 86</tt>  <tt class="py-line">         </tt>
+<a name="L87"></a><tt class="py-lineno"> 87</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-34" class="py-name" targets="Method core.sock_js.SockJSSocket.handler_id()=core.sock_js.SockJSSocket-class.html#handler_id"><a title="core.sock_js.SockJSSocket.handler_id" class="py-name" href="#" onclick="return doclink('link-34', 'handler_id', 'link-34');">handler_id</a></tt> <tt class="py-op">=</tt> <tt id="link-35" class="py-name"><a title="core.event_bus.EventBus" class="py-name" href="#" onclick="return doclink('link-35', 'EventBus', 'link-14');">EventBus</a></tt><tt class="py-op">.</tt><tt id="link-36" class="py-name" targets="Static Method core.event_bus.EventBus.register_simple_handler()=core.event_bus.EventBus-class.html#register_simple_handler"><a title="core.event_bus.EventBus.register_simple_handler" class="py-name" href="#" onclick="return doclink('link-36', 'register_simple_handler', 'link-36');">register_simple_handler</a></tt><tt class="py-op">(</tt><tt class="py-name">simple_handler</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L88"></a><tt class="py-lineno"> 88</tt>  <tt class="py-line"> </tt>
+<a name="SockJSSocket.close"></a><div id="SockJSSocket.close-def"><a name="L89"></a><tt class="py-lineno"> 89</tt> <a class="py-toggle" href="#" id="SockJSSocket.close-toggle" onclick="return toggle('SockJSSocket.close');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.sock_js.SockJSSocket-class.html#close">close</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="SockJSSocket.close-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="SockJSSocket.close-expanded"><a name="L90"></a><tt class="py-lineno"> 90</tt>  <tt class="py-line">        <tt class="py-docstring">"""Close the socket"""</tt> </tt>
+<a name="L91"></a><tt class="py-lineno"> 91</tt>  <tt class="py-line">        <tt id="link-37" class="py-name"><a title="core.event_bus.EventBus" class="py-name" href="#" onclick="return doclink('link-37', 'EventBus', 'link-14');">EventBus</a></tt><tt class="py-op">.</tt><tt id="link-38" class="py-name" targets="Static Method core.event_bus.EventBus.unregister_handler()=core.event_bus.EventBus-class.html#unregister_handler"><a title="core.event_bus.EventBus.unregister_handler" class="py-name" href="#" onclick="return doclink('link-38', 'unregister_handler', 'link-38');">unregister_handler</a></tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-39" class="py-name"><a title="core.sock_js.SockJSSocket.handler_id" class="py-name" href="#" onclick="return doclink('link-39', 'handler_id', 'link-34');">handler_id</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L92"></a><tt class="py-lineno"> 92</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt><tt class="py-op">.</tt><tt id="link-40" class="py-name" targets="Method core.file_system.AsyncFile.close()=core.file_system.AsyncFile-class.html#close,Method core.http.HttpClient.close()=core.http.HttpClient-class.html#close,Method core.http.HttpServer.close()=core.http.HttpServer-class.html#close,Method core.http.HttpServerResponse.close()=core.http.HttpServerResponse-class.html#close,Method core.http.WebSocket.close()=core.http.WebSocket-class.html#close,Method core.net.NetClient.close()=core.net.NetClient-class.html#close,Method core.net.NetServer.close()=core.net.NetServer-class.html#close,Method core.net.NetSocket.close()=core.net.NetSocket-class.html#close,Method core.sock_js.SockJSSocket.close()=core.sock_js.SockJSSocket-class.html#close"><a title="core.file_system.AsyncFile.close
+core.http.HttpClient.close
+core.http.HttpServer.close
+core.http.HttpServerResponse.close
+core.http.WebSocket.close
+core.net.NetClient.close
+core.net.NetServer.close
+core.net.NetSocket.close
+core.sock_js.SockJSSocket.close" class="py-name" href="#" onclick="return doclink('link-40', 'close', 'link-40');">close</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L93"></a><tt class="py-lineno"> 93</tt>  <tt class="py-line"> </tt>
+<a name="SockJSSocket.handler_id"></a><div id="SockJSSocket.handler_id-def"><a name="L94"></a><tt class="py-lineno"> 94</tt> <a class="py-toggle" href="#" id="SockJSSocket.handler_id-toggle" onclick="return toggle('SockJSSocket.handler_id');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.sock_js.SockJSSocket-class.html#handler_id">handler_id</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="SockJSSocket.handler_id-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="SockJSSocket.handler_id-expanded"><a name="L95"></a><tt class="py-lineno"> 95</tt>  <tt class="py-line">        <tt class="py-docstring">"""When a SockJSSocket is created it automatically registers an event handler with the system, the ID of that</tt> </tt>
+<a name="L96"></a><tt class="py-lineno"> 96</tt>  <tt class="py-line"><tt class="py-docstring">        handler is given by handler_id.</tt> </tt>
+<a name="L97"></a><tt class="py-lineno"> 97</tt>  <tt class="py-line"><tt class="py-docstring">        Given this ID, a different event loop can send a buffer to that event handler using the event bus. This</tt> </tt>
+<a name="L98"></a><tt class="py-lineno"> 98</tt>  <tt class="py-line"><tt class="py-docstring">        allows you to write data to other SockJSSockets which are owned by different event loops.</tt> </tt>
+<a name="L99"></a><tt class="py-lineno"> 99</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L100"></a><tt class="py-lineno">100</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-41" class="py-name"><a title="core.sock_js.SockJSSocket.handler_id" class="py-name" href="#" onclick="return doclink('link-41', 'handler_id', 'link-34');">handler_id</a></tt> </tt>
+</div><a name="L101"></a><tt class="py-lineno">101</tt>  <tt class="py-line"> </tt>
+<a name="SockJSSocket._to_java_socket"></a><div id="SockJSSocket._to_java_socket-def"><a name="L102"></a><tt class="py-lineno">102</tt> <a class="py-toggle" href="#" id="SockJSSocket._to_java_socket-toggle" onclick="return toggle('SockJSSocket._to_java_socket');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.sock_js.SockJSSocket-class.html#_to_java_socket">_to_java_socket</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="SockJSSocket._to_java_socket-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="SockJSSocket._to_java_socket-expanded"><a name="L103"></a><tt class="py-lineno">103</tt>  <tt class="py-line">      <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">java_obj</tt> </tt>
+</div></div><a name="L104"></a><tt class="py-lineno">104</tt>  <tt class="py-line"> </tt>
+<a name="SockJSSocketHandler"></a><div id="SockJSSocketHandler-def"><a name="L105"></a><tt class="py-lineno">105</tt> <a class="py-toggle" href="#" id="SockJSSocketHandler-toggle" onclick="return toggle('SockJSSocketHandler');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="core.sock_js.SockJSSocketHandler-class.html">SockJSSocketHandler</a><tt class="py-op">(</tt><tt class="py-base-class">org</tt><tt class="py-op">.</tt><tt class="py-base-class">vertx</tt><tt class="py-op">.</tt><tt class="py-base-class">java</tt><tt class="py-op">.</tt><tt class="py-base-class">core</tt><tt class="py-op">.</tt><tt class="py-base-class">Handler</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="SockJSSocketHandler-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="SockJSSocketHandler-expanded"><a name="L106"></a><tt class="py-lineno">106</tt>  <tt class="py-line">    <tt class="py-docstring">""" SockJS Socket handler """</tt> </tt>
+<a name="SockJSSocketHandler.__init__"></a><div id="SockJSSocketHandler.__init__-def"><a name="L107"></a><tt class="py-lineno">107</tt> <a class="py-toggle" href="#" id="SockJSSocketHandler.__init__-toggle" onclick="return toggle('SockJSSocketHandler.__init__');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.sock_js.SockJSSocketHandler-class.html#__init__">__init__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">handler</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="SockJSSocketHandler.__init__-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="SockJSSocketHandler.__init__-expanded"><a name="L108"></a><tt class="py-lineno">108</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">handler</tt> <tt class="py-op">=</tt> <tt class="py-name">handler</tt> </tt>
+</div><a name="L109"></a><tt class="py-lineno">109</tt>  <tt class="py-line"> </tt>
+<a name="SockJSSocketHandler.handle"></a><div id="SockJSSocketHandler.handle-def"><a name="L110"></a><tt class="py-lineno">110</tt> <a class="py-toggle" href="#" id="SockJSSocketHandler.handle-toggle" onclick="return toggle('SockJSSocketHandler.handle');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.sock_js.SockJSSocketHandler-class.html#handle">handle</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">sock</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="SockJSSocketHandler.handle-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="SockJSSocketHandler.handle-expanded"><a name="L111"></a><tt class="py-lineno">111</tt>  <tt class="py-line">        <tt class="py-docstring">""" Call the handler after SockJS Socket is ready"""</tt> </tt>
+<a name="L112"></a><tt class="py-lineno">112</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">handler</tt><tt class="py-op">(</tt><tt id="link-42" class="py-name" targets="Class core.sock_js.SockJSSocket=core.sock_js.SockJSSocket-class.html"><a title="core.sock_js.SockJSSocket" class="py-name" href="#" onclick="return doclink('link-42', 'SockJSSocket', 'link-42');">SockJSSocket</a></tt><tt class="py-op">(</tt><tt class="py-name">sock</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+</div></div><a name="L113"></a><tt class="py-lineno">113</tt>  <tt class="py-line"> </tt><script type="text/javascript">
+<!--
+expandto(location.href);
+// -->
+</script>
+</pre>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1
+    on Thu Jun 28 22:57:51 2012
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>
