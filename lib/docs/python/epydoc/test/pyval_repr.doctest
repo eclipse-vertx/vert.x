@@ -1,0 +1,304 @@
+Regression Testing for epydoc.markup.pyval_repr
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    >>> from epydoc.markup.pyval_repr import *
+    >>> colorizer = PyvalColorizer(linelen=40)
+    >>> def color(v, linebreakok=True):
+    ...     colorizer = PyvalColorizer(linelen=40, linebreakok=linebreakok)
+    ...     pds = colorizer.colorize(v, None)
+    ...     s = pds.to_html(None).rstrip()
+    ...     if isinstance(s, unicode):
+    ...         s = s.encode('ascii', 'xmlcharrefreplace')
+    ...     print s
+
+Simple Types
+============
+Integers, floats, None, and complex numbers get printed using str,
+with no syntax highlighting:
+
+    >>> color(10)
+    10
+    >>> color(1./4)
+    0.25
+    >>> color(None)
+    None
+    >>> color(100)
+    100
+
+Long ints will get wrapped if they're big enough:
+    
+    >>> color(10000000)
+    10000000
+    >>> color(10**90)
+    1000000000000000000000000000000000000000&crarr;
+    0000000000000000000000000000000000000000&crarr;
+    00000000000
+    >>> colorizer = PyvalColorizer(linelen=40)
+    >>> print '-'*40+'\n'+colorizer.colorize(10**90).to_plaintext(None)
+    ----------------------------------------
+    1000000000000000000000000000000000000000\
+    0000000000000000000000000000000000000000\
+    00000000000
+
+Strings
+=======
+Strings have their quotation marks tagged as 'quote'.  Characters are
+escaped using the 'string-escape' encoding.  
+
+    >>> color(''.join([chr(i) for i in range(256)]))
+    <code class="variable-quote">'''</code><code class="variable-string">\x00\x01\x02\x03\x04\x05\x06\x07\x08\</code>&crarr;
+    <code class="variable-string">t</code>
+    <code class="variable-string">\x0b\x0c\r\x0e\x0f\x10\x11\x12\x13\x14\x</code>&crarr;
+    <code class="variable-string">15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x</code>&crarr;
+    <code class="variable-string">1f !&quot;#$%&amp;\'()*+,-./0123456789:;&lt;=&gt;?@ABCD</code>&crarr;
+    <code class="variable-ellipsis">...</code>
+    
+Currently, the "'" quote is always used, because that's what the
+'string-escape' encoding expects.
+
+    >>> color('Hello')
+    <code class="variable-quote">'</code><code class="variable-string">Hello</code><code class="variable-quote">'</code>
+    >>> color('"Hello"')
+    <code class="variable-quote">'</code><code class="variable-string">&quot;Hello&quot;</code><code class="variable-quote">'</code>
+    >>> color("'Hello'")
+    <code class="variable-quote">'</code><code class="variable-string">\'Hello\'</code><code class="variable-quote">'</code>
+
+Strings containing newlines are automatically rendered as multiline
+strings.
+
+    >>> color("This\n  is a multiline\n string!")
+    <code class="variable-quote">'''</code><code class="variable-string">This</code>
+    <code class="variable-string">  is a multiline</code>
+    <code class="variable-string"> string!</code><code class="variable-quote">'''</code>
+
+Unless we ask for them not to be:
+
+    >>> color("This\n  is a multiline\n string!", linebreakok=False)
+    <code class="variable-quote">'</code><code class="variable-string">This\n  is a multiline\n string!</code><code class="variable-quote">'</code>
+
+Unicode strings are handled properly.
+
+    >>> color(u"Hello world")
+    <code class="variable-quote">u'</code><code class="variable-string">Hello world</code><code class="variable-quote">'</code>
+    >>> color(u"\uaaaa And \ubbbb")
+    <code class="variable-quote">u'</code><code class="variable-string">&#43690; And &#48059;</code><code class="variable-quote">'</code>
+
+Lists, Tuples, etc.
+===================
+Lists, tuples, and sets are all colorized using the same method.  The
+braces and commas are tagged with "op".  If the value can fit on the
+current line, it is displayed on one line.  Otherwise, each value is
+listed on a separate line, indented by the size of the open-bracket.
+    
+    >>> color(range(10))
+    <code class="variable-group">[</code>0<code class="variable-op">, </code>1<code class="variable-op">, </code>2<code class="variable-op">, </code>3<code class="variable-op">, </code>4<code class="variable-op">, </code>5<code class="variable-op">, </code>6<code class="variable-op">, </code>7<code class="variable-op">, </code>8<code class="variable-op">, </code>9<code class="variable-group">]</code>
+    >>> color(range(100))
+    <code class="variable-group">[</code>0<code class="variable-op">,</code>
+     1<code class="variable-op">,</code>
+     2<code class="variable-op">,</code>
+     3<code class="variable-op">,</code>
+     4<code class="variable-op">,</code>
+    <code class="variable-ellipsis">...</code>
+    >>> color([1,2,[5,6,[(11,22,33),9],10],11]+[99,98,97,96,95])
+    <code class="variable-group">[</code>1<code class="variable-op">,</code>
+     2<code class="variable-op">,</code>
+     <code class="variable-group">[</code>5<code class="variable-op">, </code>6<code class="variable-op">, </code><code class="variable-group">[</code><code class="variable-group">(</code>11<code class="variable-op">, </code>22<code class="variable-op">, </code>33<code class="variable-group">)</code><code class="variable-op">, </code>9<code class="variable-group">]</code><code class="variable-op">, </code>10<code class="variable-group">]</code><code class="variable-op">,</code>
+     11<code class="variable-op">,</code>
+     99<code class="variable-op">,</code>
+    <code class="variable-ellipsis">...</code>
+    >>> color(set(range(20)))
+    <code class="variable-group">set([</code>0<code class="variable-op">,</code>
+         1<code class="variable-op">,</code>
+         2<code class="variable-op">,</code>
+         3<code class="variable-op">,</code>
+         4<code class="variable-op">,</code>
+    <code class="variable-ellipsis">...</code>
+
+Dictionaries
+============
+Dicts are treated just like lists, except that the ":" is also tagged as
+"op".
+
+    >>> color({1:33, 2:[1,2,3,{7:'oo'*20}]})
+    <code class="variable-group">{</code>1<code class="variable-op">: </code>33<code class="variable-op">,</code>
+     2<code class="variable-op">: </code><code class="variable-group">[</code>1<code class="variable-op">,</code>
+         2<code class="variable-op">,</code>
+         3<code class="variable-op">,</code>
+         <code class="variable-group">{</code>7<code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">oooooooooooooooooooooooooooooo</code>&crarr;
+    <code class="variable-ellipsis">...</code>
+
+Regular Expressions
+===================
+
+    >>> def textcontent(elt):
+    ...     if isinstance(elt, basestring): return elt
+    ...     else: return ''.join([textcontent(c) for c in elt.children])
+
+    >>> import re
+    >>> def color_re(s, check_roundtrip=True):
+    ...     colorizer = PyvalColorizer(linelen=55)
+    ...     val = colorizer.colorize(re.compile(s))
+    ...     if check_roundtrip:
+    ...         assert textcontent(val._tree)[13:-2] == s, val._tree
+    ...     print val.to_html(None).rstrip()[13:-2]
+
+    >>> # Literal characters
+    >>> color_re(u'abc \t\r\n\f\v \xff \uffff', False)
+    abc \t\r\n\f\v \xff \uffff
+    >>> color_re(r'\.\^\$\\\*\+\?\{\}\[\]\|\(\)\'')
+    \.\^\$\\\*\+\?\{\}\[\]\|\(\)\'
+
+    >>> # Any character & character classes
+    >>> color_re(r".\d\D\s\S\w\W\A^$\b\B\Z")
+    .\d\D\s\S\w\W\A^$\b\B\Z
+
+    >>> # Branching
+    >>> color_re(r"foo|bar")
+    foo<code class="re-op">|</code>bar
+
+    >>> # Character classes
+    >>> color_re(r"[abcd]")
+    <code class="re-group">[</code>abcd<code class="re-group">]</code>
+
+    >>> # Repeats
+    >>> color_re(r"a*b+c{4,}d{,5}e{3,9}f?")
+    a<code class="re-op">*</code>b<code class="re-op">+</code>c<code class="re-op">{4,}</code>d<code class="re-op">{,5}</code>e<code class="re-op">{3,9}</code>f<code class="re-op">?</code>
+    >>> color_re(r"a*?b+?c{4,}?d{,5}?e{3,9}?f??")
+    a<code class="re-op">*?</code>b<code class="re-op">+?</code>c<code class="re-op">{4,}?</code>d<code class="re-op">{,5}?</code>e<code class="re-op">{3,9}?</code>f<code class="re-op">??</code>
+    
+    >>> # Subpatterns
+    >>> color_re(r"(foo (bar) | (baz))")
+    <code class="re-group">(</code>foo <code class="re-group">(</code>bar<code class="re-group">)</code> <code class="re-op">|</code> <code class="re-group">(</code>baz<code class="re-group">)</code><code class="re-group">)</code>
+    >>> color_re(r"(?:foo (?:bar) | (?:baz))")
+    <code class="re-group">(?:</code>foo <code class="re-group">(?:</code>bar<code class="re-group">)</code> <code class="re-op">|</code> <code class="re-group">(?:</code>baz<code class="re-group">)</code><code class="re-group">)</code>
+    >>> color_re("(foo (?P<a>bar) | (?P<boop>baz))")
+    <code class="re-group">(</code>foo <code class="re-group">(?P&lt;</code><code class="re-ref">a</code><code class="re-group">&gt;</code>bar<code class="re-group">)</code> <code class="re-op">|</code> <code class="re-group">(?P&lt;</code><code class="re-ref">boop</code><code class="re-group">&gt;</code>baz<code class="re-group">)</code><code class="re-group">)</code>
+
+    >>> # Group References
+    >>> color_re(r"(...) and (\1)")
+    <code class="re-group">(</code>...<code class="re-group">)</code> and <code class="re-group">(</code><code class="re-ref">\1</code><code class="re-group">)</code>
+
+    >>> # Ranges
+    >>> color_re(r"[a-bp-z]")
+    <code class="re-group">[</code>a<code class="re-op">-</code>bp<code class="re-op">-</code>z<code class="re-group">]</code>
+    >>> color_re(r"[^a-bp-z]")
+    <code class="re-group">[</code><code class="re-op">^</code>a<code class="re-op">-</code>bp<code class="re-op">-</code>z<code class="re-group">]</code>
+    >>> color_re(r"[^abc]")
+    <code class="re-group">[</code><code class="re-op">^</code>abc<code class="re-group">]</code>
+
+    >>> # Lookahead/behinds
+    >>> color_re(r"foo(?=bar)")
+    foo<code class="re-group">(?=</code>bar<code class="re-group">)</code>
+    >>> color_re(r"foo(?!bar)")
+    foo<code class="re-group">(?!</code>bar<code class="re-group">)</code>
+    >>> color_re(r"(?<=bar)foo")
+    <code class="re-group">(?&lt;=</code>bar<code class="re-group">)</code>foo
+    >>> color_re(r"(?<!bar)foo")
+    <code class="re-group">(?&lt;!</code>bar<code class="re-group">)</code>foo
+
+    >>> # Flags
+    >>> color_re(r"(?im)^Food")
+    <code class="re-flags">(?im)</code>^Food
+    >>> color_re(r"(?Limsx)^Food")
+    <code class="re-flags">(?Limsx)</code>^Food
+    >>> color_re(r"(?Limstux)^Food")
+    <code class="re-flags">(?Limstux)</code>^Food
+    >>> color_re(r"(?x)This   is   verbose", False)
+    <code class="re-flags">(?x)</code>Thisisverbose
+
+Line Wrapping
+=============
+If a line goes beyond linelen, it is wrapped using ``&crarr;`` (which
+gets translated to ``\\`` by `ParsedEpytextDocstring.to_plaintext()`).
+
+    >>> colorizer = PyvalColorizer(linelen=40)
+    >>> print colorizer.colorize('x'*100).to_plaintext(None)
+    'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\
+    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\
+    xxxxxxxxxxxxxxxxxxxxx'
+
+Check that the last line gets a ``&crarr;`` when maxlines is exceeded:
+
+    >>> print colorizer.colorize('x'*1000).to_plaintext(None)
+    'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\
+    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\
+    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\
+    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\
+    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\
+    ...
+
+If linebreakok is False, then line wrapping gives an ellipsis instead:
+
+    >>> colorizer = PyvalColorizer(linelen=40, linebreakok=False)
+    >>> print colorizer.colorize('x'*100).to_plaintext(None)
+    'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...
+
+Representation Scores
+=====================
+When colorized representations are built, a score is computed
+evaluating how helpful the repr is.  E.g., unhelpful values like ``<Foo
+instance at 0x12345>`` get low scores.  Currently, the scoring
+algorithm is:
+
+- [+1] for each object colorized.  When the colorizer recurses into
+  a structure, this will add one for each element contained.
+- [-5] when repr(obj) looks like <xyz instance at ...>, for any
+  colorized object (including objects in structures).
+- [-100] if repr(obj) raises an exception, for any colorized object
+  (including objects in structures).
+
+The ``min_score`` arg to colorize can be used to set a cutoff-point for
+scores; if the score is too low, then `PyvalColorizer.colorize` will return ``None``.
+
+    >>> def color2(v):
+    ...     colorizer = PyvalColorizer(linelen=40)
+    ...     pds = colorizer.colorize(v)
+    ...     print 'repr: %s' % pds.to_plaintext(None)
+    ...     print 'score: %s (%s)' % (pds.score, pds.score>0 and 'ok' or 'bad')
+
+    >>> class A: pass
+
+    >>> color2('hello')
+    repr: 'hello'
+    score: 1 (ok)
+
+    >>> color2(["hello", 123])
+    repr: ['hello', 123]
+    score: 3 (ok)
+
+    >>> color2(A()) # doctest: +ELLIPSIS
+    repr: <__builtin__.A instance at ...>
+    score: -4 (bad)
+
+    >>> color2([A()]) # doctest: +ELLIPSIS
+    repr: [<__builtin__.A instance at ...>]
+    score: -3 (bad)
+
+    >>> color2([A(),1,2,3,4,5,6]) # doctest: +ELLIPSIS
+    repr: [<__builtin__.A instance at ...>,
+     1,
+     2,
+     3,
+     4,
+    ...
+    score: 1 (ok)
+
+    >>> from epydoc.test.util import print_warnings
+    >>> print_warnings()
+
+Summary
+=======
+To generate summary-reprs, use maxlines=1 and linebreakok=False:
+
+    >>> summarizer = PyvalColorizer(linelen=60, maxlines=1, linebreakok=False)
+    >>> def summarize(v):
+    ...     print summarizer.colorize(v).to_plaintext(None)
+
+    >>> summarize(range(100))
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16...
+    >>> summarize('hello\nworld')
+    'hello\nworld'
+    >>> summarize('hello\nworld'*100)
+    'hello\nworldhello\nworldhello\nworldhello\nworldhello\nw...
+
+    

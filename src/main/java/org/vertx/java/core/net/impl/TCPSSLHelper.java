@@ -312,7 +312,7 @@ public class TCPSSLHelper {
       return context;
     } catch (Exception e) {
       //TODO better logging
-      log.error("Failed to create conext", e);
+      log.error("Failed to create context", e);
       throw new RuntimeException(e.getMessage());
     }
   }
