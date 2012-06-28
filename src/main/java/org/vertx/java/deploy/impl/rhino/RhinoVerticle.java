@@ -182,11 +182,16 @@ public class RhinoVerticle extends Verticle {
       throw new FileNotFoundException("Cannot find script: " + scriptName);
     }
     BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+    ClassLoader old = Thread.currentThread().getContextClassLoader();
     Thread.currentThread().setContextClassLoader(cl);
-    cx.evaluateReader(scope, reader, scriptName, 1, null);
     try {
-      is.close();
-    } catch (IOException ignore) {
+      cx.evaluateReader(scope, reader, scriptName, 1, null);
+      try {
+        is.close();
+      } catch (IOException ignore) {
+      }
+    } finally {
+      Thread.currentThread().setContextClassLoader(old);
     }
   }
 
