@@ -23,7 +23,7 @@ class TCPSupport(object):
     """Set the TCP send buffer size.
 
     Keyword arguments:
-    bytes -- The size in bytes.
+    @param bytes: The size in bytes.
 
     return a reference to self so invocations can be chained
     """
@@ -36,7 +36,7 @@ class TCPSupport(object):
     """Set the TCP receive buffer size.
     
     Keyword arguments:
-    bytes -- The size in bytes.
+    @param bytes: The size in bytes.
   
     return a reference to self so invocations can be chained
     """
@@ -49,7 +49,7 @@ class TCPSupport(object):
     """Set the TCP keep alive setting.
 
     Keyword arguments:
-    val -- If true, then TCP keep alive will be enabled.
+    @param val: If true, then TCP keep alive will be enabled.
     
     return a reference to self so invocations can be chained
     """
@@ -62,9 +62,8 @@ class TCPSupport(object):
     """Set the TCP reuse address setting.
 
     Keyword arguments:
-    val -- If true, then TCP reuse address will be enabled.
-    
-    returns a reference to self so invocations can be chained
+    @param val: If true, then TCP reuse address will be enabled.
+    @return: a reference to self so invocations can be chained
     """
     self.java_obj.setReuseAddress(val)
     return self
@@ -75,7 +74,7 @@ class TCPSupport(object):
     """Set the TCP so linger setting.
 
     Keyword arguments:
-    val -- If true, then TCP so linger will be enabled.
+    @param val: If true, then TCP so linger will be enabled.
     
     return a reference to self so invocations can be chained
     """
@@ -88,7 +87,7 @@ class TCPSupport(object):
     """Set the TCP traffic class setting.
 
     Keyword arguments:
-    val -- The TCP traffic class setting.
+    @param val: The TCP traffic class setting.
     
     return a reference to self so invocations can be chained
     """
