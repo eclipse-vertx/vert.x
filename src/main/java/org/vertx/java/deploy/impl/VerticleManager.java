@@ -105,7 +105,7 @@ public class VerticleManager {
       modRoot = new File("./mods");
     }
 
-    this.factories = new HashMap<String, VerticleFactory>();
+    this.factories = new HashMap<>();
 
     // Find and load VerticleFactories
     Iterable<VerticleFactory> services = VerticleFactory.factories;
@@ -251,8 +251,10 @@ public class VerticleManager {
             // Use the current module directory instead, or the cwd if not in a module
             modDir = currentModDir;
           }
-          List<URL> urls = processIncludes(new ArrayList<URL>(), modName, conf,
+
+          List<URL> urls = processIncludes(new ArrayList<URL>(), modName, modDir, conf,
                                            new HashMap<URL, String>(), new HashSet<String>());
+
           if (urls == null) {
             return false;
           }
@@ -293,11 +295,10 @@ public class VerticleManager {
   // are included more than once
   // We make sure we only include each module once in the case of loops in the
   // graph
-  private List<URL> processIncludes(List<URL> urls, String modName, JsonObject conf,
+  private List<URL> processIncludes(List<URL> urls, String modName, File modDir,
+                                    JsonObject conf,
                                     Map<URL, String> includedJars,
                                     Set<String> includedModules) {
-    File modDir = new File(modRoot, modName);
-
     // Add the urls for this module
     try {
       urls.add(modDir.toURI().toURL());
@@ -335,9 +336,10 @@ public class VerticleManager {
         if (includedModules.contains(include)) {
           // Ignore - already included this one
         } else {
-          JsonObject newconf = loadModuleConfig(include, modDir);
+          File newmodDir = new File(modRoot, include);
+          JsonObject newconf = loadModuleConfig(include, newmodDir);
           if (newconf != null) {
-            urls = processIncludes(urls, include, newconf, includedJars, includedModules);
+            urls = processIncludes(urls, include, newmodDir, newconf, includedJars, includedModules);
             if (urls == null) {
               return null;
             }

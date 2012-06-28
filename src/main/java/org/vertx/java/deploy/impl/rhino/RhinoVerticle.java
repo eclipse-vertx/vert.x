@@ -182,6 +182,7 @@ public class RhinoVerticle extends Verticle {
       throw new FileNotFoundException("Cannot find script: " + scriptName);
     }
     BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+    Thread.currentThread().setContextClassLoader(cl);
     cx.evaluateReader(scope, reader, scriptName, 1, null);
     try {
       is.close();
@@ -202,6 +203,7 @@ public class RhinoVerticle extends Verticle {
       scopeThreadLocal.set(scope);
       clThreadLocal.set(cl);
 
+      Thread.currentThread().setContextClassLoader(cl);
       Require require = installRequire(cl, cx, scope);
 
       Scriptable script = require.requireMain(cx, scriptName);
@@ -211,7 +213,6 @@ public class RhinoVerticle extends Verticle {
         // Get CCE if no such function
         stopFunction = null;
       }
-
     } finally {
       Context.exit();
     }

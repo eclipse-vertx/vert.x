@@ -28,6 +28,7 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.impl.VerticleManager;
 
+import java.io.File;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
@@ -202,6 +203,38 @@ public class TestBase extends TestCase {
     };
 
     verticleManager.deploy(worker, main, config, new URL[] {url}, instances, null, doneHandler);
+
+    if (!doneLatch.await(10, TimeUnit.SECONDS)) {
+      throw new IllegalStateException("Timedout waiting for apps to start");
+    }
+
+    if (await) {
+      for (int i = 0; i < instances; i++) {
+        waitAppReady();
+      }
+    }
+
+    return res.get();
+  }
+
+  public String startMod(String modName) throws Exception {
+    return startMod(modName, null, 1, true);
+  }
+
+  public String startMod(String modName, JsonObject config, int instances, boolean await) throws Exception {
+
+    final CountDownLatch doneLatch = new CountDownLatch(1);
+    final AtomicReference<String> res = new AtomicReference<>(null);
+
+    Handler<String> doneHandler = new Handler<String>() {
+      public void handle(String deploymentName) {
+        startedApps.add(deploymentName);
+        res.set(deploymentName);
+        doneLatch.countDown();
+      }
+    };
+
+    verticleManager.deployMod(modName, config, instances, null, doneHandler);
 
     if (!doneLatch.await(10, TimeUnit.SECONDS)) {
       throw new IllegalStateException("Timedout waiting for apps to start");
