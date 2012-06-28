@@ -50,13 +50,18 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -227,50 +232,29 @@ public class VerticleManager {
       public Boolean action() throws Exception {
         log.debug("Attempting to deploy module " + modName);
         File modDir = new File(modRoot, modName);
-        if (modDir.exists()) {
-          String conf;
-          try {
-            conf = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A").next();
-          } catch (FileNotFoundException e) {
-            throw new IllegalStateException("Module " + modName + " does not contain a mod.json file");
-          }
-          JsonObject json;
-          try {
-            json = new JsonObject(conf);
-          } catch (DecodeException e) {
-            throw new IllegalStateException("Module " + modName + " mod.json contains invalid json");
-          }
-
-          List<URL> urls = new ArrayList<>();
-          try {
-            urls.add(modDir.toURI().toURL());
-            File libDir = new File(modDir, "lib");
-            if (libDir.exists()) {
-              File[] jars = libDir.listFiles();
-              for (File jar: jars) {
-                urls.add(jar.toURI().toURL());
-              }
-            }
-          } catch (MalformedURLException e) {
-            //Won't happen
-            log.error("malformed url", e);
-          }
-
-          String main = json.getString("main");
+        JsonObject conf = loadModuleConfig(modName, modDir);
+        if (conf != null) {
+          String main = conf.getString("main");
           if (main == null) {
-            throw new IllegalStateException("Module " + modName + " mod.json must contain a \"main\" field");
+            log.error("Runnable module " + modName + " mod.json must contain a \"main\" field");
+            return false;
           }
-          Boolean worker = json.getBoolean("worker");
+          Boolean worker = conf.getBoolean("worker");
           if (worker == null) {
             worker = Boolean.FALSE;
           }
-          Boolean preserveCwd = json.getBoolean("preserve-cwd");
+          Boolean preserveCwd = conf.getBoolean("preserve-cwd");
           if (preserveCwd == null) {
             preserveCwd = Boolean.FALSE;
           }
           if (preserveCwd) {
             // Use the current module directory instead, or the cwd if not in a module
             modDir = currentModDir;
+          }
+          List<URL> urls = processIncludes(new ArrayList<URL>(), modName, conf,
+                                           new HashMap<URL, String>(), new HashSet<String>());
+          if (urls == null) {
+            return false;
           }
           doDeploy(worker, main, config,
                    urls.toArray(new URL[urls.size()]), instances, modDir, ctx, doneHandler);
@@ -282,6 +266,115 @@ public class VerticleManager {
     };
 
     deployModuleAction.run();
+  }
+
+  private JsonObject loadModuleConfig(String modName, File modDir) {
+    if (modDir.exists()) {
+      String conf;
+      try {
+        conf = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A").next();
+      } catch (FileNotFoundException e) {
+        throw new IllegalStateException("Module " + modName + " does not contain a mod.json file");
+      }
+      JsonObject json;
+      try {
+        json = new JsonObject(conf);
+      } catch (DecodeException e) {
+        throw new IllegalStateException("Module " + modName + " mod.json contains invalid json");
+      }
+      return json;
+    } else {
+      return null;
+    }
+  }
+
+  // We walk through the graph of includes making sure we only add each one once
+  // We keep track of what jars have been included so we can flag errors if paths
+  // are included more than once
+  // We make sure we only include each module once in the case of loops in the
+  // graph
+  private List<URL> processIncludes(List<URL> urls, String modName, JsonObject conf,
+                                    Map<URL, String> includedJars,
+                                    Set<String> includedModules) {
+    File modDir = new File(modRoot, modName);
+
+    // Add the urls for this module
+    try {
+      urls.add(modDir.toURI().toURL());
+      File libDir = new File(modDir, "lib");
+      if (libDir.exists()) {
+        File[] jars = libDir.listFiles();
+        for (File jar: jars) {
+          URL jarURL = jar.toURI().toURL();
+          String prevMod = includedJars.get(jarURL);
+          if (prevMod != null) {
+            log.warn("jar file " + jar.getAbsolutePath() + " is included by module " +
+                     prevMod + " and also included by module " + modName);
+          }
+          includedJars.put(jarURL, modName);
+          urls.add(jarURL);
+        }
+      }
+    } catch (MalformedURLException e) {
+      //Won't happen
+      log.error("malformed url", e);
+      return null;
+    }
+
+    includedModules.add(modName);
+
+    String sincludes = conf.getString("includes");
+    if (sincludes != null) {
+      sincludes = sincludes.trim();
+      if ("".equals(sincludes)) {
+        log.error("Empty include string in module " + modName);
+        return null;
+      }
+      String[] sarr = sincludes.split(",");
+      for (String include: sarr) {
+        if (includedModules.contains(include)) {
+          // Ignore - already included this one
+        } else {
+          JsonObject newconf = loadModuleConfig(include, modDir);
+          if (newconf != null) {
+            urls = processIncludes(urls, include, newconf, includedJars, includedModules);
+            if (urls == null) {
+              return null;
+            }
+          } else {
+            // Module not installed - let's try to install it
+            // This is called on a blocking action so it's ok to use a CountDownLatch
+            // and block the thread for a bit
+            final CountDownLatch latch = new CountDownLatch(1);
+            final AtomicReference<Boolean> res = new AtomicReference<>();
+            Handler<Boolean> doneHandler = new Handler<Boolean>() {
+              public void handle(Boolean b) {
+                res.set(b);
+                latch.countDown();
+              }
+            };
+            installMod(include, doneHandler);
+            while (true) {
+              try {
+                if (latch.await(30000, TimeUnit.SECONDS)) {
+                  if (!res.get()) {
+                    return null;
+                  }
+                  break;
+                } else {
+                  log.error("Timed out in attempting to install module");
+                  return null;
+                }
+              } catch (InterruptedException e) {
+                // spurious wakeup - continue
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return urls;
   }
 
   public void installMod(final String moduleName, final Handler<Boolean> doneHandler) {
@@ -301,7 +394,7 @@ public class VerticleManager {
           log.info("Downloading module...");
           resp.bodyHandler(new Handler<Buffer>() {
             public void handle(Buffer buffer) {
-              doneHandler.handle(unzipModule(moduleName, buffer));
+              unzipModule(moduleName, buffer, doneHandler);
             }
           });
         } else if (resp.statusCode == 404) {
@@ -333,56 +426,76 @@ public class VerticleManager {
     }
   }
 
-  private boolean unzipModule(String modName, Buffer data) {
-    if (!modRoot.exists()) {
-      if (!modRoot.mkdir()) {
-        log.error("Failed to create directory " + modRoot);
-        return false;
-      }
-    }
-    log.info("Installing module into directory '" + modRoot + "'");
-    File fdest = new File(modRoot, modName);
-    if (fdest.exists()) {
-      log.error("Module is already installed");
-      return false;
-    }
-    try {
-      InputStream is = new ByteArrayInputStream(data.getBytes());
-      ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
-      ZipEntry entry;
-      while ((entry = zis.getNextEntry()) != null) {
-        if (!entry.getName().startsWith(modName)) {
-          log.error("Module must contain zipped directory with same name as module");
-          fdest.delete();
-          return false;
-        }
-        if (entry.isDirectory()) {
-          new File(modRoot, entry.getName()).mkdir();
+  private void unzipModule(final String modName, final Buffer data, final Handler<Boolean> doneHandler) {
+
+    AsyncResultHandler<Boolean> arHandler = new AsyncResultHandler<Boolean>() {
+      public void handle(AsyncResult<Boolean> res) {
+        if (res.succeeded()) {
+          doneHandler.handle(res.result);
         } else {
-          int count;
-          byte[] buff = new byte[BUFFER_SIZE];
-          BufferedOutputStream dest = null;
-          try {
-            OutputStream fos = new FileOutputStream(new File(modRoot, entry.getName()));
-            dest = new BufferedOutputStream(fos, BUFFER_SIZE);
-            while ((count = zis.read(buff, 0, BUFFER_SIZE)) != -1) {
-               dest.write(buff, 0, count);
-            }
-            dest.flush();
-          } finally {
-            if (dest != null) {
-              dest.close();
-            }
+          log.error("Failed to unzip module", res.exception);
+          doneHandler.handle(false);
+        }
+      }
+    };
+
+    // This needs to be executed on a pool thread too
+
+    BlockingAction<Boolean> action = new BlockingAction<Boolean>(vertx, arHandler) {
+      public Boolean action() {
+        if (!modRoot.exists()) {
+          if (!modRoot.mkdir()) {
+            log.error("Failed to create directory " + modRoot);
+            return false;
           }
         }
+        log.info("Installing module into directory '" + modRoot + "'");
+        File fdest = new File(modRoot, modName);
+        if (fdest.exists()) {
+          log.error("Module is already installed");
+          return false;
+        }
+        try {
+          InputStream is = new ByteArrayInputStream(data.getBytes());
+          ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
+          ZipEntry entry;
+          while ((entry = zis.getNextEntry()) != null) {
+            if (!entry.getName().startsWith(modName)) {
+              log.error("Module must contain zipped directory with same name as module");
+              fdest.delete();
+              return false;
+            }
+            if (entry.isDirectory()) {
+              new File(modRoot, entry.getName()).mkdir();
+            } else {
+              int count;
+              byte[] buff = new byte[BUFFER_SIZE];
+              BufferedOutputStream dest = null;
+              try {
+                OutputStream fos = new FileOutputStream(new File(modRoot, entry.getName()));
+                dest = new BufferedOutputStream(fos, BUFFER_SIZE);
+                while ((count = zis.read(buff, 0, BUFFER_SIZE)) != -1) {
+                   dest.write(buff, 0, count);
+                }
+                dest.flush();
+              } finally {
+                if (dest != null) {
+                  dest.close();
+                }
+              }
+            }
+          }
+          zis.close();
+        } catch (IOException e) {
+          log.error("Failed to unzip module", e);
+          return false;
+        }
+        log.info("Module " + modName +" successfully installed");
+        return true;
+
       }
-      zis.close();
-    } catch (IOException e) {
-      log.error("Failed to unzip module", e);
-      return false;
-    }
-    log.info("Module " + modName +" successfully installed");
-    return true;
+    };
+    action.run();
   }
 
   // We calculate a path adjustment that can be used by the fileSystem object
@@ -416,8 +529,8 @@ public class VerticleManager {
 
     final String deploymentName = "deployment-" + UUID.randomUUID().toString();
 
-    log.debug("Deploying name : " + deploymentName  + " main: " + main +
-              " instances: " + instances);
+    log.debug("Deploying name : " + deploymentName + " main: " + main +
+        " instances: " + instances);
 
     if (!factories.containsKey(language)) {
     	throw new IllegalArgumentException("Unsupported language: " + language);
