@@ -252,8 +252,8 @@ public class VerticleManager {
             modDir = currentModDir;
           }
 
-          List<URL> urls = processIncludes(new ArrayList<URL>(), modName, modDir, conf,
-                                           new HashMap<URL, String>(), new HashSet<String>());
+          List<URL> urls = processIncludes(modName, new ArrayList<URL>(), modName, modDir, conf,
+                                           new HashMap<String, String>(), new HashSet<String>());
 
           if (urls == null) {
             return false;
@@ -295,9 +295,9 @@ public class VerticleManager {
   // are included more than once
   // We make sure we only include each module once in the case of loops in the
   // graph
-  private List<URL> processIncludes(List<URL> urls, String modName, File modDir,
+  private List<URL> processIncludes(String runModule, List<URL> urls, String modName, File modDir,
                                     JsonObject conf,
-                                    Map<URL, String> includedJars,
+                                    Map<String, String> includedJars,
                                     Set<String> includedModules) {
     // Add the urls for this module
     try {
@@ -307,12 +307,16 @@ public class VerticleManager {
         File[] jars = libDir.listFiles();
         for (File jar: jars) {
           URL jarURL = jar.toURI().toURL();
-          String prevMod = includedJars.get(jarURL);
+          String sjarURL = jarURL.toString();
+          String jarName = sjarURL.substring(sjarURL.lastIndexOf("/") + 1);
+          String prevMod = includedJars.get(jarName);
           if (prevMod != null) {
-            log.warn("jar file " + jar.getAbsolutePath() + " is included by module " +
-                     prevMod + " and also included by module " + modName);
+            log.warn("Warning! jar file " + jarName + " is contained in module " +
+                     prevMod + " and also in module " + modName +
+                     " which are both included (perhaps indirectly) by module " +
+                     runModule);
           }
-          includedJars.put(jarURL, modName);
+          includedJars.put(jarName, modName);
           urls.add(jarURL);
         }
       }
@@ -339,7 +343,8 @@ public class VerticleManager {
           File newmodDir = new File(modRoot, include);
           JsonObject newconf = loadModuleConfig(include, newmodDir);
           if (newconf != null) {
-            urls = processIncludes(urls, include, newmodDir, newconf, includedJars, includedModules);
+            urls = processIncludes(runModule, urls, include, newmodDir, newconf,
+                                   includedJars, includedModules);
             if (urls == null) {
               return null;
             }
