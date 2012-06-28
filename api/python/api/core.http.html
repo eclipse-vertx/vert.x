@@ -133,34 +133,34 @@ Methods defined here:<br>
 When&nbsp;an&nbsp;HTTP&nbsp;response&nbsp;is&nbsp;received&nbsp;from&nbsp;the&nbsp;server&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;passing&nbsp;in&nbsp;the&nbsp;response.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-uri&nbsp;--&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;CONNECT&nbsp;on&nbsp;the&nbsp;server.<br>
-handler&nbsp;--&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;CONNECT&nbsp;on&nbsp;the&nbsp;server.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
 
 <dl><dt><a name="HttpClient-connect_web_socket"><strong>connect_web_socket</strong></a>(self, uri, handler)</dt><dd><tt>Attempt&nbsp;to&nbsp;connect&nbsp;an&nbsp;HTML5&nbsp;websocket&nbsp;to&nbsp;the&nbsp;specified&nbsp;URI.<br>
 The&nbsp;connect&nbsp;is&nbsp;done&nbsp;asynchronously&nbsp;and&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;with&nbsp;a&nbsp;<a href="#WebSocket">WebSocket</a>&nbsp;on&nbsp;success.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-uri&nbsp;--&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;connect&nbsp;the&nbsp;websocket&nbsp;on&nbsp;the&nbsp;host,&nbsp;e.g.&nbsp;/some/path<br>
-handler&nbsp;--&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#WebSocket">WebSocket</a></tt></dd></dl>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;connect&nbsp;the&nbsp;websocket&nbsp;on&nbsp;the&nbsp;host,&nbsp;e.g.&nbsp;/some/path<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#WebSocket">WebSocket</a></tt></dd></dl>
 
 <dl><dt><a name="HttpClient-delete"><strong>delete</strong></a>(self, uri, handler)</dt><dd><tt>This&nbsp;method&nbsp;returns&nbsp;an&nbsp;<a href="#HttpClientRequest">HttpClientRequest</a>&nbsp;instance&nbsp;which&nbsp;represents&nbsp;an&nbsp;HTTP&nbsp;DELETE&nbsp;request&nbsp;with&nbsp;the&nbsp;specified&nbsp;uri.<br>
 When&nbsp;an&nbsp;HTTP&nbsp;response&nbsp;is&nbsp;received&nbsp;from&nbsp;the&nbsp;server&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;passing&nbsp;in&nbsp;the&nbsp;response.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-uri&nbsp;--&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;DELETE&nbsp;on&nbsp;the&nbsp;server.<br>
-handler&nbsp;--&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;DELETE&nbsp;on&nbsp;the&nbsp;server.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
 
 <dl><dt><a name="HttpClient-exception_handler"><strong>exception_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;the&nbsp;exception&nbsp;handler.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;function&nbsp;to&nbsp;be&nbsp;used&nbsp;as&nbsp;the&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;function&nbsp;to&nbsp;be&nbsp;used&nbsp;as&nbsp;the&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="HttpClient-get"><strong>get</strong></a>(self, uri, handler)</dt><dd><tt>This&nbsp;method&nbsp;returns&nbsp;an&nbsp;<a href="#HttpClientRequest">HttpClientRequest</a>&nbsp;instance&nbsp;which&nbsp;represents&nbsp;an&nbsp;HTTP&nbsp;GET&nbsp;request&nbsp;with&nbsp;the&nbsp;specified&nbsp;uri.<br>
 When&nbsp;an&nbsp;HTTP&nbsp;response&nbsp;is&nbsp;received&nbsp;from&nbsp;the&nbsp;server&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;passing&nbsp;in&nbsp;the&nbsp;response.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-uri&nbsp;--&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;GET&nbsp;on&nbsp;the&nbsp;server.<br>
-handler&nbsp;--&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;GET&nbsp;on&nbsp;the&nbsp;server.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
 
 <dl><dt><a name="HttpClient-get_max_pool_size"><strong>get_max_pool_size</strong></a>(self)</dt><dd><tt>The&nbsp;maxium&nbsp;number&nbsp;of&nbsp;connections&nbsp;this&nbsp;client&nbsp;will&nbsp;pool.</tt></dd></dl>
 
@@ -170,57 +170,57 @@ With&nbsp;this&nbsp;method&nbsp;the&nbsp;request&nbsp;is&nbsp;immediately&nbsp;s
 When&nbsp;an&nbsp;HTTP&nbsp;response&nbsp;is&nbsp;received&nbsp;from&nbsp;the&nbsp;server&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;passing&nbsp;in&nbsp;the&nbsp;response.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-&nbsp;uri&nbsp;--&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;GET&nbsp;on&nbsp;the&nbsp;server.<br>
-&nbsp;handler&nbsp;--&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a><br>
-&nbsp;headers&nbsp;--&nbsp;A&nbsp;dictionary&nbsp;of&nbsp;headers&nbsp;to&nbsp;pass&nbsp;with&nbsp;the&nbsp;request.</tt></dd></dl>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;GET&nbsp;on&nbsp;the&nbsp;server.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a><br>
+@param&nbsp;headers:&nbsp;A&nbsp;dictionary&nbsp;of&nbsp;headers&nbsp;to&nbsp;pass&nbsp;with&nbsp;the&nbsp;request.</tt></dd></dl>
 
 <dl><dt><a name="HttpClient-head"><strong>head</strong></a>(self, uri, handler)</dt><dd><tt>This&nbsp;method&nbsp;returns&nbsp;an&nbsp;<a href="#HttpClientRequest">HttpClientRequest</a>&nbsp;instance&nbsp;which&nbsp;represents&nbsp;an&nbsp;HTTP&nbsp;HEAD&nbsp;request&nbsp;with&nbsp;the&nbsp;specified&nbsp;uri.<br>
 When&nbsp;an&nbsp;HTTP&nbsp;response&nbsp;is&nbsp;received&nbsp;from&nbsp;the&nbsp;server&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;passing&nbsp;in&nbsp;the&nbsp;response.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-uri&nbsp;--&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;HEAD&nbsp;on&nbsp;the&nbsp;server.<br>
-handler&nbsp;--&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;HEAD&nbsp;on&nbsp;the&nbsp;server.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
 
 <dl><dt><a name="HttpClient-options"><strong>options</strong></a>(self, uri, handler)</dt><dd><tt>This&nbsp;method&nbsp;returns&nbsp;an&nbsp;<a href="#HttpClientRequest">HttpClientRequest</a>&nbsp;instance&nbsp;which&nbsp;represents&nbsp;an&nbsp;HTTP&nbsp;OPTIONS&nbsp;request&nbsp;with&nbsp;the&nbsp;specified&nbsp;uri.<br>
 When&nbsp;an&nbsp;HTTP&nbsp;response&nbsp;is&nbsp;received&nbsp;from&nbsp;the&nbsp;server&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;passing&nbsp;in&nbsp;the&nbsp;response.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-uri&nbsp;--&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;OPTIONS&nbsp;on&nbsp;the&nbsp;server.<br>
-handler&nbsp;--&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;OPTIONS&nbsp;on&nbsp;the&nbsp;server.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
 
 <dl><dt><a name="HttpClient-patch"><strong>patch</strong></a>(self, uri, handler)</dt><dd><tt>This&nbsp;method&nbsp;returns&nbsp;an&nbsp;<a href="#HttpClientRequest">HttpClientRequest</a>&nbsp;instance&nbsp;which&nbsp;represents&nbsp;an&nbsp;HTTP&nbsp;PATCH&nbsp;request&nbsp;with&nbsp;the&nbsp;specified&nbsp;uri.<br>
 When&nbsp;an&nbsp;HTTP&nbsp;response&nbsp;is&nbsp;received&nbsp;from&nbsp;the&nbsp;server&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;passing&nbsp;in&nbsp;the&nbsp;response.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-uri&nbsp;--&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;PATCH&nbsp;on&nbsp;the&nbsp;server.<br>
-handler&nbsp;--&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;PATCH&nbsp;on&nbsp;the&nbsp;server.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
 
 <dl><dt><a name="HttpClient-post"><strong>post</strong></a>(self, uri, handler)</dt><dd><tt>This&nbsp;method&nbsp;returns&nbsp;an&nbsp;<a href="#HttpClientRequest">HttpClientRequest</a>&nbsp;instance&nbsp;which&nbsp;represents&nbsp;an&nbsp;HTTP&nbsp;POST&nbsp;request&nbsp;with&nbsp;the&nbsp;specified&nbsp;uri.<br>
 When&nbsp;an&nbsp;HTTP&nbsp;response&nbsp;is&nbsp;received&nbsp;from&nbsp;the&nbsp;server&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;passing&nbsp;in&nbsp;the&nbsp;response.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-uri&nbsp;--&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;POST&nbsp;on&nbsp;the&nbsp;server.<br>
-handler&nbsp;--&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;POST&nbsp;on&nbsp;the&nbsp;server.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
 
 <dl><dt><a name="HttpClient-put"><strong>put</strong></a>(self, uri, handler)</dt><dd><tt>This&nbsp;method&nbsp;returns&nbsp;an&nbsp;<a href="#HttpClientRequest">HttpClientRequest</a>&nbsp;instance&nbsp;which&nbsp;represents&nbsp;an&nbsp;HTTP&nbsp;PUT&nbsp;request&nbsp;with&nbsp;the&nbsp;specified&nbsp;uri.<br>
 When&nbsp;an&nbsp;HTTP&nbsp;response&nbsp;is&nbsp;received&nbsp;from&nbsp;the&nbsp;server&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;passing&nbsp;in&nbsp;the&nbsp;response.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-uri&nbsp;--&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;PUT&nbsp;on&nbsp;the&nbsp;server.<br>
-handler&nbsp;--&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;PUT&nbsp;on&nbsp;the&nbsp;server.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
 
 <dl><dt><a name="HttpClient-request"><strong>request</strong></a>(self, method, uri, handler)</dt><dd><tt>This&nbsp;method&nbsp;returns&nbsp;an&nbsp;<a href="#HttpClientRequest">HttpClientRequest</a>&nbsp;instance&nbsp;which&nbsp;represents&nbsp;an&nbsp;HTTP&nbsp;request&nbsp;with&nbsp;the&nbsp;specified&nbsp;method&nbsp;and&nbsp;uri.<br>
 When&nbsp;an&nbsp;HTTP&nbsp;response&nbsp;is&nbsp;received&nbsp;from&nbsp;the&nbsp;server&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;passing&nbsp;in&nbsp;the&nbsp;response.<br>
 method.&nbsp;The&nbsp;HTTP&nbsp;method.&nbsp;Can&nbsp;be&nbsp;one&nbsp;of&nbsp;OPTIONS,&nbsp;HEAD,&nbsp;GET,&nbsp;POST,&nbsp;PUT,&nbsp;DELETE,&nbsp;TRACE,&nbsp;CONNECT.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-uri&nbsp;--&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;OPTIONS&nbsp;on&nbsp;the&nbsp;server.<br>
-handler&nbsp;--&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;OPTIONS&nbsp;on&nbsp;the&nbsp;server.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
 
 <dl><dt><a name="HttpClient-set_host"><strong>set_host</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;host&nbsp;name&nbsp;or&nbsp;ip&nbsp;address&nbsp;that&nbsp;the&nbsp;client&nbsp;will&nbsp;attempt&nbsp;to&nbsp;connect&nbsp;to&nbsp;on&nbsp;the&nbsp;server&nbsp;on.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;The&nbsp;host&nbsp;name&nbsp;or&nbsp;ip&nbsp;address&nbsp;to&nbsp;connect&nbsp;to.</tt></dd></dl>
+@param&nbsp;val:&nbsp;The&nbsp;host&nbsp;name&nbsp;or&nbsp;ip&nbsp;address&nbsp;to&nbsp;connect&nbsp;to.</tt></dd></dl>
 
 <dl><dt><a name="HttpClient-set_keep_alive"><strong>set_keep_alive</strong></a>(self, val)</dt><dd><tt>If&nbsp;val&nbsp;is&nbsp;true&nbsp;then,&nbsp;after&nbsp;the&nbsp;request&nbsp;has&nbsp;ended&nbsp;the&nbsp;connection&nbsp;will&nbsp;be&nbsp;returned&nbsp;to&nbsp;the&nbsp;pool<br>
 where&nbsp;it&nbsp;can&nbsp;be&nbsp;used&nbsp;by&nbsp;another&nbsp;request.&nbsp;In&nbsp;this&nbsp;manner,&nbsp;many&nbsp;HTTP&nbsp;requests&nbsp;can&nbsp;be&nbsp;pipe-lined&nbsp;over&nbsp;an&nbsp;HTTP&nbsp;connection.<br>
@@ -230,23 +230,23 @@ the&nbsp;connection&nbsp;will&nbsp;closed&nbsp;after&nbsp;the&nbsp;response&nbsp
 than&nbsp;max_pool_size&nbsp;connections&nbsp;to&nbsp;be&nbsp;created&nbsp;at&nbsp;any&nbsp;one&nbsp;time.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;The&nbsp;value&nbsp;to&nbsp;use&nbsp;for&nbsp;keep_alive</tt></dd></dl>
+@param&nbsp;val:&nbsp;The&nbsp;value&nbsp;to&nbsp;use&nbsp;for&nbsp;keep_alive</tt></dd></dl>
 
 <dl><dt><a name="HttpClient-set_max_pool_size"><strong>set_max_pool_size</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;maximum&nbsp;pool&nbsp;size.<br>
 The&nbsp;client&nbsp;will&nbsp;maintain&nbsp;up&nbsp;to&nbsp;this&nbsp;number&nbsp;of&nbsp;HTTP&nbsp;connections&nbsp;in&nbsp;an&nbsp;internal&nbsp;pool<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;The&nbsp;maximum&nbsp;number&nbsp;of&nbsp;connections&nbsp;(default&nbsp;to&nbsp;1).</tt></dd></dl>
+@param&nbsp;val:&nbsp;The&nbsp;maximum&nbsp;number&nbsp;of&nbsp;connections&nbsp;(default&nbsp;to&nbsp;1).</tt></dd></dl>
 
 <dl><dt><a name="HttpClient-set_port"><strong>set_port</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;port&nbsp;that&nbsp;the&nbsp;client&nbsp;will&nbsp;attempt&nbsp;to&nbsp;connect&nbsp;to&nbsp;on&nbsp;the&nbsp;server&nbsp;on.&nbsp;The&nbsp;default&nbsp;value&nbsp;is&nbsp;80<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;The&nbsp;port&nbsp;value.</tt></dd></dl>
+@param&nbsp;val:&nbsp;The&nbsp;port&nbsp;value.</tt></dd></dl>
 
 <dl><dt><a name="HttpClient-set_trust_all"><strong>set_trust_all</strong></a>(self, val)</dt><dd><tt>Should&nbsp;the&nbsp;client&nbsp;trust&nbsp;ALL&nbsp;server&nbsp;certificates?<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;If&nbsp;val&nbsp;is&nbsp;set&nbsp;to&nbsp;true&nbsp;then&nbsp;the&nbsp;client&nbsp;will&nbsp;trust&nbsp;ALL&nbsp;server&nbsp;certificates&nbsp;and&nbsp;will&nbsp;not&nbsp;attempt&nbsp;to&nbsp;authenticate&nbsp;them<br>
+@param&nbsp;val:&nbsp;If&nbsp;val&nbsp;is&nbsp;set&nbsp;to&nbsp;true&nbsp;then&nbsp;the&nbsp;client&nbsp;will&nbsp;trust&nbsp;ALL&nbsp;server&nbsp;certificates&nbsp;and&nbsp;will&nbsp;not&nbsp;attempt&nbsp;to&nbsp;authenticate&nbsp;them<br>
 against&nbsp;it's&nbsp;local&nbsp;client&nbsp;trust&nbsp;store.&nbsp;The&nbsp;default&nbsp;value&nbsp;is&nbsp;false.<br>
 Use&nbsp;this&nbsp;method&nbsp;with&nbsp;caution!</tt></dd></dl>
 
@@ -254,7 +254,7 @@ Use&nbsp;this&nbsp;method&nbsp;with&nbsp;caution!</tt></dd></dl>
 When&nbsp;an&nbsp;HTTP&nbsp;response&nbsp;is&nbsp;received&nbsp;from&nbsp;the&nbsp;server&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;passing&nbsp;in&nbsp;the&nbsp;response.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-uri&nbsp;--&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;TRACE&nbsp;on&nbsp;the&nbsp;server.<br>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;TRACE&nbsp;on&nbsp;the&nbsp;server.<br>
 handler.&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
 
 <hr>
@@ -276,7 +276,7 @@ Methods inherited from <a href="core.ssl_support.html#SSLSupport">core.ssl_suppo
 has&nbsp;been&nbsp;set&nbsp;to&nbsp;true.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-password&nbsp;--&nbsp;The&nbsp;password.<br>
+@param&nbsp;password:&nbsp;The&nbsp;password.<br>
 &nbsp;<br>
 return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
@@ -286,14 +286,14 @@ The&nbsp;SSL&nbsp;key&nbsp;store&nbsp;is&nbsp;a&nbsp;standard&nbsp;Java&nbsp;Key
 a&nbsp;client&nbsp;key&nbsp;store&nbsp;if&nbsp;the&nbsp;server&nbsp;requires&nbsp;client&nbsp;authentication&nbsp;via&nbsp;client&nbsp;certificates.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-path&nbsp;--&nbsp;The&nbsp;path&nbsp;to&nbsp;the&nbsp;key&nbsp;store<br>
+@param&nbsp;path:&nbsp;The&nbsp;path&nbsp;to&nbsp;the&nbsp;key&nbsp;store<br>
 &nbsp;<br>
 return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
 <dl><dt><a name="HttpClient-set_ssl"><strong>set_ssl</strong></a>(self, val)</dt><dd><tt>Set&nbsp;whether&nbsp;the&nbsp;server&nbsp;or&nbsp;client&nbsp;will&nbsp;use&nbsp;SSL.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;If&nbsp;true&nbsp;then&nbsp;ssl&nbsp;will&nbsp;be&nbsp;used.<br>
+@param&nbsp;val:&nbsp;If&nbsp;true&nbsp;then&nbsp;ssl&nbsp;will&nbsp;be&nbsp;used.<br>
 &nbsp;<br>
 return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
@@ -301,7 +301,7 @@ return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;c
 has&nbsp;been&nbsp;set&nbsp;to&nbsp;true.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-password&nbsp;--&nbsp;The&nbsp;password.<br>
+@param&nbsp;password:&nbsp;The&nbsp;password.<br>
 &nbsp;<br>
 return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
@@ -312,7 +312,7 @@ handshake&nbsp;will&nbsp;fail&nbsp;if&nbsp;the&nbsp;server&nbsp;provides&nbsp;a&
 if&nbsp;the&nbsp;client&nbsp;provides&nbsp;a&nbsp;certificate&nbsp;the&nbsp;server&nbsp;does&nbsp;not&nbsp;trust.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-path&nbsp;--&nbsp;The&nbsp;path&nbsp;to&nbsp;the&nbsp;trust&nbsp;store<br>
+@param&nbsp;path:&nbsp;The&nbsp;path&nbsp;to&nbsp;the&nbsp;trust&nbsp;store<br>
 &nbsp;<br>
 return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
@@ -339,42 +339,41 @@ Methods inherited from <a href="core.tcp_support.html#TCPSupport">core.tcp_suppo
 <dl><dt><a name="HttpClient-set_receive_buffer_size"><strong>set_receive_buffer_size</strong></a>(self, bytes)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;receive&nbsp;buffer&nbsp;size.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-bytes&nbsp;--&nbsp;The&nbsp;size&nbsp;in&nbsp;bytes.<br>
+@param&nbsp;bytes:&nbsp;The&nbsp;size&nbsp;in&nbsp;bytes.<br>
 &nbsp;<br>
 return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <dl><dt><a name="HttpClient-set_reuse_address"><strong>set_reuse_address</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;reuse&nbsp;address&nbsp;setting.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;reuse&nbsp;address&nbsp;will&nbsp;be&nbsp;enabled.<br>
-&nbsp;<br>
-returns&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+@param&nbsp;val:&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;reuse&nbsp;address&nbsp;will&nbsp;be&nbsp;enabled.<br>
+@return:&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <dl><dt><a name="HttpClient-set_send_buffer_size"><strong>set_send_buffer_size</strong></a>(self, bytes)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;send&nbsp;buffer&nbsp;size.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-bytes&nbsp;--&nbsp;The&nbsp;size&nbsp;in&nbsp;bytes.<br>
+@param&nbsp;bytes:&nbsp;The&nbsp;size&nbsp;in&nbsp;bytes.<br>
 &nbsp;<br>
 return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <dl><dt><a name="HttpClient-set_so_linger"><strong>set_so_linger</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;so&nbsp;linger&nbsp;setting.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;so&nbsp;linger&nbsp;will&nbsp;be&nbsp;enabled.<br>
+@param&nbsp;val:&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;so&nbsp;linger&nbsp;will&nbsp;be&nbsp;enabled.<br>
 &nbsp;<br>
 return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <dl><dt><a name="HttpClient-set_tcp_keep_alive"><strong>set_tcp_keep_alive</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;keep&nbsp;alive&nbsp;setting.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;keep&nbsp;alive&nbsp;will&nbsp;be&nbsp;enabled.<br>
+@param&nbsp;val:&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;keep&nbsp;alive&nbsp;will&nbsp;be&nbsp;enabled.<br>
 &nbsp;<br>
 return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <dl><dt><a name="HttpClient-set_traffic_class"><strong>set_traffic_class</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;traffic&nbsp;class&nbsp;setting.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;The&nbsp;TCP&nbsp;traffic&nbsp;class&nbsp;setting.<br>
+@param&nbsp;val:&nbsp;The&nbsp;TCP&nbsp;traffic&nbsp;class&nbsp;setting.<br>
 &nbsp;<br>
 return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
@@ -431,7 +430,7 @@ You&nbsp;can&nbsp;then&nbsp;continue&nbsp;to&nbsp;write&nbsp;data&nbsp;to&nbsp;t
 the&nbsp;send_head&nbsp;method&nbsp;to&nbsp;force&nbsp;the&nbsp;request&nbsp;header&nbsp;to&nbsp;be&nbsp;written&nbsp;before&nbsp;the&nbsp;request&nbsp;has&nbsp;ended.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="HttpClientRequest-end"><strong>end</strong></a>(self)</dt><dd><tt>Ends&nbsp;the&nbsp;request.&nbsp;If&nbsp;no&nbsp;data&nbsp;has&nbsp;been&nbsp;written&nbsp;to&nbsp;the&nbsp;request&nbsp;body,&nbsp;and&nbsp;send_head&nbsp;has&nbsp;not&nbsp;been&nbsp;called&nbsp;then<br>
 the&nbsp;actual&nbsp;request&nbsp;won't&nbsp;get&nbsp;written&nbsp;until&nbsp;this&nbsp;method&nbsp;gets&nbsp;called.<br>
@@ -441,19 +440,20 @@ be&nbsp;returned&nbsp;to&nbsp;the&nbsp;<a href="#HttpClient">HttpClient</a>&nbsp
 <dl><dt><a name="HttpClientRequest-put_header"><strong>put_header</strong></a>(self, key, value)</dt><dd><tt>Inserts&nbsp;a&nbsp;header&nbsp;into&nbsp;the&nbsp;request.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-key&nbsp;--&nbsp;The&nbsp;header&nbsp;key<br>
-value&nbsp;--&nbsp;The&nbsp;header&nbsp;value.&nbsp;to_s&nbsp;will&nbsp;be&nbsp;called&nbsp;on&nbsp;the&nbsp;value&nbsp;to&nbsp;determine&nbsp;the&nbsp;actual&nbsp;String&nbsp;value&nbsp;to&nbsp;insert.<br>
-returns&nbsp;&nbsp;self&nbsp;So&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+@param&nbsp;key:&nbsp;The&nbsp;header&nbsp;key<br>
+@param&nbsp;value:&nbsp;The&nbsp;header&nbsp;value.&nbsp;to_s&nbsp;will&nbsp;be&nbsp;called&nbsp;on&nbsp;the&nbsp;value&nbsp;to&nbsp;determine&nbsp;the&nbsp;actual&nbsp;String&nbsp;value&nbsp;to&nbsp;insert.<br>
+&nbsp;<br>
+@return:&nbsp;self&nbsp;so&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
 <dl><dt><a name="HttpClientRequest-send_head"><strong>send_head</strong></a>(self)</dt><dd><tt>Forces&nbsp;the&nbsp;head&nbsp;of&nbsp;the&nbsp;request&nbsp;to&nbsp;be&nbsp;written&nbsp;before&nbsp;end&nbsp;is&nbsp;called&nbsp;on&nbsp;the&nbsp;request.&nbsp;This&nbsp;is&nbsp;normally&nbsp;used<br>
 to&nbsp;implement&nbsp;HTTP&nbsp;100-continue&nbsp;handling,&nbsp;see&nbsp;continue_handler&nbsp;for&nbsp;more&nbsp;information.<br>
 &nbsp;<br>
-returns&nbsp;self&nbsp;So&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+@return:&nbsp;self&nbsp;So&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
 <dl><dt><a name="HttpClientRequest-set_chunked"><strong>set_chunked</strong></a>(self, val)</dt><dd><tt>Sets&nbsp;whether&nbsp;the&nbsp;request&nbsp;should&nbsp;used&nbsp;HTTP&nbsp;chunked&nbsp;encoding&nbsp;or&nbsp;not.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;If&nbsp;val&nbsp;is&nbsp;true,&nbsp;this&nbsp;request&nbsp;will&nbsp;use&nbsp;HTTP&nbsp;chunked&nbsp;encoding,&nbsp;and&nbsp;each&nbsp;call&nbsp;to&nbsp;write&nbsp;to&nbsp;the&nbsp;body<br>
+@param&nbsp;val:&nbsp;If&nbsp;val&nbsp;is&nbsp;true,&nbsp;this&nbsp;request&nbsp;will&nbsp;use&nbsp;HTTP&nbsp;chunked&nbsp;encoding,&nbsp;and&nbsp;each&nbsp;call&nbsp;to&nbsp;write&nbsp;to&nbsp;the&nbsp;body<br>
 will&nbsp;correspond&nbsp;to&nbsp;a&nbsp;new&nbsp;HTTP&nbsp;chunk&nbsp;sent&nbsp;on&nbsp;the&nbsp;wire.&nbsp;If&nbsp;chunked&nbsp;encoding&nbsp;is&nbsp;used&nbsp;the&nbsp;HTTP&nbsp;header<br>
 'Transfer-Encoding'&nbsp;with&nbsp;a&nbsp;value&nbsp;of&nbsp;'Chunked'&nbsp;will&nbsp;be&nbsp;automatically&nbsp;inserted&nbsp;in&nbsp;the&nbsp;request.<br>
 &nbsp;<br>
@@ -461,35 +461,36 @@ If&nbsp;chunked&nbsp;is&nbsp;false,&nbsp;this&nbsp;request&nbsp;will&nbsp;not&nb
 body&nbsp;of&nbsp;the&nbsp;request,&nbsp;the&nbsp;total&nbsp;size&nbsp;of&nbsp;that&nbsp;data&nbsp;must&nbsp;be&nbsp;set&nbsp;in&nbsp;the&nbsp;'Content-Length'&nbsp;header&nbsp;before&nbsp;any<br>
 data&nbsp;is&nbsp;written&nbsp;to&nbsp;the&nbsp;request&nbsp;body.<br>
 &nbsp;<br>
-returns&nbsp;self&nbsp;So&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+@return:&nbsp;self&nbsp;So&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
 <dl><dt><a name="HttpClientRequest-write_buffer"><strong>write_buffer</strong></a>(self, chunk, handler<font color="#909090">=None</font>)</dt><dd><tt>Write&nbsp;a&nbsp;to&nbsp;the&nbsp;request&nbsp;body.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-chunk&nbsp;--&nbsp;The&nbsp;buffer&nbsp;to&nbsp;write.<br>
-handler&nbsp;--&nbsp;The&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;the&nbsp;buffer&nbsp;has&nbsp;actually&nbsp;been&nbsp;written&nbsp;to&nbsp;the&nbsp;wire.<br>
-returns&nbsp;&nbsp;self&nbsp;So&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+@param&nbsp;chunk:&nbsp;The&nbsp;buffer&nbsp;to&nbsp;write.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;the&nbsp;buffer&nbsp;has&nbsp;actually&nbsp;been&nbsp;written&nbsp;to&nbsp;the&nbsp;wire.<br>
+&nbsp;<br>
+@return:&nbsp;&nbsp;self&nbsp;So&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
 <dl><dt><a name="HttpClientRequest-write_buffer_and_end"><strong>write_buffer_and_end</strong></a>(self, chunk)</dt><dd><tt>Same&nbsp;as&nbsp;end&nbsp;but&nbsp;writes&nbsp;some&nbsp;data&nbsp;to&nbsp;the&nbsp;response&nbsp;body&nbsp;before&nbsp;ending.&nbsp;If&nbsp;the&nbsp;response&nbsp;is&nbsp;not&nbsp;chunked&nbsp;and<br>
 no&nbsp;other&nbsp;data&nbsp;has&nbsp;been&nbsp;written&nbsp;then&nbsp;the&nbsp;Content-Length&nbsp;header&nbsp;will&nbsp;be&nbsp;automatically&nbsp;set<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-chunk&nbsp;--&nbsp;The&nbsp;Buffer&nbsp;to&nbsp;write</tt></dd></dl>
+@param&nbsp;chunk:&nbsp;The&nbsp;Buffer&nbsp;to&nbsp;write</tt></dd></dl>
 
 <dl><dt><a name="HttpClientRequest-write_str"><strong>write_str</strong></a>(self, str, enc<font color="#909090">='UTF-8'</font>, handler<font color="#909090">=None</font>)</dt><dd><tt>Write&nbsp;a&nbsp;to&nbsp;the&nbsp;request&nbsp;body.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-str&nbsp;--&nbsp;The&nbsp;string&nbsp;to&nbsp;write.<br>
-enc&nbsp;--&nbsp;The&nbsp;encoding&nbsp;to&nbsp;use.<br>
-handler&nbsp;--&nbsp;The&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;the&nbsp;buffer&nbsp;has&nbsp;actually&nbsp;been&nbsp;written&nbsp;to&nbsp;the&nbsp;wire.<br>
+@param&nbsp;str:&nbsp;The&nbsp;string&nbsp;to&nbsp;write.<br>
+@param&nbsp;enc:&nbsp;The&nbsp;encoding&nbsp;to&nbsp;use.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;the&nbsp;buffer&nbsp;has&nbsp;actually&nbsp;been&nbsp;written&nbsp;to&nbsp;the&nbsp;wire.<br>
 &nbsp;<br>
-returns&nbsp;self&nbsp;So&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+@return:&nbsp;self&nbsp;So&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
 <dl><dt><a name="HttpClientRequest-write_str_and_end"><strong>write_str_and_end</strong></a>(self, str, enc<font color="#909090">='UTF-8'</font>)</dt><dd><tt>Same&nbsp;as&nbsp;write_buffer_and_end&nbsp;but&nbsp;writes&nbsp;a&nbsp;String<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-str&nbsp;--&nbsp;The&nbsp;String&nbsp;to&nbsp;write<br>
-enc&nbsp;--&nbsp;The&nbsp;encoding</tt></dd></dl>
+@param&nbsp;str:&nbsp;The&nbsp;String&nbsp;to&nbsp;write<br>
+@param&nbsp;enc:&nbsp;The&nbsp;encoding</tt></dd></dl>
 
 <hr>
 Data descriptors defined here:<br>
@@ -504,19 +505,19 @@ Methods inherited from <a href="core.streams.html#WriteStream">core.streams.Writ
 queue&nbsp;has&nbsp;been&nbsp;reduced&nbsp;to&nbsp;maxSize&nbsp;/&nbsp;2.&nbsp;See&nbsp;&nbsp;for&nbsp;an&nbsp;example&nbsp;of&nbsp;this&nbsp;being&nbsp;used.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;drain&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;drain&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="HttpClientRequest-exception_handler"><strong>exception_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;execption&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="HttpClientRequest-set_write_queue_max_size"><strong>set_write_queue_max_size</strong></a>(self, size)</dt><dd><tt>Set&nbsp;the&nbsp;maximum&nbsp;size&nbsp;of&nbsp;the&nbsp;write&nbsp;queue.&nbsp;You&nbsp;will&nbsp;still&nbsp;be&nbsp;able&nbsp;to&nbsp;write&nbsp;to&nbsp;the&nbsp;stream&nbsp;even<br>
 if&nbsp;there&nbsp;is&nbsp;more&nbsp;data&nbsp;than&nbsp;this&nbsp;in&nbsp;the&nbsp;write&nbsp;queue.&nbsp;This&nbsp;is&nbsp;used&nbsp;as&nbsp;an&nbsp;indicator&nbsp;by&nbsp;classes&nbsp;such&nbsp;as<br>
 to&nbsp;provide&nbsp;flow&nbsp;control.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-size&nbsp;--&nbsp;The&nbsp;maximum&nbsp;size,&nbsp;in&nbsp;bytes.</tt></dd></dl>
+@param&nbsp;size:&nbsp;The&nbsp;maximum&nbsp;size,&nbsp;in&nbsp;bytes.</tt></dd></dl>
 
 <hr>
 Data descriptors inherited from <a href="core.streams.html#WriteStream">core.streams.WriteStream</a>:<br>
@@ -559,7 +560,7 @@ Methods defined here:<br>
 <dl><dt><a name="HttpClientResponse-header"><strong>header</strong></a>(self, key)</dt><dd><tt>Get&nbsp;a&nbsp;header&nbsp;value<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-key&nbsp;--&nbsp;The&nbsp;key&nbsp;of&nbsp;the&nbsp;header.<br>
+@param&nbsp;key:&nbsp;The&nbsp;key&nbsp;of&nbsp;the&nbsp;header.<br>
 &nbsp;<br>
 return&nbsp;the&nbsp;header&nbsp;value.</tt></dd></dl>
 
@@ -591,12 +592,12 @@ Methods inherited from <a href="core.streams.html#ReadStream">core.streams.ReadS
 <dl><dt><a name="HttpClientResponse-data_handler"><strong>data_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;data&nbsp;handler.&nbsp;As&nbsp;data&nbsp;is&nbsp;read,&nbsp;the&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;data.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;data&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;data&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="HttpClientResponse-end_handler"><strong>end_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;end&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.&nbsp;Once&nbsp;the&nbsp;stream&nbsp;has&nbsp;ended,&nbsp;and&nbsp;there&nbsp;is&nbsp;no&nbsp;more&nbsp;data&nbsp;to&nbsp;be&nbsp;read,&nbsp;this&nbsp;handler&nbsp;will&nbsp;be&nbsp;called.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="HttpClientResponse-exception_handler"><strong>exception_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;execption&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.<br>
 param&nbsp;[Block]&nbsp;hndlr.&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
@@ -710,73 +711,74 @@ Methods defined here:<br>
 Those&nbsp;certificates&nbsp;must&nbsp;be&nbsp;added&nbsp;to&nbsp;the&nbsp;server&nbsp;trust&nbsp;store.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;If&nbsp;true&nbsp;then&nbsp;the&nbsp;server&nbsp;will&nbsp;request&nbsp;client&nbsp;authentication&nbsp;from&nbsp;any&nbsp;connecting&nbsp;clients,&nbsp;if&nbsp;they&nbsp;<br>
+@param&nbsp;val:&nbsp;If&nbsp;true&nbsp;then&nbsp;the&nbsp;server&nbsp;will&nbsp;request&nbsp;client&nbsp;authentication&nbsp;from&nbsp;any&nbsp;connecting&nbsp;clients,&nbsp;if&nbsp;they&nbsp;<br>
 do&nbsp;not&nbsp;authenticate&nbsp;then&nbsp;they&nbsp;will&nbsp;not&nbsp;make&nbsp;a&nbsp;connection.</tt></dd></dl>
 
 <dl><dt><a name="HttpServer-close"><strong>close</strong></a>(self, handler<font color="#909090">=None</font>)</dt><dd><tt>Close&nbsp;the&nbsp;server.&nbsp;Any&nbsp;open&nbsp;HTTP&nbsp;connections&nbsp;will&nbsp;be&nbsp;closed.&nbsp;This&nbsp;can&nbsp;be&nbsp;used&nbsp;as&nbsp;a&nbsp;decorator.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;a&nbsp;handler&nbsp;that&nbsp;is&nbsp;called&nbsp;when&nbsp;the&nbsp;connection&nbsp;is&nbsp;closed.&nbsp;The&nbsp;handler&nbsp;is&nbsp;wrapped&nbsp;in&nbsp;a&nbsp;ClosedHandler.</tt></dd></dl>
+@param&nbsp;handler:&nbsp;a&nbsp;handler&nbsp;that&nbsp;is&nbsp;called&nbsp;when&nbsp;the&nbsp;connection&nbsp;is&nbsp;closed.&nbsp;The&nbsp;handler&nbsp;is&nbsp;wrapped&nbsp;in&nbsp;a&nbsp;ClosedHandler.</tt></dd></dl>
 
 <dl><dt><a name="HttpServer-listen"><strong>listen</strong></a>(self, port, host<font color="#909090">=None</font>)</dt><dd><tt>Instruct&nbsp;the&nbsp;server&nbsp;to&nbsp;listen&nbsp;for&nbsp;incoming&nbsp;connections.&nbsp;If&nbsp;host&nbsp;is&nbsp;None&nbsp;listens&nbsp;on&nbsp;all.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-port&nbsp;--&nbsp;The&nbsp;port&nbsp;to&nbsp;listen&nbsp;on.<br>
-host&nbsp;--&nbsp;The&nbsp;host&nbsp;name&nbsp;or&nbsp;ip&nbsp;address&nbsp;to&nbsp;listen&nbsp;on.&nbsp;(default&nbsp;None)</tt></dd></dl>
+@param&nbsp;port:&nbsp;The&nbsp;port&nbsp;to&nbsp;listen&nbsp;on.<br>
+@param&nbsp;host:&nbsp;The&nbsp;host&nbsp;name&nbsp;or&nbsp;ip&nbsp;address&nbsp;to&nbsp;listen&nbsp;on.&nbsp;(default&nbsp;None)</tt></dd></dl>
 
 <dl><dt><a name="HttpServer-request_handler"><strong>request_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;the&nbsp;HTTP&nbsp;request&nbsp;handler&nbsp;for&nbsp;the&nbsp;server.<br>
 As&nbsp;HTTP&nbsp;requests&nbsp;arrive&nbsp;on&nbsp;the&nbsp;server&nbsp;a&nbsp;new&nbsp;<a href="#HttpServerRequest">HttpServerRequest</a>&nbsp;instance&nbsp;will&nbsp;be&nbsp;created&nbsp;and&nbsp;passed&nbsp;to&nbsp;the&nbsp;handler.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;the&nbsp;function&nbsp;used&nbsp;to&nbsp;handle&nbsp;the&nbsp;request.</tt></dd></dl>
+@param&nbsp;handler:&nbsp;the&nbsp;function&nbsp;used&nbsp;to&nbsp;handle&nbsp;the&nbsp;request.&nbsp;<br>
+&nbsp;<br>
+@return:&nbsp;self</tt></dd></dl>
 
 <dl><dt><a name="HttpServer-websocket_handler"><strong>websocket_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;the&nbsp;websocket&nbsp;handler&nbsp;for&nbsp;the&nbsp;server.<br>
 As&nbsp;websocket&nbsp;requests&nbsp;arrive&nbsp;on&nbsp;the&nbsp;server&nbsp;a&nbsp;new&nbsp;<a href="#ServerWebSocket">ServerWebSocket</a>&nbsp;instance&nbsp;will&nbsp;be&nbsp;created&nbsp;and&nbsp;passed&nbsp;to&nbsp;the&nbsp;handler.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;the&nbsp;function&nbsp;used&nbsp;to&nbsp;handle&nbsp;the&nbsp;request.</tt></dd></dl>
+@param&nbsp;handler:&nbsp;the&nbsp;function&nbsp;used&nbsp;to&nbsp;handle&nbsp;the&nbsp;request.</tt></dd></dl>
 
 <hr>
 Methods inherited from <a href="core.tcp_support.html#TCPSupport">core.tcp_support.TCPSupport</a>:<br>
 <dl><dt><a name="HttpServer-set_receive_buffer_size"><strong>set_receive_buffer_size</strong></a>(self, bytes)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;receive&nbsp;buffer&nbsp;size.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-bytes&nbsp;--&nbsp;The&nbsp;size&nbsp;in&nbsp;bytes.<br>
+@param&nbsp;bytes:&nbsp;The&nbsp;size&nbsp;in&nbsp;bytes.<br>
 &nbsp;<br>
 return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <dl><dt><a name="HttpServer-set_reuse_address"><strong>set_reuse_address</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;reuse&nbsp;address&nbsp;setting.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;reuse&nbsp;address&nbsp;will&nbsp;be&nbsp;enabled.<br>
-&nbsp;<br>
-returns&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+@param&nbsp;val:&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;reuse&nbsp;address&nbsp;will&nbsp;be&nbsp;enabled.<br>
+@return:&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <dl><dt><a name="HttpServer-set_send_buffer_size"><strong>set_send_buffer_size</strong></a>(self, bytes)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;send&nbsp;buffer&nbsp;size.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-bytes&nbsp;--&nbsp;The&nbsp;size&nbsp;in&nbsp;bytes.<br>
+@param&nbsp;bytes:&nbsp;The&nbsp;size&nbsp;in&nbsp;bytes.<br>
 &nbsp;<br>
 return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <dl><dt><a name="HttpServer-set_so_linger"><strong>set_so_linger</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;so&nbsp;linger&nbsp;setting.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;so&nbsp;linger&nbsp;will&nbsp;be&nbsp;enabled.<br>
+@param&nbsp;val:&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;so&nbsp;linger&nbsp;will&nbsp;be&nbsp;enabled.<br>
 &nbsp;<br>
 return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <dl><dt><a name="HttpServer-set_tcp_keep_alive"><strong>set_tcp_keep_alive</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;keep&nbsp;alive&nbsp;setting.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;keep&nbsp;alive&nbsp;will&nbsp;be&nbsp;enabled.<br>
+@param&nbsp;val:&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;keep&nbsp;alive&nbsp;will&nbsp;be&nbsp;enabled.<br>
 &nbsp;<br>
 return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <dl><dt><a name="HttpServer-set_traffic_class"><strong>set_traffic_class</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;traffic&nbsp;class&nbsp;setting.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;The&nbsp;TCP&nbsp;traffic&nbsp;class&nbsp;setting.<br>
+@param&nbsp;val:&nbsp;The&nbsp;TCP&nbsp;traffic&nbsp;class&nbsp;setting.<br>
 &nbsp;<br>
 return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
@@ -806,7 +808,7 @@ Methods inherited from <a href="core.ssl_support.html#SSLSupport">core.ssl_suppo
 has&nbsp;been&nbsp;set&nbsp;to&nbsp;true.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-password&nbsp;--&nbsp;The&nbsp;password.<br>
+@param&nbsp;password:&nbsp;The&nbsp;password.<br>
 &nbsp;<br>
 return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
@@ -816,14 +818,14 @@ The&nbsp;SSL&nbsp;key&nbsp;store&nbsp;is&nbsp;a&nbsp;standard&nbsp;Java&nbsp;Key
 a&nbsp;client&nbsp;key&nbsp;store&nbsp;if&nbsp;the&nbsp;server&nbsp;requires&nbsp;client&nbsp;authentication&nbsp;via&nbsp;client&nbsp;certificates.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-path&nbsp;--&nbsp;The&nbsp;path&nbsp;to&nbsp;the&nbsp;key&nbsp;store<br>
+@param&nbsp;path:&nbsp;The&nbsp;path&nbsp;to&nbsp;the&nbsp;key&nbsp;store<br>
 &nbsp;<br>
 return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
 <dl><dt><a name="HttpServer-set_ssl"><strong>set_ssl</strong></a>(self, val)</dt><dd><tt>Set&nbsp;whether&nbsp;the&nbsp;server&nbsp;or&nbsp;client&nbsp;will&nbsp;use&nbsp;SSL.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;If&nbsp;true&nbsp;then&nbsp;ssl&nbsp;will&nbsp;be&nbsp;used.<br>
+@param&nbsp;val:&nbsp;If&nbsp;true&nbsp;then&nbsp;ssl&nbsp;will&nbsp;be&nbsp;used.<br>
 &nbsp;<br>
 return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
@@ -831,7 +833,7 @@ return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;c
 has&nbsp;been&nbsp;set&nbsp;to&nbsp;true.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-password&nbsp;--&nbsp;The&nbsp;password.<br>
+@param&nbsp;password:&nbsp;The&nbsp;password.<br>
 &nbsp;<br>
 return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
@@ -842,7 +844,7 @@ handshake&nbsp;will&nbsp;fail&nbsp;if&nbsp;the&nbsp;server&nbsp;provides&nbsp;a&
 if&nbsp;the&nbsp;client&nbsp;provides&nbsp;a&nbsp;certificate&nbsp;the&nbsp;server&nbsp;does&nbsp;not&nbsp;trust.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-path&nbsp;--&nbsp;The&nbsp;path&nbsp;to&nbsp;the&nbsp;trust&nbsp;store<br>
+@param&nbsp;path:&nbsp;The&nbsp;path&nbsp;to&nbsp;the&nbsp;trust&nbsp;store<br>
 &nbsp;<br>
 return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
@@ -885,7 +887,7 @@ Methods defined here:<br>
 This&nbsp;can&nbsp;be&nbsp;used&nbsp;as&nbsp;a&nbsp;decorator.&nbsp;<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;a&nbsp;handler&nbsp;that&nbsp;is&nbsp;called&nbsp;when&nbsp;the&nbsp;body&nbsp;has&nbsp;been&nbsp;received.&nbsp;The&nbsp;handler&nbsp;is&nbsp;wrapped&nbsp;in&nbsp;a&nbsp;BufferHandler.</tt></dd></dl>
+@param&nbsp;handler:&nbsp;a&nbsp;handler&nbsp;that&nbsp;is&nbsp;called&nbsp;when&nbsp;the&nbsp;body&nbsp;has&nbsp;been&nbsp;received.&nbsp;The&nbsp;handler&nbsp;is&nbsp;wrapped&nbsp;in&nbsp;a&nbsp;BufferHandler.</tt></dd></dl>
 
 <hr>
 Data descriptors defined here:<br>
@@ -915,12 +917,12 @@ Methods inherited from <a href="core.streams.html#ReadStream">core.streams.ReadS
 <dl><dt><a name="HttpServerRequest-data_handler"><strong>data_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;data&nbsp;handler.&nbsp;As&nbsp;data&nbsp;is&nbsp;read,&nbsp;the&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;data.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;data&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;data&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="HttpServerRequest-end_handler"><strong>end_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;end&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.&nbsp;Once&nbsp;the&nbsp;stream&nbsp;has&nbsp;ended,&nbsp;and&nbsp;there&nbsp;is&nbsp;no&nbsp;more&nbsp;data&nbsp;to&nbsp;be&nbsp;read,&nbsp;this&nbsp;handler&nbsp;will&nbsp;be&nbsp;called.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="HttpServerRequest-exception_handler"><strong>exception_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;execption&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.<br>
 param&nbsp;[Block]&nbsp;hndlr.&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
@@ -1047,7 +1049,7 @@ Once&nbsp;the&nbsp;response&nbsp;has&nbsp;ended,&nbsp;it&nbsp;cannot&nbsp;be&nbs
 be&nbsp;closed.<br>
 &nbsp;<br>
 Keywords&nbsp;arguments<br>
-data&nbsp;--&nbsp;Optional&nbsp;String&nbsp;or&nbsp;Buffer&nbsp;to&nbsp;write&nbsp;before&nbsp;ending&nbsp;the&nbsp;response</tt></dd></dl>
+@param&nbsp;data:&nbsp;Optional&nbsp;String&nbsp;or&nbsp;Buffer&nbsp;to&nbsp;write&nbsp;before&nbsp;ending&nbsp;the&nbsp;response</tt></dd></dl>
 
 <dl><dt><a name="HttpServerResponse-get_chunked"><strong>get_chunked</strong></a>(self)</dt><dd><tt>Get&nbsp;whether&nbsp;this&nbsp;response&nbsp;uses&nbsp;HTTP&nbsp;chunked&nbsp;encoding&nbsp;or&nbsp;not.</tt></dd></dl>
 
@@ -1058,31 +1060,30 @@ data&nbsp;--&nbsp;Optional&nbsp;String&nbsp;or&nbsp;Buffer&nbsp;to&nbsp;write&nb
 <dl><dt><a name="HttpServerResponse-put_header"><strong>put_header</strong></a>(self, key, value)</dt><dd><tt>Inserts&nbsp;a&nbsp;header&nbsp;into&nbsp;the&nbsp;response.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-key&nbsp;--&nbsp;The&nbsp;header&nbsp;key<br>
-value&nbsp;--&nbsp;The&nbsp;header&nbsp;value.<br>
+@param&nbsp;key:&nbsp;The&nbsp;header&nbsp;key<br>
+@param&nbsp;value:&nbsp;The&nbsp;header&nbsp;value.<br>
 &nbsp;<br>
-returns&nbsp;<a href="#HttpServerResponse">HttpServerResponse</a>&nbsp;so&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+@return:&nbsp;<a href="#HttpServerResponse">HttpServerResponse</a>&nbsp;so&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
 <dl><dt><a name="HttpServerResponse-put_trailer"><strong>put_trailer</strong></a>(self, key, value)</dt><dd><tt>Inserts&nbsp;a&nbsp;trailer&nbsp;into&nbsp;the&nbsp;response.&nbsp;<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-key&nbsp;--&nbsp;The&nbsp;header&nbsp;key<br>
-value&nbsp;--&nbsp;The&nbsp;header&nbsp;value.<br>
-&nbsp;<br>
-returns&nbsp;<a href="#HttpServerResponse">HttpServerResponse</a>&nbsp;so&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+@param&nbsp;key:&nbsp;The&nbsp;header&nbsp;key<br>
+@param&nbsp;value:&nbsp;The&nbsp;header&nbsp;value.<br>
+@return:&nbsp;<a href="#HttpServerResponse">HttpServerResponse</a>&nbsp;so&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
 <dl><dt><a name="HttpServerResponse-send_file"><strong>send_file</strong></a>(self, path)</dt><dd><tt>Tell&nbsp;the&nbsp;kernel&nbsp;to&nbsp;stream&nbsp;a&nbsp;file&nbsp;directly&nbsp;from&nbsp;disk&nbsp;to&nbsp;the&nbsp;outgoing&nbsp;connection,&nbsp;bypassing&nbsp;userspace&nbsp;altogether<br>
 (where&nbsp;supported&nbsp;by&nbsp;the&nbsp;underlying&nbsp;operating&nbsp;system.&nbsp;This&nbsp;is&nbsp;a&nbsp;very&nbsp;efficient&nbsp;way&nbsp;to&nbsp;serve&nbsp;files.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-path&nbsp;--&nbsp;Path&nbsp;to&nbsp;file&nbsp;to&nbsp;send.<br>
+@param&nbsp;path:&nbsp;Path&nbsp;to&nbsp;file&nbsp;to&nbsp;send.<br>
 &nbsp;<br>
-returns&nbsp;a&nbsp;<a href="#HttpServerResponse">HttpServerResponse</a>&nbsp;so&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+@return:&nbsp;a&nbsp;<a href="#HttpServerResponse">HttpServerResponse</a>&nbsp;so&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
 <dl><dt><a name="HttpServerResponse-set_chunked"><strong>set_chunked</strong></a>(self, val)</dt><dd><tt>Sets&nbsp;whether&nbsp;this&nbsp;response&nbsp;uses&nbsp;HTTP&nbsp;chunked&nbsp;encoding&nbsp;or&nbsp;not.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;If&nbsp;val&nbsp;is&nbsp;true,&nbsp;this&nbsp;response&nbsp;will&nbsp;use&nbsp;HTTP&nbsp;chunked&nbsp;encoding,&nbsp;and&nbsp;each&nbsp;call&nbsp;to&nbsp;write&nbsp;to&nbsp;the&nbsp;body<br>
+@param&nbsp;val:&nbsp;If&nbsp;val&nbsp;is&nbsp;true,&nbsp;this&nbsp;response&nbsp;will&nbsp;use&nbsp;HTTP&nbsp;chunked&nbsp;encoding,&nbsp;and&nbsp;each&nbsp;call&nbsp;to&nbsp;write&nbsp;to&nbsp;the&nbsp;body<br>
 will&nbsp;correspond&nbsp;to&nbsp;a&nbsp;new&nbsp;HTTP&nbsp;chunk&nbsp;sent&nbsp;on&nbsp;the&nbsp;wire.&nbsp;If&nbsp;chunked&nbsp;encoding&nbsp;is&nbsp;used&nbsp;the&nbsp;HTTP&nbsp;header<br>
 'Transfer-Encoding'&nbsp;with&nbsp;a&nbsp;value&nbsp;of&nbsp;'Chunked'&nbsp;will&nbsp;be&nbsp;automatically&nbsp;inserted&nbsp;in&nbsp;the&nbsp;response.<br>
 &nbsp;<br>
@@ -1091,7 +1092,7 @@ body&nbsp;of&nbsp;the&nbsp;response,&nbsp;the&nbsp;total&nbsp;size&nbsp;of&nbsp;
 data&nbsp;is&nbsp;written&nbsp;to&nbsp;the&nbsp;response&nbsp;body.<br>
 An&nbsp;HTTP&nbsp;chunked&nbsp;response&nbsp;is&nbsp;typically&nbsp;used&nbsp;when&nbsp;you&nbsp;do&nbsp;not&nbsp;know&nbsp;the&nbsp;total&nbsp;size&nbsp;of&nbsp;the&nbsp;request&nbsp;body&nbsp;up&nbsp;front.<br>
 &nbsp;<br>
-returns&nbsp;a&nbsp;<a href="#HttpServerResponse">HttpServerResponse</a>&nbsp;so&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+@return:&nbsp;a&nbsp;<a href="#HttpServerResponse">HttpServerResponse</a>&nbsp;so&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
 <dl><dt><a name="HttpServerResponse-set_status_code"><strong>set_status_code</strong></a>(self, code)</dt><dd><tt>Set&nbsp;the&nbsp;status&nbsp;code&nbsp;of&nbsp;the&nbsp;response.&nbsp;Default&nbsp;is&nbsp;200</tt></dd></dl>
 
@@ -1100,20 +1101,20 @@ returns&nbsp;a&nbsp;<a href="#HttpServerResponse">HttpServerResponse</a>&nbsp;so
 <dl><dt><a name="HttpServerResponse-write_buffer"><strong>write_buffer</strong></a>(self, buffer, handler<font color="#909090">=None</font>)</dt><dd><tt>Write&nbsp;a&nbsp;buffer&nbsp;to&nbsp;the&nbsp;response.&nbsp;The&nbsp;handler&nbsp;(if&nbsp;supplied)&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;the&nbsp;buffer&nbsp;has&nbsp;actually&nbsp;been&nbsp;written&nbsp;to&nbsp;the&nbsp;wire.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-buffer&nbsp;--&nbsp;The&nbsp;buffer&nbsp;to&nbsp;write<br>
-handler&nbsp;--&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;when&nbsp;writing&nbsp;has&nbsp;been&nbsp;completed.&nbsp;It&nbsp;is&nbsp;wrapped&nbsp;in&nbsp;a&nbsp;DoneHandler&nbsp;(default&nbsp;None)<br>
+@param&nbsp;buffer:&nbsp;The&nbsp;buffer&nbsp;to&nbsp;write<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;when&nbsp;writing&nbsp;has&nbsp;been&nbsp;completed.&nbsp;It&nbsp;is&nbsp;wrapped&nbsp;in&nbsp;a&nbsp;DoneHandler&nbsp;(default&nbsp;None)<br>
 &nbsp;<br>
-returns&nbsp;a&nbsp;<a href="#HttpServerResponse">HttpServerResponse</a>&nbsp;so&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+@return:&nbsp;a&nbsp;<a href="#HttpServerResponse">HttpServerResponse</a>&nbsp;so&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
 <dl><dt><a name="HttpServerResponse-write_str"><strong>write_str</strong></a>(self, str, enc<font color="#909090">='UTF-8'</font>, handler<font color="#909090">=None</font>)</dt><dd><tt>Write&nbsp;a&nbsp;String&nbsp;to&nbsp;the&nbsp;response.&nbsp;The&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;the&nbsp;String&nbsp;has&nbsp;actually&nbsp;been&nbsp;written&nbsp;to&nbsp;the&nbsp;wire.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-str&nbsp;--&nbsp;The&nbsp;string&nbsp;to&nbsp;write<br>
-enc&nbsp;--&nbsp;Encoding&nbsp;to&nbsp;use.<br>
+@param&nbsp;str:&nbsp;The&nbsp;string&nbsp;to&nbsp;write<br>
+@param&nbsp;enc:&nbsp;Encoding&nbsp;to&nbsp;use.<br>
 &nbsp;<br>
-handler&nbsp;--&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;when&nbsp;writing&nbsp;has&nbsp;been&nbsp;completed.&nbsp;It&nbsp;is&nbsp;wrapped&nbsp;in&nbsp;a&nbsp;DoneHandler&nbsp;(default&nbsp;None)<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;when&nbsp;writing&nbsp;has&nbsp;been&nbsp;completed.&nbsp;It&nbsp;is&nbsp;wrapped&nbsp;in&nbsp;a&nbsp;DoneHandler&nbsp;(default&nbsp;None)<br>
 &nbsp;<br>
-returns&nbsp;a&nbsp;<a href="#HttpServerResponse">HttpServerResponse</a>&nbsp;so&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+@return:&nbsp;a&nbsp;<a href="#HttpServerResponse">HttpServerResponse</a>&nbsp;so&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
 <hr>
 Data descriptors defined here:<br>
@@ -1138,19 +1139,19 @@ Methods inherited from <a href="core.streams.html#WriteStream">core.streams.Writ
 queue&nbsp;has&nbsp;been&nbsp;reduced&nbsp;to&nbsp;maxSize&nbsp;/&nbsp;2.&nbsp;See&nbsp;&nbsp;for&nbsp;an&nbsp;example&nbsp;of&nbsp;this&nbsp;being&nbsp;used.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;drain&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;drain&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="HttpServerResponse-exception_handler"><strong>exception_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;execption&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="HttpServerResponse-set_write_queue_max_size"><strong>set_write_queue_max_size</strong></a>(self, size)</dt><dd><tt>Set&nbsp;the&nbsp;maximum&nbsp;size&nbsp;of&nbsp;the&nbsp;write&nbsp;queue.&nbsp;You&nbsp;will&nbsp;still&nbsp;be&nbsp;able&nbsp;to&nbsp;write&nbsp;to&nbsp;the&nbsp;stream&nbsp;even<br>
 if&nbsp;there&nbsp;is&nbsp;more&nbsp;data&nbsp;than&nbsp;this&nbsp;in&nbsp;the&nbsp;write&nbsp;queue.&nbsp;This&nbsp;is&nbsp;used&nbsp;as&nbsp;an&nbsp;indicator&nbsp;by&nbsp;classes&nbsp;such&nbsp;as<br>
 to&nbsp;provide&nbsp;flow&nbsp;control.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-size&nbsp;--&nbsp;The&nbsp;maximum&nbsp;size,&nbsp;in&nbsp;bytes.</tt></dd></dl>
+@param&nbsp;size:&nbsp;The&nbsp;maximum&nbsp;size,&nbsp;in&nbsp;bytes.</tt></dd></dl>
 
 <hr>
 Data descriptors inherited from <a href="core.streams.html#WriteStream">core.streams.WriteStream</a>:<br>
@@ -1201,134 +1202,134 @@ a&nbsp;particular&nbsp;request,&nbsp;the&nbsp;first&nbsp;matching&nbsp;one&nbsp;
 <dl><dt><a name="RouteMatcher-all"><strong>all</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;any&nbsp;matching&nbsp;HTTP&nbsp;request<br>
 &nbsp;&nbsp;&nbsp;<br>
 Keyword&nbsp;arguments:<br>
-pattern&nbsp;--&nbsp;pattern&nbsp;to&nbsp;match<br>
-handler&nbsp;--&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="RouteMatcher-all_re"><strong>all_re</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;any&nbsp;matching&nbsp;HTTP&nbsp;request<br>
 &nbsp;&nbsp;&nbsp;<br>
 Keyword&nbsp;arguments:<br>
-pattern&nbsp;--&nbsp;pattern&nbsp;to&nbsp;match<br>
-handler&nbsp;--&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="RouteMatcher-connect"><strong>connect</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;CONNECT<br>
 &nbsp;&nbsp;&nbsp;<br>
 Keyword&nbsp;arguments:<br>
-pattern&nbsp;--&nbsp;pattern&nbsp;to&nbsp;match<br>
-handler&nbsp;--&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="RouteMatcher-connect_re"><strong>connect_re</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;CONNECT<br>
 &nbsp;&nbsp;&nbsp;<br>
 Keyword&nbsp;arguments:<br>
-pattern&nbsp;--&nbsp;pattern&nbsp;to&nbsp;match<br>
-handler&nbsp;--&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="RouteMatcher-delete"><strong>delete</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;DELETE<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
 Keyword&nbsp;arguments:<br>
-pattern&nbsp;--&nbsp;pattern&nbsp;to&nbsp;match<br>
-handler&nbsp;--&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="RouteMatcher-delete_re"><strong>delete_re</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;DELETE<br>
 &nbsp;&nbsp;&nbsp;<br>
 Keyword&nbsp;arguments:<br>
-pattern&nbsp;--&nbsp;pattern&nbsp;to&nbsp;match<br>
-handler&nbsp;--&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="RouteMatcher-get"><strong>get</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;GET<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-pattern&nbsp;--&nbsp;pattern&nbsp;to&nbsp;match<br>
-handler&nbsp;--&nbsp;handler&nbsp;for&nbsp;match</tt></dd></dl>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;handler&nbsp;for&nbsp;match</tt></dd></dl>
 
 <dl><dt><a name="RouteMatcher-get_re"><strong>get_re</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;GET<br>
 &nbsp;&nbsp;&nbsp;<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-pattern&nbsp;--&nbsp;pattern&nbsp;to&nbsp;match<br>
-handler&nbsp;--&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="RouteMatcher-head"><strong>head</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;HEAD<br>
 &nbsp;&nbsp;&nbsp;<br>
 Keyword&nbsp;arguments:<br>
-pattern&nbsp;--&nbsp;pattern&nbsp;to&nbsp;match<br>
-handler&nbsp;--&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="RouteMatcher-head_re"><strong>head_re</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;HEAD<br>
 &nbsp;&nbsp;&nbsp;<br>
 Keyword&nbsp;arguments:<br>
-pattern&nbsp;--&nbsp;pattern&nbsp;to&nbsp;match<br>
-handler&nbsp;--&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="RouteMatcher-input"><strong>input</strong></a>(self, request)</dt><dd><tt>This&nbsp;method&nbsp;is&nbsp;called&nbsp;to&nbsp;provide&nbsp;the&nbsp;matcher&nbsp;with&nbsp;data.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-request&nbsp;--&nbsp;input&nbsp;request&nbsp;to&nbsp;the&nbsp;parser.</tt></dd></dl>
+@param&nbsp;request:&nbsp;input&nbsp;request&nbsp;to&nbsp;the&nbsp;parser.</tt></dd></dl>
 
 <dl><dt><a name="RouteMatcher-no_match"><strong>no_match</strong></a>(self, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;nothing&nbsp;matches<br>
 Default&nbsp;behaviour&nbsp;is&nbsp;to&nbsp;return&nbsp;a&nbsp;404<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="RouteMatcher-options"><strong>options</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;OPTIONS<br>
 &nbsp;&nbsp;&nbsp;<br>
 Keyword&nbsp;arguments:<br>
-pattern&nbsp;--&nbsp;pattern&nbsp;to&nbsp;match<br>
-handler&nbsp;--&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="RouteMatcher-options_re"><strong>options_re</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;OPTIONS<br>
 &nbsp;&nbsp;&nbsp;<br>
 Keyword&nbsp;arguments:<br>
-pattern&nbsp;--&nbsp;pattern&nbsp;to&nbsp;match<br>
-handler&nbsp;--&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="RouteMatcher-patch"><strong>patch</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;PATCH<br>
 &nbsp;&nbsp;&nbsp;<br>
 Keyword&nbsp;arguments:<br>
-pattern&nbsp;--&nbsp;pattern&nbsp;to&nbsp;match<br>
-handler&nbsp;--&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="RouteMatcher-patch_re"><strong>patch_re</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;PATCH<br>
 &nbsp;&nbsp;&nbsp;<br>
 Keyword&nbsp;arguments:<br>
-pattern&nbsp;--&nbsp;pattern&nbsp;to&nbsp;match<br>
-handler&nbsp;--&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="RouteMatcher-post"><strong>post</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;POST<br>
 &nbsp;&nbsp;&nbsp;<br>
 Keyword&nbsp;arguments:<br>
-pattern&nbsp;--&nbsp;pattern&nbsp;to&nbsp;match<br>
-handler&nbsp;--&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="RouteMatcher-post_re"><strong>post_re</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;POST<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-pattern&nbsp;--&nbsp;pattern&nbsp;to&nbsp;match<br>
-handler&nbsp;--&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="RouteMatcher-put"><strong>put</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;PUT<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-pattern&nbsp;--&nbsp;pattern&nbsp;to&nbsp;match<br>
-handler&nbsp;--&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="RouteMatcher-put_re"><strong>put_re</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;PUT<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-pattern&nbsp;--&nbsp;pattern&nbsp;to&nbsp;match<br>
-handler&nbsp;--&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="RouteMatcher-trace"><strong>trace</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;TRACE<br>
 &nbsp;&nbsp;&nbsp;<br>
 Keyword&nbsp;arguments:<br>
-pattern&nbsp;--&nbsp;pattern&nbsp;to&nbsp;match<br>
-handler&nbsp;--&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="RouteMatcher-trace_re"><strong>trace_re</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;TRACE<br>
 &nbsp;&nbsp;&nbsp;<br>
 Keyword&nbsp;arguments:<br>
-pattern&nbsp;--&nbsp;pattern&nbsp;to&nbsp;match<br>
-handler&nbsp;--&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
 
 <hr>
 Data descriptors defined here:<br>
@@ -1380,24 +1381,24 @@ handler&nbsp;-&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;when&nbsp;
 <dl><dt><a name="ServerWebSocket-write_binary_frame"><strong>write_binary_frame</strong></a>(self, buffer)</dt><dd><tt>Write&nbsp;data&nbsp;to&nbsp;the&nbsp;websocket&nbsp;as&nbsp;a&nbsp;binary&nbsp;frame&nbsp;<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-buffer&nbsp;--&nbsp;Buffer&nbsp;data&nbsp;to&nbsp;write&nbsp;to&nbsp;socket.</tt></dd></dl>
+@param&nbsp;buffer:&nbsp;Buffer&nbsp;data&nbsp;to&nbsp;write&nbsp;to&nbsp;socket.</tt></dd></dl>
 
 <dl><dt><a name="ServerWebSocket-write_text_frame"><strong>write_text_frame</strong></a>(self, text)</dt><dd><tt>Write&nbsp;data&nbsp;to&nbsp;the&nbsp;websocket&nbsp;as&nbsp;a&nbsp;text&nbsp;frame&nbsp;<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-text&nbsp;--&nbsp;text&nbsp;to&nbsp;write&nbsp;to&nbsp;socket</tt></dd></dl>
+@param&nbsp;text:&nbsp;text&nbsp;to&nbsp;write&nbsp;to&nbsp;socket</tt></dd></dl>
 
 <hr>
 Methods inherited from <a href="core.streams.html#ReadStream">core.streams.ReadStream</a>:<br>
 <dl><dt><a name="ServerWebSocket-data_handler"><strong>data_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;data&nbsp;handler.&nbsp;As&nbsp;data&nbsp;is&nbsp;read,&nbsp;the&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;data.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;data&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;data&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="ServerWebSocket-end_handler"><strong>end_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;end&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.&nbsp;Once&nbsp;the&nbsp;stream&nbsp;has&nbsp;ended,&nbsp;and&nbsp;there&nbsp;is&nbsp;no&nbsp;more&nbsp;data&nbsp;to&nbsp;be&nbsp;read,&nbsp;this&nbsp;handler&nbsp;will&nbsp;be&nbsp;called.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="ServerWebSocket-exception_handler"><strong>exception_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;execption&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.<br>
 param&nbsp;[Block]&nbsp;hndlr.&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
@@ -1420,14 +1421,14 @@ Methods inherited from <a href="core.streams.html#WriteStream">core.streams.Writ
 queue&nbsp;has&nbsp;been&nbsp;reduced&nbsp;to&nbsp;maxSize&nbsp;/&nbsp;2.&nbsp;See&nbsp;&nbsp;for&nbsp;an&nbsp;example&nbsp;of&nbsp;this&nbsp;being&nbsp;used.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;drain&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;drain&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="ServerWebSocket-set_write_queue_max_size"><strong>set_write_queue_max_size</strong></a>(self, size)</dt><dd><tt>Set&nbsp;the&nbsp;maximum&nbsp;size&nbsp;of&nbsp;the&nbsp;write&nbsp;queue.&nbsp;You&nbsp;will&nbsp;still&nbsp;be&nbsp;able&nbsp;to&nbsp;write&nbsp;to&nbsp;the&nbsp;stream&nbsp;even<br>
 if&nbsp;there&nbsp;is&nbsp;more&nbsp;data&nbsp;than&nbsp;this&nbsp;in&nbsp;the&nbsp;write&nbsp;queue.&nbsp;This&nbsp;is&nbsp;used&nbsp;as&nbsp;an&nbsp;indicator&nbsp;by&nbsp;classes&nbsp;such&nbsp;as<br>
 to&nbsp;provide&nbsp;flow&nbsp;control.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-size&nbsp;--&nbsp;The&nbsp;maximum&nbsp;size,&nbsp;in&nbsp;bytes.</tt></dd></dl>
+@param&nbsp;size:&nbsp;The&nbsp;maximum&nbsp;size,&nbsp;in&nbsp;bytes.</tt></dd></dl>
 
 <dl><dt><a name="ServerWebSocket-write_buffer"><strong>write_buffer</strong></a>(self, buff)</dt><dd><tt>Write&nbsp;some&nbsp;data&nbsp;to&nbsp;the&nbsp;stream.&nbsp;The&nbsp;data&nbsp;is&nbsp;put&nbsp;on&nbsp;an&nbsp;internal&nbsp;write&nbsp;queue,&nbsp;and&nbsp;the&nbsp;write&nbsp;actually&nbsp;happens<br>
 asynchronously.&nbsp;To&nbsp;avoid&nbsp;running&nbsp;out&nbsp;of&nbsp;memory&nbsp;by&nbsp;putting&nbsp;too&nbsp;much&nbsp;on&nbsp;the&nbsp;write&nbsp;queue,<br>
@@ -1551,24 +1552,24 @@ handler&nbsp;-&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;when&nbsp;
 <dl><dt><a name="WebSocket-write_binary_frame"><strong>write_binary_frame</strong></a>(self, buffer)</dt><dd><tt>Write&nbsp;data&nbsp;to&nbsp;the&nbsp;websocket&nbsp;as&nbsp;a&nbsp;binary&nbsp;frame&nbsp;<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-buffer&nbsp;--&nbsp;Buffer&nbsp;data&nbsp;to&nbsp;write&nbsp;to&nbsp;socket.</tt></dd></dl>
+@param&nbsp;buffer:&nbsp;Buffer&nbsp;data&nbsp;to&nbsp;write&nbsp;to&nbsp;socket.</tt></dd></dl>
 
 <dl><dt><a name="WebSocket-write_text_frame"><strong>write_text_frame</strong></a>(self, text)</dt><dd><tt>Write&nbsp;data&nbsp;to&nbsp;the&nbsp;websocket&nbsp;as&nbsp;a&nbsp;text&nbsp;frame&nbsp;<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-text&nbsp;--&nbsp;text&nbsp;to&nbsp;write&nbsp;to&nbsp;socket</tt></dd></dl>
+@param&nbsp;text:&nbsp;text&nbsp;to&nbsp;write&nbsp;to&nbsp;socket</tt></dd></dl>
 
 <hr>
 Methods inherited from <a href="core.streams.html#ReadStream">core.streams.ReadStream</a>:<br>
 <dl><dt><a name="WebSocket-data_handler"><strong>data_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;data&nbsp;handler.&nbsp;As&nbsp;data&nbsp;is&nbsp;read,&nbsp;the&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;data.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;data&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;data&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="WebSocket-end_handler"><strong>end_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;end&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.&nbsp;Once&nbsp;the&nbsp;stream&nbsp;has&nbsp;ended,&nbsp;and&nbsp;there&nbsp;is&nbsp;no&nbsp;more&nbsp;data&nbsp;to&nbsp;be&nbsp;read,&nbsp;this&nbsp;handler&nbsp;will&nbsp;be&nbsp;called.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="WebSocket-exception_handler"><strong>exception_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;execption&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.<br>
 param&nbsp;[Block]&nbsp;hndlr.&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
@@ -1591,14 +1592,14 @@ Methods inherited from <a href="core.streams.html#WriteStream">core.streams.Writ
 queue&nbsp;has&nbsp;been&nbsp;reduced&nbsp;to&nbsp;maxSize&nbsp;/&nbsp;2.&nbsp;See&nbsp;&nbsp;for&nbsp;an&nbsp;example&nbsp;of&nbsp;this&nbsp;being&nbsp;used.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;drain&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;drain&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="WebSocket-set_write_queue_max_size"><strong>set_write_queue_max_size</strong></a>(self, size)</dt><dd><tt>Set&nbsp;the&nbsp;maximum&nbsp;size&nbsp;of&nbsp;the&nbsp;write&nbsp;queue.&nbsp;You&nbsp;will&nbsp;still&nbsp;be&nbsp;able&nbsp;to&nbsp;write&nbsp;to&nbsp;the&nbsp;stream&nbsp;even<br>
 if&nbsp;there&nbsp;is&nbsp;more&nbsp;data&nbsp;than&nbsp;this&nbsp;in&nbsp;the&nbsp;write&nbsp;queue.&nbsp;This&nbsp;is&nbsp;used&nbsp;as&nbsp;an&nbsp;indicator&nbsp;by&nbsp;classes&nbsp;such&nbsp;as<br>
 to&nbsp;provide&nbsp;flow&nbsp;control.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-size&nbsp;--&nbsp;The&nbsp;maximum&nbsp;size,&nbsp;in&nbsp;bytes.</tt></dd></dl>
+@param&nbsp;size:&nbsp;The&nbsp;maximum&nbsp;size,&nbsp;in&nbsp;bytes.</tt></dd></dl>
 
 <dl><dt><a name="WebSocket-write_buffer"><strong>write_buffer</strong></a>(self, buff)</dt><dd><tt>Write&nbsp;some&nbsp;data&nbsp;to&nbsp;the&nbsp;stream.&nbsp;The&nbsp;data&nbsp;is&nbsp;put&nbsp;on&nbsp;an&nbsp;internal&nbsp;write&nbsp;queue,&nbsp;and&nbsp;the&nbsp;write&nbsp;actually&nbsp;happens<br>
 asynchronously.&nbsp;To&nbsp;avoid&nbsp;running&nbsp;out&nbsp;of&nbsp;memory&nbsp;by&nbsp;putting&nbsp;too&nbsp;much&nbsp;on&nbsp;the&nbsp;write&nbsp;queue,<br>

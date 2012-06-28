@@ -9,19 +9,7 @@
 <font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="core.html"><font color="#ffffff">core</font></a>.net</strong></big></big></font></td
 ><td align=right valign=bottom
 ><font color="#ffffff" face="helvetica, arial"><a href="index.html">index</a><br></font></td></tr></table>
-    <p><tt>#&nbsp;Copyright&nbsp;2011&nbsp;the&nbsp;original&nbsp;author&nbsp;or&nbsp;authors.<br>
-#<br>
-#&nbsp;Licensed&nbsp;under&nbsp;the&nbsp;Apache&nbsp;License,&nbsp;Version&nbsp;2.0&nbsp;(the&nbsp;"License");<br>
-#&nbsp;you&nbsp;may&nbsp;not&nbsp;use&nbsp;this&nbsp;file&nbsp;except&nbsp;in&nbsp;compliance&nbsp;with&nbsp;the&nbsp;License.<br>
-#&nbsp;You&nbsp;may&nbsp;obtain&nbsp;a&nbsp;copy&nbsp;of&nbsp;the&nbsp;License&nbsp;at<br>
-#<br>
-#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a><br>
-#<br>
-#&nbsp;Unless&nbsp;required&nbsp;by&nbsp;applicable&nbsp;law&nbsp;or&nbsp;agreed&nbsp;to&nbsp;in&nbsp;writing,&nbsp;software<br>
-#&nbsp;distributed&nbsp;under&nbsp;the&nbsp;License&nbsp;is&nbsp;distributed&nbsp;on&nbsp;an&nbsp;"AS&nbsp;IS"&nbsp;BASIS,<br>
-#&nbsp;WITHOUT&nbsp;WARRANTIES&nbsp;OR&nbsp;CONDITIONS&nbsp;OF&nbsp;ANY&nbsp;KIND,&nbsp;either&nbsp;express&nbsp;or&nbsp;implied.<br>
-#&nbsp;See&nbsp;the&nbsp;License&nbsp;for&nbsp;the&nbsp;specific&nbsp;language&nbsp;governing&nbsp;permissions&nbsp;and<br>
-#&nbsp;limitations&nbsp;under&nbsp;the&nbsp;License.</tt></p>
+    <p><tt>Net&nbsp;support&nbsp;to&nbsp;the&nbsp;python&nbsp;vert.x&nbsp;platform</tt></p>
 <p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#aa55cc">
@@ -177,20 +165,21 @@ Methods defined here:<br>
 handler.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-port&nbsp;--&nbsp;The&nbsp;port&nbsp;to&nbsp;connect&nbsp;to.<br>
-host&nbsp;--&nbsp;The&nbsp;host&nbsp;or&nbsp;ip&nbsp;address&nbsp;to&nbsp;connect&nbsp;to.<br>
-handler&nbsp;--&nbsp;The&nbsp;connection&nbsp;handler<br>
-returns&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+@param&nbsp;port:&nbsp;The&nbsp;port&nbsp;to&nbsp;connect&nbsp;to.<br>
+@param&nbsp;host:&nbsp;The&nbsp;host&nbsp;or&nbsp;ip&nbsp;address&nbsp;to&nbsp;connect&nbsp;to.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;connection&nbsp;handler<br>
+&nbsp;<br>
+@return:&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <dl><dt><a name="NetClient-set_trust_all"><strong>set_trust_all</strong></a>(self, val)</dt><dd><tt>Should&nbsp;the&nbsp;client&nbsp;trust&nbsp;ALL&nbsp;server&nbsp;certificates<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;&nbsp;If&nbsp;val&nbsp;is&nbsp;set&nbsp;to&nbsp;true&nbsp;then&nbsp;the&nbsp;client&nbsp;will&nbsp;trust&nbsp;ALL&nbsp;server&nbsp;certificates&nbsp;and&nbsp;will&nbsp;not&nbsp;attempt&nbsp;to&nbsp;authenticate&nbsp;them<br>
+@param&nbsp;val:&nbsp;&nbsp;If&nbsp;val&nbsp;is&nbsp;set&nbsp;to&nbsp;true&nbsp;then&nbsp;the&nbsp;client&nbsp;will&nbsp;trust&nbsp;ALL&nbsp;server&nbsp;certificates&nbsp;and&nbsp;will&nbsp;not&nbsp;attempt&nbsp;to&nbsp;authenticate&nbsp;them<br>
 against&nbsp;it's&nbsp;local&nbsp;client&nbsp;trust&nbsp;store.&nbsp;The&nbsp;default&nbsp;value&nbsp;is&nbsp;false.<br>
 &nbsp;<br>
 Use&nbsp;this&nbsp;method&nbsp;with&nbsp;caution!<br>
 &nbsp;<br>
-returns&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+@return:&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <hr>
 Data descriptors defined here:<br>
@@ -202,7 +191,7 @@ Methods inherited from <a href="core.ssl_support.html#SSLSupport">core.ssl_suppo
 has&nbsp;been&nbsp;set&nbsp;to&nbsp;true.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-password&nbsp;--&nbsp;The&nbsp;password.<br>
+@param&nbsp;password:&nbsp;The&nbsp;password.<br>
 &nbsp;<br>
 return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
@@ -212,14 +201,14 @@ The&nbsp;SSL&nbsp;key&nbsp;store&nbsp;is&nbsp;a&nbsp;standard&nbsp;Java&nbsp;Key
 a&nbsp;client&nbsp;key&nbsp;store&nbsp;if&nbsp;the&nbsp;server&nbsp;requires&nbsp;client&nbsp;authentication&nbsp;via&nbsp;client&nbsp;certificates.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-path&nbsp;--&nbsp;The&nbsp;path&nbsp;to&nbsp;the&nbsp;key&nbsp;store<br>
+@param&nbsp;path:&nbsp;The&nbsp;path&nbsp;to&nbsp;the&nbsp;key&nbsp;store<br>
 &nbsp;<br>
 return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
 <dl><dt><a name="NetClient-set_ssl"><strong>set_ssl</strong></a>(self, val)</dt><dd><tt>Set&nbsp;whether&nbsp;the&nbsp;server&nbsp;or&nbsp;client&nbsp;will&nbsp;use&nbsp;SSL.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;If&nbsp;true&nbsp;then&nbsp;ssl&nbsp;will&nbsp;be&nbsp;used.<br>
+@param&nbsp;val:&nbsp;If&nbsp;true&nbsp;then&nbsp;ssl&nbsp;will&nbsp;be&nbsp;used.<br>
 &nbsp;<br>
 return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
@@ -227,7 +216,7 @@ return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;c
 has&nbsp;been&nbsp;set&nbsp;to&nbsp;true.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-password&nbsp;--&nbsp;The&nbsp;password.<br>
+@param&nbsp;password:&nbsp;The&nbsp;password.<br>
 &nbsp;<br>
 return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
@@ -238,7 +227,7 @@ handshake&nbsp;will&nbsp;fail&nbsp;if&nbsp;the&nbsp;server&nbsp;provides&nbsp;a&
 if&nbsp;the&nbsp;client&nbsp;provides&nbsp;a&nbsp;certificate&nbsp;the&nbsp;server&nbsp;does&nbsp;not&nbsp;trust.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-path&nbsp;--&nbsp;The&nbsp;path&nbsp;to&nbsp;the&nbsp;trust&nbsp;store<br>
+@param&nbsp;path:&nbsp;The&nbsp;path&nbsp;to&nbsp;the&nbsp;trust&nbsp;store<br>
 &nbsp;<br>
 return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
@@ -265,42 +254,41 @@ Methods inherited from <a href="core.tcp_support.html#TCPSupport">core.tcp_suppo
 <dl><dt><a name="NetClient-set_receive_buffer_size"><strong>set_receive_buffer_size</strong></a>(self, bytes)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;receive&nbsp;buffer&nbsp;size.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-bytes&nbsp;--&nbsp;The&nbsp;size&nbsp;in&nbsp;bytes.<br>
+@param&nbsp;bytes:&nbsp;The&nbsp;size&nbsp;in&nbsp;bytes.<br>
 &nbsp;<br>
 return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <dl><dt><a name="NetClient-set_reuse_address"><strong>set_reuse_address</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;reuse&nbsp;address&nbsp;setting.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;reuse&nbsp;address&nbsp;will&nbsp;be&nbsp;enabled.<br>
-&nbsp;<br>
-returns&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+@param&nbsp;val:&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;reuse&nbsp;address&nbsp;will&nbsp;be&nbsp;enabled.<br>
+@return:&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <dl><dt><a name="NetClient-set_send_buffer_size"><strong>set_send_buffer_size</strong></a>(self, bytes)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;send&nbsp;buffer&nbsp;size.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-bytes&nbsp;--&nbsp;The&nbsp;size&nbsp;in&nbsp;bytes.<br>
+@param&nbsp;bytes:&nbsp;The&nbsp;size&nbsp;in&nbsp;bytes.<br>
 &nbsp;<br>
 return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <dl><dt><a name="NetClient-set_so_linger"><strong>set_so_linger</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;so&nbsp;linger&nbsp;setting.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;so&nbsp;linger&nbsp;will&nbsp;be&nbsp;enabled.<br>
+@param&nbsp;val:&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;so&nbsp;linger&nbsp;will&nbsp;be&nbsp;enabled.<br>
 &nbsp;<br>
 return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <dl><dt><a name="NetClient-set_tcp_keep_alive"><strong>set_tcp_keep_alive</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;keep&nbsp;alive&nbsp;setting.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;keep&nbsp;alive&nbsp;will&nbsp;be&nbsp;enabled.<br>
+@param&nbsp;val:&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;keep&nbsp;alive&nbsp;will&nbsp;be&nbsp;enabled.<br>
 &nbsp;<br>
 return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <dl><dt><a name="NetClient-set_traffic_class"><strong>set_traffic_class</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;traffic&nbsp;class&nbsp;setting.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;The&nbsp;TCP&nbsp;traffic&nbsp;class&nbsp;setting.<br>
+@param&nbsp;val:&nbsp;The&nbsp;TCP&nbsp;traffic&nbsp;class&nbsp;setting.<br>
 &nbsp;<br>
 return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
@@ -348,21 +336,21 @@ As&nbsp;the&nbsp;server&nbsp;accepts&nbsp;TCP&nbsp;or&nbsp;SSL&nbsp;connections&
 connect&nbsp;handler.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;connection&nbsp;handler<br>
+@param&nbsp;handler:&nbsp;connection&nbsp;handler<br>
 &nbsp;<br>
-returns&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+@return:&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <dl><dt><a name="NetServer-listen"><strong>listen</strong></a>(self, port, host<font color="#909090">='0.0.0.0'</font>)</dt><dd><tt>Instruct&nbsp;the&nbsp;server&nbsp;to&nbsp;listen&nbsp;for&nbsp;incoming&nbsp;connections.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-port&nbsp;--&nbsp;The&nbsp;port&nbsp;to&nbsp;listen&nbsp;on.<br>
-host&nbsp;--&nbsp;The&nbsp;host&nbsp;name&nbsp;or&nbsp;ip&nbsp;address&nbsp;to&nbsp;listen&nbsp;on.<br>
+@param&nbsp;port:&nbsp;The&nbsp;port&nbsp;to&nbsp;listen&nbsp;on.<br>
+@param&nbsp;host:&nbsp;The&nbsp;host&nbsp;name&nbsp;or&nbsp;ip&nbsp;address&nbsp;to&nbsp;listen&nbsp;on.<br>
 &nbsp;<br>
-returns&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+@return:&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <dl><dt><a name="NetServer-set_client_auth_required"><strong>set_client_auth_required</strong></a>(self, val)</dt><dd><tt>Client&nbsp;authentication&nbsp;is&nbsp;an&nbsp;extra&nbsp;level&nbsp;of&nbsp;security&nbsp;in&nbsp;SSL,&nbsp;and&nbsp;requires&nbsp;clients&nbsp;to&nbsp;provide&nbsp;client&nbsp;certificates.<br>
 Those&nbsp;certificates&nbsp;must&nbsp;be&nbsp;added&nbsp;to&nbsp;the&nbsp;server&nbsp;trust&nbsp;store.<br>
-val&nbsp;--&nbsp;&nbsp;If&nbsp;true&nbsp;then&nbsp;the&nbsp;server&nbsp;will&nbsp;request&nbsp;client&nbsp;authentication&nbsp;from&nbsp;any&nbsp;connecting&nbsp;clients,&nbsp;if&nbsp;they<br>
+@param&nbsp;val:&nbsp;&nbsp;If&nbsp;true&nbsp;then&nbsp;the&nbsp;server&nbsp;will&nbsp;request&nbsp;client&nbsp;authentication&nbsp;from&nbsp;any&nbsp;connecting&nbsp;clients,&nbsp;if&nbsp;they<br>
 do&nbsp;not&nbsp;authenticate&nbsp;then&nbsp;they&nbsp;will&nbsp;not&nbsp;make&nbsp;a&nbsp;connection.</tt></dd></dl>
 
 <hr>
@@ -375,7 +363,7 @@ Methods inherited from <a href="core.ssl_support.html#SSLSupport">core.ssl_suppo
 has&nbsp;been&nbsp;set&nbsp;to&nbsp;true.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-password&nbsp;--&nbsp;The&nbsp;password.<br>
+@param&nbsp;password:&nbsp;The&nbsp;password.<br>
 &nbsp;<br>
 return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
@@ -385,14 +373,14 @@ The&nbsp;SSL&nbsp;key&nbsp;store&nbsp;is&nbsp;a&nbsp;standard&nbsp;Java&nbsp;Key
 a&nbsp;client&nbsp;key&nbsp;store&nbsp;if&nbsp;the&nbsp;server&nbsp;requires&nbsp;client&nbsp;authentication&nbsp;via&nbsp;client&nbsp;certificates.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-path&nbsp;--&nbsp;The&nbsp;path&nbsp;to&nbsp;the&nbsp;key&nbsp;store<br>
+@param&nbsp;path:&nbsp;The&nbsp;path&nbsp;to&nbsp;the&nbsp;key&nbsp;store<br>
 &nbsp;<br>
 return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
 <dl><dt><a name="NetServer-set_ssl"><strong>set_ssl</strong></a>(self, val)</dt><dd><tt>Set&nbsp;whether&nbsp;the&nbsp;server&nbsp;or&nbsp;client&nbsp;will&nbsp;use&nbsp;SSL.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;If&nbsp;true&nbsp;then&nbsp;ssl&nbsp;will&nbsp;be&nbsp;used.<br>
+@param&nbsp;val:&nbsp;If&nbsp;true&nbsp;then&nbsp;ssl&nbsp;will&nbsp;be&nbsp;used.<br>
 &nbsp;<br>
 return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
@@ -400,7 +388,7 @@ return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;c
 has&nbsp;been&nbsp;set&nbsp;to&nbsp;true.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-password&nbsp;--&nbsp;The&nbsp;password.<br>
+@param&nbsp;password:&nbsp;The&nbsp;password.<br>
 &nbsp;<br>
 return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
@@ -411,7 +399,7 @@ handshake&nbsp;will&nbsp;fail&nbsp;if&nbsp;the&nbsp;server&nbsp;provides&nbsp;a&
 if&nbsp;the&nbsp;client&nbsp;provides&nbsp;a&nbsp;certificate&nbsp;the&nbsp;server&nbsp;does&nbsp;not&nbsp;trust.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-path&nbsp;--&nbsp;The&nbsp;path&nbsp;to&nbsp;the&nbsp;trust&nbsp;store<br>
+@param&nbsp;path:&nbsp;The&nbsp;path&nbsp;to&nbsp;the&nbsp;trust&nbsp;store<br>
 &nbsp;<br>
 return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
 
@@ -438,42 +426,41 @@ Methods inherited from <a href="core.tcp_support.html#TCPSupport">core.tcp_suppo
 <dl><dt><a name="NetServer-set_receive_buffer_size"><strong>set_receive_buffer_size</strong></a>(self, bytes)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;receive&nbsp;buffer&nbsp;size.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-bytes&nbsp;--&nbsp;The&nbsp;size&nbsp;in&nbsp;bytes.<br>
+@param&nbsp;bytes:&nbsp;The&nbsp;size&nbsp;in&nbsp;bytes.<br>
 &nbsp;<br>
 return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <dl><dt><a name="NetServer-set_reuse_address"><strong>set_reuse_address</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;reuse&nbsp;address&nbsp;setting.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;reuse&nbsp;address&nbsp;will&nbsp;be&nbsp;enabled.<br>
-&nbsp;<br>
-returns&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+@param&nbsp;val:&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;reuse&nbsp;address&nbsp;will&nbsp;be&nbsp;enabled.<br>
+@return:&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <dl><dt><a name="NetServer-set_send_buffer_size"><strong>set_send_buffer_size</strong></a>(self, bytes)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;send&nbsp;buffer&nbsp;size.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-bytes&nbsp;--&nbsp;The&nbsp;size&nbsp;in&nbsp;bytes.<br>
+@param&nbsp;bytes:&nbsp;The&nbsp;size&nbsp;in&nbsp;bytes.<br>
 &nbsp;<br>
 return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <dl><dt><a name="NetServer-set_so_linger"><strong>set_so_linger</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;so&nbsp;linger&nbsp;setting.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;so&nbsp;linger&nbsp;will&nbsp;be&nbsp;enabled.<br>
+@param&nbsp;val:&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;so&nbsp;linger&nbsp;will&nbsp;be&nbsp;enabled.<br>
 &nbsp;<br>
 return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <dl><dt><a name="NetServer-set_tcp_keep_alive"><strong>set_tcp_keep_alive</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;keep&nbsp;alive&nbsp;setting.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;keep&nbsp;alive&nbsp;will&nbsp;be&nbsp;enabled.<br>
+@param&nbsp;val:&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;keep&nbsp;alive&nbsp;will&nbsp;be&nbsp;enabled.<br>
 &nbsp;<br>
 return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
 <dl><dt><a name="NetServer-set_traffic_class"><strong>set_traffic_class</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;traffic&nbsp;class&nbsp;setting.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;The&nbsp;TCP&nbsp;traffic&nbsp;class&nbsp;setting.<br>
+@param&nbsp;val:&nbsp;The&nbsp;TCP&nbsp;traffic&nbsp;class&nbsp;setting.<br>
 &nbsp;<br>
 return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
 
@@ -516,38 +503,38 @@ Methods defined here:<br>
 <dl><dt><a name="NetSocket-closed_handler"><strong>closed_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;closed&nbsp;handler&nbsp;on&nbsp;the&nbsp;socket.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;A&nbsp;block&nbsp;to&nbsp;be&nbsp;used&nbsp;as&nbsp;the&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;A&nbsp;block&nbsp;to&nbsp;be&nbsp;used&nbsp;as&nbsp;the&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="NetSocket-send_file"><strong>send_file</strong></a>(self, file_path)</dt><dd><tt>Tell&nbsp;the&nbsp;kernel&nbsp;to&nbsp;stream&nbsp;a&nbsp;file&nbsp;directly&nbsp;from&nbsp;disk&nbsp;to&nbsp;the&nbsp;outgoing&nbsp;connection,&nbsp;bypassing&nbsp;userspace&nbsp;altogether<br>
 (where&nbsp;supported&nbsp;by&nbsp;the&nbsp;underlying&nbsp;operating&nbsp;system.&nbsp;This&nbsp;is&nbsp;a&nbsp;very&nbsp;efficient&nbsp;way&nbsp;to&nbsp;stream&nbsp;files.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-file_path&nbsp;--&nbsp;Path&nbsp;to&nbsp;file&nbsp;to&nbsp;send.</tt></dd></dl>
+@param&nbsp;file_path:&nbsp;Path&nbsp;to&nbsp;file&nbsp;to&nbsp;send.</tt></dd></dl>
 
 <dl><dt><a name="NetSocket-write_buffer"><strong>write_buffer</strong></a>(self, buffer, handler<font color="#909090">=None</font>)</dt><dd><tt>Write&nbsp;a&nbsp;Buffer&nbsp;to&nbsp;the&nbsp;socket.&nbsp;The&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;the&nbsp;buffer&nbsp;has&nbsp;actually&nbsp;been&nbsp;written&nbsp;to&nbsp;the&nbsp;wire.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-buffer&nbsp;--&nbsp;The&nbsp;buffer&nbsp;to&nbsp;write.<br>
-handler&nbsp;--&nbsp;The&nbsp;handler&nbsp;to&nbsp;call&nbsp;on&nbsp;completion.</tt></dd></dl>
+@param&nbsp;buffer:&nbsp;The&nbsp;buffer&nbsp;to&nbsp;write.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;call&nbsp;on&nbsp;completion.</tt></dd></dl>
 
 <dl><dt><a name="NetSocket-write_str"><strong>write_str</strong></a>(self, str, enc<font color="#909090">='UTF-8'</font>, handler<font color="#909090">=None</font>)</dt><dd><tt>Write&nbsp;a&nbsp;String&nbsp;to&nbsp;the&nbsp;socket.&nbsp;The&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;the&nbsp;string&nbsp;has&nbsp;actually&nbsp;been&nbsp;written&nbsp;to&nbsp;the&nbsp;wire.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-str&nbsp;--&nbsp;The&nbsp;string&nbsp;to&nbsp;write.<br>
-enc&nbsp;--&nbsp;The&nbsp;encoding&nbsp;to&nbsp;use.<br>
-handler&nbsp;--&nbsp;The&nbsp;handler&nbsp;to&nbsp;call&nbsp;on&nbsp;completion.</tt></dd></dl>
+@param&nbsp;str:&nbsp;The&nbsp;string&nbsp;to&nbsp;write.<br>
+@param&nbsp;enc:&nbsp;The&nbsp;encoding&nbsp;to&nbsp;use.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;call&nbsp;on&nbsp;completion.</tt></dd></dl>
 
 <hr>
 Methods inherited from <a href="core.streams.html#ReadStream">core.streams.ReadStream</a>:<br>
 <dl><dt><a name="NetSocket-data_handler"><strong>data_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;data&nbsp;handler.&nbsp;As&nbsp;data&nbsp;is&nbsp;read,&nbsp;the&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;data.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;data&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;data&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="NetSocket-end_handler"><strong>end_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;end&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.&nbsp;Once&nbsp;the&nbsp;stream&nbsp;has&nbsp;ended,&nbsp;and&nbsp;there&nbsp;is&nbsp;no&nbsp;more&nbsp;data&nbsp;to&nbsp;be&nbsp;read,&nbsp;this&nbsp;handler&nbsp;will&nbsp;be&nbsp;called.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="NetSocket-exception_handler"><strong>exception_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;execption&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.<br>
 param&nbsp;[Block]&nbsp;hndlr.&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
@@ -570,14 +557,14 @@ Methods inherited from <a href="core.streams.html#WriteStream">core.streams.Writ
 queue&nbsp;has&nbsp;been&nbsp;reduced&nbsp;to&nbsp;maxSize&nbsp;/&nbsp;2.&nbsp;See&nbsp;&nbsp;for&nbsp;an&nbsp;example&nbsp;of&nbsp;this&nbsp;being&nbsp;used.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;drain&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;drain&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="NetSocket-set_write_queue_max_size"><strong>set_write_queue_max_size</strong></a>(self, size)</dt><dd><tt>Set&nbsp;the&nbsp;maximum&nbsp;size&nbsp;of&nbsp;the&nbsp;write&nbsp;queue.&nbsp;You&nbsp;will&nbsp;still&nbsp;be&nbsp;able&nbsp;to&nbsp;write&nbsp;to&nbsp;the&nbsp;stream&nbsp;even<br>
 if&nbsp;there&nbsp;is&nbsp;more&nbsp;data&nbsp;than&nbsp;this&nbsp;in&nbsp;the&nbsp;write&nbsp;queue.&nbsp;This&nbsp;is&nbsp;used&nbsp;as&nbsp;an&nbsp;indicator&nbsp;by&nbsp;classes&nbsp;such&nbsp;as<br>
 to&nbsp;provide&nbsp;flow&nbsp;control.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-size&nbsp;--&nbsp;The&nbsp;maximum&nbsp;size,&nbsp;in&nbsp;bytes.</tt></dd></dl>
+@param&nbsp;size:&nbsp;The&nbsp;maximum&nbsp;size,&nbsp;in&nbsp;bytes.</tt></dd></dl>
 
 <hr>
 Data descriptors inherited from <a href="core.streams.html#WriteStream">core.streams.WriteStream</a>:<br>

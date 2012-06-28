@@ -429,10 +429,16 @@
   </tr></table>
   
   <p>Inserts a header into the request.</p>
-  <p>Keyword arguments: key -- The header key value -- The header value. 
-  to_s will be called on the value to determine the actual String value to 
-  insert. returns  self So multiple operations can be chained.</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>key</code></strong> - The header key</li>
+        <li><strong class="pname"><code>value</code></strong> - The header value. to_s will be called on the value to determine 
+          the actual String value to insert.</li>
+    </ul></dd>
+    <dt>Returns:</dt>
+        <dd>self so multiple operations can be chained.</dd>
   </dl>
 </td></tr></table>
 </div>
@@ -453,10 +459,16 @@
   </tr></table>
   
   <p>Write a to the request body.</p>
-  <p>Keyword arguments: chunk -- The buffer to write. handler -- The 
-  handler will be called when the buffer has actually been written to the 
-  wire. returns  self So multiple operations can be chained.</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>chunk</code></strong> - The buffer to write.</li>
+        <li><strong class="pname"><code>handler</code></strong> - The handler will be called when the buffer has actually been 
+          written to the wire.</li>
+    </ul></dd>
+    <dt>Returns:</dt>
+        <dd>self So multiple operations can be chained.</dd>
     <dt>Overrides:
         <a href="core.streams.WriteStream-class.html#write_buffer">streams.WriteStream.write_buffer</a>
     </dt>
@@ -481,11 +493,17 @@
   </tr></table>
   
   <p>Write a to the request body.</p>
-  <p>Keyword arguments: str -- The string to write. enc -- The encoding to 
-  use. handler -- The handler will be called when the buffer has actually 
-  been written to the wire.</p>
-  <p>returns self So multiple operations can be chained.</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>str</code></strong> - The string to write.</li>
+        <li><strong class="pname"><code>enc</code></strong> - The encoding to use.</li>
+        <li><strong class="pname"><code>handler</code></strong> - The handler will be called when the buffer has actually been 
+          written to the wire.</li>
+    </ul></dd>
+    <dt>Returns:</dt>
+        <dd>self So multiple operations can be chained.</dd>
   </dl>
 </td></tr></table>
 </div>
@@ -506,8 +524,9 @@
   <p>Forces the head of the request to be written before end is called on 
   the request. This is normally used to implement HTTP 100-continue 
   handling, see continue_handler for more information.</p>
-  <p>returns self So multiple operations can be chained.</p>
   <dl class="fields">
+    <dt>Returns:</dt>
+        <dd>self So multiple operations can be chained.</dd>
   </dl>
 </td></tr></table>
 </div>
@@ -552,8 +571,13 @@
   </tr></table>
   
   <p>Same as write_buffer_and_end but writes a String</p>
-  <p>Keyword arguments: str -- The String to write enc -- The encoding</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>str</code></strong> - The String to write</li>
+        <li><strong class="pname"><code>enc</code></strong> - The encoding</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -575,8 +599,12 @@
   <p>Same as end but writes some data to the response body before ending. 
   If the response is not chunked and no other data has been written then 
   the Content-Length header will be automatically set</p>
-  <p>Keyword arguments: chunk -- The Buffer to write</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>chunk</code></strong> - The Buffer to write</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -596,17 +624,23 @@
   </tr></table>
   
   <p>Sets whether the request should used HTTP chunked encoding or not.</p>
-  <p>Keyword arguments: val -- If val is true, this request will use HTTP 
-  chunked encoding, and each call to write to the body will correspond to a
-  new HTTP chunk sent on the wire. If chunked encoding is used the HTTP 
-  header 'Transfer-Encoding' with a value of 'Chunked' will be 
-  automatically inserted in the request.</p>
-  <p>If chunked is false, this request will not use HTTP chunked encoding, 
-  and therefore if any data is written the body of the request, the total 
-  size of that data must be set in the 'Content-Length' header before any 
-  data is written to the request body.</p>
-  <p>returns self So multiple operations can be chained.</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>val</code></strong> - If val is true, this request will use HTTP chunked encoding, and 
+          each call to write to the body will correspond to a new HTTP 
+          chunk sent on the wire. If chunked encoding is used the HTTP 
+          header 'Transfer-Encoding' with a value of 'Chunked' will be 
+          automatically inserted in the request.
+          <p>If chunked is false, this request will not use HTTP chunked 
+          encoding, and therefore if any data is written the body of the 
+          request, the total size of that data must be set in the 
+          'Content-Length' header before any data is written to the request
+          body.</p></li>
+    </ul></dd>
+    <dt>Returns:</dt>
+        <dd>self So multiple operations can be chained.</dd>
   </dl>
 </td></tr></table>
 </div>
@@ -632,8 +666,12 @@
   data to the request body and later end it. This is normally used in 
   conjunction with the send_head method to force the request header to be 
   written before the request has ended.</p>
-  <p>Keyword arguments: handler -- The handler</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>handler</code></strong> - The handler</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -662,7 +700,7 @@
   <tr>
     <td align="left" class="footer">
     Generated by Epydoc 3.0.1
-    on Wed Jun 27 09:06:28 2012
+    on Thu Jun 28 22:57:46 2012
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

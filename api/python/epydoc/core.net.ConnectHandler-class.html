@@ -3,7 +3,7 @@
           "DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-  <title>core.parsetools.RecordParserHandler</title>
+  <title>core.net.ConnectHandler</title>
   <link rel="stylesheet" href="epydoc.css" type="text/css" />
   <script type="text/javascript" src="epydoc.js"></script>
 </head>
@@ -35,8 +35,8 @@
     <td width="100%">
       <span class="breadcrumbs">
         <a href="core-module.html">Package&nbsp;core</a> ::
-        <a href="core.parsetools-module.html">Module&nbsp;parsetools</a> ::
-        Class&nbsp;RecordParserHandler
+        <a href="core.net-module.html">Module&nbsp;net</a> ::
+        Class&nbsp;ConnectHandler
       </span>
     </td>
     <td>
@@ -46,22 +46,22 @@
     onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
         <tr><td align="right"><span class="options"
             >[<a href="frames.html" target="_top">frames</a
-            >]&nbsp;|&nbsp;<a href="core.parsetools.RecordParserHandler-class.html"
+            >]&nbsp;|&nbsp;<a href="core.net.ConnectHandler-class.html"
             target="_top">no&nbsp;frames</a>]</span></td></tr>
       </table>
     </td>
   </tr>
 </table>
 <!-- ==================== CLASS DESCRIPTION ==================== -->
-<h1 class="epydoc">Class RecordParserHandler</h1><p class="nomargin-top"><span class="codelink"><a href="core.parsetools-pysrc.html#RecordParserHandler">source&nbsp;code</a></span></p>
+<h1 class="epydoc">Class ConnectHandler</h1><p class="nomargin-top"><span class="codelink"><a href="core.net-pysrc.html#ConnectHandler">source&nbsp;code</a></span></p>
 <pre class="base-tree">
 org.vertx.java.core.Handler --+
                               |
-                             <strong class="uidshort">RecordParserHandler</strong>
+                             <strong class="uidshort">ConnectHandler</strong>
 </pre>
 
 <hr />
-<p>Record Parser handler</p>
+<p>Connection handler</p>
 
 <!-- ==================== INSTANCE METHODS ==================== -->
 <a name="section-InstanceMethods"></a>
@@ -89,7 +89,7 @@ org.vertx.java.core.Handler --+
           <td><span class="summary-sig"><a name="__init__"></a><span class="summary-sig-name">__init__</span>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">handler</span>)</span></td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="core.parsetools-pysrc.html#RecordParserHandler.__init__">source&nbsp;code</a></span>
+            <span class="codelink"><a href="core.net-pysrc.html#ConnectHandler.__init__">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -104,10 +104,10 @@ org.vertx.java.core.Handler --+
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td><span class="summary-sig"><a name="handle"></a><span class="summary-sig-name">handle</span>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">buffer</span>)</span><br />
-      Call the handler after buffer parsed</td>
+        <span class="summary-sig-arg">socket</span>)</span><br />
+      Call the handler after connection is established</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="core.parsetools-pysrc.html#RecordParserHandler.handle">source&nbsp;code</a></span>
+            <span class="codelink"><a href="core.net-pysrc.html#ConnectHandler.handle">source&nbsp;code</a></span>
             
           </td>
         </tr>

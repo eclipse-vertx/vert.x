@@ -92,25 +92,25 @@ other&nbsp;streams,&nbsp;e.g.&nbsp;an&nbsp;HttpClientRequest&nbsp;instance,&nbsp
 If&nbsp;the&nbsp;file&nbsp;was&nbsp;opened&nbsp;with&nbsp;flush&nbsp;set&nbsp;to&nbsp;true&nbsp;then&nbsp;calling&nbsp;this&nbsp;method&nbsp;will&nbsp;have&nbsp;no&nbsp;effect.<br>
 Keyword&nbsp;arguments:<br>
 &nbsp;<br>
-handler&nbsp;--&nbsp;the&nbsp;handler&nbsp;which&nbsp;is&nbsp;called&nbsp;on&nbsp;completion.</tt></dd></dl>
+@param&nbsp;handler:&nbsp;the&nbsp;handler&nbsp;which&nbsp;is&nbsp;called&nbsp;on&nbsp;completion.</tt></dd></dl>
 
 <dl><dt><a name="AsyncFile-read"><strong>read</strong></a>(self, buffer, offset, position, length, handler)</dt><dd><tt>Reads&nbsp;some&nbsp;data&nbsp;from&nbsp;a&nbsp;file&nbsp;into&nbsp;a&nbsp;buffer,&nbsp;asynchronously.<br>
 When&nbsp;multiple&nbsp;reads&nbsp;are&nbsp;invoked&nbsp;on&nbsp;the&nbsp;same&nbsp;file<br>
 there&nbsp;are&nbsp;no&nbsp;guarantees&nbsp;as&nbsp;to&nbsp;order&nbsp;in&nbsp;which&nbsp;those&nbsp;reads&nbsp;actually&nbsp;occur.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments&nbsp;&nbsp;<br>
-buffer&nbsp;--&nbsp;the&nbsp;buffer&nbsp;into&nbsp;which&nbsp;the&nbsp;data&nbsp;which&nbsp;is&nbsp;read&nbsp;is&nbsp;written.<br>
-offset&nbsp;--&nbsp;the&nbsp;position&nbsp;in&nbsp;the&nbsp;buffer&nbsp;where&nbsp;to&nbsp;start&nbsp;writing&nbsp;the&nbsp;data.<br>
-position&nbsp;--&nbsp;the&nbsp;position&nbsp;in&nbsp;the&nbsp;file&nbsp;where&nbsp;to&nbsp;read&nbsp;the&nbsp;data.<br>
-length&nbsp;--&nbsp;the&nbsp;number&nbsp;of&nbsp;bytes&nbsp;to&nbsp;read.</tt></dd></dl>
+@param&nbsp;buffer:&nbsp;the&nbsp;buffer&nbsp;into&nbsp;which&nbsp;the&nbsp;data&nbsp;which&nbsp;is&nbsp;read&nbsp;is&nbsp;written.<br>
+@param&nbsp;offset:&nbsp;the&nbsp;position&nbsp;in&nbsp;the&nbsp;buffer&nbsp;where&nbsp;to&nbsp;start&nbsp;writing&nbsp;the&nbsp;data.<br>
+@param&nbsp;position:&nbsp;the&nbsp;position&nbsp;in&nbsp;the&nbsp;file&nbsp;where&nbsp;to&nbsp;read&nbsp;the&nbsp;data.<br>
+@param&nbsp;length:&nbsp;the&nbsp;number&nbsp;of&nbsp;bytes&nbsp;to&nbsp;read.</tt></dd></dl>
 
 <dl><dt><a name="AsyncFile-write"><strong>write</strong></a>(self, buffer, position, handler)</dt><dd><tt>Write&nbsp;a&nbsp;Buffer&nbsp;to&nbsp;the&nbsp;file,&nbsp;asynchronously.<br>
 When&nbsp;multiple&nbsp;writes&nbsp;are&nbsp;invoked&nbsp;on&nbsp;the&nbsp;same&nbsp;file<br>
 there&nbsp;are&nbsp;no&nbsp;guarantees&nbsp;as&nbsp;to&nbsp;order&nbsp;in&nbsp;which&nbsp;those&nbsp;writes&nbsp;actually&nbsp;occur.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-buffer&nbsp;--&nbsp;the&nbsp;buffer&nbsp;to&nbsp;write<br>
-position&nbsp;--&nbsp;the&nbsp;position&nbsp;in&nbsp;the&nbsp;file&nbsp;where&nbsp;to&nbsp;write&nbsp;the&nbsp;buffer.&nbsp;Position&nbsp;is&nbsp;measured&nbsp;in&nbsp;bytes&nbsp;and<br>
+@param&nbsp;buffer:&nbsp;the&nbsp;buffer&nbsp;to&nbsp;write<br>
+@param&nbsp;position:&nbsp;the&nbsp;position&nbsp;in&nbsp;the&nbsp;file&nbsp;where&nbsp;to&nbsp;write&nbsp;the&nbsp;buffer.&nbsp;Position&nbsp;is&nbsp;measured&nbsp;in&nbsp;bytes&nbsp;and<br>
 starts&nbsp;with&nbsp;zero&nbsp;at&nbsp;the&nbsp;beginning&nbsp;of&nbsp;the&nbsp;file.</tt></dd></dl>
 
 <hr>
@@ -148,12 +148,12 @@ Methods inherited from <a href="core.streams.html#ReadStream">core.streams.ReadS
 <dl><dt><a name="AsyncFileReadStream-data_handler"><strong>data_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;data&nbsp;handler.&nbsp;As&nbsp;data&nbsp;is&nbsp;read,&nbsp;the&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;data.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;data&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;data&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="AsyncFileReadStream-end_handler"><strong>end_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;end&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.&nbsp;Once&nbsp;the&nbsp;stream&nbsp;has&nbsp;ended,&nbsp;and&nbsp;there&nbsp;is&nbsp;no&nbsp;more&nbsp;data&nbsp;to&nbsp;be&nbsp;read,&nbsp;this&nbsp;handler&nbsp;will&nbsp;be&nbsp;called.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="AsyncFileReadStream-exception_handler"><strong>exception_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;execption&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.<br>
 param&nbsp;[Block]&nbsp;hndlr.&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
@@ -192,19 +192,19 @@ Methods inherited from <a href="core.streams.html#WriteStream">core.streams.Writ
 queue&nbsp;has&nbsp;been&nbsp;reduced&nbsp;to&nbsp;maxSize&nbsp;/&nbsp;2.&nbsp;See&nbsp;&nbsp;for&nbsp;an&nbsp;example&nbsp;of&nbsp;this&nbsp;being&nbsp;used.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;drain&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;drain&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="AsyncFileWriteStream-exception_handler"><strong>exception_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;execption&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="AsyncFileWriteStream-set_write_queue_max_size"><strong>set_write_queue_max_size</strong></a>(self, size)</dt><dd><tt>Set&nbsp;the&nbsp;maximum&nbsp;size&nbsp;of&nbsp;the&nbsp;write&nbsp;queue.&nbsp;You&nbsp;will&nbsp;still&nbsp;be&nbsp;able&nbsp;to&nbsp;write&nbsp;to&nbsp;the&nbsp;stream&nbsp;even<br>
 if&nbsp;there&nbsp;is&nbsp;more&nbsp;data&nbsp;than&nbsp;this&nbsp;in&nbsp;the&nbsp;write&nbsp;queue.&nbsp;This&nbsp;is&nbsp;used&nbsp;as&nbsp;an&nbsp;indicator&nbsp;by&nbsp;classes&nbsp;such&nbsp;as<br>
 to&nbsp;provide&nbsp;flow&nbsp;control.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-size&nbsp;--&nbsp;The&nbsp;maximum&nbsp;size,&nbsp;in&nbsp;bytes.</tt></dd></dl>
+@param&nbsp;size:&nbsp;The&nbsp;maximum&nbsp;size,&nbsp;in&nbsp;bytes.</tt></dd></dl>
 
 <dl><dt><a name="AsyncFileWriteStream-write_buffer"><strong>write_buffer</strong></a>(self, buff)</dt><dd><tt>Write&nbsp;some&nbsp;data&nbsp;to&nbsp;the&nbsp;stream.&nbsp;The&nbsp;data&nbsp;is&nbsp;put&nbsp;on&nbsp;an&nbsp;internal&nbsp;write&nbsp;queue,&nbsp;and&nbsp;the&nbsp;write&nbsp;actually&nbsp;happens<br>
 asynchronously.&nbsp;To&nbsp;avoid&nbsp;running&nbsp;out&nbsp;of&nbsp;memory&nbsp;by&nbsp;putting&nbsp;too&nbsp;much&nbsp;on&nbsp;the&nbsp;write&nbsp;queue,<br>
@@ -392,29 +392,29 @@ The&nbsp;synchronous&nbsp;versions&nbsp;return&nbsp;the&nbsp;results,&nbsp;or&nb
 <dl><dt><a name="FileSystem-chmod"><strong>chmod</strong></a>(path, perms, dir_perms<font color="#909090">=None</font>, handler<font color="#909090">=None</font>)</dt><dd><tt>Change&nbsp;the&nbsp;permissions&nbsp;on&nbsp;a&nbsp;file,&nbsp;asynchronously.&nbsp;If&nbsp;the&nbsp;file&nbsp;is&nbsp;directory&nbsp;then&nbsp;all&nbsp;contents&nbsp;will&nbsp;also&nbsp;have&nbsp;their&nbsp;permissions&nbsp;changed&nbsp;recursively.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-&nbsp;&nbsp;path&nbsp;Path&nbsp;of&nbsp;file&nbsp;to&nbsp;change&nbsp;permissions<br>
-&nbsp;&nbsp;perms&nbsp;A&nbsp;permission&nbsp;string&nbsp;of&nbsp;the&nbsp;form&nbsp;rwxr-x---&nbsp;as&nbsp;specified&nbsp;in&nbsp;<a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html</a>}.&nbsp;This&nbsp;is<br>
+@param&nbsp;path:&nbsp;path&nbsp;of&nbsp;file&nbsp;to&nbsp;change&nbsp;permissions<br>
+@param&nbsp;perms:&nbsp;a&nbsp;permission&nbsp;string&nbsp;of&nbsp;the&nbsp;form&nbsp;rwxr-x---&nbsp;as&nbsp;specified&nbsp;in&nbsp;<a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html</a>.&nbsp;This&nbsp;is<br>
 used&nbsp;to&nbsp;set&nbsp;the&nbsp;permissions&nbsp;for&nbsp;any&nbsp;regular&nbsp;files&nbsp;(not&nbsp;directories).<br>
-&nbsp;&nbsp;dir_perms&nbsp;A&nbsp;permission&nbsp;string&nbsp;of&nbsp;the&nbsp;form&nbsp;rwxr-x---.&nbsp;Used&nbsp;to&nbsp;set&nbsp;permissions&nbsp;for&nbsp;regular&nbsp;files.<br>
-&nbsp;&nbsp;handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+@param&nbsp;dir_perms:&nbsp;a&nbsp;permission&nbsp;string&nbsp;of&nbsp;the&nbsp;form&nbsp;rwxr-x---.&nbsp;Used&nbsp;to&nbsp;set&nbsp;permissions&nbsp;for&nbsp;regular&nbsp;files.<br>
+@param&nbsp;handler:&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-chmod_sync"><strong>chmod_sync</strong></a>(path, perms, dir_perms<font color="#909090">=None</font>)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.chmod</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-copy"><strong>copy</strong></a>(frm, to, handler)</dt><dd><tt>Copy&nbsp;a&nbsp;file,&nbsp;asynchronously.&nbsp;The&nbsp;copy&nbsp;will&nbsp;fail&nbsp;if&nbsp;from&nbsp;does&nbsp;not&nbsp;exist,&nbsp;or&nbsp;if&nbsp;to&nbsp;already&nbsp;exists.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-frm&nbsp;--&nbsp;path&nbsp;of&nbsp;file&nbsp;to&nbsp;copy<br>
-to&nbsp;--&nbsp;path&nbsp;of&nbsp;file&nbsp;to&nbsp;copy&nbsp;to<br>
-handler&nbsp;--&nbsp;the&nbsp;handler&nbsp;which&nbsp;is&nbsp;called&nbsp;on&nbsp;completion.</tt></dd></dl>
+@param&nbsp;frm:&nbsp;path&nbsp;of&nbsp;file&nbsp;to&nbsp;copy<br>
+@param&nbsp;to:&nbsp;path&nbsp;of&nbsp;file&nbsp;to&nbsp;copy&nbsp;to<br>
+@param&nbsp;handler:&nbsp;the&nbsp;handler&nbsp;which&nbsp;is&nbsp;called&nbsp;on&nbsp;completion.</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-copy_recursive"><strong>copy_recursive</strong></a>(frm, to, handler)</dt><dd><tt>Copy&nbsp;a&nbsp;file&nbsp;recursively,&nbsp;asynchronously.&nbsp;The&nbsp;copy&nbsp;will&nbsp;fail&nbsp;if&nbsp;from&nbsp;does&nbsp;not&nbsp;exist,&nbsp;or&nbsp;if&nbsp;to&nbsp;already&nbsp;exists&nbsp;and&nbsp;is&nbsp;not&nbsp;empty.<br>
 If&nbsp;the&nbsp;source&nbsp;is&nbsp;a&nbsp;directory&nbsp;all&nbsp;contents&nbsp;of&nbsp;the&nbsp;directory&nbsp;will&nbsp;be&nbsp;copied&nbsp;recursively,&nbsp;i.e.&nbsp;the&nbsp;entire&nbsp;directory<br>
 tree&nbsp;is&nbsp;copied.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-frm&nbsp;--&nbsp;path&nbsp;of&nbsp;file&nbsp;to&nbsp;copy<br>
-to&nbsp;--&nbsp;path&nbsp;of&nbsp;file&nbsp;to&nbsp;copy&nbsp;to<br>
-handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+@param&nbsp;frm:&nbsp;path&nbsp;of&nbsp;file&nbsp;to&nbsp;copy<br>
+@param&nbsp;to:&nbsp;path&nbsp;of&nbsp;file&nbsp;to&nbsp;copy&nbsp;to<br>
+@param&nbsp;handler:&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-copy_recursive_sync"><strong>copy_recursive_sync</strong></a>(frm, to)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.copy_recursive</tt></dd></dl>
 
@@ -423,9 +423,9 @@ handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete
 <dl><dt><a name="FileSystem-create_file"><strong>create_file</strong></a>(path, perms<font color="#909090">=None</font>, handler<font color="#909090">=None</font>)</dt><dd><tt>Create&nbsp;a&nbsp;new&nbsp;empty&nbsp;file,&nbsp;asynchronously.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-path&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;file&nbsp;to&nbsp;create.<br>
-perms&nbsp;--&nbsp;the&nbsp;file&nbsp;will&nbsp;be&nbsp;created&nbsp;with&nbsp;these&nbsp;permissions.<br>
-handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+@param&nbsp;path:&nbsp;path&nbsp;of&nbsp;the&nbsp;file&nbsp;to&nbsp;create.<br>
+@param&nbsp;perms:&nbsp;the&nbsp;file&nbsp;will&nbsp;be&nbsp;created&nbsp;with&nbsp;these&nbsp;permissions.<br>
+@param&nbsp;handler:&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-create_file_sync"><strong>create_file_sync</strong></a>(path, perms<font color="#909090">=None</font>)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.create_file</tt></dd></dl>
 
@@ -433,16 +433,16 @@ handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete
 The&nbsp;delete&nbsp;will&nbsp;fail&nbsp;if&nbsp;the&nbsp;file&nbsp;does&nbsp;not&nbsp;exist,&nbsp;or&nbsp;is&nbsp;a&nbsp;directory&nbsp;and&nbsp;is&nbsp;not&nbsp;empty.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-path&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;file&nbsp;to&nbsp;delete.<br>
-handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+@param&nbsp;path:&nbsp;path&nbsp;of&nbsp;the&nbsp;file&nbsp;to&nbsp;delete.<br>
+@param&nbsp;handler:&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-delete_recursive"><strong>delete_recursive</strong></a>(path, handler)</dt><dd><tt>Delete&nbsp;a&nbsp;file&nbsp;on&nbsp;the&nbsp;file&nbsp;system&nbsp;recursively,&nbsp;asynchronously.<br>
 The&nbsp;delete&nbsp;will&nbsp;fail&nbsp;if&nbsp;the&nbsp;file&nbsp;does&nbsp;not&nbsp;exist.&nbsp;If&nbsp;the&nbsp;file&nbsp;is&nbsp;a&nbsp;directory&nbsp;the&nbsp;entire&nbsp;directory&nbsp;contents<br>
 will&nbsp;be&nbsp;deleted&nbsp;recursively.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-path&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;file&nbsp;to&nbsp;delete.<br>
-handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+@param&nbsp;path:&nbsp;path&nbsp;of&nbsp;the&nbsp;file&nbsp;to&nbsp;delete.<br>
+@param&nbsp;handler:&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-delete_recursive_sync"><strong>delete_recursive_sync</strong></a>(path)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.delete_recursive</tt></dd></dl>
 
@@ -451,16 +451,16 @@ handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete
 <dl><dt><a name="FileSystem-exists"><strong>exists</strong></a>(path, handler)</dt><dd><tt>Check&nbsp;if&nbsp;&nbsp;a&nbsp;file&nbsp;exists,&nbsp;asynchronously.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-path&nbsp;--&nbsp;Path&nbsp;of&nbsp;the&nbsp;file&nbsp;to&nbsp;check.<br>
-handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+@param&nbsp;path:&nbsp;Path&nbsp;of&nbsp;the&nbsp;file&nbsp;to&nbsp;check.<br>
+@param&nbsp;handler:&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-exists_sync"><strong>exists_sync</strong></a>(path)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.exists</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-fs_props"><strong>fs_props</strong></a>(path, handler)</dt><dd><tt>Get&nbsp;properties&nbsp;for&nbsp;the&nbsp;file&nbsp;system,&nbsp;asynchronously.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-path&nbsp;--&nbsp;Path&nbsp;in&nbsp;the&nbsp;file&nbsp;system.<br>
-handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+@param&nbsp;path:&nbsp;Path&nbsp;in&nbsp;the&nbsp;file&nbsp;system.<br>
+@param&nbsp;handler:&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-fs_props_sync"><strong>fs_props_sync</strong></a>(path)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.fs_props</tt></dd></dl>
 
@@ -469,9 +469,9 @@ handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete
 <dl><dt><a name="FileSystem-link"><strong>link</strong></a>(link, existing, handler)</dt><dd><tt>Create&nbsp;a&nbsp;hard&nbsp;link,&nbsp;asynchronously..<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-link&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;link&nbsp;to&nbsp;create.<br>
-existing&nbsp;--&nbsp;path&nbsp;of&nbsp;where&nbsp;the&nbsp;link&nbsp;points&nbsp;to.<br>
-handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+@param&nbsp;link:&nbsp;path&nbsp;of&nbsp;the&nbsp;link&nbsp;to&nbsp;create.<br>
+@param&nbsp;existing:&nbsp;path&nbsp;of&nbsp;where&nbsp;the&nbsp;link&nbsp;points&nbsp;to.<br>
+@param&nbsp;handler:&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-link_sync"><strong>link_sync</strong></a>(link, existing)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.link</tt></dd></dl>
 
@@ -480,9 +480,9 @@ The&nbsp;create&nbsp;will&nbsp;fail&nbsp;if&nbsp;the&nbsp;directory&nbsp;already
 exist.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-path&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;directory&nbsp;to&nbsp;create.<br>
-perms&nbsp;--&nbsp;a&nbsp;permission&nbsp;string&nbsp;of&nbsp;the&nbsp;form&nbsp;rwxr-x---&nbsp;to&nbsp;give&nbsp;directory.<br>
-handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+@param&nbsp;path:&nbsp;path&nbsp;of&nbsp;the&nbsp;directory&nbsp;to&nbsp;create.<br>
+@param&nbsp;perms:&nbsp;a&nbsp;permission&nbsp;string&nbsp;of&nbsp;the&nbsp;form&nbsp;rwxr-x---&nbsp;to&nbsp;give&nbsp;directory.<br>
+@param&nbsp;handler:&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-mkdir_sync"><strong>mkdir_sync</strong></a>(path, perms<font color="#909090">=None</font>)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.mkdir</tt></dd></dl>
 
@@ -490,38 +490,38 @@ handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete
 The&nbsp;create&nbsp;will&nbsp;fail&nbsp;if&nbsp;the&nbsp;directory&nbsp;already&nbsp;exists.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-path&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;directory&nbsp;to&nbsp;create.<br>
-perms&nbsp;--&nbsp;a&nbsp;permission&nbsp;string&nbsp;of&nbsp;the&nbsp;form&nbsp;rwxr-x---&nbsp;to&nbsp;give&nbsp;the&nbsp;created&nbsp;directory(ies).</tt></dd></dl>
+@param&nbsp;path:&nbsp;path&nbsp;of&nbsp;the&nbsp;directory&nbsp;to&nbsp;create.<br>
+@param&nbsp;perms:&nbsp;a&nbsp;permission&nbsp;string&nbsp;of&nbsp;the&nbsp;form&nbsp;rwxr-x---&nbsp;to&nbsp;give&nbsp;the&nbsp;created&nbsp;directory(ies).</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-mkdir_with_parents_sync"><strong>mkdir_with_parents_sync</strong></a>(path, perms<font color="#909090">=None</font>)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.mkdir_with_parents</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-move"><strong>move</strong></a>(frm, to, handler)</dt><dd><tt>Move&nbsp;a&nbsp;file,&nbsp;asynchronously.&nbsp;The&nbsp;move&nbsp;will&nbsp;fail&nbsp;if&nbsp;from&nbsp;does&nbsp;not&nbsp;exist,&nbsp;or&nbsp;if&nbsp;to&nbsp;already&nbsp;exists.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-frm&nbsp;--&nbsp;Path&nbsp;of&nbsp;file&nbsp;to&nbsp;move<br>
-to&nbsp;--&nbsp;Path&nbsp;of&nbsp;file&nbsp;to&nbsp;move&nbsp;to<br>
-handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+@param&nbsp;frm:&nbsp;Path&nbsp;of&nbsp;file&nbsp;to&nbsp;move<br>
+@param&nbsp;to:&nbsp;Path&nbsp;of&nbsp;file&nbsp;to&nbsp;move&nbsp;to<br>
+@param&nbsp;handler:&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-move_sync"><strong>move_sync</strong></a>(frm, to)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.move</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-open"><strong>open</strong></a>(path, perms<font color="#909090">=None</font>, read<font color="#909090">=True</font>, write<font color="#909090">=True</font>, create_new<font color="#909090">=True</font>, flush<font color="#909090">=False</font>, handler<font color="#909090">=None</font>)</dt><dd><tt>Open&nbsp;a&nbsp;file&nbsp;on&nbsp;the&nbsp;file&nbsp;system,&nbsp;asynchronously.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-path&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;file&nbsp;to&nbsp;open.<br>
-perms&nbsp;--&nbsp;if&nbsp;the&nbsp;file&nbsp;does&nbsp;not&nbsp;exist&nbsp;and&nbsp;create_new&nbsp;is&nbsp;true,&nbsp;then&nbsp;the&nbsp;file&nbsp;will&nbsp;be&nbsp;created&nbsp;with&nbsp;these&nbsp;permissions.<br>
-read&nbsp;--&nbsp;open&nbsp;the&nbsp;file&nbsp;for&nbsp;reading?<br>
-write&nbsp;--&nbsp;open&nbsp;the&nbsp;file&nbsp;for&nbsp;writing?<br>
-create_new&nbsp;--&nbsp;Create&nbsp;the&nbsp;file&nbsp;if&nbsp;it&nbsp;doesn't&nbsp;already&nbsp;exist?<br>
-flush&nbsp;--&nbsp;whenever&nbsp;any&nbsp;data&nbsp;is&nbsp;written&nbsp;to&nbsp;the&nbsp;file,&nbsp;flush&nbsp;all&nbsp;changes&nbsp;to&nbsp;permanent&nbsp;storage&nbsp;immediately?<br>
-handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+@param&nbsp;path:&nbsp;path&nbsp;of&nbsp;the&nbsp;file&nbsp;to&nbsp;open.<br>
+@param&nbsp;perms:&nbsp;if&nbsp;the&nbsp;file&nbsp;does&nbsp;not&nbsp;exist&nbsp;and&nbsp;create_new&nbsp;is&nbsp;true,&nbsp;then&nbsp;the&nbsp;file&nbsp;will&nbsp;be&nbsp;created&nbsp;with&nbsp;these&nbsp;permissions.<br>
+@param&nbsp;read:&nbsp;open&nbsp;the&nbsp;file&nbsp;for&nbsp;reading?<br>
+@param&nbsp;write:&nbsp;open&nbsp;the&nbsp;file&nbsp;for&nbsp;writing?<br>
+@param&nbsp;create_new:&nbsp;Create&nbsp;the&nbsp;file&nbsp;if&nbsp;it&nbsp;doesn't&nbsp;already&nbsp;exist?<br>
+@param&nbsp;flush:&nbsp;whenever&nbsp;any&nbsp;data&nbsp;is&nbsp;written&nbsp;to&nbsp;the&nbsp;file,&nbsp;flush&nbsp;all&nbsp;changes&nbsp;to&nbsp;permanent&nbsp;storage&nbsp;immediately?<br>
+@param&nbsp;handler:&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-open_sync"><strong>open_sync</strong></a>(path, perms<font color="#909090">=None</font>, read<font color="#909090">=True</font>, write<font color="#909090">=True</font>, create_new<font color="#909090">=True</font>, flush<font color="#909090">=False</font>)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.open</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-props"><strong>props</strong></a>(path, handler)</dt><dd><tt>Get&nbsp;file&nbsp;properties&nbsp;for&nbsp;a&nbsp;file,&nbsp;asynchronously.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-path&nbsp;--&nbsp;path&nbsp;to&nbsp;file<br>
-handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+@param&nbsp;path:&nbsp;path&nbsp;to&nbsp;file<br>
+@param&nbsp;handler:&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-props_sync"><strong>props_sync</strong></a>(path)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.props</tt></dd></dl>
 
@@ -529,60 +529,60 @@ handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete
 The&nbsp;read&nbsp;will&nbsp;fail&nbsp;if&nbsp;the&nbsp;directory&nbsp;does&nbsp;not&nbsp;exist.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-path&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;directory&nbsp;to&nbsp;read.<br>
-filter&nbsp;--&nbsp;a&nbsp;regular&nbsp;expression&nbsp;to&nbsp;filter&nbsp;out&nbsp;the&nbsp;contents&nbsp;of&nbsp;the&nbsp;directory.&nbsp;If&nbsp;the&nbsp;filter&nbsp;is&nbsp;not&nbsp;nil<br>
+@param&nbsp;path:&nbsp;path&nbsp;of&nbsp;the&nbsp;directory&nbsp;to&nbsp;read.<br>
+@param&nbsp;filter:&nbsp;a&nbsp;regular&nbsp;expression&nbsp;to&nbsp;filter&nbsp;out&nbsp;the&nbsp;contents&nbsp;of&nbsp;the&nbsp;directory.&nbsp;If&nbsp;the&nbsp;filter&nbsp;is&nbsp;not&nbsp;nil<br>
 then&nbsp;only&nbsp;files&nbsp;which&nbsp;match&nbsp;the&nbsp;filter&nbsp;will&nbsp;be&nbsp;returned.<br>
-handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+@param&nbsp;handler:&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-read_dir_sync"><strong>read_dir_sync</strong></a>(path, filter<font color="#909090">=None</font>)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.read_dir</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-read_file_as_buffer"><strong>read_file_as_buffer</strong></a>(path, handler)</dt><dd><tt>Read&nbsp;the&nbsp;contents&nbsp;of&nbsp;an&nbsp;entire&nbsp;file&nbsp;as&nbsp;a&nbsp;Buffer,&nbsp;asynchronously.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-path&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;file&nbsp;to&nbsp;read.<br>
-handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+@param&nbsp;path:&nbsp;path&nbsp;of&nbsp;the&nbsp;file&nbsp;to&nbsp;read.<br>
+@param&nbsp;handler:&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-read_file_as_buffer_sync"><strong>read_file_as_buffer_sync</strong></a>(path)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.read_file_as_buffer</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-read_sym_link"><strong>read_sym_link</strong></a>(link, handler)</dt><dd><tt>Read&nbsp;a&nbsp;symbolic&nbsp;link,&nbsp;asynchronously.&nbsp;I.e.&nbsp;tells&nbsp;you&nbsp;where&nbsp;the&nbsp;symbolic&nbsp;link&nbsp;points.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-link&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;link&nbsp;to&nbsp;read.<br>
-handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+@param&nbsp;link:&nbsp;path&nbsp;of&nbsp;the&nbsp;link&nbsp;to&nbsp;read.<br>
+@param&nbsp;handler:&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-read_sym_link_sync"><strong>read_sym_link_sync</strong></a>(link)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.read_sym_link</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-sym_link"><strong>sym_link</strong></a>(link, existing, handler)</dt><dd><tt>Create&nbsp;a&nbsp;symbolic&nbsp;link,&nbsp;asynchronously.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-link&nbsp;--&nbsp;Path&nbsp;of&nbsp;the&nbsp;link&nbsp;to&nbsp;create.<br>
-existing&nbsp;--&nbsp;Path&nbsp;of&nbsp;where&nbsp;the&nbsp;link&nbsp;points&nbsp;to.<br>
-handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+@param&nbsp;link:&nbsp;Path&nbsp;of&nbsp;the&nbsp;link&nbsp;to&nbsp;create.<br>
+@param&nbsp;existing:&nbsp;Path&nbsp;of&nbsp;where&nbsp;the&nbsp;link&nbsp;points&nbsp;to.<br>
+@param&nbsp;handler:&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-sym_link_sync"><strong>sym_link_sync</strong></a>(link, existing)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.sym_link</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-truncate"><strong>truncate</strong></a>(path, len, handler)</dt><dd><tt>Truncate&nbsp;a&nbsp;file,&nbsp;asynchronously.&nbsp;The&nbsp;move&nbsp;will&nbsp;fail&nbsp;if&nbsp;path&nbsp;does&nbsp;not&nbsp;exist.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-path&nbsp;--&nbsp;Path&nbsp;of&nbsp;file&nbsp;to&nbsp;truncate<br>
-len&nbsp;--&nbsp;Length&nbsp;to&nbsp;truncate&nbsp;file&nbsp;to.&nbsp;Will&nbsp;fail&nbsp;if&nbsp;len&nbsp;&lt;&nbsp;0.&nbsp;If&nbsp;len&nbsp;&gt;&nbsp;file&nbsp;size&nbsp;then&nbsp;will&nbsp;do&nbsp;nothing.<br>
-handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+@param&nbsp;path:&nbsp;Path&nbsp;of&nbsp;file&nbsp;to&nbsp;truncate<br>
+@param&nbsp;len:&nbsp;Length&nbsp;to&nbsp;truncate&nbsp;file&nbsp;to.&nbsp;Will&nbsp;fail&nbsp;if&nbsp;len&nbsp;&lt;&nbsp;0.&nbsp;If&nbsp;len&nbsp;&gt;&nbsp;file&nbsp;size&nbsp;then&nbsp;will&nbsp;do&nbsp;nothing.<br>
+@param&nbsp;handler:&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-truncate_sync"><strong>truncate_sync</strong></a>(path, len)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.truncate</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-unlink"><strong>unlink</strong></a>(link, handler)</dt><dd><tt>Unlink&nbsp;a&nbsp;hard&nbsp;link.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-link&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;link&nbsp;to&nbsp;unlink.</tt></dd></dl>
+@param&nbsp;link:&nbsp;path&nbsp;of&nbsp;the&nbsp;link&nbsp;to&nbsp;unlink.</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-unlinkSync"><strong>unlinkSync</strong></a>(link)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.unlink</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-write_buffer_to_file"><strong>write_buffer_to_file</strong></a>(path, buffer, handler)</dt><dd><tt>Write&nbsp;a&nbsp;&nbsp;as&nbsp;the&nbsp;entire&nbsp;contents&nbsp;of&nbsp;a&nbsp;file,&nbsp;asynchronously.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-path&nbsp;--&nbsp;path&nbsp;of&nbsp;the&nbsp;file&nbsp;to&nbsp;write.<br>
-buffer&nbsp;--&nbsp;the&nbsp;Buffer&nbsp;to&nbsp;write<br>
-handler&nbsp;--&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
+@param&nbsp;path:&nbsp;path&nbsp;of&nbsp;the&nbsp;file&nbsp;to&nbsp;write.<br>
+@param&nbsp;buffer:&nbsp;the&nbsp;Buffer&nbsp;to&nbsp;write<br>
+@param&nbsp;handler:&nbsp;the&nbsp;function&nbsp;to&nbsp;call&nbsp;when&nbsp;complete</tt></dd></dl>
 
 <dl><dt><a name="FileSystem-write_buffer_to_file_sync"><strong>write_buffer_to_file_sync</strong></a>(path, buffer)</dt><dd><tt>Synchronous&nbsp;version&nbsp;of&nbsp;<a href="#FileSystem">FileSystem</a>.write_buffer_to_file</tt></dd></dl>
 
