@@ -66,15 +66,14 @@ def deploy_verticle(main, config=None, instances=1, handler=None):
     instances -- number of instances to deploy
     handler -- will be executed when deploy has completed
 
-    returns Unique id of deployment
     """
     if config != None:
         config = org.vertx.java.core.json.JsonObject(map_to_java(config))
   
-    return org.vertx.java.deploy.impl.VertxLocator.container.deployVerticle(main, config, instances, DoneHandler(handler))
+    org.vertx.java.deploy.impl.VertxLocator.container.deployVerticle(main, config, instances, DoneHandler(handler))
 
 def deploy_worker_verticle(main, config=None, instances=1, handler=None):
-    """Deploy a workerverticle. The actual deploy happens asynchronously
+    """Deploy a worker verticle. The actual deploy happens asynchronously
 
     Keyword arguments:
     main -- the main of the verticle to deploy
@@ -84,7 +83,21 @@ def deploy_worker_verticle(main, config=None, instances=1, handler=None):
     """
     if config != None:
         config = org.vertx.java.core.json.JsonObject(map_to_java(config))
-    return org.vertx.java.deploy.impl.VertxLocator.container.deployWorkerVerticle(main, config, instances, DoneHandler(handler))
+    org.vertx.java.deploy.impl.VertxLocator.container.deployWorkerVerticle(main, config, instances, DoneHandler(handler))
+
+
+def deploy_module(module_name, config=None, instances=1, handler=None):
+    """Deploy a module. The actual deploy happens asynchronously
+
+    Keyword arguments:
+    module_name -- The name of the module to deploy
+    config -- dict configuration for the module
+    instances -- Number of instances to deploy
+    handler -- handler will be executed when deploy has completed
+    """
+    if config != None:
+        config = org.vertx.java.core.json.JsonObject(map_to_java(config))
+    org.vertx.java.deploy.impl.VertxLocator.container.deployModule(module_name, config, instances, DoneHandler(handler))
 
 def undeploy_verticle(id):
     """Undeploy a verticle
@@ -93,6 +106,14 @@ def undeploy_verticle(id):
     id -- the unique id of the deployment
     """
     org.vertx.java.deploy.impl.VertxLocator.container.undeployVerticle(id)
+
+def undeploy_module(id):
+    """Undeploy a module
+
+    Keyword arguments:
+    id -- the unique id of the module
+    """
+    org.vertx.java.deploy.impl.VertxLocator.container.undeployModule(id)
 
 def config():
     """Get config for the verticle

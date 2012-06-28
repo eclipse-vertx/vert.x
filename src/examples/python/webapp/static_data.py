@@ -48,10 +48,10 @@ eb.send(pa, {
     'action': 'save',
     'collection': 'users',
     'document': {
-        'firstname': 'Scott',
-        'lastname': 'Horn',
-        'email': 'scott@localhost.com',
-        'username': 'scott',
+        'firstname': 'Tim',
+        'lastname': 'Fox',
+        'email': 'tim@localhost.com',
+        'username': 'tim',
         'password': 'password'
     }
 })
