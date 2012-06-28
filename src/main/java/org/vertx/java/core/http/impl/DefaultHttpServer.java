@@ -76,6 +76,7 @@ import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Values.WEBSOCKET;
@@ -423,6 +424,8 @@ public class DefaultHttpServer implements HttpServer {
     });
   }
 
+  private static final AtomicInteger count = new AtomicInteger(0);
+
   public class ServerHandler extends SimpleChannelUpstreamHandler {
 
     private void sendError(String err, HttpResponseStatus status, Channel ch) {
@@ -571,8 +574,9 @@ public class DefaultHttpServer implements HttpServer {
         throws Exception {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final ServerConnection conn = connectionMap.get(ch);
-      ch.close();
       final Throwable t = e.getCause();
+      t.printStackTrace();
+      ch.close();
       if (conn != null && t instanceof Exception) {
         conn.getContext().execute(new Runnable() {
           public void run() {
@@ -584,6 +588,8 @@ public class DefaultHttpServer implements HttpServer {
         // be communicated explicitly
       }
     }
+
+
 
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {

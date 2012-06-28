@@ -16,6 +16,7 @@
 
 package org.vertx.java.deploy.impl.cli;
 
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.impl.VertxInternal;
@@ -48,7 +49,7 @@ public class Starter {
   private static final Logger log = LoggerFactory.getLogger(Starter.class);
 
   private static final String CP_SEPARATOR =
-      System.getProperty("os.name").startsWith("Windows") ? ";" : ":";
+    System.getProperty("os.name").startsWith("Windows") ? ";" : ":";
 
   public static void main(String[] args) {
     new Starter(args);
@@ -58,27 +59,67 @@ public class Starter {
   private VerticleManager mgr;
 
   private Starter(String[] sargs) {
-    if (sargs.length == 0) {
+    if (sargs.length < 1) {
       displaySyntax();
     } else {
       String command = sargs[0].toLowerCase();
-      if (command.equals("version")) {
-        System.out.println("vert.x 1.1.0.final");
-      } else if (command.equals("run")) {
-        runVerticle(sargs);
+      Args args = new Args(sargs);
+      if ("version".equals(command)) {
+        log.info("vert.x 1.1.0.final");
       } else {
-        displaySyntax();
+        if (sargs.length < 2) {
+          displaySyntax();
+        } else {
+          String operand = sargs[1];
+          switch (command) {
+            case "version":
+              log.info("vert.x 1.1.0.final");
+              break;
+            case "run":
+              runVerticle(false, operand, args);
+              break;
+            case "runmod":
+              runVerticle(true, operand, args);
+              break;
+            case "install":
+              installModule(operand, args);
+              break;
+            case "uninstall":
+              uninstallModule(operand);
+              break;
+            default:
+              displaySyntax();
+          }
+        }
       }
     }
   }
 
-  private void runVerticle(String[] sargs) {
+  private void installModule(String modName, Args args) {
+    String repo = args.map.get("-repo");
+    final CountDownLatch latch = new CountDownLatch(1);
+    new VerticleManager(vertx, repo).installMod(modName, new Handler<Boolean>() {
+      public void handle(Boolean res) {
+        latch.countDown();
+      }
+    });
+    while (true) {
+      try {
+        latch.await(30, TimeUnit.SECONDS);
+        break;
+      } catch (InterruptedException e) {
+      }
+    }
+  }
 
-    Args args = new Args(sargs);
+  private void uninstallModule(String modName) {
+    new VerticleManager(vertx).uninstallMod(modName);
+  }
 
+  private void runVerticle(boolean module, String main, Args args) {
     boolean clustered = args.map.get("-cluster") != null;
     if (clustered) {
-      System.out.print("Starting clustering...");
+      log.info("Starting clustering...");
       int clusterPort = args.getInt("-cluster-port");
       if (clusterPort == -1) {
         clusterPort = 25500;
@@ -87,31 +128,18 @@ public class Starter {
       if (clusterHost == null) {
         clusterHost = getDefaultAddress();
         if (clusterHost == null) {
-          System.err.println("Unable to find a default network interface for clustering. Please specify one using -cluster-host");
+          log.error("Unable to find a default network interface for clustering. Please specify one using -cluster-host");
           return;
         } else {
-          System.out.println("No cluster-host specified so using address " + clusterHost);
+          log.info("No cluster-host specified so using address " + clusterHost);
         }
       }
       vertx = new DefaultVertx(clusterPort, clusterHost);
     }
-    mgr = new VerticleManager(vertx);
-
-    addShutdownHook();
-    if (sargs.length < 2) {
-      displaySyntax();
-      return;
-    }
-    String main = sargs[1];
-
-    if (main == null) {
-      displaySyntax();
-      return;
-    }
+    String repo = args.map.get("-repo");
+    mgr = new VerticleManager(vertx, repo);
 
     boolean worker = args.map.get("-worker") != null;
-
-    String name = args.map.get("-name");
 
     String cp = args.map.get("-cp");
     if (cp == null) {
@@ -145,7 +173,7 @@ public class Starter {
         instances = Integer.parseInt(sinstances);
 
         if (instances != -1 && instances < 1) {
-          System.err.println("Invalid number of instances");
+          log.error("Invalid number of instances");
           displaySyntax();
           return;
         }
@@ -166,22 +194,32 @@ public class Starter {
         try {
           conf = new JsonObject(sconf);
         } catch (DecodeException e) {
-          System.err.println("Configuration file does not contain a valid JSON object");
+          log.error("Configuration file does not contain a valid JSON object");
           return;
         }
       } catch (FileNotFoundException e) {
-        System.err.println("Config file " + configFile + " does not exist");
+        log.error("Config file " + configFile + " does not exist");
         return;
       }
     } else {
       conf = null;
     }
 
-    mgr.deploy(worker, name, main, conf, urls, instances, null, new SimpleHandler() {
-      public void handle() {
-        System.out.println("Started");
+    Handler<String> doneHandler = new Handler<String>() {
+      public void handle(String id) {
+        if (id == null) {
+          // Failed to deploy
+          mgr.unblock();
+        }
       }
-    });
+    };
+    if (module) {
+      mgr.deployMod(main, conf, instances, null, doneHandler);
+    } else {
+      mgr.deploy(worker, main, conf, urls, instances, null, doneHandler);
+    }
+
+    addShutdownHook();
     mgr.block();
   }
 
@@ -239,7 +277,6 @@ public class Starter {
   private void displaySyntax() {
 
     String usage =
-"Usage: vertx [run|version] [main] [-options]\n\n" +
 
 "    vertx run <main> [-options]\n" +
 "        runs a verticle called <main> in its own instance of vert.x.\n" +
@@ -255,6 +292,9 @@ public class Starter {
 "                               Defaults to '.' (current directory).\n" +
 "        -instances <instances> specifies how many instances of the verticle will\n" +       // 80 chars at will
 "                               be deployed. Defaults to 1\n" +
+"        -repo <repo_host>      specifies the repository to use to install\n" +
+"                               any modules.\n" +
+"                               Default is vert-x.github.com/vertx-mods\n" +
 "        -worker                if specified then the verticle is a worker\n" +
 "                               verticle.\n" +
 "        -cluster               if specified then the vert.x instance will form a\n" +
@@ -266,10 +306,47 @@ public class Starter {
 "                               If this is not specified vert.x will attempt\n" +
 "                               to choose one from the available interfaces.\n\n" +
 
+"    vertx runmod <modname> [-options]\n" +
+"        runs a module called <modname> in its own instance of vert.x.\n" +
+"        If the module is not already installed, Vert.x will attempt to install it\n" +
+"        Java class.\n\n" +
+"    valid options are:\n" +
+"        -conf <config_file>    Specifies configuration that should be provided \n" +
+"                               to the module. <config_file> should reference \n" +
+"                               a text file containing a valid JSON object\n" +
+"                               which represents the configuration.\n" +
+"        -instances <instances> specifies how many instances of the verticle will\n" +       // 80 chars at will
+"                               be deployed. Defaults to 1\n" +
+"        -repo <repo_host>      specifies the repository to use to get the module\n" +
+"                               from if it is not already installed.\n" +
+"                               Default is vert-x.github.com/vertx-mods\n" +
+"        -cluster               if specified then the vert.x instance will form a\n" +
+"                               cluster with any other vert.x instances on the\n" +
+"                               network.\n" +
+"        -cluster-port          port to use for cluster communication.\n" +
+"                               Default is 25500.\n" +
+"        -cluster-host          host to bind to for cluster communication.\n" +
+"                               If this is not specified vert.x will attempt\n" +
+"                               to choose one from the available interfaces.\n\n" +
+
+"    vertx install <modname> [-options]\n" +
+"        attempts to install a module from a remote repository.\n" +
+"        Module will be installed into a local 'mods' directory unless the\n" +
+"        environment variable VERTX_MODS specifies a different location.\n\n" +
+"    valid options are:\n" +
+"        -repo <repo_host>      specifies the repository to use to get the module\n" +
+"                               from if it is not already installed.\n" +
+"                               Default is vert-x.github.com/vertx-mods\n\n" +
+
+"    vertx uninstall <modname>\n" +
+"        attempts to uninstall a module from a remote repository.\n" +
+"        Module will be uninstalled from the local 'mods' directory unless the\n" +
+"        environment variable VERTX_MODS specifies a different location.\n\n" +
+
 "    vertx version\n" +
 "        displays the version";
 
-     System.out.println(usage);
+     log.info(usage);
   }
 
 }
