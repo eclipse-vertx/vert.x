@@ -90,33 +90,34 @@ the&nbsp;actual&nbsp;Hash&nbsp;of&nbsp;the&nbsp;message&nbsp;plus&nbsp;a&nbsp;re
 <dl><dt><a name="EventBus-publish"><strong>publish</strong></a>(address, message)</dt><dd><tt>Publish&nbsp;a&nbsp;message&nbsp;on&nbsp;the&nbsp;event&nbsp;bus<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-address&nbsp;--&nbsp;the&nbsp;address&nbsp;to&nbsp;publish&nbsp;to<br>
-message&nbsp;--&nbsp;The&nbsp;message&nbsp;to&nbsp;publish</tt></dd></dl>
+@param&nbsp;address:&nbsp;the&nbsp;address&nbsp;to&nbsp;publish&nbsp;to<br>
+@param&nbsp;message:&nbsp;The&nbsp;message&nbsp;to&nbsp;publish</tt></dd></dl>
 
 <dl><dt><a name="EventBus-register_handler"><strong>register_handler</strong></a>(address, local_only<font color="#909090">=False</font>, handler<font color="#909090">=None</font>)</dt><dd><tt>Register&nbsp;a&nbsp;handler.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-address&nbsp;--&nbsp;the&nbsp;address&nbsp;to&nbsp;register&nbsp;for.&nbsp;Any&nbsp;messages&nbsp;sent&nbsp;to&nbsp;that&nbsp;address&nbsp;will&nbsp;be<br>
+@param&nbsp;address:&nbsp;the&nbsp;address&nbsp;to&nbsp;register&nbsp;for.&nbsp;Any&nbsp;messages&nbsp;sent&nbsp;to&nbsp;that&nbsp;address&nbsp;will&nbsp;be<br>
 received&nbsp;by&nbsp;the&nbsp;handler.&nbsp;A&nbsp;single&nbsp;handler&nbsp;can&nbsp;be&nbsp;registered&nbsp;against&nbsp;many&nbsp;addresses.<br>
-local_only&nbsp;--&nbsp;if&nbsp;True&nbsp;then&nbsp;handler&nbsp;won't&nbsp;be&nbsp;propagated&nbsp;across&nbsp;cluster<br>
-handler&nbsp;--&nbsp;The&nbsp;handler<br>
-returns&nbsp;id&nbsp;of&nbsp;the&nbsp;handler&nbsp;which&nbsp;can&nbsp;be&nbsp;used&nbsp;in&nbsp;<a href="#EventBus">EventBus</a>.unregister_handler</tt></dd></dl>
+@param&nbsp;local_only:&nbsp;if&nbsp;True&nbsp;then&nbsp;handler&nbsp;won't&nbsp;be&nbsp;propagated&nbsp;across&nbsp;cluster<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler<br>
+&nbsp;<br>
+@return:&nbsp;id&nbsp;of&nbsp;the&nbsp;handler&nbsp;which&nbsp;can&nbsp;be&nbsp;used&nbsp;in&nbsp;<a href="#EventBus">EventBus</a>.unregister_handler</tt></dd></dl>
 
 <dl><dt><a name="EventBus-register_simple_handler"><strong>register_simple_handler</strong></a>(local_only<font color="#909090">=False</font>, handler<font color="#909090">=None</font>)</dt><dd><tt>Registers&nbsp;a&nbsp;handler&nbsp;against&nbsp;a&nbsp;uniquely&nbsp;generated&nbsp;address,&nbsp;the&nbsp;address&nbsp;is&nbsp;returned&nbsp;as&nbsp;the&nbsp;id<br>
 received&nbsp;by&nbsp;the&nbsp;handler.&nbsp;A&nbsp;single&nbsp;handler&nbsp;can&nbsp;be&nbsp;registered&nbsp;against&nbsp;many&nbsp;addresses.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-local_only&nbsp;--&nbsp;If&nbsp;Rrue&nbsp;then&nbsp;handler&nbsp;won't&nbsp;be&nbsp;propagated&nbsp;across&nbsp;cluster<br>
-handler&nbsp;--&nbsp;The&nbsp;handler<br>
+@param&nbsp;local_only:&nbsp;If&nbsp;Rrue&nbsp;then&nbsp;handler&nbsp;won't&nbsp;be&nbsp;propagated&nbsp;across&nbsp;cluster<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler<br>
 &nbsp;<br>
-returns&nbsp;id&nbsp;of&nbsp;the&nbsp;handler&nbsp;which&nbsp;can&nbsp;be&nbsp;used&nbsp;in&nbsp;<a href="#EventBus">EventBus</a>.unregister_handler</tt></dd></dl>
+@return:&nbsp;id&nbsp;of&nbsp;the&nbsp;handler&nbsp;which&nbsp;can&nbsp;be&nbsp;used&nbsp;in&nbsp;<a href="#EventBus">EventBus</a>.unregister_handler</tt></dd></dl>
 
 <dl><dt><a name="EventBus-send"><strong>send</strong></a>(address, message, reply_handler<font color="#909090">=None</font>)</dt><dd><tt>Send&nbsp;a&nbsp;message&nbsp;on&nbsp;the&nbsp;event&nbsp;bus<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-address&nbsp;--&nbsp;the&nbsp;address&nbsp;to&nbsp;publish&nbsp;to<br>
-message&nbsp;--&nbsp;The&nbsp;message&nbsp;to&nbsp;send<br>
-reply_handler&nbsp;--&nbsp;An&nbsp;optional&nbsp;reply&nbsp;handler.<br>
+@param&nbsp;address:&nbsp;the&nbsp;address&nbsp;to&nbsp;publish&nbsp;to<br>
+@param&nbsp;message:&nbsp;The&nbsp;message&nbsp;to&nbsp;send<br>
+@param&nbsp;reply_handler:&nbsp;An&nbsp;optional&nbsp;reply&nbsp;handler.<br>
 It&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;the&nbsp;reply&nbsp;from&nbsp;a&nbsp;receiver&nbsp;is&nbsp;received.</tt></dd></dl>
 
 <dl><dt><a name="EventBus-send_or_pub"><strong>send_or_pub</strong></a>(send, address, message, reply_handler<font color="#909090">=None</font>)</dt></dl>
@@ -124,7 +125,7 @@ It&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;the&nbsp;reply&nbsp;from&nbsp;a&
 <dl><dt><a name="EventBus-unregister_handler"><strong>unregister_handler</strong></a>(handler_id)</dt><dd><tt>Unregisters&nbsp;a&nbsp;handler<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler_id&nbsp;--&nbsp;the&nbsp;id&nbsp;of&nbsp;the&nbsp;handler&nbsp;to&nbsp;unregister.&nbsp;Returned&nbsp;from&nbsp;<a href="#EventBus">EventBus</a>.register_handler</tt></dd></dl>
+@param&nbsp;handler_id:&nbsp;the&nbsp;id&nbsp;of&nbsp;the&nbsp;handler&nbsp;to&nbsp;unregister.&nbsp;Returned&nbsp;from&nbsp;<a href="#EventBus">EventBus</a>.register_handler</tt></dd></dl>
 
 <hr>
 Data descriptors defined here:<br>
@@ -229,8 +230,8 @@ Replying&nbsp;to&nbsp;a&nbsp;message&nbsp;this&nbsp;way&nbsp;is&nbsp;equivalent&
 of&nbsp;the&nbsp;original&nbsp;message.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-reply&nbsp;--&nbsp;message&nbsp;to&nbsp;send&nbsp;as&nbsp;reply<br>
-handler&nbsp;--&nbsp;the&nbsp;reply&nbsp;handler</tt></dd></dl>
+@param&nbsp;reply:&nbsp;message&nbsp;to&nbsp;send&nbsp;as&nbsp;reply<br>
+@param&nbsp;handler:&nbsp;the&nbsp;reply&nbsp;handler</tt></dd></dl>
 
 <hr>
 Data descriptors defined here:<br>

@@ -3,7 +3,7 @@
           "DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-  <title>core.http.HttpServer</title>
+  <title>core.net.NetServer</title>
   <link rel="stylesheet" href="epydoc.css" type="text/css" />
   <script type="text/javascript" src="epydoc.js"></script>
 </head>
@@ -35,8 +35,8 @@
     <td width="100%">
       <span class="breadcrumbs">
         <a href="core-module.html">Package&nbsp;core</a> ::
-        <a href="core.http-module.html">Module&nbsp;http</a> ::
-        Class&nbsp;HttpServer
+        <a href="core.net-module.html">Module&nbsp;net</a> ::
+        Class&nbsp;NetServer
       </span>
     </td>
     <td>
@@ -46,30 +46,31 @@
     onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
         <tr><td align="right"><span class="options"
             >[<a href="frames.html" target="_top">frames</a
-            >]&nbsp;|&nbsp;<a href="core.http.HttpServer-class.html"
+            >]&nbsp;|&nbsp;<a href="core.net.NetServer-class.html"
             target="_top">no&nbsp;frames</a>]</span></td></tr>
       </table>
     </td>
   </tr>
 </table>
 <!-- ==================== CLASS DESCRIPTION ==================== -->
-<h1 class="epydoc">Class HttpServer</h1><p class="nomargin-top"><span class="codelink"><a href="core.http-pysrc.html#HttpServer">source&nbsp;code</a></span></p>
+<h1 class="epydoc">Class NetServer</h1><p class="nomargin-top"><span class="codelink"><a href="core.net-pysrc.html#NetServer">source&nbsp;code</a></span></p>
 <pre class="base-tree">
             object --+    
                      |    
-<a href="core.tcp_support.TCPSupport-class.html">tcp_support.TCPSupport</a> --+
+<a href="core.ssl_support.SSLSupport-class.html">ssl_support.SSLSupport</a> --+
                          |
             object --+   |
                      |   |
-<a href="core.ssl_support.SSLSupport-class.html">ssl_support.SSLSupport</a> --+
+<a href="core.tcp_support.TCPSupport-class.html">tcp_support.TCPSupport</a> --+
                          |
-                object --+
-                         |
-                        <strong class="uidshort">HttpServer</strong>
+                        <strong class="uidshort">NetServer</strong>
 </pre>
 
 <hr />
-<p>An HTTP and websockets server</p>
+<p>Represents a TCP or SSL Server</p>
+  <p>When connections are accepted by the server they are supplied to the 
+  user in the form of a NetSocket instance that is passed via the handler 
+  set using connect_handler.</p>
 
 <!-- ==================== INSTANCE METHODS ==================== -->
 <a name="section-InstanceMethods"></a>
@@ -94,10 +95,10 @@
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="core.http.HttpServer-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
+          <td><span class="summary-sig"><a href="core.net.NetServer-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">**kwargs</span>)</span></td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="core.http-pysrc.html#HttpServer.__init__">source&nbsp;code</a></span>
+            <span class="codelink"><a href="core.net-pysrc.html#NetServer.__init__">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -111,67 +112,12 @@
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="core.http.HttpServer-class.html#request_handler" class="summary-sig-name">request_handler</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">handler</span>)</span><br />
-      Set the HTTP request handler for the server.</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="core.http-pysrc.html#HttpServer.request_handler">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="core.http.HttpServer-class.html#websocket_handler" class="summary-sig-name">websocket_handler</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">handler</span>)</span><br />
-      Set the websocket handler for the server.</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="core.http-pysrc.html#HttpServer.websocket_handler">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="core.http.HttpServer-class.html#listen" class="summary-sig-name">listen</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">port</span>,
-        <span class="summary-sig-arg">host</span>=<span class="summary-sig-default">None</span>)</span><br />
-      Instruct the server to listen for incoming connections.</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="core.http-pysrc.html#HttpServer.listen">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="core.http.HttpServer-class.html#client_auth_required" class="summary-sig-name">client_auth_required</a>(<span class="summary-sig-arg">self</span>,
+          <td><span class="summary-sig"><a href="core.net.NetServer-class.html#set_client_auth_required" class="summary-sig-name">set_client_auth_required</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">val</span>)</span><br />
       Client authentication is an extra level of security in SSL, and 
       requires clients to provide client certificates.</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="core.http-pysrc.html#HttpServer.client_auth_required">source&nbsp;code</a></span>
+            <span class="codelink"><a href="core.net-pysrc.html#NetServer.set_client_auth_required">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -185,11 +131,11 @@
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="core.http.HttpServer-class.html#close" class="summary-sig-name">close</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">handler</span>=<span class="summary-sig-default">None</span>)</span><br />
-      Close the server.</td>
+          <td><span class="summary-sig"><a href="core.net.NetServer-class.html#connect_handler" class="summary-sig-name">connect_handler</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">handler</span>)</span><br />
+      Supply a connect handler for this server.</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="core.http-pysrc.html#HttpServer.close">source&nbsp;code</a></span>
+            <span class="codelink"><a href="core.net-pysrc.html#NetServer.connect_handler">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -197,16 +143,36 @@
       
     </td>
   </tr>
-<tr class="private">
+<tr>
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a name="_to_java_server"></a><span class="summary-sig-name">_to_java_server</span>(<span class="summary-sig-arg">self</span>)</span><br />
-      private</td>
+          <td><span class="summary-sig"><a href="core.net.NetServer-class.html#listen" class="summary-sig-name">listen</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">port</span>,
+        <span class="summary-sig-arg">host</span>=<span class="summary-sig-default">&quot;0.0.0.0&quot;</span>)</span><br />
+      Instruct the server to listen for incoming connections.</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="core.http-pysrc.html#HttpServer._to_java_server">source&nbsp;code</a></span>
+            <span class="codelink"><a href="core.net-pysrc.html#NetServer.listen">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="core.net.NetServer-class.html#close" class="summary-sig-name">close</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">handler</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Close the server.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="core.net-pysrc.html#NetServer.close">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -216,6 +182,13 @@
   </tr>
   <tr>
     <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="core.ssl_support.SSLSupport-class.html">ssl_support.SSLSupport</a></code></b>:
+      <code><a href="core.ssl_support.SSLSupport-class.html#set_key_store_password">set_key_store_password</a></code>,
+      <code><a href="core.ssl_support.SSLSupport-class.html#set_key_store_path">set_key_store_path</a></code>,
+      <code><a href="core.ssl_support.SSLSupport-class.html#set_ssl">set_ssl</a></code>,
+      <code><a href="core.ssl_support.SSLSupport-class.html#set_trust_store_password">set_trust_store_password</a></code>,
+      <code><a href="core.ssl_support.SSLSupport-class.html#set_trust_store_path">set_trust_store_path</a></code>
+      </p>
     <p class="indent-wrapped-lines"><b>Inherited from <code><a href="core.tcp_support.TCPSupport-class.html">tcp_support.TCPSupport</a></code></b>:
       <code><a href="core.tcp_support.TCPSupport-class.html#set_receive_buffer_size">set_receive_buffer_size</a></code>,
       <code><a href="core.tcp_support.TCPSupport-class.html#set_reuse_address">set_reuse_address</a></code>,
@@ -223,13 +196,6 @@
       <code><a href="core.tcp_support.TCPSupport-class.html#set_so_linger">set_so_linger</a></code>,
       <code><a href="core.tcp_support.TCPSupport-class.html#set_tcp_keep_alive">set_tcp_keep_alive</a></code>,
       <code><a href="core.tcp_support.TCPSupport-class.html#set_traffic_class">set_traffic_class</a></code>
-      </p>
-    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="core.ssl_support.SSLSupport-class.html">ssl_support.SSLSupport</a></code></b>:
-      <code><a href="core.ssl_support.SSLSupport-class.html#set_key_store_password">set_key_store_password</a></code>,
-      <code><a href="core.ssl_support.SSLSupport-class.html#set_key_store_path">set_key_store_path</a></code>,
-      <code><a href="core.ssl_support.SSLSupport-class.html#set_ssl">set_ssl</a></code>,
-      <code><a href="core.ssl_support.SSLSupport-class.html#set_trust_store_password">set_trust_store_password</a></code>,
-      <code><a href="core.ssl_support.SSLSupport-class.html#set_trust_store_path">set_trust_store_path</a></code>
       </p>
     </td>
   </tr>
@@ -251,8 +217,22 @@
     </table>
   </td>
 </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="client_auth_required"></a><span class="summary-name">client_auth_required</span> = <code title="property(fset= set_client_auth_required)">property(fset= set_client_auth_required)</code>
+    </td>
+  </tr>
   <tr>
     <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="core.ssl_support.SSLSupport-class.html">ssl_support.SSLSupport</a></code></b>:
+      <code><a href="core.ssl_support.SSLSupport-class.html#key_store_password">key_store_password</a></code>,
+      <code><a href="core.ssl_support.SSLSupport-class.html#key_store_path">key_store_path</a></code>,
+      <code><a href="core.ssl_support.SSLSupport-class.html#ssl">ssl</a></code>,
+      <code><a href="core.ssl_support.SSLSupport-class.html#trust_store_password">trust_store_password</a></code>,
+      <code><a href="core.ssl_support.SSLSupport-class.html#trust_store_path">trust_store_path</a></code>
+      </p>
     <p class="indent-wrapped-lines"><b>Inherited from <code><a href="core.tcp_support.TCPSupport-class.html">tcp_support.TCPSupport</a></code></b>:
       <code><a href="core.tcp_support.TCPSupport-class.html#receive_buffer_size">receive_buffer_size</a></code>,
       <code><a href="core.tcp_support.TCPSupport-class.html#reuse_address">reuse_address</a></code>,
@@ -260,13 +240,6 @@
       <code><a href="core.tcp_support.TCPSupport-class.html#so_linger">so_linger</a></code>,
       <code><a href="core.tcp_support.TCPSupport-class.html#tcp_keep_alive">tcp_keep_alive</a></code>,
       <code><a href="core.tcp_support.TCPSupport-class.html#traffic_class">traffic_class</a></code>
-      </p>
-    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="core.ssl_support.SSLSupport-class.html">ssl_support.SSLSupport</a></code></b>:
-      <code><a href="core.ssl_support.SSLSupport-class.html#key_store_password">key_store_password</a></code>,
-      <code><a href="core.ssl_support.SSLSupport-class.html#key_store_path">key_store_path</a></code>,
-      <code><a href="core.ssl_support.SSLSupport-class.html#ssl">ssl</a></code>,
-      <code><a href="core.ssl_support.SSLSupport-class.html#trust_store_password">trust_store_password</a></code>,
-      <code><a href="core.ssl_support.SSLSupport-class.html#trust_store_path">trust_store_path</a></code>
       </p>
     </td>
   </tr>
@@ -301,7 +274,7 @@
     <br /><em class="fname">(Constructor)</em>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="core.http-pysrc.html#HttpServer.__init__">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="core.net-pysrc.html#NetServer.__init__">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -314,59 +287,61 @@
   </dl>
 </td></tr></table>
 </div>
-<a name="request_handler"></a>
+<a name="set_client_auth_required"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">request_handler</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">handler</span>)</span>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">set_client_auth_required</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">val</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="core.http-pysrc.html#HttpServer.request_handler">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="core.net-pysrc.html#NetServer.set_client_auth_required">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
-  <p>Set the HTTP request handler for the server. As HTTP requests arrive 
-  on the server a new HttpServerRequest instance will be created and passed
-  to the handler.</p>
-  <p>Keyword arguments:</p>
+  <p>Client authentication is an extra level of security in SSL, and 
+  requires clients to provide client certificates. Those certificates must 
+  be added to the server trust store.</p>
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>handler</code></strong> - the function used to handle the request.</li>
+        <li><strong class="pname"><code>val</code></strong> - If true then the server will request client authentication from 
+          any connecting clients, if they do not authenticate then they 
+          will not make a connection.</li>
     </ul></dd>
-    <dt>Returns:</dt>
-        <dd>self</dd>
   </dl>
 </td></tr></table>
 </div>
-<a name="websocket_handler"></a>
+<a name="connect_handler"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">websocket_handler</span>(<span class="sig-arg">self</span>,
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">connect_handler</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">handler</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="core.http-pysrc.html#HttpServer.websocket_handler">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="core.net-pysrc.html#NetServer.connect_handler">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
-  <p>Set the websocket handler for the server. As websocket requests arrive
-  on the server a new ServerWebSocket instance will be created and passed 
-  to the handler.</p>
+  <p>Supply a connect handler for this server. The server can only have at 
+  most one connect handler at any one time. As the server accepts TCP or 
+  SSL connections it creates an instance of NetSocket and passes it to the 
+  connect handler.</p>
   <p>Keyword arguments:</p>
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>handler</code></strong> - the function used to handle the request.</li>
+        <li><strong class="pname"><code>handler</code></strong> - connection handler</li>
     </ul></dd>
+    <dt>Returns:</dt>
+        <dd>a reference to self so invocations can be chained</dd>
   </dl>
 </td></tr></table>
 </div>
@@ -379,51 +354,23 @@
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">listen</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">port</span>,
-        <span class="sig-arg">host</span>=<span class="sig-default">None</span>)</span>
+        <span class="sig-arg">host</span>=<span class="sig-default">&quot;0.0.0.0&quot;</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="core.http-pysrc.html#HttpServer.listen">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="core.net-pysrc.html#NetServer.listen">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
-  <p>Instruct the server to listen for incoming connections. If host is 
-  None listens on all.</p>
+  <p>Instruct the server to listen for incoming connections.</p>
   <p>Keyword arguments:</p>
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
         <li><strong class="pname"><code>port</code></strong> - The port to listen on.</li>
-        <li><strong class="pname"><code>host</code></strong> - The host name or ip address to listen on. (default None)</li>
+        <li><strong class="pname"><code>host</code></strong> - The host name or ip address to listen on.</li>
     </ul></dd>
-  </dl>
-</td></tr></table>
-</div>
-<a name="client_auth_required"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">client_auth_required</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">val</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="core.http-pysrc.html#HttpServer.client_auth_required">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Client authentication is an extra level of security in SSL, and 
-  requires clients to provide client certificates. Those certificates must 
-  be added to the server trust store.</p>
-  <p>Keyword arguments:</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>val</code></strong> - If true then the server will request client authentication from 
-          any connecting clients, if they do not authenticate then they 
-          will not make a connection.</li>
-    </ul></dd>
+    <dt>Returns:</dt>
+        <dd>a reference to self so invocations can be chained</dd>
   </dl>
 </td></tr></table>
 </div>
@@ -438,19 +385,13 @@
         <span class="sig-arg">handler</span>=<span class="sig-default">None</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="core.http-pysrc.html#HttpServer.close">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="core.net-pysrc.html#NetServer.close">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
-  <p>Close the server. Any open HTTP connections will be closed. This can 
-  be used as a decorator.</p>
-  <p>Keyword arguments:</p>
+  <p>Close the server. The handler will be called when the close is 
+  complete.</p>
   <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>handler</code></strong> - a handler that is called when the connection is closed. The 
-          handler is wrapped in a ClosedHandler.</li>
-    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -479,7 +420,7 @@
   <tr>
     <td align="left" class="footer">
     Generated by Epydoc 3.0.1
-    on Thu Jun 28 22:57:46 2012
+    on Thu Jun 28 22:57:47 2012
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

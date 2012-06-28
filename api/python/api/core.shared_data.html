@@ -55,10 +55,10 @@ user&nbsp;from&nbsp;worrying&nbsp;about&nbsp;any&nbsp;thread&nbsp;safety&nbsp;is
 &nbsp;<br>
 The&nbsp;following&nbsp;types&nbsp;can&nbsp;be&nbsp;stored&nbsp;in&nbsp;a&nbsp;shareddata&nbsp;data&nbsp;structure:<br>
 &nbsp;<br>
-&nbsp;&nbsp;String<br>
-&nbsp;&nbsp;FixNum<br>
-&nbsp;&nbsp;Float<br>
-&nbsp;&nbsp;Buffer&nbsp;-&nbsp;this&nbsp;will&nbsp;be&nbsp;automatically&nbsp;copied,&nbsp;and&nbsp;the&nbsp;copy&nbsp;will&nbsp;be&nbsp;stored&nbsp;in&nbsp;the&nbsp;structure.<br>&nbsp;</tt></td></tr>
+String<br>
+FixNum<br>
+Float<br>
+Buffer&nbsp;-&nbsp;this&nbsp;will&nbsp;be&nbsp;automatically&nbsp;copied,&nbsp;and&nbsp;the&nbsp;copy&nbsp;will&nbsp;be&nbsp;stored&nbsp;in&nbsp;the&nbsp;structure.<br>&nbsp;</tt></td></tr>
 <tr><td>&nbsp;</td>
 <td width="100%">Static methods defined here:<br>
 <dl><dt><a name="SharedData-check_obj"><strong>check_obj</strong></a>(obj)</dt><dd><tt>Convert&nbsp;to&nbsp;corresponding&nbsp;Java&nbsp;objects<br>
@@ -68,27 +68,27 @@ and&nbsp;make&nbsp;copies&nbsp;where&nbsp;appropriate&nbsp;(the&nbsp;underlying&
 are&nbsp;guaranteed&nbsp;to&nbsp;return&nbsp;the&nbsp;same&nbsp;Hash&nbsp;instance.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-key&nbsp;--&nbsp;Get&nbsp;the&nbsp;hash&nbsp;with&nbsp;the&nbsp;key.<br>
+@param&nbsp;key:&nbsp;Get&nbsp;the&nbsp;hash&nbsp;with&nbsp;the&nbsp;key.<br>
 &nbsp;<br>
-returns&nbsp;the&nbsp;hash.</tt></dd></dl>
+@return:&nbsp;the&nbsp;hash.</tt></dd></dl>
 
 <dl><dt><a name="SharedData-get_set"><strong>get_set</strong></a>(key)</dt><dd><tt>Return&nbsp;a&nbsp;Set&nbsp;with&nbsp;the&nbsp;specific&nbsp;name.&nbsp;All&nbsp;invocations&nbsp;of&nbsp;this&nbsp;method&nbsp;with&nbsp;the&nbsp;same&nbsp;value&nbsp;of&nbsp;name<br>
 are&nbsp;guaranteed&nbsp;to&nbsp;return&nbsp;the&nbsp;same&nbsp;Set&nbsp;instance.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-key&nbsp;--&nbsp;Get&nbsp;the&nbsp;set&nbsp;with&nbsp;the&nbsp;key.<br>
+@param&nbsp;key:&nbsp;Get&nbsp;the&nbsp;set&nbsp;with&nbsp;the&nbsp;key.<br>
 &nbsp;<br>
-returns&nbsp;the&nbsp;shared&nbsp;set.</tt></dd></dl>
+@return:&nbsp;the&nbsp;shared&nbsp;set.</tt></dd></dl>
 
 <dl><dt><a name="SharedData-remove_hash"><strong>remove_hash</strong></a>(key)</dt><dd><tt>Remove&nbsp;the&nbsp;hash<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-key&nbsp;--&nbsp;The&nbsp;key&nbsp;of&nbsp;the&nbsp;hash.</tt></dd></dl>
+@param&nbsp;key:&nbsp;The&nbsp;key&nbsp;of&nbsp;the&nbsp;hash.</tt></dd></dl>
 
 <dl><dt><a name="SharedData-remove_set"><strong>remove_set</strong></a>(key)</dt><dd><tt>Remove&nbsp;the&nbsp;set<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-key&nbsp;--&nbsp;The&nbsp;key&nbsp;of&nbsp;the&nbsp;set.</tt></dd></dl>
+@param&nbsp;key:&nbsp;The&nbsp;key&nbsp;of&nbsp;the&nbsp;set.</tt></dd></dl>
 
 <dl><dt><a name="SharedData-shared_data"><strong>shared_data</strong></a>()</dt></dl>
 
@@ -153,30 +153,29 @@ Data descriptors defined here:<br>
 <dl><dt><a name="SharedSet-add"><strong>add</strong></a>(self, obj)</dt><dd><tt>Add&nbsp;an&nbsp;<a href="http://pydoc.org/2.5.1/__builtin__.html#object">object</a>&nbsp;to&nbsp;the&nbsp;set<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-obj&nbsp;--&nbsp;The&nbsp;<a href="http://pydoc.org/2.5.1/__builtin__.html#object">object</a>&nbsp;to&nbsp;add<br>
-&nbsp;<br>
-returns&nbsp;self</tt></dd></dl>
+@param&nbsp;obj:&nbsp;The&nbsp;<a href="http://pydoc.org/2.5.1/__builtin__.html#object">object</a>&nbsp;to&nbsp;add<br>
+@return:&nbsp;self</tt></dd></dl>
 
 <dl><dt><a name="SharedSet-clear"><strong>clear</strong></a>(self)</dt><dd><tt>Clear&nbsp;the&nbsp;set</tt></dd></dl>
 
 <dl><dt><a name="SharedSet-delete"><strong>delete</strong></a>(self, obj)</dt><dd><tt>Delete&nbsp;an&nbsp;<a href="http://pydoc.org/2.5.1/__builtin__.html#object">object</a>&nbsp;from&nbsp;the&nbsp;set<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-obj&nbsp;--&nbsp;the&nbsp;<a href="http://pydoc.org/2.5.1/__builtin__.html#object">object</a>&nbsp;to&nbsp;delete</tt></dd></dl>
+@param&nbsp;obj:&nbsp;the&nbsp;<a href="http://pydoc.org/2.5.1/__builtin__.html#object">object</a>&nbsp;to&nbsp;delete</tt></dd></dl>
 
 <dl><dt><a name="SharedSet-each"><strong>each</strong></a>(self, func)</dt><dd><tt>Call&nbsp;the&nbsp;func&nbsp;for&nbsp;every&nbsp;element&nbsp;of&nbsp;the&nbsp;set<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-func&nbsp;--&nbsp;The&nbsp;function&nbsp;to&nbsp;call.</tt></dd></dl>
+@param&nbsp;func:&nbsp;The&nbsp;function&nbsp;to&nbsp;call.</tt></dd></dl>
 
 <dl><dt><a name="SharedSet-empty"><strong>empty</strong></a>(self)</dt><dd><tt>returns&nbsp;True&nbsp;if&nbsp;the&nbsp;set&nbsp;is&nbsp;empty</tt></dd></dl>
 
 <dl><dt><a name="SharedSet-include"><strong>include</strong></a>(self, obj)</dt><dd><tt>Does&nbsp;the&nbsp;set&nbsp;contain&nbsp;an&nbsp;element?<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-obj&nbsp;--&nbsp;the&nbsp;<a href="http://pydoc.org/2.5.1/__builtin__.html#object">object</a>&nbsp;to&nbsp;check&nbsp;if&nbsp;the&nbsp;set&nbsp;contains<br>
+@param&nbsp;obj:&nbsp;the&nbsp;<a href="http://pydoc.org/2.5.1/__builtin__.html#object">object</a>&nbsp;to&nbsp;check&nbsp;if&nbsp;the&nbsp;set&nbsp;contains<br>
 &nbsp;<br>
-returns&nbsp;True&nbsp;if&nbsp;the&nbsp;<a href="http://pydoc.org/2.5.1/__builtin__.html#object">object</a>&nbsp;is&nbsp;contained&nbsp;in&nbsp;the&nbsp;set</tt></dd></dl>
+@return:&nbsp;True&nbsp;if&nbsp;the&nbsp;<a href="http://pydoc.org/2.5.1/__builtin__.html#object">object</a>&nbsp;is&nbsp;contained&nbsp;in&nbsp;the&nbsp;set</tt></dd></dl>
 
 <dl><dt><a name="SharedSet-size"><strong>size</strong></a>(self)</dt><dd><tt>returns&nbsp;the&nbsp;number&nbsp;of&nbsp;elements&nbsp;in&nbsp;the&nbsp;set</tt></dd></dl>
 

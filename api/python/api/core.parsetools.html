@@ -56,33 +56,29 @@
     
 <tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
 <td colspan=2><tt>A&nbsp;helper&nbsp;class&nbsp;which&nbsp;allows&nbsp;you&nbsp;to&nbsp;easily&nbsp;parse&nbsp;protocols&nbsp;which&nbsp;are&nbsp;delimited&nbsp;by&nbsp;a&nbsp;sequence&nbsp;of&nbsp;bytes,&nbsp;or&nbsp;fixed<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;records.<br>
+size&nbsp;records.<br>
 &nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;Instances&nbsp;of&nbsp;this&nbsp;class&nbsp;take&nbsp;as&nbsp;input&nbsp;{Buffer}&nbsp;instances&nbsp;containing&nbsp;raw&nbsp;bytes,&nbsp;and&nbsp;output&nbsp;records.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;For&nbsp;example,&nbsp;if&nbsp;I&nbsp;had&nbsp;a&nbsp;simple&nbsp;ASCII&nbsp;text&nbsp;protocol&nbsp;delimited&nbsp;by&nbsp;'<br>
-'&nbsp;and&nbsp;the&nbsp;input&nbsp;was&nbsp;the&nbsp;following:<br>
+Instances&nbsp;of&nbsp;this&nbsp;class&nbsp;take&nbsp;as&nbsp;input&nbsp;Buffer&nbsp;instances&nbsp;containing&nbsp;raw&nbsp;bytes,&nbsp;and&nbsp;output&nbsp;records.<br>
+For&nbsp;example,&nbsp;if&nbsp;I&nbsp;had&nbsp;a&nbsp;simple&nbsp;ASCII&nbsp;text&nbsp;protocol&nbsp;delimited&nbsp;by&nbsp;'\n'&nbsp;and&nbsp;the&nbsp;input&nbsp;was&nbsp;the&nbsp;following:<br>
 &nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;buffer1:HELLO<br>
-HOW&nbsp;ARE&nbsp;Y<br>
-&nbsp;&nbsp;&nbsp;&nbsp;buffer2:OU?<br>
-I&nbsp;AM<br>
-&nbsp;&nbsp;&nbsp;&nbsp;buffer3:&nbsp;DOING&nbsp;OK<br>
-&nbsp;&nbsp;&nbsp;&nbsp;buffer4:<br>
+buffer1:HELLO\nHOW&nbsp;ARE&nbsp;Y<br>
+buffer2:OU?\nI&nbsp;AM<br>
+buffer3:&nbsp;DOING&nbsp;OK<br>
+buffer4:\n<br>
 &nbsp;<br>
+Then&nbsp;the&nbsp;output&nbsp;would&nbsp;be:<br>
 &nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;Then&nbsp;the&nbsp;output&nbsp;would&nbsp;be:<br>
+buffer1:HELLO<br>
+buffer2:HOW&nbsp;ARE&nbsp;YOU?<br>
+buffer3:I&nbsp;AM&nbsp;DOING&nbsp;OK<br>
 &nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;buffer1:HELLO<br>
-&nbsp;&nbsp;&nbsp;&nbsp;buffer2:HOW&nbsp;ARE&nbsp;YOU?<br>
-&nbsp;&nbsp;&nbsp;&nbsp;buffer3:I&nbsp;AM&nbsp;DOING&nbsp;OK<br>
+Instances&nbsp;of&nbsp;this&nbsp;class&nbsp;can&nbsp;be&nbsp;changed&nbsp;between&nbsp;delimited&nbsp;mode&nbsp;and&nbsp;fixed&nbsp;size&nbsp;record&nbsp;mode&nbsp;on&nbsp;the&nbsp;fly&nbsp;as<br>
+individual&nbsp;records&nbsp;are&nbsp;read,&nbsp;this&nbsp;allows&nbsp;you&nbsp;to&nbsp;parse&nbsp;protocols&nbsp;where,&nbsp;for&nbsp;example,&nbsp;the&nbsp;first&nbsp;5&nbsp;records&nbsp;might<br>
+all&nbsp;be&nbsp;fixed&nbsp;size&nbsp;(of&nbsp;potentially&nbsp;different&nbsp;sizes),&nbsp;followed&nbsp;by&nbsp;some&nbsp;delimited&nbsp;records,&nbsp;followed&nbsp;by&nbsp;more&nbsp;fixed<br>
+size&nbsp;records.<br>
 &nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;Instances&nbsp;of&nbsp;this&nbsp;class&nbsp;can&nbsp;be&nbsp;changed&nbsp;between&nbsp;delimited&nbsp;mode&nbsp;and&nbsp;fixed&nbsp;size&nbsp;record&nbsp;mode&nbsp;on&nbsp;the&nbsp;fly&nbsp;as<br>
-&nbsp;&nbsp;&nbsp;&nbsp;individual&nbsp;records&nbsp;are&nbsp;read,&nbsp;this&nbsp;allows&nbsp;you&nbsp;to&nbsp;parse&nbsp;protocols&nbsp;where,&nbsp;for&nbsp;example,&nbsp;the&nbsp;first&nbsp;5&nbsp;records&nbsp;might<br>
-&nbsp;&nbsp;&nbsp;&nbsp;all&nbsp;be&nbsp;fixed&nbsp;size&nbsp;(of&nbsp;potentially&nbsp;different&nbsp;sizes),&nbsp;followed&nbsp;by&nbsp;some&nbsp;delimited&nbsp;records,&nbsp;followed&nbsp;by&nbsp;more&nbsp;fixed<br>
-&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;records.<br>
-&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;Instances&nbsp;of&nbsp;this&nbsp;class&nbsp;can't&nbsp;currently&nbsp;be&nbsp;used&nbsp;for&nbsp;protocols&nbsp;where&nbsp;the&nbsp;text&nbsp;is&nbsp;encoded&nbsp;with&nbsp;something&nbsp;other&nbsp;than<br>
-&nbsp;&nbsp;&nbsp;&nbsp;a&nbsp;1-1&nbsp;byte-char&nbsp;mapping.&nbsp;TODO&nbsp;extend&nbsp;this&nbsp;class&nbsp;to&nbsp;cope&nbsp;with&nbsp;arbitrary&nbsp;character&nbsp;encodings.<br>&nbsp;</tt></td></tr>
+Instances&nbsp;of&nbsp;this&nbsp;class&nbsp;can't&nbsp;currently&nbsp;be&nbsp;used&nbsp;for&nbsp;protocols&nbsp;where&nbsp;the&nbsp;text&nbsp;is&nbsp;encoded&nbsp;with&nbsp;something&nbsp;other&nbsp;than<br>
+a&nbsp;1-1&nbsp;byte-char&nbsp;mapping.&nbsp;TODO&nbsp;extend&nbsp;this&nbsp;class&nbsp;to&nbsp;cope&nbsp;with&nbsp;arbitrary&nbsp;character&nbsp;encodings.<br>&nbsp;</tt></td></tr>
 <tr><td>&nbsp;</td>
 <td width="100%">Methods defined here:<br>
 <dl><dt><a name="RecordParser-__call__"><strong>__call__</strong></a>(self, data)</dt></dl>
@@ -93,16 +89,16 @@ I&nbsp;AM<br>
 of&nbsp;delim&nbsp;while&nbsp;data&nbsp;is&nbsp;being&nbsp;parsed.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-delim&nbsp;--&nbsp;the&nbsp;delimiter&nbsp;string.</tt></dd></dl>
+@param&nbsp;delim:&nbsp;the&nbsp;delimiter&nbsp;string.</tt></dd></dl>
 
 <dl><dt><a name="RecordParser-fixed_size_mode"><strong>fixed_size_mode</strong></a>(self, size)</dt><dd><tt>Flip&nbsp;the&nbsp;parser&nbsp;into&nbsp;fixed&nbsp;size&nbsp;mode.&nbsp;This&nbsp;method&nbsp;can&nbsp;be&nbsp;called&nbsp;multiple&nbsp;times&nbsp;with&nbsp;different&nbsp;values<br>
 of&nbsp;size&nbsp;while&nbsp;data&nbsp;is&nbsp;being&nbsp;parsed.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-size&nbsp;--&nbsp;the&nbsp;record&nbsp;size.</tt></dd></dl>
+@param&nbsp;size:&nbsp;the&nbsp;record&nbsp;size.</tt></dd></dl>
 
 <dl><dt><a name="RecordParser-input"><strong>input</strong></a>(self, data)</dt><dd><tt>This&nbsp;method&nbsp;is&nbsp;called&nbsp;to&nbsp;provide&nbsp;the&nbsp;parser&nbsp;with&nbsp;data.<br>
-data&nbsp;--&nbsp;Input&nbsp;buffer&nbsp;&nbsp;to&nbsp;the&nbsp;parser.</tt></dd></dl>
+@param&nbsp;data:&nbsp;Input&nbsp;buffer&nbsp;&nbsp;to&nbsp;the&nbsp;parser.</tt></dd></dl>
 
 <hr>
 Static methods defined here:<br>
@@ -110,17 +106,18 @@ Static methods defined here:<br>
 by&nbsp;a&nbsp;delimiter&nbsp;string&nbsp;endcoded&nbsp;in&nbsp;latin-1&nbsp;.&nbsp;Don't&nbsp;use&nbsp;this&nbsp;if&nbsp;your&nbsp;String&nbsp;contains&nbsp;other&nbsp;than&nbsp;latin-1&nbsp;characters.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-delim&nbsp;--&nbsp;The&nbsp;delimiter&nbsp;string.<br>
-handler&nbsp;--&nbsp;the&nbsp;output&nbsp;handler<br>
+@param&nbsp;delim:&nbsp;The&nbsp;delimiter&nbsp;string.<br>
+@param&nbsp;handler:&nbsp;the&nbsp;output&nbsp;handler<br>
 &nbsp;<br>
-returns&nbsp;a&nbsp;new&nbsp;<a href="#RecordParser">RecordParser</a></tt></dd></dl>
+@return:&nbsp;a&nbsp;new&nbsp;<a href="#RecordParser">RecordParser</a></tt></dd></dl>
 
 <dl><dt><a name="RecordParser-new_fixed"><strong>new_fixed</strong></a>(size, handler)</dt><dd><tt>Create&nbsp;a&nbsp;new&nbsp;<a href="#RecordParser">RecordParser</a>&nbsp;instance,&nbsp;initially&nbsp;in&nbsp;fixed&nbsp;size&nbsp;mode.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-size&nbsp;--&nbsp;the&nbsp;initial&nbsp;record&nbsp;size.<br>
-handler&nbsp;--&nbsp;the&nbsp;output&nbsp;handler<br>
-returns&nbsp;a&nbsp;new&nbsp;<a href="#RecordParser">RecordParser</a></tt></dd></dl>
+@param&nbsp;size:&nbsp;the&nbsp;initial&nbsp;record&nbsp;size.<br>
+@param&nbsp;handler:&nbsp;the&nbsp;output&nbsp;handler<br>
+&nbsp;<br>
+@return:&nbsp;a&nbsp;new&nbsp;<a href="#RecordParser">RecordParser</a></tt></dd></dl>
 
 <hr>
 Data descriptors defined here:<br>

@@ -61,38 +61,23 @@ object --+
 </pre>
 
 <hr />
-<pre class="literalblock">
-A helper class which allows you to easily parse protocols which are delimited by a sequence of bytes, or fixed
-    size records.
-
-    Instances of this class take as input {Buffer} instances containing raw bytes, and output records.
-    For example, if I had a simple ASCII text protocol delimited by '
-' and the input was the following:
-
-    buffer1:HELLO
-HOW ARE Y
-    buffer2:OU?
-I AM
-    buffer3: DOING OK
-    buffer4:
-
-
-    Then the output would be:
-
-    buffer1:HELLO
-    buffer2:HOW ARE YOU?
-    buffer3:I AM DOING OK
-
-    Instances of this class can be changed between delimited mode and fixed size record mode on the fly as
-    individual records are read, this allows you to parse protocols where, for example, the first 5 records might
-    all be fixed size (of potentially different sizes), followed by some delimited records, followed by more fixed
-    size records.
-
-    Instances of this class can't currently be used for protocols where the text is encoded with something other than
-    a 1-1 byte-char mapping. TODO extend this class to cope with arbitrary character encodings.
-    
-
-</pre>
+<p>A helper class which allows you to easily parse protocols which are 
+  delimited by a sequence of bytes, or fixed size records.</p>
+  <p>Instances of this class take as input Buffer instances containing raw 
+  bytes, and output records. For example, if I had a simple ASCII text 
+  protocol delimited by '\n' and the input was the following:</p>
+  <p>buffer1:HELLO\nHOW ARE Y buffer2:OU?\nI AM buffer3: DOING OK 
+  buffer4:\n</p>
+  <p>Then the output would be:</p>
+  <p>buffer1:HELLO buffer2:HOW ARE YOU? buffer3:I AM DOING OK</p>
+  <p>Instances of this class can be changed between delimited mode and 
+  fixed size record mode on the fly as individual records are read, this 
+  allows you to parse protocols where, for example, the first 5 records 
+  might all be fixed size (of potentially different sizes), followed by 
+  some delimited records, followed by more fixed size records.</p>
+  <p>Instances of this class can't currently be used for protocols where 
+  the text is encoded with something other than a 1-1 byte-char mapping. 
+  TODO extend this class to cope with arbitrary character encodings.</p>
 
 <!-- ==================== INSTANCE METHODS ==================== -->
 <a name="section-InstanceMethods"></a>
@@ -314,9 +299,12 @@ I AM
     </td>
   </tr></table>
   
-  <p>This method is called to provide the parser with data. data -- Input 
-  buffer  to the parser.</p>
+  <p>This method is called to provide the parser with data.</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>data</code></strong> - Input buffer  to the parser.</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -340,10 +328,15 @@ I AM
   where the delimiter can be represented by a delimiter string endcoded in 
   latin-1 . Don't use this if your String contains other than latin-1 
   characters.</p>
-  <p>Keyword arguments: delim -- The delimiter string. handler -- the 
-  output handler</p>
-  <p>returns a new RecordParser</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>delim</code></strong> - The delimiter string.</li>
+        <li><strong class="pname"><code>handler</code></strong> - the output handler</li>
+    </ul></dd>
+    <dt>Returns:</dt>
+        <dd>a new RecordParser</dd>
   </dl>
 </td></tr></table>
 </div>
@@ -364,9 +357,15 @@ I AM
   </tr></table>
   
   <p>Create a new RecordParser instance, initially in fixed size mode.</p>
-  <p>Keyword arguments: size -- the initial record size. handler -- the 
-  output handler returns a new RecordParser</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>size</code></strong> - the initial record size.</li>
+        <li><strong class="pname"><code>handler</code></strong> - the output handler</li>
+    </ul></dd>
+    <dt>Returns:</dt>
+        <dd>a new RecordParser</dd>
   </dl>
 </td></tr></table>
 </div>
@@ -388,8 +387,12 @@ I AM
   <p>Flip the parser into delimited mode. This method can be called 
   multiple times with different values of delim while data is being 
   parsed.</p>
-  <p>Keyword arguments: delim -- the delimiter string.</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>delim</code></strong> - the delimiter string.</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -411,8 +414,12 @@ I AM
   <p>Flip the parser into fixed size mode. This method can be called 
   multiple times with different values of size while data is being 
   parsed.</p>
-  <p>Keyword arguments: size -- the record size.</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>size</code></strong> - the record size.</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -441,7 +448,7 @@ I AM
   <tr>
     <td align="left" class="footer">
     Generated by Epydoc 3.0.1
-    on Wed Jun 27 09:06:29 2012
+    on Thu Jun 28 22:57:47 2012
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

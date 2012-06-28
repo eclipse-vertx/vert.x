@@ -266,8 +266,8 @@
         <span class="summary-sig-arg">uri</span>,
         <span class="summary-sig-arg">handler</span>,
         <span class="summary-sig-arg">**headers</span>)</span><br />
-      This is a quick version of the get method where you do not want to do anything with the request
-before sing.</td>
+      This is a quick version of the get method where you do not want to do
+      anything with the request before sing.</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="core.http-pysrc.html#HttpClient.get_now">source&nbsp;code</a></span>
             
@@ -646,8 +646,12 @@ before sing.</td>
   </tr></table>
   
   <p>Set the exception handler.</p>
-  <p>Keyword arguments: handler -- function to be used as the handler</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>handler</code></strong> - function to be used as the handler</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -668,9 +672,12 @@ before sing.</td>
   
   <p>Set the maximum pool size. The client will maintain up to this number 
   of HTTP connections in an internal pool</p>
-  <p>Keyword arguments: val -- The maximum number of connections (default 
-  to 1).</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>val</code></strong> - The maximum number of connections (default to 1).</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -698,8 +705,12 @@ before sing.</td>
   after the response has been received. Even with no keep alive, the client
   will not allow more than max_pool_size connections to be created at any 
   one time.</p>
-  <p>Keyword arguments: val -- The value to use for keep_alive</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>val</code></strong> - The value to use for keep_alive</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -719,11 +730,15 @@ before sing.</td>
   </tr></table>
   
   <p>Should the client trust ALL server certificates?</p>
-  <p>Keyword arguments: val -- If val is set to true then the client will 
-  trust ALL server certificates and will not attempt to authenticate them 
-  against it's local client trust store. The default value is false. Use 
-  this method with caution!</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>val</code></strong> - If val is set to true then the client will trust ALL server 
+          certificates and will not attempt to authenticate them against 
+          it's local client trust store. The default value is false. Use 
+          this method with caution!</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -744,8 +759,12 @@ before sing.</td>
   
   <p>Set the port that the client will attempt to connect to on the server 
   on. The default value is 80</p>
-  <p>Keyword arguments: val -- The port value.</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>val</code></strong> - The port value.</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -766,9 +785,12 @@ before sing.</td>
   
   <p>Set the host name or ip address that the client will attempt to 
   connect to on the server on.</p>
-  <p>Keyword arguments: val -- The host name or ip address to connect 
-  to.</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>val</code></strong> - The host name or ip address to connect to.</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -791,10 +813,14 @@ before sing.</td>
   <p>Attempt to connect an HTML5 websocket to the specified URI. The 
   connect is done asynchronously and the handler is called with a WebSocket
   on success.</p>
-  <p>Keyword arguments: uri -- A relative URI where to connect the 
-  websocket on the host, e.g. /some/path handler -- The handler to be 
-  called with the WebSocket</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>uri</code></strong> - A relative URI where to connect the websocket on the host, e.g. 
+          /some/path</li>
+        <li><strong class="pname"><code>handler</code></strong> - The handler to be called with the WebSocket</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -815,19 +841,18 @@ before sing.</td>
     </td>
   </tr></table>
   
-  <pre class="literalblock">
-This is a quick version of the get method where you do not want to do anything with the request
-before sing.
-With this method the request is immediately sent.
-When an HTTP response is received from the server the handler is called passing in the response.
-
-Keyword arguments:
- uri -- A relative URI where to perform the GET on the server.
- handler -- The handler to be called with the HttpClientResponse
- headers -- A dictionary of headers to pass with the request.
-
-</pre>
+  <p>This is a quick version of the get method where you do not want to do 
+  anything with the request before sing. With this method the request is 
+  immediately sent. When an HTTP response is received from the server the 
+  handler is called passing in the response.</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>uri</code></strong> - A relative URI where to perform the GET on the server.</li>
+        <li><strong class="pname"><code>handler</code></strong> - The handler to be called with the HttpClientResponse</li>
+        <li><strong class="pname"><code>headers</code></strong> - A dictionary of headers to pass with the request.</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -851,10 +876,13 @@ Keyword arguments:
   HTTP OPTIONS request with the specified uri. When an HTTP response is 
   received from the server the handler is called passing in the 
   response.</p>
-  <p>Keyword arguments: uri -- A relative URI where to perform the OPTIONS 
-  on the server. handler -- The handler to be called with the 
-  HttpClientResponse</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>uri</code></strong> - A relative URI where to perform the OPTIONS on the server.</li>
+        <li><strong class="pname"><code>handler</code></strong> - The handler to be called with the HttpClientResponse</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -878,10 +906,13 @@ Keyword arguments:
   HTTP GET request with the specified uri. When an HTTP response is 
   received from the server the handler is called passing in the 
   response.</p>
-  <p>Keyword arguments: uri -- A relative URI where to perform the GET on 
-  the server. handler -- The handler to be called with the 
-  HttpClientResponse</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>uri</code></strong> - A relative URI where to perform the GET on the server.</li>
+        <li><strong class="pname"><code>handler</code></strong> - The handler to be called with the HttpClientResponse</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -905,10 +936,13 @@ Keyword arguments:
   HTTP HEAD request with the specified uri. When an HTTP response is 
   received from the server the handler is called passing in the 
   response.</p>
-  <p>Keyword arguments: uri -- A relative URI where to perform the HEAD on 
-  the server. handler -- The handler to be called with the 
-  HttpClientResponse</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>uri</code></strong> - A relative URI where to perform the HEAD on the server.</li>
+        <li><strong class="pname"><code>handler</code></strong> - The handler to be called with the HttpClientResponse</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -932,10 +966,13 @@ Keyword arguments:
   HTTP POST request with the specified uri. When an HTTP response is 
   received from the server the handler is called passing in the 
   response.</p>
-  <p>Keyword arguments: uri -- A relative URI where to perform the POST on 
-  the server. handler -- The handler to be called with the 
-  HttpClientResponse</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>uri</code></strong> - A relative URI where to perform the POST on the server.</li>
+        <li><strong class="pname"><code>handler</code></strong> - The handler to be called with the HttpClientResponse</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -959,10 +996,13 @@ Keyword arguments:
   HTTP PUT request with the specified uri. When an HTTP response is 
   received from the server the handler is called passing in the 
   response.</p>
-  <p>Keyword arguments: uri -- A relative URI where to perform the PUT on 
-  the server. handler -- The handler to be called with the 
-  HttpClientResponse</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>uri</code></strong> - A relative URI where to perform the PUT on the server.</li>
+        <li><strong class="pname"><code>handler</code></strong> - The handler to be called with the HttpClientResponse</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -986,10 +1026,13 @@ Keyword arguments:
   HTTP DELETE request with the specified uri. When an HTTP response is 
   received from the server the handler is called passing in the 
   response.</p>
-  <p>Keyword arguments: uri -- A relative URI where to perform the DELETE 
-  on the server. handler -- The handler to be called with the 
-  HttpClientResponse</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>uri</code></strong> - A relative URI where to perform the DELETE on the server.</li>
+        <li><strong class="pname"><code>handler</code></strong> - The handler to be called with the HttpClientResponse</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1013,10 +1056,13 @@ Keyword arguments:
   HTTP TRACE request with the specified uri. When an HTTP response is 
   received from the server the handler is called passing in the 
   response.</p>
-  <p>Keyword arguments: uri -- A relative URI where to perform the TRACE on
-  the server. handler. The handler to be called with the 
-  HttpClientResponse</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>uri</code></strong> - A relative URI where to perform the TRACE on the server. handler.
+          The handler to be called with the HttpClientResponse</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1040,10 +1086,13 @@ Keyword arguments:
   HTTP CONNECT request with the specified uri. When an HTTP response is 
   received from the server the handler is called passing in the 
   response.</p>
-  <p>Keyword arguments: uri -- A relative URI where to perform the CONNECT 
-  on the server. handler -- The handler to be called with the 
-  HttpClientResponse</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>uri</code></strong> - A relative URI where to perform the CONNECT on the server.</li>
+        <li><strong class="pname"><code>handler</code></strong> - The handler to be called with the HttpClientResponse</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1067,10 +1116,13 @@ Keyword arguments:
   HTTP PATCH request with the specified uri. When an HTTP response is 
   received from the server the handler is called passing in the 
   response.</p>
-  <p>Keyword arguments: uri -- A relative URI where to perform the PATCH on
-  the server. handler -- The handler to be called with the 
-  HttpClientResponse</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>uri</code></strong> - A relative URI where to perform the PATCH on the server.</li>
+        <li><strong class="pname"><code>handler</code></strong> - The handler to be called with the HttpClientResponse</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1096,10 +1148,13 @@ Keyword arguments:
   received from the server the handler is called passing in the response. 
   method. The HTTP method. Can be one of OPTIONS, HEAD, GET, POST, PUT, 
   DELETE, TRACE, CONNECT.</p>
-  <p>Keyword arguments: uri -- A relative URI where to perform the OPTIONS 
-  on the server. handler -- The handler to be called with the 
-  HttpClientResponse</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>uri</code></strong> - A relative URI where to perform the OPTIONS on the server.</li>
+        <li><strong class="pname"><code>handler</code></strong> - The handler to be called with the HttpClientResponse</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1147,7 +1202,7 @@ Keyword arguments:
   <tr>
     <td align="left" class="footer">
     Generated by Epydoc 3.0.1
-    on Wed Jun 27 09:06:28 2012
+    on Thu Jun 28 22:57:46 2012
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

@@ -914,9 +914,14 @@ object --+
   
   <p>Copy a file, asynchronously. The copy will fail if from does not 
   exist, or if to already exists.</p>
-  <p>Keyword arguments: frm -- path of file to copy to -- path of file to 
-  copy to handler -- the handler which is called on completion.</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>frm</code></strong> - path of file to copy</li>
+        <li><strong class="pname"><code>to</code></strong> - path of file to copy to</li>
+        <li><strong class="pname"><code>handler</code></strong> - the handler which is called on completion.</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -941,9 +946,14 @@ object --+
   does not exist, or if to already exists and is not empty. If the source 
   is a directory all contents of the directory will be copied recursively, 
   i.e. the entire directory tree is copied.</p>
-  <p>Keyword arguments: frm -- path of file to copy to -- path of file to 
-  copy to handler -- the function to call when complete</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>frm</code></strong> - path of file to copy</li>
+        <li><strong class="pname"><code>to</code></strong> - path of file to copy to</li>
+        <li><strong class="pname"><code>handler</code></strong> - the function to call when complete</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -966,9 +976,14 @@ object --+
   
   <p>Move a file, asynchronously. The move will fail if from does not 
   exist, or if to already exists.</p>
-  <p>Keyword arguments: frm -- Path of file to move to -- Path of file to 
-  move to handler -- the function to call when complete</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>frm</code></strong> - Path of file to move</li>
+        <li><strong class="pname"><code>to</code></strong> - Path of file to move to</li>
+        <li><strong class="pname"><code>handler</code></strong> - the function to call when complete</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -991,10 +1006,15 @@ object --+
   
   <p>Truncate a file, asynchronously. The move will fail if path does not 
   exist.</p>
-  <p>Keyword arguments: path -- Path of file to truncate len -- Length to 
-  truncate file to. Will fail if len &lt; 0. If len &gt; file size then 
-  will do nothing. handler -- the function to call when complete</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>path</code></strong> - Path of file to truncate</li>
+        <li><strong class="pname"><code>len</code></strong> - Length to truncate file to. Will fail if len &lt; 0. If len &gt; 
+          file size then will do nothing.</li>
+        <li><strong class="pname"><code>handler</code></strong> - the function to call when complete</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1016,18 +1036,22 @@ object --+
     </td>
   </tr></table>
   
-  <pre class="literalblock">
-Change the permissions on a file, asynchronously. If the file is directory then all contents will also have their permissions changed recursively.
-
-Keyword arguments:
-  path Path of file to change permissions
-  perms A permission string of the form rwxr-x--- as specified in http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html}. This is
-used to set the permissions for any regular files (not directories).
-  dir_perms A permission string of the form rwxr-x---. Used to set permissions for regular files.
-  handler -- the function to call when complete
-
-</pre>
+  <p>Change the permissions on a file, asynchronously. If the file is 
+  directory then all contents will also have their permissions changed 
+  recursively.</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>path</code></strong> - path of file to change permissions</li>
+        <li><strong class="pname"><code>perms</code></strong> - a permission string of the form rwxr-x--- as specified in 
+          http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html.
+          This is used to set the permissions for any regular files (not 
+          directories).</li>
+        <li><strong class="pname"><code>dir_perms</code></strong> - a permission string of the form rwxr-x---. Used to set 
+          permissions for regular files.</li>
+        <li><strong class="pname"><code>handler</code></strong> - the function to call when complete</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1048,9 +1072,13 @@ used to set the permissions for any regular files (not directories).
   </tr></table>
   
   <p>Get file properties for a file, asynchronously.</p>
-  <p>Keyword arguments: path -- path to file handler -- the function to 
-  call when complete</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>path</code></strong> - path to file</li>
+        <li><strong class="pname"><code>handler</code></strong> - the function to call when complete</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1072,10 +1100,14 @@ used to set the permissions for any regular files (not directories).
   </tr></table>
   
   <p>Create a hard link, asynchronously..</p>
-  <p>Keyword arguments: link -- path of the link to create. existing -- 
-  path of where the link points to. handler -- the function to call when 
-  complete</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>link</code></strong> - path of the link to create.</li>
+        <li><strong class="pname"><code>existing</code></strong> - path of where the link points to.</li>
+        <li><strong class="pname"><code>handler</code></strong> - the function to call when complete</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1097,10 +1129,14 @@ used to set the permissions for any regular files (not directories).
   </tr></table>
   
   <p>Create a symbolic link, asynchronously.</p>
-  <p>Keyword arguments: link -- Path of the link to create. existing -- 
-  Path of where the link points to. handler -- the function to call when 
-  complete</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>link</code></strong> - Path of the link to create.</li>
+        <li><strong class="pname"><code>existing</code></strong> - Path of where the link points to.</li>
+        <li><strong class="pname"><code>handler</code></strong> - the function to call when complete</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1121,8 +1157,12 @@ used to set the permissions for any regular files (not directories).
   </tr></table>
   
   <p>Unlink a hard link.</p>
-  <p>Keyword arguments: link -- path of the link to unlink.</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>link</code></strong> - path of the link to unlink.</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1144,9 +1184,13 @@ used to set the permissions for any regular files (not directories).
   
   <p>Read a symbolic link, asynchronously. I.e. tells you where the 
   symbolic link points.</p>
-  <p>Keyword arguments: link -- path of the link to read. handler -- the 
-  function to call when complete</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>link</code></strong> - path of the link to read.</li>
+        <li><strong class="pname"><code>handler</code></strong> - the function to call when complete</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1168,9 +1212,13 @@ used to set the permissions for any regular files (not directories).
   
   <p>Delete a file on the file system, asynchronously. The delete will fail
   if the file does not exist, or is a directory and is not empty.</p>
-  <p>Keyword arguments: path -- path of the file to delete. handler -- the 
-  function to call when complete</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>path</code></strong> - path of the file to delete.</li>
+        <li><strong class="pname"><code>handler</code></strong> - the function to call when complete</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1193,9 +1241,13 @@ used to set the permissions for any regular files (not directories).
   <p>Delete a file on the file system recursively, asynchronously. The 
   delete will fail if the file does not exist. If the file is a directory 
   the entire directory contents will be deleted recursively.</p>
-  <p>Keyword arguments: path -- path of the file to delete. handler -- the 
-  function to call when complete</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>path</code></strong> - path of the file to delete.</li>
+        <li><strong class="pname"><code>handler</code></strong> - the function to call when complete</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1219,10 +1271,14 @@ used to set the permissions for any regular files (not directories).
   <p>Create a directory, asynchronously. The create will fail if the 
   directory already exists, or if it contains parent directories which do 
   not already exist.</p>
-  <p>Keyword arguments: path -- path of the directory to create. perms -- a
-  permission string of the form rwxr-x--- to give directory. handler -- the
-  function to call when complete</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>path</code></strong> - path of the directory to create.</li>
+        <li><strong class="pname"><code>perms</code></strong> - a permission string of the form rwxr-x--- to give directory.</li>
+        <li><strong class="pname"><code>handler</code></strong> - the function to call when complete</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1246,10 +1302,14 @@ used to set the permissions for any regular files (not directories).
   <p>Create a directory, and create all it's parent directories if they do 
   not already exist, asynchronously. The create will fail if the directory 
   already exists.</p>
-  <p>Keyword arguments: path -- path of the directory to create. perms -- a
-  permission string of the form rwxr-x--- to give the created 
-  directory(ies).</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>path</code></strong> - path of the directory to create.</li>
+        <li><strong class="pname"><code>perms</code></strong> - a permission string of the form rwxr-x--- to give the created 
+          directory(ies).</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1272,11 +1332,16 @@ used to set the permissions for any regular files (not directories).
   
   <p>Read a directory, i.e. list it's contents, asynchronously. The read 
   will fail if the directory does not exist.</p>
-  <p>Keyword arguments: path -- path of the directory to read. filter -- a 
-  regular expression to filter out the contents of the directory. If the 
-  filter is not nil then only files which match the filter will be 
-  returned. handler -- the function to call when complete</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>path</code></strong> - path of the directory to read.</li>
+        <li><strong class="pname"><code>filter</code></strong> - a regular expression to filter out the contents of the directory.
+          If the filter is not nil then only files which match the filter 
+          will be returned.</li>
+        <li><strong class="pname"><code>handler</code></strong> - the function to call when complete</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1297,9 +1362,13 @@ used to set the permissions for any regular files (not directories).
   </tr></table>
   
   <p>Read the contents of an entire file as a Buffer, asynchronously.</p>
-  <p>Keyword arguments: path -- path of the file to read. handler -- the 
-  function to call when complete</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>path</code></strong> - path of the file to read.</li>
+        <li><strong class="pname"><code>handler</code></strong> - the function to call when complete</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1321,9 +1390,14 @@ used to set the permissions for any regular files (not directories).
   </tr></table>
   
   <p>Write a  as the entire contents of a file, asynchronously.</p>
-  <p>Keyword arguments: path -- path of the file to write. buffer -- the 
-  Buffer to write handler -- the function to call when complete</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>path</code></strong> - path of the file to write.</li>
+        <li><strong class="pname"><code>buffer</code></strong> - the Buffer to write</li>
+        <li><strong class="pname"><code>handler</code></strong> - the function to call when complete</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1349,14 +1423,20 @@ used to set the permissions for any regular files (not directories).
   </tr></table>
   
   <p>Open a file on the file system, asynchronously.</p>
-  <p>Keyword arguments: path -- path of the file to open. perms -- if the 
-  file does not exist and create_new is true, then the file will be created
-  with these permissions. read -- open the file for reading? write -- open 
-  the file for writing? create_new -- Create the file if it doesn't already
-  exist? flush -- whenever any data is written to the file, flush all 
-  changes to permanent storage immediately? handler -- the function to call
-  when complete</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>path</code></strong> - path of the file to open.</li>
+        <li><strong class="pname"><code>perms</code></strong> - if the file does not exist and create_new is true, then the file 
+          will be created with these permissions.</li>
+        <li><strong class="pname"><code>read</code></strong> - open the file for reading?</li>
+        <li><strong class="pname"><code>write</code></strong> - open the file for writing?</li>
+        <li><strong class="pname"><code>create_new</code></strong> - Create the file if it doesn't already exist?</li>
+        <li><strong class="pname"><code>flush</code></strong> - whenever any data is written to the file, flush all changes to 
+          permanent storage immediately?</li>
+        <li><strong class="pname"><code>handler</code></strong> - the function to call when complete</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1378,10 +1458,14 @@ used to set the permissions for any regular files (not directories).
   </tr></table>
   
   <p>Create a new empty file, asynchronously.</p>
-  <p>Keyword arguments: path -- path of the file to create. perms -- the 
-  file will be created with these permissions. handler -- the function to 
-  call when complete</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>path</code></strong> - path of the file to create.</li>
+        <li><strong class="pname"><code>perms</code></strong> - the file will be created with these permissions.</li>
+        <li><strong class="pname"><code>handler</code></strong> - the function to call when complete</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1402,9 +1486,13 @@ used to set the permissions for any regular files (not directories).
   </tr></table>
   
   <p>Check if  a file exists, asynchronously.</p>
-  <p>Keyword arguments: path -- Path of the file to check. handler -- the 
-  function to call when complete</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>path</code></strong> - Path of the file to check.</li>
+        <li><strong class="pname"><code>handler</code></strong> - the function to call when complete</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1425,9 +1513,13 @@ used to set the permissions for any regular files (not directories).
   </tr></table>
   
   <p>Get properties for the file system, asynchronously.</p>
-  <p>Keyword arguments: path -- Path in the file system. handler -- the 
-  function to call when complete</p>
+  <p>Keyword arguments:</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>path</code></strong> - Path in the file system.</li>
+        <li><strong class="pname"><code>handler</code></strong> - the function to call when complete</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1456,7 +1548,7 @@ used to set the permissions for any regular files (not directories).
   <tr>
     <td align="left" class="footer">
     Generated by Epydoc 3.0.1
-    on Wed Jun 27 09:06:28 2012
+    on Thu Jun 28 22:57:46 2012
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

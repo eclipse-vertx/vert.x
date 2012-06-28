@@ -109,9 +109,9 @@ application&nbsp;will&nbsp;have&nbsp;its&nbsp;own&nbsp;handler,&nbsp;and&nbsp;co
 <dl><dt><a name="SockJSServer-install_app"><strong>install_app</strong></a>(self, config, handler)</dt><dd><tt>Install&nbsp;an&nbsp;application<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-config&nbsp;--&nbsp;Configuration&nbsp;for&nbsp;the&nbsp;application<br>
-proc&nbsp;--&nbsp;Proc&nbsp;representing&nbsp;the&nbsp;handler<br>
-handler&nbsp;--&nbsp;Handler&nbsp;to&nbsp;call&nbsp;when&nbsp;a&nbsp;new&nbsp;<a href="#SockJSSocket">SockJSSocket</a>&nbsp;is&nbsp;created</tt></dd></dl>
+@param&nbsp;config:&nbsp;Configuration&nbsp;for&nbsp;the&nbsp;application<br>
+@param&nbsp;proc:&nbsp;Proc&nbsp;representing&nbsp;the&nbsp;handler<br>
+@param&nbsp;handler:&nbsp;Handler&nbsp;to&nbsp;call&nbsp;when&nbsp;a&nbsp;new&nbsp;<a href="#SockJSSocket">SockJSSocket</a>&nbsp;is&nbsp;created</tt></dd></dl>
 
 <hr>
 Data descriptors defined here:<br>
@@ -155,12 +155,12 @@ Methods inherited from <a href="core.streams.html#ReadStream">core.streams.ReadS
 <dl><dt><a name="SockJSSocket-data_handler"><strong>data_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;data&nbsp;handler.&nbsp;As&nbsp;data&nbsp;is&nbsp;read,&nbsp;the&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;data.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;data&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;data&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="SockJSSocket-end_handler"><strong>end_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;end&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.&nbsp;Once&nbsp;the&nbsp;stream&nbsp;has&nbsp;ended,&nbsp;and&nbsp;there&nbsp;is&nbsp;no&nbsp;more&nbsp;data&nbsp;to&nbsp;be&nbsp;read,&nbsp;this&nbsp;handler&nbsp;will&nbsp;be&nbsp;called.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="SockJSSocket-exception_handler"><strong>exception_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;execption&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.<br>
 param&nbsp;[Block]&nbsp;hndlr.&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
@@ -183,14 +183,14 @@ Methods inherited from <a href="core.streams.html#WriteStream">core.streams.Writ
 queue&nbsp;has&nbsp;been&nbsp;reduced&nbsp;to&nbsp;maxSize&nbsp;/&nbsp;2.&nbsp;See&nbsp;&nbsp;for&nbsp;an&nbsp;example&nbsp;of&nbsp;this&nbsp;being&nbsp;used.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;drain&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;drain&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="SockJSSocket-set_write_queue_max_size"><strong>set_write_queue_max_size</strong></a>(self, size)</dt><dd><tt>Set&nbsp;the&nbsp;maximum&nbsp;size&nbsp;of&nbsp;the&nbsp;write&nbsp;queue.&nbsp;You&nbsp;will&nbsp;still&nbsp;be&nbsp;able&nbsp;to&nbsp;write&nbsp;to&nbsp;the&nbsp;stream&nbsp;even<br>
 if&nbsp;there&nbsp;is&nbsp;more&nbsp;data&nbsp;than&nbsp;this&nbsp;in&nbsp;the&nbsp;write&nbsp;queue.&nbsp;This&nbsp;is&nbsp;used&nbsp;as&nbsp;an&nbsp;indicator&nbsp;by&nbsp;classes&nbsp;such&nbsp;as<br>
 to&nbsp;provide&nbsp;flow&nbsp;control.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-size&nbsp;--&nbsp;The&nbsp;maximum&nbsp;size,&nbsp;in&nbsp;bytes.</tt></dd></dl>
+@param&nbsp;size:&nbsp;The&nbsp;maximum&nbsp;size,&nbsp;in&nbsp;bytes.</tt></dd></dl>
 
 <dl><dt><a name="SockJSSocket-write_buffer"><strong>write_buffer</strong></a>(self, buff)</dt><dd><tt>Write&nbsp;some&nbsp;data&nbsp;to&nbsp;the&nbsp;stream.&nbsp;The&nbsp;data&nbsp;is&nbsp;put&nbsp;on&nbsp;an&nbsp;internal&nbsp;write&nbsp;queue,&nbsp;and&nbsp;the&nbsp;write&nbsp;actually&nbsp;happens<br>
 asynchronously.&nbsp;To&nbsp;avoid&nbsp;running&nbsp;out&nbsp;of&nbsp;memory&nbsp;by&nbsp;putting&nbsp;too&nbsp;much&nbsp;on&nbsp;the&nbsp;write&nbsp;queue,<br>

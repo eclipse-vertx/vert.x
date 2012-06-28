@@ -66,7 +66,7 @@ e.g.&nbsp;from&nbsp;an&nbsp;HttpServerRequest&nbsp;to&nbsp;an&nbsp;AsyncFile,&nb
 <dl><dt><a name="Pump-set_write_queue_max_size"><strong>set_write_queue_max_size</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;write&nbsp;queue&nbsp;max&nbsp;size<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-val&nbsp;--&nbsp;The&nbsp;write&nbsp;queue&nbsp;max&nbsp;size</tt></dd></dl>
+@param&nbsp;val:&nbsp;The&nbsp;write&nbsp;queue&nbsp;max&nbsp;size</tt></dd></dl>
 
 <dl><dt><a name="Pump-start"><strong>start</strong></a>(self)</dt><dd><tt>Start&nbsp;the&nbsp;<a href="#Pump">Pump</a>.&nbsp;The&nbsp;<a href="#Pump">Pump</a>&nbsp;can&nbsp;be&nbsp;started&nbsp;and&nbsp;stopped&nbsp;multiple&nbsp;times.</tt></dd></dl>
 
@@ -100,12 +100,12 @@ Any&nbsp;class&nbsp;that&nbsp;mixes&nbsp;in&nbsp;this&nbsp;module&nbsp;can&nbsp;
 <dl><dt><a name="ReadStream-data_handler"><strong>data_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;data&nbsp;handler.&nbsp;As&nbsp;data&nbsp;is&nbsp;read,&nbsp;the&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;data.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;data&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;data&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="ReadStream-end_handler"><strong>end_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;end&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.&nbsp;Once&nbsp;the&nbsp;stream&nbsp;has&nbsp;ended,&nbsp;and&nbsp;there&nbsp;is&nbsp;no&nbsp;more&nbsp;data&nbsp;to&nbsp;be&nbsp;read,&nbsp;this&nbsp;handler&nbsp;will&nbsp;be&nbsp;called.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="ReadStream-exception_handler"><strong>exception_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;execption&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.<br>
 param&nbsp;[Block]&nbsp;hndlr.&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
@@ -138,19 +138,19 @@ Any&nbsp;class&nbsp;that&nbsp;mixes&nbsp;in&nbsp;this&nbsp;module&nbsp;can&nbsp;
 queue&nbsp;has&nbsp;been&nbsp;reduced&nbsp;to&nbsp;maxSize&nbsp;/&nbsp;2.&nbsp;See&nbsp;&nbsp;for&nbsp;an&nbsp;example&nbsp;of&nbsp;this&nbsp;being&nbsp;used.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;drain&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;drain&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="WriteStream-exception_handler"><strong>exception_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;execption&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-handler&nbsp;--&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+@param&nbsp;handler:&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
 
 <dl><dt><a name="WriteStream-set_write_queue_max_size"><strong>set_write_queue_max_size</strong></a>(self, size)</dt><dd><tt>Set&nbsp;the&nbsp;maximum&nbsp;size&nbsp;of&nbsp;the&nbsp;write&nbsp;queue.&nbsp;You&nbsp;will&nbsp;still&nbsp;be&nbsp;able&nbsp;to&nbsp;write&nbsp;to&nbsp;the&nbsp;stream&nbsp;even<br>
 if&nbsp;there&nbsp;is&nbsp;more&nbsp;data&nbsp;than&nbsp;this&nbsp;in&nbsp;the&nbsp;write&nbsp;queue.&nbsp;This&nbsp;is&nbsp;used&nbsp;as&nbsp;an&nbsp;indicator&nbsp;by&nbsp;classes&nbsp;such&nbsp;as<br>
 to&nbsp;provide&nbsp;flow&nbsp;control.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
-size&nbsp;--&nbsp;The&nbsp;maximum&nbsp;size,&nbsp;in&nbsp;bytes.</tt></dd></dl>
+@param&nbsp;size:&nbsp;The&nbsp;maximum&nbsp;size,&nbsp;in&nbsp;bytes.</tt></dd></dl>
 
 <dl><dt><a name="WriteStream-write_buffer"><strong>write_buffer</strong></a>(self, buff)</dt><dd><tt>Write&nbsp;some&nbsp;data&nbsp;to&nbsp;the&nbsp;stream.&nbsp;The&nbsp;data&nbsp;is&nbsp;put&nbsp;on&nbsp;an&nbsp;internal&nbsp;write&nbsp;queue,&nbsp;and&nbsp;the&nbsp;write&nbsp;actually&nbsp;happens<br>
 asynchronously.&nbsp;To&nbsp;avoid&nbsp;running&nbsp;out&nbsp;of&nbsp;memory&nbsp;by&nbsp;putting&nbsp;too&nbsp;much&nbsp;on&nbsp;the&nbsp;write&nbsp;queue,<br>
