@@ -1,0 +1,27 @@
+Regression Testing for Zope 3 support
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+:RequireModule: zope.interface
+
+    >>> from epydoc.test.util import runintrospecter
+
+We treat zope interface objects as if they were classes:
+
+    >>> runintrospecter(s='''
+    ...     from zope.interface import Interface, Attribute
+    ...     class IExample(Interface): 
+    ...         """This interface represents a generic example.""" 
+    ...         
+    ...         text = Attribute("The text of the example") 
+    ...         
+    ...         def setText(text): 
+    ...             "This method writes the passed text to the text attribute." 
+    ...             
+    ...         def getText(): 
+    ...             "This method returns the value of the text attribute."
+    ...     ''', attribs='pyval canonical_name', introspect='IExample')
+    ClassDoc for epydoc_test.IExample [0]
+     +- canonical_name = DottedName('epydoc_test', 'IExample')
+     +- pyval = <InterfaceClass epydoc_test.IExample>
+
+(If we didn't add special support, ``IExample`` would be a
+`GenericValueDoc`.)

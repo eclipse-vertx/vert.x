@@ -176,7 +176,7 @@ public class TestBase extends TestCase {
 
   protected String startApp(boolean worker, String main, JsonObject config, int instances, boolean await) throws Exception {
     URL url;
-    if (main.endsWith(".js") || main.endsWith(".rb") || main.endsWith(".groovy")) {
+    if (main.endsWith(".js") || main.endsWith(".rb") || main.endsWith(".groovy") || main.endsWith(".py")) {
       url = getClass().getClassLoader().getResource(main);
     } else {
       String classDir = main.replace('.', '/') + ".class";
@@ -203,7 +203,7 @@ public class TestBase extends TestCase {
 
     verticleManager.deploy(worker, main, config, new URL[] {url}, instances, null, doneHandler);
 
-    if (!doneLatch.await(10, TimeUnit.SECONDS)) {
+    if (!doneLatch.await(30, TimeUnit.SECONDS)) {
       throw new IllegalStateException("Timedout waiting for apps to start");
     }
 
@@ -224,7 +224,7 @@ public class TestBase extends TestCase {
         latch.countDown();
       }
     });
-    if (!latch.await(10, TimeUnit.SECONDS)) {
+    if (!latch.await(30, TimeUnit.SECONDS)) {
         throw new IllegalStateException("Timedout waiting for app to stop");
     }
     for (int i = 0; i < instances; i++) {
