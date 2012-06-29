@@ -2191,7 +2191,7 @@ The following example bridges the event bus to client side JavaScript:
     
     JsonObject config = new JsonObject().putString("prefix", "/echo");
     
-    vertx.createSockJSServer(server).bridge(config, new JsonArray());
+    vertx.createSockJSServer(server).bridge(config, new JsonArray(), new JsonArray());
     
     server.listen(8080);
     

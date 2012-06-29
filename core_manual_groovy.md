@@ -1920,7 +1920,7 @@ The following example bridges the event bus to client side JavaScript:
 
     def config = ["prefix": "/eventbus"]
 
-    vertx.createSockJSServer(server).bridge(config, [])
+    vertx.createSockJSServer(server).bridge(config, [], [])
 
     server.listen(8080)
 
