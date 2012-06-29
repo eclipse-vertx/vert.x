@@ -2145,7 +2145,7 @@ The following example creates and starts a SockJS bridge which will bridge any e
     
     sockJSServer = create_sockjs_server(server)
 
-    sockJSServer.bridge({'prefix' : '/eventbus'}, [] )
+    sockJSServer.bridge({'prefix' : '/eventbus'}, [], [])
 
     server.listen(8080)
 
@@ -2194,28 +2194,33 @@ The client side event bus API for registering and unregistering handlers and for
 
 ## Securing the Bridge
 
-If you started a bridge like in the above example without securing it, and attempted to send messages to it from the client side you'd find that the messages mysteriously disappeared. What happened to them?
+If you started a bridge like in the above example without securing it, and attempted to send messages through it you'd find that the messages mysteriously disappeared. What happened to them?
 
 For most applications you probably don't want client side JavaScript being able to send just any message to any verticle on the server side or to all other browsers.
 
-For example, you may have a persistor verticle on the event bus which allows data to be accessed or deleted. We don't want badly behaved or malicious clients being able to delete all the data in your database!
+For example, you may have a persistor verticle on the event bus which allows data to be accessed or deleted. We don't want badly behaved or malicious clients being able to delete all the data in your database! Also, we don't necessarily want any client to be able to listen in on any topic.
 
-To deal with this, a SockJS bridge will, by default refuse to forward any messages from the client side. It's up to you to tell the bridge what messages are ok for it to pass through.
+To deal with this, a SockJS bridge will, by default refuse to let through any messages. It's up to you to tell the bridge what messages are ok for it to pass through. (There is an exception for reply messages which are always allowed through).
 
 In other words the bridge acts like a kind of firewall which has a default *deny-all* policy.
 
-Configuring the bridge to tell it what messages it should pass through is easy. You pass in an array of JSON objects that represent *matches*, as the final argument to the `bridge` method.
+Configuring the bridge to tell it what messages it should pass through is easy. You pass in two arrays of JSON objects that represent *matches*, as the final argument in the call to `bridge`.
 
-Each match has two fields:
+The first array is the *inbound* list and represents the messages that you want to allow through from the client to the server. The second array is the *outbound* list and represents the messages that you want to allow through from the server to the client.
 
-1. `address`. This represents the address the message is being sent to. If you want to filter messages based on address you will use this field.
-2. `match`. This allows you to filter messages based on their structure. Any fields in the match must exist in the message with the same values for them to be passed. This currently only works with JSON messages.
+Each match can have up to three fields:
 
-When a message arrives from the client, the bridge will look through the available permitted entries.
+1. `address`: This represents the exact address the message is being sent to. If you want to filter messages based on an exact address you use this field.
+2. `address_re`: This is a regular expression that will be matched against the address. If you want to filter messages based on a regular expression you use this field. If the `address` field is specified this field will be ignored.
+3. `match`: This allows you to filter messages based on their structure. Any fields in the match must exist in the message with the same values for them to be passed. This currently only works with JSON messages.
 
-* If an address has been specified then the address must match with the address in the message for it to be considered matched.
+When a message arrives at the bridge, it will look through the available permitted entries.
 
-* If a match has been specified, then also the structure of the message must match.
+* If an `address` field has been specified then the `address` must match exactly with the address of the message for it to be considered matched.
+
+* If an `address` field has not been specified and an `address_re` field has been specified then the regular expression in `address_re` must match with the address of the message for it to be considered matched.
+
+* If a `match` field has been specified, then also the structure of the message must match.
 
 Here is an example:
 
@@ -2250,9 +2255,9 @@ Here is an example:
 
     server.listen(8080)
 
-To let all messages through you can specify an array with a single empty JSON object which will match all messages.
+To let all messages through you can specify two arrays with a single empty JSON object which will match all messages.
 
-     sockJSServer.bridge({'prefix' : '/eventbus'}, [{}])
+     sockJSServer.bridge({'prefix' : '/eventbus'}, [{}], [{}])
 
 **Be very careful!**
 
