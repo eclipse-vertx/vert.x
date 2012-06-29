@@ -1,0 +1,135 @@
+
+<!doctype html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module core.tcp_support</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="core.html"><font color="#ffffff">core</font></a>.tcp_support</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href="index.html">index</a><br></font></td></tr></table>
+    <p><tt>#&nbsp;Copyright&nbsp;2011-2012&nbsp;the&nbsp;original&nbsp;author&nbsp;or&nbsp;authors.<br>
+#<br>
+#&nbsp;Licensed&nbsp;under&nbsp;the&nbsp;Apache&nbsp;License,&nbsp;Version&nbsp;2.0&nbsp;(the&nbsp;"License");<br>
+#&nbsp;you&nbsp;may&nbsp;not&nbsp;use&nbsp;this&nbsp;file&nbsp;except&nbsp;in&nbsp;compliance&nbsp;with&nbsp;the&nbsp;License.<br>
+#&nbsp;You&nbsp;may&nbsp;obtain&nbsp;a&nbsp;copy&nbsp;of&nbsp;the&nbsp;License&nbsp;at<br>
+#<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a><br>
+#<br>
+#&nbsp;Unless&nbsp;required&nbsp;by&nbsp;applicable&nbsp;law&nbsp;or&nbsp;agreed&nbsp;to&nbsp;in&nbsp;writing,&nbsp;software<br>
+#&nbsp;distributed&nbsp;under&nbsp;the&nbsp;License&nbsp;is&nbsp;distributed&nbsp;on&nbsp;an&nbsp;"AS&nbsp;IS"&nbsp;BASIS,<br>
+#&nbsp;WITHOUT&nbsp;WARRANTIES&nbsp;OR&nbsp;CONDITIONS&nbsp;OF&nbsp;ANY&nbsp;KIND,&nbsp;either&nbsp;express&nbsp;or&nbsp;implied.<br>
+#&nbsp;See&nbsp;the&nbsp;License&nbsp;for&nbsp;the&nbsp;specific&nbsp;language&nbsp;governing&nbsp;permissions&nbsp;and<br>
+#&nbsp;limitations&nbsp;under&nbsp;the&nbsp;License.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial">__builtin__.object
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.tcp_support.html#TCPSupport">TCPSupport</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="TCPSupport">class <strong>TCPSupport</strong></a>(__builtin__.object)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Mixin&nbsp;module&nbsp;that&nbsp;provides&nbsp;all&nbsp;the&nbsp;common&nbsp;TCP&nbsp;params&nbsp;that&nbsp;can&nbsp;be&nbsp;set.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="TCPSupport-set_receive_buffer_size"><strong>set_receive_buffer_size</strong></a>(self, bytes)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;receive&nbsp;buffer&nbsp;size.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;bytes:&nbsp;The&nbsp;size&nbsp;in&nbsp;bytes.<br>
+&nbsp;<br>
+return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+
+<dl><dt><a name="TCPSupport-set_reuse_address"><strong>set_reuse_address</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;reuse&nbsp;address&nbsp;setting.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;val:&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;reuse&nbsp;address&nbsp;will&nbsp;be&nbsp;enabled.<br>
+@return:&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+
+<dl><dt><a name="TCPSupport-set_send_buffer_size"><strong>set_send_buffer_size</strong></a>(self, bytes)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;send&nbsp;buffer&nbsp;size.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;bytes:&nbsp;The&nbsp;size&nbsp;in&nbsp;bytes.<br>
+&nbsp;<br>
+return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+
+<dl><dt><a name="TCPSupport-set_so_linger"><strong>set_so_linger</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;so&nbsp;linger&nbsp;setting.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;val:&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;so&nbsp;linger&nbsp;will&nbsp;be&nbsp;enabled.<br>
+&nbsp;<br>
+return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+
+<dl><dt><a name="TCPSupport-set_tcp_keep_alive"><strong>set_tcp_keep_alive</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;keep&nbsp;alive&nbsp;setting.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;val:&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;keep&nbsp;alive&nbsp;will&nbsp;be&nbsp;enabled.<br>
+&nbsp;<br>
+return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+
+<dl><dt><a name="TCPSupport-set_traffic_class"><strong>set_traffic_class</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;traffic&nbsp;class&nbsp;setting.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;val:&nbsp;The&nbsp;TCP&nbsp;traffic&nbsp;class&nbsp;setting.<br>
+&nbsp;<br>
+return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>receive_buffer_size</strong></dt>
+</dl>
+<dl><dt><strong>reuse_address</strong></dt>
+</dl>
+<dl><dt><strong>send_buffer_size</strong></dt>
+</dl>
+<dl><dt><strong>so_linger</strong></dt>
+</dl>
+<dl><dt><strong>tcp_keep_alive</strong></dt>
+</dl>
+<dl><dt><strong>traffic_class</strong></dt>
+</dl>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Scott Horn'<br>
+<strong>__credits__</strong> = 'Based entirely on work by Tim Fox http://tfox.org'<br>
+<strong>__email__</strong> = 'scott@hornmicro.com'</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Scott&nbsp;Horn</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Credits</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Based&nbsp;entirely&nbsp;on&nbsp;work&nbsp;by&nbsp;Tim&nbsp;Fox&nbsp;<a href="http://tfox.org">http://tfox.org</a></td></tr></table>
+</body></html>
