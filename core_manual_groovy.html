@@ -1647,7 +1647,7 @@ httpServer.listen(8080)
 
 def config = ["prefix": "/eventbus"]
 
-vertx.createSockJSServer(server).bridge(config, [])
+vertx.createSockJSServer(server).bridge(config, [], [])
 
 server.listen(8080)
 </pre>

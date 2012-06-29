@@ -1791,7 +1791,7 @@ httpServer.listen(8080)
 
 sockJSServer = Vertx::SockJSServer.new(server)
 
-sockJSServer.bridge({'prefix' =&gt; '/eventbus'}, [] )
+sockJSServer.bridge({'prefix' =&gt; '/eventbus'}, [], [])
 
 server.listen(8080)
 </pre>
