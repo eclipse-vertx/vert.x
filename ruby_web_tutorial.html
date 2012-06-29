@@ -161,7 +161,7 @@ Vertx.deploy_verticle('web-server', web_server_conf)
   'host' =&gt; 'localhost',
   'bridge' =&gt; true,
 
-  'permitted' =&gt; [
+  'inbound_permitted' =&gt; [
     # Allow calls to get static album data from the persistor
     {
       'address' =&gt; 'vertx.mongopersistor',
@@ -170,11 +170,12 @@ Vertx.deploy_verticle('web-server', web_server_conf)
         'collection' =&gt; 'albums'
       }
     }
-  ]
+  ],
+  'outbound_permitted' =&gt; [ {} ]
 }
 </pre>
 <p>Setting the <code>bridge</code> field to <code>true</code> tells the web server to also act like an event bus bridge as well as serving static files.</p>
-<p>The other new thing here is a <code>permitted</code> field. This is an array of JSON objects which determine which event bus messages we're going to allow through from the client side. The bridge basically acts like a firewall and only allows through those messages from the client that we want to come through.</p>
+<p>The other new things here are the <code>inbound_permitted</code> and <code>outbound_permitted</code> fields. These are arrays of JSON objects which determine which event bus messages we're going to allow through the client side. The bridge basically acts like a firewall and only allows through those messages that we want to come through. <code>inbound_permitted</code> determines which messages we are going to allow from the client --&gt; server, and <code>outbound_permitted</code> determines which messages we are going to allow from server --&gt; client.</p>
 <p>If we allowed the client to send any messages to the persistor, it would be able to do things like delete all data in the database, or perhaps view data it is not entitled to see.</p>
 <p>(For detailed information on how the firewall works, please see the core documentation.)</p>
 <p>Initially, we only want to allow through requests to the persistor to load the album data. This will be used by the client side application to display the list of available items to buy.</p>
@@ -247,7 +248,7 @@ end
 Vertx.deploy_verticle('auth-mgr')
 </pre>
 <p>We'll also need to tell the bridge to let through any login messages:</p>
-<pre class="prettyprint">'permitted' =&gt; [
+<pre class="prettyprint">'inbound_permitted' =&gt; [
   # Allow calls to login
   {
     'address' =&gt; 'vertx.basicauthmanager.login'
@@ -280,7 +281,7 @@ Vertx.deploy_verticle('auth-mgr')
   'host' =&gt; 'localhost',
   'bridge' =&gt; true,
 
-  'permitted' =&gt; [
+  'inbound_permitted' =&gt; [
     # Allow calls to login
     {
       'address' =&gt; 'vertx.basicauthmanager.login'
@@ -302,7 +303,8 @@ Vertx.deploy_verticle('auth-mgr')
         'collection' =&gt; 'orders'
       }
     }
-  ]
+  ],
+  'outbound_permitted' =&gt; [ {} ]
 }
 </pre>
 <p>Setting the <code>requires_auth</code> field to <code>true</code> means the bridge will only let through the message if the user is logged in.</p>

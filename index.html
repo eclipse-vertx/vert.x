@@ -228,6 +228,7 @@ end.listen(8080)
 import vertx
 
 server = vertx.create_http_server()
+
 @server.request_handler
 def request_handler(req):
     file = "index.html" if req.uri == "/" else req.uri

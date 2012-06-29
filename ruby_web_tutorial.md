@@ -138,7 +138,7 @@ Edit the web server configuration so it looks like:
       'host' => 'localhost',
       'bridge' => true,
 
-      'permitted' => [
+      'inbound_permitted' => [
         # Allow calls to get static album data from the persistor
         {
           'address' => 'vertx.mongopersistor',
@@ -147,12 +147,13 @@ Edit the web server configuration so it looks like:
             'collection' => 'albums'
           }
         }
-      ]
+      ],
+      'outbound_permitted' => [ {} ]
     }
 
 Setting the `bridge` field to `true` tells the web server to also act like an event bus bridge as well as serving static files.
 
-The other new thing here is a `permitted` field. This is an array of JSON objects which determine which event bus messages we're going to allow through from the client side. The bridge basically acts like a firewall and only allows through those messages from the client that we want to come through.
+The other new things here are the `inbound_permitted` and `outbound_permitted` fields. These are arrays of JSON objects which determine which event bus messages we're going to allow through the client side. The bridge basically acts like a firewall and only allows through those messages that we want to come through. `inbound_permitted` determines which messages we are going to allow from the client --> server, and `outbound_permitted` determines which messages we are going to allow from server --> client.
 
 If we allowed the client to send any messages to the persistor, it would be able to do things like delete all data in the database, or perhaps view data it is not entitled to see.
 
@@ -260,7 +261,7 @@ Edit `app.rb` and add the following, just after where the Mongo Persistor is dep
     
 We'll also need to tell the bridge to let through any login messages:
 
-    'permitted' => [
+    'inbound_permitted' => [
       # Allow calls to login
       {
         'address' => 'vertx.basicauthmanager.login'
@@ -305,7 +306,7 @@ Edit the web server configuration so it looks like:
       'host' => 'localhost',
       'bridge' => true,
 
-      'permitted' => [
+      'inbound_permitted' => [
         # Allow calls to login
         {
           'address' => 'vertx.basicauthmanager.login'
@@ -327,7 +328,8 @@ Edit the web server configuration so it looks like:
             'collection' => 'orders'
           }
         }
-      ]
+      ],
+      'outbound_permitted' => [ {} ]
     }
     
 Setting the `requires_auth` field to `true` means the bridge will only let through the message if the user is logged in.
