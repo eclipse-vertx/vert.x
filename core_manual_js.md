@@ -2109,7 +2109,7 @@ The following example creates and starts a SockJS bridge which will bridge any e
     
     var sockJSServer = vertx.createSockJSServer(httpServer);
 
-    sockJSServer.bridge({prefix : '/eventbus'}, [] );
+    sockJSServer.bridge({prefix : '/eventbus'}, []);
     
     server.listen(8080);
     
