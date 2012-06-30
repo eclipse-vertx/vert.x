@@ -78,13 +78,12 @@ public class RhinoVerticle extends Verticle {
     ScriptableObject.putProperty(scope, "stderr", jsStderr);
   }
   
-  private static CoffeeScriptCompiler getCoffeeScriptCompiler(ClassLoader cl) {
-      
-      // Lazy load coffee script compiler
-      if(RhinoVerticle.coffeeScriptCompiler == null) {
-          RhinoVerticle.coffeeScriptCompiler = new CoffeeScriptCompiler(cl);
-      }
-      return RhinoVerticle.coffeeScriptCompiler;
+  private static synchronized CoffeeScriptCompiler getCoffeeScriptCompiler(ClassLoader cl) {
+    // Lazy load coffee script compiler
+    if (RhinoVerticle.coffeeScriptCompiler == null) {
+      RhinoVerticle.coffeeScriptCompiler = new CoffeeScriptCompiler(cl);
+    }
+    return RhinoVerticle.coffeeScriptCompiler;
   }
   
   // Support for loading from CommonJS modules
@@ -123,7 +122,7 @@ public class RhinoVerticle extends Verticle {
                       url = cl.getResource(moduleId + ".coffee"); // Then try .coffee
                   }
                 } else {
-                    url = cl.getResource(moduleId);
+                  url = cl.getResource(moduleId);
                 }
               }
 

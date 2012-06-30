@@ -16,6 +16,10 @@
 
 package org.vertx.java.deploy.impl.rhino;
 
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.JavaScriptException;
+import org.mozilla.javascript.Scriptable;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,72 +32,70 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.JavaScriptException;
-import org.mozilla.javascript.Scriptable;
-
+/**
+ * @author Scott Horn
+ */
 public class CoffeeScriptCompiler {
-    private final Scriptable globalScope;
+  private final Scriptable globalScope;
 
-    public CoffeeScriptCompiler(ClassLoader classLoader) {
-        InputStream inputStream = classLoader.getResourceAsStream("org/vertx/java/deploy/impl/rhino/coffee-script.js");
-        
-        try {
-            Reader reader = new InputStreamReader(inputStream, "UTF-8");
-            try {
-                Context context = Context.enter();
-                context.setOptimizationLevel(-1); // Without this, Rhino hits a 64K bytecode limit and fails
-                try {
-                    globalScope = context.initStandardObjects();
-                    context.evaluateReader(globalScope, reader, "coffee-script.js", 0, null);
-                } finally {
-                    Context.exit();
-                }
-            } finally {
-                reader.close();
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                inputStream.close();
-            } catch (IOException e) {
-            }
-        }
-    }
-
-    public URI coffeeScriptToJavaScript(URI coffeeScript) throws JavaScriptException, 
-            InvalidPathException, IOException, URISyntaxException {
-        File out = new File(new URI(coffeeScript.toString()+".js"));
-        Path path = Paths.get(coffeeScript);
-        String coffee = new String(Files.readAllBytes(path));
-        Files.write(out.toPath(), compile(coffee).getBytes() );
-        return out.toURI();
-    }
-
-    public String compile (String coffeeScriptSource) throws JavaScriptException {
+  public CoffeeScriptCompiler(ClassLoader classLoader) {
+    InputStream inputStream = classLoader.getResourceAsStream("coffee-script.js");
+    try {
+      Reader reader = new InputStreamReader(inputStream, "UTF-8");
+      try {
         Context context = Context.enter();
+        context.setOptimizationLevel(-1); // Without this, Rhino hits a 64K bytecode limit and fails
         try {
-            Scriptable compileScope = context.newObject(globalScope);
-            compileScope.setParentScope(globalScope);
-            compileScope.put("coffeeScriptSource", compileScope, coffeeScriptSource);
-            
-            Object src = context.evaluateString(compileScope, 
-                    String.format("CoffeeScript.compile(coffeeScriptSource);"),
-                    "CoffeeScriptCompiler", 0, null);
-            if(src != null) {
-                return src.toString();
-            } else {
-                return null;
-            }
+          globalScope = context.initStandardObjects();
+          context.evaluateReader(globalScope, reader, "coffee-script.js", 0, null);
         } finally {
-            Context.exit();
+          Context.exit();
         }
+      } finally {
+        reader.close();
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    } finally {
+      try {
+        inputStream.close();
+      } catch (IOException e) {
+      }
     }
-    
-    public static void main(String[] args) throws Exception {
-        CoffeeScriptCompiler c = new CoffeeScriptCompiler(CoffeeScriptCompiler.class.getClassLoader());
-        
-        System.out.println(c.coffeeScriptToJavaScript(new File("test.coffee").toURI()));
+
+  }
+
+  public URI coffeeScriptToJavaScript(URI coffeeScript) throws JavaScriptException,
+      InvalidPathException, IOException, URISyntaxException {
+    File out = new File(new URI(coffeeScript.toString() + ".js"));
+    Path path = Paths.get(coffeeScript);
+    String coffee = new String(Files.readAllBytes(path));
+    Files.write(out.toPath(), compile(coffee).getBytes());
+    return out.toURI();
+  }
+
+  public String compile(String coffeeScriptSource) throws JavaScriptException {
+    Context context = Context.enter();
+    try {
+      Scriptable compileScope = context.newObject(globalScope);
+      compileScope.setParentScope(globalScope);
+      compileScope.put("coffeeScriptSource", compileScope, coffeeScriptSource);
+
+      Object src = context.evaluateString(compileScope,
+          String.format("CoffeeScript.compile(coffeeScriptSource);"),
+          "CoffeeScriptCompiler", 0, null);
+      if (src != null) {
+        return src.toString();
+      } else {
+        return null;
+      }
+    } finally {
+      Context.exit();
     }
+  }
+
+  public static void main(String[] args) throws Exception {
+    CoffeeScriptCompiler c = new CoffeeScriptCompiler(CoffeeScriptCompiler.class.getClassLoader());
+    System.out.println(c.coffeeScriptToJavaScript(new File("test.coffee").toURI()));
+  }
 }
