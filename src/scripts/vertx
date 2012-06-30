@@ -34,7 +34,8 @@ $DIRNAME/../lib/jars/groovy.jar:\
 $DIRNAME/../lib/jars/js.jar:\
 $DIRNAME/../lib/ruby:\
 $DIRNAME/../lib/python:\
-$DIRNAME/../lib/javascript
+$DIRNAME/../lib/javascript:\
+$DIRNAME/../lib/coffeescript
 
 DEBUG_CONFIG=
 for i in $@

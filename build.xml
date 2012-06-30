@@ -153,7 +153,6 @@
   	<copy todir="${java-target}">
   	  <fileset dir="${java-src-root}">
   	    <include name="META-INF/services/*"/>
-        <include name="org/vertx/java/deploy/impl/rhino/coffee-script.js"/>
   	  </fileset>
   	</copy>
   </target>
@@ -316,6 +315,12 @@
 
     <copy todir="${dist-build}/lib/javascript">
       <fileset dir="src/main/javascript">
+        <include name="**/*.js"/>
+      </fileset>
+    </copy>
+
+    <copy todir="${dist-build}/lib/coffeescript">
+      <fileset dir="src/main/coffeescript">
         <include name="**/*.js"/>
       </fileset>
     </copy>

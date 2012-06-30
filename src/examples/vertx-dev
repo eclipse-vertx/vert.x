@@ -35,7 +35,9 @@ $DIRNAME/../../lib/main/jython.jar:\
 $DIRNAME/../../lib/main/js.jar:\
 $DIRNAME/../../lib/main/groovy-all.jar:\
 $DIRNAME/../../src/main/ruby:\
-$DIRNAME/../../src/main/javascript
+$DIRNAME/../../src/main/javascript:\
+$DIRNAME/../../src/main/python:\
+$DIRNAME/../../src/main/coffeescript:\
 
 java -Djava.util.logging.config.file=$DIRNAME/../../conf/logging.properties \
 -Djruby.home=$JRUBY_HOME -Djython.home=$JYTHON_HOME \
