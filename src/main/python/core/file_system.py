@@ -109,8 +109,8 @@ class AsyncFile(object):
         there are no guarantees as to order in which those writes actually occur.
 
         Keyword arguments:
-        buffer -- the buffer to write
-        position -- the position in the file where to write the buffer. Position is measured in bytes and
+        @param buffer: the buffer to write
+        @param position: the position in the file where to write the buffer. Position is measured in bytes and
         starts with zero at the beginning of the file.
         """
         self.java_obj.write(buffer._to_java_buffer(), position, FSWrappedHandler(handler))
@@ -121,10 +121,10 @@ class AsyncFile(object):
         there are no guarantees as to order in which those reads actually occur.
 
         Keyword arguments  
-        buffer -- the buffer into which the data which is read is written.
-        offset -- the position in the buffer where to start writing the data.
-        position -- the position in the file where to read the data.
-        length -- the number of bytes to read.
+        @param buffer: the buffer into which the data which is read is written.
+        @param offset: the position in the buffer where to start writing the data.
+        @param position: the position in the file where to read the data.
+        @param length: the number of bytes to read.
         """
         def converter(buffer):
             return Buffer(buffer)
@@ -145,7 +145,7 @@ class AsyncFile(object):
         If the file was opened with flush set to true then calling this method will have no effect.
         Keyword arguments:
 
-        handler -- the handler which is called on completion.
+        @param handler: the handler which is called on completion.
         """
         Future(self.java_obj.flush())
 
@@ -191,9 +191,9 @@ class FileSystem(object):
         """Copy a file, asynchronously. The copy will fail if from does not exist, or if to already exists.
 
         Keyword arguments:
-        frm -- path of file to copy
-        to -- path of file to copy to
-        handler -- the handler which is called on completion."""
+        @param frm: path of file to copy
+        @param to: path of file to copy to
+        @param handler: the handler which is called on completion."""
         FileSystem.java_file_system().copy(frm, to, FSWrappedHandler(handler))
 
     @staticmethod
@@ -208,9 +208,9 @@ class FileSystem(object):
         tree is copied.
 
         Keyword arguments:
-        frm -- path of file to copy
-        to -- path of file to copy to
-        handler -- the function to call when complete
+        @param frm: path of file to copy
+        @param to: path of file to copy to
+        @param handler: the function to call when complete
         """
         FileSystem.java_file_system().copy(frm, to, True, FSWrappedHandler(handler))
 
@@ -224,9 +224,9 @@ class FileSystem(object):
         """Move a file, asynchronously. The move will fail if from does not exist, or if to already exists.
 
         Keyword arguments:
-        frm -- Path of file to move
-        to -- Path of file to move to
-        handler -- the function to call when complete
+        @param frm: Path of file to move
+        @param to: Path of file to move to
+        @param handler: the function to call when complete
         """
         FileSystem.java_file_system().move(frm, to, FSWrappedHandler(handler))
 
@@ -240,9 +240,9 @@ class FileSystem(object):
         """Truncate a file, asynchronously. The move will fail if path does not exist.
 
         Keyword arguments:
-        path -- Path of file to truncate
-        len -- Length to truncate file to. Will fail if len < 0. If len > file size then will do nothing.
-        handler -- the function to call when complete
+        @param path: Path of file to truncate
+        @param len: Length to truncate file to. Will fail if len < 0. If len > file size then will do nothing.
+        @param handler: the function to call when complete
         """
         FileSystem.java_file_system().truncate(path, len, FSWrappedHandler(handler))
 
@@ -256,11 +256,11 @@ class FileSystem(object):
         """Change the permissions on a file, asynchronously. If the file is directory then all contents will also have their permissions changed recursively.
 
         Keyword arguments:
-          path Path of file to change permissions
-          perms A permission string of the form rwxr-x--- as specified in http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html}. This is
+        @param path: path of file to change permissions
+        @param perms: a permission string of the form rwxr-x--- as specified in http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html. This is
         used to set the permissions for any regular files (not directories).
-          dir_perms A permission string of the form rwxr-x---. Used to set permissions for regular files.
-          handler -- the function to call when complete
+        @param dir_perms: a permission string of the form rwxr-x---. Used to set permissions for regular files.
+        @param handler: the function to call when complete
         """
         FileSystem.java_file_system().chmod(path, perms, dir_perms, FSWrappedHandler(handler))
 
@@ -274,8 +274,8 @@ class FileSystem(object):
         """Get file properties for a file, asynchronously.
 
         Keyword arguments:
-        path -- path to file
-        handler -- the function to call when complete
+        @param path: path to file
+        @param handler: the function to call when complete
         """
         def converter(obj):
             return FileProps(obj)
@@ -292,9 +292,9 @@ class FileSystem(object):
         """Create a hard link, asynchronously..
 
         Keyword arguments:
-        link -- path of the link to create.
-        existing -- path of where the link points to.
-        handler -- the function to call when complete
+        @param link: path of the link to create.
+        @param existing: path of where the link points to.
+        @param handler: the function to call when complete
         """
         FileSystem.java_file_system().link(link, existing, FSWrappedHandler(handler))
 
@@ -309,9 +309,9 @@ class FileSystem(object):
         """Create a symbolic link, asynchronously.
 
         Keyword arguments:
-        link -- Path of the link to create.
-        existing -- Path of where the link points to.
-        handler -- the function to call when complete
+        @param link: Path of the link to create.
+        @param existing: Path of where the link points to.
+        @param handler: the function to call when complete
         """
         FileSystem.java_file_system().symLink(link, existing, FSWrappedHandler(handler))
 
@@ -325,7 +325,7 @@ class FileSystem(object):
         """Unlink a hard link.
 
         Keyword arguments:
-        link -- path of the link to unlink.
+        @param link: path of the link to unlink.
         """
         FileSystem.java_file_system().unlink(link, FSWrappedHandler(handler))
 
@@ -339,8 +339,8 @@ class FileSystem(object):
         """Read a symbolic link, asynchronously. I.e. tells you where the symbolic link points.
 
         Keyword arguments:
-        link -- path of the link to read.
-        handler -- the function to call when complete
+        @param link: path of the link to read.
+        @param handler: the function to call when complete
         """
         FileSystem.java_file_system().readSymLink(link, FSWrappedHandler(handler))
 
@@ -355,8 +355,8 @@ class FileSystem(object):
         The delete will fail if the file does not exist, or is a directory and is not empty.
 
         Keyword arguments:
-        path -- path of the file to delete.
-        handler -- the function to call when complete
+        @param path: path of the file to delete.
+        @param handler: the function to call when complete
         """
         FileSystem.java_file_system().delete(path, FSWrappedHandler(handler))
 
@@ -372,8 +372,8 @@ class FileSystem(object):
         will be deleted recursively.
 
         Keyword arguments:
-        path -- path of the file to delete.
-        handler -- the function to call when complete
+        @param path: path of the file to delete.
+        @param handler: the function to call when complete
         """
         FileSystem.java_file_system().delete(path, True, FSWrappedHandler(handler))
 
@@ -389,9 +389,9 @@ class FileSystem(object):
         exist.
 
         Keyword arguments:
-        path -- path of the directory to create.
-        perms -- a permission string of the form rwxr-x--- to give directory.
-        handler -- the function to call when complete
+        @param path: path of the directory to create.
+        @param perms: a permission string of the form rwxr-x--- to give directory.
+        @param handler: the function to call when complete
         """
         FileSystem.java_file_system().mkdir(path, perms, FSWrappedHandler(handler))
 
@@ -406,8 +406,8 @@ class FileSystem(object):
         The create will fail if the directory already exists.
 
         Keyword arguments:
-        path -- path of the directory to create.
-        perms -- a permission string of the form rwxr-x--- to give the created directory(ies).
+        @param path: path of the directory to create.
+        @param perms: a permission string of the form rwxr-x--- to give the created directory(ies).
         """
         FileSystem.java_file_system().mkdir(path, perms, True, FSWrappedHandler(handler))
 
@@ -422,10 +422,10 @@ class FileSystem(object):
         The read will fail if the directory does not exist.
 
         Keyword arguments:
-        path -- path of the directory to read.
-        filter -- a regular expression to filter out the contents of the directory. If the filter is not nil
+        @param path: path of the directory to read.
+        @param filter: a regular expression to filter out the contents of the directory. If the filter is not nil
         then only files which match the filter will be returned.
-        handler -- the function to call when complete
+        @param handler: the function to call when complete
         """
         FileSystem.java_file_system().readDir(path, filter, FSWrappedHandler(handler))
     
@@ -439,8 +439,8 @@ class FileSystem(object):
         """Read the contents of an entire file as a Buffer, asynchronously.
 
         Keyword arguments:
-        path -- path of the file to read.
-        handler -- the function to call when complete
+        @param path: path of the file to read.
+        @param handler: the function to call when complete
         """
         def converter(buffer):
             return Buffer(buffer)
@@ -456,9 +456,9 @@ class FileSystem(object):
         """Write a  as the entire contents of a file, asynchronously.
 
         Keyword arguments:
-        path -- path of the file to write.
-        buffer -- the Buffer to write
-        handler -- the function to call when complete
+        @param path: path of the file to write.
+        @param buffer: the Buffer to write
+        @param handler: the function to call when complete
         """
         FileSystem.java_file_system().writeFile(path, buffer, FSWrappedHandler(handler))
 
@@ -472,13 +472,13 @@ class FileSystem(object):
         """Open a file on the file system, asynchronously.
 
         Keyword arguments:
-        path -- path of the file to open.
-        perms -- if the file does not exist and create_new is true, then the file will be created with these permissions.
-        read -- open the file for reading?
-        write -- open the file for writing?
-        create_new -- Create the file if it doesn't already exist?
-        flush -- whenever any data is written to the file, flush all changes to permanent storage immediately?
-        handler -- the function to call when complete
+        @param path: path of the file to open.
+        @param perms: if the file does not exist and create_new is true, then the file will be created with these permissions.
+        @param read: open the file for reading?
+        @param write: open the file for writing?
+        @param create_new: Create the file if it doesn't already exist?
+        @param flush: whenever any data is written to the file, flush all changes to permanent storage immediately?
+        @param handler: the function to call when complete
         """
         def converter(file):
             return AsyncFile(file)
@@ -495,9 +495,9 @@ class FileSystem(object):
         """Create a new empty file, asynchronously.
 
         Keyword arguments:
-        path -- path of the file to create.
-        perms -- the file will be created with these permissions.
-        handler -- the function to call when complete
+        @param path: path of the file to create.
+        @param perms: the file will be created with these permissions.
+        @param handler: the function to call when complete
         """
         FileSystem.java_file_system().createFile(path, perms, FSWrappedHandler(handler))
 
@@ -511,8 +511,8 @@ class FileSystem(object):
         """Check if  a file exists, asynchronously.
 
         Keyword arguments:
-        path -- Path of the file to check.
-        handler -- the function to call when complete
+        @param path: Path of the file to check.
+        @param handler: the function to call when complete
         """
         FileSystem.java_file_system().exists(path, FSWrappedHandler(handler))
 
@@ -526,8 +526,8 @@ class FileSystem(object):
         """Get properties for the file system, asynchronously.
 
         Keyword arguments:
-        path -- Path in the file system.
-        handler -- the function to call when complete
+        @param path: Path in the file system.
+        @param handler: the function to call when complete
         """
         def converter(props):
             return FSProps(props)

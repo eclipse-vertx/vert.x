@@ -56,13 +56,20 @@ public class JythonVerticle extends Verticle {
       throw new IllegalArgumentException("Cannot find verticle: " + scriptName);
     }
 
-    // Inject vertx and container as a variable in the script
-    py.set("vertx", getVertx());
-    py.set("container", getContainer());
-    py.execfile(is, scriptName);
+    ClassLoader old = Thread.currentThread().getContextClassLoader();
     try {
-      is.close();
-    } catch (IOException ignore) {
+      Thread.currentThread().setContextClassLoader(cl);
+
+      // Inject vertx and container as a variable in the script
+      py.set("vertx", getVertx());
+      py.set("container", getContainer());
+      py.execfile(is, scriptName);
+      try {
+        is.close();
+      } catch (IOException ignore) {
+      }
+    } finally {
+      Thread.currentThread().setContextClassLoader(old);
     }
   }
 

@@ -16,7 +16,6 @@
 
 package org.vertx.java.core.eventbus.impl;
 
-import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;

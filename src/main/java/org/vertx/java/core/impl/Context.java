@@ -20,9 +20,7 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
@@ -74,7 +72,8 @@ public abstract class Context {
     if (deploymentContext != null) {
       deploymentContext.reportException(t);
     } else {
-      log.error("Unhandled exception", t);
+      t.printStackTrace();
+      log.error("context Unhandled exception", t);
     }
   }
 

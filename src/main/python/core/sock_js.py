@@ -60,9 +60,9 @@ class SockJSServer(object):
         """Install an application
 
         Keyword arguments:
-        config -- Configuration for the application
-        proc -- Proc representing the handler
-        handler -- Handler to call when a new SockJSSocket is created
+        @param config: Configuration for the application
+        @param proc: Proc representing the handler
+        @param handler: Handler to call when a new SockJSSocket is created
         """
         java_config = org.vertx.java.core.json.JsonObject(map_to_java(config))
         self.java_obj.installApp(java_config, SockJSSocketHandler(handler))

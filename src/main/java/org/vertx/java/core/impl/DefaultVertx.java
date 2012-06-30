@@ -73,7 +73,7 @@ public class DefaultVertx extends VertxInternal {
   //For now we use a hashed wheel with it's own thread for timeouts - ideally the event loop would have
   //it's own hashed wheel
   private final HashedWheelTimer timer = new HashedWheelTimer(new VertxThreadFactory("vert.x-timer-thread"), 20,
-      TimeUnit.MILLISECONDS);
+      TimeUnit.MILLISECONDS, 8192);
   {
     timer.start();
   }
@@ -231,7 +231,7 @@ public class DefaultVertx extends VertxInternal {
     if (ctx != null) {
       ctx.reportException(t);
     } else {
-      log.error("Unhandled exception ", t);
+      log.error(" default vertx Unhandled exception ", t);
     }
   }
 
