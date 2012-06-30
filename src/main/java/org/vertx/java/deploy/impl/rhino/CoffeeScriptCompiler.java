@@ -16,10 +16,17 @@
 
 package org.vertx.java.deploy.impl.rhino;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.JavaScriptException;
@@ -55,6 +62,15 @@ public class CoffeeScriptCompiler {
         }
     }
 
+    public URI coffeeScriptToJavaScript(URI coffeeScript) throws JavaScriptException, 
+            InvalidPathException, IOException, URISyntaxException {
+        File out = new File(new URI(coffeeScript.toString()+".js"));
+        Path path = Paths.get(coffeeScript);
+        String coffee = new String(Files.readAllBytes(path));
+        Files.write(out.toPath(), compile(coffee).getBytes() );
+        return out.toURI();
+    }
+
     public String compile (String coffeeScriptSource) throws JavaScriptException {
         Context context = Context.enter();
         try {
@@ -62,22 +78,22 @@ public class CoffeeScriptCompiler {
             compileScope.setParentScope(globalScope);
             compileScope.put("coffeeScriptSource", compileScope, coffeeScriptSource);
             
-            return (String)context.evaluateString(compileScope, 
+            Object src = context.evaluateString(compileScope, 
                     String.format("CoffeeScript.compile(coffeeScriptSource);"),
                     "CoffeeScriptCompiler", 0, null);
+            if(src != null) {
+                return src.toString();
+            } else {
+                return null;
+            }
         } finally {
             Context.exit();
         }
     }
     
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         CoffeeScriptCompiler c = new CoffeeScriptCompiler(CoffeeScriptCompiler.class.getClassLoader());
-        String someCoffee = ""+ 
-"fun = (a,b,c) ->\n"+
-"  java.lang.System.out.println a+b+c\n" +
-"\n" +
-"fun 'hello','world','scott'"+
-"";
-        System.out.println(c.compile(someCoffee));
+        
+        System.out.println(c.coffeeScriptToJavaScript(new File("test.coffee").toURI()));
     }
 }
