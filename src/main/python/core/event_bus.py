@@ -63,9 +63,9 @@ class EventBus(object):
         """Send a message on the event bus
 
         Keyword arguments:
-        address -- the address to publish to
-        message -- The message to send
-        reply_handler -- An optional reply handler.
+        @param address: the address to publish to
+        @param message: The message to send
+        @param reply_handler: An optional reply handler.
         It will be called when the reply from a receiver is received.
         """
         EventBus.send_or_pub(True, address, message, reply_handler)
@@ -75,8 +75,8 @@ class EventBus(object):
         """Publish a message on the event bus
 
         Keyword arguments:
-        address -- the address to publish to
-        message -- The message to publish
+        @param address: the address to publish to
+        @param message: The message to publish
         """
         EventBus.send_or_pub(False, address, message)
 
@@ -101,11 +101,12 @@ class EventBus(object):
         """ Register a handler.
 
         Keyword arguments:
-        address -- the address to register for. Any messages sent to that address will be
+        @param address: the address to register for. Any messages sent to that address will be
         received by the handler. A single handler can be registered against many addresses.
-        local_only -- if True then handler won't be propagated across cluster
-        handler -- The handler
-        returns id of the handler which can be used in EventBus.unregister_handler
+        @param local_only: if True then handler won't be propagated across cluster
+        @param handler: The handler
+
+        @return: id of the handler which can be used in EventBus.unregister_handler
         """
         if handler is None:
             raise RuntimeError("handler is required")
@@ -124,10 +125,10 @@ class EventBus(object):
         received by the handler. A single handler can be registered against many addresses.
 
         Keyword arguments:
-        local_only -- If Rrue then handler won't be propagated across cluster
-        handler -- The handler
-
-        returns id of the handler which can be used in EventBus.unregister_handler
+        @param local_only: If Rrue then handler won't be propagated across cluster
+        @param handler: The handler
+        
+        @return: id of the handler which can be used in EventBus.unregister_handler
         """
         if handler is None:
             raise RuntimeError("Handler is required")
@@ -144,7 +145,7 @@ class EventBus(object):
         """Unregisters a handler
 
         Keyword arguments:
-        handler_id -- the id of the handler to unregister. Returned from EventBus.register_handler
+        @param handler_id: the id of the handler to unregister. Returned from EventBus.register_handler
         """
         handler = EventBus.handler_dict.pop(handler_id)
         EventBus.java_eventbus().unregisterHandler(handler_id)
@@ -191,8 +192,8 @@ class Message(object):
         of the original message.
 
         Keyword arguments:
-        reply -- message to send as reply
-        handler -- the reply handler 
+        @param reply: message to send as reply
+        @param handler: the reply handler 
         """
         reply = EventBus.convert_msg(reply)
         if handler is None:

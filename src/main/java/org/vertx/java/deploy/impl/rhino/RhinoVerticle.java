@@ -26,14 +26,14 @@ import org.mozilla.javascript.commonjs.module.Require;
 import org.mozilla.javascript.commonjs.module.RequireBuilder;
 import org.mozilla.javascript.commonjs.module.provider.SoftCachingModuleScriptProvider;
 import org.mozilla.javascript.commonjs.module.provider.UrlModuleSourceProvider;
+import org.vertx.java.core.json.DecodeException;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Verticle;
-import org.vertx.java.core.json.DecodeException;
-import org.vertx.java.core.json.JsonObject;
 
-import java.io.File;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -208,10 +208,16 @@ public class RhinoVerticle extends Verticle {
       throw new FileNotFoundException("Cannot find script: " + scriptName);
     }
     BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-    cx.evaluateReader(scope, reader, scriptName, 1, null);
+    ClassLoader old = Thread.currentThread().getContextClassLoader();
+    Thread.currentThread().setContextClassLoader(cl);
     try {
-      is.close();
-    } catch (IOException ignore) {
+      cx.evaluateReader(scope, reader, scriptName, 1, null);
+      try {
+        is.close();
+      } catch (IOException ignore) {
+      }
+    } finally {
+      Thread.currentThread().setContextClassLoader(old);
     }
   }
 
@@ -228,6 +234,7 @@ public class RhinoVerticle extends Verticle {
       scopeThreadLocal.set(scope);
       clThreadLocal.set(cl);
 
+      Thread.currentThread().setContextClassLoader(cl);
       Require require = installRequire(cl, cx, scope);
 
       Scriptable script = require.requireMain(cx, scriptName);
@@ -237,7 +244,6 @@ public class RhinoVerticle extends Verticle {
         // Get CCE if no such function
         stopFunction = null;
       }
-
     } finally {
       Context.exit();
     }

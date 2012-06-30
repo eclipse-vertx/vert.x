@@ -28,14 +28,17 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.impl.VerticleManager;
 
+import java.io.File;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -53,7 +56,7 @@ public class TestBase extends TestCase {
   private TestUtils tu = new TestUtils(vertx);
   private volatile Handler<Message<JsonObject>> handler;
   private List<AssertHolder> failedAsserts = new ArrayList<>();
-  private List<String> startedApps = new ArrayList<>();
+  private List<String> startedApps = new CopyOnWriteArrayList<>();
 
   private class AssertHolder {
     final String message;
@@ -189,16 +192,17 @@ public class TestBase extends TestCase {
     }
 
     final CountDownLatch doneLatch = new CountDownLatch(1);
+    final AtomicReference<String> res = new AtomicReference<>(null);
 
-    Handler<Void> doneHandler = new SimpleHandler() {
-      public void handle() {
+    Handler<String> doneHandler = new Handler<String>() {
+      public void handle(String deploymentName) {
+        startedApps.add(deploymentName);
+        res.set(deploymentName);
         doneLatch.countDown();
       }
     };
 
-    String deploymentName = verticleManager.deploy(worker, null, main, config, new URL[] {url}, instances, null, doneHandler);
-
-    startedApps.add(deploymentName);
+    verticleManager.deploy(worker, main, config, new URL[] {url}, instances, null, doneHandler);
 
     if (!doneLatch.await(30, TimeUnit.SECONDS)) {
       throw new IllegalStateException("Timedout waiting for apps to start");
@@ -210,7 +214,39 @@ public class TestBase extends TestCase {
       }
     }
 
-    return deploymentName;
+    return res.get();
+  }
+
+  public String startMod(String modName) throws Exception {
+    return startMod(modName, null, 1, true);
+  }
+
+  public String startMod(String modName, JsonObject config, int instances, boolean await) throws Exception {
+
+    final CountDownLatch doneLatch = new CountDownLatch(1);
+    final AtomicReference<String> res = new AtomicReference<>(null);
+
+    Handler<String> doneHandler = new Handler<String>() {
+      public void handle(String deploymentName) {
+        startedApps.add(deploymentName);
+        res.set(deploymentName);
+        doneLatch.countDown();
+      }
+    };
+
+    verticleManager.deployMod(modName, config, instances, null, doneHandler);
+
+    if (!doneLatch.await(10, TimeUnit.SECONDS)) {
+      throw new IllegalStateException("Timedout waiting for apps to start");
+    }
+
+    if (await) {
+      for (int i = 0; i < instances; i++) {
+        waitAppReady();
+      }
+    }
+
+    return res.get();
   }
 
   protected void stopApp(String appName) throws Exception {

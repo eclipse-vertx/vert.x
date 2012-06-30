@@ -16,8 +16,8 @@
 
 package org.vertx.java.core.shareddata.impl;
 
-import org.vertx.java.core.shareddata.Shareable;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.shareddata.Shareable;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

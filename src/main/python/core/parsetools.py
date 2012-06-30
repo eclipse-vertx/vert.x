@@ -23,13 +23,13 @@ class RecordParser(object):
     """A helper class which allows you to easily parse protocols which are delimited by a sequence of bytes, or fixed
     size records.
 
-    Instances of this class take as input {Buffer} instances containing raw bytes, and output records.
-    For example, if I had a simple ASCII text protocol delimited by '\n' and the input was the following:
+    Instances of this class take as input Buffer instances containing raw bytes, and output records.
+    For example, if I had a simple ASCII text protocol delimited by '\\n' and the input was the following:
 
-    buffer1:HELLO\nHOW ARE Y
-    buffer2:OU?\nI AM
+    buffer1:HELLO\\nHOW ARE Y
+    buffer2:OU?\\nI AM
     buffer3: DOING OK
-    buffer4:\n
+    buffer4:\\n
 
     Then the output would be:
 
@@ -54,7 +54,7 @@ class RecordParser(object):
   
     def input(self, data):
         """This method is called to provide the parser with data.
-        data -- Input buffer  to the parser.
+        @param data: Input buffer  to the parser.
         """
         self.java_parser.handle(data._to_java_buffer())
 
@@ -64,10 +64,10 @@ class RecordParser(object):
         by a delimiter string endcoded in latin-1 . Don't use this if your String contains other than latin-1 characters.
 
         Keyword arguments:
-        delim -- The delimiter string.
-        handler -- the output handler
-
-        returns a new RecordParser
+        @param delim: The delimiter string.
+        @param handler: the output handler
+        
+        @return: a new RecordParser
         """        
         return RecordParser(org.vertx.java.core.parsetools.RecordParser.newDelimited(delim, RecordParserHandler(handler)))
 
@@ -76,9 +76,10 @@ class RecordParser(object):
         """Create a new RecordParser instance, initially in fixed size mode.
 
         Keyword arguments:
-        size -- the initial record size.
-        handler -- the output handler
-        returns a new RecordParser
+        @param size: the initial record size.
+        @param handler: the output handler
+
+        @return: a new RecordParser
         """        
         return RecordParser(org.vertx.java.core.parsetools.RecordParser.newFixed(size, RecordParserHandler(handler)))
 
@@ -87,7 +88,7 @@ class RecordParser(object):
         of delim while data is being parsed.
 
         Keyword arguments:
-        delim -- the delimiter string.
+        @param delim: the delimiter string.
         """
         self.java_parser.delimitedMode(delim)
 
@@ -96,7 +97,7 @@ class RecordParser(object):
         of size while data is being parsed.
 
         Keyword arguments:
-        size -- the record size.
+        @param size: the record size.
         """
         self.java_parser.fixedSizeMode(size)
 

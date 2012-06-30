@@ -42,7 +42,7 @@ class WriteStream(object):
         to provide flow control.
 
         Keyword arguments:
-        size -- The maximum size, in bytes.
+        @param size: The maximum size, in bytes.
         """
         self.java_obj.setWriteQueueMaxSize(size)
 
@@ -61,7 +61,7 @@ class WriteStream(object):
         queue has been reduced to maxSize / 2. See  for an example of this being used.
 
         Keyword arguments:
-        handler -- The drain handler
+        @param handler: The drain handler
         """
         self.java_obj.drainHandler(BufferHandler(handler))
     
@@ -69,7 +69,7 @@ class WriteStream(object):
         """Set an execption handler on the stream.
 
         Keyword arguments:
-        handler -- The exception handler
+        @param handler: The exception handler
         """  
         self.java_obj.exceptionHandler(ExceptionHandler(handler))
     
@@ -86,7 +86,7 @@ class ReadStream(object):
         """Set a data handler. As data is read, the handler will be called with the data.
 
         Keyword arguments:
-        handler -- The data handler
+        @param handler: The data handler
         """
         self.java_obj.dataHandler(BufferHandler(handler))
     
@@ -108,7 +108,7 @@ class ReadStream(object):
         """Set an end handler on the stream. Once the stream has ended, and there is no more data to be read, this handler will be called.
 
         Keyword arguments:
-        handler -- The exception handler"""
+        @param handler: The exception handler"""
         self.java_obj.endHandler(StreamEndHandler(handler))
         
     def _to_read_stream(self):
@@ -141,7 +141,7 @@ class Pump(object):
         """Set the write queue max size
 
         Keyword arguments:
-        val -- The write queue max size
+        @param val: The write queue max size
         """  
         self.j_pump.setWriteQueueMaxSize(val)
 

@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+""" 
+Net support to the python vert.x platform 
+"""
+
 import org.vertx.java.core.Handler
 import org.vertx.java.deploy.impl.VertxLocator
 import core.tcp_support
@@ -42,7 +46,7 @@ class NetServer(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport):
     def set_client_auth_required(self, val):
         """Client authentication is an extra level of security in SSL, and requires clients to provide client certificates.
         Those certificates must be added to the server trust store.
-        val --  If true then the server will request client authentication from any connecting clients, if they
+        @param val:  If true then the server will request client authentication from any connecting clients, if they
         do not authenticate then they will not make a connection.
         """
         self.java_obj.setClientAuthRequired(val)
@@ -55,9 +59,9 @@ class NetServer(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport):
         connect handler.
 
         Keyword arguments:
-        handler -- connection handler
-
-        returns a reference to self so invocations can be chained
+        @param handler: connection handler
+        
+        @return: a reference to self so invocations can be chained
         """
         self.java_obj.connectHandler(ConnectHandler(handler))
         return self
@@ -67,10 +71,10 @@ class NetServer(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport):
         """Instruct the server to listen for incoming connections.
 
         Keyword arguments:
-        port -- The port to listen on.
-        host -- The host name or ip address to listen on.
-
-        returns a reference to self so invocations can be chained
+        @param port: The port to listen on.
+        @param host: The host name or ip address to listen on.
+        
+        @return: a reference to self so invocations can be chained
         """    
         self.java_obj.listen(port, host)
         return self
@@ -96,12 +100,12 @@ class NetClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport):
         """Should the client trust ALL server certificates
 
         Keyword arguments:
-        val --  If val is set to true then the client will trust ALL server certificates and will not attempt to authenticate them
+        @param val:  If val is set to true then the client will trust ALL server certificates and will not attempt to authenticate them
         against it's local client trust store. The default value is false.
 
         Use this method with caution!
-
-        returns a reference to self so invocations can be chained
+        
+        @return: a reference to self so invocations can be chained
         """
         self.java_obj.setTrustAll(val)
         return self
@@ -113,10 +117,11 @@ class NetClient(core.ssl_support.SSLSupport, core.tcp_support.TCPSupport):
         handler.
 
         Keyword arguments:
-        port -- The port to connect to.
-        host -- The host or ip address to connect to.
-        handler -- The connection handler
-        returns a reference to self so invocations can be chained
+        @param port: The port to connect to.
+        @param host: The host or ip address to connect to.
+        @param handler: The connection handler
+
+        @return: a reference to self so invocations can be chained
         """
         self.java_obj.connect(port, host, ConnectHandler(handler))
         return self
@@ -147,8 +152,8 @@ class NetSocket(core.streams.ReadStream, core.streams.WriteStream):
         """Write a Buffer to the socket. The handler will be called when the buffer has actually been written to the wire.
 
         Keyword arguments:
-        buffer -- The buffer to write.
-        handler -- The handler to call on completion.
+        @param buffer: The buffer to write.
+        @param handler: The handler to call on completion.
         """
         java_buffer = buffer._to_java_buffer()
         if handler is None:
@@ -160,9 +165,9 @@ class NetSocket(core.streams.ReadStream, core.streams.WriteStream):
         """Write a String to the socket. The handler will be called when the string has actually been written to the wire.
 
         Keyword arguments:
-        str -- The string to write.
-        enc -- The encoding to use.
-        handler -- The handler to call on completion.
+        @param str: The string to write.
+        @param enc: The encoding to use.
+        @param handler: The handler to call on completion.
         """
         if handler is None:
             self.java_obj.write(str, enc)
@@ -173,7 +178,7 @@ class NetSocket(core.streams.ReadStream, core.streams.WriteStream):
         """Set a closed handler on the socket.
 
         Keyword arguments:
-        handler -- A block to be used as the handler
+        @param handler: A block to be used as the handler
         """
         self._closed_handler = handler
 
@@ -182,7 +187,7 @@ class NetSocket(core.streams.ReadStream, core.streams.WriteStream):
         (where supported by the underlying operating system. This is a very efficient way to stream files.
 
         Keyword arguments:
-        file_path -- Path to file to send.
+        @param file_path: Path to file to send.
         """
         self.java_obj.sendFile(file_path)
      
@@ -197,4 +202,4 @@ class ConnectHandler(org.vertx.java.core.Handler):
 
     def handle(self, socket):
         """ Call the handler after connection is established"""
-        self.handler(NetSocket(socket))    
+        self.handler(NetSocket(socket))
