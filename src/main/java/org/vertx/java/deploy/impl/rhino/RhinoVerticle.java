@@ -56,6 +56,7 @@ public class RhinoVerticle extends Verticle {
 
   private static ThreadLocal<ScriptableObject> scopeThreadLocal = new ThreadLocal<>();
   private static ThreadLocal<ClassLoader> clThreadLocal = new ThreadLocal<>();
+  private static CoffeeScriptCompiler coffeeScriptCompiler = null;
 
   RhinoVerticle(String scriptName, ClassLoader cl) {
     this.cl = cl;
@@ -76,7 +77,16 @@ public class RhinoVerticle extends Verticle {
     Object jsStderr = Context.javaToJS(System.err, scope);
     ScriptableObject.putProperty(scope, "stderr", jsStderr);
   }
-
+  
+  private static CoffeeScriptCompiler getCoffeeScriptCompiler(ClassLoader cl) {
+      
+      // Lazy load coffee script compiler
+      if(RhinoVerticle.coffeeScriptCompiler == null) {
+          RhinoVerticle.coffeeScriptCompiler = new CoffeeScriptCompiler(cl);
+      }
+      return RhinoVerticle.coffeeScriptCompiler;
+  }
+  
   // Support for loading from CommonJS modules
   private static Require installRequire(final ClassLoader cl, Context cx, ScriptableObject scope) {
     RequireBuilder rb = new RequireBuilder();
@@ -107,11 +117,14 @@ public class RhinoVerticle extends Verticle {
               if (url != null) {
                 url = new File(url.getFile()).getParentFile().toURI().toURL();
               } else {
-                String resourceName = moduleId;
-                if (!moduleId.endsWith(".js")) {
-                  resourceName = moduleId + ".js";
+                if (!moduleId.endsWith(".js") && !moduleId.endsWith(".coffee")) {
+                  url = cl.getResource(moduleId + ".js"); // Try .js first
+                  if(url == null) {
+                      url = cl.getResource(moduleId + ".coffee"); // Then try .coffee
+                  }
+                } else {
+                    url = cl.getResource(moduleId);
                 }
-                url = cl.getResource(resourceName);
               }
 
               if (url != null) {
@@ -121,7 +134,7 @@ public class RhinoVerticle extends Verticle {
 
             if (uri != null && new File(uri).isDirectory()) {
 
-              String main = "index.js";
+              String main = "index";
 
               // Allow loading modules from <dir>/package.json
               File packageFile = new File(uri.getPath(), "package.json");
@@ -142,20 +155,24 @@ public class RhinoVerticle extends Verticle {
                 }
 
                 main = json.getString("main");
-
-                if (!main.endsWith(".js")) {
-                  main = main + ".js";
-                }
               }
 
-              // Allow loading modules from <dir>/<main>.js
-              File mainFile = new File(uri.getPath(), main);
-              if (mainFile.exists()) {
+              // Allow loading modules from <dir>/<main>.js or <dir>/<main>.coffee
+              File mainFile = new File(uri.getPath(), main.endsWith(".js") ? main : main+".js");
+              if (!mainFile.exists() && !main.endsWith(".js") && !main.endsWith(".coffee")) {
+                  mainFile = new File(uri.getPath(), main+".coffee");
+                  if(mainFile.exists()) {
+                      uri = mainFile.toURI();
+                  }
+              } else {
                 uri = mainFile.toURI();
-              }
+              } 
 
             }
 
+            if(uri != null && uri.toString().endsWith(".coffee")) {
+                uri = getCoffeeScriptCompiler(cl).coffeeScriptToJavaScript(uri);                
+            }
             return super.getModuleScript(cx, moduleId, uri, uri, paths);
           }
         });
@@ -177,6 +194,15 @@ public class RhinoVerticle extends Verticle {
   }
 
   private static void loadScript(ClassLoader cl, Context cx, ScriptableObject scope, String scriptName) throws Exception {
+    if(scriptName != null && scriptName.endsWith(".coffee")) {
+        URL resource = cl.getResource(scriptName);
+        if(resource != null) {
+            getCoffeeScriptCompiler(cl).coffeeScriptToJavaScript(resource.toURI());
+            scriptName += ".js";
+        } else {
+            throw new FileNotFoundException("Cannot find script: " + scriptName);
+        }
+    } 
     InputStream is = cl.getResourceAsStream(scriptName);
     if (is == null) {
       throw new FileNotFoundException("Cannot find script: " + scriptName);
@@ -228,3 +254,5 @@ public class RhinoVerticle extends Verticle {
     }
   }
 }
+
+  

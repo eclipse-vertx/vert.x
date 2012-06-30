@@ -49,7 +49,7 @@ public class RhinoVerticleFactory implements VerticleFactory {
   
   @Override
   public boolean isFactoryFor(String main) {
-    if (main.endsWith(".js")) {
+    if (main.endsWith(".js") || main.endsWith(".coffee")) {
       return true;
     }
     return false;
@@ -62,7 +62,7 @@ public class RhinoVerticleFactory implements VerticleFactory {
 
   public void reportException(Throwable t) {
 
-    t.printStackTrace();
+    //t.printStackTrace();
 
     Logger logger = mgr.getLogger();
 
