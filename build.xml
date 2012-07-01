@@ -153,6 +153,7 @@
   	<copy todir="${java-target}">
   	  <fileset dir="${java-src-root}">
   	    <include name="META-INF/services/*"/>
+        <include name="org/vertx/java/deploy/impl/rhino/coffee-script.js"/>
   	  </fileset>
   	</copy>
   </target>

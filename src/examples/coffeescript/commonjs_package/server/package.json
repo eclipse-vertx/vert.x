@@ -1,0 +1,26 @@
+{
+  "name": "Server",
+  "version": "1.1.1",
+  "author": "Scott Horn",
+  "keywords": "An example coffee-script pacakge",
+  "description": "Not real useful",
+  "licenses": [{
+    "type": "Apache",
+    "url": "http://www.apache.org/licenses/LICENSE-2.0"
+  }],
+
+  "repository" : {
+    "type": "git",
+    "url": "https://github.com/sjhorn/vert.x.git"
+  },
+
+  "dependencies": {
+    
+  },
+
+  "main": "./run",
+
+  "bin": {
+    
+  }
+}
