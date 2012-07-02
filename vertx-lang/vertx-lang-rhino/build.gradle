@@ -25,3 +25,10 @@ dependencies {
 artifacts {
 	platform jar
 }
+sourceSets {
+	main {
+		resources {
+			srcDirs 'src/main/coffeescript'
+		}
+	}
+}
