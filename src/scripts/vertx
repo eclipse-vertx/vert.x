@@ -37,16 +37,6 @@ $DIRNAME/../lib/python:\
 $DIRNAME/../lib/javascript:\
 $DIRNAME/../lib/coffeescript
 
-DEBUG_CONFIG=
-for i in $@
-do
-  if [ $i == "-debug" ];
-  then
-    echo "Launching JVM in Debug Mode"
-    DEBUG_CONFIG="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8001"
-  fi
-done
-
 java $DEBUG_CONFIG -Djava.util.logging.config.file=$DIRNAME/../conf/logging.properties \
 -Djruby.home=$JRUBY_HOME -Djython.home=$JYTHON_HOME \
 -Dpython.path=$JYTHON_HOME/Lib:$DIRNAME/../lib/python \
