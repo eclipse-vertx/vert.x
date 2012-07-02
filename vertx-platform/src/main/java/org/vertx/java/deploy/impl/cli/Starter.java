@@ -59,13 +59,14 @@ public class Starter {
   private VerticleManager mgr;
 
   private Starter(String[] sargs) {
+	String vertxVersion = String.format("vert.x %s", System.getProperty("vertx.version", "0.0.0-UNKNOWN!"));
     if (sargs.length < 1) {
       displaySyntax();
     } else {
       String command = sargs[0].toLowerCase();
       Args args = new Args(sargs);
       if ("version".equals(command)) {
-        log.info("vert.x 1.1.0.final");
+        log.info(vertxVersion);
       } else {
         if (sargs.length < 2) {
           displaySyntax();
@@ -73,7 +74,7 @@ public class Starter {
           String operand = sargs[1];
           switch (command) {
             case "version":
-              log.info("vert.x 1.1.0.final");
+              log.info(vertxVersion);
               break;
             case "run":
               runVerticle(false, operand, args);
