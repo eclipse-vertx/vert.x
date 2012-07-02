@@ -7,7 +7,7 @@ Vert.x is a framework which takes inspiration from event driven frameworks like 
 
 Some of the key highlights include:
 
-* Polyglot. Write your application components in JavaScript, Ruby, Groovy or Java. It's up to you. Or mix and match
+* Polyglot. Write your application components in JavaScript, Ruby, Groovy, Python or Java. It's up to you. Or mix and match
 several programming languages in a single application. (Scala and Clojure support is scheduled too).
 
 * No more worrying about concurrency. Vert.x allows you to write all your code as single threaded,
