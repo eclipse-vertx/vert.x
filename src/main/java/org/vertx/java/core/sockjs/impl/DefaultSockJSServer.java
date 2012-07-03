@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.sockjs.impl;
+
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
@@ -261,11 +261,11 @@ public class DefaultSockJSServer implements SockJSServer {
   }
 
   private Handler<HttpServerRequest> createIFrameHandler(final String iframeHTML) {
+    final String etag = getMD5String(iframeHTML);
     return new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         try {
           if (log.isTraceEnabled()) log.trace("In Iframe handler");
-          String etag = getMD5String(iframeHTML);
           if (etag.equals(req.headers().get("If-None-Match"))) {
             req.response.statusCode = 304;
             req.response.end();
