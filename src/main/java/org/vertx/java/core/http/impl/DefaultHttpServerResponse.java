@@ -265,7 +265,13 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
       conn.write(response);
       channelFuture = conn.sendFile(file);
       headWritten = written = true;
+      
+      if (!keepAlive) {
+        closeConnAfterWrite();
+      }
+      
       conn.responseComplete();
+
     }
 
     return this;
