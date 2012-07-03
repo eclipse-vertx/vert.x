@@ -5,7 +5,7 @@ import org.vertx.java.framework.TestBase;
 /**
  * @author <a href="https://github.com/sjhorn">Scott Horn</a>
  */
-public class PythonRouteMatcher extends TestBase {
+public class PythonRouteMatcherTest extends TestBase {
 
     @Override
     protected void setUp() throws Exception {
