@@ -3,6 +3,7 @@
 .project
 .settings
 bin
+build
 target
 out
 *.iml
