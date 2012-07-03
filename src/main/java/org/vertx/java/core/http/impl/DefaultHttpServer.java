@@ -181,7 +181,7 @@ public class DefaultHttpServer implements HttpServer {
 
             if (tcpHelper.isSSL()) {
               SSLEngine engine = tcpHelper.getSSLContext().createSSLEngine();
-              if ( this.sslConfig != null ) sslConfig.configure( engine );
+              if ( sslConfig != null ) sslConfig.configure( engine );
               engine.setUseClientMode(false);
               switch (tcpHelper.getClientAuth()) {
                 case REQUEST: {
@@ -394,7 +394,7 @@ public class DefaultHttpServer implements HttpServer {
     return tcpHelper.getTrustStorePassword();
   }
   
-  public void setSSLConfigureInterceptor( SSLConfigureInterceptor cfg ) {
+  public void setSslConfigureInterceptor( SSLConfigureInterceptor cfg ) {
 	  this.sslConfig = cfg;
   }
 
