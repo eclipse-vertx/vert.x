@@ -82,10 +82,10 @@ task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
 	description 'Build the parent and all of the vert.x subprojects'
 
 	['mods', 'temp', 'logs'].each { dir->
-		mkdir("$rootDir/build/release/$dir")
+		mkdir("$rootDir/build/$rootProject.name-$version/$dir")
 	}
 
-	destinationDir file('build/release')
+	destinationDir file("build/$rootProject.name-$version")
 	outputs.dir destinationDir
 	into('bin') {
 		from project(':vertx-boot').jar
@@ -110,7 +110,7 @@ task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
 		from subprojects.configurations.compile
 	}
 	doLast {
-		project.ant.chmod(file: "build/release/bin", perm: 'ugo+x')
+		project.ant.chmod(file: "build/$rootProject.name-$version/bin", perm: 'ugo+x')
 	}
 }
 
@@ -121,7 +121,7 @@ task javadocs(type: Javadoc, dependsOn: subprojects.javadoc) {
 	source = subprojects.sourceSets.main.java
 	classpath = files(subprojects.configurations.compile)
 
-	destinationDir file("build/release/docs/java/api")
+	destinationDir file("build/$rootProject.name-$version/docs/java/api")
 	inputs.files classpath
 	outputs.dir destinationDir
 }
@@ -130,14 +130,14 @@ task nonJavadocs(type: Copy) {
 	group = null       // hide the task
 	description = null // hide the task
 
-	destinationDir file('build/release/docs')
+	destinationDir file("build/$rootProject.name-$version/docs")
 	
 	inputs.files subprojects.docsDir
 	outputs.dir destinationDir
 	
 	doFirst {
 		['groovy/api', 'javascript/api', 'python/api', 'ruby/api'].each { dir->
-			mkdir("$rootDir/build/release/docs/$dir")
+			mkdir("$rootDir/build/$rootProject.name-$version/docs/$dir")
 		}
 	}
 	
@@ -156,7 +156,7 @@ task nonJavadocs(type: Copy) {
 	}
 }
 
-task createDocs(dependsOn: ['assemble', 'javadocs', 'nonJavadocs']) {
+task createDocs(dependsOn: ['classes', 'javadocs', 'nonJavadocs']) {
 	group = 'vert.x'
 	description = 'Build all of the various docs for the project'
 }
@@ -166,23 +166,31 @@ task installApp(type: Sync, dependsOn: ['assemble']) {
 	description 'Install a local copy of this build'
 
 	def vertxTemp = file(System.getProperty('java.io.tmpdir') + "vertx-$version")
+
 	destinationDir vertxTemp
-	inputs.files files('build/release')
+	inputs.files files("build/$rootProject.name-$version")
 	outputs.dir destinationDir
-	from 'build/release'
+	from "build/$rootProject.name-$version"
 }
 
-task createRelease(type: Tar, dependsOn: 'assemble') {
+task createPackage(type: Tar, dependsOn: ['assemble', 'createDocs']) {
 	group = 'vert.x'
-	description 'Install a local copy of this build'
+	description 'Create the distributable package'
 	
 	compression = org.gradle.api.tasks.bundling.Compression.GZIP
 	destinationDir file('build/distributions')
-	inputs.files files('build/release')
+	inputs.files files("build/$rootProject.name-$version")
 	outputs.dir destinationDir
 	baseName = rootProject.name
 	version = rootProject.version
-	from 'build/release'
+	extension = 'tar.gz'
+	from 'build'
+	include "$rootProject.name-$version/**"
+}
+
+task release(dependsOn: ['clean', 'test', 'createPackage']) {
+	group = 'vert.x'
+	description 'Clean and fully test the current version before creating the distributable package'
 }
 
 /* 
