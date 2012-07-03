@@ -24,7 +24,7 @@ buildscript {
 		mavenCentral()
 	}
 	dependencies {
-		classpath "org.vert-x:vertx-build-tools:0.1-SNAPSHOT"
+		classpath "org.vert-x:build-tools:0.1-SNAPSHOT"
 	}
 } 
 
