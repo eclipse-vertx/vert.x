@@ -94,7 +94,7 @@ install {
 def configurePom(def pom) {
 	pom.project {
 		name rootProject.name
-		description 'vert.x - effortless polglot'
+		description 'vert.x - Effortless asynchronous application development for the modern web and enterprise'
 		groupId rootProject.group
 		inceptionYear '2011'
 		packaging 'jar'
