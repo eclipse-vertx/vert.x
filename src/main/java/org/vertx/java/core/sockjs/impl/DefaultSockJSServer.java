@@ -261,12 +261,12 @@ public class DefaultSockJSServer implements SockJSServer {
   }
 
   private Handler<HttpServerRequest> createIFrameHandler(final String iframeHTML) {
+    final String etag = getMD5String(iframeHTML);
     return new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         try {
           if (log.isTraceEnabled()) log.trace("In Iframe handler");
-          String etag = getMD5String(iframeHTML);
-          if (etag.equals(req.headers().get("If-None-Match"))) {
+          if (etag != null && etag.equals(req.headers().get("If-None-Match"))) {
             req.response.statusCode = 304;
             req.response.end();
           } else {
@@ -285,14 +285,20 @@ public class DefaultSockJSServer implements SockJSServer {
     };
   }
 
-  private String getMD5String(final String str) throws Exception {
-    MessageDigest md = MessageDigest.getInstance("MD5");
-    byte[] bytes = md.digest(str.getBytes("UTF-8"));
-    StringBuilder sb = new StringBuilder();
-    for (byte b : bytes) {
-      sb.append(Integer.toHexString(b + 127));
+  private String getMD5String(final String str) {
+    try {
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        byte[] bytes = md.digest(str.getBytes("UTF-8"));
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+          sb.append(Integer.toHexString(b + 127));
+        }
+        return sb.toString();
     }
-    return sb.toString();
+    catch (Exception e) {
+        log.error("Failed to generate MD5 for iframe, If-None-Match headers will be ignored");
+        return null;
+    }
   }
 
 
