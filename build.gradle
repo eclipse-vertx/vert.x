@@ -24,7 +24,7 @@ buildscript {
 		mavenCentral()
 	}
 	dependencies {
-		classpath "io.vertx:vertx-build-tools:0.1-SNAPSHOT"
+		classpath "org.vert-x:vertx-build-tools:0.1-SNAPSHOT"
 	}
 } 
 
@@ -43,7 +43,7 @@ subprojects {
 	targetCompatibility = '1.7'
 
 	defaultTasks = ['classes']
-	group = 'io.vertx'
+	group = rootProject.group
 	
 	repositories {
 		mavenCentral()
@@ -156,7 +156,7 @@ task nonJavadocs(type: Copy) {
 	}
 }
 
-task createDocs(dependsOn: ['classes', 'javadocs', 'nonJavadocs']) {
+task createDocs(dependsOn: [subprojects.classes, 'javadocs', 'nonJavadocs']) {
 	group = 'vert.x'
 	description = 'Build all of the various docs for the project'
 }
