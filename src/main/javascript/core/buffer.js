@@ -16,8 +16,5 @@
 
 var vertx = vertx || {};
 
-if (!vertx.Buffer) {
-  vertx.Buffer = function(p) {
-    return new org.vertx.java.core.buffer.Buffer(p);
-  }
-}
+if (!vertx.Buffer)
+  vertx.Buffer = org.vertx.java.core.buffer.Buffer;
