@@ -81,7 +81,7 @@ task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
 	group = 'vert.x'
 	description 'Build the parent and all of the vert.x subprojects'
 
-	['mods', 'temp', 'logs'].each { dir->
+	['temp', 'logs'].each { dir->
 		mkdir("$rootDir/build/release/$dir")
 	}
 
