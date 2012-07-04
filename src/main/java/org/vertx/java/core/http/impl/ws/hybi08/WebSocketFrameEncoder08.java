@@ -65,7 +65,7 @@ public class WebSocketFrameEncoder08 extends OneToOneEncoder {
         encoded.writeShort(dataLen);
       } else {
         encoded.writeByte(applyMaskBit(0x7F));
-        encoded.writeInt(dataLen);
+        encoded.writeLong(dataLen);
       }
 
       if (shouldMask()) {
