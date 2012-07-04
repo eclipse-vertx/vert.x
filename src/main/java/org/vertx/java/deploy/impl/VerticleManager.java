@@ -299,7 +299,9 @@ public class VerticleManager {
     log.info("Processing includes for " + modName + " mod Dir " + modDir);
     // Add the urls for this module
     try {
+      log.error(modDir);
       urls.add(modDir.toURI().toURL());
+      log.error("fuckup!");
       File libDir = new File(modDir, "lib");
       if (libDir.exists()) {
         File[] jars = libDir.listFiles();
@@ -524,7 +526,7 @@ public class VerticleManager {
   {
 
     // Infer the main type
-    String language = null;
+    String language = urls != null ? "java" : null;
     for (VerticleFactory vf : factories.values()) {
       if (vf.isFactoryFor(main)) {
         language = vf.getLanguage();
