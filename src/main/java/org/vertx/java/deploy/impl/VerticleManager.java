@@ -198,7 +198,7 @@ public class VerticleManager {
 
   public void deployMod(final String modName, final JsonObject config,
                         final int instances, final File currentModDir, final Handler<String> doneHandler) {
-
+    log.info("deploying module " + modName + " current mod dir " + currentModDir);
     final Context ctx = vertx.getOrAssignContext();
 
     AsyncResultHandler<Boolean> handler = new AsyncResultHandler<Boolean>() {
@@ -247,19 +247,16 @@ public class VerticleManager {
           if (preserveCwd == null) {
             preserveCwd = Boolean.FALSE;
           }
-          if (preserveCwd) {
-            // Use the current module directory instead, or the cwd if not in a module
-            modDir = currentModDir;
-          }
+          // If preserveCwd then use the current module directory instead, or the cwd if not in a module
+          File modDirToUse = preserveCwd ? currentModDir : modDir;
 
           List<URL> urls = processIncludes(modName, new ArrayList<URL>(), modName, modDir, conf,
                                            new HashMap<String, String>(), new HashSet<String>());
-
           if (urls == null) {
             return false;
           }
           doDeploy(worker, main, config,
-                   urls.toArray(new URL[urls.size()]), instances, modDir, ctx, doneHandler);
+                   urls.toArray(new URL[urls.size()]), instances, modDirToUse, ctx, doneHandler);
           return true;
         } else {
           return false;
@@ -299,6 +296,7 @@ public class VerticleManager {
                                     JsonObject conf,
                                     Map<String, String> includedJars,
                                     Set<String> includedModules) {
+    log.info("Processing includes for " + modName + " mod Dir " + modDir);
     // Add the urls for this module
     try {
       urls.add(modDir.toURI().toURL());
