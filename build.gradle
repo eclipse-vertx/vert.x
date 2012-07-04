@@ -24,7 +24,7 @@ buildscript {
 		mavenCentral()
 	}
 	dependencies {
-		classpath "org.vert-x:build-tools:0.1-SNAPSHOT"
+		classpath "org.vert-x:build-tools:$vertxBuildToolsVersion"
 	}
 } 
 
@@ -63,9 +63,11 @@ defaultTasks = ['preflight']
 task preflight() {
 	group = null
 	description = null
+	/* this is an issue for IDEs
 	assert System.getenv("JRUBY_HOME") != null
 	assert System.getenv("JYTHON_HOME") != null
-	
+	*/
+
 	System.setProperty 'jruby.home', System.getenv("JRUBY_HOME")
 	System.setProperty 'jython.home', System.getenv("JYTHON_HOME")
 }
