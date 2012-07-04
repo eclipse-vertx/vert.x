@@ -180,9 +180,9 @@ task installApp(type: Sync, dependsOn: ['assemble']) {
 	from "build/$rootProject.name-$version"
 }
 
-task createPackage(type: Tar, dependsOn: ['assemble', 'createDocs']) {
+task dist(type: Tar, dependsOn: ['assemble', 'createDocs']) {
 	group = 'vert.x'
-	description 'Create the distributable package'
+	description 'Create the distribution'
 	
 	compression = org.gradle.api.tasks.bundling.Compression.GZIP
 	destinationDir file('build/distributions')
@@ -195,9 +195,9 @@ task createPackage(type: Tar, dependsOn: ['assemble', 'createDocs']) {
 	include "$rootProject.name-$version/**"
 }
 
-task release(dependsOn: ['clean', 'test', 'createPackage']) {
+task release(dependsOn: ['clean', 'test', 'dist']) {
 	group = 'vert.x'
-	description 'Clean and fully test the current version before creating the distributable package'
+	description 'Clean and fully test the current version before creating the distribution'
 }
 
 /* 
