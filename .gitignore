@@ -1,7 +1,10 @@
+.gradle
 .idea
 .classpath
 .project
 .settings
+.yardoc
+.yardopts
 bin
 build
 target
@@ -12,11 +15,6 @@ out
 test-output
 Scratch.java
 ScratchTest.java
-.yardoc
-.gradle
-src/examples/java/classes
-src/examples/java/quux-out
 test-results
 test-tmp
 *.class
-lib/main/cachedir
