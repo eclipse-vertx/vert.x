@@ -247,19 +247,16 @@ public class VerticleManager {
           if (preserveCwd == null) {
             preserveCwd = Boolean.FALSE;
           }
-          if (preserveCwd) {
-            // Use the current module directory instead, or the cwd if not in a module
-            modDir = currentModDir;
-          }
+          // If preserveCwd then use the current module directory instead, or the cwd if not in a module
+          File modDirToUse = preserveCwd ? currentModDir : modDir;
 
           List<URL> urls = processIncludes(modName, new ArrayList<URL>(), modName, modDir, conf,
                                            new HashMap<String, String>(), new HashSet<String>());
-
           if (urls == null) {
             return false;
           }
           doDeploy(worker, main, config,
-                   urls.toArray(new URL[urls.size()]), instances, modDir, ctx, doneHandler);
+                   urls.toArray(new URL[urls.size()]), instances, modDirToUse, ctx, doneHandler);
           return true;
         } else {
           return false;
