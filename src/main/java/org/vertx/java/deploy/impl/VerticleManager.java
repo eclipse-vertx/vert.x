@@ -526,22 +526,21 @@ public class VerticleManager {
   {
 
     // Infer the main type
-    String language = "java";
+    String language = null;
     for (VerticleFactory vf : factories.values()) {
       if (vf.isFactoryFor(main)) {
         language = vf.getLanguage();
         break;
       }
     }
+    if (language == null) {
+      throw new IllegalArgumentException("Unsupported language: " + language);
+    }
 
     final String deploymentName = "deployment-" + UUID.randomUUID().toString();
 
     log.debug("Deploying name : " + deploymentName + " main: " + main +
         " instances: " + instances);
-
-    if (!factories.containsKey(language)) {
-    	throw new IllegalArgumentException("Unsupported language: " + language);
-    }
 
     final VerticleFactory verticleFactory = factories.get(language);
     verticleFactory.init(this);
