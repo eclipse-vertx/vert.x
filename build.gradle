@@ -16,6 +16,7 @@
 
 // apply plugin: 'application'
 apply from: 'gradle/extra-tasks.gradle'
+apply from: "gradle/ide-setup.gradle"
 
 buildscript {
 	repositories {
@@ -29,14 +30,15 @@ buildscript {
 } 
 
 allprojects {
+    apply plugin: 'eclipse'
+    apply plugin: 'idea'
+
 	configurations {
 		platform
 	}
 }
 
 subprojects {
-	apply plugin: 'eclipse'
-	apply plugin: 'idea'
 	apply plugin: 'java'
 	
 	sourceCompatibility = '1.7'
@@ -56,20 +58,30 @@ subprojects {
 	javadoc {
 		destinationDir = file("build/docs/java/api")
 	}
+
+    task collectDeps(type: Copy) {
+        destinationDir = file("build/deps")
+        into("compile") {
+            from configurations.compile
+        }
+        into("test") {
+            from configurations.testCompile
+        }
+    }
 }
 
 defaultTasks = ['preflight']
 
-task preflight() {
+task preflight(dependsOn: subprojects.collectDeps) {
 	group = null
 	description = null
 	/* this is an issue for IDEs
 	assert System.getenv("JRUBY_HOME") != null
 	assert System.getenv("JYTHON_HOME") != null
-	*/
 
 	System.setProperty 'jruby.home', System.getenv("JRUBY_HOME")
 	System.setProperty 'jython.home', System.getenv("JYTHON_HOME")
+	*/
 }
 
 task test(dependsOn: [subprojects.test]) {
@@ -82,6 +94,9 @@ task clean(type: Delete, dependsOn: [subprojects.clean]) {
 	description 'Clean the parent and all of the vert.x subprojects'
 
 	delete 'build/release', 'build/distributions'
+    subprojects.each {
+        delete 'build/deps'
+    } 
 }
 
 task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
