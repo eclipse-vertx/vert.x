@@ -53,6 +53,7 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.impl.TCPSSLHelper;
 import org.vertx.java.core.net.impl.VertxWorkerPool;
+import org.vertx.java.core.http.SSLConfigureInterceptor;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLHandshakeException;
@@ -79,6 +80,7 @@ public class DefaultHttpClient implements HttpClient {
     }
   };
   private boolean keepAlive = true;
+  private SSLConfigureInterceptor sslConfig;
 
   public DefaultHttpClient(VertxInternal vertx) {
     this.vertx = vertx;
@@ -331,6 +333,10 @@ public class DefaultHttpClient implements HttpClient {
     return tcpHelper.getTrustStorePassword();
   }
 
+  public void setSslConfigureInterceptor( SSLConfigureInterceptor cfg ) {
+	  this.sslConfig = cfg;
+  }
+
   void getConnection(Handler<ClientConnection> handler, Context context) {
     pool.getConnection(handler, context);
   }
@@ -372,6 +378,7 @@ public class DefaultHttpClient implements HttpClient {
           ChannelPipeline pipeline = Channels.pipeline();
           if (tcpHelper.isSSL()) {
             SSLEngine engine = tcpHelper.getSSLContext().createSSLEngine();
+            if ( sslConfig != null ) sslConfig.configure( engine );
             engine.setUseClientMode(true); //We are on the tcpHelper side of the connection
             pipeline.addLast("ssl", new SslHandler(engine));
           }

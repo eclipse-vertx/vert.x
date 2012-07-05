@@ -18,6 +18,7 @@ package org.vertx.groovy.core.http
 
 import org.vertx.java.core.Handler
 import org.vertx.java.core.http.WebSocketVersion
+import org.vertx.java.core.http.SSLConfigureInterceptor
 
 /**
  * An HTTP client that maintains a pool of connections to a specific host, at a specific port. The client supports
@@ -280,6 +281,11 @@ abstract class HttpClient {
   HttpClient setTrustAll(boolean trustAll) {
     jClient.setTrustAll(trustAll)
     this
+  }
+
+  HttpClient setSslConfigureInterceptor( SSLConfigureInterceptor cfg ) {
+	  jClient.setSslConfigureInterceptor(cfg)
+	  this
   }
 
   /**

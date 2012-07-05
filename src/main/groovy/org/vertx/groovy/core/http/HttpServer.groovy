@@ -17,6 +17,7 @@
 package org.vertx.groovy.core.http
 
 import org.vertx.java.core.Handler
+import org.vertx.java.core.http.SSLConfigureInterceptor
 
 /**
  * An HTTP and WebSockets server<p>
@@ -164,6 +165,12 @@ abstract class HttpServer {
     jServer.setTrustStorePassword(pwd)
     this
   }
+
+  HttpServer setSslConfigureInterceptor( SSLConfigureInterceptor cfg ) {
+	  jServer.setSslConfigureInterceptor(cfg)
+	  this
+  }
+  
 
   /**
    * Set {@code required} to true if you want the server to request client authentication from any connecting clients. This
