@@ -176,6 +176,10 @@ public class TestBase extends TestCase {
   }
 
   protected String startApp(boolean worker, String main, JsonObject config, int instances, boolean await) throws Exception {
+    if(Runtime.getRuntime().availableProcessors() < 2) {
+        log.error("*** The test framework requires at least 2 processors ***");
+        fail("The test framework requires at least 2 processors");
+    }
     URL url;
     if (main.endsWith(".js") || main.endsWith(".rb") || main.endsWith(".groovy") || main.endsWith(".py")) {
       url = getClass().getClassLoader().getResource(main);
