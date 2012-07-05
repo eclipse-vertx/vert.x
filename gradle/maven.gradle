@@ -1,0 +1,130 @@
+/*
+ * Copyright 2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+apply plugin: 'maven'
+apply plugin: 'signing'
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// custom maven tasks
+
+task sourceJar(type: Jar) {
+	description = 'Builds a source jar artifact suitable for maven deployment.'
+	classifier = 'sources'
+	from sourceSets.main.java
+}
+
+task javadocJar(type: Jar) {
+	description = 'Builds a javadoc jar artifact suitable for maven deployment.'
+	classifier = 'javadoc'
+	from javadoc.destinationDir
+}
+javadocJar.dependsOn javadoc
+
+build.dependsOn sourceJar, javadocJar
+
+artifacts {
+	archives sourceJar, javadocJar
+}
+
+if (!hasProperty('sonatypeUsername')) {
+	ext.sonatypeUsername = ''
+}
+if (!hasProperty('sonatypePassword')) {
+	ext.sonatypePassword = ''
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// maven task configuration
+
+ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
+
+signing {
+	required { isReleaseVersion && gradle.taskGraph.hasTask("uploadArchives") }
+	sign configurations.archives
+}
+
+uploadArchives {
+	group 'build'
+	description = "Does a maven deploy of archives artifacts"
+
+	repositories {
+		mavenDeployer {
+			configuration = configurations.archives
+
+			repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+				authentication(userName: sonatypeUsername, password: sonatypePassword)
+			}
+
+			snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+				authentication(userName: sonatypeUsername, password: sonatypePassword)
+			}
+
+			if (isReleaseVersion) {
+				beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+			}
+
+			configurePom(pom)
+		}
+	}
+}
+
+install {
+	group = 'build'
+	description = "Does a maven install of archives artifacts to local m2 cache"
+	configurePom(repositories.mavenInstaller.pom)
+}
+
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// configuration methods
+
+def configurePom(def pom) {
+	pom.project {
+		name rootProject.name
+		description 'vert.x - Effortless asynchronous application development for the modern web and enterprise'
+		groupId rootProject.group
+		inceptionYear '2011'
+		packaging 'jar'
+		url 'http://vertx.io'
+		
+		developers {
+            developer {
+                id 'purplefox'
+                name 'Tim Fox'
+                email 'tim@tfox.org'
+            }
+        }
+
+		scm {
+	        connection 'scm:https://vert-x@github.com/purplefox/vert.x'
+	        developerConnection 'scm:git@github.com:purplefox/vert.x.git'
+	        url 'https://github.com/purplefox/vert.x'
+		}
+		
+		licenses {
+			license {
+				name 'The Apache Software License, Version 2.0'
+				url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+				distribution 'repo'
+			}
+		}
+
+		properties {
+			setProperty('project.build.sourceEncoding', 'UTF8')
+		}
+	}
+}
+
