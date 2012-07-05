@@ -67,7 +67,6 @@ public class RhinoVerticle extends Verticle {
     ScriptableObject scope = scopeThreadLocal.get();
     ClassLoader cl = clThreadLocal.get();
     Context cx = Context.getCurrentContext();
-    cx.setOptimizationLevel(0);
     loadScript(cl, cx, scope, moduleName);
   }
 
@@ -222,6 +221,7 @@ public class RhinoVerticle extends Verticle {
 
   public void start() throws Exception {
     Context cx = Context.enter();
+    cx.setOptimizationLevel(2);
     try {
       scope = cx.initStandardObjects();
 
