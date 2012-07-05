@@ -30,14 +30,15 @@ buildscript {
 } 
 
 allprojects {
+    apply plugin: 'eclipse'
+    apply plugin: 'idea'
+
 	configurations {
 		platform
 	}
 }
 
 subprojects {
-	apply plugin: 'eclipse'
-	apply plugin: 'idea'
 	apply plugin: 'java'
 	
 	sourceCompatibility = '1.7'
