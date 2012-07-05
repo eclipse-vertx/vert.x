@@ -1,0 +1,236 @@
+Regression Testing for restructuredtext
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+:RequireModule: docutils
+
+    >>> from epydoc.test.util import print_warnings
+    >>> print_warnings()
+
+Summary
+=======
+The implementation of the summaization function works as expected.
+
+>>> from epydoc.markup import restructuredtext
+>>> def getsummary(s):
+...     p = restructuredtext.parse_docstring(s, [])
+...     s, o = p.summary()
+...     s = s.to_plaintext(None).strip()
+...     return s, o
+
+#Let's not lose anything!
+
+>>> getsummary("Single line")
+(u'Single line', False)
+
+>>> getsummary("Single line.")
+(u'Single line.', False)
+
+>>> getsummary("""
+... Single line *with* period.
+... """)
+(u'Single line with period.', False)
+
+>>> getsummary("""
+... Single line `with` period.
+...
+... :type: Also with a tag.
+... """)
+(u'Single line with period.', False)
+
+>>> getsummary("""
+... Other lines **with** period.
+... This is attached
+... """)
+(u'Other lines with period.', True)
+
+>>> getsummary("""
+... Other lines *with* period.
+...
+... This is detached
+...
+... :type: Also with a tag.
+... """)
+(u'Other lines with period.', True)
+
+>>> getsummary("""
+... Other lines without period
+... This is attached
+... """)
+(u'Other lines without period\nThis is attached', False)
+
+>>> getsummary("""
+... Other lines without period
+...
+... This is detached
+... """)
+(u'Other lines without period...', True)
+
+>>> getsummary("""
+... Single line *without* period
+...
+... :type: Also with a tag.
+... """)
+(u'Single line without period', False)
+
+>>> getsummary("""
+... This is the first line.
+...
+... :type: Also with a tag.
+...
+... Other stuff after a tag.
+... """)
+(u'This is the first line.', True)
+
+Python code
+===========
+reStructuredText markup defines a ``python`` directive to represent a block
+as colorized Python code.
+
+>>> err = []
+>>> p = restructuredtext.parse_docstring(
+... """A test module
+...
+... .. python::
+...
+...     # This is some Python code
+...     def foo():
+...         pass
+...
+...     class Foo:
+...         def __init__(self):
+...             pass
+... """, err)
+>>> err
+[]
+>>> print p.to_html(None)
+<p>A test module</p>
+<pre class="py-doctest">
+<span class="py-comment"># This is some Python code</span>
+<span class="py-keyword">def</span> <span class="py-defname">foo</span>():
+    <span class="py-keyword">pass</span>
+<BLANKLINE>
+<span class="py-keyword">class</span> <span class="py-defname">Foo</span>:
+    <span class="py-keyword">def</span> <span class="py-defname">__init__</span>(self):
+        <span class="py-keyword">pass</span></pre>
+<BLANKLINE>
+
+Consolidated Fields
+===================
+
+    >>> from epydoc.test.util import runbuilder
+
+    >>> runbuilder(s='''
+    ...     __docformat__ = 'restructuredtext'
+    ...     class Foo:
+    ...         """This is the object docstring
+    ...
+    ...         :Parameters:
+    ...           `a` : string
+    ...             init param.
+    ...
+    ...         :Exceptions:
+    ...           * `ValueError`: frobnication error
+    ...             init param.
+    ...
+    ...         :IVariables:
+    ...           `a` : date
+    ...             instance var.
+    ...         """
+    ...         def __init__(self, a):
+    ...             pass
+    ...     ''',
+    ...     build="Foo",
+    ...     attribs="variables name value exception_descrs "
+    ...         "posargs vararg kwarg type_descr arg_types arg_descrs")
+    ClassDoc for epydoc_test.Foo [0]
+     +- variables
+        +- __init__ => VariableDoc for epydoc_test.Foo.__init__ [1]
+        |  +- name = '__init__'
+        |  +- type_descr = None
+        |  +- value
+        |     +- RoutineDoc for epydoc_test.Foo.__init__ [2]
+        |        +- arg_descrs = [([u'a'], u'init param.')]
+        |        +- arg_types = {u'a': u'string'}
+        |        +- exception_descrs = [(DottedName(u'ValueError'), ...
+        |        +- kwarg = None
+        |        +- posargs = ['self', 'a']
+        |        +- vararg = None
+        +- a => VariableDoc for epydoc_test.Foo.a [3]
+           +- name = u'a'
+           +- type_descr = u'date'
+           +- value = <UNKNOWN>
+
+Misc rst constructs
+===================
+
+    >>> runbuilder(s='''
+    ...     __docformat__ = 'restructuredtext'
+    ...
+    ...     class Foo:
+    ...         """Testing defining_module
+    ...
+    ...         :cvar `c`: class var in class docstring
+    ...         :type `c`: str
+    ...         """
+    ...         c = 'abc'
+    ...
+    ...         def __init__(self):
+    ...             #: A funny number
+    ...             #:
+    ...             #: :type: float
+    ...             self.x = 108.0
+    ...
+    ...         y = property(
+    ...             fget=lambda self: 42,
+    ...             doc="""A property has no defining module
+    ...
+    ...             :type: int
+    ...             """)
+    ...
+    ...         def f(self):
+    ...             """A function has a defining module
+    ...
+    ...             :rtype: int
+    ...             """
+    ...             return 42
+    ...     ''',
+    ...     build='Foo',
+    ...     attribs="variables name value type_descr return_type descr")
+    ClassDoc for epydoc_test.Foo [0]
+     +- descr = u'Testing defining_module'
+     +- variables
+        +- __init__ => VariableDoc for epydoc_test.Foo.__init__ [1]
+        |  +- descr = None
+        |  +- name = '__init__'
+        |  +- type_descr = None
+        |  +- value
+        |     +- RoutineDoc for epydoc_test.Foo.__init__ [2]
+        |        +- descr = None
+        |        +- return_type = None
+        +- c => VariableDoc for epydoc_test.Foo.c [3]
+        |  +- descr = u'class var in class docstring'
+        |  +- name = 'c'
+        |  +- type_descr = u'str'
+        |  +- value
+        |     +- GenericValueDoc [4]
+        |        +- descr = None
+        +- f => VariableDoc for epydoc_test.Foo.f [5]
+        |  +- descr = None
+        |  +- name = 'f'
+        |  +- type_descr = None
+        |  +- value
+        |     +- RoutineDoc for epydoc_test.Foo.f [6]
+        |        +- descr = u'A function has a defining module'
+        |        +- return_type = u'int'
+        +- x => VariableDoc for epydoc_test.Foo.x [7]
+        |  +- descr = u'A funny number'
+        |  +- name = u'x'
+        |  +- type_descr = u'float'
+        |  +- value = <UNKNOWN>
+        +- y => VariableDoc for epydoc_test.Foo.y [8]
+           +- descr = None
+           +- name = 'y'
+           +- type_descr = None
+           +- value
+              +- PropertyDoc for epydoc_test.Foo.y [9]
+                 +- descr = u'A property has no defining module'
+                 +- type_descr = u'int'

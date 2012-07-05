@@ -1,0 +1,9 @@
+netty: 3.4.6.final
+js.jar - 1.7.R4
+hazelcast.jar - 2.0.2.final
+jruby.jar - 1.6.7
+jackson-core-asl - 1.9.4
+jackson-mapper-asl - 1.9.4
+groovy-all - 1.8.6
+
+

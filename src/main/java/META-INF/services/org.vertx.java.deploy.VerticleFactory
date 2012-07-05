@@ -1,0 +1,5 @@
+org.vertx.java.deploy.impl.groovy.GroovyVerticleFactory
+org.vertx.java.deploy.impl.java.JavaVerticleFactory
+org.vertx.java.deploy.impl.jruby.JRubyVerticleFactory
+org.vertx.java.deploy.impl.rhino.RhinoVerticleFactory
+org.vertx.java.deploy.impl.jython.JythonVerticleFactory

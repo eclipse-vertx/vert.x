@@ -1,0 +1,612 @@
+Regression Testing for epydoc.docintrospecter
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The `epydoc.docintrospecter` module is used to extract API documentation
+by introspecting Python objects directy.  Its primary interface is
+`docintrospecter.introspect_docs()`, which takes a Python object, and returns a
+`ValueDoc` describing that value.
+
+Test Function
+=============
+This test function takes a string containing the contents of a module.
+It writes the string contents to a file, imports the file as a module,
+and uses `docintrospecter.introspect_docs` to introspect it, and pretty prints the resulting
+`ModuleDoc` object.  The ``attribs`` argument specifies which attributes
+of the `APIDoc`s should be displayed.  The ``introspect`` argument gives the
+name of a variable in the module whose value should be introspected,
+instead of introspecting the whole module.
+
+    >>> from epydoc.test.util import runintrospecter
+
+    >>> from epydoc.test.util import print_warnings
+    >>> print_warnings()
+
+Module Variables
+================
+Each variable defined by a module is encoded as a `VariableDoc`, whose
+value contains information about the variable's value.  This includes
+any classes, functions, imported variables, and anything else that has
+an entry in a module's dictionary.
+
+    >>> runintrospecter(s="""
+    ...     x = 12
+    ...     def f(x): pass
+    ...     class A: pass
+    ...     from os import listdir, mkdir
+    ...     exec("y = 22")
+    ...     """, attribs="variables")
+    ModuleDoc for epydoc_test [0]
+     +- variables
+        +- A => VariableDoc for epydoc_test.A [1]
+        +- f => VariableDoc for epydoc_test.f [2]
+        +- listdir => VariableDoc for epydoc_test.listdir [3]
+        +- mkdir => VariableDoc for epydoc_test.mkdir [4]
+        +- x => VariableDoc for epydoc_test.x [5]
+        +- y => VariableDoc for epydoc_test.y [6]
+
+If two variables share the same value, then their `VariableDoc`\ s will
+share a `ValueDoc`:
+
+    >>> runintrospecter(s="""
+    ...     def f(x): pass
+    ...     alias = f
+    ...     """, attribs="variables value")
+    ModuleDoc for epydoc_test [0]
+     +- variables
+        +- alias => VariableDoc for epydoc_test.alias [1]
+        |  +- value
+        |     +- RoutineDoc for epydoc_test.f [2]
+        +- f => VariableDoc for epydoc_test.f [3]
+           +- value
+              +- RoutineDoc for epydoc_test.f [2] (defined above)
+
+Importing a dotted name creates a variable for the top-level component
+of the dotted name:
+
+    >>> runintrospecter(s="""
+    ...     import os.path
+    ...     """, attribs="variables")
+    ModuleDoc for epydoc_test [0]
+     +- variables
+        +- os => VariableDoc for epydoc_test.os [1]
+
+Since variables are extracted by introspection, only those variables that
+exist when the module finishes running will be seen.  (This is
+potentially different from `epydoc.docparser`, which has to guess
+about which code paths are taken).
+
+    >>> runintrospecter(s="""
+    ...     x = 22
+    ...     if x<13: y = 32
+    ...     else: z = 14
+    ...     del x
+    ...     """, attribs="variables")
+    ModuleDoc for epydoc_test [0]
+     +- variables
+        +- z => VariableDoc for epydoc_test.z [1]
+
+Unlike the parser, arbitrary computed values can be extracted:
+
+    >>> runintrospecter(s="""
+    ...     def f(x):
+    ...         if x>100: return x
+    ...         else: return f((x+2)*8/7)
+    ...     x = f(12)
+    ...     """, attribs="variables value pyval")
+    ModuleDoc for epydoc_test [0]
+     +- pyval = <module 'epydoc_test' from ...
+     +- variables
+        +- f => VariableDoc for epydoc_test.f [1]
+        |  +- value
+        |     +- RoutineDoc for epydoc_test.f [2]
+        |        +- pyval = <function f at ...>
+        +- x => VariableDoc for epydoc_test.x [3]
+           +- value
+              +- GenericValueDoc [4]
+                 +- pyval = 112
+
+The introspecter is unable to determine when variables are aliases for
+other variables, so it always sets `is_alias` to `UNKNOWN`:
+
+    >>> runintrospecter(s="""
+    ...     x = 22
+    ...     y = x
+    ...     """, attribs="variables is_alias")
+    ModuleDoc for epydoc_test [0]
+     +- variables
+        +- x => VariableDoc for epydoc_test.x [1]
+        |  +- is_alias = <UNKNOWN>
+        +- y => VariableDoc for epydoc_test.y [2]
+           +- is_alias = <UNKNOWN>
+
+Similarly, the introspecter can't always tell if a variable was imported
+or not, so it sets `is_imported` to `UNKNOWN` when it can't decide:
+
+    >>> runintrospecter(s="""
+    ...     from pickle import dump       # definitely imported
+    ...     from pickle import Pickler    # definitely imported
+    ...     from pickle import HIGHEST_PROTOCOL   # might be imported
+    ...     class A: pass              # definitely not imported
+    ...     def f(x): pass             # definitely not imported
+    ...     """, attribs="variables is_imported")
+    ModuleDoc for epydoc_test [0]
+     +- variables
+        +- A => VariableDoc for epydoc_test.A [1]
+        |  +- is_imported = False
+        +- HIGHEST_PROTOCOL => VariableDoc for epydoc_test.HIGHEST_PROTOCOL [2]
+        |  +- is_imported = <UNKNOWN>
+        +- Pickler => VariableDoc for epydoc_test.Pickler [3]
+        |  +- is_imported = True
+        +- dump => VariableDoc for epydoc_test.dump [4]
+        |  +- is_imported = True
+        +- f => VariableDoc for epydoc_test.f [5]
+           +- is_imported = False
+
+Variable Docstrings
+===================
+The `docintrospecter` is unable extract docstrings for variables.  These
+docstrings can only be detected if the `docparser` is used.
+
+    >>> runintrospecter(s="""
+    ...     x = 12
+    ...     '''docstring for x.
+    ...     (can be multiline)'''""",
+    ...     attribs="variables name docstring")
+    ModuleDoc for epydoc_test [0]
+     +- docstring = None
+     +- variables
+        +- x => VariableDoc for epydoc_test.x [1]
+           +- docstring = <UNKNOWN>
+           +- name = 'x'
+
+    >>> runintrospecter(s="""
+    ...     x = 12 #: comment docstring for x""",
+    ...     attribs="variables name docstring")
+    ModuleDoc for epydoc_test [0]
+     +- docstring = None
+     +- variables
+        +- x => VariableDoc for epydoc_test.x [1]
+           +- docstring = <UNKNOWN>
+           +- name = 'x'
+
+Functions
+=========
+Introspected functions are represented by `RoutineDoc` objects:
+
+    >>> runintrospecter(s="""
+    ...     def f(x):
+    ...         'docstring for f'
+    ...         print 'inside f'
+    ...     """, introspect="f", exclude='defining_module')
+    RoutineDoc for epydoc_test.f [0]
+     +- canonical_name = DottedName('epydoc_test', 'f')
+     +- docs_extracted_by = 'introspecter'
+     +- docstring = u'docstring for f'
+     +- kwarg = None
+     +- lineno = 2
+     +- posarg_defaults = [None]
+     +- posargs = ['x']
+     +- pyval = <function f at ...>
+     +- vararg = None
+
+The function's arguments are described by the properties ``posargs``,
+``posarg_defaults``, ``kwarg``, and ``vararg``.  ``posargs`` is a list of
+argument names (or nested tuples of names, for tuple-unpacking args).
+``posarg_defaults`` is a list of `ValueDoc`\ s for default values,
+corresponding 1:1 with ``posargs``.  ``posarg_defaults`` is None for
+arguments with no default value.  ``vararg`` and ``kwarg`` are the names
+of the variable argument and keyword argument, respectively:
+
+    >>> runintrospecter(s="""
+    ...     def f(x, y=22, z=(1,), *v, **kw):
+    ...         'docstring for f'
+    ...         print 'inside f'
+    ...     """, introspect="f", exclude='defining_module')
+    RoutineDoc for epydoc_test.f [0]
+     +- canonical_name = DottedName('epydoc_test', 'f')
+     +- docs_extracted_by = 'introspecter'
+     +- docstring = u'docstring for f'
+     +- kwarg = 'kw'
+     +- lineno = 2
+     +- posarg_defaults = [None, <GenericValueDoc 22>, <Generic...
+     +- posargs = ['x', 'y', 'z']
+     +- pyval = <function f at ...>
+     +- vararg = 'v'
+
+Tuple arguments are encoded as a single ArgDoc with a complex name:
+
+    >>> runintrospecter(s="""
+    ...     def f( (x, (y,z)) ): pass""",
+    ...     attribs='variables value posargs posarg_defaults vararg kwarg')
+    ModuleDoc for epydoc_test [0]
+     +- variables
+        +- f => VariableDoc for epydoc_test.f [1]
+           +- value
+              +- RoutineDoc for epydoc_test.f [2]
+                 +- kwarg = None
+                 +- posarg_defaults = [None]
+                 +- posargs = [['x', ['y', 'z']]]
+                 +- vararg = None
+
+Methods
+=======
+
+Note that the first argument (self) is not listed in the description
+of g(), since it's a bound
+instance method:
+
+    >>> runintrospecter(s="""
+    ...     class A:
+    ...         def f(self, x): 'docstring'
+    ...     g=A().f
+    ...     """, introspect="g", exclude='defining_module')
+    RoutineDoc [0]
+     +- docs_extracted_by = 'introspecter'
+     +- docstring = u'docstring'
+     +- kwarg = None
+     +- lineno = 3
+     +- posarg_defaults = [None]
+     +- posargs = ['x']
+     +- pyval = <bound method A.f of <epydoc_test.A i...
+     +- vararg = None
+
+Decorators & Wrapper Assignments
+================================
+
+    >>> runintrospecter( # doctest: +PYTHON2.4
+    ...     s="""
+    ...     @classmethod
+    ...     def f(cls, x): 'docstring for f'
+    ...     """, introspect="f")
+    ClassMethodDoc [0]
+     +- docs_extracted_by = 'introspecter'
+     +- docstring = u'docstring for f'
+     +- kwarg = None
+     +- lineno = 2
+     +- posarg_defaults = [None, None]
+     +- posargs = ['cls', 'x']
+     +- pyval = <classmethod object at ...>
+     +- vararg = None
+
+Classes
+=======
+
+    >>> runintrospecter(s="""
+    ...     class A:
+    ...         "no bases"
+    ...         class Nested: "nested class"
+    ...     class B(A): "single base"
+    ...     class C(A,B): "multiple bases"
+    ...     class D( ((A)) ): "extra parens around base"
+    ...     class E(A.Nested): "dotted name"
+    ...     class F(((A).Nested)): "parens with dotted name"
+    ...     class Z(B.__bases__[0]): "calculated base" # not handled!
+    ...     """,
+    ...     attribs='variables value bases docstring')
+    ModuleDoc for epydoc_test [0]
+     +- docstring = None
+     +- variables
+        +- A => VariableDoc for epydoc_test.A [1]
+        |  +- docstring = <UNKNOWN>
+        |  +- value
+        |     +- ClassDoc for epydoc_test.A [2]
+        |        +- bases = []
+        |        +- docstring = u'no bases'
+        |        +- variables
+        |           +- Nested => VariableDoc for epydoc_test.A.Nested [3]
+        |              +- docstring = <UNKNOWN>
+        |              +- value
+        |                 +- ClassDoc [4]
+        |                    +- bases = []
+        |                    +- docstring = u'nested class'
+        |                    +- variables = {}
+        +- B => VariableDoc for epydoc_test.B [5]
+        |  +- docstring = <UNKNOWN>
+        |  +- value
+        |     +- ClassDoc for epydoc_test.B [6]
+        |        +- bases
+        |        |  +- ClassDoc for epydoc_test.A [2] (defined above)
+        |        +- docstring = u'single base'
+        |        +- variables = {}
+        +- C => VariableDoc for epydoc_test.C [7]
+        |  +- docstring = <UNKNOWN>
+        |  +- value
+        |     +- ClassDoc for epydoc_test.C [8]
+        |        +- bases
+        |        |  +- ClassDoc for epydoc_test.A [2] (defined above)
+        |        |  +- ClassDoc for epydoc_test.B [6] (defined above)
+        |        +- docstring = u'multiple bases'
+        |        +- variables = {}
+        +- D => VariableDoc for epydoc_test.D [9]
+        |  +- docstring = <UNKNOWN>
+        |  +- value
+        |     +- ClassDoc for epydoc_test.D [10]
+        |        +- bases
+        |        |  +- ClassDoc for epydoc_test.A [2] (defined above)
+        |        +- docstring = u'extra parens around base'
+        |        +- variables = {}
+        +- E => VariableDoc for epydoc_test.E [11]
+        |  +- docstring = <UNKNOWN>
+        |  +- value
+        |     +- ClassDoc for epydoc_test.E [12]
+        |        +- bases
+        |        |  +- ClassDoc [4] (defined above)
+        |        +- docstring = u'dotted name'
+        |        +- variables = {}
+        +- F => VariableDoc for epydoc_test.F [13]
+        |  +- docstring = <UNKNOWN>
+        |  +- value
+        |     +- ClassDoc for epydoc_test.F [14]
+        |        +- bases
+        |        |  +- ClassDoc [4] (defined above)
+        |        +- docstring = u'parens with dotted name'
+        |        +- variables = {}
+        +- Z => VariableDoc for epydoc_test.Z [15]
+           +- docstring = <UNKNOWN>
+           +- value
+              +- ClassDoc for epydoc_test.Z [16]
+                 +- bases
+                 |  +- ClassDoc for epydoc_test.A [2] (defined above)
+                 +- docstring = u'calculated base'
+                 +- variables = {}
+
+Some class variable have a special meaning. The ``__slots__`` variable isn't
+very useful and should be discarded.
+
+    >>> runintrospecter(s="""
+    ...     class Foo:
+    ...         __slots__ = ['bar']
+    ...         def __init__(self):
+    ...             self.bar = 0
+    ...     """,
+    ...     attribs="variables name value")
+    ModuleDoc for epydoc_test [0]
+     +- variables
+        +- Foo => VariableDoc for epydoc_test.Foo [1]
+           +- name = 'Foo'
+           +- value
+              +- ClassDoc for epydoc_test.Foo [2]
+                 +- variables
+                    +- __init__ => VariableDoc for epydoc_test.Foo.__init__ [3]
+                       +- name = '__init__'
+                       +- value
+                          +- RoutineDoc [4]
+
+Delete Statements
+=================
+
+Deleting variables:
+
+    >>> runintrospecter(s="""
+    ...     x = y = 12
+    ...     del y
+    ...     """,
+    ...     attribs='variables value repr is_alias')
+    ModuleDoc for epydoc_test [0]
+     +- variables
+        +- x => VariableDoc for epydoc_test.x [1]
+           +- is_alias = <UNKNOWN>
+           +- value
+              +- GenericValueDoc [2]
+
+The right-hand side of a ``del`` statement may contain a nested
+combination of lists, tuples, and parenthases.  All variables found
+anywhere in this nested structure should be deleted:
+    
+    >>> runintrospecter(s="""
+    ...     a=b=c=d=e=f=g=1
+    ...     del a
+    ...     del (b)
+    ...     del [c]
+    ...     del (d,)
+    ...     del (((e,)),)
+    ...     del [[[[f]]]]
+    ...     """,
+    ...     attribs='variables')
+    ModuleDoc for epydoc_test [0]
+     +- variables
+        +- g => VariableDoc for epydoc_test.g [1]
+    >>> runintrospecter(s="""
+    ...     a=b=c=d=e=f=g=1
+    ...     del a,b
+    ...     del (c,d)
+    ...     del [e,f]
+    ...     """,
+    ...     attribs='variables')
+    ModuleDoc for epydoc_test [0]
+     +- variables
+        +- g => VariableDoc for epydoc_test.g [1]
+    >>> runintrospecter(s="""
+    ...     a=b=c=d=e=f=g=1
+    ...     del ((a, (((((b, c)), d), [e]))), f)
+    ...     """,
+    ...     attribs='variables')
+    ModuleDoc for epydoc_test [0]
+     +- variables
+        +- g => VariableDoc for epydoc_test.g [1]
+
+The right-hand side of a ``del`` statement may contain a dotted name, in
+which case the named variable should be deleted from its containing
+namespace.
+
+    >>> runintrospecter(s="""
+    ...     class A: a = b = 1
+    ...     del A.a
+    ...     """,
+    ...     attribs='variables value local_variables')
+    ModuleDoc for epydoc_test [0]
+     +- variables
+        +- A => VariableDoc for epydoc_test.A [1]
+           +- value
+              +- ClassDoc for epydoc_test.A [2]
+                 +- variables
+                    +- b => VariableDoc for epydoc_test.A.b [3]
+                       +- value
+                          +- GenericValueDoc [4]
+
+Slice deletes:
+
+    >>> runintrospecter(s="""
+    ...     a = b = [1,2,3,4]
+    ...     del a[2]
+    ...     del a[2:]
+    ...     del ([b], a[1])
+    ...     """,
+    ...     attribs='variables')
+    ModuleDoc for epydoc_test [0]
+     +- variables
+        +- a => VariableDoc for epydoc_test.a [1]
+
+Single-Line Blocks
+==================
+
+    >>> runintrospecter(s="""
+    ...     class A: 'docstring for A'
+    ...     
+    ... 
+    ...     """,
+    ...     attribs='variables value docstring')
+    ModuleDoc for epydoc_test [0]
+     +- docstring = None
+     +- variables
+        +- A => VariableDoc for epydoc_test.A [1]
+           +- docstring = <UNKNOWN>
+           +- value
+              +- ClassDoc for epydoc_test.A [2]
+                 +- docstring = u'docstring for A'
+                 +- variables = {}
+
+Imports
+=======
+
+    >>> runintrospecter(s="""
+    ...     import pickle
+    ...     from pickle import dump
+    ...     """,
+    ...     attribs='variables value is_imported')
+    ModuleDoc for epydoc_test [0]
+     +- variables
+        +- dump => VariableDoc for epydoc_test.dump [1]
+        |  +- is_imported = True
+        |  +- value
+        |     +- ValueDoc for pickle.dump [2]
+        +- pickle => VariableDoc for epydoc_test.pickle [3]
+           +- is_imported = True
+           +- value
+              +- ModuleDoc for pickle [4]
+                 +- variables = {}
+
+    >>> runintrospecter(s="""
+    ...     from __future__ import division
+    ...     from pickle import dump
+    ...     """,
+    ...     attribs='variables value')
+    ModuleDoc for epydoc_test [0]
+     +- variables
+        +- dump => VariableDoc for epydoc_test.dump [1]
+           +- value
+              +- ValueDoc for pickle.dump [2]
+
+Unicode
+=======
+
+    >>> runintrospecter(s="""
+    ...     def f(x):
+    ...         u"unicode in docstring: \u1000"
+    ...     """, introspect="f", attribs="docstring")
+    RoutineDoc for epydoc_test.f [0]
+     +- docstring = u'unicode in docstring: \u1000'
+
+Instance Variables
+==================
+
+DocIntrospecter is unable to discover instance variables:
+
+    >>> runintrospecter(s="""
+    ...     class A:
+    ...         def __init__(self, x, y):
+    ...             self.x = 10
+    ...             
+    ...             self.y = 20 #: docstring for y
+    ...             
+    ...             self.z = 30
+    ...             '''docstring for z'''
+    ...     
+    ...     """, introspect="A", attribs="variables")
+    ClassDoc for epydoc_test.A [0]
+     +- variables
+        +- __init__ => VariableDoc for epydoc_test.A.__init__ [1]
+
+Assignments Into Namespaces
+===========================
+
+    >>> runintrospecter(s="""
+    ...     class A: pass
+    ...     A.x = 22
+    ...     """, introspect="A", attribs='variables value local_variables')
+    ClassDoc for epydoc_test.A [0]
+     +- variables
+        +- x => VariableDoc for epydoc_test.A.x [1]
+           +- value
+              +- GenericValueDoc [2]
+
+Recursive objects
+=================
+
+    >>> x = runintrospecter(s="""
+    ...     class A:
+    ...         "A base referring to a child"
+    ...         b = None
+    ...
+    ...     class B(A):
+    ...         "Its child."
+    ...         pass
+    ...
+    ...     A.b = B
+    ...     """, introspect="A", exclude='defining_module')
+    ...     # doctest: +ELLIPSIS
+    ClassDoc for epydoc_test.A [0]
+     +- bases = []
+     +- canonical_name = DottedName('epydoc_test', 'A')
+     +- docs_extracted_by = 'introspecter'
+     +- docstring = u'A base referring to a child'
+     +- pyval = <class epydoc_test.A at ...>
+     +- subclasses
+     |  +- ClassDoc for epydoc_test.B [1]
+     |     +- bases
+     |     |  +- ClassDoc for epydoc_test.A [0] (defined above)
+     |     +- canonical_name = DottedName('epydoc_test', 'B')
+     |     +- docs_extracted_by = 'introspecter'
+     |     +- docstring = u'Its child.'
+     |     +- pyval = <class epydoc_test.B at ...>
+     |     +- subclasses = []
+     |     +- variables = {}
+     +- variables
+        +- b => VariableDoc for epydoc_test.A.b [2]
+           +- container
+           |  +- ClassDoc for epydoc_test.A [0] (defined above)
+           +- docs_extracted_by = 'introspecter'
+           +- is_public = True
+           +- name = 'b'
+           +- value
+              +- ClassDoc for epydoc_test.B [1] (defined above)
+
+Closed Bugs
+===========
+
+SF Bug [ 1657050 ] Builtins not resolved in "os"
+------------------------------------------------
+If a variable is listed in ``__all__``, then we need to introspect it,
+even if we know for certain that it's imported.  Before this bug
+was fixed, the following test generated a generic `ValueDoc` value
+instead of a `RoutineDoc` value, because it didn't introspect the
+value of getcwd.
+
+    >>> x = runintrospecter(s="""
+    ...     __all__ = ['getcwd']
+    ...     from os import getcwd
+    ...     """, attribs='variables value')
+    ModuleDoc for epydoc_test [0]
+     +- variables
+        +- getcwd => VariableDoc for epydoc_test.getcwd [1]
+           +- value
+              +- RoutineDoc [2]
