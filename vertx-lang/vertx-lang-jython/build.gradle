@@ -1,0 +1,53 @@
+/*
+ * Copyright 2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+apply from: "$rootDir/gradle/maven.gradle"
+apply plugin: 'vertx-jython'
+
+dependencies {
+	compile project(':vertx-core')
+	compile project(':vertx-platform')
+	vertxJython "org.python:jython-standalone:$jythonVersion"
+}
+artifacts {
+	platform jar
+}
+
+// TODO move this into build-tools
+/*
+task pydoc(type: Exec) {
+	group 'documentation'
+	description 'Generates Python API documentation for the main source code.'
+	
+	def jythonHome = System.getProperty('jython.home')
+	def projectClasspath = files(project.configurations.compile).files.join(':')
+
+	workingDir projectDir
+	inputs.files files("/src/main/python", "/src/main/python_scripts", "/tools/doclib")
+	outputs.dir "/build/pydoc"
+
+	commandLine = [ 
+		"${jythonHome}/bin/jython",
+		'-J-classpath',
+		projectClasspath,
+		"-Dpython.path=$projectDir/src/main/python:$projectDir/src/main/python_scripts:$projectDir/tools/doclib",
+		"-Dproj.base=$projectDir",
+		"-Doutput.base=$projectDir/build/python",
+		"$projectDir/tools/pydocx.py"
+	]
+}
+javadoc.dependsOn pydoc
+*/
