@@ -131,7 +131,7 @@ public class WebSocketFrameEncoder08 extends OneToOneEncoder {
     return (this.random != null);
   }
 
-  private static Logger log = LoggerFactory.getLogger(WebSocketFrameEncoder08.class);
+  private static final Logger log = LoggerFactory.getLogger(WebSocketFrameEncoder08.class);
   private SecureRandom random;
 
 }

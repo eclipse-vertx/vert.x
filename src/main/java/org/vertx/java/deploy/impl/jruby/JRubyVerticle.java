@@ -81,7 +81,7 @@ public class JRubyVerticle extends Verticle {
     }
   }
 
-  private class NullWriter extends Writer {
+  private static class NullWriter extends Writer {
 
     public void write(char[] cbuf, int off, int len) throws IOException {
     }

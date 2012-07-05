@@ -40,7 +40,7 @@ class BooleanMessage extends BaseMessage<Boolean> {
   protected void readBody(int pos, Buffer readBuff) {
     boolean isNull = readBuff.getByte(pos) == (byte)0;
     if (!isNull) {
-      body = new Boolean(readBuff.getByte(pos + 1) == (byte)1);
+      body = Boolean.valueOf(readBuff.getByte(pos + 1) == (byte)1);
     }
   }
 

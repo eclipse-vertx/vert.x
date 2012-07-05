@@ -69,11 +69,7 @@ public class SwitchingHttpResponseDecoder extends HttpResponseDecoder {
 
       if (buf.readable()) {
         // Hand off the remaining data to the second decoder
-        if (firstMessage != null) {
-          return new Object[]{firstMessage, buf.readBytes(super.actualReadableBytes())};
-        } else {
-          return new Object[]{buf.readBytes(super.actualReadableBytes())};
-        }
+        return new Object[]{firstMessage, buf.readBytes(super.actualReadableBytes())};
       } else {
         // Nothing to hand off
         return firstMessage;

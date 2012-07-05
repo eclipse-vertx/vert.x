@@ -58,7 +58,7 @@ public class TestBase extends TestCase {
   private List<AssertHolder> failedAsserts = new ArrayList<>();
   private List<String> startedApps = new CopyOnWriteArrayList<>();
 
-  private class AssertHolder {
+  private static class AssertHolder {
     final String message;
     final String stackTrace;
 
