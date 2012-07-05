@@ -12,11 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-execfile("src/main/python_scripts/core/scriptloading/script2.py")
+import vertx
+from test_utils import TestUtils
 
-class Foo(object):
+tu = TestUtils()
 
-    @staticmethod
-    def func1(tu):
-        tu.azzert(Bar.func2() == 'bar')
-        return "foo"
+execfile("src/test/python_scripts/core/scriptloading/script1.py")
+
+class ScriptingLoadingTest(object):
+    def test_scriptloading(self):
+        tu.azzert(Foo.func1(tu) == "foo")
+        tu.test_complete()
+
+def vertx_stop():
+    tu.unregister_all()
+    tu.app_stopped()
+
+tu.register_all(ScriptingLoadingTest())
+tu.app_ready()
