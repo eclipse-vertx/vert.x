@@ -1,0 +1,352 @@
+Regression Testing for epytext
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+These tests were taken pretty much verbatim out of the old unittests
+from epydoc 2.1.  They could use some serious updating, when I get the
+time, esp. given that it's so much easier to write tests with doctest
+than it was with unittest.
+
+    >>> from epydoc.test.util import print_warnings
+    >>> print_warnings()
+
+    >>> from epydoc.markup import epytext
+    >>> import re
+    >>> def testparse(s):
+    ...     # this strips off the <epytext>...</epytext>
+    ...     out = ''.join([str(n) for n in
+    ...                    epytext.parse(s).children])
+    ...     # This is basically word-wrapping:
+    ...     out = re.sub(r'((</\w+>)+)', r'\1\n', out).rstrip()
+    ...     out = re.sub(r'(?m)^(.{50,70}>)(.)', r'\1\n\2', out).rstrip()
+    ...     return out
+    >>> def checkparse(s, expect):
+    ...     # this strips off the <epytext>...</epytext>
+    ...     got = ''.join([str(n) for n in epytext.parse(s).children])
+    ...     if got != expect:
+    ...         raise ValueError('mismatch: %r %r' % (expect, got))
+
+Paragraphs:
+
+    >>> print testparse("""
+    ...     this is one paragraph.
+    ...
+    ...     This is
+    ...     another.
+    ...
+    ...     This is a third""")
+    <para>this is one paragraph.</para>
+    <para>This is another.</para>
+    <para>This is a third</para>
+
+Make sure that unindented fields are allowed:
+
+    >>> print testparse("""
+    ...     This is a paragraph.
+    ...
+    ...     @foo: This is a field.""")
+    <para>This is a paragraph.</para>
+    <fieldlist><field><tag>foo</tag>
+    <para inline=True>This is a field.</para></field></fieldlist>
+
+    >>> print testparse("""
+    ...     This is a paragraph.
+    ...     @foo: This is a field.""")
+    <para>This is a paragraph.</para>
+    <fieldlist><field><tag>foo</tag>
+    <para inline=True>This is a field.</para></field></fieldlist>
+
+    >>> print testparse("""
+    ...     This is a paragraph.
+    ...       @foo: This is a field.
+    ...         Hello.""")
+    <para>This is a paragraph.</para>
+    <fieldlist><field><tag>foo</tag>
+    <para inline=True>This is a field. Hello.</para></field>
+    </fieldlist>
+
+    >>> print testparse("""Paragraph\n@foo: field""")
+    <para>Paragraph</para>
+    <fieldlist><field><tag>foo</tag>
+    <para inline=True>field</para></field></fieldlist>
+
+    >>> print testparse("""Paragraph\n\n@foo: field""")
+    <para>Paragraph</para>
+    <fieldlist><field><tag>foo</tag>
+    <para inline=True>field</para></field></fieldlist>
+
+    >>> print testparse("""\nParagraph\n@foo: field""")
+    <para>Paragraph</para>
+    <fieldlist><field><tag>foo</tag>
+    <para inline=True>field</para></field></fieldlist>
+
+Make sure thta unindented lists are not allowed:
+
+    >>> print testparse("""
+    ...     This is a paragraph.
+    ...
+    ...     - This is a list item.""")
+    Traceback (most recent call last):
+    StructuringError: Line 4: Lists must be indented.
+
+    >>> print testparse("""
+    ...     This is a paragraph.
+    ...     - This is a list item.""")
+    Traceback (most recent call last):
+    StructuringError: Line 3: Lists must be indented.
+
+    >>> print testparse("""
+    ...     This is a paragraph.
+    ...       - This is a list item.
+    ...         Hello.
+    ...         - Sublist item""")
+    Traceback (most recent call last):
+    StructuringError: Line 5: Lists must be indented.
+
+    >>> print testparse("""
+    ...     This is a paragraph.
+    ...       - This is a list item.
+    ...         Hello.
+    ...
+    ...         - Sublist item""")
+    Traceback (most recent call last):
+    StructuringError: Line 6: Lists must be indented.
+
+    >>> print testparse("""Paragraph\n\n- list item""")
+    Traceback (most recent call last):
+    StructuringError: Line 3: Lists must be indented.
+
+    >>> print testparse("""\nParagraph\n- list item""")
+    Traceback (most recent call last):
+    StructuringError: Line 3: Lists must be indented.
+        
+Special case if there's text on the same line as the opening quote:
+
+    >>> print testparse("""Paragraph\n- list item""")
+    <para>Paragraph</para>
+    <ulist><li><para inline=True>list item</para></li></ulist>
+
+Make sure that indented lists are allowed:
+
+    >>> print testparse('This is a paragraph.\n  - This is a list item.\n'+
+    ...           'This is a paragraph')
+    <para>This is a paragraph.</para>
+    <ulist><li><para inline=True>This is a list item.</para></li>
+    </ulist>
+    <para>This is a paragraph</para>
+    
+    >>> print testparse('This is a paragraph.\n\n  - This is a list item.'+
+    ...           '\n\nThis is a paragraph')
+    <para>This is a paragraph.</para>
+    <ulist><li><para inline=True>This is a list item.</para></li>
+    </ulist>
+    <para>This is a paragraph</para>
+    
+    >>> print testparse("""
+    ...     This is a paragraph.
+    ...
+    ...       - This is a list item.
+    ...
+    ...     This is a paragraph""")
+    <para>This is a paragraph.</para>
+    <ulist><li><para inline=True>This is a list item.</para></li>
+    </ulist>
+    <para>This is a paragraph</para>
+    
+    >>> print testparse("""
+    ...     This is a paragraph.
+    ...
+    ...           - This is a list item.
+    ...     This is a paragraph""")
+    <para>This is a paragraph.</para>
+    <ulist><li><para inline=True>This is a list item.</para></li>
+    </ulist>
+    <para>This is a paragraph</para>
+    
+    >>> print testparse("""
+    ...       - This is a list item.""")
+    <ulist><li><para inline=True>This is a list item.</para></li>
+    </ulist>
+    
+    >>> print testparse("""- This is a list item.""")
+    <ulist><li><para inline=True>This is a list item.</para></li>
+    </ulist>
+    
+    >>> print testparse("""\n- This is a list item.""")
+    <ulist><li><para inline=True>This is a list item.</para></li>
+    </ulist>
+
+Basic list tests:
+
+    >>> P1 = "This is a paragraph."
+    >>> P2 = "This is a \nparagraph."
+    >>> LI1 = "  - This is a list item."
+    >>> LI2 = "\n  - This is a list item."
+    >>> LI3 = "  - This is a list\n  item."
+    >>> LI4 = "\n  - This is a list\n  item."
+    >>> PARA = ('<para>This is a paragraph.</para>')
+    >>> ONELIST = ('<ulist><li><para inline=True>This is a '+
+    ...            'list item.</para></li></ulist>')
+    >>> TWOLIST = ('<ulist><li><para inline=True>This is a '+
+    ...            'list item.</para></li><li><para inline=True>This is a '+
+    ...            'list item.</para></li></ulist>')
+
+    >>> for p in (P1, P2):
+    ...     for li1 in (LI1, LI2, LI3, LI4):
+    ...         checkparse(li1, ONELIST)
+    ...         checkparse('%s\n%s' % (p, li1), PARA+ONELIST)
+    ...         checkparse('%s\n%s' % (li1, p), ONELIST+PARA)
+    ...         checkparse('%s\n%s\n%s' % (p, li1, p),
+    ...                         PARA+ONELIST+PARA)
+    ...
+    ...         for li2 in (LI1, LI2, LI3, LI4):
+    ...             checkparse('%s\n%s' % (li1, li2), TWOLIST)
+    ...             checkparse('%s\n%s\n%s' % (p, li1, li2), PARA+TWOLIST)
+    ...             checkparse('%s\n%s\n%s' % (li1, li2, p), TWOLIST+PARA)
+    ...             checkparse('%s\n%s\n%s\n%s' % (p, li1, li2, p),
+    ...                             PARA+TWOLIST+PARA)
+
+    >>> LI5 = "  - This is a list item.\n\n    It contains two paragraphs."
+    >>> LI5LIST = ('<ulist><li><para inline=True>This is a list item.</para>'+
+    ...            '<para>It contains two paragraphs.</para></li></ulist>')
+    >>> checkparse(LI5, LI5LIST)
+    >>> checkparse('%s\n%s' % (P1, LI5), PARA+LI5LIST)
+    >>> checkparse('%s\n%s\n%s' % (P2, LI5, P1), PARA+LI5LIST+PARA)
+
+    >>> LI6 = ("  - This is a list item with a literal block::\n" +
+    ...        "    hello\n      there")
+    >>> LI6LIST = ('<ulist><li><para inline=True>This is a list item with a literal '+
+    ...            'block:</para><literalblock> hello\n   there'+
+    ...            '</literalblock></li></ulist>')
+    >>> checkparse(LI6, LI6LIST)
+    >>> checkparse('%s\n%s' % (P1, LI6), PARA+LI6LIST)
+    >>> checkparse('%s\n%s\n%s' % (P2, LI6, P1), PARA+LI6LIST+PARA)
+
+Item wrap tests:
+
+    >>> LI = "- This is a list\n  item."
+    >>> ONELIST = ('<ulist><li><para inline=True>This is a '+
+    ...            'list item.</para></li></ulist>')
+    >>> TWOLIST = ('<ulist><li><para inline=True>This is a '+
+    ...            'list item.</para></li><li><para inline=True>This is a '+
+    ...            'list item.</para></li></ulist>')
+    >>> for indent in ('', '  '):
+    ...     for nl1 in ('', '\n'):
+    ...         checkparse(nl1+indent+LI, ONELIST)
+    ...         for nl2 in ('\n', '\n\n'):
+    ...             checkparse(nl1+indent+LI+nl2+indent+LI, TWOLIST)
+
+Summary
+=======
+The implementation of the summarization function works as expected.
+
+>>> from epydoc.markup import epytext
+>>> def getsummary(s):
+...     p = epytext.parse_docstring(s, [])
+...     s, o = p.summary()
+...     s = s.to_plaintext(None).strip()
+...     return s, o
+
+Let's not lose anything!
+
+>>> getsummary("Single line")
+('Single line', False)
+
+>>> getsummary("Single line.")
+('Single line.', False)
+
+>>> getsummary("""
+... Single line C{with} period.
+... """)
+('Single line with period.', False)
+
+>>> getsummary("""
+... Single line C{with }period.
+...
+... @type: Also with a tag.
+... """)
+('Single line with period.', False)
+
+>>> getsummary("""
+... Other lines C{with} period.
+... This is attached
+... """)
+('Other lines with period.', True)
+
+>>> getsummary("""
+... Other lines C{with} period.
+...
+... This is detached
+...
+... @type: Also with a tag.
+... """)
+('Other lines with period.', True)
+
+>>> getsummary("""
+... Other lines without period
+... This is attached
+... """)
+('Other lines without period This is attached', False)
+
+>>> getsummary("""
+... Other lines without period
+...
+... This is detached
+... """)
+('Other lines without period...', True)
+
+Literal Braces
+==============
+SF bug #1562530 reported some trouble with literal braces.  These
+tests make sure that braces are getting rendered as desired.
+
+>>> def epytext2html(s):
+...     errs = []
+...     v = epytext.parse_docstring(s, errs).to_html(None)
+...     for err in errs: print err
+...     return (v or '').rstrip()
+
+>>> print epytext2html("{1:{2:3}}")
+<p>{1:{2:3}}</p>
+>>> print epytext2html("C{{1:{2:3}}}")
+<p><code>{1:{2:3}}</code></p>
+>>> print epytext2html("{1:C{{2:3}}}")
+<p>{1:<code>{2:3}</code>}</p>
+>>> print epytext2html("{{{}{}}{}}")
+<p>{{{}{}}{}}</p>
+>>> print epytext2html("{{E{lb}E{lb}E{lb}}}")
+<p>{{{{{}}</p>
+
+Graph Raising
+=============
+
+>>> epytext._x = True
+>>> print testparse("""
+... Para containing G{classtree} graph.
+... """)
+<para>Para containing </para>
+<graph>classtree</graph>
+<para> graph.</para>
+
+>>> print testparse("""
+... Para B{I{containing C{G{classtree} graph}} inside nested markup}.
+... """)
+<para>Para <bold><italic>containing <code></code></italic></bold>
+</para>
+<graph>classtree</graph>
+<para><bold><italic><code> graph</code></italic>
+ inside nested markup</bold>
+.</para>
+
+Should we strip the 'inline' from the paras in cases like this:?
+
+>>> print testparse("""
+... - List item with G{classtree foo} graph.
+... - And with I{nested G{callgraph: zippy} markup} too.
+... """)
+<ulist><li><para inline=True>List item with </para>
+<graph>classtreefoo</graph>
+<para inline=True> graph.</para></li>
+<li><para inline=True>And with <italic>nested </italic>
+</para>
+<graph>callgraphzippy</graph>
+<para inline=True><italic> markup</italic>
+ too.</para></li></ulist>

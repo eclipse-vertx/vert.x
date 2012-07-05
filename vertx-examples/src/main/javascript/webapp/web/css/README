@@ -1,3 +1,0 @@
-css (less) stuff used by Twitter bootstrap
-
-Vert.x doesn't require anything here, it's just because we have chosen to build the front end app using Bootstrap but you could use whatever toolset you are more comfortable with.
