@@ -210,6 +210,7 @@ abstract class HttpServer {
    */
   HttpServer setTCPKeepAlive(boolean keepAlive) {
     jServer.setTCPKeepAlive(keepAlive)
+    this
   }
 
   /**
