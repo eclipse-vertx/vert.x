@@ -16,7 +16,6 @@
 
 // apply plugin: 'application'
 apply from: 'gradle/extra-tasks.gradle'
-apply from: "gradle/ide-setup.gradle"
 
 buildscript {
 	repositories {
