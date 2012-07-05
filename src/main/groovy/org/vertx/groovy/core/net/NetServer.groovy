@@ -178,6 +178,7 @@ abstract class NetServer {
    */
   NetServer setTCPKeepAlive(boolean keepAlive) {
     jServer.setTCPKeepAlive(keepAlive)
+    this
   }
 
   /**
@@ -242,7 +243,7 @@ abstract class NetServer {
    * @return true if TCP keep alive is enabled
    */
   Boolean isTCPKeepAlive() {
-    return jServer.isTCPKeepAlive()
+    jServer.isTCPKeepAlive()
   }
 
   /**
@@ -320,9 +321,4 @@ abstract class NetServer {
   private Handler wrapHandler(Closure hndlr) {
     return {hndlr(new NetSocket(it))} as Handler
   }
-
-
-
-  
-
 }
