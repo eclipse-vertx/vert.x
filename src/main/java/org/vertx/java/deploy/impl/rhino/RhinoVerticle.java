@@ -70,16 +70,13 @@ public class RhinoVerticle extends Verticle {
     loadScript(cl, cx, scope, moduleName);
   }
 
-  public static void load(String moduleName, int optmizationLevel) throws Exception {
-    ScriptableObject scope = scopeThreadLocal.get();
-    ClassLoader cl = clThreadLocal.get();
-    Context cx = Context.getCurrentContext();
-    int originalOptimizationLevel = cx.getOptimizationLevel();
-    cx.setOptimizationLevel(optmizationLevel);
-    loadScript(cl, cx, scope, moduleName);
-    cx.setOptimizationLevel(originalOptimizationLevel);
+  private static void addStandardObjectsToScope(ScriptableObject scope) {
+    Object jsStdout = Context.javaToJS(System.out, scope);
+    ScriptableObject.putProperty(scope, "stdout", jsStdout);
+    Object jsStderr = Context.javaToJS(System.err, scope);
+    ScriptableObject.putProperty(scope, "stderr", jsStderr);
   }
-
+  
   private static synchronized CoffeeScriptCompiler getCoffeeScriptCompiler(ClassLoader cl) {
     // Lazy load coffee script compiler
     if (RhinoVerticle.coffeeScriptCompiler == null) {
@@ -224,9 +221,12 @@ public class RhinoVerticle extends Verticle {
 
   public void start() throws Exception {
     Context cx = Context.enter();
-    cx.setOptimizationLevel(9);
+    cx.setOptimizationLevel(2);
     try {
       scope = cx.initStandardObjects();
+
+      addStandardObjectsToScope(scope);
+      scope.defineFunctionProperties(new String[]{"load"}, RhinoVerticle.class, ScriptableObject.DONTENUM);
 
       // This is pretty ugly - we have to set some thread locals so we can get a reference to the scope and
       // classloader in the load() method - this is because Rhino insists load() must be static
@@ -235,8 +235,6 @@ public class RhinoVerticle extends Verticle {
 
       Thread.currentThread().setContextClassLoader(cl);
       Require require = installRequire(cl, cx, scope);
-
-      load("global.js", 9);
 
       Scriptable script = require.requireMain(cx, scriptName);
       try {
