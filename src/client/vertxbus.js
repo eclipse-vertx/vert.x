@@ -28,20 +28,11 @@ vertx.EventBus = function(url, options) {
   that.onclose = null;
 
   that.send = function(address, message, replyHandler) {
-    checkSpecified("address", 'string', address);
-    checkSpecified("message", 'object', message);
-    checkSpecified("replyHandler", 'function', replyHandler, true);
-    checkOpen();
-    var envelope = { type : "send",
-                     address: address,
-                     body: message };
-    if (replyHandler) {
-      var replyAddress = makeUUID();
-      envelope.replyAddress = replyAddress;
-      replyHandlers[replyAddress] = replyHandler;
-    }
-    var str = JSON.stringify(envelope);
-    sockJSConn.send(str);
+    sendOrPub("send", address, message, replyHandler)
+  }
+
+  that.publish = function(address, message, replyHandler) {
+    sendOrPub("publish", address, message, replyHandler)
   }
 
   that.registerHandler = function(address, handler) {
@@ -135,6 +126,23 @@ vertx.EventBus = function(url, options) {
     }
   }
 
+  function sendOrPub(sendOrPub, address, message, replyHandler) {
+    checkSpecified("address", 'string', address);
+    checkSpecified("message", 'object', message);
+    checkSpecified("replyHandler", 'function', replyHandler, true);
+    checkOpen();
+    var envelope = { type : sendOrPub,
+                     address: address,
+                     body: message };
+    if (replyHandler) {
+      var replyAddress = makeUUID();
+      envelope.replyAddress = replyAddress;
+      replyHandlers[replyAddress] = replyHandler;
+    }
+    var str = JSON.stringify(envelope);
+    sockJSConn.send(str);
+  }
+
   function checkOpen() {
     if (state != vertx.EventBus.OPEN) {
       throw new Error('INVALID_STATE_ERR');
@@ -163,7 +171,3 @@ vertx.EventBus.CONNECTING = 0;
 vertx.EventBus.OPEN = 1;
 vertx.EventBus.CLOSING = 2;
 vertx.EventBus.CLOSED = 3;
-
-
-
-
