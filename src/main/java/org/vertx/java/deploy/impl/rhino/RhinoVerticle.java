@@ -70,12 +70,12 @@ public class RhinoVerticle extends Verticle {
     loadScript(cl, cx, scope, moduleName);
   }
 
-  public static void load(String moduleName, int optmizationLevel) throws Exception {
+  public static void load(String moduleName, int optimizationLevel) throws Exception {
     ScriptableObject scope = scopeThreadLocal.get();
     ClassLoader cl = clThreadLocal.get();
     Context cx = Context.getCurrentContext();
     int originalOptimizationLevel = cx.getOptimizationLevel();
-    cx.setOptimizationLevel(optmizationLevel);
+    cx.setOptimizationLevel(optimizationLevel);
     loadScript(cl, cx, scope, moduleName);
     cx.setOptimizationLevel(originalOptimizationLevel);
   }
