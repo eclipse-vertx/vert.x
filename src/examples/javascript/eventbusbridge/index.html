@@ -78,10 +78,10 @@
 
   var eb = null;
 
-  function send(address,  message) {
+  function publish(address,  message) {
     if (eb) {
       var json = {text: message};
-      eb.send(address, json);
+      eb.publish(address, json);
       $('#sent').append($("<code>").text("Address:" + address + " Message:" + message));
       $('#sent').append($("</code><br>"));
     }
@@ -120,7 +120,7 @@
 
   $(document).ready(function() {
     $("#sendButton").click(function() {
-      send($("#sendAddress").val(), $("#sendMessage").val());
+      publish($("#sendAddress").val(), $("#sendMessage").val());
     });
 
     $("#subscribeButton").click(function() {
