@@ -62,9 +62,11 @@ subprojects {
         destinationDir = file("build/deps")
         into("compile") {
             from configurations.compile
+            exclude "vertx-*.jar"
         }
         into("test") {
             from configurations.testCompile
+            exclude "vertx-*.jar"
         }
     }
 }
