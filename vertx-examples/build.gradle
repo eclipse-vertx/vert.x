@@ -25,7 +25,8 @@ dependencies {
 	compile project(':vertx-platform')
 	
 	compile project(':vertx-lang-groovy')
-	compile project(':vertx-lang-jruby')
+    compile project(':vertx-lang-java')
+    compile project(':vertx-lang-jruby')
 	compile project(':vertx-lang-jython')
 	compile project(':vertx-lang-rhino')
 	
