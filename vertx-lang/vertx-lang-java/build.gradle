@@ -14,27 +14,12 @@
  * limitations under the License.
  */
 
-include 'vertx-boot'
-include 'vertx-core'
-include 'vertx-platform'
+apply from: "$rootDir/gradle/maven.gradle"
 
-include 'vertx-lang-groovy'
-include 'vertx-lang-java'
-include 'vertx-lang-jruby'
-include 'vertx-lang-jython'
-include 'vertx-lang-rhino'
-
-include 'vertx-examples'
-include 'vertx-testframework'
-
-rootProject.name='vert.x'
-
-rootProject.children.each { project->
-	if (project.name.startsWith('vertx-lang-')) {
-		String projectDirName = "vertx-lang/${project.name}"
-		project.projectDir = new File(settingsDir, projectDirName)
-		project.buildFileName = "build.gradle"
-		assert project.projectDir.isDirectory()
-		assert project.buildFile.isFile()
-	}
+dependencies {
+    compile project(':vertx-core')
+    compile project(':vertx-platform')
+}
+artifacts {
+    platform jar
 }
