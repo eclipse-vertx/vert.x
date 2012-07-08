@@ -4,9 +4,9 @@ The build uses Gradle. The build script will automatically install the bits it n
 
 ## On *nix
 
-Use `./mk.sh`
+Use `./mk`
 
-`.mk.sh tasks` to show the list of tasks
+`.mk tasks` to show the list of tasks
 
 ## On Windows
 
