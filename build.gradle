@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-// apply plugin: 'application'
 apply from: 'gradle/extra-tasks.gradle'
 
 buildscript {
@@ -29,8 +28,8 @@ buildscript {
 } 
 
 allprojects {
-    apply plugin: 'eclipse'
-    apply plugin: 'idea'
+  apply plugin: 'eclipse'
+  apply plugin: 'idea'
 
 	configurations {
 		platform
@@ -58,17 +57,17 @@ subprojects {
 		destinationDir = file("build/docs/java/api")
 	}
 
-    task collectDeps(type: Copy) {
-        destinationDir = file("build/deps")
-        into("compile") {
-            from configurations.compile
-            exclude "vertx-*.jar"
-        }
-        into("test") {
-            from configurations.testCompile
-            exclude "vertx-*.jar"
-        }
+  task collectDeps(type: Copy) {
+    destinationDir = file("build/deps")
+    into("compile") {
+      from configurations.compile
+      exclude "vertx-*.jar"
     }
+    into("test") {
+      from configurations.testCompile
+      exclude "vertx-*.jar"
+    }
+  }
 }
 
 defaultTasks = ['preflight']
@@ -95,9 +94,9 @@ task clean(type: Delete, dependsOn: [subprojects.clean]) {
 	description 'Clean the parent and all of the vert.x subprojects'
 
 	delete 'build/release', 'build/distributions'
-    subprojects.each {
-        delete 'build/deps'
-    } 
+  subprojects.each {
+    delete 'build/deps'
+  }
 }
 
 task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
@@ -126,7 +125,6 @@ task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
 	}
 	into('examples') {
 		from file("vertx-examples/src/main")
-		// from project(":vertx-examples").sourceSets.main
 	}
 	into('lib') {
 		from subprojects.configurations.platform

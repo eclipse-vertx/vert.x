@@ -17,9 +17,9 @@
 apply from: "$rootDir/gradle/maven.gradle"
 
 dependencies {
-    compile project(':vertx-core')
-    compile project(':vertx-platform')
+  compile project(':vertx-core')
+  compile project(':vertx-platform')
 }
 artifacts {
-    platform jar
+  platform jar
 }

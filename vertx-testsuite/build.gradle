@@ -26,12 +26,14 @@ dependencies {
 	compile "junit:junit:$junitVersion" // provide exportable components
 	
 	compile project(':vertx-platform')
-
-  compile project(':vertx-lang-groovy')
+	
+	compile project(':vertx-lang-groovy')
   compile project(':vertx-lang-java')
 	compile project(':vertx-lang-jruby')
 	compile project(':vertx-lang-jython')
 	compile project(':vertx-lang-rhino')
+
+  compile project(':vertx-testframework')
 
 	groovy "org.codehaus.groovy:groovy-all:$groovyVersion"
 	testCompile "org.jruby:jruby:$jrubyVersion"
@@ -42,3 +44,16 @@ dependencies {
 }
 
 javadoc.dependsOn groovydoc
+
+test {
+  testLogging.showStandardStreams = true
+
+	systemProperty 'vertx.test.timeout', 15
+  systemProperty 'vertx.mods', "$projectDir/src/test/mod-test"
+	systemProperty 'jruby.home', System.getenv('JRUBY_HOME')
+	systemProperty 'jython.home', System.getenv('JYTHON_HOME')
+
+	jvmArgs '-server', '-Xms128m', '-Xmx1024m', '-XX:MaxPermSize=128m', '-XX:NewRatio=2'
+
+	forkEvery 50 // FIXME This may not be necessary
+}

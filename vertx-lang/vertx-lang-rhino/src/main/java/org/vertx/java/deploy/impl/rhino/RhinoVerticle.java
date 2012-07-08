@@ -131,7 +131,7 @@ public class RhinoVerticle extends Verticle {
               }
             }
 
-            if (uri != null && new File(uri).isDirectory()) {
+            if (uri != null && uri.toString().startsWith("file:") && new File(uri).isDirectory()) {
 
               String main = "index";
 
@@ -169,7 +169,7 @@ public class RhinoVerticle extends Verticle {
 
             }
 
-            if(uri != null && uri.toString().endsWith(".coffee")) {
+            if (uri != null && uri.toString().endsWith(".coffee")) {
                 uri = getCoffeeScriptCompiler(cl).coffeeScriptToJavaScript(uri);                
             }
             return super.getModuleScript(cx, moduleId, uri, uri, paths);

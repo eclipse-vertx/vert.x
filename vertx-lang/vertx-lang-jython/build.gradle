@@ -25,29 +25,3 @@ dependencies {
 artifacts {
 	platform jar
 }
-
-// TODO move this into build-tools
-/*
-task pydoc(type: Exec) {
-	group 'documentation'
-	description 'Generates Python API documentation for the main source code.'
-	
-	def jythonHome = System.getProperty('jython.home')
-	def projectClasspath = files(project.configurations.compile).files.join(':')
-
-	workingDir projectDir
-	inputs.files files("/src/main/python", "/src/main/python_scripts", "/tools/doclib")
-	outputs.dir "/build/pydoc"
-
-	commandLine = [ 
-		"${jythonHome}/bin/jython",
-		'-J-classpath',
-		projectClasspath,
-		"-Dpython.path=$projectDir/src/main/python:$projectDir/src/main/python_scripts:$projectDir/tools/doclib",
-		"-Dproj.base=$projectDir",
-		"-Doutput.base=$projectDir/build/python",
-		"$projectDir/tools/pydocx.py"
-	]
-}
-javadoc.dependsOn pydoc
-*/
