@@ -4,12 +4,12 @@ The build uses Gradle. The build script will automatically install the bits it n
 
 ## On *nix
 
-Use `./grb.sh`
+Use `./mk.sh`
 
-`.grb.sh tasks` to show the list of tasks
+`.mk.sh tasks` to show the list of tasks
 
 ## On Windows
 
-Use `wgrb.bat`
+Use `wmk.bat`
 
-`wgrb.bat tasks` to show list of tasks
+`wmk.bat tasks` to show list of tasks
