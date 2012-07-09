@@ -245,35 +245,35 @@ public class DefaultFileSystem implements FileSystem {
   }
 
   public void open(String path, AsyncResultHandler<AsyncFile> handler) {
-    openInternal(path, handler).run();
+    openInternal(path, null, true, true, true, false, handler).run();
   }
 
   public AsyncFile openSync(String path) throws Exception {
-    return openInternal(path, null).action();
+    return doOpen(path, null, true, true, true, false, vertx.getOrAssignContext());
   }
 
   public void open(String path, String perms, AsyncResultHandler<AsyncFile> handler) {
-    openInternal(path, perms, handler).run();
+    openInternal(path, perms, true, true, true, false, handler).run();
   }
 
   public AsyncFile openSync(String path, String perms) throws Exception {
-    return openInternal(path, perms, null).action();
+    return doOpen(path, perms, true, true, true, false, vertx.getOrAssignContext());
   }
 
   public void open(String path, String perms, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
-    openInternal(path, perms, createNew, handler).run();
+    openInternal(path, perms, true, true, createNew, false, handler).run();
   }
 
   public AsyncFile openSync(String path, String perms, boolean createNew) throws Exception {
-    return openInternal(path, perms, createNew, null).action();
+    return doOpen(path, perms, true, true, createNew, false, vertx.getOrAssignContext());
   }
 
   public void open(String path, String perms, boolean read, boolean write, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
-    openInternal(path, perms, read, write, createNew, handler).run();
+    openInternal(path, perms, read, write, createNew, false, handler).run();
   }
 
   public AsyncFile openSync(String path, String perms, boolean read, boolean write, boolean createNew) throws Exception {
-    return openInternal(path, perms, read, write, createNew, null).action();
+    return doOpen(path, perms, read, write, createNew, false, vertx.getOrAssignContext());
   }
 
   public void open(String path, String perms, boolean read, boolean write, boolean createNew,
@@ -282,7 +282,7 @@ public class DefaultFileSystem implements FileSystem {
   }
 
   public AsyncFile openSync(String path, String perms, boolean read, boolean write, boolean createNew, boolean flush) throws Exception {
-    return openInternal(path, perms, read, write, createNew, flush, null).action();
+    return doOpen(path, perms, read, write, createNew, flush, vertx.getOrAssignContext());
   }
 
   public void createFile(String path, AsyncResultHandler<Void> handler) {
@@ -649,22 +649,6 @@ public class DefaultFileSystem implements FileSystem {
         return null;
       }
     };
-  }
-
-  private BlockingAction<AsyncFile> openInternal(String path, AsyncResultHandler<AsyncFile> handler) {
-    return openInternal(path, null, true, true, true, false, handler);
-  }
-
-  private BlockingAction<AsyncFile> openInternal(String path, String perms, AsyncResultHandler<AsyncFile> handler) {
-    return openInternal(path, perms, true, true, true, false, handler);
-  }
-
-  private BlockingAction<AsyncFile> openInternal(String path, String perms, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
-    return openInternal(path, perms, true, true, createNew, false, handler);
-  }
-
-  private BlockingAction<AsyncFile> openInternal(String path, String perms, boolean read, boolean write, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
-    return openInternal(path, perms, read, write, createNew, false, handler);
   }
 
   private BlockingAction<AsyncFile> openInternal(String p, final String perms, final boolean read, final boolean write, final boolean createNew,
