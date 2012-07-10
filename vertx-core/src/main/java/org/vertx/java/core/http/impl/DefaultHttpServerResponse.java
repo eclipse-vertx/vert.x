@@ -271,7 +271,6 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
       }
       
       conn.responseComplete();
-
     }
 
     return this;
