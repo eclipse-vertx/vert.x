@@ -155,7 +155,7 @@ Edit the web server configuration so it looks like:
 
 Setting the `bridge` field to `true` tells the web server to also act like an event bus bridge as well as serving static files.
 
-he other new things here are the `inbound_permitted` and `outbound_permitted` fields. These are arrays of JSON objects which determine which event bus messages we're going to allow through the client side. The bridge basically acts like a firewall and only allows through those messages that we want to come through. `inbound_permitted` determines which messages we are going to allow from the client --> server, and `outbound_permitted` determines which messages we are going to allow from server --> client.
+The other new things here are the `inbound_permitted` and `outbound_permitted` fields. These are arrays of JSON objects which determine which event bus messages we're going to allow through the client side. The bridge basically acts like a firewall and only allows through those messages that we want to come through. `inbound_permitted` determines which messages we are going to allow from the client --> server, and `outbound_permitted` determines which messages we are going to allow from server --> client.
 
 If we allowed the client to send any messages to the persistor, it would be able to do things like delete all data in the database, or perhaps view data it is not entitled to see.
 
@@ -227,7 +227,6 @@ If you look a little further down the script, you will find the part which loads
             }
           });
       };  
-  }; 
   
 The `onopen` is called when, unsurprisingly, the event bus connection is fully setup and open.  
 
@@ -272,7 +271,7 @@ We'll also need to tell the bridge to let through any login messages:
        
 Save, and restart the app.
 
-You can test login by attempting to log-in with username `tim` and password `password`. A message should appear on the left telling you you are logged in!.
+You can test login by attempting to log-in with username `tim` and password `password`. A message should appear on the left telling you you are logged in!
 
 ![Client Application](tutorial_3.png)
 
