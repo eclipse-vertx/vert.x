@@ -14,7 +14,7 @@ In this version of this tutorial we've written the script in Groovy. If you'd pr
 
 If you'd rather just run the complete code, the working example is present in the `webapp` directory of the examples in the distribution. Read the README there for instructions on how to run it.
 
-You can also see the code in [github](https://github.com/purplefox/vert.x/tree/master/src/examples/groovy/webapp).
+You can also see the code in [github](https://github.com/purplefox/vert.x/tree/master/vertx-examples/src/main/groovy/webapp).
 
 ## Step 1. Install vert.x
 
