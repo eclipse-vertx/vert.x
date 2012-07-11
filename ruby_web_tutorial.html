@@ -227,7 +227,6 @@ end
       });
   };
 </pre>
-<p>}; </p>
 <p>The <code>onopen</code> is called when, unsurprisingly, the event bus connection is fully setup and open.<br/>
 </p>
 <p>At that point we are calling the <code>send</code> function on the event bus to a send a JSON message to the address <code>vertx.mongopersistor</code>. This is the address of the MongoDB persistor busmod that we configured earlier.</p>
@@ -256,7 +255,7 @@ Vertx.deploy_verticle('auth-mgr')
   ...
 </pre>
 <p>Save, and restart the app.</p>
-<p>You can test login by attempting to log-in with username <code>tim</code> and password <code>password</code>. A message should appear on the left telling you you are logged in!.</p>
+<p>You can test login by attempting to log-in with username <code>tim</code> and password <code>password</code>. A message should appear on the left telling you you are logged in!</p>
 <p><img alt="Client Application" src="tutorial_3.png"/></p>
 <p>Let's take a look at the client side code which does the login.</p>
 <p>Open <code>web/js/client_app.js</code> and scroll down to the <code>login</code> function. This gets trigged by knockout when the login button is pressed on the page.</p>
