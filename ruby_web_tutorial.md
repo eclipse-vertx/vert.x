@@ -225,7 +225,6 @@ If you look a little further down the script, you will find the part which loads
             }
           });
       };  
-  }; 
   
 The `onopen` is called when, unsurprisingly, the event bus connection is fully setup and open.  
 
@@ -270,7 +269,7 @@ We'll also need to tell the bridge to let through any login messages:
        
 Save, and restart the app.
 
-You can test login by attempting to log-in with username `tim` and password `password`. A message should appear on the left telling you you are logged in!.
+You can test login by attempting to log-in with username `tim` and password `password`. A message should appear on the left telling you you are logged in!
 
 ![Client Application](tutorial_3.png)
 
