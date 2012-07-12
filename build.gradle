@@ -1,124 +1,226 @@
-apply plugin: 'java'
-apply plugin: 'groovy'
+/*
+ * Copyright 2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-version = '1.0.beta1'
+apply from: 'gradle/extra-tasks.gradle'
 
-repositories {
-    flatDir(dirs: file('lib/main'))
+buildscript {
+	repositories {
+		// mavenLocal()
+		maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+		mavenCentral()
+	}
+	dependencies {
+		classpath "org.vert-x:build-tools:$vertxBuildToolsVersion"
+	}
+} 
+
+allprojects {
+  apply plugin: 'eclipse'
+  apply plugin: 'idea'
+
+	configurations {
+		platform
+	}
 }
 
-dependencies {
-  compile fileTree('lib/main').matching {
-    include '*.jar'
-    exclude 'groovy-all-*.jar'
-  }
-  testCompile fileTree('lib/tests').matching { include '*.jar' }
+subprojects {
+	apply plugin: 'java'
+	
+	sourceCompatibility = '1.7'
+	targetCompatibility = '1.7'
 
-  groovy module(':groovy-all:1.8.6')
-}
+	defaultTasks = ['classes']
+	group = rootProject.group
+	
+	repositories {
+		mavenCentral()
+	}
+	
+	dependencies {
+		testCompile "junit:junit:$junitVersion"
+	}
+	
+	javadoc {
+		destinationDir = file("build/docs/java/api")
+	}
 
-sourceSets {
-  test {
-    java.srcDirs = [file('src/tests/java'), file('src/tests/controllers'), file('src/tests/framework/java'), file('src/tests/testapps/java')]
-    resources.srcDirs = [file('src/tests/java')]
-  }
-}
-
-sourceCompatibility = "1.7"
-targetCompatibility = "1.7"
-
-jar {
-  version = ''
-}
-
-test {
-  useTestNG()
-  include "**/*Test.class"
-  systemProperty "java.util.logging.config.file", "conf/logging.properties"
-}
-
-task rubyTests(type: Exec, dependsOn: testClasses) {
-  group = 'verification'
-  workingDir = file('src/tests/ruby')
-  executable = file('src/tests/ruby/run_tests.sh')
-}
-
-task yardoc(type: Exec) {
-    rubySrc = "src/main/ruby/core/**"
-    vertxRbSrc = "src/main/ruby/vertx.rb"
-    licenseSrc = "LICENSE.txt"
-    readmeSrc = "README.md"
-    destDir = "target/docs/ruby/api/"
-
-    inputs.files licenseSrc, vertxRbSrc, readmeSrc
-    inputs.dir rubySrc
-    outputs.dir destDir
-
-    commandLine = ["yardoc", "--title", "'vert.x Ruby API'", "--readme",
-                   readmeSrc, "--no-private", "--output-dir", destDir,
-                   vertxRbSrc, rubySrc, "-", licenseSrc]
-}
-
-distSpec = copySpec {
-  into('lib/java') {
-    from jar, configurations.compile
-  }
-  into('lib/ruby') {
-    from 'src/main/ruby'
-    include '**/*.rb'
-  }
-  into('lib/groovy') {
-    from 'src/main/groovy'
-    include '**/*.groovy'
-  }
-  into('conf') {
-    from "conf/logging.properties", "conf/cluster.xml"
-  }
-  into('docs/java/api') {
-    from javadoc
-  }
-  into('docs/groovy/api') {
-    from groovydoc
-  }
-  into('docs/ruby/api') {
-    from yardoc
-  }
-  into('bin') {
-    from 'src/scripts/vertx'
-    fileMode = 0755
-  }
-  into('examples') {
-    from 'src/examples'
-  }
-
-  from 'LICENSE.txt', "README.md", "rel-notes/release-notes-${version}.txt"
-}
-
-
-task dist(type: Zip) {
-  description = 'Builds the distribution.'
-  group = 'build'
-  into("$project.name-$version") {
-    with distSpec
+  task collectDeps(type: Copy) {
+    destinationDir = file("build/deps")
+    into("compile") {
+      from configurations.compile
+      exclude "vertx-*.jar"
+    }
+    into("test") {
+      from configurations.testCompile
+      exclude "vertx-*.jar"
+    }
   }
 }
 
-task install(type: Sync) {
-  with distSpec
-  if (System.getenv()['VERTX_HOME']) {
-    into System.getenv()['VERTX_HOME']
-  }
-  else {
-    into System.getProperty('java.io.tmpdir') + '/vertx'
+defaultTasks = ['preflight']
+
+task preflight(dependsOn: subprojects.collectDeps) {
+	group = null
+	description = null
+	/* this is an issue for IDEs
+	assert System.getenv("JRUBY_HOME") != null
+	assert System.getenv("JYTHON_HOME") != null
+
+	System.setProperty 'jruby.home', System.getenv("JRUBY_HOME")
+	System.setProperty 'jython.home', System.getenv("JYTHON_HOME")
+	*/
+}
+
+task test(dependsOn: [subprojects.test]) {
+	group = null
+	description = null
+}
+
+task clean(type: Delete, dependsOn: [subprojects.clean]) {
+	group = 'build'
+	description 'Clean the parent and all of the vert.x subprojects'
+
+	delete 'build/release', 'build/distributions'
+  subprojects.each {
+    delete 'build/deps'
   }
 }
 
-task tarDist(type: Tar) {
-  into("$project.name-$version") {
-    with distSpec
-  }
-  compression = org.gradle.api.tasks.bundling.Compression.GZIP
+task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
+	group = 'vert.x'
+	description 'Build the parent and all of the vert.x subprojects'
+
+	['temp', 'logs'].each { dir->
+		mkdir("$rootDir/build/$rootProject.name-$version/$dir")
+	}
+
+	destinationDir file("build/$rootProject.name-$version")
+	outputs.dir destinationDir
+	into('bin') {
+		from project(':vertx-boot').jar
+	}
+	into('bin') {
+		from file('src/dist/scripts')
+		// fileMode 755
+	}
+	into('client') {
+		from file('src/dist/client')
+	}
+	into('conf') {
+		from file('src/dist/conf')
+		filter(org.apache.tools.ant.filters.ReplaceTokens, tokens:[version: rootProject.version])
+	}
+	into('examples') {
+		from file("vertx-examples/src/main")
+	}
+	into('lib') {
+		from subprojects.configurations.platform
+		from subprojects.configurations.compile
+	}
+	doLast {
+		project.ant.chmod(file: "build/$rootProject.name-$version/bin", perm: 'ugo+x')
+	}
 }
 
-task wrapper(type: Wrapper)
+task javadocs(type: Javadoc, dependsOn: subprojects.javadoc) {
+	group = null       // hide the task
+	description = null // hide the task
+
+	source = subprojects.sourceSets.main.java
+	classpath = files(subprojects.configurations.compile)
+
+	destinationDir file("build/$rootProject.name-$version/docs/java/api")
+	inputs.files classpath
+	outputs.dir destinationDir
+}
+
+task nonJavadocs(type: Copy) {
+	group = null       // hide the task
+	description = null // hide the task
+
+	destinationDir file("build/$rootProject.name-$version/docs")
+	
+	inputs.files subprojects.docsDir
+	outputs.dir destinationDir
+	
+	doFirst {
+		['groovy/api', 'javascript/api', 'python/api', 'ruby/api'].each { dir->
+			mkdir("$rootDir/build/$rootProject.name-$version/docs/$dir")
+		}
+	}
+	
+	// TODO make this less ugly
+	into('groovy') {
+		from file('vertx-lang/vertx-lang-groovy/build/docs/groovy')
+	}
+	into('python') {
+		from file('vertx-lang/vertx-lang-jython/build/docs/python')
+	}
+	into('ruby') {
+		from file('vertx-lang/vertx-lang-jruby/build/docs/ruby')
+	}
+	into('javascript') {
+		from file('vertx-lang/vertx-lang-rhino/build/docs/javascript')
+	}
+}
+
+task createDocs(dependsOn: [subprojects.classes, 'javadocs', 'nonJavadocs']) {
+	group = 'vert.x'
+	description = 'Build all of the various docs for the project'
+}
+
+task installApp(type: Sync, dependsOn: ['assemble']) {
+	group = 'vert.x'
+	description 'Install a local copy of this build'
+
+	def vertxTemp = file(System.getProperty('java.io.tmpdir') + "vertx-$version")
+
+	destinationDir vertxTemp
+	inputs.files files("build/$rootProject.name-$version")
+	outputs.dir destinationDir
+	from "build/$rootProject.name-$version"
+}
+
+task dist(type: Tar, dependsOn: ['assemble', 'createDocs']) {
+	group = 'vert.x'
+	description 'Create the distribution'
+	
+	compression = org.gradle.api.tasks.bundling.Compression.GZIP
+	destinationDir file('build/distributions')
+	inputs.files files("build/$rootProject.name-$version")
+	outputs.dir destinationDir
+	baseName = rootProject.name
+	version = rootProject.version
+	extension = 'tar.gz'
+	from 'build'
+	include "$rootProject.name-$version/**"
+}
+
+task release(dependsOn: ['clean', 'test', 'dist']) {
+	group = 'vert.x'
+	description 'Clean and fully test the current version before creating the distribution'
+}
+
+/* 
+ * TODO add Git tasks for tagging a release
+ * TODO add Git tasks for publishing binaries to master
+ * TODO add Git tasks for updating documentation on website
+ * (@see EGit)
+ * 
+ */
+
+
 
