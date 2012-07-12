@@ -59,7 +59,7 @@ public class Starter {
   private VerticleManager mgr;
 
   private Starter(String[] sargs) {
-	String vertxVersion = String.format("vert.x %s", System.getProperty("vertx.version", "0.0.0-UNKNOWN!"));
+	  String vertxVersion = String.format("vert.x %s", System.getProperty("vertx.version", "0.0.0-UNKNOWN!"));
     if (sargs.length < 1) {
       displaySyntax();
     } else {

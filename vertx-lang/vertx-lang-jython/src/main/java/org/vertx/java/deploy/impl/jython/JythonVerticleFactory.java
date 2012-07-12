@@ -16,13 +16,9 @@
 
 package org.vertx.java.deploy.impl.jython;
 
-import org.vertx.java.core.logging.Logger;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.deploy.VerticleFactory;
 import org.vertx.java.deploy.impl.VerticleManager;
-
-
-import java.util.List;
 
 /**
  * @author <a href="https://github.com/sjhorn">Scott Horn</a>
