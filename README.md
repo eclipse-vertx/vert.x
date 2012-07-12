@@ -1,2 +1,1 @@
-vert.x
-======
+The Vert.x project has moved here https://github.com/vert-x/vert.x
