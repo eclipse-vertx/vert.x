@@ -14,7 +14,7 @@ In this version of this tutorial we've written the script in Ruby. If you'd pref
 
 If you'd rather just run the complete code, the working example is present in the `webapp` directory of the examples in the distribution. Read the README there for instructions on how to run it.
 
-You can also see the code in [github](https://github.com/purplefox/vert.x/tree/master/vertx-examples/src/main/ruby/webapp).
+You can also see the code in [github](https://github.com/vert-x/vert.x/tree/master/vertx-examples/src/main/ruby/webapp).
 
 ## Step 1. Install vert.x
 
