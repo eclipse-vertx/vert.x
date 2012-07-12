@@ -15,7 +15,6 @@
 import org.vertx.java.core.Handler
 
 from core.buffer import Buffer
-from core.javautils import map_from_java, map_to_java
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"

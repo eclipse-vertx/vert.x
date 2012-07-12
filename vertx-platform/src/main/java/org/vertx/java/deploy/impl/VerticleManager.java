@@ -26,7 +26,6 @@ import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.impl.Context;
-import org.vertx.java.core.impl.DeploymentHandle;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
@@ -35,7 +34,6 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Container;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.deploy.VerticleFactory;
-import org.vertx.java.deploy.impl.VerticleManager;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -55,6 +53,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.UUID;
@@ -83,6 +82,7 @@ public class VerticleManager {
   private final CountDownLatch stopLatch = new CountDownLatch(1);
   private Map<String, VerticleFactory> factories;
   private final String defaultRepo;
+  private final Redeployer redeployer;
 
   public VerticleManager(VertxInternal vertx) {
     this(vertx, null);
@@ -102,10 +102,11 @@ public class VerticleManager {
       modRoot = new File(modDir);
     } else {
       // Default to local module directory called 'mods'
-      modRoot = new File("./mods");
+      modRoot = new File("mods");
     }
 
     this.factories = new HashMap<>();
+    this.redeployer = new Redeployer(vertx, modRoot, this);
 
     // Find and load VerticleFactories
     Iterable<VerticleFactory> services = VerticleFactory.factories;
@@ -159,11 +160,11 @@ public class VerticleManager {
                      int instances, File currentModDir,
                      final Handler<String> doneHandler) {
     Context ctx = vertx.getOrAssignContext();
-    doDeploy(worker, main, config, urls, instances, currentModDir, ctx, doneHandler);
+    doDeploy(worker, main, null, config, urls, instances, currentModDir, ctx, doneHandler);
   }
 
   public synchronized void undeployAll(final Handler<Void> doneHandler) {
-    final UndeployCount count = new UndeployCount();
+    final CountingCompletionHandler count = new CountingCompletionHandler(vertx.getOrAssignContext());
     if (!deployments.isEmpty()) {
       // We do it this way since undeploy is itself recursive - we don't want
       // to attempt to undeploy the same verticle twice if it's a child of
@@ -173,7 +174,7 @@ public class VerticleManager {
         count.incRequired();
         undeploy(name, new SimpleHandler() {
           public void handle() {
-            count.undeployed();
+            count.complete();
           }
         });
       }
@@ -182,10 +183,21 @@ public class VerticleManager {
   }
 
   public synchronized void undeploy(String name, final Handler<Void> doneHandler) {
-    if (deployments.get(name) == null) {
+    final Deployment dep = deployments.get(name);
+    if (dep == null) {
       throw new IllegalArgumentException("There is no deployment with name " + name);
     }
-    doUndeploy(name, doneHandler);
+    Handler<Void> wrappedHandler = new SimpleHandler() {
+      public void handle() {
+        log.info("in handle of undeploy of dep " + dep.name + " dep.modName " + dep.modName + " pdn: " + dep.parentDeploymentName);
+        if (dep.modName != null && dep.parentDeploymentName == null) {
+          // Top level module deployment
+          redeployer.moduleUndeployed(dep);
+          doneHandler.handle(null);
+        }
+      }
+    };
+    doUndeploy(name, wrappedHandler);
   }
 
   public synchronized Map<String, Integer> listInstances() {
@@ -198,7 +210,6 @@ public class VerticleManager {
 
   public void deployMod(final String modName, final JsonObject config,
                         final int instances, final File currentModDir, final Handler<String> doneHandler) {
-    log.info("deploying module " + modName + " current mod dir " + currentModDir);
     final Context ctx = vertx.getOrAssignContext();
 
     AsyncResultHandler<Boolean> handler = new AsyncResultHandler<Boolean>() {
@@ -212,9 +223,7 @@ public class VerticleManager {
                   // Now deploy it
                   deployMod(modName, config, instances, currentModDir, doneHandler);
                 } else {
-                  if (doneHandler != null) {
-                    doneHandler.handle(null);
-                  }
+                  executeHandlerOnContext(ctx, doneHandler, null);
                 }
               }
             });
@@ -230,7 +239,6 @@ public class VerticleManager {
 
       @Override
       public Boolean action() throws Exception {
-        log.debug("Attempting to deploy module " + modName);
         File modDir = new File(modRoot, modName);
         JsonObject conf = loadModuleConfig(modName, modDir);
         if (conf != null) {
@@ -250,13 +258,22 @@ public class VerticleManager {
           // If preserveCwd then use the current module directory instead, or the cwd if not in a module
           File modDirToUse = preserveCwd ? currentModDir : modDir;
 
-          List<URL> urls = processIncludes(modName, new ArrayList<URL>(), modName, modDir, conf,
+          List<URL> urls = processIncludes(modName, new ArrayList<URL>(), modName, modDirToUse, conf,
                                            new HashMap<String, String>(), new HashSet<String>());
           if (urls == null) {
             return false;
           }
-          doDeploy(worker, main, config,
-                   urls.toArray(new URL[urls.size()]), instances, modDirToUse, ctx, doneHandler);
+          Handler<String> handler = new Handler<String>() {
+            public void handle(String res) {
+              log.info("calling handler with res " + res);
+              if (currentModDir == null && res != null) {
+                redeployer.moduleDeployed(deployments.get(res));
+              }
+              executeHandlerOnContext(context, doneHandler, res);
+            }
+          };
+          doDeploy(worker, main, modName, config,
+                   urls.toArray(new URL[urls.size()]), instances, modDir, ctx, handler);
           return true;
         } else {
           return false;
@@ -267,6 +284,10 @@ public class VerticleManager {
     deployModuleAction.run();
   }
 
+  boolean hasDeployment(String deploymentID) {
+    return deployments.containsKey(deploymentID);
+  }
+
   private JsonObject loadModuleConfig(String modName, File modDir) {
     if (modDir.exists()) {
       String conf;
@@ -274,6 +295,8 @@ public class VerticleManager {
         conf = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A").next();
       } catch (FileNotFoundException e) {
         throw new IllegalStateException("Module " + modName + " does not contain a mod.json file");
+      } catch (NoSuchElementException e) {
+        throw new IllegalStateException("Module " + modName + " contains an empty mod.json file");
       }
       JsonObject json;
       try {
@@ -296,7 +319,6 @@ public class VerticleManager {
                                     JsonObject conf,
                                     Map<String, String> includedJars,
                                     Set<String> includedModules) {
-    log.info("Processing includes for " + modName + " mod Dir " + modDir);
     // Add the urls for this module
     try {
       urls.add(modDir.toURI().toURL());
@@ -383,9 +405,9 @@ public class VerticleManager {
   }
 
   /* (non-Javadoc)
- * @see org.vertx.java.deploy.impl.VTest#installMod(java.lang.String, org.vertx.java.core.Handler)
- */
-public void installMod(final String moduleName, final Handler<Boolean> doneHandler) {
+   * @see org.vertx.java.deploy.impl.VTest#installMod(java.lang.String, org.vertx.java.core.Handler)
+   */
+  public void installMod(final String moduleName, final Handler<Boolean> doneHandler) {
     HttpClient client = vertx.createHttpClient();
     client.setHost(defaultRepo);
     client.exceptionHandler(new Handler<Exception>() {
@@ -420,9 +442,9 @@ public void installMod(final String moduleName, final Handler<Boolean> doneHandl
   }
 
   /* (non-Javadoc)
- * @see org.vertx.java.deploy.impl.VTest#uninstallMod(java.lang.String)
- */
-public void uninstallMod(String moduleName) {
+   * @see org.vertx.java.deploy.impl.VTest#uninstallMod(java.lang.String)
+   */
+  public void uninstallMod(String moduleName) {
     log.info("Removing module " + moduleName + " from directory " + modRoot);
     File modDir = new File(modRoot, moduleName);
     if (!modDir.exists()) {
@@ -521,14 +543,27 @@ public void uninstallMod(String moduleName) {
     Context.getContext().setPathAdjustment(relative);
   }
 
+  private void executeHandlerOnContext(final Context context,
+                                       final Handler<String> doneHandler,
+                                       final String res)
+  {
+    if (doneHandler != null) {
+      context.execute(new Runnable() {
+        public void run() {
+          doneHandler.handle(res);
+        }
+      });
+    }
+  }
+
   private synchronized void doDeploy(boolean worker, final String main,
+                                     final String modName,
                                      final JsonObject config, final URL[] urls,
                                      int instances,
                                      final File modDir,
                                      final Context context,
                                      final Handler<String> doneHandler)
   {
-
     // Infer the main type
     String language = "java";
     for (VerticleFactory vf : factories.values()) {
@@ -554,16 +589,14 @@ public void uninstallMod(String moduleName) {
 
     class AggHandler {
       AtomicInteger count = new AtomicInteger(0);
+      boolean failed;
 
-      void started() {
+      void done(boolean res) {
+        if (!res) {
+          failed = true;
+        }
         if (count.incrementAndGet() == instCount) {
-          if (doneHandler != null) {
-            context.execute(new Runnable() {
-              public void run() {
-                doneHandler.handle(deploymentName);
-              }
-            });
-          }
+          executeHandlerOnContext(context, doneHandler, failed ? null : deploymentName);
         }
       }
     }
@@ -571,7 +604,7 @@ public void uninstallMod(String moduleName) {
     final AggHandler aggHandler = new AggHandler();
 
     String parentDeploymentName = getDeploymentName();
-    final Deployment deployment = new Deployment(deploymentName, verticleFactory,
+    final Deployment deployment = new Deployment(deploymentName, modName, instances, verticleFactory,
         config == null ? new JsonObject() : config.copy(), urls, modDir, parentDeploymentName);
     deployments.put(deploymentName, deployment);
     if (parentDeploymentName != null) {
@@ -601,9 +634,7 @@ public void uninstallMod(String moduleName) {
           if (error) {
             doUndeploy(deploymentName, new SimpleHandler() {
               public void handle() {
-                if (doneHandler != null) {
-                  doneHandler.handle(null);
-                }
+                aggHandler.done(false);
               }
             });
             return;
@@ -619,15 +650,16 @@ public void uninstallMod(String moduleName) {
               setPathAdjustment(modDir);
             }
             verticle.start();
+            aggHandler.done(true);
           } catch (Throwable t) {
             vertx.reportException(t);
             doUndeploy(deploymentName, new SimpleHandler() {
               public void handle() {
-                doneHandler.handle(null);
+                aggHandler.done(false);
               }
             });
           }
-          aggHandler.started();
+
         }
       };
 
@@ -661,14 +693,14 @@ public void uninstallMod(String moduleName) {
   }
 
   private void doUndeploy(String name, final Handler<Void> doneHandler) {
-    UndeployCount count = new UndeployCount();
+    CountingCompletionHandler count = new CountingCompletionHandler(vertx.getOrAssignContext());
     doUndeploy(name, count);
     if (doneHandler != null) {
       count.setHandler(doneHandler);
     }
   }
 
-  private void doUndeploy(String name, final UndeployCount count) {
+  private void doUndeploy(String name, final CountingCompletionHandler count) {
 
     final Deployment deployment = deployments.remove(name);
 
@@ -678,7 +710,6 @@ public void uninstallMod(String moduleName) {
     }
 
     if (!deployment.verticles.isEmpty()) {
-
       for (final VerticleHolder holder: deployment.verticles) {
         count.incRequired();
         holder.context.execute(new Runnable() {
@@ -688,7 +719,7 @@ public void uninstallMod(String moduleName) {
             } catch (Throwable t) {
               vertx.reportException(t);
             }
-            count.undeployed();
+            count.complete();
             LoggerFactory.removeLogger(holder.loggerName);
             holder.context.runCloseHooks();
           }
@@ -700,83 +731,6 @@ public void uninstallMod(String moduleName) {
       Deployment parent = deployments.get(deployment.parentDeploymentName);
       if (parent != null) {
         parent.childDeployments.remove(name);
-      }
-    }
-  }
-
-  private static class VerticleHolder implements DeploymentHandle {
-    final Deployment deployment;
-    final Context context;
-    final Verticle verticle;
-    final String loggerName;
-    final Logger logger;
-    //We put the config here too so it's still accessible to the verticle after it has been deployed
-    //(deploy is async)
-    final JsonObject config;
-
-    private VerticleHolder(Deployment deployment, Context context, Verticle verticle, String loggerName,
-                           Logger logger, JsonObject config) {
-      this.deployment = deployment;
-      this.context = context;
-      this.verticle = verticle;
-      this.loggerName = loggerName;
-      this.logger = logger;
-      this.config = config;
-    }
-
-    public void reportException(Throwable t) {
-      deployment.factory.reportException(t);
-    }
-  }
-
-  private static class Deployment {
-    final String name;
-    final VerticleFactory factory;
-    final JsonObject config;
-    final URL[] urls;
-    final File modDir;
-    final List<VerticleHolder> verticles = new ArrayList<>();
-    final List<String> childDeployments = new ArrayList<>();
-    final String parentDeploymentName;
-
-    private Deployment(String name, VerticleFactory factory, JsonObject config,
-                       URL[] urls, File modDir, String parentDeploymentName) {
-      this.name = name;
-      this.factory = factory;
-      this.config = config;
-      this.urls = urls;
-      this.modDir = modDir;
-      this.parentDeploymentName = parentDeploymentName;
-    }
-  }
-
-  private class UndeployCount {
-    int count;
-    int required;
-    Handler<Void> doneHandler;
-    Context context = vertx.getOrAssignContext();
-
-    synchronized void undeployed() {
-      count++;
-      checkDone();
-    }
-
-    synchronized void incRequired() {
-      required++;
-    }
-
-    synchronized void setHandler(Handler<Void> doneHandler) {
-      this.doneHandler = doneHandler;
-      checkDone();
-    }
-
-    void checkDone() {
-      if (doneHandler != null && count == required) {
-        context.execute(new Runnable() {
-          public void run() {
-            doneHandler.handle(null);
-          }
-        });
       }
     }
   }
