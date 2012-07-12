@@ -1,9 +1,0 @@
-netty: 3.4.2.final
-js.jar - currently built from rhino master since require some fixes not in release yet
-hazelcast.jar - 2.0.2.final
-jruby.jar - 1.6.7
-jackson-core-asl - 1.9.4
-jackson-mapper-asl - 1.9.4
-groovy-all - 1.8.6
-
-
