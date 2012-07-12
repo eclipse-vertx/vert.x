@@ -7,6 +7,9 @@ Object.defineProperties(global, {
   load: {
     value: org.vertx.java.deploy.impl.rhino.RhinoVerticle.load
   },
+  log: {
+    value: org.vertx.java.deploy.impl.VertxLocator.container.getLogger()
+  },
   stdin: {
     value: java.lang.System.in
   },
