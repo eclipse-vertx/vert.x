@@ -59,8 +59,9 @@ public class Handshake00 implements Handshake {
 
   private final WebSocketChallenge00 challenge;
 
-  protected String getWebSocketLocation(HttpRequest request) {
-    return "ws://" + request.getHeader(HttpHeaders.Names.HOST) + request.getUri();
+  protected String getWebSocketLocation(HttpRequest request, String serverOrigin) {
+    String scheme = serverOrigin.substring(0, 5).toLowerCase().equals("https") ? "wss://" : "ws://";
+    return scheme + request.getHeader(HttpHeaders.Names.HOST) + request.getUri();
   }
 
   public Handshake00() throws NoSuchAlgorithmException {
@@ -98,7 +99,7 @@ public class Handshake00 implements Handshake {
       origin = serverOrigin;
     }
     response.addHeader(Names.SEC_WEBSOCKET_ORIGIN, origin);
-    response.addHeader(Names.SEC_WEBSOCKET_LOCATION, getWebSocketLocation(request));
+    response.addHeader(Names.SEC_WEBSOCKET_LOCATION, getWebSocketLocation(request, serverOrigin));
 
     String protocol = request.getHeader(Names.SEC_WEBSOCKET_PROTOCOL);
 
