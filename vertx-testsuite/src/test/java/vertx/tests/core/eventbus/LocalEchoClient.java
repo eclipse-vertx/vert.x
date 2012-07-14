@@ -143,7 +143,7 @@ public class LocalEchoClient extends EventBusAppBase {
   }
 
   public void testEchoFloat() {
-    Float fl = (float)(new Random().nextInt() / 37);
+    Float fl = new Random().nextInt() / 37.0f;
     Handler<Message<Float>> handler = echoHandler(fl);
     eb.send(ECHO_ADDRESS, fl, handler);
   }
@@ -155,7 +155,7 @@ public class LocalEchoClient extends EventBusAppBase {
   }
 
   public void testEchoDouble() {
-    Double db = (double)(new Random().nextInt() / 37);
+    Double db = new Random().nextInt() / 37.0d;
     Handler<Message<Double>> handler = echoHandler(db);
     eb.send(ECHO_ADDRESS, db, handler);
   }
