@@ -62,7 +62,8 @@ public class LocalEchoClient extends EventBusAppBase {
   }
 
   public void testEchoLong() {
-    Long msg = new Random().nextLong();
+    // must use new Long instance, not autoboxing
+    Long msg = new Long(new Random().nextLong());
     Handler<Message<Long>> handler = echoHandler(msg);
     eb.send(ECHO_ADDRESS, msg, handler);
   }
@@ -74,7 +75,8 @@ public class LocalEchoClient extends EventBusAppBase {
   }
 
   public void testEchoInt() {
-    Integer msg = new Random().nextInt();
+    // must use new Integer instance, not autoboxing
+    Integer msg = new Integer(new Random().nextInt());
     Handler<Message<Integer>> handler = echoHandler(msg);
     eb.send(ECHO_ADDRESS, msg, handler);
   }
@@ -86,7 +88,8 @@ public class LocalEchoClient extends EventBusAppBase {
   }
 
   public void testEchoShort() {
-    Short msg = (short)(new Random().nextInt(Short.MAX_VALUE));
+    // must use new Short instance, not autoboxing
+    Short msg = new Short((short)(new Random().nextInt(Short.MAX_VALUE)));
     Handler<Message<Short>> handler = echoHandler(msg);
     eb.send(ECHO_ADDRESS, msg, handler);
   }
@@ -140,7 +143,7 @@ public class LocalEchoClient extends EventBusAppBase {
   }
 
   public void testEchoFloat() {
-    Float fl = (float)(new Random().nextInt() / 37);
+    Float fl = new Random().nextInt() / 37.0f;
     Handler<Message<Float>> handler = echoHandler(fl);
     eb.send(ECHO_ADDRESS, fl, handler);
   }
@@ -152,7 +155,7 @@ public class LocalEchoClient extends EventBusAppBase {
   }
 
   public void testEchoDouble() {
-    Double db = (double)(new Random().nextInt() / 37);
+    Double db = new Random().nextInt() / 37.0d;
     Handler<Message<Double>> handler = echoHandler(db);
     eb.send(ECHO_ADDRESS, db, handler);
   }
@@ -192,7 +195,8 @@ public class LocalEchoClient extends EventBusAppBase {
   }
 
   public void testEchoCharacter() {
-    Character chr = (char)(new Random().nextInt());
+    // must use new Character instance, not autoboxing
+    Character chr = new Character((char)(new Random().nextInt()));
     Handler<Message<Character>> handler = echoHandler(chr);
     eb.send(ECHO_ADDRESS, chr, handler);
   }
