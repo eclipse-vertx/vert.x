@@ -168,6 +168,8 @@ public class JsonArray implements Iterable<Object> {
     for (Object obj: list) {
       if (obj instanceof Map) {
         arr.add(JsonObject.convertMap((Map<String, Object>) obj));
+      } else if (obj instanceof JsonObject) {
+        arr.add(((JsonObject)obj).toMap());
       } else if (obj instanceof List) {
           arr.add(convertList((List<?>) obj));
       } else {
