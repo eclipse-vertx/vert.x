@@ -103,6 +103,9 @@ if [ "$cygwin" = "false" -a "$darwin" = "false" ] ; then
     else
         warn "Could not query businessSystem maximum file descriptor limit: $MAX_FD_LIMIT"
     fi
+
+    # set umask to sane default for FileSystem tests
+    umask 0022
 fi
 
 # For Darwin, add APP_NAME to the JAVA_OPTS as -Xdock:name
