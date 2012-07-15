@@ -190,8 +190,7 @@ public class VerticleManager {
     Handler<Void> wrappedHandler = new SimpleHandler() {
       public void handle() {
         log.info("in handle of undeploy of dep " + dep.name + " dep.modName " + dep.modName + " pdn: " + dep.parentDeploymentName);
-        if (dep.modName != null && dep.parentDeploymentName == null) {
-          // Top level module deployment
+        if (dep.modName != null) {
           redeployer.moduleUndeployed(dep);
           doneHandler.handle(null);
         }
@@ -266,7 +265,7 @@ public class VerticleManager {
           Handler<String> handler = new Handler<String>() {
             public void handle(String res) {
               log.info("calling handler with res " + res);
-              if (currentModDir == null && res != null) {
+              if (res != null) {
                 redeployer.moduleDeployed(deployments.get(res));
               }
               executeHandlerOnContext(context, doneHandler, res);
@@ -606,7 +605,7 @@ public class VerticleManager {
     String parentDeploymentName = getDeploymentName();
     final Deployment deployment = new Deployment(deploymentName, modName, instances, verticleFactory,
         config == null ? new JsonObject() : config.copy(), urls, modDir, parentDeploymentName);
-    deployments.put(deploymentName, deployment);
+    addDeployment(deploymentName, deployment);
     if (parentDeploymentName != null) {
       Deployment parent = deployments.get(parentDeploymentName);
       parent.childDeployments.add(deploymentName);
@@ -670,6 +669,15 @@ public class VerticleManager {
       }
     }
   }
+
+  private void addDeployment(String deploymentName, Deployment deployment) {
+    deployments.put(deploymentName, deployment);
+  }
+
+  private Deployment removeDeployment(String name) {
+    return deployments.remove(name);
+  }
+
 
   // Must be synchronized since called directly from different thread
   private synchronized void addVerticle(Deployment deployment, Verticle verticle) {

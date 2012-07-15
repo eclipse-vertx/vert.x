@@ -69,7 +69,7 @@ public class Redeployer {
 
   private void dumpSizes() {
     log.info("watchkeys: " + watchKeys.size());
-    log.info("moduleDIrs: " + moduleDirs.size());
+    log.info("moduleDirs: " + moduleDirs.size());
     log.info("changing: " + changing.size());
     int size = 0;
     for (Set<Deployment> s: this.watchedDeployments.values()) {
@@ -211,37 +211,49 @@ public class Redeployer {
         toRedeploy.add(entry.getKey());
       }
     }
+    Set<Deployment> parents = new HashSet<>();
     for (Path moduleDir: toRedeploy) {
       changing.remove(moduleDir);
-      reload(moduleDir);
+      computeParents(moduleDir, parents);
+    }
+    reload(parents);
+  }
+
+  // Some of the modules that need to be redeployed might have been programmatically
+  // deployed so we don't redeploy them directly. Instead we need to compute the
+  // set of parent modules which are the ones we need to redeploy
+  private void computeParents(Path modulePath, Set<Deployment> parents)  {
+    Set<Deployment> deployments = watchedDeployments.get(modulePath);
+    for (Deployment d: deployments) {
+      if (d.parentDeploymentName != null) {
+        File f = new File(modRoot, d.parentDeploymentName);
+        computeParents(f.toPath(), parents);
+      } else {
+        parents.add(d);
+      }
     }
   }
 
-  private void reload(final Path modulePath) {
-    log.info("reloading " + modulePath);
-    final Set<Deployment> deployments = watchedDeployments.get(modulePath);
-    if (deployments == null  || deployments.isEmpty()) {
-      throw new IllegalStateException("Cannot find any deployments for path: " + modulePath);
-    }
-    for (final Deployment deployment: deployments) {
+  private void reload(final Set<Deployment> parents) {
+    for (final Deployment deployment: parents) {
       log.info("undeploying " + deployment.name);
       if (verticleManager.hasDeployment(deployment.name)) {
         verticleManager.undeploy(deployment.name, new SimpleHandler() {
           public void handle() {
             checkContext();
             log.info("undeployed");
-            redeploy(modulePath, deployment, deployments);
+            redeploy(deployment, parents);
           }
         });
       } else {
         // This will be the case if the previous deployment failed, e.g.
         // a code error in a user verticle
-        redeploy(modulePath, deployment, deployments);
+        redeploy(deployment, parents);
       }
     }
   }
 
-  private void redeploy(final Path modulePath, final Deployment deployment, final Set<Deployment> deployments) {
+  private void redeploy(final Deployment deployment, final Set<Deployment> deployments) {
     verticleManager.deployMod(deployment.modName, deployment.config, deployment.instances,
         null, new Handler<String>() {
       public void handle(String res) {
