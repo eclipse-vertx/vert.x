@@ -17,11 +17,13 @@
 package org.vertx.java.core.impl;
 
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.eventbus.EventBusFactory;
 import org.vertx.java.core.http.impl.DefaultHttpServer;
 import org.vertx.java.core.net.impl.DefaultNetServer;
 import org.vertx.java.core.net.impl.ServerID;
 
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
@@ -33,6 +35,11 @@ import java.util.concurrent.ExecutorService;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class VertxInternal extends Vertx {
+
+  protected static EventBusFactory loadEventBusFactory() {
+    ServiceLoader<EventBusFactory> factories = ServiceLoader.load(EventBusFactory.class);
+    return factories.iterator().next();
+  }
 
   public abstract Executor getAcceptorPool();
 
