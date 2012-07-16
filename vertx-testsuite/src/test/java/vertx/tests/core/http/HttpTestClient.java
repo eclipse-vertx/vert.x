@@ -568,6 +568,30 @@ public class HttpTestClient extends TestClientBase {
     req.end();
   }
 
+  public void testLowerCaseHeaders() {
+
+    startServer(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+        tu.checkContext();
+        tu.azzert(req.headers().get("foo").equals("bar"));
+        tu.azzert(req.headers().get("Foo") == null);
+        req.response.putHeader("Quux", "wib");
+        req.response.end();
+      }
+    });
+
+    HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
+      public void handle(HttpClientResponse resp) {
+        tu.azzert(resp.headers().get("quux").equals("wib"));
+        tu.azzert(resp.headers().get("Quux") == null);
+        tu.checkContext();
+        tu.testComplete();
+      }
+    });
+    req.putHeader("Foo", "bar");
+    req.end();
+  }
+
   public void testRequestChaining() {
     // TODO
   }
