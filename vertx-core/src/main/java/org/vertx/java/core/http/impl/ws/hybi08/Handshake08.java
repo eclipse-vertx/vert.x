@@ -104,7 +104,7 @@ public class Handshake08 implements Handshake {
   }
 
   public void onComplete(HttpClientResponse response, final AsyncResultHandler<Void> doneHandler) throws Exception {
-    String challengeResponse = response.headers().get("Sec-WebSocket-Accept");
+    String challengeResponse = response.headers().get("sec-websocket-accept");
     AsyncResult<Void> res;
     if (challenge.verify(challengeResponse)) {
       res = new AsyncResult<>((Void)null);

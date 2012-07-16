@@ -517,8 +517,8 @@ public class HttpTestClient extends TestClientBase {
       public void handle(HttpServerRequest req) {
         tu.checkContext();
         tu.azzert(req.headers().size() == 1);
-        tu.azzert(req.headers().get("Host").equals("localhost:8080"));
-        tu.azzert(req.headers().get("Host").equals("localhost:8080"));
+        tu.azzert(req.headers().get("host").equals("localhost:8080"));
+        tu.azzert(req.headers().get("host").equals("localhost:8080"));
         req.response.end();
       }
     });
@@ -1692,8 +1692,8 @@ public class HttpTestClient extends TestClientBase {
     client.getNow("some-uri", new Handler<HttpClientResponse>() {
       public void handle(final HttpClientResponse response) {
         tu.azzert(response.statusCode == 200);
-        tu.azzert(file.length() == Long.valueOf(response.headers().get("Content-Length")));
-        tu.azzert("text/html".equals(response.headers().get("Content-Type")));
+        tu.azzert(file.length() == Long.valueOf(response.headers().get("content-length")));
+        tu.azzert("text/html".equals(response.headers().get("content-type")));
         response.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(content.equals(buff.toString()));
@@ -1719,8 +1719,8 @@ public class HttpTestClient extends TestClientBase {
     client.getNow("some-uri", new Handler<HttpClientResponse>() {
       public void handle(final HttpClientResponse response) {
         tu.azzert(response.statusCode == 200);
-        tu.azzert(file.length() == Long.valueOf(response.headers().get("Content-Length")));
-        tu.azzert("wibble".equals(response.headers().get("Content-Type")));
+        tu.azzert(file.length() == Long.valueOf(response.headers().get("content-length")));
+        tu.azzert("wibble".equals(response.headers().get("content-type")));
         response.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(content.equals(buff.toString()));
@@ -2137,7 +2137,7 @@ public class HttpTestClient extends TestClientBase {
     for (int i = 0; i < num; i++) {
       String key;
       do {
-        key = TestUtils.randomAlphaString(1 + (int) ((19) * Math.random()));
+        key = TestUtils.randomAlphaString(1 + (int) ((19) * Math.random())).toLowerCase();
       } while (map.containsKey(key));
       map.put(key, TestUtils.randomAlphaString(1 + (int) ((19) * Math.random())));
     }
