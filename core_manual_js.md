@@ -1209,6 +1209,8 @@ Then `request.query` would contain the string `param1=abc&param2=xyz`
 
 The request headers are available as the `headers()` function of the request object. The return value is just a JavaScript object (associative array).
 
+Note that the header keys are always lower-cased before being they are returned to you.
+
 Here's an example that echoes the headers to the output of the response. Run it and point your browser at `http://localhost:8080` to see the headers.
 
     var server = vertx.createHttpServer();

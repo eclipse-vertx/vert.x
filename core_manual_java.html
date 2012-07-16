@@ -1237,6 +1237,7 @@ server.requestHandler(new Handler&lt;HttpServerRequest&gt;() {
 </p>
 <h4 id="request-headers">Request Headers</h4><br/>
 <p>A map of the request headers are available using the <code>headers()</code> method on the request object.</p>
+<p>Note that the header keys are always lower-cased before being put in the <code>headers()</code> map.</p>
 <p>Here's an example that echoes the headers to the output of the response. Run it and point your browser at <code>http://localhost:8080</code> to see the headers.</p>
 <pre class="prettyprint">HttpServer server = vertx.createHttpServer();
 
@@ -1246,7 +1247,7 @@ server.requestHandler(new Handler&lt;HttpServerRequest&gt;() {
         for (Map.Entry&lt;String, String&gt; header: request.headers().entrySet()) {
             sb.append(header.getKey()).append(": ").append(header.getValue()).append("\n");
         }
-        request.response.putHeader("Content-Type", "text/plain");
+        request.response.putHeader("content-type", "text/plain");
         request.response.end(sb.toString());  
     }
 }).listen(8080, "localhost");

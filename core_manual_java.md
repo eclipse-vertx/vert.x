@@ -1266,6 +1266,8 @@ Then `request.query` would contain the string `param1=abc&param2=xyz`
 
 A map of the request headers are available using the `headers()` method on the request object.
 
+Note that the header keys are always lower-cased before being put in the `headers()` map.
+
 Here's an example that echoes the headers to the output of the response. Run it and point your browser at `http://localhost:8080` to see the headers.
 
     HttpServer server = vertx.createHttpServer();
@@ -1276,7 +1278,7 @@ Here's an example that echoes the headers to the output of the response. Run it 
             for (Map.Entry<String, String> header: request.headers().entrySet()) {
                 sb.append(header.getKey()).append(": ").append(header.getValue()).append("\n");
             }
-            request.response.putHeader("Content-Type", "text/plain");
+            request.response.putHeader("content-type", "text/plain");
             request.response.end(sb.toString());  
         }
     }).listen(8080, "localhost");

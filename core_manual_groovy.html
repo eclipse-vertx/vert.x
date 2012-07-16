@@ -1056,6 +1056,7 @@ server.requestHandler{ request -&gt; println "A request has arrived on the serve
 <p>Then <code>request.query</code> would contain the string <code>param1=abc&amp;param2=xyz</code></p>
 <h4 id="request-headers">Request Headers</h4><br/>
 <p>A map of the request headers are available using the <code>headers</code> property on the request object.</p>
+<p>Note that the header keys are always lower-cased before being put in the <code>headers</code> property.</p>
 <p>Here's an example that echoes the headers to the output of the response. Run it and point your browser at <code>http://localhost:8080</code> to see the headers.</p>
 <pre class="prettyprint">def server = vertx.createHttpServer()
 

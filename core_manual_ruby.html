@@ -1148,6 +1148,7 @@ end.listen(8080, 'localhost')
 <p>Then <code>request.query</code> would contain the string <code>param1=abc&amp;param2=xyz</code></p>
 <h4 id="request-headers">Request Headers</h4><br/>
 <p>The request headers are available using the <code>headers</code> method on the request object. The return value of the method is a Ruby Hash.</p>
+<p>Note that the header keys are always lower-cased before being returned to you.</p>
 <p>Here's an example that echoes the headers to the output of the response. Run it and point your browser at <code>http://localhost:8080</code> to see the headers.</p>
 <pre class="prettyprint">server.request_handler do |request|
 

@@ -1192,6 +1192,8 @@ Then `request.query` would contain the string `param1=abc&param2=xyz`
 
 The request headers are available using the `headers` method on the request object. The return value of the method is a Ruby Hash.
 
+Note that the header keys are always lower-cased before being returned to you.
+
 Here's an example that echoes the headers to the output of the response. Run it and point your browser at `http://localhost:8080` to see the headers.
 
     server.request_handler do |request|

@@ -1093,6 +1093,8 @@ Then `request.query` would contain the string `param1=abc&param2=xyz`
 
 A map of the request headers are available using the `headers` property on the request object.
 
+Note that the header keys are always lower-cased before being put in the `headers` property.
+
 Here's an example that echoes the headers to the output of the response. Run it and point your browser at `http://localhost:8080` to see the headers.
 
     def server = vertx.createHttpServer()

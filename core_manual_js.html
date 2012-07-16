@@ -1177,6 +1177,7 @@ server.requestHandler(function(request) {
 </p>
 <h4 id="request-headers">Request Headers</h4><br/>
 <p>The request headers are available as the <code>headers()</code> function of the request object. The return value is just a JavaScript object (associative array).</p>
+<p>Note that the header keys are always lower-cased before being they are returned to you.</p>
 <p>Here's an example that echoes the headers to the output of the response. Run it and point your browser at <code>http://localhost:8080</code> to see the headers.</p>
 <pre class="prettyprint">var server = vertx.createHttpServer();
 
