@@ -22,3 +22,5 @@ freeing you from the hassle of multi-threaded programming, yet unlike other asyn
 Groovy applications*
 
 **Please see the [website](http://vertx.io/) for full documentation and information on vert.x**
+
+The Vert.x project has moved here https://github.com/vert-x/vert.x
