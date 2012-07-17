@@ -19,21 +19,15 @@ package org.vertx.java.deploy.impl.java;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
-import javax.tools.Diagnostic;
-import javax.tools.DiagnosticCollector;
-import javax.tools.JavaCompiler;
-import javax.tools.JavaFileObject;
+import javax.tools.*;
 import javax.tools.JavaFileObject.Kind;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.StandardLocation;
-import javax.tools.ToolProvider;
 import java.io.File;
 import java.util.Collections;
 
 /**
- * 
+ *
  * Classloader for dynamic .java source file compilation and loading.
- * 
+ *
  * @author Janne Hietam&auml;ki
  */
 public class CompilingClassLoader extends ClassLoader {
@@ -53,22 +47,27 @@ public class CompilingClassLoader extends ClassLoader {
       DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
       JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
       StandardJavaFileManager standardFileManager = javaCompiler.getStandardFileManager(null, null, null);
-      
+
       standardFileManager.setLocation(StandardLocation.SOURCE_PATH, Collections.singleton(sourceFile.getParentFile()));
 
-      fileManager = new MemoryFileManager(standardFileManager);
+      fileManager = new MemoryFileManager(loader, standardFileManager);
       JavaFileObject javaFile = standardFileManager.getJavaFileForInput(StandardLocation.SOURCE_PATH, resolveMainClassName(), Kind.SOURCE);
-      JavaCompiler.CompilationTask task = javaCompiler.getTask(null, fileManager, diagnostics, null, null, Collections.singleton(javaFile));      
-      boolean valid = task.call();      
-      
-      for (Diagnostic<?> d : diagnostics.getDiagnostics()) {
-        log.debug(d);
-      }
-      if (!valid) {
+
+      JavaCompiler.CompilationTask task = javaCompiler.getTask(null, fileManager, diagnostics, null, null, Collections.singleton(javaFile));
+      boolean valid = task.call();
+
+      if (valid) {
+        for (Diagnostic<?> d : diagnostics.getDiagnostics()) {
+          log.info(d);
+        }
+      } else {
+        for (Diagnostic<?> d : diagnostics.getDiagnostics()) {
+          log.warn(d);
+        }
         throw new RuntimeException("Compilation failed!");
       }
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      throw new RuntimeException("Compilation failed", e);
     }
   }
 

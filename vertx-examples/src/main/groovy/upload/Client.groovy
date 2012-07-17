@@ -26,7 +26,7 @@ fs.props(filename) { ares ->
   def props = ares.result
   println "props is ${props}"
   def size = props.size
-  req.headers["Content-Length"] = size
+  req.headers["content-length"] = size
   fs.open(filename) { ares2 ->
     def file = ares2.result
     def rs = file.readStream

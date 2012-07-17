@@ -266,7 +266,7 @@ public class DefaultSockJSServer implements SockJSServer {
       public void handle(HttpServerRequest req) {
         try {
           if (log.isTraceEnabled()) log.trace("In Iframe handler");
-          if (etag != null && etag.equals(req.headers().get("If-None-Match"))) {
+          if (etag != null && etag.equals(req.headers().get("if-none-match"))) {
             req.response.statusCode = 304;
             req.response.end();
           } else {
