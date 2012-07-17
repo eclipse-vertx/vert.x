@@ -63,7 +63,7 @@ public class HandshakeRFC6455 extends Handshake08 {
     req.headers().put("Sec-WebSocket-Key", challenge.getNonceBase64());
   }
 
-  public HttpResponse generateResponse(HttpRequest request) throws Exception {
+  public HttpResponse generateResponse(HttpRequest request, String serverOrigin) throws Exception {
     HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, new HttpResponseStatus(101,
         "Switching Protocols"));
     response.addHeader(Names.UPGRADE, "WebSocket");
@@ -72,7 +72,7 @@ public class HandshakeRFC6455 extends Handshake08 {
     if (origin != null) {
       response.addHeader(Names.SEC_WEBSOCKET_ORIGIN, origin);
     }
-    response.addHeader(Names.SEC_WEBSOCKET_LOCATION, getWebSocketLocation(request));
+    response.addHeader(Names.SEC_WEBSOCKET_LOCATION, getWebSocketLocation(request, serverOrigin));
     String protocol = request.getHeader(Names.SEC_WEBSOCKET_PROTOCOL);
     if (protocol != null) {
       response.addHeader(Names.SEC_WEBSOCKET_PROTOCOL, protocol);

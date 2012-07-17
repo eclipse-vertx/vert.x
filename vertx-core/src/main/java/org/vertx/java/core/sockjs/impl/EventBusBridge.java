@@ -165,6 +165,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
             break;
           case "publish":
             sendOrPub(false, msg, address);
+            break;
           case "register":
             handleRegister(address);
             break;
