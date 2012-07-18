@@ -53,8 +53,9 @@ public class Handshake08 implements Handshake {
 
   protected final WebSocketChallenge08 challenge;
 
-  protected String getWebSocketLocation(HttpRequest request) {
-    return "ws://" + request.getHeader(HttpHeaders.Names.HOST) + request.getUri();
+  protected String getWebSocketLocation(HttpRequest request, String serverOrigin) {
+    String scheme = serverOrigin.substring(0, 5).toLowerCase().equals("https") ? "wss://" : "ws://";
+    return scheme + request.getHeader(HttpHeaders.Names.HOST) + request.getUri();
   }
 
   public Handshake08() throws NoSuchAlgorithmException {
@@ -90,7 +91,7 @@ public class Handshake08 implements Handshake {
       origin = serverOrigin;
     }
     response.addHeader(Names.SEC_WEBSOCKET_ORIGIN, origin);
-    response.addHeader(Names.SEC_WEBSOCKET_LOCATION, getWebSocketLocation(request));
+    response.addHeader(Names.SEC_WEBSOCKET_LOCATION, getWebSocketLocation(request, serverOrigin));
     String protocol = request.getHeader(Names.SEC_WEBSOCKET_PROTOCOL);
     if (protocol != null) {
       response.addHeader(Names.SEC_WEBSOCKET_PROTOCOL, protocol);
@@ -103,7 +104,7 @@ public class Handshake08 implements Handshake {
   }
 
   public void onComplete(HttpClientResponse response, final AsyncResultHandler<Void> doneHandler) throws Exception {
-    String challengeResponse = response.headers().get("Sec-WebSocket-Accept");
+    String challengeResponse = response.headers().get("sec-websocket-accept");
     AsyncResult<Void> res;
     if (challenge.verify(challengeResponse)) {
       res = new AsyncResult<>((Void)null);

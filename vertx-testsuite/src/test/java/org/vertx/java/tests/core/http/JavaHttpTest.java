@@ -88,6 +88,11 @@ public class JavaHttpTest extends TestBase {
   }
 
   @Test
+  public void testLowerCaseHeaders() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
   public void testNoContext() throws Exception {
 
     final CountDownLatch latch = new CountDownLatch(1);
