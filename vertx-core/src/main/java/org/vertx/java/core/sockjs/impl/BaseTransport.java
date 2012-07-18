@@ -99,7 +99,7 @@ class BaseTransport {
   }
 
   static void setJSESSIONID(JsonObject config, HttpServerRequest req) {
-    String cookies = req.headers().get("Cookie");
+    String cookies = req.headers().get("cookie");
     if (config.getBoolean("insert_JSESSIONID")) {
       //Preserve existing JSESSIONID, if any
       if (cookies != null) {
@@ -124,7 +124,7 @@ class BaseTransport {
   }
 
   static void setCORS(HttpServerRequest req) {
-    String origin = req.headers().get("Origin");
+    String origin = req.headers().get("origin");
     if (origin == null) {
       origin = "*";
     }
