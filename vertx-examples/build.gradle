@@ -22,18 +22,18 @@ apply plugin: 'vertx-rhino'
 
 
 dependencies {
-	compile project(':vertx-platform')
-	
-	compile project(':vertx-lang-groovy')
+  compile project(':vertx-platform')
+  
+  compile project(':vertx-lang-groovy')
   compile project(':vertx-lang-java')
   compile project(':vertx-lang-jruby')
-	compile project(':vertx-lang-jython')
-	compile project(':vertx-lang-rhino')
-	
-	groovy "org.codehaus.groovy:groovy-all:$groovyVersion"
-	vertxJRuby "org.jruby:jruby:$jrubyVersion"
-	vertxJython "org.python:jython-standalone:$jythonVersion"
-	vertxRhino "org.mozilla:rhino:$rhinoVersion"
+  compile project(':vertx-lang-jython')
+  compile project(':vertx-lang-rhino')
+  
+  groovy "org.codehaus.groovy:groovy-all:$groovyVersion"
+  vertxJRuby "org.jruby:jruby:$jrubyVersion"
+  vertxJython "org.python:jython-standalone:$jythonVersion"
+  vertxRhino "org.mozilla:rhino:$rhinoVersion"
 }
 
 javadoc.dependsOn groovydoc

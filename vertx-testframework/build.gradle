@@ -23,20 +23,20 @@ apply plugin: 'vertx-jython'
 apply plugin: 'vertx-rhino'
 
 dependencies {
-	compile "junit:junit:$junitVersion" // provide exportable components
-	
-	compile project(':vertx-platform')
+  compile "junit:junit:$junitVersion" // provide exportable components
+  
+  compile project(':vertx-platform')
 
   compile project(':vertx-lang-groovy')
   compile project(':vertx-lang-java')
-	compile project(':vertx-lang-jruby')
-	compile project(':vertx-lang-jython')
-	compile project(':vertx-lang-rhino')
+  compile project(':vertx-lang-jruby')
+  compile project(':vertx-lang-jython')
+  compile project(':vertx-lang-rhino')
 
-	groovy "org.codehaus.groovy:groovy-all:$groovyVersion"
-	testCompile "org.jruby:jruby:$jrubyVersion"
-	testCompile "org.python:jython-standalone:$jythonVersion"
-	testCompile "org.mozilla:rhino:$rhinoVersion"
+  groovy "org.codehaus.groovy:groovy-all:$groovyVersion"
+  testCompile "org.jruby:jruby:$jrubyVersion"
+  testCompile "org.python:jython-standalone:$jythonVersion"
+  testCompile "org.mozilla:rhino:$rhinoVersion"
 
   testCompile files("$rootDir/src/dist/conf")
 }

@@ -17,10 +17,10 @@
 apply plugin: 'java'
 
 jar {
-	version = ''
-	manifest {
-		attributes(
-			'Main-Class': 'org.vertx.java.boot.VertxBoot'
-		)
-	}
+  version = ''
+  manifest {
+    attributes(
+      'Main-Class': 'org.vertx.java.boot.VertxBoot'
+    )
+  }
 }

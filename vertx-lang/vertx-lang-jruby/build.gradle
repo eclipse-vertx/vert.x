@@ -18,12 +18,12 @@ apply from: "$rootDir/gradle/maven.gradle"
 apply plugin: 'vertx-jruby'
 
 dependencies {
-	compile project(':vertx-core')
-	compile project(':vertx-platform')
-	vertxJRuby "org.jruby:jruby:$jrubyVersion"
+  compile project(':vertx-core')
+  compile project(':vertx-platform')
+  vertxJRuby "org.jruby:jruby:$jrubyVersion"
 }
 artifacts {
-	platform jar
+  platform jar
 }
 
 yardoc.readme = "$rootDir/README.md"
