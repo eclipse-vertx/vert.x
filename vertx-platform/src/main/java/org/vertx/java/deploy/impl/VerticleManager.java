@@ -198,7 +198,6 @@ public class VerticleManager {
 
   public void deployMod(final String modName, final JsonObject config,
                         final int instances, final File currentModDir, final Handler<String> doneHandler) {
-    log.info("deploying module " + modName + " current mod dir " + currentModDir);
     final Context ctx = vertx.getOrAssignContext();
 
     AsyncResultHandler<Boolean> handler = new AsyncResultHandler<Boolean>() {
@@ -413,7 +412,7 @@ public void installMod(final String moduleName, final Handler<Boolean> doneHandl
         }
       }
     });
-    req.putHeader("host", "vert-x.github.com");
+    req.putHeader("host", defaultRepo);
     req.putHeader("user-agent", "Vert.x Module Installer");
     req.end();
   }
