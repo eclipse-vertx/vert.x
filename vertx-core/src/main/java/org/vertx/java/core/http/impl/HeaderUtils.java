@@ -31,13 +31,18 @@ public class HeaderUtils {
     // This hugely simplifies header handling
     Map<String, String> map = new HashMap<>();
     for (Map.Entry<String, String> entry : hdrs) {
-      String prev = map.get(entry.getKey());
+      // We lower case the key - HTTP header keys are case insensitive so
+      // this is valid, and it makes it easier for the user since they don't
+      // have to worry about whether the browser sent 'Content-Type' or 'content-type'
+      // (for example)
+      String hdrKey = entry.getKey().toLowerCase();
+      String prev = map.get(hdrKey);
       if (prev != null) {
         StringBuilder sb = new StringBuilder(prev);
         sb.append(',').append(entry.getValue());
-        map.put(entry.getKey(), sb.toString());
+        map.put(hdrKey, sb.toString());
       } else {
-        map.put(entry.getKey(), entry.getValue());
+        map.put(hdrKey, entry.getValue());
       }
     }
     return map;

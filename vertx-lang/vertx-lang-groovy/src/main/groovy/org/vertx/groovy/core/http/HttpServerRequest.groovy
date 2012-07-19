@@ -79,6 +79,7 @@ class HttpServerRequest implements ReadStream {
    * A map of all headers in the request, If the request contains multiple headers with the same key, the values
    * will be concatenated together into a single header with the same key value, with each value separated by a comma,
    * as specified <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">here</a>.
+   * The headers will be automatically lower-cased when they reach the server
    */
   Map<String, String> getHeaders() {
     return jRequest.headers()

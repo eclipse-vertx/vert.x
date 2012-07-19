@@ -18,8 +18,8 @@ vertx.createHttpServer().requestHandler { req ->
   //req.response.end()
   //req.response.sendFile("httpperf/foo.html")
   vertx.fileSystem.readFile("httpperf/foo.html") { ar ->
-    req.response.headers["Content-Length"] = ar.result.length
-    req.response.headers["Content-Type"] = "text/html"
+    req.response.headers["content-length"] = ar.result.length
+    req.response.headers["content-type"] = "text/html"
     req.response.end(ar.result)
   }
 }.listen(8080, 'localhost')

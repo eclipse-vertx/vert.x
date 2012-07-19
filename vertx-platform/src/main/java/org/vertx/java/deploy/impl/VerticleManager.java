@@ -198,7 +198,6 @@ public class VerticleManager {
 
   public void deployMod(final String modName, final JsonObject config,
                         final int instances, final File currentModDir, final Handler<String> doneHandler) {
-    log.info("deploying module " + modName + " current mod dir " + currentModDir);
     final Context ctx = vertx.getOrAssignContext();
 
     AsyncResultHandler<Boolean> handler = new AsyncResultHandler<Boolean>() {
@@ -296,7 +295,6 @@ public class VerticleManager {
                                     JsonObject conf,
                                     Map<String, String> includedJars,
                                     Set<String> includedModules) {
-    log.info("Processing includes for " + modName + " mod Dir " + modDir);
     // Add the urls for this module
     try {
       urls.add(modDir.toURI().toURL());
@@ -414,7 +412,7 @@ public void installMod(final String moduleName, final Handler<Boolean> doneHandl
         }
       }
     });
-    req.putHeader("host", "vert-x.github.com");
+    req.putHeader("host", defaultRepo);
     req.putHeader("user-agent", "Vert.x Module Installer");
     req.end();
   }
