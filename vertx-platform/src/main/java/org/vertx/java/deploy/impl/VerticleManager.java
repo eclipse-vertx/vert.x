@@ -296,7 +296,6 @@ public class VerticleManager {
                                     JsonObject conf,
                                     Map<String, String> includedJars,
                                     Set<String> includedModules) {
-    log.info("Processing includes for " + modName + " mod Dir " + modDir);
     // Add the urls for this module
     try {
       urls.add(modDir.toURI().toURL());
