@@ -575,7 +575,6 @@ public class DefaultHttpServer implements HttpServer {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final ServerConnection conn = connectionMap.get(ch);
       final Throwable t = e.getCause();
-      t.printStackTrace();
       ch.close();
       if (conn != null && t instanceof Exception) {
         conn.getContext().execute(new Runnable() {
@@ -588,8 +587,6 @@ public class DefaultHttpServer implements HttpServer {
         // be communicated explicitly
       }
     }
-
-
 
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
