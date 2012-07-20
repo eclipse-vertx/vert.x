@@ -108,6 +108,16 @@ public class JsonObject {
     return (Number)map.get(fieldName);
   }
 
+  public Long getLong(String fieldName) {
+    Number num = (Number)map.get(fieldName);
+    return num == null ? null : num.longValue();
+  }
+
+  public Integer getInteger(String fieldName) {
+    Number num = (Number)map.get(fieldName);
+    return num == null ? null : num.intValue();
+  }
+
   public Boolean getBoolean(String fieldName) {
     return (Boolean)map.get(fieldName);
   }
