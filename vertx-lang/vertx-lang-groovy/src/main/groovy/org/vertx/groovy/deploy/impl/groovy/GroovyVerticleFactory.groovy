@@ -117,7 +117,7 @@ public class GroovyVerticleFactory implements VerticleFactory {
   }
 
   public void reportException(Throwable t) {
-    env.getLogger().error("Exception in Groovy verticle", t)
+    mgr.getLogger().error("Exception in Groovy verticle", t)
   }
 }
 
