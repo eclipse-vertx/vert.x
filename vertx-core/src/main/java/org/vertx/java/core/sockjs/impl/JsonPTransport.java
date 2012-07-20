@@ -57,7 +57,7 @@ class JsonPTransport extends BaseTransport {
         }
 
         String sessionID = req.params().get("param0");
-        Session session = getSession((Long)config.getNumber("session_timeout"), (Long)config.getNumber("heartbeat_period"), sessionID, sockHandler);
+        Session session = getSession(config.getLong("session_timeout"), config.getLong("heartbeat_period"), sessionID, sockHandler);
         session.register(new JsonPListener(req, session, callback));
       }
     });

@@ -81,8 +81,8 @@ class HtmlFileTransport extends BaseTransport {
         }
 
         String sessionID = req.params().get("param0");
-        Session session = getSession((Long)config.getNumber("session_timeout"), (Long)config.getNumber("heartbeat_period"), sessionID, sockHandler);
-        session.register(new HtmlFileListener((Integer)config.getNumber("max_bytes_streaming"), req, callback, session));
+        Session session = getSession(config.getLong("session_timeout"), config.getLong("heartbeat_period"), sessionID, sockHandler);
+        session.register(new HtmlFileListener(config.getInteger("max_bytes_streaming"), req, callback, session));
       }
     });
   }
