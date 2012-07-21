@@ -524,8 +524,7 @@ public void uninstallMod(String moduleName) {
                                      int instances,
                                      final File modDir,
                                      final Context context,
-                                     final Handler<String> doneHandler)
-  {
+                                     final Handler<String> doneHandler) {
 
     // Infer the main type
     String language = "java";
@@ -577,6 +576,12 @@ public void uninstallMod(String moduleName) {
       parent.childDeployments.add(deploymentName);
     }
 
+    // Workers share a single classloader with all instances in a deployment - this
+    // enables them to use libraries that rely on caching or statics to share state
+    // (e.g. JDBC connection pools)
+    final ClassLoader sharedLoader = worker ? new ParentLastURLClassLoader(urls, getClass()
+                .getClassLoader()): null;
+
     for (int i = 0; i < instances; i++) {
 
       // Launch the verticle instance
@@ -587,8 +592,8 @@ public void uninstallMod(String moduleName) {
           Verticle verticle = null;
           boolean error = true;
           try {
-            verticle = verticleFactory.createVerticle(main, new ParentLastURLClassLoader(urls, getClass()
-                .getClassLoader()));
+            verticle = verticleFactory.createVerticle(main, sharedLoader != null ?
+                sharedLoader: new ParentLastURLClassLoader(urls, getClass().getClassLoader()));
             error = false;
           } catch (ClassNotFoundException e) {
             log.error("Cannot find verticle " + main);
