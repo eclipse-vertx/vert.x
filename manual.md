@@ -6,7 +6,7 @@
       
 **Vert.x is the framework for the next generation of asynchronous, effortlessly scalable, concurrent applications.**
 
-Vert.x is an event driven application framework that runs on the JVM - a run-time with *real* concurrency and unrivaled performance. Vert.x then exposes the API in Ruby, Java, Groovy, JavaScript and Python. So *you* choose what language you want to use. Scala and Clojure support is on the roadmap too.
+Vert.x is an event driven application framework that runs on the JVM - a run-time with *real* concurrency and unrivalled performance. Vert.x then exposes the API in Ruby, Java, Groovy, JavaScript and Python. So *you* choose what language you want to use. Scala and Clojure support is on the roadmap too.
       
 Some of the key highlights include:
 
