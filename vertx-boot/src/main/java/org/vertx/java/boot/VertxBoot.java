@@ -89,7 +89,7 @@ public class VertxBoot {
       System.out.format("vertx.install: %s %n", vertx);
     }
 
-    Set<URL> found = new HashSet<URL>();
+    Set<URL> found = new HashSet<>();
 
     // Use Java 7 try-with-resources
     try (InputStream is = Files.newInputStream(props, StandardOpenOption.READ)) {

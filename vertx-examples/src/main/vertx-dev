@@ -164,4 +164,4 @@ function splitJvmOpts() {
 }
 eval splitJvmOpts $DEFAULT_JVM_OPTS $JAVA_OPTS $VERTX_OPTS
 
-exec "$JAVACMD" "${JVM_OPTS[@]}" -Dvertx.install=$APP_HOME -Dvertx.conf=$APP_HOME/vertx-examples/src/main/vertx-dev.properties -classpath "$CLASSPATH" org.vertx.java.boot.VertxBoot "$@"
+exec "$JAVACMD" "${JVM_OPTS[@]}" -Dvertx.install=$APP_HOME -Dvertx.conf=$APP_HOME/vertx-examples/src/main/vertx-dev.properties -Djava.util.logging.config.file=$APP_HOME/src/dist/conf/logging.properties -classpath "$CLASSPATH" org.vertx.java.boot.VertxBoot "$@"
