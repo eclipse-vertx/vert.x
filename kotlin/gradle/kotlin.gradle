@@ -1,0 +1,36 @@
+repositories {
+    flatDir {
+        dirs "$rootDir/kotlin/lib"
+    }
+}
+
+def kotlinSrc = "$projectDir/src/main/kotlin".toString()
+if(new File(kotlinSrc).exists()) {
+    project.tasks.findByName('compileJava').dependsOn 'compileKotlin'
+
+    task compileKotlin << {
+        def cl = new URLClassLoader([new File("$rootDir/kotlin/lib/kotlin-compiler.jar").toURL()].toArray(new URL[0]),getClass().getClassLoader())
+        final compiler        = cl.loadClass("org.jetbrains.jet.cli.jvm.K2JVMCompiler").newInstance()
+        final args            = cl.loadClass("org.jetbrains.jet.cli.jvm.K2JVMCompilerArguments").newInstance()
+        args.noStdlib         = true
+        args.noJdkAnnotations = true
+        args.classpath        = configurations.compile.asPath
+        args.sourceDirs       = [kotlinSrc]
+        args.outputDir        = "$projectDir/build/main/classes".toString()
+        final exitCode        = compiler.exec( System.err, args )
+
+        println "Exit code: $exitCode"
+        switch ( exitCode )
+        {
+            case 1:
+                throw new GradleException( 'Compilation error. See log for more details' )
+
+            case 2:
+                throw new GradleException( 'Internal compiler error. See log for more details' )
+
+            case 0:
+            default:
+                logger.info( 'Compilation successful' )
+        }
+    }
+}

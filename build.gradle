@@ -18,7 +18,7 @@ apply from: 'gradle/extra-tasks.gradle'
 
 buildscript {
 	repositories {
-		// mavenLocal()
+		mavenLocal()
 		maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
 		mavenCentral()
 	}
