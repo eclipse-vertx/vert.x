@@ -186,7 +186,7 @@ task installApp(type: Sync, dependsOn: ['assemble']) {
 	group = 'vert.x'
 	description 'Install a local copy of this build'
 
-	def vertxTemp = file(System.getProperty('java.io.tmpdir') + "vertx-$version")
+	def vertxTemp = file(System.getProperty('java.io.tmpdir') + "/vertx-$version")
 
 	destinationDir vertxTemp
 	inputs.files files("build/$rootProject.name-$version")
