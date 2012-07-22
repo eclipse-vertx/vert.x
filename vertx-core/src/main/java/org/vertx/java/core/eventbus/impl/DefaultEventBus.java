@@ -393,6 +393,8 @@ public class DefaultEventBus implements EventBus {
                 ServerIDs serverIDs = event.result;
                 if (!serverIDs.isEmpty()) {
                   sendToSubs(serverIDs, message);
+                } else {
+                  receiveMessage(message);
                 }
               } else {
                 log.error("Failed to send message", event.exception);

@@ -105,7 +105,12 @@ public class JavaEventBusTest extends TestBase {
   }
 
   @Test
-  public void testLocal() {
+  public void testLocal1() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testLocal2() {
     startTest(getMethodName());
   }
 
