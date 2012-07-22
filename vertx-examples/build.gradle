@@ -20,7 +20,6 @@ apply plugin: 'vertx-jruby'
 apply plugin: 'vertx-jython'
 apply plugin: 'vertx-rhino'
 
-
 apply from: "$rootDir/kotlin/gradle/kotlin.gradle"
 
 dependencies {

@@ -6,7 +6,8 @@ repositories {
 
 def kotlinSrc = "$projectDir/src/main/kotlin".toString()
 if(new File(kotlinSrc).exists()) {
-    project.tasks.findByName('compileJava').dependsOn 'compileKotlin'
+    project.tasks.findByName('classes').dependsOn 'compileKotlin'
+    project.tasks.findByName('jar').from("$projectDir/build/classes/main".toString())
 
     task compileKotlin << {
         def cl = new URLClassLoader([new File("$rootDir/kotlin/lib/kotlin-compiler.jar").toURL()].toArray(new URL[0]),getClass().getClassLoader())
@@ -16,10 +17,9 @@ if(new File(kotlinSrc).exists()) {
         args.noJdkAnnotations = true
         args.classpath        = configurations.compile.asPath
         args.sourceDirs       = [kotlinSrc]
-        args.outputDir        = "$projectDir/build/main/classes".toString()
+        args.outputDir        = "$projectDir/build/classes/main".toString()
         final exitCode        = compiler.exec( System.err, args )
 
-        println "Exit code: $exitCode"
         switch ( exitCode )
         {
             case 1:
