@@ -5,6 +5,7 @@ import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -35,8 +36,35 @@ public class VerticleTestRunner extends BlockJUnit4ClassRunner {
   }
 
   @Override
+  protected void collectInitializationErrors(List<Throwable> errors) {
+    super.collectInitializationErrors(errors);
+    validateBeforeStartMethods(errors);
+  }
+
+  private void validateBeforeStartMethods(List<Throwable> errors) {
+    for (FrameworkMethod method : getTestClass().getAnnotatedMethods(BeforeStart.class)) {
+      method.validatePublicVoid(true, errors);
+      Class<?>[] parameterTypes = method.getMethod().getParameterTypes();
+      if (parameterTypes.length > 1 || (parameterTypes.length == 1 && parameterTypes[0] != VertxTestFixture.class)) {
+        errors.add(new Exception("A method annotated @BeforeStart must either have no arguments or" +
+            " one argument of type VertxTestFixture"));
+      }
+    }
+  }
+
+  @Override
   protected Object createTest() throws Exception {
     fixture.setUp();
+    List<FrameworkMethod> methods = getTestClass().getAnnotatedMethods(BeforeStart.class);
+    for (FrameworkMethod method : methods) {
+      Class<?>[] parameterTypes = method.getMethod().getParameterTypes();
+      if (parameterTypes.length == 1) {
+        method.getMethod().invoke(null, fixture);
+      }
+      else {
+        method.getMethod().invoke(null);
+      }
+    }
     return fixture.startApp(false, getTestClass().getJavaClass().getName(), null, 1, true);
   }
 
