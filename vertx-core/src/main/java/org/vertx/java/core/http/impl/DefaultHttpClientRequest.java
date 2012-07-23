@@ -31,6 +31,7 @@ import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.LowerCaseKeyMap;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -108,7 +109,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
   public Map<String, Object> headers() {
     if (headers == null) {
-      headers = new HashMap<>();
+      headers = new LowerCaseKeyMap();
     }
     return headers;
   }

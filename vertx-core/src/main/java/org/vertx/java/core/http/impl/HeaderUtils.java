@@ -16,6 +16,8 @@
 
 package org.vertx.java.core.http.impl;
 
+import org.vertx.java.core.impl.LowerCaseKeyMap;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,20 +31,20 @@ public class HeaderUtils {
     // HTTP headers into a map of headers where any header values
     // with the same key are concatenated together into a single value separated by commas
     // This hugely simplifies header handling
-    Map<String, String> map = new HashMap<>();
+    LowerCaseKeyMap<String> map = new LowerCaseKeyMap<>();
     for (Map.Entry<String, String> entry : hdrs) {
       // We lower case the key - HTTP header keys are case insensitive so
       // this is valid, and it makes it easier for the user since they don't
       // have to worry about whether the browser sent 'Content-Type' or 'content-type'
       // (for example)
       String hdrKey = entry.getKey().toLowerCase();
-      String prev = map.get(hdrKey);
+      String prev = map.getRaw(hdrKey);
       if (prev != null) {
         StringBuilder sb = new StringBuilder(prev);
         sb.append(',').append(entry.getValue());
-        map.put(hdrKey, sb.toString());
+        map.putRaw(hdrKey, sb.toString());
       } else {
-        map.put(hdrKey, entry.getValue());
+        map.putRaw(hdrKey, entry.getValue());
       }
     }
     return map;
