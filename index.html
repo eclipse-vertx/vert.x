@@ -288,15 +288,12 @@ public class Server extends Verticle {
 }
                 </pre>
 
-                <p>Compile it:</p>
-                <p><code>javac Server.java -cp $VERTX_HOME/lib/*</code></p>
-
                 <p>Run it with:</p>
-                <p><code>vertx run Server</code></p>
+                <p><code>vertx run Server.java</code></p>
 
                 <p><strong>Have lots of cores on your server and want to use them all?</strong></p>
                 <p>Just spin up more instances:</p>
-                <p><code>vertx run Server -instances 32</code></p>                
+                <p><code>vertx run Server.java -instances 32</code></p>                
                 <p>Vert.x will do the magic to ensure the requests are distributed amongst the instances:</p>
             
 

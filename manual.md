@@ -202,13 +202,13 @@ The command `vertx run` is used to start a vert.x verticle.
 
 At minimum `vertx run` takes a single parameter - the name of the main or module to run.
 
-If you're running a local verticle written in JavaScript, Ruby, or Groovy then it's just the name of the script, e.g. `server.js`, `server.rb`, or `server.groovy`. (It doesn't have to be called `server`, you can name it anything as long as it has the right extension). If the verticle is written in Java the name is the fully qualified class name of the Main class.
+If you're running a local verticle written in JavaScript, Ruby, or Groovy then it's just the name of the script, e.g. `server.js`, `server.rb`, or `server.groovy`. (It doesn't have to be called `server`, you can name it anything as long as it has the right extension). If the verticle is written in Java the name can either be the fully qualified class name of the Main class, *or* you can specify the Java Source file directly and Vert.x will compile it for you.
 
 The `vertx run` command can take a few optional parameters, they are:
 
 * `-conf <config_file>` Provide some configuration to the verticle. `config_file` is the name of a text file containing a JSON object that represents the configuration for the verticle. This is optional.
 
-* `-cp <path>` The path on which to search for the main and any other resources used by the verticle. This is ignored if you are running an installed module. This defaults to `.` (current directory). If your verticle references other scripts, classes or other resources (e.g. jar files) then make sure these are on this path. The path can contain multiple path entries separated by `:` (colon). Each path entry can be an absolute or relative path to a directory containing scripts, or absolute or relative filenames for jar or zip files.
+* `-cp <path>` The path on which to search for the main and any other resources used by the verticle. This defaults to `.` (current directory). If your verticle references other scripts, classes or other resources (e.g. jar files) then make sure these are on this path. The path can contain multiple path entries separated by `:` (colon). Each path entry can be an absolute or relative path to a directory containing scripts, or absolute or relative filenames for jar or zip files.
     An example path might be `-cp classes:lib/otherscripts:jars/myjar.jar:jars/otherjar.jar`
     Always use the path to reference any resources that your verticle requires. Please, **do not** put them on the system classpath as this can cause isolation issues between deployed verticles.
     
@@ -228,9 +228,13 @@ Run a JavaScript verticle server.js with default settings
 
     vertx run server.js
     
-Run 10 instances of a Java verticle specifying classpath
+Run 10 instances of a pre-compiled Java verticle specifying classpath
 
     vertx run com.acme.MyVerticle -cp "classes:lib/myjar.jar" -instances 10
+    
+Run 10 instances of a Java verticle by source file
+
+    vertx run MyVerticle.java -instances 10    
     
 Run 20 instances of a ruby worker verticle    
     
