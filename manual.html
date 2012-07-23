@@ -239,14 +239,14 @@ vertx.createHttpServer().requestHandler { req -&gt;
 <h2 id="running-verticles-directly">Running Verticles directly</h2><br/>
 <p>The command <code>vertx run</code> is used to start a vert.x verticle.</p>
 <p>At minimum <code>vertx run</code> takes a single parameter - the name of the main or module to run.</p>
-<p>If you're running a local verticle written in JavaScript, Ruby, or Groovy then it's just the name of the script, e.g. <code>server.js</code>, <code>server.rb</code>, or <code>server.groovy</code>. (It doesn't have to be called <code>server</code>, you can name it anything as long as it has the right extension). If the verticle is written in Java the name is the fully qualified class name of the Main class.</p>
+<p>If you're running a local verticle written in JavaScript, Ruby, or Groovy then it's just the name of the script, e.g. <code>server.js</code>, <code>server.rb</code>, or <code>server.groovy</code>. (It doesn't have to be called <code>server</code>, you can name it anything as long as it has the right extension). If the verticle is written in Java the name can either be the fully qualified class name of the Main class, <em>or</em> you can specify the Java Source file directly and Vert.x will compile it for you.</p>
 <p>The <code>vertx run</code> command can take a few optional parameters, they are:</p>
 <ul>
 <li>
 <p><code>-conf &lt;config_file&gt;</code> Provide some configuration to the verticle. <code>config_file</code> is the name of a text file containing a JSON object that represents the configuration for the verticle. This is optional.</p>
 </li>
 <li>
-<p><code>-cp &lt;path&gt;</code> The path on which to search for the main and any other resources used by the verticle. This is ignored if you are running an installed module. This defaults to <code>.</code> (current directory). If your verticle references other scripts, classes or other resources (e.g. jar files) then make sure these are on this path. The path can contain multiple path entries separated by <code>:</code> (colon). Each path entry can be an absolute or relative path to a directory containing scripts, or absolute or relative filenames for jar or zip files.
+<p><code>-cp &lt;path&gt;</code> The path on which to search for the main and any other resources used by the verticle. This defaults to <code>.</code> (current directory). If your verticle references other scripts, classes or other resources (e.g. jar files) then make sure these are on this path. The path can contain multiple path entries separated by <code>:</code> (colon). Each path entry can be an absolute or relative path to a directory containing scripts, or absolute or relative filenames for jar or zip files.
     An example path might be <code>-cp classes:lib/otherscripts:jars/myjar.jar:jars/otherjar.jar</code>
     Always use the path to reference any resources that your verticle requires. Please, <strong>do not</strong> put them on the system classpath as this can cause isolation issues between deployed verticles.</p>
 </li>
@@ -271,8 +271,11 @@ vertx.createHttpServer().requestHandler { req -&gt;
 <p>Run a JavaScript verticle server.js with default settings</p>
 <pre class="prettyprint">vertx run server.js
 </pre>
-<p>Run 10 instances of a Java verticle specifying classpath</p>
+<p>Run 10 instances of a pre-compiled Java verticle specifying classpath</p>
 <pre class="prettyprint">vertx run com.acme.MyVerticle -cp "classes:lib/myjar.jar" -instances 10
+</pre>
+<p>Run 10 instances of a Java verticle by source file</p>
+<pre class="prettyprint">vertx run MyVerticle.java -instances 10
 </pre>
 <p>Run 20 instances of a ruby worker verticle  <br/>
 </p>
