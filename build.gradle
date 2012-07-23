@@ -93,7 +93,7 @@ task clean(type: Delete, dependsOn: [subprojects.clean]) {
 	group = 'build'
 	description 'Clean the parent and all of the vert.x subprojects'
 
-	delete 'build/release', 'build/distributions'
+	delete 'build'
   subprojects.each {
     delete 'build/deps'
   }
