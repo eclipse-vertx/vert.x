@@ -239,7 +239,8 @@ This example shows how you can access various resources on your classpath from w
 
 Run it with
 
-vertx run resourceload/ResourceLoadExample.java -cp "./resourceload/quux.jar"
+cd resourceload
+vertx run /ResourceLoadExample.java
 
 
 
