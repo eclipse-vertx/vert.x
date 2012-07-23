@@ -32,7 +32,7 @@ Some of the key highlights include:
 
 If you don't want the whole vert.x platform but just want to use HTTP, HTTPS, TCP, SSL, WebSockets, the event bus, or other vert.x functionality as a library in your own Java or Groovy application, then you can do this too.
 
-Just use the jar `vertx-core.jar` which is available in the `lib/jars` directory in the distribution.
+Just use the jar `vertx-core-<version>.jar` which is available in the `lib` directory in the distribution.
 
 You then have full access to the core vert.x API, in either Java or Groovy. If you use vert.x embedded you don't have to worry about verticles or any of the deployment related topics, and can just use the core API directly.
 
