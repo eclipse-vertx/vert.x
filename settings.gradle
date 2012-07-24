@@ -26,8 +26,6 @@ include 'vertx-lang-jruby'
 include 'vertx-lang-jython'
 include 'vertx-lang-rhino'
 
-include 'vertx-examples'
-
 include 'vertx-testsuite'
 
 rootProject.name='vert.x'

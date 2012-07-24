@@ -20,6 +20,7 @@ import org.jruby.embed.InvokeFailedException;
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.CompatVersion;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Verticle;
@@ -41,6 +42,7 @@ public class JRubyVerticle extends Verticle {
 
   JRubyVerticle(String scriptName, ClassLoader cl) {
     this.container = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+    container.setCompatVersion(CompatVersion.RUBY1_8);
     container.setClassLoader(cl);
     //Prevent JRuby from logging errors to stderr - we want to log ourselves
     container.setErrorWriter(new NullWriter());

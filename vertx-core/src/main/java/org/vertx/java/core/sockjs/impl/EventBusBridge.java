@@ -273,7 +273,6 @@ public class EventBusBridge implements Handler<SockJSSocket> {
         log.debug("Forwarding message to address " + address + " on event bus");
       }
       if (send) {
-        checkAddAccceptedReplyAddress(replyAddress);
         eb.send(address, jsonObject, replyHandler);
       } else {
         eb.publish(address, jsonObject);

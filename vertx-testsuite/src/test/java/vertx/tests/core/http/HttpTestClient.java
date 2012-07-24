@@ -573,22 +573,42 @@ public class HttpTestClient extends TestClientBase {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkContext();
-        tu.azzert(req.headers().get("foo").equals("bar"));
-        tu.azzert(req.headers().get("Foo") == null);
-        req.response.putHeader("Quux", "wib");
+        tu.azzert(req.headers().get("Foo").equals("foo"));
+        tu.azzert(req.headers().get("foo").equals("foo"));
+        tu.azzert(req.headers().get("fOO").equals("foo"));
+        tu.azzert(req.headers().containsKey("Foo"));
+        tu.azzert(req.headers().containsKey("foo"));
+        tu.azzert(req.headers().containsKey("fOO"));
+        req.response.putHeader("Quux", "quux");
+        tu.azzert(req.response.headers().get("Quux").equals("quux"));
+        tu.azzert(req.response.headers().get("quux").equals("quux"));
+        tu.azzert(req.response.headers().get("qUUX").equals("quux"));
+        tu.azzert(req.response.headers().containsKey("Quux"));
+        tu.azzert(req.response.headers().containsKey("quux"));
+        tu.azzert(req.response.headers().containsKey("qUUX"));
         req.response.end();
       }
     });
 
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.azzert(resp.headers().get("quux").equals("wib"));
-        tu.azzert(resp.headers().get("Quux") == null);
+        tu.azzert(resp.headers().get("Quux").equals("quux"));
+        tu.azzert(resp.headers().get("quux").equals("quux"));
+        tu.azzert(resp.headers().get("qUUX").equals("quux"));
+        tu.azzert(resp.headers().containsKey("Quux"));
+        tu.azzert(resp.headers().containsKey("quux"));
+        tu.azzert(resp.headers().containsKey("qUUX"));
         tu.checkContext();
         tu.testComplete();
       }
     });
-    req.putHeader("Foo", "bar");
+    req.putHeader("Foo", "foo");
+    tu.azzert(req.headers().get("Foo").equals("foo"));
+    tu.azzert(req.headers().get("foo").equals("foo"));
+    tu.azzert(req.headers().get("fOO").equals("foo"));
+    tu.azzert(req.headers().containsKey("Foo"));
+    tu.azzert(req.headers().containsKey("foo"));
+    tu.azzert(req.headers().containsKey("fOO"));
     req.end();
   }
 
