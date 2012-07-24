@@ -6,7 +6,7 @@
 <title>
   File: README
   
-    &mdash; vert.x Ruby API
+    &mdash; 'Ruby API Docs'
   
 </title>
 
@@ -15,9 +15,11 @@
   <link rel="stylesheet" href="css/common.css" type="text/css" media="screen" charset="utf-8" />
 
 <script type="text/javascript" charset="utf-8">
+  hasFrames = window.top.frames.main ? true : false;
   relpath = '';
-  if (relpath != '') relpath += '/';
+  framesUrl = "frames.html#!" + escape(window.location.href);
 </script>
+
 
   <script type="text/javascript" charset="utf-8" src="js/jquery.js"></script>
 
@@ -26,46 +28,49 @@
 
   </head>
   <body>
-    <script type="text/javascript" charset="utf-8">
-      if (window.top.frames.main) document.body.className = 'frames';
-    </script>
-    
     <div id="header">
       <div id="menu">
   
-    <a href="_index.html" title="Index">Index</a> &raquo; 
+    <a href="_index.html">Index</a> &raquo; 
     <span class="title">File: README</span>
   
-  
+
   <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
   
-    <a id="class_list_link" href="#">Class List</a>
+    <a class="full_list_link" id="class_list_link"
+        href="class_list.html">
+      Class List
+    </a>
   
-    <a id="method_list_link" href="#">Method List</a>
+    <a class="full_list_link" id="method_list_link"
+        href="method_list.html">
+      Method List
+    </a>
   
-    <a id="file_list_link" href="#">File List</a>
+    <a class="full_list_link" id="file_list_link"
+        href="file_list.html">
+      File List
+    </a>
   
 </div>
       <div class="clear"></div>
     </div>
-    
-    <iframe id="search_frame"></iframe>
-    
-    <div id="content"><div id='filecontents'><h1>vert.x</h1>
 
-<h2>What is vert.x?</h2>
+    <iframe id="search_frame"></iframe>
+
+    <div id="content"><div id='filecontents'><h2>What is vert.x?</h2>
 
 <p><strong>Vert.x is the framework for the next generation of asynchronous, effortlessly scalable, concurrent applications.</strong></p>
 
-<p>Vert.x is a framework which takes inspiration from event driven frameworks like node.js, combines it with a distributed event bus and sticks it all on the JVM - a runtime with <em>real</em> concurrency and unrivalled performance. Vert.x then exposes the API in JavaScript, Ruby, Groovy and Java.</p>
+<p>Vert.x is a framework which takes inspiration from event driven frameworks like node.js, combines it with a distributed event bus and sticks it all on the JVM - a runtime with <em>real</em> concurrency and unrivalled performance. Vert.x then exposes the API in JavaScript, CoffeeScript, Ruby, Python, Groovy and Java.</p>
 
 <p>Some of the key highlights include:</p>
 
 <ul>
-<li><p>Polyglot. Write your application components in JavaScript, Ruby, Groovy or Java. It&#39;s up to you. Or mix and match
+<li><p>Polyglot. Write your application components in JavaScript, CoffeeScript, Ruby, Python, Groovy or Java. It&#39;s up to you. Or mix and match
 several programming languages in a single application. (Scala and Clojure support is scheduled too).</p></li>
 <li><p>No more worrying about concurrency. Vert.x allows you to write all your code as single threaded,
 freeing you from the hassle of multi-threaded programming, yet unlike other asynchronous framework it scales seamlessly over available cores without you having to fork.</p></li>
@@ -79,11 +84,11 @@ Groovy applications</em></p>
 
 <p><strong>Please see the <a href="http://vertx.io/">website</a> for full documentation and information on vert.x</strong></p>
 </div></div>
-    
+
     <div id="footer">
-  Generated on Tue Jun 19 16:38:23 2012 by 
+  Generated on Tue Jul 24 12:18:20 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.7.5 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.8.7).
 </div>
 
   </body>

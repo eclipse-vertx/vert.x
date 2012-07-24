@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::HttpClientRequest
   
-    &mdash; vert.x Ruby API
+    &mdash; 'Ruby API Docs'
   
 </title>
 
@@ -15,9 +15,11 @@
   <link rel="stylesheet" href="../css/common.css" type="text/css" media="screen" charset="utf-8" />
 
 <script type="text/javascript" charset="utf-8">
-  relpath = '..';
-  if (relpath != '') relpath += '/';
+  hasFrames = window.top.frames.main ? true : false;
+  relpath = '../';
+  framesUrl = "../frames.html#!" + escape(window.location.href);
 </script>
+
 
   <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
 
@@ -26,36 +28,41 @@
 
   </head>
   <body>
-    <script type="text/javascript" charset="utf-8">
-      if (window.top.frames.main) document.body.className = 'frames';
-    </script>
-    
     <div id="header">
       <div id="menu">
   
-    <a href="../_index.html">Index (H)</a> &raquo; 
+    <a href="../_index.html">Index (H)</a> &raquo;
     <span class='title'><span class='object_link'><a href="../Vertx.html" title="Vertx (module)">Vertx</a></span></span>
      &raquo; 
     <span class="title">HttpClientRequest</span>
   
-  
+
   <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
   
-    <a id="class_list_link" href="#">Class List</a>
+    <a class="full_list_link" id="class_list_link"
+        href="../class_list.html">
+      Class List
+    </a>
   
-    <a id="method_list_link" href="#">Method List</a>
+    <a class="full_list_link" id="method_list_link"
+        href="../method_list.html">
+      Method List
+    </a>
   
-    <a id="file_list_link" href="#">File List</a>
+    <a class="full_list_link" id="file_list_link"
+        href="../file_list.html">
+      File List
+    </a>
   
 </div>
       <div class="clear"></div>
     </div>
-    
+
     <iframe id="search_frame"></iframe>
-    
+
     <div id="content"><h1>Class: Vertx::HttpClientRequest
   
   
@@ -91,7 +98,7 @@
   
   
     <dt class="r1 last">Defined in:</dt>
-    <dd class="r1 last">src/main/ruby/core/http.rb</dd>
+    <dd class="r1 last">src/main/ruby_scripts/core/http.rb</dd>
   
 </dl>
 <div class="clear"></div>
@@ -136,9 +143,9 @@ An example of using this class is as follows:
 <div class="tags">
   
   <div class="examples">
-    <h3>Examples:</h3>
+    <p class="tag_title">Examples:</p>
     
-      <h4><div class='inline'></div></h4>
+      
       <pre class="example code">
 <span class='rubyid_req identifier id'>req</span> <span class='assign token'>=</span> <span class='rubyid_httpClient identifier id'>httpClient</span><span class='dot token'>.</span><span class='rubyid_post identifier id'>post</span><span class='lparen token'>(</span><span class='string val'>&quot;/some-url&quot;</span><span class='rparen token'>)</span> <span class='rubyid_do do kw'>do</span> <span class='bitor op'>|</span><span class='rubyid_response identifier id'>response</span><span class='bitor op'>|</span>
   <span class='rubyid_puts identifier id'>puts</span> <span class='dstring node'>&quot;Got response #{response.status_code}&quot;</span>
@@ -155,7 +162,7 @@ An example of using this class is as follows:
     
   </div>
 
-<h3>Author:</h3>
+<p class="tag_title">Author:</p>
 <ul class="author">
   
     <li>
@@ -202,6 +209,7 @@ An example of using this class is as follows:
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -220,6 +228,7 @@ Sets whether the request should used HTTP chunked encoding or not.
 
     
   </span>
+  
   
   
   
@@ -253,6 +262,7 @@ handler has been set using this method, then the handler will be called.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -271,6 +281,7 @@ Ends the request.
 
     
   </span>
+  
   
   
   
@@ -301,6 +312,7 @@ Hash of headers for the request.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -319,6 +331,7 @@ Inserts a header into the request.
 
     
   </span>
+  
   
   
   
@@ -350,6 +363,7 @@ request.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -368,6 +382,7 @@ Write a [Buffer] to the request body.
 
     
   </span>
+  
   
   
   
@@ -398,6 +413,7 @@ Same as <span class='object_link'><a href="#end-instance_method" title="Vertx::H
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -416,6 +432,7 @@ Write a [String] to the request body.
 
     
   </span>
+  
   
   
   
@@ -443,22 +460,25 @@ Same as <span class='object_link'><a href="#write_buffer_and_end-instance_method
   
   
   
+  
   <h3 class="inherited">Methods included from <span class='object_link'><a href="WriteStream.html" title="Vertx::WriteStream (module)">WriteStream</a></span></h3>
   <p class="inherited"><span class='object_link'><a href="WriteStream.html#drain_handler-instance_method" title="Vertx::WriteStream#drain_handler (method)">#drain_handler</a></span>, <span class='object_link'><a href="WriteStream.html#exception_handler-instance_method" title="Vertx::WriteStream#exception_handler (method)">#exception_handler</a></span>, <span class='object_link'><a href="WriteStream.html#write_queue_full%3F-instance_method" title="Vertx::WriteStream#write_queue_full? (method)">#write_queue_full?</a></span>, <span class='object_link'><a href="WriteStream.html#write_queue_max_size%3D-instance_method" title="Vertx::WriteStream#write_queue_max_size= (method)">#write_queue_max_size=</a></span></p>
 
 
   <div id="instance_method_details" class="method_details_list">
     <h2>Instance Method Details</h2>
-    
+
     
       <div class="method_details first">
-  <p class="signature first" id="chunked=-instance_method">
+  <h3 class="signature first" id="chunked=-instance_method">
   
     - (<tt><span class='object_link'><a href="" title="Vertx::HttpClientRequest (class)">HttpClientRequest</a></span></tt>) <strong>chunked=</strong>(val) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Sets whether the request should used HTTP chunked encoding or not. will
@@ -475,7 +495,7 @@ data is written to the request body.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -498,7 +518,7 @@ to write to the body
   
 </ul>
 
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -530,7 +550,7 @@ self So multiple operations can be chained.
 393</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 390</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 390</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_chunked= identifier id'>chunked=</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_setChunked identifier id'>setChunked</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
@@ -543,13 +563,15 @@ self So multiple operations can be chained.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="continue_handler-instance_method">
+  <h3 class="signature " id="continue_handler-instance_method">
   
     - (<tt>Object</tt>) <strong>continue_handler</strong>(proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 If you send an HTTP request with the header &#8216;Expect&#8217; set to the
@@ -565,7 +587,7 @@ the request header to be written before the request has ended.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -617,7 +639,7 @@ The handler
 405</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 402</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 402</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_continue_handler identifier id'>continue_handler</span><span class='lparen token'>(</span><span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -630,13 +652,15 @@ The handler
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="end-instance_method">
+  <h3 class="signature " id="end-instance_method">
   
     - (<tt>Object</tt>) <strong>end</strong> 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Ends the request. If no data has been written to the request body, and
@@ -662,7 +686,7 @@ to another request.
 364</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 364</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 364</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_end end kw'>end</span>
 </pre>
@@ -672,13 +696,15 @@ to another request.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="headers-instance_method">
+  <h3 class="signature " id="headers-instance_method">
   
     - (<tt>Object</tt>) <strong>headers</strong> 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Hash of headers for the request
@@ -704,7 +730,7 @@ Hash of headers for the request
 322</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 317</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 317</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_headers identifier id'>headers</span>
   <span class='rubyid_if if kw'>if</span> <span class='notop op'>!</span><span class='rubyid_@headers ivar id'>@headers</span>
@@ -719,13 +745,15 @@ Hash of headers for the request
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="put_header-instance_method">
+  <h3 class="signature " id="put_header-instance_method">
   
     - (<tt><span class='object_link'><a href="" title="Vertx::HttpClientRequest (class)">HttpClientRequest</a></span></tt>) <strong>put_header</strong>(key, value) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Inserts a header into the request.
@@ -735,7 +763,7 @@ Inserts a header into the request.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -775,7 +803,7 @@ String value to insert.
   
 </ul>
 
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -807,7 +835,7 @@ self So multiple operations can be chained.
 331</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 328</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 328</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_put_header identifier id'>put_header</span><span class='lparen token'>(</span><span class='rubyid_key identifier id'>key</span><span class='comma token'>,</span> <span class='rubyid_value identifier id'>value</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_putHeader identifier id'>putHeader</span><span class='lparen token'>(</span><span class='rubyid_key identifier id'>key</span><span class='comma token'>,</span> <span class='rubyid_value identifier id'>value</span><span class='dot token'>.</span><span class='rubyid_to_s identifier id'>to_s</span><span class='rparen token'>)</span>
@@ -820,13 +848,15 @@ self So multiple operations can be chained.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="send_head-instance_method">
+  <h3 class="signature " id="send_head-instance_method">
   
     - (<tt><span class='object_link'><a href="" title="Vertx::HttpClientRequest (class)">HttpClientRequest</a></span></tt>) <strong>send_head</strong> 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Forces the head of the request to be written before <span class='object_link'><a href="#end-instance_method" title="Vertx::HttpClientRequest#end (method)">#end</a></span> is called on the
@@ -839,7 +869,7 @@ request. This is normally used to implement HTTP 100-continue handling, see
 </div>
 <div class="tags">
   
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -871,7 +901,7 @@ self So multiple operations can be chained.
 358</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 355</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 355</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_send_head identifier id'>send_head</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_sendHead identifier id'>sendHead</span>
@@ -884,13 +914,15 @@ self So multiple operations can be chained.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="write_buffer-instance_method">
+  <h3 class="signature " id="write_buffer-instance_method">
   
     - (<tt><span class='object_link'><a href="" title="Vertx::HttpClientRequest (class)">HttpClientRequest</a></span></tt>) <strong>write_buffer</strong>(chunk, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Write a [Buffer] to the request body.
@@ -900,7 +932,7 @@ Write a [Buffer] to the request body.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -940,7 +972,7 @@ wire.
   
 </ul>
 
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -972,7 +1004,7 @@ self So multiple operations can be chained.
 340</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 337</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 337</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_write_buffer identifier id'>write_buffer</span><span class='lparen token'>(</span><span class='rubyid_chunk identifier id'>chunk</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_writeBuffer identifier id'>writeBuffer</span><span class='lparen token'>(</span><span class='rubyid_chunk identifier id'>chunk</span><span class='dot token'>.</span><span class='rubyid__to_java_buffer identifier id'>_to_java_buffer</span><span class='rparen token'>)</span>
@@ -985,13 +1017,15 @@ self So multiple operations can be chained.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="write_buffer_and_end-instance_method">
+  <h3 class="signature " id="write_buffer_and_end-instance_method">
   
     - (<tt>Object</tt>) <strong>write_buffer_and_end</strong>(chunk) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Same as <span class='object_link'><a href="#end-instance_method" title="Vertx::HttpClientRequest#end (method)">#end</a></span> but writes some data to the response body before ending. If
@@ -1003,7 +1037,7 @@ Content-Length header will be automatically set
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1037,7 +1071,7 @@ The Buffer to write
 380</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 378</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 378</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_write_buffer_and_end identifier id'>write_buffer_and_end</span><span class='lparen token'>(</span><span class='rubyid_chunk identifier id'>chunk</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_end identifier id'>end</span><span class='lparen token'>(</span><span class='rubyid_chunk identifier id'>chunk</span><span class='dot token'>.</span><span class='rubyid__to_java_buffer identifier id'>_to_java_buffer</span><span class='rparen token'>)</span>
@@ -1049,13 +1083,15 @@ The Buffer to write
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="write_str-instance_method">
+  <h3 class="signature " id="write_str-instance_method">
   
     - (<tt><span class='object_link'><a href="" title="Vertx::HttpClientRequest (class)">HttpClientRequest</a></span></tt>) <strong>write_str</strong>(str, enc = &quot;UTF-8&quot;, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Write a [String] to the request body.
@@ -1065,7 +1101,7 @@ Write a [String] to the request body.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1122,7 +1158,7 @@ wire.
   
 </ul>
 
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -1154,7 +1190,7 @@ self So multiple operations can be chained.
 350</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 347</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 347</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_write_str identifier id'>write_str</span><span class='lparen token'>(</span><span class='rubyid_str identifier id'>str</span><span class='comma token'>,</span> <span class='rubyid_enc identifier id'>enc</span> <span class='assign token'>=</span> <span class='string val'>&quot;UTF-8&quot;</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_write identifier id'>write</span><span class='lparen token'>(</span><span class='rubyid_str identifier id'>str</span><span class='comma token'>,</span> <span class='rubyid_enc identifier id'>enc</span><span class='rparen token'>)</span>
@@ -1167,13 +1203,15 @@ self So multiple operations can be chained.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="write_str_and_end-instance_method">
+  <h3 class="signature " id="write_str_and_end-instance_method">
   
     - (<tt>Object</tt>) <strong>write_str_and_end</strong>(str, enc = &quot;UTF-8&quot;) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Same as <span class='object_link'><a href="#write_buffer_and_end-instance_method" title="Vertx::HttpClientRequest#write_buffer_and_end (method)">#write_buffer_and_end</a></span> but writes a String
@@ -1183,7 +1221,7 @@ Same as <span class='object_link'><a href="#write_buffer_and_end-instance_method
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1236,7 +1274,7 @@ The encoding
 373</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 371</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 371</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_write_str_and_end identifier id'>write_str_and_end</span><span class='lparen token'>(</span><span class='rubyid_str identifier id'>str</span><span class='comma token'>,</span> <span class='rubyid_enc identifier id'>enc</span> <span class='assign token'>=</span> <span class='string val'>&quot;UTF-8&quot;</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_end identifier id'>end</span><span class='lparen token'>(</span><span class='rubyid_str identifier id'>str</span><span class='comma token'>,</span> <span class='rubyid_enc identifier id'>enc</span><span class='rparen token'>)</span>
@@ -1250,11 +1288,11 @@ The encoding
   </div>
 
 </div>
-    
+
     <div id="footer">
-  Generated on Tue Jun 19 16:38:25 2012 by 
+  Generated on Tue Jul 24 12:18:22 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.7.5 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.8.7).
 </div>
 
   </body>

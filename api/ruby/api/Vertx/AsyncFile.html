@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::AsyncFile
   
-    &mdash; vert.x Ruby API
+    &mdash; 'Ruby API Docs'
   
 </title>
 
@@ -15,9 +15,11 @@
   <link rel="stylesheet" href="../css/common.css" type="text/css" media="screen" charset="utf-8" />
 
 <script type="text/javascript" charset="utf-8">
-  relpath = '..';
-  if (relpath != '') relpath += '/';
+  hasFrames = window.top.frames.main ? true : false;
+  relpath = '../';
+  framesUrl = "../frames.html#!" + escape(window.location.href);
 </script>
+
 
   <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
 
@@ -26,36 +28,41 @@
 
   </head>
   <body>
-    <script type="text/javascript" charset="utf-8">
-      if (window.top.frames.main) document.body.className = 'frames';
-    </script>
-    
     <div id="header">
       <div id="menu">
   
-    <a href="../_index.html">Index (A)</a> &raquo; 
+    <a href="../_index.html">Index (A)</a> &raquo;
     <span class='title'><span class='object_link'><a href="../Vertx.html" title="Vertx (module)">Vertx</a></span></span>
      &raquo; 
     <span class="title">AsyncFile</span>
   
-  
+
   <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
   
-    <a id="class_list_link" href="#">Class List</a>
+    <a class="full_list_link" id="class_list_link"
+        href="../class_list.html">
+      Class List
+    </a>
   
-    <a id="method_list_link" href="#">Method List</a>
+    <a class="full_list_link" id="method_list_link"
+        href="../method_list.html">
+      Method List
+    </a>
   
-    <a id="file_list_link" href="#">File List</a>
+    <a class="full_list_link" id="file_list_link"
+        href="../file_list.html">
+      File List
+    </a>
   
 </div>
       <div class="clear"></div>
     </div>
-    
+
     <iframe id="search_frame"></iframe>
-    
+
     <div id="content"><h1>Class: Vertx::AsyncFile
   
   
@@ -87,7 +94,7 @@
   
   
     <dt class="r2 last">Defined in:</dt>
-    <dd class="r2 last">src/main/ruby/core/file_system.rb</dd>
+    <dd class="r2 last">src/main/ruby_scripts/core/file_system.rb</dd>
   
 </dl>
 <div class="clear"></div>
@@ -106,7 +113,7 @@ e.g. an <span class='object_link'><a href="HttpClientRequest.html" title="Vertx:
 </div>
 <div class="tags">
   
-<h3>Author:</h3>
+<p class="tag_title">Author:</p>
 <ul class="author">
   
     <li>
@@ -153,6 +160,7 @@ e.g. an <span class='object_link'><a href="HttpClientRequest.html" title="Vertx:
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -171,6 +179,7 @@ Close the file, asynchronously.
 
     
   </span>
+  
   
   
   
@@ -202,6 +211,7 @@ asynchronously.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -220,6 +230,7 @@ Reads some data from a file into a buffer, asynchronously.
 
     
   </span>
+  
   
   
   
@@ -250,6 +261,7 @@ A read stream operating on the file.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -274,6 +286,7 @@ Write a <span class='object_link'><a href="Buffer.html" title="Vertx::Buffer (cl
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -291,16 +304,18 @@ A write stream operating on the file.
 
   <div id="instance_method_details" class="method_details_list">
     <h2>Instance Method Details</h2>
-    
+
     
       <div class="method_details first">
-  <p class="signature first" id="close-instance_method">
+  <h3 class="signature first" id="close-instance_method">
   
     - (<tt>Object</tt>) <strong>close</strong>(&amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Close the file, asynchronously.
@@ -323,7 +338,7 @@ Close the file, asynchronously.
 110</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 108</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 108</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_close identifier id'>close</span><span class='lparen token'>(</span><span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_file ivar id'>@j_file</span><span class='dot token'>.</span><span class='rubyid_close identifier id'>close</span><span class='lparen token'>(</span><span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -335,13 +350,15 @@ Close the file, asynchronously.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="flush-instance_method">
+  <h3 class="signature " id="flush-instance_method">
   
     - (<tt>Object</tt>) <strong>flush</strong> 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Flush any writes made to this file to underlying persistent storage,
@@ -353,7 +370,7 @@ this method will have no effect.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -387,7 +404,7 @@ a block representing the handler which is called on completion.
 148</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 146</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 146</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_flush identifier id'>flush</span>
   <span class='rubyid_Future constant id'>Future</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_@j_file ivar id'>@j_file</span><span class='dot token'>.</span><span class='rubyid_flush identifier id'>flush</span><span class='rparen token'>)</span>
@@ -399,13 +416,15 @@ a block representing the handler which is called on completion.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="read-instance_method">
+  <h3 class="signature " id="read-instance_method">
   
     - (<tt>Object</tt>) <strong>read</strong>(buffer, offset, position, length, &amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Reads some data from a file into a buffer, asynchronously. When multiple
@@ -417,7 +436,7 @@ which those reads actually occur.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -502,7 +521,7 @@ The number of bytes to read.
 131</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 129</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 129</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_read identifier id'>read</span><span class='lparen token'>(</span><span class='rubyid_buffer identifier id'>buffer</span><span class='comma token'>,</span> <span class='rubyid_offset identifier id'>offset</span><span class='comma token'>,</span> <span class='rubyid_position identifier id'>position</span><span class='comma token'>,</span> <span class='rubyid_length identifier id'>length</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_file ivar id'>@j_file</span><span class='dot token'>.</span><span class='rubyid_read identifier id'>read</span><span class='lparen token'>(</span><span class='rubyid_buffer identifier id'>buffer</span><span class='dot token'>.</span><span class='rubyid__to_java_buffer identifier id'>_to_java_buffer</span><span class='comma token'>,</span> <span class='rubyid_offset identifier id'>offset</span><span class='comma token'>,</span> <span class='rubyid_position identifier id'>position</span><span class='comma token'>,</span> <span class='rubyid_length identifier id'>length</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_buff identifier id'>j_buff</span><span class='bitor op'>|</span> <span class='rubyid_Buffer constant id'>Buffer</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_buff identifier id'>j_buff</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span><span class='rparen token'>)</span>
@@ -514,13 +533,15 @@ The number of bytes to read.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="read_stream-instance_method">
+  <h3 class="signature " id="read_stream-instance_method">
   
     - (<tt><span class='object_link'><a href="ReadStream.html" title="Vertx::ReadStream (module)">ReadStream</a></span></tt>) <strong>read_stream</strong> 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 A read stream operating on the file.
@@ -531,7 +552,7 @@ A read stream operating on the file.
 </div>
 <div class="tags">
   
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -562,7 +583,7 @@ A read stream operating on the file.
 141</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 139</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 139</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_read_stream identifier id'>read_stream</span>
   <span class='rubyid_AsyncFileReadStream constant id'>AsyncFileReadStream</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_@j_file ivar id'>@j_file</span><span class='dot token'>.</span><span class='rubyid_getReadStream identifier id'>getReadStream</span><span class='rparen token'>)</span>
@@ -574,13 +595,15 @@ A read stream operating on the file.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="write-instance_method">
+  <h3 class="signature " id="write-instance_method">
   
     - (<tt>Object</tt>) <strong>write</strong>(buffer, position, &amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Write a <span class='object_link'><a href="Buffer.html" title="Vertx::Buffer (class)">Buffer</a></span> to the file, asynchronously. When multiple writes are
@@ -592,7 +615,7 @@ writes actually occur. starts with zero at the beginning of the file.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -644,7 +667,7 @@ bytes and
 120</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 118</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 118</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_write identifier id'>write</span><span class='lparen token'>(</span><span class='rubyid_buffer identifier id'>buffer</span><span class='comma token'>,</span> <span class='rubyid_position identifier id'>position</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_file ivar id'>@j_file</span><span class='dot token'>.</span><span class='rubyid_write identifier id'>write</span><span class='lparen token'>(</span><span class='rubyid_buffer identifier id'>buffer</span><span class='dot token'>.</span><span class='rubyid__to_java_buffer identifier id'>_to_java_buffer</span><span class='comma token'>,</span> <span class='rubyid_position identifier id'>position</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -656,13 +679,15 @@ bytes and
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="write_stream-instance_method">
+  <h3 class="signature " id="write_stream-instance_method">
   
     - (<tt><span class='object_link'><a href="WriteStream.html" title="Vertx::WriteStream (module)">WriteStream</a></span></tt>) <strong>write_stream</strong> 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 A write stream operating on the file.
@@ -673,7 +698,7 @@ A write stream operating on the file.
 </div>
 <div class="tags">
   
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -704,7 +729,7 @@ A write stream operating on the file.
 136</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 134</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 134</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_write_stream identifier id'>write_stream</span>
   <span class='rubyid_AsyncFileWriteStream constant id'>AsyncFileWriteStream</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_@j_file ivar id'>@j_file</span><span class='dot token'>.</span><span class='rubyid_getWriteStream identifier id'>getWriteStream</span><span class='rparen token'>)</span>
@@ -718,11 +743,11 @@ A write stream operating on the file.
   </div>
 
 </div>
-    
+
     <div id="footer">
-  Generated on Tue Jun 19 16:38:27 2012 by 
+  Generated on Tue Jul 24 12:18:25 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.7.5 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.8.7).
 </div>
 
   </body>

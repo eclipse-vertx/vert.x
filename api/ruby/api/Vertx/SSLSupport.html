@@ -6,7 +6,7 @@
 <title>
   Module: Vertx::SSLSupport
   
-    &mdash; vert.x Ruby API
+    &mdash; 'Ruby API Docs'
   
 </title>
 
@@ -15,9 +15,11 @@
   <link rel="stylesheet" href="../css/common.css" type="text/css" media="screen" charset="utf-8" />
 
 <script type="text/javascript" charset="utf-8">
-  relpath = '..';
-  if (relpath != '') relpath += '/';
+  hasFrames = window.top.frames.main ? true : false;
+  relpath = '../';
+  framesUrl = "../frames.html#!" + escape(window.location.href);
 </script>
+
 
   <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
 
@@ -26,36 +28,41 @@
 
   </head>
   <body>
-    <script type="text/javascript" charset="utf-8">
-      if (window.top.frames.main) document.body.className = 'frames';
-    </script>
-    
     <div id="header">
       <div id="menu">
   
-    <a href="../_index.html">Index (S)</a> &raquo; 
+    <a href="../_index.html">Index (S)</a> &raquo;
     <span class='title'><span class='object_link'><a href="../Vertx.html" title="Vertx (module)">Vertx</a></span></span>
      &raquo; 
     <span class="title">SSLSupport</span>
   
-  
+
   <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
   
-    <a id="class_list_link" href="#">Class List</a>
+    <a class="full_list_link" id="class_list_link"
+        href="../class_list.html">
+      Class List
+    </a>
   
-    <a id="method_list_link" href="#">Method List</a>
+    <a class="full_list_link" id="method_list_link"
+        href="../method_list.html">
+      Method List
+    </a>
   
-    <a id="file_list_link" href="#">File List</a>
+    <a class="full_list_link" id="file_list_link"
+        href="../file_list.html">
+      File List
+    </a>
   
 </div>
       <div class="clear"></div>
     </div>
-    
+
     <iframe id="search_frame"></iframe>
-    
+
     <div id="content"><h1>Module: Vertx::SSLSupport
   
   
@@ -76,7 +83,7 @@
   
   
     <dt class="r2 last">Defined in:</dt>
-    <dd class="r2 last">src/main/ruby/core/ssl_support.rb</dd>
+    <dd class="r2 last">src/main/ruby_scripts/core/ssl_support.rb</dd>
   
 </dl>
 <div class="clear"></div>
@@ -92,7 +99,7 @@ A mixin module allowing SSL attributes to be set on classes
 </div>
 <div class="tags">
   
-<h3>Author:</h3>
+<p class="tag_title">Author:</p>
 <ul class="author">
   
     <li>
@@ -139,6 +146,7 @@ A mixin module allowing SSL attributes to be set on classes
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -157,6 +165,7 @@ Set the password for the SSL key store.
 
     
   </span>
+  
   
   
   
@@ -187,6 +196,7 @@ Set the path to the SSL key store.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -205,6 +215,7 @@ Set whether the server or client will use SSL.
 
     
   </span>
+  
   
   
   
@@ -235,6 +246,7 @@ Set the password for the SSL trust store.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -252,16 +264,18 @@ Set the path to the SSL trust store.
 
   <div id="instance_method_details" class="method_details_list">
     <h2>Instance Method Details</h2>
-    
+
     
       <div class="method_details first">
-  <p class="signature first" id="key_store_password=-instance_method">
+  <h3 class="signature first" id="key_store_password=-instance_method">
   
     - (<tt>Object</tt>) <strong>key_store_password=</strong>(val) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Set the password for the SSL key store. This method should only be used
@@ -272,7 +286,7 @@ with the client in SSL mode, i.e. after <span class='object_link'><a href="#ssl%
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -294,7 +308,7 @@ The password.
   
 </ul>
 
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -328,7 +342,7 @@ The password.
 49</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/ssl_support.rb', line 46</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/ssl_support.rb', line 46</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_key_store_password= identifier id'>key_store_password=</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_setKeyStorePassword identifier id'>setKeyStorePassword</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
@@ -341,13 +355,15 @@ The password.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="key_store_path=-instance_method">
+  <h3 class="signature " id="key_store_path=-instance_method">
   
     - (<tt>Object</tt>) <strong>key_store_path=</strong>(val) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Set the path to the SSL key store. This method should only be used with the
@@ -362,7 +378,7 @@ client certificates.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -384,7 +400,7 @@ The path to the key store
   
 </ul>
 
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -418,7 +434,7 @@ The path to the key store
 40</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/ssl_support.rb', line 37</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/ssl_support.rb', line 37</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_key_store_path= identifier id'>key_store_path=</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_setKeyStorePath identifier id'>setKeyStorePath</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
@@ -431,13 +447,15 @@ The path to the key store
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="ssl=-instance_method">
+  <h3 class="signature " id="ssl=-instance_method">
   
     - (<tt>Object</tt>) <strong>ssl=</strong>(val) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Set whether the server or client will use SSL.
@@ -447,7 +465,7 @@ Set whether the server or client will use SSL.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -469,7 +487,7 @@ If true then ssl will be used.
   
 </ul>
 
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -503,7 +521,7 @@ If true then ssl will be used.
 29</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/ssl_support.rb', line 26</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/ssl_support.rb', line 26</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_ssl= identifier id'>ssl=</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_setSSL identifier id'>setSSL</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
@@ -516,13 +534,15 @@ If true then ssl will be used.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="trust_store_password=-instance_method">
+  <h3 class="signature " id="trust_store_password=-instance_method">
   
     - (<tt>Object</tt>) <strong>trust_store_password=</strong>(val) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Set the password for the SSL trust store. This method should only be used
@@ -533,7 +553,7 @@ with the client in SSL mode, i.e. after <span class='object_link'><a href="#ssl%
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -555,7 +575,7 @@ The password.
   
 </ul>
 
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -589,7 +609,7 @@ The password.
 70</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/ssl_support.rb', line 67</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/ssl_support.rb', line 67</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_trust_store_password= identifier id'>trust_store_password=</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_setTrustStorePassword identifier id'>setTrustStorePassword</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
@@ -602,13 +622,15 @@ The password.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="trust_store_path=-instance_method">
+  <h3 class="signature " id="trust_store_path=-instance_method">
   
     - (<tt>Object</tt>) <strong>trust_store_path=</strong>(val) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Set the path to the SSL trust store. This method should only be used with
@@ -624,7 +646,7 @@ provides a certificate the server does not trust.&lt;p&gt;
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -646,7 +668,7 @@ The path to the trust store
   
 </ul>
 
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -680,7 +702,7 @@ The path to the trust store
 61</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/ssl_support.rb', line 58</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/ssl_support.rb', line 58</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_trust_store_path= identifier id'>trust_store_path=</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_setTrustStorePath identifier id'>setTrustStorePath</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
@@ -695,11 +717,11 @@ The path to the trust store
   </div>
 
 </div>
-    
+
     <div id="footer">
-  Generated on Tue Jun 19 16:38:27 2012 by 
+  Generated on Tue Jul 24 12:18:21 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.7.5 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.8.7).
 </div>
 
   </body>
