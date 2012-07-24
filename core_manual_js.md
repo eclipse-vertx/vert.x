@@ -1185,15 +1185,19 @@ The request object has a property `method` which is a string representing what H
 
 The request object has a property `uri` which contains the full URI (Uniform Resource Locator) of the request. For example, if the request URI was:
 
-    http://localhost:8080/a/b/c/page.html?param1=abc&param2=xyz    
+    /a/b/c/page.html?param1=abc&param2=xyz    
     
-Then `request.uri` would contain the string `http://localhost:8080/a/b/c/page.html?param1=abc&param2=xyz`.
+Then `request.uri` would contain the string `/a/b/c/page.html?param1=abc&param2=xyz`.
+
+Request URIs can be relative or absolute (with a domain) depending on what the client sent. In many cases they will be relative.
+
+The request uri contains the value as defined in [Section 5.1.2 of the HTTP specification - Request-URI](http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html)
 
 #### Request Path
 
 The request object has a property `path` which contains the path of the request. For example, if the request URI was:
 
-    http://localhost:8080/a/b/c/page.html?param1=abc&param2=xyz    
+    /a/b/c/page.html?param1=abc&param2=xyz    
     
 Then `request.path` would contain the string `/a/b/c/page.html`
    
@@ -1201,7 +1205,7 @@ Then `request.path` would contain the string `/a/b/c/page.html`
 
 The request object has a property `query` which contains the query of the request. For example, if the request URI was:
 
-    http://localhost:8080/a/b/c/page.html?param1=abc&param2=xyz    
+    /a/b/c/page.html?param1=abc&param2=xyz    
     
 Then `request.query` would contain the string `param1=abc&param2=xyz`    
         
@@ -1232,7 +1236,7 @@ Similarly to the headers, the request parameters are available as the `params()`
 
 Request parameters are sent on the request URI, after the path. For example if the URI was:
 
-    http://localhost:8080/page.html?param1=abc&param2=xyz
+    /page.html?param1=abc&param2=xyz
     
 Then the params hash would be the following JS object:
 
@@ -1487,7 +1491,7 @@ This, of course, can be chained:
                    
 A single `HTTPClient` always connects to the same host and port. If you want to connect to different servers, create more instances.
 
-The default value for hostname is `localhost`, and the default value for port is `80`.  
+The default port is `80` and the default host is `localhost`. So if you don't explicitly set these values that's what the client will attempt to connect to.  
 
 ### Pooling and Keep Alive
 
@@ -1537,15 +1541,19 @@ Legal request methods are: `get`, `put`, `post`, `delete`, `head`, `options`, `c
 
 The general modus operandi is you invoke the appropriate method passing in the request URI as the first parameter, the second parameter is an event handler which will get called when the corresponding response arrives. The response handler is passed the client response object as an argument.
 
+The value specified in the request URI corresponds to the Request-URI as specified in [Section 5.1.2 of the HTTP specification](http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html). In most cases it will be a relative URI.
+
+*Please note that the domain/port that the client connects to is determined by `setPort` and `setHost`, and is not parsed from the uri.*
+
 The return value from the appropriate request method is an `HTTPClientRequest` object. You can use this to add headers to the request, and to write to the request body. The request object implements `WriteStream`.
 
 Once you have finished with the request you must call the `end` function.
 
 If you don't know the name of the request method in advance there is a general `request` method which takes the HTTP method as a parameter:
 
-    var client = vertx.createHttpClient();
+    var client = vertx.createHttpClient().setHost('foo.com');
     
-    var request = client.request('POST', 'http://localhost:8080/some-path', function(resp) {
+    var request = client.request('POST', '/some-path', function(resp) {
         log.info('Got a response, status code: ' + resp.statusCode);
     });
     
@@ -1553,9 +1561,9 @@ If you don't know the name of the request method in advance there is a general `
     
 There is also a method called `getNow` which does the same as `get`, but automatically ends the request. This is useful for simple GETs which don't have a request body:
 
-    var client = vertx.createHttpClient();
+    var client = vertx.createHttpClient().setHost('foo.com');
     
-    client.getNow('http://localhost:8080/some-path', function(resp) {
+    client.getNow('/some-path', function(resp) {
         log.info('Got a response, status code: ' + resp.statusCode);
     });
 
@@ -1611,9 +1619,9 @@ The function can also be called with a string or Buffer in the same way `write` 
 
 To write headers to the request you can just add them to the headers hash:
 
-    var client = vertx.createHttpClient();
+    var client = vertx.createHttpClient().setHost('foo.com');
     
-    var request = client.post('http://localhost:8080/some-path', function(resp) {
+    var request = client.post('/some-path', function(resp) {
         log.info('Got a response, status code: ' + resp.statusCode);
     });
     
@@ -1622,7 +1630,7 @@ To write headers to the request you can just add them to the headers hash:
     
 Or you can use the `putHeader` method if you prefer a more fluent API:        
 
-    client.post('http://localhost:8080/some-uri', function(resp) {
+    client.post('/some-uri', function(resp) {
         log.info('Got a response, status code: ' + resp.statusCode);
     }).putHeader('Some-Header', 'Some-Value')
       .putHeader('Some-Other-Header', 'Some-Other-Value')
@@ -1630,7 +1638,7 @@ Or you can use the `putHeader` method if you prefer a more fluent API:
 
 If you want to put more than one header at the same time, you can instead use the `putAllHeaders` function.
   
-    client.post('http://localhost:8080/some-uri', function(resp) {
+    client.post('/some-uri', function(resp) {
         log.info('Got a response, status code: ' + resp.statusCode);
     }).putAllHeaders({'Some-Header': 'Some-Value',
                    'Some-Other-Header': 'Some-Other-Value',
@@ -1657,9 +1665,9 @@ The response object implements `ReadStream`, so it can be pumped to a `WriteStre
 
 To query the status code of the response use the `statusCode` property. The `statusMessage` property contains the status message. For example:
 
-    var client = vertx.createHttpClient();
+    var client = vertx.createHttpClient().setHost('foo.com');
     
-    client.getNow('http://localhost:8080/some-path', function(resp) {
+    client.getNow('/some-path', function(resp) {
       log.info('server returned status code: ' + resp.statusCode);   
       log.info('server returned status message: ' + resp.statusMessage);   
     });
@@ -1673,9 +1681,9 @@ Sometimes an HTTP response contains a request body that we want to read. Like an
 To receive the response body, you set a `dataHandler` on the response object which gets called as parts of the HTTP response arrive. Here's an example:
 
 
-    var client = vertx.createHttpClient();
+    var client = vertx.createHttpClient().setHost('foo.com');
     
-    client.getNow('http://localhost:8080/some-path', function(resp) {
+    client.getNow('/some-path', function(resp) {
       resp.dataHandler(function(buffer) {
         log.info('I received ' + buffer.length() + ' bytes');
       });    
@@ -1687,9 +1695,9 @@ The `dataHandler` can be called multiple times for a single HTTP response.
 
 As with a server request, if you wanted to read the entire response body before doing something with it you could do something like the following:
 
-    var client = vertx.createHttpClient();
+    var client = vertx.createHttpClient().setHost('foo.com');
     
-    client.getNow('http://localhost:8080/some-path', function(resp) {
+    client.getNow('/some-path', function(resp) {
       
       // Create a buffer to hold the entire response body
       var body = new vertx.Buffer();  
@@ -1718,9 +1726,9 @@ The body handler is called only once when the *entire* response body has been re
 
 Here's an example using `bodyHandler`:
 
-    var client = vertx.createHttpClient();
+    var client = vertx.createHttpClient().setHost('foo.com');
     
-    client.getNow('http://localhost:8080/some-uri', function(resp) {
+    client.getNow('/some-uri', function(resp) {
       
       resp.bodyHandler(function(body) {
         log.info('The total body received was ' + body.length() + ' bytes');
@@ -1746,9 +1754,9 @@ This is used in conjunction with the `sendHead` function to send the head of the
 
 An example will illustrate this:
 
-    var client = vertx.createHttpClient();
+    var client = vertx.createHttpClient().setHost('foo.com');
     
-    var request = client.put('http://localhost:8080/some-path', function(resp) {
+    var request = client.put('/some-path', function(resp) {
       
       log.info('Got a response ' + resp.statusCode);
       
