@@ -1,0 +1,270 @@
+
+<!doctype html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module core.event_bus</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="core.html"><font color="#ffffff">core</font></a>.event_bus</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href="index.html">index</a><br></font></td></tr></table>
+    <p><tt>#&nbsp;Copyright&nbsp;2011&nbsp;the&nbsp;original&nbsp;author&nbsp;or&nbsp;authors.<br>
+#<br>
+#&nbsp;Licensed&nbsp;under&nbsp;the&nbsp;Apache&nbsp;License,&nbsp;Version&nbsp;2.0&nbsp;(the&nbsp;"License");<br>
+#&nbsp;you&nbsp;may&nbsp;not&nbsp;use&nbsp;this&nbsp;file&nbsp;except&nbsp;in&nbsp;compliance&nbsp;with&nbsp;the&nbsp;License.<br>
+#&nbsp;You&nbsp;may&nbsp;obtain&nbsp;a&nbsp;copy&nbsp;of&nbsp;the&nbsp;License&nbsp;at<br>
+#<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a><br>
+#<br>
+#&nbsp;Unless&nbsp;required&nbsp;by&nbsp;applicable&nbsp;law&nbsp;or&nbsp;agreed&nbsp;to&nbsp;in&nbsp;writing,&nbsp;software<br>
+#&nbsp;distributed&nbsp;under&nbsp;the&nbsp;License&nbsp;is&nbsp;distributed&nbsp;on&nbsp;an&nbsp;"AS&nbsp;IS"&nbsp;BASIS,<br>
+#&nbsp;WITHOUT&nbsp;WARRANTIES&nbsp;OR&nbsp;CONDITIONS&nbsp;OF&nbsp;ANY&nbsp;KIND,&nbsp;either&nbsp;express&nbsp;or&nbsp;implied.<br>
+#&nbsp;See&nbsp;the&nbsp;License&nbsp;for&nbsp;the&nbsp;specific&nbsp;language&nbsp;governing&nbsp;permissions&nbsp;and<br>
+#&nbsp;limitations&nbsp;under&nbsp;the&nbsp;License.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial">__builtin__.object
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.event_bus.html#EventBus">EventBus</a>
+</font></dt><dt><font face="helvetica, arial"><a href="core.event_bus.html#Message">Message</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial">org.vertx.java.core.Handler(java.lang.Object)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial">org.python.proxies.core.event_bus$InternalHandler$0(org.vertx.java.core.Handler, java.lang.Object)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.event_bus.html#InternalHandler">InternalHandler</a>
+</font></dt></dl>
+</dd>
+</dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EventBus">class <strong>EventBus</strong></a>(__builtin__.object)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>This&nbsp;class&nbsp;represents&nbsp;a&nbsp;distributed&nbsp;lightweight&nbsp;event&nbsp;bus&nbsp;which&nbsp;can&nbsp;encompass&nbsp;multiple&nbsp;vert.x&nbsp;instances.<br>
+It&nbsp;is&nbsp;very&nbsp;useful&nbsp;for&nbsp;otherwise&nbsp;isolated&nbsp;vert.x&nbsp;application&nbsp;instances&nbsp;to&nbsp;communicate&nbsp;with&nbsp;each&nbsp;other.<br>
+&nbsp;<br>
+Messages&nbsp;sent&nbsp;over&nbsp;the&nbsp;event&nbsp;bus&nbsp;are&nbsp;JSON&nbsp;objects&nbsp;represented&nbsp;as&nbsp;Ruby&nbsp;Hash&nbsp;instances.<br>
+&nbsp;<br>
+The&nbsp;event&nbsp;bus&nbsp;implements&nbsp;a&nbsp;distributed&nbsp;publish&nbsp;/&nbsp;subscribe&nbsp;network.<br>
+&nbsp;<br>
+Messages&nbsp;are&nbsp;sent&nbsp;to&nbsp;an&nbsp;address.<br>
+&nbsp;<br>
+There&nbsp;can&nbsp;be&nbsp;multiple&nbsp;handlers&nbsp;registered&nbsp;against&nbsp;that&nbsp;address.<br>
+Any&nbsp;handlers&nbsp;with&nbsp;a&nbsp;matching&nbsp;name&nbsp;will&nbsp;receive&nbsp;the&nbsp;message&nbsp;irrespective&nbsp;of&nbsp;what&nbsp;vert.x&nbsp;application&nbsp;instance&nbsp;and<br>
+what&nbsp;vert.x&nbsp;instance&nbsp;they&nbsp;are&nbsp;located&nbsp;in.<br>
+&nbsp;<br>
+All&nbsp;messages&nbsp;sent&nbsp;over&nbsp;the&nbsp;bus&nbsp;are&nbsp;transient.&nbsp;On&nbsp;event&nbsp;of&nbsp;failure&nbsp;of&nbsp;all&nbsp;or&nbsp;part&nbsp;of&nbsp;the&nbsp;event&nbsp;bus&nbsp;messages<br>
+may&nbsp;be&nbsp;lost.&nbsp;Applications&nbsp;should&nbsp;be&nbsp;coded&nbsp;to&nbsp;cope&nbsp;with&nbsp;lost&nbsp;messages,&nbsp;e.g.&nbsp;by&nbsp;resending&nbsp;them,&nbsp;and&nbsp;making&nbsp;application<br>
+services&nbsp;idempotent.<br>
+&nbsp;<br>
+The&nbsp;order&nbsp;of&nbsp;messages&nbsp;received&nbsp;by&nbsp;any&nbsp;specific&nbsp;handler&nbsp;from&nbsp;a&nbsp;specific&nbsp;sender&nbsp;will&nbsp;match&nbsp;the&nbsp;order&nbsp;of&nbsp;messages<br>
+sent&nbsp;from&nbsp;that&nbsp;sender.<br>
+&nbsp;<br>
+When&nbsp;sending&nbsp;a&nbsp;message,&nbsp;a&nbsp;reply&nbsp;handler&nbsp;can&nbsp;be&nbsp;provided.&nbsp;If&nbsp;so,&nbsp;it&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;the&nbsp;reply&nbsp;from&nbsp;the&nbsp;receiver<br>
+has&nbsp;been&nbsp;received.<br>
+&nbsp;<br>
+When&nbsp;receiving&nbsp;a&nbsp;message&nbsp;in&nbsp;a&nbsp;handler&nbsp;the&nbsp;received&nbsp;<a href="http://pydoc.org/2.5.1/__builtin__.html#object">object</a>&nbsp;is&nbsp;an&nbsp;instance&nbsp;of&nbsp;<a href="#EventBus">EventBus</a>::<a href="#Message">Message</a>&nbsp;-&nbsp;this&nbsp;contains<br>
+the&nbsp;actual&nbsp;Hash&nbsp;of&nbsp;the&nbsp;message&nbsp;plus&nbsp;a&nbsp;reply&nbsp;method&nbsp;which&nbsp;can&nbsp;be&nbsp;used&nbsp;to&nbsp;reply&nbsp;to&nbsp;it.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Static methods defined here:<br>
+<dl><dt><a name="EventBus-convert_msg"><strong>convert_msg</strong></a>(message)</dt></dl>
+
+<dl><dt><a name="EventBus-java_eventbus"><strong>java_eventbus</strong></a>()</dt></dl>
+
+<dl><dt><a name="EventBus-publish"><strong>publish</strong></a>(address, message)</dt><dd><tt>Publish&nbsp;a&nbsp;message&nbsp;on&nbsp;the&nbsp;event&nbsp;bus<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;address:&nbsp;the&nbsp;address&nbsp;to&nbsp;publish&nbsp;to<br>
+@param&nbsp;message:&nbsp;The&nbsp;message&nbsp;to&nbsp;publish</tt></dd></dl>
+
+<dl><dt><a name="EventBus-register_handler"><strong>register_handler</strong></a>(address, local_only<font color="#909090">=False</font>, handler<font color="#909090">=None</font>)</dt><dd><tt>Register&nbsp;a&nbsp;handler.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;address:&nbsp;the&nbsp;address&nbsp;to&nbsp;register&nbsp;for.&nbsp;Any&nbsp;messages&nbsp;sent&nbsp;to&nbsp;that&nbsp;address&nbsp;will&nbsp;be<br>
+received&nbsp;by&nbsp;the&nbsp;handler.&nbsp;A&nbsp;single&nbsp;handler&nbsp;can&nbsp;be&nbsp;registered&nbsp;against&nbsp;many&nbsp;addresses.<br>
+@param&nbsp;local_only:&nbsp;if&nbsp;True&nbsp;then&nbsp;handler&nbsp;won't&nbsp;be&nbsp;propagated&nbsp;across&nbsp;cluster<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler<br>
+&nbsp;<br>
+@return:&nbsp;id&nbsp;of&nbsp;the&nbsp;handler&nbsp;which&nbsp;can&nbsp;be&nbsp;used&nbsp;in&nbsp;<a href="#EventBus">EventBus</a>.unregister_handler</tt></dd></dl>
+
+<dl><dt><a name="EventBus-register_simple_handler"><strong>register_simple_handler</strong></a>(local_only<font color="#909090">=False</font>, handler<font color="#909090">=None</font>)</dt><dd><tt>Registers&nbsp;a&nbsp;handler&nbsp;against&nbsp;a&nbsp;uniquely&nbsp;generated&nbsp;address,&nbsp;the&nbsp;address&nbsp;is&nbsp;returned&nbsp;as&nbsp;the&nbsp;id<br>
+received&nbsp;by&nbsp;the&nbsp;handler.&nbsp;A&nbsp;single&nbsp;handler&nbsp;can&nbsp;be&nbsp;registered&nbsp;against&nbsp;many&nbsp;addresses.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;local_only:&nbsp;If&nbsp;Rrue&nbsp;then&nbsp;handler&nbsp;won't&nbsp;be&nbsp;propagated&nbsp;across&nbsp;cluster<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler<br>
+&nbsp;<br>
+@return:&nbsp;id&nbsp;of&nbsp;the&nbsp;handler&nbsp;which&nbsp;can&nbsp;be&nbsp;used&nbsp;in&nbsp;<a href="#EventBus">EventBus</a>.unregister_handler</tt></dd></dl>
+
+<dl><dt><a name="EventBus-send"><strong>send</strong></a>(address, message, reply_handler<font color="#909090">=None</font>)</dt><dd><tt>Send&nbsp;a&nbsp;message&nbsp;on&nbsp;the&nbsp;event&nbsp;bus<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;address:&nbsp;the&nbsp;address&nbsp;to&nbsp;publish&nbsp;to<br>
+@param&nbsp;message:&nbsp;The&nbsp;message&nbsp;to&nbsp;send<br>
+@param&nbsp;reply_handler:&nbsp;An&nbsp;optional&nbsp;reply&nbsp;handler.<br>
+It&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;the&nbsp;reply&nbsp;from&nbsp;a&nbsp;receiver&nbsp;is&nbsp;received.</tt></dd></dl>
+
+<dl><dt><a name="EventBus-send_or_pub"><strong>send_or_pub</strong></a>(send, address, message, reply_handler<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="EventBus-unregister_handler"><strong>unregister_handler</strong></a>(handler_id)</dt><dd><tt>Unregisters&nbsp;a&nbsp;handler<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;handler_id:&nbsp;the&nbsp;id&nbsp;of&nbsp;the&nbsp;handler&nbsp;to&nbsp;unregister.&nbsp;Returned&nbsp;from&nbsp;<a href="#EventBus">EventBus</a>.register_handler</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>handler_dict</strong> = {}</dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="InternalHandler">class <strong>InternalHandler</strong></a>(org.python.proxies.core.event_bus$InternalHandler$0)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="core.event_bus.html#InternalHandler">InternalHandler</a></dd>
+<dd>org.python.proxies.core.event_bus$InternalHandler$0</dd>
+<dd>org.vertx.java.core.Handler</dd>
+<dd>java.lang.Object</dd>
+<dd>__builtin__.object</dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="InternalHandler-__init__"><strong>__init__</strong></a>(self, handler)</dt></dl>
+
+<dl><dt><a name="InternalHandler-handle"><strong>handle</strong></a>(self, message)</dt></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>__initProxy__</strong> = &lt;java function __initProxy__ 0x3&gt;</dl>
+
+<dl><dt><strong>__supernames__</strong> = array('java.lang.String', [u'clone', u'finalize'])</dl>
+
+<dl><dt><strong>classDictInit</strong> = &lt;java function classDictInit 0x4&gt;</dl>
+
+<dl><dt><strong>clone</strong> = &lt;java function clone 0x5&gt;</dl>
+
+<dl><dt><strong>finalize</strong> = &lt;java function finalize 0x6&gt;</dl>
+
+<hr>
+Methods inherited from java.lang.Object:<br>
+<dl><dt><a name="InternalHandler-__copy__"><strong>__copy__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="InternalHandler-__deepcopy__"><strong>__deepcopy__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="InternalHandler-__eq__"><strong>__eq__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="InternalHandler-__hash__"><strong>__hash__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="InternalHandler-__ne__"><strong>__ne__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="InternalHandler-__repr__"><strong>__repr__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="InternalHandler-__unicode__"><strong>__unicode__</strong></a>(...)</dt></dl>
+
+<hr>
+Data and other attributes inherited from java.lang.Object:<br>
+<dl><dt><strong>equals</strong> = &lt;java function equals 0x7&gt;</dl>
+
+<dl><dt><strong>getClass</strong> = &lt;java function getClass 0x8&gt;</dl>
+
+<dl><dt><strong>hashCode</strong> = &lt;java function hashCode 0x9&gt;</dl>
+
+<dl><dt><strong>notify</strong> = &lt;java function notify 0xa&gt;</dl>
+
+<dl><dt><strong>notifyAll</strong> = &lt;java function notifyAll 0xb&gt;</dl>
+
+<dl><dt><strong>toString</strong> = &lt;java function toString 0xc&gt;</dl>
+
+<dl><dt><strong>wait</strong> = &lt;java function wait 0xd&gt;</dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Message">class <strong>Message</strong></a>(__builtin__.object)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Represents&nbsp;a&nbsp;message&nbsp;received&nbsp;from&nbsp;the&nbsp;event&nbsp;bus<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="Message-__init__"><strong>__init__</strong></a>(self, message)</dt></dl>
+
+<dl><dt><a name="Message-reply"><strong>reply</strong></a>(self, reply, handler<font color="#909090">=None</font>)</dt><dd><tt>Reply&nbsp;to&nbsp;this&nbsp;message.&nbsp;If&nbsp;the&nbsp;message&nbsp;was&nbsp;sent&nbsp;specifying&nbsp;a&nbsp;receipt&nbsp;handler,&nbsp;that&nbsp;handler&nbsp;will&nbsp;be<br>
+called&nbsp;when&nbsp;it&nbsp;has&nbsp;received&nbsp;a&nbsp;reply.&nbsp;If&nbsp;the&nbsp;message&nbsp;wasn't&nbsp;sent&nbsp;specifying&nbsp;a&nbsp;receipt&nbsp;handler<br>
+this&nbsp;method&nbsp;does&nbsp;nothing.<br>
+Replying&nbsp;to&nbsp;a&nbsp;message&nbsp;this&nbsp;way&nbsp;is&nbsp;equivalent&nbsp;to&nbsp;sending&nbsp;a&nbsp;message&nbsp;to&nbsp;an&nbsp;address&nbsp;which&nbsp;is&nbsp;the&nbsp;same&nbsp;as&nbsp;the&nbsp;message&nbsp;id<br>
+of&nbsp;the&nbsp;original&nbsp;message.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;reply:&nbsp;message&nbsp;to&nbsp;send&nbsp;as&nbsp;reply<br>
+@param&nbsp;handler:&nbsp;the&nbsp;reply&nbsp;handler</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Scott Horn'<br>
+<strong>__credits__</strong> = 'Based entirely on work by Tim Fox http://tfox.org'<br>
+<strong>__email__</strong> = 'scott@hornmicro.com'<br>
+<strong>java</strong> = &lt;java package java 0xe&gt;<br>
+<strong>org</strong> = &lt;java package org 0x2&gt;</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Scott&nbsp;Horn</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Credits</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Based&nbsp;entirely&nbsp;on&nbsp;work&nbsp;by&nbsp;Tim&nbsp;Fox&nbsp;<a href="http://tfox.org">http://tfox.org</a></td></tr></table>
+</body></html>

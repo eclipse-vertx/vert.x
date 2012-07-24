@@ -1,0 +1,38 @@
+<html><head><title>Epydoc Redirect Page</title>
+<meta http-equiv="cache-control" content="no-cache" />
+<meta http-equiv="expires" content="0" />
+<meta http-equiv="pragma" content="no-cache" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+<!--
+var pages = ["core.file_system.AsyncFileWriteStream-c", "core.file_system.AsyncFileReadStream-c", "core.http.HttpClientResponseHandler-c", "core.parsetools.RecordParserHandler-c", "core.http.HttpServerRequestHandler-c", "core.file_system.FSWrappedHandler-c", "core.http.ServerWebSocketHandler-c", "core.sock_js.SockJSSocketHandler-c", "core.event_bus.InternalHandler-c", "core.handlers.ExceptionHandler-c", "core.handlers.StreamEndHandler-c", "core.handlers.ContinueHandler-c", "core.http.HttpClientResponse-c", "core.http.HttpServerResponse-c", "core.parsetools.RecordParser-c", "core.file_system.FileSystem-c", "core.handlers.BufferHandler-c", "core.handlers.ClosedHandler-c", "core.http.HttpClientRequest-c", "core.http.HttpServerRequest-c", "core.shared_data.SharedData-c", "core.shared_data.SharedHash-c", "core.ssl_support.SSLSupport-c", "core.tcp_support.TCPSupport-c", "core.file_system.AsyncFile-c", "core.file_system.FileProps-c", "core.handlers.CloseHandler-c", "core.handlers.DrainHandler-c", "core.handlers.TimerHandler-c", "core.http.WebSocketHandler-c", "core.shared_data.SharedSet-c", "core.handlers.DoneHandler-c", "core.http.ServerWebSocket-c", "core.sock_js.SockJSServer-c", "core.sock_js.SockJSSocket-c", "core.file_system.FSProps-c", "core.streams.WriteStream-c", "core.event_bus.EventBus-c", "core.net.ConnectHandler-c", "core.streams.ReadStream-c", "core.event_bus.Message-c", "core.http.RouteMatcher-c", "core.http.HttpClient-c", "core.http.HttpServer-c", "core.http.WebSocket-c", "core.buffer.Buffer-c", "core.net.NetClient-c", "core.net.NetServer-c", "core.net.NetSocket-c", "core.streams.Pump-c", "core.file_system-m", "core.shared_data-m", "core.ssl_support-m", "core.tcp_support-m", "core.parsetools-m", "core.event_bus-m", "core.javautils-m", "core.handlers-m", "core.sock_js-m", "core.streams-m", "core.buffer-m", "vertx.Vertx-c", "core.http-m", "core.net-m", "vertx-m", "core-m"];
+var dottedName = get_anchor();
+if (dottedName) {
+    var target = redirect_url(dottedName);
+    if (target) window.location.replace(target);
+}
+// -->
+</script>
+
+<h3>Epydoc Auto-redirect page</h3>
+
+<p>When javascript is enabled, this page will redirect URLs of
+the form <tt>redirect.html#<i>dotted.name</i></tt> to the
+documentation for the object with the given fully-qualified
+dotted name.</p>
+<p><a id="message"> &nbsp; </a></p>
+
+<script type="text/javascript">
+<!--
+if (dottedName) {
+    var msg = document.getElementById("message");
+    msg.innerHTML = "No documentation found for <tt>"+
+                    dottedName+"</tt>";
+}
+// -->
+</script>
+
+</body>
+</html>

@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>core.buffer</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="core-module.html">Package&nbsp;core</a> ::
+        Module&nbsp;buffer
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="core.buffer-pysrc.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<h1 class="epydoc">Source Code for <a href="core.buffer-module.html">Module core.buffer</a></h1>
+<pre class="py-src">
+<a name="L1"></a><tt class="py-lineno">  1</tt>  <tt class="py-line"><tt class="py-comment"># Copyright 2011-2012 the original author or authors.</tt> </tt>
+<a name="L2"></a><tt class="py-lineno">  2</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L3"></a><tt class="py-lineno">  3</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># Licensed under the Apache License, Version 2.0 (the "License");</tt> </tt>
+<a name="L4"></a><tt class="py-lineno">  4</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># you may not use this file except in compliance with the License.</tt> </tt>
+<a name="L5"></a><tt class="py-lineno">  5</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># You may obtain a copy of the License at</tt> </tt>
+<a name="L6"></a><tt class="py-lineno">  6</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L7"></a><tt class="py-lineno">  7</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#      http://www.apache.org/licenses/LICENSE-2.0</tt> </tt>
+<a name="L8"></a><tt class="py-lineno">  8</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment">#</tt> </tt>
+<a name="L9"></a><tt class="py-lineno">  9</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># Unless required by applicable law or agreed to in writing, software</tt> </tt>
+<a name="L10"></a><tt class="py-lineno"> 10</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># distributed under the License is distributed on an "AS IS" BASIS,</tt> </tt>
+<a name="L11"></a><tt class="py-lineno"> 11</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</tt> </tt>
+<a name="L12"></a><tt class="py-lineno"> 12</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># See the License for the specific language governing permissions and</tt> </tt>
+<a name="L13"></a><tt class="py-lineno"> 13</tt>  <tt class="py-line"><tt class="py-comment"></tt><tt class="py-comment"># limitations under the License.</tt> </tt>
+<a name="L14"></a><tt class="py-lineno"> 14</tt>  <tt class="py-line"><tt class="py-comment"></tt> </tt>
+<a name="L15"></a><tt class="py-lineno"> 15</tt>  <tt class="py-line"><tt class="py-docstring">""" </tt> </tt>
+<a name="L16"></a><tt class="py-lineno"> 16</tt>  <tt class="py-line"><tt class="py-docstring">This module adds the buffer support to the python vert.x platform </tt> </tt>
+<a name="L17"></a><tt class="py-lineno"> 17</tt>  <tt class="py-line"><tt class="py-docstring">"""</tt> </tt>
+<a name="L18"></a><tt class="py-lineno"> 18</tt>  <tt class="py-line"> </tt>
+<a name="L19"></a><tt class="py-lineno"> 19</tt>  <tt class="py-line"><tt class="py-keyword">import</tt> <tt class="py-name">org</tt><tt class="py-op">.</tt><tt id="link-0" class="py-name" targets="Module vertx=vertx-module.html"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-0', 'vertx', 'link-0');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">java</tt><tt class="py-op">.</tt><tt id="link-1" class="py-name" targets="Package core=core-module.html"><a title="core" class="py-name" href="#" onclick="return doclink('link-1', 'core', 'link-1');">core</a></tt><tt class="py-op">.</tt><tt id="link-2" class="py-name" targets="Module core.buffer=core.buffer-module.html"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-2', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt id="link-3" class="py-name" targets="Class core.buffer.Buffer=core.buffer.Buffer-class.html"><a title="core.buffer.Buffer" class="py-name" href="#" onclick="return doclink('link-3', 'Buffer', 'link-3');">Buffer</a></tt> </tt>
+<a name="L20"></a><tt class="py-lineno"> 20</tt>  <tt class="py-line"> </tt>
+<a name="L21"></a><tt class="py-lineno"> 21</tt>  <tt class="py-line"><tt class="py-name">__author__</tt> <tt class="py-op">=</tt> <tt class="py-string">"Scott Horn"</tt> </tt>
+<a name="L22"></a><tt class="py-lineno"> 22</tt>  <tt class="py-line"><tt id="link-4" class="py-name" targets="Variable core.buffer.__email__=core.buffer-module.html#__email__,Variable core.event_bus.__email__=core.event_bus-module.html#__email__,Variable core.file_system.__email__=core.file_system-module.html#__email__,Variable core.handlers.__email__=core.handlers-module.html#__email__,Variable core.http.__email__=core.http-module.html#__email__,Variable core.javautils.__email__=core.javautils-module.html#__email__,Variable core.net.__email__=core.net-module.html#__email__,Variable core.parsetools.__email__=core.parsetools-module.html#__email__,Variable core.shared_data.__email__=core.shared_data-module.html#__email__,Variable core.sock_js.__email__=core.sock_js-module.html#__email__,Variable core.ssl_support.__email__=core.ssl_support-module.html#__email__,Variable core.streams.__email__=core.streams-module.html#__email__,Variable core.tcp_support.__email__=core.tcp_support-module.html#__email__,Variable vertx.__email__=vertx-module.html#__email__"><a title="core.buffer.__email__
+core.event_bus.__email__
+core.file_system.__email__
+core.handlers.__email__
+core.http.__email__
+core.javautils.__email__
+core.net.__email__
+core.parsetools.__email__
+core.shared_data.__email__
+core.sock_js.__email__
+core.ssl_support.__email__
+core.streams.__email__
+core.tcp_support.__email__
+vertx.__email__" class="py-name" href="#" onclick="return doclink('link-4', '__email__', 'link-4');">__email__</a></tt> <tt class="py-op">=</tt> <tt class="py-string">"scott@hornmicro.com"</tt> </tt>
+<a name="L23"></a><tt class="py-lineno"> 23</tt>  <tt class="py-line"><tt id="link-5" class="py-name" targets="Variable core.buffer.__credits__=core.buffer-module.html#__credits__,Variable core.event_bus.__credits__=core.event_bus-module.html#__credits__,Variable core.file_system.__credits__=core.file_system-module.html#__credits__,Variable core.handlers.__credits__=core.handlers-module.html#__credits__,Variable core.http.__credits__=core.http-module.html#__credits__,Variable core.javautils.__credits__=core.javautils-module.html#__credits__,Variable core.net.__credits__=core.net-module.html#__credits__,Variable core.parsetools.__credits__=core.parsetools-module.html#__credits__,Variable core.shared_data.__credits__=core.shared_data-module.html#__credits__,Variable core.sock_js.__credits__=core.sock_js-module.html#__credits__,Variable core.ssl_support.__credits__=core.ssl_support-module.html#__credits__,Variable core.streams.__credits__=core.streams-module.html#__credits__,Variable core.tcp_support.__credits__=core.tcp_support-module.html#__credits__,Variable vertx.__credits__=vertx-module.html#__credits__"><a title="core.buffer.__credits__
+core.event_bus.__credits__
+core.file_system.__credits__
+core.handlers.__credits__
+core.http.__credits__
+core.javautils.__credits__
+core.net.__credits__
+core.parsetools.__credits__
+core.shared_data.__credits__
+core.sock_js.__credits__
+core.ssl_support.__credits__
+core.streams.__credits__
+core.tcp_support.__credits__
+vertx.__credits__" class="py-name" href="#" onclick="return doclink('link-5', '__credits__', 'link-5');">__credits__</a></tt> <tt class="py-op">=</tt> <tt class="py-string">"Based entirely on work by Tim Fox http://tfox.org"</tt> </tt>
+<a name="Buffer"></a><div id="Buffer-def"><a name="L24"></a><tt class="py-lineno"> 24</tt>  <tt class="py-line"> </tt>
+<a name="L25"></a><tt class="py-lineno"> 25</tt> <a class="py-toggle" href="#" id="Buffer-toggle" onclick="return toggle('Buffer');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="core.buffer.Buffer-class.html">Buffer</a><tt class="py-op">(</tt><tt class="py-base-class">object</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Buffer-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="Buffer-expanded"><a name="L26"></a><tt class="py-lineno"> 26</tt>  <tt class="py-line">    <tt class="py-docstring">"""A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands</tt> </tt>
+<a name="L27"></a><tt class="py-lineno"> 27</tt>  <tt class="py-line"><tt class="py-docstring">    as necessary to accomodate any bytes written to it.</tt> </tt>
+<a name="L28"></a><tt class="py-lineno"> 28</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L29"></a><tt class="py-lineno"> 29</tt>  <tt class="py-line"><tt class="py-docstring">    Buffers are used in many places in vert.x, for example to read/write data to/from NetSocket, AsyncFile,</tt> </tt>
+<a name="L30"></a><tt class="py-lineno"> 30</tt>  <tt class="py-line"><tt class="py-docstring">    WebSocket, HttpClientRequest, HttpClientResponse, HttpServerRequest, HttpServerResponse etc.</tt> </tt>
+<a name="L31"></a><tt class="py-lineno"> 31</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L32"></a><tt class="py-lineno"> 32</tt>  <tt class="py-line"><tt class="py-docstring">    There are two ways to write data to a Buffer: The first method involves methods that take the form set_XXX.</tt> </tt>
+<a name="L33"></a><tt class="py-lineno"> 33</tt>  <tt class="py-line"><tt class="py-docstring">    These methods write data into the buffer starting at the specified position. The position does not have to be inside data that</tt> </tt>
+<a name="L34"></a><tt class="py-lineno"> 34</tt>  <tt class="py-line"><tt class="py-docstring">    has already been written to the buffer; the buffer will automatically expand to encompass the position plus any data that needs</tt> </tt>
+<a name="L35"></a><tt class="py-lineno"> 35</tt>  <tt class="py-line"><tt class="py-docstring">    to be written. All positions are measured in bytes and start with zero.</tt> </tt>
+<a name="L36"></a><tt class="py-lineno"> 36</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L37"></a><tt class="py-lineno"> 37</tt>  <tt class="py-line"><tt class="py-docstring">    The second method involves methods that take the form append-XXX; these methods append data at the end of the buffer.</tt> </tt>
+<a name="L38"></a><tt class="py-lineno"> 38</tt>  <tt class="py-line"><tt class="py-docstring">    Methods exist to both set and append all primitive types, String and  other instances of Buffer.</tt> </tt>
+<a name="L39"></a><tt class="py-lineno"> 39</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L40"></a><tt class="py-lineno"> 40</tt>  <tt class="py-line"><tt class="py-docstring">    Data can be read from a buffer by invoking methods which take the form get_XXX. These methods take a parameter</tt> </tt>
+<a name="L41"></a><tt class="py-lineno"> 41</tt>  <tt class="py-line"><tt class="py-docstring">    representing the position in the Buffer from where to read data.</tt> </tt>
+<a name="L42"></a><tt class="py-lineno"> 42</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="Buffer.__init__"></a><div id="Buffer.__init__-def"><a name="L43"></a><tt class="py-lineno"> 43</tt> <a class="py-toggle" href="#" id="Buffer.__init__-toggle" onclick="return toggle('Buffer.__init__');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.buffer.Buffer-class.html#__init__">__init__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">buffer</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Buffer.__init__-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Buffer.__init__-expanded"><a name="L44"></a><tt class="py-lineno"> 44</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-6" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-6', 'buffer', 'link-2');">buffer</a></tt> <tt class="py-op">=</tt> <tt id="link-7" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-7', 'buffer', 'link-2');">buffer</a></tt> </tt>
+</div><a name="L45"></a><tt class="py-lineno"> 45</tt>  <tt class="py-line"> </tt>
+<a name="Buffer.__repr__"></a><div id="Buffer.__repr__-def"><a name="L46"></a><tt class="py-lineno"> 46</tt> <a class="py-toggle" href="#" id="Buffer.__repr__-toggle" onclick="return toggle('Buffer.__repr__');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.buffer.Buffer-class.html#__repr__">__repr__</a><tt class="py-op">(</tt> <tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Buffer.__repr__-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Buffer.__repr__-expanded"><a name="L47"></a><tt class="py-lineno"> 47</tt>  <tt class="py-line">        <tt class="py-docstring">""" String representation of buffer """</tt> </tt>
+<a name="L48"></a><tt class="py-lineno"> 48</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-8" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-8', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">toString</tt><tt class="py-op">(</tt><tt class="py-string">"UTF-8"</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L49"></a><tt class="py-lineno"> 49</tt>  <tt class="py-line"> </tt>
+<a name="Buffer.to_string"></a><div id="Buffer.to_string-def"><a name="L50"></a><tt class="py-lineno"> 50</tt> <a class="py-toggle" href="#" id="Buffer.to_string-toggle" onclick="return toggle('Buffer.to_string');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.buffer.Buffer-class.html#to_string">to_string</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">enc</tt><tt class="py-op">=</tt><tt class="py-string">"UTF-8"</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Buffer.to_string-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Buffer.to_string-expanded"><a name="L51"></a><tt class="py-lineno"> 51</tt>  <tt class="py-line">        <tt class="py-docstring">""" Buffer in enc encoding """</tt> </tt>
+<a name="L52"></a><tt class="py-lineno"> 52</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-9" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-9', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">toString</tt><tt class="py-op">(</tt><tt class="py-name">enc</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L53"></a><tt class="py-lineno"> 53</tt>  <tt class="py-line"> </tt>
+<a name="L54"></a><tt class="py-lineno"> 54</tt>  <tt class="py-line">    <tt class="py-decorator">@</tt><tt class="py-decorator">staticmethod</tt> </tt>
+<a name="Buffer.create_from_str"></a><div id="Buffer.create_from_str-def"><a name="L55"></a><tt class="py-lineno"> 55</tt> <a class="py-toggle" href="#" id="Buffer.create_from_str-toggle" onclick="return toggle('Buffer.create_from_str');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.buffer.Buffer-class.html#create_from_str">create_from_str</a><tt class="py-op">(</tt><tt class="py-param">str</tt><tt class="py-op">,</tt> <tt class="py-param">enc</tt><tt class="py-op">=</tt><tt class="py-string">"UTF-8"</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Buffer.create_from_str-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Buffer.create_from_str-expanded"><a name="L56"></a><tt class="py-lineno"> 56</tt>  <tt class="py-line">        <tt class="py-docstring">""" Create a buffer from a string in the enc encoding """</tt> </tt>
+<a name="L57"></a><tt class="py-lineno"> 57</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt id="link-10" class="py-name"><a title="core.buffer.Buffer" class="py-name" href="#" onclick="return doclink('link-10', 'Buffer', 'link-3');">Buffer</a></tt><tt class="py-op">(</tt><tt class="py-name">org</tt><tt class="py-op">.</tt><tt id="link-11" class="py-name"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-11', 'vertx', 'link-0');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">java</tt><tt class="py-op">.</tt><tt id="link-12" class="py-name"><a title="core" class="py-name" href="#" onclick="return doclink('link-12', 'core', 'link-1');">core</a></tt><tt class="py-op">.</tt><tt id="link-13" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-13', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt id="link-14" class="py-name"><a title="core.buffer.Buffer" class="py-name" href="#" onclick="return doclink('link-14', 'Buffer', 'link-3');">Buffer</a></tt><tt class="py-op">(</tt><tt class="py-name">str</tt><tt class="py-op">,</tt> <tt class="py-name">enc</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L58"></a><tt class="py-lineno"> 58</tt>  <tt class="py-line"> </tt>
+<a name="L59"></a><tt class="py-lineno"> 59</tt>  <tt class="py-line">    <tt class="py-decorator">@</tt><tt class="py-decorator">staticmethod</tt> </tt>
+<a name="Buffer.create"></a><div id="Buffer.create-def"><a name="L60"></a><tt class="py-lineno"> 60</tt> <a class="py-toggle" href="#" id="Buffer.create-toggle" onclick="return toggle('Buffer.create');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.buffer.Buffer-class.html#create">create</a><tt class="py-op">(</tt><tt class="py-param">initial_size_hint</tt> <tt class="py-op">=</tt> <tt class="py-number">0</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Buffer.create-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Buffer.create-expanded"><a name="L61"></a><tt class="py-lineno"> 61</tt>  <tt class="py-line">        <tt class="py-docstring">""" Creates a new empty buffer. initial_size_hint is a hint to the system for how much memory to initially allocate."""</tt> </tt>
+<a name="L62"></a><tt class="py-lineno"> 62</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt id="link-15" class="py-name"><a title="core.buffer.Buffer" class="py-name" href="#" onclick="return doclink('link-15', 'Buffer', 'link-3');">Buffer</a></tt><tt class="py-op">(</tt><tt class="py-name">org</tt><tt class="py-op">.</tt><tt id="link-16" class="py-name"><a title="vertx" class="py-name" href="#" onclick="return doclink('link-16', 'vertx', 'link-0');">vertx</a></tt><tt class="py-op">.</tt><tt class="py-name">java</tt><tt class="py-op">.</tt><tt id="link-17" class="py-name"><a title="core" class="py-name" href="#" onclick="return doclink('link-17', 'core', 'link-1');">core</a></tt><tt class="py-op">.</tt><tt id="link-18" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-18', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt id="link-19" class="py-name"><a title="core.buffer.Buffer" class="py-name" href="#" onclick="return doclink('link-19', 'Buffer', 'link-3');">Buffer</a></tt><tt class="py-op">(</tt><tt class="py-name">initial_size_hint</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L63"></a><tt class="py-lineno"> 63</tt>  <tt class="py-line"> </tt>
+<a name="Buffer.get_byte"></a><div id="Buffer.get_byte-def"><a name="L64"></a><tt class="py-lineno"> 64</tt> <a class="py-toggle" href="#" id="Buffer.get_byte-toggle" onclick="return toggle('Buffer.get_byte');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.buffer.Buffer-class.html#get_byte">get_byte</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">pos</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Buffer.get_byte-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Buffer.get_byte-expanded"><a name="L65"></a><tt class="py-lineno"> 65</tt>  <tt class="py-line">        <tt class="py-docstring">""" Get the byte at position pos in the buffer. """</tt> </tt>
+<a name="L66"></a><tt class="py-lineno"> 66</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-20" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-20', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">getByte</tt><tt class="py-op">(</tt><tt class="py-name">pos</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L67"></a><tt class="py-lineno"> 67</tt>  <tt class="py-line"> </tt>
+<a name="Buffer.get_fixnum"></a><div id="Buffer.get_fixnum-def"><a name="L68"></a><tt class="py-lineno"> 68</tt> <a class="py-toggle" href="#" id="Buffer.get_fixnum-toggle" onclick="return toggle('Buffer.get_fixnum');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.buffer.Buffer-class.html#get_fixnum">get_fixnum</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">pos</tt><tt class="py-op">,</tt> <tt class="py-param">bytes</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Buffer.get_fixnum-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Buffer.get_fixnum-expanded"><a name="L69"></a><tt class="py-lineno"> 69</tt>  <tt class="py-line">        <tt class="py-docstring">""" Get the fixnum represented by a sequence of bytes starting at position pos in the buffer. """</tt> </tt>
+<a name="L70"></a><tt class="py-lineno"> 70</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-name">bytes</tt> <tt class="py-op">==</tt> <tt class="py-number">1</tt><tt class="py-op">:</tt> </tt>
+<a name="L71"></a><tt class="py-lineno"> 71</tt>  <tt class="py-line">          <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-21" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-21', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">getByte</tt><tt class="py-op">(</tt><tt class="py-name">pos</tt><tt class="py-op">)</tt> </tt>
+<a name="L72"></a><tt class="py-lineno"> 72</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">bytes</tt> <tt class="py-op">==</tt>  <tt class="py-number">2</tt><tt class="py-op">:</tt> </tt>
+<a name="L73"></a><tt class="py-lineno"> 73</tt>  <tt class="py-line">          <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-22" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-22', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">getShort</tt><tt class="py-op">(</tt><tt class="py-name">pos</tt><tt class="py-op">)</tt> </tt>
+<a name="L74"></a><tt class="py-lineno"> 74</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">bytes</tt> <tt class="py-op">==</tt>  <tt class="py-number">4</tt><tt class="py-op">:</tt> </tt>
+<a name="L75"></a><tt class="py-lineno"> 75</tt>  <tt class="py-line">          <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-23" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-23', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">getInt</tt><tt class="py-op">(</tt><tt class="py-name">pos</tt><tt class="py-op">)</tt> </tt>
+<a name="L76"></a><tt class="py-lineno"> 76</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">bytes</tt> <tt class="py-op">==</tt>  <tt class="py-number">8</tt><tt class="py-op">:</tt> </tt>
+<a name="L77"></a><tt class="py-lineno"> 77</tt>  <tt class="py-line">          <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-24" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-24', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">getLong</tt><tt class="py-op">(</tt><tt class="py-name">pos</tt><tt class="py-op">)</tt> </tt>
+<a name="L78"></a><tt class="py-lineno"> 78</tt>  <tt class="py-line">        <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
+<a name="L79"></a><tt class="py-lineno"> 79</tt>  <tt class="py-line">          <tt class="py-keyword">raise</tt> <tt class="py-name">Exception</tt><tt class="py-op">(</tt><tt class="py-string">"bytes must be 1, 2, 4, or 8"</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L80"></a><tt class="py-lineno"> 80</tt>  <tt class="py-line"> </tt>
+<a name="Buffer.get_float"></a><div id="Buffer.get_float-def"><a name="L81"></a><tt class="py-lineno"> 81</tt> <a class="py-toggle" href="#" id="Buffer.get_float-toggle" onclick="return toggle('Buffer.get_float');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.buffer.Buffer-class.html#get_float">get_float</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">pos</tt><tt class="py-op">,</tt> <tt class="py-param">bytes</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Buffer.get_float-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Buffer.get_float-expanded"><a name="L82"></a><tt class="py-lineno"> 82</tt>  <tt class="py-line">        <tt class="py-docstring">""" Get the float represented by a sequence of bytes starting at position pos in the buffer. """</tt> </tt>
+<a name="L83"></a><tt class="py-lineno"> 83</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-name">bytes</tt> <tt class="py-op">==</tt> <tt class="py-number">4</tt><tt class="py-op">:</tt> </tt>
+<a name="L84"></a><tt class="py-lineno"> 84</tt>  <tt class="py-line">          <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-25" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-25', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">getFloat</tt><tt class="py-op">(</tt><tt class="py-name">pos</tt><tt class="py-op">)</tt> </tt>
+<a name="L85"></a><tt class="py-lineno"> 85</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">bytes</tt> <tt class="py-op">==</tt> <tt class="py-number">8</tt><tt class="py-op">:</tt> </tt>
+<a name="L86"></a><tt class="py-lineno"> 86</tt>  <tt class="py-line">          <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-26" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-26', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">getDouble</tt><tt class="py-op">(</tt><tt class="py-name">pos</tt><tt class="py-op">)</tt> </tt>
+<a name="L87"></a><tt class="py-lineno"> 87</tt>  <tt class="py-line">        <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
+<a name="L88"></a><tt class="py-lineno"> 88</tt>  <tt class="py-line">          <tt class="py-keyword">raise</tt> <tt class="py-name">Exception</tt><tt class="py-op">(</tt><tt class="py-string">"bytes must be 4 or 8"</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L89"></a><tt class="py-lineno"> 89</tt>  <tt class="py-line"> </tt>
+<a name="Buffer.get_string"></a><div id="Buffer.get_string-def"><a name="L90"></a><tt class="py-lineno"> 90</tt> <a class="py-toggle" href="#" id="Buffer.get_string-toggle" onclick="return toggle('Buffer.get_string');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.buffer.Buffer-class.html#get_string">get_string</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">pos</tt><tt class="py-op">,</tt> <tt class="py-param">end_pos</tt><tt class="py-op">,</tt> <tt class="py-param">enc</tt><tt class="py-op">=</tt><tt class="py-string">'UTF-8'</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Buffer.get_string-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Buffer.get_string-expanded"><a name="L91"></a><tt class="py-lineno"> 91</tt>  <tt class="py-line">        <tt class="py-docstring">""" Return bytes from the buffer interpreted as a String """</tt> </tt>
+<a name="L92"></a><tt class="py-lineno"> 92</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-27" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-27', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">getString</tt><tt class="py-op">(</tt><tt class="py-name">pos</tt><tt class="py-op">,</tt> <tt class="py-name">end_pos</tt><tt class="py-op">,</tt> <tt class="py-name">enc</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L93"></a><tt class="py-lineno"> 93</tt>  <tt class="py-line"> </tt>
+<a name="Buffer.get_buffer"></a><div id="Buffer.get_buffer-def"><a name="L94"></a><tt class="py-lineno"> 94</tt> <a class="py-toggle" href="#" id="Buffer.get_buffer-toggle" onclick="return toggle('Buffer.get_buffer');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.buffer.Buffer-class.html#get_buffer">get_buffer</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">pos</tt><tt class="py-op">,</tt> <tt class="py-param">end_pos</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Buffer.get_buffer-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Buffer.get_buffer-expanded"><a name="L95"></a><tt class="py-lineno"> 95</tt>  <tt class="py-line">        <tt class="py-docstring">""" Return bytes in the buffer as a Buffer """</tt> </tt>
+<a name="L96"></a><tt class="py-lineno"> 96</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt id="link-28" class="py-name"><a title="core.buffer.Buffer" class="py-name" href="#" onclick="return doclink('link-28', 'Buffer', 'link-3');">Buffer</a></tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-29" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-29', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">getBuffer</tt><tt class="py-op">(</tt><tt class="py-name">pos</tt><tt class="py-op">,</tt> <tt class="py-name">end_pos</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L97"></a><tt class="py-lineno"> 97</tt>  <tt class="py-line"> </tt>
+<a name="Buffer.append_buffer"></a><div id="Buffer.append_buffer-def"><a name="L98"></a><tt class="py-lineno"> 98</tt> <a class="py-toggle" href="#" id="Buffer.append_buffer-toggle" onclick="return toggle('Buffer.append_buffer');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.buffer.Buffer-class.html#append_buffer">append_buffer</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">buff</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Buffer.append_buffer-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Buffer.append_buffer-expanded"><a name="L99"></a><tt class="py-lineno"> 99</tt>  <tt class="py-line">        <tt class="py-docstring">""" Appends a buffer to the end of this buffer. The buffer will expand as necessary to accomodate any bytes written. """</tt> </tt>
+<a name="L100"></a><tt class="py-lineno">100</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-30" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-30', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">appendBuffer</tt><tt class="py-op">(</tt><tt class="py-name">buff</tt><tt class="py-op">.</tt><tt id="link-31" class="py-name" targets="Method core.buffer.Buffer._to_java_buffer()=core.buffer.Buffer-class.html#_to_java_buffer"><a title="core.buffer.Buffer._to_java_buffer" class="py-name" href="#" onclick="return doclink('link-31', '_to_java_buffer', 'link-31');">_to_java_buffer</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">)</tt>         </tt>
+<a name="L101"></a><tt class="py-lineno">101</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt> </tt>
+</div><a name="L102"></a><tt class="py-lineno">102</tt>  <tt class="py-line"> </tt>
+<a name="Buffer.append_fixnum"></a><div id="Buffer.append_fixnum-def"><a name="L103"></a><tt class="py-lineno">103</tt> <a class="py-toggle" href="#" id="Buffer.append_fixnum-toggle" onclick="return toggle('Buffer.append_fixnum');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.buffer.Buffer-class.html#append_fixnum">append_fixnum</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">num</tt><tt class="py-op">,</tt> <tt class="py-param">bytes</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Buffer.append_fixnum-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Buffer.append_fixnum-expanded"><a name="L104"></a><tt class="py-lineno">104</tt>  <tt class="py-line">        <tt class="py-docstring">""" Appends a fixnum to the end of this buffer. The buffer will expand as necessary to accomodate any bytes written. """</tt> </tt>
+<a name="L105"></a><tt class="py-lineno">105</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-name">bytes</tt> <tt class="py-op">==</tt> <tt class="py-number">1</tt><tt class="py-op">:</tt> </tt>
+<a name="L106"></a><tt class="py-lineno">106</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-32" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-32', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">appendByte</tt><tt class="py-op">(</tt><tt class="py-name">num</tt><tt class="py-op">)</tt> </tt>
+<a name="L107"></a><tt class="py-lineno">107</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">bytes</tt> <tt class="py-op">==</tt> <tt class="py-number">2</tt><tt class="py-op">:</tt> </tt>
+<a name="L108"></a><tt class="py-lineno">108</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-33" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-33', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">appendShort</tt><tt class="py-op">(</tt><tt class="py-name">num</tt><tt class="py-op">)</tt> </tt>
+<a name="L109"></a><tt class="py-lineno">109</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">bytes</tt> <tt class="py-op">==</tt>  <tt class="py-number">4</tt><tt class="py-op">:</tt> </tt>
+<a name="L110"></a><tt class="py-lineno">110</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-34" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-34', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">appendInt</tt><tt class="py-op">(</tt><tt class="py-name">num</tt><tt class="py-op">)</tt> </tt>
+<a name="L111"></a><tt class="py-lineno">111</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">bytes</tt> <tt class="py-op">==</tt>  <tt class="py-number">8</tt><tt class="py-op">:</tt> </tt>
+<a name="L112"></a><tt class="py-lineno">112</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-35" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-35', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">appendLong</tt><tt class="py-op">(</tt><tt class="py-name">num</tt><tt class="py-op">)</tt> </tt>
+<a name="L113"></a><tt class="py-lineno">113</tt>  <tt class="py-line">        <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
+<a name="L114"></a><tt class="py-lineno">114</tt>  <tt class="py-line">          <tt class="py-keyword">raise</tt> <tt class="py-name">Exception</tt><tt class="py-op">(</tt><tt class="py-string">"bytes must be 1, 2, 4, or 8"</tt><tt class="py-op">)</tt> </tt>
+<a name="L115"></a><tt class="py-lineno">115</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt> </tt>
+</div><a name="L116"></a><tt class="py-lineno">116</tt>  <tt class="py-line"> </tt>
+<a name="Buffer.append_float"></a><div id="Buffer.append_float-def"><a name="L117"></a><tt class="py-lineno">117</tt> <a class="py-toggle" href="#" id="Buffer.append_float-toggle" onclick="return toggle('Buffer.append_float');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.buffer.Buffer-class.html#append_float">append_float</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">num</tt><tt class="py-op">,</tt> <tt class="py-param">bytes</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Buffer.append_float-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Buffer.append_float-expanded"><a name="L118"></a><tt class="py-lineno">118</tt>  <tt class="py-line">        <tt class="py-docstring">""" Appends a float to the end of this buffer. The buffer will expand as necessary to accomodate any bytes written. """</tt> </tt>
+<a name="L119"></a><tt class="py-lineno">119</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-name">bytes</tt> <tt class="py-op">==</tt> <tt class="py-number">4</tt><tt class="py-op">:</tt> </tt>
+<a name="L120"></a><tt class="py-lineno">120</tt>  <tt class="py-line">          <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-36" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-36', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">appendFloat</tt><tt class="py-op">(</tt><tt class="py-name">num</tt><tt class="py-op">)</tt> </tt>
+<a name="L121"></a><tt class="py-lineno">121</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">bytes</tt> <tt class="py-op">==</tt> <tt class="py-number">8</tt><tt class="py-op">:</tt> </tt>
+<a name="L122"></a><tt class="py-lineno">122</tt>  <tt class="py-line">          <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-37" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-37', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">appendDouble</tt><tt class="py-op">(</tt><tt class="py-name">num</tt><tt class="py-op">)</tt> </tt>
+<a name="L123"></a><tt class="py-lineno">123</tt>  <tt class="py-line">        <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
+<a name="L124"></a><tt class="py-lineno">124</tt>  <tt class="py-line">          <tt class="py-keyword">raise</tt> <tt class="py-name">Exception</tt><tt class="py-op">(</tt><tt class="py-string">"bytes must be 4 or 8"</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L125"></a><tt class="py-lineno">125</tt>  <tt class="py-line">       </tt>
+<a name="Buffer.append_str"></a><div id="Buffer.append_str-def"><a name="L126"></a><tt class="py-lineno">126</tt> <a class="py-toggle" href="#" id="Buffer.append_str-toggle" onclick="return toggle('Buffer.append_str');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.buffer.Buffer-class.html#append_str">append_str</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">str</tt><tt class="py-op">,</tt> <tt class="py-param">enc</tt><tt class="py-op">=</tt><tt class="py-string">"UTF-8"</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Buffer.append_str-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Buffer.append_str-expanded"><a name="L127"></a><tt class="py-lineno">127</tt>  <tt class="py-line">        <tt class="py-docstring">""" Appends a string to the end of this buffer. The buffer will expand as necessary to accomodate any bytes written. """</tt> </tt>
+<a name="L128"></a><tt class="py-lineno">128</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-38" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-38', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">appendString</tt><tt class="py-op">(</tt><tt class="py-name">str</tt><tt class="py-op">,</tt> <tt class="py-name">enc</tt><tt class="py-op">)</tt> </tt>
+<a name="L129"></a><tt class="py-lineno">129</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt> </tt>
+</div><a name="L130"></a><tt class="py-lineno">130</tt>  <tt class="py-line"> </tt>
+<a name="Buffer.set_fixnum"></a><div id="Buffer.set_fixnum-def"><a name="L131"></a><tt class="py-lineno">131</tt> <a class="py-toggle" href="#" id="Buffer.set_fixnum-toggle" onclick="return toggle('Buffer.set_fixnum');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.buffer.Buffer-class.html#set_fixnum">set_fixnum</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">pos</tt><tt class="py-op">,</tt> <tt class="py-param">num</tt><tt class="py-op">,</tt> <tt class="py-param">bytes</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Buffer.set_fixnum-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Buffer.set_fixnum-expanded"><a name="L132"></a><tt class="py-lineno">132</tt>  <tt class="py-line">        <tt class="py-docstring">""" Sets bytes in the buffer to a representation of a fixnum. The buffer will expand as necessary to accomodate any bytes written. """</tt> </tt>
+<a name="L133"></a><tt class="py-lineno">133</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-name">bytes</tt> <tt class="py-op">==</tt> <tt class="py-number">1</tt><tt class="py-op">:</tt> </tt>
+<a name="L134"></a><tt class="py-lineno">134</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-39" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-39', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">setByte</tt><tt class="py-op">(</tt><tt class="py-name">pos</tt><tt class="py-op">,</tt> <tt class="py-name">num</tt><tt class="py-op">)</tt> </tt>
+<a name="L135"></a><tt class="py-lineno">135</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">bytes</tt> <tt class="py-op">==</tt> <tt class="py-number">2</tt><tt class="py-op">:</tt> </tt>
+<a name="L136"></a><tt class="py-lineno">136</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-40" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-40', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">setShort</tt><tt class="py-op">(</tt><tt class="py-name">pos</tt><tt class="py-op">,</tt> <tt class="py-name">num</tt><tt class="py-op">)</tt> </tt>
+<a name="L137"></a><tt class="py-lineno">137</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">bytes</tt> <tt class="py-op">==</tt> <tt class="py-number">4</tt><tt class="py-op">:</tt> </tt>
+<a name="L138"></a><tt class="py-lineno">138</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-41" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-41', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">setInt</tt><tt class="py-op">(</tt><tt class="py-name">pos</tt><tt class="py-op">,</tt> <tt class="py-name">num</tt><tt class="py-op">)</tt> </tt>
+<a name="L139"></a><tt class="py-lineno">139</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">bytes</tt> <tt class="py-op">==</tt> <tt class="py-number">8</tt><tt class="py-op">:</tt> </tt>
+<a name="L140"></a><tt class="py-lineno">140</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-42" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-42', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">setLong</tt><tt class="py-op">(</tt><tt class="py-name">pos</tt><tt class="py-op">,</tt> <tt class="py-name">num</tt><tt class="py-op">)</tt> </tt>
+<a name="L141"></a><tt class="py-lineno">141</tt>  <tt class="py-line">        <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
+<a name="L142"></a><tt class="py-lineno">142</tt>  <tt class="py-line">          <tt class="py-keyword">raise</tt> <tt class="py-name">Exception</tt><tt class="py-op">(</tt><tt class="py-string">"bytes must be 1, 2, 4, or 8"</tt><tt class="py-op">)</tt> </tt>
+<a name="L143"></a><tt class="py-lineno">143</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt> </tt>
+</div><a name="L144"></a><tt class="py-lineno">144</tt>  <tt class="py-line"> </tt>
+<a name="Buffer.set_float"></a><div id="Buffer.set_float-def"><a name="L145"></a><tt class="py-lineno">145</tt> <a class="py-toggle" href="#" id="Buffer.set_float-toggle" onclick="return toggle('Buffer.set_float');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.buffer.Buffer-class.html#set_float">set_float</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">pos</tt><tt class="py-op">,</tt> <tt class="py-param">num</tt><tt class="py-op">,</tt> <tt class="py-param">bytes</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Buffer.set_float-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Buffer.set_float-expanded"><a name="L146"></a><tt class="py-lineno">146</tt>  <tt class="py-line">        <tt class="py-docstring">""" Sets bytes in the buffer to a representation of a float. The buffer will expand as necessary to accomodate any bytes written. """</tt> </tt>
+<a name="L147"></a><tt class="py-lineno">147</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-name">bytes</tt> <tt class="py-op">==</tt> <tt class="py-number">4</tt><tt class="py-op">:</tt> </tt>
+<a name="L148"></a><tt class="py-lineno">148</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-43" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-43', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">setFloat</tt><tt class="py-op">(</tt><tt class="py-name">pos</tt><tt class="py-op">,</tt> <tt class="py-name">num</tt><tt class="py-op">)</tt> </tt>
+<a name="L149"></a><tt class="py-lineno">149</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">bytes</tt> <tt class="py-op">==</tt> <tt class="py-number">8</tt><tt class="py-op">:</tt> </tt>
+<a name="L150"></a><tt class="py-lineno">150</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-44" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-44', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">setDouble</tt><tt class="py-op">(</tt><tt class="py-name">pos</tt><tt class="py-op">,</tt> <tt class="py-name">num</tt><tt class="py-op">)</tt> </tt>
+<a name="L151"></a><tt class="py-lineno">151</tt>  <tt class="py-line">        <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
+<a name="L152"></a><tt class="py-lineno">152</tt>  <tt class="py-line">            <tt class="py-keyword">raise</tt> <tt class="py-name">Exception</tt><tt class="py-op">(</tt><tt class="py-string">"bytes must be 4 or 8"</tt><tt class="py-op">)</tt> </tt>
+<a name="L153"></a><tt class="py-lineno">153</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt> </tt>
+</div><a name="L154"></a><tt class="py-lineno">154</tt>  <tt class="py-line"> </tt>
+<a name="Buffer.set_buffer"></a><div id="Buffer.set_buffer-def"><a name="L155"></a><tt class="py-lineno">155</tt> <a class="py-toggle" href="#" id="Buffer.set_buffer-toggle" onclick="return toggle('Buffer.set_buffer');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.buffer.Buffer-class.html#set_buffer">set_buffer</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">pos</tt><tt class="py-op">,</tt> <tt class="py-param">buff</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Buffer.set_buffer-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Buffer.set_buffer-expanded"><a name="L156"></a><tt class="py-lineno">156</tt>  <tt class="py-line">        <tt class="py-docstring">""" Sets bytes in this buffer to the bytes of the specified buffer. The buffer will expand as necessary to accomodate any bytes written. """</tt> </tt>
+<a name="L157"></a><tt class="py-lineno">157</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-45" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-45', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">setBytes</tt><tt class="py-op">(</tt><tt class="py-name">pos</tt><tt class="py-op">,</tt> <tt class="py-name">buff</tt><tt class="py-op">.</tt><tt id="link-46" class="py-name"><a title="core.buffer.Buffer._to_java_buffer" class="py-name" href="#" onclick="return doclink('link-46', '_to_java_buffer', 'link-31');">_to_java_buffer</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L158"></a><tt class="py-lineno">158</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt> </tt>
+</div><a name="L159"></a><tt class="py-lineno">159</tt>  <tt class="py-line"> </tt>
+<a name="Buffer.set_string"></a><div id="Buffer.set_string-def"><a name="L160"></a><tt class="py-lineno">160</tt> <a class="py-toggle" href="#" id="Buffer.set_string-toggle" onclick="return toggle('Buffer.set_string');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.buffer.Buffer-class.html#set_string">set_string</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">pos</tt><tt class="py-op">,</tt> <tt class="py-param">str</tt><tt class="py-op">,</tt> <tt class="py-param">enc</tt><tt class="py-op">=</tt><tt class="py-string">"UTF-8"</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Buffer.set_string-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Buffer.set_string-expanded"><a name="L161"></a><tt class="py-lineno">161</tt>  <tt class="py-line">        <tt class="py-docstring">""" Set bytes in the buffer to the string encoding in the specified encoding """</tt> </tt>
+<a name="L162"></a><tt class="py-lineno">162</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-47" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-47', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt class="py-name">setString</tt><tt class="py-op">(</tt><tt class="py-name">pos</tt><tt class="py-op">,</tt> <tt class="py-name">str</tt><tt class="py-op">,</tt> <tt class="py-name">enc</tt><tt class="py-op">)</tt> </tt>
+<a name="L163"></a><tt class="py-lineno">163</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt> </tt>
+</div><a name="L164"></a><tt class="py-lineno">164</tt>  <tt class="py-line"> </tt>
+<a name="L165"></a><tt class="py-lineno">165</tt>  <tt class="py-line">    <tt class="py-decorator">@</tt><tt class="py-decorator">property</tt> </tt>
+<a name="Buffer.length"></a><div id="Buffer.length-def"><a name="L166"></a><tt class="py-lineno">166</tt> <a class="py-toggle" href="#" id="Buffer.length-toggle" onclick="return toggle('Buffer.length');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.buffer.Buffer-class.html#length">length</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Buffer.length-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Buffer.length-expanded"><a name="L167"></a><tt class="py-lineno">167</tt>  <tt class="py-line">        <tt class="py-docstring">""" The length of this buffer, in bytes. """</tt> </tt>
+<a name="L168"></a><tt class="py-lineno">168</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-48" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-48', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt id="link-49" class="py-name" targets="Method core.buffer.Buffer.length()=core.buffer.Buffer-class.html#length"><a title="core.buffer.Buffer.length" class="py-name" href="#" onclick="return doclink('link-49', 'length', 'link-49');">length</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L169"></a><tt class="py-lineno">169</tt>  <tt class="py-line"> </tt>
+<a name="Buffer.copy"></a><div id="Buffer.copy-def"><a name="L170"></a><tt class="py-lineno">170</tt> <a class="py-toggle" href="#" id="Buffer.copy-toggle" onclick="return toggle('Buffer.copy');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.buffer.Buffer-class.html#copy">copy</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Buffer.copy-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Buffer.copy-expanded"><a name="L171"></a><tt class="py-lineno">171</tt>  <tt class="py-line">        <tt class="py-docstring">""" Get a copy of the entire buffer. """</tt> </tt>
+<a name="L172"></a><tt class="py-lineno">172</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt id="link-50" class="py-name"><a title="core.buffer.Buffer" class="py-name" href="#" onclick="return doclink('link-50', 'Buffer', 'link-3');">Buffer</a></tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-51" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-51', 'buffer', 'link-2');">buffer</a></tt><tt class="py-op">.</tt><tt id="link-52" class="py-name" targets="Method core.buffer.Buffer.copy()=core.buffer.Buffer-class.html#copy,Static Method core.file_system.FileSystem.copy()=core.file_system.FileSystem-class.html#copy"><a title="core.buffer.Buffer.copy
+core.file_system.FileSystem.copy" class="py-name" href="#" onclick="return doclink('link-52', 'copy', 'link-52');">copy</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L173"></a><tt class="py-lineno">173</tt>  <tt class="py-line"> </tt>
+<a name="Buffer._to_java_buffer"></a><div id="Buffer._to_java_buffer-def"><a name="L174"></a><tt class="py-lineno">174</tt> <a class="py-toggle" href="#" id="Buffer._to_java_buffer-toggle" onclick="return toggle('Buffer._to_java_buffer');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.buffer.Buffer-class.html#_to_java_buffer">_to_java_buffer</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Buffer._to_java_buffer-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Buffer._to_java_buffer-expanded"><a name="L175"></a><tt class="py-lineno">175</tt>  <tt class="py-line">        <tt class="py-docstring">""" private """</tt> </tt>
+<a name="L176"></a><tt class="py-lineno">176</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-53" class="py-name"><a title="core.buffer" class="py-name" href="#" onclick="return doclink('link-53', 'buffer', 'link-2');">buffer</a></tt> </tt>
+</div></div><a name="L177"></a><tt class="py-lineno">177</tt>  <tt class="py-line"> </tt><script type="text/javascript">
+<!--
+expandto(location.href);
+// -->
+</script>
+</pre>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1
+    on Thu Jun 28 22:57:50 2012
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>

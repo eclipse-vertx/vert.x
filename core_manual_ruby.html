@@ -1133,21 +1133,24 @@ end.listen(8080, 'localhost')
 <p>The request object has a property <code>method</code> which is a string representing what HTTP method was requested. Possible values for <code>method</code> are: <code>GET</code>, <code>PUT</code>, <code>POST</code>, <code>DELETE</code>, <code>HEAD</code>, <code>OPTIONS</code>, <code>CONNECT</code>, <code>TRACE</code>, <code>PATCH</code>.</p>
 <h4 id="request-uri">Request URI</h4><br/>
 <p>The request object has a property <code>uri</code> which contains the full URI (Uniform Resource Locator) of the request. For example, if the request URI was:</p>
-<pre class="prettyprint">http://localhost:8080/a/b/c/page.html?param1=abc&amp;param2=xyz
+<pre class="prettyprint">/a/b/c/page.html?param1=abc&amp;param2=xyz
 </pre>
-<p>Then <code>request.uri</code> would contain the string <code>http://localhost:8080/a/b/c/page.html?param1=abc&amp;param2=xyz</code>.</p>
+<p>Then <code>request.uri</code> would contain the string <code>/a/b/c/page.html?param1=abc&amp;param2=xyz</code>.</p>
+<p>Request URIs can be relative or absolute (with a domain) depending on what the client sent. In many cases they will be relative.</p>
+<p>The request uri contains the value as defined in <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html">Section 5.1.2 of the HTTP specification - Request-URI</a></p>
 <h4 id="request-path">Request Path</h4><br/>
 <p>The request object has a property <code>path</code> which contains the path of the request. For example, if the request URI was:</p>
-<pre class="prettyprint">http://localhost:8080/a/b/c/page.html?param1=abc&amp;param2=xyz
+<pre class="prettyprint">/a/b/c/page.html?param1=abc&amp;param2=xyz
 </pre>
 <p>Then <code>request.path</code> would contain the string <code>/a/b/c/page.html</code></p>
 <h4 id="request-query">Request Query</h4><br/>
 <p>The request object has a property <code>query</code> which contains the query of the request. For example, if the request URI was:</p>
-<pre class="prettyprint">http://localhost:8080/a/b/c/page.html?param1=abc&amp;param2=xyz
+<pre class="prettyprint">/a/b/c/page.html?param1=abc&amp;param2=xyz
 </pre>
 <p>Then <code>request.query</code> would contain the string <code>param1=abc&amp;param2=xyz</code></p>
 <h4 id="request-headers">Request Headers</h4><br/>
 <p>The request headers are available using the <code>headers</code> method on the request object. The return value of the method is a Ruby Hash.</p>
+<p>Note that the header keys are always lower-cased before being returned to you.</p>
 <p>Here's an example that echoes the headers to the output of the response. Run it and point your browser at <code>http://localhost:8080</code> to see the headers.</p>
 <pre class="prettyprint">server.request_handler do |request|
 
@@ -1165,7 +1168,7 @@ end.listen(8080, 'localhost')
 <h4 id="request-params">Request params</h4><br/>
 <p>Similarly to the headers, the request parameters are available using the <code>params</code> method on the request object. The return value of the function is just a Hash too.</p>
 <p>Request parameters are sent on the request URI, after the path. For example if the URI was:</p>
-<pre class="prettyprint">http://localhost:8080/page.html?param1=abc&amp;param2=xyz
+<pre class="prettyprint">/page.html?param1=abc&amp;param2=xyz
 </pre>
 <p>Then the params hash would be the following JS object:</p>
 <pre class="prettyprint">{ param1: 'abc', param2: 'xyz' }
@@ -1338,7 +1341,7 @@ client.port = 8181
 client.host = 'foo.com'
 </pre>
 <p>A single <code>HttpClient</code> always connects to the same host and port. If you want to connect to different servers, create more instances.</p>
-<p>The default value for hostname is <code>localhost</code>, and the default value for port is <code>80</code>.</p>
+<p>The default port is <code>80</code> and the default host is <code>localhost</code>. So if you don't explicitly set these values that's what the client will attempt to connect to.</p>
 <h3 id="pooling-and-keep-alive">Pooling and Keep Alive</h3><br/>
 <p>By default the <code>HttpClient</code> pools HTTP connections. As you make requests a connection is borrowed from the pool and returned when the HTTP response has ended.</p>
 <p>If you do not want connections to be pooled you can call <code>setKeepAlive</code> with <code>false</code>:</p>
@@ -1359,8 +1362,9 @@ client.max_pool_size = 10
 <p>To make a request using the client you invoke one the methods named after the HTTP method that you want to invoke.</p>
 <p>For example, to make a <code>POST</code> request:</p>
 <pre class="prettyprint">client = Vertx::HttpClient.new
+client.host = 'foo.com'
 
-request = client.post('http://localhost:8080/some-path/') do |resp|
+request = client.post('/some-path/') do |resp|
     puts "got response #{resp.status_code}" 
 end
 
@@ -1369,12 +1373,15 @@ request.end
 <p>To make a PUT request use the <code>put</code> method, to make a GET request use the <code>get</code> method, etc.</p>
 <p>Legal request methods are: <code>get</code>, <code>put</code>, <code>post</code>, <code>delete</code>, <code>head</code>, <code>options</code>, <code>connect</code>, <code>trace</code> and <code>patch</code>.</p>
 <p>The general modus operandi is you invoke the appropriate method passing in the request URI as the first parameter, the second parameter is an event handler which will get called when the corresponding response arrives. The response handler is passed the client response object as an argument.</p>
+<p>The value specified in the request URI corresponds to the Request-URI as specified in <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html">Section 5.1.2 of the HTTP specification</a>. In most cases it will be a relative URI.</p>
+<p><em>Please note that the domain/port that the client connects to is determined by <code>setPort</code> and <code>setHost</code>, and is not parsed from the uri.</em></p>
 <p>The return value from the appropriate request method is an <code>HttpClientRequest</code> object. You can use this to add headers to the request, and to write to the request body. The request object implements <code>WriteStream</code>.</p>
 <p>Once you have finished with the request you must call the <code>end</code> method.</p>
 <p>If you don't know the name of the request method in advance there is a general <code>request</code> method which takes the HTTP method as a parameter:</p>
 <pre class="prettyprint">client = Vertx::HttpClient.new
+client.host = 'foo.com'
 
-request = client.request('POST', 'http://localhost:8080/some-path/') do |resp|
+request = client.request('POST', '/some-path/') do |resp|
     puts "got response #{resp.status_code}" 
 end
 
@@ -1382,8 +1389,9 @@ request.end
 </pre>
 <p>There is also a method called <code>get_now</code> which does the same as <code>get</code>, but automatically ends the request. This is useful for simple GETs which don't have a request body:</p>
 <pre class="prettyprint">client = Vertx::HttpClient.new
+client.host = 'foo.com'
 
-client.get_now('http://localhost:8080/some-path/') do |resp|
+client.get_now('/some-path/') do |resp|
     puts "got response #{resp.status_code}" 
 end
 </pre>
@@ -1418,8 +1426,9 @@ request.write_buffer(myBuffer)
 <h4 id="writing-request-headers">Writing Request Headers</h4><br/>
 <p>To write headers to the request, add them to the Hash returned from the <code>headers</code> method:</p>
 <pre class="prettyprint">client = Vertx::HttpClient.new
+client.host = 'foo.com'
 
-request = client.post('http://localhost:8080/some-path') do |resp|
+request = client.post('/some-path') do |resp|
     puts "got response #{resp.status_code}" 
 end
 
@@ -1429,8 +1438,9 @@ request.end
 <p>You can also use the <code>put_header</code> method to enable a more fluent API:  <br/>
 </p>
 <pre class="prettyprint">client = Vertx::HttpClient.new
+client.host = 'foo.com'
 
-request = client.post('http://localhost:8080/some-path') do |resp|
+request = client.post('/some-path') do |resp|
     puts "got response #{resp.status_code}" 
 end.put_header('Some-Header', 'Some-Value').
     put_header('Some-Other-Header', 'Some-Other-Value').
@@ -1447,8 +1457,9 @@ end.put_header('Some-Header', 'Some-Value').
 <p>The response object implements <code>ReadStream</code>, so it can be pumped to a <code>WriteStream</code> like any other <code>ReadStream</code>.</p>
 <p>To query the status code of the response use the <code>status_code</code> property. The <code>status_message</code> property contains the status message. For example:</p>
 <pre class="prettyprint">client = Vertx::HttpClient.new
+client.host = 'foo.com'
 
-client.get_now('http://localhost:8080/some-path') do |resp|
+client.get_now('/some-path') do |resp|
   puts "server returned status code: #{resp.status_code}"
   puts "server returned status message: #{resp.status_message}"      
 end
@@ -1458,8 +1469,9 @@ end
 <p>Sometimes an HTTP response contains a request body that we want to read. Like an HTTP request, the client response handler is called when all the response headers have arrived, not when the entire response body has arrived.</p>
 <p>To receive the response body, you set a <code>dataHandler</code> on the response object which gets called as parts of the HTTP response arrive. Here's an example:</p>
 <pre class="prettyprint">client = Vertx::HttpClient.new
+client.host = 'foo.com'
 
-client.get_now('http://localhost:8080/some-path') do |resp|
+client.get_now('/some-path') do |resp|
   resp.data_handler { |buffer| puts "I received #{buffer.length} bytes" }     
 end
 </pre>
@@ -1467,8 +1479,9 @@ end
 <p>The <code>data_handler</code> can be called multiple times for a single HTTP response.</p>
 <p>As with a server request, if you wanted to read the entire response body before doing something with it you could do something like the following:</p>
 <pre class="prettyprint">client = Vertx::HttpClient.new
+client.host = 'foo.com'
 
-client.get_now('http://localhost:8080/some-path') do |resp|
+client.get_now('/some-path') do |resp|
 
   # Create a buffer to hold the entire response body
   body = Vertx::Buffer.create(0)
@@ -1492,8 +1505,9 @@ end
 <p><em>Beware of doing this with very large responses since the entire response body will be stored in memory.</em></p>
 <p>Here's an example using <code>body_handler</code>:</p>
 <pre class="prettyprint">client = Vertx::HttpClient.new
+client.host = 'foo.com'
 
-client.get_now('http://localhost:8080/some-path') do |resp|
+client.get_now('/some-path') do |resp|
 
   resp.body_handler do |body|
     puts "The total body received was #{body.length} bytes"
@@ -1511,8 +1525,9 @@ end
 <p>This is used in conjunction with the <code>send_head</code> function to send the head of the request.</p>
 <p>An example will illustrate this:</p>
 <pre class="prettyprint">client = Vertx::HttpClient.new
+client.host = 'foo.com'
 
-request = client.put('http://localhost:8080/some-path') do |resp|
+request = client.put('/some-path') do |resp|
 
   puts "Got a response: #{resp.status_code}"
 

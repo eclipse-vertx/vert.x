@@ -83,16 +83,20 @@
 <li><a href="#message-passing">Message Passing</a></li>
 <li><a href="#shared-data">Shared data</a></li>
 <li><a href="#worker-verticles">Worker Verticles</a></li>
-<li><a href="#core-and-busmods">Core and BusMods</a><ul>
+<li><a href="#core-and-modules">Core and Modules</a><ul>
 <li><a href="#vertx-core">Vert.x Core</a></li>
-<li><a href="#busmods">BusMods</a></li>
+<li><a href="#modules">Modules</a></li>
 </ul>
 </li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#running-vertx">Running vert.x</a></li>
+<li><a href="#interacting-with-vertx">Interacting with vert.x</a><ul>
+<li><a href="#running-verticles-directly">Running Verticles directly</a></li>
+<li><a href="#running-modules-from-the-command-line">Running modules from the command line</a></li>
+</ul>
+</li>
 <li><a href="#logging">Logging</a></li>
 <li><a href="#configuring-clustering">Configuring clustering</a></li>
 <li><a href="#performance-tuning">Performance Tuning</a><ul>
@@ -105,12 +109,11 @@
 <h1 id="introduction">Introduction</h1><br/>
 <h2 id="what-is-vertx">What is vert.x?</h2><br/>
 <p><strong>Vert.x is the framework for the next generation of asynchronous, effortlessly scalable, concurrent applications.</strong></p>
-<p>Vert.x is an event driven application framework that runs on the JVM - a run-time with <em>real</em> concurrency and unrivaled performance. Vert.x then exposes the API in Ruby, Java, Groovy and JavaScript. So <em>you</em> choose what language you want to use. Scala, Clojure and Python support is on the roadmap too.</p>
-<p>We also bundle a host of goodies out-of-the-box including a distributed event bus, Web Sockets, SockJS, a MongoDB persistor and many other features so you can write <em>real</em> applications from the set-off.</p>
+<p>Vert.x is an event driven application framework that runs on the JVM - a run-time with <em>real</em> concurrency and unrivalled performance. Vert.x then exposes the API in Ruby, Java, Groovy, JavaScript and Python. So <em>you</em> choose what language you want to use. Scala and Clojure support is on the roadmap too.</p>
 <p>Some of the key highlights include:</p>
 <ul>
 <li>
-<p>Polyglot. Write your application components in JavaScript, Ruby, Groovy or Java. It's up to you. Or mix and match several programming languages in a single application.</p>
+<p>Polyglot. Write your application components in JavaScript, Ruby, Groovy, Java or Python. It's up to you. Or mix and match several programming languages in a single application.</p>
 </li>
 <li>
 <p>Super simple concurrency model. Vert.x allows you to write all your code as single threaded, freeing you from the hassle of multi-threaded programming. (No more <code>synchronized</code>, <code>volatile</code> or explicit locking). </p>
@@ -119,7 +122,7 @@
 <p>Unlike other popular event driven frameworks, Vert.x takes advantage of the JVM and scales seamlessly over available cores without having to manually fork multiple servers and handle inter process communication between them.</p>
 </li>
 <li>
-<p>Vert.x has a super simple, asynchronous programming model for writing truly scalable non-blocking applications.</p>
+<p>Vert.x has a simple, asynchronous programming model for writing truly scalable non-blocking applications.</p>
 </li>
 <li>
 <p>Vert.x includes a distributed event bus that spans the client and server side so your applications components can communicate incredibly easily. The event bus even penetrates into in-browser JavaScript allowing you to create effortless so-called <em>real-time</em> web applications.</p>
@@ -127,13 +130,15 @@
 <li>
 <p>Vert.x provides real power and simplicity, without being simplistic. No more sprawling xml configuration files.</p>
 </li>
+<li>
+<p>Vert.x includes a module system and public module repository, so you can easily re-use and share Vert.x modules with others.</p>
+</li>
 </ul>
-<p>Vert.x is a community project sponsored by VMware.</p>
 <p><em>Future applications will largely be running on mobile and embedded devices. These demand a platform that can scale with 10s, 100s or even millions of concurrent connections, and allow developers to write scalable, performant applications for them incredibly easily, in whatever language they prefer.</em></p>
 <p><strong>We believe Vert.x is that platform.</strong></p>
 <h2 id="vertx-embedded">Vert.x Embedded</h2><br/>
 <p>If you don't want the whole vert.x platform but just want to use HTTP, HTTPS, TCP, SSL, WebSockets, the event bus, or other vert.x functionality as a library in your own Java or Groovy application, then you can do this too.</p>
-<p>Just use the jar <code>vertx-core.jar</code> which is available in the <code>lib/jars</code> directory in the distribution.</p>
+<p>Just use the jar <code>vertx-core-&lt;version&gt;.jar</code> which is available in the <code>lib</code> directory in the distribution.</p>
 <p>You then have full access to the core vert.x API, in either Java or Groovy. If you use vert.x embedded you don't have to worry about verticles or any of the deployment related topics, and can just use the core API directly.</p>
 <p>Here's an example of a simple embedded web server in Java:</p>
 <pre class="prettyprint">Vertx vertx = Vertx.newVertx();
@@ -200,8 +205,8 @@ vertx.createHttpServer().requestHandler { req -&gt;
 <p>For cases like these, vert.x allows you to mark a particular verticle instance as a <em>worker verticle</em>. A worker verticle differs from a normal verticle in that it is not assigned a vert.x event loop thread, instead it executes on a thread from an internal thread pool called the <em>background pool</em>. </p>
 <p>Worker verticles are never executed concurrently by more than one thread. Worker verticles are also not allowed to use TCP or HTTP clients or servers. Worker verticles normally communicate with other verticles using the vert.x event bus, e.g. receiving work to process.</p>
 <p>Worker verticles should be kept to a minimum, since a blocking approach doesn't scale if you want to deal with many concurrent connections.</p>
-<h3 id="core-and-busmods">Core and BusMods</h3><br/>
-<p>Vert.x modules can be conceptually divided into two types: <em>Core Services</em>, and <em>BusMods</em>.</p>
+<h3 id="core-and-modules">Core and Modules</h3><br/>
+<p>Vert.x functionality can be conceptually divided into two types: <em>Core Services</em>, and <em>Modules</em>.</p>
 <h4 id="vertx-core">Vert.x Core</h4><br/>
 <p>Vert.x core provides a set of services which can be directly called from code in a verticle. The API for core is provided in each of the programming languages that vert.x supports.</p>
 <p>The API will be described in detail in the Core API manual, but includes services such as:</p>
@@ -221,25 +226,27 @@ vertx.createHttpServer().requestHandler { req -&gt;
 <li>Deploying and undeploying verticles</li>
 </ul>
 <p>Vert.x core is fairly static and is not envisaged that it will grow much over time. This is good since every service in core has to be provided in each of the languages we support - that's a lot of API adaptors to write.</p>
-<h4 id="busmods">BusMods</h4><br/>
-<p><em>BusMod</em> is short for <em>Bus Module</em>. It's basically a service that you communicate with by exchanging JSON messages over the event bus. Since all communication is over the event bus, and not by direct calls like with vert.x core, it means it can be written once in any language, and any verticle in any other language can immediately use it without an API adaptor having to be written for each language.</p>
-<p>Whilst vert.x core is fairly static, we envisage that a wide range of busmods will be available in vert.x for performing common operations. Vert.x already ships with several busmods out-of-the-box, including a persistor, a mailer and work queues, and we hope to ship with many more over time.</p>
-<p>We also encourage the community to create and contribute their own busmods for others to use.</p>
-<p>For more information on busmods please see the modules manual.</p>
-<h1 id="running-vertx">Running vert.x</h1><br/>
+<h4 id="modules">Modules</h4><br/>
+<p>Vert.x includes a module system and public module repository.</p>
+<p>Vert.x applications or reusable resources can easily be packaged as modules. These modules can be written in any of the languages that Vert.x supports, and they communicate with each other over the event bus by sending and receiving JSON messages.</p>
+<p>Since all communication is over the event bus, and not by direct calls like with vert.x core, it means it can be written once in any language, and any verticle in any other language can immediately use it without an API adaptor having to be written for each language.</p>
+<p>Whilst vert.x core is fairly static, we envisage that a wide range of modules will be available in vert.x for performing common operations. The Vert.x repository already contains several modules including a persistor, a mailer and work queues.</p>
+<p>We also encourage the community to create and contribute their own modules for others to use.</p>
+<p>For more information on modules please see the modules manual.</p>
+<h1 id="interacting-with-vertx">Interacting with vert.x</h1><br/>
 <p>The <code>vertx</code> command is used to interact with vert.x from the command line. It's main use is to run vert.x verticles.</p>
 <p>If you just type <code>vertx</code> at a command line you can see the different options the command takes.</p>
+<h2 id="running-verticles-directly">Running Verticles directly</h2><br/>
 <p>The command <code>vertx run</code> is used to start a vert.x verticle.</p>
 <p>At minimum <code>vertx run</code> takes a single parameter - the name of the main or module to run.</p>
-<p>If you're running a local verticle written in JavaScript, Ruby, or Groovy then it's just the name of the script, e.g. <code>server.js</code>, <code>server.rb</code>, or <code>server.groovy</code>. (It doesn't have to be called <code>server</code>, you can name it anything as long as it has the right extension). If the verticle is written in Java the name is the fully qualified class name of the Main class.</p>
-<p>If you're running an installed module (see the modules manual for more information on modules), then <code>vertx run</code> takes the name of the module to run.</p>
+<p>If you're running a local verticle written in JavaScript, Ruby, or Groovy then it's just the name of the script, e.g. <code>server.js</code>, <code>server.rb</code>, or <code>server.groovy</code>. (It doesn't have to be called <code>server</code>, you can name it anything as long as it has the right extension). If the verticle is written in Java the name can either be the fully qualified class name of the Main class, <em>or</em> you can specify the Java Source file directly and Vert.x will compile it for you.</p>
 <p>The <code>vertx run</code> command can take a few optional parameters, they are:</p>
 <ul>
 <li>
 <p><code>-conf &lt;config_file&gt;</code> Provide some configuration to the verticle. <code>config_file</code> is the name of a text file containing a JSON object that represents the configuration for the verticle. This is optional.</p>
 </li>
 <li>
-<p><code>-cp &lt;path&gt;</code> The path on which to search for the main and any other resources used by the verticle. This is ignored if you are running an installed module. This defaults to <code>.</code> (current directory). If your verticle references other scripts, classes or other resources (e.g. jar files) then make sure these are on this path. The path can contain multiple path entries separated by <code>:</code> (colon). Each path entry can be an absolute or relative path to a directory containing scripts, or absolute or relative filenames for jar or zip files.
+<p><code>-cp &lt;path&gt;</code> The path on which to search for the main and any other resources used by the verticle. This defaults to <code>.</code> (current directory). If your verticle references other scripts, classes or other resources (e.g. jar files) then make sure these are on this path. The path can contain multiple path entries separated by <code>:</code> (colon). Each path entry can be an absolute or relative path to a directory containing scripts, or absolute or relative filenames for jar or zip files.
     An example path might be <code>-cp classes:lib/otherscripts:jars/myjar.jar:jars/otherjar.jar</code>
     Always use the path to reference any resources that your verticle requires. Please, <strong>do not</strong> put them on the system classpath as this can cause isolation issues between deployed verticles.</p>
 </li>
@@ -264,8 +271,11 @@ vertx.createHttpServer().requestHandler { req -&gt;
 <p>Run a JavaScript verticle server.js with default settings</p>
 <pre class="prettyprint">vertx run server.js
 </pre>
-<p>Run 10 instances of a Java verticle specifying classpath</p>
+<p>Run 10 instances of a pre-compiled Java verticle specifying classpath</p>
 <pre class="prettyprint">vertx run com.acme.MyVerticle -cp "classes:lib/myjar.jar" -instances 10
+</pre>
+<p>Run 10 instances of a Java verticle by source file</p>
+<pre class="prettyprint">vertx run MyVerticle.java -instances 10
 </pre>
 <p>Run 20 instances of a ruby worker verticle  <br/>
 </p>
@@ -286,11 +296,40 @@ vertx run handler1.js -cluster -cluster-port 25501
 </pre>
 <p>The config will be available inside the verticle via the core API.  <br/>
 </p>
-<p>Run an installed module called <code>my-mod</code></p>
-<pre class="prettyprint">vertx run my-mod
+<h2 id="running-modules-from-the-command-line">Running modules from the command line</h2><br/>
+<p>While you can run a verticle directly from the command line using <code>vertx run</code> this can be kind of fiddly since you have to specify the classpath every time.</p>
+<p>An alternative is to package your application as a <em>module</em>. For detailed information on how to package your code as a module please see the modules manual.</p>
+<p>Once you've packaged your module and installed it in the module directory, you can run a module directly from the command line in a similar way to <code>vertx run</code>.</p>
+<p>Instead of <code>vertx run</code> you use <code>vertx runmod &lt;module name&gt;</code>. This takes some of the same options as <code>vertx run</code>. They are:</p>
+<ul>
+<li>
+<p><code>-conf &lt;config_file&gt;</code></p>
+</li>
+<li>
+<p><code>-instances &lt;instances&gt;</code></p>
+</li>
+<li>
+<p><code>-cluster</code></p>
+</li>
+<li>
+<p><code>-cluster-port</code></p>
+</li>
+<li>
+<p><code>-cluster-host</code></p>
+</li>
+</ul>
+<p>They have the exact same meanings as the corresponding options in <code>vertx run</code>.</p>
+<p>If you attempt to run a module and it hasn't been installed, Vert.x will attempt to install it from the module repository. See the modules manual for more on this.</p>
+<p>Some examples of running modules directly:</p>
+<pre class="prettyprint">Run an installed module called `com.acme.my-mod-v2.1`
+
+vertx run com.acme.my-mod-v2.1
 </pre>
-<p>Run an installed module called <code>other-mod</code> specifying number of instances and some config</p>
-<pre class="prettyprint">vertx run other-mod -instances 10 -conf other-mod.conf
+<p>Run an installed module called <code>com.acme.other-mod-v1.0.beta1</code> specifying number of instances and some config</p>
+<pre class="prettyprint">vertx run com.acme.other-mod-v1.0.beta1 -instances 10 -conf other-mod.conf
+</pre>
+<p>Run the module <code>vertx.mongo-persistor-v1.0</code></p>
+<pre class="prettyprint">vertx run vertx.mongo-persistor-v1.0
 </pre>
 <h1 id="logging">Logging</h1><br/>
 <p>Each verticle gets its own logger which can be retrieved from inside the verticle. For information on how to get the logger please see the core guide for the language you are using.</p>
@@ -323,7 +362,9 @@ server.setAcceptBacklog(10000);
 <ul>
 <li><a href="https://github.com/netty/netty">Netty</a> for much of its network IO</li>
 <li><a href="http://jruby.org/">JRuby</a> for its Ruby engine</li>
+<li><a href="http://groovy.codehaus.org/">Groovy</a></li>
 <li><a href="http://www.mozilla.org/rhino/">Mozilla Rhino</a> for its JavaScript engine</li>
+<li><a href="http://jython.org">Jython</a> for its Python engine</li>
 <li><a href="http://www.hazelcast.com/">Hazelcast</a> for group management of cluster members</li>
 </ul>
 <p><em>Copies of this document may be made for your own use and for distribution to others, provided that you do not charge any fee for such copies and further provided that each copy contains this Copyright Notice, whether distributed in print or electronically.</em></p></div>
