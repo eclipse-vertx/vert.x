@@ -308,7 +308,7 @@ public class Server extends Verticle {
 }
 </pre>
 <p>Now, go to the directory where you saved the file and compile it with:</p>
-<pre class="prettyprint">javac Server.java -cp $VERTX_HOME/lib/jars/vert.x-core.jar:$VERTX_HOME/lib/jars/vert.x-platform.jar
+<pre class="prettyprint">javac Server.java -cp $VERTX_HOME/lib/*
 </pre>
 <p><em>Where VERTX_HOME is the directory where you installed vert.x</em>    <br/>
 </p>
@@ -1221,22 +1221,25 @@ server.requestHandler(new Handler&lt;HttpServerRequest&gt;() {
 <p>The request object has a property <code>method</code> which is a string representing what HTTP method was requested. Possible values for <code>method</code> are: <code>GET</code>, <code>PUT</code>, <code>POST</code>, <code>DELETE</code>, <code>HEAD</code>, <code>OPTIONS</code>, <code>CONNECT</code>, <code>TRACE</code>, <code>PATCH</code>.</p>
 <h4 id="request-uri">Request URI</h4><br/>
 <p>The request object has a property <code>uri</code> which contains the full URI (Uniform Resource Locator) of the request. For example, if the request URI was:</p>
-<pre class="prettyprint">http://localhost:8080/a/b/c/page.html?param1=abc&amp;param2=xyz
+<pre class="prettyprint">/a/b/c/page.html?param1=abc&amp;param2=xyz
 </pre>
-<p>Then <code>request.uri</code> would contain the string <code>http://localhost:8080/a/b/c/page.html?param1=abc&amp;param2=xyz</code>.</p>
+<p>Then <code>request.uri</code> would contain the string <code>/a/b/c/page.html?param1=abc&amp;param2=xyz</code>.</p>
+<p>Request URIs can be relative or absolute (with a domain) depending on what the client sent. In many cases they will be relative.</p>
+<p>The request uri contains the value as defined in <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html">Section 5.1.2 of the HTTP specification - Request-URI</a></p>
 <h4 id="request-path">Request Path</h4><br/>
 <p>The request object has a property <code>path</code> which contains the path of the request. For example, if the request URI was:</p>
-<pre class="prettyprint">http://localhost:8080/a/b/c/page.html?param1=abc&amp;param2=xyz
+<pre class="prettyprint">a/b/c/page.html?param1=abc&amp;param2=xyz
 </pre>
 <p>Then <code>request.path</code> would contain the string <code>/a/b/c/page.html</code></p>
 <h4 id="request-query">Request Query</h4><br/>
 <p>The request object has a property <code>query</code> which contains the query of the request. For example, if the request URI was:</p>
-<pre class="prettyprint">http://localhost:8080/a/b/c/page.html?param1=abc&amp;param2=xyz
+<pre class="prettyprint">a/b/c/page.html?param1=abc&amp;param2=xyz
 </pre>
 <p>Then <code>request.query</code> would contain the string <code>param1=abc&amp;param2=xyz</code>  <br/>
 </p>
 <h4 id="request-headers">Request Headers</h4><br/>
 <p>A map of the request headers are available using the <code>headers()</code> method on the request object.</p>
+<p>Note that the header keys are always lower-cased before being put in the <code>headers()</code> map.</p>
 <p>Here's an example that echoes the headers to the output of the response. Run it and point your browser at <code>http://localhost:8080</code> to see the headers.</p>
 <pre class="prettyprint">HttpServer server = vertx.createHttpServer();
 
@@ -1246,7 +1249,7 @@ server.requestHandler(new Handler&lt;HttpServerRequest&gt;() {
         for (Map.Entry&lt;String, String&gt; header: request.headers().entrySet()) {
             sb.append(header.getKey()).append(": ").append(header.getValue()).append("\n");
         }
-        request.response.putHeader("Content-Type", "text/plain");
+        request.response.putHeader("content-type", "text/plain");
         request.response.end(sb.toString());  
     }
 }).listen(8080, "localhost");
@@ -1255,7 +1258,7 @@ server.requestHandler(new Handler&lt;HttpServerRequest&gt;() {
 <p>Similarly to the headers, the map of request parameters are available using the <code>params()</code> method on the request object.    <br/>
 </p>
 <p>Request parameters are sent on the request URI, after the path. For example if the URI was:</p>
-<pre class="prettyprint">http://localhost:8080/page.html?param1=abc&amp;param2=xyz
+<pre class="prettyprint">/page.html?param1=abc&amp;param2=xyz
 </pre>
 <p>Then the params map would contain the following entries:</p>
 <pre class="prettyprint">param1: 'abc'
@@ -1460,7 +1463,7 @@ client.setHost("foo.com");
     .setHost("foo.com");
 </pre>
 <p>A single <code>HTTPClient</code> always connects to the same host and port. If you want to connect to different servers, create more instances.</p>
-<p>The default value for hostname is <code>localhost</code>, and the default value for port is <code>80</code>.<br/>
+<p>The default port is <code>80</code> and the default host is <code>localhost</code>. So if you don't explicitly set these values that's what the client will attempt to connect to.       <br/>
 </p>
 <h3 id="pooling-and-keep-alive">Pooling and Keep Alive</h3><br/>
 <p>By default the <code>HTTPClient</code> pools HTTP connections. As you make requests a connection is borrowed from the pool and returned when the HTTP response has ended.</p>
@@ -1486,9 +1489,9 @@ client.setHost("foo.com");
 <h3 id="making-requests">Making Requests</h3><br/>
 <p>To make a request using the client you invoke one the methods named after the HTTP method that you want to invoke.</p>
 <p>For example, to make a <code>POST</code> request:</p>
-<pre class="prettyprint">HttpClient client = vertx.createHttpClient();
+<pre class="prettyprint">HttpClient client = vertx.createHttpClient().setHost("foo.com");
 
-HttpClientRequest request = client.post("http://localhost:8080/some-path/", new Handler&lt;HttpClientResponse&gt;() {
+HttpClientRequest request = client.post("/some-path/", new Handler&lt;HttpClientResponse&gt;() {
     public void handle(HttpClientResponse resp) {
         log.info("Got a response: " + resp.statusCode());
     }
@@ -1499,12 +1502,14 @@ request.end();
 <p>To make a PUT request use the <code>put</code> method, to make a GET request use the <code>get</code> method, etc.</p>
 <p>Legal request methods are: <code>get</code>, <code>put</code>, <code>post</code>, <code>delete</code>, <code>head</code>, <code>options</code>, <code>connect</code>, <code>trace</code> and <code>patch</code>.</p>
 <p>The general modus operandi is you invoke the appropriate method passing in the request URI as the first parameter, the second parameter is an event handler which will get called when the corresponding response arrives. The response handler is passed the client response object as an argument.</p>
+<p>The value specified in the request URI corresponds to the Request-URI as specified in <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html">Section 5.1.2 of the HTTP specification</a>. In most cases it will be a relative URI.</p>
+<p><em>Please note that the domain/port that the client connects to is determined by <code>setPort</code> and <code>setHost</code>, and is not parsed from the uri.</em></p>
 <p>The return value from the appropriate request method is an instance of <code>org.vertx.java.core.http.HTTPClientRequest</code>. You can use this to add headers to the request, and to write to the request body. The request object implements <code>WriteStream</code>.</p>
 <p>Once you have finished with the request you must call the <code>end</code> function.</p>
 <p>If you don't know the name of the request method in advance there is a general <code>request</code> method which takes the HTTP method as a parameter:</p>
-<pre class="prettyprint">HttpClient client = vertx.createHttpClient();
+<pre class="prettyprint">HttpClient client = vertx.createHttpClient().setHost("foo.com");
 
-HttpClientRequest request = client.request("POST", "http://localhost:8080/some-path/",
+HttpClientRequest request = client.request("POST", "/some-path/",
     new Handler&lt;HttpClientResponse&gt;() {
         public void handle(HttpClientResponse resp) {
             log.info("Got a response: " + resp.statusCode());
@@ -1514,9 +1519,9 @@ HttpClientRequest request = client.request("POST", "http://localhost:8080/some-p
 request.end();
 </pre>
 <p>There is also a method called <code>getNow</code> which does the same as <code>get</code>, but automatically ends the request. This is useful for simple GETs which don't have a request body:</p>
-<pre class="prettyprint">HttpClient client = vertx.createHttpClient();
+<pre class="prettyprint">HttpClient client = vertx.createHttpClient().setHost("foo.com");
 
-client.getNow("http://localhost:8080/some-path/", new Handler&lt;HttpClientResponse&gt;() {
+client.getNow("/some-path/", new Handler&lt;HttpClientResponse&gt;() {
     public void handle(HttpClientResponse resp) {
         log.info("Got a response: " + resp.statusCode());
     }
@@ -1558,9 +1563,9 @@ request.write(myBuffer);
 <p>The function can also be called with a string or Buffer in the same way <code>write</code> is called. In this case it's just the same as calling write with a string or Buffer followed by calling <code>end</code> with no arguments.</p>
 <h4 id="writing-request-headers">Writing Request Headers</h4><br/>
 <p>To write headers to the request, add them to the map returned from the <code>headers()</code> method:</p>
-<pre class="prettyprint">HttpClient client = vertx.createHttpClient();
+<pre class="prettyprint">HttpClient client = vertx.createHttpClient().setHost("foo.com");
 
-HttpClientRequest request = client.post("http://localhost:8080/some-path/", new Handler&lt;HttpClientResponse&gt;() {
+HttpClientRequest request = client.post("/some-path/", new Handler&lt;HttpClientResponse&gt;() {
     public void handle(HttpClientResponse resp) {
         log.info("Got a response: " + resp.statusCode());
     }
@@ -1573,7 +1578,7 @@ request.end();
 <pre class="prettyprint">request.putHeader("Some-Header", "Some-Value").putHeader("Some-Other", "Blah");
 </pre>
 <p>These can all be chained together as per the common vert.x API pattern:</p>
-<pre class="prettyprint">client.post("http://localhost:8080/some-path/", new Handler&lt;HttpClientResponse&gt;() {
+<pre class="prettyprint">client.setHost("foo.com").post("/some-path/", new Handler&lt;HttpClientResponse&gt;() {
     public void handle(HttpClientResponse resp) {
         log.info("Got a response: " + resp.statusCode());
     }
@@ -1590,9 +1595,9 @@ request.end();
 <p>Client responses are received as an argument to the response handler that is passed into one of the request methods on the HTTP client.</p>
 <p>The response object implements <code>ReadStream</code>, so it can be pumped to a <code>WriteStream</code> like any other <code>ReadStream</code>.</p>
 <p>To query the status code of the response use the <code>statusCode</code> property. The <code>statusMessage</code> property contains the status message. For example:</p>
-<pre class="prettyprint">HttpClient client = vertx.createHttpClient();
+<pre class="prettyprint">HttpClient client = vertx.createHttpClient().setHost("foo.com");
 
-client.getNow("http://localhost:8080/some-path/", new Handler&lt;HttpClientResponse&gt;() {
+client.getNow("/some-path/", new Handler&lt;HttpClientResponse&gt;() {
     public void handle(HttpClientResponse resp) {
         log.info('server returned status code: ' + resp.statusCode);   
         log.info('server returned status message: ' + resp.statusMessage);   
@@ -1603,9 +1608,9 @@ client.getNow("http://localhost:8080/some-path/", new Handler&lt;HttpClientRespo
 <p>The API for reading an HTTP client response body is very similar to the API for reading a HTTP server request body.</p>
 <p>Sometimes an HTTP response contains a body that we want to read. Like an HTTP request, the client response handler is called when all the response headers have arrived, not when the entire response body has arrived.</p>
 <p>To receive the response body, you set a <code>dataHandler</code> on the response object which gets called as parts of the HTTP response arrive. Here's an example:</p>
-<pre class="prettyprint">HttpClient client = vertx.createHttpClient();
+<pre class="prettyprint">HttpClient client = vertx.createHttpClient().setHost("foo.com");
 
-client.getNow("http://localhost:8080/some-path/", new Handler&lt;HttpClientResponse&gt;() {
+client.getNow("/some-path/", new Handler&lt;HttpClientResponse&gt;() {
     public void handle(HttpClientResponse resp) {
         resp.dataHandler(new Handler&lt;Buffer&gt;() {
             public void handle(Buffer data) {
@@ -1618,9 +1623,9 @@ client.getNow("http://localhost:8080/some-path/", new Handler&lt;HttpClientRespo
 <p>The response object implements the <code>ReadStream</code> interface so you can pump the response body to a <code>WriteStream</code>. See the chapter on streams and pump for a detailed explanation. </p>
 <p>The <code>dataHandler</code> can be called multiple times for a single HTTP response.</p>
 <p>As with a server request, if you wanted to read the entire response body before doing something with it you could do something like the following:</p>
-<pre class="prettyprint">HttpClient client = vertx.createHttpClient();
+<pre class="prettyprint">HttpClient client = vertx.createHttpClient().setHost("foo.com");
 
-client.getNow("http://localhost:8080/some-path/", new Handler&lt;HttpClientResponse&gt;() {
+client.getNow("/some-path/", new Handler&lt;HttpClientResponse&gt;() {
     public void handle(HttpClientResponse resp) {
 
         final Buffer body = new Buffer(0);
@@ -1645,9 +1650,9 @@ client.getNow("http://localhost:8080/some-path/", new Handler&lt;HttpClientRespo
 <p>The body handler is called only once when the <em>entire</em> response body has been read.</p>
 <p><em>Beware of doing this with very large responses since the entire response body will be stored in memory.</em></p>
 <p>Here's an example using <code>bodyHandler</code>:</p>
-<pre class="prettyprint">HttpClient client = vertx.createHttpClient();
+<pre class="prettyprint">HttpClient client = vertx.createHttpClient().setHost("foo.com");
 
-client.getNow("http://localhost:8080/some-path/", new Handler&lt;HttpClientResponse&gt;() {
+client.getNow("/some-path/", new Handler&lt;HttpClientResponse&gt;() {
     public void handle(HttpClientResponse resp) {       
         resp.bodyHandler(new Handler&lt;Buffer&gt;() {
             public void handle(Buffer body) {
@@ -1667,9 +1672,9 @@ client.getNow("http://localhost:8080/some-path/", new Handler&lt;HttpClientRespo
 <p>Vert.x allows you to set a <code>continueHandler</code> on the client request object. This will be called if the server sends back a <code>Status: 100 (Continue)</code> response to signify it is ok to send the rest of the request.</p>
 <p>This is used in conjunction with the <code>sendHead</code> function to send the head of the request.</p>
 <p>An example will illustrate this:</p>
-<pre class="prettyprint">HttpClient client = vertx.createHttpClient();
+<pre class="prettyprint">HttpClient client = vertx.createHttpClient().setHost("foo.com");
 
-final HttpClientRequest request = client.put("http://localhost:8080/some-path/", new Handler&lt;HttpClientResponse&gt;() {
+final HttpClientRequest request = client.put("/some-path/", new Handler&lt;HttpClientResponse&gt;() {
     public void handle(HttpClientResponse resp) {       
         log.info("Got a response " + resp.statusCode);
     }

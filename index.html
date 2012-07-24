@@ -74,8 +74,7 @@
       <div class="well">
         <h3 class="title">Polyglot</h3>
         <br/>
-        <p>Write your application components in <strong>JavaScript</strong>,
-          <strong>Ruby</strong>, <strong>Groovy</strong> or <strong>Java</strong>. Or mix and match several programming languages in a single application.</p>
+        <p>Write your application components in <strong>JavaScript</strong>, <strong>CoffeeScript</strong>, <strong>Ruby</strong>, <strong>Python</strong>, <strong>Groovy</strong> or <strong>Java</strong>. Or mix and match several programming languages in a single app.</p>
       </div>
     </div>
     <div class="span3">
@@ -139,6 +138,9 @@
             <p><strong>SockJS</strong> support</p>
           </li>
           <li>
+            <p><strong>Module System</strong></p>
+          </li>
+          <li>
             <p><strong>Extensive <a href="docs.html">documentation</a></strong></p>
           </li>
           <li>
@@ -172,6 +174,7 @@
             <ul class="nav nav-tabs">              
               <li class="active"><a href="#ws_js" data-toggle="tab">JavaScript</a></li>
               <li><a href="#ws_ruby" data-toggle="tab">Ruby</a></li>
+              <li><a href="#ws_python" data-toggle="tab">Python</a></li>
               <li><a href="#ws_groovy" data-toggle="tab">Groovy</a></li>
               <li><a href="#ws_java" data-toggle="tab">Java</a></li>              
             </ul>
@@ -220,6 +223,31 @@ end.listen(8080)
             
 
               </div>
+               <div class="tab-pane" id="ws_python">
+
+                <p>Save the following in <code>server.py</code></p>
+                <pre class="prettyprint">
+import vertx
+
+server = vertx.create_http_server()
+
+@server.request_handler
+def request_handler(req):
+    file = "index.html" if req.uri == "/" else req.uri
+    req.response.send_file("webroot/%s"%file)
+server.listen(8080)
+                </pre>
+
+                <p>Run it with:</p>
+                <p><code>vertx run server.py</code></p>
+
+                <p><strong>Have lots of cores on your server and want to use them all?</strong></p>
+                <p>Just spin up more instances:</p>
+                <p><code>vertx run server.py -instances 32</code></p>
+                <p>Vert.x will do the magic to ensure the requests are distributed amongst the instances:</p>
+            
+
+              </div>
               <div class="tab-pane" id="ws_groovy">
 
                 <p>Save the following in <code>Server.groovy</code></p>
@@ -259,15 +287,12 @@ public class Server extends Verticle {
 }
                 </pre>
 
-                <p>Compile it:</p>
-                <p><code>javac Server.java -cp $VERTX_HOME/lib/jars/vert.x-core.jar:$VERTX_HOME/lib/jars/vert.x-platform.jar</code></p>
-
                 <p>Run it with:</p>
-                <p><code>vertx run Server</code></p>
+                <p><code>vertx run Server.java</code></p>
 
                 <p><strong>Have lots of cores on your server and want to use them all?</strong></p>
                 <p>Just spin up more instances:</p>
-                <p><code>vertx run Server -instances 32</code></p>                
+                <p><code>vertx run Server.java -instances 32</code></p>                
                 <p>Vert.x will do the magic to ensure the requests are distributed amongst the instances:</p>
             
 

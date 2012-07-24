@@ -1,0 +1,1717 @@
+
+<!doctype html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module core.http</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="core.html"><font color="#ffffff">core</font></a>.http</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href="index.html">index</a><br></font></td></tr></table>
+    <p><tt>This&nbsp;module&nbsp;adds&nbsp;the&nbsp;http&nbsp;support&nbsp;to&nbsp;the&nbsp;python&nbsp;vert.x&nbsp;platform</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#fffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="core.html">core</a><br>
+</td><td width="25%" valign=top></td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial">__builtin__.object
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.http.html#HttpClient">HttpClient</a>(<a href="core.ssl_support.html#SSLSupport">core.ssl_support.SSLSupport</a>, <a href="core.tcp_support.html#TCPSupport">core.tcp_support.TCPSupport</a>, __builtin__.object)
+</font></dt><dt><font face="helvetica, arial"><a href="core.http.html#HttpServer">HttpServer</a>(<a href="core.tcp_support.html#TCPSupport">core.tcp_support.TCPSupport</a>, <a href="core.ssl_support.html#SSLSupport">core.ssl_support.SSLSupport</a>, __builtin__.object)
+</font></dt><dt><font face="helvetica, arial"><a href="core.http.html#RouteMatcher">RouteMatcher</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="core.ssl_support.html#SSLSupport">core.ssl_support.SSLSupport</a>(__builtin__.object)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.http.html#HttpClient">HttpClient</a>(<a href="core.ssl_support.html#SSLSupport">core.ssl_support.SSLSupport</a>, <a href="core.tcp_support.html#TCPSupport">core.tcp_support.TCPSupport</a>, __builtin__.object)
+</font></dt><dt><font face="helvetica, arial"><a href="core.http.html#HttpServer">HttpServer</a>(<a href="core.tcp_support.html#TCPSupport">core.tcp_support.TCPSupport</a>, <a href="core.ssl_support.html#SSLSupport">core.ssl_support.SSLSupport</a>, __builtin__.object)
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="core.streams.html#ReadStream">core.streams.ReadStream</a>(__builtin__.object)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.http.html#HttpClientResponse">HttpClientResponse</a>
+</font></dt><dt><font face="helvetica, arial"><a href="core.http.html#HttpServerRequest">HttpServerRequest</a>
+</font></dt><dt><font face="helvetica, arial"><a href="core.http.html#WebSocket">WebSocket</a>(<a href="core.streams.html#ReadStream">core.streams.ReadStream</a>, <a href="core.streams.html#WriteStream">core.streams.WriteStream</a>)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.http.html#ServerWebSocket">ServerWebSocket</a>
+</font></dt></dl>
+</dd>
+</dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="core.streams.html#WriteStream">core.streams.WriteStream</a>(__builtin__.object)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.http.html#HttpClientRequest">HttpClientRequest</a>
+</font></dt><dt><font face="helvetica, arial"><a href="core.http.html#HttpServerResponse">HttpServerResponse</a>
+</font></dt><dt><font face="helvetica, arial"><a href="core.http.html#WebSocket">WebSocket</a>(<a href="core.streams.html#ReadStream">core.streams.ReadStream</a>, <a href="core.streams.html#WriteStream">core.streams.WriteStream</a>)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.http.html#ServerWebSocket">ServerWebSocket</a>
+</font></dt></dl>
+</dd>
+</dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="core.tcp_support.html#TCPSupport">core.tcp_support.TCPSupport</a>(__builtin__.object)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.http.html#HttpClient">HttpClient</a>(<a href="core.ssl_support.html#SSLSupport">core.ssl_support.SSLSupport</a>, <a href="core.tcp_support.html#TCPSupport">core.tcp_support.TCPSupport</a>, __builtin__.object)
+</font></dt><dt><font face="helvetica, arial"><a href="core.http.html#HttpServer">HttpServer</a>(<a href="core.tcp_support.html#TCPSupport">core.tcp_support.TCPSupport</a>, <a href="core.ssl_support.html#SSLSupport">core.ssl_support.SSLSupport</a>, __builtin__.object)
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial">org.vertx.java.core.Handler(java.lang.Object)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial">org.python.proxies.core.http$HttpClientResponseHandler$12(org.vertx.java.core.Handler, java.lang.Object)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.http.html#HttpClientResponseHandler">HttpClientResponseHandler</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial">org.python.proxies.core.http$HttpServerRequestHandler$11(org.vertx.java.core.Handler, java.lang.Object)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.http.html#HttpServerRequestHandler">HttpServerRequestHandler</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial">org.python.proxies.core.http$ServerWebSocketHandler$13(org.vertx.java.core.Handler, java.lang.Object)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.http.html#ServerWebSocketHandler">ServerWebSocketHandler</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial">org.python.proxies.core.http$WebSocketHandler$14(org.vertx.java.core.Handler, java.lang.Object)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.http.html#WebSocketHandler">WebSocketHandler</a>
+</font></dt></dl>
+</dd>
+</dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="HttpClient">class <strong>HttpClient</strong></a>(<a href="core.ssl_support.html#SSLSupport">core.ssl_support.SSLSupport</a>, <a href="core.tcp_support.html#TCPSupport">core.tcp_support.TCPSupport</a>, __builtin__.object)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>An&nbsp;HTTP&nbsp;client.<br>
+A&nbsp;client&nbsp;maintains&nbsp;a&nbsp;pool&nbsp;of&nbsp;connections&nbsp;to&nbsp;a&nbsp;specific&nbsp;host,&nbsp;at&nbsp;a&nbsp;specific&nbsp;port.&nbsp;The&nbsp;HTTP&nbsp;connections&nbsp;can&nbsp;act<br>
+as&nbsp;pipelines&nbsp;for&nbsp;HTTP&nbsp;requests.<br>
+It&nbsp;is&nbsp;used&nbsp;as&nbsp;a&nbsp;factory&nbsp;for&nbsp;<a href="#HttpClientRequest">HttpClientRequest</a>&nbsp;instances&nbsp;which&nbsp;encapsulate&nbsp;the&nbsp;actual&nbsp;HTTP&nbsp;requests.&nbsp;It&nbsp;is&nbsp;also<br>
+used&nbsp;as&nbsp;a&nbsp;factory&nbsp;for&nbsp;HTML5&nbsp;<a href="#WebSocket">WebSocket</a>&nbsp;websockets.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="core.http.html#HttpClient">HttpClient</a></dd>
+<dd><a href="core.ssl_support.html#SSLSupport">core.ssl_support.SSLSupport</a></dd>
+<dd><a href="core.tcp_support.html#TCPSupport">core.tcp_support.TCPSupport</a></dd>
+<dd>__builtin__.object</dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="HttpClient-__init__"><strong>__init__</strong></a>(self, **kwargs)</dt></dl>
+
+<dl><dt><a name="HttpClient-close"><strong>close</strong></a>(self)</dt><dd><tt>Close&nbsp;the&nbsp;client.&nbsp;Any&nbsp;unclosed&nbsp;connections&nbsp;will&nbsp;be&nbsp;closed.</tt></dd></dl>
+
+<dl><dt><a name="HttpClient-connect"><strong>connect</strong></a>(self, uri, handler)</dt><dd><tt>This&nbsp;method&nbsp;returns&nbsp;an&nbsp;<a href="#HttpClientRequest">HttpClientRequest</a>&nbsp;instance&nbsp;which&nbsp;represents&nbsp;an&nbsp;HTTP&nbsp;CONNECT&nbsp;request&nbsp;with&nbsp;the&nbsp;specified&nbsp;uri.<br>
+When&nbsp;an&nbsp;HTTP&nbsp;response&nbsp;is&nbsp;received&nbsp;from&nbsp;the&nbsp;server&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;passing&nbsp;in&nbsp;the&nbsp;response.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;CONNECT&nbsp;on&nbsp;the&nbsp;server.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
+
+<dl><dt><a name="HttpClient-connect_web_socket"><strong>connect_web_socket</strong></a>(self, uri, handler)</dt><dd><tt>Attempt&nbsp;to&nbsp;connect&nbsp;an&nbsp;HTML5&nbsp;websocket&nbsp;to&nbsp;the&nbsp;specified&nbsp;URI.<br>
+The&nbsp;connect&nbsp;is&nbsp;done&nbsp;asynchronously&nbsp;and&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;with&nbsp;a&nbsp;<a href="#WebSocket">WebSocket</a>&nbsp;on&nbsp;success.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;connect&nbsp;the&nbsp;websocket&nbsp;on&nbsp;the&nbsp;host,&nbsp;e.g.&nbsp;/some/path<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#WebSocket">WebSocket</a></tt></dd></dl>
+
+<dl><dt><a name="HttpClient-delete"><strong>delete</strong></a>(self, uri, handler)</dt><dd><tt>This&nbsp;method&nbsp;returns&nbsp;an&nbsp;<a href="#HttpClientRequest">HttpClientRequest</a>&nbsp;instance&nbsp;which&nbsp;represents&nbsp;an&nbsp;HTTP&nbsp;DELETE&nbsp;request&nbsp;with&nbsp;the&nbsp;specified&nbsp;uri.<br>
+When&nbsp;an&nbsp;HTTP&nbsp;response&nbsp;is&nbsp;received&nbsp;from&nbsp;the&nbsp;server&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;passing&nbsp;in&nbsp;the&nbsp;response.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;DELETE&nbsp;on&nbsp;the&nbsp;server.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
+
+<dl><dt><a name="HttpClient-exception_handler"><strong>exception_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;the&nbsp;exception&nbsp;handler.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;handler:&nbsp;function&nbsp;to&nbsp;be&nbsp;used&nbsp;as&nbsp;the&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="HttpClient-get"><strong>get</strong></a>(self, uri, handler)</dt><dd><tt>This&nbsp;method&nbsp;returns&nbsp;an&nbsp;<a href="#HttpClientRequest">HttpClientRequest</a>&nbsp;instance&nbsp;which&nbsp;represents&nbsp;an&nbsp;HTTP&nbsp;GET&nbsp;request&nbsp;with&nbsp;the&nbsp;specified&nbsp;uri.<br>
+When&nbsp;an&nbsp;HTTP&nbsp;response&nbsp;is&nbsp;received&nbsp;from&nbsp;the&nbsp;server&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;passing&nbsp;in&nbsp;the&nbsp;response.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;GET&nbsp;on&nbsp;the&nbsp;server.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
+
+<dl><dt><a name="HttpClient-get_max_pool_size"><strong>get_max_pool_size</strong></a>(self)</dt><dd><tt>The&nbsp;maxium&nbsp;number&nbsp;of&nbsp;connections&nbsp;this&nbsp;client&nbsp;will&nbsp;pool.</tt></dd></dl>
+
+<dl><dt><a name="HttpClient-get_now"><strong>get_now</strong></a>(self, uri, handler, **headers)</dt><dd><tt>This&nbsp;is&nbsp;a&nbsp;quick&nbsp;version&nbsp;of&nbsp;the&nbsp;get&nbsp;method&nbsp;where&nbsp;you&nbsp;do&nbsp;not&nbsp;want&nbsp;to&nbsp;do&nbsp;anything&nbsp;with&nbsp;the&nbsp;request<br>
+before&nbsp;sing.<br>
+With&nbsp;this&nbsp;method&nbsp;the&nbsp;request&nbsp;is&nbsp;immediately&nbsp;sent.<br>
+When&nbsp;an&nbsp;HTTP&nbsp;response&nbsp;is&nbsp;received&nbsp;from&nbsp;the&nbsp;server&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;passing&nbsp;in&nbsp;the&nbsp;response.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;GET&nbsp;on&nbsp;the&nbsp;server.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a><br>
+@param&nbsp;headers:&nbsp;A&nbsp;dictionary&nbsp;of&nbsp;headers&nbsp;to&nbsp;pass&nbsp;with&nbsp;the&nbsp;request.</tt></dd></dl>
+
+<dl><dt><a name="HttpClient-head"><strong>head</strong></a>(self, uri, handler)</dt><dd><tt>This&nbsp;method&nbsp;returns&nbsp;an&nbsp;<a href="#HttpClientRequest">HttpClientRequest</a>&nbsp;instance&nbsp;which&nbsp;represents&nbsp;an&nbsp;HTTP&nbsp;HEAD&nbsp;request&nbsp;with&nbsp;the&nbsp;specified&nbsp;uri.<br>
+When&nbsp;an&nbsp;HTTP&nbsp;response&nbsp;is&nbsp;received&nbsp;from&nbsp;the&nbsp;server&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;passing&nbsp;in&nbsp;the&nbsp;response.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;HEAD&nbsp;on&nbsp;the&nbsp;server.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
+
+<dl><dt><a name="HttpClient-options"><strong>options</strong></a>(self, uri, handler)</dt><dd><tt>This&nbsp;method&nbsp;returns&nbsp;an&nbsp;<a href="#HttpClientRequest">HttpClientRequest</a>&nbsp;instance&nbsp;which&nbsp;represents&nbsp;an&nbsp;HTTP&nbsp;OPTIONS&nbsp;request&nbsp;with&nbsp;the&nbsp;specified&nbsp;uri.<br>
+When&nbsp;an&nbsp;HTTP&nbsp;response&nbsp;is&nbsp;received&nbsp;from&nbsp;the&nbsp;server&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;passing&nbsp;in&nbsp;the&nbsp;response.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;OPTIONS&nbsp;on&nbsp;the&nbsp;server.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
+
+<dl><dt><a name="HttpClient-patch"><strong>patch</strong></a>(self, uri, handler)</dt><dd><tt>This&nbsp;method&nbsp;returns&nbsp;an&nbsp;<a href="#HttpClientRequest">HttpClientRequest</a>&nbsp;instance&nbsp;which&nbsp;represents&nbsp;an&nbsp;HTTP&nbsp;PATCH&nbsp;request&nbsp;with&nbsp;the&nbsp;specified&nbsp;uri.<br>
+When&nbsp;an&nbsp;HTTP&nbsp;response&nbsp;is&nbsp;received&nbsp;from&nbsp;the&nbsp;server&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;passing&nbsp;in&nbsp;the&nbsp;response.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;PATCH&nbsp;on&nbsp;the&nbsp;server.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
+
+<dl><dt><a name="HttpClient-post"><strong>post</strong></a>(self, uri, handler)</dt><dd><tt>This&nbsp;method&nbsp;returns&nbsp;an&nbsp;<a href="#HttpClientRequest">HttpClientRequest</a>&nbsp;instance&nbsp;which&nbsp;represents&nbsp;an&nbsp;HTTP&nbsp;POST&nbsp;request&nbsp;with&nbsp;the&nbsp;specified&nbsp;uri.<br>
+When&nbsp;an&nbsp;HTTP&nbsp;response&nbsp;is&nbsp;received&nbsp;from&nbsp;the&nbsp;server&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;passing&nbsp;in&nbsp;the&nbsp;response.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;POST&nbsp;on&nbsp;the&nbsp;server.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
+
+<dl><dt><a name="HttpClient-put"><strong>put</strong></a>(self, uri, handler)</dt><dd><tt>This&nbsp;method&nbsp;returns&nbsp;an&nbsp;<a href="#HttpClientRequest">HttpClientRequest</a>&nbsp;instance&nbsp;which&nbsp;represents&nbsp;an&nbsp;HTTP&nbsp;PUT&nbsp;request&nbsp;with&nbsp;the&nbsp;specified&nbsp;uri.<br>
+When&nbsp;an&nbsp;HTTP&nbsp;response&nbsp;is&nbsp;received&nbsp;from&nbsp;the&nbsp;server&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;passing&nbsp;in&nbsp;the&nbsp;response.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;PUT&nbsp;on&nbsp;the&nbsp;server.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
+
+<dl><dt><a name="HttpClient-request"><strong>request</strong></a>(self, method, uri, handler)</dt><dd><tt>This&nbsp;method&nbsp;returns&nbsp;an&nbsp;<a href="#HttpClientRequest">HttpClientRequest</a>&nbsp;instance&nbsp;which&nbsp;represents&nbsp;an&nbsp;HTTP&nbsp;request&nbsp;with&nbsp;the&nbsp;specified&nbsp;method&nbsp;and&nbsp;uri.<br>
+When&nbsp;an&nbsp;HTTP&nbsp;response&nbsp;is&nbsp;received&nbsp;from&nbsp;the&nbsp;server&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;passing&nbsp;in&nbsp;the&nbsp;response.<br>
+method.&nbsp;The&nbsp;HTTP&nbsp;method.&nbsp;Can&nbsp;be&nbsp;one&nbsp;of&nbsp;OPTIONS,&nbsp;HEAD,&nbsp;GET,&nbsp;POST,&nbsp;PUT,&nbsp;DELETE,&nbsp;TRACE,&nbsp;CONNECT.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;OPTIONS&nbsp;on&nbsp;the&nbsp;server.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
+
+<dl><dt><a name="HttpClient-set_host"><strong>set_host</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;host&nbsp;name&nbsp;or&nbsp;ip&nbsp;address&nbsp;that&nbsp;the&nbsp;client&nbsp;will&nbsp;attempt&nbsp;to&nbsp;connect&nbsp;to&nbsp;on&nbsp;the&nbsp;server&nbsp;on.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;val:&nbsp;The&nbsp;host&nbsp;name&nbsp;or&nbsp;ip&nbsp;address&nbsp;to&nbsp;connect&nbsp;to.</tt></dd></dl>
+
+<dl><dt><a name="HttpClient-set_keep_alive"><strong>set_keep_alive</strong></a>(self, val)</dt><dd><tt>If&nbsp;val&nbsp;is&nbsp;true&nbsp;then,&nbsp;after&nbsp;the&nbsp;request&nbsp;has&nbsp;ended&nbsp;the&nbsp;connection&nbsp;will&nbsp;be&nbsp;returned&nbsp;to&nbsp;the&nbsp;pool<br>
+where&nbsp;it&nbsp;can&nbsp;be&nbsp;used&nbsp;by&nbsp;another&nbsp;request.&nbsp;In&nbsp;this&nbsp;manner,&nbsp;many&nbsp;HTTP&nbsp;requests&nbsp;can&nbsp;be&nbsp;pipe-lined&nbsp;over&nbsp;an&nbsp;HTTP&nbsp;connection.<br>
+Keep&nbsp;alive&nbsp;connections&nbsp;will&nbsp;not&nbsp;be&nbsp;closed&nbsp;until&nbsp;the&nbsp;close&nbsp;method&nbsp;is&nbsp;invoked.<br>
+If&nbsp;val&nbsp;is&nbsp;false&nbsp;then&nbsp;a&nbsp;new&nbsp;connection&nbsp;will&nbsp;be&nbsp;created&nbsp;for&nbsp;each&nbsp;request&nbsp;and&nbsp;it&nbsp;won't&nbsp;ever&nbsp;go&nbsp;in&nbsp;the&nbsp;pool,<br>
+the&nbsp;connection&nbsp;will&nbsp;closed&nbsp;after&nbsp;the&nbsp;response&nbsp;has&nbsp;been&nbsp;received.&nbsp;Even&nbsp;with&nbsp;no&nbsp;keep&nbsp;alive,&nbsp;the&nbsp;client&nbsp;will&nbsp;not&nbsp;allow&nbsp;more<br>
+than&nbsp;max_pool_size&nbsp;connections&nbsp;to&nbsp;be&nbsp;created&nbsp;at&nbsp;any&nbsp;one&nbsp;time.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;val:&nbsp;The&nbsp;value&nbsp;to&nbsp;use&nbsp;for&nbsp;keep_alive</tt></dd></dl>
+
+<dl><dt><a name="HttpClient-set_max_pool_size"><strong>set_max_pool_size</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;maximum&nbsp;pool&nbsp;size.<br>
+The&nbsp;client&nbsp;will&nbsp;maintain&nbsp;up&nbsp;to&nbsp;this&nbsp;number&nbsp;of&nbsp;HTTP&nbsp;connections&nbsp;in&nbsp;an&nbsp;internal&nbsp;pool<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;val:&nbsp;The&nbsp;maximum&nbsp;number&nbsp;of&nbsp;connections&nbsp;(default&nbsp;to&nbsp;1).</tt></dd></dl>
+
+<dl><dt><a name="HttpClient-set_port"><strong>set_port</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;port&nbsp;that&nbsp;the&nbsp;client&nbsp;will&nbsp;attempt&nbsp;to&nbsp;connect&nbsp;to&nbsp;on&nbsp;the&nbsp;server&nbsp;on.&nbsp;The&nbsp;default&nbsp;value&nbsp;is&nbsp;80<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;val:&nbsp;The&nbsp;port&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="HttpClient-set_trust_all"><strong>set_trust_all</strong></a>(self, val)</dt><dd><tt>Should&nbsp;the&nbsp;client&nbsp;trust&nbsp;ALL&nbsp;server&nbsp;certificates?<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;val:&nbsp;If&nbsp;val&nbsp;is&nbsp;set&nbsp;to&nbsp;true&nbsp;then&nbsp;the&nbsp;client&nbsp;will&nbsp;trust&nbsp;ALL&nbsp;server&nbsp;certificates&nbsp;and&nbsp;will&nbsp;not&nbsp;attempt&nbsp;to&nbsp;authenticate&nbsp;them<br>
+against&nbsp;it's&nbsp;local&nbsp;client&nbsp;trust&nbsp;store.&nbsp;The&nbsp;default&nbsp;value&nbsp;is&nbsp;false.<br>
+Use&nbsp;this&nbsp;method&nbsp;with&nbsp;caution!</tt></dd></dl>
+
+<dl><dt><a name="HttpClient-trace"><strong>trace</strong></a>(self, uri, handler)</dt><dd><tt>This&nbsp;method&nbsp;returns&nbsp;an&nbsp;<a href="#HttpClientRequest">HttpClientRequest</a>&nbsp;instance&nbsp;which&nbsp;represents&nbsp;an&nbsp;HTTP&nbsp;TRACE&nbsp;request&nbsp;with&nbsp;the&nbsp;specified&nbsp;uri.<br>
+When&nbsp;an&nbsp;HTTP&nbsp;response&nbsp;is&nbsp;received&nbsp;from&nbsp;the&nbsp;server&nbsp;the&nbsp;handler&nbsp;is&nbsp;called&nbsp;passing&nbsp;in&nbsp;the&nbsp;response.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;uri:&nbsp;A&nbsp;relative&nbsp;URI&nbsp;where&nbsp;to&nbsp;perform&nbsp;the&nbsp;TRACE&nbsp;on&nbsp;the&nbsp;server.<br>
+handler.&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a></tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>host</strong></dt>
+</dl>
+<dl><dt><strong>keep_alive</strong></dt>
+</dl>
+<dl><dt><strong>max_pool_size</strong></dt>
+<dd><tt>The&nbsp;maxium&nbsp;number&nbsp;of&nbsp;connections&nbsp;this&nbsp;client&nbsp;will&nbsp;pool.</tt></dd>
+</dl>
+<dl><dt><strong>port</strong></dt>
+</dl>
+<dl><dt><strong>trust_all</strong></dt>
+</dl>
+<hr>
+Methods inherited from <a href="core.ssl_support.html#SSLSupport">core.ssl_support.SSLSupport</a>:<br>
+<dl><dt><a name="HttpClient-set_key_store_password"><strong>set_key_store_password</strong></a>(self, password)</dt><dd><tt>Set&nbsp;the&nbsp;password&nbsp;for&nbsp;the&nbsp;SSL&nbsp;key&nbsp;store.&nbsp;This&nbsp;method&nbsp;should&nbsp;only&nbsp;be&nbsp;used&nbsp;with&nbsp;the&nbsp;client&nbsp;in&nbsp;SSL&nbsp;mode,&nbsp;i.e.&nbsp;after&nbsp;ssl<br>
+has&nbsp;been&nbsp;set&nbsp;to&nbsp;true.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;password:&nbsp;The&nbsp;password.<br>
+&nbsp;<br>
+return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<dl><dt><a name="HttpClient-set_key_store_path"><strong>set_key_store_path</strong></a>(self, path)</dt><dd><tt>Set&nbsp;the&nbsp;path&nbsp;to&nbsp;the&nbsp;SSL&nbsp;key&nbsp;store.&nbsp;This&nbsp;method&nbsp;should&nbsp;only&nbsp;be&nbsp;used&nbsp;with&nbsp;the&nbsp;client/server&nbsp;in&nbsp;SSL&nbsp;mode,&nbsp;i.e.&nbsp;after&nbsp;{#ssl=}<br>
+has&nbsp;been&nbsp;set&nbsp;to&nbsp;true.<br>
+The&nbsp;SSL&nbsp;key&nbsp;store&nbsp;is&nbsp;a&nbsp;standard&nbsp;Java&nbsp;Key&nbsp;Store,&nbsp;and&nbsp;should&nbsp;contain&nbsp;the&nbsp;client/server&nbsp;certificate.&nbsp;For&nbsp;a&nbsp;client,&nbsp;it's&nbsp;only&nbsp;necessary&nbsp;to&nbsp;supply<br>
+a&nbsp;client&nbsp;key&nbsp;store&nbsp;if&nbsp;the&nbsp;server&nbsp;requires&nbsp;client&nbsp;authentication&nbsp;via&nbsp;client&nbsp;certificates.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;path:&nbsp;The&nbsp;path&nbsp;to&nbsp;the&nbsp;key&nbsp;store<br>
+&nbsp;<br>
+return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<dl><dt><a name="HttpClient-set_ssl"><strong>set_ssl</strong></a>(self, val)</dt><dd><tt>Set&nbsp;whether&nbsp;the&nbsp;server&nbsp;or&nbsp;client&nbsp;will&nbsp;use&nbsp;SSL.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;val:&nbsp;If&nbsp;true&nbsp;then&nbsp;ssl&nbsp;will&nbsp;be&nbsp;used.<br>
+&nbsp;<br>
+return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<dl><dt><a name="HttpClient-set_trust_store_password"><strong>set_trust_store_password</strong></a>(self, password)</dt><dd><tt>Set&nbsp;the&nbsp;password&nbsp;for&nbsp;the&nbsp;SSL&nbsp;trust&nbsp;store.&nbsp;This&nbsp;method&nbsp;should&nbsp;only&nbsp;be&nbsp;used&nbsp;with&nbsp;the&nbsp;client&nbsp;in&nbsp;SSL&nbsp;mode,&nbsp;i.e.&nbsp;after&nbsp;{#ssl=}<br>
+has&nbsp;been&nbsp;set&nbsp;to&nbsp;true.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;password:&nbsp;The&nbsp;password.<br>
+&nbsp;<br>
+return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<dl><dt><a name="HttpClient-set_trust_store_path"><strong>set_trust_store_path</strong></a>(self, path)</dt><dd><tt>Set&nbsp;the&nbsp;path&nbsp;to&nbsp;the&nbsp;SSL&nbsp;trust&nbsp;store.&nbsp;This&nbsp;method&nbsp;should&nbsp;only&nbsp;be&nbsp;used&nbsp;with&nbsp;the&nbsp;client/server&nbsp;in&nbsp;SSL&nbsp;mode,&nbsp;i.e.&nbsp;after&nbsp;{#ssl=}<br>
+has&nbsp;been&nbsp;set&nbsp;to&nbsp;true.<br>
+The&nbsp;SSL&nbsp;trust&nbsp;store&nbsp;is&nbsp;a&nbsp;standard&nbsp;Java&nbsp;Key&nbsp;Store,&nbsp;and&nbsp;should&nbsp;contain&nbsp;the&nbsp;certificate(s)&nbsp;of&nbsp;the&nbsp;clients/servers&nbsp;that&nbsp;the&nbsp;server/client&nbsp;trusts.&nbsp;The&nbsp;SSL<br>
+handshake&nbsp;will&nbsp;fail&nbsp;if&nbsp;the&nbsp;server&nbsp;provides&nbsp;a&nbsp;certificate&nbsp;that&nbsp;the&nbsp;client&nbsp;does&nbsp;not&nbsp;trust,&nbsp;or&nbsp;if&nbsp;client&nbsp;authentication&nbsp;is&nbsp;used,<br>
+if&nbsp;the&nbsp;client&nbsp;provides&nbsp;a&nbsp;certificate&nbsp;the&nbsp;server&nbsp;does&nbsp;not&nbsp;trust.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;path:&nbsp;The&nbsp;path&nbsp;to&nbsp;the&nbsp;trust&nbsp;store<br>
+&nbsp;<br>
+return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="core.ssl_support.html#SSLSupport">core.ssl_support.SSLSupport</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>key_store_password</strong></dt>
+</dl>
+<dl><dt><strong>key_store_path</strong></dt>
+</dl>
+<dl><dt><strong>ssl</strong></dt>
+</dl>
+<dl><dt><strong>trust_store_password</strong></dt>
+</dl>
+<dl><dt><strong>trust_store_path</strong></dt>
+</dl>
+<hr>
+Methods inherited from <a href="core.tcp_support.html#TCPSupport">core.tcp_support.TCPSupport</a>:<br>
+<dl><dt><a name="HttpClient-set_receive_buffer_size"><strong>set_receive_buffer_size</strong></a>(self, bytes)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;receive&nbsp;buffer&nbsp;size.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;bytes:&nbsp;The&nbsp;size&nbsp;in&nbsp;bytes.<br>
+&nbsp;<br>
+return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+
+<dl><dt><a name="HttpClient-set_reuse_address"><strong>set_reuse_address</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;reuse&nbsp;address&nbsp;setting.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;val:&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;reuse&nbsp;address&nbsp;will&nbsp;be&nbsp;enabled.<br>
+@return:&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+
+<dl><dt><a name="HttpClient-set_send_buffer_size"><strong>set_send_buffer_size</strong></a>(self, bytes)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;send&nbsp;buffer&nbsp;size.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;bytes:&nbsp;The&nbsp;size&nbsp;in&nbsp;bytes.<br>
+&nbsp;<br>
+return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+
+<dl><dt><a name="HttpClient-set_so_linger"><strong>set_so_linger</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;so&nbsp;linger&nbsp;setting.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;val:&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;so&nbsp;linger&nbsp;will&nbsp;be&nbsp;enabled.<br>
+&nbsp;<br>
+return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+
+<dl><dt><a name="HttpClient-set_tcp_keep_alive"><strong>set_tcp_keep_alive</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;keep&nbsp;alive&nbsp;setting.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;val:&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;keep&nbsp;alive&nbsp;will&nbsp;be&nbsp;enabled.<br>
+&nbsp;<br>
+return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+
+<dl><dt><a name="HttpClient-set_traffic_class"><strong>set_traffic_class</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;traffic&nbsp;class&nbsp;setting.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;val:&nbsp;The&nbsp;TCP&nbsp;traffic&nbsp;class&nbsp;setting.<br>
+&nbsp;<br>
+return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="core.tcp_support.html#TCPSupport">core.tcp_support.TCPSupport</a>:<br>
+<dl><dt><strong>receive_buffer_size</strong></dt>
+</dl>
+<dl><dt><strong>reuse_address</strong></dt>
+</dl>
+<dl><dt><strong>send_buffer_size</strong></dt>
+</dl>
+<dl><dt><strong>so_linger</strong></dt>
+</dl>
+<dl><dt><strong>tcp_keep_alive</strong></dt>
+</dl>
+<dl><dt><strong>traffic_class</strong></dt>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="HttpClientRequest">class <strong>HttpClientRequest</strong></a>(<a href="core.streams.html#WriteStream">core.streams.WriteStream</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Instances&nbsp;of&nbsp;this&nbsp;class&nbsp;are&nbsp;created&nbsp;by&nbsp;an&nbsp;<a href="#HttpClient">HttpClient</a>&nbsp;instance,&nbsp;via&nbsp;one&nbsp;of&nbsp;the&nbsp;methods&nbsp;corresponding&nbsp;to&nbsp;the<br>
+specific&nbsp;HTTP&nbsp;methods,&nbsp;or&nbsp;the&nbsp;generic&nbsp;<a href="#HttpClient">HttpClient</a>&nbsp;request&nbsp;method.<br>
+&nbsp;<br>
+Once&nbsp;an&nbsp;instance&nbsp;of&nbsp;this&nbsp;class&nbsp;has&nbsp;been&nbsp;obtained,&nbsp;headers&nbsp;can&nbsp;be&nbsp;set&nbsp;on&nbsp;it,&nbsp;and&nbsp;data&nbsp;can&nbsp;be&nbsp;written&nbsp;to&nbsp;its&nbsp;body,<br>
+if&nbsp;required.&nbsp;Once&nbsp;you&nbsp;are&nbsp;ready&nbsp;to&nbsp;send&nbsp;the&nbsp;request,&nbsp;the&nbsp;end&nbsp;method&nbsp;must&nbsp;called.<br>
+&nbsp;<br>
+Nothing&nbsp;is&nbsp;sent&nbsp;until&nbsp;the&nbsp;request&nbsp;has&nbsp;been&nbsp;internally&nbsp;assigned&nbsp;an&nbsp;HTTP&nbsp;connection.&nbsp;The&nbsp;<a href="#HttpClient">HttpClient</a>&nbsp;instance<br>
+will&nbsp;return&nbsp;an&nbsp;instance&nbsp;of&nbsp;this&nbsp;class&nbsp;immediately,&nbsp;even&nbsp;if&nbsp;there&nbsp;are&nbsp;no&nbsp;HTTP&nbsp;connections&nbsp;available&nbsp;in&nbsp;the&nbsp;pool.&nbsp;Any&nbsp;requests<br>
+sent&nbsp;before&nbsp;a&nbsp;connection&nbsp;is&nbsp;assigned&nbsp;will&nbsp;be&nbsp;queued&nbsp;internally&nbsp;and&nbsp;actually&nbsp;sent&nbsp;when&nbsp;an&nbsp;HTTP&nbsp;connection&nbsp;becomes<br>
+available&nbsp;from&nbsp;the&nbsp;pool.<br>
+&nbsp;<br>
+The&nbsp;headers&nbsp;of&nbsp;the&nbsp;request&nbsp;are&nbsp;actually&nbsp;sent&nbsp;either&nbsp;when&nbsp;the&nbsp;end&nbsp;method&nbsp;is&nbsp;called,&nbsp;or,&nbsp;when&nbsp;the&nbsp;first<br>
+part&nbsp;of&nbsp;the&nbsp;body&nbsp;is&nbsp;written,&nbsp;whichever&nbsp;occurs&nbsp;first.<br>
+&nbsp;<br>
+This&nbsp;class&nbsp;supports&nbsp;both&nbsp;chunked&nbsp;and&nbsp;non-chunked&nbsp;HTTP.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="core.http.html#HttpClientRequest">HttpClientRequest</a></dd>
+<dd><a href="core.streams.html#WriteStream">core.streams.WriteStream</a></dd>
+<dd>__builtin__.object</dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="HttpClientRequest-__init__"><strong>__init__</strong></a>(self, java_obj)</dt></dl>
+
+<dl><dt><a name="HttpClientRequest-continue_handler"><strong>continue_handler</strong></a>(self, handler)</dt><dd><tt>If&nbsp;you&nbsp;send&nbsp;an&nbsp;HTTP&nbsp;request&nbsp;with&nbsp;the&nbsp;header&nbsp;'Expect'&nbsp;set&nbsp;to&nbsp;the&nbsp;value&nbsp;'100-continue'<br>
+and&nbsp;the&nbsp;server&nbsp;responds&nbsp;with&nbsp;an&nbsp;interim&nbsp;HTTP&nbsp;response&nbsp;with&nbsp;a&nbsp;status&nbsp;code&nbsp;of&nbsp;'100'&nbsp;and&nbsp;a&nbsp;continue&nbsp;handler<br>
+has&nbsp;been&nbsp;set&nbsp;using&nbsp;this&nbsp;method,&nbsp;then&nbsp;the&nbsp;handler&nbsp;will&nbsp;be&nbsp;called.<br>
+You&nbsp;can&nbsp;then&nbsp;continue&nbsp;to&nbsp;write&nbsp;data&nbsp;to&nbsp;the&nbsp;request&nbsp;body&nbsp;and&nbsp;later&nbsp;end&nbsp;it.&nbsp;This&nbsp;is&nbsp;normally&nbsp;used&nbsp;in&nbsp;conjunction&nbsp;with<br>
+the&nbsp;send_head&nbsp;method&nbsp;to&nbsp;force&nbsp;the&nbsp;request&nbsp;header&nbsp;to&nbsp;be&nbsp;written&nbsp;before&nbsp;the&nbsp;request&nbsp;has&nbsp;ended.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="HttpClientRequest-end"><strong>end</strong></a>(self)</dt><dd><tt>Ends&nbsp;the&nbsp;request.&nbsp;If&nbsp;no&nbsp;data&nbsp;has&nbsp;been&nbsp;written&nbsp;to&nbsp;the&nbsp;request&nbsp;body,&nbsp;and&nbsp;send_head&nbsp;has&nbsp;not&nbsp;been&nbsp;called&nbsp;then<br>
+the&nbsp;actual&nbsp;request&nbsp;won't&nbsp;get&nbsp;written&nbsp;until&nbsp;this&nbsp;method&nbsp;gets&nbsp;called.<br>
+Once&nbsp;the&nbsp;request&nbsp;has&nbsp;ended,&nbsp;it&nbsp;cannot&nbsp;be&nbsp;used&nbsp;any&nbsp;more,&nbsp;and&nbsp;if&nbsp;keep&nbsp;alive&nbsp;is&nbsp;true&nbsp;the&nbsp;underlying&nbsp;connection&nbsp;will<br>
+be&nbsp;returned&nbsp;to&nbsp;the&nbsp;<a href="#HttpClient">HttpClient</a>&nbsp;pool&nbsp;so&nbsp;it&nbsp;can&nbsp;be&nbsp;assigned&nbsp;to&nbsp;another&nbsp;request.</tt></dd></dl>
+
+<dl><dt><a name="HttpClientRequest-put_header"><strong>put_header</strong></a>(self, key, value)</dt><dd><tt>Inserts&nbsp;a&nbsp;header&nbsp;into&nbsp;the&nbsp;request.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;key:&nbsp;The&nbsp;header&nbsp;key<br>
+@param&nbsp;value:&nbsp;The&nbsp;header&nbsp;value.&nbsp;to_s&nbsp;will&nbsp;be&nbsp;called&nbsp;on&nbsp;the&nbsp;value&nbsp;to&nbsp;determine&nbsp;the&nbsp;actual&nbsp;String&nbsp;value&nbsp;to&nbsp;insert.<br>
+&nbsp;<br>
+@return:&nbsp;self&nbsp;so&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<dl><dt><a name="HttpClientRequest-send_head"><strong>send_head</strong></a>(self)</dt><dd><tt>Forces&nbsp;the&nbsp;head&nbsp;of&nbsp;the&nbsp;request&nbsp;to&nbsp;be&nbsp;written&nbsp;before&nbsp;end&nbsp;is&nbsp;called&nbsp;on&nbsp;the&nbsp;request.&nbsp;This&nbsp;is&nbsp;normally&nbsp;used<br>
+to&nbsp;implement&nbsp;HTTP&nbsp;100-continue&nbsp;handling,&nbsp;see&nbsp;continue_handler&nbsp;for&nbsp;more&nbsp;information.<br>
+&nbsp;<br>
+@return:&nbsp;self&nbsp;So&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<dl><dt><a name="HttpClientRequest-set_chunked"><strong>set_chunked</strong></a>(self, val)</dt><dd><tt>Sets&nbsp;whether&nbsp;the&nbsp;request&nbsp;should&nbsp;used&nbsp;HTTP&nbsp;chunked&nbsp;encoding&nbsp;or&nbsp;not.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;val:&nbsp;If&nbsp;val&nbsp;is&nbsp;true,&nbsp;this&nbsp;request&nbsp;will&nbsp;use&nbsp;HTTP&nbsp;chunked&nbsp;encoding,&nbsp;and&nbsp;each&nbsp;call&nbsp;to&nbsp;write&nbsp;to&nbsp;the&nbsp;body<br>
+will&nbsp;correspond&nbsp;to&nbsp;a&nbsp;new&nbsp;HTTP&nbsp;chunk&nbsp;sent&nbsp;on&nbsp;the&nbsp;wire.&nbsp;If&nbsp;chunked&nbsp;encoding&nbsp;is&nbsp;used&nbsp;the&nbsp;HTTP&nbsp;header<br>
+'Transfer-Encoding'&nbsp;with&nbsp;a&nbsp;value&nbsp;of&nbsp;'Chunked'&nbsp;will&nbsp;be&nbsp;automatically&nbsp;inserted&nbsp;in&nbsp;the&nbsp;request.<br>
+&nbsp;<br>
+If&nbsp;chunked&nbsp;is&nbsp;false,&nbsp;this&nbsp;request&nbsp;will&nbsp;not&nbsp;use&nbsp;HTTP&nbsp;chunked&nbsp;encoding,&nbsp;and&nbsp;therefore&nbsp;if&nbsp;any&nbsp;data&nbsp;is&nbsp;written&nbsp;the<br>
+body&nbsp;of&nbsp;the&nbsp;request,&nbsp;the&nbsp;total&nbsp;size&nbsp;of&nbsp;that&nbsp;data&nbsp;must&nbsp;be&nbsp;set&nbsp;in&nbsp;the&nbsp;'Content-Length'&nbsp;header&nbsp;before&nbsp;any<br>
+data&nbsp;is&nbsp;written&nbsp;to&nbsp;the&nbsp;request&nbsp;body.<br>
+&nbsp;<br>
+@return:&nbsp;self&nbsp;So&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<dl><dt><a name="HttpClientRequest-write_buffer"><strong>write_buffer</strong></a>(self, chunk, handler<font color="#909090">=None</font>)</dt><dd><tt>Write&nbsp;a&nbsp;to&nbsp;the&nbsp;request&nbsp;body.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;chunk:&nbsp;The&nbsp;buffer&nbsp;to&nbsp;write.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;the&nbsp;buffer&nbsp;has&nbsp;actually&nbsp;been&nbsp;written&nbsp;to&nbsp;the&nbsp;wire.<br>
+&nbsp;<br>
+@return:&nbsp;&nbsp;self&nbsp;So&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<dl><dt><a name="HttpClientRequest-write_buffer_and_end"><strong>write_buffer_and_end</strong></a>(self, chunk)</dt><dd><tt>Same&nbsp;as&nbsp;end&nbsp;but&nbsp;writes&nbsp;some&nbsp;data&nbsp;to&nbsp;the&nbsp;response&nbsp;body&nbsp;before&nbsp;ending.&nbsp;If&nbsp;the&nbsp;response&nbsp;is&nbsp;not&nbsp;chunked&nbsp;and<br>
+no&nbsp;other&nbsp;data&nbsp;has&nbsp;been&nbsp;written&nbsp;then&nbsp;the&nbsp;Content-Length&nbsp;header&nbsp;will&nbsp;be&nbsp;automatically&nbsp;set<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;chunk:&nbsp;The&nbsp;Buffer&nbsp;to&nbsp;write</tt></dd></dl>
+
+<dl><dt><a name="HttpClientRequest-write_str"><strong>write_str</strong></a>(self, str, enc<font color="#909090">='UTF-8'</font>, handler<font color="#909090">=None</font>)</dt><dd><tt>Write&nbsp;a&nbsp;to&nbsp;the&nbsp;request&nbsp;body.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;str:&nbsp;The&nbsp;string&nbsp;to&nbsp;write.<br>
+@param&nbsp;enc:&nbsp;The&nbsp;encoding&nbsp;to&nbsp;use.<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;the&nbsp;buffer&nbsp;has&nbsp;actually&nbsp;been&nbsp;written&nbsp;to&nbsp;the&nbsp;wire.<br>
+&nbsp;<br>
+@return:&nbsp;self&nbsp;So&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<dl><dt><a name="HttpClientRequest-write_str_and_end"><strong>write_str_and_end</strong></a>(self, str, enc<font color="#909090">='UTF-8'</font>)</dt><dd><tt>Same&nbsp;as&nbsp;write_buffer_and_end&nbsp;but&nbsp;writes&nbsp;a&nbsp;String<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;str:&nbsp;The&nbsp;String&nbsp;to&nbsp;write<br>
+@param&nbsp;enc:&nbsp;The&nbsp;encoding</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>chunked</strong></dt>
+</dl>
+<dl><dt><strong>headers</strong></dt>
+<dd><tt>Hash&nbsp;of&nbsp;headers&nbsp;for&nbsp;the&nbsp;request</tt></dd>
+</dl>
+<hr>
+Methods inherited from <a href="core.streams.html#WriteStream">core.streams.WriteStream</a>:<br>
+<dl><dt><a name="HttpClientRequest-drain_handler"><strong>drain_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;drain&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.&nbsp;If&nbsp;the&nbsp;write&nbsp;queue&nbsp;is&nbsp;full,&nbsp;then&nbsp;the&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;the&nbsp;write<br>
+queue&nbsp;has&nbsp;been&nbsp;reduced&nbsp;to&nbsp;maxSize&nbsp;/&nbsp;2.&nbsp;See&nbsp;&nbsp;for&nbsp;an&nbsp;example&nbsp;of&nbsp;this&nbsp;being&nbsp;used.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;handler:&nbsp;The&nbsp;drain&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="HttpClientRequest-exception_handler"><strong>exception_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;execption&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;handler:&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="HttpClientRequest-set_write_queue_max_size"><strong>set_write_queue_max_size</strong></a>(self, size)</dt><dd><tt>Set&nbsp;the&nbsp;maximum&nbsp;size&nbsp;of&nbsp;the&nbsp;write&nbsp;queue.&nbsp;You&nbsp;will&nbsp;still&nbsp;be&nbsp;able&nbsp;to&nbsp;write&nbsp;to&nbsp;the&nbsp;stream&nbsp;even<br>
+if&nbsp;there&nbsp;is&nbsp;more&nbsp;data&nbsp;than&nbsp;this&nbsp;in&nbsp;the&nbsp;write&nbsp;queue.&nbsp;This&nbsp;is&nbsp;used&nbsp;as&nbsp;an&nbsp;indicator&nbsp;by&nbsp;classes&nbsp;such&nbsp;as<br>
+to&nbsp;provide&nbsp;flow&nbsp;control.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;size:&nbsp;The&nbsp;maximum&nbsp;size,&nbsp;in&nbsp;bytes.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="core.streams.html#WriteStream">core.streams.WriteStream</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>write_queue_full</strong></dt>
+<dd><tt>Is&nbsp;the&nbsp;write&nbsp;queue&nbsp;full?<br>
+&nbsp;<br>
+return&nbsp;True&nbsp;if&nbsp;there&nbsp;are&nbsp;more&nbsp;bytes&nbsp;in&nbsp;the&nbsp;write&nbsp;queue&nbsp;than&nbsp;the&nbsp;max&nbsp;write&nbsp;queue&nbsp;size.</tt></dd>
+</dl>
+<dl><dt><strong>write_queue_max_size</strong></dt>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="HttpClientResponse">class <strong>HttpClientResponse</strong></a>(<a href="core.streams.html#ReadStream">core.streams.ReadStream</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Encapsulates&nbsp;a&nbsp;client-side&nbsp;HTTP&nbsp;response.<br>
+&nbsp;<br>
+An&nbsp;instance&nbsp;of&nbsp;this&nbsp;class&nbsp;is&nbsp;provided&nbsp;to&nbsp;the&nbsp;user&nbsp;via&nbsp;a&nbsp;handler&nbsp;that&nbsp;was&nbsp;specified&nbsp;when&nbsp;one&nbsp;of&nbsp;the<br>
+HTTP&nbsp;method&nbsp;operations,&nbsp;or&nbsp;the&nbsp;generic&nbsp;HttpClientrequest&nbsp;method&nbsp;was&nbsp;called&nbsp;on&nbsp;an&nbsp;instance&nbsp;of&nbsp;<a href="#HttpClient">HttpClient</a>.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="core.http.html#HttpClientResponse">HttpClientResponse</a></dd>
+<dd><a href="core.streams.html#ReadStream">core.streams.ReadStream</a></dd>
+<dd>__builtin__.object</dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="HttpClientResponse-__init__"><strong>__init__</strong></a>(self, java_obj)</dt></dl>
+
+<dl><dt><a name="HttpClientResponse-body_handler"><strong>body_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;handler&nbsp;to&nbsp;receive&nbsp;the&nbsp;entire&nbsp;body&nbsp;in&nbsp;one&nbsp;go&nbsp;-&nbsp;do&nbsp;not&nbsp;use&nbsp;this&nbsp;for&nbsp;large&nbsp;bodies</tt></dd></dl>
+
+<dl><dt><a name="HttpClientResponse-header"><strong>header</strong></a>(self, key)</dt><dd><tt>Get&nbsp;a&nbsp;header&nbsp;value<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;key:&nbsp;The&nbsp;key&nbsp;of&nbsp;the&nbsp;header.<br>
+&nbsp;<br>
+return&nbsp;the&nbsp;header&nbsp;value.</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>headers</strong></dt>
+<dd><tt>Get&nbsp;all&nbsp;the&nbsp;headers&nbsp;in&nbsp;the&nbsp;response.<br>
+If&nbsp;the&nbsp;response&nbsp;contains&nbsp;multiple&nbsp;headers&nbsp;with&nbsp;the&nbsp;same&nbsp;key,&nbsp;the&nbsp;values<br>
+will&nbsp;be&nbsp;concatenated&nbsp;together&nbsp;into&nbsp;a&nbsp;single&nbsp;header&nbsp;with&nbsp;the&nbsp;same&nbsp;key&nbsp;value,&nbsp;with&nbsp;each&nbsp;value&nbsp;separated&nbsp;by&nbsp;a&nbsp;comma,<br>
+as&nbsp;specified&nbsp;by&nbsp;{<a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.htmlsec4.2">http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.htmlsec4.2</a>}.<br>
+return&nbsp;a&nbsp;dictionary&nbsp;of&nbsp;headers.</tt></dd>
+</dl>
+<dl><dt><strong>status_code</strong></dt>
+<dd><tt>return&nbsp;the&nbsp;HTTP&nbsp;status&nbsp;code&nbsp;of&nbsp;the&nbsp;response.</tt></dd>
+</dl>
+<dl><dt><strong>trailers</strong></dt>
+<dd><tt>Get&nbsp;all&nbsp;the&nbsp;trailers&nbsp;in&nbsp;the&nbsp;response.<br>
+If&nbsp;the&nbsp;response&nbsp;contains&nbsp;multiple&nbsp;trailers&nbsp;with&nbsp;the&nbsp;same&nbsp;key,&nbsp;the&nbsp;values<br>
+will&nbsp;be&nbsp;concatenated&nbsp;together&nbsp;into&nbsp;a&nbsp;single&nbsp;header&nbsp;with&nbsp;the&nbsp;same&nbsp;key&nbsp;value,&nbsp;with&nbsp;each&nbsp;value&nbsp;separated&nbsp;by&nbsp;a&nbsp;comma,<br>
+as&nbsp;specified&nbsp;by&nbsp;{<a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.htmlsec4.2">http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.htmlsec4.2</a>}.<br>
+Trailers&nbsp;will&nbsp;only&nbsp;be&nbsp;available&nbsp;in&nbsp;the&nbsp;response&nbsp;if&nbsp;the&nbsp;server&nbsp;has&nbsp;sent&nbsp;a&nbsp;HTTP&nbsp;chunked&nbsp;response&nbsp;where&nbsp;headers&nbsp;have<br>
+been&nbsp;inserted&nbsp;by&nbsp;the&nbsp;server&nbsp;on&nbsp;the&nbsp;last&nbsp;chunk.&nbsp;In&nbsp;such&nbsp;a&nbsp;case&nbsp;they&nbsp;won't&nbsp;be&nbsp;available&nbsp;on&nbsp;the&nbsp;client&nbsp;until&nbsp;the&nbsp;last&nbsp;chunk&nbsp;has<br>
+been&nbsp;received.<br>
+&nbsp;<br>
+return&nbsp;a&nbsp;dictionary&nbsp;of&nbsp;trailers.</tt></dd>
+</dl>
+<hr>
+Methods inherited from <a href="core.streams.html#ReadStream">core.streams.ReadStream</a>:<br>
+<dl><dt><a name="HttpClientResponse-data_handler"><strong>data_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;data&nbsp;handler.&nbsp;As&nbsp;data&nbsp;is&nbsp;read,&nbsp;the&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;data.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;handler:&nbsp;The&nbsp;data&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="HttpClientResponse-end_handler"><strong>end_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;end&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.&nbsp;Once&nbsp;the&nbsp;stream&nbsp;has&nbsp;ended,&nbsp;and&nbsp;there&nbsp;is&nbsp;no&nbsp;more&nbsp;data&nbsp;to&nbsp;be&nbsp;read,&nbsp;this&nbsp;handler&nbsp;will&nbsp;be&nbsp;called.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;handler:&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="HttpClientResponse-exception_handler"><strong>exception_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;execption&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.<br>
+param&nbsp;[Block]&nbsp;hndlr.&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="HttpClientResponse-pause"><strong>pause</strong></a>(self)</dt><dd><tt>Pause&nbsp;the&nbsp;<a href="core.streams.html#ReadStream">ReadStream</a>.&nbsp;After&nbsp;calling&nbsp;this,&nbsp;the&nbsp;<a href="core.streams.html#ReadStream">ReadStream</a>&nbsp;will&nbsp;aim&nbsp;to&nbsp;send&nbsp;no&nbsp;more&nbsp;data&nbsp;to&nbsp;the</tt></dd></dl>
+
+<dl><dt><a name="HttpClientResponse-resume"><strong>resume</strong></a>(self)</dt><dd><tt>Resume&nbsp;reading.&nbsp;If&nbsp;the&nbsp;<a href="core.streams.html#ReadStream">ReadStream</a>&nbsp;has&nbsp;been&nbsp;paused,&nbsp;reading&nbsp;will&nbsp;recommence&nbsp;on&nbsp;it.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="core.streams.html#ReadStream">core.streams.ReadStream</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="HttpClientResponseHandler">class <strong>HttpClientResponseHandler</strong></a>(org.python.proxies.core.http$HttpClientResponseHandler$12)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;handler&nbsp;for&nbsp;Http&nbsp;Client&nbsp;Responses<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="core.http.html#HttpClientResponseHandler">HttpClientResponseHandler</a></dd>
+<dd>org.python.proxies.core.http$HttpClientResponseHandler$12</dd>
+<dd>org.vertx.java.core.Handler</dd>
+<dd>java.lang.Object</dd>
+<dd>__builtin__.object</dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="HttpClientResponseHandler-__init__"><strong>__init__</strong></a>(self, handler)</dt></dl>
+
+<dl><dt><a name="HttpClientResponseHandler-handle"><strong>handle</strong></a>(self, res)</dt><dd><tt>Called&nbsp;when&nbsp;a&nbsp;response&nbsp;is&nbsp;being&nbsp;handled.&nbsp;Argument&nbsp;is&nbsp;a&nbsp;<a href="#HttpClientResponse">HttpClientResponse</a>&nbsp;<a href="http://pydoc.org/2.5.1/__builtin__.html#object">object</a></tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>__initProxy__</strong> = &lt;java function __initProxy__ 0x7d&gt;</dl>
+
+<dl><dt><strong>__supernames__</strong> = array('java.lang.String', [u'clone', u'finalize'])</dl>
+
+<dl><dt><strong>classDictInit</strong> = &lt;java function classDictInit 0x7e&gt;</dl>
+
+<dl><dt><strong>clone</strong> = &lt;java function clone 0x7f&gt;</dl>
+
+<dl><dt><strong>finalize</strong> = &lt;java function finalize 0x80&gt;</dl>
+
+<hr>
+Methods inherited from java.lang.Object:<br>
+<dl><dt><a name="HttpClientResponseHandler-__copy__"><strong>__copy__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="HttpClientResponseHandler-__deepcopy__"><strong>__deepcopy__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="HttpClientResponseHandler-__eq__"><strong>__eq__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="HttpClientResponseHandler-__hash__"><strong>__hash__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="HttpClientResponseHandler-__ne__"><strong>__ne__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="HttpClientResponseHandler-__repr__"><strong>__repr__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="HttpClientResponseHandler-__unicode__"><strong>__unicode__</strong></a>(...)</dt></dl>
+
+<hr>
+Data and other attributes inherited from java.lang.Object:<br>
+<dl><dt><strong>equals</strong> = &lt;java function equals 0x81&gt;</dl>
+
+<dl><dt><strong>getClass</strong> = &lt;java function getClass 0x82&gt;</dl>
+
+<dl><dt><strong>hashCode</strong> = &lt;java function hashCode 0x83&gt;</dl>
+
+<dl><dt><strong>notify</strong> = &lt;java function notify 0x84&gt;</dl>
+
+<dl><dt><strong>notifyAll</strong> = &lt;java function notifyAll 0x85&gt;</dl>
+
+<dl><dt><strong>toString</strong> = &lt;java function toString 0x86&gt;</dl>
+
+<dl><dt><strong>wait</strong> = &lt;java function wait 0x87&gt;</dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="HttpServer">class <strong>HttpServer</strong></a>(<a href="core.tcp_support.html#TCPSupport">core.tcp_support.TCPSupport</a>, <a href="core.ssl_support.html#SSLSupport">core.ssl_support.SSLSupport</a>, __builtin__.object)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>An&nbsp;HTTP&nbsp;and&nbsp;websockets&nbsp;server<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="core.http.html#HttpServer">HttpServer</a></dd>
+<dd><a href="core.tcp_support.html#TCPSupport">core.tcp_support.TCPSupport</a></dd>
+<dd><a href="core.ssl_support.html#SSLSupport">core.ssl_support.SSLSupport</a></dd>
+<dd>__builtin__.object</dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="HttpServer-__init__"><strong>__init__</strong></a>(self, **kwargs)</dt></dl>
+
+<dl><dt><a name="HttpServer-client_auth_required"><strong>client_auth_required</strong></a>(self, val)</dt><dd><tt>Client&nbsp;authentication&nbsp;is&nbsp;an&nbsp;extra&nbsp;level&nbsp;of&nbsp;security&nbsp;in&nbsp;SSL,&nbsp;and&nbsp;requires&nbsp;clients&nbsp;to&nbsp;provide&nbsp;client&nbsp;certificates.<br>
+Those&nbsp;certificates&nbsp;must&nbsp;be&nbsp;added&nbsp;to&nbsp;the&nbsp;server&nbsp;trust&nbsp;store.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;val:&nbsp;If&nbsp;true&nbsp;then&nbsp;the&nbsp;server&nbsp;will&nbsp;request&nbsp;client&nbsp;authentication&nbsp;from&nbsp;any&nbsp;connecting&nbsp;clients,&nbsp;if&nbsp;they&nbsp;<br>
+do&nbsp;not&nbsp;authenticate&nbsp;then&nbsp;they&nbsp;will&nbsp;not&nbsp;make&nbsp;a&nbsp;connection.</tt></dd></dl>
+
+<dl><dt><a name="HttpServer-close"><strong>close</strong></a>(self, handler<font color="#909090">=None</font>)</dt><dd><tt>Close&nbsp;the&nbsp;server.&nbsp;Any&nbsp;open&nbsp;HTTP&nbsp;connections&nbsp;will&nbsp;be&nbsp;closed.&nbsp;This&nbsp;can&nbsp;be&nbsp;used&nbsp;as&nbsp;a&nbsp;decorator.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;handler:&nbsp;a&nbsp;handler&nbsp;that&nbsp;is&nbsp;called&nbsp;when&nbsp;the&nbsp;connection&nbsp;is&nbsp;closed.&nbsp;The&nbsp;handler&nbsp;is&nbsp;wrapped&nbsp;in&nbsp;a&nbsp;ClosedHandler.</tt></dd></dl>
+
+<dl><dt><a name="HttpServer-listen"><strong>listen</strong></a>(self, port, host<font color="#909090">=None</font>)</dt><dd><tt>Instruct&nbsp;the&nbsp;server&nbsp;to&nbsp;listen&nbsp;for&nbsp;incoming&nbsp;connections.&nbsp;If&nbsp;host&nbsp;is&nbsp;None&nbsp;listens&nbsp;on&nbsp;all.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;port:&nbsp;The&nbsp;port&nbsp;to&nbsp;listen&nbsp;on.<br>
+@param&nbsp;host:&nbsp;The&nbsp;host&nbsp;name&nbsp;or&nbsp;ip&nbsp;address&nbsp;to&nbsp;listen&nbsp;on.&nbsp;(default&nbsp;None)</tt></dd></dl>
+
+<dl><dt><a name="HttpServer-request_handler"><strong>request_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;the&nbsp;HTTP&nbsp;request&nbsp;handler&nbsp;for&nbsp;the&nbsp;server.<br>
+As&nbsp;HTTP&nbsp;requests&nbsp;arrive&nbsp;on&nbsp;the&nbsp;server&nbsp;a&nbsp;new&nbsp;<a href="#HttpServerRequest">HttpServerRequest</a>&nbsp;instance&nbsp;will&nbsp;be&nbsp;created&nbsp;and&nbsp;passed&nbsp;to&nbsp;the&nbsp;handler.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;handler:&nbsp;the&nbsp;function&nbsp;used&nbsp;to&nbsp;handle&nbsp;the&nbsp;request.&nbsp;<br>
+&nbsp;<br>
+@return:&nbsp;self</tt></dd></dl>
+
+<dl><dt><a name="HttpServer-websocket_handler"><strong>websocket_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;the&nbsp;websocket&nbsp;handler&nbsp;for&nbsp;the&nbsp;server.<br>
+As&nbsp;websocket&nbsp;requests&nbsp;arrive&nbsp;on&nbsp;the&nbsp;server&nbsp;a&nbsp;new&nbsp;<a href="#ServerWebSocket">ServerWebSocket</a>&nbsp;instance&nbsp;will&nbsp;be&nbsp;created&nbsp;and&nbsp;passed&nbsp;to&nbsp;the&nbsp;handler.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;handler:&nbsp;the&nbsp;function&nbsp;used&nbsp;to&nbsp;handle&nbsp;the&nbsp;request.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="core.tcp_support.html#TCPSupport">core.tcp_support.TCPSupport</a>:<br>
+<dl><dt><a name="HttpServer-set_receive_buffer_size"><strong>set_receive_buffer_size</strong></a>(self, bytes)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;receive&nbsp;buffer&nbsp;size.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;bytes:&nbsp;The&nbsp;size&nbsp;in&nbsp;bytes.<br>
+&nbsp;<br>
+return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+
+<dl><dt><a name="HttpServer-set_reuse_address"><strong>set_reuse_address</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;reuse&nbsp;address&nbsp;setting.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;val:&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;reuse&nbsp;address&nbsp;will&nbsp;be&nbsp;enabled.<br>
+@return:&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+
+<dl><dt><a name="HttpServer-set_send_buffer_size"><strong>set_send_buffer_size</strong></a>(self, bytes)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;send&nbsp;buffer&nbsp;size.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;bytes:&nbsp;The&nbsp;size&nbsp;in&nbsp;bytes.<br>
+&nbsp;<br>
+return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+
+<dl><dt><a name="HttpServer-set_so_linger"><strong>set_so_linger</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;so&nbsp;linger&nbsp;setting.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;val:&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;so&nbsp;linger&nbsp;will&nbsp;be&nbsp;enabled.<br>
+&nbsp;<br>
+return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+
+<dl><dt><a name="HttpServer-set_tcp_keep_alive"><strong>set_tcp_keep_alive</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;keep&nbsp;alive&nbsp;setting.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;val:&nbsp;If&nbsp;true,&nbsp;then&nbsp;TCP&nbsp;keep&nbsp;alive&nbsp;will&nbsp;be&nbsp;enabled.<br>
+&nbsp;<br>
+return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+
+<dl><dt><a name="HttpServer-set_traffic_class"><strong>set_traffic_class</strong></a>(self, val)</dt><dd><tt>Set&nbsp;the&nbsp;TCP&nbsp;traffic&nbsp;class&nbsp;setting.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;val:&nbsp;The&nbsp;TCP&nbsp;traffic&nbsp;class&nbsp;setting.<br>
+&nbsp;<br>
+return&nbsp;a&nbsp;reference&nbsp;to&nbsp;self&nbsp;so&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="core.tcp_support.html#TCPSupport">core.tcp_support.TCPSupport</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>receive_buffer_size</strong></dt>
+</dl>
+<dl><dt><strong>reuse_address</strong></dt>
+</dl>
+<dl><dt><strong>send_buffer_size</strong></dt>
+</dl>
+<dl><dt><strong>so_linger</strong></dt>
+</dl>
+<dl><dt><strong>tcp_keep_alive</strong></dt>
+</dl>
+<dl><dt><strong>traffic_class</strong></dt>
+</dl>
+<hr>
+Methods inherited from <a href="core.ssl_support.html#SSLSupport">core.ssl_support.SSLSupport</a>:<br>
+<dl><dt><a name="HttpServer-set_key_store_password"><strong>set_key_store_password</strong></a>(self, password)</dt><dd><tt>Set&nbsp;the&nbsp;password&nbsp;for&nbsp;the&nbsp;SSL&nbsp;key&nbsp;store.&nbsp;This&nbsp;method&nbsp;should&nbsp;only&nbsp;be&nbsp;used&nbsp;with&nbsp;the&nbsp;client&nbsp;in&nbsp;SSL&nbsp;mode,&nbsp;i.e.&nbsp;after&nbsp;ssl<br>
+has&nbsp;been&nbsp;set&nbsp;to&nbsp;true.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;password:&nbsp;The&nbsp;password.<br>
+&nbsp;<br>
+return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<dl><dt><a name="HttpServer-set_key_store_path"><strong>set_key_store_path</strong></a>(self, path)</dt><dd><tt>Set&nbsp;the&nbsp;path&nbsp;to&nbsp;the&nbsp;SSL&nbsp;key&nbsp;store.&nbsp;This&nbsp;method&nbsp;should&nbsp;only&nbsp;be&nbsp;used&nbsp;with&nbsp;the&nbsp;client/server&nbsp;in&nbsp;SSL&nbsp;mode,&nbsp;i.e.&nbsp;after&nbsp;{#ssl=}<br>
+has&nbsp;been&nbsp;set&nbsp;to&nbsp;true.<br>
+The&nbsp;SSL&nbsp;key&nbsp;store&nbsp;is&nbsp;a&nbsp;standard&nbsp;Java&nbsp;Key&nbsp;Store,&nbsp;and&nbsp;should&nbsp;contain&nbsp;the&nbsp;client/server&nbsp;certificate.&nbsp;For&nbsp;a&nbsp;client,&nbsp;it's&nbsp;only&nbsp;necessary&nbsp;to&nbsp;supply<br>
+a&nbsp;client&nbsp;key&nbsp;store&nbsp;if&nbsp;the&nbsp;server&nbsp;requires&nbsp;client&nbsp;authentication&nbsp;via&nbsp;client&nbsp;certificates.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;path:&nbsp;The&nbsp;path&nbsp;to&nbsp;the&nbsp;key&nbsp;store<br>
+&nbsp;<br>
+return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<dl><dt><a name="HttpServer-set_ssl"><strong>set_ssl</strong></a>(self, val)</dt><dd><tt>Set&nbsp;whether&nbsp;the&nbsp;server&nbsp;or&nbsp;client&nbsp;will&nbsp;use&nbsp;SSL.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;val:&nbsp;If&nbsp;true&nbsp;then&nbsp;ssl&nbsp;will&nbsp;be&nbsp;used.<br>
+&nbsp;<br>
+return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<dl><dt><a name="HttpServer-set_trust_store_password"><strong>set_trust_store_password</strong></a>(self, password)</dt><dd><tt>Set&nbsp;the&nbsp;password&nbsp;for&nbsp;the&nbsp;SSL&nbsp;trust&nbsp;store.&nbsp;This&nbsp;method&nbsp;should&nbsp;only&nbsp;be&nbsp;used&nbsp;with&nbsp;the&nbsp;client&nbsp;in&nbsp;SSL&nbsp;mode,&nbsp;i.e.&nbsp;after&nbsp;{#ssl=}<br>
+has&nbsp;been&nbsp;set&nbsp;to&nbsp;true.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;password:&nbsp;The&nbsp;password.<br>
+&nbsp;<br>
+return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<dl><dt><a name="HttpServer-set_trust_store_path"><strong>set_trust_store_path</strong></a>(self, path)</dt><dd><tt>Set&nbsp;the&nbsp;path&nbsp;to&nbsp;the&nbsp;SSL&nbsp;trust&nbsp;store.&nbsp;This&nbsp;method&nbsp;should&nbsp;only&nbsp;be&nbsp;used&nbsp;with&nbsp;the&nbsp;client/server&nbsp;in&nbsp;SSL&nbsp;mode,&nbsp;i.e.&nbsp;after&nbsp;{#ssl=}<br>
+has&nbsp;been&nbsp;set&nbsp;to&nbsp;true.<br>
+The&nbsp;SSL&nbsp;trust&nbsp;store&nbsp;is&nbsp;a&nbsp;standard&nbsp;Java&nbsp;Key&nbsp;Store,&nbsp;and&nbsp;should&nbsp;contain&nbsp;the&nbsp;certificate(s)&nbsp;of&nbsp;the&nbsp;clients/servers&nbsp;that&nbsp;the&nbsp;server/client&nbsp;trusts.&nbsp;The&nbsp;SSL<br>
+handshake&nbsp;will&nbsp;fail&nbsp;if&nbsp;the&nbsp;server&nbsp;provides&nbsp;a&nbsp;certificate&nbsp;that&nbsp;the&nbsp;client&nbsp;does&nbsp;not&nbsp;trust,&nbsp;or&nbsp;if&nbsp;client&nbsp;authentication&nbsp;is&nbsp;used,<br>
+if&nbsp;the&nbsp;client&nbsp;provides&nbsp;a&nbsp;certificate&nbsp;the&nbsp;server&nbsp;does&nbsp;not&nbsp;trust.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;path:&nbsp;The&nbsp;path&nbsp;to&nbsp;the&nbsp;trust&nbsp;store<br>
+&nbsp;<br>
+return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="core.ssl_support.html#SSLSupport">core.ssl_support.SSLSupport</a>:<br>
+<dl><dt><strong>key_store_password</strong></dt>
+</dl>
+<dl><dt><strong>key_store_path</strong></dt>
+</dl>
+<dl><dt><strong>ssl</strong></dt>
+</dl>
+<dl><dt><strong>trust_store_password</strong></dt>
+</dl>
+<dl><dt><strong>trust_store_path</strong></dt>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="HttpServerRequest">class <strong>HttpServerRequest</strong></a>(<a href="core.streams.html#ReadStream">core.streams.ReadStream</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Encapsulates&nbsp;a&nbsp;server-side&nbsp;HTTP&nbsp;request.<br>
+&nbsp;<br>
+An&nbsp;instance&nbsp;of&nbsp;this&nbsp;class&nbsp;is&nbsp;created&nbsp;for&nbsp;each&nbsp;request&nbsp;that&nbsp;is&nbsp;handled&nbsp;by&nbsp;the&nbsp;server&nbsp;and&nbsp;is&nbsp;passed&nbsp;to&nbsp;the&nbsp;user&nbsp;via&nbsp;the<br>
+handler&nbsp;specified&nbsp;using&nbsp;<a href="#HttpServer">HttpServer</a>.request_handler.<br>
+&nbsp;<br>
+Each&nbsp;instance&nbsp;of&nbsp;this&nbsp;class&nbsp;is&nbsp;associated&nbsp;with&nbsp;a&nbsp;corresponding&nbsp;<a href="#HttpServerResponse">HttpServerResponse</a>&nbsp;instance&nbsp;via&nbsp;the&nbsp;property&nbsp;response.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="core.http.html#HttpServerRequest">HttpServerRequest</a></dd>
+<dd><a href="core.streams.html#ReadStream">core.streams.ReadStream</a></dd>
+<dd>__builtin__.object</dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="HttpServerRequest-__init__"><strong>__init__</strong></a>(self, java_obj)</dt></dl>
+
+<dl><dt><a name="HttpServerRequest-body_handler"><strong>body_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;the&nbsp;body&nbsp;handler&nbsp;for&nbsp;this&nbsp;request,&nbsp;the&nbsp;handler&nbsp;receives&nbsp;a&nbsp;single&nbsp;Buffer&nbsp;<a href="http://pydoc.org/2.5.1/__builtin__.html#object">object</a>&nbsp;as&nbsp;a&nbsp;parameter.&nbsp;<br>
+This&nbsp;can&nbsp;be&nbsp;used&nbsp;as&nbsp;a&nbsp;decorator.&nbsp;<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;handler:&nbsp;a&nbsp;handler&nbsp;that&nbsp;is&nbsp;called&nbsp;when&nbsp;the&nbsp;body&nbsp;has&nbsp;been&nbsp;received.&nbsp;The&nbsp;handler&nbsp;is&nbsp;wrapped&nbsp;in&nbsp;a&nbsp;BufferHandler.</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>headers</strong></dt>
+<dd><tt>The&nbsp;request&nbsp;headers&nbsp;as&nbsp;a&nbsp;dictionary</tt></dd>
+</dl>
+<dl><dt><strong>method</strong></dt>
+<dd><tt>The&nbsp;HTTP&nbsp;method,&nbsp;one&nbsp;of&nbsp;HEAD,&nbsp;OPTIONS,&nbsp;GET,&nbsp;POST,&nbsp;PUT,&nbsp;DELETE,&nbsp;CONNECT,&nbsp;TRACE</tt></dd>
+</dl>
+<dl><dt><strong>params</strong></dt>
+<dd><tt>The&nbsp;request&nbsp;parameters&nbsp;as&nbsp;a&nbsp;dictionary</tt></dd>
+</dl>
+<dl><dt><strong>path</strong></dt>
+<dd><tt>The&nbsp;path&nbsp;part&nbsp;of&nbsp;the&nbsp;uri.&nbsp;For&nbsp;example&nbsp;/somepath/somemorepath/somresource.foo</tt></dd>
+</dl>
+<dl><dt><strong>query</strong></dt>
+<dd><tt>The&nbsp;query&nbsp;part&nbsp;of&nbsp;the&nbsp;uri.&nbsp;For&nbsp;example&nbsp;someparam=32&amp;someotherparam=x</tt></dd>
+</dl>
+<dl><dt><strong>response</strong></dt>
+<dd><tt>The&nbsp;response&nbsp;HttpServerResponse&nbsp;object.</tt></dd>
+</dl>
+<dl><dt><strong>uri</strong></dt>
+<dd><tt>The&nbsp;uri&nbsp;of&nbsp;the&nbsp;request.&nbsp;For&nbsp;example&nbsp;'<a href="http://www.somedomain.com/somepath/somemorepath/somresource.foo?someparam=32&amp;someotherparam=x">http://www.somedomain.com/somepath/somemorepath/somresource.foo?someparam=32&amp;someotherparam=x</a></tt></dd>
+</dl>
+<hr>
+Methods inherited from <a href="core.streams.html#ReadStream">core.streams.ReadStream</a>:<br>
+<dl><dt><a name="HttpServerRequest-data_handler"><strong>data_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;data&nbsp;handler.&nbsp;As&nbsp;data&nbsp;is&nbsp;read,&nbsp;the&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;data.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;handler:&nbsp;The&nbsp;data&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="HttpServerRequest-end_handler"><strong>end_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;end&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.&nbsp;Once&nbsp;the&nbsp;stream&nbsp;has&nbsp;ended,&nbsp;and&nbsp;there&nbsp;is&nbsp;no&nbsp;more&nbsp;data&nbsp;to&nbsp;be&nbsp;read,&nbsp;this&nbsp;handler&nbsp;will&nbsp;be&nbsp;called.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;handler:&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="HttpServerRequest-exception_handler"><strong>exception_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;execption&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.<br>
+param&nbsp;[Block]&nbsp;hndlr.&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="HttpServerRequest-pause"><strong>pause</strong></a>(self)</dt><dd><tt>Pause&nbsp;the&nbsp;<a href="core.streams.html#ReadStream">ReadStream</a>.&nbsp;After&nbsp;calling&nbsp;this,&nbsp;the&nbsp;<a href="core.streams.html#ReadStream">ReadStream</a>&nbsp;will&nbsp;aim&nbsp;to&nbsp;send&nbsp;no&nbsp;more&nbsp;data&nbsp;to&nbsp;the</tt></dd></dl>
+
+<dl><dt><a name="HttpServerRequest-resume"><strong>resume</strong></a>(self)</dt><dd><tt>Resume&nbsp;reading.&nbsp;If&nbsp;the&nbsp;<a href="core.streams.html#ReadStream">ReadStream</a>&nbsp;has&nbsp;been&nbsp;paused,&nbsp;reading&nbsp;will&nbsp;recommence&nbsp;on&nbsp;it.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="core.streams.html#ReadStream">core.streams.ReadStream</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="HttpServerRequestHandler">class <strong>HttpServerRequestHandler</strong></a>(org.python.proxies.core.http$HttpServerRequestHandler$11)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;handler&nbsp;for&nbsp;Http&nbsp;Server&nbsp;Requests<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="core.http.html#HttpServerRequestHandler">HttpServerRequestHandler</a></dd>
+<dd>org.python.proxies.core.http$HttpServerRequestHandler$11</dd>
+<dd>org.vertx.java.core.Handler</dd>
+<dd>java.lang.Object</dd>
+<dd>__builtin__.object</dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="HttpServerRequestHandler-__init__"><strong>__init__</strong></a>(self, handler)</dt></dl>
+
+<dl><dt><a name="HttpServerRequestHandler-handle"><strong>handle</strong></a>(self, req)</dt><dd><tt>Called&nbsp;when&nbsp;a&nbsp;request&nbsp;is&nbsp;being&nbsp;handled.&nbsp;Argument&nbsp;is&nbsp;a&nbsp;<a href="#HttpServerRequest">HttpServerRequest</a>&nbsp;<a href="http://pydoc.org/2.5.1/__builtin__.html#object">object</a></tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>__initProxy__</strong> = &lt;java function __initProxy__ 0x88&gt;</dl>
+
+<dl><dt><strong>__supernames__</strong> = array('java.lang.String', [u'clone', u'finalize'])</dl>
+
+<dl><dt><strong>classDictInit</strong> = &lt;java function classDictInit 0x89&gt;</dl>
+
+<dl><dt><strong>clone</strong> = &lt;java function clone 0x8a&gt;</dl>
+
+<dl><dt><strong>finalize</strong> = &lt;java function finalize 0x8b&gt;</dl>
+
+<hr>
+Methods inherited from java.lang.Object:<br>
+<dl><dt><a name="HttpServerRequestHandler-__copy__"><strong>__copy__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="HttpServerRequestHandler-__deepcopy__"><strong>__deepcopy__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="HttpServerRequestHandler-__eq__"><strong>__eq__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="HttpServerRequestHandler-__hash__"><strong>__hash__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="HttpServerRequestHandler-__ne__"><strong>__ne__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="HttpServerRequestHandler-__repr__"><strong>__repr__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="HttpServerRequestHandler-__unicode__"><strong>__unicode__</strong></a>(...)</dt></dl>
+
+<hr>
+Data and other attributes inherited from java.lang.Object:<br>
+<dl><dt><strong>equals</strong> = &lt;java function equals 0x8c&gt;</dl>
+
+<dl><dt><strong>getClass</strong> = &lt;java function getClass 0x8d&gt;</dl>
+
+<dl><dt><strong>hashCode</strong> = &lt;java function hashCode 0x8e&gt;</dl>
+
+<dl><dt><strong>notify</strong> = &lt;java function notify 0x8f&gt;</dl>
+
+<dl><dt><strong>notifyAll</strong> = &lt;java function notifyAll 0x90&gt;</dl>
+
+<dl><dt><strong>toString</strong> = &lt;java function toString 0x91&gt;</dl>
+
+<dl><dt><strong>wait</strong> = &lt;java function wait 0x92&gt;</dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="HttpServerResponse">class <strong>HttpServerResponse</strong></a>(<a href="core.streams.html#WriteStream">core.streams.WriteStream</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Encapsulates&nbsp;a&nbsp;server-side&nbsp;HTTP&nbsp;response.<br>
+&nbsp;<br>
+An&nbsp;instance&nbsp;of&nbsp;this&nbsp;class&nbsp;is&nbsp;created&nbsp;and&nbsp;associated&nbsp;to&nbsp;every&nbsp;instance&nbsp;of&nbsp;<a href="#HttpServerRequest">HttpServerRequest</a>&nbsp;that&nbsp;is&nbsp;created.<br>
+&nbsp;<br>
+It&nbsp;allows&nbsp;the&nbsp;developer&nbsp;to&nbsp;control&nbsp;the&nbsp;HTTP&nbsp;response&nbsp;that&nbsp;is&nbsp;sent&nbsp;back&nbsp;to&nbsp;the&nbsp;client&nbsp;for&nbsp;the&nbsp;corresponding&nbsp;HTTP<br>
+request.&nbsp;It&nbsp;contains&nbsp;methods&nbsp;that&nbsp;allow&nbsp;HTTP&nbsp;headers&nbsp;and&nbsp;trailers&nbsp;to&nbsp;be&nbsp;set,&nbsp;and&nbsp;for&nbsp;a&nbsp;body&nbsp;to&nbsp;be&nbsp;written&nbsp;out<br>
+to&nbsp;the&nbsp;response.<br>
+&nbsp;<br>
+It&nbsp;also&nbsp;allows&nbsp;a&nbsp;file&nbsp;to&nbsp;be&nbsp;streamed&nbsp;by&nbsp;the&nbsp;kernel&nbsp;directly&nbsp;from&nbsp;disk&nbsp;to&nbsp;the&nbsp;outgoing&nbsp;HTTP&nbsp;connection,<br>
+bypassing&nbsp;user&nbsp;space&nbsp;altogether&nbsp;(where&nbsp;supported&nbsp;by&nbsp;the&nbsp;underlying&nbsp;operating&nbsp;system).&nbsp;This&nbsp;is&nbsp;a&nbsp;very&nbsp;efficient&nbsp;way&nbsp;of<br>
+serving&nbsp;files&nbsp;from&nbsp;the&nbsp;server&nbsp;since&nbsp;buffers&nbsp;do&nbsp;not&nbsp;have&nbsp;to&nbsp;be&nbsp;read&nbsp;one&nbsp;by&nbsp;one&nbsp;from&nbsp;the&nbsp;file&nbsp;and&nbsp;written&nbsp;to&nbsp;the&nbsp;outgoing<br>
+socket.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="core.http.html#HttpServerResponse">HttpServerResponse</a></dd>
+<dd><a href="core.streams.html#WriteStream">core.streams.WriteStream</a></dd>
+<dd>__builtin__.object</dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="HttpServerResponse-__init__"><strong>__init__</strong></a>(self, java_obj)</dt></dl>
+
+<dl><dt><a name="HttpServerResponse-close"><strong>close</strong></a>(self)</dt><dd><tt>Close&nbsp;the&nbsp;underlying&nbsp;TCP&nbsp;connection</tt></dd></dl>
+
+<dl><dt><a name="HttpServerResponse-end"><strong>end</strong></a>(self, data<font color="#909090">=None</font>)</dt><dd><tt>Ends&nbsp;the&nbsp;response.&nbsp;If&nbsp;no&nbsp;data&nbsp;has&nbsp;been&nbsp;written&nbsp;to&nbsp;the&nbsp;response&nbsp;body,&nbsp;the&nbsp;actual&nbsp;response&nbsp;won't&nbsp;get&nbsp;written&nbsp;until&nbsp;this&nbsp;method&nbsp;gets&nbsp;called.<br>
+Once&nbsp;the&nbsp;response&nbsp;has&nbsp;ended,&nbsp;it&nbsp;cannot&nbsp;be&nbsp;used&nbsp;any&nbsp;more,&nbsp;and&nbsp;if&nbsp;keep&nbsp;alive&nbsp;is&nbsp;true&nbsp;the&nbsp;underlying&nbsp;connection&nbsp;will<br>
+be&nbsp;closed.<br>
+&nbsp;<br>
+Keywords&nbsp;arguments<br>
+@param&nbsp;data:&nbsp;Optional&nbsp;String&nbsp;or&nbsp;Buffer&nbsp;to&nbsp;write&nbsp;before&nbsp;ending&nbsp;the&nbsp;response</tt></dd></dl>
+
+<dl><dt><a name="HttpServerResponse-get_chunked"><strong>get_chunked</strong></a>(self)</dt><dd><tt>Get&nbsp;whether&nbsp;this&nbsp;response&nbsp;uses&nbsp;HTTP&nbsp;chunked&nbsp;encoding&nbsp;or&nbsp;not.</tt></dd></dl>
+
+<dl><dt><a name="HttpServerResponse-get_status_code"><strong>get_status_code</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;status&nbsp;code&nbsp;of&nbsp;the&nbsp;response.</tt></dd></dl>
+
+<dl><dt><a name="HttpServerResponse-get_status_message"><strong>get_status_message</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;status&nbsp;message&nbsp;the&nbsp;goes&nbsp;with&nbsp;status&nbsp;code</tt></dd></dl>
+
+<dl><dt><a name="HttpServerResponse-put_header"><strong>put_header</strong></a>(self, key, value)</dt><dd><tt>Inserts&nbsp;a&nbsp;header&nbsp;into&nbsp;the&nbsp;response.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;key:&nbsp;The&nbsp;header&nbsp;key<br>
+@param&nbsp;value:&nbsp;The&nbsp;header&nbsp;value.<br>
+&nbsp;<br>
+@return:&nbsp;<a href="#HttpServerResponse">HttpServerResponse</a>&nbsp;so&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<dl><dt><a name="HttpServerResponse-put_trailer"><strong>put_trailer</strong></a>(self, key, value)</dt><dd><tt>Inserts&nbsp;a&nbsp;trailer&nbsp;into&nbsp;the&nbsp;response.&nbsp;<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;key:&nbsp;The&nbsp;header&nbsp;key<br>
+@param&nbsp;value:&nbsp;The&nbsp;header&nbsp;value.<br>
+@return:&nbsp;<a href="#HttpServerResponse">HttpServerResponse</a>&nbsp;so&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<dl><dt><a name="HttpServerResponse-send_file"><strong>send_file</strong></a>(self, path)</dt><dd><tt>Tell&nbsp;the&nbsp;kernel&nbsp;to&nbsp;stream&nbsp;a&nbsp;file&nbsp;directly&nbsp;from&nbsp;disk&nbsp;to&nbsp;the&nbsp;outgoing&nbsp;connection,&nbsp;bypassing&nbsp;userspace&nbsp;altogether<br>
+(where&nbsp;supported&nbsp;by&nbsp;the&nbsp;underlying&nbsp;operating&nbsp;system.&nbsp;This&nbsp;is&nbsp;a&nbsp;very&nbsp;efficient&nbsp;way&nbsp;to&nbsp;serve&nbsp;files.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;path:&nbsp;Path&nbsp;to&nbsp;file&nbsp;to&nbsp;send.<br>
+&nbsp;<br>
+@return:&nbsp;a&nbsp;<a href="#HttpServerResponse">HttpServerResponse</a>&nbsp;so&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<dl><dt><a name="HttpServerResponse-set_chunked"><strong>set_chunked</strong></a>(self, val)</dt><dd><tt>Sets&nbsp;whether&nbsp;this&nbsp;response&nbsp;uses&nbsp;HTTP&nbsp;chunked&nbsp;encoding&nbsp;or&nbsp;not.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;val:&nbsp;If&nbsp;val&nbsp;is&nbsp;true,&nbsp;this&nbsp;response&nbsp;will&nbsp;use&nbsp;HTTP&nbsp;chunked&nbsp;encoding,&nbsp;and&nbsp;each&nbsp;call&nbsp;to&nbsp;write&nbsp;to&nbsp;the&nbsp;body<br>
+will&nbsp;correspond&nbsp;to&nbsp;a&nbsp;new&nbsp;HTTP&nbsp;chunk&nbsp;sent&nbsp;on&nbsp;the&nbsp;wire.&nbsp;If&nbsp;chunked&nbsp;encoding&nbsp;is&nbsp;used&nbsp;the&nbsp;HTTP&nbsp;header<br>
+'Transfer-Encoding'&nbsp;with&nbsp;a&nbsp;value&nbsp;of&nbsp;'Chunked'&nbsp;will&nbsp;be&nbsp;automatically&nbsp;inserted&nbsp;in&nbsp;the&nbsp;response.<br>
+&nbsp;<br>
+If&nbsp;chunked&nbsp;is&nbsp;false,&nbsp;this&nbsp;response&nbsp;will&nbsp;not&nbsp;use&nbsp;HTTP&nbsp;chunked&nbsp;encoding,&nbsp;and&nbsp;therefore&nbsp;if&nbsp;any&nbsp;data&nbsp;is&nbsp;written&nbsp;the<br>
+body&nbsp;of&nbsp;the&nbsp;response,&nbsp;the&nbsp;total&nbsp;size&nbsp;of&nbsp;that&nbsp;data&nbsp;must&nbsp;be&nbsp;set&nbsp;in&nbsp;the&nbsp;'Content-Length'&nbsp;header&nbsp;before&nbsp;any<br>
+data&nbsp;is&nbsp;written&nbsp;to&nbsp;the&nbsp;response&nbsp;body.<br>
+An&nbsp;HTTP&nbsp;chunked&nbsp;response&nbsp;is&nbsp;typically&nbsp;used&nbsp;when&nbsp;you&nbsp;do&nbsp;not&nbsp;know&nbsp;the&nbsp;total&nbsp;size&nbsp;of&nbsp;the&nbsp;request&nbsp;body&nbsp;up&nbsp;front.<br>
+&nbsp;<br>
+@return:&nbsp;a&nbsp;<a href="#HttpServerResponse">HttpServerResponse</a>&nbsp;so&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<dl><dt><a name="HttpServerResponse-set_status_code"><strong>set_status_code</strong></a>(self, code)</dt><dd><tt>Set&nbsp;the&nbsp;status&nbsp;code&nbsp;of&nbsp;the&nbsp;response.&nbsp;Default&nbsp;is&nbsp;200</tt></dd></dl>
+
+<dl><dt><a name="HttpServerResponse-set_status_message"><strong>set_status_message</strong></a>(self, message)</dt><dd><tt>Set&nbsp;the&nbsp;status&nbsp;message&nbsp;for&nbsp;a&nbsp;response</tt></dd></dl>
+
+<dl><dt><a name="HttpServerResponse-write_buffer"><strong>write_buffer</strong></a>(self, buffer, handler<font color="#909090">=None</font>)</dt><dd><tt>Write&nbsp;a&nbsp;buffer&nbsp;to&nbsp;the&nbsp;response.&nbsp;The&nbsp;handler&nbsp;(if&nbsp;supplied)&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;the&nbsp;buffer&nbsp;has&nbsp;actually&nbsp;been&nbsp;written&nbsp;to&nbsp;the&nbsp;wire.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;buffer:&nbsp;The&nbsp;buffer&nbsp;to&nbsp;write<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;when&nbsp;writing&nbsp;has&nbsp;been&nbsp;completed.&nbsp;It&nbsp;is&nbsp;wrapped&nbsp;in&nbsp;a&nbsp;DoneHandler&nbsp;(default&nbsp;None)<br>
+&nbsp;<br>
+@return:&nbsp;a&nbsp;<a href="#HttpServerResponse">HttpServerResponse</a>&nbsp;so&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<dl><dt><a name="HttpServerResponse-write_str"><strong>write_str</strong></a>(self, str, enc<font color="#909090">='UTF-8'</font>, handler<font color="#909090">=None</font>)</dt><dd><tt>Write&nbsp;a&nbsp;String&nbsp;to&nbsp;the&nbsp;response.&nbsp;The&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;the&nbsp;String&nbsp;has&nbsp;actually&nbsp;been&nbsp;written&nbsp;to&nbsp;the&nbsp;wire.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;str:&nbsp;The&nbsp;string&nbsp;to&nbsp;write<br>
+@param&nbsp;enc:&nbsp;Encoding&nbsp;to&nbsp;use.<br>
+&nbsp;<br>
+@param&nbsp;handler:&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;when&nbsp;writing&nbsp;has&nbsp;been&nbsp;completed.&nbsp;It&nbsp;is&nbsp;wrapped&nbsp;in&nbsp;a&nbsp;DoneHandler&nbsp;(default&nbsp;None)<br>
+&nbsp;<br>
+@return:&nbsp;a&nbsp;<a href="#HttpServerResponse">HttpServerResponse</a>&nbsp;so&nbsp;multiple&nbsp;operations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>chunked</strong></dt>
+<dd><tt>Get&nbsp;whether&nbsp;this&nbsp;response&nbsp;uses&nbsp;HTTP&nbsp;chunked&nbsp;encoding&nbsp;or&nbsp;not.</tt></dd>
+</dl>
+<dl><dt><strong>headers</strong></dt>
+<dd><tt>Get&nbsp;a&nbsp;copy&nbsp;of&nbsp;the&nbsp;reponse&nbsp;headers&nbsp;as&nbsp;a&nbsp;dictionary</tt></dd>
+</dl>
+<dl><dt><strong>status_code</strong></dt>
+<dd><tt>Get&nbsp;the&nbsp;status&nbsp;code&nbsp;of&nbsp;the&nbsp;response.</tt></dd>
+</dl>
+<dl><dt><strong>status_message</strong></dt>
+<dd><tt>Get&nbsp;the&nbsp;status&nbsp;message&nbsp;the&nbsp;goes&nbsp;with&nbsp;status&nbsp;code</tt></dd>
+</dl>
+<dl><dt><strong>trailers</strong></dt>
+<dd><tt>Get&nbsp;a&nbsp;copy&nbsp;of&nbsp;the&nbsp;trailers&nbsp;as&nbsp;a&nbsp;dictionary</tt></dd>
+</dl>
+<hr>
+Methods inherited from <a href="core.streams.html#WriteStream">core.streams.WriteStream</a>:<br>
+<dl><dt><a name="HttpServerResponse-drain_handler"><strong>drain_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;drain&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.&nbsp;If&nbsp;the&nbsp;write&nbsp;queue&nbsp;is&nbsp;full,&nbsp;then&nbsp;the&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;the&nbsp;write<br>
+queue&nbsp;has&nbsp;been&nbsp;reduced&nbsp;to&nbsp;maxSize&nbsp;/&nbsp;2.&nbsp;See&nbsp;&nbsp;for&nbsp;an&nbsp;example&nbsp;of&nbsp;this&nbsp;being&nbsp;used.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;handler:&nbsp;The&nbsp;drain&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="HttpServerResponse-exception_handler"><strong>exception_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;execption&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;handler:&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="HttpServerResponse-set_write_queue_max_size"><strong>set_write_queue_max_size</strong></a>(self, size)</dt><dd><tt>Set&nbsp;the&nbsp;maximum&nbsp;size&nbsp;of&nbsp;the&nbsp;write&nbsp;queue.&nbsp;You&nbsp;will&nbsp;still&nbsp;be&nbsp;able&nbsp;to&nbsp;write&nbsp;to&nbsp;the&nbsp;stream&nbsp;even<br>
+if&nbsp;there&nbsp;is&nbsp;more&nbsp;data&nbsp;than&nbsp;this&nbsp;in&nbsp;the&nbsp;write&nbsp;queue.&nbsp;This&nbsp;is&nbsp;used&nbsp;as&nbsp;an&nbsp;indicator&nbsp;by&nbsp;classes&nbsp;such&nbsp;as<br>
+to&nbsp;provide&nbsp;flow&nbsp;control.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;size:&nbsp;The&nbsp;maximum&nbsp;size,&nbsp;in&nbsp;bytes.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="core.streams.html#WriteStream">core.streams.WriteStream</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>write_queue_full</strong></dt>
+<dd><tt>Is&nbsp;the&nbsp;write&nbsp;queue&nbsp;full?<br>
+&nbsp;<br>
+return&nbsp;True&nbsp;if&nbsp;there&nbsp;are&nbsp;more&nbsp;bytes&nbsp;in&nbsp;the&nbsp;write&nbsp;queue&nbsp;than&nbsp;the&nbsp;max&nbsp;write&nbsp;queue&nbsp;size.</tt></dd>
+</dl>
+<dl><dt><strong>write_queue_max_size</strong></dt>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="RouteMatcher">class <strong>RouteMatcher</strong></a>(__builtin__.object)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>This&nbsp;class&nbsp;allows&nbsp;you&nbsp;to&nbsp;do&nbsp;route&nbsp;requests&nbsp;based&nbsp;on&nbsp;the&nbsp;HTTP&nbsp;verb&nbsp;and&nbsp;the&nbsp;request&nbsp;URI,&nbsp;in&nbsp;a&nbsp;manner&nbsp;similar<br>
+to&nbsp;&lt;a&nbsp;href="<a href="http://www.sinatrarb.com/&quot;&gt;Sinatra&lt;/a">http://www.sinatrarb.com/&quot;&gt;Sinatra&lt;/a</a>&gt;&nbsp;or&nbsp;&lt;a&nbsp;href="<a href="http://expressjs.com/&quot;&gt;Express&lt;/a">http://expressjs.com/&quot;&gt;Express&lt;/a</a>&gt;.<br>
+&nbsp;<br>
+<a href="#RouteMatcher">RouteMatcher</a>&nbsp;also&nbsp;lets&nbsp;you&nbsp;extract&nbsp;paramaters&nbsp;from&nbsp;the&nbsp;request&nbsp;URI&nbsp;either&nbsp;a&nbsp;simple&nbsp;pattern&nbsp;or&nbsp;using<br>
+regular&nbsp;expressions&nbsp;for&nbsp;more&nbsp;complex&nbsp;matches.&nbsp;Any&nbsp;parameters&nbsp;extracted&nbsp;will&nbsp;be&nbsp;added&nbsp;to&nbsp;the&nbsp;requests&nbsp;parameters<br>
+which&nbsp;will&nbsp;be&nbsp;available&nbsp;to&nbsp;you&nbsp;in&nbsp;your&nbsp;request&nbsp;handler.<br>
+&nbsp;<br>
+It's&nbsp;particularly&nbsp;useful&nbsp;when&nbsp;writing&nbsp;REST-ful&nbsp;web&nbsp;applications.<br>
+&nbsp;<br>
+To&nbsp;use&nbsp;a&nbsp;simple&nbsp;pattern&nbsp;to&nbsp;extract&nbsp;parameters&nbsp;simply&nbsp;prefix&nbsp;the&nbsp;parameter&nbsp;name&nbsp;in&nbsp;the&nbsp;pattern&nbsp;with&nbsp;a&nbsp;':'&nbsp;(colon).<br>
+&nbsp;<br>
+Different&nbsp;handlers&nbsp;can&nbsp;be&nbsp;specified&nbsp;for&nbsp;each&nbsp;of&nbsp;the&nbsp;HTTP&nbsp;verbs,&nbsp;GET,&nbsp;POST,&nbsp;PUT,&nbsp;DELETE&nbsp;etc.<br>
+&nbsp;<br>
+For&nbsp;more&nbsp;complex&nbsp;matches&nbsp;regular&nbsp;expressions&nbsp;can&nbsp;be&nbsp;used&nbsp;in&nbsp;the&nbsp;pattern.&nbsp;When&nbsp;regular&nbsp;expressions&nbsp;are&nbsp;used,&nbsp;the&nbsp;extracted<br>
+parameters&nbsp;do&nbsp;not&nbsp;have&nbsp;a&nbsp;name,&nbsp;so&nbsp;they&nbsp;are&nbsp;put&nbsp;into&nbsp;the&nbsp;HTTP&nbsp;request&nbsp;with&nbsp;names&nbsp;of&nbsp;param0,&nbsp;param1,&nbsp;param2&nbsp;etc.<br>
+&nbsp;<br>
+Multiple&nbsp;matches&nbsp;can&nbsp;be&nbsp;specified&nbsp;for&nbsp;each&nbsp;HTTP&nbsp;verb.&nbsp;In&nbsp;the&nbsp;case&nbsp;there&nbsp;are&nbsp;more&nbsp;than&nbsp;one&nbsp;matching&nbsp;patterns&nbsp;for<br>
+a&nbsp;particular&nbsp;request,&nbsp;the&nbsp;first&nbsp;matching&nbsp;one&nbsp;will&nbsp;be&nbsp;used.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="RouteMatcher-__call__"><strong>__call__</strong></a>(self, data)</dt></dl>
+
+<dl><dt><a name="RouteMatcher-__init__"><strong>__init__</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="RouteMatcher-all"><strong>all</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;any&nbsp;matching&nbsp;HTTP&nbsp;request<br>
+&nbsp;&nbsp;&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="RouteMatcher-all_re"><strong>all_re</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;any&nbsp;matching&nbsp;HTTP&nbsp;request<br>
+&nbsp;&nbsp;&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="RouteMatcher-connect"><strong>connect</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;CONNECT<br>
+&nbsp;&nbsp;&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="RouteMatcher-connect_re"><strong>connect_re</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;CONNECT<br>
+&nbsp;&nbsp;&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="RouteMatcher-delete"><strong>delete</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;DELETE<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="RouteMatcher-delete_re"><strong>delete_re</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;DELETE<br>
+&nbsp;&nbsp;&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="RouteMatcher-get"><strong>get</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;GET<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;handler&nbsp;for&nbsp;match</tt></dd></dl>
+
+<dl><dt><a name="RouteMatcher-get_re"><strong>get_re</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;GET<br>
+&nbsp;&nbsp;&nbsp;<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="RouteMatcher-head"><strong>head</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;HEAD<br>
+&nbsp;&nbsp;&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="RouteMatcher-head_re"><strong>head_re</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;HEAD<br>
+&nbsp;&nbsp;&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="RouteMatcher-input"><strong>input</strong></a>(self, request)</dt><dd><tt>This&nbsp;method&nbsp;is&nbsp;called&nbsp;to&nbsp;provide&nbsp;the&nbsp;matcher&nbsp;with&nbsp;data.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;request:&nbsp;input&nbsp;request&nbsp;to&nbsp;the&nbsp;parser.</tt></dd></dl>
+
+<dl><dt><a name="RouteMatcher-no_match"><strong>no_match</strong></a>(self, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;nothing&nbsp;matches<br>
+Default&nbsp;behaviour&nbsp;is&nbsp;to&nbsp;return&nbsp;a&nbsp;404<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="RouteMatcher-options"><strong>options</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;OPTIONS<br>
+&nbsp;&nbsp;&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="RouteMatcher-options_re"><strong>options_re</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;OPTIONS<br>
+&nbsp;&nbsp;&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="RouteMatcher-patch"><strong>patch</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;PATCH<br>
+&nbsp;&nbsp;&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="RouteMatcher-patch_re"><strong>patch_re</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;PATCH<br>
+&nbsp;&nbsp;&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="RouteMatcher-post"><strong>post</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;POST<br>
+&nbsp;&nbsp;&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="RouteMatcher-post_re"><strong>post_re</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;POST<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="RouteMatcher-put"><strong>put</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;PUT<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="RouteMatcher-put_re"><strong>put_re</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;PUT<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="RouteMatcher-trace"><strong>trace</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;TRACE<br>
+&nbsp;&nbsp;&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="RouteMatcher-trace_re"><strong>trace_re</strong></a>(self, pattern, handler)</dt><dd><tt>Specify&nbsp;a&nbsp;handler&nbsp;that&nbsp;will&nbsp;be&nbsp;called&nbsp;for&nbsp;a&nbsp;matching&nbsp;HTTP&nbsp;TRACE<br>
+&nbsp;&nbsp;&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;pattern:&nbsp;pattern&nbsp;to&nbsp;match<br>
+@param&nbsp;handler:&nbsp;http&nbsp;server&nbsp;request&nbsp;handler</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="ServerWebSocket">class <strong>ServerWebSocket</strong></a>(<a href="core.http.html#WebSocket">WebSocket</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Instances&nbsp;of&nbsp;this&nbsp;class&nbsp;are&nbsp;created&nbsp;when&nbsp;a&nbsp;<a href="#WebSocket">WebSocket</a>&nbsp;is&nbsp;accepted&nbsp;on&nbsp;the&nbsp;server.<br>
+It&nbsp;extends&nbsp;<a href="#WebSocket">WebSocket</a>&nbsp;and&nbsp;adds&nbsp;methods&nbsp;to&nbsp;reject&nbsp;the&nbsp;<a href="#WebSocket">WebSocket</a>&nbsp;and&nbsp;an<br>
+attribute&nbsp;for&nbsp;the&nbsp;path.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="core.http.html#ServerWebSocket">ServerWebSocket</a></dd>
+<dd><a href="core.http.html#WebSocket">WebSocket</a></dd>
+<dd><a href="core.streams.html#ReadStream">core.streams.ReadStream</a></dd>
+<dd><a href="core.streams.html#WriteStream">core.streams.WriteStream</a></dd>
+<dd>__builtin__.object</dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="ServerWebSocket-__init__"><strong>__init__</strong></a>(self, websocket)</dt></dl>
+
+<dl><dt><a name="ServerWebSocket-reject"><strong>reject</strong></a>(self)</dt><dd><tt>Reject&nbsp;the&nbsp;<a href="#WebSocket">WebSocket</a>.&nbsp;Sends&nbsp;404&nbsp;to&nbsp;client</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>path</strong></dt>
+<dd><tt>The&nbsp;path&nbsp;the&nbsp;websocket&nbsp;connect&nbsp;was&nbsp;attempted&nbsp;at.</tt></dd>
+</dl>
+<hr>
+Methods inherited from <a href="core.http.html#WebSocket">WebSocket</a>:<br>
+<dl><dt><a name="ServerWebSocket-close"><strong>close</strong></a>(self)</dt><dd><tt>Close&nbsp;the&nbsp;websocket</tt></dd></dl>
+
+<dl><dt><a name="ServerWebSocket-closed_handler"><strong>closed_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;closed&nbsp;handler&nbsp;on&nbsp;the&nbsp;connection,&nbsp;the&nbsp;handler&nbsp;receives&nbsp;a&nbsp;no&nbsp;parameters.&nbsp;<br>
+This&nbsp;can&nbsp;be&nbsp;used&nbsp;as&nbsp;a&nbsp;decorator.&nbsp;<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+handler&nbsp;-&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;when&nbsp;writing&nbsp;has&nbsp;been&nbsp;completed.&nbsp;It&nbsp;is&nbsp;wrapped&nbsp;in&nbsp;a&nbsp;ClosedHandler.</tt></dd></dl>
+
+<dl><dt><a name="ServerWebSocket-write_binary_frame"><strong>write_binary_frame</strong></a>(self, buffer)</dt><dd><tt>Write&nbsp;data&nbsp;to&nbsp;the&nbsp;websocket&nbsp;as&nbsp;a&nbsp;binary&nbsp;frame&nbsp;<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;buffer:&nbsp;Buffer&nbsp;data&nbsp;to&nbsp;write&nbsp;to&nbsp;socket.</tt></dd></dl>
+
+<dl><dt><a name="ServerWebSocket-write_text_frame"><strong>write_text_frame</strong></a>(self, text)</dt><dd><tt>Write&nbsp;data&nbsp;to&nbsp;the&nbsp;websocket&nbsp;as&nbsp;a&nbsp;text&nbsp;frame&nbsp;<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;text:&nbsp;text&nbsp;to&nbsp;write&nbsp;to&nbsp;socket</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="core.streams.html#ReadStream">core.streams.ReadStream</a>:<br>
+<dl><dt><a name="ServerWebSocket-data_handler"><strong>data_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;data&nbsp;handler.&nbsp;As&nbsp;data&nbsp;is&nbsp;read,&nbsp;the&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;data.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;handler:&nbsp;The&nbsp;data&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="ServerWebSocket-end_handler"><strong>end_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;end&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.&nbsp;Once&nbsp;the&nbsp;stream&nbsp;has&nbsp;ended,&nbsp;and&nbsp;there&nbsp;is&nbsp;no&nbsp;more&nbsp;data&nbsp;to&nbsp;be&nbsp;read,&nbsp;this&nbsp;handler&nbsp;will&nbsp;be&nbsp;called.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;handler:&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="ServerWebSocket-exception_handler"><strong>exception_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;execption&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.<br>
+param&nbsp;[Block]&nbsp;hndlr.&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="ServerWebSocket-pause"><strong>pause</strong></a>(self)</dt><dd><tt>Pause&nbsp;the&nbsp;<a href="core.streams.html#ReadStream">ReadStream</a>.&nbsp;After&nbsp;calling&nbsp;this,&nbsp;the&nbsp;<a href="core.streams.html#ReadStream">ReadStream</a>&nbsp;will&nbsp;aim&nbsp;to&nbsp;send&nbsp;no&nbsp;more&nbsp;data&nbsp;to&nbsp;the</tt></dd></dl>
+
+<dl><dt><a name="ServerWebSocket-resume"><strong>resume</strong></a>(self)</dt><dd><tt>Resume&nbsp;reading.&nbsp;If&nbsp;the&nbsp;<a href="core.streams.html#ReadStream">ReadStream</a>&nbsp;has&nbsp;been&nbsp;paused,&nbsp;reading&nbsp;will&nbsp;recommence&nbsp;on&nbsp;it.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="core.streams.html#ReadStream">core.streams.ReadStream</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Methods inherited from <a href="core.streams.html#WriteStream">core.streams.WriteStream</a>:<br>
+<dl><dt><a name="ServerWebSocket-drain_handler"><strong>drain_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;drain&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.&nbsp;If&nbsp;the&nbsp;write&nbsp;queue&nbsp;is&nbsp;full,&nbsp;then&nbsp;the&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;the&nbsp;write<br>
+queue&nbsp;has&nbsp;been&nbsp;reduced&nbsp;to&nbsp;maxSize&nbsp;/&nbsp;2.&nbsp;See&nbsp;&nbsp;for&nbsp;an&nbsp;example&nbsp;of&nbsp;this&nbsp;being&nbsp;used.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;handler:&nbsp;The&nbsp;drain&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="ServerWebSocket-set_write_queue_max_size"><strong>set_write_queue_max_size</strong></a>(self, size)</dt><dd><tt>Set&nbsp;the&nbsp;maximum&nbsp;size&nbsp;of&nbsp;the&nbsp;write&nbsp;queue.&nbsp;You&nbsp;will&nbsp;still&nbsp;be&nbsp;able&nbsp;to&nbsp;write&nbsp;to&nbsp;the&nbsp;stream&nbsp;even<br>
+if&nbsp;there&nbsp;is&nbsp;more&nbsp;data&nbsp;than&nbsp;this&nbsp;in&nbsp;the&nbsp;write&nbsp;queue.&nbsp;This&nbsp;is&nbsp;used&nbsp;as&nbsp;an&nbsp;indicator&nbsp;by&nbsp;classes&nbsp;such&nbsp;as<br>
+to&nbsp;provide&nbsp;flow&nbsp;control.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;size:&nbsp;The&nbsp;maximum&nbsp;size,&nbsp;in&nbsp;bytes.</tt></dd></dl>
+
+<dl><dt><a name="ServerWebSocket-write_buffer"><strong>write_buffer</strong></a>(self, buff)</dt><dd><tt>Write&nbsp;some&nbsp;data&nbsp;to&nbsp;the&nbsp;stream.&nbsp;The&nbsp;data&nbsp;is&nbsp;put&nbsp;on&nbsp;an&nbsp;internal&nbsp;write&nbsp;queue,&nbsp;and&nbsp;the&nbsp;write&nbsp;actually&nbsp;happens<br>
+asynchronously.&nbsp;To&nbsp;avoid&nbsp;running&nbsp;out&nbsp;of&nbsp;memory&nbsp;by&nbsp;putting&nbsp;too&nbsp;much&nbsp;on&nbsp;the&nbsp;write&nbsp;queue,<br>
+check&nbsp;the&nbsp;&nbsp;method&nbsp;before&nbsp;writing.&nbsp;This&nbsp;is&nbsp;done&nbsp;automatically&nbsp;if&nbsp;using&nbsp;a&nbsp;.<br>
+param&nbsp;[Buffer].&nbsp;The&nbsp;buffer&nbsp;to&nbsp;write.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="core.streams.html#WriteStream">core.streams.WriteStream</a>:<br>
+<dl><dt><strong>write_queue_full</strong></dt>
+<dd><tt>Is&nbsp;the&nbsp;write&nbsp;queue&nbsp;full?<br>
+&nbsp;<br>
+return&nbsp;True&nbsp;if&nbsp;there&nbsp;are&nbsp;more&nbsp;bytes&nbsp;in&nbsp;the&nbsp;write&nbsp;queue&nbsp;than&nbsp;the&nbsp;max&nbsp;write&nbsp;queue&nbsp;size.</tt></dd>
+</dl>
+<dl><dt><strong>write_queue_max_size</strong></dt>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="ServerWebSocketHandler">class <strong>ServerWebSocketHandler</strong></a>(org.python.proxies.core.http$ServerWebSocketHandler$13)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;handler&nbsp;for&nbsp;<a href="#WebSocket">WebSocket</a>&nbsp;Server&nbsp;Requests<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="core.http.html#ServerWebSocketHandler">ServerWebSocketHandler</a></dd>
+<dd>org.python.proxies.core.http$ServerWebSocketHandler$13</dd>
+<dd>org.vertx.java.core.Handler</dd>
+<dd>java.lang.Object</dd>
+<dd>__builtin__.object</dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="ServerWebSocketHandler-__init__"><strong>__init__</strong></a>(self, handler)</dt></dl>
+
+<dl><dt><a name="ServerWebSocketHandler-handle"><strong>handle</strong></a>(self, req)</dt><dd><tt>Calls&nbsp;the&nbsp;Handler&nbsp;with&nbsp;the&nbsp;<a href="#ServerWebSocket">ServerWebSocket</a>&nbsp;when&nbsp;connected</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>__initProxy__</strong> = &lt;java function __initProxy__ 0x93&gt;</dl>
+
+<dl><dt><strong>__supernames__</strong> = array('java.lang.String', [u'clone', u'finalize'])</dl>
+
+<dl><dt><strong>classDictInit</strong> = &lt;java function classDictInit 0x94&gt;</dl>
+
+<dl><dt><strong>clone</strong> = &lt;java function clone 0x95&gt;</dl>
+
+<dl><dt><strong>finalize</strong> = &lt;java function finalize 0x96&gt;</dl>
+
+<hr>
+Methods inherited from java.lang.Object:<br>
+<dl><dt><a name="ServerWebSocketHandler-__copy__"><strong>__copy__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="ServerWebSocketHandler-__deepcopy__"><strong>__deepcopy__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="ServerWebSocketHandler-__eq__"><strong>__eq__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="ServerWebSocketHandler-__hash__"><strong>__hash__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="ServerWebSocketHandler-__ne__"><strong>__ne__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="ServerWebSocketHandler-__repr__"><strong>__repr__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="ServerWebSocketHandler-__unicode__"><strong>__unicode__</strong></a>(...)</dt></dl>
+
+<hr>
+Data and other attributes inherited from java.lang.Object:<br>
+<dl><dt><strong>equals</strong> = &lt;java function equals 0x97&gt;</dl>
+
+<dl><dt><strong>getClass</strong> = &lt;java function getClass 0x98&gt;</dl>
+
+<dl><dt><strong>hashCode</strong> = &lt;java function hashCode 0x99&gt;</dl>
+
+<dl><dt><strong>notify</strong> = &lt;java function notify 0x9a&gt;</dl>
+
+<dl><dt><strong>notifyAll</strong> = &lt;java function notifyAll 0x9b&gt;</dl>
+
+<dl><dt><strong>toString</strong> = &lt;java function toString 0x9c&gt;</dl>
+
+<dl><dt><strong>wait</strong> = &lt;java function wait 0x9d&gt;</dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="WebSocket">class <strong>WebSocket</strong></a>(<a href="core.streams.html#ReadStream">core.streams.ReadStream</a>, <a href="core.streams.html#WriteStream">core.streams.WriteStream</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Encapsulates&nbsp;an&nbsp;HTML&nbsp;5&nbsp;Websocket.<br>
+&nbsp;<br>
+Instances&nbsp;of&nbsp;this&nbsp;class&nbsp;are&nbsp;created&nbsp;by&nbsp;an&nbsp;<a href="#HttpClient">HttpClient</a>&nbsp;instance&nbsp;when&nbsp;a&nbsp;client&nbsp;succeeds&nbsp;in&nbsp;a&nbsp;websocket&nbsp;handshake&nbsp;with&nbsp;a&nbsp;server.<br>
+Once&nbsp;an&nbsp;instance&nbsp;has&nbsp;been&nbsp;obtained&nbsp;it&nbsp;can&nbsp;be&nbsp;used&nbsp;to&nbsp;s&nbsp;or&nbsp;receive&nbsp;buffers&nbsp;of&nbsp;data&nbsp;from&nbsp;the&nbsp;connection,<br>
+a&nbsp;bit&nbsp;like&nbsp;a&nbsp;TCP&nbsp;socket.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="core.http.html#WebSocket">WebSocket</a></dd>
+<dd><a href="core.streams.html#ReadStream">core.streams.ReadStream</a></dd>
+<dd><a href="core.streams.html#WriteStream">core.streams.WriteStream</a></dd>
+<dd>__builtin__.object</dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="WebSocket-__init__"><strong>__init__</strong></a>(self, websocket)</dt></dl>
+
+<dl><dt><a name="WebSocket-close"><strong>close</strong></a>(self)</dt><dd><tt>Close&nbsp;the&nbsp;websocket</tt></dd></dl>
+
+<dl><dt><a name="WebSocket-closed_handler"><strong>closed_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;closed&nbsp;handler&nbsp;on&nbsp;the&nbsp;connection,&nbsp;the&nbsp;handler&nbsp;receives&nbsp;a&nbsp;no&nbsp;parameters.&nbsp;<br>
+This&nbsp;can&nbsp;be&nbsp;used&nbsp;as&nbsp;a&nbsp;decorator.&nbsp;<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+handler&nbsp;-&nbsp;The&nbsp;handler&nbsp;to&nbsp;be&nbsp;called&nbsp;when&nbsp;writing&nbsp;has&nbsp;been&nbsp;completed.&nbsp;It&nbsp;is&nbsp;wrapped&nbsp;in&nbsp;a&nbsp;ClosedHandler.</tt></dd></dl>
+
+<dl><dt><a name="WebSocket-write_binary_frame"><strong>write_binary_frame</strong></a>(self, buffer)</dt><dd><tt>Write&nbsp;data&nbsp;to&nbsp;the&nbsp;websocket&nbsp;as&nbsp;a&nbsp;binary&nbsp;frame&nbsp;<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;buffer:&nbsp;Buffer&nbsp;data&nbsp;to&nbsp;write&nbsp;to&nbsp;socket.</tt></dd></dl>
+
+<dl><dt><a name="WebSocket-write_text_frame"><strong>write_text_frame</strong></a>(self, text)</dt><dd><tt>Write&nbsp;data&nbsp;to&nbsp;the&nbsp;websocket&nbsp;as&nbsp;a&nbsp;text&nbsp;frame&nbsp;<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;text:&nbsp;text&nbsp;to&nbsp;write&nbsp;to&nbsp;socket</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="core.streams.html#ReadStream">core.streams.ReadStream</a>:<br>
+<dl><dt><a name="WebSocket-data_handler"><strong>data_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;data&nbsp;handler.&nbsp;As&nbsp;data&nbsp;is&nbsp;read,&nbsp;the&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;with&nbsp;the&nbsp;data.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;handler:&nbsp;The&nbsp;data&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="WebSocket-end_handler"><strong>end_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;end&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.&nbsp;Once&nbsp;the&nbsp;stream&nbsp;has&nbsp;ended,&nbsp;and&nbsp;there&nbsp;is&nbsp;no&nbsp;more&nbsp;data&nbsp;to&nbsp;be&nbsp;read,&nbsp;this&nbsp;handler&nbsp;will&nbsp;be&nbsp;called.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;handler:&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="WebSocket-exception_handler"><strong>exception_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;an&nbsp;execption&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.<br>
+param&nbsp;[Block]&nbsp;hndlr.&nbsp;The&nbsp;exception&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="WebSocket-pause"><strong>pause</strong></a>(self)</dt><dd><tt>Pause&nbsp;the&nbsp;<a href="core.streams.html#ReadStream">ReadStream</a>.&nbsp;After&nbsp;calling&nbsp;this,&nbsp;the&nbsp;<a href="core.streams.html#ReadStream">ReadStream</a>&nbsp;will&nbsp;aim&nbsp;to&nbsp;send&nbsp;no&nbsp;more&nbsp;data&nbsp;to&nbsp;the</tt></dd></dl>
+
+<dl><dt><a name="WebSocket-resume"><strong>resume</strong></a>(self)</dt><dd><tt>Resume&nbsp;reading.&nbsp;If&nbsp;the&nbsp;<a href="core.streams.html#ReadStream">ReadStream</a>&nbsp;has&nbsp;been&nbsp;paused,&nbsp;reading&nbsp;will&nbsp;recommence&nbsp;on&nbsp;it.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="core.streams.html#ReadStream">core.streams.ReadStream</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Methods inherited from <a href="core.streams.html#WriteStream">core.streams.WriteStream</a>:<br>
+<dl><dt><a name="WebSocket-drain_handler"><strong>drain_handler</strong></a>(self, handler)</dt><dd><tt>Set&nbsp;a&nbsp;drain&nbsp;handler&nbsp;on&nbsp;the&nbsp;stream.&nbsp;If&nbsp;the&nbsp;write&nbsp;queue&nbsp;is&nbsp;full,&nbsp;then&nbsp;the&nbsp;handler&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;the&nbsp;write<br>
+queue&nbsp;has&nbsp;been&nbsp;reduced&nbsp;to&nbsp;maxSize&nbsp;/&nbsp;2.&nbsp;See&nbsp;&nbsp;for&nbsp;an&nbsp;example&nbsp;of&nbsp;this&nbsp;being&nbsp;used.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;handler:&nbsp;The&nbsp;drain&nbsp;handler</tt></dd></dl>
+
+<dl><dt><a name="WebSocket-set_write_queue_max_size"><strong>set_write_queue_max_size</strong></a>(self, size)</dt><dd><tt>Set&nbsp;the&nbsp;maximum&nbsp;size&nbsp;of&nbsp;the&nbsp;write&nbsp;queue.&nbsp;You&nbsp;will&nbsp;still&nbsp;be&nbsp;able&nbsp;to&nbsp;write&nbsp;to&nbsp;the&nbsp;stream&nbsp;even<br>
+if&nbsp;there&nbsp;is&nbsp;more&nbsp;data&nbsp;than&nbsp;this&nbsp;in&nbsp;the&nbsp;write&nbsp;queue.&nbsp;This&nbsp;is&nbsp;used&nbsp;as&nbsp;an&nbsp;indicator&nbsp;by&nbsp;classes&nbsp;such&nbsp;as<br>
+to&nbsp;provide&nbsp;flow&nbsp;control.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;size:&nbsp;The&nbsp;maximum&nbsp;size,&nbsp;in&nbsp;bytes.</tt></dd></dl>
+
+<dl><dt><a name="WebSocket-write_buffer"><strong>write_buffer</strong></a>(self, buff)</dt><dd><tt>Write&nbsp;some&nbsp;data&nbsp;to&nbsp;the&nbsp;stream.&nbsp;The&nbsp;data&nbsp;is&nbsp;put&nbsp;on&nbsp;an&nbsp;internal&nbsp;write&nbsp;queue,&nbsp;and&nbsp;the&nbsp;write&nbsp;actually&nbsp;happens<br>
+asynchronously.&nbsp;To&nbsp;avoid&nbsp;running&nbsp;out&nbsp;of&nbsp;memory&nbsp;by&nbsp;putting&nbsp;too&nbsp;much&nbsp;on&nbsp;the&nbsp;write&nbsp;queue,<br>
+check&nbsp;the&nbsp;&nbsp;method&nbsp;before&nbsp;writing.&nbsp;This&nbsp;is&nbsp;done&nbsp;automatically&nbsp;if&nbsp;using&nbsp;a&nbsp;.<br>
+param&nbsp;[Buffer].&nbsp;The&nbsp;buffer&nbsp;to&nbsp;write.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="core.streams.html#WriteStream">core.streams.WriteStream</a>:<br>
+<dl><dt><strong>write_queue_full</strong></dt>
+<dd><tt>Is&nbsp;the&nbsp;write&nbsp;queue&nbsp;full?<br>
+&nbsp;<br>
+return&nbsp;True&nbsp;if&nbsp;there&nbsp;are&nbsp;more&nbsp;bytes&nbsp;in&nbsp;the&nbsp;write&nbsp;queue&nbsp;than&nbsp;the&nbsp;max&nbsp;write&nbsp;queue&nbsp;size.</tt></dd>
+</dl>
+<dl><dt><strong>write_queue_max_size</strong></dt>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="WebSocketHandler">class <strong>WebSocketHandler</strong></a>(org.python.proxies.core.http$WebSocketHandler$14)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;handler&nbsp;for&nbsp;<a href="#WebSocket">WebSocket</a>&nbsp;&nbsp;Requests<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="core.http.html#WebSocketHandler">WebSocketHandler</a></dd>
+<dd>org.python.proxies.core.http$WebSocketHandler$14</dd>
+<dd>org.vertx.java.core.Handler</dd>
+<dd>java.lang.Object</dd>
+<dd>__builtin__.object</dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="WebSocketHandler-__init__"><strong>__init__</strong></a>(self, handler)</dt></dl>
+
+<dl><dt><a name="WebSocketHandler-handle"><strong>handle</strong></a>(self, req)</dt><dd><tt>Calls&nbsp;the&nbsp;Handler&nbsp;with&nbsp;the&nbsp;<a href="#WebSocket">WebSocket</a>&nbsp;when&nbsp;connected</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>__initProxy__</strong> = &lt;java function __initProxy__ 0x9e&gt;</dl>
+
+<dl><dt><strong>__supernames__</strong> = array('java.lang.String', [u'clone', u'finalize'])</dl>
+
+<dl><dt><strong>classDictInit</strong> = &lt;java function classDictInit 0x9f&gt;</dl>
+
+<dl><dt><strong>clone</strong> = &lt;java function clone 0xa0&gt;</dl>
+
+<dl><dt><strong>finalize</strong> = &lt;java function finalize 0xa1&gt;</dl>
+
+<hr>
+Methods inherited from java.lang.Object:<br>
+<dl><dt><a name="WebSocketHandler-__copy__"><strong>__copy__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="WebSocketHandler-__deepcopy__"><strong>__deepcopy__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="WebSocketHandler-__eq__"><strong>__eq__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="WebSocketHandler-__hash__"><strong>__hash__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="WebSocketHandler-__ne__"><strong>__ne__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="WebSocketHandler-__repr__"><strong>__repr__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="WebSocketHandler-__unicode__"><strong>__unicode__</strong></a>(...)</dt></dl>
+
+<hr>
+Data and other attributes inherited from java.lang.Object:<br>
+<dl><dt><strong>equals</strong> = &lt;java function equals 0xa2&gt;</dl>
+
+<dl><dt><strong>getClass</strong> = &lt;java function getClass 0xa3&gt;</dl>
+
+<dl><dt><strong>hashCode</strong> = &lt;java function hashCode 0xa4&gt;</dl>
+
+<dl><dt><strong>notify</strong> = &lt;java function notify 0xa5&gt;</dl>
+
+<dl><dt><strong>notifyAll</strong> = &lt;java function notifyAll 0xa6&gt;</dl>
+
+<dl><dt><strong>toString</strong> = &lt;java function toString 0xa7&gt;</dl>
+
+<dl><dt><strong>wait</strong> = &lt;java function wait 0xa8&gt;</dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Scott Horn'<br>
+<strong>__credits__</strong> = 'Based entirely on work by Tim Fox http://tfox.org'<br>
+<strong>__email__</strong> = 'scott@hornmicro.com'<br>
+<strong>org</strong> = &lt;java package org 0x2&gt;</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Scott&nbsp;Horn</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Credits</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Based&nbsp;entirely&nbsp;on&nbsp;work&nbsp;by&nbsp;Tim&nbsp;Fox&nbsp;<a href="http://tfox.org">http://tfox.org</a></td></tr></table>
+</body></html>

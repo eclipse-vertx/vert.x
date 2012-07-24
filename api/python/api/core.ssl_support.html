@@ -1,0 +1,136 @@
+
+<!doctype html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module core.ssl_support</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="core.html"><font color="#ffffff">core</font></a>.ssl_support</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href="index.html">index</a><br></font></td></tr></table>
+    <p><tt>#&nbsp;Copyright&nbsp;2011&nbsp;the&nbsp;original&nbsp;author&nbsp;or&nbsp;authors.<br>
+#<br>
+#&nbsp;Licensed&nbsp;under&nbsp;the&nbsp;Apache&nbsp;License,&nbsp;Version&nbsp;2.0&nbsp;(the&nbsp;"License");<br>
+#&nbsp;you&nbsp;may&nbsp;not&nbsp;use&nbsp;this&nbsp;file&nbsp;except&nbsp;in&nbsp;compliance&nbsp;with&nbsp;the&nbsp;License.<br>
+#&nbsp;You&nbsp;may&nbsp;obtain&nbsp;a&nbsp;copy&nbsp;of&nbsp;the&nbsp;License&nbsp;at<br>
+#<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a><br>
+#<br>
+#&nbsp;Unless&nbsp;required&nbsp;by&nbsp;applicable&nbsp;law&nbsp;or&nbsp;agreed&nbsp;to&nbsp;in&nbsp;writing,&nbsp;software<br>
+#&nbsp;distributed&nbsp;under&nbsp;the&nbsp;License&nbsp;is&nbsp;distributed&nbsp;on&nbsp;an&nbsp;"AS&nbsp;IS"&nbsp;BASIS,<br>
+#&nbsp;WITHOUT&nbsp;WARRANTIES&nbsp;OR&nbsp;CONDITIONS&nbsp;OF&nbsp;ANY&nbsp;KIND,&nbsp;either&nbsp;express&nbsp;or&nbsp;implied.<br>
+#&nbsp;See&nbsp;the&nbsp;License&nbsp;for&nbsp;the&nbsp;specific&nbsp;language&nbsp;governing&nbsp;permissions&nbsp;and<br>
+#&nbsp;limitations&nbsp;under&nbsp;the&nbsp;License.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial">__builtin__.object
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="core.ssl_support.html#SSLSupport">SSLSupport</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="SSLSupport">class <strong>SSLSupport</strong></a>(__builtin__.object)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;mixin&nbsp;module&nbsp;allowing&nbsp;SSL&nbsp;attributes&nbsp;to&nbsp;be&nbsp;set&nbsp;on&nbsp;classes<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="SSLSupport-set_key_store_password"><strong>set_key_store_password</strong></a>(self, password)</dt><dd><tt>Set&nbsp;the&nbsp;password&nbsp;for&nbsp;the&nbsp;SSL&nbsp;key&nbsp;store.&nbsp;This&nbsp;method&nbsp;should&nbsp;only&nbsp;be&nbsp;used&nbsp;with&nbsp;the&nbsp;client&nbsp;in&nbsp;SSL&nbsp;mode,&nbsp;i.e.&nbsp;after&nbsp;ssl<br>
+has&nbsp;been&nbsp;set&nbsp;to&nbsp;true.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;password:&nbsp;The&nbsp;password.<br>
+&nbsp;<br>
+return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<dl><dt><a name="SSLSupport-set_key_store_path"><strong>set_key_store_path</strong></a>(self, path)</dt><dd><tt>Set&nbsp;the&nbsp;path&nbsp;to&nbsp;the&nbsp;SSL&nbsp;key&nbsp;store.&nbsp;This&nbsp;method&nbsp;should&nbsp;only&nbsp;be&nbsp;used&nbsp;with&nbsp;the&nbsp;client/server&nbsp;in&nbsp;SSL&nbsp;mode,&nbsp;i.e.&nbsp;after&nbsp;{#ssl=}<br>
+has&nbsp;been&nbsp;set&nbsp;to&nbsp;true.<br>
+The&nbsp;SSL&nbsp;key&nbsp;store&nbsp;is&nbsp;a&nbsp;standard&nbsp;Java&nbsp;Key&nbsp;Store,&nbsp;and&nbsp;should&nbsp;contain&nbsp;the&nbsp;client/server&nbsp;certificate.&nbsp;For&nbsp;a&nbsp;client,&nbsp;it's&nbsp;only&nbsp;necessary&nbsp;to&nbsp;supply<br>
+a&nbsp;client&nbsp;key&nbsp;store&nbsp;if&nbsp;the&nbsp;server&nbsp;requires&nbsp;client&nbsp;authentication&nbsp;via&nbsp;client&nbsp;certificates.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;path:&nbsp;The&nbsp;path&nbsp;to&nbsp;the&nbsp;key&nbsp;store<br>
+&nbsp;<br>
+return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<dl><dt><a name="SSLSupport-set_ssl"><strong>set_ssl</strong></a>(self, val)</dt><dd><tt>Set&nbsp;whether&nbsp;the&nbsp;server&nbsp;or&nbsp;client&nbsp;will&nbsp;use&nbsp;SSL.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;val:&nbsp;If&nbsp;true&nbsp;then&nbsp;ssl&nbsp;will&nbsp;be&nbsp;used.<br>
+&nbsp;<br>
+return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<dl><dt><a name="SSLSupport-set_trust_store_password"><strong>set_trust_store_password</strong></a>(self, password)</dt><dd><tt>Set&nbsp;the&nbsp;password&nbsp;for&nbsp;the&nbsp;SSL&nbsp;trust&nbsp;store.&nbsp;This&nbsp;method&nbsp;should&nbsp;only&nbsp;be&nbsp;used&nbsp;with&nbsp;the&nbsp;client&nbsp;in&nbsp;SSL&nbsp;mode,&nbsp;i.e.&nbsp;after&nbsp;{#ssl=}<br>
+has&nbsp;been&nbsp;set&nbsp;to&nbsp;true.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;password:&nbsp;The&nbsp;password.<br>
+&nbsp;<br>
+return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<dl><dt><a name="SSLSupport-set_trust_store_path"><strong>set_trust_store_path</strong></a>(self, path)</dt><dd><tt>Set&nbsp;the&nbsp;path&nbsp;to&nbsp;the&nbsp;SSL&nbsp;trust&nbsp;store.&nbsp;This&nbsp;method&nbsp;should&nbsp;only&nbsp;be&nbsp;used&nbsp;with&nbsp;the&nbsp;client/server&nbsp;in&nbsp;SSL&nbsp;mode,&nbsp;i.e.&nbsp;after&nbsp;{#ssl=}<br>
+has&nbsp;been&nbsp;set&nbsp;to&nbsp;true.<br>
+The&nbsp;SSL&nbsp;trust&nbsp;store&nbsp;is&nbsp;a&nbsp;standard&nbsp;Java&nbsp;Key&nbsp;Store,&nbsp;and&nbsp;should&nbsp;contain&nbsp;the&nbsp;certificate(s)&nbsp;of&nbsp;the&nbsp;clients/servers&nbsp;that&nbsp;the&nbsp;server/client&nbsp;trusts.&nbsp;The&nbsp;SSL<br>
+handshake&nbsp;will&nbsp;fail&nbsp;if&nbsp;the&nbsp;server&nbsp;provides&nbsp;a&nbsp;certificate&nbsp;that&nbsp;the&nbsp;client&nbsp;does&nbsp;not&nbsp;trust,&nbsp;or&nbsp;if&nbsp;client&nbsp;authentication&nbsp;is&nbsp;used,<br>
+if&nbsp;the&nbsp;client&nbsp;provides&nbsp;a&nbsp;certificate&nbsp;the&nbsp;server&nbsp;does&nbsp;not&nbsp;trust.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+@param&nbsp;path:&nbsp;The&nbsp;path&nbsp;to&nbsp;the&nbsp;trust&nbsp;store<br>
+&nbsp;<br>
+return&nbsp;self.&nbsp;So&nbsp;multiple&nbsp;invocations&nbsp;can&nbsp;be&nbsp;chained.</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>key_store_password</strong></dt>
+</dl>
+<dl><dt><strong>key_store_path</strong></dt>
+</dl>
+<dl><dt><strong>ssl</strong></dt>
+</dl>
+<dl><dt><strong>trust_store_password</strong></dt>
+</dl>
+<dl><dt><strong>trust_store_path</strong></dt>
+</dl>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Scott Horn'<br>
+<strong>__credits__</strong> = 'Based entirely on work by Tim Fox http://tfox.org'<br>
+<strong>__email__</strong> = 'scott@hornmicro.com'</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Scott&nbsp;Horn</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Credits</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Based&nbsp;entirely&nbsp;on&nbsp;work&nbsp;by&nbsp;Tim&nbsp;Fox&nbsp;<a href="http://tfox.org">http://tfox.org</a></td></tr></table>
+</body></html>
