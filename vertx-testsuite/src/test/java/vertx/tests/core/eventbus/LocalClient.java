@@ -89,13 +89,22 @@ public class LocalClient extends EventBusAppBase {
     }
   }
 
-  public void testLocal() {
+  public void testLocal1() {
+    testLocal(true);
+  }
+
+  public void testLocal2() {
+    testLocal(false);
+  }
+
+  public void testLocal(boolean localMethod) {
     final int numHandlers = 10;
     final String address = UUID.randomUUID().toString();
     final AtomicInteger count = new AtomicInteger(0);
     final Buffer buff = TestUtils.generateRandomBuffer(1000);
     for (int i = 0; i < numHandlers; i++) {
-      eb.registerHandler(address, new Handler<Message<Buffer>>() {
+
+      Handler<Message<Buffer>> handler = new Handler<Message<Buffer>>() {
         boolean handled;
 
         public void handle(Message<Buffer> msg) {
@@ -110,7 +119,12 @@ public class LocalClient extends EventBusAppBase {
           }
           handled = true;
         }
-      });
+      };
+      if (localMethod) {
+        eb.registerLocalHandler(address, handler);
+      } else {
+        eb.registerHandler(address, handler);
+      }
     }
 
     eb.publish(address, buff);
