@@ -159,7 +159,8 @@ java-mod/lib/other-jar.jar
 <h2 id="running-a-module-programmatically">Running a module programmatically</h2><br/>
 <p>You can also run a module programmatically similarly to how you run any verticle programmatically. Please see the core manual for the appropriate language for a full description on how to do this.</p>
 <p>E.g. (JavaScript)</p>
-<p>vertx.deployModule('org.myorg.mymod-v3.2');</p>
+<pre class="prettyprint">vertx.deployModule('org.myorg.mymod-v3.2');
+</pre>
 <h2 id="module-working-directory">Module working directory</h2><br/>
 <p>When you run a module using <code>vertx run</code> or <code>vertx deploy</code> your actual process working directory is wherever you were when you executed the command.</p>
 <p>However the module will be located in the <code>mods</code> (or <code>VERTX_MODS</code>) directory. Consequently if your module contains static files - e.g. your module might be a web application that serves static files from the file system, then if your module expects the working directory to be set to module directory it won't find them!</p>

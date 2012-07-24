@@ -95,7 +95,7 @@ You can also run a module programmatically similarly to how you run any verticle
 
 E.g. (JavaScript)
 
-   vertx.deployModule('org.myorg.mymod-v3.2');
+    vertx.deployModule('org.myorg.mymod-v3.2');
 
 ## Module working directory
 
