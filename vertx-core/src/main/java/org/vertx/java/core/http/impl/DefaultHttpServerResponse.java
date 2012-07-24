@@ -32,6 +32,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.impl.PathAdjuster;
 import org.vertx.java.core.http.HttpServerResponse;
+import org.vertx.java.core.impl.LowerCaseKeyMap;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -73,14 +74,14 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
 
   public Map<String, Object> headers() {
     if (headers == null) {
-      headers = new HashMap<>();
+      headers = new LowerCaseKeyMap();
     }
     return headers;
   }
 
   public Map<String, Object> trailers() {
     if (trailers == null) {
-      trailers = new HashMap<>();
+      trailers = new LowerCaseKeyMap();
     }
     return trailers;
   }

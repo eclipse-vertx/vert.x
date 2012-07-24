@@ -165,4 +165,4 @@ function splitJvmOpts() {
 eval splitJvmOpts $DEFAULT_JVM_OPTS $JAVA_OPTS $VERTX_OPTS
 
 
-exec "$JAVACMD" "${JVM_OPTS[@]}" -Dvertx.install=$APP_HOME -classpath "$CLASSPATH" org.vertx.java.boot.VertxBoot "$@"
+exec "$JAVACMD" "${JVM_OPTS[@]}" -Dvertx.install=$APP_HOME -Djava.util.logging.config.file=$APP_HOME/conf/logging.properties -Djruby.home=$JRUBY_HOME -Djython.home=$JYTHON_HOME -classpath "$CLASSPATH" org.vertx.java.boot.VertxBoot "$@"

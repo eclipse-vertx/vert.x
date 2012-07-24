@@ -135,7 +135,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
         Handler<Message<JsonObject>> handler = new Handler<Message<JsonObject>>() {
           public void handle(final Message<JsonObject> msg) {
             if (checkMatches(false, address, msg.body, false)) {
-              checkAddAccceptedReplyAddress(msg);
+              checkAddAccceptedReplyAddress(msg.replyAddress);
               deliverMessage(sock, address, msg);
             } else {
               log.debug("Outbound message for address " + address + " rejected because there is no inbound match");
@@ -185,17 +185,17 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     });
   }
 
-  private void checkAddAccceptedReplyAddress(final Message<JsonObject> msg) {
-    if (msg.replyAddress != null) {
+  private void checkAddAccceptedReplyAddress(final String replyAddress) {
+    if (replyAddress != null) {
       // This message has a reply address
       // When the reply comes through we want to accept it irrespective of its address
       // Since all replies are implicitly accepted if the original message was accepted
       // So we cache the reply address, so we can check against it
-      acceptedReplyAddresses.add(msg.replyAddress);
+      acceptedReplyAddresses.add(replyAddress);
       // And we remove after timeout in case the reply never comes
       vertx.setTimer(DEFAULT_REPLY_TIMEOUT, new Handler<Long>() {
         public void handle(Long id) {
-          acceptedReplyAddresses.remove(msg.replyAddress);
+          acceptedReplyAddresses.remove(replyAddress);
         }
       });
     }
@@ -262,7 +262,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
             // Note we don't check outbound matches for replies
             // Replies are always let through if the original message
             // was approved
-            checkAddAccceptedReplyAddress(message);
+            checkAddAccceptedReplyAddress(message.replyAddress);
             deliverMessage(sock, replyAddress, message);
           }
         };
