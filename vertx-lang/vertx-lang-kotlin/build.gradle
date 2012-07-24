@@ -48,14 +48,16 @@ dependencies {
 }
 
 
-task kotlinSourceJar( type: Jar, dependsOn: sourceJar ) {
+task kotlinSourceJar( type: Jar, dependsOn: [ sourceJar ] ) {
 	classifier = 'sources'
+    sourceSets.main.kotlin.srcDirs.each{ inputs.dir it }
 	from sourceSets.main.kotlin
 }
 
 
 task kdocJar( type: Jar, dependsOn: [ javadocJar /*, kdoc */ ] ) {
 	classifier = 'javadoc'
+    sourceSets.main.kotlin.srcDirs.each{ inputs.dir it }
 	from kdoc.destinationDir
 }
 
