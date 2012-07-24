@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::FileSystem
   
-    &mdash; vert.x Ruby API
+    &mdash; 'Ruby API Docs'
   
 </title>
 
@@ -15,9 +15,11 @@
   <link rel="stylesheet" href="../css/common.css" type="text/css" media="screen" charset="utf-8" />
 
 <script type="text/javascript" charset="utf-8">
-  relpath = '..';
-  if (relpath != '') relpath += '/';
+  hasFrames = window.top.frames.main ? true : false;
+  relpath = '../';
+  framesUrl = "../frames.html#!" + escape(window.location.href);
 </script>
+
 
   <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
 
@@ -26,36 +28,41 @@
 
   </head>
   <body>
-    <script type="text/javascript" charset="utf-8">
-      if (window.top.frames.main) document.body.className = 'frames';
-    </script>
-    
     <div id="header">
       <div id="menu">
   
-    <a href="../_index.html">Index (F)</a> &raquo; 
+    <a href="../_index.html">Index (F)</a> &raquo;
     <span class='title'><span class='object_link'><a href="../Vertx.html" title="Vertx (module)">Vertx</a></span></span>
      &raquo; 
     <span class="title">FileSystem</span>
   
-  
+
   <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
   
-    <a id="class_list_link" href="#">Class List</a>
+    <a class="full_list_link" id="class_list_link"
+        href="../class_list.html">
+      Class List
+    </a>
   
-    <a id="method_list_link" href="#">Method List</a>
+    <a class="full_list_link" id="method_list_link"
+        href="../method_list.html">
+      Method List
+    </a>
   
-    <a id="file_list_link" href="#">File List</a>
+    <a class="full_list_link" id="file_list_link"
+        href="../file_list.html">
+      File List
+    </a>
   
 </div>
       <div class="clear"></div>
     </div>
-    
+
     <iframe id="search_frame"></iframe>
-    
+
     <div id="content"><h1>Class: Vertx::FileSystem
   
   
@@ -87,7 +94,7 @@
   
   
     <dt class="r2 last">Defined in:</dt>
-    <dd class="r2 last">src/main/ruby/core/file_system.rb</dd>
+    <dd class="r2 last">src/main/ruby_scripts/core/file_system.rb</dd>
   
 </dl>
 <div class="clear"></div>
@@ -110,7 +117,7 @@ synchronous versions return the results, or throw exceptions directly.
 </div>
 <div class="tags">
   
-<h3>Author:</h3>
+<p class="tag_title">Author:</p>
 <ul class="author">
   
     <li>
@@ -170,6 +177,7 @@ synchronous versions return the results, or throw exceptions directly.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -188,6 +196,7 @@ Change the permissions on a file, asynchronously.
 
     
   </span>
+  
   
   
   
@@ -218,6 +227,7 @@ Synchronous version of #FileSystem#FileSystem.chmod.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -236,6 +246,7 @@ Copy a file, asynchronously.
 
     
   </span>
+  
   
   
   
@@ -266,6 +277,7 @@ Copy a file recursively, asynchronously.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -284,6 +296,7 @@ Synchronous version of #FileSystem#FileSystem.copy_recursive.
 
     
   </span>
+  
   
   
   
@@ -314,6 +327,7 @@ Synchronous version of #FileSystem#FileSystem.copy.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -332,6 +346,7 @@ Create a new empty file, asynchronously.
 
     
   </span>
+  
   
   
   
@@ -362,6 +377,7 @@ Synchronous version of #FileSystem#FileSystem.create_file.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -380,6 +396,7 @@ Delete a file on the file system, asynchronously.
 
     
   </span>
+  
   
   
   
@@ -410,6 +427,7 @@ Delete a file on the file system recursively, asynchronously.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -428,6 +446,7 @@ Synchronous version of #FileSystem#FileSystem.delete_recursive.
 
     
   </span>
+  
   
   
   
@@ -458,6 +477,7 @@ Synchronous version of #FileSystem#FileSystem.delete.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -476,6 +496,7 @@ Check if a file exists, asynchronously.
 
     
   </span>
+  
   
   
   
@@ -506,6 +527,7 @@ Synchronous version of #FileSystem#FileSystem.exists?.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -524,6 +546,7 @@ Get properties for the file system, asynchronously.
 
     
   </span>
+  
   
   
   
@@ -554,6 +577,7 @@ Synchronous version of #FileSystem#FileSystem.fs_props.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -572,6 +596,7 @@ Create a hard link, asynchronously..
 
     
   </span>
+  
   
   
   
@@ -602,6 +627,7 @@ Synchronous version of #FileSystem#FileSystem.link.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -626,6 +652,7 @@ Create a directory, asynchronously.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -644,6 +671,7 @@ Synchronous version of #FileSystem#FileSystem.mkdir.
 
     
   </span>
+  
   
   
   
@@ -675,6 +703,7 @@ not already exist, asynchronously.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -693,6 +722,7 @@ Synchronous version of #FileSystem#FileSystem.mkdir_with_parents.
 
     
   </span>
+  
   
   
   
@@ -723,6 +753,7 @@ Move a file, asynchronously.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -741,6 +772,7 @@ Synchronous version of #FileSystem#FileSystem.move.
 
     
   </span>
+  
   
   
   
@@ -771,6 +803,7 @@ Open a file on the file system, asynchronously.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -789,6 +822,7 @@ Synchronous version of #FileSystem#FileSystem.open.
 
     
   </span>
+  
   
   
   
@@ -819,6 +853,7 @@ Get file properties for a file, asynchronously.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -837,6 +872,7 @@ Synchronous version of #FileSystem#FileSystem.props.
 
     
   </span>
+  
   
   
   
@@ -867,6 +903,7 @@ Read a directory, i.e.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -885,6 +922,7 @@ Synchronous version of #FileSystem#FileSystem.read_dir.
 
     
   </span>
+  
   
   
   
@@ -915,6 +953,7 @@ Read the contents of an entire file as a <span class='object_link'><a href="Buff
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -933,6 +972,7 @@ Synchronous version of #FileSystem#FileSystem.read_file_as_buffer.
 
     
   </span>
+  
   
   
   
@@ -963,6 +1003,7 @@ Read a symbolic link, asynchronously.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -981,6 +1022,7 @@ Synchronous version of #FileSystem#FileSystem.read_sym_link.
 
     
   </span>
+  
   
   
   
@@ -1011,6 +1053,7 @@ Create a symbolic link, asynchronously.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -1029,6 +1072,7 @@ Synchronous version of #FileSystem#FileSystem.sym_link.
 
     
   </span>
+  
   
   
   
@@ -1059,6 +1103,7 @@ Truncate a file, asynchronously.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -1077,6 +1122,7 @@ Synchronous version of #FileSystem#FileSystem.truncate.
 
     
   </span>
+  
   
   
   
@@ -1107,6 +1153,7 @@ Unlink a hard link.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -1125,6 +1172,7 @@ Synchronous version of #FileSystem#FileSystem.unlink.
 
     
   </span>
+  
   
   
   
@@ -1155,6 +1203,7 @@ Write a [Buffer] as the entire contents of a file, asynchronously.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -1172,16 +1221,18 @@ Synchronous version of #FileSystem#FileSystem.write_buffer_to_file.
 
   <div id="class_method_details" class="method_details_list">
     <h2>Class Method Details</h2>
-    
+
     
       <div class="method_details first">
-  <p class="signature first" id="chmod-class_method">
+  <h3 class="signature first" id="chmod-class_method">
   
     + (<tt>Object</tt>) <strong>chmod</strong>(path, perms, dir_perms = nil, &amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Change the permissions on a file, asynchronously. If the file is directory
@@ -1195,7 +1246,7 @@ directories).
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1266,7 +1317,7 @@ regular files.
 265</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 263</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 263</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_chmod identifier id'>chmod</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_perms identifier id'>perms</span><span class='comma token'>,</span> <span class='rubyid_dir_perms identifier id'>dir_perms</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_chmod identifier id'>chmod</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_perms identifier id'>perms</span><span class='comma token'>,</span> <span class='rubyid_dir_perms identifier id'>dir_perms</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -1278,13 +1329,15 @@ regular files.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="chmod_sync-class_method">
+  <h3 class="signature " id="chmod_sync-class_method">
   
     + (<tt>Object</tt>) <strong>chmod_sync</strong>(path, perms, dir_perms = nil) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.chmod
@@ -1307,7 +1360,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.chmod
 270</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 268</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 268</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_chmod_sync identifier id'>chmod_sync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_perms identifier id'>perms</span><span class='comma token'>,</span> <span class='rubyid_dir_perms identifier id'>dir_perms</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_chmodSync identifier id'>chmodSync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_perms identifier id'>perms</span><span class='comma token'>,</span> <span class='rubyid_dir_perms identifier id'>dir_perms</span><span class='rparen token'>)</span>
@@ -1319,13 +1372,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.chmod
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="copy-class_method">
+  <h3 class="signature " id="copy-class_method">
   
     + (<tt>Object</tt>) <strong>copy</strong>(from, to, &amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Copy a file, asynchronously. The copy will fail if from does not exist, or
@@ -1336,7 +1391,7 @@ if to already exists.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1404,7 +1459,7 @@ a block representing the handler which is called on completion.
 212</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 210</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 210</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_copy identifier id'>copy</span><span class='lparen token'>(</span><span class='rubyid_from identifier id'>from</span><span class='comma token'>,</span> <span class='rubyid_to identifier id'>to</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_copy identifier id'>copy</span><span class='lparen token'>(</span><span class='rubyid_from identifier id'>from</span><span class='comma token'>,</span> <span class='rubyid_to identifier id'>to</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -1416,13 +1471,15 @@ a block representing the handler which is called on completion.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="copy_recursive-class_method">
+  <h3 class="signature " id="copy_recursive-class_method">
   
     + (<tt>Object</tt>) <strong>copy_recursive</strong>(from, to, &amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Copy a file recursively, asynchronously. The copy will fail if from does
@@ -1435,7 +1492,7 @@ the entire directory tree is copied.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1486,7 +1543,7 @@ Path of file to copy to
 226</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 224</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 224</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_copy_recursive identifier id'>copy_recursive</span><span class='lparen token'>(</span><span class='rubyid_from identifier id'>from</span><span class='comma token'>,</span> <span class='rubyid_to identifier id'>to</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_copy identifier id'>copy</span><span class='lparen token'>(</span><span class='rubyid_from identifier id'>from</span><span class='comma token'>,</span> <span class='rubyid_to identifier id'>to</span><span class='comma token'>,</span> <span class='rubyid_true true kw'>true</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -1498,13 +1555,15 @@ Path of file to copy to
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="copy_recursive_sync-class_method">
+  <h3 class="signature " id="copy_recursive_sync-class_method">
   
     + (<tt>Object</tt>) <strong>copy_recursive_sync</strong>(from, to) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.copy_recursive
@@ -1527,7 +1586,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.copy_recursive
 231</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 229</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 229</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_copy_recursive_sync identifier id'>copy_recursive_sync</span><span class='lparen token'>(</span><span class='rubyid_from identifier id'>from</span><span class='comma token'>,</span> <span class='rubyid_to identifier id'>to</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_copySync identifier id'>copySync</span><span class='lparen token'>(</span><span class='rubyid_from identifier id'>from</span><span class='comma token'>,</span> <span class='rubyid_to identifier id'>to</span><span class='comma token'>,</span> <span class='rubyid_true true kw'>true</span><span class='rparen token'>)</span>
@@ -1539,13 +1598,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.copy_recursive
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="copy_sync-class_method">
+  <h3 class="signature " id="copy_sync-class_method">
   
     + (<tt>Object</tt>) <strong>copy_sync</strong>(from, to) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.copy
@@ -1568,7 +1629,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.copy
 217</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 215</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 215</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_copy_sync identifier id'>copy_sync</span><span class='lparen token'>(</span><span class='rubyid_from identifier id'>from</span><span class='comma token'>,</span> <span class='rubyid_to identifier id'>to</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_copySync identifier id'>copySync</span><span class='lparen token'>(</span><span class='rubyid_from identifier id'>from</span><span class='comma token'>,</span> <span class='rubyid_to identifier id'>to</span><span class='rparen token'>)</span>
@@ -1580,13 +1641,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.copy
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="create_file-class_method">
+  <h3 class="signature " id="create_file-class_method">
   
     + (<tt>Object</tt>) <strong>create_file</strong>(path, perms = nil, &amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Create a new empty file, asynchronously.
@@ -1596,7 +1659,7 @@ Create a new empty file, asynchronously.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1649,7 +1712,7 @@ The file will be created with these permissions.
 441</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 439</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 439</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_create_file identifier id'>create_file</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_perms identifier id'>perms</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_createFile identifier id'>createFile</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_perms identifier id'>perms</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -1661,13 +1724,15 @@ The file will be created with these permissions.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="create_file_sync-class_method">
+  <h3 class="signature " id="create_file_sync-class_method">
   
     + (<tt>Object</tt>) <strong>create_file_sync</strong>(path, perms = nil) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.create_file
@@ -1690,7 +1755,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.create_file
 446</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 444</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 444</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_create_file_sync identifier id'>create_file_sync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_perms identifier id'>perms</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_createFileSync identifier id'>createFileSync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_perms identifier id'>perms</span><span class='rparen token'>)</span>
@@ -1702,13 +1767,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.create_file
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="delete-class_method">
+  <h3 class="signature " id="delete-class_method">
   
     + (<tt>Object</tt>) <strong>delete</strong>(path, &amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Delete a file on the file system, asynchronously. The delete will fail if
@@ -1719,7 +1786,7 @@ the file does not exist, or is a directory and is not empty.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1753,7 +1820,7 @@ Path of the file to delete.
 335</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 333</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 333</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_delete identifier id'>delete</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_delete identifier id'>delete</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -1765,13 +1832,15 @@ Path of the file to delete.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="delete_recursive-class_method">
+  <h3 class="signature " id="delete_recursive-class_method">
   
     + (<tt>Object</tt>) <strong>delete_recursive</strong>(path, &amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Delete a file on the file system recursively, asynchronously. The delete
@@ -1783,7 +1852,7 @@ directory contents will be deleted recursively.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1817,7 +1886,7 @@ Path of the file to delete.
 348</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 346</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 346</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_delete_recursive identifier id'>delete_recursive</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_delete identifier id'>delete</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_true true kw'>true</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -1829,13 +1898,15 @@ Path of the file to delete.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="delete_recursive_sync-class_method">
+  <h3 class="signature " id="delete_recursive_sync-class_method">
   
     + (<tt>Object</tt>) <strong>delete_recursive_sync</strong>(path) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.delete_recursive
@@ -1858,7 +1929,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.delete_recursive
 353</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 351</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 351</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_delete_recursive_sync identifier id'>delete_recursive_sync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_deleteSync identifier id'>deleteSync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_true true kw'>true</span><span class='rparen token'>)</span>
@@ -1870,13 +1941,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.delete_recursive
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="delete_sync-class_method">
+  <h3 class="signature " id="delete_sync-class_method">
   
     + (<tt>Object</tt>) <strong>delete_sync</strong>(path) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.delete
@@ -1899,7 +1972,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.delete
 340</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 338</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 338</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_delete_sync identifier id'>delete_sync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_deleteSync identifier id'>deleteSync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='rparen token'>)</span>
@@ -1911,13 +1984,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.delete
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="exists?-class_method">
+  <h3 class="signature " id="exists?-class_method">
   
     + (<tt>Boolean</tt>) <strong>exists?</strong>(path, &amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Check if a file exists, asynchronously.
@@ -1927,7 +2002,7 @@ Check if a file exists, asynchronously.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1949,7 +2024,7 @@ Path of the file to check.
   
 </ul>
 
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -1974,7 +2049,7 @@ Path of the file to check.
 452</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 450</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 450</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_exists? fid id'>exists?</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_exists identifier id'>exists</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -1986,13 +2061,15 @@ Path of the file to check.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="exists_sync?-class_method">
+  <h3 class="signature " id="exists_sync?-class_method">
   
     + (<tt>Boolean</tt>) <strong>exists_sync?</strong>(path) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.exists?
@@ -2003,7 +2080,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.exists?
 </div>
 <div class="tags">
   
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -2028,7 +2105,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.exists?
 457</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 455</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 455</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_exists_sync? fid id'>exists_sync?</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_existsSync identifier id'>existsSync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='rparen token'>)</span>
@@ -2040,13 +2117,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.exists?
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="fs_props-class_method">
+  <h3 class="signature " id="fs_props-class_method">
   
     + (<tt>Object</tt>) <strong>fs_props</strong>(path, &amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Get properties for the file system, asynchronously.
@@ -2056,7 +2135,7 @@ Get properties for the file system, asynchronously.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -2090,7 +2169,7 @@ Path in the file system.
 463</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 461</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 461</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_fs_props identifier id'>fs_props</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_fsProps identifier id'>fsProps</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_props identifier id'>j_props</span><span class='bitor op'>|</span> <span class='rubyid_FSProps constant id'>FSProps</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_props identifier id'>j_props</span><span class='rparen token'>)</span><span class='rbrace token'>}</span><span class='rparen token'>)</span>
@@ -2102,13 +2181,15 @@ Path in the file system.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="fs_props_sync-class_method">
+  <h3 class="signature " id="fs_props_sync-class_method">
   
     + (<tt>Object</tt>) <strong>fs_props_sync</strong>(path) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.fs_props
@@ -2132,7 +2213,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.fs_props
 469</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 466</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 466</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_fs_props_sync identifier id'>fs_props_sync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='rparen token'>)</span>
   <span class='rubyid_j_fsprops identifier id'>j_fsprops</span> <span class='assign token'>=</span> <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_fsPropsSync identifier id'>fsPropsSync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='rparen token'>)</span>
@@ -2145,13 +2226,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.fs_props
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="link-class_method">
+  <h3 class="signature " id="link-class_method">
   
     + (<tt>Object</tt>) <strong>link</strong>(link, existing, &amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Create a hard link, asynchronously..
@@ -2161,7 +2244,7 @@ Create a hard link, asynchronously..
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -2212,7 +2295,7 @@ Path of where the link points to.
 289</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 287</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 287</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_link identifier id'>link</span><span class='lparen token'>(</span><span class='rubyid_link identifier id'>link</span><span class='comma token'>,</span> <span class='rubyid_existing identifier id'>existing</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
    <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_link identifier id'>link</span><span class='lparen token'>(</span><span class='rubyid_link identifier id'>link</span><span class='comma token'>,</span> <span class='rubyid_existing identifier id'>existing</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -2224,13 +2307,15 @@ Path of where the link points to.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="link_sync-class_method">
+  <h3 class="signature " id="link_sync-class_method">
   
     + (<tt>Object</tt>) <strong>link_sync</strong>(link, existing) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.link
@@ -2253,7 +2338,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.link
 294</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 292</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 292</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_link_sync identifier id'>link_sync</span><span class='lparen token'>(</span><span class='rubyid_link identifier id'>link</span><span class='comma token'>,</span> <span class='rubyid_existing identifier id'>existing</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_linkSync identifier id'>linkSync</span><span class='lparen token'>(</span><span class='rubyid_link identifier id'>link</span><span class='comma token'>,</span> <span class='rubyid_existing identifier id'>existing</span><span class='rparen token'>)</span>
@@ -2265,13 +2350,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.link
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="mkdir-class_method">
+  <h3 class="signature " id="mkdir-class_method">
   
     + (<tt>Object</tt>) <strong>mkdir</strong>(path, perms = nil, &amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Create a directory, asynchronously. The create will fail if the directory
@@ -2283,7 +2370,7 @@ exist.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -2334,7 +2421,7 @@ A permission string of the form rwxr-x&#8212; to give directory.
 362</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 360</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 360</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_mkdir identifier id'>mkdir</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_perms identifier id'>perms</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_mkdir identifier id'>mkdir</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_perms identifier id'>perms</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -2346,13 +2433,15 @@ A permission string of the form rwxr-x&#8212; to give directory.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="mkdir_sync-class_method">
+  <h3 class="signature " id="mkdir_sync-class_method">
   
     + (<tt>Object</tt>) <strong>mkdir_sync</strong>(path, perms = nil) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.mkdir
@@ -2375,7 +2464,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.mkdir
 367</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 365</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 365</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_mkdir_sync identifier id'>mkdir_sync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_perms identifier id'>perms</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_mkdirSync identifier id'>mkdirSync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_perms identifier id'>perms</span><span class='rparen token'>)</span>
@@ -2387,13 +2476,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.mkdir
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="mkdir_with_parents-class_method">
+  <h3 class="signature " id="mkdir_with_parents-class_method">
   
     + (<tt>Object</tt>) <strong>mkdir_with_parents</strong>(path, perms = nil, &amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Create a directory, and create all it&#8217;s parent directories if they do
@@ -2405,7 +2496,7 @@ already exists.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -2457,7 +2548,7 @@ directory(ies).
 375</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 373</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 373</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_mkdir_with_parents identifier id'>mkdir_with_parents</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_perms identifier id'>perms</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_mkdir identifier id'>mkdir</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_perms identifier id'>perms</span><span class='comma token'>,</span> <span class='rubyid_true true kw'>true</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -2469,13 +2560,15 @@ directory(ies).
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="mkdir_with_parents_sync-class_method">
+  <h3 class="signature " id="mkdir_with_parents_sync-class_method">
   
     + (<tt>Object</tt>) <strong>mkdir_with_parents_sync</strong>(path, perms = nil) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.mkdir_with_parents
@@ -2498,7 +2591,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.mkdir_with_parent
 380</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 378</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 378</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_mkdir_with_parents_sync identifier id'>mkdir_with_parents_sync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_perms identifier id'>perms</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_mkdirSync identifier id'>mkdirSync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_perms identifier id'>perms</span><span class='comma token'>,</span> <span class='rubyid_true true kw'>true</span><span class='rparen token'>)</span>
@@ -2510,13 +2603,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.mkdir_with_parent
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="move-class_method">
+  <h3 class="signature " id="move-class_method">
   
     + (<tt>Object</tt>) <strong>move</strong>(from, to, &amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Move a file, asynchronously. The move will fail if from does not exist, or
@@ -2527,7 +2622,7 @@ if to already exists.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -2578,7 +2673,7 @@ Path of file to move to
 238</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 236</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 236</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_move identifier id'>move</span><span class='lparen token'>(</span><span class='rubyid_from identifier id'>from</span><span class='comma token'>,</span> <span class='rubyid_to identifier id'>to</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_move identifier id'>move</span><span class='lparen token'>(</span><span class='rubyid_from identifier id'>from</span><span class='comma token'>,</span> <span class='rubyid_to identifier id'>to</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -2590,13 +2685,15 @@ Path of file to move to
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="move_sync-class_method">
+  <h3 class="signature " id="move_sync-class_method">
   
     + (<tt>Object</tt>) <strong>move_sync</strong>(from, to) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.move
@@ -2619,7 +2716,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.move
 243</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 241</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 241</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_move_sync identifier id'>move_sync</span><span class='lparen token'>(</span><span class='rubyid_from identifier id'>from</span><span class='comma token'>,</span> <span class='rubyid_to identifier id'>to</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_moveSync identifier id'>moveSync</span><span class='lparen token'>(</span><span class='rubyid_from identifier id'>from</span><span class='comma token'>,</span> <span class='rubyid_to identifier id'>to</span><span class='rparen token'>)</span>
@@ -2631,13 +2728,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.move
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="open-class_method">
+  <h3 class="signature " id="open-class_method">
   
     + (<tt>Object</tt>) <strong>open</strong>(path, perms = nil, read = true, write = true, create_new = true, flush = false, &amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Open a file on the file system, asynchronously.
@@ -2647,7 +2746,7 @@ Open a file on the file system, asynchronously.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -2778,7 +2877,7 @@ storage immediately?
 428</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 426</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 426</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_open identifier id'>open</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_perms identifier id'>perms</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='rubyid_read identifier id'>read</span> <span class='assign token'>=</span> <span class='rubyid_true true kw'>true</span><span class='comma token'>,</span> <span class='rubyid_write identifier id'>write</span> <span class='assign token'>=</span> <span class='rubyid_true true kw'>true</span><span class='comma token'>,</span> <span class='rubyid_create_new identifier id'>create_new</span> <span class='assign token'>=</span> <span class='rubyid_true true kw'>true</span><span class='comma token'>,</span> <span class='rubyid_flush identifier id'>flush</span> <span class='assign token'>=</span> <span class='rubyid_false false kw'>false</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_open identifier id'>open</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_perms identifier id'>perms</span><span class='comma token'>,</span> <span class='rubyid_read identifier id'>read</span><span class='comma token'>,</span> <span class='rubyid_write identifier id'>write</span><span class='comma token'>,</span> <span class='rubyid_create_new identifier id'>create_new</span><span class='comma token'>,</span> <span class='rubyid_flush identifier id'>flush</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span><span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_file identifier id'>j_file</span><span class='bitor op'>|</span> <span class='rubyid_AsyncFile constant id'>AsyncFile</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_file identifier id'>j_file</span><span class='rparen token'>)</span><span class='rbrace token'>}</span><span class='rparen token'>)</span>
@@ -2790,13 +2889,15 @@ storage immediately?
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="open_sync-class_method">
+  <h3 class="signature " id="open_sync-class_method">
   
     + (<tt>Object</tt>) <strong>open_sync</strong>(path, perms = nil, read = true, write = true, create_new = true, flush = false) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.open
@@ -2820,7 +2921,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.open
 434</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 431</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 431</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_open_sync identifier id'>open_sync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_perms identifier id'>perms</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='rubyid_read identifier id'>read</span> <span class='assign token'>=</span> <span class='rubyid_true true kw'>true</span><span class='comma token'>,</span> <span class='rubyid_write identifier id'>write</span> <span class='assign token'>=</span> <span class='rubyid_true true kw'>true</span><span class='comma token'>,</span> <span class='rubyid_create_new identifier id'>create_new</span> <span class='assign token'>=</span> <span class='rubyid_true true kw'>true</span><span class='comma token'>,</span> <span class='rubyid_flush identifier id'>flush</span> <span class='assign token'>=</span> <span class='rubyid_false false kw'>false</span><span class='rparen token'>)</span>
   <span class='rubyid_j_af identifier id'>j_af</span> <span class='assign token'>=</span> <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_open identifier id'>open</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_perms identifier id'>perms</span><span class='comma token'>,</span> <span class='rubyid_read identifier id'>read</span><span class='comma token'>,</span> <span class='rubyid_write identifier id'>write</span><span class='comma token'>,</span> <span class='rubyid_create_new identifier id'>create_new</span><span class='comma token'>,</span> <span class='rubyid_flush identifier id'>flush</span><span class='rparen token'>)</span>
@@ -2833,13 +2934,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.open
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="props-class_method">
+  <h3 class="signature " id="props-class_method">
   
     + (<tt>Object</tt>) <strong>props</strong>(path, &amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Get file properties for a file, asynchronously.
@@ -2849,7 +2952,7 @@ Get file properties for a file, asynchronously.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -2883,7 +2986,7 @@ Path to file
 276</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 274</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 274</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_props identifier id'>props</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_props identifier id'>props</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_props identifier id'>j_props</span><span class='bitor op'>|</span> <span class='rubyid_FileProps constant id'>FileProps</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_props identifier id'>j_props</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span><span class='rparen token'>)</span>
@@ -2895,13 +2998,15 @@ Path to file
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="props_sync-class_method">
+  <h3 class="signature " id="props_sync-class_method">
   
     + (<tt>Object</tt>) <strong>props_sync</strong>(path) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.props
@@ -2925,7 +3030,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.props
 282</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 279</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 279</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_props_sync identifier id'>props_sync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='rparen token'>)</span>
   <span class='rubyid_j_props identifier id'>j_props</span> <span class='assign token'>=</span> <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_propsSync identifier id'>propsSync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='rparen token'>)</span>
@@ -2938,13 +3043,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.props
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="read_dir-class_method">
+  <h3 class="signature " id="read_dir-class_method">
   
     + (<tt>Object</tt>) <strong>read_dir</strong>(path, filter = nil, &amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Read a directory, i.e. list it&#8217;s contents, asynchronously. The read
@@ -2956,7 +3063,7 @@ filter will be returned.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -3010,7 +3117,7 @@ filter is not nil
 389</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 387</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 387</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_read_dir identifier id'>read_dir</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_filter identifier id'>filter</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_readDir identifier id'>readDir</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_filter identifier id'>filter</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -3022,13 +3129,15 @@ filter is not nil
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="read_dir_sync-class_method">
+  <h3 class="signature " id="read_dir_sync-class_method">
   
     + (<tt>Object</tt>) <strong>read_dir_sync</strong>(path, filter = nil) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.read_dir
@@ -3051,7 +3160,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.read_dir
 394</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 392</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 392</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_read_dir_sync identifier id'>read_dir_sync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_filter identifier id'>filter</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_readDirSync identifier id'>readDirSync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_filter identifier id'>filter</span><span class='rparen token'>)</span>
@@ -3063,13 +3172,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.read_dir
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="read_file_as_buffer-class_method">
+  <h3 class="signature " id="read_file_as_buffer-class_method">
   
     + (<tt>Object</tt>) <strong>read_file_as_buffer</strong>(path, &amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Read the contents of an entire file as a <span class='object_link'><a href="Buffer.html" title="Vertx::Buffer (class)">Buffer</a></span>, asynchronously.
@@ -3079,7 +3190,7 @@ Read the contents of an entire file as a <span class='object_link'><a href="Buff
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -3113,7 +3224,7 @@ Path of the file to read.
 400</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 398</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 398</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_read_file_as_buffer identifier id'>read_file_as_buffer</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_readFile identifier id'>readFile</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_buff identifier id'>j_buff</span><span class='bitor op'>|</span> <span class='rubyid_Buffer constant id'>Buffer</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_buff identifier id'>j_buff</span><span class='rparen token'>)</span><span class='rbrace token'>}</span><span class='rparen token'>)</span>
@@ -3125,13 +3236,15 @@ Path of the file to read.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="read_file_as_buffer_sync-class_method">
+  <h3 class="signature " id="read_file_as_buffer_sync-class_method">
   
     + (<tt>Object</tt>) <strong>read_file_as_buffer_sync</strong>(path) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.read_file_as_buffer
@@ -3154,7 +3267,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.read_file_as_buff
 405</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 403</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 403</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_read_file_as_buffer_sync identifier id'>read_file_as_buffer_sync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_readFileSync identifier id'>readFileSync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='rparen token'>)</span>
@@ -3166,13 +3279,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.read_file_as_buff
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="read_sym_link-class_method">
+  <h3 class="signature " id="read_sym_link-class_method">
   
     + (<tt>Object</tt>) <strong>read_sym_link</strong>(link, &amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Read a symbolic link, asynchronously. I.e. tells you where the symbolic
@@ -3183,7 +3298,7 @@ link points.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -3217,7 +3332,7 @@ Path of the link to read.
 323</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 321</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 321</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_read_sym_link identifier id'>read_sym_link</span><span class='lparen token'>(</span><span class='rubyid_link identifier id'>link</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_readSymLink identifier id'>readSymLink</span><span class='lparen token'>(</span><span class='rubyid_link identifier id'>link</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -3229,13 +3344,15 @@ Path of the link to read.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="read_sym_link_sync-class_method">
+  <h3 class="signature " id="read_sym_link_sync-class_method">
   
     + (<tt>Object</tt>) <strong>read_sym_link_sync</strong>(link) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.read_sym_link
@@ -3258,7 +3375,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.read_sym_link
 328</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 326</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 326</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_read_sym_link_sync identifier id'>read_sym_link_sync</span><span class='lparen token'>(</span><span class='rubyid_link identifier id'>link</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_readSymLinkSync identifier id'>readSymLinkSync</span><span class='lparen token'>(</span><span class='rubyid_link identifier id'>link</span><span class='rparen token'>)</span>
@@ -3270,13 +3387,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.read_sym_link
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="sym_link-class_method">
+  <h3 class="signature " id="sym_link-class_method">
   
     + (<tt>Object</tt>) <strong>sym_link</strong>(link, existing, &amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Create a symbolic link, asynchronously.
@@ -3286,7 +3405,7 @@ Create a symbolic link, asynchronously.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -3337,7 +3456,7 @@ Path of where the link points to.
 301</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 299</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 299</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_sym_link identifier id'>sym_link</span><span class='lparen token'>(</span><span class='rubyid_link identifier id'>link</span><span class='comma token'>,</span> <span class='rubyid_existing identifier id'>existing</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
    <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_symLink identifier id'>symLink</span><span class='lparen token'>(</span><span class='rubyid_link identifier id'>link</span><span class='comma token'>,</span> <span class='rubyid_existing identifier id'>existing</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -3349,13 +3468,15 @@ Path of where the link points to.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="sym_link_sync-class_method">
+  <h3 class="signature " id="sym_link_sync-class_method">
   
     + (<tt>Object</tt>) <strong>sym_link_sync</strong>(link, existing) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.sym_link
@@ -3378,7 +3499,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.sym_link
 306</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 304</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 304</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_sym_link_sync identifier id'>sym_link_sync</span><span class='lparen token'>(</span><span class='rubyid_link identifier id'>link</span><span class='comma token'>,</span> <span class='rubyid_existing identifier id'>existing</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_symLinkSync identifier id'>symLinkSync</span><span class='lparen token'>(</span><span class='rubyid_link identifier id'>link</span><span class='comma token'>,</span> <span class='rubyid_existing identifier id'>existing</span><span class='rparen token'>)</span>
@@ -3390,13 +3511,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.sym_link
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="truncate-class_method">
+  <h3 class="signature " id="truncate-class_method">
   
     + (<tt>Object</tt>) <strong>truncate</strong>(path, len, &amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Truncate a file, asynchronously. The move will fail if path does not exist.
@@ -3406,7 +3529,7 @@ Truncate a file, asynchronously. The move will fail if path does not exist.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -3458,7 +3581,7 @@ then will do nothing.
 250</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 248</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 248</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_truncate identifier id'>truncate</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_len identifier id'>len</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_truncate identifier id'>truncate</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_len identifier id'>len</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -3470,13 +3593,15 @@ then will do nothing.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="truncate_sync-class_method">
+  <h3 class="signature " id="truncate_sync-class_method">
   
     + (<tt>Object</tt>) <strong>truncate_sync</strong>(path, len) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.truncate
@@ -3499,7 +3624,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.truncate
 255</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 253</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 253</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_truncate_sync identifier id'>truncate_sync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_len identifier id'>len</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_truncateSync identifier id'>truncateSync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_len identifier id'>len</span><span class='rparen token'>)</span>
@@ -3511,13 +3636,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.truncate
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="unlink-class_method">
+  <h3 class="signature " id="unlink-class_method">
   
     + (<tt>Object</tt>) <strong>unlink</strong>(link, &amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Unlink a hard link.
@@ -3527,7 +3654,7 @@ Unlink a hard link.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -3561,7 +3688,7 @@ Path of the link to unlink.
 312</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 310</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 310</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_unlink identifier id'>unlink</span><span class='lparen token'>(</span><span class='rubyid_link identifier id'>link</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_unlink identifier id'>unlink</span><span class='lparen token'>(</span><span class='rubyid_link identifier id'>link</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -3573,13 +3700,15 @@ Path of the link to unlink.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="unlinkSync-class_method">
+  <h3 class="signature " id="unlinkSync-class_method">
   
     + (<tt>Object</tt>) <strong>unlinkSync</strong>(link) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.unlink
@@ -3602,7 +3731,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.unlink
 317</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 315</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 315</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_unlinkSync identifier id'>unlinkSync</span><span class='lparen token'>(</span><span class='rubyid_link identifier id'>link</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_unlinkSync identifier id'>unlinkSync</span><span class='lparen token'>(</span><span class='rubyid_link identifier id'>link</span><span class='rparen token'>)</span>
@@ -3614,13 +3743,15 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.unlink
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="write_buffer_to_file-class_method">
+  <h3 class="signature " id="write_buffer_to_file-class_method">
   
     + (<tt>Object</tt>) <strong>write_buffer_to_file</strong>(path, buffer, &amp;block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Write a [Buffer] as the entire contents of a file, asynchronously.
@@ -3630,7 +3761,7 @@ Write a [Buffer] as the entire contents of a file, asynchronously.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -3681,7 +3812,7 @@ The Buffer to write
 412</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 410</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 410</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_write_buffer_to_file identifier id'>write_buffer_to_file</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_buffer identifier id'>buffer</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_writeFile identifier id'>writeFile</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_buffer identifier id'>buffer</span><span class='comma token'>,</span> <span class='rubyid_FSWrappedHandler constant id'>FSWrappedHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_block identifier id'>block</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -3693,13 +3824,15 @@ The Buffer to write
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="write_buffer_to_file_sync-class_method">
+  <h3 class="signature " id="write_buffer_to_file_sync-class_method">
   
     + (<tt>Object</tt>) <strong>write_buffer_to_file_sync</strong>(path, buffer) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.write_buffer_to_file
@@ -3722,7 +3855,7 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.write_buffer_to_f
 417</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/file_system.rb', line 415</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/file_system.rb', line 415</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_FileSystem constant id'>FileSystem</span><span class='dot token'>.</span><span class='rubyid_write_buffer_to_file_sync identifier id'>write_buffer_to_file_sync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_buffer identifier id'>buffer</span><span class='rparen token'>)</span>
   <span class='rubyid_@@j_fs ivar id'>@@j_fs</span><span class='dot token'>.</span><span class='rubyid_writeFileSync identifier id'>writeFileSync</span><span class='lparen token'>(</span><span class='rubyid_path identifier id'>path</span><span class='comma token'>,</span> <span class='rubyid_buffer identifier id'>buffer</span><span class='rparen token'>)</span>
@@ -3736,11 +3869,11 @@ Synchronous version of Vertx::FileSystem#FileSystem#FileSystem.write_buffer_to_f
   </div>
 
 </div>
-    
+
     <div id="footer">
-  Generated on Tue Jun 19 16:38:27 2012 by 
+  Generated on Tue Jul 24 12:18:26 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.7.5 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.8.7).
 </div>
 
   </body>

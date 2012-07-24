@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::SockJSServer
   
-    &mdash; vert.x Ruby API
+    &mdash; 'Ruby API Docs'
   
 </title>
 
@@ -15,9 +15,11 @@
   <link rel="stylesheet" href="../css/common.css" type="text/css" media="screen" charset="utf-8" />
 
 <script type="text/javascript" charset="utf-8">
-  relpath = '..';
-  if (relpath != '') relpath += '/';
+  hasFrames = window.top.frames.main ? true : false;
+  relpath = '../';
+  framesUrl = "../frames.html#!" + escape(window.location.href);
 </script>
+
 
   <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
 
@@ -26,36 +28,41 @@
 
   </head>
   <body>
-    <script type="text/javascript" charset="utf-8">
-      if (window.top.frames.main) document.body.className = 'frames';
-    </script>
-    
     <div id="header">
       <div id="menu">
   
-    <a href="../_index.html">Index (S)</a> &raquo; 
+    <a href="../_index.html">Index (S)</a> &raquo;
     <span class='title'><span class='object_link'><a href="../Vertx.html" title="Vertx (module)">Vertx</a></span></span>
      &raquo; 
     <span class="title">SockJSServer</span>
   
-  
+
   <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
   
-    <a id="class_list_link" href="#">Class List</a>
+    <a class="full_list_link" id="class_list_link"
+        href="../class_list.html">
+      Class List
+    </a>
   
-    <a id="method_list_link" href="#">Method List</a>
+    <a class="full_list_link" id="method_list_link"
+        href="../method_list.html">
+      Method List
+    </a>
   
-    <a id="file_list_link" href="#">File List</a>
+    <a class="full_list_link" id="file_list_link"
+        href="../file_list.html">
+      File List
+    </a>
   
 </div>
       <div class="clear"></div>
     </div>
-    
+
     <iframe id="search_frame"></iframe>
-    
+
     <div id="content"><h1>Class: Vertx::SockJSServer
   
   
@@ -87,7 +94,7 @@
   
   
     <dt class="r2 last">Defined in:</dt>
-    <dd class="r2 last">src/main/ruby/core/sock_js.rb</dd>
+    <dd class="r2 last">src/main/ruby_scripts/core/sock_js.rb</dd>
   
 </dl>
 <div class="clear"></div>
@@ -96,7 +103,7 @@
   <div class="discussion">
     <p>
 This is an implementation of the server side part of
-<a href="&quot;https://github.com/sockjs&quot;" target="_parent" title="&amp;quot;https://github.com/sockjs&amp;quot;">&quot;https://github.com/sockjs&quot;</a>
+<a href="\"https://github.com/sockjs\"" target="_parent" title="&quot;https://github.com/sockjs&quot;">"https://github.com/sockjs"</a>
 </p>
 <p>
 SockJS enables browsers to communicate with the server using a simple
@@ -134,7 +141,7 @@ and configuration is described in a Hash.
 </div>
 <div class="tags">
   
-<h3>Author:</h3>
+<p class="tag_title">Author:</p>
 <ul class="author">
   
     <li>
@@ -181,6 +188,7 @@ and configuration is described in a Hash.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'></div></span>
@@ -196,6 +204,7 @@ and configuration is described in a Hash.
 
     
   </span>
+  
   
     <span class="note title constructor">constructor</span>
   
@@ -228,6 +237,7 @@ Create a new SockJSServer.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -245,13 +255,15 @@ Install an application.
   <h2>Constructor Details</h2>
   
     <div class="method_details first">
-  <p class="signature first" id="initialize-instance_method">
+  <h3 class="signature first" id="initialize-instance_method">
   
     - (<tt><span class='object_link'><a href="" title="Vertx::SockJSServer (class)">SockJSServer</a></span></tt>) <strong>initialize</strong>(http_server) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Create a new SockJSServer
@@ -261,7 +273,7 @@ Create a new SockJSServer
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -295,7 +307,7 @@ You must pass in an instance of <span class='object_link'><a href="HttpServer.ht
 52</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/sock_js.rb', line 50</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/sock_js.rb', line 50</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_initialize identifier id'>initialize</span><span class='lparen token'>(</span><span class='rubyid_http_server identifier id'>http_server</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_server ivar id'>@j_server</span> <span class='assign token'>=</span> <span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='rubyid_impl identifier id'>impl</span><span class='dot token'>.</span><span class='rubyid_VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_createSockJSServer identifier id'>createSockJSServer</span><span class='lparen token'>(</span><span class='rubyid_http_server identifier id'>http_server</span><span class='dot token'>.</span><span class='rubyid__to_java_server identifier id'>_to_java_server</span><span class='rparen token'>)</span>
@@ -311,16 +323,18 @@ You must pass in an instance of <span class='object_link'><a href="HttpServer.ht
 
   <div id="instance_method_details" class="method_details_list">
     <h2>Instance Method Details</h2>
-    
+
     
       <div class="method_details first">
-  <p class="signature first" id="bridge-instance_method">
+  <h3 class="signature first" id="bridge-instance_method">
   
     - (<tt>Object</tt>) <strong>bridge</strong>(config, inbound_permitted, outbound_permitted, auth_timeout = 5*60*1000, auth_address = nil) 
   
 
   
-</p><table class="source_code">
+
+  
+</h3><table class="source_code">
   <tr>
     <td>
       <pre class="lines">
@@ -334,7 +348,7 @@ You must pass in an instance of <span class='object_link'><a href="HttpServer.ht
 71</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/sock_js.rb', line 66</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/sock_js.rb', line 66</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_bridge identifier id'>bridge</span><span class='lparen token'>(</span><span class='rubyid_config identifier id'>config</span><span class='comma token'>,</span> <span class='rubyid_inbound_permitted identifier id'>inbound_permitted</span><span class='comma token'>,</span> <span class='rubyid_outbound_permitted identifier id'>outbound_permitted</span><span class='comma token'>,</span> <span class='rubyid_auth_timeout identifier id'>auth_timeout</span> <span class='assign token'>=</span> <span class='integer val'>5</span> <span class='mult op'>*</span> <span class='integer val'>60</span> <span class='mult op'>*</span> <span class='integer val'>1000</span><span class='comma token'>,</span> <span class='rubyid_auth_address identifier id'>auth_address</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='rparen token'>)</span>
   <span class='rubyid_j_inbound_permitted identifier id'>j_inbound_permitted</span> <span class='assign token'>=</span> <span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_core identifier id'>core</span><span class='dot token'>.</span><span class='rubyid_json identifier id'>json</span><span class='dot token'>.</span><span class='rubyid_JsonArray constant id'>JsonArray</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_inbound_permitted identifier id'>inbound_permitted</span><span class='rparen token'>)</span>
@@ -349,13 +363,15 @@ You must pass in an instance of <span class='object_link'><a href="HttpServer.ht
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="install_app-instance_method">
+  <h3 class="signature " id="install_app-instance_method">
   
     - (<tt>Object</tt>) <strong>install_app</strong>(config, proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Install an application
@@ -365,7 +381,7 @@ Install an application
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -439,7 +455,7 @@ Handler to call when a new <span class='object_link'><a href="SockJSSocket.html"
 64</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/sock_js.rb', line 58</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/sock_js.rb', line 58</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_install_app identifier id'>install_app</span><span class='lparen token'>(</span><span class='rubyid_config identifier id'>config</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -457,11 +473,11 @@ Handler to call when a new <span class='object_link'><a href="SockJSSocket.html"
   </div>
 
 </div>
-    
+
     <div id="footer">
-  Generated on Tue Jun 19 16:38:26 2012 by 
+  Generated on Tue Jul 24 12:18:24 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.7.5 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.8.7).
 </div>
 
   </body>

@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::RecordParser
   
-    &mdash; vert.x Ruby API
+    &mdash; 'Ruby API Docs'
   
 </title>
 
@@ -15,9 +15,11 @@
   <link rel="stylesheet" href="../css/common.css" type="text/css" media="screen" charset="utf-8" />
 
 <script type="text/javascript" charset="utf-8">
-  relpath = '..';
-  if (relpath != '') relpath += '/';
+  hasFrames = window.top.frames.main ? true : false;
+  relpath = '../';
+  framesUrl = "../frames.html#!" + escape(window.location.href);
 </script>
+
 
   <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
 
@@ -26,36 +28,41 @@
 
   </head>
   <body>
-    <script type="text/javascript" charset="utf-8">
-      if (window.top.frames.main) document.body.className = 'frames';
-    </script>
-    
     <div id="header">
       <div id="menu">
   
-    <a href="../_index.html">Index (R)</a> &raquo; 
+    <a href="../_index.html">Index (R)</a> &raquo;
     <span class='title'><span class='object_link'><a href="../Vertx.html" title="Vertx (module)">Vertx</a></span></span>
      &raquo; 
     <span class="title">RecordParser</span>
   
-  
+
   <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
   
-    <a id="class_list_link" href="#">Class List</a>
+    <a class="full_list_link" id="class_list_link"
+        href="../class_list.html">
+      Class List
+    </a>
   
-    <a id="method_list_link" href="#">Method List</a>
+    <a class="full_list_link" id="method_list_link"
+        href="../method_list.html">
+      Method List
+    </a>
   
-    <a id="file_list_link" href="#">File List</a>
+    <a class="full_list_link" id="file_list_link"
+        href="../file_list.html">
+      File List
+    </a>
   
 </div>
       <div class="clear"></div>
     </div>
-    
+
     <iframe id="search_frame"></iframe>
-    
+
     <div id="content"><h1>Class: Vertx::RecordParser
   
   
@@ -87,7 +94,7 @@
   
   
     <dt class="r2 last">Defined in:</dt>
-    <dd class="r2 last">src/main/ruby/core/parsetools.rb</dd>
+    <dd class="r2 last">src/main/ruby_scripts/core/parsetools.rb</dd>
   
 </dl>
 <div class="clear"></div>
@@ -135,7 +142,7 @@ extend this class to cope with arbitrary character encodings.
 </div>
 <div class="tags">
   
-<h3>Author:</h3>
+<p class="tag_title">Author:</p>
 <ul class="author">
   
     <li>
@@ -182,6 +189,7 @@ extend this class to cope with arbitrary character encodings.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -202,6 +210,7 @@ the delimiter can be represented by a delimiter string endcoded in latin-1
 
     
   </span>
+  
   
   
   
@@ -241,6 +250,7 @@ Create a new RecordParser instance, initially in fixed size mode.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -259,6 +269,7 @@ Flip the parser into delimited mode.
 
     
   </span>
+  
   
   
   
@@ -289,6 +300,7 @@ Flip the parser into fixed size mode.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -306,16 +318,18 @@ This method is called to provide the parser with data.
 
   <div id="class_method_details" class="method_details_list">
     <h2>Class Method Details</h2>
-    
+
     
       <div class="method_details first">
-  <p class="signature first" id="new_delimited-class_method">
+  <h3 class="signature first" id="new_delimited-class_method">
   
     + (<tt><span class='object_link'><a href="" title="Vertx::RecordParser (class)">RecordParser</a></span></tt>) <strong>new_delimited</strong>(delim, proc = nil, &amp;output_block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Create a new RecordParser instance, initially in delimited mode, and where
@@ -328,7 +342,7 @@ characters.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -386,7 +400,7 @@ A block to be used as the output handler
   
 </ul>
 
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -418,7 +432,7 @@ a new RecordParser
 70</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/parsetools.rb', line 67</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/parsetools.rb', line 67</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_RecordParser constant id'>RecordParser</span><span class='dot token'>.</span><span class='rubyid_new_delimited identifier id'>new_delimited</span><span class='lparen token'>(</span><span class='rubyid_delim identifier id'>delim</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_output_block identifier id'>output_block</span><span class='rparen token'>)</span>
   <span class='rubyid_output_block identifier id'>output_block</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -431,13 +445,15 @@ a new RecordParser
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="new_fixed-class_method">
+  <h3 class="signature " id="new_fixed-class_method">
   
     + (<tt><span class='object_link'><a href="" title="Vertx::RecordParser (class)">RecordParser</a></span></tt>) <strong>new_fixed</strong>(size, proc = nil, &amp;output_block) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Create a new RecordParser instance, initially in fixed size mode.
@@ -447,7 +463,7 @@ Create a new RecordParser instance, initially in fixed size mode.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -505,7 +521,7 @@ A block to be used as the output handler
   
 </ul>
 
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -537,7 +553,7 @@ a new RecordParser
 80</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/parsetools.rb', line 77</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/parsetools.rb', line 77</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_RecordParser constant id'>RecordParser</span><span class='dot token'>.</span><span class='rubyid_new_fixed identifier id'>new_fixed</span><span class='lparen token'>(</span><span class='rubyid_size identifier id'>size</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_output_block identifier id'>output_block</span><span class='rparen token'>)</span>
   <span class='rubyid_output_block identifier id'>output_block</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -553,16 +569,18 @@ a new RecordParser
 
   <div id="instance_method_details" class="method_details_list">
     <h2>Instance Method Details</h2>
-    
+
     
       <div class="method_details first">
-  <p class="signature first" id="delimited_mode-instance_method">
+  <h3 class="signature first" id="delimited_mode-instance_method">
   
     - (<tt>Object</tt>) <strong>delimited_mode</strong>(delim) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Flip the parser into delimited mode. This method can be called multiple
@@ -573,7 +591,7 @@ times with different values of delim while data is being parsed.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -607,7 +625,7 @@ The delimiter string.
 87</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/parsetools.rb', line 85</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/parsetools.rb', line 85</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_delimited_mode identifier id'>delimited_mode</span><span class='lparen token'>(</span><span class='rubyid_delim identifier id'>delim</span><span class='rparen token'>)</span>
   <span class='rubyid_@java_parser ivar id'>@java_parser</span><span class='dot token'>.</span><span class='rubyid_delimitedMode identifier id'>delimitedMode</span><span class='lparen token'>(</span><span class='rubyid_delim identifier id'>delim</span><span class='rparen token'>)</span>
@@ -619,13 +637,15 @@ The delimiter string.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="fixed_size_mode-instance_method">
+  <h3 class="signature " id="fixed_size_mode-instance_method">
   
     - (<tt>Object</tt>) <strong>fixed_size_mode</strong>(size) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Flip the parser into fixed size mode. This method can be called multiple
@@ -636,7 +656,7 @@ times with different values of size while data is being parsed.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -670,7 +690,7 @@ The record size.
 94</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/parsetools.rb', line 92</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/parsetools.rb', line 92</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_fixed_size_mode identifier id'>fixed_size_mode</span><span class='lparen token'>(</span><span class='rubyid_size identifier id'>size</span><span class='rparen token'>)</span>
   <span class='rubyid_@java_parser ivar id'>@java_parser</span><span class='dot token'>.</span><span class='rubyid_fixedSizeMode identifier id'>fixedSizeMode</span><span class='lparen token'>(</span><span class='rubyid_size identifier id'>size</span><span class='rparen token'>)</span>
@@ -682,13 +702,15 @@ The record size.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="input-instance_method">
+  <h3 class="signature " id="input-instance_method">
   
     - (<tt>Object</tt>) <strong>input</strong>(data) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 This method is called to provide the parser with data.
@@ -698,7 +720,7 @@ This method is called to provide the parser with data.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -732,7 +754,7 @@ Input data to the parser.
 59</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/parsetools.rb', line 57</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/parsetools.rb', line 57</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_input identifier id'>input</span><span class='lparen token'>(</span><span class='rubyid_data identifier id'>data</span><span class='rparen token'>)</span>
   <span class='rubyid_@java_parser ivar id'>@java_parser</span><span class='dot token'>.</span><span class='rubyid_handle identifier id'>handle</span><span class='lparen token'>(</span><span class='rubyid_data identifier id'>data</span><span class='dot token'>.</span><span class='rubyid__to_java_buffer identifier id'>_to_java_buffer</span><span class='rparen token'>)</span>
@@ -746,11 +768,11 @@ Input data to the parser.
   </div>
 
 </div>
-    
+
     <div id="footer">
-  Generated on Tue Jun 19 16:38:27 2012 by 
+  Generated on Tue Jul 24 12:18:25 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.7.5 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.8.7).
 </div>
 
   </body>

@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::NetServer
   
-    &mdash; vert.x Ruby API
+    &mdash; 'Ruby API Docs'
   
 </title>
 
@@ -15,9 +15,11 @@
   <link rel="stylesheet" href="../css/common.css" type="text/css" media="screen" charset="utf-8" />
 
 <script type="text/javascript" charset="utf-8">
-  relpath = '..';
-  if (relpath != '') relpath += '/';
+  hasFrames = window.top.frames.main ? true : false;
+  relpath = '../';
+  framesUrl = "../frames.html#!" + escape(window.location.href);
 </script>
+
 
   <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
 
@@ -26,36 +28,41 @@
 
   </head>
   <body>
-    <script type="text/javascript" charset="utf-8">
-      if (window.top.frames.main) document.body.className = 'frames';
-    </script>
-    
     <div id="header">
       <div id="menu">
   
-    <a href="../_index.html">Index (N)</a> &raquo; 
+    <a href="../_index.html">Index (N)</a> &raquo;
     <span class='title'><span class='object_link'><a href="../Vertx.html" title="Vertx (module)">Vertx</a></span></span>
      &raquo; 
     <span class="title">NetServer</span>
   
-  
+
   <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
   
-    <a id="class_list_link" href="#">Class List</a>
+    <a class="full_list_link" id="class_list_link"
+        href="../class_list.html">
+      Class List
+    </a>
   
-    <a id="method_list_link" href="#">Method List</a>
+    <a class="full_list_link" id="method_list_link"
+        href="../method_list.html">
+      Method List
+    </a>
   
-    <a id="file_list_link" href="#">File List</a>
+    <a class="full_list_link" id="file_list_link"
+        href="../file_list.html">
+      File List
+    </a>
   
 </div>
       <div class="clear"></div>
     </div>
-    
+
     <iframe id="search_frame"></iframe>
-    
+
     <div id="content"><h1>Class: Vertx::NetServer
   
   
@@ -91,7 +98,7 @@
   
   
     <dt class="r1 last">Defined in:</dt>
-    <dd class="r1 last">src/main/ruby/core/net.rb</dd>
+    <dd class="r1 last">src/main/ruby_scripts/core/net.rb</dd>
   
 </dl>
 <div class="clear"></div>
@@ -112,7 +119,7 @@ using <span class='object_link'><a href="#connect_handler-instance_method" title
 </div>
 <div class="tags">
   
-<h3>Author:</h3>
+<p class="tag_title">Author:</p>
 <ul class="author">
   
     <li>
@@ -159,6 +166,7 @@ using <span class='object_link'><a href="#connect_handler-instance_method" title
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -178,6 +186,7 @@ clients to provide client certificates.
 
     
   </span>
+  
   
   
   
@@ -208,6 +217,7 @@ Close the server.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -226,6 +236,7 @@ Supply a connect handler for this server.
 
     
   </span>
+  
   
     <span class="note title constructor">constructor</span>
   
@@ -258,6 +269,7 @@ Create a new NetServer.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -279,8 +291,9 @@ Instruct the server to listen for incoming connections.
   
   
   
-  <h3 class="inherited">Methods included from <span class='object_link'><a href="TCPSupport.html" title="Vertx::TCPSupport (module)">TCPSupport</a></span></h3>
-  <p class="inherited"><span class='object_link'><a href="TCPSupport.html#receive_buffer_size%3D-instance_method" title="Vertx::TCPSupport#receive_buffer_size= (method)">#receive_buffer_size=</a></span>, <span class='object_link'><a href="TCPSupport.html#reuse_address%3D-instance_method" title="Vertx::TCPSupport#reuse_address= (method)">#reuse_address=</a></span>, <span class='object_link'><a href="TCPSupport.html#send_buffer_size%3D-instance_method" title="Vertx::TCPSupport#send_buffer_size= (method)">#send_buffer_size=</a></span>, <span class='object_link'><a href="TCPSupport.html#so_linger%3D-instance_method" title="Vertx::TCPSupport#so_linger= (method)">#so_linger=</a></span>, <span class='object_link'><a href="TCPSupport.html#tcp_keep_alive%3D-instance_method" title="Vertx::TCPSupport#tcp_keep_alive= (method)">#tcp_keep_alive=</a></span>, <span class='object_link'><a href="TCPSupport.html#traffic_class%3D-instance_method" title="Vertx::TCPSupport#traffic_class= (method)">#traffic_class=</a></span></p>
+  
+  <h3 class="inherited">Methods included from <span class='object_link'><a href="SSLSupport.html" title="Vertx::SSLSupport (module)">SSLSupport</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="SSLSupport.html#key_store_password%3D-instance_method" title="Vertx::SSLSupport#key_store_password= (method)">#key_store_password=</a></span>, <span class='object_link'><a href="SSLSupport.html#key_store_path%3D-instance_method" title="Vertx::SSLSupport#key_store_path= (method)">#key_store_path=</a></span>, <span class='object_link'><a href="SSLSupport.html#ssl%3D-instance_method" title="Vertx::SSLSupport#ssl= (method)">#ssl=</a></span>, <span class='object_link'><a href="SSLSupport.html#trust_store_password%3D-instance_method" title="Vertx::SSLSupport#trust_store_password= (method)">#trust_store_password=</a></span>, <span class='object_link'><a href="SSLSupport.html#trust_store_path%3D-instance_method" title="Vertx::SSLSupport#trust_store_path= (method)">#trust_store_path=</a></span></p>
 
   
   
@@ -289,19 +302,22 @@ Instruct the server to listen for incoming connections.
   
   
   
-  <h3 class="inherited">Methods included from <span class='object_link'><a href="SSLSupport.html" title="Vertx::SSLSupport (module)">SSLSupport</a></span></h3>
-  <p class="inherited"><span class='object_link'><a href="SSLSupport.html#key_store_password%3D-instance_method" title="Vertx::SSLSupport#key_store_password= (method)">#key_store_password=</a></span>, <span class='object_link'><a href="SSLSupport.html#key_store_path%3D-instance_method" title="Vertx::SSLSupport#key_store_path= (method)">#key_store_path=</a></span>, <span class='object_link'><a href="SSLSupport.html#ssl%3D-instance_method" title="Vertx::SSLSupport#ssl= (method)">#ssl=</a></span>, <span class='object_link'><a href="SSLSupport.html#trust_store_password%3D-instance_method" title="Vertx::SSLSupport#trust_store_password= (method)">#trust_store_password=</a></span>, <span class='object_link'><a href="SSLSupport.html#trust_store_path%3D-instance_method" title="Vertx::SSLSupport#trust_store_path= (method)">#trust_store_path=</a></span></p>
+  
+  <h3 class="inherited">Methods included from <span class='object_link'><a href="TCPSupport.html" title="Vertx::TCPSupport (module)">TCPSupport</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="TCPSupport.html#receive_buffer_size%3D-instance_method" title="Vertx::TCPSupport#receive_buffer_size= (method)">#receive_buffer_size=</a></span>, <span class='object_link'><a href="TCPSupport.html#reuse_address%3D-instance_method" title="Vertx::TCPSupport#reuse_address= (method)">#reuse_address=</a></span>, <span class='object_link'><a href="TCPSupport.html#send_buffer_size%3D-instance_method" title="Vertx::TCPSupport#send_buffer_size= (method)">#send_buffer_size=</a></span>, <span class='object_link'><a href="TCPSupport.html#so_linger%3D-instance_method" title="Vertx::TCPSupport#so_linger= (method)">#so_linger=</a></span>, <span class='object_link'><a href="TCPSupport.html#tcp_keep_alive%3D-instance_method" title="Vertx::TCPSupport#tcp_keep_alive= (method)">#tcp_keep_alive=</a></span>, <span class='object_link'><a href="TCPSupport.html#traffic_class%3D-instance_method" title="Vertx::TCPSupport#traffic_class= (method)">#traffic_class=</a></span></p>
 <div id="constructor_details" class="method_details_list">
   <h2>Constructor Details</h2>
   
     <div class="method_details first">
-  <p class="signature first" id="initialize-instance_method">
+  <h3 class="signature first" id="initialize-instance_method">
   
     - (<tt><span class='object_link'><a href="" title="Vertx::NetServer (class)">NetServer</a></span></tt>) <strong>initialize</strong> 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Create a new NetServer
@@ -324,7 +340,7 @@ Create a new NetServer
 35</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/net.rb', line 33</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/net.rb', line 33</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_initialize identifier id'>initialize</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span> <span class='assign token'>=</span> <span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='rubyid_impl identifier id'>impl</span><span class='dot token'>.</span><span class='rubyid_VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_createNetServer identifier id'>createNetServer</span>
@@ -340,16 +356,18 @@ Create a new NetServer
 
   <div id="instance_method_details" class="method_details_list">
     <h2>Instance Method Details</h2>
-    
+
     
       <div class="method_details first">
-  <p class="signature first" id="client_auth_required=-instance_method">
+  <h3 class="signature first" id="client_auth_required=-instance_method">
   
     - (<tt>Object</tt>) <strong>client_auth_required=</strong>(val) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Client authentication is an extra level of security in SSL, and requires
@@ -362,7 +380,7 @@ connection.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -398,7 +416,7 @@ connecting clients, if they
 44</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/net.rb', line 41</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/net.rb', line 41</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_client_auth_required= identifier id'>client_auth_required=</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_setClientAuthRequired identifier id'>setClientAuthRequired</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
@@ -411,13 +429,15 @@ connecting clients, if they
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="close-instance_method">
+  <h3 class="signature " id="close-instance_method">
   
     - (<tt>Object</tt>) <strong>close</strong>(&amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Close the server. The handler will be called when the close is complete.
@@ -440,7 +460,7 @@ Close the server. The handler will be called when the close is complete.
 70</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/net.rb', line 68</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/net.rb', line 68</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_close identifier id'>close</span><span class='lparen token'>(</span><span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_close identifier id'>close</span><span class='lparen token'>(</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
@@ -452,13 +472,15 @@ Close the server. The handler will be called when the close is complete.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="connect_handler-instance_method">
+  <h3 class="signature " id="connect_handler-instance_method">
   
     - (<tt><span class='object_link'><a href="" title="Vertx::NetServer (class)">NetServer</a></span></tt>) <strong>connect_handler</strong>(proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Supply a connect handler for this server. The server can only have at most
@@ -471,7 +493,7 @@ connect handler.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -512,7 +534,7 @@ A block to be used as the handler
   
 </ul>
 
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -545,7 +567,7 @@ A reference to self so invocations can be chained
 56</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/net.rb', line 52</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/net.rb', line 52</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_connect_handler identifier id'>connect_handler</span><span class='lparen token'>(</span><span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -559,13 +581,15 @@ A reference to self so invocations can be chained
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="listen-instance_method">
+  <h3 class="signature " id="listen-instance_method">
   
     - (<tt><span class='object_link'><a href="" title="Vertx::NetServer (class)">NetServer</a></span></tt>) <strong>listen</strong>(port, host = &quot;0.0.0.0&quot;) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Instruct the server to listen for incoming connections.
@@ -575,7 +599,7 @@ Instruct the server to listen for incoming connections.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -614,7 +638,7 @@ The host name or ip address to listen on.
   
 </ul>
 
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -646,7 +670,7 @@ A reference to self so invocations can be chained
 65</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/net.rb', line 62</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/net.rb', line 62</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_listen identifier id'>listen</span><span class='lparen token'>(</span><span class='rubyid_port identifier id'>port</span><span class='comma token'>,</span> <span class='rubyid_host identifier id'>host</span> <span class='assign token'>=</span> <span class='string val'>&quot;0.0.0.0&quot;</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_listen identifier id'>listen</span><span class='lparen token'>(</span><span class='rubyid_port identifier id'>port</span><span class='comma token'>,</span> <span class='rubyid_host identifier id'>host</span><span class='rparen token'>)</span>
@@ -661,11 +685,11 @@ A reference to self so invocations can be chained
   </div>
 
 </div>
-    
+
     <div id="footer">
-  Generated on Tue Jun 19 16:38:24 2012 by 
+  Generated on Tue Jul 24 12:18:21 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.7.5 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.8.7).
 </div>
 
   </body>

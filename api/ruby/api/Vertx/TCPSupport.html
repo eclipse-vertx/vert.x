@@ -6,7 +6,7 @@
 <title>
   Module: Vertx::TCPSupport
   
-    &mdash; vert.x Ruby API
+    &mdash; 'Ruby API Docs'
   
 </title>
 
@@ -15,9 +15,11 @@
   <link rel="stylesheet" href="../css/common.css" type="text/css" media="screen" charset="utf-8" />
 
 <script type="text/javascript" charset="utf-8">
-  relpath = '..';
-  if (relpath != '') relpath += '/';
+  hasFrames = window.top.frames.main ? true : false;
+  relpath = '../';
+  framesUrl = "../frames.html#!" + escape(window.location.href);
 </script>
+
 
   <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
 
@@ -26,36 +28,41 @@
 
   </head>
   <body>
-    <script type="text/javascript" charset="utf-8">
-      if (window.top.frames.main) document.body.className = 'frames';
-    </script>
-    
     <div id="header">
       <div id="menu">
   
-    <a href="../_index.html">Index (T)</a> &raquo; 
+    <a href="../_index.html">Index (T)</a> &raquo;
     <span class='title'><span class='object_link'><a href="../Vertx.html" title="Vertx (module)">Vertx</a></span></span>
      &raquo; 
     <span class="title">TCPSupport</span>
   
-  
+
   <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
   
-    <a id="class_list_link" href="#">Class List</a>
+    <a class="full_list_link" id="class_list_link"
+        href="../class_list.html">
+      Class List
+    </a>
   
-    <a id="method_list_link" href="#">Method List</a>
+    <a class="full_list_link" id="method_list_link"
+        href="../method_list.html">
+      Method List
+    </a>
   
-    <a id="file_list_link" href="#">File List</a>
+    <a class="full_list_link" id="file_list_link"
+        href="../file_list.html">
+      File List
+    </a>
   
 </div>
       <div class="clear"></div>
     </div>
-    
+
     <iframe id="search_frame"></iframe>
-    
+
     <div id="content"><h1>Module: Vertx::TCPSupport
   
   
@@ -76,7 +83,7 @@
   
   
     <dt class="r2 last">Defined in:</dt>
-    <dd class="r2 last">src/main/ruby/core/tcp_support.rb</dd>
+    <dd class="r2 last">src/main/ruby_scripts/core/tcp_support.rb</dd>
   
 </dl>
 <div class="clear"></div>
@@ -92,7 +99,7 @@ Mixin module that provides all the common TCP params that can be set.
 </div>
 <div class="tags">
   
-<h3>Author:</h3>
+<p class="tag_title">Author:</p>
 <ul class="author">
   
     <li>
@@ -139,6 +146,7 @@ Mixin module that provides all the common TCP params that can be set.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -157,6 +165,7 @@ Set the TCP receive buffer size.
 
     
   </span>
+  
   
   
   
@@ -187,6 +196,7 @@ Set the TCP reuse address setting.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -205,6 +215,7 @@ Set the TCP send buffer size.
 
     
   </span>
+  
   
   
   
@@ -235,6 +246,7 @@ Set the TCP so linger setting.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -259,6 +271,7 @@ Set the TCP keep alive setting.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -276,16 +289,18 @@ Set the TCP traffic class setting.
 
   <div id="instance_method_details" class="method_details_list">
     <h2>Instance Method Details</h2>
-    
+
     
       <div class="method_details first">
-  <p class="signature first" id="receive_buffer_size=-instance_method">
+  <h3 class="signature first" id="receive_buffer_size=-instance_method">
   
     - (<tt>Object</tt>) <strong>receive_buffer_size=</strong>(val) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Set the TCP receive buffer size.
@@ -295,7 +310,7 @@ Set the TCP receive buffer size.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -317,7 +332,7 @@ The size in bytes.
   
 </ul>
 
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -351,7 +366,7 @@ The size in bytes.
 36</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/tcp_support.rb', line 33</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/tcp_support.rb', line 33</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_receive_buffer_size= identifier id'>receive_buffer_size=</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_setReceiveBufferSize identifier id'>setReceiveBufferSize</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
@@ -364,13 +379,15 @@ The size in bytes.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="reuse_address=-instance_method">
+  <h3 class="signature " id="reuse_address=-instance_method">
   
     - (<tt>Object</tt>) <strong>reuse_address=</strong>(val) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Set the TCP reuse address setting.
@@ -380,7 +397,7 @@ Set the TCP reuse address setting.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -402,7 +419,7 @@ If true, then TCP reuse address will be enabled.
   
 </ul>
 
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -436,7 +453,7 @@ If true, then TCP reuse address will be enabled.
 52</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/tcp_support.rb', line 49</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/tcp_support.rb', line 49</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_reuse_address= identifier id'>reuse_address=</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_setReuseAddress identifier id'>setReuseAddress</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
@@ -449,13 +466,15 @@ If true, then TCP reuse address will be enabled.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="send_buffer_size=-instance_method">
+  <h3 class="signature " id="send_buffer_size=-instance_method">
   
     - (<tt>Object</tt>) <strong>send_buffer_size=</strong>(val) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Set the TCP send buffer size.
@@ -465,7 +484,7 @@ Set the TCP send buffer size.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -487,7 +506,7 @@ The size in bytes.
   
 </ul>
 
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -521,7 +540,7 @@ The size in bytes.
 28</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/tcp_support.rb', line 25</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/tcp_support.rb', line 25</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_send_buffer_size= identifier id'>send_buffer_size=</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_setSendBufferSize identifier id'>setSendBufferSize</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
@@ -534,13 +553,15 @@ The size in bytes.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="so_linger=-instance_method">
+  <h3 class="signature " id="so_linger=-instance_method">
   
     - (<tt>Object</tt>) <strong>so_linger=</strong>(val) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Set the TCP so linger setting.
@@ -550,7 +571,7 @@ Set the TCP so linger setting.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -572,7 +593,7 @@ If true, then TCP so linger will be enabled.
   
 </ul>
 
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -606,7 +627,7 @@ If true, then TCP so linger will be enabled.
 60</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/tcp_support.rb', line 57</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/tcp_support.rb', line 57</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_so_linger= identifier id'>so_linger=</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_setSoLinger identifier id'>setSoLinger</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
@@ -619,13 +640,15 @@ If true, then TCP so linger will be enabled.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="tcp_keep_alive=-instance_method">
+  <h3 class="signature " id="tcp_keep_alive=-instance_method">
   
     - (<tt>Object</tt>) <strong>tcp_keep_alive=</strong>(val) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Set the TCP keep alive setting.
@@ -635,7 +658,7 @@ Set the TCP keep alive setting.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -657,7 +680,7 @@ If true, then TCP keep alive will be enabled.
   
 </ul>
 
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -691,7 +714,7 @@ If true, then TCP keep alive will be enabled.
 44</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/tcp_support.rb', line 41</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/tcp_support.rb', line 41</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_tcp_keep_alive= identifier id'>tcp_keep_alive=</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_setTCPKeepAlive identifier id'>setTCPKeepAlive</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
@@ -704,13 +727,15 @@ If true, then TCP keep alive will be enabled.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="traffic_class=-instance_method">
+  <h3 class="signature " id="traffic_class=-instance_method">
   
     - (<tt>Object</tt>) <strong>traffic_class=</strong>(val) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Set the TCP traffic class setting.
@@ -720,7 +745,7 @@ Set the TCP traffic class setting.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -742,7 +767,7 @@ The TCP traffic class setting.
   
 </ul>
 
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -776,7 +801,7 @@ The TCP traffic class setting.
 68</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/tcp_support.rb', line 65</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/tcp_support.rb', line 65</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_traffic_class= identifier id'>traffic_class=</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_setTrafficClass identifier id'>setTrafficClass</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
@@ -791,11 +816,11 @@ The TCP traffic class setting.
   </div>
 
 </div>
-    
+
     <div id="footer">
-  Generated on Tue Jun 19 16:38:27 2012 by 
+  Generated on Tue Jul 24 12:18:21 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.7.5 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.8.7).
 </div>
 
   </body>

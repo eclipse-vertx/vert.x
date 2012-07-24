@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::RouteMatcher
   
-    &mdash; vert.x Ruby API
+    &mdash; 'Ruby API Docs'
   
 </title>
 
@@ -15,9 +15,11 @@
   <link rel="stylesheet" href="../css/common.css" type="text/css" media="screen" charset="utf-8" />
 
 <script type="text/javascript" charset="utf-8">
-  relpath = '..';
-  if (relpath != '') relpath += '/';
+  hasFrames = window.top.frames.main ? true : false;
+  relpath = '../';
+  framesUrl = "../frames.html#!" + escape(window.location.href);
 </script>
+
 
   <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
 
@@ -26,36 +28,41 @@
 
   </head>
   <body>
-    <script type="text/javascript" charset="utf-8">
-      if (window.top.frames.main) document.body.className = 'frames';
-    </script>
-    
     <div id="header">
       <div id="menu">
   
-    <a href="../_index.html">Index (R)</a> &raquo; 
+    <a href="../_index.html">Index (R)</a> &raquo;
     <span class='title'><span class='object_link'><a href="../Vertx.html" title="Vertx (module)">Vertx</a></span></span>
      &raquo; 
     <span class="title">RouteMatcher</span>
   
-  
+
   <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
   
-    <a id="class_list_link" href="#">Class List</a>
+    <a class="full_list_link" id="class_list_link"
+        href="../class_list.html">
+      Class List
+    </a>
   
-    <a id="method_list_link" href="#">Method List</a>
+    <a class="full_list_link" id="method_list_link"
+        href="../method_list.html">
+      Method List
+    </a>
   
-    <a id="file_list_link" href="#">File List</a>
+    <a class="full_list_link" id="file_list_link"
+        href="../file_list.html">
+      File List
+    </a>
   
 </div>
       <div class="clear"></div>
     </div>
-    
+
     <iframe id="search_frame"></iframe>
-    
+
     <div id="content"><h1>Class: Vertx::RouteMatcher
   
   
@@ -87,7 +94,7 @@
   
   
     <dt class="r2 last">Defined in:</dt>
-    <dd class="r2 last">src/main/ruby/core/http.rb</dd>
+    <dd class="r2 last">src/main/ruby_scripts/core/http.rb</dd>
   
 </dl>
 <div class="clear"></div>
@@ -134,7 +141,7 @@ matching one will be used.
 </div>
 <div class="tags">
   
-<h3>Author:</h3>
+<p class="tag_title">Author:</p>
 <ul class="author">
   
     <li>
@@ -181,6 +188,7 @@ matching one will be used.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -199,6 +207,7 @@ Specify a handler that will be called for any matching HTTP request.
 
     
   </span>
+  
   
   
   
@@ -229,6 +238,7 @@ Specify a handler that will be called for any matching HTTP request.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -247,6 +257,7 @@ Specify a handler that will be called for a matching HTTP CONNECT.
 
     
   </span>
+  
   
   
   
@@ -277,6 +288,7 @@ Specify a handler that will be called for a matching HTTP CONNECT.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -295,6 +307,7 @@ Specify a handler that will be called for a matching HTTP DELETE.
 
     
   </span>
+  
   
   
   
@@ -325,6 +338,7 @@ Specify a handler that will be called for a matching HTTP DELETE.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -343,6 +357,7 @@ Specify a handler that will be called for a matching HTTP GET.
 
     
   </span>
+  
   
   
   
@@ -373,6 +388,7 @@ Specify a handler that will be called for a matching HTTP GET.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -397,6 +413,7 @@ Specify a handler that will be called for a matching HTTP HEAD.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -415,6 +432,7 @@ Specify a handler that will be called for a matching HTTP HEAD.
 
     
   </span>
+  
   
     <span class="note title constructor">constructor</span>
   
@@ -447,6 +465,7 @@ A new instance of RouteMatcher.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -465,6 +484,7 @@ This method is called to provide the matcher with data.
 
     
   </span>
+  
   
   
   
@@ -496,6 +516,7 @@ behaviour is to return a 404.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -514,6 +535,7 @@ Specify a handler that will be called for a matching HTTP OPTIONS.
 
     
   </span>
+  
   
   
   
@@ -544,6 +566,7 @@ Specify a handler that will be called for a matching HTTP OPTIONS.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -562,6 +585,7 @@ Specify a handler that will be called for a matching HTTP PATCH.
 
     
   </span>
+  
   
   
   
@@ -592,6 +616,7 @@ Specify a handler that will be called for a matching HTTP PATCH.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -610,6 +635,7 @@ Specify a handler that will be called for a matching HTTP POST.
 
     
   </span>
+  
   
   
   
@@ -640,6 +666,7 @@ Specify a handler that will be called for a matching HTTP POST.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -658,6 +685,7 @@ Specify a handler that will be called for a matching HTTP PUT.
 
     
   </span>
+  
   
   
   
@@ -688,6 +716,7 @@ Specify a handler that will be called for a matching HTTP PUT.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -712,6 +741,7 @@ Specify a handler that will be called for a matching HTTP TRACE.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -729,13 +759,15 @@ Specify a handler that will be called for a matching HTTP TRACE.
   <h2>Constructor Details</h2>
   
     <div class="method_details first">
-  <p class="signature first" id="initialize-instance_method">
+  <h3 class="signature first" id="initialize-instance_method">
   
     - (<tt><span class='object_link'><a href="" title="Vertx::RouteMatcher (class)">RouteMatcher</a></span></tt>) <strong>initialize</strong> 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 A new instance of RouteMatcher
@@ -758,7 +790,7 @@ A new instance of RouteMatcher
 789</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 787</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 787</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_initialize identifier id'>initialize</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span> <span class='assign token'>=</span> <span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_core identifier id'>core</span><span class='dot token'>.</span><span class='rubyid_http identifier id'>http</span><span class='dot token'>.</span><span class='rubyid_RouteMatcher constant id'>RouteMatcher</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span>
@@ -774,16 +806,18 @@ A new instance of RouteMatcher
 
   <div id="instance_method_details" class="method_details_list">
     <h2>Instance Method Details</h2>
-    
+
     
       <div class="method_details first">
-  <p class="signature first" id="all-instance_method">
+  <h3 class="signature first" id="all-instance_method">
   
     - (<tt>Object</tt>) <strong>all</strong>(pattern, proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Specify a handler that will be called for any matching HTTP request
@@ -793,7 +827,7 @@ Specify a handler that will be called for any matching HTTP request
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -864,7 +898,7 @@ A block to be used as the handler
 890</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 887</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 887</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_all identifier id'>all</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -877,13 +911,15 @@ A block to be used as the handler
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="all_re-instance_method">
+  <h3 class="signature " id="all_re-instance_method">
   
     - (<tt>Object</tt>) <strong>all_re</strong>(pattern, proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Specify a handler that will be called for any matching HTTP request
@@ -893,7 +929,7 @@ Specify a handler that will be called for any matching HTTP request
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -964,7 +1000,7 @@ A block to be used as the handler
 980</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 977</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 977</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_all_re identifier id'>all_re</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -977,13 +1013,15 @@ A block to be used as the handler
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="connect-instance_method">
+  <h3 class="signature " id="connect-instance_method">
   
     - (<tt>Object</tt>) <strong>connect</strong>(pattern, proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Specify a handler that will be called for a matching HTTP CONNECT
@@ -993,7 +1031,7 @@ Specify a handler that will be called for a matching HTTP CONNECT
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1064,7 +1102,7 @@ A block to be used as the handler
 881</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 878</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 878</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_connect identifier id'>connect</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -1077,13 +1115,15 @@ A block to be used as the handler
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="connect_re-instance_method">
+  <h3 class="signature " id="connect_re-instance_method">
   
     - (<tt>Object</tt>) <strong>connect_re</strong>(pattern, proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Specify a handler that will be called for a matching HTTP CONNECT
@@ -1093,7 +1133,7 @@ Specify a handler that will be called for a matching HTTP CONNECT
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1164,7 +1204,7 @@ A block to be used as the handler
 971</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 968</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 968</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_connect_re identifier id'>connect_re</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -1177,13 +1217,15 @@ A block to be used as the handler
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="delete-instance_method">
+  <h3 class="signature " id="delete-instance_method">
   
     - (<tt>Object</tt>) <strong>delete</strong>(pattern, proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Specify a handler that will be called for a matching HTTP DELETE
@@ -1193,7 +1235,7 @@ Specify a handler that will be called for a matching HTTP DELETE
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1264,7 +1306,7 @@ A block to be used as the handler
 836</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 833</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 833</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_delete identifier id'>delete</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -1277,13 +1319,15 @@ A block to be used as the handler
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="delete_re-instance_method">
+  <h3 class="signature " id="delete_re-instance_method">
   
     - (<tt>Object</tt>) <strong>delete_re</strong>(pattern, proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Specify a handler that will be called for a matching HTTP DELETE
@@ -1293,7 +1337,7 @@ Specify a handler that will be called for a matching HTTP DELETE
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1364,7 +1408,7 @@ A block to be used as the handler
 926</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 923</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 923</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_delete_re identifier id'>delete_re</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -1377,13 +1421,15 @@ A block to be used as the handler
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="get-instance_method">
+  <h3 class="signature " id="get-instance_method">
   
     - (<tt>Object</tt>) <strong>get</strong>(pattern, proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Specify a handler that will be called for a matching HTTP GET
@@ -1393,7 +1439,7 @@ Specify a handler that will be called for a matching HTTP GET
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1464,7 +1510,7 @@ A block to be used as the handler
 809</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 806</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 806</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_get identifier id'>get</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -1477,13 +1523,15 @@ A block to be used as the handler
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="get_re-instance_method">
+  <h3 class="signature " id="get_re-instance_method">
   
     - (<tt>Object</tt>) <strong>get_re</strong>(pattern, proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Specify a handler that will be called for a matching HTTP GET
@@ -1493,7 +1541,7 @@ Specify a handler that will be called for a matching HTTP GET
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1564,7 +1612,7 @@ A block to be used as the handler
 899</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 896</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 896</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_get_re identifier id'>get_re</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -1577,13 +1625,15 @@ A block to be used as the handler
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="head-instance_method">
+  <h3 class="signature " id="head-instance_method">
   
     - (<tt>Object</tt>) <strong>head</strong>(pattern, proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Specify a handler that will be called for a matching HTTP HEAD
@@ -1593,7 +1643,7 @@ Specify a handler that will be called for a matching HTTP HEAD
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1664,7 +1714,7 @@ A block to be used as the handler
 854</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 851</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 851</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_head identifier id'>head</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -1677,13 +1727,15 @@ A block to be used as the handler
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="head_re-instance_method">
+  <h3 class="signature " id="head_re-instance_method">
   
     - (<tt>Object</tt>) <strong>head_re</strong>(pattern, proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Specify a handler that will be called for a matching HTTP HEAD
@@ -1693,7 +1745,7 @@ Specify a handler that will be called for a matching HTTP HEAD
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1764,7 +1816,7 @@ A block to be used as the handler
 944</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 941</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 941</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_head_re identifier id'>head_re</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -1777,13 +1829,15 @@ A block to be used as the handler
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="input-instance_method">
+  <h3 class="signature " id="input-instance_method">
   
     - (<tt>Object</tt>) <strong>input</strong>(request) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 This method is called to provide the matcher with data.
@@ -1793,7 +1847,7 @@ This method is called to provide the matcher with data.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1827,7 +1881,7 @@ Input request to the parser.
 800</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 798</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 798</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_input identifier id'>input</span><span class='lparen token'>(</span><span class='rubyid_request identifier id'>request</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_handle identifier id'>handle</span><span class='lparen token'>(</span><span class='rubyid_request identifier id'>request</span><span class='dot token'>.</span><span class='rubyid__to_java_request identifier id'>_to_java_request</span><span class='rparen token'>)</span>
@@ -1839,13 +1893,15 @@ Input request to the parser.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="no_match-instance_method">
+  <h3 class="signature " id="no_match-instance_method">
   
     - (<tt>Object</tt>) <strong>no_match</strong>(proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Specify a handler that will be called when nothing matches Default
@@ -1856,7 +1912,7 @@ behaviour is to return a 404
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1910,7 +1966,7 @@ A block to be used as the handler
 989</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 986</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 986</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_no_match identifier id'>no_match</span><span class='lparen token'>(</span><span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -1923,13 +1979,15 @@ A block to be used as the handler
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="options-instance_method">
+  <h3 class="signature " id="options-instance_method">
   
     - (<tt>Object</tt>) <strong>options</strong>(pattern, proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Specify a handler that will be called for a matching HTTP OPTIONS
@@ -1939,7 +1997,7 @@ Specify a handler that will be called for a matching HTTP OPTIONS
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -2010,7 +2068,7 @@ A block to be used as the handler
 845</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 842</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 842</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_options identifier id'>options</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -2023,13 +2081,15 @@ A block to be used as the handler
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="options_re-instance_method">
+  <h3 class="signature " id="options_re-instance_method">
   
     - (<tt>Object</tt>) <strong>options_re</strong>(pattern, proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Specify a handler that will be called for a matching HTTP OPTIONS
@@ -2039,7 +2099,7 @@ Specify a handler that will be called for a matching HTTP OPTIONS
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -2110,7 +2170,7 @@ A block to be used as the handler
 935</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 932</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 932</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_options_re identifier id'>options_re</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -2123,13 +2183,15 @@ A block to be used as the handler
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="patch-instance_method">
+  <h3 class="signature " id="patch-instance_method">
   
     - (<tt>Object</tt>) <strong>patch</strong>(pattern, proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Specify a handler that will be called for a matching HTTP PATCH
@@ -2139,7 +2201,7 @@ Specify a handler that will be called for a matching HTTP PATCH
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -2210,7 +2272,7 @@ A block to be used as the handler
 872</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 869</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 869</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_patch identifier id'>patch</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -2223,13 +2285,15 @@ A block to be used as the handler
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="patch_re-instance_method">
+  <h3 class="signature " id="patch_re-instance_method">
   
     - (<tt>Object</tt>) <strong>patch_re</strong>(pattern, proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Specify a handler that will be called for a matching HTTP PATCH
@@ -2239,7 +2303,7 @@ Specify a handler that will be called for a matching HTTP PATCH
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -2310,7 +2374,7 @@ A block to be used as the handler
 962</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 959</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 959</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_patch_re identifier id'>patch_re</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -2323,13 +2387,15 @@ A block to be used as the handler
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="post-instance_method">
+  <h3 class="signature " id="post-instance_method">
   
     - (<tt>Object</tt>) <strong>post</strong>(pattern, proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Specify a handler that will be called for a matching HTTP POST
@@ -2339,7 +2405,7 @@ Specify a handler that will be called for a matching HTTP POST
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -2410,7 +2476,7 @@ A block to be used as the handler
 827</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 824</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 824</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_post identifier id'>post</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -2423,13 +2489,15 @@ A block to be used as the handler
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="post_re-instance_method">
+  <h3 class="signature " id="post_re-instance_method">
   
     - (<tt>Object</tt>) <strong>post_re</strong>(pattern, proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Specify a handler that will be called for a matching HTTP POST
@@ -2439,7 +2507,7 @@ Specify a handler that will be called for a matching HTTP POST
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -2510,7 +2578,7 @@ A block to be used as the handler
 917</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 914</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 914</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_post_re identifier id'>post_re</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -2523,13 +2591,15 @@ A block to be used as the handler
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="put-instance_method">
+  <h3 class="signature " id="put-instance_method">
   
     - (<tt>Object</tt>) <strong>put</strong>(pattern, proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Specify a handler that will be called for a matching HTTP PUT
@@ -2539,7 +2609,7 @@ Specify a handler that will be called for a matching HTTP PUT
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -2610,7 +2680,7 @@ A block to be used as the handler
 818</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 815</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 815</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_put identifier id'>put</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -2623,13 +2693,15 @@ A block to be used as the handler
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="put_re-instance_method">
+  <h3 class="signature " id="put_re-instance_method">
   
     - (<tt>Object</tt>) <strong>put_re</strong>(pattern, proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Specify a handler that will be called for a matching HTTP PUT
@@ -2639,7 +2711,7 @@ Specify a handler that will be called for a matching HTTP PUT
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -2710,7 +2782,7 @@ A block to be used as the handler
 908</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 905</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 905</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_put_re identifier id'>put_re</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -2723,13 +2795,15 @@ A block to be used as the handler
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="trace-instance_method">
+  <h3 class="signature " id="trace-instance_method">
   
     - (<tt>Object</tt>) <strong>trace</strong>(pattern, proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Specify a handler that will be called for a matching HTTP TRACE
@@ -2739,7 +2813,7 @@ Specify a handler that will be called for a matching HTTP TRACE
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -2810,7 +2884,7 @@ A block to be used as the handler
 863</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 860</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 860</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_trace identifier id'>trace</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -2823,13 +2897,15 @@ A block to be used as the handler
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="trace_re-instance_method">
+  <h3 class="signature " id="trace_re-instance_method">
   
     - (<tt>Object</tt>) <strong>trace_re</strong>(pattern, proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Specify a handler that will be called for a matching HTTP TRACE
@@ -2839,7 +2915,7 @@ Specify a handler that will be called for a matching HTTP TRACE
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -2910,7 +2986,7 @@ A block to be used as the handler
 953</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 950</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 950</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_trace_re identifier id'>trace_re</span><span class='lparen token'>(</span><span class='rubyid_pattern identifier id'>pattern</span><span class='comma token'>,</span> <span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -2925,11 +3001,11 @@ A block to be used as the handler
   </div>
 
 </div>
-    
+
     <div id="footer">
-  Generated on Tue Jun 19 16:38:26 2012 by 
+  Generated on Tue Jul 24 12:18:24 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.7.5 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.8.7).
 </div>
 
   </body>

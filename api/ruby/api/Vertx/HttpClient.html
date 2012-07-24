@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::HttpClient
   
-    &mdash; vert.x Ruby API
+    &mdash; 'Ruby API Docs'
   
 </title>
 
@@ -15,9 +15,11 @@
   <link rel="stylesheet" href="../css/common.css" type="text/css" media="screen" charset="utf-8" />
 
 <script type="text/javascript" charset="utf-8">
-  relpath = '..';
-  if (relpath != '') relpath += '/';
+  hasFrames = window.top.frames.main ? true : false;
+  relpath = '../';
+  framesUrl = "../frames.html#!" + escape(window.location.href);
 </script>
+
 
   <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
 
@@ -26,36 +28,41 @@
 
   </head>
   <body>
-    <script type="text/javascript" charset="utf-8">
-      if (window.top.frames.main) document.body.className = 'frames';
-    </script>
-    
     <div id="header">
       <div id="menu">
   
-    <a href="../_index.html">Index (H)</a> &raquo; 
+    <a href="../_index.html">Index (H)</a> &raquo;
     <span class='title'><span class='object_link'><a href="../Vertx.html" title="Vertx (module)">Vertx</a></span></span>
      &raquo; 
     <span class="title">HttpClient</span>
   
-  
+
   <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
   
-    <a id="class_list_link" href="#">Class List</a>
+    <a class="full_list_link" id="class_list_link"
+        href="../class_list.html">
+      Class List
+    </a>
   
-    <a id="method_list_link" href="#">Method List</a>
+    <a class="full_list_link" id="method_list_link"
+        href="../method_list.html">
+      Method List
+    </a>
   
-    <a id="file_list_link" href="#">File List</a>
+    <a class="full_list_link" id="file_list_link"
+        href="../file_list.html">
+      File List
+    </a>
   
 </div>
       <div class="clear"></div>
     </div>
-    
+
     <iframe id="search_frame"></iframe>
-    
+
     <div id="content"><h1>Class: Vertx::HttpClient
   
   
@@ -91,7 +98,7 @@
   
   
     <dt class="r1 last">Defined in:</dt>
-    <dd class="r1 last">src/main/ruby/core/http.rb</dd>
+    <dd class="r1 last">src/main/ruby_scripts/core/http.rb</dd>
   
 </dl>
 <div class="clear"></div>
@@ -111,7 +118,7 @@ for HTML5 <span class='object_link'><a href="WebSocket.html" title="Vertx::WebSo
 </div>
 <div class="tags">
   
-<h3>Author:</h3>
+<p class="tag_title">Author:</p>
 <ul class="author">
   
     <li>
@@ -158,6 +165,7 @@ for HTML5 <span class='object_link'><a href="WebSocket.html" title="Vertx::WebSo
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -176,6 +184,7 @@ Close the client.
 
     
   </span>
+  
   
   
   
@@ -207,6 +216,7 @@ HTTP CONNECT request with the specified uri.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -225,6 +235,7 @@ Attempt to connect an HTML5 websocket to the specified URI.
 
     
   </span>
+  
   
   
   
@@ -256,6 +267,7 @@ HTTP DELETE request with the specified uri.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -274,6 +286,7 @@ Set the exception handler.
 
     
   </span>
+  
   
   
   
@@ -305,6 +318,7 @@ HTTP GET request with the specified uri.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -324,6 +338,7 @@ anything with the request before sending.
 
     
   </span>
+  
   
   
   
@@ -355,6 +370,7 @@ HTTP HEAD request with the specified uri.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -374,6 +390,7 @@ on the server on.
 
     
   </span>
+  
   
     <span class="note title constructor">constructor</span>
   
@@ -406,6 +423,7 @@ Create a new HttpClient.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -425,6 +443,7 @@ returned to the pool where it can be used by another request.
 
     
   </span>
+  
   
   
   
@@ -455,6 +474,7 @@ The maxium number of connections this client will pool.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -473,6 +493,7 @@ Set the maximum pool size.
 
     
   </span>
+  
   
   
   
@@ -504,6 +525,7 @@ HTTP OPTIONS request with the specified uri.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -529,6 +551,7 @@ HTTP PATCH request with the specified uri.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -547,6 +570,7 @@ Set the port that the client will attempt to connect to on the server on.
 
     
   </span>
+  
   
   
   
@@ -578,6 +602,7 @@ HTTP POST request with the specified uri.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -597,6 +622,7 @@ HTTP PUT request with the specified uri.
 
     
   </span>
+  
   
   
   
@@ -628,6 +654,7 @@ HTTP request with the specified method and uri.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -647,6 +674,7 @@ HTTP TRACE request with the specified uri.
 
     
   </span>
+  
   
   
   
@@ -675,8 +703,9 @@ client trust store.
   
   
   
-  <h3 class="inherited">Methods included from <span class='object_link'><a href="TCPSupport.html" title="Vertx::TCPSupport (module)">TCPSupport</a></span></h3>
-  <p class="inherited"><span class='object_link'><a href="TCPSupport.html#receive_buffer_size%3D-instance_method" title="Vertx::TCPSupport#receive_buffer_size= (method)">#receive_buffer_size=</a></span>, <span class='object_link'><a href="TCPSupport.html#reuse_address%3D-instance_method" title="Vertx::TCPSupport#reuse_address= (method)">#reuse_address=</a></span>, <span class='object_link'><a href="TCPSupport.html#send_buffer_size%3D-instance_method" title="Vertx::TCPSupport#send_buffer_size= (method)">#send_buffer_size=</a></span>, <span class='object_link'><a href="TCPSupport.html#so_linger%3D-instance_method" title="Vertx::TCPSupport#so_linger= (method)">#so_linger=</a></span>, <span class='object_link'><a href="TCPSupport.html#tcp_keep_alive%3D-instance_method" title="Vertx::TCPSupport#tcp_keep_alive= (method)">#tcp_keep_alive=</a></span>, <span class='object_link'><a href="TCPSupport.html#traffic_class%3D-instance_method" title="Vertx::TCPSupport#traffic_class= (method)">#traffic_class=</a></span></p>
+  
+  <h3 class="inherited">Methods included from <span class='object_link'><a href="SSLSupport.html" title="Vertx::SSLSupport (module)">SSLSupport</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="SSLSupport.html#key_store_password%3D-instance_method" title="Vertx::SSLSupport#key_store_password= (method)">#key_store_password=</a></span>, <span class='object_link'><a href="SSLSupport.html#key_store_path%3D-instance_method" title="Vertx::SSLSupport#key_store_path= (method)">#key_store_path=</a></span>, <span class='object_link'><a href="SSLSupport.html#ssl%3D-instance_method" title="Vertx::SSLSupport#ssl= (method)">#ssl=</a></span>, <span class='object_link'><a href="SSLSupport.html#trust_store_password%3D-instance_method" title="Vertx::SSLSupport#trust_store_password= (method)">#trust_store_password=</a></span>, <span class='object_link'><a href="SSLSupport.html#trust_store_path%3D-instance_method" title="Vertx::SSLSupport#trust_store_path= (method)">#trust_store_path=</a></span></p>
 
   
   
@@ -685,19 +714,22 @@ client trust store.
   
   
   
-  <h3 class="inherited">Methods included from <span class='object_link'><a href="SSLSupport.html" title="Vertx::SSLSupport (module)">SSLSupport</a></span></h3>
-  <p class="inherited"><span class='object_link'><a href="SSLSupport.html#key_store_password%3D-instance_method" title="Vertx::SSLSupport#key_store_password= (method)">#key_store_password=</a></span>, <span class='object_link'><a href="SSLSupport.html#key_store_path%3D-instance_method" title="Vertx::SSLSupport#key_store_path= (method)">#key_store_path=</a></span>, <span class='object_link'><a href="SSLSupport.html#ssl%3D-instance_method" title="Vertx::SSLSupport#ssl= (method)">#ssl=</a></span>, <span class='object_link'><a href="SSLSupport.html#trust_store_password%3D-instance_method" title="Vertx::SSLSupport#trust_store_password= (method)">#trust_store_password=</a></span>, <span class='object_link'><a href="SSLSupport.html#trust_store_path%3D-instance_method" title="Vertx::SSLSupport#trust_store_path= (method)">#trust_store_path=</a></span></p>
+  
+  <h3 class="inherited">Methods included from <span class='object_link'><a href="TCPSupport.html" title="Vertx::TCPSupport (module)">TCPSupport</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="TCPSupport.html#receive_buffer_size%3D-instance_method" title="Vertx::TCPSupport#receive_buffer_size= (method)">#receive_buffer_size=</a></span>, <span class='object_link'><a href="TCPSupport.html#reuse_address%3D-instance_method" title="Vertx::TCPSupport#reuse_address= (method)">#reuse_address=</a></span>, <span class='object_link'><a href="TCPSupport.html#send_buffer_size%3D-instance_method" title="Vertx::TCPSupport#send_buffer_size= (method)">#send_buffer_size=</a></span>, <span class='object_link'><a href="TCPSupport.html#so_linger%3D-instance_method" title="Vertx::TCPSupport#so_linger= (method)">#so_linger=</a></span>, <span class='object_link'><a href="TCPSupport.html#tcp_keep_alive%3D-instance_method" title="Vertx::TCPSupport#tcp_keep_alive= (method)">#tcp_keep_alive=</a></span>, <span class='object_link'><a href="TCPSupport.html#traffic_class%3D-instance_method" title="Vertx::TCPSupport#traffic_class= (method)">#traffic_class=</a></span></p>
 <div id="constructor_details" class="method_details_list">
   <h2>Constructor Details</h2>
   
     <div class="method_details first">
-  <p class="signature first" id="initialize-instance_method">
+  <h3 class="signature first" id="initialize-instance_method">
   
     - (<tt><span class='object_link'><a href="" title="Vertx::HttpClient (class)">HttpClient</a></span></tt>) <strong>initialize</strong> 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Create a new HttpClient
@@ -720,7 +752,7 @@ Create a new HttpClient
 98</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 96</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 96</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_initialize identifier id'>initialize</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span> <span class='assign token'>=</span> <span class='rubyid_org identifier id'>org</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_deploy identifier id'>deploy</span><span class='dot token'>.</span><span class='rubyid_impl identifier id'>impl</span><span class='dot token'>.</span><span class='rubyid_VertxLocator constant id'>VertxLocator</span><span class='dot token'>.</span><span class='rubyid_vertx identifier id'>vertx</span><span class='dot token'>.</span><span class='rubyid_createHttpClient identifier id'>createHttpClient</span>
@@ -736,16 +768,18 @@ Create a new HttpClient
 
   <div id="instance_method_details" class="method_details_list">
     <h2>Instance Method Details</h2>
-    
+
     
       <div class="method_details first">
-  <p class="signature first" id="close-instance_method">
+  <h3 class="signature first" id="close-instance_method">
   
     - (<tt>Object</tt>) <strong>close</strong> 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Close the client. Any unclosed connections will be closed.
@@ -768,7 +802,7 @@ Close the client. Any unclosed connections will be closed.
 261</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 259</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 259</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_close identifier id'>close</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_close identifier id'>close</span>
@@ -780,13 +814,15 @@ Close the client. Any unclosed connections will be closed.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="connect-instance_method">
+  <h3 class="signature " id="connect-instance_method">
   
     - (<tt>Object</tt>) <strong>connect</strong>(uri, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 This method returns an <span class='object_link'><a href="HttpClientRequest.html" title="Vertx::HttpClientRequest (class)">Vertx::HttpClientRequest</a></span> instance which represents an
@@ -798,7 +834,7 @@ received from the server the handler is called passing in the response.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -849,7 +885,7 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
 239</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 237</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 237</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_connect identifier id'>connect</span><span class='lparen token'>(</span><span class='rubyid_uri identifier id'>uri</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_HttpClientRequest constant id'>HttpClientRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_connect identifier id'>connect</span><span class='lparen token'>(</span><span class='rubyid_uri identifier id'>uri</span><span class='comma token'>,</span> <span class='rubyid_resp_handler identifier id'>resp_handler</span><span class='lparen token'>(</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -861,13 +897,15 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="connect_web_socket-instance_method">
+  <h3 class="signature " id="connect_web_socket-instance_method">
   
     - (<tt>Object</tt>) <strong>connect_web_socket</strong>(uri, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Attempt to connect an HTML5 websocket to the specified URI. The connect is
@@ -879,7 +917,7 @@ success.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -930,7 +968,7 @@ The handler to be called with the <span class='object_link'><a href="WebSocket.h
 163</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 161</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 161</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_connect_web_socket identifier id'>connect_web_socket</span><span class='lparen token'>(</span><span class='rubyid_uri identifier id'>uri</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_connectWebsocket identifier id'>connectWebsocket</span><span class='lparen token'>(</span><span class='rubyid_uri identifier id'>uri</span><span class='rparen token'>)</span> <span class='lbrace token'>{</span> <span class='bitor op'>|</span><span class='rubyid_j_ws identifier id'>j_ws</span><span class='bitor op'>|</span> <span class='rubyid_hndlr identifier id'>hndlr</span><span class='dot token'>.</span><span class='rubyid_call identifier id'>call</span><span class='lparen token'>(</span><span class='rubyid_WebSocket constant id'>WebSocket</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_j_ws identifier id'>j_ws</span><span class='rparen token'>)</span><span class='rparen token'>)</span> <span class='rbrace token'>}</span>
@@ -942,13 +980,15 @@ The handler to be called with the <span class='object_link'><a href="WebSocket.h
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="delete-instance_method">
+  <h3 class="signature " id="delete-instance_method">
   
     - (<tt>Object</tt>) <strong>delete</strong>(uri, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 This method returns an <span class='object_link'><a href="HttpClientRequest.html" title="Vertx::HttpClientRequest (class)">Vertx::HttpClientRequest</a></span> instance which represents an
@@ -960,7 +1000,7 @@ received from the server the handler is called passing in the response.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1011,7 +1051,7 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
 223</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 221</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 221</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_delete identifier id'>delete</span><span class='lparen token'>(</span><span class='rubyid_uri identifier id'>uri</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_HttpClientRequest constant id'>HttpClientRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_delete identifier id'>delete</span><span class='lparen token'>(</span><span class='rubyid_uri identifier id'>uri</span><span class='comma token'>,</span> <span class='rubyid_resp_handler identifier id'>resp_handler</span><span class='lparen token'>(</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -1023,13 +1063,15 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="exception_handler-instance_method">
+  <h3 class="signature " id="exception_handler-instance_method">
   
     - (<tt>Object</tt>) <strong>exception_handler</strong>(proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Set the exception handler.
@@ -1039,7 +1081,7 @@ Set the exception handler.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1094,7 +1136,7 @@ A block to be used as the handler
 107</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 103</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 103</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_exception_handler identifier id'>exception_handler</span><span class='lparen token'>(</span><span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -1108,13 +1150,15 @@ A block to be used as the handler
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="get-instance_method">
+  <h3 class="signature " id="get-instance_method">
   
     - (<tt>Object</tt>) <strong>get</strong>(uri, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 This method returns an <span class='object_link'><a href="HttpClientRequest.html" title="Vertx::HttpClientRequest (class)">Vertx::HttpClientRequest</a></span> instance which represents an
@@ -1126,7 +1170,7 @@ from the server the handler is called passing in the response.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1177,7 +1221,7 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
 191</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 189</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 189</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_get identifier id'>get</span><span class='lparen token'>(</span><span class='rubyid_uri identifier id'>uri</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_HttpClientRequest constant id'>HttpClientRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_get identifier id'>get</span><span class='lparen token'>(</span><span class='rubyid_uri identifier id'>uri</span><span class='comma token'>,</span> <span class='rubyid_resp_handler identifier id'>resp_handler</span><span class='lparen token'>(</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -1189,13 +1233,15 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="get_now-instance_method">
+  <h3 class="signature " id="get_now-instance_method">
   
     - (<tt>Object</tt>) <strong>get_now</strong>(uri, headers = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 This is a quick version of the <span class='object_link'><a href="#get-instance_method" title="Vertx::HttpClient#get (method)">#get</a></span> method where you do not want to do
@@ -1210,7 +1256,7 @@ called passing in the response.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1278,7 +1324,7 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
 175</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 173</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 173</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_get_now identifier id'>get_now</span><span class='lparen token'>(</span><span class='rubyid_uri identifier id'>uri</span><span class='comma token'>,</span> <span class='rubyid_headers identifier id'>headers</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_getNow identifier id'>getNow</span><span class='lparen token'>(</span><span class='rubyid_uri identifier id'>uri</span><span class='comma token'>,</span> <span class='rubyid_headers identifier id'>headers</span><span class='comma token'>,</span> <span class='rubyid_resp_handler identifier id'>resp_handler</span><span class='lparen token'>(</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -1290,13 +1336,15 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="head-instance_method">
+  <h3 class="signature " id="head-instance_method">
   
     - (<tt>Object</tt>) <strong>head</strong>(uri, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 This method returns an <span class='object_link'><a href="HttpClientRequest.html" title="Vertx::HttpClientRequest (class)">Vertx::HttpClientRequest</a></span> instance which represents an
@@ -1308,7 +1356,7 @@ from the server the handler is called passing in the response.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1359,7 +1407,7 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
 199</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 197</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 197</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_head identifier id'>head</span><span class='lparen token'>(</span><span class='rubyid_uri identifier id'>uri</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_HttpClientRequest constant id'>HttpClientRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_head identifier id'>head</span><span class='lparen token'>(</span><span class='rubyid_uri identifier id'>uri</span><span class='comma token'>,</span> <span class='rubyid_resp_handler identifier id'>resp_handler</span><span class='lparen token'>(</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -1371,13 +1419,15 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="host=-instance_method">
+  <h3 class="signature " id="host=-instance_method">
   
     - (<tt>Object</tt>) <strong>host=</strong>(val) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Set the host name or ip address that the client will attempt to connect to
@@ -1388,7 +1438,7 @@ on the server on.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1423,7 +1473,7 @@ The host name or ip address to connect to.
 155</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 152</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 152</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_host= identifier id'>host=</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_setHost identifier id'>setHost</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
@@ -1436,13 +1486,15 @@ The host name or ip address to connect to.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="keep_alive=-instance_method">
+  <h3 class="signature " id="keep_alive=-instance_method">
   
     - (<tt>Object</tt>) <strong>keep_alive=</strong>(val) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 If val is true then, after the request has ended the connection will be
@@ -1459,7 +1511,7 @@ allow more than <span class='object_link'><a href="#max_pool_size-instance_metho
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1494,7 +1546,7 @@ The value to use for keep_alive
 132</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 129</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 129</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_keep_alive= identifier id'>keep_alive=</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_setTCPKeepAlive identifier id'>setTCPKeepAlive</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
@@ -1507,13 +1559,15 @@ The value to use for keep_alive
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="max_pool_size-instance_method">
+  <h3 class="signature " id="max_pool_size-instance_method">
   
     - (<tt>FixNum</tt>) <strong>max_pool_size</strong> 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 The maxium number of connections this client will pool.
@@ -1524,7 +1578,7 @@ The maxium number of connections this client will pool.
 </div>
 <div class="tags">
   
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -1555,7 +1609,7 @@ The maxium number of connections this client will pool.
 120</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 118</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 118</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_max_pool_size identifier id'>max_pool_size</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_getMaxPoolSize identifier id'>getMaxPoolSize</span>
@@ -1567,13 +1621,15 @@ The maxium number of connections this client will pool.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="max_pool_size=-instance_method">
+  <h3 class="signature " id="max_pool_size=-instance_method">
   
     - (<tt>Object</tt>) <strong>max_pool_size=</strong>(val) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Set the maximum pool size. The client will maintain up to this number of
@@ -1584,7 +1640,7 @@ HTTP connections in an internal pool
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1619,7 +1675,7 @@ The maximum number of connections (default to 1).
 115</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 112</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 112</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_max_pool_size= identifier id'>max_pool_size=</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_setMaxPoolSize identifier id'>setMaxPoolSize</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
@@ -1632,13 +1688,15 @@ The maximum number of connections (default to 1).
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="options-instance_method">
+  <h3 class="signature " id="options-instance_method">
   
     - (<tt>Object</tt>) <strong>options</strong>(uri, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 This method returns an <span class='object_link'><a href="HttpClientRequest.html" title="Vertx::HttpClientRequest (class)">Vertx::HttpClientRequest</a></span> instance which represents an
@@ -1650,7 +1708,7 @@ received from the server the handler is called passing in the response.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1701,7 +1759,7 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
 183</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 181</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 181</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_options identifier id'>options</span><span class='lparen token'>(</span><span class='rubyid_uri identifier id'>uri</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_HttpClientRequest constant id'>HttpClientRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_options identifier id'>options</span><span class='lparen token'>(</span><span class='rubyid_uri identifier id'>uri</span><span class='comma token'>,</span> <span class='rubyid_resp_handler identifier id'>resp_handler</span><span class='lparen token'>(</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -1713,13 +1771,15 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="patch-instance_method">
+  <h3 class="signature " id="patch-instance_method">
   
     - (<tt>Object</tt>) <strong>patch</strong>(uri, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 This method returns an <span class='object_link'><a href="HttpClientRequest.html" title="Vertx::HttpClientRequest (class)">Vertx::HttpClientRequest</a></span> instance which represents an
@@ -1731,7 +1791,7 @@ received from the server the handler is called passing in the response.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1782,7 +1842,7 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
 247</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 245</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 245</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_patch identifier id'>patch</span><span class='lparen token'>(</span><span class='rubyid_uri identifier id'>uri</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_HttpClientRequest constant id'>HttpClientRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_patch identifier id'>patch</span><span class='lparen token'>(</span><span class='rubyid_uri identifier id'>uri</span><span class='comma token'>,</span> <span class='rubyid_resp_handler identifier id'>resp_handler</span><span class='lparen token'>(</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -1794,13 +1854,15 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="port=-instance_method">
+  <h3 class="signature " id="port=-instance_method">
   
     - (<tt>Object</tt>) <strong>port=</strong>(val) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Set the port that the client will attempt to connect to on the server on.
@@ -1811,7 +1873,7 @@ The default value is 80
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1846,7 +1908,7 @@ The port value.
 148</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 145</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 145</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_port= identifier id'>port=</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_setPort identifier id'>setPort</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
@@ -1859,13 +1921,15 @@ The port value.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="post-instance_method">
+  <h3 class="signature " id="post-instance_method">
   
     - (<tt>Object</tt>) <strong>post</strong>(uri, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 This method returns an <span class='object_link'><a href="HttpClientRequest.html" title="Vertx::HttpClientRequest (class)">Vertx::HttpClientRequest</a></span> instance which represents an
@@ -1877,7 +1941,7 @@ from the server the handler is called passing in the response.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -1928,7 +1992,7 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
 207</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 205</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 205</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_post identifier id'>post</span><span class='lparen token'>(</span><span class='rubyid_uri identifier id'>uri</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_HttpClientRequest constant id'>HttpClientRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_post identifier id'>post</span><span class='lparen token'>(</span><span class='rubyid_uri identifier id'>uri</span><span class='comma token'>,</span> <span class='rubyid_resp_handler identifier id'>resp_handler</span><span class='lparen token'>(</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -1940,13 +2004,15 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="put-instance_method">
+  <h3 class="signature " id="put-instance_method">
   
     - (<tt>Object</tt>) <strong>put</strong>(uri, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 This method returns an <span class='object_link'><a href="HttpClientRequest.html" title="Vertx::HttpClientRequest (class)">Vertx::HttpClientRequest</a></span> instance which represents an
@@ -1958,7 +2024,7 @@ from the server the handler is called passing in the response.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -2009,7 +2075,7 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
 215</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 213</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 213</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_put identifier id'>put</span><span class='lparen token'>(</span><span class='rubyid_uri identifier id'>uri</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_HttpClientRequest constant id'>HttpClientRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_put identifier id'>put</span><span class='lparen token'>(</span><span class='rubyid_uri identifier id'>uri</span><span class='comma token'>,</span> <span class='rubyid_resp_handler identifier id'>resp_handler</span><span class='lparen token'>(</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -2021,13 +2087,15 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="request-instance_method">
+  <h3 class="signature " id="request-instance_method">
   
     - (<tt>Object</tt>) <strong>request</strong>(method, uri, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 This method returns an <span class='object_link'><a href="HttpClientRequest.html" title="Vertx::HttpClientRequest (class)">Vertx::HttpClientRequest</a></span> instance which represents an
@@ -2039,7 +2107,7 @@ received from the server the handler is called passing in the response.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -2108,7 +2176,7 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
 256</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 254</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 254</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_request identifier id'>request</span><span class='lparen token'>(</span><span class='rubyid_method identifier id'>method</span><span class='comma token'>,</span> <span class='rubyid_uri identifier id'>uri</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_HttpClientRequest constant id'>HttpClientRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_request identifier id'>request</span><span class='lparen token'>(</span><span class='rubyid_method identifier id'>method</span><span class='comma token'>,</span> <span class='rubyid_uri identifier id'>uri</span><span class='comma token'>,</span> <span class='rubyid_resp_handler identifier id'>resp_handler</span><span class='lparen token'>(</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -2120,13 +2188,15 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="trace-instance_method">
+  <h3 class="signature " id="trace-instance_method">
   
     - (<tt>Object</tt>) <strong>trace</strong>(uri, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 This method returns an <span class='object_link'><a href="HttpClientRequest.html" title="Vertx::HttpClientRequest (class)">Vertx::HttpClientRequest</a></span> instance which represents an
@@ -2138,7 +2208,7 @@ received from the server the handler is called passing in the response.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -2189,7 +2259,7 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
 231</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 229</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 229</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_trace identifier id'>trace</span><span class='lparen token'>(</span><span class='rubyid_uri identifier id'>uri</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_HttpClientRequest constant id'>HttpClientRequest</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_trace identifier id'>trace</span><span class='lparen token'>(</span><span class='rubyid_uri identifier id'>uri</span><span class='comma token'>,</span> <span class='rubyid_resp_handler identifier id'>resp_handler</span><span class='lparen token'>(</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span><span class='rparen token'>)</span><span class='rparen token'>)</span>
@@ -2201,13 +2271,15 @@ The handler to be called with the <span class='object_link'><a href="HttpClientR
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="trust_all=-instance_method">
+  <h3 class="signature " id="trust_all=-instance_method">
   
     - (<tt>Object</tt>) <strong>trust_all=</strong>(val) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Should the client trust ALL server certificates? against it&#8217;s local
@@ -2219,7 +2291,7 @@ caution!
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -2255,7 +2327,7 @@ and will not attempt to authenticate them
 141</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 138</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 138</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_trust_all= identifier id'>trust_all=</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_setTrustAll identifier id'>setTrustAll</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
@@ -2270,11 +2342,11 @@ and will not attempt to authenticate them
   </div>
 
 </div>
-    
+
     <div id="footer">
-  Generated on Tue Jun 19 16:38:25 2012 by 
+  Generated on Tue Jul 24 12:18:22 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.7.5 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.8.7).
 </div>
 
   </body>

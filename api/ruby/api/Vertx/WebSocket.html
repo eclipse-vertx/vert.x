@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::WebSocket
   
-    &mdash; vert.x Ruby API
+    &mdash; 'Ruby API Docs'
   
 </title>
 
@@ -15,9 +15,11 @@
   <link rel="stylesheet" href="../css/common.css" type="text/css" media="screen" charset="utf-8" />
 
 <script type="text/javascript" charset="utf-8">
-  relpath = '..';
-  if (relpath != '') relpath += '/';
+  hasFrames = window.top.frames.main ? true : false;
+  relpath = '../';
+  framesUrl = "../frames.html#!" + escape(window.location.href);
 </script>
+
 
   <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
 
@@ -26,36 +28,41 @@
 
   </head>
   <body>
-    <script type="text/javascript" charset="utf-8">
-      if (window.top.frames.main) document.body.className = 'frames';
-    </script>
-    
     <div id="header">
       <div id="menu">
   
-    <a href="../_index.html">Index (W)</a> &raquo; 
+    <a href="../_index.html">Index (W)</a> &raquo;
     <span class='title'><span class='object_link'><a href="../Vertx.html" title="Vertx (module)">Vertx</a></span></span>
      &raquo; 
     <span class="title">WebSocket</span>
   
-  
+
   <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
   
-    <a id="class_list_link" href="#">Class List</a>
+    <a class="full_list_link" id="class_list_link"
+        href="../class_list.html">
+      Class List
+    </a>
   
-    <a id="method_list_link" href="#">Method List</a>
+    <a class="full_list_link" id="method_list_link"
+        href="../method_list.html">
+      Method List
+    </a>
   
-    <a id="file_list_link" href="#">File List</a>
+    <a class="full_list_link" id="file_list_link"
+        href="../file_list.html">
+      File List
+    </a>
   
 </div>
       <div class="clear"></div>
     </div>
-    
+
     <iframe id="search_frame"></iframe>
-    
+
     <div id="content"><h1>Class: Vertx::WebSocket
   
   
@@ -91,7 +98,7 @@
   
   
     <dt class="r1 last">Defined in:</dt>
-    <dd class="r1 last">src/main/ruby/core/http.rb</dd>
+    <dd class="r1 last">src/main/ruby_scripts/core/http.rb</dd>
   
 </dl>
 <div class="clear"></div>
@@ -113,7 +120,7 @@ the connection, a bit like a TCP socket.
 </div>
 <div class="tags">
   
-<h3>Author:</h3>
+<p class="tag_title">Author:</p>
 <ul class="author">
   
     <li>
@@ -164,6 +171,7 @@ the connection, a bit like a TCP socket.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -183,6 +191,7 @@ with the system, the ID of that handler is given by <span class='object_link'><a
 
     
   </span>
+  
   
   
   
@@ -213,6 +222,7 @@ Close the websocket.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -231,6 +241,7 @@ Set a closed handler on the websocket.
 
     
   </span>
+  
   
   
   
@@ -262,6 +273,7 @@ with the system, the ID of that handler is given by <span class='object_link'><a
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -280,6 +292,7 @@ Write data to the websocket as a binary frame.
 
     
   </span>
+  
   
   
   
@@ -307,32 +320,36 @@ Write data to the websocket as a text frame.
   
   
   
-  <h3 class="inherited">Methods included from <span class='object_link'><a href="WriteStream.html" title="Vertx::WriteStream (module)">WriteStream</a></span></h3>
-  <p class="inherited"><span class='object_link'><a href="WriteStream.html#drain_handler-instance_method" title="Vertx::WriteStream#drain_handler (method)">#drain_handler</a></span>, <span class='object_link'><a href="WriteStream.html#exception_handler-instance_method" title="Vertx::WriteStream#exception_handler (method)">#exception_handler</a></span>, <span class='object_link'><a href="WriteStream.html#write_buffer-instance_method" title="Vertx::WriteStream#write_buffer (method)">#write_buffer</a></span>, <span class='object_link'><a href="WriteStream.html#write_queue_full%3F-instance_method" title="Vertx::WriteStream#write_queue_full? (method)">#write_queue_full?</a></span>, <span class='object_link'><a href="WriteStream.html#write_queue_max_size%3D-instance_method" title="Vertx::WriteStream#write_queue_max_size= (method)">#write_queue_max_size=</a></span></p>
-
-  
-  
-  
-  
-  
-  
   
   <h3 class="inherited">Methods included from <span class='object_link'><a href="ReadStream.html" title="Vertx::ReadStream (module)">ReadStream</a></span></h3>
   <p class="inherited"><span class='object_link'><a href="ReadStream.html#data_handler-instance_method" title="Vertx::ReadStream#data_handler (method)">#data_handler</a></span>, <span class='object_link'><a href="ReadStream.html#end_handler-instance_method" title="Vertx::ReadStream#end_handler (method)">#end_handler</a></span>, <span class='object_link'><a href="ReadStream.html#exception_handler-instance_method" title="Vertx::ReadStream#exception_handler (method)">#exception_handler</a></span>, <span class='object_link'><a href="ReadStream.html#pause-instance_method" title="Vertx::ReadStream#pause (method)">#pause</a></span>, <span class='object_link'><a href="ReadStream.html#resume-instance_method" title="Vertx::ReadStream#resume (method)">#resume</a></span></p>
 
+  
+  
+  
+  
+  
+  
+  
+  
+  <h3 class="inherited">Methods included from <span class='object_link'><a href="WriteStream.html" title="Vertx::WriteStream (module)">WriteStream</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="WriteStream.html#drain_handler-instance_method" title="Vertx::WriteStream#drain_handler (method)">#drain_handler</a></span>, <span class='object_link'><a href="WriteStream.html#exception_handler-instance_method" title="Vertx::WriteStream#exception_handler (method)">#exception_handler</a></span>, <span class='object_link'><a href="WriteStream.html#write_buffer-instance_method" title="Vertx::WriteStream#write_buffer (method)">#write_buffer</a></span>, <span class='object_link'><a href="WriteStream.html#write_queue_full%3F-instance_method" title="Vertx::WriteStream#write_queue_full? (method)">#write_queue_full?</a></span>, <span class='object_link'><a href="WriteStream.html#write_queue_max_size%3D-instance_method" title="Vertx::WriteStream#write_queue_max_size= (method)">#write_queue_max_size=</a></span></p>
+
 
   <div id="instance_method_details" class="method_details_list">
     <h2>Instance Method Details</h2>
-    
+
     
       <div class="method_details first">
-  <p class="signature first" id="binary_handler_id-instance_method">
+  <h3 class="signature first" id="binary_handler_id-instance_method">
   
     - (<tt>Object</tt>) <strong>binary_handler_id</strong> 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 When a Websocket is created it automatically registers an event handler
@@ -359,7 +376,7 @@ websockets which are owned by different event loops.
 721</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 719</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 719</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_binary_handler_id identifier id'>binary_handler_id</span>
   <span class='rubyid_@binary_handler_id ivar id'>@binary_handler_id</span>
@@ -371,13 +388,15 @@ websockets which are owned by different event loops.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="close-instance_method">
+  <h3 class="signature " id="close-instance_method">
   
     - (<tt>Object</tt>) <strong>close</strong> 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Close the websocket
@@ -400,7 +419,7 @@ Close the websocket
 713</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 711</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 711</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_close identifier id'>close</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_close identifier id'>close</span>
@@ -412,13 +431,15 @@ Close the websocket
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="closed_handler-instance_method">
+  <h3 class="signature " id="closed_handler-instance_method">
   
     - (<tt>Object</tt>) <strong>closed_handler</strong>(proc = nil, &amp;hndlr) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Set a closed handler on the websocket.
@@ -428,7 +449,7 @@ Set a closed handler on the websocket.
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -482,7 +503,7 @@ A block to be used as the handler
 737</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 734</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 734</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_closed_handler identifier id'>closed_handler</span><span class='lparen token'>(</span><span class='rubyid_proc identifier id'>proc</span> <span class='assign token'>=</span> <span class='rubyid_nil nil kw'>nil</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_hndlr identifier id'>hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_hndlr identifier id'>hndlr</span> <span class='assign token'>=</span> <span class='rubyid_proc identifier id'>proc</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_proc identifier id'>proc</span>
@@ -495,13 +516,15 @@ A block to be used as the handler
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="text_handler_id-instance_method">
+  <h3 class="signature " id="text_handler_id-instance_method">
   
     - (<tt>Object</tt>) <strong>text_handler_id</strong> 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 When a Websocket is created it automatically registers an event handler
@@ -528,7 +551,7 @@ websockets which are owned by different event loops.
 729</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 727</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 727</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_text_handler_id identifier id'>text_handler_id</span>
   <span class='rubyid_@text_handler_id ivar id'>@text_handler_id</span>
@@ -540,13 +563,15 @@ websockets which are owned by different event loops.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="write_binary_frame-instance_method">
+  <h3 class="signature " id="write_binary_frame-instance_method">
   
     - (<tt>Object</tt>) <strong>write_binary_frame</strong>(buffer) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Write data to the websocket as a binary frame
@@ -556,7 +581,7 @@ Write data to the websocket as a binary frame
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -590,7 +615,7 @@ Data to write.
 702</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 700</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 700</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_write_binary_frame identifier id'>write_binary_frame</span><span class='lparen token'>(</span><span class='rubyid_buffer identifier id'>buffer</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_writeBinaryFrame identifier id'>writeBinaryFrame</span><span class='lparen token'>(</span><span class='rubyid_buffer identifier id'>buffer</span><span class='dot token'>.</span><span class='rubyid__to_java_buffer identifier id'>_to_java_buffer</span><span class='rparen token'>)</span>
@@ -602,13 +627,15 @@ Data to write.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="write_text_frame-instance_method">
+  <h3 class="signature " id="write_text_frame-instance_method">
   
     - (<tt>Object</tt>) <strong>write_text_frame</strong>(str) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Write data to the websocket as a text frame
@@ -618,7 +645,7 @@ Write data to the websocket as a text frame
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -652,7 +679,7 @@ String to write.
 708</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/http.rb', line 706</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/http.rb', line 706</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_write_text_frame identifier id'>write_text_frame</span><span class='lparen token'>(</span><span class='rubyid_str identifier id'>str</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_del ivar id'>@j_del</span><span class='dot token'>.</span><span class='rubyid_writeTextFrame identifier id'>writeTextFrame</span><span class='lparen token'>(</span><span class='rubyid_str identifier id'>str</span><span class='rparen token'>)</span>
@@ -666,11 +693,11 @@ String to write.
   </div>
 
 </div>
-    
+
     <div id="footer">
-  Generated on Tue Jun 19 16:38:25 2012 by 
+  Generated on Tue Jul 24 12:18:23 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.7.5 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.8.7).
 </div>
 
   </body>

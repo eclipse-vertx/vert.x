@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::Pump
   
-    &mdash; vert.x Ruby API
+    &mdash; 'Ruby API Docs'
   
 </title>
 
@@ -15,9 +15,11 @@
   <link rel="stylesheet" href="../css/common.css" type="text/css" media="screen" charset="utf-8" />
 
 <script type="text/javascript" charset="utf-8">
-  relpath = '..';
-  if (relpath != '') relpath += '/';
+  hasFrames = window.top.frames.main ? true : false;
+  relpath = '../';
+  framesUrl = "../frames.html#!" + escape(window.location.href);
 </script>
+
 
   <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
 
@@ -26,36 +28,41 @@
 
   </head>
   <body>
-    <script type="text/javascript" charset="utf-8">
-      if (window.top.frames.main) document.body.className = 'frames';
-    </script>
-    
     <div id="header">
       <div id="menu">
   
-    <a href="../_index.html">Index (P)</a> &raquo; 
+    <a href="../_index.html">Index (P)</a> &raquo;
     <span class='title'><span class='object_link'><a href="../Vertx.html" title="Vertx (module)">Vertx</a></span></span>
      &raquo; 
     <span class="title">Pump</span>
   
-  
+
   <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
   
-    <a id="class_list_link" href="#">Class List</a>
+    <a class="full_list_link" id="class_list_link"
+        href="../class_list.html">
+      Class List
+    </a>
   
-    <a id="method_list_link" href="#">Method List</a>
+    <a class="full_list_link" id="method_list_link"
+        href="../method_list.html">
+      Method List
+    </a>
   
-    <a id="file_list_link" href="#">File List</a>
+    <a class="full_list_link" id="file_list_link"
+        href="../file_list.html">
+      File List
+    </a>
   
 </div>
       <div class="clear"></div>
     </div>
-    
+
     <iframe id="search_frame"></iframe>
-    
+
     <div id="content"><h1>Class: Vertx::Pump
   
   
@@ -87,7 +94,7 @@
   
   
     <dt class="r2 last">Defined in:</dt>
-    <dd class="r2 last">src/main/ruby/core/streams.rb</dd>
+    <dd class="r2 last">src/main/ruby_scripts/core/streams.rb</dd>
   
 </dl>
 <div class="clear"></div>
@@ -120,7 +127,7 @@ a <span class='object_link'><a href="WebSocket.html" title="Vertx::WebSocket (cl
 </div>
 <div class="tags">
   
-<h3>Author:</h3>
+<p class="tag_title">Author:</p>
 <ul class="author">
   
     <li>
@@ -167,6 +174,7 @@ a <span class='object_link'><a href="WebSocket.html" title="Vertx::WebSocket (cl
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -185,6 +193,7 @@ Return the total number of bytes pumped by this pump.
 
     
   </span>
+  
   
     <span class="note title constructor">constructor</span>
   
@@ -217,6 +226,7 @@ A new instance of Pump.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -235,6 +245,7 @@ Start the Pump.
 
     
   </span>
+  
   
   
   
@@ -265,6 +276,7 @@ Stop the Pump.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'><p>
@@ -282,13 +294,15 @@ Set the write queue max size.
   <h2>Constructor Details</h2>
   
     <div class="method_details first">
-  <p class="signature first" id="initialize-instance_method">
+  <h3 class="signature first" id="initialize-instance_method">
   
     - (<tt><span class='object_link'><a href="" title="Vertx::Pump (class)">Pump</a></span></tt>) <strong>initialize</strong>(read_stream, write_stream) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 A new instance of Pump
@@ -315,7 +329,7 @@ A new instance of Pump
 133</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/streams.rb', line 127</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/streams.rb', line 127</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_initialize identifier id'>initialize</span><span class='lparen token'>(</span><span class='rubyid_read_stream identifier id'>read_stream</span><span class='comma token'>,</span> <span class='rubyid_write_stream identifier id'>write_stream</span><span class='rparen token'>)</span>
   <span class='rubyid_raise identifier id'>raise</span> <span class='string val'>&quot;read_stream is not a ReadStream&quot;</span> <span class='rubyid_if if_mod kw'>if</span> <span class='notop op'>!</span><span class='rubyid_read_stream identifier id'>read_stream</span><span class='dot token'>.</span><span class='rubyid_is_a? fid id'>is_a?</span> <span class='rubyid_ReadStream constant id'>ReadStream</span>
@@ -335,16 +349,18 @@ A new instance of Pump
 
   <div id="instance_method_details" class="method_details_list">
     <h2>Instance Method Details</h2>
-    
+
     
       <div class="method_details first">
-  <p class="signature first" id="bytes_pumped-instance_method">
+  <h3 class="signature first" id="bytes_pumped-instance_method">
   
     - (<tt>FixNum</tt>) <strong>bytes_pumped</strong> 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Return the total number of bytes pumped by this pump.
@@ -355,7 +371,7 @@ Return the total number of bytes pumped by this pump.
 </div>
 <div class="tags">
   
-<h3>Returns:</h3>
+<p class="tag_title">Returns:</p>
 <ul class="return">
   
     <li>
@@ -386,7 +402,7 @@ Return the total number of bytes pumped by this pump.
 154</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/streams.rb', line 152</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/streams.rb', line 152</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_bytes_pumped identifier id'>bytes_pumped</span>
   <span class='rubyid_@j_pump ivar id'>@j_pump</span><span class='dot token'>.</span><span class='rubyid_getBytesPumped identifier id'>getBytesPumped</span>
@@ -398,13 +414,15 @@ Return the total number of bytes pumped by this pump.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="start-instance_method">
+  <h3 class="signature " id="start-instance_method">
   
     - (<tt>Object</tt>) <strong>start</strong> 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Start the Pump. The Pump can be started and stopped multiple times.
@@ -427,7 +445,7 @@ Start the Pump. The Pump can be started and stopped multiple times.
 144</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/streams.rb', line 142</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/streams.rb', line 142</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_start identifier id'>start</span>
   <span class='rubyid_@j_pump ivar id'>@j_pump</span><span class='dot token'>.</span><span class='rubyid_start identifier id'>start</span>
@@ -439,13 +457,15 @@ Start the Pump. The Pump can be started and stopped multiple times.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="stop-instance_method">
+  <h3 class="signature " id="stop-instance_method">
   
     - (<tt>Object</tt>) <strong>stop</strong> 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Stop the Pump. The Pump can be started and stopped multiple times.
@@ -468,7 +488,7 @@ Stop the Pump. The Pump can be started and stopped multiple times.
 149</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/streams.rb', line 147</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/streams.rb', line 147</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_stop identifier id'>stop</span>
   <span class='rubyid_@j_pump ivar id'>@j_pump</span><span class='dot token'>.</span><span class='rubyid_stop identifier id'>stop</span>
@@ -480,13 +500,15 @@ Stop the Pump. The Pump can be started and stopped multiple times.
 </div>
     
       <div class="method_details ">
-  <p class="signature " id="write_queue_max_size=-instance_method">
+  <h3 class="signature " id="write_queue_max_size=-instance_method">
   
     - (<tt>Object</tt>) <strong>write_queue_max_size=</strong>(val) 
   
 
   
-</p><div class="docstring">
+
+  
+</h3><div class="docstring">
   <div class="discussion">
     <p>
 Set the write queue max size
@@ -496,7 +518,7 @@ Set the write queue max size
   </div>
 </div>
 <div class="tags">
-  <h3>Parameters:</h3>
+  <p class="tag_title">Parameters:</p>
 <ul class="param">
   
     <li>
@@ -530,7 +552,7 @@ write queue max size
 139</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby/core/streams.rb', line 137</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/streams.rb', line 137</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_write_queue_max_size= identifier id'>write_queue_max_size=</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
   <span class='rubyid_@j_pump ivar id'>@j_pump</span><span class='dot token'>.</span><span class='rubyid_setWriteQueueMaxSize identifier id'>setWriteQueueMaxSize</span><span class='lparen token'>(</span><span class='rubyid_val identifier id'>val</span><span class='rparen token'>)</span>
@@ -544,11 +566,11 @@ write queue max size
   </div>
 
 </div>
-    
+
     <div id="footer">
-  Generated on Tue Jun 19 16:38:26 2012 by 
+  Generated on Tue Jul 24 12:18:24 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.7.5 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.8.7).
 </div>
 
   </body>
