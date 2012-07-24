@@ -1168,15 +1168,19 @@ The request object has a property `method` which is a string representing what H
 
 The request object has a property `uri` which contains the full URI (Uniform Resource Locator) of the request. For example, if the request URI was:
 
-    http://localhost:8080/a/b/c/page.html?param1=abc&param2=xyz
+    /a/b/c/page.html?param1=abc&param2=xyz    
+    
+Then `request.uri` would contain the string `/a/b/c/page.html?param1=abc&param2=xyz`.
 
-Then `request.uri` would contain the string `http://localhost:8080/a/b/c/page.html?param1=abc&param2=xyz`.
+Request URIs can be relative or absolute (with a domain) depending on what the client sent. In many cases they will be relative.
+
+The request uri contains the value as defined in [Section 5.1.2 of the HTTP specification - Request-URI](http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html)
 
 #### Request Path
 
 The request object has a property `path` which contains the path of the request. For example, if the request URI was:
 
-    http://localhost:8080/a/b/c/page.html?param1=abc&param2=xyz
+    /a/b/c/page.html?param1=abc&param2=xyz
 
 Then `request.path` would contain the string `/a/b/c/page.html`
 
@@ -1184,7 +1188,7 @@ Then `request.path` would contain the string `/a/b/c/page.html`
 
 The request object has a property `query` which contains the query of the request. For example, if the request URI was:
 
-    http://localhost:8080/a/b/c/page.html?param1=abc&param2=xyz
+    /a/b/c/page.html?param1=abc&param2=xyz
 
 Then `request.query` would contain the string `param1=abc&param2=xyz`
 
@@ -1215,7 +1219,7 @@ Similarly to the headers, the request parameters are available using the `params
 
 Request parameters are sent on the request URI, after the path. For example if the URI was:
 
-    http://localhost:8080/page.html?param1=abc&param2=xyz
+    /page.html?param1=abc&param2=xyz
 
 Then the params hash would be the following JS object:
 
@@ -1452,7 +1456,7 @@ You set the port and hostname (or ip address) that the client will connect to us
 
 A single `HttpClient` always connects to the same host and port. If you want to connect to different servers, create more instances.
 
-The default value for hostname is `localhost`, and the default value for port is `80`.
+The default port is `80` and the default host is `localhost`. So if you don't explicitly set these values that's what the client will attempt to connect to.
 
 ### Pooling and Keep Alive
 
@@ -1484,9 +1488,10 @@ To make a request using the client you invoke one the methods named after the HT
 
 For example, to make a `POST` request:
 
-    client = Vertx::HttpClient.new  
+    client = Vertx::HttpClient.new
+    client.host = 'foo.com'  
 
-    request = client.post('http://localhost:8080/some-path/') do |resp|
+    request = client.post('/some-path/') do |resp|
         puts "got response #{resp.status_code}" 
     end
 
@@ -1498,15 +1503,20 @@ Legal request methods are: `get`, `put`, `post`, `delete`, `head`, `options`, `c
 
 The general modus operandi is you invoke the appropriate method passing in the request URI as the first parameter, the second parameter is an event handler which will get called when the corresponding response arrives. The response handler is passed the client response object as an argument.
 
+The value specified in the request URI corresponds to the Request-URI as specified in [Section 5.1.2 of the HTTP specification](http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html). In most cases it will be a relative URI.
+
+*Please note that the domain/port that the client connects to is determined by `setPort` and `setHost`, and is not parsed from the uri.*
+
 The return value from the appropriate request method is an `HttpClientRequest` object. You can use this to add headers to the request, and to write to the request body. The request object implements `WriteStream`.
 
 Once you have finished with the request you must call the `end` method.
 
 If you don't know the name of the request method in advance there is a general `request` method which takes the HTTP method as a parameter:
 
-    client = Vertx::HttpClient.new  
+    client = Vertx::HttpClient.new
+    client.host = 'foo.com'    
 
-    request = client.request('POST', 'http://localhost:8080/some-path/') do |resp|
+    request = client.request('POST', '/some-path/') do |resp|
         puts "got response #{resp.status_code}" 
     end
 
@@ -1514,9 +1524,10 @@ If you don't know the name of the request method in advance there is a general `
 
 There is also a method called `get_now` which does the same as `get`, but automatically ends the request. This is useful for simple GETs which don't have a request body:
 
-    client = Vertx::HttpClient.new  
+    client = Vertx::HttpClient.new
+    client.host = 'foo.com'    
 
-    client.get_now('http://localhost:8080/some-path/') do |resp|
+    client.get_now('/some-path/') do |resp|
         puts "got response #{resp.status_code}" 
     end
 
@@ -1571,8 +1582,9 @@ The method can also be called with a string or Buffer in the same way write is c
 To write headers to the request, add them to the Hash returned from the `headers` method:
 
     client = Vertx::HttpClient.new
+    client.host = 'foo.com'  
 
-    request = client.post('http://localhost:8080/some-path') do |resp|
+    request = client.post('/some-path') do |resp|
         puts "got response #{resp.status_code}" 
     end
 
@@ -1582,8 +1594,9 @@ To write headers to the request, add them to the Hash returned from the `headers
 You can also use the `put_header` method to enable a more fluent API:    
 
     client = Vertx::HttpClient.new
+    client.host = 'foo.com'  
 
-    request = client.post('http://localhost:8080/some-path') do |resp|
+    request = client.post('/some-path') do |resp|
         puts "got response #{resp.status_code}" 
     end.put_header('Some-Header', 'Some-Value').
         put_header('Some-Other-Header', 'Some-Other-Value').
@@ -1608,8 +1621,9 @@ The response object implements `ReadStream`, so it can be pumped to a `WriteStre
 To query the status code of the response use the `status_code` property. The `status_message` property contains the status message. For example:
 
     client = Vertx::HttpClient.new
+    client.host = 'foo.com'  
 
-    client.get_now('http://localhost:8080/some-path') do |resp|
+    client.get_now('/some-path') do |resp|
       puts "server returned status code: #{resp.status_code}"
       puts "server returned status message: #{resp.status_message}"      
     end
@@ -1624,8 +1638,9 @@ To receive the response body, you set a `dataHandler` on the response object whi
 
 
     client = Vertx::HttpClient.new
+    client.host = 'foo.com'
 
-    client.get_now('http://localhost:8080/some-path') do |resp|
+    client.get_now('/some-path') do |resp|
       resp.data_handler { |buffer| puts "I received #{buffer.length} bytes" }     
     end
 
@@ -1637,8 +1652,9 @@ The `data_handler` can be called multiple times for a single HTTP response.
 As with a server request, if you wanted to read the entire response body before doing something with it you could do something like the following:
 
     client = Vertx::HttpClient.new
+    client.host = 'foo.com'  
 
-    client.get_now('http://localhost:8080/some-path') do |resp|
+    client.get_now('/some-path') do |resp|
 
       # Create a buffer to hold the entire response body
       body = Vertx::Buffer.create(0)
@@ -1668,8 +1684,9 @@ The body handler is called only once when the *entire* response body has been re
 Here's an example using `body_handler`:
 
     client = Vertx::HttpClient.new
+    client.host = 'foo.com'  
 
-    client.get_now('http://localhost:8080/some-path') do |resp|
+    client.get_now('/some-path') do |resp|
 
       resp.body_handler do |body|
         puts "The total body received was #{body.length} bytes"
@@ -1696,8 +1713,9 @@ This is used in conjunction with the `send_head` function to send the head of th
 An example will illustrate this:
 
     client = Vertx::HttpClient.new
+    client.host = 'foo.com'  
 
-    request = client.put('http://localhost:8080/some-path') do |resp|
+    request = client.put('/some-path') do |resp|
     
       puts "Got a response: #{resp.status_code}"     
 

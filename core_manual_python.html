@@ -1184,17 +1184,19 @@ server.listen(8080, 'localhost')
 <p>The request object has a property <code>method</code> which is a string representing what HTTP method was requested. Possible values for <code>method</code> are: <code>GET</code>, <code>PUT</code>, <code>POST</code>, <code>DELETE</code>, <code>HEAD</code>, <code>OPTIONS</code>, <code>CONNECT</code>, <code>TRACE</code>, <code>PATCH</code>.</p>
 <h4 id="request-uri">Request URI</h4><br/>
 <p>The request object has a property <code>uri</code> which contains the full URI (Uniform Resource Locator) of the request. For example, if the request URI was:</p>
-<pre class="prettyprint">http://localhost:8080/a/b/c/page.html?param1=abc&amp;param2=xyz
+<pre class="prettyprint">/a/b/c/page.html?param1=abc&amp;param2=xyz
 </pre>
-<p>Then <code>request.uri</code> would contain the string <code>http://localhost:8080/a/b/c/page.html?param1=abc&amp;param2=xyz</code>.</p>
+<p>Then <code>request.uri</code> would contain the string <code>/a/b/c/page.html?param1=abc&amp;param2=xyz</code>.</p>
+<p>Request URIs can be relative or absolute (with a domain) depending on what the client sent. In many cases they will be relative.</p>
+<p>The request uri contains the value as defined in <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html">Section 5.1.2 of the HTTP specification - Request-URI</a></p>
 <h4 id="request-path">Request Path</h4><br/>
 <p>The request object has a property <code>path</code> which contains the path of the request. For example, if the request URI was:</p>
-<pre class="prettyprint">http://localhost:8080/a/b/c/page.html?param1=abc&amp;param2=xyz
+<pre class="prettyprint">/a/b/c/page.html?param1=abc&amp;param2=xyz
 </pre>
 <p>Then <code>request.path</code> would contain the string <code>/a/b/c/page.html</code></p>
 <h4 id="request-query">Request Query</h4><br/>
 <p>The request object has a property <code>query</code> which contains the query of the request. For example, if the request URI was:</p>
-<pre class="prettyprint">http://localhost:8080/a/b/c/page.html?param1=abc&amp;param2=xyz
+<pre class="prettyprint">/a/b/c/page.html?param1=abc&amp;param2=xyz
 </pre>
 <p>Then <code>request.query</code> would contain the string <code>param1=abc&amp;param2=xyz</code></p>
 <h4 id="request-headers">Request Headers</h4><br/>
@@ -1218,7 +1220,7 @@ server.listen(8080, 'localhost')
 <h4 id="request-params">Request params</h4><br/>
 <p>Similarly to the headers, the request parameters are available using the <code>params</code> method on the request object. The return value of the function is just a Hash too.</p>
 <p>Request parameters are sent on the request URI, after the path. For example if the URI was:</p>
-<pre class="prettyprint">http://localhost:8080/page.html?param1=abc&amp;param2=xyz
+<pre class="prettyprint">/page.html?param1=abc&amp;param2=xyz
 </pre>
 <p>Then the params hash would be the following JS object:</p>
 <pre class="prettyprint">{ param1: 'abc', param2: 'xyz' }
@@ -1407,7 +1409,7 @@ client.port = 8181
 client.host = 'foo.com'
 </pre>
 <p>A single <code>HttpClient</code> always connects to the same host and port. If you want to connect to different servers, create more instances.</p>
-<p>The default value for hostname is <code>localhost</code>, and the default value for port is <code>80</code>.</p>
+<p>The default port is <code>80</code> and the default host is <code>localhost</code>. So if you don't explicitly set these values that's what the client will attempt to connect to.</p>
 <h3 id="pooling-and-keep-alive">Pooling and Keep Alive</h3><br/>
 <p>By default the <code>HttpClient</code> pools HTTP connections. As you make requests a connection is borrowed from the pool and returned when the HTTP response has ended.</p>
 <p>If you do not want connections to be pooled you can set <code>keep_alive</code> to <code>False</code>:</p>
@@ -1430,23 +1432,27 @@ client.max_pool_size = 10
 <pre class="prettyprint">import vertx
 
 client = vertx.create_http_client()
+client.host = 'foo.com'
 
 def response_handler(resp): print "got response %s"% resp.status_code
-request = client.post('http://localhost:8080/some-path/', response_handler)
+request = client.post('/some-path/', response_handler)
 
 request.end()
 </pre>
 <p>To make a PUT request use the <code>put</code> method, to make a GET request use the <code>get</code> method, etc.</p>
 <p>Legal request methods are: <code>get</code>, <code>put</code>, <code>post</code>, <code>delete</code>, <code>head</code>, <code>options</code>, <code>connect</code>, <code>trace</code> and <code>patch</code>.</p>
 <p>The general modus operandi is you invoke the appropriate method passing in the request URI as the first parameter, the second parameter is an event handler which will get called when the corresponding response arrives. The response handler is passed the client response object as an argument.</p>
+<p>The value specified in the request URI corresponds to the Request-URI as specified in <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html">Section 5.1.2 of the HTTP specification</a>. In most cases it will be a relative URI.</p>
+<p><em>Please note that the domain/port that the client connects to is determined by <code>setPort</code> and <code>setHost</code>, and is not parsed from the uri.</em></p>
 <p>The return value from the appropriate request method is an <code>HttpClientRequest</code> object. You can use this to add headers to the request, and to write to the request body. The request object implements <code>WriteStream</code>.</p>
 <p>Once you have finished with the request you must call the <code>end</code> method.</p>
 <p>If you don't know the name of the request method in advance there is a general <code>request</code> method which takes the HTTP method as a parameter:</p>
 <pre class="prettyprint">import vertx
 
 client = vertx.create_http_client()
+client.host = 'foo.com'
 def response_handler(resp): print "got response %s"% resp.status_code
-request = client.request('POST', 'http://localhost:8080/some-path/', response_handler)
+request = client.request('POST', '/some-path/', response_handler)
 
 request.end()
 </pre>
@@ -1454,9 +1460,10 @@ request.end()
 <pre class="prettyprint">import vertx
 
 client = vertx.create_http_client()
+client.host = 'foo.com'
 
 def response_handler(resp): print "got response %s"% resp.status_code
-client.get_now('http://localhost:8080/some-path/', response_handler)
+client.get_now('/some-path/', response_handler)
 </pre>
 <p>With <code>get_now</code> there is no return value.</p>
 <h4 id="writing-to-the-request-body">Writing to the request body</h4><br/>
@@ -1490,10 +1497,11 @@ request.response.write('hello', handler)
 <h4 id="writing-request-headers">Writing Request Headers</h4><br/>
 <p>To write headers to the request, add them to the Hash returned from the <code>headers</code> method:</p>
 <pre class="prettyprint">client = vertx.create_http_client()
+client.host = 'foo.com'
 
 def response_handler(resp): print "got response %s"% resp.status_code
 
-request = client.post('http://localhost:8080/some-path', response_handler)
+request = client.post('/some-path', response_handler)
 
 request.headers['Some-Header'] = 'Some-Value'
 request.end()
@@ -1501,10 +1509,11 @@ request.end()
 <p>You can also use the <code>put_header</code> method to enable a more fluent API:  <br/>
 </p>
 <pre class="prettyprint">client = vertx.create_http_client()
+client.host = 'foo.com'
 
 def response_handler(resp): print "got response %s"% resp.status_code
 
-request = client.post('http://localhost:8080/some-path', response_handler). 
+request = client.post('/some-path', response_handler). 
     put_header('Some-Header', 'Some-Value').
     put_header('Some-Other-Header', 'Some-Other-Value').
     end()
@@ -1520,30 +1529,33 @@ request = client.post('http://localhost:8080/some-path', response_handler).
 <p>The response object implements <code>ReadStream</code>, so it can be pumped to a <code>WriteStream</code> like any other <code>ReadStream</code>.</p>
 <p>To query the status code of the response use the <code>status_code</code> property. The <code>status_message</code> property contains the status message. For example:</p>
 <pre class="prettyprint">client = vertx.create_http_client()
+client.host = 'foo.com'
 
 def response_handler(resp): 
     print "server returned status code:  %s"% resp.status_code
     print "server returned status message: %s"% resp.status_message
 
-client.get_now('http://localhost:8080/some-path', response_handler)
+client.get_now('/some-path', response_handler)
 </pre>
 <h4 id="reading-data-from-the-response-body">Reading Data from the Response Body</h4><br/>
 <p>The API for reading a http client response body is very similar to the API for reading a http server request body.</p>
 <p>Sometimes an HTTP response contains a request body that we want to read. Like an HTTP request, the client response handler is called when all the response headers have arrived, not when the entire response body has arrived.</p>
 <p>To receive the response body, you set a <code>dataHandler</code> on the response object which gets called as parts of the HTTP response arrive. Here's an example:</p>
 <pre class="prettyprint">client = vertx.create_http_client()
+client.host = 'foo.com'
 
 def response_handler(resp): 
     @resp.data_handler
     def data_handler(buffer):
         print "I received %s bytes"% buffer.length
 
-client.get_now('http://localhost:8080/some-path', response_handler)
+client.get_now('/some-path', response_handler)
 </pre>
 <p>The response object implements the <code>ReadStream</code> interface so you can pump the response body to a <code>WriteStream</code>. See the chapter on streams and pump for a detailed explanation.</p>
 <p>The <code>data_handler</code> can be called multiple times for a single HTTP response.</p>
 <p>As with a server request, if you wanted to read the entire response body before doing something with it you could do something like the following:</p>
 <pre class="prettyprint">client = vertx.create_http_client()
+client.host = 'foo.com'
 
 def response_handler(resp):
 
@@ -1559,7 +1571,7 @@ def response_handler(resp):
         # The entire response body has been received
         print "The total body received was %s bytes"% body.length
 
-client.get_now('http://localhost:8080/some-path', response_handler)
+client.get_now('/some-path', response_handler)
 </pre>
 <p>Like any <code>ReadStream</code> the end handler is invoked when the end of stream is reached - in this case at the end of the response.</p>
 <p>If the HTTP response is using HTTP chunking, then each chunk of the response body will correspond to a single call to the <code>data_handler</code>.</p>
@@ -1568,12 +1580,13 @@ client.get_now('http://localhost:8080/some-path', response_handler)
 <p><em>Beware of doing this with very large responses since the entire response body will be stored in memory.</em></p>
 <p>Here's an example using <code>body_handler</code>:</p>
 <pre class="prettyprint">client = vertx.create_http_client()
+client.host = 'foo.com'
 
 def response_handler(resp): 
     @resp.body_handler
     def body_handler(body):
         print "The total body received was %s bytes"% body.length
-client.get_now('http://localhost:8080/some-path', response_handler)
+client.get_now('/some-path', response_handler)
 </pre>
 <h2 id="pumping-requests-and-responses">Pumping Requests and Responses</h2><br/>
 <p>The HTTP client and server requests and responses all implement either <code>ReadStream</code> or <code>WriteStream</code>. This means you can pump between them and any other read and write streams.</p>
@@ -1585,10 +1598,11 @@ client.get_now('http://localhost:8080/some-path', response_handler)
 <p>This is used in conjunction with the <code>send_head</code> function to send the head of the request.</p>
 <p>An example will illustrate this:</p>
 <pre class="prettyprint">client = vertx.create_http_client()
+client.host = 'foo.com'
 
 def response_handler(resp): 
     print "Got a response: %s"% resp.status_code
-request = client.put('http://localhost:8080/some-path', response_handler)
+request = client.put('/some-path', response_handler)
 
 request.put_header('Expect', '100-Continue')
 request.chunked = True
@@ -1966,7 +1980,7 @@ sockJSServer.bridge({'prefix' : '/eventbus'},
         'wibble' : 'foo'
       }
     }
-  ])
+  ], [{}])
 
 server.listen(8080)
 </pre>
