@@ -48,14 +48,18 @@ dependencies {
 }
 
 
-artifacts {
-	platform jar
+task kotlinSourceJar( type: Jar, dependsOn: sourceJar ) {
+	classifier = 'sources'
+	from sourceSets.main.kotlin
 }
 
-sourceSets {
-	main {
-        resources {
-            srcDirs 'src/main/resources'
-        }
-	}
+
+task kdocJar( type: Jar, dependsOn: [ javadocJar /*, kdoc */ ] ) {
+	classifier = 'javadoc'
+	from kdoc.destinationDir
+}
+
+
+artifacts {
+	archives kotlinSourceJar, kdocJar
 }
