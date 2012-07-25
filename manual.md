@@ -307,11 +307,11 @@ By default [JUL](http://docs.oracle.com/javase/7/docs/technotes/guides/logging/o
 
 Advanced note: If you'd rather use a different logging framework, e.g. log4j you can do this by specifying a system property when running vert.x (edit the vertx.sh script), e.g.
 
-    -Dorg.vertx.logger-delegate-factory-class-name=org.vertx.java.core.logging.Log4jLogDelegateFactory
+    -Dorg.vertx.logger-delegate-factory-class-name=org.vertx.java.core.logging.impl.Log4jLogDelegateFactory
     
 or
 
-    -Dorg.vertx.logger-delegate-factory-class-name=org.vertx.java.core.logging.SLF4JLogDelegateFactory    
+    -Dorg.vertx.logger-delegate-factory-class-name=org.vertx.java.core.logging.impl.SLF4JLogDelegateFactory    
     
 # Configuring clustering
 
