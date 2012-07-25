@@ -452,56 +452,63 @@ public void uninstallMod(String moduleName) {
 
     BlockingAction<Boolean> action = new BlockingAction<Boolean>(vertx, arHandler) {
       public Boolean action() {
-        if (!modRoot.exists()) {
-          if (!modRoot.mkdir()) {
-            log.error("Failed to create directory " + modRoot);
-            return false;
-          }
-        }
-        log.info("Installing module into directory '" + modRoot + "'");
-        File fdest = new File(modRoot, modName);
-        if (fdest.exists()) {
-          log.error("Module is already installed");
-          return false;
-        }
-        try {
-          InputStream is = new ByteArrayInputStream(data.getBytes());
-          ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
-          ZipEntry entry;
-          while ((entry = zis.getNextEntry()) != null) {
-            if (!entry.getName().startsWith(modName)) {
-              log.error("Module must contain zipped directory with same name as module");
-              fdest.delete();
+
+        // We synchronize to prevent a race whereby it tries to unzip the same module at the
+        // same time (e.g. deployModule for the same module name has been called in parallel)
+        synchronized (modName.intern()) {
+
+          if (!modRoot.exists()) {
+            if (!modRoot.mkdir()) {
+              log.error("Failed to create directory " + modRoot);
               return false;
             }
-            if (entry.isDirectory()) {
-              new File(modRoot, entry.getName()).mkdir();
-            } else {
-              int count;
-              byte[] buff = new byte[BUFFER_SIZE];
-              BufferedOutputStream dest = null;
-              try {
-                OutputStream fos = new FileOutputStream(new File(modRoot, entry.getName()));
-                dest = new BufferedOutputStream(fos, BUFFER_SIZE);
-                while ((count = zis.read(buff, 0, BUFFER_SIZE)) != -1) {
-                   dest.write(buff, 0, count);
-                }
-                dest.flush();
-              } finally {
-                if (dest != null) {
-                  dest.close();
+          }
+          log.info("Installing module into directory '" + modRoot + "'");
+          File fdest = new File(modRoot, modName);
+          if (fdest.exists()) {
+            // This can happen if the same module is requested to be installed
+            // at around the same time
+            // It's ok if this happens
+            return true;
+          }
+          try {
+            InputStream is = new ByteArrayInputStream(data.getBytes());
+            ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+              if (!entry.getName().startsWith(modName)) {
+                log.error("Module must contain zipped directory with same name as module");
+                fdest.delete();
+                return false;
+              }
+              if (entry.isDirectory()) {
+                new File(modRoot, entry.getName()).mkdir();
+              } else {
+                int count;
+                byte[] buff = new byte[BUFFER_SIZE];
+                BufferedOutputStream dest = null;
+                try {
+                  OutputStream fos = new FileOutputStream(new File(modRoot, entry.getName()));
+                  dest = new BufferedOutputStream(fos, BUFFER_SIZE);
+                  while ((count = zis.read(buff, 0, BUFFER_SIZE)) != -1) {
+                     dest.write(buff, 0, count);
+                  }
+                  dest.flush();
+                } finally {
+                  if (dest != null) {
+                    dest.close();
+                  }
                 }
               }
             }
+            zis.close();
+          } catch (IOException e) {
+            log.error("Failed to unzip module", e);
+            return false;
           }
-          zis.close();
-        } catch (IOException e) {
-          log.error("Failed to unzip module", e);
-          return false;
+          log.info("Module " + modName +" successfully installed");
+          return true;
         }
-        log.info("Module " + modName +" successfully installed");
-        return true;
-
       }
     };
     action.run();
