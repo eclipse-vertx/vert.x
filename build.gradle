@@ -21,11 +21,18 @@ buildscript {
 		mavenLocal()
 		maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
 		mavenCentral()
-	}
+
+        // kotlin plugin
+        mavenRepo url: 'http://repository.jetbrains.com/kotlin/'
+        mavenRepo url: 'http://evgenyg.artifactoryonline.com/evgenyg/repo/'
+    }
 	dependencies {
 		classpath "org.vert-x:build-tools:$vertxBuildToolsVersion"
-	}
-} 
+
+        // kotlin plugin
+        classpath 'com.github.goldin.plugins:kotlin:0.1.4-SNAPSHOT'
+    }
+}
 
 allprojects {
   apply plugin: 'eclipse'
@@ -47,7 +54,7 @@ subprojects {
 	
 	repositories {
 		mavenCentral()
-	}
+    }
 	
 	dependencies {
 		testCompile "junit:junit:$junitVersion"

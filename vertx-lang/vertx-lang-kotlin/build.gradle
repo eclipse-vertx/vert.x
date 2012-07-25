@@ -18,27 +18,11 @@ apply from:   "$rootDir/gradle/maven.gradle"
 apply plugin: 'kotlin'
 
 
-/**
- * Gradle Kotlin plugin
- */
-buildscript {
-    repositories {
-        mavenRepo url: 'http://repository.jetbrains.com/kotlin/'
-        mavenRepo url: 'http://evgenyg.artifactoryonline.com/evgenyg/repo/'
-    }
-    dependencies {
-        classpath 'com.github.goldin.plugins:kotlin:0.1.4-SNAPSHOT'
-    }
-}
-
-
 final kotlinVersion = '0.1-SNAPSHOT'
-
 
 repositories {
     mavenRepo url: 'http://repository.jetbrains.com/kotlin/'
 }
-
 
 dependencies {
 	compile project(':vertx-core'),
