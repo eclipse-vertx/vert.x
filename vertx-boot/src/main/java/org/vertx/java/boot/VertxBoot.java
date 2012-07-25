@@ -117,7 +117,10 @@ public class VertxBoot {
         }
 
         // TODO check this works on Windows
-        if (!url.startsWith(File.separator) && !url.matches("^[A-Z]\\:\\/.*")) {
+
+        // Regexp matches windows absolute file paths that include a drive letter
+        // e.g. C:\foo\bar.txt
+        if (!url.startsWith(File.separator) && !url.matches("^[A-Za-z]:\\\\.*")) {
           url = resolve(userDir, url).toString(); // resolve against current dir
         }
 
