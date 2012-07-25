@@ -111,16 +111,15 @@ public class VertxBoot {
           System.out.format("url:%s %n", url);
         }
 
+        url = url.replace(File.separator, "/");
+
         // TODO check this works on Windows
         if (url.startsWith(".")) {
           url = stringToPath(url).toString(); // resolve against relative path
         }
 
         // TODO check this works on Windows
-
-        // Regexp matches windows absolute file paths that include a drive letter
-        // e.g. C:\foo\bar.txt
-        if (!url.startsWith(File.separator) && !url.matches("^[A-Za-z]:\\\\.*")) {
+        if (!url.startsWith(File.separator) && !url.matches("^[A-Za-z]:[(\\)(/)].*")) {
           url = resolve(userDir, url).toString(); // resolve against current dir
         }
 
@@ -155,11 +154,11 @@ public class VertxBoot {
         int end = value.indexOf("}", match + 1);
         String variable = value.substring(match + 2, end);
 
-        match = end;
-
         if (System.getProperties().containsKey(variable)) {
-          modified = modified.replaceFirst("\\$\\{" + variable + "\\}", System.getProperty(variable));
+          modified = value.replace("${" + variable + "}", System.getProperty(variable));
         }
+
+        match = end;
       }
 
       properties.setProperty(name, modified);
