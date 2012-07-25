@@ -71,8 +71,8 @@ import java.util.zip.ZipInputStream;
 public class VerticleManager {
 
   private static final Logger log = LoggerFactory.getLogger(VerticleManager.class);
-  private static final String REPO_URI_ROOT = "/vertx-mods/mods/";
-  private static final String DEFAULT_REPO_HOST = "vert-x.github.com";
+  private static final String REPO_URI_ROOT = System.getProperty("vertx.mods.uriRoot", "/vertx-mods/mods/");
+  private static final String DEFAULT_REPO_HOST = System.getProperty("vertx.mods.host", "vert-x.github.com");
   private static final int BUFFER_SIZE = 4096;
 
   private final VertxInternal vertx;
