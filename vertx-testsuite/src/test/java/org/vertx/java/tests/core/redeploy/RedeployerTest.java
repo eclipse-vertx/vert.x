@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.AsyncFile;
+import org.vertx.java.core.impl.ConcurrentHashSet;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.impl.Deployment;
@@ -13,6 +14,8 @@ import org.vertx.java.deploy.impl.Redeployer;
 import org.vertx.java.framework.TestUtils;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.RandomAccessFile;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -48,7 +51,7 @@ public class RedeployerTest extends TestCase {
   }
 
   @Test
-  public void testAddFile() throws Exception {
+  public void tesCreateFile() throws Exception {
     String modName = "my-mod";
     File modDir = createModDir(modName);
     createFile(modDir, "foo.js", TestUtils.randomAlphaString(1000));
@@ -71,49 +74,174 @@ public class RedeployerTest extends TestCase {
     waitReload(dep);
   }
 
+  @Test
+  public void testDeleteFile() throws Exception {
+    String modName = "my-mod";
+    File modDir = createModDir(modName);
+    createFile(modDir, "foo.js", TestUtils.randomAlphaString(1000));
+    createFile(modDir, "blah.txt", TestUtils.randomAlphaString(1000));
+    Deployment dep = createDeployment("dep1", "my-mod", null);
+    red.moduleDeployed(dep);
+    Thread.sleep(500);
+    deleteFile(modDir, "blah.txt");
+    waitReload(dep);
+  }
+
+  @Test
+  public void testCreateDirectory() throws Exception {
+    String modName = "my-mod";
+    File modDir = createModDir(modName);
+    createFile(modDir, "foo.js", TestUtils.randomAlphaString(1000));
+    Deployment dep = createDeployment("dep1", "my-mod", null);
+    red.moduleDeployed(dep);
+    Thread.sleep(500);
+    createDirectory(modDir, "some-dir");
+    waitReload(dep);
+  }
+
+  @Test
+  public void testCreateFileInSubDirectory() throws Exception {
+    String modName = "my-mod";
+    File modDir = createModDir(modName);
+    createFile(modDir, "foo.js", TestUtils.randomAlphaString(1000));
+    createDirectory(modDir, "some-dir");
+    Deployment dep = createDeployment("dep1", "my-mod", null);
+    red.moduleDeployed(dep);
+    Thread.sleep(500);
+    File subDir = new File(modDir, "some-dir");
+    createFile(subDir, "bar.txt", TestUtils.randomAlphaString(1000));
+    waitReload(dep);
+  }
+
+  @Test
+  public void testDeleteFileInSubDirectory() throws Exception {
+    String modName = "my-mod";
+    File modDir = createModDir(modName);
+    createFile(modDir, "foo.js", TestUtils.randomAlphaString(1000));
+    createDirectory(modDir, "some-dir");
+    File subDir = new File(modDir, "some-dir");
+    createFile(subDir, "bar.txt", TestUtils.randomAlphaString(1000));
+    Deployment dep = createDeployment("dep1", "my-mod", null);
+    red.moduleDeployed(dep);
+    Thread.sleep(500);
+    deleteFile(subDir, "bar.txt");
+    waitReload(dep);
+  }
+
+  @Test
+  public void testModifyFileInSubDirectory() throws Exception {
+    String modName = "my-mod";
+    File modDir = createModDir(modName);
+    createFile(modDir, "foo.js", TestUtils.randomAlphaString(1000));
+    createDirectory(modDir, "some-dir");
+    File subDir = new File(modDir, "some-dir");
+    createFile(subDir, "bar.txt", TestUtils.randomAlphaString(1000));
+    Deployment dep = createDeployment("dep1", "my-mod", null);
+    red.moduleDeployed(dep);
+    Thread.sleep(500);
+    modifyFile(subDir, "bar.txt");
+    waitReload(dep);
+  }
+
+  @Test
+  public void testDeleteSubDir() throws Exception {
+    String modName = "my-mod";
+    File modDir = createModDir(modName);
+    createFile(modDir, "foo.js", TestUtils.randomAlphaString(1000));
+    createDirectory(modDir, "some-dir");
+    File subDir = new File(modDir, "some-dir");
+    createFile(subDir, "bar.txt", TestUtils.randomAlphaString(1000));
+    Deployment dep = createDeployment("dep1", "my-mod", null);
+    red.moduleDeployed(dep);
+    Thread.sleep(500);
+    vertx.fileSystem().deleteSync(subDir.getAbsolutePath(), true);
+    waitReload(dep);
+  }
+
+  @Test
+  public void testReloadMultipleDeps() throws Exception {
+    String modName = "my-mod";
+    File modDir = createModDir(modName);
+    File modDir2 = createModDir("other-mod");
+    createFile(modDir, "foo.js", TestUtils.randomAlphaString(1000));
+    Deployment dep1 = createDeployment("dep1", "my-mod", null);
+    red.moduleDeployed(dep1);
+    Deployment dep2 = createDeployment("dep2", "my-mod", null);
+    red.moduleDeployed(dep2);
+    Deployment dep3 = createDeployment("dep3", "other-mod", null);
+    red.moduleDeployed(dep3);
+    Thread.sleep(500);
+    createFile(modDir, "blah.txt", TestUtils.randomAlphaString(1000));
+    waitReload(dep1, dep2);
+  }
+
+  @Test
+  public void testCheckReloadParent() throws Exception {
+    String modName = "my-mod";
+    File modDir = createModDir(modName);
+    createFile(modDir, "foo.js", TestUtils.randomAlphaString(1000));
+    Deployment parent = createDeployment("parent", "parent-mod", null);
+    Deployment dep = createDeployment("dep1", "my-mod", "parent");
+    red.moduleDeployed(parent);
+    red.moduleDeployed(dep);
+    Thread.sleep(500);
+    createFile(modDir, "blah.txt", TestUtils.randomAlphaString(1000));
+    waitReload(parent);
+  }
+
   private File createModDir(String modName) {
     File modDir = new File(modRoot, modName);
     modDir.mkdir();
     return modDir;
   }
 
-  private void createFile(File modDir, String fileName, String content) throws Exception {
-    File f = new File(modDir, fileName);
+  private void createFile(File dir, String fileName, String content) throws Exception {
+    File f = new File(dir, fileName);
     vertx.fileSystem().writeFileSync(f.getAbsolutePath(), new Buffer(content));
   }
 
-  private void modifyFile(File modDir, String fileName) throws Exception {
-    File f = new File(modDir, fileName);
-    f.setLastModified(System.currentTimeMillis());
+  private void modifyFile(File dir, String fileName) throws Exception {
+    File f = new File(dir, fileName);
+    FileWriter fw = new FileWriter(f, true);
+    fw.write(TestUtils.randomAlphaString(500));
+    fw.close();
   }
 
-  private void createDirectory(File modDir, String dirName) throws Exception {
-    File f = new File(modDir, dirName);
+  private void deleteFile(File dir, String fileName) throws Exception {
+    File f = new File(dir, fileName);
+    f.delete();
+  }
+
+  private void createDirectory(File dir, String dirName) throws Exception {
+    File f = new File(dir, dirName);
     vertx.fileSystem().mkdirSync(f.getAbsolutePath());
   }
 
-  private void waitReload(Deployment dep) throws Exception {
+  private void waitReload(Deployment... deps) throws Exception {
     Set<Deployment> set = new HashSet<>();
-    set.add(dep);
+    for (Deployment dep: deps) {
+      set.add(dep);
+    }
     reloader.waitReload(set);
   }
 
   class TestReloader implements ModuleReloader {
 
-    Set<Deployment> reloaded = new HashSet<>();
+    Set<Deployment> reloaded = new ConcurrentHashSet<>();
     CountDownLatch latch = new CountDownLatch(1);
 
     @Override
-    public synchronized void reloadModules(Set<Deployment> deps) {
+    public void reloadModules(Set<Deployment> deps) {
       log.info("reload module called with " + deps.size());
       for (Deployment dep: deps) {
         log.info("reload module: " + dep.modName);
       }
       reloaded.addAll(deps);
       latch.countDown();
+      log.info("called countdown");
     }
 
-    synchronized void waitReload(Set<Deployment> deps) throws Exception {
+    void waitReload(Set<Deployment> deps) throws Exception {
       if (!reloaded.isEmpty()) {
         checkDeps(deps);
       } else {

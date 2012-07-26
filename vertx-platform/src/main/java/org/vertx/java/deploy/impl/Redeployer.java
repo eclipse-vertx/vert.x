@@ -56,6 +56,7 @@ public class Redeployer {
 
   private final File modRoot;
   private final ModuleReloader reloader;
+  private final Map<String, Deployment> deployments = new HashMap<>();
   private final Map<Path, Set<Deployment>> watchedDeployments = new HashMap<>();
   private final Map<WatchKey, Path> watchKeys = new HashMap<>();
   private final Map<Path, Path> moduleDirs = new HashMap<>();
@@ -133,6 +134,7 @@ public class Redeployer {
   private void processDeployments() {
     Deployment dep;
     while ((dep = toDeploy.poll()) != null) {
+      deployments.put(dep.name, dep);
       File fmodDir = new File(modRoot, dep.modName);
       Path modDir = fmodDir.toPath();
       Set<Deployment> deps = watchedDeployments.get(modDir);
@@ -155,6 +157,7 @@ public class Redeployer {
     Deployment dep;
     while ((dep = toUndeploy.poll()) != null) {
       log.info("processing undeployment");
+      deployments.remove(dep.name);
       File modDir = new File(modRoot, dep.modName);
       Path pModDir = modDir.toPath();
       Set<Deployment> deps = watchedDeployments.get(pModDir);
@@ -211,22 +214,25 @@ public class Redeployer {
         toRedeploy.add(entry.getKey());
       }
     }
-    Set<Deployment> parents = new HashSet<>();
-    for (Path moduleDir: toRedeploy) {
-      changing.remove(moduleDir);
-      computeParents(moduleDir, parents);
+    if (!toRedeploy.isEmpty()) {
+      Set<Deployment> parents = new HashSet<>();
+      for (Path moduleDir: toRedeploy) {
+        changing.remove(moduleDir);
+        computeParents(moduleDir, parents);
+      }
+      reloader.reloadModules(parents);
     }
-    reloader.reloadModules(parents);
   }
 
   // Some of the modules that need to be redeployed might have been programmatically
   // deployed so we don't redeploy them directly. Instead we need to compute the
   // set of parent modules which are the ones we need to redeploy
   private void computeParents(Path modulePath, Set<Deployment> parents)  {
-    Set<Deployment> deployments = watchedDeployments.get(modulePath);
-    for (Deployment d: deployments) {
+    Set<Deployment> deps = watchedDeployments.get(modulePath);
+    for (Deployment d: deps) {
       if (d.parentDeploymentName != null) {
-        File f = new File(modRoot, d.parentDeploymentName);
+        Deployment parent = deployments.get(d.parentDeploymentName);
+        File f = new File(modRoot, parent.modName);
         computeParents(f.toPath(), parents);
       } else {
         parents.add(d);
