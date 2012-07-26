@@ -193,7 +193,7 @@ Modules that *only* contain resources for re-use are called *non-runnable* modul
 
 ## Configuration
 
-Configuration for a module (if any) should be specified using a JSON configuration file when deploying from the command line using `vertx runmod` or passed in when deploying a busmod programmatically.
+Configuration for a module (if any) should be specified using a JSON configuration file when deploying from the command line using `vertx runmod` or passed in when deploying a module programmatically.
 
 Applying configuration this way allows it to be easily and consistently configured irrespective of the language.
 

@@ -38,9 +38,9 @@ Open a text editor and copy the following into it:
     # Start the web server, with the config we defined above
     import vertx
     
-    vertx.deploy_verticle('web-server', web_server_conf)
+    vertx.deploy_module('vertx.web-server-v1.0', web_server_conf)
     
-The call to `deploy_verticle` tells Vert.x to deploy an instance of the `web-server` module. For detailed information on the `web-server` module please see the modules manual.
+The call to `deploy_module` tells Vert.x to deploy an instance of the `vertx.web-server` module. If the module is not already installed, Vert.x will install it automatically from the module repository. For detailed information on modules please see the modules manual.
 
 Save it as `app.py`.
 
@@ -85,9 +85,9 @@ On the left hand bar there's a form which allows you to login.
 
 ### Step 4. Get the Persistor up and running
 
-Vert.x ships with an out of the box bus module (busmod) called `mongo-persistor`. A busmod is a component which communicates with other components on the vert.x event bus by exchanging JSON messages.
+The Vert.x module repository contains a module called `vertx.mongo-persistor`. 
 
-The `mongo-persistor` busmod allows you to store/update/delete/find data in a MongoDB database. (For detailed info on it, please see the modules manual).
+This module allows you to store/update/delete/find data in a MongoDB database. (For detailed info on modules please see the modules manual).
 
 We're going to use a persistor in our application for a few different things:
 
@@ -105,11 +105,11 @@ Add a line to `app.py` which starts the persistor, so the file now looks like:
     # Deploy a MongoDB persistor module
 	import vertx
 	
-    vertx.deploy_verticle('mongo-persistor')
+    vertx.deploy_module('vertx.mongo-persistor-v1.0')
 
     # Start the web server, with the config we defined above
 
-    vertx.deploy_verticle('web-server', web_server_conf)
+    vertx.deploy_module('vertx.web-server-v1.0', web_server_conf)
 
 Of course you'll also need to make sure you have installed a MongoDB instance on the local machine, with default settings.
 
@@ -129,7 +129,7 @@ To that we use a SockJS bridge.
 
 SockJS is a technology which allows a full-duplex WebSocket-like connection between browsers and servers, even if the browser or network doesn't support websockets.
 
-You can create a SockJS server manually in the Vert.x API (see the core manual for more information on this), but the web-server module contains bridge functionality built in, so we're just going to tell it to activate the bridge. This is done in the configuration we specify to the web server.
+You can create a SockJS server manually in the Vert.x API (see the core manual for more information on this), but the `vertx.web-server` module contains bridge functionality built in, so we're just going to tell it to activate the bridge. This is done in the configuration we specify to the web server.
 
 Edit the web server configuration so it looks like:
 
@@ -181,9 +181,9 @@ We want to insert the static data only after the persistor verticle has complete
 
 	def after_deploy(): execfile('static_data.py')
 			
-    vertx.deploy_verticle('mongo-persistor', after_deploy)
+    vertx.deploy_module('vertx.mongo-persistor-v1.0', after_deploy)
     
-The block that we're specifying in the call to `deploy_verticle` won't be invoked until the persistor is fully started. In that function we just load the static data script.
+The block that we're specifying in the call to `deploy_module` won't be invoked until the persistor is fully started. In that function we just load the static data script.
 
 Save the edited `app.py` and restart it.
 
@@ -231,9 +231,9 @@ If you look a little further down the script, you will find the part which loads
   
 The `onopen` is called when, unsurprisingly, the event bus connection is fully setup and open.  
 
-At that point we are calling the `send` function on the event bus to a send a JSON message to the address `vertx.mongopersistor`. This is the address of the MongoDB persistor busmod that we configured earlier.
+At that point we are calling the `send` function on the event bus to a send a JSON message to the address `vertx.mongopersistor`. This is the address of the MongoDB persistor module that we configured earlier.
 
-The JSON message that we're sending specifies that we want to find and return all albums in the database. (For a full description of the operations that the MongoDBPersistor busmod expects you can consult the modules manual).
+The JSON message that we're sending specifies that we want to find and return all albums in the database. (For a full description of the operations that the MongoDBPersistor module expects you can consult the README.md in the `mod-mongo-persistor` repository).
 
 The final argument that we pass to to `send` is a reply handler. This is a function that gets called when the persistor has processed the operation and sent the reply back here. The first argument to the reply handler is the reply itself.
 
@@ -245,7 +245,7 @@ Once we get the albums we give them to knockout.js to render on the view.
 
 In order to actually send an order, you need to be logged in.
 
-To handle login we will start an instance of the out-of-the-box `auth-mgr` component. This is a simple busmod which handles simple user/password authentication and authorisation. Users credentials are stored in the MongoDB database. Fore more sophisticated auth, you can easily write your own auth busmod and the bridge can talk to that instead.
+To handle login we will start an instance of the `vertx.auth-mgr` which lives in the repository. This is a simple module which handles simple user/password authentication and authorisation. Users credentials are stored in the MongoDB database. Fore more sophisticated auth, you can easily write your own auth module and the bridge can talk to that instead.
 
 To login, the client sends a message on the event bus to the address `vertx.basicauthmanager.login` with fields `username` and `credentials`, and if successful it replies with a message containing a unique session id, in the `sessionID` field.
 
@@ -259,7 +259,7 @@ Edit `app.py` and add the following, just after where the Mongo Persistor is dep
 
     # Deploy an auth manager to handle the authentication
 
-    vertx.deploy_verticle('auth-mgr')
+    vertx.deploy_module('vertx.auth-mgr-v1.0')
     
 We'll also need to tell the bridge to let through any login messages:
 
@@ -434,12 +434,12 @@ Easy peasy. **It just works**
 
 ### Scaling the web server
 
-Scaling up the web server part is trivial. Simply start up more instances of the webserver. You can do this by changing the line that starts the `web-server` module to something like:
+Scaling up the web server part is trivial. Simply start up more instances of the webserver. You can do this by changing the line that starts the `vertx.web-server` module to something like:
 
     # Start 32 instances of the web server!
 	import vertx
 	
-    vertx.deploy_verticle('web-server', web_server_conf, 32)
+    vertx.deploy_module('vertx.web-server-v1.0', web_server_conf, 32)
     
 (*Vert.x is clever here, it notices that you are trying to start multiple servers on the same host and port, and internally it maintains a single listening server, but round robins connections between the various instances*.)
 

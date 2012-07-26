@@ -433,7 +433,7 @@ container.undeployVerticle(deploymentID)
 <p>When the reply is received back at the sender, it too can be replied to. This can be repeated ad-infinitum, and allows a dialog to be set-up between two different verticles. This is a common messaging pattern called the <em>Request-Response</em> pattern.</p>
 <h3 id="transient">Transient</h3><br/>
 <p><em>All messages in the event bus are transient, and in case of failure of all or parts of the event bus, there is a possibility messages will be lost. If your application cares about lost messages, you should code your handlers to be idempotent, and your senders to retry after recovery.</em></p>
-<p>If you want to persist your messages you can use a persistent work queue busmod for that.</p>
+<p>If you want to persist your messages you can use a persistent work queue module for that.</p>
 <h3 id="types-of-messages">Types of messages</h3><br/>
 <p>Messages that you send on the event bus can be as simple as a string, a number or a boolean. You can also send vert.x buffers or JSON messages.</p>
 <p>It's highly recommended you use JSON messages to communicate between verticles. JSON is easy to create and parse in all the languages that vert.x supports.</p>
@@ -1759,7 +1759,7 @@ vertx.createSockJSBridge(server).bridge(config, [[:]], [[:]])
 <p><strong>Be very careful!</strong></p>
 <h2 id="messages-that-require-authorisation">Messages that require authorisation</h2><br/>
 <p>The bridge can also refuse to let certain messages through if the user is not authorised.</p>
-<p>To enable this you need to make sure an instance of the <code>auth-mgr</code> busmod is available on the event bus. (Please see the modules manual for a full description of it).</p>
+<p>To enable this you need to make sure an instance of the <code>vertx.auth-mgr</code> module is available on the event bus. (Please see the modules manual for a full description of modules).</p>
 <p>To tell the bridge that certain messages require authorisation before being passed, you add the field <code>requires_auth</code> with the value of <code>true</code> in the match. The default value is <code>false</code>. For example, the following match:</p>
 <pre class="prettyprint">permitted &lt;&lt; ["address": "demo.persistor",
               "match": [ "action": "save",
