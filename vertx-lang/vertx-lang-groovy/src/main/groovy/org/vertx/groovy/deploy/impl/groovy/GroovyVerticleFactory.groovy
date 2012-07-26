@@ -69,6 +69,9 @@ public class GroovyVerticleFactory implements VerticleFactory {
             url = file.toURL()
         }
     }
+    if (url == null) {
+          throw new IllegalStateException("Cannot find main script: " + main + " on classpath");
+    }
 
     GroovyCodeSource gcs = new GroovyCodeSource(url)
     GroovyClassLoader gcl = new GroovyClassLoader(cl)
