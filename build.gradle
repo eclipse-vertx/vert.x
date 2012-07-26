@@ -54,6 +54,7 @@ subprojects {
 	
 	repositories {
 		mavenCentral()
+        mavenRepo url: 'http://repository.jetbrains.com/kotlin/'
     }
 	
 	dependencies {
