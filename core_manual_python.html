@@ -442,7 +442,7 @@ Deployment.id = vertx.deploy_verticle('my_verticle.py', deploy_handler)
 <p>If multiple vert.x instances are clustered together, the message will be delivered to any matching handlers irrespective of what vert.x instance they reside on.</p>
 <p>As previously mentioned, when sending a message you can specify an optional reply handler which will be invoked once the message has reached a handler and the recipient has replied to it.</p>
 <p><em>All messages in the event bus are transient, and in case of failure of all or parts of the event bus, there is a possibility messages will be lost. If your application cares about lost messages, you should code your handlers to be idempotent, and your senders to retry after recovery.</em></p>
-<p>If you want to persist your messages you can use a persistent work queue busmod for that.</p>
+<p>If you want to persist your messages you can use a persistent work queue module for that.</p>
 <p>Messages that you send on the event bus can be as simple as a string, a number or a boolean. You can also send vert.x buffers or JSON messages.</p>
 <p>It's highly recommended you use JSON messages to communicate between verticles. JSON is easy to create and parse in all the languages that vert.x supports.</p>
 <h2 id="event-bus-api">Event Bus API</h2><br/>
@@ -1990,7 +1990,7 @@ server.listen(8080)
 <p><strong>Be very careful!</strong></p>
 <h2 id="messages-that-require-authorisation">Messages that require authorisation</h2><br/>
 <p>The bridge can also refuse to let certain messages through if the user is not authorised.</p>
-<p>To enable this you need to make sure an instance of the <code>auth-mgr</code> busmod is available on the event bus. (Please see the modules manual for a full description of it).</p>
+<p>To enable this you need to make sure an instance of the <code>vertx.auth-mgr</code> module is available on the event bus. (Please see the modules manual for a full description of modules).</p>
 <p>To tell the bridge that certain messages require authorisation before being passed, you add the field <code>requires_auth</code> with the value of <code>true</code> in the match. The default value is <code>false</code>. For example, the following match:</p>
 <pre class="prettyprint">{
   'address' : 'demo.persistor',

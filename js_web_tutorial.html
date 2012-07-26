@@ -93,9 +93,9 @@ var webServerConf = {
 
 // Start the web server, with the config we defined above
 
-vertx.deployVerticle('web-server', webServerConf);
+vertx.deployModule('vertx.web-server-v1.0', webServerConf);
 </pre>
-<p>The call to <code>deployVerticle</code> tells Vert.x to deploy an instance of the <code>web-server</code> module. For detailed information on the <code>web-server</code> module please see the modules manual.</p>
+<p>The call to <code>deployModule</code> tells Vert.x to deploy an instance of the <code>vertx.web-server</code> module. If the module is not already installed Vert.x will automatically install it for you from the module repository. For detailed information on modules please see the modules manual.</p>
 <p>Save it as <code>app.js</code>.</p>
 <p>Now, create a directory called <code>web</code> with a file <code>index.html</code> in it:</p>
 <pre class="prettyprint">mkdir web
@@ -122,8 +122,8 @@ echo "&lt;html&gt;&lt;body&gt;Hello World&lt;/body&gt;&lt;/html&gt;" &gt; web/in
 <p>On the left hand bar there's a form which allows you to login.  <br/>
 </p>
 <h3 id="step-4-get-the-persistor-up-and-running">Step 4. Get the Persistor up and running</h3><br/>
-<p>Vert.x ships with an out of the box bus module (busmod) called <code>mongo-persistor</code>. A busmod is a component which communicates with other components on the vert.x event bus by exchanging JSON messages.</p>
-<p>The <code>mongo-persistor</code> busmod allows you to store/update/delete/find data in a MongoDB database. (For detailed info on it, please see the modules manual).</p>
+<p>The Vert.x module repository contains a module called <code>vertx.mongo-persistor</code>. </p>
+<p>This module allows you to store/update/delete/find data in a MongoDB database. (For detailed info on modules please see the modules manual).</p>
 <p>We're going to use a persistor in our application for a few different things:</p>
 <ul>
 <li>Storing the catalogue of track data.</li>
@@ -140,11 +140,11 @@ var webServerConf = {
 
 // Start a MongoDB persistor module
 
-vertx.deployVerticle('mongo-persistor');
+vertx.deployModule('vertx.mongo-persistor-v1.0');
 
 // Start the web server, with the config we defined above
 
-vertx.deployVerticle('web-server', webServerConf);
+vertx.deployModule('vertx.web-server-v1.0', webServerConf);
 </pre>
 <p>Of course you'll also need to make sure you have installed a MongoDB instance on the local machine, with default settings.</p>
 <p>Now CTRL-C the web server you started earlier and run <code>app.js</code> with </p>
@@ -156,7 +156,7 @@ vertx.deployVerticle('web-server', webServerConf);
 <p>We need to connect up the client side so it can interact with the persistor via the event bus.</p>
 <p>To that we use a SockJS bridge.</p>
 <p>SockJS is a technology which allows a full-duplex WebSocket-like connection between browsers and servers, even if the browser or network doesn't support websockets.</p>
-<p>You can create a SockJS server manually in the Vert.x API (see the core manual for more information on this), but the web-server module contains bridge functionality built in, so we're just going to tell it to activate the bridge. This is done in the configuration we specify to the web server.</p>
+<p>You can create a SockJS server manually in the Vert.x API (see the core manual for more information on this), but the <code>vertx.web-server</code> module contains bridge functionality built in, so we're just going to tell it to activate the bridge. This is done in the configuration we specify to the web server.</p>
 <p>Edit the web server configuration so it looks like:</p>
 <pre class="prettyprint">var webServerConf = {  
   port: 8080,
@@ -189,11 +189,11 @@ vertx.deployVerticle('web-server', webServerConf);
 <pre class="prettyprint">cp $VERTX_HOME/examples/javascript/webapp/static_data.js .
 </pre>
 <p>We want to insert the static data only after the persistor verticle has completed starting up so we edit <code>app.js</code> as follows:</p>
-<pre class="prettyprint">vertx.deployVerticle('mongo-persistor', null, 1, function() {
+<pre class="prettyprint">vertx.deployModule('vertx.mongo-persistor-v1.0', null, 1, function() {
   load('static_data.js');
 });
 </pre>
-<p>The function that we're specifying in the call to <code>deployVerticle</code> won't be invoked until the persistor is fully started. In that function we just load the static data script.</p>
+<p>The function that we're specifying in the call to <code>deployModule</code> won't be invoked until the persistor is fully started. In that function we just load the static data script.</p>
 <p>Save the edited <code>app.js</code> and restart it.</p>
 <pre class="prettyprint">vertx run app.js
 </pre>
@@ -230,14 +230,14 @@ vertx.deployVerticle('web-server', webServerConf);
 </pre>
 <p>The <code>onopen</code> is called when, unsurprisingly, the event bus connection is fully setup and open.<br/>
 </p>
-<p>At that point we are calling the <code>send</code> function on the event bus to a send a JSON message to the address <code>vertx.mongopersistor</code>. This is the address of the MongoDB persistor busmod that we configured earlier.</p>
-<p>The JSON message that we're sending specifies that we want to find and return all albums in the database. (For a full description of the operations that the MongoDBPersistor busmod expects you can consult the modules manual).</p>
+<p>At that point we are calling the <code>send</code> function on the event bus to a send a JSON message to the address <code>vertx.mongopersistor</code>. This is the address of the MongoDB persistor module that we configured earlier.</p>
+<p>The JSON message that we're sending specifies that we want to find and return all albums in the database. (For a full description of the operations that the MongoDBPersistor module expects you can consult the README.md in the <code>mod-mongo-persistor</code> repository).</p>
 <p>The final argument that we pass to to <code>send</code> is a reply handler. This is a function that gets called when the persistor has processed the operation and sent the reply back here. The first argument to the reply handler is the reply itself.</p>
 <p>In this case, the reply contains a JSON message with a field <code>results</code> which contains a JSON array containing the albums.</p>
 <p>Once we get the albums we give them to knockout.js to render on the view.</p>
 <h2 id="step-8-handling-login">Step 8. Handling Login</h2><br/>
 <p>In order to actually send an order, you need to be logged in.</p>
-<p>To handle login we will start an instance of the out-of-the-box <code>auth-mgr</code> component. This is a simple busmod which handles simple user/password authentication and authorisation. Users credentials are stored in the MongoDB database. Fore more sophisticated auth, you can easily write your own auth busmod and the bridge can talk to that instead.</p>
+<p>To handle login we will start an instance of the <code>vertx.auth-mgr</code> which lives in the repository. This is a simple module which handles simple user/password authentication and authorisation. Users credentials are stored in the MongoDB database. Fore more sophisticated auth, you can easily write your own auth module and the bridge can talk to that instead.</p>
 <p>To login, the client sends a message on the event bus to the address <code>vertx.basicauthmanager.login</code> with fields <code>username</code> and <code>credentials</code>, and if successful it replies with a message containing a unique session id, in the <code>sessionID</code> field.</p>
 <p>This session id should then be sent in any subsequent message from the client to the server that requires authentication (e.g. persisting an order).</p>
 <p>When the bridge receives a message with a <code>sessionID</code> field in it, it will contact the auth manager to see if the session is authorised for that resource.</p>
@@ -245,7 +245,7 @@ vertx.deployVerticle('web-server', webServerConf);
 <p>Edit <code>app.js</code> and add the following, just after where the Mongo Persistor is deployed.</p>
 <pre class="prettyprint">// Deploy an auth manager to handle the authentication
 
-vertx.deployVerticle('auth-mgr');
+vertx.deployModule('vertx.auth-mgr-v1.0');
 </pre>
 <p>We'll also need to tell the bridge to let through any login messages:</p>
 <pre class="prettyprint">inbound_permitted: [
@@ -375,10 +375,10 @@ see the manual).</p>
 <p>Easy peasy. <strong>It just works</strong></p>
 <h2 id="step-12-scaling-the-application">Step 12. Scaling the application</h2><br/>
 <h3 id="scaling-the-web-server">Scaling the web server</h3><br/>
-<p>Scaling up the web server part is trivial. Simply start up more instances of the webserver. You can do this by changing the line that starts the <code>web-server</code> module to something like:</p>
+<p>Scaling up the web server part is trivial. Simply start up more instances of the webserver. You can do this by changing the line that starts the <code>vertx.web-server</code> module to something like:</p>
 <pre class="prettyprint">// Start 32 instances of the web server!
 
-vertx.deployVerticle('web-server', webServerConf, 32);
+vertx.deployModule('vertx.web-server-v1.0', webServerConf, 32);
 </pre>
 <p>(<em>Vert.x is clever here, it notices that you are trying to start multiple servers on the same host and port, and internally it maintains a single listening server, but round robins connections between the various instances</em>.)</p>
 <h3 id="more-complex-web-applications">More complex web applications</h3><br/>

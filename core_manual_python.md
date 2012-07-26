@@ -232,7 +232,7 @@ As previously mentioned, when sending a message you can specify an optional repl
 
 *All messages in the event bus are transient, and in case of failure of all or parts of the event bus, there is a possibility messages will be lost. If your application cares about lost messages, you should code your handlers to be idempotent, and your senders to retry after recovery.*
 
-If you want to persist your messages you can use a persistent work queue busmod for that.
+If you want to persist your messages you can use a persistent work queue module for that.
 
 Messages that you send on the event bus can be as simple as a string, a number or a boolean. You can also send vert.x buffers or JSON messages.
 
@@ -2285,7 +2285,7 @@ To let all messages through you can specify two arrays with a single empty JSON 
 
 The bridge can also refuse to let certain messages through if the user is not authorised.
 
-To enable this you need to make sure an instance of the `auth-mgr` busmod is available on the event bus. (Please see the modules manual for a full description of it).
+To enable this you need to make sure an instance of the `vertx.auth-mgr` module is available on the event bus. (Please see the modules manual for a full description of modules).
 
 To tell the bridge that certain messages require authorisation before being passed, you add the field `requires_auth` with the value of `true` in the match. The default value is `false`. For example, the following match:
 
