@@ -55,7 +55,7 @@ public class Redeployer {
   private static final long CHECK_PERIOD = 200;
 
   private final File modRoot;
-  private final VerticleManager verticleManager;
+  private final ModuleReloader reloader;
   private final Map<Path, Set<Deployment>> watchedDeployments = new HashMap<>();
   private final Map<WatchKey, Path> watchKeys = new HashMap<>();
   private final Map<Path, Path> moduleDirs = new HashMap<>();
@@ -85,9 +85,9 @@ public class Redeployer {
     }
   }
 
-  public Redeployer(Vertx vertx, File modRoot, VerticleManager verticleManager) {
+  public Redeployer(Vertx vertx, File modRoot, ModuleReloader reloader) {
     this.modRoot = modRoot;
-    this.verticleManager = verticleManager;
+    this.reloader = reloader;
     try {
       watchService = FileSystems.getDefault().newWatchService();
     } catch (IOException e) {
@@ -216,7 +216,7 @@ public class Redeployer {
       changing.remove(moduleDir);
       computeParents(moduleDir, parents);
     }
-    reload(parents);
+    reloader.reloadModules(parents);
   }
 
   // Some of the modules that need to be redeployed might have been programmatically
@@ -232,39 +232,6 @@ public class Redeployer {
         parents.add(d);
       }
     }
-  }
-
-  private void reload(final Set<Deployment> parents) {
-    for (final Deployment deployment: parents) {
-      log.info("undeploying " + deployment.name);
-      if (verticleManager.hasDeployment(deployment.name)) {
-        verticleManager.undeploy(deployment.name, new SimpleHandler() {
-          public void handle() {
-            checkContext();
-            log.info("undeployed");
-            redeploy(deployment, parents);
-          }
-        });
-      } else {
-        // This will be the case if the previous deployment failed, e.g.
-        // a code error in a user verticle
-        redeploy(deployment, parents);
-      }
-    }
-  }
-
-  private void redeploy(final Deployment deployment, final Set<Deployment> deployments) {
-    verticleManager.deployMod(deployment.modName, deployment.config, deployment.instances,
-        null, new Handler<String>() {
-      public void handle(String res) {
-        checkContext();
-        if (res != null) {
-          deployments.remove(deployment);
-          log.info("removing deployment: " + deployment.name);
-        }
-        dumpSizes();
-      }
-    });
   }
 
   private void handleEvent(WatchKey key, Set<Path> changed) {

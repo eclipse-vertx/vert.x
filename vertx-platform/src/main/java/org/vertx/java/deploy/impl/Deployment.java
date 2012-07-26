@@ -27,19 +27,19 @@ import java.util.List;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class Deployment {
-  final String name;
-  final String modName;
-  final int instances;
-  final VerticleFactory factory;
-  final JsonObject config;
-  final URL[] urls;
-  final File modDir;
-  final List<VerticleHolder> verticles = new ArrayList<>();
-  final List<String> childDeployments = new ArrayList<>();
-  final String parentDeploymentName;
+public class Deployment {
+  public final String name;
+  public final String modName;
+  public final int instances;
+  public final VerticleFactory factory;
+  public final JsonObject config;
+  public final URL[] urls;
+  public final File modDir;
+  public final List<VerticleHolder> verticles = new ArrayList<>();
+  public final List<String> childDeployments = new ArrayList<>();
+  public final String parentDeploymentName;
 
-  Deployment(String name, String modName, int instances, VerticleFactory factory, JsonObject config,
+  public Deployment(String name, String modName, int instances, VerticleFactory factory, JsonObject config,
              URL[] urls, File modDir, String parentDeploymentName) {
     this.name = name;
     this.modName = modName;
