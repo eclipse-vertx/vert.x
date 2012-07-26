@@ -91,6 +91,23 @@ public class VertxBoot {
 
     Set<URL> found = new HashSet<>();
 
+    try {
+      String jrubyHome = System.getProperty("jruby.home");
+      if (jrubyHome != null) {
+        Path p = stringToPath(jrubyHome + "/lib/jruby.jar");
+        found.add(p.toUri().toURL());
+      }
+
+      String jythonHome = System.getProperty("jython.home");
+      if (jrubyHome != null) {
+        Path p = stringToPath(jythonHome + "/jython.jar");
+        found.add(p.toUri().toURL());
+      }
+
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
     // Use Java 7 try-with-resources
     try (InputStream is = Files.newInputStream(props, StandardOpenOption.READ)) {
       vertxProps.load(is);
