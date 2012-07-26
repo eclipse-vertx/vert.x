@@ -18,3 +18,11 @@ package org.vertx.kotlin.core
 
 import org.vertx.java.core.net.NetSocket
 import org.vertx.java.core.buffer.Buffer
+
+public fun NetSocket.invoke(action: NetSocket.()->Any?) {
+    this.action()
+}
+
+public fun NetSocket.closedHandler(handler: ()->Any?) {
+    this.closedHandler(handler(handler));
+}

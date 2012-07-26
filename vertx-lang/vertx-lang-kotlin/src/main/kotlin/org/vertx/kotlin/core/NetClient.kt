@@ -24,3 +24,51 @@ public fun NetClient?.connect(port: Int,  connectCallback: (NetSocket)->Unit): N
 
 public fun NetClient?.connect(port: Int,  host: String, connectCallback: (NetSocket)->Unit): NetClient
         = this!!.connect(port, host, handler(connectCallback))!!
+
+public var NetClient.SSL : Boolean
+    set(v: Boolean) { setSSL(v) }
+    get() = this.isSSL()
+
+public var NetClient.keyStorePath : String
+    set(v: String) { setKeyStorePath(v) }
+    get() = getKeyStorePath()!!
+
+public var NetClient.keyStorePassword : String
+    set(v: String) { setKeyStorePassword(v) }
+    get() = getKeyStorePassword()!!
+
+public var NetClient.trustStorePath : String
+    set(v: String) { setTrustStorePath(v) }
+    get() = getTrustStorePath()!!
+
+public var NetClient.trustStorePassword : String
+    set(v: String) { setTrustStorePassword(v) }
+    get() = getTrustStorePassword()!!
+
+public var NetClient.tcpNoDelay : Boolean
+    get() = isTCPNoDelay()!!
+    set(v: Boolean) { setTCPNoDelay(v) }
+
+public var NetClient.tcpKeepAlive : Boolean
+    get() = isTCPKeepAlive()!!
+    set(v: Boolean) { setTCPKeepAlive(v) }
+
+public var NetClient.reuseAddress : Boolean
+    get() = isReuseAddress()!!
+    set(v: Boolean) { setReuseAddress(v) }
+
+public var NetClient.soLinger : Boolean
+    get() = isSoLinger()!!
+    set(v: Boolean) { setSoLinger(v) }
+
+public var NetClient.sendBufferSize : Int
+    get() = getSendBufferSize()!!
+    set(v: Int) { setSendBufferSize(v) }
+
+public var NetClient.receiveBufferSize : Int
+    get() = getReceiveBufferSize()!!
+    set(v: Int) { setReceiveBufferSize(v) }
+
+public var NetClient.trafficClass : Int
+    get() = getTrafficClass()!!
+    set(v: Int) { setTrafficClass(v) }

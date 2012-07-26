@@ -181,8 +181,13 @@ public class TestBase extends TestCase {
         fail("The test framework requires at least 2 processors");
     }
     URL url;
-    if (main.endsWith(".js") || main.endsWith(".rb") || main.endsWith(".groovy") || main.endsWith(".py")) {
+    if (main.endsWith(".js") || main.endsWith(".rb") || main.endsWith(".groovy") || main.endsWith(".py") || main.endsWith(".kt") || main.endsWith(".ktscript")) {
       url = getClass().getClassLoader().getResource(main);
+      if(url == null) {
+          File file = new File(main).getAbsoluteFile().getCanonicalFile();
+          if(file.exists())
+              url = file.toURL();
+      }
     } else {
       String classDir = main.replace('.', '/') + ".class";
       url = getClass().getClassLoader().getResource(classDir);

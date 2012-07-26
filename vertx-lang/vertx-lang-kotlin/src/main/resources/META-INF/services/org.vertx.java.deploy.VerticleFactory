@@ -1,1 +1,1 @@
-org.vertx.kotlin.deploy.impl.kotlin.KotlinVerticleFactory
+org.vertx.kotlin.deploy.KotlinVerticleFactory
