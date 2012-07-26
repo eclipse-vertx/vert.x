@@ -67,7 +67,7 @@ import java.util.zip.ZipInputStream;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class VerticleManager {
+public class VerticleManager implements ModuleReloader {
 
   private static final Logger log = LoggerFactory.getLogger(VerticleManager.class);
   private static final String REPO_URI_ROOT = "/vertx-mods/mods/";
@@ -283,10 +283,6 @@ public class VerticleManager {
     deployModuleAction.run();
   }
 
-  boolean hasDeployment(String deploymentID) {
-    return deployments.containsKey(deploymentID);
-  }
-
   private JsonObject loadModuleConfig(String modName, File modDir) {
     if (modDir.exists()) {
       String conf;
@@ -438,6 +434,24 @@ public class VerticleManager {
     req.putHeader("host", "vert-x.github.com");
     req.putHeader("user-agent", "Vert.x Module Installer");
     req.end();
+  }
+
+  public void reloadModules(final Set<Deployment> parents) {
+    for (final Deployment deployment: parents) {
+      log.info("undeploying " + deployment.name);
+      if (deployments.containsKey(deployment.name)) {
+        undeploy(deployment.name, new SimpleHandler() {
+          public void handle() {
+            log.info("undeployed");
+            redeploy(deployment, parents);
+          }
+        });
+      } else {
+        // This will be the case if the previous deployment failed, e.g.
+        // a code error in a user verticle
+        redeploy(deployment, parents);
+      }
+    }
   }
 
   /* (non-Javadoc)
@@ -706,6 +720,19 @@ public class VerticleManager {
     if (doneHandler != null) {
       count.setHandler(doneHandler);
     }
+  }
+
+
+  private void redeploy(final Deployment deployment, final Set<Deployment> deployments) {
+    deployMod(deployment.modName, deployment.config, deployment.instances,
+        null, new Handler<String>() {
+      public void handle(String res) {
+        if (res != null) {
+          deployments.remove(deployment);
+          log.info("removing deployment: " + deployment.name);
+        }
+      }
+    });
   }
 
   private void doUndeploy(String name, final CountingCompletionHandler count) {
