@@ -217,7 +217,7 @@ public class Starter {
     if (module) {
       mgr.deployMod(main, conf, instances, null, doneHandler);
     } else {
-      mgr.deploy(worker, main, conf, urls, instances, null, doneHandler);
+      mgr.deployVerticle(worker, main, conf, urls, instances, null, doneHandler);
     }
 
     addShutdownHook();
