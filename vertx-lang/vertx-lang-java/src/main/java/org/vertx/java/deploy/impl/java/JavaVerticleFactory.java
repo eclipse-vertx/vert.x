@@ -60,6 +60,9 @@ public class JavaVerticleFactory implements VerticleFactory {
   }
 
   public Verticle createVerticle(String main, ClassLoader loader) throws Exception {
+
+    System.out.println("creating verticle " + main);
+
     ClassLoader cl = loader;
     String className = main;
     if (isJavaSource(main)) {

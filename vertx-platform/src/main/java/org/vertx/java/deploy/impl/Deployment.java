@@ -38,9 +38,11 @@ public class Deployment {
   public final List<VerticleHolder> verticles = new ArrayList<>();
   public final List<String> childDeployments = new ArrayList<>();
   public final String parentDeploymentName;
+  public final boolean autoRedeploy;
 
   public Deployment(String name, String modName, int instances, VerticleFactory factory, JsonObject config,
-             URL[] urls, File modDir, String parentDeploymentName) {
+             URL[] urls, File modDir, String parentDeploymentName,
+             boolean autoRedeploy) {
     this.name = name;
     this.modName = modName;
     this.instances = instances;
@@ -49,5 +51,6 @@ public class Deployment {
     this.urls = urls;
     this.modDir = modDir;
     this.parentDeploymentName = parentDeploymentName;
+    this.autoRedeploy = autoRedeploy;
   }
 }

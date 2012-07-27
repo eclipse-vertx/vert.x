@@ -162,7 +162,7 @@ public class RedeployerTest extends TestCase {
   public void testReloadMultipleDeps() throws Exception {
     String modName = "my-mod";
     File modDir = createModDir(modName);
-    File modDir2 = createModDir("other-mod");
+    createModDir("other-mod");
     createFile(modDir, "foo.js", TestUtils.randomAlphaString(1000));
     Deployment dep1 = createDeployment("dep1", "my-mod", null);
     red.moduleDeployed(dep1);
@@ -173,20 +173,6 @@ public class RedeployerTest extends TestCase {
     Thread.sleep(500);
     createFile(modDir, "blah.txt", TestUtils.randomAlphaString(1000));
     waitReload(dep1, dep2);
-  }
-
-  @Test
-  public void testCheckReloadParent() throws Exception {
-    String modName = "my-mod";
-    File modDir = createModDir(modName);
-    createFile(modDir, "foo.js", TestUtils.randomAlphaString(1000));
-    Deployment parent = createDeployment("parent", "parent-mod", null);
-    Deployment dep = createDeployment("dep1", "my-mod", "parent");
-    red.moduleDeployed(parent);
-    red.moduleDeployed(dep);
-    Thread.sleep(500);
-    createFile(modDir, "blah.txt", TestUtils.randomAlphaString(1000));
-    waitReload(parent);
   }
 
   private File createModDir(String modName) {
@@ -263,7 +249,7 @@ public class RedeployerTest extends TestCase {
   }
 
   private Deployment createDeployment(String name, String modName, String parentName) {
-     return new Deployment(name, modName, 1, null, null, null, null, parentName);
+     return new Deployment(name, modName, 1, null, null, null, null, parentName, true);
   }
 
 

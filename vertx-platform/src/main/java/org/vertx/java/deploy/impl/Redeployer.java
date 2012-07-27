@@ -56,7 +56,6 @@ public class Redeployer {
 
   private final File modRoot;
   private final ModuleReloader reloader;
-  private final Map<String, Deployment> deployments = new HashMap<>();
   private final Map<Path, Set<Deployment>> watchedDeployments = new HashMap<>();
   private final Map<WatchKey, Path> watchKeys = new HashMap<>();
   private final Map<Path, Path> moduleDirs = new HashMap<>();
@@ -67,24 +66,6 @@ public class Redeployer {
   private final Queue<Deployment> toDeploy = new ConcurrentLinkedQueue<>();
   private final Queue<Deployment> toUndeploy = new ConcurrentLinkedQueue<>();
   private Context ctx;
-
-  private void dumpSizes() {
-    log.info("watchkeys: " + watchKeys.size());
-    log.info("moduleDirs: " + moduleDirs.size());
-    log.info("changing: " + changing.size());
-    int size = 0;
-    for (Set<Deployment> s: this.watchedDeployments.values()) {
-      size += s.size();
-    }
-    log.info("watcheddeployments:" + size);
-  }
-
-  private void checkContext() {
-    //Sanity check
-    if (Context.getContext() != ctx) {
-      throw new IllegalStateException("Got context: " + Context.getContext() + " expected " + ctx);
-    }
-  }
 
   public Redeployer(Vertx vertx, File modRoot, ModuleReloader reloader) {
     this.modRoot = modRoot;
@@ -118,12 +99,10 @@ public class Redeployer {
   }
 
   public void moduleDeployed(Deployment deployment) {
-    log.info("module deployed " + deployment.name);
     toDeploy.add(deployment);
   }
 
   public void moduleUndeployed(Deployment deployment) {
-    log.info("module undeployed " + deployment.name);
     toUndeploy.add(deployment);
   }
 
@@ -134,7 +113,6 @@ public class Redeployer {
   private void processDeployments() {
     Deployment dep;
     while ((dep = toDeploy.poll()) != null) {
-      deployments.put(dep.name, dep);
       File fmodDir = new File(modRoot, dep.modName);
       Path modDir = fmodDir.toPath();
       Set<Deployment> deps = watchedDeployments.get(modDir);
@@ -156,14 +134,11 @@ public class Redeployer {
   private void processUndeployments() {
     Deployment dep;
     while ((dep = toUndeploy.poll()) != null) {
-      log.info("processing undeployment");
-      deployments.remove(dep.name);
       File modDir = new File(modRoot, dep.modName);
       Path pModDir = modDir.toPath();
       Set<Deployment> deps = watchedDeployments.get(pModDir);
       deps.remove(dep);
       if (deps.isEmpty()) {
-        log.info("unwatching module " + dep.modName);
         watchedDeployments.remove(pModDir);
         Set<Path> modPaths = new HashSet<>();
         for (Map.Entry<Path, Path> entry: moduleDirs.entrySet()) {
@@ -186,7 +161,6 @@ public class Redeployer {
           watchKeys.remove(key);
         }
       }
-      this.dumpSizes();
     }
   }
 
@@ -210,35 +184,20 @@ public class Redeployer {
       if (now - entry.getValue() > GRACE_PERIOD) {
         // Module has changed but no changes for GRACE_PERIOD ms
         // we can assume the redeploy has finished
-        log.info("module hasn't changed for 1000 ms so redeploy it");
         toRedeploy.add(entry.getKey());
       }
     }
     if (!toRedeploy.isEmpty()) {
-      Set<Deployment> parents = new HashSet<>();
+      Set<Deployment> deployments = new HashSet<>();
       for (Path moduleDir: toRedeploy) {
+        log.info("Module has changed - redeploying module from directory " + moduleDir.toString());
         changing.remove(moduleDir);
-        computeParents(moduleDir, parents);
+        deployments.addAll(watchedDeployments.get(moduleDir));
       }
-      reloader.reloadModules(parents);
+      reloader.reloadModules(deployments);
     }
   }
 
-  // Some of the modules that need to be redeployed might have been programmatically
-  // deployed so we don't redeploy them directly. Instead we need to compute the
-  // set of parent modules which are the ones we need to redeploy
-  private void computeParents(Path modulePath, Set<Deployment> parents)  {
-    Set<Deployment> deps = watchedDeployments.get(modulePath);
-    for (Deployment d: deps) {
-      if (d.parentDeploymentName != null) {
-        Deployment parent = deployments.get(d.parentDeploymentName);
-        File f = new File(modRoot, parent.modName);
-        computeParents(f.toPath(), parents);
-      } else {
-        parents.add(d);
-      }
-    }
-  }
 
   private void handleEvent(WatchKey key, Set<Path> changed) {
     Path dir = watchKeys.get(key);
@@ -254,10 +213,7 @@ public class Redeployer {
         continue;
       }
 
-      log.info("got event in directory " + dir);
-
       Path moduleDir = moduleDirs.get(dir);
-      log.info("module dir is " + moduleDir);
 
       @SuppressWarnings("unchecked")
       WatchEvent<Path> ev = (WatchEvent<Path>) event;
@@ -265,10 +221,7 @@ public class Redeployer {
 
       Path child = dir.resolve(name);
 
-      if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
-        log.info("entry modified: " + child);
-      } else if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
-        log.info("entry created: " + child);
+      if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
         if (Files.isDirectory(child, LinkOption.NOFOLLOW_LINKS)) {
           try {
             registerAll(moduleDir, child);
@@ -278,7 +231,6 @@ public class Redeployer {
           }
         }
       } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
-        log.info("entry deleted: " + child);
         moduleDirs.remove(child);
       }
       changed.add(moduleDir);
@@ -291,7 +243,6 @@ public class Redeployer {
   }
 
   private void register(Path modDir, Path dir) throws IOException {
-    log.info("registering " + dir);
     WatchKey key = dir.register(watchService, StandardWatchEventKinds.ENTRY_CREATE,
         StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_DELETE);
     watchKeys.put(key, dir);
@@ -299,7 +250,6 @@ public class Redeployer {
   }
 
   private void registerAll(final Path modDir, final Path dir) throws IOException {
-    log.info("registering all " + modDir);
     Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
       @Override
       public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
@@ -308,4 +258,23 @@ public class Redeployer {
       }
     });
   }
+
+//  private void dumpSizes() {
+//    log.info("watchkeys: " + watchKeys.size());
+//    log.info("moduleDirs: " + moduleDirs.size());
+//    log.info("changing: " + changing.size());
+//    int size = 0;
+//    for (Set<Deployment> s: this.watchedDeployments.values()) {
+//      size += s.size();
+//    }
+//    log.info("watcheddeployments:" + size);
+//  }
+
+  private void checkContext() {
+    //Sanity check
+    if (Context.getContext() != ctx) {
+      throw new IllegalStateException("Got context: " + Context.getContext() + " expected " + ctx);
+    }
+  }
+
 }
