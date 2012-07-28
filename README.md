@@ -1,13 +1,12 @@
-# vert.x
 ## What is vert.x?
 
 **Vert.x is the framework for the next generation of asynchronous, effortlessly scalable, concurrent applications.**
 
-Vert.x is a framework which takes inspiration from event driven frameworks like node.js, combines it with a distributed event bus and sticks it all on the JVM - a runtime with *real* concurrency and unrivalled performance. Vert.x then exposes the API in Ruby and Java too.
+Vert.x is a framework which takes inspiration from event driven frameworks like node.js, combines it with a distributed event bus and sticks it all on the JVM - a runtime with *real* concurrency and unrivalled performance. Vert.x then exposes the API in JavaScript, CoffeeScript, Ruby, Python, Groovy and Java.
 
 Some of the key highlights include:
 
-* Polyglot. Write your application components in JavaScript, Ruby, Groovy or Java. It's up to you. Or mix and match
+* Polyglot. Write your application components in JavaScript, CoffeeScript, Ruby, Python, Groovy or Java. It's up to you. Or mix and match
 several programming languages in a single application. (Scala and Clojure support is scheduled too).
 
 * No more worrying about concurrency. Vert.x allows you to write all your code as single threaded,
@@ -23,3 +22,5 @@ freeing you from the hassle of multi-threaded programming, yet unlike other asyn
 Groovy applications*
 
 **Please see the [website](http://vertx.io/) for full documentation and information on vert.x**
+
+The Vert.x project has moved here https://github.com/vert-x/vert.x
