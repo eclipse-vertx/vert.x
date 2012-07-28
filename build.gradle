@@ -224,10 +224,21 @@ task installApp(type: Sync, dependsOn: ['assemble']) {
 	from "build/$rootProject.name-$version"
 }
 
-task dist(type: Tar, dependsOn: ['assemble', 'createDocs']) {
+task distZip(type: Zip, dependsOn : ['assemble', 'createDocs']) {
 	group = 'vert.x'
-	description 'Create the distribution'
-	
+	description 'Create the Zip distribution'
+
+	destinationDir file('build/distributions')
+	baseName = rootProject.name
+	version = rootProject.version
+	from 'build'
+	include "$rootProject.name-$version/**"
+}
+
+task distTar(type: Tar, dependsOn: ['assemble', 'createDocs']) {
+	group = 'vert.x'
+	description 'Create the GZIP distribution'
+
 	compression = org.gradle.api.tasks.bundling.Compression.GZIP
 	destinationDir file('build/distributions')
 	inputs.files files("build/$rootProject.name-$version")
@@ -237,6 +248,11 @@ task dist(type: Tar, dependsOn: ['assemble', 'createDocs']) {
 	extension = 'tar.gz'
 	from 'build'
 	include "$rootProject.name-$version/**"
+}
+
+task dist(dependsOn: ['distTar', 'distZip']){
+	group = 'vert.x'
+	description 'Create distributions - tar.gz and zip'
 }
 
 task release(dependsOn: ['clean', 'test', 'dist']) {
