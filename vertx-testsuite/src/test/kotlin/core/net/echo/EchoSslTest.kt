@@ -1,7 +1,6 @@
 package core.net.echo
 
 import org.vertx.java.framework.TestBase
-import org.vertx.kotlin.framework.TestVerticle
 import org.vertx.java.core.streams.Pump
 
 import org.vertx.java.core.buffer.Buffer
@@ -13,11 +12,27 @@ import java.lang.reflect.Modifier
 import java.util.ArrayList
 import java.lang.reflect.Method
 import junit.framework.TestSuite
+import org.vertx.java.framework.TestVerticle
 
 public class KotlinNetTest() : TestBase() {
     protected override fun setUp() {
         super.setUp()
         startApp(javaClass<EchoSslApp>().getName())
+    }
+
+    public fun testEcho() {
+        startTest(getMethodName())
+    }
+
+    public fun testEchoSSL() {
+        startTest(getMethodName())
+    }
+}
+
+public class KotlinNetScriptTest() : TestBase() {
+    protected override fun setUp() {
+        super.setUp()
+        startApp("./vertx-testsuite/src/test/kotlin/core/net/echo/EchoSslTest.ktscript")
     }
 
     public fun testEcho() {
@@ -51,9 +66,9 @@ public class EchoSslApp() : TestVerticle() {
             }
             
             connectHandler { socket ->
-                testUtils.checkContext()
+                testUtils!!!!.checkContext()
                 socket.dataHandler { buffer ->
-                    testUtils.checkContext()
+                    testUtils!!!!.checkContext()
                     socket.write(buffer)
                 }
             }
@@ -71,7 +86,7 @@ public class EchoSslApp() : TestVerticle() {
         }
 
         client.connect(8080, "localhost") { socket ->
-            testUtils.checkContext()
+            testUtils!!.checkContext()
 
             val sends = 10
             val size = 100
@@ -81,31 +96,31 @@ public class EchoSslApp() : TestVerticle() {
 
             socket {
                 dataHandler { buffer ->
-                    testUtils.checkContext()
+                    testUtils!!.checkContext()
 
                     received.appendBuffer(buffer)
 
                     if (received.length() == sends * size) {
-                        testUtils.azzert(TestUtils.buffersEqual(sent, received))
+                        testUtils!!.azzert(TestUtils.buffersEqual(sent, received))
 
                         // FIXME: kotlin compiler thinks that server is nullable. why?
                         server!!.close{
                             client.close()
-                            testUtils.testComplete()
+                            testUtils!!.testComplete()
                         }
                     }
                 }
 
                 endHandler {
-                    testUtils.checkContext()
+                    testUtils!!.checkContext()
                 }
 
                 closedHandler {
-                    testUtils.checkContext()
+                    testUtils!!.checkContext()
                 }
 
                 drainHandler {
-                    testUtils.checkContext()
+                    testUtils!!.checkContext()
                 }
 
                 pause()

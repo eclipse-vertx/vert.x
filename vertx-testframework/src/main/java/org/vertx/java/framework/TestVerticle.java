@@ -3,7 +3,7 @@ package org.vertx.java.framework;
 import org.vertx.java.deploy.Verticle;
 
 public abstract class TestVerticle extends Verticle {
-    protected TestUtils testUtils;
+    public TestUtils testUtils;
 
     public final void start() {
         testUtils = new TestUtils(vertx);

@@ -1,0 +1,125 @@
+import org.vertx.java.framework.TestBase
+import org.vertx.java.core.streams.Pump
+
+import org.vertx.java.core.buffer.Buffer
+import org.vertx.java.framework.TestUtils
+
+import org.vertx.kotlin.core.*
+import org.vertx.java.core.Handler
+import java.lang.reflect.Modifier
+import java.util.ArrayList
+import java.lang.reflect.Method
+import junit.framework.TestSuite
+
+/*
+ Vertx Kotlin script executed with  parameters
+   vertx: Vertx
+   container: container
+   verticle: KotlinScriptVerticle
+
+ Script is created and executed at KotlinScriptVerticle.start method
+
+ Optionally verticle.onStart and verticle.onStop event handlers can be set
+*/
+
+val testUtils = TestUtils(vertx)
+
+fun echo(ssl: Boolean) {
+    val server = vertx.createNetServer() {
+        if(ssl) {
+            SSL = true
+            keyStorePath = "./vertx-testsuite/src/test/keystores/server-keystore.jks"
+            keyStorePassword = "wibble"
+            trustStorePath = "./vertx-testsuite/src/test/keystores/server-truststore.jks"
+            trustStorePassword = "wibble"
+            clientAuthRequired = true
+        }
+
+        connectHandler { socket ->
+            testUtils.checkContext()
+            socket.dataHandler { buffer ->
+                testUtils.checkContext()
+                socket.write(buffer)
+            }
+        }
+    }.listen(8080)
+
+
+    val client = vertx.createNetClient() {
+        if(ssl)  {
+            SSL = true
+            keyStorePath = "./vertx-testsuite/src/test/keystores/client-keystore.jks"
+            keyStorePassword = "wibble"
+            trustStorePath = "./vertx-testsuite/src/test/keystores/client-truststore.jks"
+            trustStorePassword = "wibble"
+        }
+    }
+
+    client.connect(8080, "localhost") { socket ->
+        testUtils.checkContext()
+
+        val sends = 10
+        val size = 100
+
+        val sent = Buffer()
+        val received = Buffer()
+
+        socket {
+            dataHandler { buffer ->
+                testUtils.checkContext()
+
+                received.appendBuffer(buffer)
+
+                if (received.length() == sends * size) {
+                    testUtils.azzert(TestUtils.buffersEqual(sent, received))
+
+                    // FIXME: kotlin compiler thinks that server is nullable. why?
+                    server!!.close{
+                        client.close()
+                        testUtils.testComplete()
+                    }
+                }
+            }
+
+            endHandler {
+                testUtils.checkContext()
+            }
+
+            closedHandler {
+                testUtils.checkContext()
+            }
+
+            drainHandler {
+                testUtils.checkContext()
+            }
+
+            pause()
+            resume()
+        }
+
+        sends.times {
+            val data = TestUtils.generateRandomBuffer(size)
+            sent.appendBuffer(data)
+            socket.write(data)
+        }
+    }
+}
+
+fun TestUtils.register(name: String, test: ()->Any?) = register(name, handler(test))
+
+verticle.onStop = {
+  testUtils.unregisterAll()
+  testUtils.appStopped()
+}
+
+verticle.onStart = {
+    testUtils.register("testEcho") {
+        echo(false)
+    }
+
+    testUtils.register("testEchoSSL") {
+        echo(true)
+    }
+
+    testUtils.appReady();
+}
