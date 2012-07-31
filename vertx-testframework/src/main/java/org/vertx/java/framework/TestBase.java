@@ -28,7 +28,6 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.impl.VerticleManager;
 
-import java.io.File;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
@@ -176,9 +175,9 @@ public class TestBase extends TestCase {
   }
 
   protected String startApp(boolean worker, String main, JsonObject config, int instances, boolean await) throws Exception {
-    if(Runtime.getRuntime().availableProcessors() < 2) {
-        log.error("*** The test framework requires at least 2 processors ***");
-        fail("The test framework requires at least 2 processors");
+    if (Runtime.getRuntime().availableProcessors() < 2) {
+      log.error("*** The test framework requires at least 2 processors ***");
+      fail("The test framework requires at least 2 processors");
     }
     URL url;
     if (main.endsWith(".js") || main.endsWith(".rb") || main.endsWith(".groovy") || main.endsWith(".py")) {
@@ -206,7 +205,7 @@ public class TestBase extends TestCase {
       }
     };
 
-    verticleManager.deploy(worker, main, config, new URL[] {url}, instances, null, doneHandler);
+    verticleManager.deployVerticle(worker, main, config, new URL[]{url}, instances, null, doneHandler);
 
     if (!doneLatch.await(30, TimeUnit.SECONDS)) {
       throw new IllegalStateException("Timedout waiting for apps to start");
