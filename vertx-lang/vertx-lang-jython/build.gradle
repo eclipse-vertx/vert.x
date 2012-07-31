@@ -18,10 +18,10 @@ apply from: "$rootDir/gradle/maven.gradle"
 apply plugin: 'vertx-jython'
 
 dependencies {
-	compile project(':vertx-core')
-	compile project(':vertx-platform')
-	vertxJython "org.python:jython-standalone:$jythonVersion"
+  compile project(':vertx-core')
+  compile project(':vertx-platform')
+  vertxJython "org.python:jython-standalone:$jythonVersion"
 }
 artifacts {
-	platform jar
+  platform jar
 }
