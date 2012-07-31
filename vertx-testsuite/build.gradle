@@ -33,7 +33,6 @@ test {
 	systemProperty 'vertx.test.timeout', 15
   systemProperty 'vertx.mods', "$projectDir/src/test/mod-test"
 	systemProperty 'jruby.home', System.getenv('JRUBY_HOME')
-	systemProperty 'jython.home', System.getenv('JYTHON_HOME')
 
 	jvmArgs '-server', '-Xms128m', '-Xmx1024m', '-XX:MaxPermSize=128m', '-XX:NewRatio=2'
 

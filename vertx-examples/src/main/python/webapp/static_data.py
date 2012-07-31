@@ -1,4 +1,3 @@
-import vertx
 from core.event_bus import EventBus
 
 eb = EventBus
