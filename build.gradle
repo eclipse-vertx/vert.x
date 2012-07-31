@@ -218,6 +218,16 @@ task distTar(type: Tar, dependsOn: ['assemble', 'createDocs']) {
   group = 'vert.x'
   description 'Create the GZIP distribution'
 
+  destinationDir vertxTemp
+  inputs.files files("build/$rootProject.name-$version")
+  outputs.dir destinationDir
+  from "build/$rootProject.name-$version"
+}
+
+task dist(type: Tar, dependsOn: ['assemble', 'createDocs']) {
+  group = 'vert.x'
+  description 'Create the distribution'
+
   compression = org.gradle.api.tasks.bundling.Compression.GZIP
   destinationDir file('build/distributions')
   inputs.files files("build/$rootProject.name-$version")
