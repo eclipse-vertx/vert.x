@@ -361,11 +361,11 @@ logger.info("I am logging something");
 </pre>
 <p>Where <code>main</code> is the name of the "main" of the Verticle (i.e. the name of the script if it's a Ruby or JavaScript verticle or the fully qualified class name if it's a Java verticle). See the chapter on "running vert.x" in the main manual for a description of what a main is.</p>
 <h2 id="deploying-a-module-programmatically">Deploying a module programmatically</h2><br/>
-<p>You can also use <code>deployVerticle</code> to deploy an installed module, for example:</p>
-<pre class="prettyprint">container.deployVerticle("mailer", config);
+<p>You should use <code>deployModule</code> to deploy a module, for example:</p>
+<pre class="prettyprint">container.deployModule("vertx.mailer-v1.0", config);
 </pre>
-<p>Would deploy an instance of the out-of-the-box mailer module (see the modules manual) with the specified configuration.<br/>
-</p>
+<p>Would deploy an instance of the <code>vertx.mailer</code> module with the specified configuration. Please see the modules manual
+ for more information about modules.</p>
 <h2 id="passing-configuration-to-a-verticle-programmatically">Passing configuration to a verticle programmatically</h2><br/>
 <p>JSON configuration can be passed to a verticle that is deployed programmatically. Inside the deployed verticle the configuration is accessed with the <code>getConfig</code> method. For example:</p>
 <pre class="prettyprint">JsonObject config = new JsonObject();
