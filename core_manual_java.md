@@ -102,11 +102,12 @@ Where `main` is the name of the "main" of the Verticle (i.e. the name of the scr
     
 ## Deploying a module programmatically
 
-You can also use `deployVerticle` to deploy an installed module, for example:
+You should use `deployModule` to deploy a module, for example:
 
-    container.deployVerticle("mailer", config);
-    
-Would deploy an instance of the out-of-the-box mailer module (see the modules manual) with the specified configuration.  
+    container.deployModule("vertx.mailer-v1.0", config);
+
+Would deploy an instance of the `vertx.mailer` module with the specified configuration. Please see the modules manual
+ for more information about modules.
     
 ## Passing configuration to a verticle programmatically   
   

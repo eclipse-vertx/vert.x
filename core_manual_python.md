@@ -94,11 +94,12 @@ To deploy a single instance of a verticle :
     
 ## Deploying a module programmatically
 
-You can also use `deploy_verticle` to deploy an installed module, for example:
+You should use `deploy_module` to deploy a module, for example:
 
-    vertx.deploy_verticle('mailer', config)
-    
-Would deploy an instance of the out-of-the-box mailer module (see the modules manual) with the specified configuration.      
+    container.deploy_module('vertx.mailer-v1.0', config)
+
+Would deploy an instance of the `vertx.mailer` module with the specified configuration. Please see the modules manual
+ for more information about modules.
 
 ## Passing configuration to a verticle programmatically
 
