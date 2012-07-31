@@ -71,7 +71,8 @@ $APP_HOME/vertx-lang/vertx-lang-jruby/build/deps/compile/*:$APP_HOME/vertx-lang/
 $APP_HOME/vertx-lang/vertx-lang-rhino/build/deps/compile/*:\
 $APP_HOME/vertx-lang/vertx-lang-groovy/build/libs/*:$APP_HOME/vertx-lang/vertx-lang-java/build/libs/*:\
 $APP_HOME/vertx-lang/vertx-lang-jruby/build/libs/*:$APP_HOME/vertx-lang/vertx-lang-jython/build/libs/*:\
-$APP_HOME/vertx-lang/vertx-lang-rhino/build/libs/*
+$APP_HOME/vertx-lang/vertx-lang-rhino/build/libs/*:\
+$APP_HOME/src/dist/conf
 
 echo $APP_HOME
 
@@ -172,4 +173,4 @@ function splitJvmOpts() {
 }
 eval splitJvmOpts $DEFAULT_JVM_OPTS $JAVA_OPTS $VERTX_OPTS
 
-exec "$JAVACMD" "${JVM_OPTS[@]}" -Dvertx.install=$APP_HOME -Djava.util.logging.config.file=$APP_HOME/src/dist/conf/logging.properties -Djruby.home=$JRUBY_HOME -Djython.home=$JYTHON_HOME -classpath "$CLASSPATH" org.vertx.java.deploy.impl.cli.Starter "$@"
+exec "$JAVACMD" "${JVM_OPTS[@]}" -Dvertx.install=$APP_HOME -Djava.util.logging.config.file=$APP_HOME/src/dist/conf/logging.properties -Djruby.home=$JRUBY_HOME -classpath "$CLASSPATH" org.vertx.java.deploy.impl.cli.Starter "$@"

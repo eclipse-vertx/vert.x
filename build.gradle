@@ -75,13 +75,6 @@ defaultTasks = ['preflight']
 task preflight(dependsOn: subprojects.collectDeps) {
 	group = null
 	description = null
-	/* this is an issue for IDEs
-	assert System.getenv("JRUBY_HOME") != null
-	assert System.getenv("JYTHON_HOME") != null
-
-	System.setProperty 'jruby.home', System.getenv("JRUBY_HOME")
-	System.setProperty 'jython.home', System.getenv("JYTHON_HOME")
-	*/
 }
 
 task test(dependsOn: [subprojects.test]) {
@@ -102,10 +95,6 @@ task clean(type: Delete, dependsOn: [subprojects.clean]) {
 task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
 	group = 'vert.x'
 	description 'Build the parent and all of the vert.x subprojects'
-
-	['temp', 'logs'].each { dir->
-		mkdir("$rootDir/build/$rootProject.name-$version/$dir")
-	}
 
 	destinationDir file("build/$rootProject.name-$version")
 	outputs.dir destinationDir
@@ -169,7 +158,7 @@ task javadocs(type: Javadoc, dependsOn: subprojects.javadoc) {
 	source = subprojects.sourceSets.main.java
 	classpath = files(subprojects.configurations.compile)
 
-	destinationDir file("build/$rootProject.name-$version/docs/java/api")
+	destinationDir file("build/$rootProject.name-$version/api-docs/java/api")
 	inputs.files classpath
 	outputs.dir destinationDir
 }
@@ -178,14 +167,14 @@ task nonJavadocs(type: Copy) {
 	group = null       // hide the task
 	description = null // hide the task
 
-	destinationDir file("build/$rootProject.name-$version/docs")
+	destinationDir file("build/$rootProject.name-$version/api-docs")
 	
 	inputs.files subprojects.docsDir
 	outputs.dir destinationDir
 	
 	doFirst {
 		['groovy/api', 'javascript/api', 'python/api', 'ruby/api'].each { dir->
-			mkdir("$rootDir/build/$rootProject.name-$version/docs/$dir")
+			mkdir("$rootDir/build/$rootProject.name-$version/api-docs/$dir")
 		}
 	}
 	

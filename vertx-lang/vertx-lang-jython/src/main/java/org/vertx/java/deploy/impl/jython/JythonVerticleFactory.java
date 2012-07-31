@@ -49,10 +49,6 @@ public class JythonVerticleFactory implements VerticleFactory {
   }
 
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
-    if (System.getProperty("jython.home") == null) {
-      throw new IllegalStateException("In order to deploy Python applications you must set JYTHON_HOME to point " +
-          "at your Jython installation");
-    }
     Verticle app = new JythonVerticle(main, cl);
     return app;
   }
