@@ -130,6 +130,7 @@ task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
     from file("vertx-examples/src/main")
     exclude "**/vertx-dev*"
   }
+  // see language impl map defined above
   languageImplementations.each { key, value->
     into("examples/$key/eventbusbridge") {
       from file("src/dist/client/vertxbus.js")
@@ -177,7 +178,7 @@ task nonJavadocs(type: Copy) {
     }
   }
 
-  // TODO make this less ugly
+  // see language impl map defined above
   languageImplementations.each { key, value->
     into(key) {
       from file("vertx-lang/vertx-lang-$value/build/docs/$key")
