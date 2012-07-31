@@ -51,6 +51,8 @@ public class Starter {
   private static final String CP_SEPARATOR =
     System.getProperty("os.name").startsWith("Windows") ? ";" : ":";
 
+  private static final String VERSION = "vert.x-1.2.3.final";
+
   public static void main(String[] args) {
     new Starter(args);
   }
@@ -59,14 +61,13 @@ public class Starter {
   private VerticleManager mgr;
 
   private Starter(String[] sargs) {
-	  String vertxVersion = String.format("vert.x %s", System.getProperty("vertx.version", "0.0.0-UNKNOWN!"));
     if (sargs.length < 1) {
       displaySyntax();
     } else {
       String command = sargs[0].toLowerCase();
       Args args = new Args(sargs);
       if ("version".equals(command)) {
-        log.info(vertxVersion);
+        log.info(VERSION);
       } else {
         if (sargs.length < 2) {
           displaySyntax();
@@ -74,7 +75,7 @@ public class Starter {
           String operand = sargs[1];
           switch (command) {
             case "version":
-              log.info(vertxVersion);
+              log.info(VERSION);
               break;
             case "run":
               runVerticle(false, operand, args);
