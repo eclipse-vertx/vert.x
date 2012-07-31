@@ -79,6 +79,7 @@
 <li><a href="#main-field">Main field</a></li>
 <li><a href="#worker-modules">Worker modules</a></li>
 <li><a href="#preserving-working-directory">Preserving working directory</a></li>
+<li><a href="#auto-re-deploy">Auto re-deploy</a></li>
 </ul>
 </li>
 <li><a href="#module-path">Module path</a></li>
@@ -136,6 +137,9 @@ vertx.mongo-persistor-v1.0
 <p>However in some cases, you don't want this behaviour, you want the module to see its working directory as the working directory of whoever started the module.</p>
 <p>An example of this would be the <code>web-server</code> module. With the web server, you use it to serve your own static files which exist either outside of a module or in your own module, they do not exist inside the <code>web-server</code> module itself.</p>
 <p>If you want to preserve current working directory, set the field <code>preserve-cwd</code> to <code>true</code> in <code>mod.json</code>. The default value is <code>false</code>.</p>
+<h4 id="auto-re-deploy">Auto re-deploy</h4><br/>
+<p>You can configure a module to be auto-redeployed if it detects any files were modified, added or deleted in its module directory.</p>
+<p>To enable auto re-deploy for a module you should specify a field <code>auto-redeploy</code> with a value of <code>true</code> in <code>mod.json</code>. The default value for <code>auto-redeploy</code> is <code>false</code>.</p>
 <h3 id="module-path">Module path</h3><br/>
 <p>Any scripts or classes you place in the module directory will be available to the module (placed on the module path). If you have any jar dependencies you can also place these in a directory called <code>lib</code> and these will be added to the module path.</p>
 <p>Here's an example JS module:</p>

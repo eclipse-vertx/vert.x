@@ -60,6 +60,12 @@ An example of this would be the `web-server` module. With the web server, you us
 
 If you want to preserve current working directory, set the field `preserve-cwd` to `true` in `mod.json`. The default value is `false`.
 
+#### Auto re-deploy
+
+You can configure a module to be auto-redeployed if it detects any files were modified, added or deleted in its module directory.
+
+To enable auto re-deploy for a module you should specify a field `auto-redeploy` with a value of `true` in `mod.json`. The default value for `auto-redeploy` is `false`.
+
 ### Module path
 
 Any scripts or classes you place in the module directory will be available to the module (placed on the module path). If you have any jar dependencies you can also place these in a directory called `lib` and these will be added to the module path.
