@@ -65,7 +65,7 @@ cd "`dirname \"$PRG\"`/.."
 APP_HOME="`pwd -P`"
 cd "$SAVED"
 
-CLASSPATH=$APP_HOME/bin/vertx-boot.jar
+CLASSPATH=$APP_HOME/lib/*
 
 # Determine the Java command to use to start the JVM.
 if [ -n "$JAVA_HOME" ] ; then
@@ -165,4 +165,4 @@ function splitJvmOpts() {
 eval splitJvmOpts $DEFAULT_JVM_OPTS $JAVA_OPTS $VERTX_OPTS
 
 
-exec "$JAVACMD" "${JVM_OPTS[@]}" -Dvertx.install=$APP_HOME -Djava.util.logging.config.file=$APP_HOME/conf/logging.properties -Djruby.home=$JRUBY_HOME -Djython.home=$JYTHON_HOME -classpath "$CLASSPATH" org.vertx.java.boot.VertxBoot "$@"
+exec "$JAVACMD" "${JVM_OPTS[@]}" -Dvertx.install=$APP_HOME -Djava.util.logging.config.file=$APP_HOME/conf/logging.properties -Djruby.home=$JRUBY_HOME -Djython.home=$JYTHON_HOME -classpath "$CLASSPATH" org.vertx.java.deploy.impl.cli.Starter "$@"

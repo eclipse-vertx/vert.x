@@ -245,7 +245,7 @@ public class VerticleManager implements ModuleReloader {
           // If preserveCwd then use the current module directory instead, or the cwd if not in a module
           File modDirToUse = preserveCwd ? currentModDir : modDir;
 
-          List<URL> urls = processIncludes(modName, new ArrayList<URL>(), modName, modDirToUse, conf,
+          List<URL> urls = processIncludes(modName, new ArrayList<URL>(), modName, modDir, conf,
                                            new HashMap<String, String>(), new HashSet<String>());
           if (urls == null) {
             return false;
@@ -263,7 +263,7 @@ public class VerticleManager implements ModuleReloader {
             }
           };
           doDeploy(depName, autoRedeploy, worker, main, modName, config,
-                   urls.toArray(new URL[urls.size()]), instances, modDir, ctx, handler);
+                   urls.toArray(new URL[urls.size()]), instances, modDirToUse, ctx, handler);
           return true;
         } else {
           return false;
