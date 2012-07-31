@@ -110,9 +110,6 @@ task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
 	destinationDir file("build/$rootProject.name-$version")
 	outputs.dir destinationDir
 	into('bin') {
-		from project(':vertx-boot').jar
-	}
-	into('bin') {
 		from file('src/dist/scripts')
 		// fileMode 755
 	}
