@@ -226,6 +226,7 @@ task distTar(type: Tar, dependsOn: ['assemble', 'createDocs']) {
   // setting inputs/outputs helps Gradle understand what's changed
   inputs.files files("build/$rootProject.name-$version")
   outputs.dir destinationDir
+
   baseName = rootProject.name
   version = rootProject.version
   extension = 'tar.gz'
