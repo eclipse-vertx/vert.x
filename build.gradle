@@ -17,45 +17,49 @@
 apply from: 'gradle/extra-tasks.gradle'
 
 buildscript {
-	repositories {
-		// mavenLocal()
-		maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
-		mavenCentral()
-	}
-	dependencies {
-		classpath "org.vert-x:build-tools:$vertxBuildToolsVersion"
-	}
-} 
+  repositories {
+    // mavenLocal()
+    maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+    mavenCentral()
+  }
+  dependencies {
+    classpath "org.vert-x:build-tools:$vertxBuildToolsVersion"
+  }
+}
 
 allprojects {
   apply plugin: 'eclipse'
   apply plugin: 'idea'
 
-	configurations {
-		platform
-	}
+  configurations {
+    platform
+  }
 }
 
 subprojects {
-	apply plugin: 'java'
-	
-	sourceCompatibility = '1.7'
-	targetCompatibility = '1.7'
+  apply plugin: 'java'
 
-	defaultTasks = ['classes']
-	group = rootProject.group
-	
-	repositories {
-		mavenCentral()
-	}
-	
-	dependencies {
-		testCompile "junit:junit:$junitVersion"
-	}
-	
-	javadoc {
-		destinationDir = file("build/docs/java/api")
-	}
+  sourceCompatibility = '1.7'
+  targetCompatibility = '1.7'
+
+  defaultTasks = ['classes']
+  group = rootProject.group
+
+  repositories {
+    mavenCentral()
+  }
+
+  dependencies {
+    testCompile "junit:junit:$junitVersion"
+  }
+
+  javadoc {
+    destinationDir = file("build/docs/java/api")
+  }
+
+  jar {
+    version = ''
+  }
 
   task collectDeps(type: Copy) {
     destinationDir = file("build/deps")
@@ -70,188 +74,179 @@ subprojects {
   }
 }
 
+// Add language implementation mapping pairs to this map:
+def languageImplementations = [ java: 'java', groovy: 'groovy', javascript: 'rhino', ruby: 'jruby', python: 'jython']
+
 defaultTasks = ['preflight']
 
 task preflight(dependsOn: subprojects.collectDeps) {
-	group = null
-	description = null
+  group = null
+  description = null
 }
 
 task test(dependsOn: [subprojects.test]) {
-	group = null
-	description = null
+  group = null
+  description = null
 }
 
 task clean(type: Delete, dependsOn: [subprojects.clean]) {
-	group = 'build'
-	description 'Clean the parent and all of the vert.x subprojects'
+  group = 'build'
+  description 'Clean the parent and all of the vert.x subprojects'
 
-	delete 'build'
+  delete 'build'
   subprojects.each {
     delete 'build/deps'
   }
 }
 
 task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
-	group = 'vert.x'
-	description 'Build the parent and all of the vert.x subprojects'
+  group = 'vert.x'
+  description 'Build the parent and all of the vert.x subprojects'
 
-	destinationDir file("build/$rootProject.name-$version")
-	outputs.dir destinationDir
-	into('bin') {
-		from file('src/dist/scripts')
-		// fileMode 755
-	}
-	into('client') {
-		from file('src/dist/client')
-	}
-	into('conf') {
-		from file('src/dist/conf')
-		filter(org.apache.tools.ant.filters.ReplaceTokens, tokens:[version: rootProject.version])
-	}
-	into('examples') {
-		from file("vertx-examples/src/main")
+  ['temp', 'logs'].each { dir->
+    mkdir("$rootDir/build/$rootProject.name-$version/$dir")
+  }
+
+  destinationDir file("build/$rootProject.name-$version")
+  outputs.dir destinationDir
+  into('bin') {
+    from project(':vertx-boot').jar
+  }
+  into('bin') {
+    from file('src/dist/scripts')
+    // fileMode 755
+  }
+  into('client') {
+    from file('src/dist/client')
+  }
+  into('conf') {
+    from file('src/dist/conf')
+    filter(org.apache.tools.ant.filters.ReplaceTokens, tokens:[version: rootProject.version])
+  }
+  into('examples') {
+    from file("vertx-examples/src/main")
     exclude "**/vertx-dev*"
-	}
-  into('examples/java/eventbusbridge') {
-    from file("src/dist/client/vertxbus.js")
   }
-  into('examples/groovy/eventbusbridge') {
-    from file("src/dist/client/vertxbus.js")
+  // use language/impl map to reduce duplication
+  languageImplementations.each { key, value->
+    into("examples/$key/eventbusbridge") {
+      from file("src/dist/client/vertxbus.js")
+    }
+    into("examples/$key/webapp/web/js") {
+      from file("src/dist/client/vertxbus.js")
+    }
   }
-  into('examples/javascript/eventbusbridge') {
-    from file("src/dist/client/vertxbus.js")
-  }
-  into('examples/python/eventbusbridge') {
-    from file("src/dist/client/vertxbus.js")
-  }
-  into('examples/ruby/eventbusbridge') {
-    from file("src/dist/client/vertxbus.js")
-  }
-  into('examples/groovy/webapp/web/js') {
-    from file("src/dist/client/vertxbus.js")
-  }
-  into('examples/javascript/webapp/web/js') {
-    from file("src/dist/client/vertxbus.js")
-  }
-  into('examples/python/webapp/web/js') {
-    from file("src/dist/client/vertxbus.js")
-  }
-  into('examples/ruby/webapp/web/js') {
-    from file("src/dist/client/vertxbus.js")
-  }
-	into('lib') {
-		from subprojects.configurations.platform
-		from subprojects.configurations.compile
+  into('lib') {
+    // TODO figure out why this didn't work; currently deps are actually pulled from test-framework
+    // from subprojects.configurations.platform
+    from subprojects.configurations.compile
     // Don't just include everything!!
     includes = ["groovy*.jar", "jackson*.jar", "rhino*.jar", "netty*.jar", "hazelcast*.jar", "vertx*.jar"]
-	}
-	doLast {
-		project.ant.chmod(file: "build/$rootProject.name-$version/bin", perm: 'ugo+x')
-	}
+  }
+  doLast {
+    project.ant.chmod(file: "build/$rootProject.name-$version/bin", perm: 'ugo+x')
+  }
 }
 
 task javadocs(type: Javadoc, dependsOn: subprojects.javadoc) {
-	group = null       // hide the task
-	description = null // hide the task
+  group = null       // hide the task
+  description = null // hide the task
 
-	source = subprojects.sourceSets.main.java
-	classpath = files(subprojects.configurations.compile)
+  source = subprojects.sourceSets.main.java
+  classpath = files(subprojects.configurations.compile)
 
-	destinationDir file("build/$rootProject.name-$version/api-docs/java/api")
-	inputs.files classpath
-	outputs.dir destinationDir
+  destinationDir file("build/$rootProject.name-$version/docs/java/api")
+  inputs.files classpath
+  outputs.dir destinationDir
 }
 
 task nonJavadocs(type: Copy) {
-	group = null       // hide the task
-	description = null // hide the task
+  group = null       // hide the task
+  description = null // hide the task
 
-	destinationDir file("build/$rootProject.name-$version/api-docs")
-	
-	inputs.files subprojects.docsDir
-	outputs.dir destinationDir
-	
-	doFirst {
-		['groovy/api', 'javascript/api', 'python/api', 'ruby/api'].each { dir->
-			mkdir("$rootDir/build/$rootProject.name-$version/api-docs/$dir")
-		}
-	}
-	
-	// TODO make this less ugly
-	into('groovy') {
-		from file('vertx-lang/vertx-lang-groovy/build/docs/groovy')
-	}
-	into('python') {
-		from file('vertx-lang/vertx-lang-jython/build/docs/python')
-	}
-	into('ruby') {
-		from file('vertx-lang/vertx-lang-jruby/build/docs/ruby')
-	}
-	into('javascript') {
-		from file('vertx-lang/vertx-lang-rhino/build/docs/javascript')
-	}
+  destinationDir file("build/$rootProject.name-$version/docs")
+
+  inputs.files subprojects.docsDir
+  outputs.dir destinationDir
+
+  doFirst {
+    ['groovy/api', 'javascript/api', 'python/api', 'ruby/api'].each { dir->
+      mkdir("$rootDir/build/$rootProject.name-$version/docs/$dir")
+    }
+  }
+
+  // TODO make this less ugly
+  languageImplementations.each { key, value->
+    into(key) {
+      from file("vertx-lang/vertx-lang-$value/build/docs/$key")
+    }
+  }
 }
 
 task createDocs(dependsOn: [subprojects.classes, 'javadocs', 'nonJavadocs']) {
-	group = 'vert.x'
-	description = 'Build all of the various docs for the project'
+  group = 'vert.x'
+  description = 'Build all of the various docs for the project'
 }
 
 task installApp(type: Sync, dependsOn: ['assemble']) {
-	group = 'vert.x'
-	description 'Install a local copy of this build'
+  group = 'vert.x'
+  description 'Install a local copy of this build'
 
-	def vertxTemp = file(System.getProperty('java.io.tmpdir') + "/vertx-$version")
+  def vertxTemp = file(System.getProperty('java.io.tmpdir') + "/vertx-$version")
 
-	destinationDir vertxTemp
-	inputs.files files("build/$rootProject.name-$version")
-	outputs.dir destinationDir
-	from "build/$rootProject.name-$version"
+  destinationDir vertxTemp
+  inputs.files files("build/$rootProject.name-$version")
+  outputs.dir destinationDir
+  from "build/$rootProject.name-$version"
 }
 
 task distZip(type: Zip, dependsOn : ['assemble', 'createDocs']) {
-	group = 'vert.x'
-	description 'Create the Zip distribution'
+  group = 'vert.x'
+  description 'Create the Zip distribution'
 
-	destinationDir file('build/distributions')
-	baseName = rootProject.name
-	version = rootProject.version
-	from 'build'
-	include "$rootProject.name-$version/**"
+  destinationDir file('build/distributions')
+  // setting inputs/outputs helps Gradle understand what's changed
+  inputs.files files("build/$rootProject.name-$version")
+  outputs.dir destinationDir
+
+  baseName = rootProject.name
+  version = rootProject.version
+  from 'build'
+  include "$rootProject.name-$version/**"
 }
 
 task distTar(type: Tar, dependsOn: ['assemble', 'createDocs']) {
-	group = 'vert.x'
-	description 'Create the GZIP distribution'
+  group = 'vert.x'
+  description 'Create the GZIP distribution'
 
-	compression = org.gradle.api.tasks.bundling.Compression.GZIP
-	destinationDir file('build/distributions')
-	inputs.files files("build/$rootProject.name-$version")
-	outputs.dir destinationDir
-	baseName = rootProject.name
-	version = rootProject.version
-	extension = 'tar.gz'
-	from 'build'
-	include "$rootProject.name-$version/**"
+  compression = org.gradle.api.tasks.bundling.Compression.GZIP
+  destinationDir file('build/distributions')
+  // setting inputs/outputs helps Gradle understand what's changed
+  inputs.files files("build/$rootProject.name-$version")
+  outputs.dir destinationDir
+  baseName = rootProject.name
+  version = rootProject.version
+  extension = 'tar.gz'
+  from 'build'
+  include "$rootProject.name-$version/**"
 }
 
 task dist(dependsOn: ['distTar', 'distZip']){
-	group = 'vert.x'
-	description 'Create distributions - tar.gz and zip'
+  group = 'vert.x'
+  description 'Create distributions - tar.gz and zip'
 }
 
 task release(dependsOn: ['clean', 'test', 'dist']) {
-	group = 'vert.x'
-	description 'Clean and fully test the current version before creating the distribution'
+  group = 'vert.x'
+  description 'Clean and fully test the current version before creating the distribution'
 }
 
-/* 
+/*
  * TODO add Git tasks for tagging a release
  * TODO add Git tasks for publishing binaries to master
  * TODO add Git tasks for updating documentation on website
  * (@see EGit)
- * 
+ *
  */
 
 
