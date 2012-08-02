@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.vert-x</groupId>
+        <artifactId>parent</artifactId>
+        <version>1.2.4-SNAPSHOT</version>
+        <relativePath>../..</relativePath>
+    </parent>
+
+    <groupId>org.vert-x</groupId>
+    <artifactId>vertx-testsuite</artifactId>
+
+    <dependencies>
+        <!-- == compile == -->
+        <dependency>
+            <groupId>org.vert-x</groupId>
+            <artifactId>vertx-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.vert-x</groupId>
+            <artifactId>vertx-platform</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.vert-x</groupId>
+            <artifactId>vertx-testframework</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.vert-x</groupId>
+            <artifactId>vertx-lang-groovy</artifactId>
+            <version>${project.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.vert-x</groupId>
+            <artifactId>vertx-lang-java</artifactId>
+            <version>${project.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.vert-x</groupId>
+            <artifactId>vertx-lang-jruby</artifactId>
+            <version>${project.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.vert-x</groupId>
+            <artifactId>vertx-lang-jython</artifactId>
+            <version>${project.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.vert-x</groupId>
+            <artifactId>vertx-lang-rhino</artifactId>
+            <version>${project.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <testResources>
+            <testResource>
+                <directory>src/main/resources</directory>
+            </testResource>
+            <testResource>
+                <directory>src/main/groovy_scripts</directory>
+            </testResource>
+            <testResource>
+                <directory>src/main/javascript_scripts</directory>
+            </testResource>
+            <testResource>
+                <directory>src/main/python_scripts</directory>
+            </testResource>
+            <testResource>
+                <directory>src/main/ruby_scripts</directory>
+            </testResource>
+        </testResources>
+
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.gmaven</groupId>
+                <artifactId>gmaven-plugin</artifactId>
+                <version>1.4</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <!--
+                        this is required because the version of gmaven-plugin
+                        we're using still depends on a beta version of groovy.
+                    -->
+                    <dependency>
+                        <groupId>org.codehaus.groovy</groupId>
+                        <artifactId>groovy-all</artifactId>
+                        <version>2.0.0</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.vert-x</groupId>
+    <artifactId>parent</artifactId>
+    <version>1.2.4-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>Vert.x</name>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    </properties>
+
+    <build>
+        <plugins>
+            <!-- this configures the Java compiler plugin for all children -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.4</version>
+
+                <configuration>
+                    <showDeprecation>true</showDeprecation>
+                    <showWarnings>true</showWarnings>
+                    
+                    <source>1.7</source>
+                    <target>1.7</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <modules>
+        <module>vertx-core</module>
+        <module>vertx-platform</module>
+
+        <module>vertx-lang/vertx-lang-groovy</module>
+        <module>vertx-lang/vertx-lang-java</module>
+        <module>vertx-lang/vertx-lang-jruby</module>
+        <module>vertx-lang/vertx-lang-jython</module>
+        <module>vertx-lang/vertx-lang-rhino</module>
+        <module>vertx-testframework</module>
+        <module>vertx-testsuite</module>
+    </modules>
+</project>
