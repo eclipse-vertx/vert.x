@@ -18,16 +18,16 @@ apply plugin: 'java'
 apply from: "$rootDir/gradle/maven.gradle"
 
 dependencies {
-	compile project(':vertx-core')
+  compile project(':vertx-core')
 }
 artifacts {
-	platform jar
+  platform jar
 }
 
 jar {
-	manifest {
-		attributes(
-			'Main-Class': 'org.vertx.java.deploy.impl.cli.Starter'
-		)
-	}
+  manifest {
+    attributes(
+      'Main-Class': 'org.vertx.java.deploy.impl.cli.Starter'
+    )
+  }
 }
