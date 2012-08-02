@@ -127,7 +127,9 @@ task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
     from file("vertx-examples/src/main")
     exclude "**/vertx-dev*"
   }
+
   // use language/impl map to reduce duplication
+  // see language impl map defined above
   languageImplementations.each { key, value->
     into("examples/$key/eventbusbridge") {
       from file("src/dist/client/vertxbus.js")
@@ -136,6 +138,7 @@ task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
       from file("src/dist/client/vertxbus.js")
     }
   }
+
   into('lib') {
     // TODO figure out why this didn't work; currently deps are actually pulled from test-framework
     // from subprojects.configurations.platform
@@ -165,7 +168,6 @@ task nonJavadocs(type: Copy) {
   description = null // hide the task
 
   destinationDir file("build/$rootProject.name-$version/docs")
-
   inputs.files subprojects.docsDir
   outputs.dir destinationDir
 
@@ -175,7 +177,7 @@ task nonJavadocs(type: Copy) {
     }
   }
 
-  // TODO make this less ugly
+  // see language impl map defined above
   languageImplementations.each { key, value->
     into(key) {
       from file("vertx-lang/vertx-lang-$value/build/docs/$key")
