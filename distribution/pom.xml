@@ -66,6 +66,12 @@
             <version>${project.version}</version>
             <classifier>groovydoc</classifier>
         </dependency>
+        <dependency>
+            <groupId>org.vert-x</groupId>
+            <artifactId>vertx-lang-jruby</artifactId>
+            <version>${project.version}</version>
+            <classifier>yardoc</classifier>
+        </dependency>
     </dependencies>
 
     <build>

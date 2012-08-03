@@ -15,7 +15,7 @@
     <artifactId>vertx-testsuite</artifactId>
 
     <properties>
-        <jruby.lib>${project.build.directory}/jruby-lib/gems</jruby.lib>
+        <jruby.lib>${project.build.directory}/jruby-lib</jruby.lib>
     </properties>
 
     <dependencies>
@@ -117,8 +117,8 @@
                            these tell JRuby where to pick up the gems required
                            for test execution
                         -->
-                        <GEM_PATH>${jruby.lib}</GEM_PATH>
-                        <GEM_HOME>${jruby.lib}</GEM_HOME>
+                        <GEM_PATH>${jruby.lib}/gems</GEM_PATH>
+                        <GEM_HOME>${jruby.lib}/gems</GEM_HOME>
                     </environmentVariables>
 
                     <systemPropertyVariables>

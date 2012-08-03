@@ -15,6 +15,10 @@
     <groupId>org.vert-x</groupId>
     <artifactId>vertx-lang-jruby</artifactId>
 
+    <properties>
+        <jruby.lib>${project.build.directory}/jruby-lib</jruby.lib>
+    </properties>
+
     <dependencies>
         <!-- == compile == -->
         <dependency>
@@ -44,6 +48,138 @@
             </resource>
         </resources>
 
-        <!-- @todo implement yardoc -->
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+
+                <dependencies>
+                    <dependency>
+                        <groupId>ant-contrib</groupId>
+                        <artifactId>ant-contrib</artifactId>
+                        <version>1.0b3</version>
+
+                        <exclusions>
+                            <exclusion>
+                                <groupId>ant</groupId>
+                                <artifactId>ant</artifactId>
+                            </exclusion>
+                        </exclusions>
+                    </dependency>
+
+                    <dependency>
+                        <groupId>org.jruby</groupId>
+                        <artifactId>jruby-complete</artifactId>
+                        <version>1.7.0.preview1</version>
+                    </dependency>
+                </dependencies>
+
+                <executions>
+                    <execution>
+                        <id>provide-jruby-gems</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+
+                        <configuration>
+                            <!--
+                                http://blog.confabulus.com/2009/12/08/updating-embedded-jruby-gems-with-ant/
+
+                                The JRuby tests require some gems to run.  This
+                                will make sure that anybody can run the tests
+                                without doing manual setup tasks.
+
+
+                            -->
+                            <target name="install.yardoc">
+                                <taskdef resource="net/sf/antcontrib/antcontrib.properties"
+                                         classpathref="maven.plugin.classpath"
+                                />
+
+                                <if>
+                                    <not>
+                                        <available file="${jruby.lib}" />
+                                    </not>
+                                    <then>
+                                        <java classname="org.jruby.Main" fork="true" failonerror="true">
+                                            <classpath refid="maven.plugin.classpath" />
+
+                                            <env key="GEM_PATH" value="${jruby.lib}/gems" />
+                                            <env key="GEM_HOME" value="${jruby.lib}/gems" />
+                                            
+                                            <arg value="-S" />
+                                            <arg value="gem" />
+                                            <arg value="install" />
+                                            <arg value="--version" />
+                                            <arg value="=0.8.2.1" /> <!-- provide version for repeatability -->
+                                            <arg value="yard" />
+                                        </java>
+                                    </then>
+                                    <else>
+                                        <echo message="JRuby gems are already installed" />
+                                    </else>
+                                </if>
+                            </target>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>generate-yardoc</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+
+                        <configuration>
+                            <target name="generate.yardoc">
+                                <property name="dest-path" value="${project.reporting.outputDirectory}/yardoc" />
+                                <property name="dest-jar" value="${project.build.directory}/yardoc.jar" />
+
+                                <java classname="org.jruby.Main" fork="true" failonerror="true">
+                                    <classpath>
+                                        <path refid="maven.plugin.classpath" />
+                                        <path refid="maven.test.classpath" />
+                                    </classpath>
+
+                                    <!--
+                                        http://jira.codehaus.org/browse/JRUBY-6680
+                                    -->
+                                    <sysproperty key="jruby.compile.invokedynamic" value="false" />
+
+                                    <env key="GEM_PATH" value="${jruby.lib}/gems" />
+                                    <env key="GEM_HOME" value="${jruby.lib}/gems" />
+                                    
+                                    <arg value="-S" />
+                                    <arg value="${jruby.lib}/gems/bin/yardoc" />
+                                    <arg value="-q" />
+                                    <arg value="--title" />
+                                    <arg value="Ruby API Docs" />
+                                    <arg value="--readme" />
+                                    <arg value="README" />
+                                    <arg value="--license" />
+                                    <arg value="LICENSE" />
+                                    <arg value="--no-private" />
+                                    <arg value="--output-dir" />
+                                    <arg value="${dest-path}" />
+                                    <arg value="src/main/ruby_scripts/**/*.rb" />
+                                </java>
+
+                                <zip destfile="${dest-jar}"
+                                     basedir="${dest-path}"
+                                     includes="**/*"
+                                />
+
+                                <attachartifact
+                                    file="${dest-jar}"
+                                    classifier="yardoc"
+                                    type="jar"
+                                />
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 </project>
