@@ -15,6 +15,10 @@
     <groupId>org.vert-x</groupId>
     <artifactId>vertx-testsuite</artifactId>
 
+    <properties>
+        <jruby.lib>${project.build.directory}/jruby-lib/gems</jruby.lib>
+    </properties>
+
     <dependencies>
         <!-- == compile == -->
         <dependency>
@@ -33,6 +37,7 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- == runtime == -->
         <dependency>
             <groupId>org.vert-x</groupId>
             <artifactId>vertx-lang-groovy</artifactId>
@@ -50,6 +55,14 @@
             <artifactId>vertx-lang-jruby</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
+
+            <exclusions>
+                <!-- we're providing jruby-complete, instead -->
+                <exclusion>
+                    <groupId>org.jruby</groupId>
+                    <artifactId>jruby</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.vert-x</groupId>
@@ -63,50 +76,134 @@
             <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
+
+        <!-- == test == -->
+        <!--
+            jruby-complete includes its own JRUBY_HOME, so tests can be executed
+            without manual preparation of the development environment.
+        -->
+        <dependency>
+            <groupId>org.jruby</groupId>
+            <artifactId>jruby-complete</artifactId>
+            <version>1.7.0.preview1</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <testResources>
             <testResource>
-                <directory>src/main/resources</directory>
+                <directory>src/test/groovy_scripts</directory>
             </testResource>
             <testResource>
-                <directory>src/main/groovy_scripts</directory>
+                <directory>src/test/javascript_scripts</directory>
             </testResource>
             <testResource>
-                <directory>src/main/javascript_scripts</directory>
+                <directory>src/test/python_scripts</directory>
             </testResource>
             <testResource>
-                <directory>src/main/python_scripts</directory>
-            </testResource>
-            <testResource>
-                <directory>src/main/ruby_scripts</directory>
+                <directory>src/test/ruby_scripts</directory>
             </testResource>
         </testResources>
 
         <plugins>
             <plugin>
-                <groupId>org.codehaus.gmaven</groupId>
-                <artifactId>gmaven-plugin</artifactId>
-                <version>1.4</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>testCompile</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <dependencies>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.12</version>
+
+                <configuration>
+                    <environmentVariables>
+                        <!--
+                           these tell JRuby where to pick up the gems required
+                           for test execution
+                        -->
+                        <GEM_PATH>${jruby.lib}</GEM_PATH>
+                        <GEM_HOME>${jruby.lib}</GEM_HOME>
+                    </environmentVariables>
+
+                    <systemPropertyVariables>
+                        <vertx.test.timeout>15</vertx.test.timeout>
+                        <vertx.mods>${basedir}/src/test/mod-test</vertx.mods>
+                        <_ignore-missing-jruby-home>true</_ignore-missing-jruby-home>
+                    </systemPropertyVariables>
+
                     <!--
-                        this is required because the version of gmaven-plugin
-                        we're using still depends on a beta version of groovy.
+                        these are required to prevent
+                            java.lang.OutOfMemoryError: PermGen space
                     -->
+                    <forkMode>always</forkMode>
+                    <argLine>-server -Xms128m -Xmx1024m -XX:MaxPermSize=128m -XX:NewRatio=2</argLine>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+
+                <dependencies>
                     <dependency>
-                        <groupId>org.codehaus.groovy</groupId>
-                        <artifactId>groovy-all</artifactId>
-                        <version>2.0.0</version>
+                        <groupId>ant-contrib</groupId>
+                        <artifactId>ant-contrib</artifactId>
+                        <version>1.0b3</version>
+
+                        <exclusions>
+                            <exclusion>
+                                <groupId>ant</groupId>
+                                <artifactId>ant</artifactId>
+                            </exclusion>
+                        </exclusions>
                     </dependency>
                 </dependencies>
+
+                <executions>
+                    <execution>
+                        <id>provide-jruby-gems</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+
+                        <configuration>
+                            <!--
+                                http://blog.confabulus.com/2009/12/08/updating-embedded-jruby-gems-with-ant/
+
+                                The JRuby tests require some gems to run.  This
+                                will make sure that anybody can run the tests
+                                without doing manual setup tasks.
+                            -->
+                            <target name="install.gems">
+                                <taskdef resource="net/sf/antcontrib/antcontrib.properties"
+                                         classpathref="maven.plugin.classpath"
+                                />
+
+                                <if>
+                                    <not>
+                                        <available file="${jruby.lib}" />
+                                    </not>
+                                    <then>
+                                        <java classname="org.jruby.Main" fork="true" failonerror="true">
+                                            <classpath refid="maven.test.classpath" />
+
+                                            <env key="GEM_PATH" value="${jruby.lib}" />
+                                            <env key="GEM_HOME" value="${jruby.lib}" />
+                                            
+                                            <arg value="-S" />
+                                            <arg value="gem" />
+                                            <arg value="install" />
+                                            <arg value="--version" />
+                                            <arg value="=1.7.4" /> <!-- provide version for repeatability -->
+                                            <arg value="json" />
+                                        </java>
+                                    </then>
+                                    <else>
+                                        <echo message="JRuby gems are already installed" />
+                                    </else>
+                                </if>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
