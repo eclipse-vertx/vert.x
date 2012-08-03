@@ -18,6 +18,20 @@
     </properties>
 
     <build>
+        <pluginManagement>
+            <!--
+                putting these here allows for central management of plugin
+                versions and configuration for child projects.
+            -->
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>1.7</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        
         <plugins>
             <!-- this configures the Java compiler plugin for all children -->
             <plugin>
