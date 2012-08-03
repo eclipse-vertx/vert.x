@@ -134,6 +134,10 @@
                     -->
                     <forkMode>always</forkMode>
                     <argLine>-server -Xms128m -Xmx1024m -XX:MaxPermSize=128m -XX:NewRatio=2</argLine>
+
+                    <excludes>
+                        <exclude>**/RedeployerTest.java</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
 
