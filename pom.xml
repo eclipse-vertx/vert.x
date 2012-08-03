@@ -98,5 +98,7 @@
 
         <module>vertx-testframework</module>
         <module>vertx-testsuite</module>
+
+        <module>distribution</module>
     </modules>
 </project>

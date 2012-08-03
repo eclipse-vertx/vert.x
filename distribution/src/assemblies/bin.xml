@@ -1,0 +1,65 @@
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="
+              http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd
+          ">
+
+    <id>bin</id>
+
+    <formats>
+        <format>dir</format>
+    </formats>
+
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <dependencySets>
+        <dependencySet>
+            <!--
+                pull in all dependencies and transitive dependencies of this project
+
+                If you're wondering how something got included, use
+                    "mvn dependency:tree"
+            -->
+            <outputDirectory>lib</outputDirectory>
+        </dependencySet>
+
+        <dependencySet>
+            <outputDirectory>api-docs/java/api</outputDirectory>
+            <unpack>true</unpack>
+            <includes>
+                <include>org.vert-x:vertx-core:jar:javadoc</include>
+            </includes>
+        </dependencySet>
+
+        <dependencySet>
+            <outputDirectory>api-docs/groovy/api</outputDirectory>
+            <unpack>true</unpack>
+            <includes>
+                <include>org.vert-x:vertx-lang-groovy:jar:groovydoc</include>
+            </includes>
+        </dependencySet>
+    </dependencySets>
+
+    <fileSets>
+        <fileSet>
+            <directory>../src/dist</directory>
+            <outputDirectory></outputDirectory>
+            <includes>
+                <include>client/**</include>
+                <include>conf/**</include>
+            </includes>
+        </fileSet>
+
+        <!-- …/scripts → bin -->
+        <fileSet>
+            <directory>../src/dist/scripts</directory>
+            <outputDirectory>bin</outputDirectory>
+        </fileSet>
+
+        <!-- package up examples -->
+        <fileSet>
+            <directory>../vertx-examples/src/main</directory>
+            <outputDirectory>examples</outputDirectory>
+        </fileSet>
+    </fileSets>
+</assembly>

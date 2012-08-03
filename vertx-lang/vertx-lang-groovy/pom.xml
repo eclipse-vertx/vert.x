@@ -48,10 +48,12 @@
                         </goals>
                     </execution>
                 </executions>
+
                 <dependencies>
                     <!--
                         this is required because the version of gmaven-plugin
-                        we're using still depends on a beta version of groovy.
+                        we're using still depends on a beta version of groovy
+                        which generates compilation errors
                     -->
                     <dependency>
                         <groupId>org.codehaus.groovy</groupId>
@@ -69,31 +71,45 @@
                 <artifactId>maven-antrun-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>groovydoc</id>
-                        <phase>site</phase>
+                        <id>generate-groovydoc</id>
+                        <phase>prepare-package</phase>
                         <goals>
                             <goal>run</goal>
                         </goals>
                         <configuration>
-                            <target>
-                                <taskdef name="groovydoc"
-                                         classname="org.codehaus.groovy.ant.Groovydoc"
-                                         classpathref="maven.compile.classpath"
+                            <target name="generate-groovydoc">
+                                <property name="dest-path" value="${project.build.directory}/groovydoc" />
+                                <property name="dest-jar" value="${project.build.directory}/groovydoc.jar" />
+
+                                <taskdef 
+                                    name="groovydoc"
+                                     classname="org.codehaus.groovy.ant.Groovydoc"
+                                     classpathref="maven.compile.classpath"
                                 />
 
                                 <groovydoc
-                                        destdir="${project.reporting.outputDirectory}/groovydoc"
-                                        sourcepath="${basedir}/src/main/groovy"
-                                        use="true"
-                                        windowtitle="${project.name}"
-                                        doctitle="${project.name}"
+                                    destdir="${dest-path}"
+                                    sourcepath="${basedir}/src/main/groovy"
+                                    use="true"
+                                    windowtitle="${project.name}"
+                                    doctitle="${project.name}"
+                                />
+
+                                <zip destfile="${dest-jar}"
+                                     basedir="${dest-path}"
+                                     includes="**/*"
+                                />
+
+                                <attachartifact
+                                    file="${dest-jar}"
+                                    classifier="groovydoc"
+                                    type="jar"
                                 />
                             </target>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-
         </plugins>
     </build>
 </project>
