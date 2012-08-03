@@ -9,7 +9,6 @@
         <groupId>org.vert-x</groupId>
         <artifactId>parent</artifactId>
         <version>1.2.4-SNAPSHOT</version>
-        <relativePath>../..</relativePath>
     </parent>
 
     <groupId>org.vert-x</groupId>

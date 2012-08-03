@@ -56,35 +56,16 @@
         <!-- javadoc dependencies -->
         <dependency>
             <groupId>org.vert-x</groupId>
-            <artifactId>vertx-lang-groovy</artifactId>
-            <version>${project.version}</version>
-            <classifier>groovydoc</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.vert-x</groupId>
             <artifactId>vertx-core</artifactId>
             <version>${project.version}</version>
             <classifier>javadoc</classifier>
         </dependency>
         <dependency>
             <groupId>org.vert-x</groupId>
-            <artifactId>vertx-lang-jruby</artifactId>
+            <artifactId>vertx-lang-groovy</artifactId>
             <version>${project.version}</version>
-            <classifier>javadoc</classifier>
+            <classifier>groovydoc</classifier>
         </dependency>
-        <dependency>
-            <groupId>org.vert-x</groupId>
-            <artifactId>vertx-lang-jython</artifactId>
-            <version>${project.version}</version>
-            <classifier>javadoc</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.vert-x</groupId>
-            <artifactId>vertx-lang-rhino</artifactId>
-            <version>${project.version}</version>
-            <classifier>javadoc</classifier>
-        </dependency>
-
     </dependencies>
 
     <build>
