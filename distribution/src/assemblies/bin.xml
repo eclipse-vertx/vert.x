@@ -46,6 +46,14 @@
                 <include>org.vert-x:vertx-lang-jruby:jar:yardoc</include>
             </includes>
         </dependencySet>
+
+        <dependencySet>
+            <outputDirectory>api-docs/python</outputDirectory>
+            <unpack>true</unpack>
+            <includes>
+                <include>org.vert-x:vertx-lang-jython:jar:pydoc</include>
+            </includes>
+        </dependencySet>
     </dependencySets>
 
     <fileSets>

@@ -26,7 +26,6 @@ import os
 import re
 import shutil
 import sys
-from java.lang import System
 import __builtin__
 
 class CustomHTMLDoc(pydoc.HTMLDoc):
@@ -155,16 +154,23 @@ def custom_getclasstree(classes, unique=0):
     return pydoc.inspect.walktree(roots, children, None)
 
 # Remove and recreate the output docs directory
-PROJECT_BASE = System.getProperty("proj.base")
-PYDOC_OUTPUT_DIR = str(PROJECT_BASE)+"/build/docs/python/api/" 
-EYDOC_OUTPUT_DIR = str(PROJECT_BASE)+"/build/docs/python/epydoc"
+sys.path.insert(0, project.getProperty("additional-pythonpath"))
+sys.path.insert(0, project.getProperty("classes-dir"))
+
+DOC_BASE = project.getProperty("docs-dest-path")
+PYDOC_OUTPUT_DIR = os.path.join(DOC_BASE, "api") + os.path.sep # needs to end in a slash
+EYDOC_OUTPUT_DIR = os.path.join(DOC_BASE, "epydoc")
+
 print "PYDOC_OUTPUT_DIR: " + PYDOC_OUTPUT_DIR
 print "EYDOC_OUTPUT_DIR: " + EYDOC_OUTPUT_DIR
+
 try:
-    shutil.rmtree(PROJECT_BASE+"/build/docs/python")
-except: pass
+    shutil.rmtree(DOC_BASE)
+except:
+    pass
+
 os.makedirs(PYDOC_OUTPUT_DIR)
-os.chdir(PROJECT_BASE+"/src/main/python_scripts")
+os.chdir(project.getProperty("classes-dir"))
 
 # pydoc 
 # Replace some of the pydoc methods to all them to work with java inheritance

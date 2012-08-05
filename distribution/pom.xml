@@ -72,6 +72,12 @@
             <version>${project.version}</version>
             <classifier>yardoc</classifier>
         </dependency>
+        <dependency>
+            <groupId>org.vert-x</groupId>
+            <artifactId>vertx-lang-jython</artifactId>
+            <version>${project.version}</version>
+            <classifier>pydoc</classifier>
+        </dependency>
     </dependencies>
 
     <build>
