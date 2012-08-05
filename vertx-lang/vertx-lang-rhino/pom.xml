@@ -47,6 +47,6 @@
             </resource>
         </resources>
 
-        <!-- @todo implement pydoc -->
+        <!-- @todo generate jsdoc, after javascript has been documented -->
     </build>
 </project>
