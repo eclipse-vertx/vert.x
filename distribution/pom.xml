@@ -95,6 +95,7 @@
                             <goal>single</goal>
                         </goals>
                         <configuration>
+                            <finalName>vertx-${project.version}</finalName>
                             <descriptors>
                                 <descriptor>src/assemblies/bin.xml</descriptor>
                             </descriptors>

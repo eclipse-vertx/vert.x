@@ -7,7 +7,8 @@
     <id>bin</id>
 
     <formats>
-        <format>dir</format>
+        <format>zip</format>
+        <format>tar.gz</format>
     </formats>
 
     <includeBaseDirectory>false</includeBaseDirectory>
@@ -76,6 +77,79 @@
         <fileSet>
             <directory>../vertx-examples/src/main</directory>
             <outputDirectory>examples</outputDirectory>
+        </fileSet>
+
+        <!-- hand-feed vertxbus.js to each examples directory -->
+        <fileSet>
+            <directory>../src/dist/client</directory>
+            <includes>
+                <include>vertxbus.js</include>
+            </includes>
+            <outputDirectory>examples/java/eventbusbridge</outputDirectory>
+        </fileSet>
+
+        <fileSet>
+            <directory>../src/dist/client</directory>
+            <includes>
+                <include>vertxbus.js</include>
+            </includes>
+            <outputDirectory>examples/groovy/eventbusbridge</outputDirectory>
+        </fileSet>
+
+        <fileSet>
+            <directory>../src/dist/client</directory>
+            <includes>
+                <include>vertxbus.js</include>
+            </includes>
+            <outputDirectory>examples/javascript/eventbusbridge</outputDirectory>
+        </fileSet>
+
+        <fileSet>
+            <directory>../src/dist/client</directory>
+            <includes>
+                <include>vertxbus.js</include>
+            </includes>
+            <outputDirectory>examples/python/eventbusbridge</outputDirectory>
+        </fileSet>
+
+        <fileSet>
+            <directory>../src/dist/client</directory>
+            <includes>
+                <include>vertxbus.js</include>
+            </includes>
+            <outputDirectory>examples/ruby/eventbusbridge</outputDirectory>
+        </fileSet>
+
+        <fileSet>
+            <directory>../src/dist/client</directory>
+            <includes>
+                <include>vertxbus.js</include>
+            </includes>
+            <outputDirectory>examples/groovy/webapp/web/js</outputDirectory>
+        </fileSet>
+
+        <fileSet>
+            <directory>../src/dist/client</directory>
+            <includes>
+                <include>vertxbus.js</include>
+            </includes>
+            <outputDirectory>examples/javascript/webapp/web/js</outputDirectory>
+        </fileSet>
+
+        <fileSet>
+            <directory>../src/dist/client</directory>
+            <includes>
+                <include>vertxbus.js</include>
+            </includes>
+            <outputDirectory>examples/python/webapp/web/js</outputDirectory>
+        </fileSet>
+
+        <fileSet>
+            <directory>../src/dist/client</directory>
+            <includes>
+                <include>vertxbus.js</include>
+            </includes>
+            <outputDirectory>examples/ruby/webapp/web/js</outputDirectory>
         </fileSet>
     </fileSets>
 </assembly>
