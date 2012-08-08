@@ -35,7 +35,7 @@ class TestUtils
   def register_all(object)
     methods = object.private_methods
     methods.each do |meth|
-      if meth.start_with? 'test_'
+      if meth.to_s.start_with? 'test_'
         register(meth) {
           object.method(meth).call
         }
