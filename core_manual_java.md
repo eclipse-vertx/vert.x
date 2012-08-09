@@ -2343,6 +2343,84 @@ When a message is sent from the client that requires authorisation, the client m
 
 When the bridge receives such a message, it will send a message to the `auth-mgr` to see if the session is authorised for that message. If the session is authorised the bridge will cache the authorisation for a certain amount of time (five minutes by default)
 
+## Setting a handler for events on the bridge
+
+The bridge can also be set up to fire events specific client actions. These events are currently supported:
+
+* A client sends a message to an address via the EventBus.
+* A client publishes a message to an address via the EventBus.
+* A client registering a handler.
+* A client unregistering a handler.
+* A client disconnected.
+
+### Implementing the EventBusBridgeListener
+
+To use this feature, you first have to implement the Interface `EventBusBridgeListener`. It consists of five methods, which will be triggered on the specific event.
+
+When a client sends a message, the `sendingMessage` method will be triggered. You can return `false`, if you do not want the client to be able to send the message to the specified address. A use case for that could be censoring unwanted chat-messages. Here is an example to filter out all messages which contain "math rules":
+
+    class MyEventBusBridgeListener implements EventBusBridgeListener {
+
+      public boolean sendingMessage(String clientId, String address, JsonObject message) {
+        if ("chat-server".equals(address) && message.getString("text", "").contains("math rules")) {
+          thatClientSaidBadWords(clientId); // save that client for later punishment 
+          return false;
+        }
+        return true;
+      }
+    
+      ...
+
+If a client publishes a message to an address, the `publishingMessage` method will be triggered. It behaves just like the above, so if you'd want to let clients publish everything to any address, you could just return true:
+
+      public boolean publishingMessage(String clientId, String address, JsonObject message) {
+        return true; // No censorship in publishing!
+      }
+
+You can also intercept a client registering an address. If you return false, it won't be able to register a handler for this address. This allows you to tune your authentication mechanisms on a "by client" basis via the provided ID, for example. Here, the client who said bad words before, won't be able to register a handler on chatroom=silly-math addresses:
+
+      public boolean registeringHandler(String clientId, String address) {
+        if ("chatroom-silly-math".equals(address) && didThatClientSayBadWords(id)) {
+          return false;
+        }
+        clientJoinedChatRoom(clientId, address);
+        return true;
+      }
+
+There are two more methods to cover in the `EventBusBridgeListener`. Since a client can always disregard messages sent to a handler or disconnect from the event bus, the following methods cannot be prevented by returning a boolean. Instead, you can use them to clean up things.
+
+      public void unregisteredHandler(String clientId, String address) {
+        if (address.matches("^chatroom-*$")) {
+          clientLeftChatRoom(clientId, address);
+        }
+      }
+
+      public void disconnect(String clientId) {
+        clientLeftAllChatRooms(id);
+      }
+
+    } // End of MyEventBusBridgeListener
+
+### Provide your listener to the bridge
+
+After you have implemented the `EventBusBridgeListener`, you need to provide it to the bridge function. You can either set it when you invoke the bridge function, or register it before bridging on the `SockJSServer`.
+
+    ...
+    EventBusBridgeListener myBridgeListener = new MyEventBusBridgeListener();
+
+    // create the SockJSServer
+    SockJSServer sjsServer = vertx.createSockJSServer(httpServer);
+
+    // set the bridge listener before bridging
+    sjsServer.setEventBusBridgeListener(myBridgeListener);
+    sjsServer.bridge(config, inboundPerms, outboundPerms);
+    
+    // another way to achieve the same
+    sjsServer.bridge(config, inboundPerms, outboundPerms, myBridgeListener);
+    ...
+
+Just like the `HttpServer.listen()`, the `bridge()` method needs to be called after all things are set up.
+
     
 # File System
 
