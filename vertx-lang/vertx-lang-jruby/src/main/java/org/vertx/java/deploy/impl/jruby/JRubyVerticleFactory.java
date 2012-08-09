@@ -57,10 +57,15 @@ public class JRubyVerticleFactory implements VerticleFactory {
   }
 
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
-    if (System.getProperty("jruby.home") == null) {
+    if (
+        (System.getProperty("jruby.home") == null) &&
+        (System.getProperty("_ignore-missing-jruby-home") == null)
+      )
+    {
       throw new IllegalStateException("In order to deploy Ruby applications you must set JRUBY_HOME to point " +
           "at your JRuby installation");
     }
+
     Verticle app = new JRubyVerticle(main, cl);
     return app;
   }

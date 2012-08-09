@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.vert-x</groupId>
+        <artifactId>parent</artifactId>
+        <version>1.2.4-SNAPSHOT</version>
+        <relativePath>../..</relativePath>
+    </parent>
+
+    <groupId>org.vert-x</groupId>
+    <artifactId>vertx-lang-jython</artifactId>
+
+    <dependencies>
+        <!-- == compile == -->
+        <dependency>
+            <groupId>org.vert-x</groupId>
+            <artifactId>vertx-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.vert-x</groupId>
+            <artifactId>vertx-platform</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.python</groupId>
+            <artifactId>jython-standalone</artifactId>
+            <version>2.5.2</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>src/main/python_scripts</directory>
+            </resource>
+        </resources>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+
+                <executions>
+                    <execution>
+                        <id>generate-pydoc</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <!-- where to write the files -->
+                                <property name="docs-dest-path"
+                                          value="${project.reporting.outputDirectory}/pydoc"
+                                />
+
+                                <property name="dest-jar" value="${project.build.directory}/pydoc.jar" />
+
+                                <!-- where to find epydoc -->
+                                <property name="additional-pythonpath"
+                                          value="${basedir}/src/build_tools/doclib"
+                                />
+
+                                <!-- where compiled directories live -->
+                                <property name="classes-dir"
+                                          value="${project.build.outputDirectory}"
+                                />
+
+                                <!-- invoke the pydocx script -->
+                                <script language="jython"
+                                        classpathref="maven.compile.classpath"
+                                        src="${basedir}/src/build_tools/pydocx.py"
+                                />
+
+                                <zip destfile="${dest-jar}"
+                                     basedir="${docs-dest-path}"
+                                     includes="**/*"
+                                />
+
+                                <attachartifact
+                                    file="${dest-jar}"
+                                    classifier="pydoc"
+                                    type="jar"
+                                />
+
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

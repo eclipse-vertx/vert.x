@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.vert-x</groupId>
+    <artifactId>parent</artifactId>
+    <version>1.2.4-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>Vert.x</name>
+    <description>
+        vert.x - Effortless asynchronous application development for the modern
+        web and enterprise
+    </description>
+
+    <url>http://vertx.io</url>
+    <inceptionYear>2011</inceptionYear>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>purplefox</id>
+            <name>Tim Fox</name>
+            <email>tim@tfox.org</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:https://vert-x@github.com/purplefox/vert.x</connection>
+        <developerConnection>scm:git@github.com:purplefox/vert.x.git</developerConnection>
+        <url>https://github.com/purplefox/vert.x</url>
+    </scm>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    </properties>
+
+    <build>
+        <pluginManagement>
+            <!--
+                putting these here allows for central management of plugin
+                versions and configuration for child projects.
+            -->
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>1.7</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        
+        <plugins>
+            <!--
+                this explicitly configures the Java compiler plugin for all children
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.4</version>
+
+                <configuration>
+                    <showDeprecation>true</showDeprecation>
+                    <showWarnings>true</showWarnings>
+                    
+                    <source>1.7</source>
+                    <target>1.7</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <!--
+        Include all child projects. Yes, it's completely declarative and manual.
+        The dependencies are listed in must-compile order, but Maven will Do The
+        Right Thing™ regardless of the order they're placed here.
+    -->
+    <modules>
+        <module>vertx-core</module>
+        <module>vertx-platform</module>
+
+        <module>vertx-lang/vertx-lang-groovy</module>
+        <module>vertx-lang/vertx-lang-java</module>
+        <module>vertx-lang/vertx-lang-jruby</module>
+        <module>vertx-lang/vertx-lang-jython</module>
+        <module>vertx-lang/vertx-lang-rhino</module>
+
+        <module>vertx-testframework</module>
+        <module>vertx-testsuite</module>
+
+        <module>distribution</module>
+    </modules>
+</project>

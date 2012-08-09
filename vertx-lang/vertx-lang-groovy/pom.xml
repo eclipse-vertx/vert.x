@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.vert-x</groupId>
+        <artifactId>parent</artifactId>
+        <version>1.2.4-SNAPSHOT</version>
+        <relativePath>../..</relativePath>
+    </parent>
+
+    <groupId>org.vert-x</groupId>
+    <artifactId>vertx-lang-groovy</artifactId>
+
+    <dependencies>
+        <!-- == compile == -->
+        <dependency>
+            <groupId>org.vert-x</groupId>
+            <artifactId>vertx-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.vert-x</groupId>
+            <artifactId>vertx-platform</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-all</artifactId>
+            <version>2.0.0</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.gmaven</groupId>
+                <artifactId>gmaven-plugin</artifactId>
+                <version>1.4</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>compile</goal>
+                            <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <dependencies>
+                    <!--
+                        this is required because the version of gmaven-plugin
+                        we're using still depends on a beta version of groovy
+                        which generates compilation errors
+                    -->
+                    <dependency>
+                        <groupId>org.codehaus.groovy</groupId>
+                        <artifactId>groovy-all</artifactId>
+                        <version>2.0.0</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+
+            <!--
+                http://stackoverflow.com/questions/5325259/groovydoc-as-maven-plugin
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generate-groovydoc</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target name="generate-groovydoc">
+                                <property name="dest-path" value="${project.build.directory}/groovydoc" />
+                                <property name="dest-jar" value="${project.build.directory}/groovydoc.jar" />
+
+                                <taskdef 
+                                    name="groovydoc"
+                                     classname="org.codehaus.groovy.ant.Groovydoc"
+                                     classpathref="maven.compile.classpath"
+                                />
+
+                                <groovydoc
+                                    destdir="${dest-path}"
+                                    sourcepath="${basedir}/src/main/groovy"
+                                    use="true"
+                                    windowtitle="${project.name}"
+                                    doctitle="${project.name}"
+                                />
+
+                                <zip destfile="${dest-jar}"
+                                     basedir="${dest-path}"
+                                     includes="**/*"
+                                />
+
+                                <attachartifact
+                                    file="${dest-jar}"
+                                    classifier="groovydoc"
+                                    type="jar"
+                                />
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

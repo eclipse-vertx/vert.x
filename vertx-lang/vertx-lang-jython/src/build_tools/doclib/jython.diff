@@ -1,0 +1,11 @@
+Index: epydoc/markup/doctest.py
+===================================================================
+--- epydoc/markup/doctest.py    (revision 1812)
++++ epydoc/markup/doctest.py    (working copy)
+@@ -17,6 +17,7 @@
+ """
+ __docformat__ = 'epytext en'
+ 
++import __builtin__ as __builtins__
+ import re
+ from epydoc.util import plaintext_to_html, plaintext_to_latex
