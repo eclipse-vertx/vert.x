@@ -23,18 +23,19 @@ apply plugin: 'vertx-jython'
 apply plugin: 'vertx-rhino'
 
 dependencies {
-	compile "junit:junit:$junitVersion" // provide exportable components
+  compile "junit:junit:$junitVersion" // provide exportable components
   compile project(':vertx-testframework')
 }
 
 test {
   testLogging.showStandardStreams = true
 
-	systemProperty 'vertx.test.timeout', 15
+  systemProperty 'vertx.test.timeout', 15
   systemProperty 'vertx.mods', "$projectDir/src/test/mod-test"
-	systemProperty 'jruby.home', System.getenv('JRUBY_HOME')
+  systemProperty 'jruby.home', System.getenv('JRUBY_HOME')
+  systemProperty 'jython.home', System.getenv('JYTHON_HOME')
 
-	jvmArgs '-server', '-Xms128m', '-Xmx1024m', '-XX:MaxPermSize=128m', '-XX:NewRatio=2'
+  jvmArgs '-server', '-Xms128m', '-Xmx1024m', '-XX:MaxPermSize=128m', '-XX:NewRatio=2'
 
-	forkEvery 50 // FIXME This may not be necessary
+  forkEvery 50 // FIXME This may not be necessary
 }

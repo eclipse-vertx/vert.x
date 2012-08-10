@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
- task wrapper(type: Wrapper) {
-	 group = 'setup'
-	 description = 'Configures a Gradle wrapper'
-	 gradleVersion = "$gradleVersion"
- }
-
+task wrapper(type: Wrapper) {
+  group = 'setup'
+  description = 'Configures a Gradle wrapper'
+  gradleVersion = "$gradleVersion"
+}
