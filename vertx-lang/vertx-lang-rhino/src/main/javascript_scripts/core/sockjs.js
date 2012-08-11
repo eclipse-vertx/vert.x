@@ -43,6 +43,10 @@ if (!vertx.createSockJSServer) {
       installApp: function(config, handler) {
         jserver.installApp(new org.vertx.java.core.json.JsonObject(JSON.stringify(config)), handler);
       },
+      setEventBusBridgeListener: function(bridgeListener) {
+          jserver.setEventBusBridgeListener(new org.vertx.java.core.sockjs.EventBusBridgeListener(bridgeListener));
+          return server;
+      },
       bridge: function(config, inboundPermitted, outboundPermitted, authTimeout, authAddress) {
         if (typeof authTimeout === 'undefined') {
           authTimeout = 5 * 50 * 1000;
