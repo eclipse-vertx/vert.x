@@ -2131,7 +2131,7 @@ vertx.createSockJSBridge(server).bridge(config, permitted, permitted);
 } // End of MyEventBusBridgeListener
 </pre>
 <h3 id="provide-your-listener-to-the-bridge">Provide your listener to the bridge</h3><br/>
-<p>After you have implemented the <code>EventBusBridgeListener</code>, you need to provide it to the bridge function. You can either set it when you invoke the bridge function, or register it before bridging on the <code>SockJSServer</code>.</p>
+<p>After you have implemented the <code>EventBusBridgeListener</code>, you need to provide it to the bridge function. You can register it before bridging on the <code>SockJSServer</code>.</p>
 <pre class="prettyprint">...
 EventBusBridgeListener myBridgeListener = new MyEventBusBridgeListener();
 
@@ -2141,12 +2141,9 @@ SockJSServer sjsServer = vertx.createSockJSServer(httpServer);
 // set the bridge listener before bridging
 sjsServer.setEventBusBridgeListener(myBridgeListener);
 sjsServer.bridge(config, inboundPerms, outboundPerms);
-
-// another way to achieve the same
-sjsServer.bridge(config, inboundPerms, outboundPerms, myBridgeListener);
 ...
 </pre>
-<p>Just like the <code>HttpServer.listen()</code>, the <code>bridge()</code> method needs to be called after all things are set up.</p>
+<p>Just like the <code>HttpServer.listen()</code>, the <code>bridge()</code> method needs to be called after the EventBusBridgeListener was set.</p>
 <h1 id="file-system">File System</h1><br/>
 <p>Vert.x lets you manipulate files on the file system. File system operations are asynchronous and take a handler function as the last argument. This function will be called when the operation is complete, or an error has occurred.</p>
 <p>The argument passed into the handler is an instance of <code>org.vertx.java.core.AsyncResult</code>. Instances of this class have two fields: <code>exception</code> - If the operation has failed this will be set; <code>result</code> - If the operation has succeeded this will contain the result.</p>

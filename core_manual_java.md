@@ -2403,7 +2403,7 @@ There are two more methods to cover in the `EventBusBridgeListener`. Since a cli
 
 ### Provide your listener to the bridge
 
-After you have implemented the `EventBusBridgeListener`, you need to provide it to the bridge function. You can either set it when you invoke the bridge function, or register it before bridging on the `SockJSServer`.
+After you have implemented the `EventBusBridgeListener`, you need to provide it to the bridge function. You can register it before bridging on the `SockJSServer`.
 
     ...
     EventBusBridgeListener myBridgeListener = new MyEventBusBridgeListener();
@@ -2414,12 +2414,9 @@ After you have implemented the `EventBusBridgeListener`, you need to provide it 
     // set the bridge listener before bridging
     sjsServer.setEventBusBridgeListener(myBridgeListener);
     sjsServer.bridge(config, inboundPerms, outboundPerms);
-    
-    // another way to achieve the same
-    sjsServer.bridge(config, inboundPerms, outboundPerms, myBridgeListener);
     ...
 
-Just like the `HttpServer.listen()`, the `bridge()` method needs to be called after all things are set up.
+Just like the `HttpServer.listen()`, the `bridge()` method needs to be called after the EventBusBridgeListener was set.
 
     
 # File System
