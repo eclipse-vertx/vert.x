@@ -56,6 +56,6 @@ public class SocketIOExample extends Verticle {
 			}
 		});
 
-		server.listen(8081);
+		server.listen(8080);
 	}
 }
