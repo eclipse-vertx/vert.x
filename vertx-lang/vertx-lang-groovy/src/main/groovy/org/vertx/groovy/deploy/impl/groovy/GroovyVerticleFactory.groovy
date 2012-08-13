@@ -16,20 +16,14 @@
 
 package org.vertx.groovy.deploy.impl.groovy
 
-import groovy.lang.Binding
-import groovy.lang.GroovyClassLoader
-import groovy.lang.GroovyCodeSource
-import groovy.lang.Script
+import java.lang.reflect.Method
 import org.vertx.groovy.core.Vertx
 import org.vertx.groovy.deploy.Container
 import org.vertx.java.core.impl.VertxInternal
 import org.vertx.java.deploy.Verticle
 import org.vertx.java.deploy.VerticleFactory
-import org.vertx.java.deploy.impl.VertxLocator
 import org.vertx.java.deploy.impl.VerticleManager
-
-import java.lang.reflect.Method
-import java.net.URL
+import org.vertx.java.deploy.impl.VertxLocator
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -61,8 +55,10 @@ public class GroovyVerticleFactory implements VerticleFactory {
   }
 
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
-
     URL url = cl.getResource(main)
+    if (url == null) {
+      throw new IllegalStateException("Cannot find main script: " + main + " on classpath");
+    }
     GroovyCodeSource gcs = new GroovyCodeSource(url)
     GroovyClassLoader gcl = new GroovyClassLoader(cl)
     Class clazz = gcl.parseClass(gcs)

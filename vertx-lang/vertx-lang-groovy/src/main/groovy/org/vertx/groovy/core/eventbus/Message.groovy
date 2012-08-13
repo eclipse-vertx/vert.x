@@ -41,6 +41,9 @@ class Message {
     }
     this.jMessage = jMessage
   }
+  
+  String getReplyAddress() { return jMessage.replyAddress }
+  void setReplyAddress(String address) { jMessage.replyAddress = address }
 
   /**
  * Reply to this message. If the message was sent specifying a reply handler, that handler will be
