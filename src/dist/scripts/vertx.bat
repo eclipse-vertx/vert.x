@@ -69,10 +69,10 @@ set CMD_LINE_ARGS=%$
 :execute
 @rem Setup the command line
 
-set CLASSPATH=%APP_HOME%\bin\vertx-boot.jar
+set CLASSPATH=%APP_HOME%\lib\*;%APP_HOME%\conf;%JYTHON_HOME%\jython.jar;%JRUBY_HOME%\lib\jruby.jar
 
 @rem Execute vertx
-"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %VERTX_OPTS%  -Dvertx.install=%APP_HOME% -Djruby.home=%JRUBY_HOME% -Djython.home=%JYTHON_HOME% -classpath "%CLASSPATH%" org.vertx.java.boot.VertxBoot %CMD_LINE_ARGS%
+"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %VERTX_OPTS% -Dvertx.install="%APP_HOME%" -Djruby.home="%JRUBY_HOME%" -Djython.home="%JYTHON_HOME%" -Djava.util.logging.config.file="%APP_HOME%\conf\logging.properties" -classpath "%CLASSPATH%" org.vertx.java.deploy.impl.cli.Starter %CMD_LINE_ARGS%
 
 :end
 @rem End local scope for the variables with windows NT shell

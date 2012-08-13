@@ -21,9 +21,7 @@ Initially based on resources in the following article http://www.ibm.com/develop
 
 import sys
 from types import *
-from java import lang
 from java import util
-from java import io
 
 __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"

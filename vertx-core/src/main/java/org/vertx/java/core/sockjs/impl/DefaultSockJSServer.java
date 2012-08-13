@@ -78,7 +78,7 @@ public class DefaultSockJSServer implements SockJSServer {
     config = config.copy();
     //Set the defaults
     if (config.getNumber("session_timeout") == null) {
-      config.putNumber("session_timeout", 5l * 1000);
+      config.putNumber("session_timeout", 5l * 60 * 1000);
     }
     if (config.getBoolean("insert_JSESSIONID") == null) {
       config.putBoolean("insert_JSESSIONID", true);

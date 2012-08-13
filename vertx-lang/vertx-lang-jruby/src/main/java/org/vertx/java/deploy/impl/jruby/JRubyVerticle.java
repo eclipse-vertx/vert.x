@@ -42,7 +42,7 @@ public class JRubyVerticle extends Verticle {
 
   JRubyVerticle(String scriptName, ClassLoader cl) {
     this.container = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
-    container.setCompatVersion(CompatVersion.RUBY1_8);
+    container.setCompatVersion(CompatVersion.RUBY1_9);
     container.setClassLoader(cl);
     //Prevent JRuby from logging errors to stderr - we want to log ourselves
     container.setErrorWriter(new NullWriter());

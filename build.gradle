@@ -75,13 +75,6 @@ defaultTasks = ['preflight']
 task preflight(dependsOn: subprojects.collectDeps) {
 	group = null
 	description = null
-	/* this is an issue for IDEs
-	assert System.getenv("JRUBY_HOME") != null
-	assert System.getenv("JYTHON_HOME") != null
-
-	System.setProperty 'jruby.home', System.getenv("JRUBY_HOME")
-	System.setProperty 'jython.home', System.getenv("JYTHON_HOME")
-	*/
 }
 
 task test(dependsOn: [subprojects.test]) {
@@ -103,15 +96,8 @@ task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
 	group = 'vert.x'
 	description 'Build the parent and all of the vert.x subprojects'
 
-	['temp', 'logs'].each { dir->
-		mkdir("$rootDir/build/$rootProject.name-$version/$dir")
-	}
-
 	destinationDir file("build/$rootProject.name-$version")
 	outputs.dir destinationDir
-	into('bin') {
-		from project(':vertx-boot').jar
-	}
 	into('bin') {
 		from file('src/dist/scripts')
 		// fileMode 755
@@ -157,6 +143,8 @@ task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
 	into('lib') {
 		from subprojects.configurations.platform
 		from subprojects.configurations.compile
+    // Don't just include everything!!
+    includes = ["groovy*.jar", "jackson*.jar", "rhino*.jar", "netty*.jar", "hazelcast*.jar", "vertx*.jar"]
 	}
 	doLast {
 		project.ant.chmod(file: "build/$rootProject.name-$version/bin", perm: 'ugo+x')
@@ -170,7 +158,7 @@ task javadocs(type: Javadoc, dependsOn: subprojects.javadoc) {
 	source = subprojects.sourceSets.main.java
 	classpath = files(subprojects.configurations.compile)
 
-	destinationDir file("build/$rootProject.name-$version/docs/java/api")
+	destinationDir file("build/$rootProject.name-$version/api-docs/java/api")
 	inputs.files classpath
 	outputs.dir destinationDir
 }
@@ -179,14 +167,14 @@ task nonJavadocs(type: Copy) {
 	group = null       // hide the task
 	description = null // hide the task
 
-	destinationDir file("build/$rootProject.name-$version/docs")
+	destinationDir file("build/$rootProject.name-$version/api-docs")
 	
 	inputs.files subprojects.docsDir
 	outputs.dir destinationDir
 	
 	doFirst {
 		['groovy/api', 'javascript/api', 'python/api', 'ruby/api'].each { dir->
-			mkdir("$rootDir/build/$rootProject.name-$version/docs/$dir")
+			mkdir("$rootDir/build/$rootProject.name-$version/api-docs/$dir")
 		}
 	}
 	
@@ -222,10 +210,21 @@ task installApp(type: Sync, dependsOn: ['assemble']) {
 	from "build/$rootProject.name-$version"
 }
 
-task dist(type: Tar, dependsOn: ['assemble', 'createDocs']) {
+task distZip(type: Zip, dependsOn : ['assemble', 'createDocs']) {
 	group = 'vert.x'
-	description 'Create the distribution'
-	
+	description 'Create the Zip distribution'
+
+	destinationDir file('build/distributions')
+	baseName = rootProject.name
+	version = rootProject.version
+	from 'build'
+	include "$rootProject.name-$version/**"
+}
+
+task distTar(type: Tar, dependsOn: ['assemble', 'createDocs']) {
+	group = 'vert.x'
+	description 'Create the GZIP distribution'
+
 	compression = org.gradle.api.tasks.bundling.Compression.GZIP
 	destinationDir file('build/distributions')
 	inputs.files files("build/$rootProject.name-$version")
@@ -235,6 +234,11 @@ task dist(type: Tar, dependsOn: ['assemble', 'createDocs']) {
 	extension = 'tar.gz'
 	from 'build'
 	include "$rootProject.name-$version/**"
+}
+
+task dist(dependsOn: ['distTar', 'distZip']){
+	group = 'vert.x'
+	description 'Create distributions - tar.gz and zip'
 }
 
 task release(dependsOn: ['clean', 'test', 'dist']) {
