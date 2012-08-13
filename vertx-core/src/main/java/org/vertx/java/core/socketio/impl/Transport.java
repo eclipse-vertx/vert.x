@@ -224,7 +224,7 @@ public abstract class Transport implements Shareable {
 	 * @param reason
 	 */
 	private void end(String reason) {
-		if(this.isDisconnected) {
+		if(!this.isDisconnected) {
 	   	    if(log.isInfoEnabled()) log.info("transport end (" + reason + ")");
 			Transport local = manager.getTranport(sessionId);
 			this.close();

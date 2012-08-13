@@ -61,7 +61,6 @@ public class DefaultSocketIOSocket implements SocketIOSocket {
 	 *
 	 * @see "Socket.prototype.packet"
 	 * @param packet
-	 * @return
 	 */
 	public synchronized void packet(JsonObject packet) {
 		if(this.flags.getBoolean("broadcast", false)) {
@@ -126,15 +125,15 @@ public class DefaultSocketIOSocket implements SocketIOSocket {
 	}
 
 	/**
-	 * emit reason
+	 * emit disconnect
 	 *
-	 * @param event
 	 * @param reason
 	 */
-	public synchronized void emit(String event, String reason) {
+	public synchronized void emitDisconnect(String reason) {
 		JsonObject packet = new JsonObject();
 		packet.putString("reason", reason);
-		emit(event, packet);
+		packet.putString("name", "disconnect");
+		emit(packet);
 	}
 
 	/**
@@ -160,6 +159,9 @@ public class DefaultSocketIOSocket implements SocketIOSocket {
 		Handler<JsonObject> handler = handlers.get(name);
 		if(handler != null) {
 			JsonObject packet = flatten(params.getArray("args"));
+			if(name.equals("disconnect")) {
+				packet.putString("reason", params.getString("reason"));
+			}
 			handler.handle(packet);
 		} else {
 			log.info("handler not found \'" + name + "\'");
@@ -167,6 +169,10 @@ public class DefaultSocketIOSocket implements SocketIOSocket {
 	}
 
 	private JsonObject flatten(JsonArray jsonArray) {
+		if(jsonArray == null) {
+			return new JsonObject();
+		}
+
 		JsonObject result = new JsonObject();
 
 		Iterator<Object> iterator = jsonArray.iterator();
@@ -188,7 +194,7 @@ public class DefaultSocketIOSocket implements SocketIOSocket {
 	 */
 	public synchronized void onDisconnect(String reason) {
 		if(!this.disconnected) {
-			emit("disconnect", reason);
+			emitDisconnect(reason);
 			this.disconnected = true;
 		}
 	}

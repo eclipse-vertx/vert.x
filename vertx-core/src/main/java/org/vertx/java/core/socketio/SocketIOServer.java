@@ -10,13 +10,17 @@ import org.vertx.java.core.socketio.impl.Configurer;
  */
 public interface SocketIOServer {
 
-	SocketIOServer configure(String production, Configurer configurer);
+	SocketIOServer configure(String env, Configurer configurer);
+
+	SocketIOServer configure(Configurer configurer);
 
 	SocketIOServer configure(String env, JsonObject newConfig);
+
+	SocketIOServer configure(JsonObject newConfig);
 
 	SocketIOServer setAuthrizationCallback(AuthorizationHandler globalAuthorizationCallback);
 
 	SocketIOServer sockets();
 
-	SocketIOServer onConnect(Handler<SocketIOSocket> handler);
+	SocketIOServer onConnection(Handler<SocketIOSocket> handler);
 }

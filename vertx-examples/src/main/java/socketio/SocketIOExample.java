@@ -17,6 +17,7 @@
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.socketio.impl.*;
 import org.vertx.java.core.socketio.*;
@@ -28,8 +29,10 @@ import org.vertx.java.deploy.Verticle;
 public class SocketIOExample extends Verticle {
 
 	public void start() {
+		/******************************************************
+		 * HTTP Server
+		 ******************************************************/
 		HttpServer server = vertx.createHttpServer();
-
 		server.requestHandler(new Handler<HttpServerRequest>() {
 			public void handle(HttpServerRequest req) {
 				if (req.path.equals("/")) req.response.sendFile("socketio/index.html"); // Serve the html
@@ -37,20 +40,30 @@ public class SocketIOExample extends Verticle {
 			}
 		});
 
-		final SocketIOServer io = new DefaultSocketIOServer(vertx, server);
-//		final SocketIOServer io = vertx.createSocketIOServer(server);
 
-		io.configure("development", new Configurer() {
+		/******************************************************
+		 * Socket.IO Server
+		 ******************************************************/
+		SocketIOServer io = new DefaultSocketIOServer((VertxInternal) vertx, server);
+
+		io.configure(new Configurer(){
 			public void configure(JsonObject config) {
-				config.putString("transports", "jsonp-polling"); // Now, Only this transport is implmented.
+				config.putString("transports", "jsonp-polling");
 			}
 		});
 
-		io.sockets().onConnect(new Handler<SocketIOSocket>() {
-			public void handle(final SocketIOSocket sock) {
-				sock.on("data", new Handler<JsonObject>() {
+		io.sockets().onConnection(new Handler<SocketIOSocket>() {
+			public void handle(final SocketIOSocket socket) {
+				socket.on("data", new Handler<JsonObject>() {
 					public void handle(JsonObject data) {
-						sock.emit("data", data); // Echo it back
+						socket.emit("data", data); // Echo it back
+					}
+				});
+
+				socket.on("disconnect", new Handler<JsonObject>() {
+					public void handle(JsonObject event) {
+						System.out.println("disconnected");
+						System.out.println(event);
 					}
 				});
 			}
@@ -58,4 +71,5 @@ public class SocketIOExample extends Verticle {
 
 		server.listen(8080);
 	}
+
 }

@@ -41,6 +41,11 @@ public class DefaultSocketIOServer implements SocketIOServer {
 		return this;
 	}
 
+	public SocketIOServer configure(Configurer configurer) {
+		configurer.configure(this.config);
+		return this;
+	}
+
 	public SocketIOServer configure(String env, JsonObject newConfig) {
 		if(env == null) {
 			this.config.mergeIn(newConfig);
@@ -50,12 +55,17 @@ public class DefaultSocketIOServer implements SocketIOServer {
 		return this;
 	}
 
+	public SocketIOServer configure(JsonObject newConfig) {
+		this.config.mergeIn(newConfig);
+		return this;
+	}
+
 	public SocketIOServer sockets() {
 		this.manager.config(this.config);
 		return this;
 	}
 
-	public SocketIOServer onConnect(Handler<SocketIOSocket> handler) {
+	public SocketIOServer onConnection(Handler<SocketIOSocket> handler) {
 		this.manager.setSocketHandler(handler);
 
 		Settings settings = manager.getSettings();
@@ -112,7 +122,7 @@ public class DefaultSocketIOServer implements SocketIOServer {
 
 		io.setAuthrizationCallback(globalAuthorizationCallback);
 
-		io.sockets().onConnect(new Handler<SocketIOSocket>(){
+		io.sockets().onConnection(new Handler<SocketIOSocket>() {
 			public void handle(final SocketIOSocket socket) {
 				System.out.println(socket.getId() + " Connected!");
 
@@ -120,14 +130,14 @@ public class DefaultSocketIOServer implements SocketIOServer {
 				message.putString("hello", "world");
 				socket.emit("news", message);
 
-				socket.on("my other event", new Handler<JsonObject>(){
+				socket.on("my other event", new Handler<JsonObject>() {
 					public void handle(JsonObject data) {
 						System.out.println("============ 왔어! =============");
 						System.out.println(data);
 					}
 				});
 
-				socket.on("timer", new Handler<JsonObject>(){
+				socket.on("timer", new Handler<JsonObject>() {
 					public void handle(JsonObject data) {
 						socket.emit("timer", data);
 					}

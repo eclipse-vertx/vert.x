@@ -141,7 +141,7 @@ public class Namespace implements Shareable {
 			case "disconnect":
 				this.manager.onLeave(sessionId, this.name);
 //				this.store.publish('leave', sessid, this.name);
-				socket.emit("disconnect", packet.getString("reason", "packet"));
+				socket.emitDisconnect(packet.getString("reason", "packet"));
 				break;
 			case "json":
 			case "message":

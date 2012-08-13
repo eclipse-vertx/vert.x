@@ -132,21 +132,21 @@ public class Manager {
 	 *
 	 * @see "Manager.prototype.onJoin"
 	 * @param sessionId
-	 * @param namespaceName
+	 * @param roomName is nsp + "/" + room.
 	 */
-	public void onJoin(String sessionId, String namespaceName) {
+	public void onJoin(String sessionId, String roomName) {
 		if(this.roomClients.get(sessionId) == null) {
 			this.roomClients.put(sessionId, new RoomClient());
 		}
 
-		if(this.rooms.get(namespaceName) == null) {
-			this.rooms.put(namespaceName, new Room());
+		if(this.rooms.get(roomName) == null) {
+			this.rooms.put(roomName, new Room());
 		}
 
-		Room room = this.rooms.get(namespaceName);
+		Room room = this.rooms.get(roomName);
 		if(!room.contains(sessionId)) {
 			room.push(sessionId);
-			this.roomClients.get(sessionId).put(namespaceName, true);
+			this.roomClients.get(sessionId).put(roomName, true);
 		}
 	}
 
@@ -273,11 +273,13 @@ public class Manager {
 	public void onDisconnect(String sessionId) {
 		this.handshaken.remove(sessionId);
 
-		if(this.open.get(sessionId)) {
+		Boolean isOpen = this.open.get(sessionId);
+		if(isOpen != null && isOpen) {
 			this.open.remove(sessionId);
 		}
 
-		if(this.connected.get(sessionId)) {
+		Boolean isConnected = this.connected.get(sessionId);
+		if(isConnected != null && isConnected) {
 			this.connected.remove(sessionId);
 		}
 

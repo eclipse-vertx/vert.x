@@ -11,23 +11,61 @@ import java.util.Map;
  * @author Keesun Baik
  */
 public interface SocketIOSocket extends Shareable {
+
+	/**
+	 * @return sessionId
+	 */
 	String getId();
 
+	/**
+	 * Emit override for custom events.
+	 *
+	 * @see "Socket.prototype.emit"
+	 * @param event
+	 * @param message
+	 * @return
+	 */
 	void emit(String event, JsonObject message);
 
-	void emit(String event, String reason);
+	/**
+	 * emit disconnection
+	 * @param reason
+	 */
+	void emitDisconnect(String reason);
 
+	/**
+	 * register handler to an event.
+	 *
+	 * @param event
+	 * @param handler
+	 */
 	void on(String event, Handler<JsonObject> handler);
 
-	Map<String,Handler<JsonArray>> getAcks();
-
+	/**
+	 * Transmits a packet.
+	 *
+	 * @see "Socket.prototype.packet"
+	 * @param packet
+	 */
 	void packet(JsonObject packet);
 
+	/**
+	 * Triggered on disconnect
+	 *
+	 * @see "Socket.prototype.onDisconnect"
+	 * @param reason
+	 */
+	void onDisconnect(String reason);
+
+	// $emit
+	void emit(JsonObject packet);
+
+	// get Acks
+	Map<String,Handler<JsonArray>> getAcks();
+
+	// start socket handling
 	void onConnection();
 
 	boolean isReadable();
 
-	void onDisconnect(String reason);
-
-	void emit(JsonObject packet);
 }
