@@ -6,7 +6,7 @@ import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.socketio.Socket;
+import org.vertx.java.core.socketio.SocketIOSocket;
 import org.vertx.java.core.socketio.impl.*;
 
 import java.util.List;
@@ -98,9 +98,9 @@ public class HttpRequestHandler {
 //			this.store.publish('handshake', data.id, handshaken);
 
 			// initialize the socket for all namespaces
-			Handler<Socket> socketHandler = manager.getSocketHandler();
+			Handler<SocketIOSocket> socketHandler = manager.getSocketHandler();
 			for(Namespace namespace : manager.getNamespaceValues()) {
-				Socket socket = namespace.socket(sessionId, true, socketHandler);
+				SocketIOSocket socket = namespace.socket(sessionId, true, socketHandler);
 				// echo back connect packet and fire connection event
 				if (namespace.getName().equals(Manager.DEFAULT_NSP)) {
 					JsonObject jsonObject = new JsonObject();

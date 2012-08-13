@@ -6,7 +6,7 @@ import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.socketio.Socket;
+import org.vertx.java.core.socketio.SocketIOSocket;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @see <a href="https://github.com/LearnBoost/socket.io/blob/master/lib/socket.js">socket.js</a>
  * @author Keesun Baik
  */
-public class DefaultSocket implements Socket {
+public class DefaultSocketIOSocket implements SocketIOSocket {
 
 	private static final Logger log = LoggerFactory.getLogger(DefaultSocketIOServer.class);
 
@@ -27,12 +27,12 @@ public class DefaultSocket implements Socket {
 	private JsonObject flags;
 	private Parser parser;
 	private VertxInternal vertx;
-	private Handler<Socket> socketHandler;
+	private Handler<SocketIOSocket> socketHandler;
 	private Map<String, Handler<JsonArray>> acks;
 	private Map<String, Handler<JsonObject>> handlers;
 	private boolean disconnected;
 
-	public DefaultSocket(Manager manager, String id, Namespace namespace, boolean readable, Handler<Socket> socketHandler) {
+	public DefaultSocketIOSocket(Manager manager, String id, Namespace namespace, boolean readable, Handler<SocketIOSocket> socketHandler) {
 		this.manager = manager;
 		this.vertx = manager.getVertx();
 		this.id = id;

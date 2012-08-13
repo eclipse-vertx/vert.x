@@ -7,7 +7,7 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.shareddata.Shareable;
-import org.vertx.java.core.socketio.Socket;
+import org.vertx.java.core.socketio.SocketIOSocket;
 
 import java.util.Map;
 
@@ -23,7 +23,7 @@ public class Namespace implements Shareable {
 
 	private String name;
 	private Manager manager;
-	private Map<String, Socket> sockets;
+	private Map<String, SocketIOSocket> sockets;
 	private EventBus eventBus;
 	private JsonObject flags;
 	private Parser parser;
@@ -58,9 +58,9 @@ public class Namespace implements Shareable {
 	 * @param socketHandler
 	 * @return
 	 */
-	public Socket socket(String sid, boolean readable, Handler<Socket> socketHandler) {
+	public SocketIOSocket socket(String sid, boolean readable, Handler<SocketIOSocket> socketHandler) {
 		if (!this.sockets.containsKey(sid)) {
-			this.sockets.put(sid, new DefaultSocket(this.manager, sid, this, readable, socketHandler));
+			this.sockets.put(sid, new DefaultSocketIOSocket(this.manager, sid, this, readable, socketHandler));
 		}
 		return this.sockets.get(sid);
 	}
@@ -73,8 +73,8 @@ public class Namespace implements Shareable {
 	 * @param packet
 	 * @param socketHandler
 	 */
-	public void handlePacket(final String sessionId, JsonObject packet, Handler<Socket> socketHandler) {
-		final Socket socket = socket(sessionId, true, socketHandler);
+	public void handlePacket(final String sessionId, JsonObject packet, Handler<SocketIOSocket> socketHandler) {
+		final SocketIOSocket socket = socket(sessionId, true, socketHandler);
 		boolean isDataAck = false;
 		String ack = packet.getString("ack");
 		if(ack != null && ack.equals("data")) {
@@ -159,7 +159,7 @@ public class Namespace implements Shareable {
 	 * @param socket
 	 * @param jsonObject
 	 */
-	private void ack(Socket socket, JsonObject jsonObject) {
+	private void ack(SocketIOSocket socket, JsonObject jsonObject) {
 		if(log.isDebugEnabled()) log.debug("sending data ack packet");
 		JsonObject packet = new JsonObject();
 		packet.putString("type", "ack");
@@ -173,7 +173,7 @@ public class Namespace implements Shareable {
 	 * @param socket
 	 * @param e
 	 */
-	private void error(Socket socket, Exception e) {
+	private void error(SocketIOSocket socket, Exception e) {
 		if(log.isDebugEnabled()) log.debug("hnadshake error " + e.getMessage() + " for " + this.name);
 		JsonObject packet = new JsonObject();
 		packet.putString("type", "error");
@@ -185,7 +185,7 @@ public class Namespace implements Shareable {
 	 * @see "SocketNamespace.prototype.handlePacket connect"
 	 * @param socket
 	 */
-	private void connect(Socket socket) {
+	private void connect(SocketIOSocket socket) {
 		this.manager.onJoin(socket.getId(), this.name);
 //		self.store.publish('join', sessid, self.name);
 
@@ -273,7 +273,7 @@ public class Namespace implements Shareable {
 	 * @param raiseOnDisconnect
 	 */
 	public void handleDisconnect(String sessionId, String reason, boolean raiseOnDisconnect) {
-		Socket socket = sockets.get(sessionId);
+		SocketIOSocket socket = sockets.get(sessionId);
 		if(socket != null && socket.isReadable()) {
 			if(raiseOnDisconnect) socket.onDisconnect(reason);
 			sockets.remove(sessionId);

@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * @author Keesun Baik
  */
-public interface Socket extends Shareable {
+public interface SocketIOSocket extends Shareable {
 	String getId();
 
 	void emit(String event, JsonObject message);

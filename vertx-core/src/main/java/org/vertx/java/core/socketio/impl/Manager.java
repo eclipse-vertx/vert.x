@@ -9,7 +9,7 @@ import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.socketio.Socket;
+import org.vertx.java.core.socketio.SocketIOSocket;
 import org.vertx.java.core.socketio.impl.handlers.HandshakeHandler;
 import org.vertx.java.core.socketio.impl.handlers.HttpRequestHandler;
 import org.vertx.java.core.socketio.impl.transports.JsonpPolling;
@@ -30,7 +30,7 @@ public class Manager {
 	public static final String DEFAULT_NSP = "";
 
 	private Settings settings;
-	private Handler<Socket> socketHandler;
+	private Handler<SocketIOSocket> socketHandler;
 	private AuthorizationHandler globalAuthorizationHandler;
 	private Map<String, HandshakeData> handshaken;
 	private Map<String, Transport> transports;
@@ -414,11 +414,11 @@ public class Manager {
 		this.settings = settings;
 	}
 
-	public Handler<Socket> getSocketHandler() {
+	public Handler<SocketIOSocket> getSocketHandler() {
 		return socketHandler;
 	}
 
-	public void setSocketHandler(Handler<Socket> socketHandler) {
+	public void setSocketHandler(Handler<SocketIOSocket> socketHandler) {
 		this.socketHandler = socketHandler;
 	}
 
@@ -426,7 +426,7 @@ public class Manager {
 		return vertx;
 	}
 
-	public Map<String, Socket> getMap(String mapName) {
+	public Map<String, SocketIOSocket> getMap(String mapName) {
 		return this.vertx.sharedData().getMap(mapName);
 	}
 

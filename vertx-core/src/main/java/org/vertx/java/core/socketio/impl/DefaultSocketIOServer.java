@@ -8,7 +8,7 @@ import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.socketio.Socket;
+import org.vertx.java.core.socketio.SocketIOSocket;
 import org.vertx.java.core.socketio.SocketIOServer;
 
 /**
@@ -23,8 +23,8 @@ public class DefaultSocketIOServer implements SocketIOServer {
 	private Manager manager;
 	private JsonObject config;
 
-	public DefaultSocketIOServer(final VertxInternal vertx, final HttpServer httpServer) {
-		this.vertx = vertx;
+	public DefaultSocketIOServer(final Vertx vertx, final HttpServer httpServer) {
+		this.vertx = (VertxInternal) vertx;
 		this.config = new JsonObject();
 		this.config.putString("namespace", "/socket.io");
 		this.manager = new Manager(this.vertx);
@@ -55,7 +55,7 @@ public class DefaultSocketIOServer implements SocketIOServer {
 		return this;
 	}
 
-	public SocketIOServer onConnect(Handler<Socket> handler) {
+	public SocketIOServer onConnect(Handler<SocketIOSocket> handler) {
 		this.manager.setSocketHandler(handler);
 
 		Settings settings = manager.getSettings();
@@ -112,8 +112,8 @@ public class DefaultSocketIOServer implements SocketIOServer {
 
 		io.setAuthrizationCallback(globalAuthorizationCallback);
 
-		io.sockets().onConnect(new Handler<Socket>(){
-			public void handle(final Socket socket) {
+		io.sockets().onConnect(new Handler<SocketIOSocket>(){
+			public void handle(final SocketIOSocket socket) {
 				System.out.println(socket.getId() + " Connected!");
 
 				JsonObject message = new JsonObject();

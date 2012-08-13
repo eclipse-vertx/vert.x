@@ -18,5 +18,5 @@ public interface SocketIOServer {
 
 	SocketIOServer sockets();
 
-	SocketIOServer onConnect(Handler<Socket> handler);
+	SocketIOServer onConnect(Handler<SocketIOSocket> handler);
 }
