@@ -19,7 +19,7 @@ public class DefaultSocketIOServer implements SocketIOServer {
 	private static final Logger log = LoggerFactory.getLogger(DefaultSocketIOServer.class);
 
 	private final VertxInternal vertx;
-	private RouteMatcher rm = new RouteMatcher();
+	private HttpServer httpServer;
 	private Manager manager;
 	private JsonObject config;
 
@@ -28,50 +28,50 @@ public class DefaultSocketIOServer implements SocketIOServer {
 		this.config = new JsonObject();
 		this.config.putString("namespace", "/socket.io");
 		this.manager = new Manager(this.vertx);
-		this.rm.noMatch(httpServer.requestHandler());
+		this.httpServer = httpServer;
+		setupRequestMatcher();
+	}
+
+	private void setupRequestMatcher() {
+		RouteMatcher rm = new RouteMatcher();
+		rm.noMatch(this.httpServer.requestHandler());
 		httpServer.requestHandler(rm);
+		this.manager.config(this.config);
+		final String namespace = manager.getSettings().getNamespace();
+		rm.allWithRegEx(namespace + ".*", manager.requestHandler());
 	}
 
 	public SocketIOServer configure(String env, Configurer configurer) {
-		if(env == null) {
-			configurer.configure(this.config);
-		} else if(env.equals(this.config.getString("env", "development"))) {
+		if(env == null || env.equals(this.config.getString("env", "development"))) {
 			configurer.configure(this.config);
 		}
+		setupRequestMatcher();
 		return this;
 	}
 
 	public SocketIOServer configure(Configurer configurer) {
-		configurer.configure(this.config);
-		return this;
+		return configure(null, configurer);
 	}
 
 	public SocketIOServer configure(String env, JsonObject newConfig) {
-		if(env == null) {
-			this.config.mergeIn(newConfig);
-		} else if(env.equals(this.config.getString("env", "development"))) {
+		if(env == null || env.equals(this.config.getString("env", "development"))) {
 			this.config.mergeIn(newConfig);
 		}
+		setupRequestMatcher();
 		return this;
 	}
 
 	public SocketIOServer configure(JsonObject newConfig) {
-		this.config.mergeIn(newConfig);
-		return this;
+		return configure(null, newConfig);
 	}
 
 	public SocketIOServer sockets() {
-		this.manager.config(this.config);
+		// TODO io.sockets.on("connect"); io.sockets.emit();
 		return this;
 	}
 
 	public SocketIOServer onConnection(Handler<SocketIOSocket> handler) {
 		this.manager.setSocketHandler(handler);
-
-		Settings settings = manager.getSettings();
-		final String namespace = settings.getNamespace();
-		rm.allWithRegEx(namespace + ".*", manager.requestHandler());
-
 		return this;
 	}
 

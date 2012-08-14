@@ -150,7 +150,9 @@ public class DefaultSocketIOSocket implements SocketIOSocket {
 	 * execute socket handler.
 	 */
 	public synchronized void onConnection() {
-		socketHandler.handle(this);
+		if(this.socketHandler != null) {
+			socketHandler.handle(this);
+		}
 	}
 
 	// $emit
