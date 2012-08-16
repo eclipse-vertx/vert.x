@@ -21,21 +21,85 @@ public class Namespace implements Shareable {
 
 	private static final Logger log = LoggerFactory.getLogger(Namespace.class);
 
-	private String name;
-	private Manager manager;
+	private final String name;
+	private final Manager manager;
 	private Map<String, SocketIOSocket> sockets;
 	private EventBus eventBus;
 	private JsonObject flags;
 	private Parser parser;
 	private AuthorizationHandler authHandler;
 
-	public Namespace(Manager manager, String name) {
+	public Namespace(final Manager manager, final String name) {
 		this.manager = manager;
-		this.name = name;
-		this.sockets = manager.getMap("nsp");
+		this.name = name != null ? name : "";
+
+		this.sockets = manager.getMap(name);
 		this.eventBus = manager.getVertx().eventBus();
 		this.parser = new Parser();
 		setFlags();
+	}
+
+	public Namespace onConnection(Handler<SocketIOSocket> handler) {
+		this.manager.setSocketHandler(handler);
+		return this;
+	}
+
+	/**
+	 * Access store.
+	 */
+	public Store store() {
+		return this.manager.getStore();
+	}
+
+	/**
+	 * JSON message flag.
+	 */
+	public Namespace json() {
+		this.flags.putBoolean("json", true);
+		return this;
+	}
+
+	/**
+	 * Volatile message flag.
+	 */
+	public Namespace volatilize() {
+		this.flags.putBoolean("volatile", true);
+		return this;
+	}
+
+	/**
+	 * Overrides the room to relay messages to (flag).
+	 *
+	 * @see "SocketNamespace.prototype.in"
+	 * @param room
+	 * @return
+	 */
+	public Namespace in(String room) {
+		this.flags.putString("endpoint", this.getName() + (room != null ? "/" + room : ""));
+		return this;
+	}
+
+	/**
+	 * Overrides the room to relay messages to (flag).
+	 *
+	 * @see "SocketNamespace.prototype.to"
+	 * @param room
+	 * @return
+	 */
+	public Namespace to(String room) {
+		return in(room);
+	}
+
+	/**
+	 * Adds a session id we should prevent relaying messages to (flag).
+	 *
+	 * @see "SocketNamespace.prototype.except"
+	 * @param id
+	 * @return
+	 */
+	public Namespace except(String id) {
+		this.flags.getArray("exceptions").add(id);
+		return this;
 	}
 
 	/**
@@ -47,6 +111,54 @@ public class Namespace implements Shareable {
 		this.flags = new JsonObject();
 		flags.putString("endpoint", this.name);
 		flags.putArray("exceptions", new JsonArray());
+	}
+
+	/**
+	 * Sends out a packet.
+	 *
+	 * @see "SocketNamespace.prototype.packet"
+	 * @param packet
+	 * @return
+	 */
+	public Namespace packet(JsonObject packet) {
+		packet.putString("endpoint", this.getName());
+		Store store = this.manager.getStore();
+		boolean isVolatile = this.flags.getBoolean("volatile", false);
+		JsonArray exceptions = this.flags.getArray("exceptions");
+		String encodedPacket = parser.encodePacket(packet);
+
+		this.manager.onDispatch(this.flags.getString("endpoint"), encodedPacket, isVolatile, exceptions);
+		//		this.store.publish('dispatch', this.flags.endpoint, packet, volatile, exceptions);
+		this.setFlags();
+
+		return this;
+	}
+
+	/**
+	 * Sends to everyone.
+	 * @see "SocketNamespace.prototype.send"
+	 */
+	public void send(JsonObject data) {
+		JsonObject packet = new JsonObject();
+		packet.putString("type", this.flags.getBoolean("json", false) ? "json" : "message");
+		packet.putObject("data", data);
+		packet(packet);
+	}
+
+	/**
+	 * Emits to everyone (override).
+	 * 
+	 * @see "SocketNamespace.prototype.emit"
+	 */
+	public void emit(String event, JsonObject jsonObject) {
+		JsonObject packet = new JsonObject();
+		packet.putString("type", "event");
+		packet.putString("name", event);
+
+		JsonArray args = new JsonArray();
+		args.addObject(jsonObject);
+		packet.putArray("args", args);
+		packet(packet);
 	}
 
 	/**
@@ -66,6 +178,58 @@ public class Namespace implements Shareable {
 	}
 
 	/**
+	 * Sets authorization for this namespace.
+	 *
+	 * @see "SocketNamespace.prototype.authorization"
+	 *
+	 */
+	public Namespace authorization(AuthorizationHandler handler) {
+		this.authHandler = handler;
+		return this;
+	}
+
+	/**
+	 * Called when a socket disconnects entirely.
+	 *
+	 * @see "SocketNamespace.prototype.handleDisconnect"
+	 * @param sessionId
+	 * @param reason
+	 * @param raiseOnDisconnect
+	 */
+	public void handleDisconnect(String sessionId, String reason, boolean raiseOnDisconnect) {
+		SocketIOSocket socket = sockets.get(sessionId);
+		if (socket != null && socket.isReadable()) {
+			if (raiseOnDisconnect)
+				socket.onDisconnect(reason);
+			// TODO 동기화 고려가 되어야 함
+			sockets.remove(sessionId);
+		}
+	}
+
+	/**
+	 * Performs authentication.
+	 *
+	 * @see "SocketNamespace.prototype.authorize"
+	 * @param handshakeData
+	 * @param authCallback
+	 */
+	private void authorize(HandshakeData handshakeData, final AuthorizationCallback authCallback) {
+		if (this.authHandler != null) {
+			authHandler.handle(handshakeData, new AuthorizationCallback() {
+				public void handle(Exception e, boolean isAuthorized) {
+					if (log.isInfoEnabled())
+						log.info("client " + (isAuthorized ? "" : "un") + "authorized for " + name);
+					authCallback.handle(e, isAuthorized);
+				}
+			});
+		} else {
+			if (log.isInfoEnabled())
+				log.info("client authorized for " + this.getName());
+			authCallback.handle(null, true);
+		}
+	}
+
+	/**
 	 * Handles a packet.
 	 *
 	 * @see "SocketNamespace.prototype.handlePacket"
@@ -77,32 +241,33 @@ public class Namespace implements Shareable {
 		final SocketIOSocket socket = socket(sessionId, true, socketHandler);
 		boolean isDataAck = false;
 		String ack = packet.getString("ack");
-		if(ack != null && ack.equals("data")) {
+		if (ack != null && ack.equals("data")) {
 			isDataAck = true;
 		}
 
 		String type = packet.getString("type");
-		if(type.equals("connect"));
+		if (type.equals("connect"))
+			;
 
 		switch (type) {
 			case "connect":
 				String endpoint = packet.getString("endpoint", "");
-				if(endpoint.equals("")) {
+				if (endpoint.equals("")) {
 					connect(socket);
 				} else {
-					final HandshakeData handshakeData  = manager.getHandshaken().get(sessionId);
+					final HandshakeData handshakeData = manager.getHandshaken().get(sessionId);
 
-					this.authorize(handshakeData, new AuthorizationCallback(){
+					this.authorize(handshakeData, new AuthorizationCallback() {
 						@Override
 						public void handle(Exception e, boolean isAuthorized) {
-							if(e != null) {
+							if (e != null) {
 								error(socket, e);
 								return;
 							}
 
-							if(isAuthorized) {
+							if (isAuthorized) {
 								manager.onHandshake(sessionId, handshakeData);
-//								self.store.publish('handshake', sessid, newData || handshakeData);
+								//								self.store.publish('handshake', sessid, newData || handshakeData);
 								connect(socket);
 							} else {
 								error(socket, e);
@@ -114,25 +279,27 @@ public class Namespace implements Shareable {
 
 			case "ack":
 				Map<String, Handler<JsonArray>> acks = socket.getAcks();
-				if(acks.size() > 0) {
+				if (acks.size() > 0) {
 					Handler ackHandler = acks.get(packet.getString("ackId"));
-					if(ackHandler != null) {
+					if (ackHandler != null) {
 						ackHandler.handle(packet.getArray("args"));
 					} else {
-						if(log.isInfoEnabled()) log.info("unknown ack packet");
+						if (log.isInfoEnabled())
+							log.info("unknown ack packet");
 					}
 				}
 				break;
 
 			case "event":
 				// check if the emitted event is not blacklisted
-				if(manager.getSettings().getBlacklist().indexOf(packet.getString("name")) != -1) {
-					if(log.isInfoEnabled()) log.info("ignoring blacklisted event \'" + packet.getString("name") + "\'");
+				if (manager.getSettings().getBlacklist().indexOf(packet.getString("name")) != -1) {
+					if (log.isInfoEnabled())
+						log.info("ignoring blacklisted event \'" + packet.getString("name") + "\'");
 				} else {
 					JsonObject params = new JsonObject();
 					params.putArray("args", packet.getArray("args"));
 					params.putString("name", packet.getString("name"));
-					if(isDataAck) {
+					if (isDataAck) {
 						params.putString("ack", packet.getString("ack"));
 					}
 					socket.emit(params);
@@ -140,7 +307,7 @@ public class Namespace implements Shareable {
 				break;
 			case "disconnect":
 				this.manager.onLeave(sessionId, this.name);
-//				this.store.publish('leave', sessid, this.name);
+				//				this.store.publish('leave', sessid, this.name);
 				socket.emitDisconnect(packet.getString("reason", "packet"));
 				break;
 			case "json":
@@ -160,7 +327,8 @@ public class Namespace implements Shareable {
 	 * @param jsonObject
 	 */
 	private void ack(SocketIOSocket socket, JsonObject jsonObject) {
-		if(log.isDebugEnabled()) log.debug("sending data ack packet");
+		if (log.isDebugEnabled())
+			log.debug("sending data ack packet");
 		JsonObject packet = new JsonObject();
 		packet.putString("type", "ack");
 		packet.putArray("args", jsonObject.getArray("args"));
@@ -174,7 +342,8 @@ public class Namespace implements Shareable {
 	 * @param e
 	 */
 	private void error(SocketIOSocket socket, Exception e) {
-		if(log.isDebugEnabled()) log.debug("hnadshake error " + e.getMessage() + " for " + this.name);
+		if (log.isDebugEnabled())
+			log.debug("hnadshake error " + e.getMessage() + " for " + this.name);
 		JsonObject packet = new JsonObject();
 		packet.putString("type", "error");
 		packet.putString("reason", e.getMessage());
@@ -187,7 +356,7 @@ public class Namespace implements Shareable {
 	 */
 	private void connect(SocketIOSocket socket) {
 		this.manager.onJoin(socket.getId(), this.name);
-//		self.store.publish('join', sessid, self.name);
+		//		self.store.publish('join', sessid, self.name);
 
 		// packet echo
 		JsonObject packet = new JsonObject();
@@ -198,90 +367,7 @@ public class Namespace implements Shareable {
 		socket.onConnection();
 	}
 
-	/**
-	 * Performs authentication.
-	 *
-	 * @see "SocketNamespace.prototype.authorize"
-	 * @param handshakeData
-	 * @param authCallback
-	 */
-	private void authorize(HandshakeData handshakeData, final AuthorizationCallback authCallback) {
-		if(this.authHandler != null) {
-			authHandler.handle(handshakeData, new AuthorizationCallback() {
-				public void handle(Exception e, boolean isAuthorized) {
-					if(log.isInfoEnabled()) log.info("client " + (isAuthorized ? "" : "un") + "authorized for " + name);
-					authCallback.handle(e, isAuthorized);
-				}
-			});
-		} else {
-			if(log.isInfoEnabled()) log.info("client authorized for " + this.getName());
-			authCallback.handle(null, true);
-		}
-	}
-
-	/**
-	 * Overrides the room to relay messages to (flag).
-	 *
-	 * @see "SocketNamespace.prototype.in"
-	 * @param room
-	 * @return
-	 */
-	public Namespace in(String room) {
-		this.flags.putString("endpoint", this.getName() + (room != null ? "/" + room : ""));
-		return this;
-	}
-
-	/**
-	 * Adds a session id we should prevent relaying messages to (flag).
-	 *
-	 * @see "SocketNamespace.prototype.except"
-	 * @param id
-	 * @return
-	 */
-	public Namespace except(String id) {
-		this.flags.getArray("exceptions").add(id);
-		return this;
-	}
-
-	/**
-	 * Sends out a packet.
-	 *
-	 * @see "SocketNamespace.prototype.packet"
-	 * @param packet
-	 * @return
-	 */
-	public Namespace packet(JsonObject packet) {
-		packet.putString("endpoint", this.getName());
-		Store store = this.manager.getStore();
-		boolean isVolatile = this.flags.getBoolean("volatile", false);
-		JsonArray exceptions = this.flags.getArray("exceptions");
-		String encodedPacket = parser.encodePacket(packet);
-
-		this.manager.onDispatch(this.flags.getString("endpoint"), encodedPacket, isVolatile, exceptions);
-//		this.store.publish('dispatch', this.flags.endpoint, packet, volatile, exceptions);
-		this.setFlags();
-
-		return this;
-	}
-
-	/**
-	 * Called when a socket disconnects entirely.
-	 *
-	 * @see "SocketNamespace.prototype.handleDisconnect"
-	 * @param sessionId
-	 * @param reason
-	 * @param raiseOnDisconnect
-	 */
-	public void handleDisconnect(String sessionId, String reason, boolean raiseOnDisconnect) {
-		SocketIOSocket socket = sockets.get(sessionId);
-		if(socket != null && socket.isReadable()) {
-			if(raiseOnDisconnect) socket.onDisconnect(reason);
-			sockets.remove(sessionId);
-		}
-	}
-
 	public String getName() {
 		return name;
 	}
-
 }

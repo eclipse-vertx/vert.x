@@ -3,16 +3,21 @@ package org.vertx.java.core.socketio.impl;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.socketio.SocketIOSocket;
-import org.vertx.java.core.socketio.impl.handlers.HandshakeHandler;
-import org.vertx.java.core.socketio.impl.handlers.HttpRequestHandler;
+import org.vertx.java.core.socketio.impl.handler.HandshakeHandler;
+import org.vertx.java.core.socketio.impl.handler.HttpRequestHandler;
+import org.vertx.java.core.socketio.impl.transports.HtmlFile;
 import org.vertx.java.core.socketio.impl.transports.JsonpPolling;
+import org.vertx.java.core.socketio.impl.transports.WebSocketTransport;
+import org.vertx.java.core.socketio.impl.transports.XhrPolling;
 
 import java.util.Collection;
 import java.util.List;
@@ -42,12 +47,14 @@ public class Manager {
 	private Map<String, RoomClient> roomClients;
 	private Namespace sockets;
 	private VertxInternal vertx;
+	private HttpServer httpServer;
 
 	private HandshakeHandler handshakeHandler;
 	private HttpRequestHandler httpRequestHandler;
 
-	public Manager(VertxInternal vertx) {
+	public Manager(VertxInternal vertx, HttpServer httpServer) {
 		this.vertx = vertx;
+		this.httpServer = httpServer;
 		this.handshaken = vertx.sharedData().getMap("handshaken");
 		this.transports = vertx.sharedData().getMap("transports");
 		this.closed = vertx.sharedData().getMap("closed");
@@ -64,7 +71,11 @@ public class Manager {
 		this.log.info("socket.io started");
 	}
 
-	private Namespace of(String nsp) {
+	public Namespace sockets() {
+		return this.sockets;
+	}
+
+	public Namespace of(String nsp) {
 		if (this.namespaces.containsKey(nsp)) {
 			return this.namespaces.get(nsp);
 		}
@@ -74,18 +85,36 @@ public class Manager {
 	}
 
 	/**
+	 * Handles an WebSocket request.
+	 *
+	 * @return
+	 */
+	public Handler<ServerWebSocket> webSocketHandler() {
+		return new Handler<ServerWebSocket>() {
+			public void handle(ServerWebSocket socket) {
+				ClientData clientData = new ClientData(socket);
+				if (clientData.getId() != null) {
+					httpRequestHandler.handle(clientData);
+				} else {
+					handshakeHandler.handle(clientData);
+				}
+			}
+		};
+	}
+
+	/**
 	 * Handles an HTTP request.
 	 *
 	 * @see "Manager.prototype.handleRequest"
 	 * @return
 	 */
 	public Handler<HttpServerRequest> requestHandler() {
-		final String namespace = this.settings.getNamespace();
-
 		return new Handler<HttpServerRequest>() {
-			@Override
 			public void handle(HttpServerRequest req) {
-				ClientData clientData = new ClientData(namespace, req);
+				System.out.println("requestHandler");
+				System.out.println(req.method + " " + req.uri);
+
+				ClientData clientData = new ClientData(settings.getNamespace(), req);
 
 				if (clientData.isStatic()) {
 					// TODO delegate to StaticHandler
@@ -93,7 +122,8 @@ public class Manager {
 
 				if (clientData.getProtocol() != 1) {
 					writeError(req, 500, "Protocol version not supported");
-					if (log.isInfoEnabled()) log.info("client protocol version unsupported");
+					if (log.isInfoEnabled())
+						log.info("client protocol version unsupported");
 					return;
 				} else {
 					if (clientData.getId() != null) {
@@ -132,19 +162,19 @@ public class Manager {
 	 *
 	 * @see "Manager.prototype.onJoin"
 	 * @param sessionId
-	 * @param roomName is nsp + "/" + room.
+	 * @param roomName = namespace + "/" + name
 	 */
 	public void onJoin(String sessionId, String roomName) {
-		if(this.roomClients.get(sessionId) == null) {
+		if (this.roomClients.get(sessionId) == null) {
 			this.roomClients.put(sessionId, new RoomClient());
 		}
 
-		if(this.rooms.get(roomName) == null) {
+		if (this.rooms.get(roomName) == null) {
 			this.rooms.put(roomName, new Room());
 		}
 
 		Room room = this.rooms.get(roomName);
-		if(!room.contains(sessionId)) {
+		if (!room.contains(sessionId)) {
 			room.push(sessionId);
 			this.roomClients.get(sessionId).put(roomName, true);
 		}
@@ -159,15 +189,15 @@ public class Manager {
 	 */
 	public void onLeave(String sessionId, String roomName) {
 		Room room = this.rooms.get(roomName);
-		if(room != null) {
+		if (room != null) {
 			room.remove(sessionId);
 
-			if(room.size() == 0) {
+			if (room.size() == 0) {
 				this.rooms.remove(roomName);
 			}
 
 			RoomClient roomClient = this.roomClients.get(sessionId);
-			if(roomClient != null) {
+			if (roomClient != null) {
 				roomClient.remove(roomName);
 			}
 		}
@@ -184,13 +214,13 @@ public class Manager {
 	 */
 	public void onDispatch(String room, String encodedPacket, boolean isVolatile, JsonArray exceptions) {
 		Room thisRoom = this.rooms.get(room);
-		if(thisRoom != null) {
-			for(String id : thisRoom.values()) {
-				if(!exceptions.contains(id)) {
+		if (thisRoom != null) {
+			for (String id : thisRoom.values()) {
+				if (!exceptions.contains(id)) {
 					Transport transport = this.transports.get(id);
-					if(transport != null && transport.isOpen()) {
+					if (transport != null && transport.isOpen()) {
 						transports.get(id).onDispatch(encodedPacket, isVolatile);
-					} else if(!isVolatile) {
+					} else if (!isVolatile) {
 						this.onClientDispatch(id, encodedPacket);
 					}
 
@@ -207,7 +237,7 @@ public class Manager {
 	 * @param encodedPacket
 	 */
 	public void onClientDispatch(String id, String encodedPacket) {
-		if(this.closed.get(id) != null) {
+		if (this.closed.get(id) != null) {
 			this.closed.get(id).add(new Buffer(encodedPacket));
 		}
 	}
@@ -219,17 +249,17 @@ public class Manager {
 	 * @param sessionId
 	 */
 	public void onClose(String sessionId) {
-		if(this.open.get(sessionId) != null) {
+		if (this.open.get(sessionId) != null) {
 			this.open.remove(sessionId);
 		}
 
 		this.closed.put(sessionId, new ShareableList<Buffer>());
 
-//		this.store.subscribe('dispatch:' + id, function (packet, volatile) {
-//			if (!volatile) {
-//				self.onClientDispatch(id, packet);
-//			}
-//		});
+		//		this.store.subscribe('dispatch:' + id, function (packet, volatile) {
+		//			if (!volatile) {
+		//				self.onClientDispatch(id, packet);
+		//			}
+		//		});
 	}
 
 	/**
@@ -241,7 +271,7 @@ public class Manager {
 	 */
 	public void onClientMessage(String sessionId, JsonObject packet) {
 		Namespace namespace = namespaces.get(packet.getString("endpoint"));
-		if(namespace != null) {
+		if (namespace != null) {
 			namespace.handlePacket(sessionId, packet, socketHandler);
 		}
 	}
@@ -255,7 +285,7 @@ public class Manager {
 	 * @param flag
 	 */
 	public void onClientDisconnect(String sessionId, String reason, boolean flag) {
-		for(Map.Entry<String, Namespace> entry : namespaces.entrySet()) {
+		for (Map.Entry<String, Namespace> entry : namespaces.entrySet()) {
 			RoomClient roomClient = this.roomClients.get(sessionId);
 			boolean isInARoom = (roomClient != null) && (roomClient.isIn(entry.getKey()));
 			entry.getValue().handleDisconnect(sessionId, reason, isInARoom);
@@ -274,43 +304,43 @@ public class Manager {
 		this.handshaken.remove(sessionId);
 
 		Boolean isOpen = this.open.get(sessionId);
-		if(isOpen != null && isOpen) {
+		if (isOpen != null && isOpen) {
 			this.open.remove(sessionId);
 		}
 
 		Boolean isConnected = this.connected.get(sessionId);
-		if(isConnected != null && isConnected) {
+		if (isConnected != null && isConnected) {
 			this.connected.remove(sessionId);
 		}
 
 		Transport transport = this.transports.get(sessionId);
-		if(transport != null) {
+		if (transport != null) {
 			transport.discard();
 			this.transports.remove(sessionId);
 		}
 
-		if(this.closed.get(sessionId) != null) {
+		if (this.closed.get(sessionId) != null) {
 			this.closed.remove(sessionId);
 		}
 
 		RoomClient roomClient = this.roomClients.get(sessionId);
-		if(roomClient != null) {
-			for(String room : roomClient.rooms()) {
-				if(roomClient.isIn(room)) {
+		if (roomClient != null) {
+			for (String room : roomClient.rooms()) {
+				if (roomClient.isIn(room)) {
 					this.onLeave(sessionId, room);
 				}
 			}
 			this.roomClients.remove(sessionId);
 		}
 
-//		this.store.destroyClient(id, this.get('client store expiration'));
-//
-//		this.store.unsubscribe('dispatch:' + id);
-//
-//		if (local) {
-//			this.store.unsubscribe('message:' + id);
-//			this.store.unsubscribe('disconnect:' + id);
-//		}
+		//		this.store.destroyClient(id, this.get('client store expiration'));
+		//
+		//		this.store.unsubscribe('dispatch:' + id);
+		//
+		//		if (local) {
+		//			this.store.unsubscribe('message:' + id);
+		//			this.store.unsubscribe('disconnect:' + id);
+		//		}
 	}
 
 	/**
@@ -331,14 +361,14 @@ public class Manager {
 	 */
 	public void onOpen(final String sessionId) {
 		open.put(sessionId, true);
-		if(this.closed(sessionId) != null) {
+		if (this.closed(sessionId) != null) {
 			vertx.eventBus().unregisterHandler("dispatch:" + sessionId, new Handler<Message>() {
 				@Override
 				public void handle(Message event) {
 					Transport transport = transports.get(sessionId);
 					List<Buffer> buffers = closed.get(sessionId);
-					if(buffers != null && buffers.size() > 0 && transport != null) {
-						if(transport.isOpen()) {
+					if (buffers != null && buffers.size() > 0 && transport != null) {
+						if (transport.isOpen()) {
 							transport.payload(buffers);
 							closed.remove(sessionId);
 						}
@@ -348,7 +378,7 @@ public class Manager {
 		}
 
 		Transport transport = this.transport(sessionId);
-		if(transport != null) {
+		if (transport != null) {
 			transport.discard();
 			this.transports.remove(sessionId);
 		}
@@ -361,7 +391,19 @@ public class Manager {
 	 * @return
 	 */
 	public Transport newTransport(ClientData clientData) {
-		return new JsonpPolling(this, clientData);
+		String transport = clientData.getTransport();
+		switch (transport) {
+			case "websocket":
+				return new WebSocketTransport(this, clientData);
+			case "htmlfile":
+				return new HtmlFile(this, clientData);
+			case "xhr-polling":
+				return new XhrPolling(this, clientData);
+			case "jsonp-polling":
+				return new JsonpPolling(this, clientData);
+			default:
+				throw new IllegalArgumentException(transport + " is not supported.");
+		}
 	}
 
 	public Transport transport(String sessionId) {
@@ -404,8 +446,9 @@ public class Manager {
 		return globalAuthorizationHandler;
 	}
 
-	public void config(JsonObject config) {
+	public Settings buildSettings(JsonObject config) {
 		this.settings = new Settings(config);
+		return this.settings;
 	}
 
 	public Settings getSettings() {
@@ -439,4 +482,9 @@ public class Manager {
 	public Store getStore() {
 		return this.getSettings().getStore();
 	}
+
+	public HttpServer getHttpServer() {
+		return httpServer;
+	}
+
 }

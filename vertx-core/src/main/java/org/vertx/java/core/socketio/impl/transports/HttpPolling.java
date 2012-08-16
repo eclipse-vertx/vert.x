@@ -1,7 +1,6 @@
 package org.vertx.java.core.socketio.impl.transports;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -72,13 +71,12 @@ public abstract class HttpPolling extends Http {
 	 * Handles a request
 	 *
 	 * @see "HTTPPolling.prototype.handleRequest"
-	 * @param req
 	 */
 	@Override
-	protected void handleRequest(HttpServerRequest req) {
-		super.handleRequest(req);
+	protected void handleRequest() {
+		super.handleRequest();
 
-		if(req.method.equals("GET")) {
+		if(request.method.equals("GET")) {
 			this.pollTimeout = vertx.setTimer(manager.getSettings().getPollingDuration() * 1000, new Handler<Long>() {
 				public void handle(Long event) {
 					JsonObject packet = new JsonObject();

@@ -43,6 +43,11 @@ public class DefaultSocketIOSocket implements SocketIOSocket {
 		this.acks = new ConcurrentHashMap<>();
 		this.handlers = new ConcurrentHashMap<>();
 		setupFlags();
+
+		// 기본 에러 핸들러 처리 필요함
+
+		// socket에 저장되어도 되는 데이터: handshake data, transport, log ?
+		// 추가가 필요한 기능, set, get, join, leave
 	}
 
 	/**
@@ -57,10 +62,39 @@ public class DefaultSocketIOSocket implements SocketIOSocket {
 	}
 
 	/**
+	 * JSON message flag.
+	 */
+	public SocketIOSocket json() {
+		this.flags.putBoolean("json", true);
+		return this;
+	}
+
+	public SocketIOSocket volatilize() {
+		this.flags.putBoolean("volatile", true);
+		return this;
+	}
+
+	public SocketIOSocket broadcast() {
+		this.flags.putBoolean("broadcast", true);
+		return this;
+	}
+
+	public SocketIOSocket to(final String room) {
+		this.flags.putString("room", room);
+		return this;
+	}
+
+	public SocketIOSocket in(final String room) {
+		this.flags.putString("room", room);
+		return this;
+	}
+
+	/**
 	 * Transmits a packet.
 	 *
-	 * @see "Socket.prototype.packet"
+	 * @see "Socktet.prototype.packet"
 	 * @param packet
+	 * @return
 	 */
 	public synchronized void packet(JsonObject packet) {
 		if(this.flags.getBoolean("broadcast", false)) {
@@ -125,15 +159,58 @@ public class DefaultSocketIOSocket implements SocketIOSocket {
 	}
 
 	/**
-	 * emit disconnect
+	 * emit disconnection
 	 *
 	 * @param reason
 	 */
 	public synchronized void emitDisconnect(String reason) {
 		JsonObject packet = new JsonObject();
 		packet.putString("reason", reason);
+//		emit("disconnect", packet);
 		packet.putString("name", "disconnect");
 		emit(packet);
+	}
+
+	/**
+	 * Joins a user to a room.
+	 *
+	 * @see "Socket.prototype.join"
+	 * @param room
+	 */
+	@Override
+	public SocketIOSocket join(String room) {
+		String roomName = namespace.getName() + "/" + room;
+		this.manager.onJoin(this.id, roomName);
+//		this.manager.store.publish('join', this.id, name);
+		return this;
+	}
+
+	@Override
+	public SocketIOSocket join(String room, Handler<Void> handler) {
+		join(room);
+		handler.handle(null);
+		return this;
+	}
+
+	/**
+	 * Un-joins a user from a room.
+	 *
+	 * @see "Socket.prototype.leave"
+	 * @param room
+	 */
+	@Override
+	public SocketIOSocket leave(String room) {
+		String roomName = namespace.getName() + "/" + room;
+		this.manager.onLeave(this.id, roomName);
+//		this.manager.store.publish('leave', this.id, name);
+		return this;
+	}
+
+	@Override
+	public SocketIOSocket leave(String room, Handler<Void> handler) {
+		leave(room);
+		handler.handle(null);
+		return this;
 	}
 
 	/**

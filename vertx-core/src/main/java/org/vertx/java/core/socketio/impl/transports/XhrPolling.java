@@ -1,6 +1,5 @@
 package org.vertx.java.core.socketio.impl.transports;
 
-import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.socketio.impl.ClientData;
@@ -41,8 +40,7 @@ public class XhrPolling extends HttpPolling {
 		super.doWrite(encodedPacket);
 
 		String origin = request.headers().get("Origin");
-		HttpServerResponse res = request.response;
-		Map<String, Object> resHeaders = res.headers();
+		Map<String, Object> resHeaders = response.headers();
 		resHeaders.put("Content-Type", "text/plain; charset=UTF-8");
 		resHeaders.put("Content-Length", encodedPacket == null ? 0 : encodedPacket.length());
 		resHeaders.put("Connection", "Keep-Aplive");
@@ -53,8 +51,8 @@ public class XhrPolling extends HttpPolling {
 			resHeaders.put("Access-Control-Allow-Credentials", "true");
 		}
 
-		res.statusCode = 200;
-		res.write(encodedPacket);
+		response.statusCode = 200;
+		response.write(encodedPacket);
 		if(log.isDebugEnabled()) log.debug(this.getName() + " writing " + encodedPacket);
 	}
 }

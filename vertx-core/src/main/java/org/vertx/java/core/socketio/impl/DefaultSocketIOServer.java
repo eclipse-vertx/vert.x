@@ -1,14 +1,11 @@
 package org.vertx.java.core.socketio.impl;
 
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.socketio.SocketIOSocket;
 import org.vertx.java.core.socketio.SocketIOServer;
 
 /**
@@ -19,30 +16,36 @@ public class DefaultSocketIOServer implements SocketIOServer {
 	private static final Logger log = LoggerFactory.getLogger(DefaultSocketIOServer.class);
 
 	private final VertxInternal vertx;
-	private HttpServer httpServer;
 	private Manager manager;
 	private JsonObject config;
+	private HttpServer httpServer;
 
-	public DefaultSocketIOServer(final Vertx vertx, final HttpServer httpServer) {
-		this.vertx = (VertxInternal) vertx;
+	private RouteMatcher rm;
+
+	public DefaultSocketIOServer(final VertxInternal vertx, final HttpServer httpServer) {
+		this.vertx = vertx;
 		this.config = new JsonObject();
 		this.config.putString("namespace", "/socket.io");
-		this.manager = new Manager(this.vertx);
+		this.manager = new Manager(this.vertx, httpServer);
 		this.httpServer = httpServer;
+
+		this.rm = new RouteMatcher();
+		rm.noMatch(this.httpServer.requestHandler());
+		httpServer.requestHandler(rm);
+
 		setupRequestMatcher();
 	}
 
 	private void setupRequestMatcher() {
-		RouteMatcher rm = new RouteMatcher();
-		rm.noMatch(this.httpServer.requestHandler());
-		httpServer.requestHandler(rm);
-		this.manager.config(this.config);
-		final String namespace = manager.getSettings().getNamespace();
-		rm.allWithRegEx(namespace + ".*", manager.requestHandler());
+		Settings settings = this.manager.buildSettings(this.config);
+		String namespace = settings.getNamespace();
+
+		this.rm.allWithRegEx(namespace + ".*", manager.requestHandler());
+		this.httpServer.websocketHandler(manager.webSocketHandler());
 	}
 
 	public SocketIOServer configure(String env, Configurer configurer) {
-		if(env == null || env.equals(this.config.getString("env", "development"))) {
+		if (env == null || env.equals(this.config.getString("env", "development"))) {
 			configurer.configure(this.config);
 		}
 		setupRequestMatcher();
@@ -54,7 +57,7 @@ public class DefaultSocketIOServer implements SocketIOServer {
 	}
 
 	public SocketIOServer configure(String env, JsonObject newConfig) {
-		if(env == null || env.equals(this.config.getString("env", "development"))) {
+		if (env == null || env.equals(this.config.getString("env", "development"))) {
 			this.config.mergeIn(newConfig);
 		}
 		setupRequestMatcher();
@@ -65,14 +68,12 @@ public class DefaultSocketIOServer implements SocketIOServer {
 		return configure(null, newConfig);
 	}
 
-	public SocketIOServer sockets() {
-		// TODO io.sockets.on("connect"); io.sockets.emit();
-		return this;
+	public Namespace sockets() {
+		return this.manager.sockets();
 	}
 
-	public SocketIOServer onConnection(Handler<SocketIOSocket> handler) {
-		this.manager.setSocketHandler(handler);
-		return this;
+	public Namespace of(final String name) {
+		return this.manager.of(name);
 	}
 
 	public SocketIOServer setAuthrizationCallback(AuthorizationHandler globalAuthHandler) {
@@ -80,69 +81,4 @@ public class DefaultSocketIOServer implements SocketIOServer {
 		return this;
 	}
 
-	public static void main(String[] args) throws InterruptedException {
-		Vertx vertx = Vertx.newVertx();
-		HttpServer httpServer = vertx.createHttpServer();
-		installApplication((VertxInternal) vertx, httpServer);
-		httpServer.listen(8081);
-		System.out.println("Server is running on http://localshot:8081");
-		Thread.sleep(Long.MAX_VALUE);
-	}
-
-	private static void installApplication(VertxInternal vertx, HttpServer httpServer) {
-		/**
-		 * ======================================================
-		 * TODO http://socket.io/#how-to-use
-		 * ======================================================
-		 */
-		final SocketIOServer io = new DefaultSocketIOServer(vertx, httpServer);
-
-		io.configure("production", new Configurer() {
-			public void configure(JsonObject config) {
-				config.putBoolean("browser client etag", true);
-				config.putNumber("log level", 1);
-				config.putString("transports", "websocket,htmlfile,xhr-polling,jsonp-polling");
-			}
-		});
-
-		io.configure("development", new Configurer() {
-			public void configure(JsonObject config) {
-				config.putString("transports", "jsonp-polling");
-				config.putString("namespace", "/socket.io");
-				config.putBoolean("authorization", true);
-			}
-		});
-
-		AuthorizationHandler globalAuthorizationCallback = new AuthorizationHandler() {
-			public void handle(HandshakeData handshakeData, AuthorizationCallback callback) {
-				System.out.println("authorization callback!!!");
-				callback.handle(null, true);
-			}
-		};
-
-		io.setAuthrizationCallback(globalAuthorizationCallback);
-
-		io.sockets().onConnection(new Handler<SocketIOSocket>() {
-			public void handle(final SocketIOSocket socket) {
-				System.out.println(socket.getId() + " Connected!");
-
-				JsonObject message = new JsonObject();
-				message.putString("hello", "world");
-				socket.emit("news", message);
-
-				socket.on("my other event", new Handler<JsonObject>() {
-					public void handle(JsonObject data) {
-						System.out.println("============ 왔어! =============");
-						System.out.println(data);
-					}
-				});
-
-				socket.on("timer", new Handler<JsonObject>() {
-					public void handle(JsonObject data) {
-						socket.emit("timer", data);
-					}
-				});
-			}
-		});
-	}
 }

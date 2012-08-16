@@ -10,6 +10,7 @@ import org.vertx.java.core.socketio.SocketIOSocket;
 import org.vertx.java.core.socketio.impl.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Handles a normal handshaken HTTP request (eg: long-polling)
@@ -39,7 +40,8 @@ public class HttpRequestHandler {
 		Settings settings = manager.getSettings();
 
 		// handle sync disconnect xhrs
-		if(clientData.getParams().get("disconnect") != null) {
+		Map<String,String> params = clientData.getParams();
+		if(params != null && params.get("disconnect") != null) {
 			Transport transport = manager.transport(clientData.getId());
 			if(transport != null && transport.isOpen()) {
 				transport.onForcedDisconnect();

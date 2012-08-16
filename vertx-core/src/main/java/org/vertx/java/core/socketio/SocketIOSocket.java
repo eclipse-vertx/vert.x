@@ -11,61 +11,42 @@ import java.util.Map;
  * @author Keesun Baik
  */
 public interface SocketIOSocket extends Shareable {
-
-	/**
-	 * @return sessionId
-	 */
 	String getId();
 
-	/**
-	 * Emit override for custom events.
-	 *
-	 * @see "Socket.prototype.emit"
-	 * @param event
-	 * @param message
-	 * @return
-	 */
 	void emit(String event, JsonObject message);
 
-	/**
-	 * emit disconnection
-	 * @param reason
-	 */
-	void emitDisconnect(String reason);
-
-	/**
-	 * register handler to an event.
-	 *
-	 * @param event
-	 * @param handler
-	 */
 	void on(String event, Handler<JsonObject> handler);
 
-	/**
-	 * Transmits a packet.
-	 *
-	 * @see "Socket.prototype.packet"
-	 * @param packet
-	 */
-	void packet(JsonObject packet);
-
-	/**
-	 * Triggered on disconnect
-	 *
-	 * @see "Socket.prototype.onDisconnect"
-	 * @param reason
-	 */
-	void onDisconnect(String reason);
-
-	// $emit
-	void emit(JsonObject packet);
-
-	// get Acks
 	Map<String,Handler<JsonArray>> getAcks();
 
-	// start socket handling
+	void packet(JsonObject packet);
+
 	void onConnection();
 
 	boolean isReadable();
+
+	void onDisconnect(String reason);
+
+	void emit(JsonObject packet);
+
+	void emitDisconnect(String reason);
+
+	SocketIOSocket join(String room);
+
+	SocketIOSocket join(String room, Handler<Void> handler);
+
+	SocketIOSocket leave(String room);
+
+	SocketIOSocket leave(String room, Handler<Void> handler);
+
+	SocketIOSocket json();
+
+	SocketIOSocket volatilize();
+
+	SocketIOSocket broadcast();
+
+	SocketIOSocket to(final String room);
+
+	SocketIOSocket in(final String room);
 
 }

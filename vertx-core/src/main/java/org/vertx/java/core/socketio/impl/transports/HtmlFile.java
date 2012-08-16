@@ -1,7 +1,6 @@
 package org.vertx.java.core.socketio.impl.transports;
 
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.json.impl.Json;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -36,26 +35,25 @@ public class HtmlFile extends Http {
 	 * Handles the request.
 	 *
 	 * @see "HTMLFile.prototype.handleRequest"
-	 * @param req
 	 */
 	@Override
-	protected void handleRequest(HttpServerRequest req) {
-		super.handleRequest(req);
+	protected void handleRequest() {
+		super.handleRequest();
 
-		if(req.method.equals("GET")) {
+		Map<String, Object> headers = response.headers();
+		if(request.method.equals("GET")) {
 			response.statusCode = 200;
-			Map<String, Object> headers = response.headers();
 			headers.put("Content-Type", "text/html; charset=UTF-8");
 			headers.put("Connection", "keep-alive");
 			headers.put("Transfer-Encoding", "chunked");
 		}
 
-		String space173 = "";
-		for(int i = 0 ; i < 173 ; i++) {
-			space173 += " ";
+		String body = "<html><body><script>var _ = function (msg) { parent.s._(msg, document); };</script>";
+		for(int i = body.length() ; i < 256 ; i++) {
+			body += " ";
 		}
-
-		response.write("<html><body><script>var _ = function (msg) { parent.s._(msg, document); };</script>" + space173);
+		headers.put("Content-Length", body.length());
+		response.write(body);
 	}
 
 	/**

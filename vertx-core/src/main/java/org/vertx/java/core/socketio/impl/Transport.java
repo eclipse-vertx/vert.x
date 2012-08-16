@@ -2,8 +2,6 @@ package org.vertx.java.core.socketio.impl;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
@@ -49,20 +47,20 @@ public abstract class Transport implements Shareable {
 		this.vertx = manager.getVertx();
 		this.parser = new Parser();
 
-		this.handleRequest(request);
+		this.handleRequest();
 	}
 
 	/**
 	 * Handles a request when it's set.
 	 *
 	 * @see "Transport.prototype.handleRequest"
-	 * @param req
 	 */
-	protected void handleRequest(HttpServerRequest req) {
-		if(log.isInfoEnabled()) log.info("setting request " + req.method + " " + req.uri);
-		this.request = req;
+	protected void handleRequest() {
+		if(request != null) {
+			if(log.isInfoEnabled()) log.info("setting request " + request.method + " " + request.uri);
+		}
 
-		if(req.method.toUpperCase().equals("GET")) {
+		if(clientData.isWebSocket() || request.method.toUpperCase().equals("GET")) {
 //			this.socket = req.socket;
 			this.isOpen = true;
 			this.isDrained = true;
@@ -72,37 +70,42 @@ public abstract class Transport implements Shareable {
 		}
 	}
 
+	/**
+	 * Called when a connection is first set.
+	 *
+	 * @see "Transport.prototype.onSocketConnect"
+	 */
 	protected void onSocketConnect() {}
 
 	/**
-	 * Sets transport handlers.
+	 * TODO Sets transport handlers.
 	 *
 	 * @see "Transport.prototype.setHandlers"
 	 */
 	protected void setHandlers() {
-		EventBus eventBus = manager.getVertx().eventBus();
-
-		eventBus.registerHandler("heartbeat-clear" + this.sessionId, new Handler<Message>() {
-			@Override
-			public void handle(Message event) {
-				onHeartbeatClear();
-			}
-		});
-
-		eventBus.registerHandler("disconnect-force:" + this.sessionId, new Handler<Message>() {
-			@Override
-			public void handle(Message event) {
-				onForcedDisconnect();
-			}
-		});
-
-		eventBus.registerHandler("dispatch:" + this.sessionId, new Handler<Message<JsonObject>>() {
-			@Override
-			public void handle(Message<JsonObject> event) {
-				JsonObject body = event.body;
-				onDispatch(body.getString("packet"), body.getBoolean("volatile"));
-			}
-		});
+//		EventBus eventBus = manager.getVertx().eventBus();
+//
+//		eventBus.registerHandler("heartbeat-clear" + this.sessionId, new Handler<Message>() {
+//			@Override
+//			public void handle(Message event) {
+//				onHeartbeatClear();
+//			}
+//		});
+//
+//		eventBus.registerHandler("disconnect-force:" + this.sessionId, new Handler<Message>() {
+//			@Override
+//			public void handle(Message event) {
+//				onForcedDisconnect();
+//			}
+//		});
+//
+//		eventBus.registerHandler("dispatch:" + this.sessionId, new Handler<Message<JsonObject>>() {
+//			@Override
+//			public void handle(Message<JsonObject> event) {
+//				JsonObject body = event.body;
+//				onDispatch(body.getString("packet"), body.getBoolean("volatile"));
+//			}
+//		});
 
 
 //		this.bound = {
@@ -223,8 +226,8 @@ public abstract class Transport implements Shareable {
 	 * @see "Transport.prototype.end"
 	 * @param reason
 	 */
-	private void end(String reason) {
-		if(!this.isDisconnected) {
+	protected void end(String reason) {
+		if(!this.isDisconnected()) {
 	   	    if(log.isInfoEnabled()) log.info("transport end (" + reason + ")");
 			Transport local = manager.getTranport(sessionId);
 			this.close();

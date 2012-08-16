@@ -2,7 +2,6 @@ package org.vertx.java.core.socketio.impl.transports;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -34,20 +33,19 @@ public abstract class Http extends Transport {
 	 * Handles a request.
 	 *
 	 * @see "HTTPTransport.prototype.handleRequest"
-	 * @param req
 	 */
 	@Override
-	protected void handleRequest(final HttpServerRequest req) {
+	protected void handleRequest() {
 
 		// Always set the response in case an error is returned to the client
-		this.response = req.response;
+		this.response = request.response;
 
-		if(!req.method.toUpperCase().equals("POST")) {
-			super.handleRequest(req);
+		if(!request.method.toUpperCase().equals("POST")) {
+			super.handleRequest();
 		} else {
 			final Buffer buffer = new Buffer(0);
-			final HttpServerResponse res = req.response;
-			String origin = req.headers().get("ORIGIN");
+			final HttpServerResponse res = request.response;
+			String origin = request.headers().get("ORIGIN");
 			Map<String, Object> resHeaders = res.headers();
 			resHeaders.put("Content-Length", 1);
 			resHeaders.put("Content-Type", "text/plain; charset=UTF-8");
@@ -58,17 +56,17 @@ public abstract class Http extends Transport {
 				resHeaders.put("Access-Control-Allow-Credentials", "true");
 			}
 
-			req.dataHandler(new Handler<Buffer>() {
+			request.dataHandler(new Handler<Buffer>() {
 				public void handle(Buffer data) {
 					buffer.appendBuffer(data);
 					if(buffer.length() >= manager.getSettings().getDestryBufferSize()) {
 						resetBuffer(buffer);
-						req.response.end();
+						request.response.end();
 					}
 				}
 			});
 
-			req.endHandler(new Handler<Void>() {
+			request.endHandler(new Handler<Void>() {
 				public void handle(Void event) {
 					res.statusCode = 200;
 					res.end("1");
@@ -78,7 +76,7 @@ public abstract class Http extends Transport {
 			});
 
 			// req.on('close', function () {
-			req.exceptionHandler(new Handler<Exception>() {
+			request.exceptionHandler(new Handler<Exception>() {
 				public void handle(Exception event) {
 					resetBuffer(buffer);
 					onClose();
