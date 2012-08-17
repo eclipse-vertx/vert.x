@@ -1,8 +1,8 @@
 package org.vertx.java.core.socketio.impl;
 
 import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.socketio.impl.store.MemoryStore;
-import org.vertx.java.core.socketio.impl.store.RedisStore;
+import org.vertx.java.core.socketio.impl.stores.MemoryStore;
+import org.vertx.java.core.socketio.impl.stores.RedisStore;
 
 import java.util.Arrays;
 import java.util.List;
