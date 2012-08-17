@@ -52,7 +52,8 @@ public class LocalClient extends EventBusAppBase {
   }
 
   public void testPubSubMultipleHandlers() {
-    Buffer buff = TestUtils.generateRandomBuffer(1000);                                                                    eb.send("some-address", buff);
+    Buffer buff = TestUtils.generateRandomBuffer(1000);
+    eb.send("some-address", buff);
     data.put("buffer", buff);
     eb.publish("some-address", buff);
   }
@@ -133,13 +134,14 @@ public class LocalClient extends EventBusAppBase {
   public void testRegisterNoAddress() {
     final String msg = "foo";
     final AtomicReference<String> idRef = new AtomicReference<>();
-    String id = eb.registerHandler(new Handler<Message<String>>() {
+    String id = UUID.randomUUID().toString();
+    eb.registerHandler(id, new Handler<Message<String>>() {
       boolean handled = false;
       public void handle(Message<String> received) {
         tu.azzert(!handled);
         tu.azzert(msg.equals(received.body));
         handled = true;
-        eb.unregisterHandler(idRef.get());
+        eb.unregisterHandler(idRef.get(), this);
         vertx.setTimer(100, new Handler<Long>() {
           public void handle(Long timerID) {
             tu.testComplete();

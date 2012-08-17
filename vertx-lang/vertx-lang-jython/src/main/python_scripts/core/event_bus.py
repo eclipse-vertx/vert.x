@@ -112,10 +112,11 @@ class EventBus(object):
             raise RuntimeError("handler is required")
         internal = InternalHandler(handler)
         if local_only:
-          id = EventBus.java_eventbus().registerLocalHandler(address, internal)
+          EventBus.java_eventbus().registerLocalHandler(address, internal)
         else:
-          id = EventBus.java_eventbus().registerHandler(address, internal)
-        EventBus.handler_dict[id] = internal
+          EventBus.java_eventbus().registerHandler(address, internal)
+        id = java.util.UUID.randomUUID().toString()
+        EventBus.handler_dict[id] = address, internal
         return id
 
     @staticmethod
@@ -133,11 +134,12 @@ class EventBus(object):
         if handler is None:
             raise RuntimeError("Handler is required")
         internal = InternalHandler(handler)
+        id = java.util.UUID.randomUUID().toString()
         if local_only:
-            id = EventBus.java_eventbus().registerLocalHandler(internal)
+            EventBus.java_eventbus().registerLocalHandler(id, internal)
         else:
-            id = EventBus.java_eventbus().registerHandler(internal)
-        EventBus.handler_dict[id] = internal
+            EventBus.java_eventbus().registerHandler(id, internal)
+        EventBus.handler_dict[id] = id, internal
         return id
 
     @staticmethod
@@ -147,8 +149,9 @@ class EventBus(object):
         Keyword arguments:
         @param handler_id: the id of the handler to unregister. Returned from EventBus.register_handler
         """
-        handler = EventBus.handler_dict.pop(handler_id)
-        EventBus.java_eventbus().unregisterHandler(handler_id)
+        [address, handler] = EventBus.handler_dict.pop(handler_id)
+
+        EventBus.java_eventbus().unregisterHandler(address, handler)
 
     @staticmethod
     def convert_msg(message):
