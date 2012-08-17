@@ -735,7 +735,6 @@ public class DefaultEventBus implements EventBus {
   private class HandlerCloseHook implements Runnable {
 
     final Set<HandlerEntry> entries = new HashSet<>();
-    final Set<String> handlerIDs = new HashSet<>();
 
     public void run() {
       for (HandlerEntry entry: new HashSet<>(entries)) {
