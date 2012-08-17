@@ -165,13 +165,11 @@ def echo(msg)
   address = "some-address"
 
   id = EventBus.register_handler(address) { |received|
-   # puts "received: #{received.body}"
     @tu.check_context
     EventBus.unregister_handler(id)
     received.reply(received.body)
   }
   EventBus.send(address, msg) { |reply|
-    # puts "received reply #{reply.body}"
     if reply.body.is_a? Hash
       reply.body.each do |k, v|
         @tu.azzert(msg[k] == v)

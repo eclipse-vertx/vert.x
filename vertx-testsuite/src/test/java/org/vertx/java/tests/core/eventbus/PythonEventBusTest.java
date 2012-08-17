@@ -49,7 +49,7 @@ public class PythonEventBusTest extends TestBase {
     public void test_echo_fixnum() {
       startTest(getMethodName());
     }
-    
+
     public void test_echo_float() {
       startTest(getMethodName());
     }
