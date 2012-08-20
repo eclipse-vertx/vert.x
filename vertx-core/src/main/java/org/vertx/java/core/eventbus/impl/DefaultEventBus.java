@@ -266,20 +266,20 @@ public class DefaultEventBus implements EventBus {
         if (holder.handler == handler) {
           handlers.list.remove(i);
           holder.removed = true;
-          break;
+          if (handlers.list.isEmpty()) {
+            handlerMap.remove(address);
+            if (subs != null && !holder.localOnly) {
+              removeSub(address, serverID, completionHandler);
+            } else if (completionHandler != null) {
+              callCompletionHandler(completionHandler);
+            }
+          } else if (completionHandler != null) {
+            callCompletionHandler(completionHandler);
+          }
+          getHandlerCloseHook(context).entries.remove(new HandlerEntry(address, handler));
+          return;
         }
       }
-      if (handlers.list.isEmpty()) {
-        handlerMap.remove(address);
-        if (subs != null) {
-          removeSub(address, serverID, completionHandler);
-        } else if (completionHandler != null) {
-          callCompletionHandler(completionHandler);
-        }
-      } else if (completionHandler != null) {
-        callCompletionHandler(completionHandler);
-      }
-      getHandlerCloseHook(context).entries.remove(new HandlerEntry(address, handler));
     }
   }
 
@@ -356,7 +356,7 @@ public class DefaultEventBus implements EventBus {
       if (replyHandler != null) {
         //message.replyAddress = UUID.randomUUID().toString();
         message.replyAddress = prefix + String.valueOf(seq.incrementAndGet());
-        registerHandler(message.replyAddress, replyHandler, null, true, false);
+        registerHandler(message.replyAddress, replyHandler, null, true, true);
       }
       if (replyDest != null) {
         if (!replyDest.equals(this.serverID)) {
@@ -396,8 +396,8 @@ public class DefaultEventBus implements EventBus {
   }
 
   private void registerHandler(String address, Handler<? extends Message> handler,
-                                 AsyncResultHandler<Void> completionHandler,
-                                 boolean replyHandler, boolean localOnly) {
+                               AsyncResultHandler<Void> completionHandler,
+                               boolean replyHandler, boolean localOnly) {
     if (address == null) {
       throw new NullPointerException("address");
     }
@@ -418,7 +418,7 @@ public class DefaultEventBus implements EventBus {
           }
         };
       }
-      handlers.list.add(new HandlerHolder(handler, replyHandler, context));
+      handlers.list.add(new HandlerHolder(handler, replyHandler, localOnly, context));
       if (subs != null && !replyHandler && !localOnly) {
         // Propagate the information
         subs.put(address, serverID, completionHandler);
@@ -426,7 +426,7 @@ public class DefaultEventBus implements EventBus {
         callCompletionHandler(completionHandler);
       }
     } else {
-      handlers.list.add(new HandlerHolder(handler, replyHandler, context));
+      handlers.list.add(new HandlerHolder(handler, replyHandler, localOnly, context));
       if (completionHandler != null) {
         callCompletionHandler(completionHandler);
       }
@@ -589,12 +589,14 @@ public class DefaultEventBus implements EventBus {
     final Context context;
     final Handler handler;
     final boolean replyHandler;
+    final boolean localOnly;
     boolean removed;
 
-    HandlerHolder(Handler handler, boolean replyHandler, Context context) {
+    HandlerHolder(Handler handler, boolean replyHandler, boolean localOnly, Context context) {
       this.context = context;
       this.handler = handler;
       this.replyHandler = replyHandler;
+      this.localOnly = localOnly;
     }
 
     @Override
