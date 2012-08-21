@@ -59,4 +59,9 @@ public class WebSocketTransport extends Transport {
 	public void write(String encodedPacket) {
 		webSocket.writeTextFrame(encodedPacket);
 	}
+
+	@Override
+	protected String getName() {
+		return "websocket";
+	}
 }

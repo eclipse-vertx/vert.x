@@ -60,7 +60,7 @@ public abstract class Transport implements Shareable {
 			if(log.isInfoEnabled()) log.info("setting request " + request.method + " " + request.uri);
 		}
 
-		if(clientData.isWebSocket() || request.method.toUpperCase().equals("GET")) {
+		if(clientData.getSocket() != null || request.method.toUpperCase().equals("GET")) {
 //			this.socket = req.socket;
 			this.isOpen = true;
 			this.isDrained = true;
@@ -157,7 +157,7 @@ public abstract class Transport implements Shareable {
 	 * @see "Transport.prototype.setHeartbeatInterval"
 	 */
 	protected void setHeartbeatInterval() {
-		if(this.heartbeatInterval != -1l && manager.getSettings().isHeartbeats()) {
+		if(this.heartbeatInterval == -1l && manager.getSettings().isHeartbeats()) {
 			this.heartbeatInterval = vertx.setTimer(manager.getSettings().getHeartbeatInterval() * 1000, new Handler<Long>() {
 				public void handle(Long event) {
 					heartbeat();
@@ -165,7 +165,8 @@ public abstract class Transport implements Shareable {
 				}
 			});
 
-			if(log.isDebugEnabled()) log.debug("set heartbeat interval for client " + this.sessionId);
+//			if(log.isDebugEnabled()) log.debug("set heartbeat interval for client " + this.sessionId);
+			if(log.isInfoEnabled()) log.info("set heartbeat interval for client " + this.sessionId);
 		}
 	}
 
@@ -176,7 +177,8 @@ public abstract class Transport implements Shareable {
 	 */
 	private void heartbeat() {
 		if(this.isOpen()) {
-			if(log.isDebugEnabled()) log.debug("emitting heartbeat for client " + this.sessionId);
+//			if(log.isDebugEnabled()) log.debug("emitting heartbeat for client " + this.sessionId);
+			if(log.isInfoEnabled()) log.info("emitting heartbeat for client " + this.sessionId);
 			JsonObject heartbeat = new JsonObject();
 			heartbeat.putString("type", "heartbeat");
 			this.packet(heartbeat);
@@ -381,7 +383,7 @@ public abstract class Transport implements Shareable {
 	 * @see "Transport.prototype.clearHeartbeatTimeout"
 	 */
 	protected void clearHeartbeatTimeout() {
-		if (this.heartbeatTimeout != -1l && this.manager.getSettings().isHeartbeats()) {
+		if (this.heartbeatTimeout == -1l && this.manager.getSettings().isHeartbeats()) {
 			vertx.cancelTimer(heartbeatTimeout);
 			this.heartbeatTimeout = -1l;
 			if(log.isInfoEnabled()) log.info("cleared heartbeat timeout for client " + this.sessionId);
@@ -394,7 +396,7 @@ public abstract class Transport implements Shareable {
 	 * @see "Transport.prototype.clearHeartbeatInterval"
 	 */
 	protected void clearHeartbeatInterval() {
-		if(this.heartbeatInterval != -1l && this.manager.getSettings().isHeartbeats()) {
+		if(this.heartbeatInterval == -1l && this.manager.getSettings().isHeartbeats()) {
 			vertx.cancelTimer(heartbeatInterval);
 			this.heartbeatInterval = -1l;
 			if(log.isInfoEnabled()) log.info("cleared heartbeat interval for client " + this.sessionId);
@@ -407,7 +409,7 @@ public abstract class Transport implements Shareable {
 	 * @see "Transport.prototype.clearCloseTimeout"
 	 */
 	protected void clearCloseTimeout() {
-		if(this.closeTimeout != -1l) {
+		if(this.closeTimeout == -1l) {
 			vertx.cancelTimer(this.closeTimeout);
 			this.closeTimeout = -1l;
 			if(log.isInfoEnabled()) log.info("cleared close timeout for client " + this.sessionId);
@@ -467,6 +469,8 @@ public abstract class Transport implements Shareable {
 			}
 		}
 	}
+
+	protected abstract String getName();
 
 	public boolean isDisconnected() {
 		return isDisconnected;

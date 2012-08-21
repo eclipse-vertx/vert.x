@@ -116,8 +116,6 @@ public abstract class Http extends Transport {
 		}
 	}
 
-	protected abstract String getName();
-
 	private void resetBuffer(Buffer buffer) {
 		buffer = new Buffer(0);
 	}

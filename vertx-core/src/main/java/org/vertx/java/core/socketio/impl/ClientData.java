@@ -2,6 +2,7 @@ package org.vertx.java.core.socketio.impl;
 
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
+import org.vertx.java.core.socketio.impl.handlers.StaticHandler;
 
 import java.util.Map;
 
@@ -10,6 +11,7 @@ import java.util.Map;
  */
 public class ClientData {
 
+	private String namespace;
 	private String query;
 	private Map<String, String> headers;
 	private Map<String, String> params;
@@ -18,24 +20,26 @@ public class ClientData {
 	private String transport;
 	private String id;
 	private boolean isStatic;
-	private boolean isWebSocket;
 
 	private HttpServerRequest request;
 	private ServerWebSocket socket;
 
 	public ClientData(String namespace, HttpServerRequest req) {
+		this.namespace = namespace;
 		this.request = req;
 		this.query = req.query;
 		this.headers = req.headers();
 		this.params = req.params();
 		this.path = req.path.substring(namespace.length());
+		this.isStatic = StaticHandler.has(this.path);
 
-		String[] pieces = path.substring(1).split("/");
+		if(!isStatic) {
+			String[] pieces = path.substring(1).split("/");
 
-		if(pieces.length > 0) this.protocol = Integer.parseInt(pieces[0]);
-		if(pieces.length > 1) this.transport = pieces[1];
-		if(pieces.length > 2) this.id = pieces[2];
-//	TODO	this.isStatic = StaticHandler.has(this.path);
+			if(pieces.length > 0) this.protocol = Integer.parseInt(pieces[0]);
+			if(pieces.length > 1) this.transport = pieces[1];
+			if(pieces.length > 2) this.id = pieces[2];
+		}
 	}
 
 	public ClientData(ServerWebSocket socket) {
@@ -46,7 +50,6 @@ public class ClientData {
 		if(pieces.length > 2) this.transport = pieces[2];
 		if(pieces.length > 3) this.id = pieces[3];
 
-		this.isWebSocket = true;
 		this.socket = socket;
 	}
 
@@ -86,18 +89,19 @@ public class ClientData {
 		return request;
 	}
 
-	public boolean isWebSocket() {
-		return isWebSocket;
-	}
-
 	public ServerWebSocket getSocket() {
 		return socket;
+	}
+
+	public String getNamespace() {
+		return namespace;
 	}
 
 	@Override
 	public String toString() {
 		return "ClientData{" +
-				"query='" + query + '\'' +
+				"namespace='" + namespace + '\'' +
+				", query='" + query + '\'' +
 				", headers=" + headers +
 				", params=" + params +
 				", path='" + path + '\'' +
@@ -105,7 +109,6 @@ public class ClientData {
 				", transport='" + transport + '\'' +
 				", id='" + id + '\'' +
 				", isStatic=" + isStatic +
-				", isWebSocket=" + isWebSocket +
 				", request=" + request +
 				", socket=" + socket +
 				'}';

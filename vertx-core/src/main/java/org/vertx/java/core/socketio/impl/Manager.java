@@ -14,10 +14,8 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.socketio.SocketIOSocket;
 import org.vertx.java.core.socketio.impl.handlers.HandshakeHandler;
 import org.vertx.java.core.socketio.impl.handlers.HttpRequestHandler;
-import org.vertx.java.core.socketio.impl.transports.HtmlFile;
-import org.vertx.java.core.socketio.impl.transports.JsonpPolling;
-import org.vertx.java.core.socketio.impl.transports.WebSocketTransport;
-import org.vertx.java.core.socketio.impl.transports.XhrPolling;
+import org.vertx.java.core.socketio.impl.handlers.StaticHandler;
+import org.vertx.java.core.socketio.impl.transports.*;
 
 import java.util.Collection;
 import java.util.List;
@@ -51,6 +49,7 @@ public class Manager {
 
 	private HandshakeHandler handshakeHandler;
 	private HttpRequestHandler httpRequestHandler;
+	private StaticHandler staticHandler;
 
 	public Manager(VertxInternal vertx, HttpServer httpServer) {
 		this.vertx = vertx;
@@ -67,6 +66,7 @@ public class Manager {
 
 		this.handshakeHandler = new HandshakeHandler(this);
 		this.httpRequestHandler = new HttpRequestHandler(this);
+		this.staticHandler = new StaticHandler(this);
 
 		this.log.info("socket.io started");
 	}
@@ -111,13 +111,11 @@ public class Manager {
 	public Handler<HttpServerRequest> requestHandler() {
 		return new Handler<HttpServerRequest>() {
 			public void handle(HttpServerRequest req) {
-				System.out.println("requestHandler");
-				System.out.println(req.method + " " + req.uri);
-
 				ClientData clientData = new ClientData(settings.getNamespace(), req);
 
 				if (clientData.isStatic()) {
-					// TODO delegate to StaticHandler
+					staticHandler.handle(clientData);
+					return;
 				}
 
 				if (clientData.getProtocol() != 1) {
@@ -393,6 +391,8 @@ public class Manager {
 	public Transport newTransport(ClientData clientData) {
 		String transport = clientData.getTransport();
 		switch (transport) {
+			case "flashsocket":
+				return new FlashSocket(this, clientData);
 			case "websocket":
 				return new WebSocketTransport(this, clientData);
 			case "htmlfile":

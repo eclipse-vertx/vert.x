@@ -71,7 +71,7 @@ public class HandshakeHandler {
 					request.response.statusCode = 200;
 					String jsonp = clientData.getParams().get("jsonp");
 					if(jsonp != null) {
-						result = "io.j[" + jsonp + "](" + result + ");";
+						result = "io.j[" + jsonp + "](\"" + result + "\");";
 						resHeaders.put("Content-Type", "application/javascript");
 					}
 					request.response.end(result);
