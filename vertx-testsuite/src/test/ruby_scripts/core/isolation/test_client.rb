@@ -19,6 +19,7 @@ require "test_utils"
 @tu = TestUtils.new
 
 def test_isolation
+
   # Make sure global variables aren't visible between applications
   @tu.azzert($test_global == nil)
   $test_global = 123
@@ -32,3 +33,4 @@ end
 
 @tu.register_all(self)
 @tu.app_ready
+
