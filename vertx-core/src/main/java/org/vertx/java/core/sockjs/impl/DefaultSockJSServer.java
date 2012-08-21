@@ -31,6 +31,7 @@ import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.sockjs.EventBusBridgeListener;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
@@ -56,6 +57,8 @@ public class DefaultSockJSServer implements SockJSServer {
   private RouteMatcher rm = new RouteMatcher();
   private WebSocketMatcher wsMatcher = new WebSocketMatcher();
   private final Map<String, Session> sessions;
+
+  private EventBusBridgeListener bridgeHook = null;
 
   public DefaultSockJSServer(final VertxInternal vertx, final HttpServer httpServer) {
     this.vertx = vertx;
@@ -180,17 +183,23 @@ public class DefaultSockJSServer implements SockJSServer {
   }
 
   public void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted) {
-    new EventBusBridge(vertx, this, sjsConfig, inboundPermitted, outboundPermitted);
+    installApp(sjsConfig, new EventBusBridge(vertx, inboundPermitted, outboundPermitted, bridgeHook));
   }
 
   public void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
                      long authTimeout) {
-    new EventBusBridge(vertx, this, sjsConfig, inboundPermitted, outboundPermitted, authTimeout);
+    installApp(sjsConfig, new EventBusBridge(vertx, inboundPermitted, outboundPermitted, bridgeHook, authTimeout));
   }
 
   public void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
                      long authTimeout, String authAddress) {
-    new EventBusBridge(vertx, this, sjsConfig, inboundPermitted, outboundPermitted, authTimeout, authAddress);
+    installApp(sjsConfig, new EventBusBridge(vertx, inboundPermitted, outboundPermitted, bridgeHook, authTimeout, authAddress));
+  }
+
+  @Override
+  public SockJSServer setEventBusBridgeListener(EventBusBridgeListener bridgeHook) {
+    this.bridgeHook = bridgeHook;
+    return this;
   }
 
   private Handler<HttpServerRequest> createChunkingTestHandler() {
