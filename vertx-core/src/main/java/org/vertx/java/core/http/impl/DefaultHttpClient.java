@@ -436,6 +436,11 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   private void failed(NioSocketChannel ch, final Throwable t) {
+    tcpHelper.runOnCorrectThread(ch, new Runnable() {
+      public void run() {
+        pool.connectionClosed();
+      }
+    });
     if (t instanceof Exception && exceptionHandler != null) {
       tcpHelper.runOnCorrectThread(ch, new Runnable() {
         public void run() {
