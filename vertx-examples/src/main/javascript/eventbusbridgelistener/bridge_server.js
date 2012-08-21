@@ -14,26 +14,6 @@ server.requestHandler(function(req) {
 
 
 var myListener = {
-  sendingMessage: function(clientId, address, message) {
-    log.push(clientId + ' sent ' + message.encode() + ' to ' + address);
-    return true; // let the client send the message
-  },
-  publishingMessage: function(clientId, address, message) {
-    log.push(clientId + ' tried to publish ' + message.encode() + ' to ' + address);
-    return false; // don't let any publish methods through
-  },
-  registeringHandler: function(clientId, address) {
-    if (address === 'secret') {
-      log.push('did not allow ' + clientId + ' registering at ' + address);
-      return false;
-    } else {
-      log.push(clientId + ' registered at ' + address);
-      return true;
-    }
-  },
-  unregisteredHandler: function(clientId, address) {
-    log.push(clientId + ' unregistered handler at ' + address);
-  },
   clientDisconnected: function(clientId) {
     log.push(clientId + ' disconnected');
   }

@@ -166,37 +166,16 @@ public class EventBusBridge implements Handler<SockJSSocket> {
         String address = getMandatoryString(msg, "address");
         switch (type) {
           case "send":
-            if (bridgeHook != null) {
-              if (bridgeHook.sendingMessage(sock.writeHandlerID, address, msg)) {
-                sendOrPub(true, msg, address);
-              }
-            } else {
-              sendOrPub(true, msg, address);
-            }
+            sendOrPub(true, msg, address);
             break;
           case "publish":
-            if (bridgeHook != null) {
-              if (bridgeHook.publishingMessage(sock.writeHandlerID, address, msg)) {
-                sendOrPub(false, msg, address);
-              }
-            } else {
-              sendOrPub(false, msg, address);
-            }
+            sendOrPub(false, msg, address);
             break;
           case "register":
-            if (bridgeHook != null) {
-              if (bridgeHook.registeringHandler(sock.writeHandlerID, address)) {
-                handleRegister(address);
-              }
-            } else {
-              handleRegister(address);
-            }
+            handleRegister(address);
             break;
           case "unregister":
             handleUnregister(address);
-            if (bridgeHook != null) {
-              bridgeHook.unregisteredHandler(sock.writeHandlerID, address);
-            }
             break;
           default:
             throw new IllegalStateException("Invalid type: " + type);
