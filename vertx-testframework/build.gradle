@@ -15,12 +15,21 @@
  */
 
 apply from: "$rootDir/gradle/maven.gradle"
-apply plugin: 'java'
 apply plugin: 'groovy'
-apply plugin: 'vertx-groovy'
-apply plugin: 'vertx-jruby'
-apply plugin: 'vertx-jython'
-apply plugin: 'vertx-rhino'
+
+sourceSets {
+	main {
+		resources {
+			srcDirs "src/main/ruby_scripts", "src/main/python_scripts", "src/main/javascript_scripts"
+			exclude '**/*$py.class'
+		}
+	}
+	test {
+		resources {
+			srcDirs "src/test/ruby_scripts", "src/test/python_scripts", "src/test/javascript_scripts"
+		}
+	}
+}
 
 dependencies {
 	compile "junit:junit:$junitVersion" // provide exportable components
@@ -34,10 +43,10 @@ dependencies {
 	compile project(':vertx-lang-rhino')
 
 	groovy "org.codehaus.groovy:groovy-all:$groovyVersion"
+	
 	testCompile "org.jruby:jruby:$jrubyVersion"
 	testCompile "org.python:jython-standalone:$jythonVersion"
 	testCompile "org.mozilla:rhino:$rhinoVersion"
-
   testCompile files("$rootDir/src/dist/conf")
 }
 

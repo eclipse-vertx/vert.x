@@ -24,6 +24,7 @@ dependencies {
 	compile "com.hazelcast:hazelcast:$hazelcastVersion"
 	compile "io.netty:netty:$nettyVersion"
 }
+
 artifacts {
 	platform jar
 }
