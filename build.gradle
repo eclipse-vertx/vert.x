@@ -22,9 +22,6 @@ buildscript {
 		maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
 		mavenCentral()
 	}
-	dependencies {
-		classpath "org.vert-x:build-tools:$vertxBuildToolsVersion"
-	}
 } 
 
 allprojects {
