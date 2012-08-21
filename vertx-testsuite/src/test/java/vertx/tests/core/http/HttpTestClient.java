@@ -31,9 +31,7 @@ import org.vertx.java.core.net.NetServer;
 import org.vertx.java.framework.TestClientBase;
 import org.vertx.java.framework.TestUtils;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -1782,7 +1780,7 @@ public class HttpTestClient extends TestClientBase {
     if (file.exists()) {
       file.delete();
     }
-    BufferedWriter out = new BufferedWriter(new FileWriter(file));
+    BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
     out.write(content);
     out.close();
     return file;
