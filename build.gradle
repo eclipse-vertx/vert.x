@@ -125,6 +125,9 @@ task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
   into('examples/ruby/eventbusbridge') {
     from file("src/dist/client/vertxbus.js")
   }
+  into('examples/javascript/eventbusbridgelistener') {
+    from file("src/dist/client/vertxbus.js")
+  }
   into('examples/groovy/webapp/web/js') {
     from file("src/dist/client/vertxbus.js")
   }
