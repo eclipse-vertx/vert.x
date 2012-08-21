@@ -20,6 +20,7 @@ dependencies {
   compile project(':vertx-core')
   compile project(':vertx-platform')
 }
+
 artifacts {
   platform jar
 }
