@@ -44,7 +44,7 @@ task pydoc(type: Exec) {
 	ignoreExitValue true
 	workingDir = project.projectDir
 	
-	commandLine = [ System.getenv()['JYTHON_HOME'] + "jython",
+	commandLine = [ System.getenv()['JYTHON_HOME'] + "/jython",
 		"-J-classpath", project.files(project.configurations.compile).files.join(':'), 
 		"-Dproj.base=${project.projectDir}",
 		"-Dpython.path=${project.projectDir}/src/build_tools/doclib:src/main/python_scripts",
