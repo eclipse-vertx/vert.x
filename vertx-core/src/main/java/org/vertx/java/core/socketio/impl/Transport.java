@@ -192,7 +192,7 @@ public abstract class Transport implements Shareable {
 	 * @see "Transport.prototype.setHeartbeatTimeout"
 	 */
 	private void setHeartbeatTimeout() {
-		if(this.heartbeatTimeout != -1l && manager.getSettings().isHeartbeats()) {
+		if(this.heartbeatTimeout == -1l && manager.getSettings().isHeartbeats()) {
 			this.heartbeatTimeout = vertx.setTimer(manager.getSettings().getHeartbeatTimeout() * 1000, new Handler<Long>() {
 				public void handle(Long event) {
 					if(log.isDebugEnabled()) log.debug("fired heartbeat timeout for client " + sessionId);
@@ -348,7 +348,7 @@ public abstract class Transport implements Shareable {
 	 * @see "Transport.prototype.setCloseTimeout"
 	 */
 	private void setCloseTimeout() {
-		if(this.closeTimeout == -1l) {
+		if(this.closeTimeout != -1l) {
 			this.closeTimeout = vertx.setTimer(this.manager.getSettings().getCloseTimeout() * 1000, new Handler<Long>() {
 				public void handle(Long event) {
 					if(log.isDebugEnabled()) log.debug("fired close timeout for client " + sessionId);
@@ -383,7 +383,7 @@ public abstract class Transport implements Shareable {
 	 * @see "Transport.prototype.clearHeartbeatTimeout"
 	 */
 	protected void clearHeartbeatTimeout() {
-		if (this.heartbeatTimeout == -1l && this.manager.getSettings().isHeartbeats()) {
+		if (this.heartbeatTimeout != -1l && this.manager.getSettings().isHeartbeats()) {
 			vertx.cancelTimer(heartbeatTimeout);
 			this.heartbeatTimeout = -1l;
 			if(log.isInfoEnabled()) log.info("cleared heartbeat timeout for client " + this.sessionId);
@@ -396,7 +396,7 @@ public abstract class Transport implements Shareable {
 	 * @see "Transport.prototype.clearHeartbeatInterval"
 	 */
 	protected void clearHeartbeatInterval() {
-		if(this.heartbeatInterval == -1l && this.manager.getSettings().isHeartbeats()) {
+		if(this.heartbeatInterval != -1l && this.manager.getSettings().isHeartbeats()) {
 			vertx.cancelTimer(heartbeatInterval);
 			this.heartbeatInterval = -1l;
 			if(log.isInfoEnabled()) log.info("cleared heartbeat interval for client " + this.sessionId);
@@ -409,7 +409,7 @@ public abstract class Transport implements Shareable {
 	 * @see "Transport.prototype.clearCloseTimeout"
 	 */
 	protected void clearCloseTimeout() {
-		if(this.closeTimeout == -1l) {
+		if(this.closeTimeout != -1l) {
 			vertx.cancelTimer(this.closeTimeout);
 			this.closeTimeout = -1l;
 			if(log.isInfoEnabled()) log.info("cleared close timeout for client " + this.sessionId);

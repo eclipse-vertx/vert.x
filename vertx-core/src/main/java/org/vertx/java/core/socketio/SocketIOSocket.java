@@ -49,4 +49,5 @@ public interface SocketIOSocket extends Shareable {
 
 	SocketIOSocket in(final String room);
 
+	void onDisconnect(Handler<JsonObject> disconnected);
 }

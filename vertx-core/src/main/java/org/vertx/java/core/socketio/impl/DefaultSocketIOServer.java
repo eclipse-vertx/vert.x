@@ -6,6 +6,7 @@ import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.socketio.SocketIOServer;
 
 /**
@@ -19,6 +20,7 @@ public class DefaultSocketIOServer implements SocketIOServer {
 	private Manager manager;
 	private JsonObject config;
 	private HttpServer httpServer;
+	private NetServer netServer;
 
 	private RouteMatcher rm;
 
@@ -42,6 +44,17 @@ public class DefaultSocketIOServer implements SocketIOServer {
 
 		this.rm.allWithRegEx(namespace + ".*", manager.requestHandler());
 		this.httpServer.websocketHandler(manager.webSocketHandler());
+
+		if(settings.getTransports().contains("flashsocket")) {
+			this.netServer = vertx.createNetServer();
+			this.netServer.connectHandler(manager.flashSocketHandler());
+			this.netServer.listen(settings.getFlashPolicyPort());
+		} else {
+			if(this.netServer != null) {
+				this.netServer.close();
+				this.netServer = null;
+			}
+		}
 	}
 
 	public SocketIOServer configure(String env, Configurer configurer) {
@@ -76,7 +89,7 @@ public class DefaultSocketIOServer implements SocketIOServer {
 		return this.manager.of(name);
 	}
 
-	public SocketIOServer setAuthrizationCallback(AuthorizationHandler globalAuthHandler) {
+	public SocketIOServer setAuthHandler(AuthorizationHandler globalAuthHandler) {
 		this.manager.setGlobalAuthorizationHandler(globalAuthHandler);
 		return this;
 	}

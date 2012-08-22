@@ -11,6 +11,7 @@ import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.socketio.SocketIOSocket;
 import org.vertx.java.core.socketio.impl.handlers.HandshakeHandler;
 import org.vertx.java.core.socketio.impl.handlers.HttpRequestHandler;
@@ -85,7 +86,39 @@ public class Manager {
 	}
 
 	/**
-	 * Handles an WebSocket request.
+	 * Handles flash sockets
+	 * @return
+	 */
+	public Handler<NetSocket> flashSocketHandler() {
+		return new Handler<NetSocket>() {
+			final String policy = "<?xml version=\"1.0\"?>" +
+					"<!DOCTYPE cross-domain-policy SYSTEM \"http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd\">" +
+					"<cross-domain-policy>" +
+					"<allow-access-from domain=\"*\" to-ports=\"*\"/>" +
+					"</cross-domain-policy>";
+
+			public void handle(final NetSocket socket) {
+				socket.write(policy);
+
+				socket.dataHandler(new Handler<Buffer>() {
+					public void handle(Buffer data) {
+						//TODO FlashSocket.init
+						System.out.println("FlashSocket data");
+						System.out.println(data.toString());
+
+						if(data.toString().contains("policy-file-request")) {
+							System.out.println("send policy");
+							socket.write(policy);
+							socket.close();
+						}
+					}
+				});
+			}
+		};
+	}
+
+	/**
+	 * Handles WebSocket requests.
 	 *
 	 * @return
 	 */
@@ -93,6 +126,10 @@ public class Manager {
 		return new Handler<ServerWebSocket>() {
 			public void handle(ServerWebSocket socket) {
 				ClientData clientData = new ClientData(socket);
+
+				System.out.println("WebSocket Handler");
+				System.out.println(clientData);
+
 				if (clientData.getId() != null) {
 					httpRequestHandler.handle(clientData);
 				} else {
@@ -112,6 +149,10 @@ public class Manager {
 		return new Handler<HttpServerRequest>() {
 			public void handle(HttpServerRequest req) {
 				ClientData clientData = new ClientData(settings.getNamespace(), req);
+
+				System.out.println("path: " + req.path);
+				System.out.println("url: " + req.uri);
+				System.out.println(clientData);
 
 				if (clientData.isStatic()) {
 					staticHandler.handle(clientData);
@@ -486,5 +527,6 @@ public class Manager {
 	public HttpServer getHttpServer() {
 		return httpServer;
 	}
+
 
 }

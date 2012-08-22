@@ -18,7 +18,7 @@ public interface SocketIOServer {
 
 	SocketIOServer configure(JsonObject newConfig);
 
-	SocketIOServer setAuthrizationCallback(AuthorizationHandler globalAuthorizationCallback);
+	SocketIOServer setAuthHandler(AuthorizationHandler globalAuthorizationCallback);
 
 	Namespace sockets();
 	

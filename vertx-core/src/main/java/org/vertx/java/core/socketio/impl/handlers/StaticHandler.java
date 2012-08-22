@@ -47,6 +47,7 @@ public class StaticHandler {
 			default:
 				throw new IllegalArgumentException(fileName);
 		}
+		res.close();
 	}
 
 	public static boolean has(String path) {

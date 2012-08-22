@@ -89,6 +89,10 @@ public class DefaultSocketIOSocket implements SocketIOSocket {
 		return this;
 	}
 
+	public void onDisconnect(Handler<JsonObject> handler) {
+		this.on("disconnect", handler);
+	}
+
 	/**
 	 * Transmits a packet.
 	 *
