@@ -20,21 +20,19 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.http.HttpClient;
-import org.vertx.java.core.http.HttpClientRequest;
-import org.vertx.java.core.http.HttpClientResponse;
-import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.core.http.HttpServerResponse;
-import org.vertx.java.core.http.ServerWebSocket;
+import org.vertx.java.core.http.*;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.framework.TestClientBase;
 import org.vertx.java.framework.TestUtils;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -300,10 +298,19 @@ public class HttpTestClient extends TestClientBase {
     tu.azzert(req.sendHead() == req);
     tu.azzert(req.write("foo", "UTF-8") == req);
     tu.azzert(req.write("foo") == req);
-    tu.azzert(req.write("foo", "UTF-8", new SimpleHandler() { public void handle() {} }) == req);
-    tu.azzert(req.write("foo", new SimpleHandler() { public void handle() {} }) == req);
+    tu.azzert(req.write("foo", "UTF-8", new SimpleHandler() {
+      public void handle() {
+      }
+    }) == req);
+    tu.azzert(req.write("foo", new SimpleHandler() {
+      public void handle() {
+      }
+    }) == req);
     tu.azzert(req.write(new Buffer("foo")) == req);
-    tu.azzert(req.write(new Buffer("foo"), new SimpleHandler() { public void handle() {} }) == req);
+    tu.azzert(req.write(new Buffer("foo"), new SimpleHandler() {
+      public void handle() {
+      }
+    }) == req);
     tu.testComplete();
   }
 
@@ -331,10 +338,19 @@ public class HttpTestClient extends TestClientBase {
           tu.azzert(req.response.setChunked(true) == req.response);
           tu.azzert(req.response.write("foo", "UTF-8") == req.response);
           tu.azzert(req.response.write("foo") == req.response);
-          tu.azzert(req.response.write("foo", "UTF-8", new SimpleHandler() { public void handle() {} }) == req.response);
-          tu.azzert(req.response.write("foo", new SimpleHandler() { public void handle() {} }) == req.response);
+          tu.azzert(req.response.write("foo", "UTF-8", new SimpleHandler() {
+            public void handle() {
+            }
+          }) == req.response);
+          tu.azzert(req.response.write("foo", new SimpleHandler() {
+            public void handle() {
+            }
+          }) == req.response);
           tu.azzert(req.response.write(new Buffer("foo")) == req.response);
-          tu.azzert(req.response.write(new Buffer("foo"), new SimpleHandler() { public void handle() {} }) == req.response);
+          tu.azzert(req.response.write(new Buffer("foo"), new SimpleHandler() {
+            public void handle() {
+            }
+          }) == req.response);
         }
         tu.testComplete();
       }
@@ -1677,6 +1693,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       int count;
+
       public void handle(final HttpServerRequest req) {
         tu.azzert(count == Integer.parseInt(req.headers().get("count")));
         final int theCount = count;
@@ -1970,6 +1987,68 @@ public class HttpTestClient extends TestClientBase {
       req.headers().put("count", i);
       req.end();
     }
+  }
+
+  public void testConnectionErrorsGetReportedToRequest() {
+
+    final AtomicInteger clientExceptions = new AtomicInteger();
+    final AtomicInteger req2Exceptions = new AtomicInteger();
+    final AtomicInteger req3Exceptions = new AtomicInteger();
+
+    final Handler<String> checkEndHandler = new Handler<String>() {
+      public void handle(final String name) {
+        System.out.println(name + " exception called");
+        if (clientExceptions.get() == 1 && req2Exceptions.get() ==1  && req3Exceptions.get() ==1) {
+          tu.checkContext();
+          tu.testComplete();
+        }
+      }
+    };
+
+    client.setPort(9998); // this simulates a connection error immediately
+    client.exceptionHandler(new Handler<Exception>() {
+      public void handle(Exception event) {
+        tu.azzert(clientExceptions.incrementAndGet() == 1, "More than more call to client exception handler was not expected");
+        checkEndHandler.handle("Client");
+      }
+    });
+
+    // This one should cause an error in the Client Exception handler, because it hasno exception handler set specifically.
+    final HttpClientRequest req1 = client.get("someurl1", new Handler<HttpClientResponse>() {
+      public void handle(final HttpClientResponse response) {
+        tu.azzert(false, "Should never get a response on a bad port, if you see this message than you are running an http server on port 9998");
+      }
+    });
+    // No exception handler set on request!
+
+    final HttpClientRequest req2 = client.get("someurl2", new Handler<HttpClientResponse>() {
+      public void handle(final HttpClientResponse response) {
+        tu.azzert(false, "Should never get a response on a bad port, if you see this message than you are running an http server on port 9998");
+      }
+    });
+    req2.exceptionHandler(new Handler<Exception>() {
+      public void handle(Exception event) {
+        tu.azzert(req2Exceptions.incrementAndGet() == 1, "More than more call to req2 exception handler was not expected");
+        checkEndHandler.handle("Request2");
+      }
+    });
+
+    final HttpClientRequest req3 = client.get("someurl2", new Handler<HttpClientResponse>() {
+      public void handle(final HttpClientResponse response) {
+        tu.azzert(false, "Should never get a response on a bad port, if you see this message than you are running an http server on port 9998");
+      }
+    });
+    req3.exceptionHandler(new Handler<Exception>() {
+      public void handle(Exception event) {
+        tu.azzert(req3Exceptions.incrementAndGet() == 1, "More than more call to req2 exception handler was not expected");
+        checkEndHandler.handle("Request3");
+      }
+    });
+
+
+    req1.end();
+    req2.end();
+    req3.end();
   }
 
   public void testTLSClientTrustAll() {

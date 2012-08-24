@@ -74,8 +74,8 @@ public class DefaultHttpClient implements HttpClient {
   private int port = 80;
   private String host = "localhost";
   private final ConnectionPool<ClientConnection> pool = new ConnectionPool<ClientConnection>() {
-    protected void connect(Handler<ClientConnection> connectHandler, Context context) {
-      internalConnect(connectHandler);
+    protected void connect(Handler<ClientConnection> connectHandler, Handler<Exception> connectErrorHandler, Context context) {
+      internalConnect(connectHandler, connectErrorHandler);
     }
   };
   private boolean keepAlive = true;
@@ -134,7 +134,7 @@ public class DefaultHttpClient implements HttpClient {
           connectWebsocket(uri, wsVersion, wsConnect);
         }
       }
-    }, ctx);
+    }, exceptionHandler, ctx);
   }
 
   public void getNow(String uri, Handler<HttpClientResponse> responseHandler) {
@@ -331,8 +331,8 @@ public class DefaultHttpClient implements HttpClient {
     return tcpHelper.getTrustStorePassword();
   }
 
-  void getConnection(Handler<ClientConnection> handler, Context context) {
-    pool.getConnection(handler, context);
+  public void getConnection(Handler<ClientConnection> handler, Handler<Exception> connectionExceptionHandler, Context context) {
+    pool.getConnection(handler, connectionExceptionHandler, context);
   }
 
   void returnConnection(final ClientConnection conn) {
@@ -347,7 +347,7 @@ public class DefaultHttpClient implements HttpClient {
     }
   }
 
-  private void internalConnect(final Handler<ClientConnection> connectHandler) {
+  private void internalConnect(final Handler<ClientConnection> connectHandler, final Handler<Exception> connectErrorHandler) {
 
     if (bootstrap == null) {
       VertxWorkerPool pool = new VertxWorkerPool();
@@ -403,7 +403,7 @@ public class DefaultHttpClient implements HttpClient {
                 if (channelFuture.isSuccess()) {
                   connected(ch, connectHandler);
                 } else {
-                  failed(ch, new SSLHandshakeException("Failed to create SSL connection"));
+                  failed(ch, connectErrorHandler, new SSLHandshakeException("Failed to create SSL connection"));
                 }
               }
             });
@@ -412,7 +412,7 @@ public class DefaultHttpClient implements HttpClient {
           }
 
         } else {
-          failed(ch, channelFuture.getCause());
+          failed(ch, connectErrorHandler, channelFuture.getCause());
         }
       }
     });
@@ -435,17 +435,21 @@ public class DefaultHttpClient implements HttpClient {
     });
   }
 
-  private void failed(NioSocketChannel ch, final Throwable t) {
+  private void failed(NioSocketChannel ch, final Handler<Exception> connectionExceptionHandler, final Throwable t) {
+    // If no specific exception handler is provided, fall back to the HttpClient's exception handler.
+    final Handler<Exception> exHandler = connectionExceptionHandler == null ? exceptionHandler : connectionExceptionHandler;
+
     tcpHelper.runOnCorrectThread(ch, new Runnable() {
-      public void run() {
-        pool.connectionClosed();
-      }
-    });
-    if (t instanceof Exception && exceptionHandler != null) {
+         public void run() {
+           pool.connectionClosed();
+         }
+       });
+
+    if (t instanceof Exception && exHandler != null) {
       tcpHelper.runOnCorrectThread(ch, new Runnable() {
         public void run() {
           Context.setContext(ctx);
-          exceptionHandler.handle((Exception) t);
+          exHandler.handle((Exception) t);
         }
       });
     } else {
@@ -534,4 +538,13 @@ public class DefaultHttpClient implements HttpClient {
       }
     }
   }
+
+  @Override
+    protected void finalize() throws Throwable {
+      // Make sure this gets cleaned up if there are no more references to it
+      // so as not to leave connections and resources dangling until the system is shutdown
+      // which could make the JVM run out of file handles.
+      close();
+      super.finalize();
+    }
 }
