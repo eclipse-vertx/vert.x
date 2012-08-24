@@ -62,10 +62,16 @@ public class JavaHttpTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void testHttpClientParams() {
+    startTest(getMethodName());
+  }
+
   @Test
   public void testServerDefaults() throws Exception {
     startTest(getMethodName());
   }
+
+
 
   @Test
   public void testServerAttributes() throws Exception {

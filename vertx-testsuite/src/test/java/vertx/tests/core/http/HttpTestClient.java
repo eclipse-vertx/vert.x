@@ -194,6 +194,48 @@ public class HttpTestClient extends TestClientBase {
     tu.testComplete();
   }
 
+  public void testHttpClientParams() {
+    final HttpClientParams params = new HttpClientParams("localhost");
+    params.setBossThreads(1);
+    params.setConnectTimeout(2);
+    params.setKeyStorePassword("kpwd");
+    params.setKeyStorePath("kpath");
+    params.setMaxPoolSize(3);
+    params.setReceiveBufferSize(4);
+    params.setReuseAddress(true);
+    params.setSendBufferSize(5);
+    params.setSoLinger(true);
+    params.setSSL(true);
+    params.setTCPKeepAlive(true);
+    params.setTCPNoDelay(true);
+    params.setTrafficClass(6);
+    params.setTrustAll(true);
+    params.setTrustStorePassword("tpwd");
+    params.setTrustStorePath("tpath");
+
+
+    final SharedHttpClient shClient = vertx.createHttpClient(params);
+    tu.azzert(shClient.getBossThreads() == 1);
+    tu.azzert(shClient.getConnectTimeout() == 2);
+    tu.azzert(shClient.getKeyStorePassword().equals("kpwd"));
+    tu.azzert(shClient.getKeyStorePath().equals("kpath"));
+    tu.azzert(shClient.getMaxPoolSize() == 3);
+    tu.azzert(shClient.getReceiveBufferSize() == 4);
+    tu.azzert(shClient.isReuseAddress());
+    tu.azzert(shClient.getSendBufferSize() == 5);
+    tu.azzert(shClient.isSoLinger());
+    tu.azzert(shClient.isSSL());
+    tu.azzert(shClient.isTCPKeepAlive());
+    tu.azzert(shClient.isTCPNoDelay());
+    tu.azzert(shClient.getTrafficClass() == 6);
+    tu.azzert(shClient.isTrustAll());
+    tu.azzert(shClient.getTrustStorePassword().equals("tpwd"));
+    tu.azzert(shClient.getTrustStorePath().equals("tpath"));
+
+    tu.testComplete();
+
+  }
+
   public void testServerAttributes() {
 
     HttpServer server = vertx.createHttpServer();

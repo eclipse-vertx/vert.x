@@ -19,7 +19,9 @@ package org.vertx.java.core;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.http.HttpClient;
+import org.vertx.java.core.http.HttpClientParams;
 import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.core.http.SharedHttpClient;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.shareddata.SharedData;
@@ -86,8 +88,19 @@ public abstract class Vertx {
 
   /**
    * Create a HTTP/HTTPS client
+   * @deprecated Use #createHttpClient(org.vertx.java.core.http.HttpClientParams) as it allows sharing of the
+   * connection without the risk of one code path changing a parameter and leaving the client in a state that
+   * another code path does not expect.
+   * @see #createHttpClient(org.vertx.java.core.http.HttpClientParams)
    */
   public abstract HttpClient createHttpClient();
+
+  /**
+   * Created a SharedHttpClient which can be safely used by multiple code paths for pipelined requests.
+   * @param params The configuration for the new client.
+   * @return An instance of a configured client, ready to make requests.
+   */
+  public abstract SharedHttpClient createHttpClient(final HttpClientParams params);
 
   /**
    * Create a SockJS server that wraps an HTTP server

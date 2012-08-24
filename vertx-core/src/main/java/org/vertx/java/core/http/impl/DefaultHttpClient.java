@@ -39,11 +39,7 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.http.HttpClient;
-import org.vertx.java.core.http.HttpClientRequest;
-import org.vertx.java.core.http.HttpClientResponse;
-import org.vertx.java.core.http.WebSocket;
-import org.vertx.java.core.http.WebSocketVersion;
+import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.ConnectionPool;
 import org.vertx.java.core.impl.Context;
@@ -66,7 +62,7 @@ public class DefaultHttpClient implements HttpClient {
 
   private final VertxInternal vertx;
   private final Context ctx;
-  private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
+  private final TCPSSLHelper tcpHelper;
   private ClientBootstrap bootstrap;
   private NioClientSocketChannelFactory channelFactory;
   private Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap();
@@ -91,6 +87,26 @@ public class DefaultHttpClient implements HttpClient {
         close();
       }
     });
+    tcpHelper= new TCPSSLHelper();
+  }
+
+  public DefaultHttpClient(VertxInternal vertx, HttpClientParams params) {
+    this.vertx = vertx;
+    ctx = vertx.getOrAssignContext();
+    if (vertx.isWorker()) {
+      throw new IllegalStateException("Cannot be used in a worker application");
+    }
+    ctx.putCloseHook(this, new Runnable() {
+      public void run() {
+        close();
+      }
+    });
+    this.tcpHelper = params.getTCPHelper();
+    setMaxPoolSize(params.getMaxPoolSize());
+    setHost(params.getHost());
+    if (params.getPort() != -1) setPort(params.getPort());
+    setKeepAlive(params.isKeepAlive());
+    exceptionHandler(params.getExceptionHandler());
   }
 
   public void exceptionHandler(Handler<Exception> handler) {
