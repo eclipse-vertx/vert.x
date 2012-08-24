@@ -722,8 +722,81 @@ public class HttpTestClient extends TestClientBase {
     });
   }
 
+  public void testResponseTimesoutWhenIndicatedPeriodExpiresWithoutFullyReadingResponse() {
+    startServer(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+        // Answer but, write the response very slowly.
+        req.response.statusCode = 200;
+        req.response.setChunked(true);
+        req.response.write("Some Data");
+        // Don't end, this should make the reading of the response timeout.
+      }
+    });
+
+    getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
+      public void handle(HttpClientResponse resp) {
+        // This should get called.
+        resp.setTimeout(500);
+        resp.endHandler(new Handler<Void>() {
+          @Override
+          public void handle(Void event) {
+            tu.azzert(false,"Unexpected call to repsonse end");
+          }
+        });
+        resp.exceptionHandler(new Handler<Exception>() {
+          @Override
+          public void handle(Exception exception) {
+            tu.azzert(exception != null, "Expected an exception to be set");
+            tu.azzert((exception instanceof TimeoutException), "Expected to end with timeout exception but ended with other exception: " + exception);
+            tu.checkContext();
+            tu.testComplete();
+          }
+        });
+      }
+    }).end();
+  }
+
+  public void testResponseTimeoutCanceledWhenResponseEndsNormally() {
+    final AtomicReference<Exception> exception = new AtomicReference<>();
+    final AtomicBoolean ended  = new AtomicBoolean();
 
 
+    startServer(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+        req.response.statusCode = 200;
+        req.response.end("Some Data");
+      }
+    });
+
+    getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
+      public void handle(HttpClientResponse resp) {
+        // This should get called.
+        resp.setTimeout(500);
+        resp.endHandler(new Handler<Void>() {
+          @Override
+          public void handle(Void event) {
+            ended.set(true);
+          }
+        });
+        resp.exceptionHandler(new Handler<Exception>() {
+          @Override
+          public void handle(Exception ex) {
+            exception.set(ex);
+          }
+        });
+      }
+    }).end();
+
+    getVertx().setTimer(1000, new Handler<Long>() { // wait longer than the indicated timeout to see if a timeoutexception occurs
+      @Override
+      public void handle(Long event) {
+        tu.azzert(exception.get() == null, "Did not expect any exception");
+        tu.azzert(ended.get(), "Expected to repsonse to end normally");
+        tu.checkContext();
+        tu.testComplete();
+      }
+    });
+  }
 
   public void testUseRequestAfterComplete() {
 

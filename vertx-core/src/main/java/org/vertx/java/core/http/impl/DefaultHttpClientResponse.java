@@ -20,12 +20,14 @@ import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 /**
  *
@@ -44,6 +46,7 @@ public class DefaultHttpClientResponse extends HttpClientResponse {
   // Cache these for performance
   private Map<String, String> headers;
   private Map<String, String> trailers;
+  private long currentTimeoutTimerId = -1;
 
   DefaultHttpClientResponse(ClientConnection conn, HttpResponse response) {
     super(response.getStatus().getCode(), response.getStatus().getReasonPhrase());
@@ -77,8 +80,14 @@ public class DefaultHttpClientResponse extends HttpClientResponse {
     this.endHandler = endHandler;
   }
 
-  public void exceptionHandler(Handler<Exception> exceptionHandler) {
-    this.exceptionHandler = exceptionHandler;
+  public void exceptionHandler(final Handler<Exception> handler) {
+    this.exceptionHandler = new Handler<Exception>() {
+      @Override
+      public void handle(Exception event) {
+        cancelOutstandingTimeoutTimer();
+        handler.handle(event);
+      }
+    };
   }
 
   public void pause() {
@@ -100,12 +109,36 @@ public class DefaultHttpClientResponse extends HttpClientResponse {
     if (endHandler != null) {
       endHandler.handle(null);
     }
+    cancelOutstandingTimeoutTimer();
   }
 
   void handleException(Exception e) {
     if (exceptionHandler != null) {
-      exceptionHandler.handle(e);
+      exceptionHandler.handle(e); // the handler cancels the timer.
+    } else {
+      cancelOutstandingTimeoutTimer();
+      log.error("Unhandled exception", e);
     }
   }
+
+  @Override
+  public void setTimeout(final long timeoutMs) {
+    cancelOutstandingTimeoutTimer();
+    currentTimeoutTimerId = conn.getVertx().setTimer(timeoutMs, new Handler<Long>() {
+      @Override
+      public void handle(Long event) {
+        handleException(new TimeoutException("The timeout period of " + timeoutMs + "ms has been exceeded"));
+      }
+    });
+  }
+
+  private void cancelOutstandingTimeoutTimer() {
+    if(currentTimeoutTimerId != -1) {
+      conn.getVertx().cancelTimer(currentTimeoutTimerId);
+      currentTimeoutTimerId = -1;
+    }
+  }
+
+
 
 }

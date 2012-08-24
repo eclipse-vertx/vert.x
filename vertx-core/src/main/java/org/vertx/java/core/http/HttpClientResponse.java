@@ -63,4 +63,17 @@ public abstract class HttpClientResponse extends HttpReadStreamBase {
    */
   public abstract Map<String, String> trailers();
 
+  /**
+   * Set's the amount of time after which if the response's end() or endWithError() is not called a TimeoutException()
+   * will be sent to the exception handler of this response. Calling this method more than once
+   * has the effect of canceling any existing timeout and starting the timeout from scratch.
+   *
+   * The HttpClientResponse has a separate timeout from the request, to allow adjusting the timeout based on some parameters
+   * that may be returned in the headers. For example, if the Content-Length header indicates a very large file, the
+   * timeout may be set to a larger number to accommodate how long is allowed for the response to be fully read.
+   *
+   * @param timeoutMs The quantity of time in milliseconds.
+   */
+  public abstract void setTimeout(long timeoutMs);
+
 }
