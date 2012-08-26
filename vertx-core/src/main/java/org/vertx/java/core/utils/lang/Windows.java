@@ -14,22 +14,27 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.file;
+package org.vertx.java.core.utils.lang;
 
 /**
- * Exception thrown by the FileSystem class
+ * Simple Windows specific utility
  * 
- * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author Juergen Donnerstag
  */
-public class FileSystemException extends RuntimeException {
+public class Windows {
 
-	private static final long serialVersionUID = 1L;
+	private static boolean isWindows;
+
+	static {
+		String os = System.getProperty("os.name").toLowerCase();
+		isWindows = (os.indexOf("win") >= 0);
+
+	}
 
 	/**
-	 * Construct a {@code FileSystemException} with a message as specified by
-	 * {@code msg}
+	 * @return true, if running on Windows
 	 */
-	public FileSystemException(String msg) {
-		super(msg);
+	public static boolean isWindows() {
+		return isWindows;
 	}
 }

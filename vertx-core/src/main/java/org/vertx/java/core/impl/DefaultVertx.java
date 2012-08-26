@@ -16,6 +16,15 @@
 
 package org.vertx.java.core.impl;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.jboss.netty.channel.socket.nio.NioWorkerPool;
 import org.jboss.netty.util.HashedWheelTimer;
@@ -26,6 +35,7 @@ import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.file.impl.DefaultFileSystem;
+import org.vertx.java.core.file.impl.WindowsFileSystem;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.impl.DefaultHttpClient;
@@ -40,305 +50,329 @@ import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
+import org.vertx.java.core.utils.lang.Windows;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class DefaultVertx extends VertxInternal {
 
-  private static final Logger log = LoggerFactory.getLogger(DefaultVertx.class);
+	private static final Logger log = LoggerFactory.getLogger(DefaultVertx.class);
 
-  private final FileSystem fileSystem = new DefaultFileSystem(this);
-  private final EventBus eventBus;
-  private final SharedData sharedData = new SharedData();
+	private final FileSystem fileSystem = Windows.isWindows() ? new WindowsFileSystem(this) : new DefaultFileSystem(this);
+	private final EventBus eventBus;
+	private final SharedData sharedData = new SharedData();
 
-  private int backgroundPoolSize = 20;
-  private int corePoolSize = Runtime.getRuntime().availableProcessors();
-  private ExecutorService backgroundPool;
-  private OrderedExecutorFactory orderedFact;
-  private NioWorkerPool workerPool;
-  private ExecutorService acceptorPool;
-  private final Map<ServerID, DefaultHttpServer> sharedHttpServers = new HashMap<>();
-  private final Map<ServerID, DefaultNetServer> sharedNetServers = new HashMap<>();
+	private int backgroundPoolSize = 20;
+	private final int corePoolSize = Runtime.getRuntime().availableProcessors();
+	private ExecutorService backgroundPool;
+	private OrderedExecutorFactory orderedFact;
+	private NioWorkerPool workerPool;
+	private ExecutorService acceptorPool;
+	private final Map<ServerID, DefaultHttpServer> sharedHttpServers = new HashMap<>();
+	private final Map<ServerID, DefaultNetServer> sharedNetServers = new HashMap<>();
 
-  //For now we use a hashed wheel with it's own thread for timeouts - ideally the event loop would have
-  //it's own hashed wheel
-  private final HashedWheelTimer timer = new HashedWheelTimer(new VertxThreadFactory("vert.x-timer-thread"), 20,
-      TimeUnit.MILLISECONDS, 8192);
-  {
-    timer.start();
-  }
-  private final AtomicLong timeoutCounter = new AtomicLong(0);
-  private final Map<Long, TimeoutHolder> timeouts = new ConcurrentHashMap<>();
+	// For now we use a hashed wheel with it's own thread for timeouts - ideally
+	// the event loop would have
+	// it's own hashed wheel
+	private final HashedWheelTimer timer = new HashedWheelTimer(new VertxThreadFactory("vert.x-timer-thread"), 20,
+			TimeUnit.MILLISECONDS, 8192);
+	{
+		timer.start();
+	}
+	private final AtomicLong timeoutCounter = new AtomicLong(0);
+	private final Map<Long, TimeoutHolder> timeouts = new ConcurrentHashMap<>();
 
-  public DefaultVertx() {
-    this.eventBus = new DefaultEventBus(this);
-    configure();
-  }
+	public DefaultVertx() {
+		this.eventBus = new DefaultEventBus(this);
+		configure();
+	}
 
-  public DefaultVertx(String hostname) {
-    this.eventBus = new DefaultEventBus(this, hostname);
-    configure();
-  }
+	public DefaultVertx(String hostname) {
+		this.eventBus = new DefaultEventBus(this, hostname);
+		configure();
+	}
 
-  public DefaultVertx(int port, String hostname) {
-    this.eventBus = new DefaultEventBus(this, port, hostname);
-    configure();
-  }
+	public DefaultVertx(int port, String hostname) {
+		this.eventBus = new DefaultEventBus(this, port, hostname);
+		configure();
+	}
 
-  /**
-   * deal with configuration parameters
-   */
-  private void configure() {
-    this.backgroundPoolSize = Integer.getInteger("vertx.backgroundPoolSize", 20);
-  }
+	/**
+	 * deal with configuration parameters
+	 */
+	private void configure() {
+		this.backgroundPoolSize = Integer.getInteger("vertx.backgroundPoolSize", 20);
+	}
 
-  public NetServer createNetServer() {
-    return new DefaultNetServer(this);
-  }
+	@Override
+	public NetServer createNetServer() {
+		return new DefaultNetServer(this);
+	}
 
-  public NetClient createNetClient() {
-    return new DefaultNetClient(this);
-  }
+	@Override
+	public NetClient createNetClient() {
+		return new DefaultNetClient(this);
+	}
 
-  public FileSystem fileSystem() {
-    return fileSystem;
-  }
+	@Override
+	public FileSystem fileSystem() {
+		return fileSystem;
+	}
 
-  public SharedData sharedData() {
-    return sharedData;
-  }
+	@Override
+	public SharedData sharedData() {
+		return sharedData;
+	}
 
-  public HttpServer createHttpServer() {
-    return new DefaultHttpServer(this);
-  }
+	@Override
+	public HttpServer createHttpServer() {
+		return new DefaultHttpServer(this);
+	}
 
-  public HttpClient createHttpClient() {
-    return new DefaultHttpClient(this);
-  }
+	@Override
+	public HttpClient createHttpClient() {
+		return new DefaultHttpClient(this);
+	}
 
-  public SockJSServer createSockJSServer(HttpServer httpServer) {
-    return new DefaultSockJSServer(this, httpServer);
-  }
+	@Override
+	public SockJSServer createSockJSServer(HttpServer httpServer) {
+		return new DefaultSockJSServer(this, httpServer);
+	}
 
-  public EventBus eventBus() {
-    return eventBus;
-  }
+	@Override
+	public EventBus eventBus() {
+		return eventBus;
+	}
 
-  public Context startOnEventLoop(final Runnable runnable) {
-    Context context  = createEventLoopContext();
-    context.execute(runnable);
-    return context;
-  }
+	@Override
+	public Context startOnEventLoop(final Runnable runnable) {
+		Context context = createEventLoopContext();
+		context.execute(runnable);
+		return context;
+	}
 
-  public Context startInBackground(final Runnable runnable) {
-    Context context  = createWorkerContext();
-    context.execute(runnable);
-    return context;
-  }
+	@Override
+	public Context startInBackground(final Runnable runnable) {
+		Context context = createWorkerContext();
+		context.execute(runnable);
+		return context;
+	}
 
-  public boolean isEventLoop() {
-    Context context = Context.getContext();
-    if (context != null) {
-      return context instanceof EventLoopContext;
-    }
-    return false;
-  }
+	@Override
+	public boolean isEventLoop() {
+		Context context = Context.getContext();
+		if (context != null) {
+			return context instanceof EventLoopContext;
+		}
+		return false;
+	}
 
-  public boolean isWorker() {
-    Context context = Context.getContext();
-    if (context != null) {
-      return context instanceof WorkerContext;
-    }
-    return false;
-  }
+	@Override
+	public boolean isWorker() {
+		Context context = Context.getContext();
+		if (context != null) {
+			return context instanceof WorkerContext;
+		}
+		return false;
+	}
 
-  public long setPeriodic(long delay, final Handler<Long> handler) {
-    return setTimeout(delay, true, handler);
-  }
+	@Override
+	public long setPeriodic(long delay, final Handler<Long> handler) {
+		return setTimeout(delay, true, handler);
+	}
 
-  public long setTimer(long delay, final Handler<Long> handler) {
-    return setTimeout(delay, false, handler);
-  }
+	@Override
+	public long setTimer(long delay, final Handler<Long> handler) {
+		return setTimeout(delay, false, handler);
+	}
 
-  public void runOnLoop(final Handler<Void> handler) {
-    Context context = getOrAssignContext();
-    context.execute(new Runnable() {
-      public void run() {
-        handler.handle(null);
-      }
-    });
-  }
+	@Override
+	public void runOnLoop(final Handler<Void> handler) {
+		Context context = getOrAssignContext();
+		context.execute(new Runnable() {
+			@Override
+			public void run() {
+				handler.handle(null);
+			}
+		});
+	}
 
-  //The worker pool is used for making blocking calls to legacy synchronous APIs
-  public ExecutorService getBackgroundPool() {
-    //This is a correct implementation of double-checked locking idiom
-    ExecutorService result = backgroundPool;
-    if (result == null) {
-      synchronized (this) {
-        result = backgroundPool;
-        if (result == null) {
-          backgroundPool = result = Executors.newFixedThreadPool(backgroundPoolSize, new VertxThreadFactory("vert.x-worker-thread-"));
-          orderedFact = new OrderedExecutorFactory(backgroundPool);
-        }
-      }
-    }
-    return result;
-  }
+	// The worker pool is used for making blocking calls to legacy synchronous
+	// APIs
+	@Override
+	public ExecutorService getBackgroundPool() {
+		// This is a correct implementation of double-checked locking idiom
+		ExecutorService result = backgroundPool;
+		if (result == null) {
+			synchronized (this) {
+				result = backgroundPool;
+				if (result == null) {
+					backgroundPool = result = Executors.newFixedThreadPool(backgroundPoolSize, new VertxThreadFactory(
+							"vert.x-worker-thread-"));
+					orderedFact = new OrderedExecutorFactory(backgroundPool);
+				}
+			}
+		}
+		return result;
+	}
 
-  public NioWorkerPool getWorkerPool() {
-    //This is a correct implementation of double-checked locking idiom
-    NioWorkerPool result = workerPool;
-    if (result == null) {
-      synchronized (this) {
-        result = workerPool;
-        if (result == null) {
-          ExecutorService corePool = Executors.newFixedThreadPool(corePoolSize, new VertxThreadFactory("vert.x-core-thread-"));
-          workerPool = result = new NioWorkerPool(corePool, corePoolSize, false);
-        }
-      }
-    }
-    return result;
-  }
+	public NioWorkerPool getWorkerPool() {
+		// This is a correct implementation of double-checked locking idiom
+		NioWorkerPool result = workerPool;
+		if (result == null) {
+			synchronized (this) {
+				result = workerPool;
+				if (result == null) {
+					ExecutorService corePool = Executors.newFixedThreadPool(corePoolSize, new VertxThreadFactory(
+							"vert.x-core-thread-"));
+					workerPool = result = new NioWorkerPool(corePool, corePoolSize, false);
+				}
+			}
+		}
+		return result;
+	}
 
-  //We use a cached pool, but it will never get large since only used for acceptors.
-  //There will be one thread for each port listening on
-  public Executor getAcceptorPool() {
-    //This is a correct implementation of double-checked locking idiom
-    ExecutorService result = acceptorPool;
-    if (result == null) {
-      synchronized (this) {
-        result = acceptorPool;
-        if (result == null) {
-          acceptorPool = result = Executors.newCachedThreadPool(new VertxThreadFactory("vert.x-acceptor-thread-"));
-        }
-      }
-    }
-    return result;
-  }
+	// We use a cached pool, but it will never get large since only used for
+	// acceptors.
+	// There will be one thread for each port listening on
+	@Override
+	public Executor getAcceptorPool() {
+		// This is a correct implementation of double-checked locking idiom
+		ExecutorService result = acceptorPool;
+		if (result == null) {
+			synchronized (this) {
+				result = acceptorPool;
+				if (result == null) {
+					acceptorPool = result = Executors.newCachedThreadPool(new VertxThreadFactory("vert.x-acceptor-thread-"));
+				}
+			}
+		}
+		return result;
+	}
 
+	@Override
+	public Context getOrAssignContext() {
+		Context ctx = Context.getContext();
+		if (ctx == null) {
+			// Assign a context
+			ctx = createEventLoopContext();
+		}
+		return ctx;
+	}
 
-  public Context getOrAssignContext() {
-    Context ctx = Context.getContext();
-    if (ctx == null) {
-      // Assign a context
-      ctx = createEventLoopContext();
-    }
-    return ctx;
-  }
+	@Override
+	public void reportException(Throwable t) {
+		Context ctx = Context.getContext();
+		if (ctx != null) {
+			ctx.reportException(t);
+		} else {
+			log.error(" default vertx Unhandled exception ", t);
+		}
+	}
 
-  public void reportException(Throwable t) {
-    Context ctx = Context.getContext();
-    if (ctx != null) {
-      ctx.reportException(t);
-    } else {
-      log.error(" default vertx Unhandled exception ", t);
-    }
-  }
+	@Override
+	public Map<ServerID, DefaultHttpServer> sharedHttpServers() {
+		return sharedHttpServers;
+	}
 
-  public Map<ServerID, DefaultHttpServer> sharedHttpServers() {
-    return sharedHttpServers;
-  }
+	@Override
+	public Map<ServerID, DefaultNetServer> sharedNetServers() {
+		return sharedNetServers;
+	}
 
-  public Map<ServerID, DefaultNetServer> sharedNetServers() {
-    return sharedNetServers;
-  }
+	private long setTimeout(final long delay, boolean periodic, final Handler<Long> handler) {
+		final Context context = getOrAssignContext();
 
-  private long setTimeout(final long delay, boolean periodic, final Handler<Long> handler) {
-    final Context context = getOrAssignContext();
+		InternalTimerHandler myHandler;
+		if (periodic) {
+			myHandler = new InternalTimerHandler(handler) {
+				@Override
+				public void run() {
+					super.run();
+					scheduleTimeout(timerID, context, this, delay); // And reschedule
+				}
+			};
+		} else {
+			myHandler = new InternalTimerHandler(handler) {
+				@Override
+				public void run() {
+					super.run();
+					timeouts.remove(timerID);
+				}
+			};
+		}
+		long timerID = scheduleTimeout(-1, context, myHandler, delay);
+		myHandler.timerID = timerID;
+		return timerID;
+	}
 
-    InternalTimerHandler myHandler;
-    if (periodic) {
-      myHandler = new InternalTimerHandler(handler) {
-        public void run() {
-          super.run();
-          scheduleTimeout(timerID, context, this, delay); // And reschedule
-        }
-      };
-    } else {
-      myHandler = new InternalTimerHandler(handler) {
-        public void run() {
-          super.run();
-          timeouts.remove(timerID);
-        }
-      };
-    }
-    long timerID = scheduleTimeout(-1, context, myHandler, delay);
-    myHandler.timerID = timerID;
-    return timerID;
-  }
+	@Override
+	public boolean cancelTimer(long id) {
+		return cancelTimeout(id);
+	}
 
-  public boolean cancelTimer(long id) {
-    return cancelTimeout(id);
-  }
+	public Context createEventLoopContext() {
+		getBackgroundPool();
+		NioWorker worker = getWorkerPool().nextWorker();
+		return new EventLoopContext(orderedFact.getExecutor(), worker);
+	}
 
-  public Context createEventLoopContext() {
-    getBackgroundPool();
-    NioWorker worker = getWorkerPool().nextWorker();
-    return new EventLoopContext(orderedFact.getExecutor(), worker);
-  }
+	private boolean cancelTimeout(long id) {
+		TimeoutHolder holder = timeouts.remove(id);
+		if (holder != null) {
+			holder.timeout.cancel();
+			return true;
+		} else {
+			return false;
+		}
+	}
 
-  private boolean cancelTimeout(long id) {
-    TimeoutHolder holder = timeouts.remove(id);
-    if (holder != null) {
-      holder.timeout.cancel();
-      return true;
-    } else {
-      return false;
-    }
-  }
+	private long scheduleTimeout(long id, final Context context, final Runnable task, long delay) {
+		TimerTask ttask = new TimerTask() {
+			@Override
+			public void run(Timeout timeout) throws Exception {
+				context.execute(task);
+			}
+		};
+		if (id != -1 && timeouts.get(id) == null) {
+			// Been cancelled
+			return -1;
+		}
+		Timeout timeout = timer.newTimeout(ttask, delay, TimeUnit.MILLISECONDS);
+		id = id != -1 ? id : timeoutCounter.getAndIncrement();
+		timeouts.put(id, new TimeoutHolder(timeout, context));
+		return id;
+	}
 
-  private long scheduleTimeout(long id, final Context context, final Runnable task, long delay) {
-    TimerTask ttask = new TimerTask() {
-      public void run(Timeout timeout) throws Exception {
-        context.execute(task);
-      }
-    };
-    if (id != -1 && timeouts.get(id) == null) {
-      //Been cancelled
-      return -1;
-    }
-    Timeout timeout = timer.newTimeout(ttask, delay, TimeUnit.MILLISECONDS);
-    id = id != -1 ? id : timeoutCounter.getAndIncrement();
-    timeouts.put(id, new TimeoutHolder(timeout, context));
-    return id;
-  }
+	private Context createWorkerContext() {
+		getBackgroundPool();
+		return new WorkerContext(orderedFact.getExecutor());
+	}
 
-  private Context createWorkerContext() {
-    getBackgroundPool();
-    return new WorkerContext(orderedFact.getExecutor());
-  }
+	private static class InternalTimerHandler implements Runnable {
+		final Handler<Long> handler;
+		long timerID;
 
-  private static class InternalTimerHandler implements Runnable {
-    final Handler<Long> handler;
-    long timerID;
+		InternalTimerHandler(Handler<Long> runnable) {
+			this.handler = runnable;
+		}
 
-    InternalTimerHandler(Handler<Long> runnable) {
-      this.handler = runnable;
-    }
+		@Override
+		public void run() {
+			handler.handle(timerID);
+		}
+	}
 
-    public void run() {
-      handler.handle(timerID);
-    }
-  }
+	private static class TimeoutHolder {
+		final Timeout timeout;
 
-  private static class TimeoutHolder {
-    final Timeout timeout;
-    final Context context;
+		// final Context context;
 
-    TimeoutHolder(Timeout timeout, Context context) {
-      this.timeout = timeout;
-      this.context = context;
-    }
-  }
+		TimeoutHolder(Timeout timeout, Context context) {
+			this.timeout = timeout;
+			// this.context = context;
+		}
+	}
 
 }
