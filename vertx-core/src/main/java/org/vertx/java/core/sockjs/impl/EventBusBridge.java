@@ -137,6 +137,10 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     sock.dataHandler(new Handler<Buffer>() {
 
       private void handleRegister(final String address) {
+        // To avoid a leak of handlers
+        if (handlers.get(address) != null) {
+            return;
+        }
         Handler<Message<JsonObject>> handler = new Handler<Message<JsonObject>>() {
           public void handle(final Message<JsonObject> msg) {
             if (checkMatches(false, address, msg.body, false)) {
