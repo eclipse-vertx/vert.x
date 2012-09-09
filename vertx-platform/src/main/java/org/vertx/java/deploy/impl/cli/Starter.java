@@ -120,6 +120,9 @@ public class Starter {
   }
 
   private void runVerticle(boolean module, String main, Args args) {
+    if (args.map.get("-debug-rhino") != null) {
+      System.setProperty("vertx.debugRhino", "true");
+    }
     boolean clustered = args.map.get("-cluster") != null;
     if (clustered) {
       log.info("Starting clustering...");
