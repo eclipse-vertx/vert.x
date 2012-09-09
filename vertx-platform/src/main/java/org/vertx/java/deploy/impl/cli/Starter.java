@@ -29,6 +29,7 @@ import org.vertx.java.deploy.impl.VerticleManager;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
@@ -146,6 +147,11 @@ public class Starter {
     String cp = args.map.get("-cp");
     if (cp == null) {
       cp = ".";
+    }
+
+    String jarDir = args.map.get("-jars");
+    if (jarDir != null) {
+      cp = this.getClasspathWithJars(jarDir, cp);
     }
 
     // Convert to URL[]
@@ -292,6 +298,9 @@ public class Starter {
 "        -cp <path>             specifies the path on which to search for <main>\n" +
 "                               and any referenced resources.\n" +
 "                               Defaults to '.' (current directory).\n" +
+"        -jars <path>           specifies a directory where jars used in the\n" +
+"                               vertical are located.  These jars will be added\n" +
+"                               to the classpath.\n" +
 "        -instances <instances> specifies how many instances of the verticle will\n" +       // 80 chars at will
 "                               be deployed. Defaults to 1\n" +
 "        -repo <repo_host>      specifies the repository to use to install\n" +
@@ -351,4 +360,25 @@ public class Starter {
      log.info(usage);
   }
 
+  private String getClasspathWithJars(String jarDir, String oldClasspath) {
+    StringBuilder classpath = new StringBuilder(oldClasspath);
+
+    File jarParentDir = new File(jarDir);
+    String[] jarPaths = jarParentDir.list(new FilenameFilter() {
+      public boolean accept(File dir, String filename) {
+        boolean ret = filename.toLowerCase().endsWith(".jar");
+
+        return ret;
+      }
+    });
+
+    for(String path: jarPaths) {
+      classpath.append(Starter.CP_SEPARATOR);
+      classpath.append(jarDir);
+      classpath.append(File.separatorChar);
+      classpath.append(path);
+    }
+
+    return classpath.toString();
+  }
 }
