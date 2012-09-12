@@ -52,7 +52,7 @@ If your main verticle is a worker verticle you must also specify the `worker` fi
 
 #### Preserving working directory
 
-By default when you're module is executing it will see its working directory as the module directory when using the Vert.x API. This is useful if you want to package up an application which contains its own static resources into a module.
+By default when your module is executing it will see its working directory as the module directory when using the Vert.x API. This is useful if you want to package up an application which contains its own static resources into a module.
 
 However in some cases, you don't want this behaviour, you want the module to see its working directory as the working directory of whoever started the module.
 
