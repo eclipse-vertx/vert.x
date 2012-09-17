@@ -226,7 +226,6 @@ public class DefaultVertx extends VertxInternal {
     return result;
   }
 
-
   public Context getOrAssignContext() {
     Context ctx = Context.getContext();
     if (ctx == null) {

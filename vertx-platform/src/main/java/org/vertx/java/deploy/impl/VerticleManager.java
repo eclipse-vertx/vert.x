@@ -606,14 +606,18 @@ public class VerticleManager implements ModuleReloader {
 
       // Launch the verticle instance
 
+      final ClassLoader cl = sharedLoader != null ?
+          sharedLoader: new ParentLastURLClassLoader(urls, getClass().getClassLoader());
+      Thread.currentThread().setContextClassLoader(cl);
+
       Runnable runner = new Runnable() {
         public void run() {
 
           Verticle verticle = null;
           boolean error = true;
+
           try {
-            verticle = verticleFactory.createVerticle(main, sharedLoader != null ?
-                sharedLoader: new ParentLastURLClassLoader(urls, getClass().getClassLoader()));
+            verticle = verticleFactory.createVerticle(main, cl);
             error = false;
           } catch (ClassNotFoundException e) {
             log.error("Cannot find verticle " + main);
