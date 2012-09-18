@@ -77,8 +77,16 @@ public class JavaJsonTest extends TestBase {
 
   @Test
   public void testPutsNullObjectWithoutException() {
-    new JsonObject()
-      .putObject("null", null) // this shouldn't cause a NullPointerException
-    ;
+    log.debug(
+      new JsonObject()
+        .putObject("null", null) // this shouldn't cause a NullPointerException
+        .encode()
+    );
+    
+    log.debug(
+      new JsonObject()
+        .putObject("null", new JsonObject().putString("foo", "bar"))
+        .encode()
+    );
   }
 }
