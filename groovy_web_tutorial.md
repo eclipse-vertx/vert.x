@@ -1,3 +1,9 @@
+<!--
+This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 Unported License.
+To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/ or send
+a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
+-->
+
 In this tutorial we're going to write a 'real-time' web-application using vert.x.
 
 The application is a shop application called "vToons" which allows you to buy music tracks online.
@@ -457,10 +463,7 @@ Then you can just call it from client side JavaScript, or other server side comp
 You can package up your entire application, or just individual Verticles as modules, so they can be easily reused by other applications, or started on the command line more easily.
 
 For an explanation of how to do this, please see the modules manual.    
-    
-*Copies of this document may be made for your own use and for distribution to others, provided that you do not charge any fee for such copies and further provided that each copy contains this Copyright Notice, whether distributed in print or electronically.*
 
-          
 
     
 

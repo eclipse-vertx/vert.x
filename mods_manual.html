@@ -68,6 +68,8 @@
     <div class="span12">
       <div class="well">
 <div>
+
+
 <div class="toc">
 <ul>
 <li><a href="#modules">Modules</a><ul>
@@ -133,7 +135,7 @@ vertx.mongo-persistor-v1.0
 <h4 id="worker-modules">Worker modules</h4><br/>
 <p>If your main verticle is a worker verticle you must also specify the <code>worker</code> field with value <code>true</code>, otherwise it will be assumed it is not a worker.</p>
 <h4 id="preserving-working-directory">Preserving working directory</h4><br/>
-<p>By default when you're module is executing it will see its working directory as the module directory when using the Vert.x API. This is useful if you want to package up an application which contains its own static resources into a module.</p>
+<p>By default when your module is executing it will see its working directory as the module directory when using the Vert.x API. This is useful if you want to package up an application which contains its own static resources into a module.</p>
 <p>However in some cases, you don't want this behaviour, you want the module to see its working directory as the working directory of whoever started the module.</p>
 <p>An example of this would be the <code>web-server</code> module. With the web server, you use it to serve your own static files which exist either outside of a module or in your own module, they do not exist inside the <code>web-server</code> module itself.</p>
 <p>If you want to preserve current working directory, set the field <code>preserve-cwd</code> to <code>true</code> in <code>mod.json</code>. The default value is <code>false</code>.</p>
@@ -225,8 +227,7 @@ mods/my-web-app/web-root/index.html
 <p>Modules that <em>only</em> contain resources for re-use are called <em>non-runnable</em> modules and they don't require a <code>main</code> field in <code>mod.json</code>. It's also possible to include the resources of runnable modules into another module.</p>
 <h2 id="configuration">Configuration</h2><br/>
 <p>Configuration for a module (if any) should be specified using a JSON configuration file when deploying from the command line using <code>vertx runmod</code> or passed in when deploying a module programmatically.</p>
-<p>Applying configuration this way allows it to be easily and consistently configured irrespective of the language.</p>
-<p><em>Copies of this document may be made for your own use and for distribution to others, provided that you do not charge any fee for such copies and further provided that each copy contains this Copyright Notice, whether distributed in print or electronically.</em></p></div>
+<p>Applying configuration this way allows it to be easily and consistently configured irrespective of the language.</p></div>
       </div>
     </div>
   </div>
