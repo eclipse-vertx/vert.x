@@ -1,3 +1,9 @@
+<!--
+This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 Unported License.
+To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/ or send
+a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
+-->
+
 
 [TOC]
 
@@ -2687,8 +2693,6 @@ Here's an example of pumping data from a file on a client to a HTTP request:
 ### Closing an AsyncFile
 
 To close an AsyncFile call the `close` method. Closing is asynchronous and if you want to be notified when the close has been completed you can specify a handler block as an argument to `close`.
-
-*Copies of this document may be made for your own use and for distribution to others, provided that you do not charge any fee for such copies and further provided that each copy contains this Copyright Notice, whether distributed in print or electronically.*
 
 
 

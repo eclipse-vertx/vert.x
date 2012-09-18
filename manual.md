@@ -1,3 +1,9 @@
+<!--
+This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 Unported License.
+To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/ or send
+a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
+-->
+
 [TOC]
 
 # Introduction 
@@ -350,9 +356,6 @@ Vert.x uses the following amazing open source projects:
 * [Mozilla Rhino](http://www.mozilla.org/rhino/) for its JavaScript engine
 * [Jython](http://jython.org) for its Python engine
 * [Hazelcast](http://www.hazelcast.com/) for group management of cluster members
-
-*Copies of this document may be made for your own use and for distribution to others, provided that you do not charge any fee for such copies and further provided that each copy contains this Copyright Notice, whether distributed in print or electronically.*
-
 
 
 

@@ -1,3 +1,9 @@
+<!--
+This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 Unported License.
+To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/ or send
+a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
+-->
+
 [TOC]
 
 # Modules
@@ -202,6 +208,4 @@ Modules that *only* contain resources for re-use are called *non-runnable* modul
 Configuration for a module (if any) should be specified using a JSON configuration file when deploying from the command line using `vertx runmod` or passed in when deploying a module programmatically.
 
 Applying configuration this way allows it to be easily and consistently configured irrespective of the language.
-
-*Copies of this document may be made for your own use and for distribution to others, provided that you do not charge any fee for such copies and further provided that each copy contains this Copyright Notice, whether distributed in print or electronically.*
 
