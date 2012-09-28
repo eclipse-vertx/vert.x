@@ -155,7 +155,7 @@ if $cygwin ; then
 fi
 
 if [ "x" != "x$VERTX_MODS" ]; then
-  VERTX_OPTS="$VERTX_OPTS -Dvertx.mods=$VERTX_MODS"
+  VERTX_OPTS="$VERTX_OPTS -Dvertx.mods=$VERTX_MODS"
 fi
 
 # Split up the JVM_OPTS And VERTX_OPTS values into an array, following the shell quoting and substitution rules
