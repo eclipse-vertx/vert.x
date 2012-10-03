@@ -48,15 +48,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Scanner;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -158,9 +150,39 @@ public class VerticleManager implements ModuleReloader {
   public void deployVerticle(boolean worker, final String main,
                              final JsonObject config, final URL[] urls,
                              int instances, File currentModDir,
+                             String includes,
                              final Handler<String> doneHandler) {
     Context ctx = vertx.getOrAssignContext();
-    doDeploy(null, false, worker, main, null, config, urls, instances, currentModDir, ctx, doneHandler);
+    URL[] theURLs;
+    // The user has specified a list of modules to include when deploying this verticle
+    // so we walk the tree of modules adding tree of includes to classpath
+    if (includes != null) {
+      String[] includedMods = parseIncludes(includes, null);
+      List<URL> includedURLs = new ArrayList<>(Arrays.asList(urls));
+      for (String includedMod: includedMods) {
+        File modDir = new File(modRoot, includedMod);
+        JsonObject conf;
+        inner: while (true) {
+          conf = loadModuleConfig(includedMod, modDir);
+          if (conf == null) {
+            // Try and install the module
+            if (!installModSync(includedMod)) {
+              return;
+            }
+          } else {
+            break inner;
+          }
+        }
+        Map<String, String> includedJars = new HashMap<>();
+        Set<String> includedModules = new HashSet<>();
+        includedURLs = processIncludes(main, includedURLs, includedMod, modDir, conf,
+            includedJars, includedModules);
+      }
+      theURLs = includedURLs.toArray(new URL[includedURLs.size()]);
+    } else {
+      theURLs = urls;
+    }
+    doDeploy(null, false, worker, main, null, config, theURLs, instances, currentModDir, ctx, doneHandler);
   }
 
   public synchronized void undeployAll(final Handler<Void> doneHandler) {
@@ -336,50 +358,25 @@ public class VerticleManager implements ModuleReloader {
 
     String sincludes = conf.getString("includes");
     if (sincludes != null) {
-      sincludes = sincludes.trim();
-      if ("".equals(sincludes)) {
-        log.error("Empty include string in module " + modName);
-        return null;
-      }
-      String[] sarr = sincludes.split(",");
+      String[] sarr = parseIncludes(sincludes, modName);
       for (String include: sarr) {
         if (includedModules.contains(include)) {
           // Ignore - already included this one
         } else {
           File newmodDir = new File(modRoot, include);
-          JsonObject newconf = loadModuleConfig(include, newmodDir);
-          if (newconf != null) {
-            urls = processIncludes(runModule, urls, include, newmodDir, newconf,
-                                   includedJars, includedModules);
-            if (urls == null) {
-              return null;
-            }
-          } else {
-            // Module not installed - let's try to install it
-            // This is called on a blocking action so it's ok to use a CountDownLatch
-            // and block the thread for a bit
-            final CountDownLatch latch = new CountDownLatch(1);
-            final AtomicReference<Boolean> res = new AtomicReference<>();
-            Handler<Boolean> doneHandler = new Handler<Boolean>() {
-              public void handle(Boolean b) {
-                res.set(b);
-                latch.countDown();
+          inner: while (true) {
+            JsonObject newconf = loadModuleConfig(include, newmodDir);
+            if (newconf != null) {
+              urls = processIncludes(runModule, urls, include, newmodDir, newconf,
+                                     includedJars, includedModules);
+              if (urls == null) {
+                return null;
               }
-            };
-            installMod(include, doneHandler);
-            while (true) {
-              try {
-                if (latch.await(30000, TimeUnit.SECONDS)) {
-                  if (!res.get()) {
-                    return null;
-                  }
-                  break;
-                } else {
-                  log.error("Timed out in attempting to install module");
-                  return null;
-                }
-              } catch (InterruptedException e) {
-                // spurious wakeup - continue
+              break inner;
+            } else {
+              // Module not installed - let's try to install it
+              if (!installModSync(include)) {
+                return null;
               }
             }
           }
@@ -389,6 +386,43 @@ public class VerticleManager implements ModuleReloader {
 
     return urls;
   }
+
+  // This is not on an event loop so it's ok to use a CountDownLatch
+  // and block the thread for a bit
+  private boolean installModSync(String modName) {
+    final CountDownLatch latch = new CountDownLatch(1);
+    final AtomicReference<Boolean> res = new AtomicReference<>();
+    Handler<Boolean> doneHandler = new Handler<Boolean>() {
+      public void handle(Boolean b) {
+        res.set(b);
+        latch.countDown();
+      }
+    };
+    installMod(modName, doneHandler);
+    while (true) {
+      try {
+        if (latch.await(30000, TimeUnit.SECONDS)) {
+          return res.get();
+        } else {
+          log.error("Timed out in attempting to install module");
+          return false;
+        }
+      } catch (InterruptedException e) {
+        // spurious wakeup - continue
+      }
+    }
+  }
+
+
+  private String[] parseIncludes(String sincludes, String modName) {
+    sincludes = sincludes.trim();
+    if ("".equals(sincludes)) {
+      log.error("Empty include string " + ((modName != null) ? " in module " : ""));
+      return null;
+    }
+    return sincludes.split(",");
+  }
+
 
 
   /* (non-Javadoc)
