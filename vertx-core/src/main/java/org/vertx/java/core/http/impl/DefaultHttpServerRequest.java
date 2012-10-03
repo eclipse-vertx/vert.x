@@ -16,6 +16,12 @@
 
 package org.vertx.java.core.http.impl;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.vertx.java.core.Handler;
@@ -24,10 +30,6 @@ import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  *
@@ -40,7 +42,7 @@ public class DefaultHttpServerRequest extends HttpServerRequest {
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Exception> exceptionHandler;
-  private final ServerConnection conn;
+  protected final ServerConnection conn;
   private final HttpRequest request;
   //Cache this for performance
   private Map<String, String> params;
@@ -96,6 +98,13 @@ public class DefaultHttpServerRequest extends HttpServerRequest {
 
   public void endHandler(Handler<Void> handler) {
     this.endHandler = handler;
+  }
+
+  void handleChunk(HttpChunk chunk) {
+    ChannelBuffer content = chunk.getContent();
+    if (content.readable()) {
+      handleData(new Buffer(chunk.getContent()));
+    }
   }
 
   void handleData(Buffer data) {
