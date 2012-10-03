@@ -218,7 +218,8 @@ public class Starter {
     if (module) {
       mgr.deployMod(main, conf, instances, null, doneHandler);
     } else {
-      mgr.deployVerticle(worker, main, conf, urls, instances, null, doneHandler);
+      String includes = args.map.get("-includes");
+      mgr.deployVerticle(worker, main, conf, urls, instances, null, includes, doneHandler);
     }
 
     addShutdownHook();
@@ -299,6 +300,9 @@ public class Starter {
 "                               Default is vert-x.github.com/vertx-mods\n" +
 "        -worker                if specified then the verticle is a worker\n" +
 "                               verticle.\n" +
+"        -includes <mod_list>   optional comma separated list of modules\n" +
+"                               which will be added to the classpath of\n" +
+"                               the verticle.\n" +
 "        -cluster               if specified then the vert.x instance will form a\n" +
 "                               cluster with any other vert.x instances on the\n" +
 "                               network.\n" +

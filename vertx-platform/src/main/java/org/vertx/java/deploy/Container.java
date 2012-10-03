@@ -89,7 +89,7 @@ public class Container {
   public void deployWorkerVerticle(String main, JsonObject config, int instances, Handler<String> doneHandler) {
     URL[] currURLs = mgr.getDeploymentURLs();
     File modDir = mgr.getDeploymentModDir();
-    mgr.deployVerticle(true, main, config, currURLs, instances, modDir, doneHandler);
+    mgr.deployVerticle(true, main, config, currURLs, instances, modDir, null, doneHandler);
   }
 
   /**
@@ -186,7 +186,7 @@ public class Container {
   public void deployVerticle(String main, JsonObject config, int instances, Handler<String> doneHandler) {
     URL[] currURLs = mgr.getDeploymentURLs();
     File modDir = mgr.getDeploymentModDir();
-    mgr.deployVerticle(false, main, config, currURLs, instances, modDir, doneHandler);
+    mgr.deployVerticle(false, main, config, currURLs, instances, modDir, null, doneHandler);
   }
 
   /**
