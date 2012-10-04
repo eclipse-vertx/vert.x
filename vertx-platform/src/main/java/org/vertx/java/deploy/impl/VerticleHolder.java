@@ -21,6 +21,7 @@ import org.vertx.java.core.impl.DeploymentHandle;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.deploy.Verticle;
+import org.vertx.java.deploy.VerticleFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -34,18 +35,21 @@ class VerticleHolder implements DeploymentHandle {
   //We put the config here too so it's still accessible to the verticle after it has been deployed
   //(deploy is async)
   final JsonObject config;
+  final VerticleFactory factory;
 
   VerticleHolder(Deployment deployment, Context context, Verticle verticle, String loggerName,
-                         Logger logger, JsonObject config) {
+                 Logger logger, JsonObject config,
+                 VerticleFactory factory) {
     this.deployment = deployment;
     this.context = context;
     this.verticle = verticle;
     this.loggerName = loggerName;
     this.logger = logger;
     this.config = config;
+    this.factory = factory;
   }
 
   public void reportException(Throwable t) {
-    deployment.factory.reportException(t);
+    factory.reportException(t);
   }
 }

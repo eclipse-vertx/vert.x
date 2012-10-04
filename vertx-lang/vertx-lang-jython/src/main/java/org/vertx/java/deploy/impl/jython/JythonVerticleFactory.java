@@ -35,19 +35,6 @@ public class JythonVerticleFactory implements VerticleFactory {
       this.mgr = mgr;
   }
 
-  @Override
-  public String getLanguage() {
-      return "python";
-  }
-  
-  @Override
-  public boolean isFactoryFor(String main) {
-    if (main.endsWith(".py")) {
-      return true;
-    }
-    return false;
-  }
-
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
     Verticle app = new JythonVerticle(main, cl);
     return app;
