@@ -41,19 +41,6 @@ public class GroovyVerticleFactory implements VerticleFactory {
 	  this.mgr = mgr
   }
 
-  @Override
-  public String getLanguage() {
-	  return "groovy"
-  }
-  
-  @Override
-  public boolean isFactoryFor(String main) {
-    if (main.endsWith(".groovy")) {
-      return true
-    }
-	  return false
-  }
-
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
     URL url = cl.getResource(main)
     if (url == null) {

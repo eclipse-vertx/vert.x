@@ -72,7 +72,7 @@ public class VerticleManager implements ModuleReloader {
   // The user mods dir
   private final File modRoot;
   private final CountDownLatch stopLatch = new CountDownLatch(1);
-  private Map<String, VerticleFactory> factories;
+  private Map<String, String> factoryNames = new HashMap<>();
   private final String defaultRepo;
   private final Redeployer redeployer;
 
@@ -85,10 +85,6 @@ public class VerticleManager implements ModuleReloader {
     this.defaultRepo = defaultRepo == null ? DEFAULT_REPO_HOST : defaultRepo;
     VertxLocator.vertx = vertx;
     VertxLocator.container = new Container(this);
-    String installDir = System.getProperty("vertx.install");
-    if (installDir == null) {
-      installDir = ".";
-    }
     String modDir = System.getProperty("vertx.mods");
     if (modDir != null && !modDir.trim().equals("")) {
       modRoot = new File(modDir);
@@ -96,14 +92,31 @@ public class VerticleManager implements ModuleReloader {
       // Default to local module directory called 'mods'
       modRoot = new File("mods");
     }
-
-    this.factories = new HashMap<>();
     this.redeployer = new Redeployer(vertx, modRoot, this);
 
-    // Find and load VerticleFactories
-    Iterable<VerticleFactory> services = VerticleFactory.factories;
-    for (VerticleFactory vf : services) {
-      factories.put(vf.getLanguage(), vf);
+    InputStream is = null;
+    try {
+      is = getClass().getClassLoader().getResourceAsStream("langs.properties");
+      if (is == null) {
+        log.warn("No language mappings found!");
+      } else {
+        Properties props = new Properties();
+        props.load(new BufferedInputStream(is));
+        Enumeration<?> en = props.propertyNames();
+        while (en.hasMoreElements()) {
+          String propName = (String)en.nextElement();
+          factoryNames.put(propName, props.getProperty(propName));
+        }
+      }
+    } catch (IOException e) {
+      log.error("Failed to load langs.properties: " + e.getMessage());
+    } finally {
+      if (is != null) {
+        try {
+          is.close();
+        } catch (IOException ignore) {
+        }
+      }
     }
   }
 
@@ -580,27 +593,25 @@ public class VerticleManager implements ModuleReloader {
                                      final File modDir,
                                      final Context context,
                                      final Handler<String> doneHandler) {
-    // Infer the main type
-    String language = "java";
-    for (VerticleFactory vf : factories.values()) {
-      if (vf.isFactoryFor(main)) {
-        language = vf.getLanguage();
-        break;
-      }
-    }
-
     final String deploymentName =
         depName != null ? depName : "deployment-" + UUID.randomUUID().toString();
 
     log.debug("Deploying name : " + deploymentName + " main: " + main +
         " instances: " + instances);
 
-    if (!factories.containsKey(language)) {
-    	throw new IllegalArgumentException("Unsupported language: " + language);
+    int dotIndex = main.lastIndexOf('.');
+    if (dotIndex == -1) {
+      throw new IllegalArgumentException("Invalid main: " + main);
     }
-
-    final VerticleFactory verticleFactory = factories.get(language);
-    verticleFactory.init(this);
+    String extension = main.substring(dotIndex + 1);
+    String factoryName = factoryNames.get(extension);
+    if (factoryName == null) {
+      // Use the default
+      factoryName = factoryNames.get("default");
+      if (factoryName == null) {
+        throw new IllegalArgumentException("No language mapping found and no default specified in langs.properties");
+      }
+    }
 
     final int instCount = instances;
 
@@ -621,7 +632,7 @@ public class VerticleManager implements ModuleReloader {
     final AggHandler aggHandler = new AggHandler();
 
     String parentDeploymentName = getDeploymentName();
-    final Deployment deployment = new Deployment(deploymentName, modName, instances, verticleFactory,
+    final Deployment deployment = new Deployment(deploymentName, modName, instances,
         config == null ? new JsonObject() : config.copy(), urls, modDir, parentDeploymentName,
         autoRedeploy);
     addDeployment(deploymentName, deployment);
@@ -643,6 +654,29 @@ public class VerticleManager implements ModuleReloader {
       final ClassLoader cl = sharedLoader != null ?
           sharedLoader: new ParentLastURLClassLoader(urls, getClass().getClassLoader());
       Thread.currentThread().setContextClassLoader(cl);
+
+      // We load the VerticleFactory class using the verticle classloader - this allows
+      // us to put language implementations in modules
+
+      Class clazz;
+      try {
+        clazz = cl.loadClass(factoryName);
+      } catch (ClassNotFoundException e) {
+        log.error("Cannot find class " + factoryName + " to load");
+        doneHandler.handle(null);
+        return;
+      }
+
+      final VerticleFactory verticleFactory;
+      try {
+        verticleFactory = (VerticleFactory)clazz.newInstance();
+      } catch (Exception e) {
+        log.error("Failed to instantiate VerticleFactory: " + e.getMessage());
+        doneHandler.handle(null);
+        return;
+      }
+
+      verticleFactory.init(this);
 
       Runnable runner = new Runnable() {
         public void run() {
@@ -673,7 +707,7 @@ public class VerticleManager implements ModuleReloader {
           verticle.setContainer(new Container(VerticleManager.this));
 
           try {
-            addVerticle(deployment, verticle);
+            addVerticle(deployment, verticle, verticleFactory);
             if (modDir != null) {
               setPathAdjustment(modDir);
             }
@@ -700,12 +734,14 @@ public class VerticleManager implements ModuleReloader {
   }
 
   // Must be synchronized since called directly from different thread
-  private synchronized void addVerticle(Deployment deployment, Verticle verticle) {
+  private synchronized void addVerticle(Deployment deployment, Verticle verticle,
+                                        VerticleFactory factory) {
     String loggerName = deployment.name + "-" + deployment.verticles.size();
     Logger logger = LoggerFactory.getLogger(loggerName);
     Context context = Context.getContext();
     VerticleHolder holder = new VerticleHolder(deployment, context, verticle,
-                                               loggerName, logger, deployment.config);
+                                               loggerName, logger, deployment.config,
+                                               factory);
     deployment.verticles.add(holder);
     context.setDeploymentHandle(holder);
   }

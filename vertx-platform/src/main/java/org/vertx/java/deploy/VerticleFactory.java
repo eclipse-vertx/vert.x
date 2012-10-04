@@ -29,10 +29,6 @@ public interface VerticleFactory {
   public static final Iterable<VerticleFactory> factories = ServiceLoader.load(VerticleFactory.class);
 
   void init(VerticleManager manager);
-  
-  String getLanguage();
-  
-  boolean isFactoryFor(String main);
 
   Verticle createVerticle(String main, ClassLoader parentCL) throws Exception;
 

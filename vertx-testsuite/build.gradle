@@ -25,7 +25,9 @@ sourceSets {
 	}
 	test {
 		resources {
-			srcDirs "src/test/ruby_scripts", "src/test/python_scripts", "src/test/groovy_scripts", "src/test/javascript_scripts"
+			srcDirs "src/test/ruby_scripts", "src/test/python_scripts", "src/test/groovy_scripts",
+          "src/test/javascript_scripts",
+          "../src/dist/conf"
 		}
 	}
 }

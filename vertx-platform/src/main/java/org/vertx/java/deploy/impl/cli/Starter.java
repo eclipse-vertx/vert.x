@@ -48,8 +48,7 @@ public class Starter {
 
   private static final Logger log = LoggerFactory.getLogger(Starter.class);
 
-  private static final String CP_SEPARATOR =
-    System.getProperty("os.name").startsWith("Windows") ? ";" : ":";
+  private static final String CP_SEPARATOR = System.getProperty("path.separator");
 
   private static final String VERSION = "vert.x-1.2.3.final";
 
