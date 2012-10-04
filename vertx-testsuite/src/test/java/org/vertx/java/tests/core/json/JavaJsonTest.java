@@ -74,4 +74,19 @@ public class JavaJsonTest extends TestBase {
     
     assertEquals("baz", ((JsonObject) arr.get(1)).getString("bar"));
   }
+
+  @Test
+  public void testPutsNullObjectWithoutException() {
+    log.debug(
+      new JsonObject()
+        .putObject("null", null) // this shouldn't cause a NullPointerException
+        .encode()
+    );
+    
+    log.debug(
+      new JsonObject()
+        .putObject("null", new JsonObject().putString("foo", "bar"))
+        .encode()
+    );
+  }
 }
