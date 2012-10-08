@@ -637,11 +637,6 @@ public class TestClient extends TestClientBase {
       public void handle() {
         tu.azzert(fileExists(dirName));
         tu.azzert(Files.isDirectory(Paths.get(TEST_DIR + pathSep + dirName)));
-        /*
-         * Cannot assume DEFAULT_DIR_PERMS is correct
-         * Different umask values will cause different default values
-         */
-        // tu.azzert(DEFAULT_DIR_PERMS.equals(getPerms(dirName)));
       }
     });
   }
@@ -658,11 +653,7 @@ public class TestClient extends TestClientBase {
       public void handle() {
         tu.azzert(fileExists(dirName));
         tu.azzert(Files.isDirectory(Paths.get(TEST_DIR + pathSep + dirName)));
-        /*
-         * Cannot assume DEFAULT_DIR_PERMS is correct
-         * Different umask values will cause different default values
-         */
-        // tu.azzert(DEFAULT_DIR_PERMS.equals(getPerms(dirName)));
+        tu.azzert(perms.equals(getPerms(dirName)));
       }
     });
   }
@@ -673,9 +664,6 @@ public class TestClient extends TestClientBase {
       public void handle() {
         tu.azzert(fileExists(dirName));
         tu.azzert(Files.isDirectory(Paths.get(TEST_DIR + pathSep + dirName)));
-        // Cannot assume DEFAULT_DIR_PERMS is correct
-        // Different umask values will cause different default values
-        // tu.azzert(DEFAULT_DIR_PERMS.equals(getPerms(dirName)));
       }
     });
   }
