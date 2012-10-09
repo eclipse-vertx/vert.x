@@ -168,8 +168,11 @@ class Session extends SockJSSocket implements Shareable {
 
   synchronized void resetListener() {
     listener = null;
+    setTimer();
+  }
 
-    if (timeout != -1) {
+  private void setTimer() {
+    if (timeout != -1 && timeoutTimerID == -1) {
       timeoutTimerID = vertx.setTimer(timeout, new Handler<Long>() {
         public void handle(Long id) {
           vertx.cancelTimer(heartbeatID);
@@ -196,7 +199,6 @@ class Session extends SockJSSocket implements Shareable {
   }
 
   synchronized void register(final TransportListener lst) {
-
     if (closed) {
       // Closed by the application
       writeClosed(lst);
@@ -221,11 +223,13 @@ class Session extends SockJSSocket implements Shareable {
         handleCalled = true;
       }
 
+      setTimer();
+
       if (listener != null) {
         if (closed) {
           // Could have already been closed by the user
           writeClosed(lst);
-          resetListener();
+          listener = null;
           lst.close();
         } else {
           if (!pendingWrites.isEmpty()) {
