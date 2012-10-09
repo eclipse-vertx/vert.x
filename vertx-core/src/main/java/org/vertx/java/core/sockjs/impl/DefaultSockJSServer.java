@@ -69,7 +69,9 @@ public class DefaultSockJSServer implements SockJSServer {
     wsMatcher.noMatch(new Handler<WebSocketMatcher.Match>() {
       Handler<ServerWebSocket> wsHandler = httpServer.websocketHandler();
       public void handle(WebSocketMatcher.Match match) {
-        wsHandler.handle(match.ws);
+        if (wsHandler != null) {
+          wsHandler.handle(match.ws);
+        }
       }
     });
 
@@ -81,7 +83,7 @@ public class DefaultSockJSServer implements SockJSServer {
     config = config.copy();
     //Set the defaults
     if (config.getNumber("session_timeout") == null) {
-      config.putNumber("session_timeout", 5l * 60 * 1000);
+      config.putNumber("session_timeout", 5 * 1000); // 5 seconds default
     }
     if (config.getBoolean("insert_JSESSIONID") == null) {
       config.putBoolean("insert_JSESSIONID", true);

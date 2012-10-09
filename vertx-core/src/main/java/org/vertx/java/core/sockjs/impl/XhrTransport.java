@@ -90,7 +90,6 @@ class XhrTransport extends BaseTransport {
         if (log.isTraceEnabled()) log.trace("XHR, post, " + req.uri);
         String sessionID = req.params().get("param0");
         Session session = getSession(config.getLong("session_timeout"), config.getLong("heartbeat_period"), sessionID, sockHandler);
-
         session.register(streaming? new XhrStreamingListener(config.getInteger("max_bytes_streaming"), req, session) : new XhrPollingListener(req, session));
       }
     });
