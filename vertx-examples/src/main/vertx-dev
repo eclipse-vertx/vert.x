@@ -74,8 +74,6 @@ $APP_HOME/vertx-lang/vertx-lang-jruby/build/libs/*:$APP_HOME/vertx-lang/vertx-la
 $APP_HOME/vertx-lang/vertx-lang-rhino/build/libs/*:\
 $APP_HOME/src/dist/conf
 
-echo $APP_HOME
-
 # Determine the Java command to use to start the JVM.
 if [ -n "$JAVA_HOME" ] ; then
     if [ -x "$JAVA_HOME/jre/sh/java" ] ; then
