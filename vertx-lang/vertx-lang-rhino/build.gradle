@@ -28,6 +28,7 @@ dependencies {
 	compile project(':vertx-core')
 	compile project(':vertx-platform')
 	compile "org.mozilla:rhino:$rhinoVersion"
+	compile "org.jvnet.hudson:embedded-rhino-debugger:$rhinoDebuggerVersion"
 }
 
 artifacts {

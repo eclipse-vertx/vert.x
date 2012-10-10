@@ -221,7 +221,17 @@ public class RhinoVerticle extends Verticle {
 
   public void start() throws Exception {
     Context cx = Context.enter();
-    cx.setOptimizationLevel(2);
+
+    // If the Rhino debugger is being used, the optimization level needs
+    // to be set to -1, to disable all optimization, and compilation
+    
+    boolean rhinoDebuggingEnabled = "true".equals(System.getProperty("vertx.debugRhino", "false"));
+    if(rhinoDebuggingEnabled) {
+      cx.setOptimizationLevel(-1);
+    } else {
+      cx.setOptimizationLevel(2);
+    }
+
     try {
       scope = cx.initStandardObjects();
 
