@@ -29,12 +29,7 @@ import org.vertx.java.deploy.impl.VerticleManager;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.MalformedURLException;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.URL;
+import java.net.*;
 import java.util.Enumeration;
 import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;

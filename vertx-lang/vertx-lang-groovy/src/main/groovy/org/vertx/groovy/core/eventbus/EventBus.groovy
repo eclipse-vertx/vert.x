@@ -18,11 +18,12 @@ package org.vertx.groovy.core.eventbus
 
 import org.vertx.java.core.eventbus.EventBus as JEventBus
 
-import java.util.concurrent.ConcurrentHashMap
 import org.vertx.groovy.core.buffer.Buffer
 import org.vertx.java.core.AsyncResultHandler
 import org.vertx.java.core.Handler
 import org.vertx.java.core.json.JsonObject
+
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * A distributed lightweight event bus which can encompass multiple vert.x instances.

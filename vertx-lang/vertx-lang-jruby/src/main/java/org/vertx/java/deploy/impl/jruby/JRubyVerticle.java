@@ -16,11 +16,11 @@
 
 package org.vertx.java.deploy.impl.jruby;
 
+import org.jruby.CompatVersion;
 import org.jruby.embed.InvokeFailedException;
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.CompatVersion;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Verticle;

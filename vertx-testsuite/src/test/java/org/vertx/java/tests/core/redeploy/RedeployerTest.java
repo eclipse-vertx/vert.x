@@ -4,7 +4,6 @@ import junit.framework.TestCase;
 import org.junit.Test;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.impl.ConcurrentHashSet;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -15,7 +14,6 @@ import org.vertx.java.framework.TestUtils;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.io.RandomAccessFile;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;

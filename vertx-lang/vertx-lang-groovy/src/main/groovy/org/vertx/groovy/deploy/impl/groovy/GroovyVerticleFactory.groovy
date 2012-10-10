@@ -16,7 +16,6 @@
 
 package org.vertx.groovy.deploy.impl.groovy
 
-import java.lang.reflect.Method
 import org.vertx.groovy.core.Vertx
 import org.vertx.groovy.deploy.Container
 import org.vertx.java.core.impl.VertxInternal
@@ -24,6 +23,8 @@ import org.vertx.java.deploy.Verticle
 import org.vertx.java.deploy.VerticleFactory
 import org.vertx.java.deploy.impl.VerticleManager
 import org.vertx.java.deploy.impl.VertxLocator
+
+import java.lang.reflect.Method
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

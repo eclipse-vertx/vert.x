@@ -22,8 +22,6 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import javax.tools.*;
 import javax.tools.JavaFileObject.Kind;
 import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 
 /**

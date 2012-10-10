@@ -19,11 +19,7 @@ package vertx.tests.core.websockets;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.http.HttpClient;
-import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.http.ServerWebSocket;
-import org.vertx.java.core.http.WebSocket;
-import org.vertx.java.core.http.WebSocketVersion;
+import org.vertx.java.core.http.*;
 import org.vertx.java.framework.TestClientBase;
 import org.vertx.java.framework.TestUtils;
 

@@ -1,8 +1,8 @@
 package deploymod;
 
-import org.vertx.java.deploy.Verticle;
-import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.deploy.Verticle;
 
 public class Deploy extends Verticle {
 
