@@ -139,7 +139,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       private void handleRegister(final String address) {
         Handler<Message<JsonObject>> handler = new Handler<Message<JsonObject>>() {
           public void handle(final Message<JsonObject> msg) {
-            if (checkMatches(false, address, msg.body, false)) {
+            if (checkMatches(false, address, msg.body, sockAuths.get(sock) != null && !sockAuths.get(sock).isEmpty())) {
               checkAddAccceptedReplyAddress(msg.replyAddress);
               deliverMessage(sock, address, msg);
             } else {
