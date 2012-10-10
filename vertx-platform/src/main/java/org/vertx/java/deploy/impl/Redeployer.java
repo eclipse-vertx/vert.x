@@ -96,6 +96,12 @@ public class Redeployer {
 
   public void close() {
     vertx.cancelTimer(timerID);
+    Set<Deployment>  deps = new HashSet<>();
+    for (Map.Entry<Path, Set<Deployment>> entry: watchedDeployments.entrySet()) {
+      deps.addAll(entry.getValue());
+    }
+    toUndeploy.addAll(deps);
+    processUndeployments();
   }
 
   public void moduleDeployed(Deployment deployment) {

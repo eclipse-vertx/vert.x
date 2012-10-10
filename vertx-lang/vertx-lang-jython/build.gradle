@@ -15,13 +15,41 @@
  */
 
 apply from: "$rootDir/gradle/maven.gradle"
-apply plugin: 'vertx-jython'
+
+sourceSets {
+	main {
+		resources {
+			srcDirs project.file("src/main/python_scripts")
+			exclude '**/*$py.class'
+		}
+	}
+	test {
+		resources {
+			srcDirs project.file("src/test/python_scripts")
+		}
+	}
+}
 
 dependencies {
 	compile project(':vertx-core')
 	compile project(':vertx-platform')
-	vertxJython "org.python:jython-standalone:$jythonVersion"
+	compile "org.python:jython-standalone:$jythonVersion"
 }
+
 artifacts {
 	platform jar
 }
+
+task pydoc(type: Exec) {
+	ignoreExitValue true
+	workingDir = project.projectDir
+	
+	commandLine = [ System.getenv()['JYTHON_HOME'] + "/jython",
+		"-J-classpath", project.files(project.configurations.compile).files.join(':'), 
+		"-Dproj.base=${project.projectDir}",
+		"-Dpython.path=${project.projectDir}/src/build_tools/doclib:src/main/python_scripts",
+		"-Dproj.base=$project.projectDir.path",
+		"${project.projectDir}/src/build_tools/pydocx.py" ]
+}
+
+javadoc.dependsOn pydoc

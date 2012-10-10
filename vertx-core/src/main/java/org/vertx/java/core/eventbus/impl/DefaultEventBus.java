@@ -36,16 +36,12 @@ import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.parsetools.RecordParser;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Queue;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *
@@ -65,7 +61,8 @@ public class DefaultEventBus implements EventBus {
   private SubsMap subs;
   private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, Handlers> handlerMap = new ConcurrentHashMap<>();
-  private final Map<String, HandlerInfo> handlersByID = new ConcurrentHashMap<>();
+  private final AtomicInteger seq = new AtomicInteger(0);
+  private final String prefix = UUID.randomUUID().toString();
 
   public DefaultEventBus(VertxInternal vertx) {
     // Just some dummy server ID
@@ -243,70 +240,51 @@ public class DefaultEventBus implements EventBus {
     sendOrPub(new ByteMessage(false, address, message), null);
   }
 
+  public void registerHandler(String address, Handler<? extends Message> handler,
+                              AsyncResultHandler<Void> completionHandler) {
+    registerHandler(address, handler, completionHandler, false, false);
+  }
+
+  public void registerHandler(String address, Handler<? extends Message> handler) {
+    registerHandler(address, handler, null);
+  }
+
+  public void registerLocalHandler(String address, Handler<? extends Message> handler) {
+    registerHandler(address, handler, null, false, true);
+  }
+
   public void unregisterHandler(String address, Handler<? extends Message> handler,
                                 AsyncResultHandler<Void> completionHandler) {
     Context context = vertx.getOrAssignContext();
     Handlers handlers = handlerMap.get(address);
     if (handlers != null) {
-      String handlerID = handlers.map.remove(new HandlerHolder(handler, false, context));
-      if (handlerID != null) {
-        handlersByID.remove(handlerID);
-        getHandlerCloseHook(context).ids.remove(handlerID);
-      }
-      if (handlers.map.isEmpty()) {
-        handlerMap.remove(address);
-        if (subs != null) {
-          removeSub(address, serverID, completionHandler);
-        } else if (completionHandler != null) {
-          callCompletionHandler(completionHandler);
+      int size = handlers.list.size();
+      // Requires a list traversal. This is tricky to optimise since we can't use a set since
+      // we need fast ordered traversal for the round robin
+      for (int i = 0; i < size; i++) {
+        HandlerHolder holder = handlers.list.get(i);
+        if (holder.handler == handler) {
+          handlers.list.remove(i);
+          holder.removed = true;
+          if (handlers.list.isEmpty()) {
+            handlerMap.remove(address);
+            if (subs != null && !holder.localOnly) {
+              removeSub(address, serverID, completionHandler);
+            } else if (completionHandler != null) {
+              callCompletionHandler(completionHandler);
+            }
+          } else if (completionHandler != null) {
+            callCompletionHandler(completionHandler);
+          }
+          getHandlerCloseHook(context).entries.remove(new HandlerEntry(address, handler));
+          return;
         }
-      } else if (completionHandler != null) {
-        callCompletionHandler(completionHandler);
       }
     }
   }
 
   public void unregisterHandler(String address, Handler<? extends Message> handler) {
     unregisterHandler(address, handler, null);
-  }
-
-  public void unregisterHandler(String id) {
-    unregisterHandler(id, (AsyncResultHandler<Void>) null);
-  }
-
-  public void unregisterHandler(String id, AsyncResultHandler<Void> completionHandler) {
-    HandlerInfo info = handlersByID.get(id);
-    if (info != null) {
-      unregisterHandler(info.address, info.handler, completionHandler);
-    } else if (completionHandler != null) {
-      callCompletionHandler(completionHandler);
-    }
-  }
-
-  public String registerHandler(Handler<? extends Message> handler) {
-    return registerHandler(handler, null);
-  }
-
-  public String registerHandler(Handler<? extends Message> handler,
-                               AsyncResultHandler<Void> completionHandler) {
-    return registerHandler(null, handler, completionHandler, false, false);
-  }
-
-  public String registerHandler(String address, Handler<? extends Message> handler,
-                               AsyncResultHandler<Void> completionHandler) {
-    return registerHandler(address, handler, completionHandler, false, false);
-  }
-
-  public String registerHandler(String address, Handler<? extends Message> handler) {
-    return registerHandler(address, handler, null);
-  }
-
-  public String registerLocalHandler(String address, Handler<? extends Message> handler) {
-    return registerHandler(address, handler, null, false, true);
-  }
-
-  public String registerLocalHandler(Handler<? extends Message> handler) {
-    return registerHandler(null, handler, null, false, true);
   }
 
   public void close(Handler<Void> doneHandler) {
@@ -376,8 +354,9 @@ public class DefaultEventBus implements EventBus {
     try {
       message.sender = serverID;
       if (replyHandler != null) {
-        message.replyAddress = UUID.randomUUID().toString();
-        registerHandler(message.replyAddress, replyHandler, null, true, false);
+        //message.replyAddress = UUID.randomUUID().toString();
+        message.replyAddress = prefix + String.valueOf(seq.incrementAndGet());
+        registerHandler(message.replyAddress, replyHandler, null, true, true);
       }
       if (replyDest != null) {
         if (!replyDest.equals(this.serverID)) {
@@ -416,15 +395,13 @@ public class DefaultEventBus implements EventBus {
     }
   }
 
-  private String registerHandler(String address, Handler<? extends Message> handler,
-                                 AsyncResultHandler<Void> completionHandler,
-                                 boolean replyHandler, boolean localOnly) {
-    Context context = vertx.getOrAssignContext();
-    final String id = UUID.randomUUID().toString();
+  private void registerHandler(String address, Handler<? extends Message> handler,
+                               AsyncResultHandler<Void> completionHandler,
+                               boolean replyHandler, boolean localOnly) {
     if (address == null) {
-      address = id;
+      throw new NullPointerException("address");
     }
-    handlersByID.put(id, new HandlerInfo(address, handler));
+    Context context = vertx.getOrAssignContext();
     Handlers handlers = handlerMap.get(address);
     if (handlers == null) {
       handlers = new Handlers();
@@ -441,8 +418,7 @@ public class DefaultEventBus implements EventBus {
           }
         };
       }
-
-      handlers.map.put(new HandlerHolder(handler, replyHandler, context), id);
+      handlers.list.add(new HandlerHolder(handler, replyHandler, localOnly, context));
       if (subs != null && !replyHandler && !localOnly) {
         // Propagate the information
         subs.put(address, serverID, completionHandler);
@@ -450,14 +426,12 @@ public class DefaultEventBus implements EventBus {
         callCompletionHandler(completionHandler);
       }
     } else {
-      handlers.map.put(new HandlerHolder(handler, replyHandler, context), id);
+      handlers.list.add(new HandlerHolder(handler, replyHandler, localOnly, context));
       if (completionHandler != null) {
         callCompletionHandler(completionHandler);
       }
     }
-    HandlerCloseHook hcl = getHandlerCloseHook(context);
-    hcl.ids.add(id);
-    return id;
+    getHandlerCloseHook(context).entries.add(new HandlerEntry(address, handler));
   }
 
   private HandlerCloseHook getHandlerCloseHook(Context context) {
@@ -579,34 +553,34 @@ public class DefaultEventBus implements EventBus {
         //Choose one
         HandlerHolder holder = handlers.choose();
         if (holder != null) {
-          doReceive(handlers, msg, holder);
+          doReceive(msg, holder);
         }
       } else {
         // Publish
-        for (final HandlerHolder holder: handlers.map.keySet()) {
-          doReceive(handlers, msg, holder);
+        for (final HandlerHolder holder: handlers.list) {
+          doReceive(msg, holder);
         }
       }
     }
   }
 
-  private void doReceive(final Handlers handlers, final BaseMessage msg, final HandlerHolder holder) {
+  private void doReceive(final BaseMessage msg, final HandlerHolder holder) {
     // Each handler gets a fresh copy
     final Message copied = msg.copy();
 
     holder.context.execute(new Runnable() {
       public void run() {
-        // Need to check handler is still there - the handler might have been removed after the message were sent but
-        // before it was received
-        if (handlers.map.containsKey(holder)) {
-          try {
-            holder.handler.handle(copied);
-          } finally {
-            if (holder.replyHandler) {
-              unregisterHandler(msg.address, holder.handler);
-            }
-          }
+      // Need to check handler is still there - the handler might have been removed after the message were sent but
+      // before it was received
+      try {
+        if (!holder.removed) {
+          holder.handler.handle(copied);
         }
+      } finally {
+        if (holder.replyHandler) {
+          unregisterHandler(msg.address, holder.handler);
+        }
+      }
       }
     });
   }
@@ -615,11 +589,14 @@ public class DefaultEventBus implements EventBus {
     final Context context;
     final Handler handler;
     final boolean replyHandler;
+    final boolean localOnly;
+    boolean removed;
 
-    HandlerHolder(Handler handler, boolean replyHandler, Context context) {
+    HandlerHolder(Handler handler, boolean replyHandler, boolean localOnly, Context context) {
       this.context = context;
       this.handler = handler;
       this.replyHandler = replyHandler;
+      this.localOnly = localOnly;
     }
 
     @Override
@@ -706,43 +683,67 @@ public class DefaultEventBus implements EventBus {
     }
   }
 
-  // TODO combine this with ServerIDs (make common class)
   private static class Handlers {
-    final Map<HandlerHolder, String> map = new ConcurrentHashMap<>();
-    private Iterator<HandlerHolder> iter;
-    synchronized HandlerHolder choose() {
-      if (map.isEmpty()) {
-        return null;
-      } else {
-        if (iter == null || !iter.hasNext()) {
-          iter = map.keySet().iterator();
+
+    final List<HandlerHolder> list = new CopyOnWriteArrayList<>();
+    final AtomicInteger pos = new AtomicInteger(0);
+    HandlerHolder choose() {
+      while (true) {
+        int size = list.size();
+        if (size == 0) {
+          return null;
+        }
+        int p = pos.getAndIncrement();
+        if (p >= size - 1) {
+          pos.set(0);
         }
         try {
-          return iter.next();
-        } catch (NoSuchElementException e) {
-          return null;
+          return list.get(p);
+        } catch (IndexOutOfBoundsException e) {
+          // Can happen
+          pos.set(0);
         }
       }
     }
   }
 
-  private static class HandlerInfo {
+  private class HandlerEntry {
     final String address;
     final Handler<? extends Message> handler;
 
-    private HandlerInfo(String address, Handler<? extends Message> handler) {
+    private HandlerEntry(String address, Handler<? extends Message> handler) {
       this.address = address;
       this.handler = handler;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (getClass() != o.getClass()) return false;
+      HandlerEntry entry = (HandlerEntry) o;
+      if (!address.equals(entry.address)) return false;
+      if (!handler.equals(entry.handler)) return false;
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      int result = address != null ? address.hashCode() : 0;
+      result = 31 * result + (handler != null ? handler.hashCode() : 0);
+      return result;
     }
   }
 
   private class HandlerCloseHook implements Runnable {
-    final List<String> ids = new ArrayList<>();
+
+    final Set<HandlerEntry> entries = new HashSet<>();
+
     public void run() {
-      for (String id: new ArrayList<>(ids)) {
-        unregisterHandler(id);
+      for (HandlerEntry entry: new HashSet<>(entries)) {
+        unregisterHandler(entry.address, entry.handler);
       }
     }
+
   }
 
 }

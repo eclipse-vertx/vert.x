@@ -27,10 +27,9 @@ buildscript {
         mavenRepo url: 'http://evgenyg.artifactoryonline.com/evgenyg/repo/'
     }
 	dependencies {
-		classpath "org.vert-x:build-tools:$vertxBuildToolsVersion"
 
         // kotlin plugin
-        classpath 'com.github.goldin.plugins:kotlin:0.1.4-SNAPSHOT'
+        classpath 'com.github.goldin.plugins.gradle:kotlin:0.2-beta'
     }
 }
 
@@ -111,15 +110,8 @@ task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
 	group = 'vert.x'
 	description 'Build the parent and all of the vert.x subprojects'
 
-	['temp', 'logs'].each { dir->
-		mkdir("$rootDir/build/$rootProject.name-$version/$dir")
-	}
-
 	destinationDir file("build/$rootProject.name-$version")
 	outputs.dir destinationDir
-	into('bin') {
-		from project(':vertx-boot').jar
-	}
 	into('bin') {
 		from file('src/dist/scripts')
 		// fileMode 755
@@ -148,6 +140,9 @@ task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
     from file("src/dist/client/vertxbus.js")
   }
   into('examples/ruby/eventbusbridge') {
+    from file("src/dist/client/vertxbus.js")
+  }
+  into('examples/javascript/eventbusbridgelistener') {
     from file("src/dist/client/vertxbus.js")
   }
   into('examples/groovy/webapp/web/js') {
@@ -180,7 +175,7 @@ task javadocs(type: Javadoc, dependsOn: subprojects.javadoc) {
 	source = subprojects.sourceSets.main.java
 	classpath = files(subprojects.configurations.compile)
 
-	destinationDir file("build/$rootProject.name-$version/docs/java/api")
+	destinationDir file("build/$rootProject.name-$version/api-docs/java/api")
 	inputs.files classpath
 	outputs.dir destinationDir
 }
@@ -189,14 +184,14 @@ task nonJavadocs(type: Copy) {
 	group = null       // hide the task
 	description = null // hide the task
 
-	destinationDir file("build/$rootProject.name-$version/docs")
+	destinationDir file("build/$rootProject.name-$version/api-docs")
 	
 	inputs.files subprojects.docsDir
 	outputs.dir destinationDir
 	
 	doFirst {
 		['groovy/api', 'javascript/api', 'python/api', 'ruby/api'].each { dir->
-			mkdir("$rootDir/build/$rootProject.name-$version/docs/$dir")
+			mkdir("$rootDir/build/$rootProject.name-$version/api-docs/$dir")
 		}
 	}
 	

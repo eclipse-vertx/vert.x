@@ -38,14 +38,18 @@ public abstract class Context {
 
   private Map<Object, Runnable> closeHooks;
 
+  private final ClassLoader tccl;
+
   protected Context(Executor bgExec) {
     this.bgExec = bgExec;
+    this.tccl = Thread.currentThread().getContextClassLoader();
   }
 
   private final Executor bgExec;
 
   public static void setContext(Context context) {
     contextTL.set(context);
+    Thread.currentThread().setContextClassLoader(context.tccl);
   }
 
   public static Context getContext() {

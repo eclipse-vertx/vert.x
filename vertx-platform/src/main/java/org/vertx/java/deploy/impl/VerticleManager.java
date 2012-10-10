@@ -48,15 +48,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Scanner;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -80,7 +72,7 @@ public class VerticleManager implements ModuleReloader {
   // The user mods dir
   private final File modRoot;
   private final CountDownLatch stopLatch = new CountDownLatch(1);
-  private Map<String, VerticleFactory> factories;
+  private Map<String, String> factoryNames = new HashMap<>();
   private final String defaultRepo;
   private final Redeployer redeployer;
 
@@ -93,10 +85,6 @@ public class VerticleManager implements ModuleReloader {
     this.defaultRepo = defaultRepo == null ? DEFAULT_REPO_HOST : defaultRepo;
     VertxLocator.vertx = vertx;
     VertxLocator.container = new Container(this);
-    String installDir = System.getProperty("vertx.install");
-    if (installDir == null) {
-      installDir = ".";
-    }
     String modDir = System.getProperty("vertx.mods");
     if (modDir != null && !modDir.trim().equals("")) {
       modRoot = new File(modDir);
@@ -104,14 +92,31 @@ public class VerticleManager implements ModuleReloader {
       // Default to local module directory called 'mods'
       modRoot = new File("mods");
     }
-
-    this.factories = new HashMap<>();
     this.redeployer = new Redeployer(vertx, modRoot, this);
 
-    // Find and load VerticleFactories
-    Iterable<VerticleFactory> services = VerticleFactory.factories;
-    for (VerticleFactory vf : services) {
-      factories.put(vf.getLanguage(), vf);
+    InputStream is = null;
+    try {
+      is = getClass().getClassLoader().getResourceAsStream("langs.properties");
+      if (is == null) {
+        log.warn("No language mappings found!");
+      } else {
+        Properties props = new Properties();
+        props.load(new BufferedInputStream(is));
+        Enumeration<?> en = props.propertyNames();
+        while (en.hasMoreElements()) {
+          String propName = (String)en.nextElement();
+          factoryNames.put(propName, props.getProperty(propName));
+        }
+      }
+    } catch (IOException e) {
+      log.error("Failed to load langs.properties: " + e.getMessage());
+    } finally {
+      if (is != null) {
+        try {
+          is.close();
+        } catch (IOException ignore) {
+        }
+      }
     }
   }
 
@@ -158,9 +163,39 @@ public class VerticleManager implements ModuleReloader {
   public void deployVerticle(boolean worker, final String main,
                              final JsonObject config, final URL[] urls,
                              int instances, File currentModDir,
+                             String includes,
                              final Handler<String> doneHandler) {
     Context ctx = vertx.getOrAssignContext();
-    doDeploy(null, false, worker, main, null, config, urls, instances, currentModDir, ctx, doneHandler);
+    URL[] theURLs;
+    // The user has specified a list of modules to include when deploying this verticle
+    // so we walk the tree of modules adding tree of includes to classpath
+    if (includes != null) {
+      String[] includedMods = parseIncludes(includes, null);
+      List<URL> includedURLs = new ArrayList<>(Arrays.asList(urls));
+      for (String includedMod: includedMods) {
+        File modDir = new File(modRoot, includedMod);
+        JsonObject conf;
+        inner: while (true) {
+          conf = loadModuleConfig(includedMod, modDir);
+          if (conf == null) {
+            // Try and install the module
+            if (!installModSync(includedMod)) {
+              return;
+            }
+          } else {
+            break inner;
+          }
+        }
+        Map<String, String> includedJars = new HashMap<>();
+        Set<String> includedModules = new HashSet<>();
+        includedURLs = processIncludes(main, includedURLs, includedMod, modDir, conf,
+            includedJars, includedModules);
+      }
+      theURLs = includedURLs.toArray(new URL[includedURLs.size()]);
+    } else {
+      theURLs = urls;
+    }
+    doDeploy(null, false, worker, main, null, config, theURLs, instances, currentModDir, ctx, doneHandler);
   }
 
   public synchronized void undeployAll(final Handler<Void> doneHandler) {
@@ -245,7 +280,7 @@ public class VerticleManager implements ModuleReloader {
           // If preserveCwd then use the current module directory instead, or the cwd if not in a module
           File modDirToUse = preserveCwd ? currentModDir : modDir;
 
-          List<URL> urls = processIncludes(modName, new ArrayList<URL>(), modName, modDirToUse, conf,
+          List<URL> urls = processIncludes(modName, new ArrayList<URL>(), modName, modDir, conf,
                                            new HashMap<String, String>(), new HashSet<String>());
           if (urls == null) {
             return false;
@@ -263,7 +298,7 @@ public class VerticleManager implements ModuleReloader {
             }
           };
           doDeploy(depName, autoRedeploy, worker, main, modName, config,
-                   urls.toArray(new URL[urls.size()]), instances, modDir, ctx, handler);
+                   urls.toArray(new URL[urls.size()]), instances, modDirToUse, ctx, handler);
           return true;
         } else {
           return false;
@@ -336,50 +371,25 @@ public class VerticleManager implements ModuleReloader {
 
     String sincludes = conf.getString("includes");
     if (sincludes != null) {
-      sincludes = sincludes.trim();
-      if ("".equals(sincludes)) {
-        log.error("Empty include string in module " + modName);
-        return null;
-      }
-      String[] sarr = sincludes.split(",");
+      String[] sarr = parseIncludes(sincludes, modName);
       for (String include: sarr) {
         if (includedModules.contains(include)) {
           // Ignore - already included this one
         } else {
           File newmodDir = new File(modRoot, include);
-          JsonObject newconf = loadModuleConfig(include, newmodDir);
-          if (newconf != null) {
-            urls = processIncludes(runModule, urls, include, newmodDir, newconf,
-                                   includedJars, includedModules);
-            if (urls == null) {
-              return null;
-            }
-          } else {
-            // Module not installed - let's try to install it
-            // This is called on a blocking action so it's ok to use a CountDownLatch
-            // and block the thread for a bit
-            final CountDownLatch latch = new CountDownLatch(1);
-            final AtomicReference<Boolean> res = new AtomicReference<>();
-            Handler<Boolean> doneHandler = new Handler<Boolean>() {
-              public void handle(Boolean b) {
-                res.set(b);
-                latch.countDown();
+          inner: while (true) {
+            JsonObject newconf = loadModuleConfig(include, newmodDir);
+            if (newconf != null) {
+              urls = processIncludes(runModule, urls, include, newmodDir, newconf,
+                                     includedJars, includedModules);
+              if (urls == null) {
+                return null;
               }
-            };
-            installMod(include, doneHandler);
-            while (true) {
-              try {
-                if (latch.await(30000, TimeUnit.SECONDS)) {
-                  if (!res.get()) {
-                    return null;
-                  }
-                  break;
-                } else {
-                  log.error("Timed out in attempting to install module");
-                  return null;
-                }
-              } catch (InterruptedException e) {
-                // spurious wakeup - continue
+              break inner;
+            } else {
+              // Module not installed - let's try to install it
+              if (!installModSync(include)) {
+                return null;
               }
             }
           }
@@ -389,6 +399,43 @@ public class VerticleManager implements ModuleReloader {
 
     return urls;
   }
+
+  // This is not on an event loop so it's ok to use a CountDownLatch
+  // and block the thread for a bit
+  private boolean installModSync(String modName) {
+    final CountDownLatch latch = new CountDownLatch(1);
+    final AtomicReference<Boolean> res = new AtomicReference<>();
+    Handler<Boolean> doneHandler = new Handler<Boolean>() {
+      public void handle(Boolean b) {
+        res.set(b);
+        latch.countDown();
+      }
+    };
+    installMod(modName, doneHandler);
+    while (true) {
+      try {
+        if (latch.await(30000, TimeUnit.SECONDS)) {
+          return res.get();
+        } else {
+          log.error("Timed out in attempting to install module");
+          return false;
+        }
+      } catch (InterruptedException e) {
+        // spurious wakeup - continue
+      }
+    }
+  }
+
+
+  private String[] parseIncludes(String sincludes, String modName) {
+    sincludes = sincludes.trim();
+    if ("".equals(sincludes)) {
+      log.error("Empty include string " + ((modName != null) ? " in module " : ""));
+      return null;
+    }
+    return sincludes.split(",");
+  }
+
 
 
   /* (non-Javadoc)
@@ -546,27 +593,25 @@ public class VerticleManager implements ModuleReloader {
                                      final File modDir,
                                      final Context context,
                                      final Handler<String> doneHandler) {
-    // Infer the main type
-    String language = "java";
-    for (VerticleFactory vf : factories.values()) {
-      if (vf.isFactoryFor(main)) {
-        language = vf.getLanguage();
-        break;
-      }
-    }
-
     final String deploymentName =
         depName != null ? depName : "deployment-" + UUID.randomUUID().toString();
 
     log.debug("Deploying name : " + deploymentName + " main: " + main +
         " instances: " + instances);
 
-    if (!factories.containsKey(language)) {
-    	throw new IllegalArgumentException("Unsupported language: " + language);
+    int dotIndex = main.lastIndexOf('.');
+    if (dotIndex == -1) {
+      throw new IllegalArgumentException("Invalid main: " + main);
     }
-
-    final VerticleFactory verticleFactory = factories.get(language);
-    verticleFactory.init(this);
+    String extension = main.substring(dotIndex + 1);
+    String factoryName = factoryNames.get(extension);
+    if (factoryName == null) {
+      // Use the default
+      factoryName = factoryNames.get("default");
+      if (factoryName == null) {
+        throw new IllegalArgumentException("No language mapping found and no default specified in langs.properties");
+      }
+    }
 
     final int instCount = instances;
 
@@ -587,7 +632,7 @@ public class VerticleManager implements ModuleReloader {
     final AggHandler aggHandler = new AggHandler();
 
     String parentDeploymentName = getDeploymentName();
-    final Deployment deployment = new Deployment(deploymentName, modName, instances, verticleFactory,
+    final Deployment deployment = new Deployment(deploymentName, modName, instances,
         config == null ? new JsonObject() : config.copy(), urls, modDir, parentDeploymentName,
         autoRedeploy);
     addDeployment(deploymentName, deployment);
@@ -606,14 +651,41 @@ public class VerticleManager implements ModuleReloader {
 
       // Launch the verticle instance
 
+      final ClassLoader cl = sharedLoader != null ?
+          sharedLoader: new ParentLastURLClassLoader(urls, getClass().getClassLoader());
+      Thread.currentThread().setContextClassLoader(cl);
+
+      // We load the VerticleFactory class using the verticle classloader - this allows
+      // us to put language implementations in modules
+
+      Class clazz;
+      try {
+        clazz = cl.loadClass(factoryName);
+      } catch (ClassNotFoundException e) {
+        log.error("Cannot find class " + factoryName + " to load");
+        doneHandler.handle(null);
+        return;
+      }
+
+      final VerticleFactory verticleFactory;
+      try {
+        verticleFactory = (VerticleFactory)clazz.newInstance();
+      } catch (Exception e) {
+        log.error("Failed to instantiate VerticleFactory: " + e.getMessage());
+        doneHandler.handle(null);
+        return;
+      }
+
+      verticleFactory.init(this);
+
       Runnable runner = new Runnable() {
         public void run() {
 
           Verticle verticle = null;
           boolean error = true;
+
           try {
-            verticle = verticleFactory.createVerticle(main, sharedLoader != null ?
-                sharedLoader: new ParentLastURLClassLoader(urls, getClass().getClassLoader()));
+            verticle = verticleFactory.createVerticle(main, cl);
             error = false;
           } catch (ClassNotFoundException e) {
             log.error("Cannot find verticle " + main);
@@ -635,7 +707,7 @@ public class VerticleManager implements ModuleReloader {
           verticle.setContainer(new Container(VerticleManager.this));
 
           try {
-            addVerticle(deployment, verticle);
+            addVerticle(deployment, verticle, verticleFactory);
             if (modDir != null) {
               setPathAdjustment(modDir);
             }
@@ -662,12 +734,14 @@ public class VerticleManager implements ModuleReloader {
   }
 
   // Must be synchronized since called directly from different thread
-  private synchronized void addVerticle(Deployment deployment, Verticle verticle) {
+  private synchronized void addVerticle(Deployment deployment, Verticle verticle,
+                                        VerticleFactory factory) {
     String loggerName = deployment.name + "-" + deployment.verticles.size();
     Logger logger = LoggerFactory.getLogger(loggerName);
     Context context = Context.getContext();
     VerticleHolder holder = new VerticleHolder(deployment, context, verticle,
-                                               loggerName, logger, deployment.config);
+                                               loggerName, logger, deployment.config,
+                                               factory);
     deployment.verticles.add(holder);
     context.setDeploymentHandle(holder);
   }

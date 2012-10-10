@@ -28,7 +28,7 @@ import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.sockjs.SockJSServer;
+import org.vertx.java.core.sockjs.EventBusBridgeListener;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
 import java.util.ArrayList;
@@ -58,6 +58,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   private final Map<SockJSSocket, Set<String>> sockAuths = new HashMap<>();
   private final List<JsonObject> inboundPermitted;
   private final List<JsonObject> outboundPermitted;
+  private final EventBusBridgeListener bridgeHook;
   private final long authTimeout;
   private final String authAddress;
   private final Vertx vertx;
@@ -76,19 +77,19 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     return l;
   }
 
-  EventBusBridge(Vertx vertx, SockJSServer sjsServer, JsonObject sjsConfig, JsonArray inboundPermitted,
-                 JsonArray outboundPermitted) {
-    this(vertx, sjsServer, sjsConfig, inboundPermitted, outboundPermitted, DEFAULT_AUTH_TIMEOUT, null);
+  EventBusBridge(Vertx vertx, JsonArray inboundPermitted, JsonArray outboundPermitted,
+                 EventBusBridgeListener bridgeHook) {
+    this(vertx, inboundPermitted, outboundPermitted, bridgeHook, DEFAULT_AUTH_TIMEOUT, null);
   }
 
-  EventBusBridge(Vertx vertx, SockJSServer sjsServer, JsonObject sjsConfig, JsonArray inboundPermitted,
-                 JsonArray outboundPermitted,
+  EventBusBridge(Vertx vertx, JsonArray inboundPermitted, JsonArray outboundPermitted,
+                 EventBusBridgeListener bridgeHook,
                  long authTimeout) {
-    this(vertx, sjsServer, sjsConfig, inboundPermitted, outboundPermitted, authTimeout, null);
+    this(vertx, inboundPermitted, outboundPermitted, bridgeHook, authTimeout, null);
   }
 
-  EventBusBridge(Vertx vertx, SockJSServer sjsServer, JsonObject sjsConfig, JsonArray inboundPermitted,
-                 JsonArray outboundPermitted,
+  EventBusBridge(Vertx vertx, JsonArray inboundPermitted, JsonArray outboundPermitted,
+                 EventBusBridgeListener bridgeHook,
                  long authTimeout,
                  String authAddress) {
     this.vertx = vertx;
@@ -103,7 +104,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       authAddress = DEFAULT_AUTH_ADDRESS;
     }
     this.authAddress = authAddress;
-    sjsServer.installApp(sjsConfig, this);
+    this.bridgeHook = bridgeHook;
   }
 
   public void handle(final SockJSSocket sock) {
@@ -112,6 +113,10 @@ public class EventBusBridge implements Handler<SockJSSocket> {
 
     sock.endHandler(new SimpleHandler() {
       public void handle() {
+
+        if (bridgeHook != null) {
+          bridgeHook.clientDisconnected(sock.writeHandlerID);
+        }
 
         // On close unregister any handlers that haven't been unregistered
         for (Map.Entry<String, Handler<Message<JsonObject>>> entry: handlers.entrySet()) {

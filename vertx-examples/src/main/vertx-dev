@@ -65,7 +65,16 @@ cd "`dirname \"$PRG\"`/../../.."
 APP_HOME="`pwd -P`"
 cd "$SAVED"
 
-CLASSPATH=$APP_HOME/vertx-boot/build/libs/vertx-boot.jar
+CLASSPATH=$APP_HOME/vertx-core/build/libs/*:$APP_HOME/vertx-platform/build/libs/*:$APP_HOME/vertx-core/build/deps/compile/*:\
+$APP_HOME/vertx-lang/vertx-lang-groovy/build/deps/compile/*:$APP_HOME/vertx-lang/vertx-lang-java/build/deps/compile/*:\
+$APP_HOME/vertx-lang/vertx-lang-jruby/build/deps/compile/*:$APP_HOME/vertx-lang/vertx-lang-jython/build/deps/compile/*:\
+$APP_HOME/vertx-lang/vertx-lang-rhino/build/deps/compile/*:\
+$APP_HOME/vertx-lang/vertx-lang-groovy/build/libs/*:$APP_HOME/vertx-lang/vertx-lang-java/build/libs/*:\
+$APP_HOME/vertx-lang/vertx-lang-jruby/build/libs/*:$APP_HOME/vertx-lang/vertx-lang-jython/build/libs/*:\
+$APP_HOME/vertx-lang/vertx-lang-rhino/build/libs/*:\
+$APP_HOME/src/dist/conf
+
+echo $APP_HOME
 
 # Determine the Java command to use to start the JVM.
 if [ -n "$JAVA_HOME" ] ; then
@@ -164,4 +173,4 @@ function splitJvmOpts() {
 }
 eval splitJvmOpts $DEFAULT_JVM_OPTS $JAVA_OPTS $VERTX_OPTS
 
-exec "$JAVACMD" "${JVM_OPTS[@]}" -Dvertx.install=$APP_HOME -Dvertx.conf=$APP_HOME/vertx-examples/src/main/vertx-dev.properties -Djava.util.logging.config.file=$APP_HOME/src/dist/conf/logging.properties -Djruby.home=$JRUBY_HOME -Djython.home=$JYTHON_HOME -classpath "$CLASSPATH" org.vertx.java.boot.VertxBoot "$@"
+exec "$JAVACMD" "${JVM_OPTS[@]}" -Djava.util.logging.config.file=$APP_HOME/src/dist/conf/logging.properties -Djruby.home=$JRUBY_HOME -classpath "$CLASSPATH" org.vertx.java.deploy.impl.cli.Starter "$@"
