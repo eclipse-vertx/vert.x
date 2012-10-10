@@ -17,7 +17,6 @@
 package org.vertx.kotlin.core
 
 import org.vertx.java.core.http.HttpServerRequest
-import java.util.Map
 import org.vertx.java.core.buffer.Buffer
 import org.w3c.dom.Node
 import kotlin.dom.toXmlString

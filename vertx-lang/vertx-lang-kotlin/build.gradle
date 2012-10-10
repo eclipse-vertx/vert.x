@@ -18,8 +18,6 @@ apply from:   "$rootDir/gradle/maven.gradle"
 apply plugin: 'kotlin'
 
 
-final kotlinVersion = '0.1-SNAPSHOT'
-
 repositories {
     mavenRepo url: 'http://repository.jetbrains.com/kotlin/'
 }
@@ -27,8 +25,10 @@ repositories {
 dependencies {
 	compile project(':vertx-core'),
             project(':vertx-platform'),
-            "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+            "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion",
+            "org.jetbrains.kotlin:kotlin-compiler:$kotlinVersion"
     runtime "org.jetbrains.kotlin:kotlin-runtime:$kotlinVersion"
+
 }
 
 
@@ -49,3 +49,6 @@ task kdocJar( type: Jar, dependsOn: [ javadocJar /*, kdoc */ ] ) {
 artifacts {
 	archives kotlinSourceJar, kdocJar
 }
+
+processTestResources.dependsOn compileTestKotlin
+processResources.dependsOn compileKotlin
