@@ -64,7 +64,7 @@ public class JsonObject {
   }
 
   public JsonObject putObject(String fieldName, JsonObject value) {
-    map.put(fieldName, value.map);
+    map.put(fieldName, value == null ? null : value.map);
     return this;
   }
 

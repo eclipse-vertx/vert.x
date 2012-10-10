@@ -183,7 +183,6 @@ public class LocalPeer extends EventBusAppBase {
       public void handle(AsyncResult<Void> event) {
         if (event.exception == null) {
           tu.testComplete();
-          System.out.println("Registered");
         } else {
           tu.azzert(false, "Failed to register");
         }

@@ -98,11 +98,12 @@ module Vertx
       raise "A message handler must be specified" if !message_hndlr
       internal = InternalHandler.new(message_hndlr)
       if local_only
-        id = @@j_eventbus.registerLocalHandler(address, internal)
+        @@j_eventbus.registerLocalHandler(address, internal)
       else
-        id = @@j_eventbus.registerHandler(address, internal)
+        @@j_eventbus.registerHandler(address, internal)
       end
-      @@handler_map[id] = internal
+      id = java.util.UUID.randomUUID.toString
+      @@handler_map[id] = [address, internal]
       id
     end
 
@@ -114,12 +115,13 @@ module Vertx
     def EventBus.register_simple_handler(local_only = false, &message_hndlr)
       raise "A message handler must be specified" if !message_hndlr
       internal = InternalHandler.new(message_hndlr)
+      id = java.util.UUID.randomUUID.toString
       if local_only
-        id = @@j_eventbus.registerLocalHandler(internal)
+        @@j_eventbus.registerLocalHandler(id, internal)
       else
-        id = @@j_eventbus.registerHandler(internal)
+        @@j_eventbus.registerHandler(id, internal)
       end
-      @@handler_map[id] = internal
+      @@handler_map[id] = [id, internal]
       id
     end
 
@@ -127,9 +129,9 @@ module Vertx
     # @param handler_id [FixNum] The id of the handler to unregister. Returned from {EventBus.register_handler}
     def EventBus.unregister_handler(handler_id)
       raise "A handler_id must be specified" if !handler_id
-      handler = @@handler_map.delete(handler_id)
-      raise "Cannot find handler for id #{handler_id}" if !handler
-      @@j_eventbus.unregisterHandler(handler_id)
+      tuple = @@handler_map.delete(handler_id)
+      raise "Cannot find handler for id #{handler_id}" if !tuple
+      @@j_eventbus.unregisterHandler(tuple.first, tuple.last)
     end
 
     # @private

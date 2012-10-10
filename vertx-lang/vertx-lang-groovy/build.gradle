@@ -16,18 +16,21 @@
 
 apply from: "$rootDir/gradle/maven.gradle"
 apply plugin: 'groovy'
-apply plugin: 'vertx-groovy'
 
 dependencies {
 	compile project(':vertx-core')
 	compile project(':vertx-platform')
+	
 	groovy "org.codehaus.groovy:groovy-all:$groovyVersion"
 }
+
 artifacts {
 	platform jar
 }
+
 groovydoc {
 	destinationDir = file("build/docs/groovy/api")
 	outputs.dir destinationDir
 }
+
 javadoc.dependsOn groovydoc

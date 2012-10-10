@@ -15,20 +15,21 @@
  */
 
 apply from: "$rootDir/gradle/maven.gradle"
-apply plugin: 'vertx-rhino'
+
+sourceSets {
+	main {
+		resources {
+			srcDirs "src/main/coffeescript", "src/main/javascript_scripts"
+		}
+	}
+}
 
 dependencies {
 	compile project(':vertx-core')
 	compile project(':vertx-platform')
-	vertxRhino "org.mozilla:rhino:$rhinoVersion"
+	compile "org.mozilla:rhino:$rhinoVersion"
 }
+
 artifacts {
 	platform jar
-}
-sourceSets {
-	main {
-		resources {
-			srcDirs 'src/main/coffeescript'
-		}
-	}
 }

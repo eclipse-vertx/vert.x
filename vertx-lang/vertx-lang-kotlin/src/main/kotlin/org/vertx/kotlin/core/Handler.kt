@@ -19,19 +19,19 @@ package org.vertx.kotlin.core
 import org.vertx.java.core.Handler
 
 public fun <T> handler(handlerFun: (T)->Any?) : Handler<T?>  = object: Handler<T?> {
-    public override fun handle(arg: T?) {
-        handlerFun(arg!!)
+    public override fun handle(event: T?) {
+        handlerFun(event!!)
     }
 }
 
 public fun <T> handler(handlerFun: T.()->Any?) : Handler<T?>  = object: Handler<T?> {
-    public override fun handle(arg: T?) {
-        arg!!.handlerFun()
+    public override fun handle(event: T?) {
+        event!!.handlerFun()
     }
 }
 
 public fun handler(handlerFun: ()->Any?) : Handler<Void?>  = object: Handler<Void?> {
-    public override fun handle(_: Void?) {
+    public override fun handle(event: Void?) {
         handlerFun()
     }
 }

@@ -224,7 +224,7 @@ public class RedeployerTest extends TestCase {
       if (!reloaded.isEmpty()) {
         checkDeps(deps);
       } else {
-        if (!latch.await(5, TimeUnit.SECONDS)) {
+        if (!latch.await(30000, TimeUnit.SECONDS)) {
           throw new IllegalStateException("Time out");
         }
         checkDeps(deps);
@@ -240,7 +240,7 @@ public class RedeployerTest extends TestCase {
   }
 
   private Deployment createDeployment(String name, String modName, String parentName) {
-     return new Deployment(name, modName, 1, null, null, null, null, parentName, true);
+     return new Deployment(name, modName, 1, null, null, null, parentName, true);
   }
 
 

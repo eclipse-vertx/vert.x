@@ -82,14 +82,24 @@ public class DefaultVertx extends VertxInternal {
 
   public DefaultVertx() {
     this.eventBus = new DefaultEventBus(this);
+    configure();
   }
 
   public DefaultVertx(String hostname) {
     this.eventBus = new DefaultEventBus(this, hostname);
+    configure();
   }
 
   public DefaultVertx(int port, String hostname) {
     this.eventBus = new DefaultEventBus(this, port, hostname);
+    configure();
+  }
+
+  /**
+   * deal with configuration parameters
+   */
+  private void configure() {
+    this.backgroundPoolSize = Integer.getInteger("vertx.backgroundPoolSize", 20);
   }
 
   public NetServer createNetServer() {
@@ -215,7 +225,6 @@ public class DefaultVertx extends VertxInternal {
     }
     return result;
   }
-
 
   public Context getOrAssignContext() {
     Context ctx = Context.getContext();

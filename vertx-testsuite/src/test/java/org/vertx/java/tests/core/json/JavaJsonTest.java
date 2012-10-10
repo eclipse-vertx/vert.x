@@ -64,4 +64,29 @@ public class JavaJsonTest extends TestBase {
     JsonArray array2 = object2.getArray("array");
   }
 
+  @Test
+  public void testRetrieveArrayItemByIndex() {
+    JsonArray arr = new JsonArray();
+    
+    arr.addString("foo");
+    arr.addObject(new JsonObject().putString("bar", "baz"));
+    arr.addString("bap");
+    
+    assertEquals("baz", ((JsonObject) arr.get(1)).getString("bar"));
+  }
+
+  @Test
+  public void testPutsNullObjectWithoutException() {
+    log.debug(
+      new JsonObject()
+        .putObject("null", null) // this shouldn't cause a NullPointerException
+        .encode()
+    );
+    
+    log.debug(
+      new JsonObject()
+        .putObject("null", new JsonObject().putString("foo", "bar"))
+        .encode()
+    );
+  }
 }
