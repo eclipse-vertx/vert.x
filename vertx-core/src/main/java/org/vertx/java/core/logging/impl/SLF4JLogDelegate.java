@@ -19,6 +19,7 @@
 package org.vertx.java.core.logging.impl;
 
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
