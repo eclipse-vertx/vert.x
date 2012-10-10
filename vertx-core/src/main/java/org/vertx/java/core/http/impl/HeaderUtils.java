@@ -18,7 +18,6 @@ package org.vertx.java.core.http.impl;
 
 import org.vertx.java.core.impl.LowerCaseKeyMap;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 

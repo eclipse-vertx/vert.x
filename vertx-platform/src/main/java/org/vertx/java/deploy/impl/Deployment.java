@@ -17,7 +17,6 @@
 package org.vertx.java.deploy.impl;
 
 import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.deploy.VerticleFactory;
 
 import java.io.File;
 import java.net.URL;

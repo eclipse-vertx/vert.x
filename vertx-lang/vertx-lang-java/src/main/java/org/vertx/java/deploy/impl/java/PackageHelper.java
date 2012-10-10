@@ -15,16 +15,16 @@
  */
 package org.vertx.java.deploy.impl.java;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.jar.JarEntry;
-import java.io.IOException;
+import javax.tools.JavaFileObject;
 import java.io.File;
-import java.net.URL;
+import java.io.IOException;
 import java.net.JarURLConnection;
 import java.net.URI;
-import javax.tools.JavaFileObject;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.jar.JarEntry;
 
 /**
  * @author Janne Hietam&auml;ki

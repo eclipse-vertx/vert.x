@@ -25,13 +25,7 @@ import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.framework.TestBase;
-import vertx.tests.core.http.CountServer;
-import vertx.tests.core.http.DrainingServer;
-import vertx.tests.core.http.HttpTestClient;
-import vertx.tests.core.http.InstanceCheckServer;
-import vertx.tests.core.http.PausingServer;
-import vertx.tests.core.http.TLSServer;
-import vertx.tests.core.http.TLSTestParams;
+import vertx.tests.core.http.*;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
