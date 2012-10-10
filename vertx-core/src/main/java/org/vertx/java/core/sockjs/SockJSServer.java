@@ -93,12 +93,5 @@ public interface SockJSServer {
   void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
               long authTimeout, String authAddress);
 
-  /**
-   * Sets a listener for sending, publishing, registering, unregistering and disconnect events on the bridge.
-   * @param listener A listener for all the possible events.
-   * @return The SockJSServer instance for chaining.
-   */
-  SockJSServer setEventBusBridgeListener(EventBusBridgeListener listener);
-
 }
 

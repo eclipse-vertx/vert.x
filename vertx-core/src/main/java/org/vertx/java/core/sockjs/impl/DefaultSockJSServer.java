@@ -31,7 +31,7 @@ import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.sockjs.EventBusBridgeListener;
+import org.vertx.java.core.sockjs.EventBusBridge;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
@@ -57,8 +57,6 @@ public class DefaultSockJSServer implements SockJSServer {
   private RouteMatcher rm = new RouteMatcher();
   private WebSocketMatcher wsMatcher = new WebSocketMatcher();
   private final Map<String, Session> sessions;
-
-  private EventBusBridgeListener bridgeHook = null;
 
   public DefaultSockJSServer(final VertxInternal vertx, final HttpServer httpServer) {
     this.vertx = vertx;
@@ -185,23 +183,17 @@ public class DefaultSockJSServer implements SockJSServer {
   }
 
   public void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted) {
-    installApp(sjsConfig, new EventBusBridge(vertx, inboundPermitted, outboundPermitted, bridgeHook));
+    installApp(sjsConfig, new EventBusBridge(vertx, inboundPermitted, outboundPermitted));
   }
 
   public void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
                      long authTimeout) {
-    installApp(sjsConfig, new EventBusBridge(vertx, inboundPermitted, outboundPermitted, bridgeHook, authTimeout));
+    installApp(sjsConfig, new EventBusBridge(vertx, inboundPermitted, outboundPermitted, authTimeout));
   }
 
   public void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
                      long authTimeout, String authAddress) {
-    installApp(sjsConfig, new EventBusBridge(vertx, inboundPermitted, outboundPermitted, bridgeHook, authTimeout, authAddress));
-  }
-
-  @Override
-  public SockJSServer setEventBusBridgeListener(EventBusBridgeListener bridgeHook) {
-    this.bridgeHook = bridgeHook;
-    return this;
+    installApp(sjsConfig, new EventBusBridge(vertx, inboundPermitted, outboundPermitted, authTimeout, authAddress));
   }
 
   private Handler<HttpServerRequest> createChunkingTestHandler() {

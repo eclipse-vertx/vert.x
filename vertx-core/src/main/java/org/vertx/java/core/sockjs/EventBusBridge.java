@@ -14,13 +14,9 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.sockjs.impl;
+package org.vertx.java.core.sockjs;
 
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.Vertx;
+import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
@@ -28,15 +24,8 @@ import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.sockjs.EventBusBridgeListener;
-import org.vertx.java.core.sockjs.SockJSSocket;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,7 +36,7 @@ import java.util.regex.Pattern;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class EventBusBridge implements Handler<SockJSSocket> {
-  
+
   private static final Logger log = LoggerFactory.getLogger(EventBusBridge.class);
 
   private static final String DEFAULT_AUTH_ADDRESS = "vertx.basicauthmanager.authorise";
@@ -58,7 +47,6 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   private final Map<SockJSSocket, Set<String>> sockAuths = new HashMap<>();
   private final List<JsonObject> inboundPermitted;
   private final List<JsonObject> outboundPermitted;
-  private final EventBusBridgeListener bridgeHook;
   private final long authTimeout;
   private final String authAddress;
   private final Vertx vertx;
@@ -77,21 +65,18 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     return l;
   }
 
-  EventBusBridge(Vertx vertx, JsonArray inboundPermitted, JsonArray outboundPermitted,
-                 EventBusBridgeListener bridgeHook) {
-    this(vertx, inboundPermitted, outboundPermitted, bridgeHook, DEFAULT_AUTH_TIMEOUT, null);
+  public EventBusBridge(Vertx vertx, JsonArray inboundPermitted, JsonArray outboundPermitted) {
+    this(vertx, inboundPermitted, outboundPermitted, DEFAULT_AUTH_TIMEOUT, null);
   }
 
-  EventBusBridge(Vertx vertx, JsonArray inboundPermitted, JsonArray outboundPermitted,
-                 EventBusBridgeListener bridgeHook,
-                 long authTimeout) {
-    this(vertx, inboundPermitted, outboundPermitted, bridgeHook, authTimeout, null);
+  public EventBusBridge(Vertx vertx, JsonArray inboundPermitted, JsonArray outboundPermitted,
+                        long authTimeout) {
+    this(vertx, inboundPermitted, outboundPermitted, authTimeout, null);
   }
 
-  EventBusBridge(Vertx vertx, JsonArray inboundPermitted, JsonArray outboundPermitted,
-                 EventBusBridgeListener bridgeHook,
-                 long authTimeout,
-                 String authAddress) {
+  public EventBusBridge(Vertx vertx, JsonArray inboundPermitted, JsonArray outboundPermitted,
+                        long authTimeout,
+                        String authAddress) {
     this.vertx = vertx;
     this.eb = vertx.eventBus();
     this.inboundPermitted = convertArray(inboundPermitted);
@@ -104,7 +89,81 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       authAddress = DEFAULT_AUTH_ADDRESS;
     }
     this.authAddress = authAddress;
-    this.bridgeHook = bridgeHook;
+  }
+
+  private void handleSocketClosed(SockJSSocket sock, Map<String, Handler<Message<JsonObject>>> handlers) {
+    // On close unregister any handlers that haven't been unregistered
+    for (Map.Entry<String, Handler<Message<JsonObject>>> entry: handlers.entrySet()) {
+      eb.unregisterHandler(entry.getKey(), entry.getValue());
+    }
+
+    //Close any cached authorisations for this connection
+    Set<String> auths = sockAuths.remove(sock);
+    if (auths != null) {
+      for (String sessionID: auths) {
+        Auth auth = authCache.remove(sessionID);
+        auth.cancel();
+      }
+    }
+    handleSocketClosed(sock);
+  }
+
+  private void handleSocketData(SockJSSocket sock, Buffer data, Map<String, Handler<Message<JsonObject>>> handlers) {
+    JsonObject msg = new JsonObject(data.toString());
+
+    String type = getMandatoryString(msg, "type");
+    String address = getMandatoryString(msg, "address");
+    switch (type) {
+      case "send":
+        internalHandleSendOrPub(sock, true, msg, address);
+        break;
+      case "publish":
+        internalHandleSendOrPub(sock, false, msg, address);
+        break;
+      case "register":
+        internalHandleRegister(sock, address, handlers);
+        break;
+      case "unregister":
+        internalHandleUnregister(sock, address, handlers);
+        break;
+      default:
+        throw new IllegalStateException("Invalid type: " + type);
+    }
+  }
+
+  private void internalHandleSendOrPub(SockJSSocket sock, boolean send, JsonObject msg, String address) {
+    if (handleSendOrPub(sock, send, msg, address)) {
+      JsonObject body = getMandatoryObject(msg, "body");
+      String replyAddress = msg.getString("replyAddress");
+      doSendOrPub(send, sock, address, body, replyAddress);
+    }
+  }
+
+  private void internalHandleRegister(final SockJSSocket sock, final String address, Map<String, Handler<Message<JsonObject>>> handlers) {
+    if (handleRegister(sock, address)) {
+      Handler<Message<JsonObject>> handler = new Handler<Message<JsonObject>>() {
+        public void handle(final Message<JsonObject> msg) {
+          if (checkMatches(false, address, msg.body, false)) {
+            checkAddAccceptedReplyAddress(msg.replyAddress);
+            deliverMessage(sock, address, msg);
+          } else {
+            log.debug("Outbound message for address " + address + " rejected because there is no inbound match");
+          }
+        }
+      };
+      handlers.put(address, handler);
+      eb.registerHandler(address, handler);
+    }
+  }
+
+  private void internalHandleUnregister(SockJSSocket sock, String address, Map<String,
+      Handler<Message<JsonObject>>> handlers) {
+    if (handleUnregister(sock, address)) {
+      Handler<Message<JsonObject>> handler = handlers.remove(address);
+      if (handler != null) {
+        eb.unregisterHandler(address, handler);
+      }
+    }
   }
 
   public void handle(final SockJSSocket sock) {
@@ -113,79 +172,13 @@ public class EventBusBridge implements Handler<SockJSSocket> {
 
     sock.endHandler(new SimpleHandler() {
       public void handle() {
-
-        if (bridgeHook != null) {
-          bridgeHook.clientDisconnected(sock.writeHandlerID);
-        }
-
-        // On close unregister any handlers that haven't been unregistered
-        for (Map.Entry<String, Handler<Message<JsonObject>>> entry: handlers.entrySet()) {
-          eb.unregisterHandler(entry.getKey(), entry.getValue());
-        }
-
-        //Close any cached authorisations for this connection
-        Set<String> auths = sockAuths.remove(sock);
-        if (auths != null) {
-          for (String sessionID: auths) {
-            Auth auth = authCache.remove(sessionID);
-            auth.cancel();
-          }
-        }
+        handleSocketClosed(sock, handlers);
       }
     });
 
     sock.dataHandler(new Handler<Buffer>() {
-
-      private void handleRegister(final String address) {
-        Handler<Message<JsonObject>> handler = new Handler<Message<JsonObject>>() {
-          public void handle(final Message<JsonObject> msg) {
-            if (checkMatches(false, address, msg.body, false)) {
-              checkAddAccceptedReplyAddress(msg.replyAddress);
-              deliverMessage(sock, address, msg);
-            } else {
-              log.debug("Outbound message for address " + address + " rejected because there is no inbound match");
-            }
-          }
-        };
-        handlers.put(address, handler);
-        eb.registerHandler(address, handler);
-      }
-
-      private void handleUnregister(String address) {
-        Handler<Message<JsonObject>> handler = handlers.remove(address);
-        if (handler != null) {
-          eb.unregisterHandler(address, handler);
-        }
-      }
-
       public void handle(Buffer data)  {
-
-        JsonObject msg = new JsonObject(data.toString());
-
-        String type = getMandatoryString(msg, "type");
-        String address = getMandatoryString(msg, "address");
-        switch (type) {
-          case "send":
-            sendOrPub(true, msg, address);
-            break;
-          case "publish":
-            sendOrPub(false, msg, address);
-            break;
-          case "register":
-            handleRegister(address);
-            break;
-          case "unregister":
-            handleUnregister(address);
-            break;
-          default:
-            throw new IllegalStateException("Invalid type: " + type);
-        }
-      }
-
-      private void sendOrPub(boolean send, JsonObject msg, String address) {
-        JsonObject body = getMandatoryObject(msg, "body");
-        String replyAddress = msg.getString("replyAddress");
-        doSendOrPub(send, sock, address, body, replyAddress);
+        handleSocketData(sock, data, handlers);
       }
     });
   }
@@ -410,5 +403,47 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     }
 
   }
+
+  // Override these to get hooks into the bridge events
+  // ==================================================
+
+  /**
+   * The socket has been closed
+   * @param sock The socket
+   */
+  protected void handleSocketClosed(SockJSSocket sock) {
+  }
+
+  /**
+   * Client is sending or publishing on the socket
+   * @param sock The sock
+   * @param send if true it's a send else it's a publish
+   * @param msg The message
+   * @param address The address the message is being sent/published to
+   * @return true To allow the send/publish to occur, false otherwise
+   */
+  protected boolean handleSendOrPub(SockJSSocket sock, boolean send, JsonObject msg, String address) {
+    return true;
+  }
+
+  /**
+   * Client is registering a handler
+   * @param sock The socket
+   * @param address The address
+   * @return true to let the registration occur, false otherwise
+   */
+  protected boolean handleRegister(SockJSSocket sock, String address) {
+    return true;
+  }
+
+  /**
+   * Client is unregistering a handler
+   * @param sock The socket
+   * @param address The address
+   */
+  protected boolean handleUnregister(SockJSSocket sock, String address) {
+    return true;
+  }
+
 
 }
