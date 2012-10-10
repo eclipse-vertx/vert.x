@@ -1,3 +1,5 @@
+package resourceload;
+
 /**
  *
  * This gets built into its own jar which is loaded in the example
