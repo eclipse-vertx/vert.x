@@ -1,3 +1,5 @@
+package websockets;
+
 /*
  * Copyright 2011 the original author or authors.
  *
