@@ -50,6 +50,7 @@ public class TestClient extends TestClientBase {
 
   private static final String TEST_DIR = "test-tmp";
   private static final String DEFAULT_DIR_PERMS = "rwxr-xr-x";
+  private static final String DEFAULT_FILE_PERMS = "rw-r--r--";
 
   private Map<String, Object> params;
   private String pathSep;
@@ -378,9 +379,9 @@ public class TestClient extends TestClientBase {
   private void testChmod(final String file, final String perms, final String dirPerms,
                          final boolean shouldPass, final Handler<Void> afterOK) throws Exception {
     if (Files.isDirectory(Paths.get(TEST_DIR + pathSep + file))) {
-      tu.azzert("rwxr-xr-x".equals(getPerms(file)));
+      tu.azzert(DEFAULT_DIR_PERMS.equals(getPerms(file)));
     } else {
-      tu.azzert("rw-r--r--".equals(getPerms(file)));
+      tu.azzert(DEFAULT_FILE_PERMS.equals(getPerms(file)));
     }
     AsyncResultHandler<Void> handler = createHandler(shouldPass, afterOK);
     if (dirPerms != null) {
@@ -636,7 +637,6 @@ public class TestClient extends TestClientBase {
       public void handle() {
         tu.azzert(fileExists(dirName));
         tu.azzert(Files.isDirectory(Paths.get(TEST_DIR + pathSep + dirName)));
-        tu.azzert(DEFAULT_DIR_PERMS.equals(getPerms(dirName)));
       }
     });
   }
@@ -664,7 +664,6 @@ public class TestClient extends TestClientBase {
       public void handle() {
         tu.azzert(fileExists(dirName));
         tu.azzert(Files.isDirectory(Paths.get(TEST_DIR + pathSep + dirName)));
-        tu.azzert(DEFAULT_DIR_PERMS.equals(getPerms(dirName)));
       }
     });
   }
@@ -1226,6 +1225,8 @@ public class TestClient extends TestClientBase {
     File file = new File(testDir, fileName);
     Path path = Paths.get(file.getCanonicalPath());
     Files.write(path, bytes);
+    
+    setPerms( path, DEFAULT_FILE_PERMS );
   }
 
   private void deleteDir(File dir) {
@@ -1244,9 +1245,11 @@ public class TestClient extends TestClientBase {
     deleteDir(new File(TEST_DIR + pathSep + dir));
   }
 
-  private void mkDir(String dirName) {
+  private void mkDir(String dirName) throws Exception {
     File dir = new File(TEST_DIR + pathSep + dirName);
     dir.mkdir();
+    
+    setPerms( Paths.get( dir.getCanonicalPath() ), DEFAULT_DIR_PERMS );
   }
 
   private long fileLength(String fileName) {
@@ -1254,6 +1257,14 @@ public class TestClient extends TestClientBase {
     return file.length();
   }
 
+  private void setPerms( Path path, String perms ) {
+    try {
+      Files.setPosixFilePermissions( path, PosixFilePermissions.fromString( perms ) );
+    }
+    catch(IOException e) { 
+      throw new RuntimeException(e.getMessage());
+    } 
+  }
   private String getPerms(String fileName) {
     try {
       Set<PosixFilePermission> perms = Files.getPosixFilePermissions(Paths.get(testDir + pathSep + fileName));
