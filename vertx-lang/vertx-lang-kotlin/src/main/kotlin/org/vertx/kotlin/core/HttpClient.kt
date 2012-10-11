@@ -14,27 +14,15 @@
  * limitations under the License.
  */
 
-include 'vertx-core'
-include 'vertx-platform'
-include 'vertx-testframework'
+package org.vertx.kotlin.core
 
-include 'vertx-lang-groovy'
-include 'vertx-lang-kotlin'
-include 'vertx-lang-java'
-include 'vertx-lang-jruby'
-include 'vertx-lang-jython'
-include 'vertx-lang-rhino'
+import org.vertx.java.core.http.HttpClient
+import org.vertx.java.core.http.HttpClientRequest
+import org.vertx.java.core.http.HttpClientResponse
+import org.vertx.java.core.http.WebSocket
 
-include 'vertx-testsuite'
+public fun HttpClient.request(method: String, uri: String, handler: (HttpClientResponse)->Unit) : HttpClientRequest
+        = this.request(method, uri, handler(handler))!!
 
-rootProject.name='vert.x'
-
-rootProject.children.each { project->
-	if (project.name.startsWith('vertx-lang-')) {
-		String projectDirName = "vertx-lang/${project.name}"
-		project.projectDir = new File(settingsDir, projectDirName)
-		project.buildFileName = "build.gradle"
-		assert project.projectDir.isDirectory()
-		assert project.buildFile.isFile()
-	}
-}
+public fun HttpClient.connectWebsocket(uri: String, handler: WebSocket.()->Any?) : Unit
+        = this.connectWebsocket(uri,handler(handler))

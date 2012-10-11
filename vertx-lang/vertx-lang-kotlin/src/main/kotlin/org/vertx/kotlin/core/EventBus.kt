@@ -14,27 +14,15 @@
  * limitations under the License.
  */
 
-include 'vertx-core'
-include 'vertx-platform'
-include 'vertx-testframework'
+package org.vertx.kotlin.core
 
-include 'vertx-lang-groovy'
-include 'vertx-lang-kotlin'
-include 'vertx-lang-java'
-include 'vertx-lang-jruby'
-include 'vertx-lang-jython'
-include 'vertx-lang-rhino'
+import org.vertx.java.core.eventbus.EventBus
+import org.vertx.java.core.eventbus.Message
+import org.vertx.java.core.json.JsonObject
+import org.vertx.java.core.Handler
 
-include 'vertx-testsuite'
+public fun <T> EventBus.registerLocalHandler(where: String, localHandler: Message<T>.()->Any?) : Any?
+    = registerLocalHandler(where, handler<Message<T>>(localHandler))
 
-rootProject.name='vert.x'
-
-rootProject.children.each { project->
-	if (project.name.startsWith('vertx-lang-')) {
-		String projectDirName = "vertx-lang/${project.name}"
-		project.projectDir = new File(settingsDir, projectDirName)
-		project.buildFileName = "build.gradle"
-		assert project.projectDir.isDirectory()
-		assert project.buildFile.isFile()
-	}
-}
+public fun EventBus.post(where: String, msg: JsonObject, replyHandler: (Message<JsonObject?>)->Any?) : Unit
+        = this.send(where, msg, handler(replyHandler))

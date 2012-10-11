@@ -14,27 +14,15 @@
  * limitations under the License.
  */
 
-include 'vertx-core'
-include 'vertx-platform'
-include 'vertx-testframework'
+package org.vertx.kotlin.core
 
-include 'vertx-lang-groovy'
-include 'vertx-lang-kotlin'
-include 'vertx-lang-java'
-include 'vertx-lang-jruby'
-include 'vertx-lang-jython'
-include 'vertx-lang-rhino'
+import org.vertx.java.core.net.NetSocket
+import org.vertx.java.core.buffer.Buffer
 
-include 'vertx-testsuite'
+public fun NetSocket.invoke(action: NetSocket.()->Any?) {
+    this.action()
+}
 
-rootProject.name='vert.x'
-
-rootProject.children.each { project->
-	if (project.name.startsWith('vertx-lang-')) {
-		String projectDirName = "vertx-lang/${project.name}"
-		project.projectDir = new File(settingsDir, projectDirName)
-		project.buildFileName = "build.gradle"
-		assert project.projectDir.isDirectory()
-		assert project.buildFile.isFile()
-	}
+public fun NetSocket.closedHandler(handler: ()->Any?) {
+    this.closedHandler(handler(handler));
 }

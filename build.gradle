@@ -18,11 +18,20 @@ apply from: 'gradle/extra-tasks.gradle'
 
 buildscript {
 	repositories {
-		// mavenLocal()
+		mavenLocal()
 		maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
 		mavenCentral()
-	}
-} 
+
+        // kotlin plugin
+        mavenRepo url: 'http://repository.jetbrains.com/kotlin/'
+        mavenRepo url: 'http://evgenyg.artifactoryonline.com/evgenyg/repo/'
+    }
+	dependencies {
+
+        // kotlin plugin
+        classpath 'com.github.goldin.plugins.gradle:kotlin:0.2-beta'
+    }
+}
 
 allprojects {
   apply plugin: 'eclipse'
@@ -44,7 +53,8 @@ subprojects {
 	
 	repositories {
 		mavenCentral()
-	}
+        mavenRepo url: 'http://repository.jetbrains.com/kotlin/'
+    }
 	
 	dependencies {
 		testCompile "junit:junit:$junitVersion"
@@ -72,6 +82,13 @@ defaultTasks = ['preflight']
 task preflight(dependsOn: subprojects.collectDeps) {
 	group = null
 	description = null
+	/* this is an issue for IDEs
+	assert System.getenv("JRUBY_HOME") != null
+	assert System.getenv("JYTHON_HOME") != null
+
+	System.setProperty 'jruby.home', System.getenv("JRUBY_HOME")
+	System.setProperty 'jython.home', System.getenv("JYTHON_HOME")
+	*/
 }
 
 task test(dependsOn: [subprojects.test]) {

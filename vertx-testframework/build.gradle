@@ -35,12 +35,12 @@ dependencies {
 	compile "junit:junit:$junitVersion" // provide exportable components
 	
 	compile project(':vertx-platform')
-
-  compile project(':vertx-lang-groovy')
-  compile project(':vertx-lang-java')
+    compile project(':vertx-lang-groovy')
+    compile project(':vertx-lang-java')
 	compile project(':vertx-lang-jruby')
 	compile project(':vertx-lang-jython')
 	compile project(':vertx-lang-rhino')
+	compile project(':vertx-lang-kotlin')
 
 	groovy "org.codehaus.groovy:groovy-all:$groovyVersion"
 	
