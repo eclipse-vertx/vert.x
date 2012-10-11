@@ -57,6 +57,8 @@ import static org.jboss.netty.handler.codec.http.HttpHeaders.Values.WEBSOCKET;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
 import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
+import se.cgbystrom.netty.FlashPolicyHandler;
+
 /**
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -168,6 +170,8 @@ public class DefaultHttpServer implements HttpServer {
               }
               pipeline.addLast("ssl", new SslHandler(engine));
             }
+
+            pipeline.addLast("flashpolicy", new FlashPolicyHandler());
 
             pipeline.addLast("decoder", new HttpRequestDecoder());
             pipeline.addLast("encoder", new HttpResponseEncoder());
