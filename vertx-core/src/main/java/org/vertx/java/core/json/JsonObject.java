@@ -19,7 +19,7 @@ package org.vertx.java.core.json;
 import org.vertx.java.core.http.impl.ws.Base64;
 import org.vertx.java.core.json.impl.Json;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,7 +46,7 @@ public class JsonObject {
    * Create an empty JSON object
    */
   public JsonObject() {
-    this.map = new HashMap<>();
+    this.map = new LinkedHashMap<>();
   }
 
   /**
@@ -228,7 +228,7 @@ public class JsonObject {
 
   @SuppressWarnings("unchecked")
   static Map<String, Object> convertMap(Map<String, Object> map) {
-    Map<String, Object> converted = new HashMap<>(map.size());
+    Map<String, Object> converted = new LinkedHashMap<>(map.size());
     for (Map.Entry<String, Object> entry: map.entrySet()) {
       Object obj = entry.getValue();
       if (obj instanceof Map) {
