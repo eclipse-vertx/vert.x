@@ -199,7 +199,7 @@ public class DefaultVertx extends VertxInternal {
         result = workerPool;
         if (result == null) {
           ExecutorService corePool = Executors.newFixedThreadPool(corePoolSize, new VertxThreadFactory("vert.x-core-thread-"));
-          workerPool = result = new NioWorkerPool(corePool, corePoolSize, false);
+          workerPool = result = new NioWorkerPool(corePool, corePoolSize);
         }
       }
     }
