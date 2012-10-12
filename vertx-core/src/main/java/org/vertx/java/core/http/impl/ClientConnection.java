@@ -191,6 +191,10 @@ class ClientConnection extends AbstractConnection {
     req.handleResponse(nResp);
   }
 
+  VertxInternal getVertx() {
+    return vertx;
+  }
+
   void handleResponseChunk(Buffer buff) {
     setContext();
     try {
