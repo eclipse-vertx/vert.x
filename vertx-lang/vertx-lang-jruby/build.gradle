@@ -49,6 +49,10 @@ task yardoc(type:Exec) {
 		"--output-dir","${project.buildDir}/docs/ruby/api",
 		"src/main/ruby/**/*.rb", "src/main/ruby_scripts/**/*.rb",
 		"-", "$rootDir/LICENSE.txt" ]
+		
+  if( System.properties['os.name'].toLowerCase().contains('windows') ) {
+    commandLine = ['cmd', '/c'] + commandLine
+  }
 }
 
 javadoc.dependsOn yardoc
