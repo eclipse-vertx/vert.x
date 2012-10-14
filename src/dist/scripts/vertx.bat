@@ -49,6 +49,9 @@ goto fail
 @rem Add module option to commandline, if VERTX_MODS was set
 if not "%VERTX_MODS%" == "" set VERTX_MODULE_OPTS="-Dvertx.mods=%VERTX_MODS%"
 
+@rem Configure JUL using custom properties file
+if "%VERTX_JUL_CONFIG%" == "" set VERTX_JUL_CONFIG="%APP_HOME%\conf\logging.properties"
+
 @rem Get command-line arguments, handling Windowz variants
 
 if not "%OS%" == "Windows_NT" goto win9xME_args
@@ -75,7 +78,7 @@ set CMD_LINE_ARGS=%$
 set CLASSPATH=%APP_HOME%\lib\*;%APP_HOME%\conf;%JYTHON_HOME%\jython.jar;%JRUBY_HOME%\lib\jruby.jar
 
 @rem Execute vertx
-"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %VERTX_OPTS% %VERTX_MODULE_OPTS% -Djruby.home="%JRUBY_HOME%" -Djython.home="%JYTHON_HOME%" -Djava.util.logging.config.file="%APP_HOME%\conf\logging.properties" -classpath "%CLASSPATH%" org.vertx.java.deploy.impl.cli.Starter %CMD_LINE_ARGS%
+"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %VERTX_OPTS% %VERTX_MODULE_OPTS% -Djruby.home="%JRUBY_HOME%" -Djython.home="%JYTHON_HOME%" -Djava.util.logging.config.file="%VERTX_JUL_CONFIG%" -classpath "%CLASSPATH%" org.vertx.java.deploy.impl.cli.Starter %CMD_LINE_ARGS%
 
 :end
 @rem End local scope for the variables with windows NT shell
