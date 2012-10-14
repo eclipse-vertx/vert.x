@@ -72,7 +72,7 @@ set CMD_LINE_ARGS=%$
 :execute
 @rem Setup the command line
 
-set CLASSPATH=%APP_HOME%\lib\*;%APP_HOME%\conf;%JYTHON_HOME%\jython.jar;%JRUBY_HOME%\lib\jruby.jar
+set CLASSPATH=%CLASSPATH%;%APP_HOME%\lib\*;%APP_HOME%\conf;%JYTHON_HOME%\jython.jar;%JRUBY_HOME%\lib\jruby.jar
 
 @rem Execute vertx
 "%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %VERTX_OPTS% %VERTX_MODULE_OPTS% -Djruby.home="%JRUBY_HOME%" -Djython.home="%JYTHON_HOME%" -Djava.util.logging.config.file="%APP_HOME%\conf\logging.properties" -classpath "%CLASSPATH%" org.vertx.java.deploy.impl.cli.Starter %CMD_LINE_ARGS%
