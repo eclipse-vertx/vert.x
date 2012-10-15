@@ -728,7 +728,7 @@ public class VerticleManager implements ModuleReloader {
   // Must be synchronized since called directly from different thread
   private synchronized void addVerticle(Deployment deployment, Verticle verticle,
                                         VerticleFactory factory) {
-    String loggerName = deployment.name + "-" + deployment.verticles.size();
+    String loggerName = "org.vertx.deployments." + deployment.name + "-" + deployment.verticles.size();
     Logger logger = LoggerFactory.getLogger(loggerName);
     Context context = Context.getContext();
     VerticleHolder holder = new VerticleHolder(deployment, context, verticle,
