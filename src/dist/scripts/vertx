@@ -65,7 +65,7 @@ cd "`dirname \"$PRG\"`/.."
 APP_HOME="`pwd -P`"
 cd "$SAVED"
 
-CLASSPATH=$APP_HOME/lib/*:$APP_HOME/conf:$JYTHON_HOME/jython.jar::$JRUBY_HOME/lib/jruby.jar
+CLASSPATH=${CLASSPATH}:${APP_HOME}/lib/*:${APP_HOME}/conf:${JYTHON_HOME}/jython.jar:${JRUBY_HOME}/lib/jruby.jar
 
 # Determine the Java command to use to start the JVM.
 if [ -n "$JAVA_HOME" ] ; then
