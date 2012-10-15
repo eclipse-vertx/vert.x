@@ -121,7 +121,7 @@ Of course you'll also need to make sure you have installed a MongoDB instance on
 
 Now CTRL-C the web server you started earlier and run `app.py` with 
 
-    vertx run app.ry
+    vertx run app.py
     
 The persistor and web server should be running and it should serve the client application as before.
 
