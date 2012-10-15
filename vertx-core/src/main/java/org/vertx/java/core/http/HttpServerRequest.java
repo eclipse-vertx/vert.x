@@ -20,6 +20,8 @@ import org.vertx.java.core.http.impl.HttpReadStreamBase;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
 import java.util.Map;
 
 /**
@@ -86,4 +88,11 @@ public abstract class HttpServerRequest extends HttpReadStreamBase {
    * Returns a map of all the parameters in the request
    */
   public abstract Map<String, String> params();
+
+  /**
+   * @return an array of the peer certificates.  Returns null if connection is
+   *         not SSL.
+   * @throws SSLPeerUnverifiedException SSL peer's identity has not been verified.
+   */
+  public abstract X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException;
 }
