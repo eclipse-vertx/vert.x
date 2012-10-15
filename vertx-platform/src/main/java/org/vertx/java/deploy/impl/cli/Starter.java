@@ -152,11 +152,6 @@ public class Starter {
       cp = ".";
     }
 
-    String jarDir = args.map.get("-jars");
-    if (jarDir != null) {
-      cp = this.getClasspathWithJars(jarDir, cp);
-    }
-
     // Convert to URL[]
 
     String[] parts;
@@ -363,25 +358,4 @@ public class Starter {
      log.info(usage);
   }
 
-  private String getClasspathWithJars(String jarDir, String oldClasspath) {
-    StringBuilder classpath = new StringBuilder(oldClasspath);
-
-    File jarParentDir = new File(jarDir);
-    String[] jarPaths = jarParentDir.list(new FilenameFilter() {
-      public boolean accept(File dir, String filename) {
-        boolean ret = filename.toLowerCase().endsWith(".jar");
-
-        return ret;
-      }
-    });
-
-    for(String path: jarPaths) {
-      classpath.append(Starter.CP_SEPARATOR);
-      classpath.append(jarDir);
-      classpath.append(File.separatorChar);
-      classpath.append(path);
-    }
-
-    return classpath.toString();
-  }
 }
