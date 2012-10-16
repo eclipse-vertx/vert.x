@@ -314,13 +314,13 @@ def vertx_stop():
 <p>Servers, clients and event bus handlers will be automatically closed when the verticles is stopped, however if you need to provide any custom clean-up code when the verticle is stopped you can provide a <code>vertx_stop</code> top-level method. Vert.x will then call this when the verticle is stopped. </p>
 <h2 id="getting-configuration-in-a-verticle">Getting Configuration in a Verticle</h2><br/>
 <p>If JSON configuration has been passed when deploying a verticle from either the command line using <code>vertx run</code> or <code>vertx deploy</code> and specifying a configuration file, or when deploying programmatically, that configuration is available to the verticle using the <code>Vertx.config</code> method. For example:</p>
-<pre class="prettyprint">from vertx import Vertx
+<pre class="prettyprint">import vertx
 
-config = Vertx.config;
+config = vertx.config()
 
 # Do something with config
 
-print "number of wibbles is %s"%config.wibble_number
+print "number of wibbles is %s" % config['wibble_number']
 </pre>
 <p>The config returned is a Python dict. You can use this object to configure the verticle. Allowing verticles to be configured in a consistent way like this allows configuration to be easily passed to them irrespective of the language.</p>
 <h2 id="logging-from-a-verticle">Logging from a Verticle</h2><br/>
