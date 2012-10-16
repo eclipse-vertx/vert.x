@@ -53,13 +53,13 @@ Servers, clients and event bus handlers will be automatically closed when the ve
 
 If JSON configuration has been passed when deploying a verticle from either the command line using `vertx run` or `vertx deploy` and specifying a configuration file, or when deploying programmatically, that configuration is available to the verticle using the `Vertx.config` method. For example:
 
-	from vertx import Vertx
+    import vertx
 	
-    config = Vertx.config;
+    config = vertx.config()
 
     # Do something with config
     
-    print "number of wibbles is %s"%config.wibble_number
+    print "number of wibbles is %s" % config['wibble_number']
 
 The config returned is a Python dict. You can use this object to configure the verticle. Allowing verticles to be configured in a consistent way like this allows configuration to be easily passed to them irrespective of the language.
 
