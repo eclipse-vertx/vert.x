@@ -25,6 +25,8 @@ import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,6 +78,10 @@ public class DefaultHttpServerRequest extends HttpServerRequest {
       }
     }
     return params;
+  }
+
+  public X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException {
+    return conn.getPeerCertificateChain();
   }
 
   public void dataHandler(Handler<Buffer> dataHandler) {

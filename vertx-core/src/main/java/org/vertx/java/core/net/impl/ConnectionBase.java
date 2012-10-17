@@ -21,6 +21,7 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.DefaultFileRegion;
 import org.jboss.netty.channel.FileRegion;
+import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.socket.nio.NioSocketChannelConfig;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedFile;
@@ -33,6 +34,8 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -108,6 +111,22 @@ public abstract class ConnectionBase {
    */
   public void closedHandler(Handler<Void> handler) {
     this.closedHandler = handler;
+  }
+
+  /**
+   * @return an array of the peer certificates.  Returns null if connection is
+   *         not SSL.
+   * @throws SSLPeerUnverifiedException SSL peer's identity has not been verified.
+   */
+  public X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException {
+    if (isSSL()) {
+      final ChannelHandlerContext sslHandlerContext = channel.getPipeline().getContext("ssl");
+      assert sslHandlerContext != null;
+      final SslHandler sslHandler = (SslHandler) sslHandlerContext.getHandler();
+      return sslHandler.getEngine().getSession().getPeerCertificateChain();
+    } else {
+      return null;
+    }
   }
 
   protected Context getContext() {
