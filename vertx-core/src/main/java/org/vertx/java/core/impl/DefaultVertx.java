@@ -27,7 +27,9 @@ import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.file.impl.DefaultFileSystem;
 import org.vertx.java.core.http.HttpClient;
+import org.vertx.java.core.http.HttpClientParams;
 import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.core.http.SharedHttpClient;
 import org.vertx.java.core.http.impl.DefaultHttpClient;
 import org.vertx.java.core.http.impl.DefaultHttpServer;
 import org.vertx.java.core.logging.Logger;
@@ -120,6 +122,10 @@ public class DefaultVertx extends VertxInternal {
 
   public HttpClient createHttpClient() {
     return new DefaultHttpClient(this);
+  }
+
+  public SharedHttpClient createHttpClient(HttpClientParams params) {
+    return new DefaultHttpClient(this, params);
   }
 
   public SockJSServer createSockJSServer(HttpServer httpServer) {

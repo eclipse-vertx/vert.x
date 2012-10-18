@@ -56,10 +56,16 @@ public class JavaHttpTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void testHttpClientParams() {
+    startTest(getMethodName());
+  }
+
   @Test
   public void testServerDefaults() throws Exception {
     startTest(getMethodName());
   }
+
+
 
   @Test
   public void testServerAttributes() throws Exception {
@@ -476,7 +482,36 @@ public class JavaHttpTest extends TestBase {
     startTest(getMethodName());
   }
 
-    @Test
+  public void testConnectionErrorsGetReportedToRequest() {
+    startTest(getMethodName());
+  }
+
+  public void testRequestTimesoutWhenIndicatedPeriodExpiresWithoutAResponseFromRemoteServer() {
+    startTest(getMethodName());
+  }
+
+  public void testRequestTimeoutCanceledWhenRequestHasAnOtherError() {
+    startTest(getMethodName());
+  }
+
+  public void testRequestTimeoutCanceledWhenRequestEndsNormally() {
+    startTest(getMethodName());
+  }
+
+  public void testResponseTimesoutWhenIndicatedPeriodExpiresWithoutFullyReadingResponse() {
+    startTest(getMethodName());
+  }
+
+  public void testResponseTimeoutCanceledWhenResponseEndsNormally() {
+    startTest(getMethodName());
+  }
+
+// This really can't be tested since I don't know how I would simulate an error reading the response.
+//  public void testResponseTimeoutCanceledWhenAnotherResponseExceptionOccurs() {
+//    startTest(getMethodName());
+//  }
+
+  @Test
   // Client trusts all server certs
   public void testTLSClientTrustAll() throws Exception {
     testTLS(getMethodName(), false, false, true, false, false, true, true);
