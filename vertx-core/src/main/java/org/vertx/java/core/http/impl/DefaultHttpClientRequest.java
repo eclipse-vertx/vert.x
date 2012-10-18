@@ -32,6 +32,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 /**
  *
@@ -69,6 +70,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     this.respHandler = respHandler;
     this.context = context;
     this.raw = raw;
+
   }
 
   private final DefaultHttpClient client;
@@ -89,6 +91,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   private boolean connecting;
   private boolean writeHead;
   private long written;
+  private long currentTimeoutTimerId = -1;
   //private long contentLength = 0;
   private Map<String, Object> headers;
 
@@ -175,9 +178,15 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
   }
 
-  public void exceptionHandler(Handler<Exception> handler) {
+  public void exceptionHandler(final Handler<Exception> handler) {
     check();
-    this.exceptionHandler = handler;
+    this.exceptionHandler = new Handler<Exception>() {
+      @Override
+      public void handle(Exception event) {
+        cancelOutstandingTimeoutTimer();
+        handler.handle(event);
+      }
+    };
   }
 
   public void continueHandler(Handler<Void> handler) {
@@ -232,6 +241,18 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
   }
 
+  @Override
+  public HttpClientRequest setTimeout(final long timeoutMs) {
+    cancelOutstandingTimeoutTimer();
+    currentTimeoutTimerId = client.getVertx().setTimer(timeoutMs, new Handler<Long>() {
+      @Override
+      public void handle(Long event) {
+        handleException(new TimeoutException("The timeout period of " + timeoutMs + "ms has been exceeded"));
+      }
+    });
+    return this;
+  }
+
   void handleDrained() {
     if (drainHandler != null) {
       drainHandler.handle(null);
@@ -240,13 +261,15 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
   void handleException(Exception e) {
     if (exceptionHandler != null) {
-      exceptionHandler.handle(e);
+      exceptionHandler.handle(e); // the handler cancels the timer.
     } else {
+      cancelOutstandingTimeoutTimer();
       log.error("Unhandled exception", e);
     }
   }
 
   void handleResponse(DefaultHttpClientResponse resp) {
+    cancelOutstandingTimeoutTimer();
     try {
       if (resp.statusCode == 100) {
         if (continueHandler != null) {
@@ -264,6 +287,13 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
   }
 
+  private void cancelOutstandingTimeoutTimer() {
+    if(currentTimeoutTimerId != -1) {
+      client.getVertx().cancelTimer(currentTimeoutTimerId);
+      currentTimeoutTimerId = -1;
+    }
+  }
+
   private void connect() {
     if (!connecting) {
       //We defer actual connection until the first part of body is written or end is called
@@ -277,7 +307,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
             connect();
           }
         }
-      }, context);
+      }, exceptionHandler, context);
 
       connecting = true;
     }
