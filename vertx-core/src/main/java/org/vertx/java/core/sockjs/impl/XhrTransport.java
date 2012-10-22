@@ -171,7 +171,7 @@ class XhrTransport extends BaseTransport {
           req.response.close();
           closed = true;
         } catch (IllegalStateException e) {
-          // Underlying connection might alreadu be closed - that's fine
+          // Underlying connection might already be closed - that's fine
         }
       }
     }

@@ -65,6 +65,17 @@ public class DefaultSockJSServer implements SockJSServer {
 
     httpServer.requestHandler(rm);
     httpServer.websocketHandler(wsMatcher);
+
+    vertx.setPeriodic(1000, new Handler<Long>() {
+      @Override
+      public void handle(Long event) {
+        System.gc();
+        System.gc();
+        System.gc();
+        System.out.println("Sessions: " + sessions.size());
+        System.out.println("Total socks: " + SockJSSocket.cnt.get());
+      }
+    });
   }
 
   private JsonObject setDefaults(JsonObject config) {
@@ -77,7 +88,7 @@ public class DefaultSockJSServer implements SockJSServer {
       config.putBoolean("insert_JSESSIONID", true);
     }
     if (config.getNumber("heartbeat_period") == null) {
-      config.putNumber("heartbeat_period", 25l * 1000);
+      config.putNumber("heartbeat_period", 5l * 1000);
     }
     if (config.getNumber("max_bytes_streaming") == null) {
       config.putNumber("max_bytes_streaming", 128 * 1024);

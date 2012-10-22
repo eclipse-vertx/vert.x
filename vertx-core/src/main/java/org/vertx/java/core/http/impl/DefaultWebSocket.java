@@ -151,9 +151,15 @@ public class DefaultWebSocket extends ServerWebSocket {
       }
     }
     conn.close();
-    vertx.eventBus().unregisterHandler(binaryHandlerID, binaryHandler);
-    vertx.eventBus().unregisterHandler(textHandlerID, textHandler);
-    closed = true;
+    cleanupHandlers();
+  }
+
+  private void cleanupHandlers() {
+    if (!closed) {
+      vertx.eventBus().unregisterHandler(binaryHandlerID, binaryHandler);
+      vertx.eventBus().unregisterHandler(textHandlerID, textHandler);
+      closed = true;
+    }
   }
 
   protected void writeFrame(WebSocketFrame frame) {
@@ -209,6 +215,7 @@ public class DefaultWebSocket extends ServerWebSocket {
   }
 
   void handleClosed() {
+    cleanupHandlers();
     if (endHandler != null) {
       endHandler.handle(null);
     }
