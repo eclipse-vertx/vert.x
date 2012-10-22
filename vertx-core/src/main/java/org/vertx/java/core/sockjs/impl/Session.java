@@ -169,6 +169,7 @@ class Session extends SockJSSocket implements Shareable {
     if (listener != null && handleCalled) {
       listener.sessionClosed();
     }
+    super.close();
   }
 
   synchronized boolean isClosed() {
