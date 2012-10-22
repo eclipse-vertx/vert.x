@@ -62,20 +62,8 @@ public class DefaultSockJSServer implements SockJSServer {
         }
       }
     });
-
     httpServer.requestHandler(rm);
     httpServer.websocketHandler(wsMatcher);
-
-    vertx.setPeriodic(1000, new Handler<Long>() {
-      @Override
-      public void handle(Long event) {
-        System.gc();
-        System.gc();
-        System.gc();
-        System.out.println("Sessions: " + sessions.size());
-        System.out.println("Total socks: " + SockJSSocket.cnt.get());
-      }
-    });
   }
 
   private JsonObject setDefaults(JsonObject config) {
