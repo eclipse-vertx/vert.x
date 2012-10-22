@@ -96,13 +96,6 @@ public class DefaultVertx extends VertxInternal {
    */
   private void configure() {
     this.backgroundPoolSize = Integer.getInteger("vertx.backgroundPoolSize", 20);
-
-    this.setPeriodic(1000, new Handler<Long>() {
-      @Override
-      public void handle(Long event) {
-        System.out.println("timeouts: " + timeouts.size());
-      }
-    });
   }
 
   public NetServer createNetServer() {

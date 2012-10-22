@@ -38,18 +38,13 @@ public class SockJSExample extends Verticle {
 
     SockJSServer sockServer = vertx.createSockJSServer(server);
 
-    System.out.println("Created sockjs servre");
-
     sockServer.installApp(new JsonObject().putString("prefix", "/testapp"), new Handler<SockJSSocket>() {
       public void handle(final SockJSSocket sock) {
-
         sock.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
             sock.writeBuffer(data); // Echo it back
           }
         });
-
-        //sock.close();
       }
     });
 
