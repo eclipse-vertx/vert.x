@@ -33,6 +33,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.jmx.VertxJMX;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetServer;
@@ -159,6 +160,7 @@ public class DefaultNetServer implements NetServer {
       }
       actualServer.handlerManager.addHandler(connectHandler, ctx);
     }
+    VertxJMX.register(this, id.host, port);
     return this;
   }
 
@@ -203,6 +205,7 @@ public class DefaultNetServer implements NetServer {
       sock.internalClose();
     }
 
+    VertxJMX.unregisterNetServer(id.host, id.port);
     // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
     // which can cause context id for the thread to change!
 
