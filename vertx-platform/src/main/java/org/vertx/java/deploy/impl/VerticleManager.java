@@ -592,11 +592,12 @@ public class VerticleManager implements ModuleReloader {
         " instances: " + instances);
 
     int dotIndex = main.lastIndexOf('.');
-    if (dotIndex == -1) {
-      throw new IllegalArgumentException("Invalid main: " + main);
+    String extension = dotIndex > -1 ? main.substring(dotIndex + 1) : null;
+    System.out.println("Extension is: " + extension);
+    String factoryName = null;
+    if (extension != null) {
+      factoryName = factoryNames.get(extension);
     }
-    String extension = main.substring(dotIndex + 1);
-    String factoryName = factoryNames.get(extension);
     if (factoryName == null) {
       // Use the default
       factoryName = factoryNames.get("default");
