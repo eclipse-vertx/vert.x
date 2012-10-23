@@ -593,7 +593,6 @@ public class VerticleManager implements ModuleReloader {
 
     int dotIndex = main.lastIndexOf('.');
     String extension = dotIndex > -1 ? main.substring(dotIndex + 1) : null;
-    System.out.println("Extension is: " + extension);
     String factoryName = null;
     if (extension != null) {
       factoryName = factoryNames.get(extension);
