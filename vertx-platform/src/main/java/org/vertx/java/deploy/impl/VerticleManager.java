@@ -27,6 +27,7 @@ import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.impl.WorkerContext;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -49,7 +50,11 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 /**
+ *
+ * This class could benefit from some refactoring
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class VerticleManager implements ModuleReloader {
 
@@ -152,12 +157,40 @@ public class VerticleManager implements ModuleReloader {
     return holder == null ? null : holder.logger;
   }
 
-  public void deployVerticle(boolean worker, final String main,
+  public void deployVerticle(final boolean worker, final String main,
                              final JsonObject config, final URL[] urls,
-                             int instances, File currentModDir,
-                             String includes,
+                             final int instances, final File currentModDir,
+                             final String includes,
                              final Handler<String> doneHandler) {
-    Context ctx = vertx.getOrAssignContext();
+
+    AsyncResultHandler<String> handler = new AsyncResultHandler<String>() {
+      public void handle(AsyncResult<String> res) {
+        if (res.succeeded()) {
+          doneHandler.handle(res.result);
+        } else {
+          res.exception.printStackTrace();
+        }
+      }
+    };
+
+    BlockingAction<String> deployModuleAction = new BlockingAction<String>(vertx, handler) {
+
+      @Override
+      public String action() throws Exception {
+        return doDeployVerticle(worker, main, config, urls, instances, currentModDir,
+            includes);
+      }
+    };
+
+    deployModuleAction.run();
+  }
+
+  private String doDeployVerticle(boolean worker, final String main,
+                                   final JsonObject config, final URL[] urls,
+                                   int instances, File currentModDir,
+                                   String includes)
+  {
+    checkWorkerContext();
     URL[] theURLs;
     // The user has specified a list of modules to include when deploying this verticle
     // so we walk the tree of modules adding tree of includes to classpath
@@ -171,8 +204,8 @@ public class VerticleManager implements ModuleReloader {
           conf = loadModuleConfig(includedMod, modDir);
           if (conf == null) {
             // Try and install the module
-            if (!installModSync(includedMod)) {
-              return;
+            if (!doInstallMod(includedMod)) {
+              return null;
             }
           } else {
             break inner;
@@ -187,7 +220,7 @@ public class VerticleManager implements ModuleReloader {
     } else {
       theURLs = urls;
     }
-    doDeploy(null, false, worker, main, null, config, theURLs, instances, currentModDir, ctx, doneHandler);
+    return doDeploy(null, false, worker, main, null, config, theURLs, instances, currentModDir);
   }
 
   public synchronized void undeployAll(final Handler<Void> doneHandler) {
@@ -219,89 +252,133 @@ public class VerticleManager implements ModuleReloader {
 
   public void deployMod(final String modName, final JsonObject config,
                         final int instances, final File currentModDir, final Handler<String> doneHandler) {
-    doDeployMod(false, null, modName, config, instances, currentModDir, doneHandler);
-  }
 
-  private void doDeployMod(final boolean redeploy, final String depName, final String modName, final JsonObject config,
-                           final int instances, final File currentModDir, final Handler<String> doneHandler) {
-    final Context ctx = vertx.getOrAssignContext();
-
-    AsyncResultHandler<Boolean> handler = new AsyncResultHandler<Boolean>() {
-      public void handle(AsyncResult<Boolean> res) {
+    AsyncResultHandler<String> handler = new AsyncResultHandler<String>() {
+      public void handle(AsyncResult<String> res) {
         if (res.succeeded()) {
-          if (!res.result) {
-            // Try and install it
-            installMod(modName, new Handler<Boolean>() {
-              public void handle(Boolean res) {
-                if (res) {
-                  // Now deploy it
-                  doDeployMod(redeploy, depName, modName, config, instances, currentModDir, doneHandler);
-                } else {
-                  executeHandlerOnContext(ctx, doneHandler, null);
-                }
-              }
-            });
-          }
+          doneHandler.handle(res.result);
         } else {
           res.exception.printStackTrace();
         }
       }
     };
 
-    // Need to run this on the background pool since it does potentially long running stuff
-    BlockingAction<Boolean> deployModuleAction = new BlockingAction<Boolean>(vertx, handler) {
+    BlockingAction<String> deployModuleAction = new BlockingAction<String>(vertx, handler) {
 
       @Override
-      public Boolean action() throws Exception {
-        File modDir = new File(modRoot, modName);
-        JsonObject conf = loadModuleConfig(modName, modDir);
-        if (conf != null) {
-          String main = conf.getString("main");
-          if (main == null) {
-            log.error("Runnable module " + modName + " mod.json must contain a \"main\" field");
-            return false;
-          }
-          Boolean worker = conf.getBoolean("worker");
-          if (worker == null) {
-            worker = Boolean.FALSE;
-          }
-          Boolean preserveCwd = conf.getBoolean("preserve-cwd");
-          if (preserveCwd == null) {
-            preserveCwd = Boolean.FALSE;
-          }
-          // If preserveCwd then use the current module directory instead, or the cwd if not in a module
-          File modDirToUse = preserveCwd ? currentModDir : modDir;
-
-          List<URL> urls = processIncludes(modName, new ArrayList<URL>(), modName, modDir, conf,
-                                           new HashMap<String, String>(), new HashSet<String>());
-          if (urls == null) {
-            return false;
-          }
-
-          Boolean ar = conf.getBoolean("auto-redeploy");
-          final boolean autoRedeploy = ar == null ? false : ar;
-
-          Handler<String> handler = new Handler<String>() {
-            public void handle(String res) {
-              if (res != null && !redeploy && autoRedeploy) {
-                redeployer.moduleDeployed(deployments.get(res));
-              }
-              executeHandlerOnContext(context, doneHandler, res);
-            }
-          };
-          doDeploy(depName, autoRedeploy, worker, main, modName, config,
-                   urls.toArray(new URL[urls.size()]), instances, modDirToUse, ctx, handler);
-          return true;
-        } else {
-          return false;
-        }
+      public String action() throws Exception {
+        return doDeployMod(false, null, modName, config, instances, currentModDir);
       }
     };
 
     deployModuleAction.run();
   }
 
+  public void installMod(final String moduleName) {
+    final CountDownLatch latch = new CountDownLatch(1);
+    AsyncResultHandler<Void> handler = new AsyncResultHandler<Void>() {
+      public void handle(AsyncResult<Void> res) {
+        if (res.succeeded()) {
+          latch.countDown();
+        } else {
+          res.exception.printStackTrace();
+        }
+      }
+    };
+
+    BlockingAction<Void> deployModuleAction = new BlockingAction<Void>(vertx, handler) {
+      @Override
+      public Void action() throws Exception {
+        doInstallMod(moduleName);
+        return null;
+      }
+    };
+
+    deployModuleAction.run();
+
+    while (true) {
+      try {
+        if (!latch.await(30, TimeUnit.SECONDS)) {
+          throw new IllegalStateException("Timed out waiting to install module");
+        }
+        break;
+      } catch (InterruptedException ignore) {
+      }
+    }
+  }
+
+  public void uninstallMod(String moduleName) {
+    log.info("Uninstalling module " + moduleName + " from directory " + modRoot);
+    File modDir = new File(modRoot, moduleName);
+    if (!modDir.exists()) {
+      log.error("Cannot find module to uninstall");
+    } else {
+      try {
+        vertx.fileSystem().deleteSync(modDir.getAbsolutePath(), true);
+        log.info("Module " + moduleName + " successfully uninstalled");
+      } catch (Exception e) {
+        log.error("Failed to delete directory: " + e.getMessage());
+      }
+    }
+  }
+
+  private void checkWorkerContext() {
+    Thread t = Thread.currentThread();
+    if (!t.getName().startsWith("vert.x-worker-thread")) {
+      throw new IllegalStateException("Not a worker thread");
+    }
+  }
+
+  private String doDeployMod(final boolean redeploy, final String depName, final String modName,
+                             final JsonObject config,
+                             final int instances, final File currentModDir) {
+    checkWorkerContext();
+
+    File modDir = new File(modRoot, modName);
+    JsonObject conf = loadModuleConfig(modName, modDir);
+    if (conf != null) {
+      String main = conf.getString("main");
+      if (main == null) {
+        log.error("Runnable module " + modName + " mod.json must contain a \"main\" field");
+        return null;
+      }
+      Boolean worker = conf.getBoolean("worker");
+      if (worker == null) {
+        worker = Boolean.FALSE;
+      }
+      Boolean preserveCwd = conf.getBoolean("preserve-cwd");
+      if (preserveCwd == null) {
+        preserveCwd = Boolean.FALSE;
+      }
+      // If preserveCwd then use the current module directory instead, or the cwd if not in a module
+      File modDirToUse = preserveCwd ? currentModDir : modDir;
+
+      List<URL> urls = processIncludes(modName, new ArrayList<URL>(), modName, modDir, conf,
+                                       new HashMap<String, String>(), new HashSet<String>());
+      if (urls == null) {
+        return null;
+      }
+
+      Boolean ar = conf.getBoolean("auto-redeploy");
+      final boolean autoRedeploy = ar == null ? false : ar;
+
+      String deploymentID = doDeploy(depName, autoRedeploy, worker, main, modName, config,
+               urls.toArray(new URL[urls.size()]), instances, modDirToUse);
+      if (deploymentID != null && !redeploy && autoRedeploy) {
+        redeployer.moduleDeployed(deployments.get(deploymentID));
+      }
+      return deploymentID;
+    } else {
+      if (doInstallMod(modName)) {
+        return doDeployMod(redeploy, depName, modName, config, instances, currentModDir);
+      } else {
+        return null;
+      }
+    }
+  }
+
   private JsonObject loadModuleConfig(String modName, File modDir) {
+    checkWorkerContext();
     if (modDir.exists()) {
       String conf;
       try {
@@ -332,6 +409,7 @@ public class VerticleManager implements ModuleReloader {
                                     JsonObject conf,
                                     Map<String, String> includedJars,
                                     Set<String> includedModules) {
+    checkWorkerContext();
     // Add the urls for this module
     try {
       urls.add(modDir.toURI().toURL());
@@ -380,7 +458,7 @@ public class VerticleManager implements ModuleReloader {
               break inner;
             } else {
               // Module not installed - let's try to install it
-              if (!installModSync(include)) {
+              if (!doInstallMod(include)) {
                 return null;
               }
             }
@@ -392,33 +470,6 @@ public class VerticleManager implements ModuleReloader {
     return urls;
   }
 
-  // This is not on an event loop so it's ok to use a CountDownLatch
-  // and block the thread for a bit
-  private boolean installModSync(String modName) {
-    final CountDownLatch latch = new CountDownLatch(1);
-    final AtomicReference<Boolean> res = new AtomicReference<>();
-    Handler<Boolean> doneHandler = new Handler<Boolean>() {
-      public void handle(Boolean b) {
-        res.set(b);
-        latch.countDown();
-      }
-    };
-    installMod(modName, doneHandler);
-    while (true) {
-      try {
-        if (latch.await(30000, TimeUnit.SECONDS)) {
-          return res.get();
-        } else {
-          log.error("Timed out in attempting to install module");
-          return false;
-        }
-      } catch (InterruptedException e) {
-        // spurious wakeup - continue
-      }
-    }
-  }
-
-
   private String[] parseIncludes(String sincludes, String modName) {
     sincludes = sincludes.trim();
     if ("".equals(sincludes)) {
@@ -428,18 +479,16 @@ public class VerticleManager implements ModuleReloader {
     return sincludes.split(",");
   }
 
-
-
-  /* (non-Javadoc)
-   * @see org.vertx.java.deploy.impl.VTest#installMod(java.lang.String, org.vertx.java.core.Handler)
-   */
-  public void installMod(final String moduleName, final Handler<Boolean> doneHandler) {
+  private boolean doInstallMod(final String moduleName) {
+    checkWorkerContext();
+    final CountDownLatch latch = new CountDownLatch(1);
+    final AtomicReference<Buffer> mod = new AtomicReference<>();
     HttpClient client = vertx.createHttpClient();
     client.setHost(defaultRepo);
     client.exceptionHandler(new Handler<Exception>() {
       public void handle(Exception e) {
         log.error("Unable to connect to repository");
-        doneHandler.handle(false);
+        latch.countDown();
       }
     });
     String uri = REPO_URI_ROOT + moduleName + "/mod.zip";
@@ -450,118 +499,100 @@ public class VerticleManager implements ModuleReloader {
           log.info("Downloading module...");
           resp.bodyHandler(new Handler<Buffer>() {
             public void handle(Buffer buffer) {
-              unzipModule(moduleName, buffer, doneHandler);
+              mod.set(buffer);
+              latch.countDown();
             }
           });
         } else if (resp.statusCode == 404) {
           log.error("Can't find module " + moduleName + " in repository");
-          doneHandler.handle(false);
+          //doneHandler.handle(false);
+          latch.countDown();
         } else {
           log.error("Failed to download module: " + resp.statusCode);
-          doneHandler.handle(false);
+          //doneHandler.handle(false);
+          latch.countDown();
         }
       }
     });
     req.putHeader("host", defaultRepo);
     req.putHeader("user-agent", "Vert.x Module Installer");
     req.end();
-  }
-
-  /* (non-Javadoc)
-   * @see org.vertx.java.deploy.impl.VTest#uninstallMod(java.lang.String)
-   */
-  public void uninstallMod(String moduleName) {
-    log.info("Removing module " + moduleName + " from directory " + modRoot);
-    File modDir = new File(modRoot, moduleName);
-    if (!modDir.exists()) {
-      log.error("Cannot find module to uninstall");
-    } else {
+    while (true) {
       try {
-        vertx.fileSystem().deleteSync(modDir.getAbsolutePath(), true);
-        log.info("Module " + moduleName + " successfully uninstalled");
-      } catch (Exception e) {
-        log.error("Failed to delete directory: " + e.getMessage());
+        if (!latch.await(30, TimeUnit.SECONDS)) {
+          throw new IllegalStateException("Timed out waiting to download module");
+        }
+        break;
+      } catch (InterruptedException ignore) {
       }
+    }
+    Buffer modZipped = mod.get();
+    if (modZipped != null) {
+      return unzipModule(moduleName, modZipped);
+    } else {
+      return false;
     }
   }
 
-  private void unzipModule(final String modName, final Buffer data, final Handler<Boolean> doneHandler) {
+  private boolean unzipModule(final String modName, final Buffer data) {
+    checkWorkerContext();
 
-    AsyncResultHandler<Boolean> arHandler = new AsyncResultHandler<Boolean>() {
-      public void handle(AsyncResult<Boolean> res) {
-        if (res.succeeded()) {
-          doneHandler.handle(res.result);
-        } else {
-          log.error("Failed to unzip module", res.exception);
-          doneHandler.handle(false);
+    // We synchronize to prevent a race whereby it tries to unzip the same module at the
+    // same time (e.g. deployModule for the same module name has been called in parallel)
+    synchronized (modName.intern()) {
+
+      if (!modRoot.exists()) {
+        if (!modRoot.mkdir()) {
+          log.error("Failed to create directory " + modRoot);
+          return false;
         }
       }
-    };
-
-    // This needs to be executed on a pool thread too
-
-    BlockingAction<Boolean> action = new BlockingAction<Boolean>(vertx, arHandler) {
-      public Boolean action() {
-
-        // We synchronize to prevent a race whereby it tries to unzip the same module at the
-        // same time (e.g. deployModule for the same module name has been called in parallel)
-        synchronized (modName.intern()) {
-
-          if (!modRoot.exists()) {
-            if (!modRoot.mkdir()) {
-              log.error("Failed to create directory " + modRoot);
-              return false;
-            }
-          }
-          log.info("Installing module into directory '" + modRoot + "'");
-          File fdest = new File(modRoot, modName);
-          if (fdest.exists()) {
-            // This can happen if the same module is requested to be installed
-            // at around the same time
-            // It's ok if this happens
-            return true;
-          }
-          try {
-            InputStream is = new ByteArrayInputStream(data.getBytes());
-            ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
-            ZipEntry entry;
-            while ((entry = zis.getNextEntry()) != null) {
-              if (!entry.getName().startsWith(modName)) {
-                log.error("Module must contain zipped directory with same name as module");
-                fdest.delete();
-                return false;
-              }
-              if (entry.isDirectory()) {
-                new File(modRoot, entry.getName()).mkdir();
-              } else {
-                int count;
-                byte[] buff = new byte[BUFFER_SIZE];
-                BufferedOutputStream dest = null;
-                try {
-                  OutputStream fos = new FileOutputStream(new File(modRoot, entry.getName()));
-                  dest = new BufferedOutputStream(fos, BUFFER_SIZE);
-                  while ((count = zis.read(buff, 0, BUFFER_SIZE)) != -1) {
-                     dest.write(buff, 0, count);
-                  }
-                  dest.flush();
-                } finally {
-                  if (dest != null) {
-                    dest.close();
-                  }
-                }
-              }
-            }
-            zis.close();
-          } catch (IOException e) {
-            log.error("Failed to unzip module", e);
+      log.info("Installing module into directory '" + modRoot + "'");
+      File fdest = new File(modRoot, modName);
+      if (fdest.exists()) {
+        // This can happen if the same module is requested to be installed
+        // at around the same time
+        // It's ok if this happens
+        return true;
+      }
+      try {
+        InputStream is = new ByteArrayInputStream(data.getBytes());
+        ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
+        ZipEntry entry;
+        while ((entry = zis.getNextEntry()) != null) {
+          if (!entry.getName().startsWith(modName)) {
+            log.error("Module must contain zipped directory with same name as module");
+            fdest.delete();
             return false;
           }
-          log.info("Module " + modName +" successfully installed");
-          return true;
+          if (entry.isDirectory()) {
+            new File(modRoot, entry.getName()).mkdir();
+          } else {
+            int count;
+            byte[] buff = new byte[BUFFER_SIZE];
+            BufferedOutputStream dest = null;
+            try {
+              OutputStream fos = new FileOutputStream(new File(modRoot, entry.getName()));
+              dest = new BufferedOutputStream(fos, BUFFER_SIZE);
+              while ((count = zis.read(buff, 0, BUFFER_SIZE)) != -1) {
+                 dest.write(buff, 0, count);
+              }
+              dest.flush();
+            } finally {
+              if (dest != null) {
+                dest.close();
+              }
+            }
+          }
         }
+        zis.close();
+      } catch (IOException e) {
+        log.error("Failed to unzip module", e);
+        return false;
       }
-    };
-    action.run();
+      log.info("Module " + modName +" successfully installed");
+      return true;
+    }
   }
 
   // We calculate a path adjustment that can be used by the fileSystem object
@@ -576,15 +607,16 @@ public class VerticleManager implements ModuleReloader {
     Context.getContext().setPathAdjustment(relative);
   }
 
-  private synchronized void doDeploy(String depName,
+  private synchronized String doDeploy(String depName,
                                      boolean autoRedeploy,
                                      boolean worker, final String main,
                                      final String modName,
                                      final JsonObject config, final URL[] urls,
                                      int instances,
-                                     final File modDir,
-                                     final Context context,
-                                     final Handler<String> doneHandler) {
+                                     final File modDir) {
+    checkWorkerContext();
+    final AtomicReference<String> deploymentID = new AtomicReference<>();
+    final CountDownLatch latch = new CountDownLatch(1);
     final String deploymentName =
         depName != null ? depName : "deployment-" + UUID.randomUUID().toString();
 
@@ -616,7 +648,8 @@ public class VerticleManager implements ModuleReloader {
           failed = true;
         }
         if (count.incrementAndGet() == instCount) {
-          executeHandlerOnContext(context, doneHandler, failed ? null : deploymentName);
+          deploymentID.set(failed ? null : deploymentName);
+          latch.countDown();
         }
       }
     }
@@ -655,8 +688,7 @@ public class VerticleManager implements ModuleReloader {
         clazz = cl.loadClass(factoryName);
       } catch (ClassNotFoundException e) {
         log.error("Cannot find class " + factoryName + " to load");
-        doneHandler.handle(null);
-        return;
+        return null;
       }
 
       final VerticleFactory verticleFactory;
@@ -664,8 +696,7 @@ public class VerticleManager implements ModuleReloader {
         verticleFactory = (VerticleFactory)clazz.newInstance();
       } catch (Exception e) {
         log.error("Failed to instantiate VerticleFactory: " + e.getMessage());
-        doneHandler.handle(null);
-        return;
+        return null;
       }
 
       verticleFactory.init(this);
@@ -706,6 +737,7 @@ public class VerticleManager implements ModuleReloader {
             verticle.start();
             aggHandler.done(true);
           } catch (Throwable t) {
+            t.printStackTrace();
             vertx.reportException(t);
             doUndeploy(deploymentName, new SimpleHandler() {
               public void handle() {
@@ -723,10 +755,21 @@ public class VerticleManager implements ModuleReloader {
         vertx.startOnEventLoop(runner);
       }
     }
+
+    while (true) {
+      try {
+        if (!latch.await(30, TimeUnit.SECONDS)) {
+          throw new IllegalStateException("Timed out waiting to deploy");
+        }
+        break;
+      } catch (InterruptedException ignore) {
+      }
+    }
+    return deploymentID.get();
   }
 
   // Must be synchronized since called directly from different thread
-  private synchronized void addVerticle(Deployment deployment, Verticle verticle,
+  private void addVerticle(Deployment deployment, Verticle verticle,
                                         VerticleFactory factory) {
     String loggerName = "org.vertx.deployments." + deployment.name + "-" + deployment.verticles.size();
     Logger logger = LoggerFactory.getLogger(loggerName);
@@ -796,13 +839,13 @@ public class VerticleManager implements ModuleReloader {
       if (deployments.containsKey(deployment.name)) {
         doUndeploy(deployment.name, new SimpleHandler() {
           public void handle() {
-            redeploy(deployment, deps);
+            redeploy(deployment);
           }
         });
       } else {
         // This will be the case if the previous deployment failed, e.g.
         // a code error in a user verticle
-        redeploy(deployment, deps);
+        redeploy(deployment);
       }
     }
   }
@@ -825,22 +868,9 @@ public class VerticleManager implements ModuleReloader {
     doUndeploy(name, wrappedHandler);
   }
 
-  private void redeploy(final Deployment deployment, final Set<Deployment> deployments) {
+  private void redeploy(final Deployment deployment) {
     doDeployMod(true, deployment.name, deployment.modName, deployment.config, deployment.instances,
-                null, null);
-  }
-
-  private void executeHandlerOnContext(final Context context,
-                                       final Handler<String> doneHandler,
-                                       final String res)
-  {
-    if (doneHandler != null) {
-      context.execute(new Runnable() {
-        public void run() {
-          doneHandler.handle(res);
-        }
-      });
-    }
+                null);
   }
 
   private void addDeployment(String deploymentName, Deployment deployment) {

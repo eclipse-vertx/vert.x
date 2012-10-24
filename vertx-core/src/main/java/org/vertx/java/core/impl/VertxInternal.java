@@ -16,6 +16,8 @@
 
 package org.vertx.java.core.impl;
 
+import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.Timer;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.http.impl.DefaultHttpServer;
 import org.vertx.java.core.net.impl.DefaultNetServer;
@@ -49,5 +51,7 @@ public abstract class VertxInternal extends Vertx {
   public abstract Map<ServerID, DefaultHttpServer> sharedHttpServers();
 
   public abstract Map<ServerID, DefaultNetServer> sharedNetServers();
+
+  public abstract HashedWheelTimer getTimer();
 
 }

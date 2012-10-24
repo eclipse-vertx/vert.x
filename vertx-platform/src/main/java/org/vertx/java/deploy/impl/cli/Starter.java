@@ -93,19 +93,7 @@ public class Starter {
 
   private void installModule(String modName, Args args) {
     String repo = args.map.get("-repo");
-    final CountDownLatch latch = new CountDownLatch(1);
-    new VerticleManager(vertx, repo).installMod(modName, new Handler<Boolean>() {
-      public void handle(Boolean res) {
-        latch.countDown();
-      }
-    });
-    while (true) {
-      try {
-        latch.await(30, TimeUnit.SECONDS);
-        break;
-      } catch (InterruptedException e) {
-      }
-    }
+    new VerticleManager(vertx, repo).installMod(modName);
   }
 
   private void uninstallModule(String modName) {

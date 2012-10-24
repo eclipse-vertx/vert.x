@@ -248,6 +248,10 @@ public class DefaultVertx extends VertxInternal {
     return sharedNetServers;
   }
 
+  public HashedWheelTimer getTimer() {
+    return timer;
+  }
+
   private long setTimeout(final long delay, boolean periodic, final Handler<Long> handler) {
     final Context context = getOrAssignContext();
 
