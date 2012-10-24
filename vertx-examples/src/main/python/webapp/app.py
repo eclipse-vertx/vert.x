@@ -55,10 +55,10 @@ def deploy_handler(id):
 
 # Now we deploy the modules that we need
 # Deploy a MongoDB persistor module
-vertx.deploy_module('vertx.mongo-persistor-v1.0', handler=deploy_handler)
+vertx.deploy_module('vertx.mongo-persistor-v1.2', handler=deploy_handler)
 
 # Deploy an auth manager to handle the authentication
-vertx.deploy_module('vertx.auth-mgr-v1.0')
+vertx.deploy_module('vertx.auth-mgr-v1.1')
 
 # Start the web server, with the config we defined above
 vertx.deploy_module('vertx.web-server-v1.0', web_server_conf)

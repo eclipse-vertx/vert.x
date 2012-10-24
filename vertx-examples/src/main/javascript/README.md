@@ -291,6 +291,20 @@ Then point your browser at https://localhost:8080 and start shopping! (Note it's
 
 To fully understand this example please follow the web app tutorial on the website
 
+## Event bus performance
+
+Gives a simple measure of the performance of the event bus.
+
+Start a sender in one console:
+
+vertx run eb_perf/sender.js -cluster
+
+And in another console:
+
+vertx run eb_perf/handler.js -cluster -cluster-port 25501
+
+
+
 
 
 
