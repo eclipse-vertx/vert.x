@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::SockJSServer
   
-    &mdash; 'Ruby API Docs'
+    &mdash; Ruby API Doc
   
 </title>
 
@@ -101,41 +101,31 @@
 
 <h2>Overview</h2><div class="docstring">
   <div class="discussion">
-    <p>
-This is an implementation of the server side part of
-<a href="\"https://github.com/sockjs\"" target="_parent" title="&quot;https://github.com/sockjs&quot;">"https://github.com/sockjs"</a>
-</p>
-<p>
-SockJS enables browsers to communicate with the server using a simple
-WebSocket-like api for sending and receiving messages. Under the bonnet
-SockJS chooses to use one of several protocols depending on browser
-capabilities and what apppears to be working across the network.
-</p>
-<p>
-Available protocols include:
-</p>
-<p>
-WebSockets xhr-polling xhr-streaming json-polling event-source html-file
-</p>
-<p>
-This means, it should just work irrespective of what browser is being used,
-and whether there are nasty things like proxies and load balancers between
-the client and the server.
-</p>
-<p>
-For more detailed information on SockJS, see their website.
-</p>
-<p>
-On the server side, you interact using instances of <span class='object_link'><a href="SockJSSocket.html" title="Vertx::SockJSSocket (class)">SockJSSocket</a></span> - this
-allows you to send data to the client or receive data via the
-<span class='object_link'><a href="ReadStream.html#data_handler-instance_method" title="Vertx::ReadStream#data_handler (method)">ReadStream#data_handler</a></span>.
-</p>
-<p>
-You can register multiple applications with the same SockJSServer, each
-using different path prefixes, each application will have its own handler,
-and configuration is described in a Hash.
-</p>
+    This is an implementation of the server side part of <a href="\"https://github.com/sockjs\"" target="_parent" title="&quot;https://github.com/sockjs&quot;">"https://github.com/sockjs"</a>
 
+SockJS enables browsers to communicate with the server using a simple WebSocket-like api for sending
+and receiving messages. Under the bonnet SockJS chooses to use one of several protocols depending on browser
+capabilities and what apppears to be working across the network.
+
+Available protocols include:
+
+WebSockets
+xhr-polling
+xhr-streaming
+json-polling
+event-source
+html-file
+
+This means, it should just work irrespective of what browser is being used, and whether there are nasty
+things like proxies and load balancers between the client and the server.
+
+For more detailed information on SockJS, see their website.
+
+On the server side, you interact using instances of <span class='object_link'><a href="SockJSSocket.html" title="Vertx::SockJSSocket (class)">SockJSSocket</a></span> - this allows you to send data to the
+client or receive data via the <span class='object_link'><a href="ReadStream.html#data_handler-instance_method" title="Vertx::ReadStream#data_handler (method)">ReadStream#data_handler</a></span>.
+
+You can register multiple applications with the same SockJSServer, each using different path prefixes, each
+application will have its own handler, and configuration is described in a Hash.
 
   </div>
 </div>
@@ -150,10 +140,7 @@ and configuration is described in a Hash.
       
       
         
-        <div class='inline'><p>
-<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
-</p>
-</div>
+        <div class='inline'><a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a></div>
       
     </li>
   
@@ -215,10 +202,7 @@ and configuration is described in a Hash.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Create a new SockJSServer.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Create a new SockJSServer.</div></span>
   
 </li>
 
@@ -240,10 +224,7 @@ Create a new SockJSServer.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Install an application.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Install an application.</div></span>
   
 </li>
 
@@ -265,10 +246,7 @@ Install an application.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Create a new SockJSServer
-</p>
-
+    Create a new SockJSServer
 
   </div>
 </div>
@@ -286,10 +264,7 @@ Create a new SockJSServer
       
       
         &mdash;
-        <div class='inline'><p>
-You must pass in an instance of <span class='object_link'><a href="HttpServer.html" title="Vertx::HttpServer (class)">HttpServer</a></span>
-</p>
-</div>
+        <div class='inline'>You must pass in an instance of <span class='object_link'><a href="HttpServer.html" title="Vertx::HttpServer (class)">HttpServer</a></span></div>
       
     </li>
   
@@ -373,10 +348,7 @@ You must pass in an instance of <span class='object_link'><a href="HttpServer.ht
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Install an application
-</p>
-
+    Install an application
 
   </div>
 </div>
@@ -394,10 +366,7 @@ Install an application
       
       
         &mdash;
-        <div class='inline'><p>
-Configuration for the application
-</p>
-</div>
+        <div class='inline'>Configuration for the application</div>
       
     </li>
   
@@ -413,10 +382,7 @@ Configuration for the application
       
       
         &mdash;
-        <div class='inline'><p>
-Proc representing the handler
-</p>
-</div>
+        <div class='inline'>Proc representing the handler</div>
       
     </li>
   
@@ -430,10 +396,7 @@ Proc representing the handler
       
       
         &mdash;
-        <div class='inline'><p>
-Handler to call when a new <span class='object_link'><a href="SockJSSocket.html" title="Vertx::SockJSSocket (class)">is created</a></span>
-</p>
-</div>
+        <div class='inline'>Handler to call when a new <span class='object_link'><a href="SockJSSocket.html" title="Vertx::SockJSSocket (class)">is created</a></span></div>
       
     </li>
   
@@ -475,9 +438,9 @@ Handler to call when a new <span class='object_link'><a href="SockJSSocket.html"
 </div>
 
     <div id="footer">
-  Generated on Tue Jul 24 12:18:24 2012 by
+  Generated on Wed Oct 24 13:13:00 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.2.1 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.9.3).
 </div>
 
   </body>

@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::RouteMatcher
   
-    &mdash; 'Ruby API Docs'
+    &mdash; Ruby API Doc
   
 </title>
 
@@ -101,41 +101,24 @@
 
 <h2>Overview</h2><div class="docstring">
   <div class="discussion">
-    <p>
-This class allows you to do route requests based on the HTTP verb and the
-request URI, in a manner similar to &lt;a
-href=&quot;http://www.sinatrarb.com/&quot;&gt;Sinatra&lt;/a&gt; or &lt;a
-href=&quot;http://expressjs.com/&quot;&gt;Express&lt;/a&gt;.
-</p>
-<p>
-RouteMatcher also lets you extract paramaters from the request URI either a
-simple pattern or using regular expressions for more complex matches. Any
-parameters extracted will be added to the requests parameters which will be
-available to you in your request handler.
-</p>
-<p>
-It&#8217;s particularly useful when writing REST-ful web applications.
-</p>
-<p>
-To use a simple pattern to extract parameters simply prefix the parameter
-name in the pattern with a &#8217;:&#8217; (colon).
-</p>
-<p>
-Different handlers can be specified for each of the HTTP verbs, GET, POST,
-PUT, DELETE etc.
-</p>
-<p>
-For more complex matches regular expressions can be used in the pattern.
-When regular expressions are used, the extracted parameters do not have a
-name, so they are put into the HTTP request with names of param0, param1,
-param2 etc.
-</p>
-<p>
-Multiple matches can be specified for each HTTP verb. In the case there are
-more than one matching patterns for a particular request, the first
-matching one will be used.
-</p>
+    This class allows you to do route requests based on the HTTP verb and the request URI, in a manner similar
+to &lt;a href=&quot;http://www.sinatrarb.com/&quot;&gt;Sinatra&lt;/a&gt; or &lt;a href=&quot;http://expressjs.com/&quot;&gt;Express&lt;/a&gt;.
 
+RouteMatcher also lets you extract paramaters from the request URI either a simple pattern or using
+regular expressions for more complex matches. Any parameters extracted will be added to the requests parameters
+which will be available to you in your request handler.
+
+It's particularly useful when writing REST-ful web applications.
+
+To use a simple pattern to extract parameters simply prefix the parameter name in the pattern with a ':' (colon).
+
+Different handlers can be specified for each of the HTTP verbs, GET, POST, PUT, DELETE etc.
+
+For more complex matches regular expressions can be used in the pattern. When regular expressions are used, the extracted
+parameters do not have a name, so they are put into the HTTP request with names of param0, param1, param2 etc.
+
+Multiple matches can be specified for each HTTP verb. In the case there are more than one matching patterns for
+a particular request, the first matching one will be used.
 
   </div>
 </div>
@@ -150,10 +133,7 @@ matching one will be used.
       
       
         
-        <div class='inline'><p>
-<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
-</p>
-</div>
+        <div class='inline'><a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a></div>
       
     </li>
   
@@ -191,10 +171,7 @@ matching one will be used.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Specify a handler that will be called for any matching HTTP request.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Specify a handler that will be called for any matching HTTP request.</div></span>
   
 </li>
 
@@ -216,10 +193,7 @@ Specify a handler that will be called for any matching HTTP request.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Specify a handler that will be called for any matching HTTP request.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Specify a handler that will be called for any matching HTTP request.</div></span>
   
 </li>
 
@@ -241,10 +215,7 @@ Specify a handler that will be called for any matching HTTP request.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Specify a handler that will be called for a matching HTTP CONNECT.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Specify a handler that will be called for a matching HTTP CONNECT.</div></span>
   
 </li>
 
@@ -266,10 +237,7 @@ Specify a handler that will be called for a matching HTTP CONNECT.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Specify a handler that will be called for a matching HTTP CONNECT.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Specify a handler that will be called for a matching HTTP CONNECT.</div></span>
   
 </li>
 
@@ -291,10 +259,7 @@ Specify a handler that will be called for a matching HTTP CONNECT.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Specify a handler that will be called for a matching HTTP DELETE.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Specify a handler that will be called for a matching HTTP DELETE.</div></span>
   
 </li>
 
@@ -316,10 +281,7 @@ Specify a handler that will be called for a matching HTTP DELETE.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Specify a handler that will be called for a matching HTTP DELETE.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Specify a handler that will be called for a matching HTTP DELETE.</div></span>
   
 </li>
 
@@ -341,10 +303,7 @@ Specify a handler that will be called for a matching HTTP DELETE.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Specify a handler that will be called for a matching HTTP GET.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Specify a handler that will be called for a matching HTTP GET.</div></span>
   
 </li>
 
@@ -366,10 +325,7 @@ Specify a handler that will be called for a matching HTTP GET.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Specify a handler that will be called for a matching HTTP GET.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Specify a handler that will be called for a matching HTTP GET.</div></span>
   
 </li>
 
@@ -391,10 +347,7 @@ Specify a handler that will be called for a matching HTTP GET.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Specify a handler that will be called for a matching HTTP HEAD.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Specify a handler that will be called for a matching HTTP HEAD.</div></span>
   
 </li>
 
@@ -416,10 +369,7 @@ Specify a handler that will be called for a matching HTTP HEAD.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Specify a handler that will be called for a matching HTTP HEAD.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Specify a handler that will be called for a matching HTTP HEAD.</div></span>
   
 </li>
 
@@ -443,10 +393,7 @@ Specify a handler that will be called for a matching HTTP HEAD.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-A new instance of RouteMatcher.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>A new instance of RouteMatcher.</div></span>
   
 </li>
 
@@ -468,10 +415,7 @@ A new instance of RouteMatcher.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-This method is called to provide the matcher with data.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>This method is called to provide the matcher with data.</div></span>
   
 </li>
 
@@ -493,11 +437,8 @@ This method is called to provide the matcher with data.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Specify a handler that will be called when nothing matches Default
-behaviour is to return a 404.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Specify a handler that will be called when nothing matches
+Default behaviour is to return a 404.</div></span>
   
 </li>
 
@@ -519,10 +460,7 @@ behaviour is to return a 404.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Specify a handler that will be called for a matching HTTP OPTIONS.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Specify a handler that will be called for a matching HTTP OPTIONS.</div></span>
   
 </li>
 
@@ -544,10 +482,7 @@ Specify a handler that will be called for a matching HTTP OPTIONS.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Specify a handler that will be called for a matching HTTP OPTIONS.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Specify a handler that will be called for a matching HTTP OPTIONS.</div></span>
   
 </li>
 
@@ -569,10 +504,7 @@ Specify a handler that will be called for a matching HTTP OPTIONS.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Specify a handler that will be called for a matching HTTP PATCH.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Specify a handler that will be called for a matching HTTP PATCH.</div></span>
   
 </li>
 
@@ -594,10 +526,7 @@ Specify a handler that will be called for a matching HTTP PATCH.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Specify a handler that will be called for a matching HTTP PATCH.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Specify a handler that will be called for a matching HTTP PATCH.</div></span>
   
 </li>
 
@@ -619,10 +548,7 @@ Specify a handler that will be called for a matching HTTP PATCH.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Specify a handler that will be called for a matching HTTP POST.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Specify a handler that will be called for a matching HTTP POST.</div></span>
   
 </li>
 
@@ -644,10 +570,7 @@ Specify a handler that will be called for a matching HTTP POST.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Specify a handler that will be called for a matching HTTP POST.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Specify a handler that will be called for a matching HTTP POST.</div></span>
   
 </li>
 
@@ -669,10 +592,7 @@ Specify a handler that will be called for a matching HTTP POST.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Specify a handler that will be called for a matching HTTP PUT.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Specify a handler that will be called for a matching HTTP PUT.</div></span>
   
 </li>
 
@@ -694,10 +614,7 @@ Specify a handler that will be called for a matching HTTP PUT.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Specify a handler that will be called for a matching HTTP PUT.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Specify a handler that will be called for a matching HTTP PUT.</div></span>
   
 </li>
 
@@ -719,10 +636,7 @@ Specify a handler that will be called for a matching HTTP PUT.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Specify a handler that will be called for a matching HTTP TRACE.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Specify a handler that will be called for a matching HTTP TRACE.</div></span>
   
 </li>
 
@@ -744,10 +658,7 @@ Specify a handler that will be called for a matching HTTP TRACE.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Specify a handler that will be called for a matching HTTP TRACE.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Specify a handler that will be called for a matching HTTP TRACE.</div></span>
   
 </li>
 
@@ -769,10 +680,7 @@ Specify a handler that will be called for a matching HTTP TRACE.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-A new instance of RouteMatcher
-</p>
-
+    A new instance of RouteMatcher
 
   </div>
 </div>
@@ -819,10 +727,7 @@ A new instance of RouteMatcher
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Specify a handler that will be called for any matching HTTP request
-</p>
-
+    Specify a handler that will be called for any matching HTTP request
 
   </div>
 </div>
@@ -840,10 +745,7 @@ Specify a handler that will be called for any matching HTTP request
       
       
         &mdash;
-        <div class='inline'><p>
-simple pattern
-</p>
-</div>
+        <div class='inline'>simple pattern</div>
       
     </li>
   
@@ -859,10 +761,7 @@ simple pattern
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the handler</div>
       
     </li>
   
@@ -876,10 +775,7 @@ A proc to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the handler</div>
       
     </li>
   
@@ -921,10 +817,7 @@ A block to be used as the handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Specify a handler that will be called for any matching HTTP request
-</p>
-
+    Specify a handler that will be called for any matching HTTP request
 
   </div>
 </div>
@@ -942,10 +835,7 @@ Specify a handler that will be called for any matching HTTP request
       
       
         &mdash;
-        <div class='inline'><p>
-regular expression for a pattern
-</p>
-</div>
+        <div class='inline'>regular expression for a pattern</div>
       
     </li>
   
@@ -961,10 +851,7 @@ regular expression for a pattern
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the handler</div>
       
     </li>
   
@@ -978,10 +865,7 @@ A proc to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the handler</div>
       
     </li>
   
@@ -1023,10 +907,7 @@ A block to be used as the handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Specify a handler that will be called for a matching HTTP CONNECT
-</p>
-
+    Specify a handler that will be called for a matching HTTP CONNECT
 
   </div>
 </div>
@@ -1044,10 +925,7 @@ Specify a handler that will be called for a matching HTTP CONNECT
       
       
         &mdash;
-        <div class='inline'><p>
-simple pattern
-</p>
-</div>
+        <div class='inline'>simple pattern</div>
       
     </li>
   
@@ -1063,10 +941,7 @@ simple pattern
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the handler</div>
       
     </li>
   
@@ -1080,10 +955,7 @@ A proc to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the handler</div>
       
     </li>
   
@@ -1125,10 +997,7 @@ A block to be used as the handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Specify a handler that will be called for a matching HTTP CONNECT
-</p>
-
+    Specify a handler that will be called for a matching HTTP CONNECT
 
   </div>
 </div>
@@ -1146,10 +1015,7 @@ Specify a handler that will be called for a matching HTTP CONNECT
       
       
         &mdash;
-        <div class='inline'><p>
-regular expression for a pattern
-</p>
-</div>
+        <div class='inline'>regular expression for a pattern</div>
       
     </li>
   
@@ -1165,10 +1031,7 @@ regular expression for a pattern
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the handler</div>
       
     </li>
   
@@ -1182,10 +1045,7 @@ A proc to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the handler</div>
       
     </li>
   
@@ -1227,10 +1087,7 @@ A block to be used as the handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Specify a handler that will be called for a matching HTTP DELETE
-</p>
-
+    Specify a handler that will be called for a matching HTTP DELETE
 
   </div>
 </div>
@@ -1248,10 +1105,7 @@ Specify a handler that will be called for a matching HTTP DELETE
       
       
         &mdash;
-        <div class='inline'><p>
-simple pattern
-</p>
-</div>
+        <div class='inline'>simple pattern</div>
       
     </li>
   
@@ -1267,10 +1121,7 @@ simple pattern
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the handler</div>
       
     </li>
   
@@ -1284,10 +1135,7 @@ A proc to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the handler</div>
       
     </li>
   
@@ -1329,10 +1177,7 @@ A block to be used as the handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Specify a handler that will be called for a matching HTTP DELETE
-</p>
-
+    Specify a handler that will be called for a matching HTTP DELETE
 
   </div>
 </div>
@@ -1350,10 +1195,7 @@ Specify a handler that will be called for a matching HTTP DELETE
       
       
         &mdash;
-        <div class='inline'><p>
-regular expression for a pattern
-</p>
-</div>
+        <div class='inline'>regular expression for a pattern</div>
       
     </li>
   
@@ -1369,10 +1211,7 @@ regular expression for a pattern
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the handler</div>
       
     </li>
   
@@ -1386,10 +1225,7 @@ A proc to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the handler</div>
       
     </li>
   
@@ -1431,10 +1267,7 @@ A block to be used as the handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Specify a handler that will be called for a matching HTTP GET
-</p>
-
+    Specify a handler that will be called for a matching HTTP GET
 
   </div>
 </div>
@@ -1452,10 +1285,7 @@ Specify a handler that will be called for a matching HTTP GET
       
       
         &mdash;
-        <div class='inline'><p>
-simple pattern
-</p>
-</div>
+        <div class='inline'>simple pattern</div>
       
     </li>
   
@@ -1471,10 +1301,7 @@ simple pattern
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the handler</div>
       
     </li>
   
@@ -1488,10 +1315,7 @@ A proc to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the handler</div>
       
     </li>
   
@@ -1533,10 +1357,7 @@ A block to be used as the handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Specify a handler that will be called for a matching HTTP GET
-</p>
-
+    Specify a handler that will be called for a matching HTTP GET
 
   </div>
 </div>
@@ -1554,10 +1375,7 @@ Specify a handler that will be called for a matching HTTP GET
       
       
         &mdash;
-        <div class='inline'><p>
-regular expression for a pattern
-</p>
-</div>
+        <div class='inline'>regular expression for a pattern</div>
       
     </li>
   
@@ -1573,10 +1391,7 @@ regular expression for a pattern
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the handler</div>
       
     </li>
   
@@ -1590,10 +1405,7 @@ A proc to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the handler</div>
       
     </li>
   
@@ -1635,10 +1447,7 @@ A block to be used as the handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Specify a handler that will be called for a matching HTTP HEAD
-</p>
-
+    Specify a handler that will be called for a matching HTTP HEAD
 
   </div>
 </div>
@@ -1656,10 +1465,7 @@ Specify a handler that will be called for a matching HTTP HEAD
       
       
         &mdash;
-        <div class='inline'><p>
-simple pattern
-</p>
-</div>
+        <div class='inline'>simple pattern</div>
       
     </li>
   
@@ -1675,10 +1481,7 @@ simple pattern
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the handler</div>
       
     </li>
   
@@ -1692,10 +1495,7 @@ A proc to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the handler</div>
       
     </li>
   
@@ -1737,10 +1537,7 @@ A block to be used as the handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Specify a handler that will be called for a matching HTTP HEAD
-</p>
-
+    Specify a handler that will be called for a matching HTTP HEAD
 
   </div>
 </div>
@@ -1758,10 +1555,7 @@ Specify a handler that will be called for a matching HTTP HEAD
       
       
         &mdash;
-        <div class='inline'><p>
-regular expression for a pattern
-</p>
-</div>
+        <div class='inline'>regular expression for a pattern</div>
       
     </li>
   
@@ -1777,10 +1571,7 @@ regular expression for a pattern
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the handler</div>
       
     </li>
   
@@ -1794,10 +1585,7 @@ A proc to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the handler</div>
       
     </li>
   
@@ -1839,10 +1627,7 @@ A block to be used as the handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-This method is called to provide the matcher with data.
-</p>
-
+    This method is called to provide the matcher with data.
 
   </div>
 </div>
@@ -1860,10 +1645,7 @@ This method is called to provide the matcher with data.
       
       
         &mdash;
-        <div class='inline'><p>
-Input request to the parser.
-</p>
-</div>
+        <div class='inline'>Input request to the parser.</div>
       
     </li>
   
@@ -1903,11 +1685,8 @@ Input request to the parser.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Specify a handler that will be called when nothing matches Default
-behaviour is to return a 404
-</p>
-
+    Specify a handler that will be called when nothing matches
+Default behaviour is to return a 404
 
   </div>
 </div>
@@ -1927,10 +1706,7 @@ behaviour is to return a 404
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the handler</div>
       
     </li>
   
@@ -1944,10 +1720,7 @@ A proc to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the handler</div>
       
     </li>
   
@@ -1989,10 +1762,7 @@ A block to be used as the handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Specify a handler that will be called for a matching HTTP OPTIONS
-</p>
-
+    Specify a handler that will be called for a matching HTTP OPTIONS
 
   </div>
 </div>
@@ -2010,10 +1780,7 @@ Specify a handler that will be called for a matching HTTP OPTIONS
       
       
         &mdash;
-        <div class='inline'><p>
-simple pattern
-</p>
-</div>
+        <div class='inline'>simple pattern</div>
       
     </li>
   
@@ -2029,10 +1796,7 @@ simple pattern
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the handler</div>
       
     </li>
   
@@ -2046,10 +1810,7 @@ A proc to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the handler</div>
       
     </li>
   
@@ -2091,10 +1852,7 @@ A block to be used as the handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Specify a handler that will be called for a matching HTTP OPTIONS
-</p>
-
+    Specify a handler that will be called for a matching HTTP OPTIONS
 
   </div>
 </div>
@@ -2112,10 +1870,7 @@ Specify a handler that will be called for a matching HTTP OPTIONS
       
       
         &mdash;
-        <div class='inline'><p>
-regular expression for a pattern
-</p>
-</div>
+        <div class='inline'>regular expression for a pattern</div>
       
     </li>
   
@@ -2131,10 +1886,7 @@ regular expression for a pattern
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the handler</div>
       
     </li>
   
@@ -2148,10 +1900,7 @@ A proc to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the handler</div>
       
     </li>
   
@@ -2193,10 +1942,7 @@ A block to be used as the handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Specify a handler that will be called for a matching HTTP PATCH
-</p>
-
+    Specify a handler that will be called for a matching HTTP PATCH
 
   </div>
 </div>
@@ -2214,10 +1960,7 @@ Specify a handler that will be called for a matching HTTP PATCH
       
       
         &mdash;
-        <div class='inline'><p>
-simple pattern
-</p>
-</div>
+        <div class='inline'>simple pattern</div>
       
     </li>
   
@@ -2233,10 +1976,7 @@ simple pattern
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the handler</div>
       
     </li>
   
@@ -2250,10 +1990,7 @@ A proc to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the handler</div>
       
     </li>
   
@@ -2295,10 +2032,7 @@ A block to be used as the handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Specify a handler that will be called for a matching HTTP PATCH
-</p>
-
+    Specify a handler that will be called for a matching HTTP PATCH
 
   </div>
 </div>
@@ -2316,10 +2050,7 @@ Specify a handler that will be called for a matching HTTP PATCH
       
       
         &mdash;
-        <div class='inline'><p>
-regular expression for a pattern
-</p>
-</div>
+        <div class='inline'>regular expression for a pattern</div>
       
     </li>
   
@@ -2335,10 +2066,7 @@ regular expression for a pattern
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the handler</div>
       
     </li>
   
@@ -2352,10 +2080,7 @@ A proc to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the handler</div>
       
     </li>
   
@@ -2397,10 +2122,7 @@ A block to be used as the handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Specify a handler that will be called for a matching HTTP POST
-</p>
-
+    Specify a handler that will be called for a matching HTTP POST
 
   </div>
 </div>
@@ -2418,10 +2140,7 @@ Specify a handler that will be called for a matching HTTP POST
       
       
         &mdash;
-        <div class='inline'><p>
-simple pattern
-</p>
-</div>
+        <div class='inline'>simple pattern</div>
       
     </li>
   
@@ -2437,10 +2156,7 @@ simple pattern
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the handler</div>
       
     </li>
   
@@ -2454,10 +2170,7 @@ A proc to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the handler</div>
       
     </li>
   
@@ -2499,10 +2212,7 @@ A block to be used as the handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Specify a handler that will be called for a matching HTTP POST
-</p>
-
+    Specify a handler that will be called for a matching HTTP POST
 
   </div>
 </div>
@@ -2520,10 +2230,7 @@ Specify a handler that will be called for a matching HTTP POST
       
       
         &mdash;
-        <div class='inline'><p>
-regular expression for a pattern
-</p>
-</div>
+        <div class='inline'>regular expression for a pattern</div>
       
     </li>
   
@@ -2539,10 +2246,7 @@ regular expression for a pattern
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the handler</div>
       
     </li>
   
@@ -2556,10 +2260,7 @@ A proc to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the handler</div>
       
     </li>
   
@@ -2601,10 +2302,7 @@ A block to be used as the handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Specify a handler that will be called for a matching HTTP PUT
-</p>
-
+    Specify a handler that will be called for a matching HTTP PUT
 
   </div>
 </div>
@@ -2622,10 +2320,7 @@ Specify a handler that will be called for a matching HTTP PUT
       
       
         &mdash;
-        <div class='inline'><p>
-simple pattern
-</p>
-</div>
+        <div class='inline'>simple pattern</div>
       
     </li>
   
@@ -2641,10 +2336,7 @@ simple pattern
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the handler</div>
       
     </li>
   
@@ -2658,10 +2350,7 @@ A proc to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the handler</div>
       
     </li>
   
@@ -2703,10 +2392,7 @@ A block to be used as the handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Specify a handler that will be called for a matching HTTP PUT
-</p>
-
+    Specify a handler that will be called for a matching HTTP PUT
 
   </div>
 </div>
@@ -2724,10 +2410,7 @@ Specify a handler that will be called for a matching HTTP PUT
       
       
         &mdash;
-        <div class='inline'><p>
-regular expression for a pattern
-</p>
-</div>
+        <div class='inline'>regular expression for a pattern</div>
       
     </li>
   
@@ -2743,10 +2426,7 @@ regular expression for a pattern
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the handler</div>
       
     </li>
   
@@ -2760,10 +2440,7 @@ A proc to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the handler</div>
       
     </li>
   
@@ -2805,10 +2482,7 @@ A block to be used as the handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Specify a handler that will be called for a matching HTTP TRACE
-</p>
-
+    Specify a handler that will be called for a matching HTTP TRACE
 
   </div>
 </div>
@@ -2826,10 +2500,7 @@ Specify a handler that will be called for a matching HTTP TRACE
       
       
         &mdash;
-        <div class='inline'><p>
-simple pattern
-</p>
-</div>
+        <div class='inline'>simple pattern</div>
       
     </li>
   
@@ -2845,10 +2516,7 @@ simple pattern
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the handler</div>
       
     </li>
   
@@ -2862,10 +2530,7 @@ A proc to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the handler</div>
       
     </li>
   
@@ -2907,10 +2572,7 @@ A block to be used as the handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Specify a handler that will be called for a matching HTTP TRACE
-</p>
-
+    Specify a handler that will be called for a matching HTTP TRACE
 
   </div>
 </div>
@@ -2928,10 +2590,7 @@ Specify a handler that will be called for a matching HTTP TRACE
       
       
         &mdash;
-        <div class='inline'><p>
-regular expression for a pattern
-</p>
-</div>
+        <div class='inline'>regular expression for a pattern</div>
       
     </li>
   
@@ -2947,10 +2606,7 @@ regular expression for a pattern
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the handler</div>
       
     </li>
   
@@ -2964,10 +2620,7 @@ A proc to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the handler</div>
       
     </li>
   
@@ -3003,9 +2656,9 @@ A block to be used as the handler
 </div>
 
     <div id="footer">
-  Generated on Tue Jul 24 12:18:24 2012 by
+  Generated on Wed Oct 24 13:12:59 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.2.1 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.9.3).
 </div>
 
   </body>

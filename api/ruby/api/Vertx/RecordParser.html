@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::RecordParser
   
-    &mdash; 'Ruby API Docs'
+    &mdash; Ruby API Doc
   
 </title>
 
@@ -101,42 +101,30 @@
 
 <h2>Overview</h2><div class="docstring">
   <div class="discussion">
-    <p>
-A helper class which allows you to easily parse protocols which are
-delimited by a sequence of bytes, or fixed size records.
-</p>
-<p>
-Instances of this class take as input <span class='object_link'><a href="Buffer.html" title="Vertx::Buffer (class)">Buffer</a></span> instances containing raw
-bytes, and output records. For example, if I had a simple ASCII text
-protocol delimited by &#8217;\n&#8217; and the input was the following:
-</p>
-<pre class="code ruby"><code>
-  <span class='rubyid_buffer1 identifier id'>buffer1</span><span class='symbol val'>:HELLO</span>\<span class='rubyid_nHOW identifier id'>nHOW</span> <span class='rubyid_ARE constant id'>ARE</span> <span class='rubyid_Y constant id'>Y</span>
-  <span class='rubyid_buffer2 identifier id'>buffer2</span><span class='symbol val'>:OU?</span>\<span class='rubyid_nI identifier id'>nI</span> <span class='rubyid_AM constant id'>AM</span>
-  <span class='rubyid_buffer3 identifier id'>buffer3</span><span class='colon op'>:</span> <span class='rubyid_DOING constant id'>DOING</span> <span class='rubyid_OK constant id'>OK</span>
-  <span class='rubyid_buffer4 identifier id'>buffer4</span><span class='symbol val'>:\</span><span class='rubyid_n identifier id'>n</span>
-</code></pre>
-<p>
-Then the output would be:
-</p>
-<pre class="code ruby"><code>
-  <span class='rubyid_buffer1 identifier id'>buffer1</span><span class='symbol val'>:HELLO</span>
-  <span class='rubyid_buffer2 identifier id'>buffer2</span><span class='symbol val'>:HOW</span> <span class='rubyid_ARE constant id'>ARE</span> <span class='rubyid_YOU? constant id'>YOU?</span>
-  <span class='rubyid_buffer3 identifier id'>buffer3</span><span class='symbol val'>:I</span> <span class='rubyid_AM constant id'>AM</span> <span class='rubyid_DOING constant id'>DOING</span> <span class='rubyid_OK constant id'>OK</span>
-</code></pre>
-<p>
-Instances of this class can be changed between delimited mode and fixed
-size record mode on the fly as individual records are read, this allows you
-to parse protocols where, for example, the first 5 records might all be
-fixed size (of potentially different sizes), followed by some delimited
-records, followed by more fixed size records.
-</p>
-<p>
-Instances of this class can&#8217;t currently be used for protocols where
-the text is encoded with something other than a 1-1 byte-char mapping. TODO
-extend this class to cope with arbitrary character encodings.
-</p>
+    A helper class which allows you to easily parse protocols which are delimited by a sequence of bytes, or fixed
+size records.
 
+Instances of this class take as input <span class='object_link'><a href="Buffer.html" title="Vertx::Buffer (class)">Buffer</a></span> instances containing raw bytes, and output records.
+For example, if I had a simple ASCII text protocol delimited by '\n' and the input was the following:
+
+  buffer1:HELLO\nHOW ARE Y
+  buffer2:OU?\nI AM
+  buffer3: DOING OK
+  buffer4:\n
+
+Then the output would be:
+
+  buffer1:HELLO
+  buffer2:HOW ARE YOU?
+  buffer3:I AM DOING OK
+
+Instances of this class can be changed between delimited mode and fixed size record mode on the fly as
+individual records are read, this allows you to parse protocols where, for example, the first 5 records might
+all be fixed size (of potentially different sizes), followed by some delimited records, followed by more fixed
+size records.
+
+Instances of this class can't currently be used for protocols where the text is encoded with something other than
+a 1-1 byte-char mapping. TODO extend this class to cope with arbitrary character encodings.
 
   </div>
 </div>
@@ -151,10 +139,7 @@ extend this class to cope with arbitrary character encodings.
       
       
         
-        <div class='inline'><p>
-<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
-</p>
-</div>
+        <div class='inline'><a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a></div>
       
     </li>
   
@@ -192,12 +177,8 @@ extend this class to cope with arbitrary character encodings.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Create a new RecordParser instance, initially in delimited mode, and where
-the delimiter can be represented by a delimiter string endcoded in latin-1
-.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Create a new RecordParser instance, initially in delimited mode, and where the delimiter can be represented
+by a delimiter string endcoded in latin-1 .</div></span>
   
 </li>
 
@@ -219,10 +200,7 @@ the delimiter can be represented by a delimiter string endcoded in latin-1
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Create a new RecordParser instance, initially in fixed size mode.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Create a new RecordParser instance, initially in fixed size mode.</div></span>
   
 </li>
 
@@ -253,10 +231,7 @@ Create a new RecordParser instance, initially in fixed size mode.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Flip the parser into delimited mode.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Flip the parser into delimited mode.</div></span>
   
 </li>
 
@@ -278,10 +253,7 @@ Flip the parser into delimited mode.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Flip the parser into fixed size mode.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Flip the parser into fixed size mode.</div></span>
   
 </li>
 
@@ -303,10 +275,7 @@ Flip the parser into fixed size mode.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-This method is called to provide the parser with data.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>This method is called to provide the parser with data.</div></span>
   
 </li>
 
@@ -331,13 +300,8 @@ This method is called to provide the parser with data.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Create a new RecordParser instance, initially in delimited mode, and where
-the delimiter can be represented by a delimiter string endcoded in latin-1
-. Don&#8217;t use this if your String contains other than latin-1
-characters.
-</p>
-
+    Create a new RecordParser instance, initially in delimited mode, and where the delimiter can be represented
+by a delimiter string endcoded in latin-1 . Don't use this if your String contains other than latin-1 characters.
 
   </div>
 </div>
@@ -355,10 +319,7 @@ characters.
       
       
         &mdash;
-        <div class='inline'><p>
-The delimiter string.
-</p>
-</div>
+        <div class='inline'>The delimiter string.</div>
       
     </li>
   
@@ -374,10 +335,7 @@ The delimiter string.
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the output handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the output handler</div>
       
     </li>
   
@@ -391,10 +349,7 @@ A proc to be used as the output handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the output handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the output handler</div>
       
     </li>
   
@@ -411,10 +366,7 @@ A block to be used as the output handler
       
       
         &mdash;
-        <div class='inline'><p>
-a new RecordParser
-</p>
-</div>
+        <div class='inline'>a new RecordParser</div>
       
     </li>
   
@@ -455,10 +407,7 @@ a new RecordParser
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Create a new RecordParser instance, initially in fixed size mode.
-</p>
-
+    Create a new RecordParser instance, initially in fixed size mode.
 
   </div>
 </div>
@@ -476,10 +425,7 @@ Create a new RecordParser instance, initially in fixed size mode.
       
       
         &mdash;
-        <div class='inline'><p>
-The initial record size.
-</p>
-</div>
+        <div class='inline'>The initial record size.</div>
       
     </li>
   
@@ -495,10 +441,7 @@ The initial record size.
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the output handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the output handler</div>
       
     </li>
   
@@ -512,10 +455,7 @@ A proc to be used as the output handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the output handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the output handler</div>
       
     </li>
   
@@ -532,10 +472,7 @@ A block to be used as the output handler
       
       
         &mdash;
-        <div class='inline'><p>
-a new RecordParser
-</p>
-</div>
+        <div class='inline'>a new RecordParser</div>
       
     </li>
   
@@ -582,11 +519,8 @@ a new RecordParser
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Flip the parser into delimited mode. This method can be called multiple
-times with different values of delim while data is being parsed.
-</p>
-
+    Flip the parser into delimited mode. This method can be called multiple times with different values
+of delim while data is being parsed.
 
   </div>
 </div>
@@ -604,10 +538,7 @@ times with different values of delim while data is being parsed.
       
       
         &mdash;
-        <div class='inline'><p>
-The delimiter string.
-</p>
-</div>
+        <div class='inline'>The delimiter string.</div>
       
     </li>
   
@@ -647,11 +578,8 @@ The delimiter string.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Flip the parser into fixed size mode. This method can be called multiple
-times with different values of size while data is being parsed.
-</p>
-
+    Flip the parser into fixed size mode. This method can be called multiple times with different values
+of size while data is being parsed.
 
   </div>
 </div>
@@ -669,10 +597,7 @@ times with different values of size while data is being parsed.
       
       
         &mdash;
-        <div class='inline'><p>
-The record size.
-</p>
-</div>
+        <div class='inline'>The record size.</div>
       
     </li>
   
@@ -712,10 +637,7 @@ The record size.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-This method is called to provide the parser with data.
-</p>
-
+    This method is called to provide the parser with data.
 
   </div>
 </div>
@@ -733,10 +655,7 @@ This method is called to provide the parser with data.
       
       
         &mdash;
-        <div class='inline'><p>
-Input data to the parser.
-</p>
-</div>
+        <div class='inline'>Input data to the parser.</div>
       
     </li>
   
@@ -770,9 +689,9 @@ Input data to the parser.
 </div>
 
     <div id="footer">
-  Generated on Tue Jul 24 12:18:25 2012 by
+  Generated on Wed Oct 24 13:13:01 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.2.1 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.9.3).
 </div>
 
   </body>

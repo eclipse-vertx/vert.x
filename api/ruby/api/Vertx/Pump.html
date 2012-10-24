@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::Pump
   
-    &mdash; 'Ruby API Docs'
+    &mdash; Ruby API Doc
   
 </title>
 
@@ -101,27 +101,19 @@
 
 <h2>Overview</h2><div class="docstring">
   <div class="discussion">
-    <p>
-Pumps data from a <span class='object_link'><a href="ReadStream.html" title="Vertx::ReadStream (module)">ReadStream</a></span> to a <span class='object_link'><a href="WriteStream.html" title="Vertx::WriteStream (module)">WriteStream</a></span> and performs flow control
-where necessary to prevent the write stream from getting overloaded.
-</p>
-<p>
-Instances of this class read bytes from a ReadStream and write them to a
-WriteStream. If data can be read faster than it can be written this could
-result in the write queue of the WriteStream growing without bound,
-eventually causing it to exhaust all available RAM. To prevent this, after
-each write, instances of this class check whether the write queue of the
-WriteStream is full, and if so, the ReadStream is paused, and a
-<span class='object_link'><a href="WriteStream.html#drain_handler-instance_method" title="Vertx::WriteStream#drain_handler (method)">WriteStream#drain_handler</a></span> is set on the WriteStream. When the WriteStream
-has processed half of its backlog, the drain_handler will be called, which
-results in the pump resuming the ReadStream.
-</p>
-<p>
-This class can be used to pump from any <span class='object_link'><a href="ReadStream.html" title="Vertx::ReadStream (module)">ReadStream</a></span> to any { WriteStream},
-e.g. from an <span class='object_link'><a href="HttpServerRequest.html" title="Vertx::HttpServerRequest (class)">HttpServerRequest</a></span> to an <span class='object_link'><a href="AsyncFile.html" title="Vertx::AsyncFile (class)">AsyncFile</a></span>, or from <span class='object_link'><a href="NetSocket.html" title="Vertx::NetSocket (class)">NetSocket</a></span> to
-a <span class='object_link'><a href="WebSocket.html" title="Vertx::WebSocket (class)">WebSocket</a></span>.
-</p>
+    Pumps data from a <span class='object_link'><a href="ReadStream.html" title="Vertx::ReadStream (module)">ReadStream</a></span> to a <span class='object_link'><a href="WriteStream.html" title="Vertx::WriteStream (module)">WriteStream</a></span> and performs flow control where necessary to
+prevent the write stream from getting overloaded.
 
+Instances of this class read bytes from a ReadStream and write them to a WriteStream. If data
+can be read faster than it can be written this could result in the write queue of the WriteStream growing
+without bound, eventually causing it to exhaust all available RAM.
+To prevent this, after each write, instances of this class check whether the write queue of the WriteStream
+is full, and if so, the ReadStream is paused, and a <span class='object_link'><a href="WriteStream.html#drain_handler-instance_method" title="Vertx::WriteStream#drain_handler (method)">WriteStream#drain_handler</a></span> is set on the WriteStream.
+When the WriteStream has processed half of its backlog, the drain_handler will be called,
+which results in the pump resuming the ReadStream.
+
+This class can be used to pump from any <span class='object_link'><a href="ReadStream.html" title="Vertx::ReadStream (module)">ReadStream</a></span> to any { WriteStream},
+e.g. from an <span class='object_link'><a href="HttpServerRequest.html" title="Vertx::HttpServerRequest (class)">HttpServerRequest</a></span> to an <span class='object_link'><a href="AsyncFile.html" title="Vertx::AsyncFile (class)">AsyncFile</a></span>, or from <span class='object_link'><a href="NetSocket.html" title="Vertx::NetSocket (class)">NetSocket</a></span> to a <span class='object_link'><a href="WebSocket.html" title="Vertx::WebSocket (class)">WebSocket</a></span>.
 
   </div>
 </div>
@@ -136,10 +128,7 @@ a <span class='object_link'><a href="WebSocket.html" title="Vertx::WebSocket (cl
       
       
         
-        <div class='inline'><p>
-<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
-</p>
-</div>
+        <div class='inline'><a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a></div>
       
     </li>
   
@@ -177,10 +166,7 @@ a <span class='object_link'><a href="WebSocket.html" title="Vertx::WebSocket (cl
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Return the total number of bytes pumped by this pump.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Return the total number of bytes pumped by this pump.</div></span>
   
 </li>
 
@@ -204,10 +190,7 @@ Return the total number of bytes pumped by this pump.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-A new instance of Pump.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>A new instance of Pump.</div></span>
   
 </li>
 
@@ -229,10 +212,7 @@ A new instance of Pump.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Start the Pump.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Start the Pump.</div></span>
   
 </li>
 
@@ -254,10 +234,7 @@ Start the Pump.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Stop the Pump.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Stop the Pump.</div></span>
   
 </li>
 
@@ -279,10 +256,7 @@ Stop the Pump.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Set the write queue max size.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Set the write queue max size.</div></span>
   
 </li>
 
@@ -304,10 +278,7 @@ Set the write queue max size.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-A new instance of Pump
-</p>
-
+    A new instance of Pump
 
   </div>
 </div>
@@ -362,10 +333,7 @@ A new instance of Pump
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Return the total number of bytes pumped by this pump.
-</p>
-
+    Return the total number of bytes pumped by this pump.
 
   </div>
 </div>
@@ -382,10 +350,7 @@ Return the total number of bytes pumped by this pump.
       
       
         &mdash;
-        <div class='inline'><p>
-Return the total number of bytes pumped by this pump.
-</p>
-</div>
+        <div class='inline'>Return the total number of bytes pumped by this pump.</div>
       
     </li>
   
@@ -424,10 +389,7 @@ Return the total number of bytes pumped by this pump.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Start the Pump. The Pump can be started and stopped multiple times.
-</p>
-
+    Start the Pump. The Pump can be started and stopped multiple times.
 
   </div>
 </div>
@@ -467,10 +429,7 @@ Start the Pump. The Pump can be started and stopped multiple times.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Stop the Pump. The Pump can be started and stopped multiple times.
-</p>
-
+    Stop the Pump. The Pump can be started and stopped multiple times.
 
   </div>
 </div>
@@ -510,10 +469,7 @@ Stop the Pump. The Pump can be started and stopped multiple times.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Set the write queue max size
-</p>
-
+    Set the write queue max size
 
   </div>
 </div>
@@ -531,10 +487,7 @@ Set the write queue max size
       
       
         &mdash;
-        <div class='inline'><p>
-write queue max size
-</p>
-</div>
+        <div class='inline'>write queue max size</div>
       
     </li>
   
@@ -568,9 +521,9 @@ write queue max size
 </div>
 
     <div id="footer">
-  Generated on Tue Jul 24 12:18:24 2012 by
+  Generated on Wed Oct 24 13:13:00 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.2.1 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.9.3).
 </div>
 
   </body>

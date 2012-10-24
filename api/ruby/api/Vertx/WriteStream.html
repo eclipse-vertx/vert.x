@@ -6,7 +6,7 @@
 <title>
   Module: Vertx::WriteStream
   
-    &mdash; 'Ruby API Docs'
+    &mdash; Ruby API Doc
   
 </title>
 
@@ -90,14 +90,9 @@
 
 <h2>Overview</h2><div class="docstring">
   <div class="discussion">
-    <p>
-A mixin module which represents a stream of data that can be written to.
-</p>
-<p>
-Any class that mixes in this module can be used by a <span class='object_link'><a href="Pump.html" title="Vertx::Pump (class)">Pump</a></span> to pump data
-from a <span class='object_link'><a href="ReadStream.html" title="Vertx::ReadStream (module)">ReadStream</a></span> to it.
-</p>
+    A mixin module which represents a stream of data that can be written to.
 
+Any class that mixes in this module can be used by a <span class='object_link'><a href="Pump.html" title="Vertx::Pump (class)">Pump</a></span> to pump data from a <span class='object_link'><a href="ReadStream.html" title="Vertx::ReadStream (module)">ReadStream</a></span> to it.
 
   </div>
 </div>
@@ -112,10 +107,7 @@ from a <span class='object_link'><a href="ReadStream.html" title="Vertx::ReadStr
       
       
         
-        <div class='inline'><p>
-<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
-</p>
-</div>
+        <div class='inline'><a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a></div>
       
     </li>
   
@@ -153,10 +145,7 @@ from a <span class='object_link'><a href="ReadStream.html" title="Vertx::ReadStr
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Set a drain handler on the stream.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Set a drain handler on the stream.</div></span>
   
 </li>
 
@@ -178,10 +167,7 @@ Set a drain handler on the stream.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Set an execption handler on the stream.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Set an execption handler on the stream.</div></span>
   
 </li>
 
@@ -203,10 +189,7 @@ Set an execption handler on the stream.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Write some data to the stream.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Write some data to the stream.</div></span>
   
 </li>
 
@@ -228,10 +211,7 @@ Write some data to the stream.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Is the write queue full?.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Is the write queue full?.</div></span>
   
 </li>
 
@@ -253,10 +233,7 @@ Is the write queue full?.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Set the maximum size of the write queue.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Set the maximum size of the write queue.</div></span>
   
 </li>
 
@@ -281,12 +258,8 @@ Set the maximum size of the write queue.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Set a drain handler on the stream. If the write queue is full, then the
-handler will be called when the write queue has been reduced to maxSize /
-2. See <span class='object_link'><a href="Pump.html" title="Vertx::Pump (class)">Pump</a></span> for an example of this being used.
-</p>
-
+    Set a drain handler on the stream. If the write queue is full, then the handler will be called when the write
+queue has been reduced to maxSize / 2. See <span class='object_link'><a href="Pump.html" title="Vertx::Pump (class)">Pump</a></span> for an example of this being used.
 
   </div>
 </div>
@@ -304,10 +277,7 @@ handler will be called when the write queue has been reduced to maxSize /
       
       
         &mdash;
-        <div class='inline'><p>
-The drain handler
-</p>
-</div>
+        <div class='inline'>The drain handler</div>
       
     </li>
   
@@ -347,10 +317,7 @@ The drain handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Set an execption handler on the stream.
-</p>
-
+    Set an execption handler on the stream.
 
   </div>
 </div>
@@ -368,10 +335,7 @@ Set an execption handler on the stream.
       
       
         &mdash;
-        <div class='inline'><p>
-The exception handler
-</p>
-</div>
+        <div class='inline'>The exception handler</div>
       
     </li>
   
@@ -411,14 +375,9 @@ The exception handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Write some data to the stream. The data is put on an internal write queue,
-and the write actually happens asynchronously. To avoid running out of
-memory by putting too much on the write queue, check the
-<span class='object_link'><a href="#write_queue_full%3F-instance_method" title="Vertx::WriteStream#write_queue_full? (method)">#write_queue_full?</a></span> method before writing. This is done automatically if
-using a <span class='object_link'><a href="Pump.html" title="Vertx::Pump (class)">Pump</a></span>.
-</p>
-
+    Write some data to the stream. The data is put on an internal write queue, and the write actually happens
+asynchronously. To avoid running out of memory by putting too much on the write queue,
+check the <span class='object_link'><a href="#write_queue_full%3F-instance_method" title="Vertx::WriteStream#write_queue_full? (method)">#write_queue_full?</a></span> method before writing. This is done automatically if using a <span class='object_link'><a href="Pump.html" title="Vertx::Pump (class)">Pump</a></span>.
 
   </div>
 </div>
@@ -436,10 +395,7 @@ using a <span class='object_link'><a href="Pump.html" title="Vertx::Pump (class)
       
       
         &mdash;
-        <div class='inline'><p>
-The buffer to write.
-</p>
-</div>
+        <div class='inline'>The buffer to write.</div>
       
     </li>
   
@@ -479,10 +435,7 @@ The buffer to write.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Is the write queue full?
-</p>
-
+    Is the write queue full?
 
   </div>
 </div>
@@ -499,11 +452,7 @@ Is the write queue full?
       
       
         &mdash;
-        <div class='inline'><p>
-true if there are more bytes in the write queue than the max write queue
-size.
-</p>
-</div>
+        <div class='inline'>true if there are more bytes in the write queue than the max write queue size.</div>
       
     </li>
   
@@ -542,12 +491,9 @@ size.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Set the maximum size of the write queue. You will still be able to write to
-the stream even if there is more data than this in the write queue. This is
-used as an indicator by classes such as <span class='object_link'><a href="Pump.html" title="Vertx::Pump (class)">Pump</a></span> to provide flow control.
-</p>
-
+    Set the maximum size of the write queue. You will still be able to write to the stream even
+if there is more data than this in the write queue. This is used as an indicator by classes such as
+<span class='object_link'><a href="Pump.html" title="Vertx::Pump (class)">Pump</a></span> to provide flow control.
 
   </div>
 </div>
@@ -565,10 +511,7 @@ used as an indicator by classes such as <span class='object_link'><a href="Pump.
       
       
         &mdash;
-        <div class='inline'><p>
-The maximum size, in bytes.
-</p>
-</div>
+        <div class='inline'>The maximum size, in bytes.</div>
       
     </li>
   
@@ -602,9 +545,9 @@ The maximum size, in bytes.
 </div>
 
     <div id="footer">
-  Generated on Tue Jul 24 12:18:21 2012 by
+  Generated on Wed Oct 24 13:12:54 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.2.1 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.9.3).
 </div>
 
   </body>

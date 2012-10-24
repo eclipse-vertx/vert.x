@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::SharedData
   
-    &mdash; 'Ruby API Docs'
+    &mdash; Ruby API Doc
   
 </title>
 
@@ -101,27 +101,19 @@
 
 <h2>Overview</h2><div class="docstring">
   <div class="discussion">
-    <p>
-Sometimes it is desirable to share immutable data between different event
-loops, for example to implement a cache of data.
-</p>
-<p>
-This class allows instances of shareddata data structures to be looked up
-and used from different event loops. The data structures themselves will
-only allow certain data types to be stored into them. This shields the user
-from worrying about any thread safety issues might occur if mutable objects
-were shareddata between event loops.
-</p>
-<p>
-The following types can be stored in a shareddata data structure:
-</p>
-<pre class="code ruby"><code>
-  <span class='rubyid_String constant id'>String</span>
-  <span class='rubyid_FixNum constant id'>FixNum</span>
-  <span class='rubyid_Float constant id'>Float</span>
-  <span class='lbrace token'>{</span><span class='rubyid_Buffer constant id'>Buffer</span><span class='rbrace token'>}</span> <span class='rubyid_this identifier id'>this</span> <span class='rubyid_will identifier id'>will</span> <span class='rubyid_be identifier id'>be</span> <span class='rubyid_automatically identifier id'>automatically</span> <span class='rubyid_copied identifier id'>copied</span><span class='comma token'>,</span> <span class='rubyid_and and kw'>and</span> <span class='rubyid_the identifier id'>the</span> <span class='rubyid_copy identifier id'>copy</span> <span class='rubyid_will identifier id'>will</span> <span class='rubyid_be identifier id'>be</span> <span class='rubyid_stored identifier id'>stored</span> <span class='rubyid_in in kw'>in</span> <span class='rubyid_the identifier id'>the</span> <span class='rubyid_structure identifier id'>structure</span><span class='dot token'>.</span>
-</code></pre>
+    Sometimes it is desirable to share immutable data between different event loops, for example to implement a
+cache of data.
 
+This class allows instances of shareddata data structures to be looked up and used from different event loops.
+The data structures themselves will only allow certain data types to be stored into them. This shields the
+user from worrying about any thread safety issues might occur if mutable objects were shareddata between event loops.
+
+The following types can be stored in a shareddata data structure:
+
+  String
+  FixNum
+  Float
+  <span class='object_link'><a href="Buffer.html" title="Vertx::Buffer (class)">Buffer</a></span> this will be automatically copied, and the copy will be stored in the structure.
 
   </div>
 </div>
@@ -136,10 +128,7 @@ The following types can be stored in a shareddata data structure:
       
       
         
-        <div class='inline'><p>
-<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
-</p>
-</div>
+        <div class='inline'><a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a></div>
       
     </li>
   
@@ -190,10 +179,7 @@ The following types can be stored in a shareddata data structure:
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Return a Hash with the specific name.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Return a Hash with the specific name.</div></span>
   
 </li>
 
@@ -215,10 +201,7 @@ Return a Hash with the specific name.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Return a Set with the specific name.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Return a Set with the specific name.</div></span>
   
 </li>
 
@@ -240,10 +223,7 @@ Return a Set with the specific name.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Remove the hash.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Remove the hash.</div></span>
   
 </li>
 
@@ -265,10 +245,7 @@ Remove the hash.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Remove the set.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Remove the set.</div></span>
   
 </li>
 
@@ -346,11 +323,8 @@ Remove the set.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Return a Hash with the specific name. All invocations of this method with
-the same value of name are guaranteed to return the same Hash instance.
-</p>
-
+    Return a Hash with the specific name. All invocations of this method with the same value of name
+are guaranteed to return the same Hash instance.
 
   </div>
 </div>
@@ -368,10 +342,7 @@ the same value of name are guaranteed to return the same Hash instance.
       
       
         &mdash;
-        <div class='inline'><p>
-Get the hash with the key.
-</p>
-</div>
+        <div class='inline'>Get the hash with the key.</div>
       
     </li>
   
@@ -388,10 +359,7 @@ Get the hash with the key.
       
       
         &mdash;
-        <div class='inline'><p>
-the hash.
-</p>
-</div>
+        <div class='inline'>the hash.</div>
       
     </li>
   
@@ -432,11 +400,8 @@ the hash.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Return a Set with the specific name. All invocations of this method with
-the same value of name are guaranteed to return the same Set instance.
-</p>
-
+    Return a Set with the specific name. All invocations of this method with the same value of name
+are guaranteed to return the same Set instance.
 
   </div>
 </div>
@@ -454,10 +419,7 @@ the same value of name are guaranteed to return the same Set instance.
       
       
         &mdash;
-        <div class='inline'><p>
-Get the set with the key.
-</p>
-</div>
+        <div class='inline'>Get the set with the key.</div>
       
     </li>
   
@@ -474,10 +436,7 @@ Get the set with the key.
       
       
         &mdash;
-        <div class='inline'><p>
-the set.
-</p>
-</div>
+        <div class='inline'>the set.</div>
       
     </li>
   
@@ -518,10 +477,7 @@ the set.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Remove the hash
-</p>
-
+    Remove the hash
 
   </div>
 </div>
@@ -539,10 +495,7 @@ Remove the hash
       
       
         &mdash;
-        <div class='inline'><p>
-The key of the hash.
-</p>
-</div>
+        <div class='inline'>The key of the hash.</div>
       
     </li>
   
@@ -582,10 +535,7 @@ The key of the hash.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Remove the set
-</p>
-
+    Remove the set
 
   </div>
 </div>
@@ -603,10 +553,7 @@ Remove the set
       
       
         &mdash;
-        <div class='inline'><p>
-The key of the set.
-</p>
-</div>
+        <div class='inline'>The key of the set.</div>
       
     </li>
   
@@ -716,9 +663,9 @@ The key of the set.
 </div>
 
     <div id="footer">
-  Generated on Tue Jul 24 12:18:26 2012 by
+  Generated on Wed Oct 24 13:13:03 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.2.1 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.9.3).
 </div>
 
   </body>

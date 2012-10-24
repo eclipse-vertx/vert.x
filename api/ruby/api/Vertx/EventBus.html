@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::EventBus
   
-    &mdash; 'Ruby API Docs'
+    &mdash; Ruby API Doc
   
 </title>
 
@@ -101,39 +101,26 @@
 
 <h2>Overview</h2><div class="docstring">
   <div class="discussion">
-    <p>
-For point to point messaging, messages can be sent to an address using the
-send method. The messages will be delivered to a single handler, if one is
-registered on that address. If more than one handler is registered on the
-same address, Vert.x will choose one and deliver the message to that.
-Vert.x will aim to fairly distribute messages in a round-robin way, but
-does not guarantee strict round-robin under all circumstances.
-</p>
-<p>
-All messages sent over the bus are transient. On event of failure of all or
-part of the event bus messages may be lost. Applications should be coded to
-cope with lost messages, e.g. by resending them, and making application
-services idempotent.
-</p>
-<p>
-The order of messages received by any specific handler from a specific
-sender should match the order of messages sent from that sender.
-</p>
-<p>
-When sending a message, a reply handler can be provided. If so, it will be
-called when the reply from the receiver has been received. Reply messages
-can also be replied to, etc, ad infinitum.
-</p>
-<p>
-Different event bus instances can be clustered together over a network, to
-give a single logical event bus.
-</p>
-<p>
-When receiving a message in a handler the received object is an instance of
-EventBus::Message - this contains the actual Hash of the message plus a
-reply method which can be used to reply to it.
-</p>
+    For point to point messaging, messages can be sent to an address using the send method.
+The messages will be delivered to a single handler, if one is registered on that address. If more than one
+handler is registered on the same address, Vert.x will choose one and deliver the message to that. Vert.x will
+aim to fairly distribute messages in a round-robin way, but does not guarantee strict round-robin under all
+circumstances.
 
+All messages sent over the bus are transient. On event of failure of all or part of the event bus messages
+may be lost. Applications should be coded to cope with lost messages, e.g. by resending them,
+and making application services idempotent.
+
+The order of messages received by any specific handler from a specific sender should match the order of messages
+sent from that sender.
+
+When sending a message, a reply handler can be provided. If so, it will be called when the reply from the receiver
+has been received. Reply messages can also be replied to, etc, ad infinitum.
+
+Different event bus instances can be clustered together over a network, to give a single logical event bus.
+
+When receiving a message in a handler the received object is an instance of EventBus::Message - this contains
+the actual Hash of the message plus a reply method which can be used to reply to it.
 
   </div>
 </div>
@@ -148,10 +135,7 @@ reply method which can be used to reply to it.
       
       
         
-        <div class='inline'><p>
-<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
-</p>
-</div>
+        <div class='inline'><a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a></div>
       
     </li>
   
@@ -208,10 +192,7 @@ reply method which can be used to reply to it.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Publish a message on the event bus.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Publish a message on the event bus.</div></span>
   
 </li>
 
@@ -233,10 +214,7 @@ Publish a message on the event bus.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Register a handler.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Register a handler.</div></span>
   
 </li>
 
@@ -258,11 +236,8 @@ Register a handler.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Registers a handler against a uniquely generated address, the address is
-returned as the id received by the handler.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Registers a handler against a uniquely generated address, the address is returned as the id
+received by the handler.</div></span>
   
 </li>
 
@@ -284,11 +259,8 @@ returned as the id received by the handler.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Send a message on the event bus It will be called when the reply from a
-receiver is received.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Send a message on the event bus
+It will be called when the reply from a receiver is received.</div></span>
   
 </li>
 
@@ -310,10 +282,7 @@ receiver is received.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Unregisters a handler.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Unregisters a handler.</div></span>
   
 </li>
 
@@ -338,10 +307,7 @@ Unregisters a handler.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Publish a message on the event bus
-</p>
-
+    Publish a message on the event bus
 
   </div>
 </div>
@@ -359,10 +325,7 @@ Publish a message on the event bus
       
       
         &mdash;
-        <div class='inline'><p>
-The message to publish
-</p>
-</div>
+        <div class='inline'>The message to publish</div>
       
     </li>
   
@@ -402,11 +365,8 @@ The message to publish
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Register a handler. received by the handler. A single handler can be
-registered against many addresses.
-</p>
-
+    Register a handler.
+received by the handler. A single handler can be registered against many addresses.
 
   </div>
 </div>
@@ -424,10 +384,7 @@ registered against many addresses.
       
       
         &mdash;
-        <div class='inline'><p>
-The address to register for. Any messages sent to that address will be
-</p>
-</div>
+        <div class='inline'>The address to register for. Any messages sent to that address will be</div>
       
     </li>
   
@@ -443,10 +400,7 @@ The address to register for. Any messages sent to that address will be
       
       
         &mdash;
-        <div class='inline'><p>
-If true then handler won&#8217;t be propagated across cluster
-</p>
-</div>
+        <div class='inline'>If true then handler won't be propagated across cluster</div>
       
     </li>
   
@@ -460,10 +414,7 @@ If true then handler won&#8217;t be propagated across cluster
       
       
         &mdash;
-        <div class='inline'><p>
-The handler
-</p>
-</div>
+        <div class='inline'>The handler</div>
       
     </li>
   
@@ -480,10 +431,7 @@ The handler
       
       
         &mdash;
-        <div class='inline'><p>
-id of the handler which can be used in <span class='object_link'><a href="#unregister_handler-class_method" title="Vertx::EventBus.unregister_handler (method)">unregister_handler</a></span>
-</p>
-</div>
+        <div class='inline'>id of the handler which can be used in <span class='object_link'><a href="#unregister_handler-class_method" title="Vertx::EventBus.unregister_handler (method)">unregister_handler</a></span></div>
       
     </li>
   
@@ -506,7 +454,8 @@ id of the handler which can be used in <span class='object_link'><a href="#unreg
 104
 105
 106
-107</pre>
+107
+108</pre>
     </td>
     <td>
       <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/event_bus.rb', line 96</span>
@@ -516,11 +465,12 @@ id of the handler which can be used in <span class='object_link'><a href="#unreg
   <span class='rubyid_raise identifier id'>raise</span> <span class='string val'>&quot;A message handler must be specified&quot;</span> <span class='rubyid_if if_mod kw'>if</span> <span class='notop op'>!</span><span class='rubyid_message_hndlr identifier id'>message_hndlr</span>
   <span class='rubyid_internal identifier id'>internal</span> <span class='assign token'>=</span> <span class='rubyid_InternalHandler constant id'>InternalHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_message_hndlr identifier id'>message_hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_if if kw'>if</span> <span class='rubyid_local_only identifier id'>local_only</span>
-    <span class='rubyid_id identifier id'>id</span> <span class='assign token'>=</span> <span class='rubyid_@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='rubyid_registerLocalHandler identifier id'>registerLocalHandler</span><span class='lparen token'>(</span><span class='rubyid_address identifier id'>address</span><span class='comma token'>,</span> <span class='rubyid_internal identifier id'>internal</span><span class='rparen token'>)</span>
+    <span class='rubyid_@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='rubyid_registerLocalHandler identifier id'>registerLocalHandler</span><span class='lparen token'>(</span><span class='rubyid_address identifier id'>address</span><span class='comma token'>,</span> <span class='rubyid_internal identifier id'>internal</span><span class='rparen token'>)</span>
   <span class='rubyid_else else kw'>else</span>
-    <span class='rubyid_id identifier id'>id</span> <span class='assign token'>=</span> <span class='rubyid_@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='rubyid_registerHandler identifier id'>registerHandler</span><span class='lparen token'>(</span><span class='rubyid_address identifier id'>address</span><span class='comma token'>,</span> <span class='rubyid_internal identifier id'>internal</span><span class='rparen token'>)</span>
+    <span class='rubyid_@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='rubyid_registerHandler identifier id'>registerHandler</span><span class='lparen token'>(</span><span class='rubyid_address identifier id'>address</span><span class='comma token'>,</span> <span class='rubyid_internal identifier id'>internal</span><span class='rparen token'>)</span>
   <span class='rubyid_end end kw'>end</span>
-  <span class='rubyid_@@handler_map ivar id'>@@handler_map</span><span class='lbrack token'>[</span><span class='rubyid_id identifier id'>id</span><span class='rbrack token'>]</span> <span class='assign token'>=</span> <span class='rubyid_internal identifier id'>internal</span>
+  <span class='rubyid_id identifier id'>id</span> <span class='assign token'>=</span> <span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_util identifier id'>util</span><span class='dot token'>.</span><span class='rubyid_UUID constant id'>UUID</span><span class='dot token'>.</span><span class='rubyid_randomUUID identifier id'>randomUUID</span><span class='dot token'>.</span><span class='rubyid_toString identifier id'>toString</span>
+  <span class='rubyid_@@handler_map ivar id'>@@handler_map</span><span class='lbrack token'>[</span><span class='rubyid_id identifier id'>id</span><span class='rbrack token'>]</span> <span class='assign token'>=</span> <span class='lbrack token'>[</span><span class='rubyid_address identifier id'>address</span><span class='comma token'>,</span> <span class='rubyid_internal identifier id'>internal</span><span class='rbrack token'>]</span>
   <span class='rubyid_id identifier id'>id</span>
 <span class='rubyid_end end kw'>end</span>
 </pre>
@@ -540,12 +490,8 @@ id of the handler which can be used in <span class='object_link'><a href="#unreg
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Registers a handler against a uniquely generated address, the address is
-returned as the id received by the handler. A single handler can be
-registered against many addresses.
-</p>
-
+    Registers a handler against a uniquely generated address, the address is returned as the id
+received by the handler. A single handler can be registered against many addresses.
 
   </div>
 </div>
@@ -565,10 +511,7 @@ registered against many addresses.
       
       
         &mdash;
-        <div class='inline'><p>
-If true then handler won&#8217;t be propagated across cluster
-</p>
-</div>
+        <div class='inline'>If true then handler won't be propagated across cluster</div>
       
     </li>
   
@@ -582,10 +525,7 @@ If true then handler won&#8217;t be propagated across cluster
       
       
         &mdash;
-        <div class='inline'><p>
-The handler
-</p>
-</div>
+        <div class='inline'>The handler</div>
       
     </li>
   
@@ -602,10 +542,7 @@ The handler
       
       
         &mdash;
-        <div class='inline'><p>
-id of the handler which can be used in <span class='object_link'><a href="#unregister_handler-class_method" title="Vertx::EventBus.unregister_handler (method)">unregister_handler</a></span>
-</p>
-</div>
+        <div class='inline'>id of the handler which can be used in <span class='object_link'><a href="#unregister_handler-class_method" title="Vertx::EventBus.unregister_handler (method)">unregister_handler</a></span></div>
       
     </li>
   
@@ -617,7 +554,6 @@ id of the handler which can be used in <span class='object_link'><a href="#unreg
       <pre class="lines">
 
 
-114
 115
 116
 117
@@ -627,20 +563,23 @@ id of the handler which can be used in <span class='object_link'><a href="#unreg
 121
 122
 123
-124</pre>
+124
+125
+126</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/event_bus.rb', line 114</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/event_bus.rb', line 115</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_EventBus constant id'>EventBus</span><span class='dot token'>.</span><span class='rubyid_register_simple_handler identifier id'>register_simple_handler</span><span class='lparen token'>(</span><span class='rubyid_local_only identifier id'>local_only</span> <span class='assign token'>=</span> <span class='rubyid_false false kw'>false</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_message_hndlr identifier id'>message_hndlr</span><span class='rparen token'>)</span>
   <span class='rubyid_raise identifier id'>raise</span> <span class='string val'>&quot;A message handler must be specified&quot;</span> <span class='rubyid_if if_mod kw'>if</span> <span class='notop op'>!</span><span class='rubyid_message_hndlr identifier id'>message_hndlr</span>
   <span class='rubyid_internal identifier id'>internal</span> <span class='assign token'>=</span> <span class='rubyid_InternalHandler constant id'>InternalHandler</span><span class='dot token'>.</span><span class='rubyid_new identifier id'>new</span><span class='lparen token'>(</span><span class='rubyid_message_hndlr identifier id'>message_hndlr</span><span class='rparen token'>)</span>
+  <span class='rubyid_id identifier id'>id</span> <span class='assign token'>=</span> <span class='rubyid_java identifier id'>java</span><span class='dot token'>.</span><span class='rubyid_util identifier id'>util</span><span class='dot token'>.</span><span class='rubyid_UUID constant id'>UUID</span><span class='dot token'>.</span><span class='rubyid_randomUUID identifier id'>randomUUID</span><span class='dot token'>.</span><span class='rubyid_toString identifier id'>toString</span>
   <span class='rubyid_if if kw'>if</span> <span class='rubyid_local_only identifier id'>local_only</span>
-    <span class='rubyid_id identifier id'>id</span> <span class='assign token'>=</span> <span class='rubyid_@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='rubyid_registerLocalHandler identifier id'>registerLocalHandler</span><span class='lparen token'>(</span><span class='rubyid_internal identifier id'>internal</span><span class='rparen token'>)</span>
+    <span class='rubyid_@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='rubyid_registerLocalHandler identifier id'>registerLocalHandler</span><span class='lparen token'>(</span><span class='rubyid_id identifier id'>id</span><span class='comma token'>,</span> <span class='rubyid_internal identifier id'>internal</span><span class='rparen token'>)</span>
   <span class='rubyid_else else kw'>else</span>
-    <span class='rubyid_id identifier id'>id</span> <span class='assign token'>=</span> <span class='rubyid_@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='rubyid_registerHandler identifier id'>registerHandler</span><span class='lparen token'>(</span><span class='rubyid_internal identifier id'>internal</span><span class='rparen token'>)</span>
+    <span class='rubyid_@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='rubyid_registerHandler identifier id'>registerHandler</span><span class='lparen token'>(</span><span class='rubyid_id identifier id'>id</span><span class='comma token'>,</span> <span class='rubyid_internal identifier id'>internal</span><span class='rparen token'>)</span>
   <span class='rubyid_end end kw'>end</span>
-  <span class='rubyid_@@handler_map ivar id'>@@handler_map</span><span class='lbrack token'>[</span><span class='rubyid_id identifier id'>id</span><span class='rbrack token'>]</span> <span class='assign token'>=</span> <span class='rubyid_internal identifier id'>internal</span>
+  <span class='rubyid_@@handler_map ivar id'>@@handler_map</span><span class='lbrack token'>[</span><span class='rubyid_id identifier id'>id</span><span class='rbrack token'>]</span> <span class='assign token'>=</span> <span class='lbrack token'>[</span><span class='rubyid_id identifier id'>id</span><span class='comma token'>,</span> <span class='rubyid_internal identifier id'>internal</span><span class='rbrack token'>]</span>
   <span class='rubyid_id identifier id'>id</span>
 <span class='rubyid_end end kw'>end</span>
 </pre>
@@ -660,11 +599,8 @@ id of the handler which can be used in <span class='object_link'><a href="#unreg
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Send a message on the event bus It will be called when the reply from a
-receiver is received.
-</p>
-
+    Send a message on the event bus
+It will be called when the reply from a receiver is received.
 
   </div>
 </div>
@@ -682,10 +618,7 @@ receiver is received.
       
       
         &mdash;
-        <div class='inline'><p>
-The message to send
-</p>
-</div>
+        <div class='inline'>The message to send</div>
       
     </li>
   
@@ -699,10 +632,7 @@ The message to send
       
       
         &mdash;
-        <div class='inline'><p>
-replyHandler An optional reply handler.
-</p>
-</div>
+        <div class='inline'>replyHandler An optional reply handler.</div>
       
     </li>
   
@@ -742,10 +672,7 @@ replyHandler An optional reply handler.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Unregisters a handler
-</p>
-
+    Unregisters a handler
 
   </div>
 </div>
@@ -763,11 +690,7 @@ Unregisters a handler
       
       
         &mdash;
-        <div class='inline'><p>
-The id of the handler to unregister. Returned from
-<span class='object_link'><a href="#register_handler-class_method" title="Vertx::EventBus.register_handler (method)">register_handler</a></span>
-</p>
-</div>
+        <div class='inline'>The id of the handler to unregister. Returned from <span class='object_link'><a href="#register_handler-class_method" title="Vertx::EventBus.register_handler (method)">register_handler</a></span></div>
       
     </li>
   
@@ -780,21 +703,21 @@ The id of the handler to unregister. Returned from
       <pre class="lines">
 
 
-128
-129
 130
 131
 132
-133</pre>
+133
+134
+135</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/event_bus.rb', line 128</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/event_bus.rb', line 130</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_EventBus constant id'>EventBus</span><span class='dot token'>.</span><span class='rubyid_unregister_handler identifier id'>unregister_handler</span><span class='lparen token'>(</span><span class='rubyid_handler_id identifier id'>handler_id</span><span class='rparen token'>)</span>
   <span class='rubyid_raise identifier id'>raise</span> <span class='string val'>&quot;A handler_id must be specified&quot;</span> <span class='rubyid_if if_mod kw'>if</span> <span class='notop op'>!</span><span class='rubyid_handler_id identifier id'>handler_id</span>
-  <span class='rubyid_handler identifier id'>handler</span> <span class='assign token'>=</span> <span class='rubyid_@@handler_map ivar id'>@@handler_map</span><span class='dot token'>.</span><span class='rubyid_delete identifier id'>delete</span><span class='lparen token'>(</span><span class='rubyid_handler_id identifier id'>handler_id</span><span class='rparen token'>)</span>
-  <span class='rubyid_raise identifier id'>raise</span> <span class='dstring node'>&quot;Cannot find handler for id #{handler_id}&quot;</span> <span class='rubyid_if if_mod kw'>if</span> <span class='notop op'>!</span><span class='rubyid_handler identifier id'>handler</span>
-  <span class='rubyid_@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='rubyid_unregisterHandler identifier id'>unregisterHandler</span><span class='lparen token'>(</span><span class='rubyid_handler_id identifier id'>handler_id</span><span class='rparen token'>)</span>
+  <span class='rubyid_tuple identifier id'>tuple</span> <span class='assign token'>=</span> <span class='rubyid_@@handler_map ivar id'>@@handler_map</span><span class='dot token'>.</span><span class='rubyid_delete identifier id'>delete</span><span class='lparen token'>(</span><span class='rubyid_handler_id identifier id'>handler_id</span><span class='rparen token'>)</span>
+  <span class='rubyid_raise identifier id'>raise</span> <span class='dstring node'>&quot;Cannot find handler for id #{handler_id}&quot;</span> <span class='rubyid_if if_mod kw'>if</span> <span class='notop op'>!</span><span class='rubyid_tuple identifier id'>tuple</span>
+  <span class='rubyid_@@j_eventbus ivar id'>@@j_eventbus</span><span class='dot token'>.</span><span class='rubyid_unregisterHandler identifier id'>unregisterHandler</span><span class='lparen token'>(</span><span class='rubyid_tuple identifier id'>tuple</span><span class='dot token'>.</span><span class='rubyid_first identifier id'>first</span><span class='comma token'>,</span> <span class='rubyid_tuple identifier id'>tuple</span><span class='dot token'>.</span><span class='rubyid_last identifier id'>last</span><span class='rparen token'>)</span>
 <span class='rubyid_end end kw'>end</span>
 </pre>
     </td>
@@ -807,9 +730,9 @@ The id of the handler to unregister. Returned from
 </div>
 
     <div id="footer">
-  Generated on Tue Jul 24 12:18:25 2012 by
+  Generated on Wed Oct 24 13:13:01 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.2.1 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.9.3).
 </div>
 
   </body>

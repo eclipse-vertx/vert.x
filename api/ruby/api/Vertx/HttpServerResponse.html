@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::HttpServerResponse
   
-    &mdash; 'Ruby API Docs'
+    &mdash; Ruby API Doc
   
 </title>
 
@@ -105,27 +105,18 @@
 
 <h2>Overview</h2><div class="docstring">
   <div class="discussion">
-    <p>
-Encapsulates a server-side HTTP response.
-</p>
-<p>
-An instance of this class is created and associated to every instance of
-<span class='object_link'><a href="HttpServerRequest.html" title="Vertx::HttpServerRequest (class)">HttpServerRequest</a></span> that is created.
-</p>
-<p>
-It allows the developer to control the HTTP response that is sent back to
-the client for the corresponding HTTP request. It contains methods that
-allow HTTP headers and trailers to be set, and for a body to be written out
-to the response.
-</p>
-<p>
-It also allows a file to be streamed by the kernel directly from disk to
-the outgoing HTTP connection, bypassing user space altogether (where
-supported by the underlying operating system). This is a very efficient way
-of serving files from the server since buffers do not have to be read one
-by one from the file and written to the outgoing socket.
-</p>
+    Encapsulates a server-side HTTP response.
 
+An instance of this class is created and associated to every instance of <span class='object_link'><a href="HttpServerRequest.html" title="Vertx::HttpServerRequest (class)">HttpServerRequest</a></span> that is created.
+
+It allows the developer to control the HTTP response that is sent back to the client for the corresponding HTTP
+request. It contains methods that allow HTTP headers and trailers to be set, and for a body to be written out
+to the response.
+
+It also allows a file to be streamed by the kernel directly from disk to the outgoing HTTP connection,
+bypassing user space altogether (where supported by the underlying operating system). This is a very efficient way of
+serving files from the server since buffers do not have to be read one by one from the file and written to the outgoing
+socket.
 
   </div>
 </div>
@@ -140,10 +131,7 @@ by one from the file and written to the outgoing socket.
       
       
         
-        <div class='inline'><p>
-<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
-</p>
-</div>
+        <div class='inline'><a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a></div>
       
     </li>
   
@@ -181,10 +169,7 @@ by one from the file and written to the outgoing socket.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Sets whether this response uses HTTP chunked encoding or not.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Sets whether this response uses HTTP chunked encoding or not.</div></span>
   
 </li>
 
@@ -206,10 +191,7 @@ Sets whether this response uses HTTP chunked encoding or not.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Close the underlying TCP connection.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Close the underlying TCP connection.</div></span>
   
 </li>
 
@@ -231,10 +213,7 @@ Close the underlying TCP connection.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Ends the response.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Ends the response.</div></span>
   
 </li>
 
@@ -256,10 +235,7 @@ Ends the response.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-The response headers.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>The response headers.</div></span>
   
 </li>
 
@@ -281,10 +257,7 @@ The response headers.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Inserts a header into the response.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Inserts a header into the response.</div></span>
   
 </li>
 
@@ -306,10 +279,7 @@ Inserts a header into the response.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Inserts a trailer into the response.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Inserts a trailer into the response.</div></span>
   
 </li>
 
@@ -331,12 +301,8 @@ Inserts a trailer into the response.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Tell the kernel to stream a file directly from disk to the outgoing
-connection, bypassing userspace altogether (where supported by the
-underlying operating system. This is a very efficient way to serve files..
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Tell the kernel to stream a file directly from disk to the outgoing connection, bypassing userspace altogether
+(where supported by the underlying operating system. This is a very efficient way to serve files..</div></span>
   
 </li>
 
@@ -358,10 +324,7 @@ underlying operating system. This is a very efficient way to serve files..
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Set the status code of the response.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Set the status code of the response.</div></span>
   
 </li>
 
@@ -405,10 +368,7 @@ Set the status code of the response.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-The response trailers.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>The response trailers.</div></span>
   
 </li>
 
@@ -430,10 +390,7 @@ The response trailers.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Write a buffer to the response.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Write a buffer to the response.</div></span>
   
 </li>
 
@@ -455,10 +412,7 @@ Write a buffer to the response.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Write a String to the response.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Write a String to the response.</div></span>
   
 </li>
 
@@ -494,19 +448,13 @@ Write a String to the response.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Sets whether this response uses HTTP chunked encoding or not. will
-correspond to a new HTTP chunk sent on the wire. If chunked encoding is
-used the HTTP header &#8216;Transfer-Encoding&#8217; with a value of
-&#8216;Chunked&#8217; will be automatically inserted in the response. If
-chunked is false, this response will not use HTTP chunked encoding, and
-therefore if any data is written the body of the response, the total size
-of that data must be set in the &#8216;Content-Length&#8217; header before
-any data is written to the response body. An HTTP chunked response is
-typically used when you do not know the total size of the request body up
-front.
-</p>
-
+    Sets whether this response uses HTTP chunked encoding or not.
+will correspond to a new HTTP chunk sent on the wire. If chunked encoding is used the HTTP header
+'Transfer-Encoding' with a value of 'Chunked' will be automatically inserted in the response.
+If chunked is false, this response will not use HTTP chunked encoding, and therefore if any data is written the
+body of the response, the total size of that data must be set in the 'Content-Length' header before any
+data is written to the response body.
+An HTTP chunked response is typically used when you do not know the total size of the request body up front.
 
   </div>
 </div>
@@ -524,11 +472,7 @@ front.
       
       
         &mdash;
-        <div class='inline'><p>
-If val is true, this response will use HTTP chunked encoding, and each call
-to write to the body
-</p>
-</div>
+        <div class='inline'>If val is true, this response will use HTTP chunked encoding, and each call to write to the body</div>
       
     </li>
   
@@ -545,10 +489,7 @@ to write to the body
       
       
         &mdash;
-        <div class='inline'><p>
-self So multiple operations can be chained.
-</p>
-</div>
+        <div class='inline'>self So multiple operations can be chained.</div>
       
     </li>
   
@@ -589,10 +530,7 @@ self So multiple operations can be chained.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Close the underlying TCP connection
-</p>
-
+    Close the underlying TCP connection
 
   </div>
 </div>
@@ -632,13 +570,9 @@ Close the underlying TCP connection
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Ends the response. If no data has been written to the response body, the
-actual response won&#8217;t get written until this method gets called. Once
-the response has ended, it cannot be used any more, and if keep alive is
-true the underlying connection will be closed.
-</p>
-
+    Ends the response. If no data has been written to the response body, the actual response won't get written until this method gets called.
+Once the response has ended, it cannot be used any more, and if keep alive is true the underlying connection will
+be closed.
 
   </div>
 </div>
@@ -656,10 +590,7 @@ true the underlying connection will be closed.
       
       
         &mdash;
-        <div class='inline'><p>
-Optional String or Buffer to write before ending the response
-</p>
-</div>
+        <div class='inline'>Optional String or Buffer to write before ending the response</div>
       
     </li>
   
@@ -707,10 +638,7 @@ Optional String or Buffer to write before ending the response
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-The response headers
-</p>
-
+    The response headers
 
   </div>
 </div>
@@ -727,10 +655,7 @@ The response headers
       
       
         &mdash;
-        <div class='inline'><p>
-The response headers
-</p>
-</div>
+        <div class='inline'>The response headers</div>
       
     </li>
   
@@ -775,10 +700,7 @@ The response headers
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Inserts a header into the response.
-</p>
-
+    Inserts a header into the response.
 
   </div>
 </div>
@@ -796,10 +718,7 @@ Inserts a header into the response.
       
       
         &mdash;
-        <div class='inline'><p>
-The header key
-</p>
-</div>
+        <div class='inline'>The header key</div>
       
     </li>
   
@@ -813,11 +732,7 @@ The header key
       
       
         &mdash;
-        <div class='inline'><p>
-The header value. to_s will be called on the value to determine the actual
-String value to insert.
-</p>
-</div>
+        <div class='inline'>The header value. to_s will be called on the value to determine the actual String value to insert.</div>
       
     </li>
   
@@ -834,10 +749,7 @@ String value to insert.
       
       
         &mdash;
-        <div class='inline'><p>
-self So multiple operations can be chained.
-</p>
-</div>
+        <div class='inline'>self So multiple operations can be chained.</div>
       
     </li>
   
@@ -878,10 +790,7 @@ self So multiple operations can be chained.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Inserts a trailer into the response.
-</p>
-
+    Inserts a trailer into the response.
 
   </div>
 </div>
@@ -899,10 +808,7 @@ Inserts a trailer into the response.
       
       
         &mdash;
-        <div class='inline'><p>
-The header key
-</p>
-</div>
+        <div class='inline'>The header key</div>
       
     </li>
   
@@ -916,11 +822,7 @@ The header key
       
       
         &mdash;
-        <div class='inline'><p>
-The header value. to_s will be called on the value to determine the actual
-String value to insert.
-</p>
-</div>
+        <div class='inline'>The header value. to_s will be called on the value to determine the actual String value to insert.</div>
       
     </li>
   
@@ -937,10 +839,7 @@ String value to insert.
       
       
         &mdash;
-        <div class='inline'><p>
-self So multiple operations can be chained.
-</p>
-</div>
+        <div class='inline'>self So multiple operations can be chained.</div>
       
     </li>
   
@@ -981,12 +880,8 @@ self So multiple operations can be chained.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Tell the kernel to stream a file directly from disk to the outgoing
-connection, bypassing userspace altogether (where supported by the
-underlying operating system. This is a very efficient way to serve files.
-</p>
-
+    Tell the kernel to stream a file directly from disk to the outgoing connection, bypassing userspace altogether
+(where supported by the underlying operating system. This is a very efficient way to serve files.
 
   </div>
 </div>
@@ -1004,10 +899,7 @@ underlying operating system. This is a very efficient way to serve files.
       
       
         &mdash;
-        <div class='inline'><p>
-Path to file to send.
-</p>
-</div>
+        <div class='inline'>Path to file to send.</div>
       
     </li>
   
@@ -1024,10 +916,7 @@ Path to file to send.
       
       
         &mdash;
-        <div class='inline'><p>
-self So multiple operations can be chained.
-</p>
-</div>
+        <div class='inline'>self So multiple operations can be chained.</div>
       
     </li>
   
@@ -1068,10 +957,7 @@ self So multiple operations can be chained.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Set the status code of the response. Default is 200
-</p>
-
+    Set the status code of the response. Default is 200
 
   </div>
 </div>
@@ -1089,10 +975,7 @@ Set the status code of the response. Default is 200
       
       
         &mdash;
-        <div class='inline'><p>
-The HTTP status code.
-</p>
-</div>
+        <div class='inline'>The HTTP status code.</div>
       
     </li>
   
@@ -1163,10 +1046,7 @@ The HTTP status code.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-The response trailers
-</p>
-
+    The response trailers
 
   </div>
 </div>
@@ -1212,11 +1092,7 @@ The response trailers
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Write a buffer to the response. The handler will be called when the buffer
-has actually been written to the wire.
-</p>
-
+    Write a buffer to the response. The handler will be called when the buffer has actually been written to the wire.
 
   </div>
 </div>
@@ -1234,10 +1110,7 @@ has actually been written to the wire.
       
       
         &mdash;
-        <div class='inline'><p>
-The buffer to write
-</p>
-</div>
+        <div class='inline'>The buffer to write</div>
       
     </li>
   
@@ -1251,10 +1124,7 @@ The buffer to write
       
       
         &mdash;
-        <div class='inline'><p>
-The handler
-</p>
-</div>
+        <div class='inline'>The handler</div>
       
     </li>
   
@@ -1271,10 +1141,7 @@ The handler
       
       
         &mdash;
-        <div class='inline'><p>
-self So multiple operations can be chained.
-</p>
-</div>
+        <div class='inline'>self So multiple operations can be chained.</div>
       
     </li>
   
@@ -1315,11 +1182,7 @@ self So multiple operations can be chained.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Write a String to the response. The handler will be called when the String
-has actually been written to the wire.
-</p>
-
+    Write a String to the response. The handler will be called when the String has actually been written to the wire.
 
   </div>
 </div>
@@ -1337,10 +1200,7 @@ has actually been written to the wire.
       
       
         &mdash;
-        <div class='inline'><p>
-The string to write
-</p>
-</div>
+        <div class='inline'>The string to write</div>
       
     </li>
   
@@ -1354,10 +1214,7 @@ The string to write
       
       
         &mdash;
-        <div class='inline'><p>
-Encoding to use.
-</p>
-</div>
+        <div class='inline'>Encoding to use.</div>
       
     </li>
   
@@ -1371,10 +1228,7 @@ Encoding to use.
       
       
         &mdash;
-        <div class='inline'><p>
-The handler
-</p>
-</div>
+        <div class='inline'>The handler</div>
       
     </li>
   
@@ -1391,10 +1245,7 @@ The handler
       
       
         &mdash;
-        <div class='inline'><p>
-self So multiple operations can be chained.
-</p>
-</div>
+        <div class='inline'>self So multiple operations can be chained.</div>
       
     </li>
   
@@ -1431,9 +1282,9 @@ self So multiple operations can be chained.
 </div>
 
     <div id="footer">
-  Generated on Tue Jul 24 12:18:23 2012 by
+  Generated on Wed Oct 24 13:12:58 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.2.1 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.9.3).
 </div>
 
   </body>

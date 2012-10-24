@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::NetServer
   
-    &mdash; 'Ruby API Docs'
+    &mdash; Ruby API Doc
   
 </title>
 
@@ -105,15 +105,11 @@
 
 <h2>Overview</h2><div class="docstring">
   <div class="discussion">
-    <p>
-Represents a TCP or SSL Server
-</p>
-<p>
-When connections are accepted by the server they are supplied to the user
-in the form of a <span class='object_link'><a href="NetSocket.html" title="Vertx::NetSocket (class)">NetSocket</a></span> instance that is passed via the handler set
-using <span class='object_link'><a href="#connect_handler-instance_method" title="Vertx::NetServer#connect_handler (method)">#connect_handler</a></span>.
-</p>
+    Represents a TCP or SSL Server
 
+When connections are accepted by the server
+they are supplied to the user in the form of a <span class='object_link'><a href="NetSocket.html" title="Vertx::NetSocket (class)">NetSocket</a></span> instance that is passed via the handler
+set using <span class='object_link'><a href="#connect_handler-instance_method" title="Vertx::NetServer#connect_handler (method)">#connect_handler</a></span>.
 
   </div>
 </div>
@@ -128,10 +124,7 @@ using <span class='object_link'><a href="#connect_handler-instance_method" title
       
       
         
-        <div class='inline'><p>
-<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
-</p>
-</div>
+        <div class='inline'><a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a></div>
       
     </li>
   
@@ -169,11 +162,7 @@ using <span class='object_link'><a href="#connect_handler-instance_method" title
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Client authentication is an extra level of security in SSL, and requires
-clients to provide client certificates.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Client authentication is an extra level of security in SSL, and requires clients to provide client certificates.</div></span>
   
 </li>
 
@@ -195,10 +184,7 @@ clients to provide client certificates.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Close the server.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Close the server.</div></span>
   
 </li>
 
@@ -220,10 +206,7 @@ Close the server.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Supply a connect handler for this server.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Supply a connect handler for this server.</div></span>
   
 </li>
 
@@ -247,10 +230,7 @@ Supply a connect handler for this server.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Create a new NetServer.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Create a new NetServer.</div></span>
   
 </li>
 
@@ -272,10 +252,7 @@ Create a new NetServer.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Instruct the server to listen for incoming connections.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Instruct the server to listen for incoming connections.</div></span>
   
 </li>
 
@@ -319,10 +296,7 @@ Instruct the server to listen for incoming connections.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Create a new NetServer
-</p>
-
+    Create a new NetServer
 
   </div>
 </div>
@@ -369,13 +343,9 @@ Create a new NetServer
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Client authentication is an extra level of security in SSL, and requires
-clients to provide client certificates. Those certificates must be added to
-the server trust store. do not authenticate then they will not make a
-connection.
-</p>
-
+    Client authentication is an extra level of security in SSL, and requires clients to provide client certificates.
+Those certificates must be added to the server trust store.
+do not authenticate then they will not make a connection.
 
   </div>
 </div>
@@ -393,11 +363,7 @@ connection.
       
       
         &mdash;
-        <div class='inline'><p>
-If true then the server will request client authentication from any
-connecting clients, if they
-</p>
-</div>
+        <div class='inline'>If true then the server will request client authentication from any connecting clients, if they</div>
       
     </li>
   
@@ -439,10 +405,7 @@ connecting clients, if they
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Close the server. The handler will be called when the close is complete.
-</p>
-
+    Close the server. The handler will be called when the close is complete.
 
   </div>
 </div>
@@ -482,13 +445,9 @@ Close the server. The handler will be called when the close is complete.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Supply a connect handler for this server. The server can only have at most
-one connect handler at any one time. As the server accepts TCP or SSL
-connections it creates an instance of <span class='object_link'><a href="NetSocket.html" title="Vertx::NetSocket (class)">Vertx::NetSocket</a></span> and passes it to the
+    Supply a connect handler for this server. The server can only have at most one connect handler at any one time.
+As the server accepts TCP or SSL connections it creates an instance of <span class='object_link'><a href="NetSocket.html" title="Vertx::NetSocket (class)">Vertx::NetSocket</a></span> and passes it to the
 connect handler.
-</p>
-
 
   </div>
 </div>
@@ -508,10 +467,7 @@ connect handler.
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the handler</div>
       
     </li>
   
@@ -525,10 +481,7 @@ A proc to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the handler</div>
       
     </li>
   
@@ -545,10 +498,7 @@ A block to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A reference to self so invocations can be chained
-</p>
-</div>
+        <div class='inline'>A reference to self so invocations can be chained</div>
       
     </li>
   
@@ -591,10 +541,7 @@ A reference to self so invocations can be chained
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Instruct the server to listen for incoming connections.
-</p>
-
+    Instruct the server to listen for incoming connections.
 
   </div>
 </div>
@@ -612,10 +559,7 @@ Instruct the server to listen for incoming connections.
       
       
         &mdash;
-        <div class='inline'><p>
-The port to listen on.
-</p>
-</div>
+        <div class='inline'>The port to listen on.</div>
       
     </li>
   
@@ -629,10 +573,7 @@ The port to listen on.
       
       
         &mdash;
-        <div class='inline'><p>
-The host name or ip address to listen on.
-</p>
-</div>
+        <div class='inline'>The host name or ip address to listen on.</div>
       
     </li>
   
@@ -649,10 +590,7 @@ The host name or ip address to listen on.
       
       
         &mdash;
-        <div class='inline'><p>
-A reference to self so invocations can be chained
-</p>
-</div>
+        <div class='inline'>A reference to self so invocations can be chained</div>
       
     </li>
   
@@ -687,9 +625,9 @@ A reference to self so invocations can be chained
 </div>
 
     <div id="footer">
-  Generated on Tue Jul 24 12:18:21 2012 by
+  Generated on Wed Oct 24 13:12:55 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.2.1 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.9.3).
 </div>
 
   </body>

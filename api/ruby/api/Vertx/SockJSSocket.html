@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::SockJSSocket
   
-    &mdash; 'Ruby API Docs'
+    &mdash; Ruby API Doc
   
 </title>
 
@@ -105,12 +105,10 @@
 
 <h2>Overview</h2><div class="docstring">
   <div class="discussion">
-    <p>
-You interact with SockJS clients through instances of SockJS socket. The
-API is very similar to <span class='object_link'><a href="WebSocket.html" title="Vertx::WebSocket (class)">WebSocket</a></span>. It implements both <span class='object_link'><a href="ReadStream.html" title="Vertx::ReadStream (module)">ReadStream</a></span> and
-<span class='object_link'><a href="WriteStream.html" title="Vertx::WriteStream (module)">WriteStream</a></span> so it can be used with <span class='object_link'><a href="Pump.html" title="Vertx::Pump (class)">Pump</a></span> to enable flow control.
-</p>
-
+    You interact with SockJS clients through instances of SockJS socket.
+The API is very similar to <span class='object_link'><a href="WebSocket.html" title="Vertx::WebSocket (class)">WebSocket</a></span>. It implements both
+<span class='object_link'><a href="ReadStream.html" title="Vertx::ReadStream (module)">ReadStream</a></span> and <span class='object_link'><a href="WriteStream.html" title="Vertx::WriteStream (module)">WriteStream</a></span> so it can be used with <span class='object_link'><a href="Pump.html" title="Vertx::Pump (class)">Pump</a></span> to enable
+flow control.
 
   </div>
 </div>
@@ -125,10 +123,7 @@ API is very similar to <span class='object_link'><a href="WebSocket.html" title=
       
       
         
-        <div class='inline'><p>
-<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
-</p>
-</div>
+        <div class='inline'><a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a></div>
       
     </li>
   
@@ -166,10 +161,7 @@ API is very similar to <span class='object_link'><a href="WebSocket.html" title=
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Close the socket.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Close the socket.</div></span>
   
 </li>
 
@@ -191,11 +183,8 @@ Close the socket.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-When a SockJSSocket is created it automatically registers an event handler
-with the system, the ID of that handler is given by <span class='object_link'><a href="#handler_id-instance_method" title="Vertx::SockJSSocket#handler_id (method)">#handler_id</a></span>.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>When a SockJSSocket is created it automatically registers an event handler with the system, the ID of that
+handler is given by <span class='object_link'><a href="#handler_id-instance_method" title="Vertx::SockJSSocket#handler_id (method)">#handler_id</a></span>.</div></span>
   
 </li>
 
@@ -242,10 +231,7 @@ with the system, the ID of that handler is given by <span class='object_link'><a
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Close the socket
-</p>
-
+    Close the socket
 
   </div>
 </div>
@@ -287,14 +273,10 @@ Close the socket
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-When a SockJSSocket is created it automatically registers an event handler
-with the system, the ID of that handler is given by <span class='object_link'><a href="#handler_id-instance_method" title="Vertx::SockJSSocket#handler_id (method)">#handler_id</a></span>. Given
-this ID, a different event loop can send a buffer to that event handler
-using the event bus. This allows you to write data to other SockJSSockets
-which are owned by different event loops.
-</p>
-
+    When a SockJSSocket is created it automatically registers an event handler with the system, the ID of that
+handler is given by <span class='object_link'><a href="#handler_id-instance_method" title="Vertx::SockJSSocket#handler_id (method)">#handler_id</a></span>.
+Given this ID, a different event loop can send a buffer to that event handler using the event bus. This
+allows you to write data to other SockJSSockets which are owned by different event loops.
 
   </div>
 </div>
@@ -328,9 +310,9 @@ which are owned by different event loops.
 </div>
 
     <div id="footer">
-  Generated on Tue Jul 24 12:18:24 2012 by
+  Generated on Wed Oct 24 13:13:00 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.2.1 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.9.3).
 </div>
 
   </body>

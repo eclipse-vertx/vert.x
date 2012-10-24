@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::HttpClientResponse
   
-    &mdash; 'Ruby API Docs'
+    &mdash; Ruby API Doc
   
 </title>
 
@@ -105,15 +105,10 @@
 
 <h2>Overview</h2><div class="docstring">
   <div class="discussion">
-    <p>
-Encapsulates a client-side HTTP response.
-</p>
-<p>
-An instance of this class is provided to the user via a handler that was
-specified when one of the HTTP method operations, or the generic
-<span class='object_link'><a href="HttpClient.html#request-instance_method" title="Vertx::HttpClient#request (method)">Vertx::HttpClient#request</a></span> method was called on an instance of <span class='object_link'><a href="HttpClient.html" title="Vertx::HttpClient (class)">HttpClient</a></span>.
-</p>
+    Encapsulates a client-side HTTP response.
 
+An instance of this class is provided to the user via a handler that was specified when one of the
+HTTP method operations, or the generic <span class='object_link'><a href="HttpClient.html#request-instance_method" title="Vertx::HttpClient#request (method)">Vertx::HttpClient#request</a></span> method was called on an instance of <span class='object_link'><a href="HttpClient.html" title="Vertx::HttpClient (class)">HttpClient</a></span>.
 
   </div>
 </div>
@@ -128,10 +123,7 @@ specified when one of the HTTP method operations, or the generic
       
       
         
-        <div class='inline'><p>
-<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
-</p>
-</div>
+        <div class='inline'><a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a></div>
       
     </li>
   
@@ -169,11 +161,7 @@ specified when one of the HTTP method operations, or the generic
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Set a handler to receive the entire body in one go - do not use this for
-large bodies.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Set a handler to receive the entire body in one go - do not use this for large bodies.</div></span>
   
 </li>
 
@@ -195,10 +183,7 @@ large bodies.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Get a header value.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Get a header value.</div></span>
   
 </li>
 
@@ -220,10 +205,7 @@ Get a header value.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Get all the headers in the response.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Get all the headers in the response.</div></span>
   
 </li>
 
@@ -245,10 +227,7 @@ Get all the headers in the response.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-The HTTP status code of the response.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>The HTTP status code of the response.</div></span>
   
 </li>
 
@@ -270,10 +249,7 @@ The HTTP status code of the response.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Get all the trailers in the response.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Get all the trailers in the response.</div></span>
   
 </li>
 
@@ -309,11 +285,7 @@ Get all the trailers in the response.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Set a handler to receive the entire body in one go - do not use this for
-large bodies
-</p>
-
+    Set a handler to receive the entire body in one go - do not use this for large bodies
 
   </div>
 </div>
@@ -353,10 +325,7 @@ large bodies
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Get a header value
-</p>
-
+    Get a header value
 
   </div>
 </div>
@@ -374,10 +343,7 @@ Get a header value
       
       
         &mdash;
-        <div class='inline'><p>
-The key of the header.
-</p>
-</div>
+        <div class='inline'>The key of the header.</div>
       
     </li>
   
@@ -394,10 +360,7 @@ The key of the header.
       
       
         &mdash;
-        <div class='inline'><p>
-the header value.
-</p>
-</div>
+        <div class='inline'>the header value.</div>
       
     </li>
   
@@ -436,14 +399,10 @@ the header value.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Get all the headers in the response. If the response contains multiple
-headers with the same key, the values will be concatenated together into a
-single header with the same key value, with each value separated by a
-comma, as specified by
-<a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2" target="_parent" title="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2</a>.
-</p>
-
+    Get all the headers in the response.
+If the response contains multiple headers with the same key, the values
+will be concatenated together into a single header with the same key value, with each value separated by a comma,
+as specified by <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2" target="_parent" title="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2</a>.
 
   </div>
 </div>
@@ -460,10 +419,7 @@ comma, as specified by
       
       
         &mdash;
-        <div class='inline'><p>
-. A Hash of headers.
-</p>
-</div>
+        <div class='inline'>. A Hash of headers.</div>
       
     </li>
   
@@ -508,10 +464,7 @@ comma, as specified by
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-The HTTP status code of the response.
-</p>
-
+    The HTTP status code of the response.
 
   </div>
 </div>
@@ -528,10 +481,7 @@ The HTTP status code of the response.
       
       
         &mdash;
-        <div class='inline'><p>
-the HTTP status code of the response.
-</p>
-</div>
+        <div class='inline'>the HTTP status code of the response.</div>
       
     </li>
   
@@ -570,18 +520,13 @@ the HTTP status code of the response.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Get all the trailers in the response. If the response contains multiple
-trailers with the same key, the values will be concatenated together into a
-single header with the same key value, with each value separated by a
-comma, as specified by
-<a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2" target="_parent" title="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2</a>. Trailers
-will only be available in the response if the server has sent a HTTP
-chunked response where headers have been inserted by the server on the last
-chunk. In such a case they won&#8217;t be available on the client until the
-last chunk has been received.
-</p>
-
+    Get all the trailers in the response.
+If the response contains multiple trailers with the same key, the values
+will be concatenated together into a single header with the same key value, with each value separated by a comma,
+as specified by <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2" target="_parent" title="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2</a>.
+Trailers will only be available in the response if the server has sent a HTTP chunked response where headers have
+been inserted by the server on the last chunk. In such a case they won't be available on the client until the last chunk has
+been received.
 
   </div>
 </div>
@@ -598,10 +543,7 @@ last chunk has been received.
       
       
         &mdash;
-        <div class='inline'><p>
-. A Hash of trailers.
-</p>
-</div>
+        <div class='inline'>. A Hash of trailers.</div>
       
     </li>
   
@@ -640,9 +582,9 @@ last chunk has been received.
 </div>
 
     <div id="footer">
-  Generated on Tue Jul 24 12:18:23 2012 by
+  Generated on Wed Oct 24 13:12:57 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.2.1 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.9.3).
 </div>
 
   </body>
