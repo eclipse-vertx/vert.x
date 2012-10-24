@@ -1,4 +1,3 @@
-org.vertx.java.boot
 org.vertx.java.busmods
 org.vertx.java.core
 org.vertx.java.core.buffer
@@ -34,3 +33,4 @@ org.vertx.java.deploy.impl.jruby
 org.vertx.java.deploy.impl.jython
 org.vertx.java.deploy.impl.rhino
 org.vertx.java.framework
+se.cgbystrom.netty

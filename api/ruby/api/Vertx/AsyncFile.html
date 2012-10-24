@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::AsyncFile
   
-    &mdash; 'Ruby API Docs'
+    &mdash; Ruby API Doc
   
 </title>
 
@@ -101,13 +101,9 @@
 
 <h2>Overview</h2><div class="docstring">
   <div class="discussion">
-    <p>
-Represents a file on the file-system which can be read from, or written to
-asynchronously. Methods also exist to get a read stream or a write stream
-on the file. This allows the data to be pumped to and from other streams,
-e.g. an <span class='object_link'><a href="HttpClientRequest.html" title="Vertx::HttpClientRequest (class)">HttpClientRequest</a></span> instance, using the <span class='object_link'><a href="Pump.html" title="Vertx::Pump (class)">Pump</a></span> class
-</p>
-
+    Represents a file on the file-system which can be read from, or written to asynchronously.
+Methods also exist to get a read stream or a write stream on the file. This allows the data to be pumped to and from
+other streams, e.g. an <span class='object_link'><a href="HttpClientRequest.html" title="Vertx::HttpClientRequest (class)">HttpClientRequest</a></span> instance, using the <span class='object_link'><a href="Pump.html" title="Vertx::Pump (class)">Pump</a></span> class
 
   </div>
 </div>
@@ -122,10 +118,7 @@ e.g. an <span class='object_link'><a href="HttpClientRequest.html" title="Vertx:
       
       
         
-        <div class='inline'><p>
-<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
-</p>
-</div>
+        <div class='inline'><a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a></div>
       
     </li>
   
@@ -163,10 +156,7 @@ e.g. an <span class='object_link'><a href="HttpClientRequest.html" title="Vertx:
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Close the file, asynchronously.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Close the file, asynchronously.</div></span>
   
 </li>
 
@@ -188,11 +178,7 @@ Close the file, asynchronously.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Flush any writes made to this file to underlying persistent storage,
-asynchronously.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Flush any writes made to this file to underlying persistent storage, asynchronously.</div></span>
   
 </li>
 
@@ -214,10 +200,7 @@ asynchronously.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Reads some data from a file into a buffer, asynchronously.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Reads some data from a file into a buffer, asynchronously.</div></span>
   
 </li>
 
@@ -239,10 +222,7 @@ Reads some data from a file into a buffer, asynchronously.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-A read stream operating on the file.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>A read stream operating on the file.</div></span>
   
 </li>
 
@@ -264,10 +244,7 @@ A read stream operating on the file.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Write a <span class='object_link'><a href="Buffer.html" title="Vertx::Buffer (class)">Buffer</a></span> to the file, asynchronously.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Write a <span class='object_link'><a href="Buffer.html" title="Vertx::Buffer (class)">Buffer</a></span> to the file, asynchronously.</div></span>
   
 </li>
 
@@ -289,10 +266,7 @@ Write a <span class='object_link'><a href="Buffer.html" title="Vertx::Buffer (cl
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-A write stream operating on the file.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>A write stream operating on the file.</div></span>
   
 </li>
 
@@ -317,10 +291,7 @@ A write stream operating on the file.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Close the file, asynchronously.
-</p>
-
+    Close the file, asynchronously.
 
   </div>
 </div>
@@ -360,12 +331,8 @@ Close the file, asynchronously.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Flush any writes made to this file to underlying persistent storage,
-asynchronously. If the file was opened with flush set to true then calling
-this method will have no effect.
-</p>
-
+    Flush any writes made to this file to underlying persistent storage, asynchronously.
+If the file was opened with flush set to true then calling this method will have no effect.
 
   </div>
 </div>
@@ -383,10 +350,7 @@ this method will have no effect.
       
       
         &mdash;
-        <div class='inline'><p>
-a block representing the handler which is called on completion.
-</p>
-</div>
+        <div class='inline'>a block representing the handler which is called on completion.</div>
       
     </li>
   
@@ -426,12 +390,9 @@ a block representing the handler which is called on completion.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Reads some data from a file into a buffer, asynchronously. When multiple
-reads are invoked on the same file there are no guarantees as to order in
-which those reads actually occur.
-</p>
-
+    Reads some data from a file into a buffer, asynchronously.
+When multiple reads are invoked on the same file
+there are no guarantees as to order in which those reads actually occur.
 
   </div>
 </div>
@@ -449,10 +410,7 @@ which those reads actually occur.
       
       
         &mdash;
-        <div class='inline'><p>
-The buffer into which the data which is read is written.
-</p>
-</div>
+        <div class='inline'>The buffer into which the data which is read is written.</div>
       
     </li>
   
@@ -466,10 +424,7 @@ The buffer into which the data which is read is written.
       
       
         &mdash;
-        <div class='inline'><p>
-The position in the buffer where to start writing the data.
-</p>
-</div>
+        <div class='inline'>The position in the buffer where to start writing the data.</div>
       
     </li>
   
@@ -483,10 +438,7 @@ The position in the buffer where to start writing the data.
       
       
         &mdash;
-        <div class='inline'><p>
-The position in the file where to read the data.
-</p>
-</div>
+        <div class='inline'>The position in the file where to read the data.</div>
       
     </li>
   
@@ -500,10 +452,7 @@ The position in the file where to read the data.
       
       
         &mdash;
-        <div class='inline'><p>
-The number of bytes to read.
-</p>
-</div>
+        <div class='inline'>The number of bytes to read.</div>
       
     </li>
   
@@ -543,10 +492,7 @@ The number of bytes to read.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-A read stream operating on the file.
-</p>
-
+    A read stream operating on the file.
 
   </div>
 </div>
@@ -563,10 +509,7 @@ A read stream operating on the file.
       
       
         &mdash;
-        <div class='inline'><p>
-A read stream operating on the file.
-</p>
-</div>
+        <div class='inline'>A read stream operating on the file.</div>
       
     </li>
   
@@ -605,12 +548,10 @@ A read stream operating on the file.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Write a <span class='object_link'><a href="Buffer.html" title="Vertx::Buffer (class)">Buffer</a></span> to the file, asynchronously. When multiple writes are
-invoked on the same file there are no guarantees as to order in which those
-writes actually occur. starts with zero at the beginning of the file.
-</p>
-
+    Write a <span class='object_link'><a href="Buffer.html" title="Vertx::Buffer (class)">Buffer</a></span> to the file, asynchronously.
+When multiple writes are invoked on the same file
+there are no guarantees as to order in which those writes actually occur.
+starts with zero at the beginning of the file.
 
   </div>
 </div>
@@ -628,10 +569,7 @@ writes actually occur. starts with zero at the beginning of the file.
       
       
         &mdash;
-        <div class='inline'><p>
-The buffer to write
-</p>
-</div>
+        <div class='inline'>The buffer to write</div>
       
     </li>
   
@@ -645,11 +583,7 @@ The buffer to write
       
       
         &mdash;
-        <div class='inline'><p>
-The position in the file where to write the buffer. Position is measured in
-bytes and
-</p>
-</div>
+        <div class='inline'>The position in the file where to write the buffer. Position is measured in bytes and</div>
       
     </li>
   
@@ -689,10 +623,7 @@ bytes and
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-A write stream operating on the file.
-</p>
-
+    A write stream operating on the file.
 
   </div>
 </div>
@@ -709,10 +640,7 @@ A write stream operating on the file.
       
       
         &mdash;
-        <div class='inline'><p>
-A write stream operating on the file.
-</p>
-</div>
+        <div class='inline'>A write stream operating on the file.</div>
       
     </li>
   
@@ -745,9 +673,9 @@ A write stream operating on the file.
 </div>
 
     <div id="footer">
-  Generated on Tue Jul 24 12:18:25 2012 by
+  Generated on Wed Oct 24 13:13:01 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.2.1 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.9.3).
 </div>
 
   </body>

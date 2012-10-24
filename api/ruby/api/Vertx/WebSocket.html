@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::WebSocket
   
-    &mdash; 'Ruby API Docs'
+    &mdash; Ruby API Doc
   
 </title>
 
@@ -105,16 +105,11 @@
 
 <h2>Overview</h2><div class="docstring">
   <div class="discussion">
-    <p>
-Encapsulates an HTML 5 Websocket.
-</p>
-<p>
-Instances of this class are createde by an <span class='object_link'><a href="HttpClient.html" title="Vertx::HttpClient (class)">HttpClient</a></span> instance when a
-client succeeds in a websocket handshake with a server. Once an instance
-has been obtained it can be used to send or receive buffers of data from
-the connection, a bit like a TCP socket.
-</p>
+    Encapsulates an HTML 5 Websocket.
 
+Instances of this class are createde by an <span class='object_link'><a href="HttpClient.html" title="Vertx::HttpClient (class)">HttpClient</a></span> instance when a client succeeds in a websocket handshake with a server.
+Once an instance has been obtained it can be used to send or receive buffers of data from the connection,
+a bit like a TCP socket.
 
   </div>
 </div>
@@ -129,10 +124,7 @@ the connection, a bit like a TCP socket.
       
       
         
-        <div class='inline'><p>
-<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
-</p>
-</div>
+        <div class='inline'><a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a></div>
       
     </li>
   
@@ -174,11 +166,8 @@ the connection, a bit like a TCP socket.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-When a Websocket is created it automatically registers an event handler
-with the system, the ID of that handler is given by <span class='object_link'><a href="#binary_handler_id-instance_method" title="Vertx::WebSocket#binary_handler_id (method)">#binary_handler_id</a></span>.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>When a Websocket is created it automatically registers an event handler with the system, the ID of that
+handler is given by <span class='object_link'><a href="#binary_handler_id-instance_method" title="Vertx::WebSocket#binary_handler_id (method)">#binary_handler_id</a></span>.</div></span>
   
 </li>
 
@@ -200,10 +189,7 @@ with the system, the ID of that handler is given by <span class='object_link'><a
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Close the websocket.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Close the websocket.</div></span>
   
 </li>
 
@@ -225,10 +211,7 @@ Close the websocket.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Set a closed handler on the websocket.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Set a closed handler on the websocket.</div></span>
   
 </li>
 
@@ -250,11 +233,8 @@ Set a closed handler on the websocket.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-When a Websocket is created it automatically registers an event handler
-with the system, the ID of that handler is given by <span class='object_link'><a href="#text_handler_id-instance_method" title="Vertx::WebSocket#text_handler_id (method)">#text_handler_id</a></span>.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>When a Websocket is created it automatically registers an event handler with the system, the ID of that
+handler is given by <span class='object_link'><a href="#text_handler_id-instance_method" title="Vertx::WebSocket#text_handler_id (method)">#text_handler_id</a></span>.</div></span>
   
 </li>
 
@@ -276,10 +256,7 @@ with the system, the ID of that handler is given by <span class='object_link'><a
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Write data to the websocket as a binary frame.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Write data to the websocket as a binary frame.</div></span>
   
 </li>
 
@@ -301,10 +278,7 @@ Write data to the websocket as a binary frame.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Write data to the websocket as a text frame.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Write data to the websocket as a text frame.</div></span>
   
 </li>
 
@@ -351,14 +325,10 @@ Write data to the websocket as a text frame.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-When a Websocket is created it automatically registers an event handler
-with the system, the ID of that handler is given by <span class='object_link'><a href="#binary_handler_id-instance_method" title="Vertx::WebSocket#binary_handler_id (method)">#binary_handler_id</a></span>.
-Given this ID, a different event loop can send a binary frame to that event
-handler using the event bus. This allows you to write data to other
-websockets which are owned by different event loops.
-</p>
-
+    When a Websocket is created it automatically registers an event handler with the system, the ID of that
+handler is given by <span class='object_link'><a href="#binary_handler_id-instance_method" title="Vertx::WebSocket#binary_handler_id (method)">#binary_handler_id</a></span>.
+Given this ID, a different event loop can send a binary frame to that event handler using the event bus. This
+allows you to write data to other websockets which are owned by different event loops.
 
   </div>
 </div>
@@ -398,10 +368,7 @@ websockets which are owned by different event loops.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Close the websocket
-</p>
-
+    Close the websocket
 
   </div>
 </div>
@@ -441,10 +408,7 @@ Close the websocket
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Set a closed handler on the websocket.
-</p>
-
+    Set a closed handler on the websocket.
 
   </div>
 </div>
@@ -464,10 +428,7 @@ Set a closed handler on the websocket.
       
       
         &mdash;
-        <div class='inline'><p>
-A proc to be used as the handler
-</p>
-</div>
+        <div class='inline'>A proc to be used as the handler</div>
       
     </li>
   
@@ -481,10 +442,7 @@ A proc to be used as the handler
       
       
         &mdash;
-        <div class='inline'><p>
-A block to be used as the handler
-</p>
-</div>
+        <div class='inline'>A block to be used as the handler</div>
       
     </li>
   
@@ -526,14 +484,10 @@ A block to be used as the handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-When a Websocket is created it automatically registers an event handler
-with the system, the ID of that handler is given by <span class='object_link'><a href="#text_handler_id-instance_method" title="Vertx::WebSocket#text_handler_id (method)">#text_handler_id</a></span>.
-Given this ID, a different event loop can send a text frame to that event
-handler using the event bus. This allows you to write data to other
-websockets which are owned by different event loops.
-</p>
-
+    When a Websocket is created it automatically registers an event handler with the system, the ID of that
+handler is given by <span class='object_link'><a href="#text_handler_id-instance_method" title="Vertx::WebSocket#text_handler_id (method)">#text_handler_id</a></span>.
+Given this ID, a different event loop can send a text frame to that event handler using the event bus. This
+allows you to write data to other websockets which are owned by different event loops.
 
   </div>
 </div>
@@ -573,10 +527,7 @@ websockets which are owned by different event loops.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Write data to the websocket as a binary frame
-</p>
-
+    Write data to the websocket as a binary frame
 
   </div>
 </div>
@@ -594,10 +545,7 @@ Write data to the websocket as a binary frame
       
       
         &mdash;
-        <div class='inline'><p>
-Data to write.
-</p>
-</div>
+        <div class='inline'>Data to write.</div>
       
     </li>
   
@@ -637,10 +585,7 @@ Data to write.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Write data to the websocket as a text frame
-</p>
-
+    Write data to the websocket as a text frame
 
   </div>
 </div>
@@ -658,10 +603,7 @@ Write data to the websocket as a text frame
       
       
         &mdash;
-        <div class='inline'><p>
-String to write.
-</p>
-</div>
+        <div class='inline'>String to write.</div>
       
     </li>
   
@@ -695,9 +637,9 @@ String to write.
 </div>
 
     <div id="footer">
-  Generated on Tue Jul 24 12:18:23 2012 by
+  Generated on Wed Oct 24 13:12:58 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.2.1 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.9.3).
 </div>
 
   </body>

@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::Buffer
   
-    &mdash; 'Ruby API Docs'
+    &mdash; Ruby API Doc
   
 </title>
 
@@ -101,35 +101,22 @@
 
 <h2>Overview</h2><div class="docstring">
   <div class="discussion">
-    <p>
-A Buffer represents a sequence of zero or more bytes that can be written to
-or read from, and which expands as necessary to accomodate any bytes
-written to it.
-</p>
-<p>
-Buffers are used in many places in vert.x, for example to read/write data
-to/from <span class='object_link'><a href="NetSocket.html" title="Vertx::NetSocket (class)">NetSocket</a></span>, <span class='object_link'><a href="AsyncFile.html" title="Vertx::AsyncFile (class)">AsyncFile</a></span>, <span class='object_link'><a href="WebSocket.html" title="Vertx::WebSocket (class)">WebSocket</a></span>, <span class='object_link'><a href="HttpClientRequest.html" title="Vertx::HttpClientRequest (class)">HttpClientRequest</a></span>,
-<span class='object_link'><a href="HttpClientResponse.html" title="Vertx::HttpClientResponse (class)">HttpClientResponse</a></span>, <span class='object_link'><a href="HttpServerRequest.html" title="Vertx::HttpServerRequest (class)">HttpServerRequest</a></span>, <span class='object_link'><a href="HttpServerResponse.html" title="Vertx::HttpServerResponse (class)">HttpServerResponse</a></span> etc.
-</p>
-<p>
-There are two ways to write data to a Buffer: The first method involves
-methods that take the form set_XXX. These methods write data into the
-buffer starting at the specified position. The position does not have to be
-inside data that has already been written to the buffer; the buffer will
-automatically expand to encompass the position plus any data that needs to
-be written. All positions are measured in bytes and start with zero.
-</p>
-<p>
-The second method involves methods that take the form append-XXX; these
-methods append data at the end of the buffer. Methods exist to both set and
-append all primitive types, String and other instances of Buffer.
-</p>
-<p>
-Data can be read from a buffer by invoking methods which take the form
-get_XXX. These methods take a parameter representing the position in the
-Buffer from where to read data.
-</p>
+    A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands
+as necessary to accomodate any bytes written to it.
 
+Buffers are used in many places in vert.x, for example to read/write data to/from <span class='object_link'><a href="NetSocket.html" title="Vertx::NetSocket (class)">NetSocket</a></span>, <span class='object_link'><a href="AsyncFile.html" title="Vertx::AsyncFile (class)">AsyncFile</a></span>,
+<span class='object_link'><a href="WebSocket.html" title="Vertx::WebSocket (class)">WebSocket</a></span>, <span class='object_link'><a href="HttpClientRequest.html" title="Vertx::HttpClientRequest (class)">HttpClientRequest</a></span>, <span class='object_link'><a href="HttpClientResponse.html" title="Vertx::HttpClientResponse (class)">HttpClientResponse</a></span>, <span class='object_link'><a href="HttpServerRequest.html" title="Vertx::HttpServerRequest (class)">HttpServerRequest</a></span>, <span class='object_link'><a href="HttpServerResponse.html" title="Vertx::HttpServerResponse (class)">HttpServerResponse</a></span> etc.
+
+There are two ways to write data to a Buffer: The first method involves methods that take the form set_XXX.
+These methods write data into the buffer starting at the specified position. The position does not have to be inside data that
+has already been written to the buffer; the buffer will automatically expand to encompass the position plus any data that needs
+to be written. All positions are measured in bytes and start with zero.
+
+The second method involves methods that take the form append-XXX; these methods append data at the end of the buffer.
+Methods exist to both set and append all primitive types, String and  other instances of Buffer.
+
+Data can be read from a buffer by invoking methods which take the form get_XXX. These methods take a parameter
+representing the position in the Buffer from where to read data.
 
   </div>
 </div>
@@ -144,10 +131,7 @@ Buffer from where to read data.
       
       
         
-        <div class='inline'><p>
-<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
-</p>
-</div>
+        <div class='inline'><a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a></div>
       
     </li>
   
@@ -185,10 +169,7 @@ Buffer from where to read data.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Creates a new empty buffer.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Creates a new empty buffer.</div></span>
   
 </li>
 
@@ -210,10 +191,7 @@ Creates a new empty buffer.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Create a new Buffer from a String.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Create a new Buffer from a String.</div></span>
   
 </li>
 
@@ -244,10 +222,7 @@ Create a new Buffer from a String.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Appends a buffer to the end of this buffer.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Appends a buffer to the end of this buffer.</div></span>
   
 </li>
 
@@ -269,10 +244,7 @@ Appends a buffer to the end of this buffer.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Appends a fixnum to the end of this buffer.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Appends a fixnum to the end of this buffer.</div></span>
   
 </li>
 
@@ -294,10 +266,7 @@ Appends a fixnum to the end of this buffer.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Appends a float to the end of this buffer.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Appends a float to the end of this buffer.</div></span>
   
 </li>
 
@@ -319,10 +288,7 @@ Appends a float to the end of this buffer.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Appends a string to the end of this buffer.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Appends a string to the end of this buffer.</div></span>
   
 </li>
 
@@ -344,10 +310,7 @@ Appends a string to the end of this buffer.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Get a copy of the entire buffer.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Get a copy of the entire buffer.</div></span>
   
 </li>
 
@@ -369,10 +332,7 @@ Get a copy of the entire buffer.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Return bytes in the buffer as a Buffer.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Return bytes in the buffer as a Buffer.</div></span>
   
 </li>
 
@@ -394,10 +354,7 @@ Return bytes in the buffer as a Buffer.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Get the byte at position pos in the buffer.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Get the byte at position pos in the buffer.</div></span>
   
 </li>
 
@@ -419,11 +376,7 @@ Get the byte at position pos in the buffer.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Get the fixnum represented by a sequence of bytes starting at position pos
-in the buffer.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Get the fixnum represented by a sequence of bytes starting at position pos in the buffer.</div></span>
   
 </li>
 
@@ -445,11 +398,7 @@ in the buffer.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Get the float represented by a sequence of bytes starting at position pos
-in the buffer.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Get the float represented by a sequence of bytes starting at position pos in the buffer.</div></span>
   
 </li>
 
@@ -471,10 +420,7 @@ in the buffer.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Return bytes from the buffer interpreted as a String.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Return bytes from the buffer interpreted as a String.</div></span>
   
 </li>
 
@@ -496,10 +442,7 @@ Return bytes from the buffer interpreted as a String.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-The length of this buffer, in bytes.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>The length of this buffer, in bytes.</div></span>
   
 </li>
 
@@ -521,10 +464,7 @@ The length of this buffer, in bytes.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Sets bytes in this buffer to the bytes of the specified buffer.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Sets bytes in this buffer to the bytes of the specified buffer.</div></span>
   
 </li>
 
@@ -546,10 +486,7 @@ Sets bytes in this buffer to the bytes of the specified buffer.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Sets bytes in the buffer to a representation of a fixnum.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Sets bytes in the buffer to a representation of a fixnum.</div></span>
   
 </li>
 
@@ -571,10 +508,7 @@ Sets bytes in the buffer to a representation of a fixnum.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Sets bytes in the buffer to a representation of a float.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Sets bytes in the buffer to a representation of a float.</div></span>
   
 </li>
 
@@ -596,10 +530,7 @@ Sets bytes in the buffer to a representation of a float.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Set bytes in the buffer to the string encoding in the specified encoding.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Set bytes in the buffer to the string encoding in the specified encoding.</div></span>
   
 </li>
 
@@ -621,10 +552,7 @@ Set bytes in the buffer to the string encoding in the specified encoding.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Return a String representation of the buffer.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Return a String representation of the buffer.</div></span>
   
 </li>
 
@@ -649,12 +577,8 @@ Return a String representation of the buffer.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Creates a new empty buffer. The <span class='object_link'><a href="#length-instance_method" title="Vertx::Buffer#length (method)">#length</a></span> of the buffer immediately after
-creation will be zero. to initially allocate to the buffer to prevent
-excessive automatic re-allocations as data is written to it.
-</p>
-
+    Creates a new empty buffer. The <span class='object_link'><a href="#length-instance_method" title="Vertx::Buffer#length (method)">#length</a></span> of the buffer immediately after creation will be zero.
+to initially allocate to the buffer to prevent excessive automatic re-allocations as data is written to it.
 
   </div>
 </div>
@@ -674,10 +598,7 @@ excessive automatic re-allocations as data is written to it.
       
       
         &mdash;
-        <div class='inline'><p>
-is a hint to the system for how much memory
-</p>
-</div>
+        <div class='inline'>is a hint to the system for how much memory</div>
       
     </li>
   
@@ -717,10 +638,7 @@ is a hint to the system for how much memory
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Create a new Buffer from a String
-</p>
-
+    Create a new Buffer from a String
 
   </div>
 </div>
@@ -738,10 +656,7 @@ Create a new Buffer from a String
       
       
         &mdash;
-        <div class='inline'><p>
-The String to encode into the Buffer
-</p>
-</div>
+        <div class='inline'>The String to encode into the Buffer</div>
       
     </li>
   
@@ -757,10 +672,7 @@ The String to encode into the Buffer
       
       
         &mdash;
-        <div class='inline'><p>
-Encoding to use. Defaults to &quot;UTF-8&quot;
-</p>
-</div>
+        <div class='inline'>Encoding to use. Defaults to &quot;UTF-8&quot;</div>
       
     </li>
   
@@ -806,11 +718,7 @@ Encoding to use. Defaults to &quot;UTF-8&quot;
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Appends a buffer to the end of this buffer. The buffer will expand as
-necessary to accomodate any bytes written.
-</p>
-
+    Appends a buffer to the end of this buffer. The buffer will expand as necessary to accomodate any bytes written.
 
   </div>
 </div>
@@ -828,10 +736,7 @@ necessary to accomodate any bytes written.
       
       
         &mdash;
-        <div class='inline'><p>
-the buffer to append.
-</p>
-</div>
+        <div class='inline'>the buffer to append.</div>
       
     </li>
   
@@ -848,10 +753,7 @@ the buffer to append.
       
       
         &mdash;
-        <div class='inline'><p>
-a reference to self so multiple operations can be appended together.
-</p>
-</div>
+        <div class='inline'>a reference to self so multiple operations can be appended together.</div>
       
     </li>
   
@@ -892,11 +794,7 @@ a reference to self so multiple operations can be appended together.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Appends a fixnum to the end of this buffer. The buffer will expand as
-necessary to accomodate any bytes written.
-</p>
-
+    Appends a fixnum to the end of this buffer. The buffer will expand as necessary to accomodate any bytes written.
 
   </div>
 </div>
@@ -914,10 +812,7 @@ necessary to accomodate any bytes written.
       
       
         &mdash;
-        <div class='inline'><p>
-the fixnum to append.
-</p>
-</div>
+        <div class='inline'>the fixnum to append.</div>
       
     </li>
   
@@ -931,11 +826,7 @@ the fixnum to append.
       
       
         &mdash;
-        <div class='inline'><p>
-the number of bytes to write in the buffer to represent the fixnum. Valid
-values are 1, 2, 4 and 8.
-</p>
-</div>
+        <div class='inline'>the number of bytes to write in the buffer to represent the fixnum. Valid values are 1, 2, 4 and 8.</div>
       
     </li>
   
@@ -952,10 +843,7 @@ values are 1, 2, 4 and 8.
       
       
         &mdash;
-        <div class='inline'><p>
-a reference to self so multiple operations can be appended together.
-</p>
-</div>
+        <div class='inline'>a reference to self so multiple operations can be appended together.</div>
       
     </li>
   
@@ -1018,11 +906,7 @@ a reference to self so multiple operations can be appended together.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Appends a float to the end of this buffer. The buffer will expand as
-necessary to accomodate any bytes written.
-</p>
-
+    Appends a float to the end of this buffer. The buffer will expand as necessary to accomodate any bytes written.
 
   </div>
 </div>
@@ -1040,10 +924,7 @@ necessary to accomodate any bytes written.
       
       
         &mdash;
-        <div class='inline'><p>
-the float to append.
-</p>
-</div>
+        <div class='inline'>the float to append.</div>
       
     </li>
   
@@ -1057,11 +938,7 @@ the float to append.
       
       
         &mdash;
-        <div class='inline'><p>
-the number of bytes to write in the buffer to represent the float. Valid
-values are 4 and 8.
-</p>
-</div>
+        <div class='inline'>the number of bytes to write in the buffer to represent the float. Valid values are 4 and 8.</div>
       
     </li>
   
@@ -1078,10 +955,7 @@ values are 4 and 8.
       
       
         &mdash;
-        <div class='inline'><p>
-a reference to self so multiple operations can be appended together.
-</p>
-</div>
+        <div class='inline'>a reference to self so multiple operations can be appended together.</div>
       
     </li>
   
@@ -1134,11 +1008,7 @@ a reference to self so multiple operations can be appended together.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Appends a string to the end of this buffer. The buffer will expand as
-necessary to accomodate any bytes written.
-</p>
-
+    Appends a string to the end of this buffer. The buffer will expand as necessary to accomodate any bytes written.
 
   </div>
 </div>
@@ -1156,10 +1026,7 @@ necessary to accomodate any bytes written.
       
       
         &mdash;
-        <div class='inline'><p>
-the string to append.
-</p>
-</div>
+        <div class='inline'>the string to append.</div>
       
     </li>
   
@@ -1175,10 +1042,7 @@ the string to append.
       
       
         &mdash;
-        <div class='inline'><p>
-the encoding to use. Defaults to &quot;UTF-8&quot;
-</p>
-</div>
+        <div class='inline'>the encoding to use. Defaults to &quot;UTF-8&quot;</div>
       
     </li>
   
@@ -1195,10 +1059,7 @@ the encoding to use. Defaults to &quot;UTF-8&quot;
       
       
         &mdash;
-        <div class='inline'><p>
-a reference to self so multiple operations can be appended together.
-</p>
-</div>
+        <div class='inline'>a reference to self so multiple operations can be appended together.</div>
       
     </li>
   
@@ -1239,10 +1100,7 @@ a reference to self so multiple operations can be appended together.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Get a copy of the entire buffer.
-</p>
-
+    Get a copy of the entire buffer.
 
   </div>
 </div>
@@ -1259,10 +1117,7 @@ Get a copy of the entire buffer.
       
       
         &mdash;
-        <div class='inline'><p>
-the copy
-</p>
-</div>
+        <div class='inline'>the copy</div>
       
     </li>
   
@@ -1301,10 +1156,7 @@ the copy
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Return bytes in the buffer as a Buffer
-</p>
-
+    Return bytes in the buffer as a Buffer
 
   </div>
 </div>
@@ -1322,12 +1174,7 @@ Return bytes in the buffer as a Buffer
       
       
         &mdash;
-        <div class='inline'><ul>
-<li>the position in this buffer from where to start the copy.
-
-</li>
-</ul>
-</div>
+        <div class='inline'>- the position in this buffer from where to start the copy.</div>
       
     </li>
   
@@ -1341,12 +1188,7 @@ Return bytes in the buffer as a Buffer
       
       
         &mdash;
-        <div class='inline'><ul>
-<li>the copy will be made up to index end_pos - 1
-
-</li>
-</ul>
-</div>
+        <div class='inline'>- the copy will be made up to index end_pos - 1</div>
       
     </li>
   
@@ -1363,10 +1205,7 @@ Return bytes in the buffer as a Buffer
       
       
         &mdash;
-        <div class='inline'><p>
-the copy
-</p>
-</div>
+        <div class='inline'>the copy</div>
       
     </li>
   
@@ -1407,10 +1246,7 @@ the copy
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Get the byte at position pos in the buffer.
-</p>
-
+    Get the byte at position pos in the buffer.
 
   </div>
 </div>
@@ -1428,10 +1264,7 @@ Get the byte at position pos in the buffer.
       
       
         &mdash;
-        <div class='inline'><p>
-the position in the buffer from where to retrieve the byte
-</p>
-</div>
+        <div class='inline'>the position in the buffer from where to retrieve the byte</div>
       
     </li>
   
@@ -1448,10 +1281,7 @@ the position in the buffer from where to retrieve the byte
       
       
         &mdash;
-        <div class='inline'><p>
-the byte
-</p>
-</div>
+        <div class='inline'>the byte</div>
       
     </li>
   
@@ -1490,11 +1320,7 @@ the byte
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Get the fixnum represented by a sequence of bytes starting at position pos
-in the buffer.
-</p>
-
+    Get the fixnum represented by a sequence of bytes starting at position pos in the buffer.
 
   </div>
 </div>
@@ -1512,10 +1338,7 @@ in the buffer.
       
       
         &mdash;
-        <div class='inline'><p>
-the position in the buffer from where to retrieve the FixNum.
-</p>
-</div>
+        <div class='inline'>the position in the buffer from where to retrieve the FixNum.</div>
       
     </li>
   
@@ -1529,11 +1352,7 @@ the position in the buffer from where to retrieve the FixNum.
       
       
         &mdash;
-        <div class='inline'><p>
-the number of bytes to retrieve from position pos to create the FixNum.
-Valid values are 1, 2, 4 and 8.
-</p>
-</div>
+        <div class='inline'>the number of bytes to retrieve from position pos to create the FixNum. Valid values are 1, 2, 4 and 8.</div>
       
     </li>
   
@@ -1550,10 +1369,7 @@ Valid values are 1, 2, 4 and 8.
       
       
         &mdash;
-        <div class='inline'><p>
-the FixNum
-</p>
-</div>
+        <div class='inline'>the FixNum</div>
       
     </li>
   
@@ -1614,11 +1430,7 @@ the FixNum
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Get the float represented by a sequence of bytes starting at position pos
-in the buffer.
-</p>
-
+    Get the float represented by a sequence of bytes starting at position pos in the buffer.
 
   </div>
 </div>
@@ -1636,10 +1448,7 @@ in the buffer.
       
       
         &mdash;
-        <div class='inline'><p>
-the position in the buffer from where to retrieve the Float.
-</p>
-</div>
+        <div class='inline'>the position in the buffer from where to retrieve the Float.</div>
       
     </li>
   
@@ -1653,11 +1462,7 @@ the position in the buffer from where to retrieve the Float.
       
       
         &mdash;
-        <div class='inline'><p>
-the number of bytes to retrieve from position pos to create the Float.
-Valid values are 4 and 8.
-</p>
-</div>
+        <div class='inline'>the number of bytes to retrieve from position pos to create the Float. Valid values are 4 and 8.</div>
       
     </li>
   
@@ -1674,10 +1479,7 @@ Valid values are 4 and 8.
       
       
         &mdash;
-        <div class='inline'><p>
-the Float
-</p>
-</div>
+        <div class='inline'>the Float</div>
       
     </li>
   
@@ -1730,10 +1532,7 @@ the Float
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Return bytes from the buffer interpreted as a String
-</p>
-
+    Return bytes from the buffer interpreted as a String
 
   </div>
 </div>
@@ -1751,10 +1550,7 @@ Return bytes from the buffer interpreted as a String
       
       
         &mdash;
-        <div class='inline'><p>
-the position in the buffer from where to start reading
-</p>
-</div>
+        <div class='inline'>the position in the buffer from where to start reading</div>
       
     </li>
   
@@ -1768,10 +1564,7 @@ the position in the buffer from where to start reading
       
       
         &mdash;
-        <div class='inline'><p>
-the position in the buffer to end reading
-</p>
-</div>
+        <div class='inline'>the position in the buffer to end reading</div>
       
     </li>
   
@@ -1787,10 +1580,7 @@ the position in the buffer to end reading
       
       
         &mdash;
-        <div class='inline'><p>
-The encoding to use
-</p>
-</div>
+        <div class='inline'>The encoding to use</div>
       
     </li>
   
@@ -1807,10 +1597,7 @@ The encoding to use
       
       
         &mdash;
-        <div class='inline'><p>
-the String
-</p>
-</div>
+        <div class='inline'>the String</div>
       
     </li>
   
@@ -1849,10 +1636,7 @@ the String
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-The length of this buffer, in bytes.
-</p>
-
+    The length of this buffer, in bytes.
 
   </div>
 </div>
@@ -1869,10 +1653,7 @@ The length of this buffer, in bytes.
       
       
         &mdash;
-        <div class='inline'><p>
-the length of this buffer, in bytes.
-</p>
-</div>
+        <div class='inline'>the length of this buffer, in bytes.</div>
       
     </li>
   
@@ -1911,11 +1692,7 @@ the length of this buffer, in bytes.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Sets bytes in this buffer to the bytes of the specified buffer. The buffer
-will expand as necessary to accomodate any bytes written.
-</p>
-
+    Sets bytes in this buffer to the bytes of the specified buffer. The buffer will expand as necessary to accomodate any bytes written.
 
   </div>
 </div>
@@ -1933,12 +1710,7 @@ will expand as necessary to accomodate any bytes written.
       
       
         &mdash;
-        <div class='inline'><ul>
-<li>the position in this buffer from where to start writing the buffer
-
-</li>
-</ul>
-</div>
+        <div class='inline'>- the position in this buffer from where to start writing the buffer</div>
       
     </li>
   
@@ -1952,12 +1724,7 @@ will expand as necessary to accomodate any bytes written.
       
       
         &mdash;
-        <div class='inline'><ul>
-<li>the buffer to write into this buffer
-
-</li>
-</ul>
-</div>
+        <div class='inline'>- the buffer to write into this buffer</div>
       
     </li>
   
@@ -1974,10 +1741,7 @@ will expand as necessary to accomodate any bytes written.
       
       
         &mdash;
-        <div class='inline'><p>
-a reference to self so multiple operations can be appended together.
-</p>
-</div>
+        <div class='inline'>a reference to self so multiple operations can be appended together.</div>
       
     </li>
   
@@ -2018,11 +1782,7 @@ a reference to self so multiple operations can be appended together.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Sets bytes in the buffer to a representation of a fixnum. The buffer will
-expand as necessary to accomodate any bytes written.
-</p>
-
+    Sets bytes in the buffer to a representation of a fixnum. The buffer will expand as necessary to accomodate any bytes written.
 
   </div>
 </div>
@@ -2040,12 +1800,7 @@ expand as necessary to accomodate any bytes written.
       
       
         &mdash;
-        <div class='inline'><ul>
-<li>the position in the buffer from where to start writing the fixnum
-
-</li>
-</ul>
-</div>
+        <div class='inline'>- the position in the buffer from where to start writing the fixnum</div>
       
     </li>
   
@@ -2059,12 +1814,7 @@ expand as necessary to accomodate any bytes written.
       
       
         &mdash;
-        <div class='inline'><ul>
-<li>the fixnum to write
-
-</li>
-</ul>
-</div>
+        <div class='inline'>- the fixnum to write</div>
       
     </li>
   
@@ -2078,13 +1828,7 @@ expand as necessary to accomodate any bytes written.
       
       
         &mdash;
-        <div class='inline'><ul>
-<li>the number of bytes to write to represent the fixnum. Valid values are 1,
-2, 4, and 8
-
-</li>
-</ul>
-</div>
+        <div class='inline'>- the number of bytes to write to represent the fixnum. Valid values are 1, 2, 4, and 8</div>
       
     </li>
   
@@ -2101,10 +1845,7 @@ expand as necessary to accomodate any bytes written.
       
       
         &mdash;
-        <div class='inline'><p>
-a reference to self so multiple operations can be appended together.
-</p>
-</div>
+        <div class='inline'>a reference to self so multiple operations can be appended together.</div>
       
     </li>
   
@@ -2167,11 +1908,7 @@ a reference to self so multiple operations can be appended together.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Sets bytes in the buffer to a representation of a float. The buffer will
-expand as necessary to accomodate any bytes written.
-</p>
-
+    Sets bytes in the buffer to a representation of a float. The buffer will expand as necessary to accomodate any bytes written.
 
   </div>
 </div>
@@ -2189,12 +1926,7 @@ expand as necessary to accomodate any bytes written.
       
       
         &mdash;
-        <div class='inline'><ul>
-<li>the position in the buffer from where to start writing the float
-
-</li>
-</ul>
-</div>
+        <div class='inline'>- the position in the buffer from where to start writing the float</div>
       
     </li>
   
@@ -2208,12 +1940,7 @@ expand as necessary to accomodate any bytes written.
       
       
         &mdash;
-        <div class='inline'><ul>
-<li>the float to write
-
-</li>
-</ul>
-</div>
+        <div class='inline'>- the float to write</div>
       
     </li>
   
@@ -2227,13 +1954,7 @@ expand as necessary to accomodate any bytes written.
       
       
         &mdash;
-        <div class='inline'><ul>
-<li>the number of bytes to write to represent the float. Valid values are 4 and
-8
-
-</li>
-</ul>
-</div>
+        <div class='inline'>- the number of bytes to write to represent the float. Valid values are 4 and 8</div>
       
     </li>
   
@@ -2250,10 +1971,7 @@ expand as necessary to accomodate any bytes written.
       
       
         &mdash;
-        <div class='inline'><p>
-a reference to self so multiple operations can be appended together.
-</p>
-</div>
+        <div class='inline'>a reference to self so multiple operations can be appended together.</div>
       
     </li>
   
@@ -2308,10 +2026,7 @@ a reference to self so multiple operations can be appended together.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Set bytes in the buffer to the string encoding in the specified encoding
-</p>
-
+    Set bytes in the buffer to the string encoding in the specified encoding
 
   </div>
 </div>
@@ -2329,12 +2044,7 @@ Set bytes in the buffer to the string encoding in the specified encoding
       
       
         &mdash;
-        <div class='inline'><ul>
-<li>the position in this buffer from where to start writing the string
-
-</li>
-</ul>
-</div>
+        <div class='inline'>- the position in this buffer from where to start writing the string</div>
       
     </li>
   
@@ -2348,10 +2058,7 @@ Set bytes in the buffer to the string encoding in the specified encoding
       
       
         &mdash;
-        <div class='inline'><p>
-the string
-</p>
-</div>
+        <div class='inline'>the string</div>
       
     </li>
   
@@ -2367,10 +2074,7 @@ the string
       
       
         &mdash;
-        <div class='inline'><p>
-the encoding
-</p>
-</div>
+        <div class='inline'>the encoding</div>
       
     </li>
   
@@ -2387,10 +2091,7 @@ the encoding
       
       
         &mdash;
-        <div class='inline'><p>
-a reference to self so multiple operations can be appended together.
-</p>
-</div>
+        <div class='inline'>a reference to self so multiple operations can be appended together.</div>
       
     </li>
   
@@ -2431,10 +2132,7 @@ a reference to self so multiple operations can be appended together.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Return a String representation of the buffer.
-</p>
-
+    Return a String representation of the buffer.
 
   </div>
 </div>
@@ -2454,10 +2152,7 @@ Return a String representation of the buffer.
       
       
         &mdash;
-        <div class='inline'><p>
-The encoding to use. Defaults to &quot;UTF-8&quot;
-</p>
-</div>
+        <div class='inline'>The encoding to use. Defaults to &quot;UTF-8&quot;</div>
       
     </li>
   
@@ -2474,10 +2169,7 @@ The encoding to use. Defaults to &quot;UTF-8&quot;
       
       
         &mdash;
-        <div class='inline'><p>
-a String representation of the buffer.
-</p>
-</div>
+        <div class='inline'>a String representation of the buffer.</div>
       
     </li>
   
@@ -2510,9 +2202,9 @@ a String representation of the buffer.
 </div>
 
     <div id="footer">
-  Generated on Tue Jul 24 12:18:24 2012 by
+  Generated on Wed Oct 24 13:13:00 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.2.1 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.9.3).
 </div>
 
   </body>

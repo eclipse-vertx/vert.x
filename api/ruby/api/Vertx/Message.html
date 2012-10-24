@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::Message
   
-    &mdash; 'Ruby API Docs'
+    &mdash; Ruby API Doc
   
 </title>
 
@@ -101,10 +101,7 @@
 
 <h2>Overview</h2><div class="docstring">
   <div class="discussion">
-    <p>
-Represents a message received from the event bus
-</p>
-
+    Represents a message received from the event bus
 
   </div>
 </div>
@@ -119,10 +116,7 @@ Represents a message received from the event bus
       
       
         
-        <div class='inline'><p>
-<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
-</p>
-</div>
+        <div class='inline'><a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a></div>
       
     </li>
   
@@ -157,10 +151,7 @@ Represents a message received from the event bus
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Returns the value of attribute body.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Returns the value of attribute body.</div></span>
   
 </li>
 
@@ -195,10 +186,7 @@ Returns the value of attribute body.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Reply to this message.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Reply to this message.</div></span>
   
 </li>
 
@@ -223,10 +211,7 @@ Reply to this message.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Returns the value of attribute body
-</p>
-
+    Returns the value of attribute body
 
   </div>
 </div>
@@ -239,12 +224,12 @@ Returns the value of attribute body
       <pre class="lines">
 
 
-168
-169
-170</pre>
+170
+171
+172</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/event_bus.rb', line 168</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/event_bus.rb', line 170</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_body identifier id'>body</span>
   <span class='rubyid_@body ivar id'>@body</span>
@@ -273,14 +258,11 @@ Returns the value of attribute body
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Reply to this message. If the message was sent specifying a receipt
-handler, that handler will be called when it has received a reply. If the
-message wasn&#8217;t sent specifying a receipt handler this method does
-nothing. Replying to a message this way is equivalent to sending a message
-to an address which is the same as the message id of the original message.
-</p>
-
+    Reply to this message. If the message was sent specifying a receipt handler, that handler will be
+called when it has received a reply. If the message wasn't sent specifying a receipt handler
+this method does nothing.
+Replying to a message this way is equivalent to sending a message to an address which is the same as the message id
+of the original message.
 
   </div>
 </div>
@@ -298,10 +280,7 @@ to an address which is the same as the message id of the original message.
       
       
         &mdash;
-        <div class='inline'><p>
-send as reply
-</p>
-</div>
+        <div class='inline'>send as reply</div>
       
     </li>
   
@@ -314,18 +293,18 @@ send as reply
       <pre class="lines">
 
 
-189
-190
 191
 192
 193
 194
 195
 196
-197</pre>
+197
+198
+199</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/event_bus.rb', line 189</span>
+      <pre class="code"><span class="info file"># File 'src/main/ruby_scripts/core/event_bus.rb', line 191</span>
 
 <span class='rubyid_def def kw'>def</span> <span class='rubyid_reply identifier id'>reply</span><span class='lparen token'>(</span><span class='rubyid_reply identifier id'>reply</span><span class='comma token'>,</span> <span class='bitand op'>&amp;</span><span class='rubyid_reply_handler identifier id'>reply_handler</span><span class='rparen token'>)</span>
   <span class='rubyid_raise identifier id'>raise</span> <span class='string val'>&quot;A reply message must be specified&quot;</span> <span class='rubyid_if if_mod kw'>if</span> <span class='rubyid_reply identifier id'>reply</span> <span class='eq op'>==</span> <span class='rubyid_nil nil kw'>nil</span>
@@ -347,9 +326,9 @@ send as reply
 </div>
 
     <div id="footer">
-  Generated on Tue Jul 24 12:18:25 2012 by
+  Generated on Wed Oct 24 13:13:01 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.2.1 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.9.3).
 </div>
 
   </body>

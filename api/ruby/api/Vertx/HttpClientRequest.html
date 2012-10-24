@@ -6,7 +6,7 @@
 <title>
   Class: Vertx::HttpClientRequest
   
-    &mdash; 'Ruby API Docs'
+    &mdash; Ruby API Doc
   
 </title>
 
@@ -105,38 +105,25 @@
 
 <h2>Overview</h2><div class="docstring">
   <div class="discussion">
-    <p>
-Encapsulates a client-side HTTP request.
-</p>
-<p>
-Instances of this class are created by an <span class='object_link'><a href="HttpClient.html" title="Vertx::HttpClient (class)">HttpClient</a></span> instance, via one of
-the methods corresponding to the specific HTTP methods, or the generic
-<span class='object_link'><a href="HttpClient.html#request-instance_method" title="Vertx::HttpClient#request (method)">Vertx::HttpClient#request</a></span> method.
-</p>
-<p>
-Once an instance of this class has been obtained, headers can be set on it,
-and data can be written to its body, if required. Once you are ready to
-send the request, the <span class='object_link'><a href="#end-instance_method" title="Vertx::HttpClientRequest#end (method)">#end</a></span> method must called.
-</p>
-<p>
-Nothing is sent until the request has been internally assigned an HTTP
-connection. The <span class='object_link'><a href="HttpClient.html" title="Vertx::HttpClient (class)">HttpClient</a></span> instance will return an instance of this class
-immediately, even if there are no HTTP connections available in the pool.
-Any requests sent before a connection is assigned will be queued internally
-and actually sent when an HTTP connection becomes available from the pool.
-</p>
-<p>
-The headers of the request are actually sent either when the <span class='object_link'><a href="#end-instance_method" title="Vertx::HttpClientRequest#end (method)">#end</a></span> method
-is called, or, when the first part of the body is written, whichever occurs
-first.
-</p>
-<p>
-This class supports both chunked and non-chunked HTTP.
-</p>
-<p>
-An example of using this class is as follows:
-</p>
+    Encapsulates a client-side HTTP request.
 
+Instances of this class are created by an <span class='object_link'><a href="HttpClient.html" title="Vertx::HttpClient (class)">HttpClient</a></span> instance, via one of the methods corresponding to the
+specific HTTP methods, or the generic <span class='object_link'><a href="HttpClient.html#request-instance_method" title="Vertx::HttpClient#request (method)">Vertx::HttpClient#request</a></span> method.
+
+Once an instance of this class has been obtained, headers can be set on it, and data can be written to its body,
+if required. Once you are ready to send the request, the <span class='object_link'><a href="#end-instance_method" title="Vertx::HttpClientRequest#end (method)">#end</a></span> method must called.
+
+Nothing is sent until the request has been internally assigned an HTTP connection. The <span class='object_link'><a href="HttpClient.html" title="Vertx::HttpClient (class)">HttpClient</a></span> instance
+will return an instance of this class immediately, even if there are no HTTP connections available in the pool. Any requests
+sent before a connection is assigned will be queued internally and actually sent when an HTTP connection becomes
+available from the pool.
+
+The headers of the request are actually sent either when the <span class='object_link'><a href="#end-instance_method" title="Vertx::HttpClientRequest#end (method)">#end</a></span> method is called, or, when the first
+part of the body is written, whichever occurs first.
+
+This class supports both chunked and non-chunked HTTP.
+
+An example of using this class is as follows:
 
   </div>
 </div>
@@ -171,10 +158,7 @@ An example of using this class is as follows:
       
       
         
-        <div class='inline'><p>
-<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
-</p>
-</div>
+        <div class='inline'><a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a></div>
       
     </li>
   
@@ -212,10 +196,7 @@ An example of using this class is as follows:
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Sets whether the request should used HTTP chunked encoding or not.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Sets whether the request should used HTTP chunked encoding or not.</div></span>
   
 </li>
 
@@ -237,13 +218,9 @@ Sets whether the request should used HTTP chunked encoding or not.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-If you send an HTTP request with the header &#8216;Expect&#8217; set to the
-value &#8216;100-continue&#8217; and the server responds with an interim
-HTTP response with a status code of &#8216;100&#8217; and a continue
-handler has been set using this method, then the handler will be called.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>If you send an HTTP request with the header 'Expect' set to the value '100-continue'
+and the server responds with an interim HTTP response with a status code of '100' and a continue handler
+has been set using this method, then the handler will be called.</div></span>
   
 </li>
 
@@ -265,10 +242,7 @@ handler has been set using this method, then the handler will be called.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Ends the request.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Ends the request.</div></span>
   
 </li>
 
@@ -290,10 +264,7 @@ Ends the request.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Hash of headers for the request.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Hash of headers for the request.</div></span>
   
 </li>
 
@@ -315,10 +286,7 @@ Hash of headers for the request.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Inserts a header into the request.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Inserts a header into the request.</div></span>
   
 </li>
 
@@ -340,11 +308,7 @@ Inserts a header into the request.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Forces the head of the request to be written before <span class='object_link'><a href="#end-instance_method" title="Vertx::HttpClientRequest#end (method)">#end</a></span> is called on the
-request.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Forces the head of the request to be written before <span class='object_link'><a href="#end-instance_method" title="Vertx::HttpClientRequest#end (method)">#end</a></span> is called on the request.</div></span>
   
 </li>
 
@@ -366,10 +330,7 @@ request.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Write a [Buffer] to the request body.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Write a [Buffer] to the request body.</div></span>
   
 </li>
 
@@ -391,10 +352,7 @@ Write a [Buffer] to the request body.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Same as <span class='object_link'><a href="#end-instance_method" title="Vertx::HttpClientRequest#end (method)">#end</a></span> but writes some data to the response body before ending.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Same as <span class='object_link'><a href="#end-instance_method" title="Vertx::HttpClientRequest#end (method)">#end</a></span> but writes some data to the response body before ending.</div></span>
   
 </li>
 
@@ -416,10 +374,7 @@ Same as <span class='object_link'><a href="#end-instance_method" title="Vertx::H
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Write a [String] to the request body.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Write a [String] to the request body.</div></span>
   
 </li>
 
@@ -441,10 +396,7 @@ Write a [String] to the request body.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Same as <span class='object_link'><a href="#write_buffer_and_end-instance_method" title="Vertx::HttpClientRequest#write_buffer_and_end (method)">#write_buffer_and_end</a></span> but writes a String.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Same as <span class='object_link'><a href="#write_buffer_and_end-instance_method" title="Vertx::HttpClientRequest#write_buffer_and_end (method)">#write_buffer_and_end</a></span> but writes a String.</div></span>
   
 </li>
 
@@ -480,17 +432,12 @@ Same as <span class='object_link'><a href="#write_buffer_and_end-instance_method
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Sets whether the request should used HTTP chunked encoding or not. will
-correspond to a new HTTP chunk sent on the wire. If chunked encoding is
-used the HTTP header &#8216;Transfer-Encoding&#8217; with a value of
-&#8216;Chunked&#8217; will be automatically inserted in the request. If
-chunked is false, this request will not use HTTP chunked encoding, and
-therefore if any data is written the body of the request, the total size of
-that data must be set in the &#8216;Content-Length&#8217; header before any
+    Sets whether the request should used HTTP chunked encoding or not.
+will correspond to a new HTTP chunk sent on the wire. If chunked encoding is used the HTTP header
+'Transfer-Encoding' with a value of 'Chunked' will be automatically inserted in the request.
+If chunked is false, this request will not use HTTP chunked encoding, and therefore if any data is written the
+body of the request, the total size of that data must be set in the 'Content-Length' header before any
 data is written to the request body.
-</p>
-
 
   </div>
 </div>
@@ -508,11 +455,7 @@ data is written to the request body.
       
       
         &mdash;
-        <div class='inline'><p>
-If val is true, this request will use HTTP chunked encoding, and each call
-to write to the body
-</p>
-</div>
+        <div class='inline'>If val is true, this request will use HTTP chunked encoding, and each call to write to the body</div>
       
     </li>
   
@@ -529,10 +472,7 @@ to write to the body
       
       
         &mdash;
-        <div class='inline'><p>
-self So multiple operations can be chained.
-</p>
-</div>
+        <div class='inline'>self So multiple operations can be chained.</div>
       
     </li>
   
@@ -573,16 +513,11 @@ self So multiple operations can be chained.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-If you send an HTTP request with the header &#8216;Expect&#8217; set to the
-value &#8216;100-continue&#8217; and the server responds with an interim
-HTTP response with a status code of &#8216;100&#8217; and a continue
-handler has been set using this method, then the handler will be called.
-You can then continue to write data to the request body and later end it.
-This is normally used in conjunction with the <span class='object_link'><a href="#send_head-instance_method" title="Vertx::HttpClientRequest#send_head (method)">#send_head</a></span> method to force
-the request header to be written before the request has ended.
-</p>
-
+    If you send an HTTP request with the header 'Expect' set to the value '100-continue'
+and the server responds with an interim HTTP response with a status code of '100' and a continue handler
+has been set using this method, then the handler will be called.
+You can then continue to write data to the request body and later end it. This is normally used in conjunction with
+the <span class='object_link'><a href="#send_head-instance_method" title="Vertx::HttpClientRequest#send_head (method)">#send_head</a></span> method to force the request header to be written before the request has ended.
 
   </div>
 </div>
@@ -600,10 +535,7 @@ the request header to be written before the request has ended.
       
       
         &mdash;
-        <div class='inline'><p>
-The handler
-</p>
-</div>
+        <div class='inline'>The handler</div>
       
     </li>
   
@@ -617,10 +549,7 @@ The handler
       
       
         &mdash;
-        <div class='inline'><p>
-The handler
-</p>
-</div>
+        <div class='inline'>The handler</div>
       
     </li>
   
@@ -662,15 +591,10 @@ The handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Ends the request. If no data has been written to the request body, and
-<span class='object_link'><a href="#send_head-instance_method" title="Vertx::HttpClientRequest#send_head (method)">#send_head</a></span> has not been called then the actual request won&#8217;t get
-written until this method gets called. Once the request has ended, it
-cannot be used any more, and if keep alive is true the underlying
-connection will be returned to the <span class='object_link'><a href="HttpClient.html" title="Vertx::HttpClient (class)">Vertx::HttpClient</a></span> pool so it can be assigned
-to another request.
-</p>
-
+    Ends the request. If no data has been written to the request body, and <span class='object_link'><a href="#send_head-instance_method" title="Vertx::HttpClientRequest#send_head (method)">#send_head</a></span> has not been called then
+the actual request won't get written until this method gets called.
+Once the request has ended, it cannot be used any more, and if keep alive is true the underlying connection will
+be returned to the <span class='object_link'><a href="HttpClient.html" title="Vertx::HttpClient (class)">Vertx::HttpClient</a></span> pool so it can be assigned to another request.
 
   </div>
 </div>
@@ -706,10 +630,7 @@ to another request.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Hash of headers for the request
-</p>
-
+    Hash of headers for the request
 
   </div>
 </div>
@@ -755,10 +676,7 @@ Hash of headers for the request
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Inserts a header into the request.
-</p>
-
+    Inserts a header into the request.
 
   </div>
 </div>
@@ -776,10 +694,7 @@ Inserts a header into the request.
       
       
         &mdash;
-        <div class='inline'><p>
-The header key
-</p>
-</div>
+        <div class='inline'>The header key</div>
       
     </li>
   
@@ -793,11 +708,7 @@ The header key
       
       
         &mdash;
-        <div class='inline'><p>
-The header value. to_s will be called on the value to determine the actual
-String value to insert.
-</p>
-</div>
+        <div class='inline'>The header value. to_s will be called on the value to determine the actual String value to insert.</div>
       
     </li>
   
@@ -814,10 +725,7 @@ String value to insert.
       
       
         &mdash;
-        <div class='inline'><p>
-self So multiple operations can be chained.
-</p>
-</div>
+        <div class='inline'>self So multiple operations can be chained.</div>
       
     </li>
   
@@ -858,12 +766,8 @@ self So multiple operations can be chained.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Forces the head of the request to be written before <span class='object_link'><a href="#end-instance_method" title="Vertx::HttpClientRequest#end (method)">#end</a></span> is called on the
-request. This is normally used to implement HTTP 100-continue handling, see
-<span class='object_link'><a href="#continue_handler-instance_method" title="Vertx::HttpClientRequest#continue_handler (method)">#continue_handler</a></span> for more information.
-</p>
-
+    Forces the head of the request to be written before <span class='object_link'><a href="#end-instance_method" title="Vertx::HttpClientRequest#end (method)">#end</a></span> is called on the request. This is normally used
+to implement HTTP 100-continue handling, see <span class='object_link'><a href="#continue_handler-instance_method" title="Vertx::HttpClientRequest#continue_handler (method)">#continue_handler</a></span> for more information.
 
   </div>
 </div>
@@ -880,10 +784,7 @@ request. This is normally used to implement HTTP 100-continue handling, see
       
       
         &mdash;
-        <div class='inline'><p>
-self So multiple operations can be chained.
-</p>
-</div>
+        <div class='inline'>self So multiple operations can be chained.</div>
       
     </li>
   
@@ -924,10 +825,7 @@ self So multiple operations can be chained.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Write a [Buffer] to the request body.
-</p>
-
+    Write a [Buffer] to the request body.
 
   </div>
 </div>
@@ -945,10 +843,7 @@ Write a [Buffer] to the request body.
       
       
         &mdash;
-        <div class='inline'><p>
-The buffer to write.
-</p>
-</div>
+        <div class='inline'>The buffer to write.</div>
       
     </li>
   
@@ -962,11 +857,7 @@ The buffer to write.
       
       
         &mdash;
-        <div class='inline'><p>
-The handler will be called when the buffer has actually been written to the
-wire.
-</p>
-</div>
+        <div class='inline'>The handler will be called when the buffer has actually been written to the wire.</div>
       
     </li>
   
@@ -983,10 +874,7 @@ wire.
       
       
         &mdash;
-        <div class='inline'><p>
-self So multiple operations can be chained.
-</p>
-</div>
+        <div class='inline'>self So multiple operations can be chained.</div>
       
     </li>
   
@@ -1027,12 +915,8 @@ self So multiple operations can be chained.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Same as <span class='object_link'><a href="#end-instance_method" title="Vertx::HttpClientRequest#end (method)">#end</a></span> but writes some data to the response body before ending. If
-the response is not chunked and no other data has been written then the
-Content-Length header will be automatically set
-</p>
-
+    Same as <span class='object_link'><a href="#end-instance_method" title="Vertx::HttpClientRequest#end (method)">#end</a></span> but writes some data to the response body before ending. If the response is not chunked and
+no other data has been written then the Content-Length header will be automatically set
 
   </div>
 </div>
@@ -1050,10 +934,7 @@ Content-Length header will be automatically set
       
       
         &mdash;
-        <div class='inline'><p>
-The Buffer to write
-</p>
-</div>
+        <div class='inline'>The Buffer to write</div>
       
     </li>
   
@@ -1093,10 +974,7 @@ The Buffer to write
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Write a [String] to the request body.
-</p>
-
+    Write a [String] to the request body.
 
   </div>
 </div>
@@ -1114,10 +992,7 @@ Write a [String] to the request body.
       
       
         &mdash;
-        <div class='inline'><p>
-The string to write.
-</p>
-</div>
+        <div class='inline'>The string to write.</div>
       
     </li>
   
@@ -1131,10 +1006,7 @@ The string to write.
       
       
         &mdash;
-        <div class='inline'><p>
-The encoding to use.
-</p>
-</div>
+        <div class='inline'>The encoding to use.</div>
       
     </li>
   
@@ -1148,11 +1020,7 @@ The encoding to use.
       
       
         &mdash;
-        <div class='inline'><p>
-The handler will be called when the buffer has actually been written to the
-wire.
-</p>
-</div>
+        <div class='inline'>The handler will be called when the buffer has actually been written to the wire.</div>
       
     </li>
   
@@ -1169,10 +1037,7 @@ wire.
       
       
         &mdash;
-        <div class='inline'><p>
-self So multiple operations can be chained.
-</p>
-</div>
+        <div class='inline'>self So multiple operations can be chained.</div>
       
     </li>
   
@@ -1213,10 +1078,7 @@ self So multiple operations can be chained.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Same as <span class='object_link'><a href="#write_buffer_and_end-instance_method" title="Vertx::HttpClientRequest#write_buffer_and_end (method)">#write_buffer_and_end</a></span> but writes a String
-</p>
-
+    Same as <span class='object_link'><a href="#write_buffer_and_end-instance_method" title="Vertx::HttpClientRequest#write_buffer_and_end (method)">#write_buffer_and_end</a></span> but writes a String
 
   </div>
 </div>
@@ -1234,10 +1096,7 @@ Same as <span class='object_link'><a href="#write_buffer_and_end-instance_method
       
       
         &mdash;
-        <div class='inline'><p>
-The String to write
-</p>
-</div>
+        <div class='inline'>The String to write</div>
       
     </li>
   
@@ -1253,10 +1112,7 @@ The String to write
       
       
         &mdash;
-        <div class='inline'><p>
-The encoding
-</p>
-</div>
+        <div class='inline'>The encoding</div>
       
     </li>
   
@@ -1290,9 +1146,9 @@ The encoding
 </div>
 
     <div id="footer">
-  Generated on Tue Jul 24 12:18:22 2012 by
+  Generated on Wed Oct 24 13:12:57 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.2.1 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.9.3).
 </div>
 
   </body>

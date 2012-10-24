@@ -6,7 +6,7 @@
 <title>
   Module: Vertx::ReadStream
   
-    &mdash; 'Ruby API Docs'
+    &mdash; Ruby API Doc
   
 </title>
 
@@ -90,14 +90,9 @@
 
 <h2>Overview</h2><div class="docstring">
   <div class="discussion">
-    <p>
-A mixin module which represents a stream of data that can be read from.
-</p>
-<p>
-Any class that mixes in this module can be used by a <span class='object_link'><a href="Pump.html" title="Vertx::Pump (class)">Pump</a></span> to pump data
-from a <span class='object_link'><a href="" title="Vertx::ReadStream (module)">ReadStream</a></span> to it.
-</p>
+    A mixin module which represents a stream of data that can be read from.
 
+Any class that mixes in this module can be used by a <span class='object_link'><a href="Pump.html" title="Vertx::Pump (class)">Pump</a></span> to pump data from a <span class='object_link'><a href="" title="Vertx::ReadStream (module)">ReadStream</a></span> to it.
 
   </div>
 </div>
@@ -112,10 +107,7 @@ from a <span class='object_link'><a href="" title="Vertx::ReadStream (module)">R
       
       
         
-        <div class='inline'><p>
-<a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a>
-</p>
-</div>
+        <div class='inline'><a href="http://tfox.org" target="_parent" title="Tim Fox">Tim Fox</a></div>
       
     </li>
   
@@ -153,10 +145,7 @@ from a <span class='object_link'><a href="" title="Vertx::ReadStream (module)">R
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Set a data handler.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Set a data handler.</div></span>
   
 </li>
 
@@ -178,10 +167,7 @@ Set a data handler.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Set an end handler on the stream.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Set an end handler on the stream.</div></span>
   
 </li>
 
@@ -203,10 +189,7 @@ Set an end handler on the stream.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Set an execption handler on the stream.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Set an execption handler on the stream.</div></span>
   
 </li>
 
@@ -228,10 +211,7 @@ Set an execption handler on the stream.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Pause the ReadStream.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Pause the ReadStream.</div></span>
   
 </li>
 
@@ -253,10 +233,7 @@ Pause the ReadStream.
   
 
   
-    <span class="summary_desc"><div class='inline'><p>
-Resume reading.
-</p>
-</div></span>
+    <span class="summary_desc"><div class='inline'>Resume reading.</div></span>
   
 </li>
 
@@ -281,11 +258,7 @@ Resume reading.
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Set a data handler. As data is read, the handler will be called with the
-data.
-</p>
-
+    Set a data handler. As data is read, the handler will be called with the data.
 
   </div>
 </div>
@@ -303,10 +276,7 @@ data.
       
       
         &mdash;
-        <div class='inline'><p>
-The data handler
-</p>
-</div>
+        <div class='inline'>The data handler</div>
       
     </li>
   
@@ -352,11 +322,7 @@ The data handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Set an end handler on the stream. Once the stream has ended, and there is
-no more data to be read, this handler will be called.
-</p>
-
+    Set an end handler on the stream. Once the stream has ended, and there is no more data to be read, this handler will be called.
 
   </div>
 </div>
@@ -374,10 +340,7 @@ no more data to be read, this handler will be called.
       
       
         &mdash;
-        <div class='inline'><p>
-The exception handler
-</p>
-</div>
+        <div class='inline'>The exception handler</div>
       
     </li>
   
@@ -417,10 +380,7 @@ The exception handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Set an execption handler on the stream.
-</p>
-
+    Set an execption handler on the stream.
 
   </div>
 </div>
@@ -438,10 +398,7 @@ Set an execption handler on the stream.
       
       
         &mdash;
-        <div class='inline'><p>
-The exception handler
-</p>
-</div>
+        <div class='inline'>The exception handler</div>
       
     </li>
   
@@ -481,11 +438,7 @@ The exception handler
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Pause the ReadStream. After calling this, the ReadStream will aim to send
-no more data to the <span class='object_link'><a href="#data_handler-instance_method" title="Vertx::ReadStream#data_handler (method)">#data_handler</a></span>
-</p>
-
+    Pause the ReadStream. After calling this, the ReadStream will aim to send no more data to the <span class='object_link'><a href="#data_handler-instance_method" title="Vertx::ReadStream#data_handler (method)">#data_handler</a></span>
 
   </div>
 </div>
@@ -525,11 +478,7 @@ no more data to the <span class='object_link'><a href="#data_handler-instance_me
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>
-Resume reading. If the ReadStream has been paused, reading will recommence
-on it.
-</p>
-
+    Resume reading. If the ReadStream has been paused, reading will recommence on it.
 
   </div>
 </div>
@@ -563,9 +512,9 @@ on it.
 </div>
 
     <div id="footer">
-  Generated on Tue Jul 24 12:18:21 2012 by
+  Generated on Wed Oct 24 13:12:54 2012 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.2.1 (ruby-1.8.7).
+  0.8.2.1 (ruby-1.9.3).
 </div>
 
   </body>
