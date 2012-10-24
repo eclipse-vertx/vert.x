@@ -256,7 +256,9 @@ public class VerticleManager implements ModuleReloader {
     AsyncResultHandler<String> handler = new AsyncResultHandler<String>() {
       public void handle(AsyncResult<String> res) {
         if (res.succeeded()) {
-          doneHandler.handle(res.result);
+          if (doneHandler != null) {
+            doneHandler.handle(res.result);
+          }
         } else {
           res.exception.printStackTrace();
         }
@@ -476,7 +478,13 @@ public class VerticleManager implements ModuleReloader {
       log.error("Empty include string " + ((modName != null) ? " in module " : ""));
       return null;
     }
-    return sincludes.split(",");
+    String[] arr = sincludes.split(",");
+    if (arr != null) {
+      for (int i = 0; i < arr.length; i++) {
+        arr[i] = arr[i].trim();
+      }
+    }
+    return arr;
   }
 
   private boolean doInstallMod(final String moduleName) {
