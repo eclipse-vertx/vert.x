@@ -6,6 +6,6 @@ public interface NetServerMXBean {
 
   int getPort();
 
-  void close();
+  String getObjectName();
 
 }

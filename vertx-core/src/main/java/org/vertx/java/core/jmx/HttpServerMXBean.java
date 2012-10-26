@@ -4,8 +4,10 @@ public interface HttpServerMXBean {
 
   String getHost();
 
+  long getRequestCount();
+
   int getPort();
 
-  void close();
+  String getObjectName();
 
 }

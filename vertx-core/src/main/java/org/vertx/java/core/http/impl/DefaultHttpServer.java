@@ -41,7 +41,7 @@ import org.vertx.java.core.http.impl.ws.hybi08.Handshake08;
 import org.vertx.java.core.http.impl.ws.hybi17.HandshakeRFC6455;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
-import org.vertx.java.core.jmx.VertxJMX;
+import org.vertx.java.core.jmx.JmxUtil;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.impl.*;
@@ -51,7 +51,7 @@ import java.net.*;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Values.WEBSOCKET;
@@ -203,12 +203,12 @@ public class DefaultHttpServer implements HttpServer {
       }
     }
     listening = true;
-    VertxJMX.register(this, id.host, port);
+    JmxUtil.register(this, id.host, port);
     return this;
   }
 
   public void close() {
-    // TODO VertxJMX.unregister(this, port);
+    // TODO JmxUtil.unregister(this, port);
     close(null);
   }
 
@@ -247,6 +247,10 @@ public class DefaultHttpServer implements HttpServer {
     }
     requestHandler = null;
     wsHandler = null;
+  }
+
+  public long getRequestCount() {
+    return requestCount.get();
   }
 
   public HttpServer setSSL(boolean ssl) {
@@ -379,7 +383,7 @@ public class DefaultHttpServer implements HttpServer {
       conn.internalClose();
     }
 
-    VertxJMX.unregisterHttpServer(id.host, id.port);
+    JmxUtil.unregisterHttpServer(id.host, id.port);
 
     // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
     // which can cause context id for the thread to change!
@@ -404,7 +408,7 @@ public class DefaultHttpServer implements HttpServer {
     });
   }
 
-  private static final AtomicInteger count = new AtomicInteger(0);
+  private final AtomicLong requestCount = new AtomicLong(0);
 
   public class ServerHandler extends SimpleChannelUpstreamHandler {
 

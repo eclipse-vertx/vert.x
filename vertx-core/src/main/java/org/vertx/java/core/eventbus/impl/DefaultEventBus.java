@@ -27,7 +27,7 @@ import org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.jmx.EventBusMXBean;
-import org.vertx.java.core.jmx.VertxJMX;
+import org.vertx.java.core.jmx.JmxUtil;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -76,7 +76,7 @@ public class DefaultEventBus implements EventBus, EventBusMXBean {
     this.serverID = new ServerID(DEFAULT_CLUSTER_PORT, "localhost");
     this.server = null;
     this.subs = null;
-    VertxJMX.register(this);
+    JmxUtil.register(this);
   }
 
   public DefaultEventBus(VertxInternal vertx, String hostname) {
@@ -89,7 +89,8 @@ public class DefaultEventBus implements EventBus, EventBusMXBean {
     ClusterManager mgr = new HazelcastClusterManager(vertx);
     subs = mgr.getSubsMap("subs");
     this.server = setServer();
-    VertxJMX.register(this, port, "localhost");
+    JmxUtil.unregisterEventBus();
+    JmxUtil.register(this, port, "localhost");
   }
 
   @Override
@@ -295,7 +296,7 @@ public class DefaultEventBus implements EventBus, EventBusMXBean {
             callCompletionHandler(completionHandler);
           }
           getHandlerCloseHook(context).entries.remove(new HandlerEntry(address, handler));
-          VertxJMX.unregister(handler, address);
+          JmxUtil.unregister(handler, address);
           return;
         }
       }
@@ -451,7 +452,7 @@ public class DefaultEventBus implements EventBus, EventBusMXBean {
       }
     }
     getHandlerCloseHook(context).entries.add(new HandlerEntry(address, handler));
-    VertxJMX.register(handler, address);
+    JmxUtil.register(handler, address);
   }
 
   private HandlerCloseHook getHandlerCloseHook(Context context) {
