@@ -30,7 +30,7 @@ import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.impl.DefaultHttpClient;
 import org.vertx.java.core.http.impl.DefaultHttpServer;
-import org.vertx.java.core.jmx.VertxJMX;
+import org.vertx.java.core.jmx.JmxUtil;
 import org.vertx.java.core.jmx.VertxMXBean;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -98,7 +98,7 @@ public class DefaultVertx extends VertxInternal implements VertxMXBean {
    */
   private void configure() {
     this.backgroundPoolSize = Integer.getInteger("vertx.backgroundPoolSize", 20);
-    VertxJMX.register(this);
+    JmxUtil.register(this);
   }
 
   public NetServer createNetServer() {
@@ -187,7 +187,7 @@ public class DefaultVertx extends VertxInternal implements VertxMXBean {
         result = backgroundPool;
         if (result == null) {
           backgroundPool = result = VertxExecutors.newThreadPool(backgroundPoolSize, "vert.x-worker-thread-", false);
-          VertxJMX.register(backgroundPool, "pool=Worker");
+          JmxUtil.register(backgroundPool, "pool=Worker");
           orderedFact = new OrderedExecutorFactory(backgroundPool);
         }
       }
@@ -203,7 +203,7 @@ public class DefaultVertx extends VertxInternal implements VertxMXBean {
         result = workerPool;
         if (result == null) {
           ExecutorService corePool = VertxExecutors.newThreadPool(corePoolSize, "vert.x-core-thread-", false);
-          VertxJMX.register(corePool, "pool=Core");
+          JmxUtil.register(corePool, "pool=Core");
           workerPool = result = new NioWorkerPool(corePool, corePoolSize);
         }
       }
@@ -221,7 +221,7 @@ public class DefaultVertx extends VertxInternal implements VertxMXBean {
         result = acceptorPool;
         if (result == null) {
           acceptorPool = result = VertxExecutors.newCachedThreadPool("vert.x-acceptor-thread-");
-          VertxJMX.register(acceptorPool, "pool=Acceptor");
+          JmxUtil.register(acceptorPool, "pool=Acceptor");
         }
       }
     }

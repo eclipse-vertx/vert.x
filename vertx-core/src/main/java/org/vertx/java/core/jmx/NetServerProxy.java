@@ -27,8 +27,8 @@ public class NetServerProxy implements NetServerMXBean {
   }
 
   @Override
-  public void close() {
-    delegate.close();
+  public String getObjectName() {
+    return String.format("org.vertx:type=NetServer,name=%s[%s]", host, port);
   }
 
 }
