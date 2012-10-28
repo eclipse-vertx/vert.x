@@ -26,6 +26,7 @@ import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.file.impl.DefaultFileSystem;
+import org.vertx.java.core.file.impl.WindowsFileSystem;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.impl.DefaultHttpClient;
@@ -40,6 +41,7 @@ import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
+import org.vertx.java.core.utils.lang.Windows;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -53,7 +55,7 @@ public class DefaultVertx extends VertxInternal {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultVertx.class);
 
-  private final FileSystem fileSystem = new DefaultFileSystem(this);
+  private final FileSystem fileSystem = (Windows.isWindows() ? new WindowsFileSystem(this) : new DefaultFileSystem(this));
   private final EventBus eventBus;
   private final SharedData sharedData = new SharedData();
 

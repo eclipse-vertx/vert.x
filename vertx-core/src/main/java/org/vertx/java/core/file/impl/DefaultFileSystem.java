@@ -44,7 +44,7 @@ public class DefaultFileSystem implements FileSystem {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultFileSystem.class);
 
-  private final VertxInternal vertx;
+  protected final VertxInternal vertx;
 
   public DefaultFileSystem(VertxInternal vertx) {
     this.vertx = vertx;
@@ -389,7 +389,7 @@ public class DefaultFileSystem implements FileSystem {
     return chmodInternal(path, perms, null, handler);
   }
 
-  private BlockingAction<Void> chmodInternal(String path, String perms, String dirPerms, AsyncResultHandler<Void> handler) {
+  protected BlockingAction<Void> chmodInternal(String path, String perms, String dirPerms, AsyncResultHandler<Void> handler) {
     final Path target = PathAdjuster.adjust(Paths.get(path));
     final Set<PosixFilePermission> permissions = PosixFilePermissions.fromString(perms);
     final Set<PosixFilePermission> dirPermissions = dirPerms == null ? null : PosixFilePermissions.fromString(dirPerms);
@@ -541,7 +541,7 @@ public class DefaultFileSystem implements FileSystem {
     return mkdirInternal(path, perms, false, handler);
   }
 
-  private BlockingAction<Void> mkdirInternal(String path, final String perms, final boolean createParents, AsyncResultHandler<Void> handler) {
+  protected BlockingAction<Void> mkdirInternal(String path, final String perms, final boolean createParents, AsyncResultHandler<Void> handler) {
     final Path source = PathAdjuster.adjust(Paths.get(path));
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
     return new BlockingAction<Void>(vertx, handler) {
@@ -659,7 +659,7 @@ public class DefaultFileSystem implements FileSystem {
     };
   }
 
-  private AsyncFile doOpen(String path, String perms, boolean read, boolean write, boolean createNew,
+  protected AsyncFile doOpen(String path, String perms, boolean read, boolean write, boolean createNew,
                            boolean flush, Context context) throws Exception {
     return new DefaultAsyncFile(vertx, path, perms, read, write, createNew, flush, context);
   }
@@ -668,7 +668,7 @@ public class DefaultFileSystem implements FileSystem {
     return createFileInternal(path, null, handler);
   }
 
-  private BlockingAction<Void> createFileInternal(String p, final String perms, AsyncResultHandler<Void> handler) {
+  protected BlockingAction<Void> createFileInternal(String p, final String perms, AsyncResultHandler<Void> handler) {
     final String path = PathAdjuster.adjust(p);
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
     return new BlockingAction<Void>(vertx, handler) {
