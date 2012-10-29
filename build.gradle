@@ -134,6 +134,9 @@ task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
   into('examples/javascript/webapp/web/js') {
     from file("src/dist/client/vertxbus.js")
   }
+  into('examples/javascript/angularjs/web/js') {
+    from file("src/dist/client/vertxbus.js")
+  }
   into('examples/python/webapp/web/js') {
     from file("src/dist/client/vertxbus.js")
   }
