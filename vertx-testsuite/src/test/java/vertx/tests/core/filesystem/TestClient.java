@@ -28,6 +28,7 @@ import org.vertx.java.core.file.FileSystemProps;
 import org.vertx.java.core.streams.Pump;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
+import org.vertx.java.core.utils.lang.Windows;
 import org.vertx.java.framework.TestClientBase;
 import org.vertx.java.framework.TestUtils;
 
@@ -321,12 +322,18 @@ public class TestClient extends TestClientBase {
     createFileWithJunk(file1, 100);
     testChmod(file1, perms, null, true, new SimpleHandler() {
       public void handle() {
-        tu.azzert(perms.equals(getPerms(file1)));
+        azzertPerms(perms, file1);
         deleteFile(file1);
       }
     });
   }
 
+  private void azzertPerms(String perms, String file1) {
+  	if (Windows.isWindows() == false) {
+  		tu.azzert(perms.equals(getPerms(file1)));
+  	}
+  }
+  
   public void testChmodRecursive1() throws Exception {
     testChmodRecursive();
   }
@@ -366,11 +373,11 @@ public class TestClient extends TestClientBase {
     createFileWithJunk(dir + pathSep + dir2 + file3, 100);
     testChmod(dir, perms, dirPerms, true, new SimpleHandler() {
       public void handle() {
-        tu.azzert(dirPerms.equals(getPerms(dir)));
-        tu.azzert(perms.equals(getPerms(dir + file1)));
-        tu.azzert(perms.equals(getPerms(dir + file2)));
-        tu.azzert(dirPerms.equals(getPerms(dir + pathSep + dir2)));
-        tu.azzert(perms.equals(getPerms(dir + pathSep + dir2 + file3)));
+        azzertPerms(dirPerms, dir);
+        azzertPerms(perms, dir + file1);
+        azzertPerms(perms, dir + file2);
+        azzertPerms(dirPerms, dir + pathSep + dir2);
+        azzertPerms(perms, dir + pathSep + dir2 + file3);
         deleteDir(dir);
       }
     });
@@ -379,9 +386,9 @@ public class TestClient extends TestClientBase {
   private void testChmod(final String file, final String perms, final String dirPerms,
                          final boolean shouldPass, final Handler<Void> afterOK) throws Exception {
     if (Files.isDirectory(Paths.get(TEST_DIR + pathSep + file))) {
-      tu.azzert(DEFAULT_DIR_PERMS.equals(getPerms(file)));
+      azzertPerms(DEFAULT_DIR_PERMS, file);
     } else {
-      tu.azzert(DEFAULT_FILE_PERMS.equals(getPerms(file)));
+      azzertPerms(DEFAULT_FILE_PERMS, file);
     }
     AsyncResultHandler<Void> handler = createHandler(shouldPass, afterOK);
     if (dirPerms != null) {
@@ -653,7 +660,7 @@ public class TestClient extends TestClientBase {
       public void handle() {
         tu.azzert(fileExists(dirName));
         tu.azzert(Files.isDirectory(Paths.get(TEST_DIR + pathSep + dirName)));
-        tu.azzert(perms.equals(getPerms(dirName)));
+        azzertPerms(perms, dirName);
       }
     });
   }
@@ -675,7 +682,7 @@ public class TestClient extends TestClientBase {
       public void handle() {
         tu.azzert(fileExists(dirName));
         tu.azzert(Files.isDirectory(Paths.get(TEST_DIR + pathSep + dirName)));
-        tu.azzert(perms.equals(getPerms(dirName)));
+        azzertPerms(perms, dirName);
       }
     });
   }
@@ -1103,7 +1110,7 @@ public class TestClient extends TestClientBase {
             tu.azzert(fileExists(fileName));
             tu.azzert(0 == fileLength(fileName));
             if (perms != null) {
-              tu.azzert(perms.equals(getPerms(fileName)));
+              azzertPerms(perms, fileName);
             }
             tu.testComplete();
           } else {
@@ -1257,14 +1264,17 @@ public class TestClient extends TestClientBase {
     return file.length();
   }
 
-  private void setPerms( Path path, String perms ) {
-    try {
-      Files.setPosixFilePermissions( path, PosixFilePermissions.fromString( perms ) );
-    }
-    catch(IOException e) { 
-      throw new RuntimeException(e.getMessage());
-    } 
+  private void setPerms(Path path, String perms) {
+  	if (Windows.isWindows() == false) {
+	    try {
+	      Files.setPosixFilePermissions( path, PosixFilePermissions.fromString( perms ) );
+	    }
+	    catch(IOException e) { 
+	      throw new RuntimeException(e.getMessage());
+	    } 
+	  }
   }
+  
   private String getPerms(String fileName) {
     try {
       Set<PosixFilePermission> perms = Files.getPosixFilePermissions(Paths.get(testDir + pathSep + fileName));
@@ -1278,5 +1288,4 @@ public class TestClient extends TestClientBase {
     File file = new File(TEST_DIR + pathSep + fileName);
     file.delete();
   }
-
 }
