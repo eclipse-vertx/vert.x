@@ -23,12 +23,11 @@ package org.vertx.java.core.utils.lang;
  */
 public class Windows {
 
-	private static boolean isWindows;
+	private static final boolean isWindows;
 
 	static {
 		String os = System.getProperty("os.name").toLowerCase();
 		isWindows = (os.indexOf("win") >= 0);
-
 	}
 
 	/**
