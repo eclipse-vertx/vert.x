@@ -16,8 +16,6 @@
 
 package org.vertx.java.core.sockjs;
 
-import javax.management.MXBean;
-
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;

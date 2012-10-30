@@ -28,7 +28,6 @@ import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.impl.WorkerContext;
-import org.vertx.java.core.jmx.JmxUtil;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -49,8 +48,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
-import javax.management.ObjectName;
 
 /**
  *
@@ -118,8 +115,6 @@ public class VerticleManager implements ModuleReloader {
         }
       }
     }
-    VerticleManagerProxy proxy = new VerticleManagerProxy(this);
-    JmxUtil.registerMBean(proxy, proxy.getObjectName());
   }
 
   public void block() {
@@ -685,9 +680,6 @@ public class VerticleManager implements ModuleReloader {
     final ClassLoader sharedLoader = worker ? new ParentLastURLClassLoader(urls, getClass()
                 .getClassLoader()): null;
 
-    ObjectName on = JmxUtil.name(String.format("type=Deployment,name=%s[%s]", deployment.name, deployment.instances));
-    JmxUtil.registerMBean(new DeploymentProxy(deployment), on);
-
     for (int i = 0; i < instances; i++) {
 
       // Launch the verticle instance
@@ -840,8 +832,6 @@ public class VerticleManager implements ModuleReloader {
           }
         });
       }
-      ObjectName on = JmxUtil.name(String.format("type=Deployment,name=%s[%s]", deployment.name, deployment.instances));
-      JmxUtil.unregisterMBean(on);
     }
 
     if (deployment.parentDeploymentName != null) {

@@ -24,17 +24,15 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class VertxThreadFactory implements ThreadFactory {
 
-  private final String prefix;
-  private final AtomicInteger threadCount = new AtomicInteger(0);
-  private final ThreadGroup group;
+  private String prefix;
+  private AtomicInteger threadCount = new AtomicInteger(0);
 
   VertxThreadFactory(String prefix) {
     this.prefix = prefix;
-    this.group = new ThreadGroup(prefix + "group");
   }
 
   public Thread newThread(Runnable runnable) {
-    Thread t = new Thread(group, runnable, prefix + threadCount.getAndIncrement());
+    Thread t = new Thread(runnable, prefix + threadCount.getAndIncrement());
     // All vert.x threads are daemons
     t.setDaemon(true);
     return t;
