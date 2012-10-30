@@ -30,8 +30,6 @@ import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.impl.DefaultHttpClient;
 import org.vertx.java.core.http.impl.DefaultHttpServer;
-import org.vertx.java.core.jmx.JmxUtil;
-import org.vertx.java.core.jmx.VertxMXBean;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetClient;
@@ -51,7 +49,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultVertx extends VertxInternal implements VertxMXBean {
+public class DefaultVertx extends VertxInternal {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultVertx.class);
 
@@ -98,7 +96,6 @@ public class DefaultVertx extends VertxInternal implements VertxMXBean {
    */
   private void configure() {
     this.backgroundPoolSize = Integer.getInteger("vertx.backgroundPoolSize", 20);
-    JmxUtil.register(this);
   }
 
   public NetServer createNetServer() {
@@ -186,8 +183,7 @@ public class DefaultVertx extends VertxInternal implements VertxMXBean {
       synchronized (this) {
         result = backgroundPool;
         if (result == null) {
-          backgroundPool = result = VertxExecutors.newThreadPool(backgroundPoolSize, "vert.x-worker-thread-", false);
-          JmxUtil.register(backgroundPool, "pool=Worker");
+          backgroundPool = result = Executors.newFixedThreadPool(backgroundPoolSize, new VertxThreadFactory("vert.x-worker-thread-"));
           orderedFact = new OrderedExecutorFactory(backgroundPool);
         }
       }
@@ -202,8 +198,7 @@ public class DefaultVertx extends VertxInternal implements VertxMXBean {
       synchronized (this) {
         result = workerPool;
         if (result == null) {
-          ExecutorService corePool = VertxExecutors.newThreadPool(corePoolSize, "vert.x-core-thread-", false);
-          JmxUtil.register(corePool, "pool=Core");
+          ExecutorService corePool = Executors.newFixedThreadPool(corePoolSize, new VertxThreadFactory("vert.x-core-thread-"));
           workerPool = result = new NioWorkerPool(corePool, corePoolSize);
         }
       }
@@ -220,8 +215,7 @@ public class DefaultVertx extends VertxInternal implements VertxMXBean {
       synchronized (this) {
         result = acceptorPool;
         if (result == null) {
-          acceptorPool = result = VertxExecutors.newCachedThreadPool("vert.x-acceptor-thread-");
-          JmxUtil.register(acceptorPool, "pool=Acceptor");
+          acceptorPool = result = Executors.newCachedThreadPool(new VertxThreadFactory("vert.x-acceptor-thread-"));
         }
       }
     }

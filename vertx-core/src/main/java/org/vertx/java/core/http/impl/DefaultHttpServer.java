@@ -41,7 +41,6 @@ import org.vertx.java.core.http.impl.ws.hybi08.Handshake08;
 import org.vertx.java.core.http.impl.ws.hybi17.HandshakeRFC6455;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
-import org.vertx.java.core.jmx.JmxUtil;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.impl.*;
@@ -51,7 +50,7 @@ import java.net.*;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Values.WEBSOCKET;
@@ -203,12 +202,10 @@ public class DefaultHttpServer implements HttpServer {
       }
     }
     listening = true;
-    JmxUtil.register(this, id.host, port);
     return this;
   }
 
   public void close() {
-    // TODO JmxUtil.unregister(this, port);
     close(null);
   }
 
@@ -247,10 +244,6 @@ public class DefaultHttpServer implements HttpServer {
     }
     requestHandler = null;
     wsHandler = null;
-  }
-
-  public long getRequestCount() {
-    return requestCount.get();
   }
 
   public HttpServer setSSL(boolean ssl) {
@@ -383,8 +376,6 @@ public class DefaultHttpServer implements HttpServer {
       conn.internalClose();
     }
 
-    JmxUtil.unregisterHttpServer(id.host, id.port);
-
     // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
     // which can cause context id for the thread to change!
 
@@ -408,7 +399,7 @@ public class DefaultHttpServer implements HttpServer {
     });
   }
 
-  private final AtomicLong requestCount = new AtomicLong(0);
+  private static final AtomicInteger count = new AtomicInteger(0);
 
   public class ServerHandler extends SimpleChannelUpstreamHandler {
 
