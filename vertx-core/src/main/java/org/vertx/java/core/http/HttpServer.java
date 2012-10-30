@@ -16,6 +16,8 @@
 
 package org.vertx.java.core.http;
 
+import javax.management.MXBean;
+
 import org.vertx.java.core.Handler;
 
 /**

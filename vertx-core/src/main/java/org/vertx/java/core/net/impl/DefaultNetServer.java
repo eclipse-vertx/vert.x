@@ -33,6 +33,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.jmx.JmxUtil;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetServer;
@@ -56,7 +57,7 @@ public class DefaultNetServer implements NetServer {
   private final VertxInternal vertx;
   private final Context ctx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
-  private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap();
+  private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<>();
   private Handler<NetSocket> connectHandler;
   private ChannelGroup serverChannelGroup;
   private boolean listening;
@@ -159,6 +160,7 @@ public class DefaultNetServer implements NetServer {
       }
       actualServer.handlerManager.addHandler(connectHandler, ctx);
     }
+    JmxUtil.register(this, id.host, port);
     return this;
   }
 
@@ -203,6 +205,7 @@ public class DefaultNetServer implements NetServer {
       sock.internalClose();
     }
 
+    JmxUtil.unregisterNetServer(id.host, id.port);
     // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
     // which can cause context id for the thread to change!
 
@@ -369,7 +372,7 @@ public class DefaultNetServer implements NetServer {
       NioWorker worker = ch.getWorker();
 
       //Choose a handler
-      final HandlerHolder handler = handlerManager.chooseHandler(worker);
+      final HandlerHolder<NetSocket> handler = handlerManager.chooseHandler(worker);
 
       if (handler == null) {
         //Ignore
@@ -396,7 +399,7 @@ public class DefaultNetServer implements NetServer {
       }
     }
 
-    private void connected(final NioSocketChannel ch, final HandlerHolder handler) {
+    private void connected(final NioSocketChannel ch, final HandlerHolder<NetSocket> handler) {
       handler.context.execute(new Runnable() {
         public void run() {
           DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, handler.context);

@@ -26,6 +26,8 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.jmx.EventBusMXBean;
+import org.vertx.java.core.jmx.JmxUtil;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -42,12 +44,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultEventBus implements EventBus {
+public class DefaultEventBus implements EventBus, EventBusMXBean {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultEventBus.class);
 
@@ -64,12 +67,16 @@ public class DefaultEventBus implements EventBus {
   private final AtomicInteger seq = new AtomicInteger(0);
   private final String prefix = UUID.randomUUID().toString();
 
+  private AtomicLong sentMessageCount = new AtomicLong(0L);
+  private AtomicLong receivedMessageCount = new AtomicLong(0L);
+
   public DefaultEventBus(VertxInternal vertx) {
     // Just some dummy server ID
     this.vertx = vertx;
     this.serverID = new ServerID(DEFAULT_CLUSTER_PORT, "localhost");
     this.server = null;
     this.subs = null;
+    JmxUtil.register(this);
   }
 
   public DefaultEventBus(VertxInternal vertx, String hostname) {
@@ -82,6 +89,18 @@ public class DefaultEventBus implements EventBus {
     ClusterManager mgr = new HazelcastClusterManager(vertx);
     subs = mgr.getSubsMap("subs");
     this.server = setServer();
+    JmxUtil.unregisterEventBus();
+    JmxUtil.register(this, port, "localhost");
+  }
+
+  @Override
+  public long getSentMessageCount() {
+    return sentMessageCount.get();
+  }
+
+  @Override
+  public long getReceivedMessageCount() {
+    return receivedMessageCount.get();
   }
 
   public void send(String address, JsonObject message, final Handler<Message<JsonObject>> replyHandler) {
@@ -277,6 +296,7 @@ public class DefaultEventBus implements EventBus {
             callCompletionHandler(completionHandler);
           }
           getHandlerCloseHook(context).entries.remove(new HandlerEntry(address, handler));
+          JmxUtil.unregister(handler, address);
           return;
         }
       }
@@ -432,6 +452,7 @@ public class DefaultEventBus implements EventBus {
       }
     }
     getHandlerCloseHook(context).entries.add(new HandlerEntry(address, handler));
+    JmxUtil.register(handler, address);
   }
 
   private HandlerCloseHook getHandlerCloseHook(Context context) {
@@ -506,6 +527,7 @@ public class DefaultEventBus implements EventBus {
       }
     }
     holder.writeMessage(message);
+    sentMessageCount.incrementAndGet();
   }
 
   private void schedulePing(final ConnectionHolder holder) {
@@ -583,6 +605,7 @@ public class DefaultEventBus implements EventBus {
       }
       }
     });
+    receivedMessageCount.incrementAndGet();
   }
 
   private static class HandlerHolder {
