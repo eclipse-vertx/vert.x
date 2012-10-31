@@ -166,7 +166,9 @@ public class VerticleManager implements ModuleReloader {
     AsyncResultHandler<String> handler = new AsyncResultHandler<String>() {
       public void handle(AsyncResult<String> res) {
         if (res.succeeded()) {
-          doneHandler.handle(res.result);
+          if (doneHandler != null) {
+            doneHandler.handle(res.result);
+          }
         } else {
           res.exception.printStackTrace();
         }
