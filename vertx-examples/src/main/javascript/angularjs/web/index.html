@@ -1,0 +1,182 @@
+<!--
+  ~ Copyright 2011-2012 the original author or authors.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<html ng-app>
+<head>
+  <link rel="stylesheet/less" href="css/bootstrap.less">
+  <script src="js3rdparty/less-1.2.1.min.js"></script>
+  <script src='js3rdparty/jquery-1.7.1.min.js'></script>
+  <script src='js3rdparty/bootstrap-tabs.js'></script>
+  <title>Welcome to vToons</title>
+</head>
+
+<body>
+
+<div class="container-fluid" ng-controller="CartController">
+
+  <div class="sidebar">
+    <div class="well">
+      <h2>Order total:</h2>
+
+      <h2><strong ng-bind="total() | currency"></strong></h2>
+    </div>
+
+    <form class="form-stacked">
+      <label for="username">Username</label>
+      <input type="text" id="username" class="span2"
+             ng-model="username"/>
+      <label for="password">Password</label>
+      <input type="password" id="password" class="span2"
+             ng-model="password"/>
+      <br><br>
+      <input type="submit" class="btn primary" value="Login"
+             ng-click="login()"/>
+    </form>
+
+    <br>
+
+    <div ng-show="sessionID != ''">
+      <h3>Logged in as</h3>
+
+      <h3><strong ng-bind="username"></strong></h3>
+    </div>
+
+  </div>
+
+  <div class="content">
+
+    <div class="hero-unit">
+      <h1>Welcome to vToons</h1>
+
+      <p>I hope you will enjoy our fantastic selection of music</p>
+    </div>
+
+    <div class="row">
+
+      <ul class="tabs">
+        <li class="active"><a href="#shop">Shop</a></li>
+        <li><a href="#cart">Cart</a></li>
+      </ul>
+
+      <div class="pill-content">
+
+        <div class="active" id="shop">
+
+          <div class="span16">
+
+            <h2>Please choose from our wonderful selection of songs:</h2>
+
+            <table class="bordered-table">
+              <thead>
+              <tr>
+                <th>Genre</th>
+                <th>Artist</th>
+                <th>Album</th>
+                <th>Price</th>
+              </tr>
+              </thead>
+              <tbody ng-repeat="album in albums">
+              <tr>
+                <td ng-bind="album.genre"></td>
+                <td ng-bind="album.artist"></td>
+                <td ng-bind="album.title"></td>
+                <td ng-bind="album.price | currency"></td>
+                <td><a href="#" ng-click="addToCart(album)">Add to
+                  Cart</a></td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+        <div id="cart">
+
+          <div class="alert-message info fade in"
+               ng-show="orderSubmitted">
+            <p><strong>Your order has been accepted!</strong></p>
+          </div>
+
+          <div class="alert-message warn fade in"
+               ng-show="!orderReady()">
+            <p><strong>Please add some item(s) to your cart and login before
+              submitting.</strong></p>
+          </div>
+
+          <div class="span16">
+
+            <form>
+              <fieldset>
+                <legend>Cart</legend>
+
+                <div class="actions">
+                  <input type="submit" class="btn primary" value="Submit Order"
+                         ng-click="submitOrder()"/>
+                </div>
+
+              </fieldset>
+            </form>
+
+          </div>
+
+          <div class="span16">
+
+            <table class="bordered-table">
+              <thead>
+              <tr>
+                <th>Genre</th>
+                <th>Artist</th>
+                <th>Album</th>
+                <th>Price</th>
+                <th>Quantity</th>
+              </tr>
+              </thead>
+              <tbody ng-repeat="item in items">
+              <tr>
+                <td ng-bind="item.album.genre"></td>
+                <td ng-bind="item.album.artist"></td>
+                <td ng-bind="item.album.title"></td>
+                <td ng-bind="item.album.price | currency"></td>
+                <td ng-bind="item.quantity"></td>
+                <td><a href="#"
+                       ng-click="removeFromCart(item)">Remove</a></td>
+              </tr>
+              </tbody>
+            </table>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+
+<script>
+  $(function () {
+    $('.tabs').tabs();
+  })
+</script>
+<script src='js3rdparty/sockjs-0.2.1.min.js'></script>
+<script src='js3rdparty/angular-1.0.1.js'></script>
+<script src='js/vertxbus.js'></script>
+<script src='js/client_app.js'></script>
+
+</html>
