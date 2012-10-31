@@ -881,8 +881,23 @@ public class VerticleManager implements ModuleReloader {
   }
 
   private void redeploy(final Deployment deployment) {
-    doDeployMod(true, deployment.name, deployment.modName, deployment.config, deployment.instances,
-                null);
+    // Has to occur on a worker thread
+    AsyncResultHandler<String> handler = new AsyncResultHandler<String>() {
+      public void handle(AsyncResult<String> res) {
+        if (!res.succeeded()) {
+          res.exception.printStackTrace();
+        }
+      }
+    };
+    BlockingAction<Void> redeployAction = new BlockingAction<Void>(vertx, handler) {
+      @Override
+      public Void action() throws Exception {
+        doDeployMod(true, deployment.name, deployment.modName, deployment.config, deployment.instances,
+            null);
+        return null;
+      }
+    };
+    redeployAction.run();
   }
 
   private void addDeployment(String deploymentName, Deployment deployment) {
