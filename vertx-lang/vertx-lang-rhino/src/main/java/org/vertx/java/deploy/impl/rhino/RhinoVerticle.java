@@ -131,8 +131,8 @@ public class RhinoVerticle extends Verticle {
               if (packageFile.exists()) {
 
                 String conf = null;
-                try {
-                  conf = new Scanner(packageFile).useDelimiter("\\A").next();
+                try (Scanner scanner = new Scanner(packageFile).useDelimiter("\\A")){
+                  conf = scanner.next();
                 } catch (FileNotFoundException e) {
                 }
 

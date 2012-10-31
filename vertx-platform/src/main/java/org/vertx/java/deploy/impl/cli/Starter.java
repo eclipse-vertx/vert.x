@@ -173,8 +173,8 @@ public class Starter {
     JsonObject conf;
 
     if (configFile != null) {
-      try {
-        String sconf = new Scanner(new File(configFile)).useDelimiter("\\A").next();
+      try (Scanner scanner = new Scanner(new File(configFile)).useDelimiter("\\A")){
+        String sconf = scanner.next();
         try {
           conf = new JsonObject(sconf);
         } catch (DecodeException e) {

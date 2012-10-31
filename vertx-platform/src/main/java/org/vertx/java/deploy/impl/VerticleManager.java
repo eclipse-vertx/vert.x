@@ -382,21 +382,23 @@ public class VerticleManager implements ModuleReloader {
   private JsonObject loadModuleConfig(String modName, File modDir) {
     checkWorkerContext();
     if (modDir.exists()) {
-      String conf;
-      try {
-        conf = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A").next();
+      try (Scanner scanner = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A")) {
+        String conf;
+        try {
+          conf = scanner.next();
+        } catch (NoSuchElementException e) {
+          throw new IllegalStateException("Module " + modName + " contains an empty mod.json file");
+        }
+        JsonObject json;
+        try {
+          json = new JsonObject(conf);
+        } catch (DecodeException e) {
+          throw new IllegalStateException("Module " + modName + " mod.json contains invalid json");
+        }
+        return json;
       } catch (FileNotFoundException e) {
         throw new IllegalStateException("Module " + modName + " does not contain a mod.json file");
-      } catch (NoSuchElementException e) {
-        throw new IllegalStateException("Module " + modName + " contains an empty mod.json file");
       }
-      JsonObject json;
-      try {
-        json = new JsonObject(conf);
-      } catch (DecodeException e) {
-        throw new IllegalStateException("Module " + modName + " mod.json contains invalid json");
-      }
-      return json;
     } else {
       return null;
     }
