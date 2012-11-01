@@ -17,9 +17,13 @@
 package org.vertx.java.tests.core.shareddata;
 
 import junit.framework.TestCase;
+
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.framework.TestUtils;
 
@@ -32,7 +36,19 @@ import java.util.Set;
  */
 public class JavaSharedDataTest extends TestCase {
 
-  private SharedData sharedData = Vertx.newVertx().sharedData();
+	private Vertx vertx;
+  private SharedData sharedData;
+  
+  @Before
+  public void setUp() {
+    vertx = new DefaultVertx();
+    sharedData = new DefaultVertx().sharedData();
+  }
+  
+  @After
+  public void teardown() {
+  	vertx.stop();
+  }
   
   @Test
   public void testMap() throws Exception {

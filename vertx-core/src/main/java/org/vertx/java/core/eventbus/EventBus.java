@@ -386,5 +386,9 @@ public interface EventBus {
    */
   void registerLocalHandler(String address, Handler<? extends Message> handler);
 
+  /**
+	 * Release any resources allocated, stop threads etc.
+	 */
+	void stop();
 }
 

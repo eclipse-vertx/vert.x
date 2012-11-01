@@ -1,8 +1,5 @@
 package org.vertx.java.tests.core.redeploy;
 
-import junit.framework.TestCase;
-import org.junit.Test;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.ConcurrentHashSet;
 import org.vertx.java.core.logging.Logger;
@@ -10,6 +7,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.impl.Deployment;
 import org.vertx.java.deploy.impl.ModuleReloader;
 import org.vertx.java.deploy.impl.Redeployer;
+import org.vertx.java.framework.TestBase;
 import org.vertx.java.framework.TestUtils;
 
 import java.io.File;
@@ -22,18 +20,16 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class RedeployerTest extends TestCase {
+public class RedeployerTest extends TestBase {
 
   private static final Logger log = LoggerFactory.getLogger(RedeployerTest.class);
 
-  Vertx vertx;
   TestReloader reloader;
   File modRoot;
   Redeployer red;
 
   protected void setUp() throws Exception {
     super.setUp();
-    vertx = Vertx.newVertx();
     reloader = new TestReloader();
     modRoot = new File("reloader-test-mods");
     modRoot.mkdir();
@@ -46,8 +42,7 @@ public class RedeployerTest extends TestCase {
     super.tearDown();
   }
 
-  @Test
-  public void tesCreateFile() throws Exception {
+  public void testCreateFile() throws Exception {
     String modName = "my-mod";
     File modDir = createModDir(modName);
     createFile(modDir, "foo.js", TestUtils.randomAlphaString(1000));
@@ -58,7 +53,6 @@ public class RedeployerTest extends TestCase {
     waitReload(dep);
   }
 
-  @Test
   public void testModifyFile() throws Exception {
     String modName = "my-mod";
     File modDir = createModDir(modName);
@@ -70,7 +64,6 @@ public class RedeployerTest extends TestCase {
     waitReload(dep);
   }
 
-  @Test
   public void testDeleteFile() throws Exception {
     String modName = "my-mod";
     File modDir = createModDir(modName);
@@ -83,7 +76,6 @@ public class RedeployerTest extends TestCase {
     waitReload(dep);
   }
 
-  @Test
   public void testCreateDirectory() throws Exception {
     String modName = "my-mod";
     File modDir = createModDir(modName);
@@ -95,7 +87,6 @@ public class RedeployerTest extends TestCase {
     waitReload(dep);
   }
 
-  @Test
   public void testCreateFileInSubDirectory() throws Exception {
     String modName = "my-mod";
     File modDir = createModDir(modName);
@@ -109,7 +100,6 @@ public class RedeployerTest extends TestCase {
     waitReload(dep);
   }
 
-  @Test
   public void testDeleteFileInSubDirectory() throws Exception {
     String modName = "my-mod";
     File modDir = createModDir(modName);
@@ -124,7 +114,6 @@ public class RedeployerTest extends TestCase {
     waitReload(dep);
   }
 
-  @Test
   public void testModifyFileInSubDirectory() throws Exception {
     String modName = "my-mod";
     File modDir = createModDir(modName);
@@ -139,7 +128,6 @@ public class RedeployerTest extends TestCase {
     waitReload(dep);
   }
 
-  @Test
   public void testDeleteSubDir() throws Exception {
     String modName = "my-mod";
     File modDir = createModDir(modName);
@@ -154,7 +142,6 @@ public class RedeployerTest extends TestCase {
     waitReload(dep);
   }
 
-  @Test
   public void testReloadMultipleDeps() throws Exception {
     String modName = "my-mod";
     File modDir = createModDir(modName);
@@ -240,6 +227,4 @@ public class RedeployerTest extends TestCase {
   private Deployment createDeployment(String name, String modName, String parentName) {
      return new Deployment(name, modName, 1, null, null, null, parentName, true);
   }
-
-
 }

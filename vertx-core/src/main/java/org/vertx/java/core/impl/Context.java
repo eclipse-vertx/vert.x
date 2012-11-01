@@ -49,7 +49,9 @@ public abstract class Context {
 
   public static void setContext(Context context) {
     contextTL.set(context);
-    Thread.currentThread().setContextClassLoader(context.tccl);
+    if (context != null) {
+    	Thread.currentThread().setContextClassLoader(context.tccl);
+    }
   }
 
   public static Context getContext() {
