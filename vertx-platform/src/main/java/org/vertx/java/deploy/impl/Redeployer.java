@@ -88,6 +88,12 @@ public class Redeployer {
     }
     toUndeploy.addAll(deps);
     processUndeployments();
+    
+    try {
+			watchService.close();
+		} catch (IOException ex) {
+			log.warn("Error while shutting down watch service: " + ex.getMessage(), ex);
+		}
   }
 
   public void moduleDeployed(Deployment deployment) {

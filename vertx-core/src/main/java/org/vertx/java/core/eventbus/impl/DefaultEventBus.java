@@ -63,13 +63,15 @@ public class DefaultEventBus implements EventBus {
   private final ConcurrentMap<String, Handlers> handlerMap = new ConcurrentHashMap<>();
   private final AtomicInteger seq = new AtomicInteger(0);
   private final String prefix = UUID.randomUUID().toString();
-
+  private final ClusterManager clusterMgr;
+  
   public DefaultEventBus(VertxInternal vertx) {
     // Just some dummy server ID
     this.vertx = vertx;
     this.serverID = new ServerID(DEFAULT_CLUSTER_PORT, "localhost");
     this.server = null;
     this.subs = null;
+    this.clusterMgr = null;
   }
 
   public DefaultEventBus(VertxInternal vertx, String hostname) {
@@ -79,8 +81,8 @@ public class DefaultEventBus implements EventBus {
   public DefaultEventBus(VertxInternal vertx, int port, String hostname) {
     this.vertx = vertx;
     this.serverID = new ServerID(port, hostname);
-    ClusterManager mgr = new HazelcastClusterManager(vertx);
-    subs = mgr.getSubsMap("subs");
+    this.clusterMgr = new HazelcastClusterManager(vertx);
+    subs = clusterMgr.getSubsMap("subs");
     this.server = setServer();
   }
 
@@ -584,7 +586,14 @@ public class DefaultEventBus implements EventBus {
       }
     });
   }
-
+  
+	@Override
+	public void stop() {
+		if (clusterMgr != null) {
+			clusterMgr.close();
+		}
+	}
+	
   private static class HandlerHolder {
     final Context context;
     final Handler handler;
@@ -743,8 +752,6 @@ public class DefaultEventBus implements EventBus {
         unregisterHandler(entry.address, entry.handler);
       }
     }
-
   }
-
 }
 

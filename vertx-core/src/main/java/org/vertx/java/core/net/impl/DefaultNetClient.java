@@ -353,6 +353,7 @@ public class DefaultNetClient implements NetClient {
   }
 
   private void failed(NioSocketChannel ch, final Throwable t) {
+  	ch.close();
     if (t instanceof Exception && exceptionHandler != null) {
       tcpHelper.runOnCorrectThread(ch, new Runnable() {
         public void run() {
