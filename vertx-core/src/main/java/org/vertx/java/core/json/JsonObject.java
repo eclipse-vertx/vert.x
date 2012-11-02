@@ -25,9 +25,9 @@ import org.vertx.java.core.http.impl.ws.Base64;
 import org.vertx.java.core.json.impl.Json;
 
 /**
- *
+ * 
  * Represents a JSON object
- *
+ * 
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class JsonObject extends JsonElement {
@@ -74,6 +74,14 @@ public class JsonObject extends JsonElement {
   public JsonObject putArray(String fieldName, JsonArray value) {
     map.put(fieldName, value.list);
     return this;
+  }
+
+  public JsonObject putElement(String fieldName, JsonElement value) {
+    if(value.isArray()){
+      return this.putArray(fieldName, value.asArray());
+    }
+    
+    return this.putObject(fieldName, value.asObject());
   }
 
   public JsonObject putNumber(String fieldName, Number value) {
