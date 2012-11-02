@@ -116,12 +116,14 @@ public class JsonObject extends JsonElement {
   }
 
   public JsonElement getElement(String fieldName) {
-    JsonElement elem = this.getObject(fieldName);
-    if (elem != null) {
-      return elem;
+    Object element = map.get(fieldName);
+    if (element instanceof Map<?,?>){
+      return this.getObject(fieldName);
     }
-
-    return this.getArray(fieldName);
+    if (element instanceof List<?>){
+      return this.getArray(fieldName);
+    }
+    throw new ClassCastException();
   }
 
   public Number getNumber(String fieldName) {
