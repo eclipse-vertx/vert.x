@@ -157,7 +157,7 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
     if (this.list.size() != that.list.size())
       return false;
 
-    Iterator<?> iter = that.iterator();
+    Iterator<?> iter = that.list.iterator();
     for (Object entry : this.list) {
       Object other = iter.next();
       if (!entry.equals(other)) {
