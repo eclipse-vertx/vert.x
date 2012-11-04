@@ -15,11 +15,11 @@
     <network>
         <port auto-increment="true">5701</port>
         <join>
-            <multicast enabled="false">
+            <multicast enabled="true">
                 <multicast-group>224.2.2.3</multicast-group>
                 <multicast-port>54327</multicast-port>
             </multicast>
-            <tcp-ip enabled="true">
+            <tcp-ip enabled="false">
                 <interface>192.168.1.28</interface>
             </tcp-ip>
             <aws enabled="false">
