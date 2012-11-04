@@ -21,7 +21,18 @@ package org.vertx.java.core.eventbus.impl;
  */
 public interface ClusterManager {
 
+	/**
+	 * Every eventbus handler has an ID. SubsMap (subscriber map) is a MultiMap which 
+	 * maps handler-IDs with server-IDs and thus allows the eventbus to determine where 
+	 * to send messages.
+	 * 
+	 * @param name A unique name by which the the MultiMap can be identified within the cluster. 
+	 * @return
+	 */
   SubsMap getSubsMap(String name);
 
+  /**
+   * Shutdown the cluster manager and release all resources.
+   */
   void close();
 }

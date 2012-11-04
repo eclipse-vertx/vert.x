@@ -81,11 +81,15 @@ public class DefaultEventBus implements EventBus {
   public DefaultEventBus(VertxInternal vertx, int port, String hostname) {
     this.vertx = vertx;
     this.serverID = new ServerID(port, hostname);
-    this.clusterMgr = new HazelcastClusterManager(vertx);
-    subs = clusterMgr.getSubsMap("subs");
+    this.clusterMgr = createClusterManager(vertx);
+    this.subs = clusterMgr.getSubsMap("subs");
     this.server = setServer();
   }
 
+  protected ClusterManager createClusterManager(final VertxInternal vertx) {
+    return new HazelcastClusterManager(vertx);
+  }
+  
   public void send(String address, JsonObject message, final Handler<Message<JsonObject>> replyHandler) {
     sendOrPub(new JsonObjectMessage(true, address, message), replyHandler);
   }
@@ -289,8 +293,15 @@ public class DefaultEventBus implements EventBus {
     unregisterHandler(address, handler, null);
   }
 
+  @Override
   public void close(Handler<Void> doneHandler) {
-    server.close(doneHandler);
+		if (clusterMgr != null) {
+			clusterMgr.close();
+		}
+		
+		if (server != null) {
+			server.close(doneHandler);
+		}
   }
 
   void sendReply(final ServerID dest, final BaseMessage message, final Handler replyHandler) {
@@ -586,13 +597,6 @@ public class DefaultEventBus implements EventBus {
       }
     });
   }
-  
-	@Override
-	public void stop() {
-		if (clusterMgr != null) {
-			clusterMgr.close();
-		}
-	}
 	
   private static class HandlerHolder {
     final Context context;

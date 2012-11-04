@@ -120,7 +120,8 @@ public class JavaEventBusTest extends TestBase {
   }
 
   public void testNoContext() throws Exception {
-    final EventBus eb = Vertx.newVertx().eventBus();
+    Vertx vertx = Vertx.newVertx();
+    final EventBus eb = vertx.eventBus();
     final CountDownLatch latch = new CountDownLatch(1);
     eb.registerHandler("foo", new Handler<Message<String>>() {
       public void handle(Message<String> msg) {
@@ -131,6 +132,6 @@ public class JavaEventBusTest extends TestBase {
     });
     eb.send("foo", "bar");
     assert(latch.await(5, TimeUnit.SECONDS));
+    vertx.stop();
   }
-
 }
