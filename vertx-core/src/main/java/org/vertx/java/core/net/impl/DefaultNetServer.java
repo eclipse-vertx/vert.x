@@ -56,7 +56,7 @@ public class DefaultNetServer implements NetServer {
   private final VertxInternal vertx;
   private final Context ctx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
-  private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap();
+  private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<Channel, DefaultNetSocket>();
   private Handler<NetSocket> connectHandler;
   private ChannelGroup serverChannelGroup;
   private boolean listening;
@@ -447,7 +447,7 @@ public class DefaultNetServer implements NetServer {
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final NetSocket sock = socketMap.remove(ch);
-      // ch.close();
+      ch.close();
       final Throwable t = e.getCause();
 
       log.error("Exception on netserver", t);
