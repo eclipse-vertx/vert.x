@@ -272,7 +272,7 @@ public class DefaultNetClient implements NetClient {
       Integer bossThreads = tcpHelper.getClientBossThreads();
       int threads = bossThreads == null ? 1 : bossThreads;
       channelFactory = new NioClientSocketChannelFactory(
-          vertx.getAcceptorPool(), threads, pool);
+          vertx.getAcceptorPool(), threads, pool, vertx.getTimer());
       bootstrap = new ClientBootstrap(channelFactory);
 
       tcpHelper.checkSSL();

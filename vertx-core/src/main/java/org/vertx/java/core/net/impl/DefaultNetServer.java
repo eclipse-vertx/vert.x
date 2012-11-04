@@ -447,7 +447,7 @@ public class DefaultNetServer implements NetServer {
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final NetSocket sock = socketMap.remove(ch);
-      ch.close();
+      // ch.close();
       final Throwable t = e.getCause();
 
       log.error("Exception on netserver", t);

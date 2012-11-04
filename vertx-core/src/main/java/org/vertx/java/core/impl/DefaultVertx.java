@@ -20,6 +20,7 @@ import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.jboss.netty.channel.socket.nio.NioWorkerPool;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timeout;
+import org.jboss.netty.util.Timer;
 import org.jboss.netty.util.TimerTask;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
@@ -100,6 +101,10 @@ public class DefaultVertx extends VertxInternal {
     this.backgroundPoolSize = Integer.getInteger("vertx.backgroundPoolSize", 20);
   }
 
+  public Timer getTimer() {
+  	return timer;
+  }
+  
   public NetServer createNetServer() {
     return new DefaultNetServer(this);
   }
@@ -338,7 +343,7 @@ public class DefaultVertx extends VertxInternal {
 		}
 
 		if (eventBus != null) {
-			eventBus.stop();
+			eventBus.close(null);
 		}
 
 		if (backgroundPool != null) {

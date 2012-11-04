@@ -55,7 +55,7 @@ public class DefaultHttpClient implements HttpClient {
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private ClientBootstrap bootstrap;
   private NioClientSocketChannelFactory channelFactory;
-  private Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap();
+  private Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<Channel, ClientConnection>();
   private Handler<Exception> exceptionHandler;
   private int port = 80;
   private String host = "localhost";
@@ -348,7 +348,7 @@ public class DefaultHttpClient implements HttpClient {
       Integer bossThreads = tcpHelper.getClientBossThreads();
       int threads = bossThreads == null ? 1 : bossThreads;
       channelFactory = new NioClientSocketChannelFactory(
-          vertx.getAcceptorPool(), threads, pool);
+          vertx.getAcceptorPool(), threads, pool, vertx.getTimer());
       bootstrap = new ClientBootstrap(channelFactory);
 
       tcpHelper.checkSSL();
