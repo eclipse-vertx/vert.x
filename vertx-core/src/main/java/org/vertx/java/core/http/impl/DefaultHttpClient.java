@@ -51,7 +51,7 @@ public class DefaultHttpClient implements HttpClient {
   private static final Logger log = LoggerFactory.getLogger(HttpClientRequest.class);
 
   private final VertxInternal vertx;
-  private final Context ctx;
+  private final EventLoopContext ctx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private ClientBootstrap bootstrap;
   private NioClientSocketChannelFactory channelFactory;
@@ -68,10 +68,10 @@ public class DefaultHttpClient implements HttpClient {
 
   public DefaultHttpClient(VertxInternal vertx) {
     this.vertx = vertx;
-    ctx = vertx.getOrAssignContext();
     if (vertx.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
+    ctx = (EventLoopContext) vertx.getOrAssignContext();
     ctx.putCloseHook(this, new Runnable() {
       public void run() {
         close();
@@ -343,15 +343,9 @@ public class DefaultHttpClient implements HttpClient {
   private void internalConnect(final Handler<ClientConnection> connectHandler, final Handler<Exception> connectErrorHandler) {
 
     if (bootstrap == null) {
+      // Share the event loop thread to also serve the HttpClient's network traffic.
       VertxWorkerPool pool = new VertxWorkerPool();
-      EventLoopContext ectx;
-      if (ctx instanceof EventLoopContext) {
-        //It always will be
-        ectx = (EventLoopContext)ctx;
-      } else {
-        ectx = null;
-      }
-      pool.addWorker(ectx.getWorker());
+      pool.addWorker(ctx.getWorker());
       Integer bossThreads = tcpHelper.getClientBossThreads();
       int threads = bossThreads == null ? 1 : bossThreads;
       channelFactory = new NioClientSocketChannelFactory(
