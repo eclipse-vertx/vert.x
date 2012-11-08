@@ -117,11 +117,14 @@ public abstract class Context {
   protected Runnable wrapTask(final Runnable task) {
     return new Runnable() {
       public void run() {
+        String threadName = Thread.currentThread().getName();
         try {
           setContext(Context.this);
           task.run();
         } catch (Throwable t) {
           reportException(t);
+        } finally {
+          Thread.currentThread().setName(threadName);
         }
       }
     };
