@@ -245,5 +245,12 @@ public class JavaJsonTest extends TestBase {
     
     assertEquals(arrayElement.get(0), testElement.asArray().get(0));
   }
-  
+
+  @Test
+  public void testJsonArraysOfJsonObjectsEquality() {
+    JsonArray array1 = new JsonArray().addObject(new JsonObject("{ \"a\": \"b\" }"));
+    JsonArray array2 = new JsonArray().addObject(new JsonObject("{ \"a\": \"b\" }"));
+
+    assertEquals(array1, array2);
+  }
 }
