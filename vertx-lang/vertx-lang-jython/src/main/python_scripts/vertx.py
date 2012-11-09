@@ -54,7 +54,7 @@ def create_sockjs_server(http_server):
     return SockJSServer(http_server)
 
 def get_logger():
-    """ Get the logger for the verticle"""
+    """ Get the logger for the verticle """
     return org.vertx.java.deploy.impl.VertxLocator.container.getLogger()
 
 def deploy_verticle(main, config=None, instances=1, handler=None):
@@ -64,7 +64,7 @@ def deploy_verticle(main, config=None, instances=1, handler=None):
     @param main: the main of the verticle to deploy
     @param config: dict configuration for the verticle
     @param instances: number of instances to deploy
-    @param handler: will be executed when deploy has completed
+    @param handler: an handler that will be called when deploy has completed
 
     """
     if config != None:
@@ -79,7 +79,7 @@ def deploy_worker_verticle(main, config=None, instances=1, handler=None):
     @param main: the main of the verticle to deploy
     @param config: dict configuration for the verticle
     @param instances: the number of instances to deploy
-    @param handler: handler will be executed when deploy has completed
+    @param handler: an handler that will be called when deploy has completed
     """
     if config != None:
         config = org.vertx.java.core.json.JsonObject(map_to_java(config))
@@ -93,27 +93,29 @@ def deploy_module(module_name, config=None, instances=1, handler=None):
     @param module_name: The name of the module to deploy
     @param config: dict configuration for the module
     @param instances: Number of instances to deploy
-    @param handler: handler will be executed when deploy has completed
+    @param handler: an handler that will be called when deploy has completed
     """
     if config != None:
         config = org.vertx.java.core.json.JsonObject(map_to_java(config))
     org.vertx.java.deploy.impl.VertxLocator.container.deployModule(module_name, config, instances, DoneHandler(handler))
 
-def undeploy_verticle(id):
+def undeploy_verticle(id, handler=None):
     """Undeploy a verticle
 
     Keyword arguments:
     @param id: the unique id of the deployment
+    @param handler: an handler that will be called when undeploy has completed
     """
-    org.vertx.java.deploy.impl.VertxLocator.container.undeployVerticle(id)
+    org.vertx.java.deploy.impl.VertxLocator.container.undeployVerticle(id, DoneHandler(handler))
 
-def undeploy_module(id):
+def undeploy_module(id, handler=None):
     """Undeploy a module
 
     Keyword arguments:
     @param id: the unique id of the module
+    @param handler: an handler that will be called when undeploy has completed
     """
-    org.vertx.java.deploy.impl.VertxLocator.container.undeployModule(id)
+    org.vertx.java.deploy.impl.VertxLocator.container.undeployModule(id, DoneHandler(handler))
 
 def config():
     """Get config for the verticle
@@ -128,23 +130,23 @@ def java_vertx():
 
 def set_timer(delay, handler):
     """Sets a one-shot timer that will fire after a certain delay.
-    This method will accept either a Proc or a block.
 
     Keyword arguments:
     @param delay: the delay, in milliseconds
-    @param handler: a block representing the code that will be run after the delay the unique id of the timer
+    @param handler: an handler that will be called when the timer fires
+    @return: the unique id of the timer
     """
-    java_vertx().setTimer(delay, TimerHandler(handler))
+    return java_vertx().setTimer(delay, TimerHandler(handler))
 
 def set_periodic(delay, handler):
     """Sets a periodic timer.
 
     Keyword arguments:
     @param delay: the period of the timer, in milliseconds
-    @param handler: a block representing the code that will be when the timer fires the unique id of the timer
+    @param handler: an handler that will be called each time the timer fires
+    @return: the unique id of the timer
     """
-    java_vertx().setPeriodic(delay, TimerHandler(handler))
-
+    return java_vertx().setPeriodic(delay, TimerHandler(handler))
 
 def cancel_timer(id):
     """Cancels a timer.
@@ -153,15 +155,18 @@ def cancel_timer(id):
     @param id: the id of the timer, as returned from set_timer or set_periodic
     @return: true if the timer was cancelled, false if it wasn't found.
     """
-    java_vertx().cancelTimer(id)
-
+    return java_vertx().cancelTimer(id)
 
 def run_on_loop(handler):
     """Put the handler on the event queue for this loop so it will be run asynchronously
     ASAP after this event has been processed
 
     Keyword arguments:
-    @param handler: a block representing the code that will be run ASAP
+    @param handler: an handler representing the code that will be run ASAP
     """
     java_vertx().runOnLoop(DoneHandler(handler))
+ 
+def exit():
+    """ Cause the container to exit """
+    org.vertx.java.deploy.impl.VertxLocator.container.exit()
 
