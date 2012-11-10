@@ -111,7 +111,7 @@ public class DefaultNetServer implements NetServer {
                 availableWorkers);
         ServerBootstrap bootstrap = new ServerBootstrap(factory);
 
-        tcpHelper.checkSSL();
+        tcpHelper.checkSSL(vertx);
 
         bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
           public ChannelPipeline getPipeline() {
@@ -208,7 +208,7 @@ public class DefaultNetServer implements NetServer {
     // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
     // which can cause context id for the thread to change!
 
-    Context.setContext(closeContext);
+    vertx.setContext(closeContext);
 
     ChannelGroupFuture fut = serverChannelGroup.close();
     if (done != null) {

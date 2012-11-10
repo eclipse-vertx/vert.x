@@ -26,6 +26,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.impl.PathAdjuster;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.impl.LowerCaseKeyMap;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -40,7 +41,8 @@ import static org.jboss.netty.handler.codec.http.HttpHeaders.Names;
  */
 public class DefaultHttpServerResponse extends HttpServerResponse {
 
-  private static final Logger log = LoggerFactory.getLogger(DefaultHttpServerResponse.class);
+  @SuppressWarnings("unused")
+	private static final Logger log = LoggerFactory.getLogger(DefaultHttpServerResponse.class);
 
   private final ServerConnection conn;
   private final HttpResponse response;
@@ -56,9 +58,11 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
   private ChannelFuture channelFuture;
   private Map<String, Object> headers;
   private Map<String, Object> trailers;
+  private final VertxInternal vertx;
 
-  DefaultHttpServerResponse(ServerConnection conn, HttpVersion version, boolean keepAlive) {
-    this.conn = conn;
+  DefaultHttpServerResponse(final VertxInternal vertx, ServerConnection conn, HttpVersion version, boolean keepAlive) {
+  	this.vertx = vertx;
+  	this.conn = conn;
     this.response = new DefaultHttpResponse(version, HttpResponseStatus.OK);
     this.version = version;
     this.keepAlive = keepAlive;
@@ -236,7 +240,7 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
       throw new IllegalStateException("Head already written");
     }
     checkWritten();
-    File file = new File(PathAdjuster.adjust(filename));
+    File file = new File(PathAdjuster.adjust(vertx, filename));
     if (!file.exists()) {
       sendNotFound();
     } else {

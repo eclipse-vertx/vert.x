@@ -352,7 +352,7 @@ public class DefaultHttpClient implements HttpClient {
           vertx.getAcceptorPool(), threads, pool, vertx.getTimer());
       bootstrap = new ClientBootstrap(channelFactory);
 
-      tcpHelper.checkSSL();
+      tcpHelper.checkSSL(vertx);
 
       bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
         public ChannelPipeline getPipeline() throws Exception {
@@ -416,7 +416,7 @@ public class DefaultHttpClient implements HttpClient {
           }
         });
         connectionMap.put(ch, conn);
-        Context.setContext(ctx);
+        vertx.setContext(ctx);
         connectHandler.handle(conn);
       }
     });
@@ -439,7 +439,7 @@ public class DefaultHttpClient implements HttpClient {
     if (t instanceof Exception && exHandler != null) {
       tcpHelper.runOnCorrectThread(ch, new Runnable() {
         public void run() {
-          Context.setContext(ctx);
+          vertx.setContext(ctx);
           exHandler.handle((Exception) t);
         }
       });

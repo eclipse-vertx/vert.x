@@ -46,7 +46,8 @@ import java.util.Queue;
  */
 class ServerConnection extends AbstractConnection {
 
-  private static final Logger log = LoggerFactory.getLogger(ServerConnection.class);
+  @SuppressWarnings("unused")
+	private static final Logger log = LoggerFactory.getLogger(ServerConnection.class);
 
   private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
 
@@ -239,7 +240,7 @@ class ServerConnection extends AbstractConnection {
       HttpVersion ver = request.getProtocolVersion();
       boolean keepAlive = ver == HttpVersion.HTTP_1_1 ||
           (ver == HttpVersion.HTTP_1_0 && "Keep-Alive".equalsIgnoreCase(request.getHeader("Connection")));
-      DefaultHttpServerResponse resp = new DefaultHttpServerResponse(this, request.getProtocolVersion(), keepAlive);
+      DefaultHttpServerResponse resp = new DefaultHttpServerResponse(vertx, this, request.getProtocolVersion(), keepAlive);
       DefaultHttpServerRequest req = new DefaultHttpServerRequest(this, method, uri, path, query, resp, request);
       handleRequest(req, resp);
 

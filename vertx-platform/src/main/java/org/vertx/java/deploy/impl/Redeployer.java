@@ -17,8 +17,8 @@
 package org.vertx.java.deploy.impl;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -46,14 +46,14 @@ public class Redeployer {
   private final Map<WatchKey, Path> watchKeys = new HashMap<>();
   private final Map<Path, Path> moduleDirs = new HashMap<>();
   private final WatchService watchService;
-  private final Vertx vertx;
+  private final VertxInternal vertx;
   private final Map<Path, Long> changing = new HashMap<>();
   private final long timerID;
   private final Queue<Deployment> toDeploy = new ConcurrentLinkedQueue<>();
   private final Queue<Deployment> toUndeploy = new ConcurrentLinkedQueue<>();
   private Context ctx;
 
-  public Redeployer(Vertx vertx, File modRoot, ModuleReloader reloader) {
+  public Redeployer(VertxInternal vertx, File modRoot, ModuleReloader reloader) {
     this.modRoot = modRoot;
     this.reloader = reloader;
     try {
@@ -67,7 +67,7 @@ public class Redeployer {
     timerID = vertx.setPeriodic(CHECK_PERIOD, new Handler<Long>() {
       public void handle(Long id) {
         if (ctx == null) {
-          ctx = Context.getContext();
+          ctx = Redeployer.this.vertx.getContext();
         } else {
           checkContext();
         }
@@ -273,8 +273,8 @@ public class Redeployer {
 
   private void checkContext() {
     //Sanity check
-    if (Context.getContext() != ctx) {
-      throw new IllegalStateException("Got context: " + Context.getContext() + " expected " + ctx);
+    if (vertx.getContext() != ctx) {
+      throw new IllegalStateException("Got context: " + vertx.getContext() + " expected " + ctx);
     }
   }
 

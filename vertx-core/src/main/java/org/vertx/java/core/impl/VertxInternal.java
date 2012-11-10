@@ -55,4 +55,15 @@ public abstract class VertxInternal extends Vertx {
 
   public abstract Timer getTimer();
 
+	/**
+	 * Get the current context
+	 * @return
+	 */
+	public abstract Context getContext();
+
+	/**
+	 * Set the current context
+	 * @return
+	 */
+  public abstract void setContext(Context context);
 }

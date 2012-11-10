@@ -403,7 +403,7 @@ public class DefaultEventBus implements EventBus {
       // Reset the context id - send can cause messages to be delivered in different contexts so the context id
       // of the current thread can change
       if (context != null) {
-        Context.setContext(context);
+        vertx.setContext(context);
       }
     }
   }
