@@ -145,7 +145,7 @@ public class DefaultHttpServer implements HttpServer {
         ServerBootstrap bootstrap = new ServerBootstrap(factory);
         bootstrap.setOptions(tcpHelper.generateConnectionOptions(true));
 
-        tcpHelper.checkSSL();
+        tcpHelper.checkSSL(vertx);
 
         bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
           public ChannelPipeline getPipeline() {
@@ -381,7 +381,7 @@ public class DefaultHttpServer implements HttpServer {
     // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
     // which can cause context id for the thread to change!
 
-    Context.setContext(closeContext);
+    vertx.setContext(closeContext);
 
     ChannelGroupFuture fut = serverChannelGroup.close();
     if (done != null) {

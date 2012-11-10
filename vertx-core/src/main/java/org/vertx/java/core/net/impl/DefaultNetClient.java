@@ -269,7 +269,7 @@ public class DefaultNetClient implements NetClient {
           vertx.getAcceptorPool(), threads, pool, vertx.getTimer());
       bootstrap = new ClientBootstrap(channelFactory);
 
-      tcpHelper.checkSSL();
+      tcpHelper.checkSSL(vertx);
 
       bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
         public ChannelPipeline getPipeline() throws Exception {
@@ -316,7 +316,7 @@ public class DefaultNetClient implements NetClient {
           if (remainingAttempts > 0 || remainingAttempts == -1) {
             tcpHelper.runOnCorrectThread(ch, new Runnable() {
               public void run() {
-                Context.setContext(ctx);
+                vertx.setContext(ctx);
                 log.debug("Failed to create connection. Will retry in " + reconnectInterval + " milliseconds");
                 //Set a timer to retry connection
                 vertx.setTimer(reconnectInterval, new Handler<Long>() {
@@ -338,7 +338,7 @@ public class DefaultNetClient implements NetClient {
   private void connected(final NioSocketChannel ch, final Handler<NetSocket> connectHandler) {
     tcpHelper.runOnCorrectThread(ch, new Runnable() {
       public void run() {
-        Context.setContext(ctx);
+        vertx.setContext(ctx);
         DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, ctx);
         socketMap.put(ch, sock);
         connectHandler.handle(sock);
@@ -351,7 +351,7 @@ public class DefaultNetClient implements NetClient {
     if (t instanceof Exception && exceptionHandler != null) {
       tcpHelper.runOnCorrectThread(ch, new Runnable() {
         public void run() {
-          Context.setContext(ctx);
+          vertx.setContext(ctx);
           exceptionHandler.handle((Exception) t);
         }
       });
