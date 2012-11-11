@@ -48,12 +48,9 @@ public class LocalPeer extends EventBusAppBase {
   public void testPubSubInitialise() {
     final String address = "some-address";
     eb.registerHandler(address, new Handler<Message<Buffer>>() {
-          boolean handled = false;
-
           public void handle(Message<Buffer> msg) {
             tu.checkContext();
             tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
-            handled = true;
             eb.unregisterHandler("some-address", this, new AsyncResultHandler<Void>() {
               public void handle(AsyncResult<Void> event) {
                 if (event.exception == null) {
@@ -89,8 +86,6 @@ public class LocalPeer extends EventBusAppBase {
 
     final String address = "some-address";
     eb.registerHandler(address, new Handler<Message<Buffer>>() {
-          boolean handled = false;
-
           public void handle(Message<Buffer> msg) {
             tu.checkContext();
             tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
@@ -104,7 +99,6 @@ public class LocalPeer extends EventBusAppBase {
               }
             });
             eb.unregisterHandler(address, otherHandler);
-            handled = true;
           }
         }, new AsyncResultHandler<Void>() {
       public void handle(AsyncResult<Void> event) {
