@@ -84,6 +84,14 @@ public interface HttpClient extends SharedHttpClient {
   HttpClient setSSL(boolean ssl);
 
   /**
+   * If {@code verifyHost} is {@code true}, then the client will try to validate the remote server's certificate
+   * hostname against the requested host. Should default to 'true'.
+   * This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)} has been set to {@code true}.
+   * @return A reference to this, so multiple invocations can be chained together.
+   */
+  HttpClient setVerifyHost(boolean verifyHost);
+
+  /**
    * Set the path to the SSL key store. This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}
    * has been set to {@code true}.<p>
    * The SSL key store is a standard Java Key Store, and will contain the client certificate. Client certificates are

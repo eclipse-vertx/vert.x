@@ -97,6 +97,12 @@ public class HttpTestClient extends TestClientBase {
     tu.azzert(client.setSSL(true) == client);
     tu.azzert(client.isSSL());
 
+    tu.azzert(client.setVerifyHost(false) == client);
+    tu.azzert(!client.isVerifyHost());
+
+    tu.azzert(client.setVerifyHost(true) == client);
+    tu.azzert(client.isVerifyHost());
+
     String pwd = TestUtils.randomUnicodeString(10);
     tu.azzert(client.setKeyStorePassword(pwd) == client);
     tu.azzert(client.getKeyStorePassword().equals(pwd));
@@ -2293,6 +2299,8 @@ public class HttpTestClient extends TestClientBase {
     TLSTestParams params = TLSTestParams.deserialize(vertx.sharedData().<String, byte[]>getMap("TLSTest").get("params"));
 
     client.setSSL(true);
+
+    client.setVerifyHost(false);
 
     if (params.clientTrustAll) {
       client.setTrustAll(true);

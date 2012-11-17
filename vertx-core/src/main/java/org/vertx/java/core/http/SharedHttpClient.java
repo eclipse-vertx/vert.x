@@ -177,6 +177,12 @@ public interface SharedHttpClient {
 
   /**
    *
+   * @return true if this client will validate the remote server's certificate hostname against the requested host
+   */
+  boolean isVerifyHost();
+
+    /**
+   *
    * @return true if this client will trust all server certificates.
    */
   boolean isTrustAll();

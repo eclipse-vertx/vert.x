@@ -45,10 +45,11 @@ import java.util.Map;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class TCPSSLHelper {
-  
+
   private static final Logger log = LoggerFactory.getLogger(TCPSSLHelper.class);
-  
+
   private boolean ssl;
+  private boolean verifyHost = true;
   private String keyStorePath;
   private String keyStorePassword;
   private String trustStorePath;
@@ -203,9 +204,12 @@ public class TCPSSLHelper {
     this.clientBossThreads = clientBossThreads;
   }
 
-
   public boolean isSSL() {
     return ssl;
+  }
+
+  public boolean isVerifyHost() {
+    return verifyHost;
   }
 
   public String getKeyStorePath() {
@@ -238,6 +242,10 @@ public class TCPSSLHelper {
 
   public void setSSL(boolean ssl) {
     this.ssl = ssl;
+  }
+
+  public void setVerifyHost(boolean verifyHost) {
+    this.verifyHost = verifyHost;
   }
 
   public void setKeyStorePath(String path) {
