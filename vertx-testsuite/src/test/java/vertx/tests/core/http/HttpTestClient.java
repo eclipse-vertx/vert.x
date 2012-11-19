@@ -2122,10 +2122,15 @@ public class HttpTestClient extends TestClientBase {
         tu.testComplete();
       }
     });
-    req.exceptionHandler(new Handler<Exception>() {
-      public void handle(Exception e) {
-      }
-    });
+    // NOTE: If you set a request handler now and an error happens on the request, the error is reported to the
+    // request handler and NOT the client handler. Only if no handler is set on the request, or an error happens
+    // that is not in the context of a request will the client handler get called. I can't figure out why an empty
+    // handler was specified here originally, but if we want the client handler (specified above) to fire, we should
+    // not set an empty handler here. The alternative would be to move the logic
+//    req.exceptionHandler(new Handler<Exception>() {
+//      public void handle(Exception e) {
+//      }
+//    });
     req.end("foo");
   }
 
