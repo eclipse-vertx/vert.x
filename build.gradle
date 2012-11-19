@@ -22,7 +22,12 @@ buildscript {
 		maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
 		mavenCentral()
 	}
+  dependencies {
+    classpath 'com.eriwen:gradle-js-plugin:1.1'
+  }
 } 
+
+apply plugin: 'js'
 
 allprojects {
   apply plugin: 'eclipse'
@@ -154,6 +159,14 @@ task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
 	}
 }
 
+task minifyClient(type: com.eriwen.gradle.js.tasks.MinifyJsTask) {
+  source = file("build/$rootProject.name-$version/client/vertxbus.js")
+  dest = file("build/$rootProject.name-$version/client/vertxbus.min.js")
+  closure {
+    warningLevel = 'QUIET'
+  }
+}
+
 task javadocs(type: Javadoc, dependsOn: subprojects.javadoc) {
 	group = null       // hide the task
 	description = null // hide the task
@@ -201,7 +214,7 @@ task createDocs(dependsOn: [subprojects.classes, 'javadocs', 'nonJavadocs']) {
 	description = 'Build all of the various docs for the project'
 }
 
-task installApp(type: Sync, dependsOn: ['assemble']) {
+task installApp(type: Sync, dependsOn: ['assemble', 'minifyClient']) {
 	group = 'vert.x'
 	description 'Install a local copy of this build'
 
@@ -213,7 +226,7 @@ task installApp(type: Sync, dependsOn: ['assemble']) {
 	from "build/$rootProject.name-$version"
 }
 
-task distZip(type: Zip, dependsOn : ['assemble', 'createDocs']) {
+task distZip(type: Zip, dependsOn : ['assemble', 'minifyClient', 'createDocs']) {
 	group = 'vert.x'
 	description 'Create the Zip distribution'
 
@@ -224,7 +237,7 @@ task distZip(type: Zip, dependsOn : ['assemble', 'createDocs']) {
 	include "$rootProject.name-$version/**"
 }
 
-task distTar(type: Tar, dependsOn: ['assemble', 'createDocs']) {
+task distTar(type: Tar, dependsOn: ['assemble', 'minifyClient', 'createDocs']) {
 	group = 'vert.x'
 	description 'Create the GZIP distribution'
 

@@ -7,7 +7,7 @@
 ##############################################################################
 
 # Add default JVM options here. You can also use JAVA_OPTS and VERTX_OPTS to pass JVM options to this script.
-DEFAULT_JVM_OPTS=""
+DEFAULT_JVM_OPTS="-XX:+CMSClassUnloadingEnabled"
 
 APP_NAME="vertx"
 APP_BASE_NAME=`basename "$0"`
@@ -171,4 +171,6 @@ function splitJvmOpts() {
 }
 eval splitJvmOpts $DEFAULT_JVM_OPTS $JAVA_OPTS $VERTX_OPTS
 
-exec "$JAVACMD" "${JVM_OPTS[@]}" -Djava.util.logging.config.file=$APP_HOME/src/dist/conf/logging.properties -Djruby.home=$JRUBY_HOME -classpath "$CLASSPATH" org.vertx.java.deploy.impl.cli.Starter "$@"
+exec "$JAVACMD" "${JVM_OPTS[@]}" -Dpython.options.internalTablesImpl=weak\
+ -Djava.util.logging.config.file=$APP_HOME/src/dist/conf/logging.properties\
+ -Djruby.home=$JRUBY_HOME -classpath "$CLASSPATH" org.vertx.java.deploy.impl.cli.Starter "$@"

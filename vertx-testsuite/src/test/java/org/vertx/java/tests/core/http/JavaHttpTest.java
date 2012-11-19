@@ -114,6 +114,7 @@ public class JavaHttpTest extends TestBase {
     });
 
     assertTrue(latch.await(5, TimeUnit.SECONDS));
+    vertx.stop();
   }
 
   public void testSimpleGET() {

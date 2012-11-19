@@ -32,7 +32,8 @@ public class JythonVerticleFactory implements VerticleFactory {
 
   @Override
   public void init(VerticleManager mgr) {
-      this.mgr = mgr;
+    this.mgr = mgr;
+    System.setProperty("python.options.internalTablesImpl","weak");
   }
 
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
