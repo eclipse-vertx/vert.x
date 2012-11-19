@@ -55,7 +55,7 @@ public class DefaultHttpClient implements HttpClient {
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private ClientBootstrap bootstrap;
   private NioClientSocketChannelFactory channelFactory;
-  private Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap();
+  private Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<Channel, ClientConnection>();
   private Handler<Exception> exceptionHandler;
   private int port = 80;
   private String host = "localhost";
@@ -422,6 +422,7 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   private void failed(NioSocketChannel ch, final Throwable t) {
+  	ch.close();
     tcpHelper.runOnCorrectThread(ch, new Runnable() {
       public void run() {
         pool.connectionClosed();

@@ -28,6 +28,7 @@ import org.vertx.java.core.file.FileSystemProps;
 import org.vertx.java.core.streams.Pump;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
+import org.vertx.java.core.utils.lang.Windows;
 import org.vertx.java.framework.TestClientBase;
 import org.vertx.java.framework.TestUtils;
 
@@ -321,12 +322,18 @@ public class TestClient extends TestClientBase {
     createFileWithJunk(file1, 100);
     testChmod(file1, perms, null, true, new SimpleHandler() {
       public void handle() {
-        tu.azzert(perms.equals(getPerms(file1)));
+        azzertPerms(perms, file1);
         deleteFile(file1);
       }
     });
   }
 
+  private void azzertPerms(String perms, String file1) {
+  	if (Windows.isWindows() == false) {
+  		tu.azzert(perms.equals(getPerms(file1)));
+  	}
+  }
+  
   public void testChmodRecursive1() throws Exception {
     testChmodRecursive();
   }
@@ -366,11 +373,11 @@ public class TestClient extends TestClientBase {
     createFileWithJunk(dir + pathSep + dir2 + file3, 100);
     testChmod(dir, perms, dirPerms, true, new SimpleHandler() {
       public void handle() {
-        tu.azzert(dirPerms.equals(getPerms(dir)));
-        tu.azzert(perms.equals(getPerms(dir + file1)));
-        tu.azzert(perms.equals(getPerms(dir + file2)));
-        tu.azzert(dirPerms.equals(getPerms(dir + pathSep + dir2)));
-        tu.azzert(perms.equals(getPerms(dir + pathSep + dir2 + file3)));
+        azzertPerms(dirPerms, dir);
+        azzertPerms(perms, dir + file1);
+        azzertPerms(perms, dir + file2);
+        azzertPerms(dirPerms, dir + pathSep + dir2);
+        azzertPerms(perms, dir + pathSep + dir2 + file3);
         deleteDir(dir);
       }
     });
@@ -379,9 +386,9 @@ public class TestClient extends TestClientBase {
   private void testChmod(final String file, final String perms, final String dirPerms,
                          final boolean shouldPass, final Handler<Void> afterOK) throws Exception {
     if (Files.isDirectory(Paths.get(TEST_DIR + pathSep + file))) {
-      tu.azzert(DEFAULT_DIR_PERMS.equals(getPerms(file)));
+      azzertPerms(DEFAULT_DIR_PERMS, file);
     } else {
-      tu.azzert(DEFAULT_FILE_PERMS.equals(getPerms(file)));
+      azzertPerms(DEFAULT_FILE_PERMS, file);
     }
     AsyncResultHandler<Void> handler = createHandler(shouldPass, afterOK);
     if (dirPerms != null) {
@@ -394,18 +401,18 @@ public class TestClient extends TestClientBase {
   public void testProps() throws Exception {
     String fileName = "some-file.txt";
     final long fileSize = 1234;
-    final long start = 1000 * (System.currentTimeMillis() / 1000);
+    
+    // The times are quite inaccurate so we give 1 second leeway
+    final long start = 1000 * (System.currentTimeMillis() / 1000 - 1);
     createFileWithJunk(fileName, fileSize);
 
     testProps(fileName, false, true, new Handler<FileProps>() {
       public void handle(FileProps st) {
         tu.azzert(st != null);
         tu.azzert(fileSize == st.size);
-
-        // The times are quite inaccurate so we give 1 second leeway
-        tu.azzert(st.creationTime.getTime() >= start - 1000);
-        tu.azzert(st.lastAccessTime.getTime() >= start - 1000);
-        tu.azzert(st.lastModifiedTime.getTime() >= start - 1000);
+        tu.azzert(st.creationTime.getTime() >= start);
+        tu.azzert(st.lastAccessTime.getTime() >= start);
+        tu.azzert(st.lastModifiedTime.getTime() >= start);
         tu.azzert(!st.isDirectory);
         tu.azzert(!st.isOther);
         tu.azzert(st.isRegularFile);
@@ -422,9 +429,11 @@ public class TestClient extends TestClientBase {
   public void testPropsFollowLink() throws Exception {
     final String fileName = "some-file.txt";
     final long fileSize = 1234;
-    final long start = 1000 * (System.currentTimeMillis() / 1000);
+    
+    // The times are quite inaccurate so we give 1 second leeway
+    final long start = 1000 * (System.currentTimeMillis() / 1000 - 1);
     createFileWithJunk(fileName, fileSize);
-    final long end = 1000 * (System.currentTimeMillis() / 1000);
+    final long end = 1000 * (System.currentTimeMillis() / 1000 + 1);
 
     String linkName = "some-link.txt";
     Files.createSymbolicLink(Paths.get(TEST_DIR + pathSep + linkName), Paths.get(fileName));
@@ -653,7 +662,7 @@ public class TestClient extends TestClientBase {
       public void handle() {
         tu.azzert(fileExists(dirName));
         tu.azzert(Files.isDirectory(Paths.get(TEST_DIR + pathSep + dirName)));
-        tu.azzert(perms.equals(getPerms(dirName)));
+        azzertPerms(perms, dirName);
       }
     });
   }
@@ -675,7 +684,7 @@ public class TestClient extends TestClientBase {
       public void handle() {
         tu.azzert(fileExists(dirName));
         tu.azzert(Files.isDirectory(Paths.get(TEST_DIR + pathSep + dirName)));
-        tu.azzert(perms.equals(getPerms(dirName)));
+        azzertPerms(perms, dirName);
       }
     });
   }
@@ -848,27 +857,37 @@ public class TestClient extends TestClientBase {
 
     vertx.fileSystem().open(TEST_DIR + pathSep + fileName, null, false, true, true, true, new AsyncResultHandler<AsyncFile>() {
       int count;
-      public void handle(AsyncResult<AsyncFile> ar) {
+      public void handle(final AsyncResult<AsyncFile> arr) {
         tu.checkContext();
-        if (ar.exception == null) {
+        if (arr.exception == null) {
           for (int i = 0; i < chunks; i++) {
             Buffer chunk = buff.getBuffer(i * chunkSize, (i + 1) * chunkSize);
             tu.azzert(chunk.length() == chunkSize);
-            ar.result.write(chunk, i * chunkSize, new AsyncResultHandler<Void>() {
+            arr.result.write(chunk, i * chunkSize, new AsyncResultHandler<Void>() {
               public void handle(AsyncResult<Void> ar) {
                 if (ar.exception == null) {
                   if (++count == chunks) {
-                    tu.azzert(fileExists(fileName));
-                    byte[] readBytes;
-                    try {
-                      readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName));
-                    } catch (IOException e) {
-                      tu.exception(e, "Failed to read file");
-                      return;
-                    }
-                    Buffer read = new Buffer(readBytes);
-                    tu.azzert(TestUtils.buffersEqual(buff, read));
-                    tu.testComplete();
+										arr.result.close(new AsyncResultHandler<Void>() {
+											@Override
+											public void handle(AsyncResult<Void> ar) {
+												tu.checkContext();
+												if (ar.exception != null) {
+													tu.exception(ar.exception, "failed to close");
+												} else {
+	                        tu.azzert(fileExists(fileName));
+                          byte[] readBytes;
+                          try {
+                            readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName));
+                          } catch (IOException e) {
+                          	tu.exception(e, "Failed to read file");
+                          	return;
+                          }
+                          Buffer read = new Buffer(readBytes);
+                          tu.azzert(TestUtils.buffersEqual(buff, read));
+                          tu.testComplete();
+												}
+											}
+										});
                   }
                 } else {
                   tu.exception(ar.exception, "Failed to write");
@@ -877,7 +896,7 @@ public class TestClient extends TestClientBase {
             });
           }
         } else {
-          tu.exception(ar.exception, "Failed to open");
+          tu.exception(arr.exception, "Failed to open");
         }
       }
     });
@@ -892,27 +911,37 @@ public class TestClient extends TestClientBase {
     createFile(fileName, content);
     vertx.fileSystem().open(TEST_DIR + pathSep + fileName, null, true, false, false, new AsyncResultHandler<AsyncFile>() {
       int reads;
-      public void handle(AsyncResult<AsyncFile> ar) {
+      public void handle(final AsyncResult<AsyncFile> arr) {
         tu.checkContext();
-        if (ar.exception == null) {
+        if (arr.exception == null) {
           final Buffer buff = new Buffer(chunks * chunkSize);
           for (int i = 0; i < chunks; i++) {
-            ar.result.read(buff, i * chunkSize, i * chunkSize, chunkSize, new AsyncResultHandler<Buffer>() {
-              public void handle(AsyncResult<Buffer> ar) {
-                if (ar.exception == null) {
+            arr.result.read(buff, i * chunkSize, i * chunkSize, chunkSize, new AsyncResultHandler<Buffer>() {
+              public void handle(final AsyncResult<Buffer> arb) {
+                if (arb.exception == null) {
                   if (++reads == chunks) {
-                    tu.azzert(TestUtils.buffersEqual(expected, buff));
-                    tu.azzert(buff == ar.result);
-                    tu.testComplete();
+										arr.result.close(new AsyncResultHandler<Void>() {
+											@Override
+											public void handle(AsyncResult<Void> ar) {
+												tu.checkContext();
+												if (ar.exception != null) {
+													tu.exception(ar.exception, "failed to close");
+												} else {
+													tu.azzert(TestUtils.buffersEqual(expected, buff));
+													tu.azzert(buff == arb.result);
+													tu.testComplete();
+												}
+											}
+										});
                   }
                 } else {
-                  tu.exception(ar.exception, "failed to read");
+                  tu.exception(arb.exception, "failed to read");
                 }
               }
             });
           }
         } else {
-          tu.exception(ar.exception, "failed to open file");
+          tu.exception(arr.exception, "failed to open file");
         }
       }
     });
@@ -977,7 +1006,7 @@ public class TestClient extends TestClientBase {
     createFile(fileName, content);
 
     vertx.fileSystem().open(TEST_DIR + pathSep + fileName, null, true, false, false, new AsyncResultHandler<AsyncFile>() {
-      public void handle(AsyncResult<AsyncFile> ar) {
+      public void handle(final AsyncResult<AsyncFile> ar) {
         tu.checkContext();
         if (ar.exception == null) {
           ReadStream rs = ar.result.getReadStream();
@@ -999,9 +1028,19 @@ public class TestClient extends TestClientBase {
 
           rs.endHandler(new SimpleHandler() {
             public void handle() {
-              tu.checkContext();
-              tu.azzert(TestUtils.buffersEqual(buff, new Buffer(content)));
-              tu.testComplete();
+							ar.result.close(new AsyncResultHandler<Void>() {
+								@Override
+								public void handle(AsyncResult<Void> ar) {
+									tu.checkContext();
+									if (ar.exception != null) {
+										tu.exception(ar.exception, "failed to close");
+									} else {
+										tu.checkContext();
+										tu.azzert(TestUtils.buffersEqual(buff, new Buffer(content)));
+										tu.testComplete();
+									}
+								}
+							});
             }
           });
         } else {
@@ -1021,10 +1060,10 @@ public class TestClient extends TestClientBase {
     createFile(fileName1, content);
 
     vertx.fileSystem().open(TEST_DIR + pathSep + fileName1, null, true, false, false, new AsyncResultHandler<AsyncFile>() {
-      public void handle(AsyncResult<AsyncFile> ar) {
+      public void handle(final AsyncResult<AsyncFile> arr) {
         tu.checkContext();
-        if (ar.exception == null) {
-          final ReadStream rs = ar.result.getReadStream();
+        if (arr.exception == null) {
+          final ReadStream rs = arr.result.getReadStream();
 
           //Open file for writing
           vertx.fileSystem().open(TEST_DIR + pathSep + fileName2, null, true, true, true, new AsyncResultHandler<AsyncFile>() {
@@ -1039,23 +1078,32 @@ public class TestClient extends TestClientBase {
                 rs.endHandler(new SimpleHandler() {
                   public void handle() {
                     tu.checkContext();
-                    ar.result.close(new AsyncResultHandler<Void>() {
-
-                      public void handle(AsyncResult<Void> ar) {
-                        tu.checkContext();
-                        if (ar.exception != null) {
-                          tu.exception(ar.exception, "failed to close");
-                        } else {
-                          tu.azzert(fileExists(fileName2));
-                          byte[] readBytes;
-                          try {
-                            readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName2));
-                          } catch (IOException e) {
-                            tu.exception(e, "failed to read");
-                            return;
-                          }
-                          tu.azzert(TestUtils.buffersEqual(new Buffer(content), new Buffer(readBytes)));
-                          tu.testComplete();
+										arr.result.close(new AsyncResultHandler<Void>() {
+											@Override
+											public void handle(AsyncResult<Void> car) {
+												tu.checkContext();
+												if (car.exception != null) {
+													tu.exception(car.exception, "failed to close");
+												} else {
+													ar.result.close(new AsyncResultHandler<Void>() {
+														public void handle(AsyncResult<Void> ar) {
+															tu.checkContext();
+															if (ar.exception != null) {
+																tu.exception(ar.exception, "failed to close");
+															} else {
+																tu.azzert(fileExists(fileName2));
+																byte[] readBytes;
+																try {
+																	readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName2));
+																} catch (IOException e) {
+																	tu.exception(e, "failed to read");
+																	return;
+																}
+																tu.azzert(TestUtils.buffersEqual(new Buffer(content), new Buffer(readBytes)));
+																tu.testComplete();
+															}
+														}
+													});
                         }
                       }
                     });
@@ -1067,7 +1115,7 @@ public class TestClient extends TestClientBase {
             }
           });
         } else {
-          tu.exception(ar.exception, "failed to open");
+          tu.exception(arr.exception, "failed to open");
         }
       }
     });
@@ -1088,7 +1136,7 @@ public class TestClient extends TestClientBase {
 
   private void testCreateFile(final String perms, final boolean shouldPass) throws Exception {
     final String fileName = "some-file.dat";
-    AsyncResultHandler handler = new AsyncResultHandler<Void>() {
+    AsyncResultHandler<Void> handler = new AsyncResultHandler<Void>() {
       public void handle(AsyncResult<Void> ar) {
         tu.checkContext();
         if (ar.exception != null) {
@@ -1103,7 +1151,7 @@ public class TestClient extends TestClientBase {
             tu.azzert(fileExists(fileName));
             tu.azzert(0 == fileLength(fileName));
             if (perms != null) {
-              tu.azzert(perms.equals(getPerms(fileName)));
+              azzertPerms(perms, fileName);
             }
             tu.testComplete();
           } else {
@@ -1257,14 +1305,17 @@ public class TestClient extends TestClientBase {
     return file.length();
   }
 
-  private void setPerms( Path path, String perms ) {
-    try {
-      Files.setPosixFilePermissions( path, PosixFilePermissions.fromString( perms ) );
-    }
-    catch(IOException e) { 
-      throw new RuntimeException(e.getMessage());
-    } 
+  private void setPerms(Path path, String perms) {
+  	if (Windows.isWindows() == false) {
+	    try {
+	      Files.setPosixFilePermissions( path, PosixFilePermissions.fromString( perms ) );
+	    }
+	    catch(IOException e) { 
+	      throw new RuntimeException(e.getMessage());
+	    } 
+	  }
   }
+  
   private String getPerms(String fileName) {
     try {
       Set<PosixFilePermission> perms = Files.getPosixFilePermissions(Paths.get(testDir + pathSep + fileName));
@@ -1278,5 +1329,4 @@ public class TestClient extends TestClientBase {
     File file = new File(TEST_DIR + pathSep + fileName);
     file.delete();
   }
-
 }

@@ -146,4 +146,9 @@ public abstract class Vertx {
    * @return true if current thread is an worker thread
    */
   public abstract boolean isWorker();
+
+  /**
+	 * Stop the eventbus and any resource managed by the eventbus.
+	 */
+	public abstract void stop();
 }

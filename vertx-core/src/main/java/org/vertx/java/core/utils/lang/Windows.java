@@ -14,25 +14,26 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.eventbus.impl;
+package org.vertx.java.core.utils.lang;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ * Simple Windows specific utility
+ * 
+ * @author Juergen Donnerstag
  */
-public interface ClusterManager {
+public class Windows {
+
+	private static final boolean isWindows;
+
+	static {
+		String os = System.getProperty("os.name").toLowerCase();
+		isWindows = (os.indexOf("win") >= 0);
+	}
 
 	/**
-	 * Every eventbus handler has an ID. SubsMap (subscriber map) is a MultiMap which 
-	 * maps handler-IDs with server-IDs and thus allows the eventbus to determine where 
-	 * to send messages.
-	 * 
-	 * @param name A unique name by which the the MultiMap can be identified within the cluster. 
-	 * @return
+	 * @return true, if running on Windows
 	 */
-  SubsMap getSubsMap(String name);
-
-  /**
-   * Shutdown the cluster manager and release all resources.
-   */
-  void close();
+	public static boolean isWindows() {
+		return isWindows;
+	}
 }
