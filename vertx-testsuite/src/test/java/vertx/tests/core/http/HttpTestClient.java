@@ -188,6 +188,7 @@ public class HttpTestClient extends TestClientBase {
     tu.azzert(server.getReceiveBufferSize() == null);
     tu.azzert(server.getSendBufferSize() == null);
     tu.azzert(server.getTrafficClass() == null);
+    server.close();
     tu.testComplete();
   }
 

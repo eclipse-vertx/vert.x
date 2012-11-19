@@ -18,7 +18,10 @@ package vertx.tests.core.eventbus;
 
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
+import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.framework.TestClientBase;
 import org.vertx.java.tests.core.eventbus.Counter;
 
@@ -28,6 +31,8 @@ import java.util.Map;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class EventBusAppBase extends TestClientBase {
+
+  private static final Logger log = LoggerFactory.getLogger(EventBusAppBase.class);
 
   protected Map<String, Object> data;
   protected DefaultEventBus eb;
@@ -42,6 +47,7 @@ public abstract class EventBusAppBase extends TestClientBase {
       eb = (DefaultEventBus)vertx.eventBus();
     } else {
       int port = Counter.portCounter.getAndIncrement();
+      log.info("Start DefaultEventBus: Port=" + port);
       eb = new DefaultEventBus((VertxInternal)vertx, port, "localhost");
     }
 

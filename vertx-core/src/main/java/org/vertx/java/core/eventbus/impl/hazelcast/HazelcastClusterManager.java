@@ -20,6 +20,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.MultiMap;
+
 import org.vertx.java.core.eventbus.impl.ClusterManager;
 import org.vertx.java.core.eventbus.impl.SubsMap;
 import org.vertx.java.core.impl.VertxInternal;
@@ -27,61 +29,113 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.io.BufferedInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 /**
+ * A cluster manager based on a HazelcastInstance singleton.
+ * <p>
+ * Please be aware of the typical issues with singletons. E.g. all junit tests will 
+ * share a single instance and the data (subsMap).
+ * 
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HazelcastClusterManager implements ClusterManager {
 
   private static final Logger log = LoggerFactory.getLogger(HazelcastClusterManager.class);
 
+  // Hazelcast config file
+  private static final String CONFIG_FILE = "cluster.xml";
+  
+  // Default instance (singleton)
   private static HazelcastInstance instance;
 
-  private static synchronized HazelcastInstance getHazelcast() {
-    if (instance == null) {
-      System.setProperty("hazelcast.mancenter.enabled", "false");
-      System.setProperty("hazelcast.memcache.enabled", "false");
-      System.setProperty("hazelcast.rest.enabled", "false");
-      System.setProperty("hazelcast.wait.seconds.before.join", "0");
-      Config cfg;
-      InputStream is =
-          HazelcastClusterManager.class.getClassLoader().getResourceAsStream("cluster.xml");
-      if (is != null) {
-        InputStream bis = null;
-        try {
-          bis = new BufferedInputStream(is);
-          cfg = new XmlConfigBuilder(bis).build();
-        } finally {
-          try {
-            if (bis != null) bis.close();
-          } catch (Exception ignore) {
-          }
-        }
-      } else {
-        log.warn("Cannot find cluster.xml on classpath. Using default cluster configuration");
-        cfg = null;
-      }
-      //We use the default instance
-      instance = Hazelcast.init(cfg);
-    }
+  private final VertxInternal vertx;
+
+  /**
+   * Constructor
+   */
+  public HazelcastClusterManager(final VertxInternal vertx) {
+  	this.vertx = vertx;
+    initHazelcast();
+  }
+
+  /**
+   * Create the singleton Hazelcast instance if necessary
+   * @return
+   */
+  private HazelcastInstance initHazelcast() {
+  	synchronized(CONFIG_FILE) {
+	    if (instance == null) {
+	      Config cfg = getConfig(null); 
+	      if (cfg != null) {
+	      	log.warn("Cannot find cluster.xml on classpath. Using default cluster configuration");
+	      }
+	
+	      // default instance
+	      instance = Hazelcast.init(cfg);
+	     
+	      // Properly shutdown all instances
+	      Runtime.getRuntime().addShutdownHook(new Thread() {
+	      	@Override
+	      	public void run() {
+	      		Hazelcast.shutdownAll();
+	      	}
+	      });
+	    }
+  	}
     return instance;
   }
 
-  private final VertxInternal vertx;
-  private final HazelcastInstance hazelcast;
+  /**
+   * Get the Hazelcast config
+   * @param configfile May be null in which case it gets the default (cluster.xml) will be used.
+   * @return
+   */
+	protected Config getConfig(String configfile) {
+		if (configfile == null) {
+			configfile = CONFIG_FILE;
+		}
+		
+		Config cfg = null;
+		try (InputStream is = HazelcastClusterManager.class.getClassLoader().getResourceAsStream(configfile);
+		    InputStream bis = new BufferedInputStream(is)) {
+			if (is != null) {
+				cfg = new XmlConfigBuilder(bis).build();
+			}
+		} catch (IOException ex) {
+			// ignore
+		}
+		return cfg;
+	}
 
-  public HazelcastClusterManager(VertxInternal vertx) {
-    this.vertx = vertx;
-    hazelcast = getHazelcast();
-  }
-
-  public SubsMap getSubsMap(String name) {
-    com.hazelcast.core.MultiMap map = hazelcast.getMultiMap(name);
+	/**
+	 * Every eventbus handler has an ID. SubsMap (subscriber map) is a MultiMap which 
+	 * maps handler-IDs with server-IDs and thus allows the eventbus to determine where 
+	 * to send messages.
+	 * 
+	 * @param name A unique name by which the the MultiMap can be identified within the cluster. 
+	 *     See the cluster config file (e.g. cluster.xml in case of HazelcastClusterManager) for
+	 *     additional MultiMap config parameters.
+	 * @return
+	 */
+  public SubsMap getSubsMap(final String name) {
+    MultiMap<String, HazelcastServerID> map = instance.getMultiMap(name);
     return new HazelcastSubsMap(vertx, map);
   }
 
+  /**
+   * Because it implements a singleton, close() needs to be a noop
+   */
   public void close() {
-    Hazelcast.shutdownAll();
+ 		// hazelcast.getLifecycleService().shutdown();
+  }
+  
+  /**
+   * Provide access to the singleton Hazelcast instance, e.g. to properly close it.
+   * @return
+   */
+  public HazelcastInstance getInstance() {
+  	return instance;
   }
 }

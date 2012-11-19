@@ -904,4 +904,7 @@ public class VerticleManager implements ModuleReloader {
     deployments.put(deploymentName, deployment);
   }
 
+  public void stop() {
+  	redeployer.close();
+  }
 }

@@ -20,12 +20,14 @@ import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.jboss.netty.channel.socket.nio.NioWorkerPool;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timeout;
+import org.jboss.netty.util.Timer;
 import org.jboss.netty.util.TimerTask;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.file.impl.DefaultFileSystem;
+import org.vertx.java.core.file.impl.WindowsFileSystem;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.impl.DefaultHttpClient;
@@ -40,6 +42,7 @@ import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
+import org.vertx.java.core.utils.lang.Windows;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -53,7 +56,7 @@ public class DefaultVertx extends VertxInternal {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultVertx.class);
 
-  private final FileSystem fileSystem = new DefaultFileSystem(this);
+  private final FileSystem fileSystem = (Windows.isWindows() ? new WindowsFileSystem(this) : new DefaultFileSystem(this));
   private final EventBus eventBus;
   private final SharedData sharedData = new SharedData();
 
@@ -63,12 +66,12 @@ public class DefaultVertx extends VertxInternal {
   private OrderedExecutorFactory orderedFact;
   private NioWorkerPool workerPool;
   private ExecutorService acceptorPool;
-  private final Map<ServerID, DefaultHttpServer> sharedHttpServers = new HashMap<>();
-  private final Map<ServerID, DefaultNetServer> sharedNetServers = new HashMap<>();
+  private Map<ServerID, DefaultHttpServer> sharedHttpServers = new HashMap<>();
+  private Map<ServerID, DefaultNetServer> sharedNetServers = new HashMap<>();
 
   //For now we use a hashed wheel with it's own thread for timeouts - ideally the event loop would have
   //it's own hashed wheel
-  private final HashedWheelTimer timer = new HashedWheelTimer(new VertxThreadFactory("vert.x-timer-thread"), 1,
+  private HashedWheelTimer timer = new HashedWheelTimer(new VertxThreadFactory("vert.x-timer-thread"), 1,
       TimeUnit.MILLISECONDS, 8192);
   {
     timer.start();
@@ -98,6 +101,10 @@ public class DefaultVertx extends VertxInternal {
     this.backgroundPoolSize = Integer.getInteger("vertx.backgroundPoolSize", 20);
   }
 
+  public Timer getTimer() {
+  	return timer;
+  }
+  
   public NetServer createNetServer() {
     return new DefaultNetServer(this);
   }
@@ -248,10 +255,6 @@ public class DefaultVertx extends VertxInternal {
     return sharedNetServers;
   }
 
-  public HashedWheelTimer getTimer() {
-    return timer;
-  }
-
   private long setTimeout(final long delay, boolean periodic, final Handler<Long> handler) {
     final Context context = getOrAssignContext();
 
@@ -316,7 +319,70 @@ public class DefaultVertx extends VertxInternal {
     getBackgroundPool();
     return new WorkerContext(orderedFact.getExecutor());
   }
+  
+  @Override
+	public void stop() {
 
+		if (sharedHttpServers != null) {
+			for (HttpServer server : sharedHttpServers.values()) {
+				server.close();
+			}
+			sharedHttpServers = null;
+		}
+
+		if (sharedNetServers != null) {
+			for (NetServer server : sharedNetServers.values()) {
+				server.close();
+			}
+			sharedNetServers = null;
+		}
+
+		if (timer != null) {
+			timer.stop();
+			timer = null;
+		}
+
+		if (eventBus != null) {
+			eventBus.close(null);
+		}
+
+		if (backgroundPool != null) {
+			backgroundPool.shutdown();
+		}
+
+		if (acceptorPool != null) {
+			acceptorPool.shutdown();
+		}
+
+		try {
+			if (backgroundPool != null) {
+				backgroundPool.awaitTermination(20, TimeUnit.SECONDS);
+				backgroundPool = null;
+			}
+		} catch (InterruptedException ex) {
+			// ignore
+		}
+
+		try {
+			if (acceptorPool != null) {
+				acceptorPool.awaitTermination(20, TimeUnit.SECONDS);
+				acceptorPool = null;
+			}
+		} catch (InterruptedException ex) {
+			// ignore
+		}
+
+		// log.info("Release external resources from worker pool");
+		if (workerPool != null) {
+			workerPool.releaseExternalResources();
+			workerPool = null;
+		}
+		// log.info("Release external resources: done");
+
+		// TODO Context should not use Singleton but rather refer to Vertx
+		Context.setContext(null);
+	}
+  
   private static class InternalTimerHandler implements Runnable {
     final Handler<Long> handler;
     long timerID;
@@ -332,12 +398,11 @@ public class DefaultVertx extends VertxInternal {
 
   private static class TimeoutHolder {
     final Timeout timeout;
-    final Context context;
+    // final Context context;
 
     TimeoutHolder(Timeout timeout, Context context) {
       this.timeout = timeout;
-      this.context = context;
+      // this.context = context;
     }
   }
-
 }

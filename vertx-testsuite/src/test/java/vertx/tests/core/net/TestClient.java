@@ -204,6 +204,7 @@ public class TestClient extends TestClientBase {
     tu.azzert(server.getReceiveBufferSize() == null);
     tu.azzert(server.getSendBufferSize() == null);
     tu.azzert(server.getTrafficClass() == null);
+    server.close();
     tu.testComplete();
   }
 
@@ -294,8 +295,8 @@ public class TestClient extends TestClientBase {
     tu.azzert(server.setTrafficClass(trafficClass) == server);
     tu.azzert(server.getTrafficClass() == trafficClass);
 
+    server.close();
     tu.testComplete();
-
   }
 
   private Handler<NetSocket> getEchoHandler() {

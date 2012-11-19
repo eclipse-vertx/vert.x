@@ -1,6 +1,13 @@
 <hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-basic.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<properties>
+	    <property name="hazelcast.mancenter.enabled">false</property>
+	    <property name="hazelcast.memcache.enabled">false</property>
+	    <property name="hazelcast.rest.enabled">false</property>
+	    <property name="hazelcast.wait.seconds.before.join">0</property>
+	    <property name="hazelcast.logging.type">jdk</property>
+	</properties>
     <group>
         <name>dev</name>
         <password>dev-pass</password>
@@ -13,7 +20,7 @@
                 <multicast-port>54327</multicast-port>
             </multicast>
             <tcp-ip enabled="false">
-                <interface>192.168.1.16</interface>
+                <interface>192.168.1.28</interface>
             </tcp-ip>
             <aws enabled="false">
                 <access-key>my-access-key</access-key>

@@ -56,7 +56,7 @@ public class DefaultNetServer implements NetServer {
   private final VertxInternal vertx;
   private final Context ctx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
-  private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap();
+  private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<Channel, DefaultNetSocket>();
   private Handler<NetSocket> connectHandler;
   private ChannelGroup serverChannelGroup;
   private boolean listening;
