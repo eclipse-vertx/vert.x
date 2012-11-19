@@ -116,9 +116,9 @@ public class VerticleManager implements ModuleReloader {
       this.defaultRepo = DEFAULT_REPO_HOST;
     this.defaultRepoPort = 80;
     }
-  this.httpProxyHost = System.getProperty(HTTP_PROXY_HOST_PROP_NAME) != null ? System
+    this.httpProxyHost = System.getProperty(HTTP_PROXY_HOST_PROP_NAME) != null ? System
         .getProperty(HTTP_PROXY_HOST_PROP_NAME) : null;
-  this.httpProxyPort = System.getProperty(HTTP_PROXY_PORT_PROP_NAME) != null ? Integer.parseInt(System
+    this.httpProxyPort = System.getProperty(HTTP_PROXY_PORT_PROP_NAME) != null ? Integer.parseInt(System
         .getProperty(HTTP_PROXY_PORT_PROP_NAME)) : 80;
     VertxLocator.vertx = vertx;
     VertxLocator.container = new Container(this);
