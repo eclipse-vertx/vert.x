@@ -114,7 +114,7 @@ public class VerticleManager implements ModuleReloader {
       }
     } else {
       this.defaultRepo = DEFAULT_REPO_HOST;
-    this.defaultRepoPort = 80;
+      this.defaultRepoPort = 80;
     }
     this.httpProxyHost = System.getProperty(HTTP_PROXY_HOST_PROP_NAME) != null ? System
         .getProperty(HTTP_PROXY_HOST_PROP_NAME) : null;
