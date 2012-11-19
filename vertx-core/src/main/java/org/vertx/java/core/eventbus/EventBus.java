@@ -58,6 +58,13 @@ import org.vertx.java.core.json.JsonObject;
  */
 public interface EventBus {
 
+	/**
+	 * Close the EventBus and release all resources. 
+	 * 
+	 * @param doneHandler
+	 */
+  void close(Handler<Void> doneHandler);
+
   /**
    * Send a JSON object as a message
    * @param address The address to send it to
@@ -385,6 +392,5 @@ public interface EventBus {
    * @param handler The handler
    */
   void registerLocalHandler(String address, Handler<? extends Message> handler);
-
 }
 

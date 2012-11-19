@@ -63,13 +63,15 @@ public class DefaultEventBus implements EventBus {
   private final ConcurrentMap<String, Handlers> handlerMap = new ConcurrentHashMap<>();
   private final AtomicInteger seq = new AtomicInteger(0);
   private final String prefix = UUID.randomUUID().toString();
-
+  private final ClusterManager clusterMgr;
+  
   public DefaultEventBus(VertxInternal vertx) {
     // Just some dummy server ID
     this.vertx = vertx;
     this.serverID = new ServerID(DEFAULT_CLUSTER_PORT, "localhost");
     this.server = null;
     this.subs = null;
+    this.clusterMgr = null;
   }
 
   public DefaultEventBus(VertxInternal vertx, String hostname) {
@@ -79,11 +81,15 @@ public class DefaultEventBus implements EventBus {
   public DefaultEventBus(VertxInternal vertx, int port, String hostname) {
     this.vertx = vertx;
     this.serverID = new ServerID(port, hostname);
-    ClusterManager mgr = new HazelcastClusterManager(vertx);
-    subs = mgr.getSubsMap("subs");
+    this.clusterMgr = createClusterManager(vertx);
+    this.subs = clusterMgr.getSubsMap("subs");
     this.server = setServer();
   }
 
+  protected ClusterManager createClusterManager(final VertxInternal vertx) {
+    return new HazelcastClusterManager(vertx);
+  }
+  
   public void send(String address, JsonObject message, final Handler<Message<JsonObject>> replyHandler) {
     sendOrPub(new JsonObjectMessage(true, address, message), replyHandler);
   }
@@ -287,8 +293,15 @@ public class DefaultEventBus implements EventBus {
     unregisterHandler(address, handler, null);
   }
 
+  @Override
   public void close(Handler<Void> doneHandler) {
-    server.close(doneHandler);
+		if (clusterMgr != null) {
+			clusterMgr.close();
+		}
+		
+		if (server != null) {
+			server.close(doneHandler);
+		}
   }
 
   void sendReply(final ServerID dest, final BaseMessage message, final Handler replyHandler) {
@@ -584,7 +597,7 @@ public class DefaultEventBus implements EventBus {
       }
     });
   }
-
+	
   private static class HandlerHolder {
     final Context context;
     final Handler handler;
@@ -743,8 +756,6 @@ public class DefaultEventBus implements EventBus {
         unregisterHandler(entry.address, entry.handler);
       }
     }
-
   }
-
 }
 
