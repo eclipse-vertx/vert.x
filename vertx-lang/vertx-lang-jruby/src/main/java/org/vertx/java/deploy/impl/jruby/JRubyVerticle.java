@@ -81,6 +81,7 @@ public class JRubyVerticle extends Verticle {
       }
       throw e;
     }
+    container.clear();
   }
 
   private class NullWriter extends Writer {
