@@ -105,23 +105,7 @@ public class VerticleManager implements ModuleReloader {
   public VerticleManager(VertxInternal vertx, String defaultRepo) {
     this.vertx = vertx;
     if(defaultRepo != null){
-    	if(defaultRepo.contains(COLON)){
-    		this.defaultRepo = defaultRepo.substring(0, defaultRepo.indexOf(COLON));
-    		this.defaultRepoPort = Integer.parseInt( defaultRepo.substring(defaultRepo.indexOf(COLON)+1));
-    	} else {
-    		this.defaultRepo = defaultRepo;
-    		this.defaultRepoPort = 80;
-    	}
-    } else {
-    	this.defaultRepo = DEFAULT_REPO_HOST;
-		this.defaultRepoPort = 80;
-    }
-	this.httpProxyHost = System.getProperty(HTTP_PROXY_HOST_PROP_NAME) != null ? System
-				.getProperty(HTTP_PROXY_HOST_PROP_NAME) : null;
-	this.httpProxyPort = System.getProperty(HTTP_PROXY_PORT_PROP_NAME) != null ? Integer.parseInt(System
-				.getProperty(HTTP_PROXY_PORT_PROP_NAME)) : 80;
-    if(defaultRepo != null) {
-      if(defaultRepo.contains(COLON)) {
+      if(defaultRepo.contains(COLON)){
         this.defaultRepo = defaultRepo.substring(0, defaultRepo.indexOf(COLON));
         this.defaultRepoPort = Integer.parseInt( defaultRepo.substring(defaultRepo.indexOf(COLON)+1));
       } else {
@@ -130,12 +114,12 @@ public class VerticleManager implements ModuleReloader {
       }
     } else {
       this.defaultRepo = DEFAULT_REPO_HOST;
-      this.defaultRepoPort = 80;
+    this.defaultRepoPort = 80;
     }
-    this.httpProxyHost = System.getProperty(HTTP_PROXY_HOST_PROP_NAME) != null ? System
-                         .getProperty(HTTP_PROXY_HOST_PROP_NAME) : null;
-    this.httpProxyPort = System.getProperty(HTTP_PROXY_PORT_PROP_NAME) != null ? Integer.parseInt(System
-                         .getProperty(HTTP_PROXY_PORT_PROP_NAME)) : 80;
+  this.httpProxyHost = System.getProperty(HTTP_PROXY_HOST_PROP_NAME) != null ? System
+        .getProperty(HTTP_PROXY_HOST_PROP_NAME) : null;
+  this.httpProxyPort = System.getProperty(HTTP_PROXY_PORT_PROP_NAME) != null ? Integer.parseInt(System
+        .getProperty(HTTP_PROXY_PORT_PROP_NAME)) : 80;
     VertxLocator.vertx = vertx;
     VertxLocator.container = new Container(this);
     String modDir = System.getProperty("vertx.mods");
@@ -552,15 +536,6 @@ public class VerticleManager implements ModuleReloader {
     final CountDownLatch latch = new CountDownLatch(1);
     final AtomicReference<Buffer> mod = new AtomicReference<>();
     HttpClient client = vertx.createHttpClient();
-	if (httpProxyHost != null) {
-		client.setHost(httpProxyHost);
-		if(httpProxyPort != 80){
-			client.setPort(httpProxyPort);
-		}
-	} else {
-		client.setHost(defaultRepo);
-		client.setPort(defaultRepoPort);
-	}
     if (httpProxyHost != null) {
       client.setHost(httpProxyHost);
       if(httpProxyPort != 80) {
@@ -576,13 +551,6 @@ public class VerticleManager implements ModuleReloader {
         latch.countDown();
       }
     });
-	String uri = REPO_URI_ROOT + moduleName + "/mod.zip";
-	log.info("Attempting to install module " + moduleName + " from http://"
-				+ defaultRepo + ":" + defaultRepoPort + uri
-				+ " Using proxy host " + httpProxyHost + ":" + httpProxyPort);
-	if(httpProxyHost != null){
-		uri = new StringBuffer("http://").append(DEFAULT_REPO_HOST).append(uri).toString();
-    }
     String uri = REPO_URI_ROOT + moduleName + "/mod.zip";
     log.info("Attempting to install module " + moduleName + " from http://"
              + defaultRepo + ":" + defaultRepoPort + uri
@@ -612,14 +580,9 @@ public class VerticleManager implements ModuleReloader {
       }
     });
     if(httpProxyHost != null){
-       req.putHeader("host", httpProxyHost);
-    }  else{
-    	req.putHeader("host", defaultRepo);
-    }
-    if(httpProxyHost != null) {
-       req.putHeader("host", httpProxyHost);
-    }  else{
-    	req.putHeader("host", defaultRepo);
+      req.putHeader("host", httpProxyHost);
+    } else {
+      req.putHeader("host", defaultRepo);
     }
     req.putHeader("user-agent", "Vert.x Module Installer");
     req.end();
