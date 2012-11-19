@@ -18,7 +18,7 @@ Copy the following into a text editor and save it as `server.py`
     import vertx
     from core.streams import Pump
 
-    server = verx.create_net_server()
+    server = vertx.create_net_server()
     @server.connect_handler
     def connect_handler(socket):
         Pump(socket, server).start()
@@ -51,21 +51,23 @@ Servers, clients and event bus handlers will be automatically closed when the ve
 
 ## Getting Configuration in a Verticle
 
-If JSON configuration has been passed when deploying a verticle from either the command line using `vertx run` or `vertx deploy` and specifying a configuration file, or when deploying programmatically, that configuration is available to the verticle using the `Vertx.config` method. For example:
+If JSON configuration has been passed when deploying a verticle from either the command line using `vertx run` and specifying a configuration file with `-conf <config_file>`, or when deploying programmatically, that configuration is available to the verticle using the `vertx.config` method. For example:
 
-	from vertx import Vertx
+	import vertx
 	
-    config = Vertx.config;
+    config = vertx.config()
 
     # Do something with config
     
-    print "number of wibbles is %s"%config.wibble_number
+    print "number of wibbles is %s" % str(config.wibble_number)
 
 The config returned is a Python dict. You can use this object to configure the verticle. Allowing verticles to be configured in a consistent way like this allows configuration to be easily passed to them irrespective of the language.
 
 ## Logging from a Verticle
 
-Each verticle is given its own logger. To get a reference to it invoke the `Vertx.logger` method:
+Each verticle is given its own logger. To get a reference to it invoke the `vertx.get_logger` method:
+
+	import vertx
 
     var logger = vertx.get_logger()
 
@@ -102,7 +104,7 @@ To deploy a single instance of a verticle :
 
 You should use `deploy_module` to deploy a module, for example:
 
-    container.deploy_module('vertx.mailer-v1.0', config)
+    vertx.deploy_module('vertx.mailer-v1.0', config)
 
 Would deploy an instance of the `vertx.mailer` module with the specified configuration. Please see the modules manual
  for more information about modules.
@@ -111,10 +113,10 @@ Would deploy an instance of the `vertx.mailer` module with the specified configu
 
 JSON configuration can be passed to a verticle that is deployed programmatically. Inside the deployed verticle the configuration is accessed with the `vertx.config` function. For example:
 
-    config = { name: 'foo', age: 234 }
-    Vertx.deploy_verticle('my_verticle.py', config)
+    config = { 'name': 'foo', 'age': 234 }
+    vertx.deploy_verticle('my_verticle.py', config)
 
-Then, in `my_verticle.py` you can access the config via `Vertx.config` as previously explained.
+Then, in `my_verticle.py` you can access the config via `vertx.config` method as previously explained.
 
 ## Using a Verticle to co-ordinate loading of an application
 
@@ -126,19 +128,19 @@ For example, you could create a verticle `app.py` as follows:
 	
     # Application config
     appConfig = {
-        verticle1_config : {
+        'verticle1_config' : {
             # Config for verticle1
         },
-        verticle2_config : {
+        'verticle2_config' : {
             # Config for verticle2
         },
-        verticle3_config : {
+        'verticle3_config' : {
             # Config for verticle3
         },
-        verticle4_config : {
+        'verticle4_config' : {
             # Config for verticle4
         },
-        verticle5_config : {
+        'verticle5_config' : {
             # Config for verticle5
         }
     }
@@ -156,10 +158,6 @@ Then you can start your entire application by simply running:
 
     vertx run app.py
 
-or
-
-    vertx deploy app.py
-
 ## Specifying number of instances
 
 By default, when you deploy a verticle only one instance of the verticle is deployed. If you want more than one instance to be deployed, e.g. so you can scale over your cores better, you can specify the number of instances in the third parameter to `deploy_verticle`:
@@ -174,9 +172,9 @@ The above examples would both deploy 10 instances.
 
 ## Getting Notified when Deployment is complete
 
-The actual verticle deployment is asynchronous and might not complete until some time after the call to `deploy_verticle` has returned. If you want to be notified when the verticle has completed being deployed, you can pass a block to `deploy_verticle`, which will be called when it's complete:
+The actual verticle deployment is asynchronous and might not complete until some time after the call to `deploy_verticle` has returned. If you want to be notified when the verticle has completed being deployed, you can pass an handler function to `deploy_verticle`, which will be called when it's complete:
 
-	def deploy_handler():
+	def deploy_handler(dip):
 		print "It's been deployed!"
     vertx.deploy_verticle('my_verticle.py', None, 10, deploy_handler)
 
@@ -186,12 +184,11 @@ The `vertx.deploy_verticle` method deploys standard (non worker) verticles. If y
 
 ## Undeploying a Verticle
 
-Any verticles that you deploy programmatically from within a verticle and all of their children are automatically undeployed when the parent verticle is undeployed, so in most cases you will not need to undeploy a verticle manually, however if you do want to do this, it can be done by calling the function `vertx.undeploy_verticle` passing in the deployment id that was returned from the call to `vertx.deploy_verticle`
+Any verticles that you deploy programmatically from within a verticle and all of their children are automatically undeployed when the parent verticle is undeployed, so in most cases you will not need to undeploy a verticle manually, however if you do want to do this, it can be done by calling the function `vertx.undeploy_verticle` passing in the deployment id that was sent to the deployment handler function you passed to `vertx.deploy_verticle`
 	
-	class Deployment: pass
-	def deploy_handler():
-		vertx.undeployVerticle(Deployment.id)
-    Deployment.id = vertx.deploy_verticle('my_verticle.py', deploy_handler)
+	def deploy_handler(dip):
+		vertx.undeploy_verticle(dip)
+    vertx.deploy_verticle('my_verticle.py', deploy_handler)
 
 # The Event Bus
 
@@ -376,13 +373,13 @@ To use a shared hash to share data between verticles first get a reference to th
 
 	from core.shared_data import SharedData
 
-    hash = SharedData.getHash('demo.myhash')
+    hash = SharedData.get_hash('demo.myhash')
 
     hash['some-key'] = 'some-value'
 
 And then, in a different verticle:
 
-    hash = SharedData.getHash('demo.myhash')
+    hash = SharedData.get_hash('demo.myhash')
 
     print "value of some-key is %s"% hash['some-key']
 
@@ -394,13 +391,13 @@ To use a shared set to share data between verticles first get a reference to the
 
     from core.shared_data import SharedData
     
-    set = SharedData.getSet('demo.myset')
+    set = SharedData.get_set('demo.myset')
 
     set.add('some-value');
 
 And then, in a different verticle:
 
-    set = SharedData.getSet('demo.myset')
+    set = SharedData.get_set('demo.myset')
 
     # Do something with the set
 
@@ -580,13 +577,14 @@ Instead you use vert.x timers. Timers can be *one-shot* or *periodic*. We'll dis
 
 A one shot timer calls an event handler after a certain delay, expressed in milliseconds.
 
-To set a timer to fire once you use the `Vertx.set_timer` function passing in the delay and specifying a handler block which will be called when after the delay:
+To set a timer to fire once you use the `vertx.set_timer` function passing in the delay and specifying a handler block which will be called when after the delay:
 
 	import vertx
 	
-	def handler():
+	def handler(tid):
 		print 'And one second later this is printed'
-    vertx.set_timer(1000, handler)
+
+    tid = vertx.set_timer(1000, handler)
 
     print 'First this is printed'
 
@@ -596,42 +594,44 @@ You can also set a timer to fire periodically by using the `set_periodic` functi
 
 	import vertx
     
-    def handler():
+    def handler(tid):
     	print 'And every second this is printed'
     
-    id = vertx.set_timer(1000, handler)
+    tid = vertx.set_periodic(1000, handler)
 
     print 'First this is printed'
 
 ## Cancelling timers
 
-To cancel a periodic timer, call the `cancel_timer` function specifying the timer id. For example:
+To cancel a timer, call the `cancel_timer` function specifying the timer id. For example:
 
     import vertx
     
-    def handler():
+    def handler(tid):
     	# This will never be called
     	pass
     	
-    id = vertx.set_periodic(1000, handler)
+    tid = vertx.set_periodic(1000, handler)
 
     # And immediately cancel it
 
-    vertx.cancel_timer(id)
+    vertx.cancel_timer(tid)
 
 Or you can cancel it from inside the event handler. The following example cancels the timer after it has fired 10 times.
 
-	import vertx
-	
-    count = 0
+    import vertx
 
-	def handler():
-        print "In event handler %s"% count
-        count += 1
-        if count == 10:
-	        vertx.cancelTimer(id) 
-	
-    vertx.set_periodic(1000, handler)
+    class Counter:
+        pass
+    Counter.count = 0
+
+    def handler(tid):
+        print "In event handler : %d" % Counter.count
+        Counter.count += 1
+        if Counter.count == 10:
+            vertx.cancel_timer(tid) 
+
+vertx.set_periodic(500, handler)
 
 
 # Writing TCP Servers and Clients
@@ -908,7 +908,7 @@ You can set an exception handler on the `NetClient`. This will catch any excepti
     	print 'Cannot connect since the host does not exist!'
 
 	def connect_handler(sock):
-		print 'this won't get called'
+		print "this won't get called"
 		
     client.connect(4242, 'host-that-doesnt-exist', connect_handler)
 
@@ -1839,22 +1839,22 @@ Vert.x lets you route HTTP requests to different handlers based on pattern match
 
 This is particularly useful when developing REST-style web applications.
 
-To do this you simply create an instance of `Vertx::RouteMatcher` and use it as handler in an HTTP server. See the chapter on HTTP servers for more information on setting HTTP handlers. Here's an example:
+To do this you simply create an instance of `core.http.RouteMatcher` and use it as handler in an HTTP server. See the chapter on HTTP servers for more information on setting HTTP handlers. Here's an example:
 
 	import vertx
-	from core.http import RouterMatcher
+	from core.http import RouteMatcher
 
-    server = vert.create_http_server()
+    server = vertx.create_http_server()
 
     route_matcher = RouteMatcher()
 
-    server.request_Handler(route_matcher).listen(8080, 'localhost')
+    server.request_handler(route_matcher).listen(8080, 'localhost')
 
 ## Specifying matches.
 
 You can then add different matches to the route matcher. For example, to send all GET requests with path `/animals/dogs` to one handler and all GET requests with path `/animals/cats` to another handler you would do:
 
-    server = vert.create_http_server()
+    server = vertx.create_http_server()
 
     route_matcher = RouteMatcher()
 
@@ -1880,7 +1880,7 @@ A request is sent to at most one handler.
 
 If you want to extract parameters from the path, you can do this too, by using the `:` (colon) character to denote the name of a parameter. For example:
 
-    server = vert.create_http_server()
+    server = vertx.create_http_server()
 
     route_matcher = RouteMatcher()
 
@@ -1911,7 +1911,7 @@ There's also an `all_re` method which applies the match to any HTTP request meth
 
 For example:
 
-    server = vert.create_http_server()
+    server = vertx.create_http_server()
 
     route_matcher = RouteMatcher()
     
@@ -1962,7 +1962,7 @@ For example, to echo all data received on a WebSocket:
 	import vertx
 	from core.streams import Pump
 
-    server = vert.create_http_server()
+    server = vertx.create_http_server()
 
     @server.websocket_handler 
     def websocker_handler(websocket):
@@ -1986,7 +1986,7 @@ To check the path, you can query the `path` property of the `websocket`. You can
     import vertx
 	from core.streams import Pump
 
-    server = vert.create_http_server()
+    server = vertx.create_http_server()
 
     @server.websocket_handler 
     def websocker_handler(websocket):
