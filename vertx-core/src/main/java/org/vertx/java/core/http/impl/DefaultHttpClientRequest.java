@@ -277,7 +277,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
             connect();
           }
         }
-      }, context);
+      }, exceptionHandler, context);
 
       connecting = true;
     }
