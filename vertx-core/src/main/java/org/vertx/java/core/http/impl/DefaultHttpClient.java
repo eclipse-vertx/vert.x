@@ -333,6 +333,13 @@ public class DefaultHttpClient implements HttpClient {
     }
   }
 
+  /**
+   * @return the vertx, for use in package related classes only.
+   */
+  VertxInternal getVertx() {
+    return vertx;
+  }
+
   private void internalConnect(final Handler<ClientConnection> connectHandler, final Handler<Exception> connectErrorHandler) {
 
     if (bootstrap == null) {
