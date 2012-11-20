@@ -540,6 +540,8 @@ public class VerticleManager implements ModuleReloader {
       client.setHost(httpProxyHost);
       if(httpProxyPort != 80) {
         client.setPort(httpProxyPort);
+      } else {
+        client.setPort(80);
       }
     } else {
       client.setHost(defaultRepo);
