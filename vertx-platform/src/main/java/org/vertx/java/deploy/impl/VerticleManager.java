@@ -91,35 +91,34 @@ public class VerticleManager implements ModuleReloader {
   private final File modRoot;
   private final CountDownLatch stopLatch = new CountDownLatch(1);
   private Map<String, String> factoryNames = new HashMap<>();
-  private final String defaultRepo;
-  private final String httpProxyHost;
-  private final int httpProxyPort;
-  private final int defaultRepoPort;
-  
+  private final String repoHost;
+  private final int repoPort;
+  private final String proxyHost;
+  private final int proxyPort;
+
   private final Redeployer redeployer;
 
   public VerticleManager(VertxInternal vertx) {
     this(vertx, null);
   }
 
-  public VerticleManager(VertxInternal vertx, String defaultRepo) {
+  public VerticleManager(VertxInternal vertx, String repo) {
     this.vertx = vertx;
-    if(defaultRepo != null){
-      if(defaultRepo.contains(COLON)){
-        this.defaultRepo = defaultRepo.substring(0, defaultRepo.indexOf(COLON));
-        this.defaultRepoPort = Integer.parseInt( defaultRepo.substring(defaultRepo.indexOf(COLON)+1));
+    if (repo != null) {
+      if (repo.contains(COLON)) {
+        this.repoHost = repo.substring(0, repo.indexOf(COLON));
+        this.repoPort = Integer.parseInt( repo.substring(repo.indexOf(COLON)+1));
       } else {
-        this.defaultRepo = defaultRepo;
-        this.defaultRepoPort = 80;
+        this.repoHost = repo;
+        this.repoPort = 80;
       }
     } else {
-      this.defaultRepo = DEFAULT_REPO_HOST;
-      this.defaultRepoPort = 80;
+      this.repoHost = DEFAULT_REPO_HOST;
+      this.repoPort = 80;
     }
-    this.httpProxyHost = System.getProperty(HTTP_PROXY_HOST_PROP_NAME) != null ? System
-        .getProperty(HTTP_PROXY_HOST_PROP_NAME) : null;
-    this.httpProxyPort = System.getProperty(HTTP_PROXY_PORT_PROP_NAME) != null ? Integer.parseInt(System
-        .getProperty(HTTP_PROXY_PORT_PROP_NAME)) : 80;
+    this.proxyHost = System.getProperty(HTTP_PROXY_HOST_PROP_NAME);
+    String tmpPort = System.getProperty(HTTP_PROXY_PORT_PROP_NAME);
+    this.proxyPort = tmpPort != null ? Integer.parseInt(tmpPort) : 80;
     VertxLocator.vertx = vertx;
     VertxLocator.container = new Container(this);
     String modDir = System.getProperty("vertx.mods");
@@ -536,16 +535,16 @@ public class VerticleManager implements ModuleReloader {
     final CountDownLatch latch = new CountDownLatch(1);
     final AtomicReference<Buffer> mod = new AtomicReference<>();
     HttpClient client = vertx.createHttpClient();
-    if (httpProxyHost != null) {
-      client.setHost(httpProxyHost);
-      if(httpProxyPort != 80) {
-        client.setPort(httpProxyPort);
+    if (proxyHost != null) {
+      client.setHost(proxyHost);
+      if (proxyPort != 80) {
+        client.setPort(proxyPort);
       } else {
         client.setPort(80);
       }
     } else {
-      client.setHost(defaultRepo);
-      client.setPort(defaultRepoPort);
+      client.setHost(repoHost);
+      client.setPort(repoPort);
     }
     client.exceptionHandler(new Handler<Exception>() {
       public void handle(Exception e) {
@@ -554,10 +553,13 @@ public class VerticleManager implements ModuleReloader {
       }
     });
     String uri = REPO_URI_ROOT + moduleName + "/mod.zip";
-    log.info("Attempting to install module " + moduleName + " from http://"
-             + defaultRepo + ":" + defaultRepoPort + uri
-             + " Using proxy host " + httpProxyHost + ":" + httpProxyPort);
-    if(httpProxyHost != null) {
+    String msg = "Attempting to install module " + moduleName + " from http://"
+        + repoHost + ":" + repoPort + uri;
+    if (proxyHost != null) {
+      msg += " Using proxy host " + proxyHost + ":" + proxyPort;
+    }
+    log.info(msg);
+    if (proxyHost != null) {
       uri = new StringBuffer("http://").append(DEFAULT_REPO_HOST).append(uri).toString();
     }
     HttpClientRequest req = client.get(uri, new Handler<HttpClientResponse>() {
@@ -572,19 +574,17 @@ public class VerticleManager implements ModuleReloader {
           });
         } else if (resp.statusCode == 404) {
           log.error("Can't find module " + moduleName + " in repository");
-          //doneHandler.handle(false);
           latch.countDown();
         } else {
           log.error("Failed to download module: " + resp.statusCode);
-          //doneHandler.handle(false);
           latch.countDown();
         }
       }
     });
-    if(httpProxyHost != null){
-      req.putHeader("host", httpProxyHost);
+    if(proxyHost != null){
+      req.putHeader("host", proxyHost);
     } else {
-      req.putHeader("host", defaultRepo);
+      req.putHeader("host", repoHost);
     }
     req.putHeader("user-agent", "Vert.x Module Installer");
     req.end();
