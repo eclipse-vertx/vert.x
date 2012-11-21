@@ -32,8 +32,10 @@ import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -630,6 +632,99 @@ public class HttpTestClient extends TestClientBase {
   public void testRequestChaining() {
     // TODO
   }
+
+  public void testRequestTimesoutWhenIndicatedPeriodExpiresWithoutAResponseFromRemoteServer() {
+    startServer(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+        // Don't answer the request, causing a timeout
+      }
+    });
+
+    final HttpClientRequest req = getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
+      public void handle(HttpClientResponse resp) {
+        tu.azzert(false, "End should not be called because the request should timeout");
+      }
+    });
+    req.exceptionHandler( new Handler<Exception>() {
+      @Override
+      public void handle(Exception event) {
+        tu.azzert(event instanceof TimeoutException, "Expected to end with timeout exception but ended with other exception: " + event);
+        tu.checkContext();
+        tu.testComplete();
+      }
+    });
+    req.setTimeout(1000);
+    req.end();
+  }
+
+  public void testRequestTimeoutCanceledWhenRequestHasAnOtherError() {
+
+    final AtomicReference<Exception> exception = new AtomicReference<>();
+    // There is no server running, should fail to connect
+    final HttpClientRequest req = getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
+      public void handle(HttpClientResponse resp) {
+        tu.azzert(false, "End should not be called because the request should fail to connect");
+      }
+    });
+    req.exceptionHandler( new Handler<Exception>() {
+      @Override
+      public void handle(Exception event) {
+        exception.set(event);
+      }
+    });
+    req.setTimeout(500);
+    req.end();
+
+    getVertx().setTimer(1000, new Handler<Long>() {
+      @Override
+      public void handle(Long event) {
+        tu.azzert(exception.get() != null, "Expected an exception to be set");
+        tu.azzert(!(exception.get() instanceof TimeoutException), "Expected to end with timeout exception but ended with other exception: " + exception.get());
+        tu.checkContext();
+        tu.testComplete();
+      }
+    });
+  }
+
+  public void testRequestTimeoutCanceledWhenRequestEndsNormally() {
+
+    startServer(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+        req.response.statusCode = 200;
+        req.response.end("OK");
+      }
+    });
+
+
+    final AtomicReference<Exception> exception = new AtomicReference<>();
+
+    // There is no server running, should fail to connect
+    final HttpClientRequest req = getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
+      public void handle(HttpClientResponse resp) {
+        // Don't do anything
+      }
+    });
+    req.exceptionHandler( new Handler<Exception>() {
+      @Override
+      public void handle(Exception event) {
+        exception.set(event);
+      }
+    });
+    req.setTimeout(500);
+    req.end();
+
+    getVertx().setTimer(1000, new Handler<Long>() {
+      @Override
+      public void handle(Long event) {
+        tu.azzert(exception.get() == null, "Did not expect any exception");
+        tu.checkContext();
+        tu.testComplete();
+      }
+    });
+  }
+
+
+
 
   public void testUseRequestAfterComplete() {
 
