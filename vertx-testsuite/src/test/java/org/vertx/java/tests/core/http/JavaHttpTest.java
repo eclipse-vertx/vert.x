@@ -493,6 +493,10 @@ public class JavaHttpTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void testRequestNotReceivedIfTimedout() {
+    startTest(getMethodName());
+  }
+
   @Test
   // Client trusts all server certs
   public void testTLSClientTrustAll() throws Exception {
