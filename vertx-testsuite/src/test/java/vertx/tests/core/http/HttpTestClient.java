@@ -723,6 +723,41 @@ public class HttpTestClient extends TestClientBase {
     });
   }
 
+  public void testRequestNotReceivedIfTimedout() {
+    startServer(new Handler<HttpServerRequest>() {
+      public void handle(final HttpServerRequest req) {
+        // Answer the request after a delay
+        vertx.setTimer(500, new Handler<Long>() {
+          public void handle(Long event) {
+            req.response.statusCode = 200;
+            req.response.end("OK");
+          }
+        });
+      }
+    });
+
+    final HttpClientRequest req = getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
+      public void handle(HttpClientResponse resp) {
+        tu.azzert(false, "Response should not be handled");
+      }
+    });
+    req.exceptionHandler( new Handler<Exception>() {
+      @Override
+      public void handle(Exception event) {
+        tu.azzert(event instanceof TimeoutException, "Expected to end with timeout exception but ended with other exception: " + event);
+        //Delay a bit to let any response come back
+        vertx.setTimer(500, new Handler<Long>() {
+          public void handle(Long event) {
+            tu.checkContext();
+            tu.testComplete();
+          }
+        });
+      }
+    });
+    req.setTimeout(100);
+    req.end();
+  }
+
 
 
 
