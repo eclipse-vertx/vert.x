@@ -42,27 +42,6 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
   private static final Logger log = LoggerFactory.getLogger(HttpClient.class);
 
-  private final DefaultHttpClient client;
-  private final HttpRequest request;
-  private final Handler<HttpClientResponse> respHandler;
-  private Handler<Void> continueHandler;
-  private final Context context;
-  private final boolean raw;
-  private boolean chunked;
-  private ClientConnection conn;
-  private Handler<Void> drainHandler;
-  private Handler<Exception> exceptionHandler;
-  private boolean headWritten;
-  private boolean completed;
-  private LinkedList<PendingChunk> pendingChunks;
-  private int pendingMaxSize = -1;
-  private boolean connecting;
-  private boolean writeHead;
-  private long written;
-  private long currentTimeoutTimerId = -1;
-  private Map<String, Object> headers;
-  private boolean exceptionOccurred;
-
   DefaultHttpClientRequest(final DefaultHttpClient client, final String method, final String uri,
                            final Handler<HttpClientResponse> respHandler,
                            final Context context) {
@@ -93,6 +72,27 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     this.raw = raw;
 
   }
+
+  private final DefaultHttpClient client;
+  private final HttpRequest request;
+  private final Handler<HttpClientResponse> respHandler;
+  private Handler<Void> continueHandler;
+  private final Context context;
+  private final boolean raw;
+
+  private boolean chunked;
+  private ClientConnection conn;
+  private Handler<Void> drainHandler;
+  private Handler<Exception> exceptionHandler;
+  private boolean headWritten;
+  private boolean completed;
+  private LinkedList<PendingChunk> pendingChunks;
+  private int pendingMaxSize = -1;
+  private boolean connecting;
+  private boolean writeHead;
+  private long written;
+  private long currentTimeoutTimerId = -1;
+  private Map<String, Object> headers;
 
   public DefaultHttpClientRequest setChunked(boolean chunked) {
     check();
@@ -257,6 +257,8 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
       drainHandler.handle(null);
     }
   }
+
+  private boolean exceptionOccurred;
 
   void handleException(Exception e) {
     exceptionOccurred = true;
