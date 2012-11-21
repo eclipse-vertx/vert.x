@@ -481,6 +481,18 @@ public class JavaHttpTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void testRequestTimesoutWhenIndicatedPeriodExpiresWithoutAResponseFromRemoteServer() {
+    startTest(getMethodName());
+  }
+
+  public void testRequestTimeoutCanceledWhenRequestHasAnOtherError() {
+    startTest(getMethodName());
+  }
+
+  public void testRequestTimeoutCanceledWhenRequestEndsNormally() {
+    startTest(getMethodName());
+  }
+
   @Test
   // Client trusts all server certs
   public void testTLSClientTrustAll() throws Exception {
