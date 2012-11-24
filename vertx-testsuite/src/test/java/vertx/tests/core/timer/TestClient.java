@@ -83,23 +83,22 @@ public class TestClient extends TestClientBase {
     }));
   }
 
-  /*
-  Test the timers fire with approximately the correct delay
+  /**
+   * Test the timers fire with approximately the correct delay
    */
   public void testTimings() throws Exception {
-    final long start = System.nanoTime();
+    final long start = System.currentTimeMillis();
     final long delay = 500;
     vertx.setTimer(delay, new Handler<Long>() {
       public void handle(Long timerID) {
         tu.checkContext();
-        long dur = (System.nanoTime() - start) / 1000000;
+        long dur = System.currentTimeMillis() - start;
         tu.azzert(dur >= delay);
-        tu.azzert(dur < delay * 1.5); // 50% margin of error
+        long maxDelay = (long)(delay * 1.5);
+        tu.azzert(dur < maxDelay, "Timer accuracy: " + dur + " vs " + maxDelay); // 50% margin of error
         vertx.cancelTimer(timerID);
         tu.testComplete();
       }
     });
   }
-
-
 }
