@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -672,14 +671,15 @@ public class HttpTestClient extends TestClientBase {
         exception.set(event);
       }
     });
-    req.setTimeout(500);
+    req.setTimeout(800);
     req.end();
 
-    getVertx().setTimer(1000, new Handler<Long>() {
+    getVertx().setTimer(1500, new Handler<Long>() {
       @Override
       public void handle(Long event) {
         tu.azzert(exception.get() != null, "Expected an exception to be set");
-        tu.azzert(!(exception.get() instanceof TimeoutException), "Expected to end with timeout exception but ended with other exception: " + exception.get());
+        tu.azzert(!(exception.get() instanceof TimeoutException), 
+        		"Expected to not end with timeout exception, but did: " + exception.get());
         tu.checkContext();
         tu.testComplete();
       }
@@ -758,12 +758,7 @@ public class HttpTestClient extends TestClientBase {
     req.end();
   }
 
-
-
-
   public void testUseRequestAfterComplete() {
-
-    final Buffer body = TestUtils.generateRandomBuffer(1000);
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
@@ -785,7 +780,6 @@ public class HttpTestClient extends TestClientBase {
       }
     };
     Buffer buff = new Buffer();
-    Map<String, String> map = new HashMap<>();
 
     try {
       req.end();
@@ -1066,7 +1060,6 @@ public class HttpTestClient extends TestClientBase {
       }
       req.end();
     }
-
   }
 
   private void writeChunk(final int remaining, final int chunkSize, final HttpClientRequest req, final Buffer totBuffer) {
@@ -1187,9 +1180,7 @@ public class HttpTestClient extends TestClientBase {
     }
   }
 
-
   public void testRequestWriteBuffer() {
-
     final Buffer body = TestUtils.generateRandomBuffer(1000);
 
     startServer(new Handler<HttpServerRequest>() {
@@ -1368,8 +1359,6 @@ public class HttpTestClient extends TestClientBase {
 
   public void testUseResponseAfterComplete() {
 
-    final Buffer body = TestUtils.generateRandomBuffer(1000);
-
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkContext();
@@ -1379,11 +1368,9 @@ public class HttpTestClient extends TestClientBase {
 
           }
         };
+        
         Buffer buff = new Buffer();
-        Map<String, String> map = new HashMap<>();
-
         HttpServerResponse resp = req.response;
-
         resp.end();
 
         try {
@@ -1499,7 +1486,6 @@ public class HttpTestClient extends TestClientBase {
         }
 
         tu.testComplete();
-
       }
     });
 
@@ -1510,8 +1496,6 @@ public class HttpTestClient extends TestClientBase {
     });
 
     req.end();
-
-
   }
 
   public void testResponseBodyBufferAtEnd() {
@@ -1539,7 +1523,6 @@ public class HttpTestClient extends TestClientBase {
 
     req.end();
   }
-
 
   public void testResponseBodyStringDefaultEncodingAtEnd() {
     testResponseBodyStringAtEnd(null);
@@ -1787,9 +1770,7 @@ public class HttpTestClient extends TestClientBase {
       }
     });
     req.end();
-
   }
-
 
   public void testResponseWriteBuffer() {
 
