@@ -334,9 +334,9 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
           + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
     }
     Object msg = chunked ? new DefaultHttpChunk(chunk) : chunk;
-    ChannelFuture writeFuture = conn.write(msg);
+    channelFuture = conn.write(msg);
     if (doneHandler != null) {
-      conn.addFuture(doneHandler, writeFuture);
+      conn.addFuture(doneHandler, channelFuture);
     }
     return this;
   }
