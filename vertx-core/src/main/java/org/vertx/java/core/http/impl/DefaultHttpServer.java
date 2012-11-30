@@ -549,7 +549,6 @@ public class DefaultHttpServer implements HttpServer {
         throws Exception {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final ServerConnection conn = connectionMap.get(ch);
-      e.getCause().printStackTrace();
       final Throwable t = e.getCause();
       ch.close();
       if (conn != null && t instanceof Exception) {
