@@ -154,6 +154,15 @@ public class VerticleManager implements ModuleReloader {
         }
       }
     }
+
+    // programmatically override mappings
+    Set<String> keySet = System.getProperties().stringPropertyNames();
+    for (String key : keySet) {
+      if (key.startsWith("vertx.lang.")) {
+        String propName = key.replaceFirst("vertx\\.lang\\.", "");
+        factoryNames.put(propName, System.getProperty(key));
+      }
+    }
   }
 
   public void block() {
