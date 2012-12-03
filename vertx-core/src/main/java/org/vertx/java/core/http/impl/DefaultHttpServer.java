@@ -40,6 +40,7 @@ import org.vertx.java.core.http.impl.ws.hybi00.Handshake00;
 import org.vertx.java.core.http.impl.ws.hybi08.Handshake08;
 import org.vertx.java.core.http.impl.ws.hybi17.HandshakeRFC6455;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.EventLoopContext;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -50,7 +51,6 @@ import java.net.*;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Values.WEBSOCKET;
@@ -69,7 +69,7 @@ public class DefaultHttpServer implements HttpServer {
 
   private final VertxInternal vertx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
-  private final Context ctx;
+  private final EventLoopContext ctx;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
   private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
@@ -85,10 +85,10 @@ public class DefaultHttpServer implements HttpServer {
 
   public DefaultHttpServer(VertxInternal vertx) {
     this.vertx = vertx;
-    ctx = vertx.getOrAssignContext();
     if (vertx.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
+    ctx = (EventLoopContext)vertx.getOrAssignContext();
     ctx.putCloseHook(this, new Runnable() {
       public void run() {
         close();
@@ -145,7 +145,7 @@ public class DefaultHttpServer implements HttpServer {
         ServerBootstrap bootstrap = new ServerBootstrap(factory);
         bootstrap.setOptions(tcpHelper.generateConnectionOptions(true));
 
-        tcpHelper.checkSSL();
+        tcpHelper.checkSSL(vertx);
 
         bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
           public ChannelPipeline getPipeline() {
@@ -195,9 +195,11 @@ public class DefaultHttpServer implements HttpServer {
         actualServer = shared;
       }
       if (requestHandler != null) {
+        // Share the event loop thread to also serve the HttpServer's network traffic.
         actualServer.reqHandlerManager.addHandler(requestHandler, ctx);
       }
       if (wsHandler != null) {
+        // Share the event loop thread to also serve the HttpServer's network traffic.
         actualServer.wsHandlerManager.addHandler(wsHandler, ctx);
       }
     }
@@ -379,7 +381,7 @@ public class DefaultHttpServer implements HttpServer {
     // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
     // which can cause context id for the thread to change!
 
-    Context.setContext(closeContext);
+    vertx.setContext(closeContext);
 
     ChannelGroupFuture fut = serverChannelGroup.close();
     if (done != null) {
@@ -398,8 +400,6 @@ public class DefaultHttpServer implements HttpServer {
       }
     });
   }
-
-  private static final AtomicInteger count = new AtomicInteger(0);
 
   public class ServerHandler extends SimpleChannelUpstreamHandler {
 

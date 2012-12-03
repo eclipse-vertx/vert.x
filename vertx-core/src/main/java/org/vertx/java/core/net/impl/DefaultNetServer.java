@@ -32,6 +32,7 @@ import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.EventLoopContext;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -54,7 +55,7 @@ public class DefaultNetServer implements NetServer {
   private static final Logger log = LoggerFactory.getLogger(DefaultNetServer.class);
 
   private final VertxInternal vertx;
-  private final Context ctx;
+  private final EventLoopContext ctx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<Channel, DefaultNetSocket>();
   private Handler<NetSocket> connectHandler;
@@ -67,10 +68,10 @@ public class DefaultNetServer implements NetServer {
 
   public DefaultNetServer(VertxInternal vertx) {
     this.vertx = vertx;
-    ctx = vertx.getOrAssignContext();
     if (vertx.isWorker()) {
-      throw new IllegalStateException("Cannot be used in a worker application");
+      throw new IllegalStateException("Cannot be used in a worker application.");
     }
+    ctx = (EventLoopContext) vertx.getOrAssignContext();
     ctx.putCloseHook(this, new Runnable() {
       public void run() {
         close();
@@ -110,7 +111,7 @@ public class DefaultNetServer implements NetServer {
                 availableWorkers);
         ServerBootstrap bootstrap = new ServerBootstrap(factory);
 
-        tcpHelper.checkSSL();
+        tcpHelper.checkSSL(vertx);
 
         bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
           public ChannelPipeline getPipeline() {
@@ -157,6 +158,7 @@ public class DefaultNetServer implements NetServer {
         checkConfigs(actualServer, this);
         actualServer = shared;
       }
+      // Share the event loop thread to also serve the NetServer's network traffic.
       actualServer.handlerManager.addHandler(connectHandler, ctx);
     }
     return this;
@@ -206,7 +208,7 @@ public class DefaultNetServer implements NetServer {
     // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
     // which can cause context id for the thread to change!
 
-    Context.setContext(closeContext);
+    vertx.setContext(closeContext);
 
     ChannelGroupFuture fut = serverChannelGroup.close();
     if (done != null) {
@@ -369,8 +371,7 @@ public class DefaultNetServer implements NetServer {
       NioWorker worker = ch.getWorker();
 
       //Choose a handler
-      final HandlerHolder handler = handlerManager.chooseHandler(worker);
-
+      final HandlerHolder<NetSocket> handler = handlerManager.chooseHandler(worker);
       if (handler == null) {
         //Ignore
         return;
@@ -396,7 +397,7 @@ public class DefaultNetServer implements NetServer {
       }
     }
 
-    private void connected(final NioSocketChannel ch, final HandlerHolder handler) {
+    private void connected(final NioSocketChannel ch, final HandlerHolder<NetSocket> handler) {
       handler.context.execute(new Runnable() {
         public void run() {
           DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, handler.context);

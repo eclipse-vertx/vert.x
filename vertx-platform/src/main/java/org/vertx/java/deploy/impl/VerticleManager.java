@@ -675,7 +675,7 @@ public class VerticleManager implements ModuleReloader {
     Path cwd = Paths.get(".").toAbsolutePath().getParent();
     Path pmodDir = Paths.get(modDir.getAbsolutePath());
     Path relative = cwd.relativize(pmodDir);
-    Context.getContext().setPathAdjustment(relative);
+    vertx.getContext().setPathAdjustment(relative);
   }
 
   private synchronized String doDeploy(String depName,
@@ -844,7 +844,7 @@ public class VerticleManager implements ModuleReloader {
                                         VerticleFactory factory) {
     String loggerName = "org.vertx.deployments." + deployment.name + "-" + deployment.verticles.size();
     Logger logger = LoggerFactory.getLogger(loggerName);
-    Context context = Context.getContext();
+    Context context = vertx.getContext();
     VerticleHolder holder = new VerticleHolder(deployment, context, verticle,
                                                loggerName, logger, deployment.config,
                                                factory);
@@ -853,7 +853,7 @@ public class VerticleManager implements ModuleReloader {
   }
 
   private VerticleHolder getVerticleHolder() {
-    Context context = Context.getContext();
+    Context context = vertx.getContext();
     if (context != null) {
       VerticleHolder holder = (VerticleHolder)context.getDeploymentHandle();
       return holder;

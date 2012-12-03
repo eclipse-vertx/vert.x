@@ -23,8 +23,8 @@ import java.util.concurrent.Executor;
  */
 public class WorkerContext extends Context {
 
-  public WorkerContext(Executor bgExec) {
-    super(bgExec);
+  public WorkerContext(VertxInternal vertx, Executor bgExec) {
+    super(vertx, bgExec);
   }
 
   public void execute(Runnable task) {
