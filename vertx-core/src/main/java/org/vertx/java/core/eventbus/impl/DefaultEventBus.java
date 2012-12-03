@@ -403,7 +403,7 @@ public class DefaultEventBus implements EventBus {
       // Reset the context id - send can cause messages to be delivered in different contexts so the context id
       // of the current thread can change
       if (context != null) {
-        Context.setContext(context);
+        vertx.setContext(context);
       }
     }
   }
@@ -583,17 +583,17 @@ public class DefaultEventBus implements EventBus {
 
     holder.context.execute(new Runnable() {
       public void run() {
-      // Need to check handler is still there - the handler might have been removed after the message were sent but
-      // before it was received
-      try {
-        if (!holder.removed) {
-          holder.handler.handle(copied);
-        }
-      } finally {
-        if (holder.replyHandler) {
-          unregisterHandler(msg.address, holder.handler);
-        }
-      }
+	      // Need to check handler is still there - the handler might have been removed after the message were sent but
+	      // before it was received
+	      try {
+	        if (!holder.removed) {
+	          holder.handler.handle(copied);
+	        }
+	      } finally {
+	        if (holder.replyHandler) {
+	          unregisterHandler(msg.address, holder.handler);
+	        }
+	      }
       }
     });
   }

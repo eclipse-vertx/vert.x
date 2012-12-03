@@ -69,6 +69,8 @@ public class DefaultVertx extends VertxInternal {
   private Map<ServerID, DefaultHttpServer> sharedHttpServers = new HashMap<>();
   private Map<ServerID, DefaultNetServer> sharedNetServers = new HashMap<>();
 
+  private final ThreadLocal<Context> contextTL = new ThreadLocal<>();
+
   //For now we use a hashed wheel with it's own thread for timeouts - ideally the event loop would have
   //it's own hashed wheel
   private HashedWheelTimer timer = new HashedWheelTimer(new VertxThreadFactory("vert.x-timer-thread"), 1,
@@ -150,7 +152,7 @@ public class DefaultVertx extends VertxInternal {
   }
 
   public boolean isEventLoop() {
-    Context context = Context.getContext();
+    Context context = getContext();
     if (context != null) {
       return context instanceof EventLoopContext;
     }
@@ -158,7 +160,7 @@ public class DefaultVertx extends VertxInternal {
   }
 
   public boolean isWorker() {
-    Context context = Context.getContext();
+    Context context = getContext();
     if (context != null) {
       return context instanceof WorkerContext;
     }
@@ -230,7 +232,7 @@ public class DefaultVertx extends VertxInternal {
   }
 
   public Context getOrAssignContext() {
-    Context ctx = Context.getContext();
+    Context ctx = getContext();
     if (ctx == null) {
       // Assign a context
       ctx = createEventLoopContext();
@@ -239,7 +241,7 @@ public class DefaultVertx extends VertxInternal {
   }
 
   public void reportException(Throwable t) {
-    Context ctx = Context.getContext();
+    Context ctx = getContext();
     if (ctx != null) {
       ctx.reportException(t);
     } else {
@@ -286,7 +288,7 @@ public class DefaultVertx extends VertxInternal {
   public Context createEventLoopContext() {
     getBackgroundPool();
     NioWorker worker = getWorkerPool().nextWorker();
-    return new EventLoopContext(orderedFact.getExecutor(), worker);
+    return new EventLoopContext(this, orderedFact.getExecutor(), worker);
   }
 
   private boolean cancelTimeout(long id) {
@@ -317,7 +319,15 @@ public class DefaultVertx extends VertxInternal {
 
   private Context createWorkerContext() {
     getBackgroundPool();
-    return new WorkerContext(orderedFact.getExecutor());
+    return new WorkerContext(this, orderedFact.getExecutor());
+  }
+
+  public void setContext(Context context) {
+    contextTL.set(context);
+  }
+
+  public Context getContext() {
+    return contextTL.get();
   }
   
   @Override
@@ -379,8 +389,7 @@ public class DefaultVertx extends VertxInternal {
 		}
 		// log.info("Release external resources: done");
 
-		// TODO Context should not use Singleton but rather refer to Vertx
-		Context.setContext(null);
+		setContext(null);
 	}
   
   private static class InternalTimerHandler implements Runnable {

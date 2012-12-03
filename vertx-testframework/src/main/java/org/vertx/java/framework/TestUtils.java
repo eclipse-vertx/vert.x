@@ -22,9 +22,11 @@ import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.utils.lang.Args;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -40,16 +42,15 @@ public class TestUtils {
 
   private static final Logger log = LoggerFactory.getLogger(TestUtils.class);
 
-  private final Vertx vertx;
+  private final VertxInternal vertx;
   private final Thread th;
   private final Context context;
   private Map<String, Handler<Message<JsonObject>>> handlers = new HashMap<>();
 
-  public TestUtils(Vertx vertx) {
-    if (vertx == null) throw new NullPointerException("vertx");
-    this.vertx = vertx;
+  public TestUtils(final Vertx vertx) {
+  	this.vertx = (VertxInternal) Args.notNull(vertx, "vertx");
     this.th = Thread.currentThread();
-    this.context = Context.getContext();
+    this.context = this.vertx.getContext();
   }
 
   public void azzert(boolean result) {
@@ -232,7 +233,7 @@ public class TestUtils {
       throw new IllegalStateException("Don't call checkContext if utils were created with a null context");
     }
     azzert(th == Thread.currentThread(), "Expected:" + th + " Actual:" + Thread.currentThread());
-    azzert(context.equals(Context.getContext()), "Expected:" + context + " Actual:" + Context.getContext());
+    azzert(context.equals(vertx.getContext()), "Expected:" + context + " Actual:" + vertx.getContext());
   }
 
 }

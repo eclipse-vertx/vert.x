@@ -31,31 +31,18 @@ public abstract class Context {
 
   private static final Logger log = LoggerFactory.getLogger(Context.class);
 
-  private static final ThreadLocal<Context> contextTL = new ThreadLocal<>();
-
+  private final VertxInternal vertx;
+  
   private DeploymentHandle deploymentContext;
   private Path pathAdjustment;
 
   private Map<Object, Runnable> closeHooks;
 
-  private final ClassLoader tccl;
-
-  protected Context(Executor bgExec) {
-    this.bgExec = bgExec;
-    this.tccl = Thread.currentThread().getContextClassLoader();
-  }
-
   private final Executor bgExec;
 
-  public static void setContext(Context context) {
-    contextTL.set(context);
-    if (context != null) {
-    	Thread.currentThread().setContextClassLoader(context.tccl);
-    }
-  }
-
-  public static Context getContext() {
-    return contextTL.get();
+  protected Context(VertxInternal vertx, Executor bgExec) {
+    this.vertx = vertx;
+  	this.bgExec = bgExec;
   }
 
   public void setDeploymentHandle(DeploymentHandle deploymentHandle) {
@@ -121,7 +108,7 @@ public abstract class Context {
       public void run() {
         String threadName = Thread.currentThread().getName();
         try {
-          setContext(Context.this);
+          vertx.setContext(Context.this);
           task.run();
         } catch (Throwable t) {
           reportException(t);
