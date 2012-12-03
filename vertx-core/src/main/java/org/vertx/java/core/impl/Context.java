@@ -40,9 +40,16 @@ public abstract class Context {
 
   private final Executor bgExec;
 
+  private final ClassLoader tccl;
+
   protected Context(VertxInternal vertx, Executor bgExec) {
     this.vertx = vertx;
   	this.bgExec = bgExec;
+    this.tccl = Thread.currentThread().getContextClassLoader();
+  }
+
+  public void setTCCL() {
+    Thread.currentThread().setContextClassLoader(tccl);
   }
 
   public void setDeploymentHandle(DeploymentHandle deploymentHandle) {
