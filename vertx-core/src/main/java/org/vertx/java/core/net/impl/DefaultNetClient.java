@@ -45,7 +45,7 @@ public class DefaultNetClient implements NetClient {
   private static final Logger log = LoggerFactory.getLogger(DefaultNetClient.class);
 
   private final VertxInternal vertx;
-  private final Context ctx;
+  private final EventLoopContext ctx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private ClientBootstrap bootstrap;
   private NioClientSocketChannelFactory channelFactory;
@@ -56,10 +56,11 @@ public class DefaultNetClient implements NetClient {
 
   public DefaultNetClient(VertxInternal vertx) {
     this.vertx = vertx;
-    ctx = vertx.getOrAssignContext();
+
     if (vertx.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
+    ctx = (EventLoopContext) vertx.getOrAssignContext();
     ctx.putCloseHook(this, new Runnable() {
       public void run() {
         close();
@@ -258,16 +259,9 @@ public class DefaultNetClient implements NetClient {
                        final int remainingAttempts) {
 
     if (bootstrap == null) {
-
+      // Share the event loop thread to also serve the NetClient's network traffic.
       VertxWorkerPool pool = new VertxWorkerPool();
-      EventLoopContext ectx;
-      if (ctx instanceof EventLoopContext) {
-        //It always will be
-        ectx = (EventLoopContext)ctx;
-      } else {
-        ectx = null;
-      }
-      pool.addWorker(ectx.getWorker());
+      pool.addWorker(ctx.getWorker());
 
       Integer bossThreads = tcpHelper.getClientBossThreads();
       int threads = bossThreads == null ? 1 : bossThreads;
@@ -275,7 +269,7 @@ public class DefaultNetClient implements NetClient {
           vertx.getAcceptorPool(), threads, pool, vertx.getTimer());
       bootstrap = new ClientBootstrap(channelFactory);
 
-      tcpHelper.checkSSL();
+      tcpHelper.checkSSL(vertx);
 
       bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
         public ChannelPipeline getPipeline() throws Exception {
@@ -322,7 +316,7 @@ public class DefaultNetClient implements NetClient {
           if (remainingAttempts > 0 || remainingAttempts == -1) {
             tcpHelper.runOnCorrectThread(ch, new Runnable() {
               public void run() {
-                Context.setContext(ctx);
+                vertx.setContext(ctx);
                 log.debug("Failed to create connection. Will retry in " + reconnectInterval + " milliseconds");
                 //Set a timer to retry connection
                 vertx.setTimer(reconnectInterval, new Handler<Long>() {
@@ -344,7 +338,7 @@ public class DefaultNetClient implements NetClient {
   private void connected(final NioSocketChannel ch, final Handler<NetSocket> connectHandler) {
     tcpHelper.runOnCorrectThread(ch, new Runnable() {
       public void run() {
-        Context.setContext(ctx);
+        vertx.setContext(ctx);
         DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, ctx);
         socketMap.put(ch, sock);
         connectHandler.handle(sock);
@@ -357,7 +351,7 @@ public class DefaultNetClient implements NetClient {
     if (t instanceof Exception && exceptionHandler != null) {
       tcpHelper.runOnCorrectThread(ch, new Runnable() {
         public void run() {
-          Context.setContext(ctx);
+          vertx.setContext(ctx);
           exceptionHandler.handle((Exception) t);
         }
       });

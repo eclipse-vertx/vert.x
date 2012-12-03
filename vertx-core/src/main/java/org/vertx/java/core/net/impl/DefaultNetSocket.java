@@ -38,7 +38,8 @@ import java.util.UUID;
 
 public class DefaultNetSocket extends NetSocket {
 
-  private static final Logger log = LoggerFactory.getLogger(DefaultNetSocket.class);
+  @SuppressWarnings("unused")
+	private static final Logger log = LoggerFactory.getLogger(DefaultNetSocket.class);
 
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
@@ -115,7 +116,7 @@ public class DefaultNetSocket extends NetSocket {
   }
 
   public void sendFile(String filename) {
-    File f = new File(PathAdjuster.adjust(filename));
+    File f = new File(PathAdjuster.adjust(vertx, filename));
     super.sendFile(f);
   }
 

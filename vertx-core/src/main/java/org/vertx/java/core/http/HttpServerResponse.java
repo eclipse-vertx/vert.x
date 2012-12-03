@@ -44,8 +44,9 @@ import java.util.Map;
  */
 public abstract class HttpServerResponse implements WriteStream {
 
-  private static final Logger log = LoggerFactory.getLogger(HttpServerResponse.class);
-
+  @SuppressWarnings("unused")
+	private static final Logger log = LoggerFactory.getLogger(HttpServerResponse.class);
+  
   protected HttpServerResponse() {
   }
 

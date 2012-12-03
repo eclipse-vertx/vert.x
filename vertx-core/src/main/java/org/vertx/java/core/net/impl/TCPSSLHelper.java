@@ -19,6 +19,7 @@ package org.vertx.java.core.net.impl;
 import org.jboss.netty.channel.FixedReceiveBufferSizePredictor;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.vertx.java.core.file.impl.PathAdjuster;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -68,9 +69,9 @@ public class TCPSSLHelper {
   public TCPSSLHelper() {
   }
 
-  public void checkSSL() {
+  public void checkSSL(VertxInternal vertx) {
     if (ssl) {
-      sslContext = createContext(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword, trustAll);
+      sslContext = createContext(vertx, keyStorePath, keyStorePassword, trustStorePath, trustStorePassword, trustAll);
     }
   }
 
@@ -289,19 +290,19 @@ public class TCPSSLHelper {
   If you don't specify a key store, and don't specify a system property no key store will be used
   You can override this by specifying the javax.echo.ssl.keyStore system property
    */
-  public SSLContext createContext(final String ksPath,
+  public SSLContext createContext(VertxInternal vertx, final String ksPath,
                                          final String ksPassword,
                                          final String tsPath,
                                          final String tsPassword,
                                          final boolean trustAll) {
     try {
       SSLContext context = SSLContext.getInstance("TLS");
-      KeyManager[] keyMgrs = ksPath == null ? null : getKeyMgrs(ksPath, ksPassword);
+      KeyManager[] keyMgrs = ksPath == null ? null : getKeyMgrs(vertx, ksPath, ksPassword);
       TrustManager[] trustMgrs;
       if (trustAll) {
         trustMgrs = new TrustManager[]{createTrustAllTrustManager()};
       } else {
-        trustMgrs = tsPath == null ? null : getTrustMgrs(tsPath, tsPassword);
+        trustMgrs = tsPath == null ? null : getTrustMgrs(vertx, tsPath, tsPassword);
       }
       context.init(keyMgrs, trustMgrs, new SecureRandom());
       return context;
@@ -330,23 +331,23 @@ public class TCPSSLHelper {
     };
   }
 
-  private TrustManager[] getTrustMgrs(final String tsPath,
+  private TrustManager[] getTrustMgrs(VertxInternal vertx, final String tsPath,
                                              final String tsPassword) throws Exception {
     TrustManagerFactory fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-    KeyStore ts = loadStore(tsPath, tsPassword);
+    KeyStore ts = loadStore(vertx, tsPath, tsPassword);
     fact.init(ts);
     return fact.getTrustManagers();
   }
 
-  private KeyManager[] getKeyMgrs(final String ksPath, final String ksPassword) throws Exception {
+  private KeyManager[] getKeyMgrs(VertxInternal vertx, final String ksPath, final String ksPassword) throws Exception {
     KeyManagerFactory fact = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-    KeyStore ks = loadStore(ksPath, ksPassword);
+    KeyStore ks = loadStore(vertx, ksPath, ksPassword);
     fact.init(ks, ksPassword != null ? ksPassword.toCharArray(): null);
     return fact.getKeyManagers();
   }
 
-  private KeyStore loadStore(String path, final String ksPassword) throws Exception {
-    final String ksPath = PathAdjuster.adjust(path);
+  private KeyStore loadStore(VertxInternal vertx, String path, final String ksPassword) throws Exception {
+    final String ksPath = PathAdjuster.adjust(vertx, path);
     KeyStore ks = KeyStore.getInstance("JKS");
     InputStream in = null;
     try {
