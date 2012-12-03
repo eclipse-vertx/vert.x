@@ -324,6 +324,9 @@ public class DefaultVertx extends VertxInternal {
 
   public void setContext(Context context) {
     contextTL.set(context);
+    if (context != null) {
+      context.setTCCL();
+    }
   }
 
   public Context getContext() {
