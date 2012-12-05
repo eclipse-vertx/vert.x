@@ -18,7 +18,6 @@ package org.vertx.java.core;
 
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.file.FileSystem;
-import org.vertx.java.core.file.impl.FolderWatcher;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.net.NetClient;
@@ -152,9 +151,4 @@ public abstract class Vertx {
 	 * Stop the eventbus and any resource managed by the eventbus.
 	 */
 	public abstract void stop();
-	
-	/**
-	 * The folder watcher
-	 */
-	public abstract FolderWatcher folderWatcher(boolean startIfNecessary);
 }

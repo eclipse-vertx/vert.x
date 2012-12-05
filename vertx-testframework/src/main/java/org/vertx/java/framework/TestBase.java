@@ -136,7 +136,7 @@ public class TestBase extends TestCase {
         vertx.setContext(null);
         
       } catch (Exception e) {
-      	log.error(e);
+        e.printStackTrace();
         throw e;
       }
     }

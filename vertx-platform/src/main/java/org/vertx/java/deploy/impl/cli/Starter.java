@@ -24,7 +24,7 @@ import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.deploy.impl.CommandLineArgs;
+import org.vertx.java.deploy.impl.Args;
 import org.vertx.java.deploy.impl.VerticleManager;
 
 import java.io.File;
@@ -59,7 +59,7 @@ public class Starter {
       displaySyntax();
     } else {
       String command = sargs[0].toLowerCase();
-      CommandLineArgs args = new CommandLineArgs(sargs);
+      Args args = new Args(sargs);
       if ("version".equals(command)) {
         log.info(VERSION);
       } else {
@@ -91,7 +91,7 @@ public class Starter {
     }
   }
 
-  private void installModule(String modName, CommandLineArgs args) {
+  private void installModule(String modName, Args args) {
     String repo = args.map.get("-repo");
     new VerticleManager(vertx, repo).installMod(modName);
   }
@@ -100,7 +100,7 @@ public class Starter {
     new VerticleManager(vertx).uninstallMod(modName);
   }
 
-  private void runVerticle(boolean module, String main, CommandLineArgs args) {
+  private void runVerticle(boolean module, String main, Args args) {
     boolean clustered = args.map.get("-cluster") != null;
     if (clustered) {
       log.info("Starting clustering...");

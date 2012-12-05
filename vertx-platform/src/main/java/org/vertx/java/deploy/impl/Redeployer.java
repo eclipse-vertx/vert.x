@@ -17,256 +17,265 @@
 package org.vertx.java.deploy.impl;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.file.impl.ChangeListener;
-import org.vertx.java.core.file.impl.FolderWatcher;
-import org.vertx.java.core.file.impl.FolderWatcher.WatchDirContext;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.utils.lang.Args;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * A Deployment may contain several modules. @TODO is that true? 
- * Every deployment will be deployed in a modRoot subdir like <code>modRoot/myDep</code>.  
- * <p>
- * Monitor the file system where the modules are deployed. In case any directory or file 
- * within that directory tree gets modified, wait for a short while (grace period) for all 
- * copies, zip exports etc. to finish. Than initiate a redeploy of that deployment (or module?).
- * 
- * @author Juergen Donnerstag
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class Redeployer {
 
   private static final Logger log = LoggerFactory.getLogger(Redeployer.class);
 
-  // Periodic timer: process the file system events
+  private static final long GRACE_PERIOD = 600;
   private static final long CHECK_PERIOD = 200;
 
-  private final VertxInternal vertx;
-  
-  // Modules get deployed in a subdir: modRoot/myMod. There can only be 
-  // one modRoot. Something like class paths are not yet supported.
   private final File modRoot;
-  
-  // ModuleReloader will be informed about changes and actually redeploy the module
   private final ModuleReloader reloader;
-  
-  // Periodic timer: every CHECK_PERIOD
-  private final long timerID;
-  
-  // The underlying file system watcher
-  private final FolderWatcher watchService;
-  
-  // All processing and all changes are done in the timer context => single thread
-  private Context ctx;
-  
-  // True, if the Redeployer has been closed (shutdown)
-  private boolean closed;
-
-  // The deployments actively monitored.
   private final Map<Path, Set<Deployment>> watchedDeployments = new HashMap<>();
-
-  // Asynchronously ask Redeployer to register or unregister additional Modules.
-  // Actual processing happens in the timer thread => single threaded.
+  private final Map<WatchKey, Path> watchKeys = new HashMap<>();
+  private final Map<Path, Path> moduleDirs = new HashMap<>();
+  private final WatchService watchService;
+  private final VertxInternal vertx;
+  private final Map<Path, Long> changing = new HashMap<>();
+  private final long timerID;
   private final Queue<Deployment> toDeploy = new ConcurrentLinkedQueue<>();
   private final Queue<Deployment> toUndeploy = new ConcurrentLinkedQueue<>();
+  private Context ctx;
 
-  /**
-   * Constructor
-   * 
-   * @param vertx
-   * @param modRoot
-   * @param reloader
-   */
-  public Redeployer(final VertxInternal vertx, final File modRoot, final ModuleReloader reloader) {
-    this.vertx = Args.notNull(vertx, "vertx");
-    this.modRoot = Args.notNull(modRoot, "modRoot");
-    this.reloader = Args.notNull(reloader, "reloader");
-
-    // Get and start the watch service
-    watchService = newFolderWatcher();
-    if (watchService == null) {
-    	throw new NullPointerException("newFolderWatcher() must not return null");
+  public Redeployer(VertxInternal vertx, File modRoot, ModuleReloader reloader) {
+    this.modRoot = modRoot;
+    this.reloader = reloader;
+    try {
+      watchService = FileSystems.getDefault().newWatchService();
+    } catch (IOException e) {
+      log.error("Failed to create redeployer", e);
+      throw new IllegalArgumentException(e.getMessage());
     }
-    
-    // Start a new periodic timer to regularly process the watcher events
+
+    this.vertx = vertx;
     timerID = vertx.setPeriodic(CHECK_PERIOD, new Handler<Long>() {
       public void handle(Long id) {
-      	// Timer shutdown is asynchronous and might not have completed yet.
-      	if (closed) {
-      		vertx.cancelTimer(timerID);
-      		return;
-      	}
-      	
         if (ctx == null) {
           ctx = Redeployer.this.vertx.getContext();
         } else {
           checkContext();
         }
-        
         try {
-        	onTimerEvent();
-        } catch (ClosedWatchServiceException e) {
-        	// Should never happen ...
-          log.warn("FolderWatcher has been closed already");
+          checkEvents();
         } catch (Exception e) {
-          log.error("Error while checking file system events", e);
+          log.error("Failed to check events", e);
         }
       }
     });
   }
 
-  /**
-   * @return By default, the vertx provided folder watcher gets used.
-   */
-  public FolderWatcher newFolderWatcher() {
-  	return vertx.folderWatcher(true);
-  }
-
-  /**
-   * Process module registration and unregistration, and any file system events.
-   * {@link #onGraceEvent(WatchDirContext)} can be subclassed to change how file system
-   * changes get handled.
-   */
-  private void onTimerEvent() {
-    processUndeployments();
-    processDeployments();
-    watchService.processEvents();
-  }
-
-  /**
-   * Shutdown the service. Free up all resources.
-   */
   public void close() {
-  	this.closed = true;
-    this.vertx.cancelTimer(timerID);
-
-    // Stop the folder watcher only if it's not the vertx default folder watcher
-    if ((watchService != null) && (watchService != vertx.folderWatcher(false))) {
-			watchService.close();
+    vertx.cancelTimer(timerID);
+    Set<Deployment>  deps = new HashSet<>();
+    for (Map.Entry<Path, Set<Deployment>> entry: watchedDeployments.entrySet()) {
+      deps.addAll(entry.getValue());
     }
+    toUndeploy.addAll(deps);
+    processUndeployments();
+    
+    try {
+			watchService.close();
+		} catch (IOException ex) {
+			log.warn("Error while shutting down watch service: " + ex.getMessage(), ex);
+		}
   }
 
-  /**
-   * Inform Redeployer that a new module has been deployed. Start monitoring it.
-   * 
-   * @param deployment
-   */
-  public final void moduleDeployed(final Deployment deployment) {
-  	Args.notNull(deployment, "deployment");
-  	if (!closed) {
-  		toDeploy.add(deployment);
-  	} else {
-  		log.warn("Redeployer is closed. Module deployment information will be ignored: " + deployment.modName);
-  	}
+  public void moduleDeployed(Deployment deployment) {
+    toDeploy.add(deployment);
   }
 
-  /**
-   * Inform the Redeployer that a module has been undeployed. Stop monitoring it.
-   * 
-   * @param deployment
-   */
-  public final void moduleUndeployed(final Deployment deployment) {
-  	Args.notNull(deployment, "deployment");
-  	if (!closed) {
-      toUndeploy.add(deployment);
-  	} else {
-  		log.warn("Redeployer is closed. Module undeployment information will be ignored: " + deployment.modName);
-  	}
+  public void moduleUndeployed(Deployment deployment) {
+    toUndeploy.add(deployment);
   }
 
-  /**
-   * Process the deployment requests.
-   * <p>
-   * All deployments and undeployments, and all processing, happens on the same context (thread). 
-   * => No need to synchronize between them.
-   */
+  // We process all the deployments and undeployments on the same context as the
+  // rest of the stuff
+  // this means we don't have to synchronize between the deployment and
+  // any stuff done on the timer
   private void processDeployments() {
     Deployment dep;
     while ((dep = toDeploy.poll()) != null) {
-    	Path modDir = new File(modRoot, dep.modName).toPath();
-   		log.info("Register new Module: " + modDir);
-    	if (closed) {
-      	log.error("Redeployer has been closed. New Deployments can not be registered: " + modDir);
-    		continue;
-    	}
-
-    	// @TODO how can there be more than 1 deployment in a subdir? What exactly the relationship between Deployment and Module?
+      File fmodDir = new File(modRoot, dep.modName);
+      Path modDir = fmodDir.toPath();
       Set<Deployment> deps = watchedDeployments.get(modDir);
       if (deps == null) {
         deps = new HashSet<>();
         watchedDeployments.put(modDir, deps);
         try {
-	        watchService.register(modDir, true, new ChangeListener() {
-						@Override
-						public void onGraceEvent(final WatchDirContext wdir) {
-							Redeployer.this.onGraceEvent(wdir);
-						}
-					});
-        } catch (ClosedWatchServiceException ex) {
-        	// FolderWatcher has (accidently) been closed behind the scene ...
-        	log.error("FolderWatcher has been closed. New Deployments can not be registered: " + modDir);
+          registerAll(modDir, modDir);
+        } catch (IOException e) {
+          log.error("Failed to register", e);
+          throw new IllegalStateException(e.getMessage());
         }
       }
-
-      // Associated the deployment with the path
-      // @TODO how can there be more than 1 deployment for the same path??
-      if (deps.contains(dep) == false) {
-      	deps.add(dep);
-      }
+      deps.add(dep);
     }
   }
 
-  /**
-   * Process the undeployment requests
-   * <p>
-   * All deployments and undeployments, and all processing, happens on the same context (thread). 
-   * => No need to synchronize between them.
-   */
+  // This can be optimised
   private void processUndeployments() {
     Deployment dep;
     while ((dep = toUndeploy.poll()) != null) {
-      Path modDir = new File(modRoot, dep.modName).toPath();
-    	log.info("Unregister Module: " + modDir);
-
-    	// Process unregister() even if Redeployer has been closed already.
-    	// It doesn't do any harm, but might release strained resources.
-    	
-      Set<Deployment> deps = watchedDeployments.get(modDir);
+      File modDir = new File(modRoot, dep.modName);
+      Path pModDir = modDir.toPath();
+      Set<Deployment> deps = watchedDeployments.get(pModDir);
       deps.remove(dep);
       if (deps.isEmpty()) {
-        watchedDeployments.remove(modDir);
-       	watchService.unregister(modDir);
+        watchedDeployments.remove(pModDir);
+        Set<Path> modPaths = new HashSet<>();
+        for (Map.Entry<Path, Path> entry: moduleDirs.entrySet()) {
+          if (entry.getValue().equals(pModDir)) {
+            modPaths.add(entry.getKey());
+          }
+        }
+        for (Path p: modPaths) {
+          moduleDirs.remove(p);
+          changing.remove(p);
+        }
+        Set<WatchKey> keys = new HashSet<>();
+        for (Map.Entry<WatchKey, Path> entry: watchKeys.entrySet()) {
+          if (modPaths.contains(entry.getValue())) {
+            keys.add(entry.getKey());
+          }
+        }
+        for (WatchKey key: keys) {
+          key.cancel();
+          watchKeys.remove(key);
+        }
       }
     }
   }
 
-  /**
-   * Something has changed on the file system (dir and subdirs) and the grace period passed
-   * by without any new changes.
-   * 
-   * @param wdir The context of the monitored root directory
-   */
-  protected void onGraceEvent(final WatchDirContext wdir) {
-    log.info("Module has changed - redeploying module from directory " + wdir.dir().toString());
-    Set<Deployment> deps = watchedDeployments.get(wdir.dir());
-    if (deps != null) {
-    	reloader.reloadModules(deps);
-    } else {
-      log.info("Bug??? No Deployment was previously registered with this directory: " + wdir.dir());
+  void checkEvents() {
+    processUndeployments();
+    processDeployments();
+    Set<Path> changed = new HashSet<>();
+    while (true) {
+      WatchKey key = watchService.poll();
+      if (key == null) {
+        break;
+      }
+      handleEvent(key, changed);
+    }
+    long now = System.currentTimeMillis();
+    for (Path modulePath: changed) {
+      changing.put(modulePath, now);
+    }
+    Set<Path> toRedeploy = new HashSet<>();
+    for (Map.Entry<Path, Long> entry: changing.entrySet()) {
+      if (now - entry.getValue() > GRACE_PERIOD) {
+        // Module has changed but no changes for GRACE_PERIOD ms
+        // we can assume the redeploy has finished
+        toRedeploy.add(entry.getKey());
+      }
+    }
+    if (!toRedeploy.isEmpty()) {
+      Set<Deployment> deployments = new HashSet<>();
+      for (Path moduleDir: toRedeploy) {
+        log.info("moduleDir is " + moduleDir);
+        log.info("Module has changed - redeploying module from directory " + moduleDir.toString());
+        changing.remove(moduleDir);
+        deployments.addAll(watchedDeployments.get(moduleDir));
+      }
+      reloader.reloadModules(deployments);
     }
   }
 
-  private void checkContext() {
-    // Sanity check
-    if (vertx.getContext() != ctx) {
-      throw new IllegalStateException("Got context: " + vertx.getContext() + ". Expected: " + ctx);
+
+  private void handleEvent(WatchKey key, Set<Path> changed) {
+    Path dir = watchKeys.get(key);
+    if (dir == null) {
+      throw new IllegalStateException("Unrecognised watch key " + dir);
+    }
+
+    for (WatchEvent<?> event : key.pollEvents()) {
+      WatchEvent.Kind<?> kind = event.kind();
+
+      if (kind == StandardWatchEventKinds.OVERFLOW) {
+        log.warn("Overflow event on watched directory");
+        continue;
+      }
+
+      Path moduleDir = moduleDirs.get(dir);
+      if (moduleDir != null) {
+
+        @SuppressWarnings("unchecked")
+        WatchEvent<Path> ev = (WatchEvent<Path>) event;
+        Path name = ev.context();
+
+        Path child = dir.resolve(name);
+
+        if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
+          if (Files.isDirectory(child, LinkOption.NOFOLLOW_LINKS)) {
+            try {
+              registerAll(moduleDir, child);
+            } catch (IOException e) {
+              log.error("Failed to register child", e);
+              throw new IllegalStateException(e.getMessage());
+            }
+          }
+        } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
+          moduleDirs.remove(child);
+        }
+        changed.add(moduleDir);
+      }
+    }
+
+    boolean valid = key.reset();
+    if (!valid) {
+      watchKeys.remove(key);
     }
   }
+
+  private void register(Path modDir, Path dir) throws IOException {
+    WatchKey key = dir.register(watchService, StandardWatchEventKinds.ENTRY_CREATE,
+        StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_DELETE);
+    watchKeys.put(key, dir);
+    moduleDirs.put(dir, modDir);
+  }
+
+  private void registerAll(final Path modDir, final Path dir) throws IOException {
+    Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+      @Override
+      public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+        register(modDir, dir);
+        return FileVisitResult.CONTINUE;
+      }
+    });
+  }
+
+//  private void dumpSizes() {
+//    log.info("watchkeys: " + watchKeys.size());
+//    log.info("moduleDirs: " + moduleDirs.size());
+//    log.info("changing: " + changing.size());
+//    int size = 0;
+//    for (Set<Deployment> s: this.watchedDeployments.values()) {
+//      size += s.size();
+//    }
+//    log.info("watcheddeployments:" + size);
+//  }
+
+  private void checkContext() {
+    //Sanity check
+    if (vertx.getContext() != ctx) {
+      throw new IllegalStateException("Got context: " + vertx.getContext() + " expected " + ctx);
+    }
+  }
+
 }
