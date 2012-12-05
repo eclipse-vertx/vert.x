@@ -24,11 +24,11 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class CommandLineArgs {
+public class Args {
 
   public final Map<String, String> map = new HashMap<>();
 
-  public CommandLineArgs(String[] args) {
+  public Args(String[] args) {
     String currentKey = null;
     for (String arg: args) {
       if (arg.startsWith("-")) {
