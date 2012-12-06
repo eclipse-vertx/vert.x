@@ -36,10 +36,10 @@ public class JavaDeployTest extends TestBase {
     super.tearDown();
   }
 
-  @Test
-  public void testDeploy() throws Exception {
-    startTest(getMethodName());
-  }
+//  @Test
+//  public void testDeploy() throws Exception {
+//    startTest(getMethodName());
+//  }
 
   @Test
   public void testUndeploy() throws Exception {
