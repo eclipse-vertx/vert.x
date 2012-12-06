@@ -41,8 +41,10 @@ public class TestClient extends TestClientBase {
   }
 
   public void testDeploy() {
+    final Thread t = Thread.currentThread();
     eb.registerHandler("test-handler", new Handler<Message<String>>() {
       public void handle(Message<String> message) {
+        tu.azzert(Thread.currentThread() == t);
         if ("started".equals(message.body)) {
           eb.unregisterHandler("test-handler", this);
           tu.testComplete();
@@ -54,10 +56,11 @@ public class TestClient extends TestClientBase {
   }
 
   public void testUndeploy() {
-
+    final Thread t = Thread.currentThread();
     container.deployVerticle("vertx.tests.core.deploy.ChildVerticle", null, 1,
       new Handler<String>() {
         public void handle(final String deploymentID) {
+          tu.azzert(Thread.currentThread() == t);
           vertx.setTimer(100, new Handler<Long>() {
             public void handle(Long tid) {
               eb.registerHandler("test-handler", new Handler<Message<String>>() {

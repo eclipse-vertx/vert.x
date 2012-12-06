@@ -56,11 +56,13 @@ public class DefaultVertx extends VertxInternal {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultVertx.class);
 
+  private static final int DEFAULT_WORKER_POOL_SIZE = 20;
+
   private final FileSystem fileSystem = (Windows.isWindows() ? new WindowsFileSystem(this) : new DefaultFileSystem(this));
   private final EventBus eventBus;
   private final SharedData sharedData = new SharedData();
 
-  private int backgroundPoolSize = 20;
+  private int backgroundPoolSize;
   private int corePoolSize = Runtime.getRuntime().availableProcessors();
   private ExecutorService backgroundPool;
   private OrderedExecutorFactory orderedFact;
@@ -100,7 +102,7 @@ public class DefaultVertx extends VertxInternal {
    * deal with configuration parameters
    */
   private void configure() {
-    this.backgroundPoolSize = Integer.getInteger("vertx.backgroundPoolSize", 20);
+    this.backgroundPoolSize = Integer.getInteger("vertx.backgroundPoolSize", DEFAULT_WORKER_POOL_SIZE);
   }
 
   public Timer getTimer() {
