@@ -29,19 +29,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Properties;
-import java.util.Scanner;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -61,6 +51,7 @@ import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.DecodeException;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -96,6 +87,7 @@ public class VerticleManager implements ModuleReloader {
   private final int repoPort;
   private final String proxyHost;
   private final int proxyPort;
+  private final Map<String, ModuleClassLoader> moduleClassLoaders = new WeakHashMap<>();
 
   private final Redeployer redeployer;
 
@@ -237,41 +229,27 @@ public class VerticleManager implements ModuleReloader {
   }
 
   private void doDeployVerticle(boolean worker, final String main,
-                                   final JsonObject config, final URL[] urls,
-                                   int instances, File currentModDir,
-                                   String includes, Handler<String> doneHandler)
+                                final JsonObject config, final URL[] urls,
+                                int instances, File currentModDir,
+                                String includes, Handler<String> doneHandler)
   {
     checkWorkerContext();
-    URL[] theURLs;
-    // The user has specified a list of modules to include when deploying this verticle
-    // so we walk the tree of modules adding tree of includes to classpath
+
+    ModuleClassLoader cl = new ModuleClassLoader(urls);
+
     if (includes != null) {
-      String[] includedMods = parseIncludes(includes, null);
-      List<URL> includedURLs = new ArrayList<>(Arrays.asList(urls));
-      for (String includedMod: includedMods) {
-        File modDir = new File(modRoot, includedMod);
-        JsonObject conf;
-        inner: while (true) {
-          conf = loadModuleConfig(includedMod, modDir);
-          if (conf == null) {
-            // Try and install the module
-            if (!doInstallMod(includedMod)) {
-              callDoneHandler(doneHandler, null);
-            }
-          } else {
-            break inner;
-          }
-        }
-        Map<String, String> includedJars = new HashMap<>();
-        Set<String> includedModules = new HashSet<>();
-        includedURLs = processIncludes(main, includedURLs, includedMod, modDir, conf,
-            includedJars, includedModules);
+      String[] includedMods = parseIncludeString(includes);
+      if (includedMods == null) {
+        callDoneHandler(doneHandler, null);
       }
-      theURLs = includedURLs.toArray(new URL[includedURLs.size()]);
-    } else {
-      theURLs = urls;
+      JsonArray jarr = new JsonArray();
+      for (String included: includedMods) {
+        jarr.add(included);
+      }
+      loadIncludedModules(cl, jarr);
     }
-    doDeploy(null, false, worker, main, null, config, theURLs, instances, currentModDir, doneHandler);
+
+    doDeploy(null, false, worker, main, null, config, urls, instances, currentModDir, cl, doneHandler);
   }
 
   public synchronized void undeployAll(final Handler<Void> doneHandler) {
@@ -303,6 +281,8 @@ public class VerticleManager implements ModuleReloader {
 
   public void deployMod(final String modName, final JsonObject config,
                         final int instances, final File currentModDir, final Handler<String> doneHandler) {
+
+    System.out.println("Deploying mod " + modName);
 
     BlockingAction<Void> deployModuleAction = new BlockingAction<Void>(vertx, null) {
 
@@ -372,13 +352,15 @@ public class VerticleManager implements ModuleReloader {
   }
 
   private void doDeployMod(final boolean redeploy, final String depName, final String modName,
-                             final JsonObject config,
-                             final int instances, final File currentModDir,
-                             final Handler<String> doneHandler) {
+                           final JsonObject config,
+                           final int instances, final File currentModDir,
+                           final Handler<String> doneHandler) {
     checkWorkerContext();
 
     File modDir = new File(modRoot, modName);
     JsonObject conf = loadModuleConfig(modName, modDir);
+
+    System.out.println("Conf is " +conf);
     if (conf != null) {
       String main = conf.getString("main");
       if (main == null) {
@@ -397,8 +379,8 @@ public class VerticleManager implements ModuleReloader {
       // If preserveCwd then use the current module directory instead, or the cwd if not in a module
       File modDirToUse = preserveCwd ? currentModDir : modDir;
 
-      List<URL> urls = processIncludes(modName, new ArrayList<URL>(), modName, modDir, conf,
-                                       new HashMap<String, String>(), new HashSet<String>());
+      List<URL> urls = getModuleClasspath(modDir);
+      System.out.println("urls is " + urls);
       if (urls == null) {
         callDoneHandler(doneHandler, null);
         return;
@@ -407,8 +389,32 @@ public class VerticleManager implements ModuleReloader {
       Boolean ar = conf.getBoolean("auto-redeploy");
       final boolean autoRedeploy = ar == null ? false : ar;
 
+      // Is the classloader already loaded? If so use that one, otherwise create a new one
+
+      // Unfortunately there is no ConcurrentWeakHashMap in the JDK so we synchronize
+
+      ModuleClassLoader cl;
+      synchronized (moduleClassLoaders) {
+        cl = moduleClassLoaders.get(modName);
+        if (cl == null) {
+          cl = new ModuleClassLoader(urls.toArray(new URL[urls.size()]));
+          moduleClassLoaders.put(modName, cl);
+        }
+      }
+
+      System.out.println("created classloader");
+
+      // Now load any included modules
+      JsonArray includes = conf.getArray("includes");
+      if (includes != null) {
+        if (!loadIncludedModules(cl, includes)) {
+          callDoneHandler(doneHandler, null);
+          return;
+        }
+      }
+
       doDeploy(depName, autoRedeploy, worker, main, modName, config,
-               urls.toArray(new URL[urls.size()]), instances, modDirToUse, new Handler<String>() {
+          urls.toArray(new URL[urls.size()]), instances, modDirToUse, cl, new Handler<String>() {
         @Override
         public void handle(String deploymentID) {
           if (deploymentID != null && !redeploy && autoRedeploy) {
@@ -451,16 +457,40 @@ public class VerticleManager implements ModuleReloader {
     }
   }
 
-  // We walk through the graph of includes making sure we only add each one once
-  // We keep track of what jars have been included so we can flag errors if paths
-  // are included more than once
-  // We make sure we only include each module once in the case of loops in the
-  // graph
-  private List<URL> processIncludes(String runModule, List<URL> urls, String modName, File modDir,
-                                    JsonObject conf,
-                                    Map<String, String> includedJars,
-                                    Set<String> includedModules) {
-    checkWorkerContext();
+  private boolean loadIncludedModules(ModuleClassLoader cl, JsonArray moduleNames) {
+    System.out.println("Loading included modules");
+    for (Object obj: moduleNames) {
+      if (!(obj instanceof String)) {
+        throw new IllegalArgumentException("module includes must contain only strings");
+      }
+      System.out.println("including " + obj);
+      String moduleName = (String)obj;
+      synchronized (moduleClassLoaders) {
+        ModuleClassLoader includedCl = moduleClassLoaders.get(moduleName);
+        if (includedCl == null) {
+          File modDir = new File(modRoot, moduleName);
+          if (!modDir.exists()) {
+            if (!doInstallMod(moduleName)) {
+              return false;
+            }
+          }
+          List<URL> urls = getModuleClasspath(modDir);
+          includedCl = new ModuleClassLoader(urls.toArray(new URL[urls.size()]));
+          JsonObject conf = loadModuleConfig(moduleName, modDir);
+          JsonArray includes = conf.getArray("includes");
+          if (includes != null) {
+            loadIncludedModules(includedCl, includes);
+          }
+          moduleClassLoaders.put(moduleName, includedCl);
+        }
+        cl.addParent(includedCl);
+      }
+    }
+    return true;
+  }
+
+  private List<URL> getModuleClasspath(File modDir) {
+    List<URL> urls = new ArrayList<>();
     // Add the urls for this module
     try {
       urls.add(modDir.toURI().toURL());
@@ -471,60 +501,21 @@ public class VerticleManager implements ModuleReloader {
           URL jarURL = jar.toURI().toURL();
           String sjarURL = jarURL.toString();
           String jarName = sjarURL.substring(sjarURL.lastIndexOf("/") + 1);
-          String prevMod = includedJars.get(jarName);
-          if (prevMod != null) {
-            log.warn("Warning! jar file " + jarName + " is contained in module " +
-                     prevMod + " and also in module " + modName +
-                     " which are both included (perhaps indirectly) by module " +
-                     runModule);
-          }
-          includedJars.put(jarName, modName);
           urls.add(jarURL);
         }
       }
+      return urls;
     } catch (MalformedURLException e) {
       //Won't happen
       log.error("malformed url", e);
       return null;
     }
-
-    includedModules.add(modName);
-
-    String sincludes = conf.getString("includes");
-    if (sincludes != null) {
-      String[] sarr = parseIncludes(sincludes, modName);
-      for (String include: sarr) {
-        if (includedModules.contains(include)) {
-          // Ignore - already included this one
-        } else {
-          File newmodDir = new File(modRoot, include);
-          inner: while (true) {
-            JsonObject newconf = loadModuleConfig(include, newmodDir);
-            if (newconf != null) {
-              urls = processIncludes(runModule, urls, include, newmodDir, newconf,
-                                     includedJars, includedModules);
-              if (urls == null) {
-                return null;
-              }
-              break inner;
-            } else {
-              // Module not installed - let's try to install it
-              if (!doInstallMod(include)) {
-                return null;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    return urls;
   }
 
-  private String[] parseIncludes(String sincludes, String modName) {
+  private String[] parseIncludeString(String sincludes) {
     sincludes = sincludes.trim();
     if ("".equals(sincludes)) {
-      log.error("Empty include string " + ((modName != null) ? " in module " : ""));
+      log.error("Empty include string");
       return null;
     }
     String[] arr = sincludes.split(",");
@@ -697,10 +688,10 @@ public class VerticleManager implements ModuleReloader {
                           final JsonObject config, final URL[] urls,
                           int instances,
                           final File modDir,
+                          final ModuleClassLoader cl,
                           final Handler<String> doneHandler) {
     checkWorkerContext();
-    //final AtomicReference<String> deploymentID = new AtomicReference<>();
-    final CountDownLatch latch = new CountDownLatch(1);
+
     final String deploymentName =
         depName != null ? depName : "deployment-" + UUID.randomUUID().toString();
 
@@ -745,23 +736,24 @@ public class VerticleManager implements ModuleReloader {
         config == null ? new JsonObject() : config.copy(), urls, modDir, parentDeploymentName,
         autoRedeploy);
     deployments.put(deploymentName, deployment);
+
     if (parentDeploymentName != null) {
+      ModuleClassLoader deployingClassloader;
       Deployment parent = deployments.get(parentDeploymentName);
       parent.childDeployments.add(deploymentName);
+      synchronized (moduleClassLoaders) {
+        deployingClassloader = moduleClassLoaders.get(parent.modName);
+        if (deployingClassloader == null) {
+          throw new IllegalStateException("Can't find class loader for parent");
+        }
+        cl.addParent(deployingClassloader);
+      }
     }
-
-    // Workers share a single classloader with all instances in a deployment - this
-    // enables them to use libraries that rely on caching or statics to share state
-    // (e.g. JDBC connection pools)
-    final ClassLoader sharedLoader = worker ? new ParentLastURLClassLoader(urls, getClass()
-                .getClassLoader()): null;
 
     for (int i = 0; i < instances; i++) {
 
       // Launch the verticle instance
 
-      final ClassLoader cl = sharedLoader != null ?
-          sharedLoader: new ParentLastURLClassLoader(urls, getClass().getClassLoader());
       Thread.currentThread().setContextClassLoader(cl);
 
       // We load the VerticleFactory class using the verticle classloader - this allows

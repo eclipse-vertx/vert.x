@@ -84,7 +84,7 @@ public class ParentLastURLClassLoader extends URLClassLoader {
     if (getParent() != null) {
       parentUrls = getParent().getResources(name);
     }
-    final List<URL> urls = new ArrayList<URL>();
+    final List<URL> urls = new ArrayList<>();
     if (localUrls != null) {
       while (localUrls.hasMoreElements()) {
         urls.add(localUrls.nextElement());
