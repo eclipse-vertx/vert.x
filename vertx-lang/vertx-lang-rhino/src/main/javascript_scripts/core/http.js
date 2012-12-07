@@ -262,8 +262,8 @@ if (!vertx.createHttpServer) {
         return that;
       }
 
-      that.setTrafficClass = function(class) {
-        j_server.setTrafficClass(class);
+      that.setTrafficClass = function(klazz) {
+        j_server.setTrafficClass(klazz);
         return that;
       }
 
@@ -549,8 +549,8 @@ if (!vertx.createHttpServer) {
         return that;
       }
 
-      that.setTrafficClass = function(class) {
-        j_client.setTrafficClass(class);
+      that.setTrafficClass = function(klazz) {
+        j_client.setTrafficClass(klazz);
         return that;
       }
 

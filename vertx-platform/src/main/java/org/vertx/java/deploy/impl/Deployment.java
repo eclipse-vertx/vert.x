@@ -39,8 +39,8 @@ public class Deployment {
   public final boolean autoRedeploy;
 
   public Deployment(String name, String modName, int instances, JsonObject config,
-             URL[] urls, File modDir, String parentDeploymentName,
-             boolean autoRedeploy) {
+                   URL[] urls, File modDir, String parentDeploymentName,
+                   boolean autoRedeploy) {
     this.name = name;
     this.modName = modName;
     this.instances = instances;
