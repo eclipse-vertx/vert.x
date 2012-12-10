@@ -18,7 +18,8 @@ package org.vertx.java.tests.core.isolation;
 
 import org.junit.Test;
 import org.vertx.java.framework.TestBase;
-import vertx.tests.core.isolation.TestClient;
+import vertx.tests.core.isolation.TestClient1;
+import vertx.tests.core.isolation.TestClient2;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -36,14 +37,13 @@ public class JavaIsolationTest extends TestBase {
   }
 
   @Test
+  // Different verticle *types* should be in different classloaders
   public void testIsolation() throws Exception {
-    int numInstances = 10;
-    for (int i = 0; i < numInstances; i++) {
-      startApp(TestClient.class.getName());
-    }
-    startApp(TestClient.class.getName(), numInstances);
+    startApp(TestClient1.class.getName());
+    startApp(TestClient2.class.getName());
+
     startTest(getMethodName(), false);
-    for (int i = 0; i < numInstances * 2; i++) {
+    for (int i = 0; i < 2; i++) {
       waitTestComplete();
     }
   }
