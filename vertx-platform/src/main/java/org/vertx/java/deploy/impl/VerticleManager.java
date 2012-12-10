@@ -31,7 +31,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -51,7 +50,6 @@ import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.DecodeException;
-import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -189,13 +187,26 @@ public class VerticleManager implements ModuleReloader {
     return holder == null ? null : holder.logger;
   }
 
+  private AsyncResultHandler<Void> createHandler(final Handler<String> doneHandler) {
+    return new AsyncResultHandler<Void>() {
+      @Override
+      public void handle(AsyncResult<Void> ar) {
+        if (ar.failed()) {
+          log.error("Failed to deploy verticle", ar.exception);
+          if (doneHandler != null) {
+            doneHandler.handle(null);
+          }
+        }
+      }
+    };
+  }
+
   public void deployVerticle(final boolean worker, final String main,
                              final JsonObject config, final URL[] urls,
                              final int instances, final File currentModDir,
                              final String includes,
                              final Handler<String> doneHandler) {
-
-    BlockingAction<Void> deployModuleAction = new BlockingAction<Void>(vertx, null) {
+    BlockingAction<Void> deployModuleAction = new BlockingAction<Void>(vertx, createHandler(doneHandler)) {
       @Override
       public Void action() throws Exception {
         doDeployVerticle(worker, main, config, urls, instances, currentModDir,
@@ -234,23 +245,13 @@ public class VerticleManager implements ModuleReloader {
                                 String includes, Handler<String> doneHandler)
   {
     checkWorkerContext();
-
     ModuleClassLoader cl = new ModuleClassLoader(urls);
-
     if (includes != null) {
-      String[] includedMods = parseIncludeString(includes);
-      if (includedMods == null) {
-        callDoneHandler(doneHandler, null);
-      }
-      JsonArray jarr = new JsonArray();
-      for (String included: includedMods) {
-        jarr.add(included);
-      }
-      loadIncludedModules(cl, jarr);
+      loadIncludedModules(cl, includes);
     }
-
     doDeploy(null, false, worker, main, null, config, urls, instances, currentModDir, cl, doneHandler);
   }
+
 
   public synchronized void undeployAll(final Handler<Void> doneHandler) {
     final CountingCompletionHandler count = new CountingCompletionHandler(vertx.getOrAssignContext());
@@ -271,7 +272,7 @@ public class VerticleManager implements ModuleReloader {
     count.setHandler(doneHandler);
   }
 
-  public synchronized Map<String, Integer> listInstances() {
+  public Map<String, Integer> listInstances() {
     Map<String, Integer> map = new HashMap<>();
     for (Map.Entry<String, Deployment> entry: deployments.entrySet()) {
       map.put(entry.getKey(), entry.getValue().verticles.size());
@@ -281,10 +282,7 @@ public class VerticleManager implements ModuleReloader {
 
   public void deployMod(final String modName, final JsonObject config,
                         final int instances, final File currentModDir, final Handler<String> doneHandler) {
-
-    System.out.println("Deploying mod " + modName);
-
-    BlockingAction<Void> deployModuleAction = new BlockingAction<Void>(vertx, null) {
+    BlockingAction<Void> deployModuleAction = new BlockingAction<Void>(vertx, createHandler(doneHandler)) {
 
       @Override
       public Void action() throws Exception {
@@ -292,7 +290,6 @@ public class VerticleManager implements ModuleReloader {
         return null;
       }
     };
-
     deployModuleAction.run();
   }
 
@@ -308,7 +305,7 @@ public class VerticleManager implements ModuleReloader {
       }
     };
 
-    BlockingAction<Void> deployModuleAction = new BlockingAction<Void>(vertx, handler) {
+    BlockingAction<Void> installModuleAction = new BlockingAction<Void>(vertx, handler) {
       @Override
       public Void action() throws Exception {
         doInstallMod(moduleName);
@@ -316,7 +313,7 @@ public class VerticleManager implements ModuleReloader {
       }
     };
 
-    deployModuleAction.run();
+    installModuleAction.run();
 
     while (true) {
       try {
@@ -329,7 +326,7 @@ public class VerticleManager implements ModuleReloader {
     }
   }
 
-  public void uninstallMod(String moduleName) {
+  public synchronized void uninstallMod(String moduleName) {
     log.info("Uninstalling module " + moduleName + " from directory " + modRoot);
     File modDir = new File(modRoot, moduleName);
     if (!modDir.exists()) {
@@ -356,11 +353,8 @@ public class VerticleManager implements ModuleReloader {
                            final int instances, final File currentModDir,
                            final Handler<String> doneHandler) {
     checkWorkerContext();
-
     File modDir = new File(modRoot, modName);
     JsonObject conf = loadModuleConfig(modName, modDir);
-
-    System.out.println("Conf is " +conf);
     if (conf != null) {
       String main = conf.getString("main");
       if (main == null) {
@@ -380,7 +374,6 @@ public class VerticleManager implements ModuleReloader {
       File modDirToUse = preserveCwd ? currentModDir : modDir;
 
       List<URL> urls = getModuleClasspath(modDir);
-      System.out.println("urls is " + urls);
       if (urls == null) {
         callDoneHandler(doneHandler, null);
         return;
@@ -402,10 +395,8 @@ public class VerticleManager implements ModuleReloader {
         }
       }
 
-      System.out.println("created classloader");
-
       // Now load any included modules
-      JsonArray includes = conf.getArray("includes");
+      String includes = conf.getString("includes");
       if (includes != null) {
         if (!loadIncludedModules(cl, includes)) {
           callDoneHandler(doneHandler, null);
@@ -457,14 +448,9 @@ public class VerticleManager implements ModuleReloader {
     }
   }
 
-  private boolean loadIncludedModules(ModuleClassLoader cl, JsonArray moduleNames) {
-    System.out.println("Loading included modules");
-    for (Object obj: moduleNames) {
-      if (!(obj instanceof String)) {
-        throw new IllegalArgumentException("module includes must contain only strings");
-      }
-      System.out.println("including " + obj);
-      String moduleName = (String)obj;
+  private boolean loadIncludedModules(ModuleClassLoader cl, String includesString) {
+    checkWorkerContext();
+    for (String moduleName: parseIncludeString(includesString)) {
       synchronized (moduleClassLoaders) {
         ModuleClassLoader includedCl = moduleClassLoaders.get(moduleName);
         if (includedCl == null) {
@@ -477,7 +463,7 @@ public class VerticleManager implements ModuleReloader {
           List<URL> urls = getModuleClasspath(modDir);
           includedCl = new ModuleClassLoader(urls.toArray(new URL[urls.size()]));
           JsonObject conf = loadModuleConfig(moduleName, modDir);
-          JsonArray includes = conf.getArray("includes");
+          String includes = conf.getString("includes");
           if (includes != null) {
             loadIncludedModules(includedCl, includes);
           }
@@ -499,8 +485,6 @@ public class VerticleManager implements ModuleReloader {
         File[] jars = libDir.listFiles();
         for (File jar: jars) {
           URL jarURL = jar.toURI().toURL();
-          String sjarURL = jarURL.toString();
-          String jarName = sjarURL.substring(sjarURL.lastIndexOf("/") + 1);
           urls.add(jarURL);
         }
       }
@@ -557,7 +541,7 @@ public class VerticleManager implements ModuleReloader {
     }
     log.info(msg);
     if (proxyHost != null) {
-      uri = new StringBuffer("http://").append(DEFAULT_REPO_HOST).append(uri).toString();
+      uri = new StringBuilder("http://").append(DEFAULT_REPO_HOST).append(uri).toString();
     }
     HttpClientRequest req = client.get(uri, new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
@@ -734,20 +718,12 @@ public class VerticleManager implements ModuleReloader {
     String parentDeploymentName = getDeploymentName();
     final Deployment deployment = new Deployment(deploymentName, modName, instances,
         config == null ? new JsonObject() : config.copy(), urls, modDir, parentDeploymentName,
-        autoRedeploy);
+        cl, autoRedeploy);
     deployments.put(deploymentName, deployment);
 
     if (parentDeploymentName != null) {
-      ModuleClassLoader deployingClassloader;
-      Deployment parent = deployments.get(parentDeploymentName);
-      parent.childDeployments.add(deploymentName);
-      synchronized (moduleClassLoaders) {
-        deployingClassloader = moduleClassLoaders.get(parent.modName);
-        if (deployingClassloader == null) {
-          throw new IllegalStateException("Can't find class loader for parent");
-        }
-        cl.addParent(deployingClassloader);
-      }
+      ModuleClassLoader deployingClassloader = getVerticleHolder().deployment.classloader;
+      cl.addParent(deployingClassloader);      
     }
 
     for (int i = 0; i < instances; i++) {
