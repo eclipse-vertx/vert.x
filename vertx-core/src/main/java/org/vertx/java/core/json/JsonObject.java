@@ -16,19 +16,24 @@
 
 package org.vertx.java.core.json;
 
-import org.vertx.java.core.http.impl.ws.Base64;
-import org.vertx.java.core.json.impl.Json;
+import java.io.File;
+import java.io.FileNotFoundException;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Scanner;
 import java.util.Set;
 
+import org.vertx.java.core.http.impl.ws.Base64;
+import org.vertx.java.core.json.impl.Json;
+
 /**
- * 
  * Represents a JSON object
  * 
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author Juergen Donnerstag
  */
 public class JsonObject extends JsonElement {
 
@@ -56,11 +61,33 @@ public class JsonObject extends JsonElement {
    * @param jsonString
    *          The string form of a JSON object
    */
-  @SuppressWarnings("unchecked")
   public JsonObject(String jsonString) {
-    map = (Map<String, Object>) Json.decodeValue(jsonString, Map.class);
+    map = init(jsonString);
   }
+  
+  /**
+	 * Load the module config from modDir + mod.json. The content must be JSON
+	 * compliant.
+	 * 
+	 * @param path
+	 * @return
+	 */
+	public JsonObject(final File path) throws NoSuchElementException, FileNotFoundException {
+		try (Scanner scanner = new Scanner(path)) {
+			// regex: \A == Beginning of input. It's a one liner to read the complete
+			// content of a file into a string
+			String conf = scanner.useDelimiter("\\A").next();
+	    map = init(conf);
+		} catch (DecodeException e) {
+			throw new RuntimeException("File contains invalid json: " + path.getAbsolutePath(), e);
+		}
+	}
 
+	@SuppressWarnings("unchecked")
+	private Map<String, Object> init(String jsonString) {
+    return (Map<String, Object>) Json.decodeValue(jsonString, Map.class);
+  }
+	
   public JsonObject putString(String fieldName, String value) {
     map.put(fieldName, value);
     return this;
