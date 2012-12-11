@@ -19,12 +19,14 @@ package org.vertx.java.deploy.impl.cli;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.impl.DefaultVertx;
+import org.vertx.java.core.impl.VertxCountDownLatch;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.deploy.impl.Args;
+import org.vertx.java.deploy.impl.CommandLineArgs;
+import org.vertx.java.deploy.impl.DefaultModuleRepository;
 import org.vertx.java.deploy.impl.VerticleManager;
 
 import java.io.File;
@@ -32,7 +34,6 @@ import java.io.FileNotFoundException;
 import java.net.*;
 import java.util.Enumeration;
 import java.util.Scanner;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -52,14 +53,14 @@ public class Starter {
   }
 
   private VertxInternal vertx = new DefaultVertx();
-  private VerticleManager mgr;
+  private VerticleManager verticleManager;
 
   private Starter(String[] sargs) {
     if (sargs.length < 1) {
       displaySyntax();
     } else {
       String command = sargs[0].toLowerCase();
-      Args args = new Args(sargs);
+      CommandLineArgs args = new CommandLineArgs(sargs);
       if ("version".equals(command)) {
         log.info(VERSION);
       } else {
@@ -91,16 +92,18 @@ public class Starter {
     }
   }
 
-  private void installModule(String modName, Args args) {
+  private void installModule(String modName, CommandLineArgs args) {
     String repo = args.map.get("-repo");
-    new VerticleManager(vertx, repo).installMod(modName);
+    VerticleManager verticleManager = new VerticleManager(vertx, null, 
+    		new DefaultModuleRepository(vertx, repo));
+    verticleManager.moduleManager().installOne(modName);
   }
 
   private void uninstallModule(String modName) {
-    new VerticleManager(vertx).uninstallMod(modName);
+    new VerticleManager(vertx).moduleManager().uninstall(modName);
   }
 
-  private void runVerticle(boolean module, String main, Args args) {
+  private void runVerticle(boolean module, String main, CommandLineArgs args) {
     boolean clustered = args.map.get("-cluster") != null;
     if (clustered) {
       log.info("Starting clustering...");
@@ -120,8 +123,10 @@ public class Starter {
       }
       vertx = new DefaultVertx(clusterPort, clusterHost);
     }
+    
     String repo = args.map.get("-repo");
-    mgr = new VerticleManager(vertx, repo);
+    verticleManager = new VerticleManager(vertx, null, 
+    		new DefaultModuleRepository(vertx, repo));
 
     boolean worker = args.map.get("-worker") != null;
 
@@ -140,14 +145,10 @@ public class Starter {
       parts = new String[] { cp };
     }
     int index = 0;
-    final URL[] urls = new URL[parts.length];
+    final URI[] urls = new URI[parts.length];
     for (String part: parts) {
-      try {
-        URL url = new File(part).toURI().toURL();
-        urls[index++] = url;
-      } catch (MalformedURLException e) {
-        throw new IllegalArgumentException("Invalid path " + part + " in cp " + cp) ;
-      }
+      URI url = new File(part).toURI();
+      urls[index++] = url;
     }
 
     String sinstances = args.map.get("-instances");
@@ -193,40 +194,33 @@ public class Starter {
       public void handle(String id) {
         if (id == null) {
           // Failed to deploy
-          mgr.unblock();
+          verticleManager.unblock();
         }
       }
     };
     if (module) {
-      mgr.deployMod(main, conf, instances, null, doneHandler);
+      verticleManager.deployMod(main, conf, instances, null, doneHandler);
     } else {
       String includes = args.map.get("-includes");
-      mgr.deployVerticle(worker, main, conf, urls, instances, null, includes, doneHandler);
+      verticleManager.deployVerticle(worker, main, conf, urls, instances, null, includes, doneHandler);
     }
 
     addShutdownHook();
-    mgr.block();
+    verticleManager.block();
   }
 
 
   private void addShutdownHook() {
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
-        final CountDownLatch latch = new CountDownLatch(1);
-        mgr.undeployAll(new SimpleHandler() {
+        final VertxCountDownLatch latch = new VertxCountDownLatch(1);
+        verticleManager.undeployAll(new SimpleHandler() {
           public void handle() {
             latch.countDown();
           }
         });
-        while (true) {
-          try {
-            if (!latch.await(30, TimeUnit.SECONDS)) {
-              log.error("Timed out waiting to undeploy");
-            }
-            break;
-          } catch (InterruptedException e) {
-            //OK - can get spurious interupts
-          }
+        if (!latch.await(30, TimeUnit.SECONDS)) {
+          log.error("Timed out waiting to undeploy");
         }
       }
     });
