@@ -53,6 +53,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   private final EventBus eb;
   private Set<String> acceptedReplyAddresses = new HashSet<>();
   private Map<String, Pattern> compiledREs = new HashMap<>();
+  private EventBusBridgeHook hook;
 
   private List<JsonObject> convertArray(JsonArray permitted) {
     List<JsonObject> l = new ArrayList<>();
@@ -404,6 +405,16 @@ public class EventBusBridge implements Handler<SockJSSocket> {
 
   }
 
+  // Hook
+  // ==============================
+  public void setHook(EventBusBridgeHook hook) {
+    this.hook = hook;
+  }
+  
+  public EventBusBridgeHook getHook() {
+    return hook;
+  }
+  
   // Override these to get hooks into the bridge events
   // ==================================================
 
@@ -412,6 +423,9 @@ public class EventBusBridge implements Handler<SockJSSocket> {
    * @param sock The socket
    */
   protected void handleSocketClosed(SockJSSocket sock) {
+    if(hook != null) {
+      hook.handleSocketClosed(sock);
+    }
   }
 
   /**
@@ -423,6 +437,9 @@ public class EventBusBridge implements Handler<SockJSSocket> {
    * @return true To allow the send/publish to occur, false otherwise
    */
   protected boolean handleSendOrPub(SockJSSocket sock, boolean send, JsonObject msg, String address) {
+	if(hook != null) {
+       return hook.handleSendOrPub(sock, send, msg, address);    		   
+	}
     return true;
   }
 
@@ -433,6 +450,9 @@ public class EventBusBridge implements Handler<SockJSSocket> {
    * @return true to let the registration occur, false otherwise
    */
   protected boolean handleRegister(SockJSSocket sock, String address) {
+    if(hook != null) {
+       return hook.handleRegister(sock, address);    		   
+	}
     return true;
   }
 
@@ -442,6 +462,9 @@ public class EventBusBridge implements Handler<SockJSSocket> {
    * @param address The address
    */
   protected boolean handleUnregister(SockJSSocket sock, String address) {
+	if(hook != null) {
+	   return hook.handleUnregister(sock, address);    		   		
+	}
     return true;
   }
 
