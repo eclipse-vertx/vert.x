@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package org.vertx.java.deploy.impl;
+package org.vertx.java.deploy;
 
 /**
+ * Interface for module repository implementations
  * 
  * @author Juergen Donnerstag
  */

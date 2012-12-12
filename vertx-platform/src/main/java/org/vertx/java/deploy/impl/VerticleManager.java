@@ -18,7 +18,6 @@ package org.vertx.java.deploy.impl;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -32,9 +31,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Properties;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,11 +46,11 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
-import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Container;
+import org.vertx.java.deploy.ModuleRepository;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.deploy.VerticleFactory;
 
@@ -84,17 +81,24 @@ public class VerticleManager implements ModuleReloader {
   }
 
   public VerticleManager(VertxInternal vertx, String repo) {
+  	this(vertx, repo, null);
+  }
+
+  public VerticleManager(VertxInternal vertx, String repo, String modDir) {
     this.vertx = vertx;
     VertxLocator.vertx = vertx;
     VertxLocator.container = new Container(this);
-    String modDir = System.getProperty("vertx.mods");
-    if (modDir != null && !modDir.trim().equals("")) {
-      modRoot = new File(modDir);
-    } else {
-      // Default to local module directory called 'mods'
-      modRoot = new File("mods");
+    if (modDir == null) {
+    	modDir = System.getProperty("vertx.mods");
     }
-    
+    if (modDir == null || modDir.trim().equals("")) {
+    	modDir = "mods";
+    } 
+    modRoot = new File(modDir);
+    if (modRoot.exists() && !modRoot.isDirectory()) {
+    	throw new RuntimeException("modRoot must be a directory: " + modRoot.getAbsolutePath());
+    }
+   
     // Always initial with at least one repository
     ModuleRepository defRepo = newModuleRepository(vertx, repo, modRoot);
     if (defRepo == null) {
@@ -235,7 +239,7 @@ public class VerticleManager implements ModuleReloader {
         File modDir = new File(modRoot, includedMod);
         JsonObject conf;
         inner: while (true) {
-          conf = loadModuleConfig(includedMod, modDir);
+          conf = new ModuleConfig(modDir, includedMod).json();
           if (conf == null) {
             // Try and install the module
             if (!doInstallMod(includedMod)) {
@@ -361,33 +365,33 @@ public class VerticleManager implements ModuleReloader {
     checkWorkerContext();
 
     File modDir = new File(modRoot, modName);
-    JsonObject conf = loadModuleConfig(modName, modDir);
-    if (conf != null) {
-      String main = conf.getString("main");
+    ModuleConfig conf = new ModuleConfig(modDir, modName);
+    if (conf.json() != null) {
+      String main = conf.main();
       if (main == null) {
         log.error("Runnable module " + modName + " mod.json must contain a \"main\" field");
         callDoneHandler(doneHandler, null);
         return;
       }
-      Boolean worker = conf.getBoolean("worker");
+      Boolean worker = conf.worker();
       if (worker == null) {
         worker = Boolean.FALSE;
       }
-      Boolean preserveCwd = conf.getBoolean("preserve-cwd");
+      Boolean preserveCwd = conf.preserveCwd();
       if (preserveCwd == null) {
         preserveCwd = Boolean.FALSE;
       }
       // If preserveCwd then use the current module directory instead, or the cwd if not in a module
       File modDirToUse = preserveCwd ? currentModDir : modDir;
 
-      List<URL> urls = processIncludes(modName, new ArrayList<URL>(), modName, modDir, conf,
+      List<URL> urls = processIncludes(modName, new ArrayList<URL>(), modName, modDir, conf.json(),
                                        new HashMap<String, String>(), new HashSet<String>());
       if (urls == null) {
         callDoneHandler(doneHandler, null);
         return;
       }
 
-      Boolean ar = conf.getBoolean("auto-redeploy");
+      Boolean ar = conf.autoRedeploy();
       final boolean autoRedeploy = ar == null ? false : ar;
 
       doDeploy(depName, autoRedeploy, worker, main, modName, config,
@@ -406,31 +410,6 @@ public class VerticleManager implements ModuleReloader {
       } else {
         callDoneHandler(doneHandler, null);
       }
-    }
-  }
-
-  private JsonObject loadModuleConfig(String modName, File modDir) {
-    checkWorkerContext();
-    if (modDir.exists()) {
-      try (Scanner scanner = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A")) {
-        String conf;
-        try {
-          conf = scanner.next();
-        } catch (NoSuchElementException e) {
-          throw new IllegalStateException("Module " + modName + " contains an empty mod.json file");
-        }
-        JsonObject json;
-        try {
-          json = new JsonObject(conf);
-        } catch (DecodeException e) {
-          throw new IllegalStateException("Module " + modName + " mod.json contains invalid json");
-        }
-        return json;
-      } catch (FileNotFoundException e) {
-        throw new IllegalStateException("Module " + modName + " does not contain a mod.json file");
-      }
-    } else {
-      return null;
     }
   }
 
@@ -482,7 +461,7 @@ public class VerticleManager implements ModuleReloader {
         } else {
           File newmodDir = new File(modRoot, include);
           inner: while (true) {
-            JsonObject newconf = loadModuleConfig(include, newmodDir);
+            JsonObject newconf = new ModuleConfig(newmodDir, include).json();
             if (newconf != null) {
               urls = processIncludes(runModule, urls, include, newmodDir, newconf,
                                      includedJars, includedModules);
