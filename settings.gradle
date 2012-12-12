@@ -16,15 +16,15 @@
 
 include 'vertx-core'
 include 'vertx-platform'
-include 'vertx-testframework'
+// include 'vertx-testframework'
 
 include 'vertx-lang-groovy'
 include 'vertx-lang-java'
-include 'vertx-lang-jruby'
-include 'vertx-lang-jython'
-include 'vertx-lang-rhino'
+// include 'vertx-lang-jruby'
+// include 'vertx-lang-jython'
+// include 'vertx-lang-rhino'
 
-include 'vertx-testsuite'
+// include 'vertx-testsuite'
 
 rootProject.name='vert.x'
 
