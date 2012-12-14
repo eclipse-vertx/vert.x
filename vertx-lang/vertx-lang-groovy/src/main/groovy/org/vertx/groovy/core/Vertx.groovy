@@ -157,8 +157,8 @@ class Vertx {
    * Cancel the timer with the specified {@code id}. Returns {@code} true if the timer was successfully cancelled, or
    * {@code false} if the timer does not exist.
    */
-  void cancelTimer(long timerID) {
-    jVertex.cancelTimer(timerID)
+  boolean cancelTimer(long timerID) {
+    return jVertex.cancelTimer(timerID)
   }
 
   /**
