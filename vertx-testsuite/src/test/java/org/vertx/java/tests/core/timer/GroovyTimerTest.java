@@ -49,4 +49,14 @@ public class GroovyTimerTest extends TestBase {
     startTest(getMethodName());
   }
 
+  @Test
+  public void testCancelledOK() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testCancelledNotOK() throws Exception {
+    startTest(getMethodName());
+  }
+
 }
