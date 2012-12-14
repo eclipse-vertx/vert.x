@@ -52,6 +52,29 @@ def testPeriodic() {
   })
 }
 
+def testCancelledOK() {
+  def id
+  id = vertx.setTimer(100, { timerID ->
+    tu.azzert(false, "Should not be called")
+  })
+  def cancelled = vertx.cancelTimer(id)
+  tu.azzert(cancelled)
+  tu.testComplete()
+}
+
+def testCancelledNotOK() {
+  def id
+  id = vertx.setTimer(1, { timerID ->
+    tu.azzert(id == timerID)
+  })
+  vertx.setTimer(100, {
+    def cancelled = vertx.cancelTimer(id)
+    tu.azzert(!cancelled)
+    tu.testComplete()
+  })
+
+}
+
 def setEndTimer() {
   vertx.setTimer(10, {
     tu.testComplete()
