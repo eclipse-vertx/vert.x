@@ -31,7 +31,7 @@ var vertx = vertx || {};
   vertx.EventBus = function(url, options) {
   
     var that = this;
-    var sockJSConn = new SockJS(url, options);
+    var sockJSConn = new SockJS(url, undefined, options);
     var handlerMap = {};
     var replyHandlers = {};
     var state = vertx.EventBus.CONNECTING;
