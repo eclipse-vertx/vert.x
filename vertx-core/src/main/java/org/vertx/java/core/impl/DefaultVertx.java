@@ -84,18 +84,18 @@ public class DefaultVertx extends VertxInternal {
   private final Map<Long, TimeoutHolder> timeouts = new ConcurrentHashMap<>();
 
   public DefaultVertx() {
-    this.eventBus = new DefaultEventBus(this);
     configure();
+    this.eventBus = new DefaultEventBus(this);
   }
 
   public DefaultVertx(String hostname) {
-    this.eventBus = new DefaultEventBus(this, hostname);
     configure();
+    this.eventBus = new DefaultEventBus(this, hostname);
   }
 
   public DefaultVertx(int port, String hostname) {
-    this.eventBus = new DefaultEventBus(this, port, hostname);
     configure();
+    this.eventBus = new DefaultEventBus(this, port, hostname);
   }
 
   /**
