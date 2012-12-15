@@ -164,8 +164,23 @@ function splitJvmOpts() {
 }
 eval splitJvmOpts $DEFAULT_JVM_OPTS $JAVA_OPTS $VERTX_OPTS
 
+for arg in "$@" ; do
+    IS_NUMBER=`echo "$arg" | egrep -c "^[0-9]+$"`
+    PREV_DEBUG_ARG=`echo "$prev" | grep -c "^-debug-port$"`
+
+    if [ $PREV_DEBUG_ARG -eq 1 ] ; then
+        if [ $IS_NUMBER -eq 1 ] ; then
+            DEBUG_PARAM="-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=$arg"
+        else
+            echo "Invalid debug port"
+        fi
+    fi
+    prev=$arg
+done
+
 exec "$JAVACMD" \
     "${JVM_OPTS[@]}" \
+    $DEBUG_PARAM \
     -Djava.util.logging.config.file=${VERTX_JUL_CONFIG:-${APP_HOME}/conf/logging.properties} \
     -Djruby.home=$JRUBY_HOME \
     -classpath "$CLASSPATH" \
