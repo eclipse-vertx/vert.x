@@ -152,7 +152,7 @@ task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
 		from subprojects.configurations.platform
 		from subprojects.configurations.compile
     // Don't just include everything!!
-    includes = ["groovy*.jar", "jackson*.jar", "rhino*.jar", "netty*.jar", "hazelcast*.jar", "vertx*.jar"]
+    includes = ["groovy*.jar", "scala*.jar", "jackson*.jar", "rhino*.jar", "netty*.jar", "hazelcast*.jar", "vertx*.jar"]
 	}
 	doLast {
 		project.ant.chmod(file: "build/$rootProject.name-$version/bin", perm: 'ugo+x')
@@ -189,7 +189,7 @@ task nonJavadocs(type: Copy) {
 	outputs.dir destinationDir
 	
 	doFirst {
-		['groovy/api', 'javascript/api', 'python/api', 'ruby/api'].each { dir->
+		['groovy/api', 'javascript/api', 'python/api', 'ruby/api', 'scala/api'].each { dir->
 			mkdir("$rootDir/build/$rootProject.name-$version/api-docs/$dir")
 		}
 	}
@@ -207,6 +207,9 @@ task nonJavadocs(type: Copy) {
 	into('javascript') {
 		from file('vertx-lang/vertx-lang-rhino/build/docs/javascript')
 	}
+  into('scala') {
+    from file('vertx-lang/vertx-lang-scala/build/docs/scala')
+  }
 }
 
 task createDocs(dependsOn: [subprojects.classes, 'javadocs', 'nonJavadocs']) {
