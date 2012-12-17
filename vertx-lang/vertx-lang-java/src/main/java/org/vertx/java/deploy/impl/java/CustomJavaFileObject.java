@@ -16,17 +16,11 @@
 
 package org.vertx.java.deploy.impl.java;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.io.Writer;
-import java.net.URI;
-
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.NestingKind;
 import javax.tools.JavaFileObject;
+import java.io.*;
+import java.net.URI;
 
 /**
  * @author Janne Hietam&auml;ki

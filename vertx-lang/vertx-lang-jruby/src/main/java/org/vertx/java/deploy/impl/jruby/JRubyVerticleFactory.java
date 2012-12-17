@@ -43,19 +43,6 @@ public class JRubyVerticleFactory implements VerticleFactory {
 	  this.mgr = mgr;
   }
 
-  @Override
-  public String getLanguage() {
-	  return "ruby";
-  }
-  
-  @Override
-  public boolean isFactoryFor(String main) {
-    if (main.endsWith(".rb")) {
-      return true;
-    }
-    return false;
-  }
-
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
     if (System.getProperty("jruby.home") == null) {
       throw new IllegalStateException("In order to deploy Ruby applications you must set JRUBY_HOME to point " +

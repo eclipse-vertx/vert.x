@@ -52,7 +52,8 @@ public class LocalClient extends EventBusAppBase {
   }
 
   public void testPubSubMultipleHandlers() {
-    Buffer buff = TestUtils.generateRandomBuffer(1000);                                                                    eb.send("some-address", buff);
+    Buffer buff = TestUtils.generateRandomBuffer(1000);
+    eb.send("some-address", buff);
     data.put("buffer", buff);
     eb.publish("some-address", buff);
   }
@@ -89,13 +90,22 @@ public class LocalClient extends EventBusAppBase {
     }
   }
 
-  public void testLocal() {
+  public void testLocal1() {
+    testLocal(true);
+  }
+
+  public void testLocal2() {
+    testLocal(false);
+  }
+
+  public void testLocal(boolean localMethod) {
     final int numHandlers = 10;
     final String address = UUID.randomUUID().toString();
     final AtomicInteger count = new AtomicInteger(0);
     final Buffer buff = TestUtils.generateRandomBuffer(1000);
     for (int i = 0; i < numHandlers; i++) {
-      eb.registerHandler(address, new Handler<Message<Buffer>>() {
+
+      Handler<Message<Buffer>> handler = new Handler<Message<Buffer>>() {
         boolean handled;
 
         public void handle(Message<Buffer> msg) {
@@ -110,7 +120,12 @@ public class LocalClient extends EventBusAppBase {
           }
           handled = true;
         }
-      });
+      };
+      if (localMethod) {
+        eb.registerLocalHandler(address, handler);
+      } else {
+        eb.registerHandler(address, handler);
+      }
     }
 
     eb.publish(address, buff);
@@ -119,13 +134,14 @@ public class LocalClient extends EventBusAppBase {
   public void testRegisterNoAddress() {
     final String msg = "foo";
     final AtomicReference<String> idRef = new AtomicReference<>();
-    String id = eb.registerHandler(new Handler<Message<String>>() {
+    String id = UUID.randomUUID().toString();
+    eb.registerHandler(id, new Handler<Message<String>>() {
       boolean handled = false;
       public void handle(Message<String> received) {
         tu.azzert(!handled);
         tu.azzert(msg.equals(received.body));
         handled = true;
-        eb.unregisterHandler(idRef.get());
+        eb.unregisterHandler(idRef.get(), this);
         vertx.setTimer(100, new Handler<Long>() {
           public void handle(Long timerID) {
             tu.testComplete();

@@ -1,0 +1,4 @@
+{
+  "main": "app.js",
+  "includes": "vertx.auth-mgr-v1.1, my-mod2"
+}

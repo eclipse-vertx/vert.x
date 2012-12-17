@@ -17,6 +17,7 @@
 package org.vertx.java.core.file.impl;
 
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.VertxInternal;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -26,8 +27,8 @@ import java.nio.file.Paths;
  */
 public class PathAdjuster {
 
-  public static Path adjust(Path path) {
-    Context context = Context.getContext();
+  public static Path adjust(final VertxInternal vertx, Path path) {
+    Context context = vertx.getContext();
     if (context != null) {
       Path adjustment = context.getPathAdjustment();
       if (adjustment != null) {
@@ -37,8 +38,8 @@ public class PathAdjuster {
     return path;
   }
 
-  public static String adjust(String path) {
-    Path adjustment = adjust(Paths.get(path));
+  public static String adjust(final VertxInternal vertx, String path) {
+    Path adjustment = adjust(vertx, Paths.get(path));
     return adjustment.toString();
   }
 }

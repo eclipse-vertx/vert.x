@@ -29,12 +29,7 @@ import org.vertx.java.deploy.impl.VerticleManager;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.MalformedURLException;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.URL;
+import java.net.*;
 import java.util.Enumeration;
 import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
@@ -48,8 +43,9 @@ public class Starter {
 
   private static final Logger log = LoggerFactory.getLogger(Starter.class);
 
-  private static final String CP_SEPARATOR =
-    System.getProperty("os.name").startsWith("Windows") ? ";" : ":";
+  private static final String CP_SEPARATOR = System.getProperty("path.separator");
+
+  private static final String VERSION = "vert.x-1.3.0.final";
 
   public static void main(String[] args) {
     new Starter(args);
@@ -59,14 +55,13 @@ public class Starter {
   private VerticleManager mgr;
 
   private Starter(String[] sargs) {
-	String vertxVersion = String.format("vert.x %s", System.getProperty("vertx.version", "0.0.0-UNKNOWN!"));
     if (sargs.length < 1) {
       displaySyntax();
     } else {
       String command = sargs[0].toLowerCase();
       Args args = new Args(sargs);
       if ("version".equals(command)) {
-        log.info(vertxVersion);
+        log.info(VERSION);
       } else {
         if (sargs.length < 2) {
           displaySyntax();
@@ -74,7 +69,7 @@ public class Starter {
           String operand = sargs[1];
           switch (command) {
             case "version":
-              log.info(vertxVersion);
+              log.info(VERSION);
               break;
             case "run":
               runVerticle(false, operand, args);
@@ -98,19 +93,7 @@ public class Starter {
 
   private void installModule(String modName, Args args) {
     String repo = args.map.get("-repo");
-    final CountDownLatch latch = new CountDownLatch(1);
-    new VerticleManager(vertx, repo).installMod(modName, new Handler<Boolean>() {
-      public void handle(Boolean res) {
-        latch.countDown();
-      }
-    });
-    while (true) {
-      try {
-        latch.await(30, TimeUnit.SECONDS);
-        break;
-      } catch (InterruptedException e) {
-      }
-    }
+    new VerticleManager(vertx, repo).installMod(modName);
   }
 
   private void uninstallModule(String modName) {
@@ -190,8 +173,8 @@ public class Starter {
     JsonObject conf;
 
     if (configFile != null) {
-      try {
-        String sconf = new Scanner(new File(configFile)).useDelimiter("\\A").next();
+      try (Scanner scanner = new Scanner(new File(configFile)).useDelimiter("\\A")){
+        String sconf = scanner.next();
         try {
           conf = new JsonObject(sconf);
         } catch (DecodeException e) {
@@ -217,7 +200,8 @@ public class Starter {
     if (module) {
       mgr.deployMod(main, conf, instances, null, doneHandler);
     } else {
-      mgr.deploy(worker, main, conf, urls, instances, null, doneHandler);
+      String includes = args.map.get("-includes");
+      mgr.deployVerticle(worker, main, conf, urls, instances, null, includes, doneHandler);
     }
 
     addShutdownHook();
@@ -298,6 +282,9 @@ public class Starter {
 "                               Default is vert-x.github.com/vertx-mods\n" +
 "        -worker                if specified then the verticle is a worker\n" +
 "                               verticle.\n" +
+"        -includes <mod_list>   optional comma separated list of modules\n" +
+"                               which will be added to the classpath of\n" +
+"                               the verticle.\n" +
 "        -cluster               if specified then the vert.x instance will form a\n" +
 "                               cluster with any other vert.x instances on the\n" +
 "                               network.\n" +

@@ -16,6 +16,7 @@
 
 package org.vertx.java.deploy.impl.jruby;
 
+import org.jruby.CompatVersion;
 import org.jruby.embed.InvokeFailedException;
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.ScriptingContainer;
@@ -41,6 +42,7 @@ public class JRubyVerticle extends Verticle {
 
   JRubyVerticle(String scriptName, ClassLoader cl) {
     this.container = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+    container.setCompatVersion(CompatVersion.RUBY1_9);
     container.setClassLoader(cl);
     //Prevent JRuby from logging errors to stderr - we want to log ourselves
     container.setErrorWriter(new NullWriter());
@@ -79,6 +81,7 @@ public class JRubyVerticle extends Verticle {
       }
       throw e;
     }
+    container.clear();
   }
 
   private class NullWriter extends Writer {

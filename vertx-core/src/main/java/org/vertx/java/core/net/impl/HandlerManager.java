@@ -18,7 +18,6 @@ package org.vertx.java.core.net.impl;
 
 import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.EventLoopContext;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -33,7 +32,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class HandlerManager<T> {
 
-  private static final Logger log = LoggerFactory.getLogger(HandlerManager.class);
+  @SuppressWarnings("unused")
+	private static final Logger log = LoggerFactory.getLogger(HandlerManager.class);
 
   private final VertxWorkerPool availableWorkers;
   private Map<NioWorker, Handlers<T>> handlerMap = new ConcurrentHashMap<>();
@@ -54,20 +54,8 @@ public class HandlerManager<T> {
     return handlers.chooseHandler();
   }
 
-  private NioWorker getWorker(Context context) {
-    EventLoopContext ectx;
-    if (context instanceof EventLoopContext) {
-      //It always will be
-      ectx = (EventLoopContext)context;
-    } else {
-      ectx = null;
-    }
-    NioWorker worker = ectx.getWorker();
-    return worker;
-  }
-
-  public synchronized void addHandler(Handler<T> handler, Context context) {
-    NioWorker worker = getWorker(context);
+  public synchronized void addHandler(Handler<T> handler, EventLoopContext context) {
+    NioWorker worker = context.getWorker();
     availableWorkers.addWorker(worker);
     Handlers<T> handlers = handlerMap.get(worker);
     if (handlers == null) {
@@ -77,8 +65,8 @@ public class HandlerManager<T> {
     handlers.addHandler(new HandlerHolder<>(context, handler));
   }
 
-  public synchronized void removeHandler(Handler<T> handler, Context context) {
-    NioWorker worker = getWorker(context);
+  public synchronized void removeHandler(Handler<T> handler, EventLoopContext context) {
+    NioWorker worker = context.getWorker();
     Handlers<T> handlers = handlerMap.get(worker);
     if (!handlers.removeHandler(new HandlerHolder<>(context, handler))) {
       throw new IllegalStateException("Can't find handler");

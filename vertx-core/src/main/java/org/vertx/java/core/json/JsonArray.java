@@ -16,21 +16,21 @@
 
 package org.vertx.java.core.json;
 
-import org.vertx.java.core.http.impl.ws.Base64;
-import org.vertx.java.core.json.impl.Json;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.vertx.java.core.http.impl.ws.Base64;
+import org.vertx.java.core.json.impl.Json;
+
 /**
  * Represents a JSON array
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JsonArray implements Iterable<Object> {
+public class JsonArray extends JsonElement implements Iterable<Object> {
 
   final List<Object> list;
 
@@ -66,6 +66,14 @@ public class JsonArray implements Iterable<Object> {
     return this;
   }
 
+  public JsonArray addElement(JsonElement value) {
+    if (value.isArray()) {
+      return addArray(value.asArray());
+    }
+
+    return addObject(value.asObject());
+  }
+
   public JsonArray addNumber(Number value) {
     list.add(value);
     return this;
@@ -84,9 +92,9 @@ public class JsonArray implements Iterable<Object> {
 
   public JsonArray add(Object obj) {
     if (obj instanceof JsonObject) {
-      obj = ((JsonObject)obj).map;
+      obj = ((JsonObject) obj).map;
     } else if (obj instanceof JsonArray) {
-      obj = ((JsonArray)obj).list;
+      obj = ((JsonArray) obj).list;
     }
     list.add(obj);
     return this;
@@ -96,6 +104,11 @@ public class JsonArray implements Iterable<Object> {
     return list.size();
   }
 
+  public Object get(final int index) {
+    return convertObject(list.get(index));
+  }
+
+  @Override
   public Iterator<Object> iterator() {
     return new Iterator<Object>() {
 
@@ -107,17 +120,9 @@ public class JsonArray implements Iterable<Object> {
       }
 
       @SuppressWarnings("unchecked")
-	  @Override
+      @Override
       public Object next() {
-        Object next = iter.next();
-        if (next != null) {
-          if (next instanceof List) {
-            next = new JsonArray((List<Object>) next);
-          } else if (next instanceof Map) {
-            next = new JsonObject((Map<String, Object>) next);
-          }
-        }
-        return next;
+        return convertObject(iter.next());
       }
 
       @Override
@@ -139,17 +144,21 @@ public class JsonArray implements Iterable<Object> {
     return new JsonArray(encode());
   }
 
+  @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
+    if (this == o)
+      return true;
 
-    if (o == null || getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass())
+      return false;
 
     JsonArray that = (JsonArray) o;
 
-    if (this.list.size() != that.list.size()) return false;
+    if (this.list.size() != that.list.size())
+      return false;
 
-    Iterator<?> iter = that.iterator();
-    for (Object entry: this.list) {
+    Iterator<?> iter = that.list.iterator();
+    for (Object entry : this.list) {
       Object other = iter.next();
       if (!entry.equals(other)) {
         return false;
@@ -165,17 +174,31 @@ public class JsonArray implements Iterable<Object> {
   @SuppressWarnings("unchecked")
   static List<Object> convertList(List<?> list) {
     List<Object> arr = new ArrayList<>(list.size());
-    for (Object obj: list) {
+    for (Object obj : list) {
       if (obj instanceof Map) {
         arr.add(JsonObject.convertMap((Map<String, Object>) obj));
       } else if (obj instanceof JsonObject) {
-        arr.add(((JsonObject)obj).toMap());
+        arr.add(((JsonObject) obj).toMap());
       } else if (obj instanceof List) {
-          arr.add(convertList((List<?>) obj));
+        arr.add(convertList((List<?>) obj));
       } else {
-          arr.add(obj);
+        arr.add(obj);
       }
     }
     return arr;
+  }
+
+  private static Object convertObject(final Object obj) {
+    Object retVal = obj;
+
+    if (obj != null) {
+      if (obj instanceof List) {
+        retVal = new JsonArray((List<Object>) obj);
+      } else if (obj instanceof Map) {
+        retVal = new JsonObject((Map<String, Object>) obj);
+      }
+    }
+
+    return retVal;
   }
 }

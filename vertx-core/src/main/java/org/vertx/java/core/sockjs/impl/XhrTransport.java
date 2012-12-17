@@ -89,9 +89,8 @@ class XhrTransport extends BaseTransport {
       public void handle(final HttpServerRequest req) {
         if (log.isTraceEnabled()) log.trace("XHR, post, " + req.uri);
         String sessionID = req.params().get("param0");
-        Session session = getSession((Long)config.getNumber("session_timeout"), (Long)config.getNumber("heartbeat_period"), sessionID, sockHandler);
-
-        session.register(streaming? new XhrStreamingListener((Integer)config.getNumber("max_bytes_streaming"), req, session) : new XhrPollingListener(req, session));
+        Session session = getSession(config.getLong("session_timeout"), config.getLong("heartbeat_period"), sessionID, sockHandler);
+        session.register(streaming? new XhrStreamingListener(config.getInteger("max_bytes_streaming"), req, session) : new XhrPollingListener(req, session));
       }
     });
   }
@@ -172,7 +171,7 @@ class XhrTransport extends BaseTransport {
           req.response.close();
           closed = true;
         } catch (IllegalStateException e) {
-          // Underlying connection might alreadu be closed - that's fine
+          // Underlying connection might already be closed - that's fine
         }
       }
     }

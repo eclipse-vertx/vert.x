@@ -58,6 +58,13 @@ import org.vertx.java.core.json.JsonObject;
  */
 public interface EventBus {
 
+	/**
+	 * Close the EventBus and release all resources. 
+	 * 
+	 * @param doneHandler
+	 */
+  void close(Handler<Void> doneHandler);
+
   /**
    * Send a JSON object as a message
    * @param address The address to send it to
@@ -352,7 +359,7 @@ public interface EventBus {
    * propagated to all nodes of the event bus, the handler will be called.
    */
   void unregisterHandler(String address, Handler<? extends Message> handler,
-                                AsyncResultHandler<Void> resultHandler);
+                         AsyncResultHandler<Void> resultHandler);
 
   /**
    * Unregisters a handler given the address and the handler
@@ -362,69 +369,28 @@ public interface EventBus {
   void unregisterHandler(String address, Handler<? extends Message> handler);
 
   /**
-   * Unregister a handler given the unique handler id
-   * @param id The handler id
-   */
-  void unregisterHandler(String id);
-
-  /**
-   * Unregister a handler given the unique handler id
-   * @param id The handler id
-   * @param resultHandler Optional completion handler. If specified, when the unregister has been
-   * propagated to all nodes of the event bus, the handler will be called.
-   */
-  void unregisterHandler(String id, AsyncResultHandler<Void> resultHandler);
-
-  /**
-   * Registers a handler against a uniquely generated address, the address is returned as the id
-   * @param handler The handler
-   * @return The unique id
-   */
-  String registerHandler(Handler<? extends Message> handler);
-
-  /**
-   * Registers a handler against a uniquely generated address, the address is returned as the id
-   * @param handler
-   * @param resultHandler Optional result handler. If specified, when the register has been
-   * propagated to all nodes of the event bus, the handler will be called.
-   * @return The unique id
-   */
-  String registerHandler(Handler<? extends Message> handler,
-                         AsyncResultHandler<Void> resultHandler);
-
-  /**
    * Registers a handler against the specified address
    * @param address The address to register it at
    * @param handler The handler
    * @param resultHandler Optional completion handler. If specified, when the register has been
    * propagated to all nodes of the event bus, the handler will be called.
-   * @return The unique id
    */
-  String registerHandler(String address, Handler<? extends Message> handler,
-                         AsyncResultHandler<Void> resultHandler);
+  void registerHandler(String address, Handler<? extends Message> handler,
+                       AsyncResultHandler<Void> resultHandler);
 
   /**
    * Registers a handler against the specified address
    * @param address The address to register it at
    * @param handler The handler
-   * @return The unique id
    */
-  String registerHandler(String address, Handler<? extends Message> handler);
+  void registerHandler(String address, Handler<? extends Message> handler);
 
   /**
    * Registers a local handler against the specified address. The handler info won't
    * be propagated across the cluster
    * @param address The address to register it at
    * @param handler The handler
-   * @return The unqiue id
    */
-  String registerLocalHandler(String address, Handler<? extends Message> handler);
-
-  /**
-   * Registers a local handler against a uniquely generated address, the address is returned as the id
-   * @param handler
-   * @return The unique id
-   */
-  String registerLocalHandler(Handler<? extends Message> handler);
+  void registerLocalHandler(String address, Handler<? extends Message> handler);
 }
 

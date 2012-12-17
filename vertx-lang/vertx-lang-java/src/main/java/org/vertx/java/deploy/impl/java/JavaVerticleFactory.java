@@ -36,30 +36,12 @@ public class JavaVerticleFactory implements VerticleFactory {
 	  this.mgr = mgr;
   }
 
-  @Override
-  public String getLanguage() {
-	  return "java";
-  }
-  
-  @Override
-  public boolean isFactoryFor(String main) {
-    if (isJavaSource(main)) {
-      return true;
-    }
-    if (main.endsWith(".class")) {
-      return true;
-    }
-    if (main.endsWith(".jar")) {
-      return true;
-    }
-    return false;
-  }
-  
   private boolean isJavaSource(String main) {
     return main.endsWith(".java");
   }
 
   public Verticle createVerticle(String main, ClassLoader loader) throws Exception {
+
     ClassLoader cl = loader;
     String className = main;
     if (isJavaSource(main)) {
@@ -81,7 +63,6 @@ public class JavaVerticleFactory implements VerticleFactory {
     }
 
     return verticle;
-
   }
     
   public void reportException(Throwable t) {

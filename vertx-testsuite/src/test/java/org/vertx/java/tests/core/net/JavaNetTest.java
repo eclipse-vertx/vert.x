@@ -29,17 +29,7 @@ import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.streams.Pump;
 import org.vertx.java.framework.TestBase;
 import vertx.tests.core.http.TLSTestParams;
-import vertx.tests.core.net.CloseHandlerServer;
-import vertx.tests.core.net.CloseHandlerServerCloseFromServer;
-import vertx.tests.core.net.CloseSocketServer;
-import vertx.tests.core.net.DrainingServer;
-import vertx.tests.core.net.EchoServer;
-import vertx.tests.core.net.EchoServerNoReady;
-import vertx.tests.core.net.FanoutServer;
-import vertx.tests.core.net.InstanceCheckServer;
-import vertx.tests.core.net.PausingServer;
-import vertx.tests.core.net.TLSServer;
-import vertx.tests.core.net.TestClient;
+import vertx.tests.core.net.*;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

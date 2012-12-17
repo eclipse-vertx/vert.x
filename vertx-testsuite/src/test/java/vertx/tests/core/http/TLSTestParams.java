@@ -16,11 +16,7 @@
 
 package vertx.tests.core.http;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import java.io.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

@@ -67,9 +67,10 @@ class SockJSServer(object):
         java_config = org.vertx.java.core.json.JsonObject(map_to_java(config))
         self.java_obj.installApp(java_config, SockJSSocketHandler(handler))
 
-    def bridge(self, config, permitted, auth_timeout=5*60*1000, auth_address=None):
-        a_json = org.vertx.java.core.json.JsonArray(map_to_java(permitted))
-        self.java_obj.bridge(org.vertx.java.core.json.JsonObject(map_to_java(config)), a_json, auth_timeout, auth_address)
+    def bridge(self, config, inbound_permitted, outbound_permitted, auth_timeout=5*60*1000, auth_address=None):
+        a_ijson = org.vertx.java.core.json.JsonArray(map_to_java(inbound_permitted))
+        a_ojson = org.vertx.java.core.json.JsonArray(map_to_java(outbound_permitted))
+        self.java_obj.bridge(org.vertx.java.core.json.JsonObject(map_to_java(config)), a_ijson, a_ojson, auth_timeout, auth_address)
 
 class SockJSSocket(core.streams.ReadStream, core.streams.WriteStream):
     """You interact with SockJS clients through instances of SockJS socket.
@@ -83,8 +84,8 @@ class SockJSSocket(core.streams.ReadStream, core.streams.WriteStream):
 
         def simple_handler(msg):
             self.write_buffer(msg.body)
-        
-        self.handler_id = EventBus.register_simple_handler(simple_handler)
+
+        self.handler_id = EventBus.register_simple_handler(True, simple_handler)
 
     def close(self):
         """Close the socket"""

@@ -18,17 +18,7 @@ package org.vertx.java.core.http.impl;
 
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.jboss.netty.handler.codec.http.HttpChunk;
@@ -39,11 +29,7 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.http.HttpClient;
-import org.vertx.java.core.http.HttpClientRequest;
-import org.vertx.java.core.http.HttpClientResponse;
-import org.vertx.java.core.http.WebSocket;
-import org.vertx.java.core.http.WebSocketVersion;
+import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.ConnectionPool;
 import org.vertx.java.core.impl.Context;
@@ -65,27 +51,27 @@ public class DefaultHttpClient implements HttpClient {
   private static final Logger log = LoggerFactory.getLogger(HttpClientRequest.class);
 
   private final VertxInternal vertx;
-  private final Context ctx;
+  private final EventLoopContext ctx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private ClientBootstrap bootstrap;
   private NioClientSocketChannelFactory channelFactory;
-  private Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap();
+  private Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<Channel, ClientConnection>();
   private Handler<Exception> exceptionHandler;
   private int port = 80;
   private String host = "localhost";
   private final ConnectionPool<ClientConnection> pool = new ConnectionPool<ClientConnection>() {
-    protected void connect(Handler<ClientConnection> connectHandler, Context context) {
-      internalConnect(connectHandler);
+    protected void connect(Handler<ClientConnection> connectHandler, Handler<Exception> connectErrorHandler, Context context) {
+      internalConnect(connectHandler, connectErrorHandler);
     }
   };
   private boolean keepAlive = true;
 
   public DefaultHttpClient(VertxInternal vertx) {
     this.vertx = vertx;
-    ctx = vertx.getOrAssignContext();
     if (vertx.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
+    ctx = (EventLoopContext) vertx.getOrAssignContext();
     ctx.putCloseHook(this, new Runnable() {
       public void run() {
         close();
@@ -134,7 +120,7 @@ public class DefaultHttpClient implements HttpClient {
           connectWebsocket(uri, wsVersion, wsConnect);
         }
       }
-    }, ctx);
+    }, exceptionHandler, ctx);
   }
 
   public void getNow(String uri, Handler<HttpClientResponse> responseHandler) {
@@ -331,8 +317,8 @@ public class DefaultHttpClient implements HttpClient {
     return tcpHelper.getTrustStorePassword();
   }
 
-  void getConnection(Handler<ClientConnection> handler, Context context) {
-    pool.getConnection(handler, context);
+  public void getConnection(Handler<ClientConnection> handler, Handler<Exception> connectionExceptionHandler, Context context) {
+    pool.getConnection(handler, connectionExceptionHandler, context);
   }
 
   void returnConnection(final ClientConnection conn) {
@@ -347,25 +333,26 @@ public class DefaultHttpClient implements HttpClient {
     }
   }
 
-  private void internalConnect(final Handler<ClientConnection> connectHandler) {
+  /**
+   * @return the vertx, for use in package related classes only.
+   */
+  VertxInternal getVertx() {
+    return vertx;
+  }
+
+  private void internalConnect(final Handler<ClientConnection> connectHandler, final Handler<Exception> connectErrorHandler) {
 
     if (bootstrap == null) {
+      // Share the event loop thread to also serve the HttpClient's network traffic.
       VertxWorkerPool pool = new VertxWorkerPool();
-      EventLoopContext ectx;
-      if (ctx instanceof EventLoopContext) {
-        //It always will be
-        ectx = (EventLoopContext)ctx;
-      } else {
-        ectx = null;
-      }
-      pool.addWorker(ectx.getWorker());
+      pool.addWorker(ctx.getWorker());
       Integer bossThreads = tcpHelper.getClientBossThreads();
       int threads = bossThreads == null ? 1 : bossThreads;
       channelFactory = new NioClientSocketChannelFactory(
-          vertx.getAcceptorPool(), threads, pool);
+          vertx.getAcceptorPool(), threads, pool, vertx.getTimer());
       bootstrap = new ClientBootstrap(channelFactory);
 
-      tcpHelper.checkSSL();
+      tcpHelper.checkSSL(vertx);
 
       bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
         public ChannelPipeline getPipeline() throws Exception {
@@ -403,7 +390,7 @@ public class DefaultHttpClient implements HttpClient {
                 if (channelFuture.isSuccess()) {
                   connected(ch, connectHandler);
                 } else {
-                  failed(ch, new SSLHandshakeException("Failed to create SSL connection"));
+                  failed(ch, connectErrorHandler, new SSLHandshakeException("Failed to create SSL connection"));
                 }
               }
             });
@@ -412,7 +399,7 @@ public class DefaultHttpClient implements HttpClient {
           }
 
         } else {
-          failed(ch, channelFuture.getCause());
+          failed(ch, connectErrorHandler, channelFuture.getCause());
         }
       }
     });
@@ -429,18 +416,31 @@ public class DefaultHttpClient implements HttpClient {
           }
         });
         connectionMap.put(ch, conn);
-        Context.setContext(ctx);
+        vertx.setContext(ctx);
         connectHandler.handle(conn);
       }
     });
   }
 
-  private void failed(NioSocketChannel ch, final Throwable t) {
-    if (t instanceof Exception && exceptionHandler != null) {
+  private void failed(final NioSocketChannel ch, final Handler<Exception> connectionExceptionHandler,
+                      final Throwable t) {
+    //ch.close();
+
+    // If no specific exception handler is provided, fall back to the HttpClient's exception handler.
+    final Handler<Exception> exHandler = connectionExceptionHandler == null ? exceptionHandler : connectionExceptionHandler;
+
+    tcpHelper.runOnCorrectThread(ch, new Runnable() {
+         public void run() {
+           pool.connectionClosed();
+           ch.close();
+         }
+       });
+
+    if (t instanceof Exception && exHandler != null) {
       tcpHelper.runOnCorrectThread(ch, new Runnable() {
         public void run() {
-          Context.setContext(ctx);
-          exceptionHandler.handle((Exception) t);
+          vertx.setContext(ctx);
+          exHandler.handle((Exception) t);
         }
       });
     } else {
@@ -529,4 +529,13 @@ public class DefaultHttpClient implements HttpClient {
       }
     }
   }
+
+  @Override
+    protected void finalize() throws Throwable {
+      // Make sure this gets cleaned up if there are no more references to it
+      // so as not to leave connections and resources dangling until the system is shutdown
+      // which could make the JVM run out of file handles.
+      close();
+      super.finalize();
+    }
 }

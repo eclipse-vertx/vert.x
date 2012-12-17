@@ -4,21 +4,21 @@ Prerequisites:
 
 1) The bin directory from the distro must be on your PATH - this should have been done as part of the install procedure.
 
-2) Apache ant must be installed and the ant bin directory must be on your PATH
+2) JDK/JRE 1.7.0+ must be installed and the JDK/JRE bin directory must be on your PATH
 
-3) JDK/JRE 1.7.0+ must be installed and the JDK/JRE bin directory must be on your PATH
-
-1. Compile the java classes by invoking ant from this directory
-
-2. Deploy an example:
+To deploy an example:
 
 (for full help on deploying just type vertx from the command line)
 
-(from this directory)
+vertx run <example java source file>
 
-vertx run <example main class name> -cp ../../../build/classes/main
+where example java source file> is, for example, `echo/EchoServer.java`.
 
-where <example main class name> is, for example, org.vertx.java.examples.echo.EchoServer
+Note that we're running the Java example by specifying the Java *source* file, not the class file. This is cool feature of Vert.x - it will automatically compile Java Source on demand.
+
+Of course, you can also run compiled Java classes with Vert.x by specifying the FQCN instead of the source file name. You'll also need to specify the classpath in that case.
+
+*All examples should be run from this directory unless otherwise stated.*
 
 There now follows a description of all the available examples:
 
@@ -28,13 +28,13 @@ A simple echo server which echos back any sent to it
 
 To run the server:
 
-vertx run org.vertx.java.examples.echo.EchoServer -cp ../../../build/classes/main
+vertx run echo/EchoServer.java
 
 Then telnet localhost 1234 and notice how text entered via telnet is echoed back
 
 Instead of telnet you can also run a simple echo client in a different console:
 
-vertx run org.vertx.java.examples.echo.EchoClient -cp ../../../build/classes/main
+vertx run echo/EchoClient.java
 
 ## Fanout Server
 
@@ -42,7 +42,7 @@ Fans out all data received on any one connection to all other connections.
 
 To run the server:
 
-vertx run org.vertx.java.examples.fanout.FanoutServer -cp ../../../build/classes/main
+vertx run fanout/FanoutServer.java
 
 Then telnet localhost 1234 from different consoles. Note how data entered in telnet is echoed to all connected connections
 
@@ -53,13 +53,13 @@ request and displays the response it receives.
 
 To run the server:
 
-vertx run org.vertx.java.examples.http.ServerExample -cp ../../../build/classes/main
+vertx run http/ServerExample.java
 
 Then point your browser at http://localhost:8080
 
 Alternatively, you can also run the HTTP client in a different console:
 
-vertx run org.vertx.java.examples.http.ClientExample -cp ../../../build/classes/main
+vertx run http/ClientExample.java
 
 ## HTTPS
 
@@ -67,13 +67,13 @@ Like the HTTP example, but using HTTPS
 
 To run the server:
 
-vertx run org.vertx.java.examples.https.ServerExample -cp ../../../build/classes/main
+vertx run https/ServerExample.java
 
 Then point your browser at https://localhost:4443
 
 Alternatively, you can also run the HTTPS client in a different console:
 
-vertx run org.vertx.java.examples.https.ClientExample -cp ../../../build/classes/main
+vertx run https/ClientExample.java
 
 You'll get a warning from your browser since the server certificate the server is using is not known to it, that's normal.
 
@@ -94,15 +94,15 @@ Do each part in a different console:
 
 To run the http server:
 
-vertx run org.vertx.java.examples.proxy.Server -cp ../../../build/classes/main
+vertx run proxy/Server.java
 
 Run the proxy server:
 
-vertx run org.vertx.java.examples.proxy.ProxyServer -cp ../../../build/classes/main
+vertx run proxy/ProxyServer.java
 
 Run the http client:
 
-vertx run org.vertx.java.examples.proxy.Client -cp ../../../build/classes/main
+vertx run proxy/Client.java
 
 ## PubSub
 
@@ -134,7 +134,7 @@ Where:
 
 To run the server:
 
-vertx run org.vertx.java.examples.pubsub.PubSubServer -cp ../../../build/classes/main
+vertx run pubsub/PubSubServer.java
 
 Then open some more consoles and telnet localhost 1234, and experiment with the protocol.
 
@@ -146,7 +146,7 @@ The example contains three static pages: index.html, page1.html and page2.html w
 
 To run the server:
 
-vertx run org.vertx.java.examples.sendfile.SendFileExample -cp ../../../build/classes/main
+vertx run sendfile/SendFileExample.java
 
 Then point your browser at http://localhost:8080 and click around
 
@@ -156,11 +156,11 @@ This is like the echo example, but this time using SSL.
 
 To run the server:
 
-vertx run org.vertx.java.examples.ssl.SSLServer -cp ../../../build/classes/main
+vertx run ssl/SSLServer.java
 
 To run the client in a different console:
 
-vertx run org.vertx.java.examples.ssl.SSLClient -cp ../../../build/classes/main
+vertx run ssl/SSLClient.java
 
 ## Upload
 
@@ -168,11 +168,11 @@ A simple upload server example. The client streams a file from disk to an HTTP r
 
 To run the server:
 
-vertx run org.vertx.java.examples.upload.UploadServer -cp ../../../build/classes/main
+vertx run upload/UploadServer.java
 
 To run the client in a different console:
 
-vertx run org.vertx.java.examples.upload.UploadClient -cp ../../../build/classes/main
+vertx run upload/UploadClient.java
 
 ## Websockets
 
@@ -183,7 +183,7 @@ The server just echoes back any data is receives on the websocket.
 
 To run the server:
 
-vertx run org.vertx.java.examples.websockets.WebsocketsExample -cp ../../../build/classes/main
+vertx run websockets/WebsocketsExample.java
 
 Then point your browser at: http://localhost:8080
 
@@ -194,7 +194,7 @@ in the manner of express (JS) or Sinatra.
 
 To run the example:
 
-vertx run org.vertx.java.examples.routematch.RouteMatchExample -cp ../../../build/classes/main
+vertx run routematch/RouteMatchExample.java
 
 Then point your browser at: http://localhost:8080.
 
@@ -213,7 +213,7 @@ It installs a simple SockJS application which simply echoes back any data receiv
 
 To run the server:
 
-vertx run org.vertx.java.examples.sockjs.SockJSExample -cp ../../../build/classes/main
+vertx run sockjs/SockJSExample.java
 
 Then point your browser at: http://localhost:8080
 
@@ -223,7 +223,7 @@ This example shows how the vert.x event bus can extend to client side JavaScript
 
 To run the server:
 
-vertx run org.vertx.java.examples.eventbusbridge.BridgeServer -cp ../../../build/classes/main
+vertx run eventbusbridge/BridgeServer.java
 
 The example shows a simple publish / subscribe client side JavaScript application that uses the vert.x event bus.
 
@@ -239,7 +239,8 @@ This example shows how you can access various resources on your classpath from w
 
 Run it with
 
-vertx run org.vertx.java.examples.resourceload.ResourceLoadExample -cp "../../../build/classes/main:resourceload:resourceload/quux.jar"
+cd resourceload
+vertx run /ResourceLoadExample.java
 
 
 

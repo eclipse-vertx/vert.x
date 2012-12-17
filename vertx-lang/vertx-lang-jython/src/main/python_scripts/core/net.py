@@ -23,7 +23,6 @@ import core.ssl_support
 import core.buffer
 import core.streams
 
-from core.javautils import map_from_java, map_to_java
 from core.handlers import CloseHandler, DoneHandler, ClosedHandler
 from core.event_bus import EventBus
 

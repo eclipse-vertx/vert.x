@@ -21,6 +21,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.WriteStream;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Represents a client-side HTTP request.<p>
@@ -166,5 +167,15 @@ public interface HttpClientRequest extends WriteStream {
    * be returned to the {@link HttpClient} pool so it can be assigned to another request.
    */
   void end();
+
+  /**
+    * Set's the amount of time after which if a response is not received TimeoutException()
+    * will be sent to the exception handler of this request. Calling this method more than once
+    * has the effect of canceling any existing timeout and starting the timeout from scratch.
+    *
+    * @param timeoutMs The quantity of time in milliseconds.
+    * @return A reference to this, so multiple method calls can be chained.
+    */
+   HttpClientRequest setTimeout(long timeoutMs);
 
 }

@@ -255,6 +255,24 @@ To run it, open one or more browsers and point them to http://localhost:8080.
 
 First connect, then try subscribing and sending messages and see how the separate browsers can interoperate on the event bus.
 
+## Eventbus Bridge Listener
+
+This example shows how the vert.x event bus listener can intercept messages from clients.
+
+To run the server:
+
+vertx run eventbusbridgelistener/bridge_server.js
+
+The example shows how the server can listen to events of client actions.
+
+You can always see that the server intercepts these messages by clicking "Refresh Log".
+
+To run it, open one or more browsers and point them to http://localhost:8080.
+
+First connect, then try sending/publishing messages or registering/unregistering handlers. You can see how the server intercepts these messages by refreshing the log. You are able to see with different browsers, that send will always do round robin. Publishing will be censored (never shown in the messages, only in the log).
+
+Registering a handler at "secret" will not be allowed, so you can see that even though the client can try to register a handler, it won't be able to see message sent to the address.
+
 ## Web application
 
 This is a full end-end "real-time" web appplication which has a modern JavaScript client side MVVM application that communicates via the event bus with a persistor.
@@ -272,6 +290,20 @@ To see log output set the following in `conf/logging.properties`
 Then point your browser at https://localhost:8080 and start shopping! (Note it's https not http!)
 
 To fully understand this example please follow the web app tutorial on the website
+
+## Event bus performance
+
+Gives a simple measure of the performance of the event bus.
+
+Start a sender in one console:
+
+vertx run eb_perf/sender.js -cluster
+
+And in another console:
+
+vertx run eb_perf/handler.js -cluster -cluster-port 25501
+
+
 
 
 
