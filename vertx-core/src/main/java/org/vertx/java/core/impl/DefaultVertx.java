@@ -58,7 +58,7 @@ public class DefaultVertx extends VertxInternal {
 
   private static final int DEFAULT_WORKER_POOL_SIZE = 20;
 
-  private final FileSystem fileSystem = (Windows.isWindows() ? new WindowsFileSystem(this) : new DefaultFileSystem(this));
+  private final FileSystem fileSystem = getFileSystem();
   private final EventBus eventBus;
   private final SharedData sharedData = new SharedData();
 
@@ -105,6 +105,13 @@ public class DefaultVertx extends VertxInternal {
     this.backgroundPoolSize = Integer.getInteger("vertx.backgroundPoolSize", DEFAULT_WORKER_POOL_SIZE);
   }
 
+  /**
+   * @return The FileSystem implementation for the OS
+   */
+  protected FileSystem getFileSystem() {
+  	return Windows.isWindows() ? new WindowsFileSystem(this) : new DefaultFileSystem(this);
+  }
+  
   public Timer getTimer() {
   	return timer;
   }
