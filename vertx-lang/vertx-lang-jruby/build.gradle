@@ -15,16 +15,44 @@
  */
 
 apply from: "$rootDir/gradle/maven.gradle"
-apply plugin: 'vertx-jruby'
 
+sourceSets {
+	main {
+		resources {
+			srcDirs project.file("src/main/ruby_scripts")
+		}
+	}
+	test {
+		resources {
+			srcDirs project.file("src/test/ruby_scripts")
+		}
+	}
+}
+			
 dependencies {
 	compile project(':vertx-core')
 	compile project(':vertx-platform')
-	vertxJRuby "org.jruby:jruby:$jrubyVersion"
+	compile "org.jruby:jruby:$jrubyVersion"
 }
+
 artifacts {
 	platform jar
 }
 
-yardoc.readme = "$rootDir/README.md"
-yardoc.license = "$rootDir/LICENSE.txt"
+task yardoc(type:Exec) {
+  commandLine = [ "yardoc", 
+    "--title", "Ruby API Doc",
+		"--no-private",
+		"--quiet",
+		"--markup-provider", "kramdown",
+		"--readme", "$rootDir/README.md",
+		"--output-dir","${project.buildDir}/docs/ruby/api",
+		"src/main/ruby/**/*.rb", "src/main/ruby_scripts/**/*.rb",
+		"-", "$rootDir/LICENSE.txt" ]
+		
+  if( System.properties['os.name'].toLowerCase().contains('windows') ) {
+    commandLine = ['cmd', '/c'] + commandLine
+  }
+}
+
+javadoc.dependsOn yardoc

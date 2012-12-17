@@ -19,32 +19,14 @@ package org.vertx.java.core.http.impl;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelState;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.ChannelGroupFuture;
 import org.jboss.netty.channel.group.ChannelGroupFutureListener;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
-import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
-import org.jboss.netty.handler.codec.http.HttpChunk;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
-import org.jboss.netty.handler.codec.http.HttpMethod;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
-import org.jboss.netty.handler.codec.http.HttpResponse;
-import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
-import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import org.jboss.netty.handler.codec.http.*;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
@@ -58,33 +40,24 @@ import org.vertx.java.core.http.impl.ws.hybi00.Handshake00;
 import org.vertx.java.core.http.impl.ws.hybi08.Handshake08;
 import org.vertx.java.core.http.impl.ws.hybi17.HandshakeRFC6455;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.EventLoopContext;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.net.impl.HandlerHolder;
-import org.vertx.java.core.net.impl.HandlerManager;
-import org.vertx.java.core.net.impl.ServerID;
-import org.vertx.java.core.net.impl.TCPSSLHelper;
-import org.vertx.java.core.net.impl.VertxWorkerPool;
+import org.vertx.java.core.net.impl.*;
 
 import javax.net.ssl.SSLEngine;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Values.WEBSOCKET;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.METHOD_NOT_ALLOWED;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
 import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+
+import se.cgbystrom.netty.FlashPolicyHandler;
 
 /**
  *
@@ -96,7 +69,7 @@ public class DefaultHttpServer implements HttpServer {
 
   private final VertxInternal vertx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
-  private final Context ctx;
+  private final EventLoopContext ctx;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
   private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
@@ -112,10 +85,10 @@ public class DefaultHttpServer implements HttpServer {
 
   public DefaultHttpServer(VertxInternal vertx) {
     this.vertx = vertx;
-    ctx = vertx.getOrAssignContext();
     if (vertx.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
+    ctx = (EventLoopContext)vertx.getOrAssignContext();
     ctx.putCloseHook(this, new Runnable() {
       public void run() {
         close();
@@ -172,7 +145,7 @@ public class DefaultHttpServer implements HttpServer {
         ServerBootstrap bootstrap = new ServerBootstrap(factory);
         bootstrap.setOptions(tcpHelper.generateConnectionOptions(true));
 
-        tcpHelper.checkSSL();
+        tcpHelper.checkSSL(vertx);
 
         bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
           public ChannelPipeline getPipeline() {
@@ -198,6 +171,8 @@ public class DefaultHttpServer implements HttpServer {
               pipeline.addLast("ssl", new SslHandler(engine));
             }
 
+            pipeline.addLast("flashpolicy", new FlashPolicyHandler());
+
             pipeline.addLast("decoder", new HttpRequestDecoder());
             pipeline.addLast("encoder", new HttpResponseEncoder());
 
@@ -220,9 +195,11 @@ public class DefaultHttpServer implements HttpServer {
         actualServer = shared;
       }
       if (requestHandler != null) {
+        // Share the event loop thread to also serve the HttpServer's network traffic.
         actualServer.reqHandlerManager.addHandler(requestHandler, ctx);
       }
       if (wsHandler != null) {
+        // Share the event loop thread to also serve the HttpServer's network traffic.
         actualServer.wsHandlerManager.addHandler(wsHandler, ctx);
       }
     }
@@ -404,7 +381,7 @@ public class DefaultHttpServer implements HttpServer {
     // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
     // which can cause context id for the thread to change!
 
-    Context.setContext(closeContext);
+    vertx.setContext(closeContext);
 
     ChannelGroupFuture fut = serverChannelGroup.close();
     if (done != null) {
@@ -423,8 +400,6 @@ public class DefaultHttpServer implements HttpServer {
       }
     });
   }
-
-  private static final AtomicInteger count = new AtomicInteger(0);
 
   public class ServerHandler extends SimpleChannelUpstreamHandler {
 
@@ -575,7 +550,6 @@ public class DefaultHttpServer implements HttpServer {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final ServerConnection conn = connectionMap.get(ch);
       final Throwable t = e.getCause();
-      t.printStackTrace();
       ch.close();
       if (conn != null && t instanceof Exception) {
         conn.getContext().execute(new Runnable() {
@@ -588,8 +562,6 @@ public class DefaultHttpServer implements HttpServer {
         // be communicated explicitly
       }
     }
-
-
 
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {

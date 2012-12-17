@@ -20,12 +20,14 @@ import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.jboss.netty.channel.socket.nio.NioWorkerPool;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timeout;
+import org.jboss.netty.util.Timer;
 import org.jboss.netty.util.TimerTask;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.file.impl.DefaultFileSystem;
+import org.vertx.java.core.file.impl.WindowsFileSystem;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.impl.DefaultHttpClient;
@@ -40,14 +42,11 @@ import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
+import org.vertx.java.core.utils.lang.Windows;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -57,22 +56,26 @@ public class DefaultVertx extends VertxInternal {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultVertx.class);
 
-  private final FileSystem fileSystem = new DefaultFileSystem(this);
+  private static final int DEFAULT_WORKER_POOL_SIZE = 20;
+
+  private final FileSystem fileSystem = (Windows.isWindows() ? new WindowsFileSystem(this) : new DefaultFileSystem(this));
   private final EventBus eventBus;
   private final SharedData sharedData = new SharedData();
 
-  private int backgroundPoolSize = 20;
+  private int backgroundPoolSize;
   private int corePoolSize = Runtime.getRuntime().availableProcessors();
   private ExecutorService backgroundPool;
   private OrderedExecutorFactory orderedFact;
   private NioWorkerPool workerPool;
   private ExecutorService acceptorPool;
-  private final Map<ServerID, DefaultHttpServer> sharedHttpServers = new HashMap<>();
-  private final Map<ServerID, DefaultNetServer> sharedNetServers = new HashMap<>();
+  private Map<ServerID, DefaultHttpServer> sharedHttpServers = new HashMap<>();
+  private Map<ServerID, DefaultNetServer> sharedNetServers = new HashMap<>();
+
+  private final ThreadLocal<Context> contextTL = new ThreadLocal<>();
 
   //For now we use a hashed wheel with it's own thread for timeouts - ideally the event loop would have
   //it's own hashed wheel
-  private final HashedWheelTimer timer = new HashedWheelTimer(new VertxThreadFactory("vert.x-timer-thread"), 20,
+  private HashedWheelTimer timer = new HashedWheelTimer(new VertxThreadFactory("vert.x-timer-thread"), 1,
       TimeUnit.MILLISECONDS, 8192);
   {
     timer.start();
@@ -81,17 +84,31 @@ public class DefaultVertx extends VertxInternal {
   private final Map<Long, TimeoutHolder> timeouts = new ConcurrentHashMap<>();
 
   public DefaultVertx() {
+    configure();
     this.eventBus = new DefaultEventBus(this);
   }
 
   public DefaultVertx(String hostname) {
+    configure();
     this.eventBus = new DefaultEventBus(this, hostname);
   }
 
   public DefaultVertx(int port, String hostname) {
+    configure();
     this.eventBus = new DefaultEventBus(this, port, hostname);
   }
 
+  /**
+   * deal with configuration parameters
+   */
+  private void configure() {
+    this.backgroundPoolSize = Integer.getInteger("vertx.backgroundPoolSize", DEFAULT_WORKER_POOL_SIZE);
+  }
+
+  public Timer getTimer() {
+  	return timer;
+  }
+  
   public NetServer createNetServer() {
     return new DefaultNetServer(this);
   }
@@ -137,7 +154,7 @@ public class DefaultVertx extends VertxInternal {
   }
 
   public boolean isEventLoop() {
-    Context context = Context.getContext();
+    Context context = getContext();
     if (context != null) {
       return context instanceof EventLoopContext;
     }
@@ -145,7 +162,7 @@ public class DefaultVertx extends VertxInternal {
   }
 
   public boolean isWorker() {
-    Context context = Context.getContext();
+    Context context = getContext();
     if (context != null) {
       return context instanceof WorkerContext;
     }
@@ -193,7 +210,7 @@ public class DefaultVertx extends VertxInternal {
         result = workerPool;
         if (result == null) {
           ExecutorService corePool = Executors.newFixedThreadPool(corePoolSize, new VertxThreadFactory("vert.x-core-thread-"));
-          workerPool = result = new NioWorkerPool(corePool, corePoolSize, false);
+          workerPool = result = new NioWorkerPool(corePool, corePoolSize);
         }
       }
     }
@@ -216,9 +233,8 @@ public class DefaultVertx extends VertxInternal {
     return result;
   }
 
-
   public Context getOrAssignContext() {
-    Context ctx = Context.getContext();
+    Context ctx = getContext();
     if (ctx == null) {
       // Assign a context
       ctx = createEventLoopContext();
@@ -227,7 +243,7 @@ public class DefaultVertx extends VertxInternal {
   }
 
   public void reportException(Throwable t) {
-    Context ctx = Context.getContext();
+    Context ctx = getContext();
     if (ctx != null) {
       ctx.reportException(t);
     } else {
@@ -274,7 +290,7 @@ public class DefaultVertx extends VertxInternal {
   public Context createEventLoopContext() {
     getBackgroundPool();
     NioWorker worker = getWorkerPool().nextWorker();
-    return new EventLoopContext(orderedFact.getExecutor(), worker);
+    return new EventLoopContext(this, orderedFact.getExecutor(), worker);
   }
 
   private boolean cancelTimeout(long id) {
@@ -305,9 +321,82 @@ public class DefaultVertx extends VertxInternal {
 
   private Context createWorkerContext() {
     getBackgroundPool();
-    return new WorkerContext(orderedFact.getExecutor());
+    return new WorkerContext(this, orderedFact.getExecutor());
   }
 
+  public void setContext(Context context) {
+    contextTL.set(context);
+    if (context != null) {
+      context.setTCCL();
+    }
+  }
+
+  public Context getContext() {
+    return contextTL.get();
+  }
+  
+  @Override
+	public void stop() {
+
+		if (sharedHttpServers != null) {
+			for (HttpServer server : sharedHttpServers.values()) {
+				server.close();
+			}
+			sharedHttpServers = null;
+		}
+
+		if (sharedNetServers != null) {
+			for (NetServer server : sharedNetServers.values()) {
+				server.close();
+			}
+			sharedNetServers = null;
+		}
+
+		if (timer != null) {
+			timer.stop();
+			timer = null;
+		}
+
+		if (eventBus != null) {
+			eventBus.close(null);
+		}
+
+		if (backgroundPool != null) {
+			backgroundPool.shutdown();
+		}
+
+		if (acceptorPool != null) {
+			acceptorPool.shutdown();
+		}
+
+		try {
+			if (backgroundPool != null) {
+				backgroundPool.awaitTermination(20, TimeUnit.SECONDS);
+				backgroundPool = null;
+			}
+		} catch (InterruptedException ex) {
+			// ignore
+		}
+
+		try {
+			if (acceptorPool != null) {
+				acceptorPool.awaitTermination(20, TimeUnit.SECONDS);
+				acceptorPool = null;
+			}
+		} catch (InterruptedException ex) {
+			// ignore
+		}
+
+		// log.info("Release external resources from worker pool");
+		if (workerPool != null) {
+			workerPool.releaseExternalResources();
+			workerPool = null;
+		}
+		// log.info("Release external resources: done");
+
+		setContext(null);
+	}
+  
   private static class InternalTimerHandler implements Runnable {
     final Handler<Long> handler;
     long timerID;
@@ -323,12 +412,11 @@ public class DefaultVertx extends VertxInternal {
 
   private static class TimeoutHolder {
     final Timeout timeout;
-    final Context context;
+    // final Context context;
 
     TimeoutHolder(Timeout timeout, Context context) {
       this.timeout = timeout;
-      this.context = context;
+      // this.context = context;
     }
   }
-
 }

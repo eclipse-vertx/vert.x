@@ -43,19 +43,6 @@ public class RhinoVerticleFactory implements VerticleFactory {
 	  this.mgr = mgr;
   }
 
-  @Override
-  public String getLanguage() {
-	  return "rhino";
-  }
-  
-  @Override
-  public boolean isFactoryFor(String main) {
-    if (main.endsWith(".js") || main.endsWith(".coffee")) {
-      return true;
-    }
-    return false;
-  }
-
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
     Verticle app = new RhinoVerticle(main, cl);
     return app;

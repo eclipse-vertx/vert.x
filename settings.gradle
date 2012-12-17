@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-include 'vertx-boot'
 include 'vertx-core'
 include 'vertx-platform'
 include 'vertx-testframework'
@@ -24,8 +23,6 @@ include 'vertx-lang-java'
 include 'vertx-lang-jruby'
 include 'vertx-lang-jython'
 include 'vertx-lang-rhino'
-
-include 'vertx-examples'
 
 include 'vertx-testsuite'
 

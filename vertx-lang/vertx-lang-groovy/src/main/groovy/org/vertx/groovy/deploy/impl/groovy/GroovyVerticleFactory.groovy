@@ -16,20 +16,15 @@
 
 package org.vertx.groovy.deploy.impl.groovy
 
-import groovy.lang.Binding
-import groovy.lang.GroovyClassLoader
-import groovy.lang.GroovyCodeSource
-import groovy.lang.Script
 import org.vertx.groovy.core.Vertx
 import org.vertx.groovy.deploy.Container
 import org.vertx.java.core.impl.VertxInternal
 import org.vertx.java.deploy.Verticle
 import org.vertx.java.deploy.VerticleFactory
-import org.vertx.java.deploy.impl.VertxLocator
 import org.vertx.java.deploy.impl.VerticleManager
+import org.vertx.java.deploy.impl.VertxLocator
 
 import java.lang.reflect.Method
-import java.net.URL
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -47,22 +42,11 @@ public class GroovyVerticleFactory implements VerticleFactory {
 	  this.mgr = mgr
   }
 
-  @Override
-  public String getLanguage() {
-	  return "groovy"
-  }
-  
-  @Override
-  public boolean isFactoryFor(String main) {
-    if (main.endsWith(".groovy")) {
-      return true
-    }
-	  return false
-  }
-
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
-
     URL url = cl.getResource(main)
+    if (url == null) {
+      throw new IllegalStateException("Cannot find main script: " + main + " on classpath");
+    }
     GroovyCodeSource gcs = new GroovyCodeSource(url)
     GroovyClassLoader gcl = new GroovyClassLoader(cl)
     Class clazz = gcl.parseClass(gcs)
@@ -117,7 +101,7 @@ public class GroovyVerticleFactory implements VerticleFactory {
   }
 
   public void reportException(Throwable t) {
-    env.getLogger().error("Exception in Groovy verticle", t)
+    mgr.getLogger().error("Exception in Groovy verticle", t)
   }
 }
 

@@ -28,16 +28,11 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.impl.VerticleManager;
 
-import java.io.File;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -50,8 +45,10 @@ public class TestBase extends TestCase {
 
   public static final String EVENTS_ADDRESS = "__test_events";
 
+  // A single Vertx and VerticleManager for <b>ALL</b> tests
   protected static VertxInternal vertx = new DefaultVertx();
   private static VerticleManager verticleManager = new VerticleManager(vertx);
+
   private BlockingQueue<JsonObject> events = new LinkedBlockingQueue<>();
   private TestUtils tu = new TestUtils(vertx);
   private volatile Handler<Message<JsonObject>> handler;
@@ -136,6 +133,8 @@ public class TestBase extends TestCase {
         }
         events.clear();
         vertx.eventBus().unregisterHandler(EVENTS_ADDRESS, handler);
+        vertx.setContext(null);
+        
       } catch (Exception e) {
         e.printStackTrace();
         throw e;
@@ -176,9 +175,9 @@ public class TestBase extends TestCase {
   }
 
   protected String startApp(boolean worker, String main, JsonObject config, int instances, boolean await) throws Exception {
-    if(Runtime.getRuntime().availableProcessors() < 2) {
-        log.error("*** The test framework requires at least 2 processors ***");
-        fail("The test framework requires at least 2 processors");
+    if (Runtime.getRuntime().availableProcessors() < 2) {
+      log.error("*** The test framework requires at least 2 processors ***");
+      fail("The test framework requires at least 2 processors");
     }
     URL url;
     if (main.endsWith(".js") || main.endsWith(".rb") || main.endsWith(".groovy") || main.endsWith(".py")) {
@@ -206,7 +205,7 @@ public class TestBase extends TestCase {
       }
     };
 
-    verticleManager.deploy(worker, main, config, new URL[] {url}, instances, null, doneHandler);
+    verticleManager.deployVerticle(worker, main, config, new URL[]{url}, instances, null, null, doneHandler);
 
     if (!doneLatch.await(30, TimeUnit.SECONDS)) {
       throw new IllegalStateException("Timedout waiting for apps to start");

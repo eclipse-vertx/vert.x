@@ -20,24 +20,21 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.http.HttpClient;
-import org.vertx.java.core.http.HttpClientRequest;
-import org.vertx.java.core.http.HttpClientResponse;
-import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.core.http.HttpServerResponse;
-import org.vertx.java.core.http.ServerWebSocket;
+import org.vertx.java.core.http.*;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.framework.TestClientBase;
 import org.vertx.java.framework.TestUtils;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -193,6 +190,7 @@ public class HttpTestClient extends TestClientBase {
     tu.azzert(server.getReceiveBufferSize() == null);
     tu.azzert(server.getSendBufferSize() == null);
     tu.azzert(server.getTrafficClass() == null);
+    server.close();
     tu.testComplete();
   }
 
@@ -302,10 +300,19 @@ public class HttpTestClient extends TestClientBase {
     tu.azzert(req.sendHead() == req);
     tu.azzert(req.write("foo", "UTF-8") == req);
     tu.azzert(req.write("foo") == req);
-    tu.azzert(req.write("foo", "UTF-8", new SimpleHandler() { public void handle() {} }) == req);
-    tu.azzert(req.write("foo", new SimpleHandler() { public void handle() {} }) == req);
+    tu.azzert(req.write("foo", "UTF-8", new SimpleHandler() {
+      public void handle() {
+      }
+    }) == req);
+    tu.azzert(req.write("foo", new SimpleHandler() {
+      public void handle() {
+      }
+    }) == req);
     tu.azzert(req.write(new Buffer("foo")) == req);
-    tu.azzert(req.write(new Buffer("foo"), new SimpleHandler() { public void handle() {} }) == req);
+    tu.azzert(req.write(new Buffer("foo"), new SimpleHandler() {
+      public void handle() {
+      }
+    }) == req);
     tu.testComplete();
   }
 
@@ -333,10 +340,19 @@ public class HttpTestClient extends TestClientBase {
           tu.azzert(req.response.setChunked(true) == req.response);
           tu.azzert(req.response.write("foo", "UTF-8") == req.response);
           tu.azzert(req.response.write("foo") == req.response);
-          tu.azzert(req.response.write("foo", "UTF-8", new SimpleHandler() { public void handle() {} }) == req.response);
-          tu.azzert(req.response.write("foo", new SimpleHandler() { public void handle() {} }) == req.response);
+          tu.azzert(req.response.write("foo", "UTF-8", new SimpleHandler() {
+            public void handle() {
+            }
+          }) == req.response);
+          tu.azzert(req.response.write("foo", new SimpleHandler() {
+            public void handle() {
+            }
+          }) == req.response);
           tu.azzert(req.response.write(new Buffer("foo")) == req.response);
-          tu.azzert(req.response.write(new Buffer("foo"), new SimpleHandler() { public void handle() {} }) == req.response);
+          tu.azzert(req.response.write(new Buffer("foo"), new SimpleHandler() {
+            public void handle() {
+            }
+          }) == req.response);
         }
         tu.testComplete();
       }
@@ -573,22 +589,42 @@ public class HttpTestClient extends TestClientBase {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkContext();
-        tu.azzert(req.headers().get("foo").equals("bar"));
-        tu.azzert(req.headers().get("Foo") == null);
-        req.response.putHeader("Quux", "wib");
+        tu.azzert(req.headers().get("Foo").equals("foo"));
+        tu.azzert(req.headers().get("foo").equals("foo"));
+        tu.azzert(req.headers().get("fOO").equals("foo"));
+        tu.azzert(req.headers().containsKey("Foo"));
+        tu.azzert(req.headers().containsKey("foo"));
+        tu.azzert(req.headers().containsKey("fOO"));
+        req.response.putHeader("Quux", "quux");
+        tu.azzert(req.response.headers().get("Quux").equals("quux"));
+        tu.azzert(req.response.headers().get("quux").equals("quux"));
+        tu.azzert(req.response.headers().get("qUUX").equals("quux"));
+        tu.azzert(req.response.headers().containsKey("Quux"));
+        tu.azzert(req.response.headers().containsKey("quux"));
+        tu.azzert(req.response.headers().containsKey("qUUX"));
         req.response.end();
       }
     });
 
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.azzert(resp.headers().get("quux").equals("wib"));
-        tu.azzert(resp.headers().get("Quux") == null);
+        tu.azzert(resp.headers().get("Quux").equals("quux"));
+        tu.azzert(resp.headers().get("quux").equals("quux"));
+        tu.azzert(resp.headers().get("qUUX").equals("quux"));
+        tu.azzert(resp.headers().containsKey("Quux"));
+        tu.azzert(resp.headers().containsKey("quux"));
+        tu.azzert(resp.headers().containsKey("qUUX"));
         tu.checkContext();
         tu.testComplete();
       }
     });
-    req.putHeader("Foo", "bar");
+    req.putHeader("Foo", "foo");
+    tu.azzert(req.headers().get("Foo").equals("foo"));
+    tu.azzert(req.headers().get("foo").equals("foo"));
+    tu.azzert(req.headers().get("fOO").equals("foo"));
+    tu.azzert(req.headers().containsKey("Foo"));
+    tu.azzert(req.headers().containsKey("foo"));
+    tu.azzert(req.headers().containsKey("fOO"));
     req.end();
   }
 
@@ -596,9 +632,133 @@ public class HttpTestClient extends TestClientBase {
     // TODO
   }
 
-  public void testUseRequestAfterComplete() {
+  public void testRequestTimesoutWhenIndicatedPeriodExpiresWithoutAResponseFromRemoteServer() {
+    startServer(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+        // Don't answer the request, causing a timeout
+      }
+    });
 
-    final Buffer body = TestUtils.generateRandomBuffer(1000);
+    final HttpClientRequest req = getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
+      public void handle(HttpClientResponse resp) {
+        tu.azzert(false, "End should not be called because the request should timeout");
+      }
+    });
+    req.exceptionHandler( new Handler<Exception>() {
+      @Override
+      public void handle(Exception event) {
+        tu.azzert(event instanceof TimeoutException, "Expected to end with timeout exception but ended with other exception: " + event);
+        tu.checkContext();
+        tu.testComplete();
+      }
+    });
+    req.setTimeout(1000);
+    req.end();
+  }
+
+  public void testRequestTimeoutCanceledWhenRequestHasAnOtherError() {
+
+    final AtomicReference<Exception> exception = new AtomicReference<>();
+    // There is no server running, should fail to connect
+    final HttpClientRequest req = getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
+      public void handle(HttpClientResponse resp) {
+        tu.azzert(false, "End should not be called because the request should fail to connect");
+      }
+    });
+    req.exceptionHandler( new Handler<Exception>() {
+      @Override
+      public void handle(Exception event) {
+        exception.set(event);
+      }
+    });
+    req.setTimeout(800);
+    req.end();
+
+    getVertx().setTimer(1500, new Handler<Long>() {
+      @Override
+      public void handle(Long event) {
+        tu.azzert(exception.get() != null, "Expected an exception to be set");
+        tu.azzert(!(exception.get() instanceof TimeoutException), 
+        		"Expected to not end with timeout exception, but did: " + exception.get());
+        tu.checkContext();
+        tu.testComplete();
+      }
+    });
+  }
+
+  public void testRequestTimeoutCanceledWhenRequestEndsNormally() {
+
+    startServer(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+        req.response.statusCode = 200;
+        req.response.end("OK");
+      }
+    });
+
+
+    final AtomicReference<Exception> exception = new AtomicReference<>();
+
+    // There is no server running, should fail to connect
+    final HttpClientRequest req = getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
+      public void handle(HttpClientResponse resp) {
+        // Don't do anything
+      }
+    });
+    req.exceptionHandler( new Handler<Exception>() {
+      @Override
+      public void handle(Exception event) {
+        exception.set(event);
+      }
+    });
+    req.setTimeout(500);
+    req.end();
+
+    getVertx().setTimer(1000, new Handler<Long>() {
+      @Override
+      public void handle(Long event) {
+        tu.azzert(exception.get() == null, "Did not expect any exception");
+        tu.checkContext();
+        tu.testComplete();
+      }
+    });
+  }
+
+  public void testRequestNotReceivedIfTimedout() {
+    startServer(new Handler<HttpServerRequest>() {
+      public void handle(final HttpServerRequest req) {
+        // Answer the request after a delay
+        vertx.setTimer(500, new Handler<Long>() {
+          public void handle(Long event) {
+            req.response.statusCode = 200;
+            req.response.end("OK");
+          }
+        });
+      }
+    });
+
+    final HttpClientRequest req = getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
+      public void handle(HttpClientResponse resp) {
+        tu.azzert(false, "Response should not be handled");
+      }
+    });
+    req.exceptionHandler( new Handler<Exception>() {
+      @Override
+      public void handle(Exception event) {
+        tu.azzert(event instanceof TimeoutException, "Expected to end with timeout exception but ended with other exception: " + event);
+        //Delay a bit to let any response come back
+        vertx.setTimer(500, new Handler<Long>() {
+          public void handle(Long event) {
+            tu.checkContext();
+            tu.testComplete();
+          }
+        });
+      }
+    });
+    req.setTimeout(100);
+    req.end();
+  }
+
+  public void testUseRequestAfterComplete() {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
@@ -620,7 +780,6 @@ public class HttpTestClient extends TestClientBase {
       }
     };
     Buffer buff = new Buffer();
-    Map<String, String> map = new HashMap<>();
 
     try {
       req.end();
@@ -901,7 +1060,6 @@ public class HttpTestClient extends TestClientBase {
       }
       req.end();
     }
-
   }
 
   private void writeChunk(final int remaining, final int chunkSize, final HttpClientRequest req, final Buffer totBuffer) {
@@ -1022,9 +1180,7 @@ public class HttpTestClient extends TestClientBase {
     }
   }
 
-
   public void testRequestWriteBuffer() {
-
     final Buffer body = TestUtils.generateRandomBuffer(1000);
 
     startServer(new Handler<HttpServerRequest>() {
@@ -1203,8 +1359,6 @@ public class HttpTestClient extends TestClientBase {
 
   public void testUseResponseAfterComplete() {
 
-    final Buffer body = TestUtils.generateRandomBuffer(1000);
-
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkContext();
@@ -1214,11 +1368,9 @@ public class HttpTestClient extends TestClientBase {
 
           }
         };
+        
         Buffer buff = new Buffer();
-        Map<String, String> map = new HashMap<>();
-
         HttpServerResponse resp = req.response;
-
         resp.end();
 
         try {
@@ -1334,7 +1486,6 @@ public class HttpTestClient extends TestClientBase {
         }
 
         tu.testComplete();
-
       }
     });
 
@@ -1345,8 +1496,6 @@ public class HttpTestClient extends TestClientBase {
     });
 
     req.end();
-
-
   }
 
   public void testResponseBodyBufferAtEnd() {
@@ -1374,7 +1523,6 @@ public class HttpTestClient extends TestClientBase {
 
     req.end();
   }
-
 
   public void testResponseBodyStringDefaultEncodingAtEnd() {
     testResponseBodyStringAtEnd(null);
@@ -1622,9 +1770,7 @@ public class HttpTestClient extends TestClientBase {
       }
     });
     req.end();
-
   }
-
 
   public void testResponseWriteBuffer() {
 
@@ -1659,6 +1805,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       int count;
+
       public void handle(final HttpServerRequest req) {
         tu.azzert(count == Integer.parseInt(req.headers().get("count")));
         final int theCount = count;
@@ -1762,7 +1909,7 @@ public class HttpTestClient extends TestClientBase {
     if (file.exists()) {
       file.delete();
     }
-    BufferedWriter out = new BufferedWriter(new FileWriter(file));
+    BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
     out.write(content);
     out.close();
     return file;
@@ -1954,6 +2101,68 @@ public class HttpTestClient extends TestClientBase {
     }
   }
 
+  public void testConnectionErrorsGetReportedToRequest() {
+
+    final AtomicInteger clientExceptions = new AtomicInteger();
+    final AtomicInteger req2Exceptions = new AtomicInteger();
+    final AtomicInteger req3Exceptions = new AtomicInteger();
+
+    final Handler<String> checkEndHandler = new Handler<String>() {
+      public void handle(final String name) {
+        System.out.println(name + " exception called");
+        if (clientExceptions.get() == 1 && req2Exceptions.get() ==1  && req3Exceptions.get() ==1) {
+          tu.checkContext();
+          tu.testComplete();
+        }
+      }
+    };
+
+    client.setPort(9998); // this simulates a connection error immediately
+    client.exceptionHandler(new Handler<Exception>() {
+      public void handle(Exception event) {
+        tu.azzert(clientExceptions.incrementAndGet() == 1, "More than more call to client exception handler was not expected");
+        checkEndHandler.handle("Client");
+      }
+    });
+
+    // This one should cause an error in the Client Exception handler, because it hasno exception handler set specifically.
+    final HttpClientRequest req1 = client.get("someurl1", new Handler<HttpClientResponse>() {
+      public void handle(final HttpClientResponse response) {
+        tu.azzert(false, "Should never get a response on a bad port, if you see this message than you are running an http server on port 9998");
+      }
+    });
+    // No exception handler set on request!
+
+    final HttpClientRequest req2 = client.get("someurl2", new Handler<HttpClientResponse>() {
+      public void handle(final HttpClientResponse response) {
+        tu.azzert(false, "Should never get a response on a bad port, if you see this message than you are running an http server on port 9998");
+      }
+    });
+    req2.exceptionHandler(new Handler<Exception>() {
+      public void handle(Exception event) {
+        tu.azzert(req2Exceptions.incrementAndGet() == 1, "More than more call to req2 exception handler was not expected");
+        checkEndHandler.handle("Request2");
+      }
+    });
+
+    final HttpClientRequest req3 = client.get("someurl2", new Handler<HttpClientResponse>() {
+      public void handle(final HttpClientResponse response) {
+        tu.azzert(false, "Should never get a response on a bad port, if you see this message than you are running an http server on port 9998");
+      }
+    });
+    req3.exceptionHandler(new Handler<Exception>() {
+      public void handle(Exception event) {
+        tu.azzert(req3Exceptions.incrementAndGet() == 1, "More than more call to req2 exception handler was not expected");
+        checkEndHandler.handle("Request3");
+      }
+    });
+
+
+    req1.end();
+    req2.end();
+    req3.end();
+  }
+
   public void testTLSClientTrustAll() {
     tls();
   }
@@ -2025,10 +2234,15 @@ public class HttpTestClient extends TestClientBase {
         tu.testComplete();
       }
     });
-    req.exceptionHandler(new Handler<Exception>() {
-      public void handle(Exception e) {
-      }
-    });
+    // NOTE: If you set a request handler now and an error happens on the request, the error is reported to the
+    // request handler and NOT the client handler. Only if no handler is set on the request, or an error happens
+    // that is not in the context of a request will the client handler get called. I can't figure out why an empty
+    // handler was specified here originally, but if we want the client handler (specified above) to fire, we should
+    // not set an empty handler here. The alternative would be to move the logic
+//    req.exceptionHandler(new Handler<Exception>() {
+//      public void handle(Exception e) {
+//      }
+//    });
     req.end("foo");
   }
 

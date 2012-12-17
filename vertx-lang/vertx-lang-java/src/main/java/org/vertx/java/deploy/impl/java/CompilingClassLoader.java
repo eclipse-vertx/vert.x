@@ -34,13 +34,17 @@ public class CompilingClassLoader extends ClassLoader {
 
   private static final Logger log = LoggerFactory.getLogger(CompilingClassLoader.class);
 
-  private final File sourceFile;
+  private final String className;
   private final MemoryFileManager fileManager;
+
+  private static final String FILE_SEP = System.getProperty("file.separator");
 
   public CompilingClassLoader(ClassLoader loader, String sourceName) {
     super(loader);
-    this.sourceFile = new File(sourceName).getAbsoluteFile();
-    if (!this.sourceFile.canRead()) {
+    String temp = sourceName.replace(FILE_SEP, ".");
+    this.className = temp.substring(0, sourceName.length() - Kind.SOURCE.extension.length());
+    File sourceFile = new File(sourceName).getAbsoluteFile();
+    if (!sourceFile.canRead()) {
       throw new RuntimeException("File not found: " + sourceName);
     }
     try {
@@ -48,14 +52,17 @@ public class CompilingClassLoader extends ClassLoader {
       JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
       StandardJavaFileManager standardFileManager = javaCompiler.getStandardFileManager(null, null, null);
 
-      standardFileManager.setLocation(StandardLocation.SOURCE_PATH, Collections.singleton(sourceFile.getParentFile()));
-
+      File sourceRoot;
+      if (sourceName.contains(FILE_SEP)) {
+        sourceRoot = new File(".").getAbsoluteFile();
+      } else {
+        sourceRoot = sourceFile.getParentFile();
+      }
+      standardFileManager.setLocation(StandardLocation.SOURCE_PATH, Collections.singleton(sourceRoot));
       fileManager = new MemoryFileManager(loader, standardFileManager);
       JavaFileObject javaFile = standardFileManager.getJavaFileForInput(StandardLocation.SOURCE_PATH, resolveMainClassName(), Kind.SOURCE);
-
       JavaCompiler.CompilationTask task = javaCompiler.getTask(null, fileManager, diagnostics, null, null, Collections.singleton(javaFile));
       boolean valid = task.call();
-
       if (valid) {
         for (Diagnostic<?> d : diagnostics.getDiagnostics()) {
           log.info(d);
@@ -72,8 +79,7 @@ public class CompilingClassLoader extends ClassLoader {
   }
 
   public String resolveMainClassName() {
-    String fileName = sourceFile.getName();
-    return fileName.substring(0, fileName.length() - Kind.SOURCE.extension.length());
+    return className;
   }
 
   @Override

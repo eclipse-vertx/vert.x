@@ -24,6 +24,7 @@ import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
 
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *
@@ -49,6 +50,8 @@ public abstract class SockJSSocket implements ReadStream, WriteStream {
    */
   public final String writeHandlerID;
 
+  public static AtomicInteger cnt = new AtomicInteger();
+
   protected SockJSSocket(Vertx vertx) {
     this.vertx = vertx;
     this.writeHandler = new Handler<Message<Buffer>>() {
@@ -58,10 +61,16 @@ public abstract class SockJSSocket implements ReadStream, WriteStream {
     };
     this.writeHandlerID = UUID.randomUUID().toString();
     vertx.eventBus().registerLocalHandler(writeHandlerID, writeHandler);
+    cnt.incrementAndGet();
   }
 
   public void close() {
     vertx.eventBus().unregisterHandler(writeHandlerID, writeHandler);
+  }
+
+  protected void finalize() throws Throwable {
+    cnt.decrementAndGet();
+    super.finalize();
   }
 
 }

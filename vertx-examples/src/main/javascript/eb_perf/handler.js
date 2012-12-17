@@ -1,5 +1,7 @@
 load('vertx.js')
 
+console.log("Wibble");
+
 var eb = vertx.eventBus;
 
 var address = 'example.address'
@@ -41,4 +43,6 @@ eb.send(creditsAddress, null);
 function vertxStop() {
   eb.unregisterHandler(address, handler);
 }
+
+console.log("Started");
 

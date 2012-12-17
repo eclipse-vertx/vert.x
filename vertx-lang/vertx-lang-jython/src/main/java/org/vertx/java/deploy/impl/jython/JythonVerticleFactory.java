@@ -16,13 +16,9 @@
 
 package org.vertx.java.deploy.impl.jython;
 
-import org.vertx.java.core.logging.Logger;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.deploy.VerticleFactory;
 import org.vertx.java.deploy.impl.VerticleManager;
-
-
-import java.util.List;
 
 /**
  * @author <a href="https://github.com/sjhorn">Scott Horn</a>
@@ -36,27 +32,11 @@ public class JythonVerticleFactory implements VerticleFactory {
 
   @Override
   public void init(VerticleManager mgr) {
-      this.mgr = mgr;
-  }
-
-  @Override
-  public String getLanguage() {
-      return "python";
-  }
-  
-  @Override
-  public boolean isFactoryFor(String main) {
-    if (main.endsWith(".py")) {
-      return true;
-    }
-    return false;
+    this.mgr = mgr;
+    System.setProperty("python.options.internalTablesImpl","weak");
   }
 
   public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
-    if (System.getProperty("jython.home") == null) {
-      throw new IllegalStateException("In order to deploy Python applications you must set JYTHON_HOME to point " +
-          "at your Jython installation");
-    }
     Verticle app = new JythonVerticle(main, cl);
     return app;
   }

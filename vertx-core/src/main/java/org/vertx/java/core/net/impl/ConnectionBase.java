@@ -16,11 +16,7 @@
 
 package org.vertx.java.core.net.impl;
 
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.channel.DefaultFileRegion;
-import org.jboss.netty.channel.FileRegion;
+import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.socket.nio.NioSocketChannelConfig;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedFile;
@@ -159,7 +155,7 @@ public abstract class ConnectionBase {
   }
 
   protected void setContext() {
-    Context.setContext(context);
+    vertx.setContext(context);
   }
 
   protected void handleHandlerException(Throwable t) {

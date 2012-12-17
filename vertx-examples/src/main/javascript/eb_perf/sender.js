@@ -37,3 +37,5 @@ function sendMessage() {
 function vertxStop() {
   eb.unregisterHandler(creditsAddress, handler);
 }
+
+console.log("Started");

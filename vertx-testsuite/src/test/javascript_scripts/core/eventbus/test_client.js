@@ -183,6 +183,10 @@ function testEchoJson() {
   echo(sent);
 }
 
+function testEchoBuffer() {
+  echo(new org.vertx.java.core.buffer.Buffer);
+}
+
 function testEchoNull() {
   echo(null);
 }
