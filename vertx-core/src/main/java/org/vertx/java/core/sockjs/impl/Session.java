@@ -28,6 +28,7 @@ import org.vertx.java.core.sockjs.SockJSSocket;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * The SockJS session implementation.
@@ -175,13 +176,22 @@ class Session extends SockJSSocket implements Shareable {
     return closed;
   }
 
-  synchronized void resetListener() {
+  synchronized void resetListener(boolean setTimer) {
     listener = null;
-    setTimer();
+    if (setTimer) {
+      setTimer();
+    }
+  }
+
+  private void cancelTimer() {
+    if (timeoutTimerID != -1) {
+      vertx.cancelTimer(timeoutTimerID);
+    }
   }
 
   private void setTimer() {
-    if (timeout != -1 && timeoutTimerID == -1) {
+    if (timeout != -1) {
+      cancelTimer();
       timeoutTimerID = vertx.setTimer(timeout, new Handler<Long>() {
         public void handle(Long id) {
           vertx.cancelTimer(heartbeatID);
@@ -219,14 +229,9 @@ class Session extends SockJSSocket implements Shareable {
       lst.close();
     } else {
 
-      if (timeoutTimerID != -1) {
-        vertx.cancelTimer(timeoutTimerID);
-        timeoutTimerID = -1;
-      }
+      cancelTimer();
 
       this.listener = lst;
-
-      setTimer();
 
       if (!openWritten) {
         writeOpen(lst);
