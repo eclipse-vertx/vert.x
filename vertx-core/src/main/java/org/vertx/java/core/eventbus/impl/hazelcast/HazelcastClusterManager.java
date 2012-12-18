@@ -64,26 +64,25 @@ public class HazelcastClusterManager implements ClusterManager {
    * Create the singleton Hazelcast instance if necessary
    * @return
    */
-  private HazelcastInstance initHazelcast() {
-  	synchronized(CONFIG_FILE) {
-	    if (instance == null) {
-	      Config cfg = getConfig(null); 
-	      if (cfg != null) {
-	      	log.warn("Cannot find cluster.xml on classpath. Using default cluster configuration");
-	      }
-	
-	      // default instance
-	      instance = Hazelcast.init(cfg);
-	     
-	      // Properly shutdown all instances
-	      Runtime.getRuntime().addShutdownHook(new Thread() {
-	      	@Override
-	      	public void run() {
-	      		Hazelcast.shutdownAll();
-	      	}
-	      });
-	    }
-  	}
+  private synchronized HazelcastInstance initHazelcast() {
+    if (instance == null) {
+      Config cfg = getConfig(null);
+      if (cfg == null) {
+        log.warn("Cannot find cluster.xml on classpath. Using default cluster configuration");
+      }
+
+      // default instance
+      instance = Hazelcast.init(cfg);
+
+      // Properly shutdown all instances
+      Runtime.getRuntime().addShutdownHook(new Thread() {
+        @Override
+        public void run() {
+          Hazelcast.shutdownAll();
+        }
+      });
+    }
+
     return instance;
   }
 
@@ -96,7 +95,7 @@ public class HazelcastClusterManager implements ClusterManager {
 		if (configfile == null) {
 			configfile = CONFIG_FILE;
 		}
-		
+
 		Config cfg = null;
 		try (InputStream is = HazelcastClusterManager.class.getClassLoader().getResourceAsStream(configfile);
 		    InputStream bis = new BufferedInputStream(is)) {
