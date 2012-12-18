@@ -325,7 +325,12 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
     if (headers != null) {
       for (Map.Entry<String, Object> header: headers.entrySet()) {
         String key = header.getKey();
-        response.setHeader(key, header.getValue());
+        Object value = header.getValue();
+        if (value instanceof Iterable<?>) {
+          response.setHeader(key, (Iterable<?>) value);
+        } else {
+          response.setHeader(key, header.getValue());
+        }
       }
     }
   }
