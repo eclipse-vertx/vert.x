@@ -329,7 +329,7 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
         if (value instanceof Iterable<?>) {
           response.setHeader(key, (Iterable<?>) value);
         } else {
-          response.setHeader(key, header.getValue());
+          response.setHeader(key, value);
         }
       }
     }
