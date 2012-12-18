@@ -110,7 +110,7 @@ Add a line to `App.groovy` which starts the persistor, so the file now looks lik
 
     container.with {
       // Deploy a MongoDB persistor module
-      deployModule('vertx.mongo-persistor-v1.0')
+      deployModule('vertx.mongo-persistor-v1.2')
 
       // Start the web server, with the config we defined above
       deployModule('vertx.web-server-v1.0', webServerConf)
@@ -185,7 +185,7 @@ Copy `StaticData.groovy` into your directory as follows:
 
 We want to insert the static data only after the persistor verticle has completed starting up so we edit `App.groovy` as follows:
 
-    deployModule('vertx.mongo-persistor-v1.0') {
+    deployModule('vertx.mongo-persistor-v1.2') {
         deployVerticle('StaticData.groovy')
     }
     
@@ -264,7 +264,7 @@ Edit `App.groovy` and add the following, just after where the Mongo Persistor is
 
     // Deploy an auth manager to handle the authentication
 
-    deployModule('vertx.auth-mgr-v1.0')
+    deployModule('vertx.auth-mgr-v1.1')
     
 We'll also need to tell the bridge to let through any login messages:
 
