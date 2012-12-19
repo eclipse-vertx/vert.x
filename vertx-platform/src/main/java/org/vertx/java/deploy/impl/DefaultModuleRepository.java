@@ -73,13 +73,13 @@ public class DefaultModuleRepository implements ModuleRepository {
 	 *          Must be != null
 	 * @param defaultRepo
 	 *          Defaults to DEFAULT_REPO_HOST
-	 * @param modDir
+	 * @param modRoot
 	 *          The directory path where all the modules are deployed already or
 	 *          will be installed after download from a repository.
 	 */
-	public DefaultModuleRepository(final VertxInternal vertx, final String repo, final File modDir) {
+	public DefaultModuleRepository(final VertxInternal vertx, final String repo, final File modRoot) {
 		this.vertx = Args.notNull(vertx, "vertx");
-		this.modRoot = Args.notNull(modDir, "modRoot");
+		this.modRoot = Args.notNull(modRoot, "modRoot");
     if (repo != null) {
       if (repo.contains(COLON)) {
         this.repoHost = repo.substring(0, repo.indexOf(COLON));
