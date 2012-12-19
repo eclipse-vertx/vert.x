@@ -18,7 +18,6 @@ package org.vertx.java.deploy.impl;
 
 
 import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
@@ -27,6 +26,7 @@ import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.VertxCountDownLatch;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
@@ -71,7 +71,7 @@ public class VerticleManager implements ModuleReloader {
   private final Map<String, Deployment> deployments = new ConcurrentHashMap<>();
   // The user mods dir
   private final File modRoot;
-  private final CountDownLatch stopLatch = new CountDownLatch(1);
+  private final VertxCountDownLatch stopLatch = new VertxCountDownLatch(1);
   private Map<String, String> factoryNames = new HashMap<>();
   private final String repoHost;
   private final int repoPort;
@@ -140,14 +140,7 @@ public class VerticleManager implements ModuleReloader {
   }
 
   public void block() {
-    while (true) {
-      try {
-        stopLatch.await();
-        break;
-      } catch (InterruptedException e) {
-        //Ignore
-      }
-    }
+  	stopLatch.await();
   }
 
   public void unblock() {
@@ -286,36 +279,19 @@ public class VerticleManager implements ModuleReloader {
   }
 
   public void installMod(final String moduleName) {
-    final CountDownLatch latch = new CountDownLatch(1);
-    AsyncResultHandler<Void> handler = new AsyncResultHandler<Void>() {
-      public void handle(AsyncResult<Void> res) {
-        if (res.succeeded()) {
-          latch.countDown();
-        } else {
-          res.exception.printStackTrace();
-        }
-      }
-    };
-
-    BlockingAction<Void> installModuleAction = new BlockingAction<Void>(vertx, handler) {
+    BlockingAction<Void> deployModuleAction = new BlockingAction<Void>(vertx) {
       @Override
       public Void action() throws Exception {
         doInstallMod(moduleName);
         return null;
       }
+      @Override
+      protected void handle(AsyncResult<Void> result) {
+        log.error(result.exception);
+      }
     };
 
-    installModuleAction.run();
-
-    while (true) {
-      try {
-        if (!latch.await(30, TimeUnit.SECONDS)) {
-          throw new IllegalStateException("Timed out waiting to install module");
-        }
-        break;
-      } catch (InterruptedException ignore) {
-      }
-    }
+    deployModuleAction.run(30, TimeUnit.SECONDS, "Timed out waiting to install module");
   }
 
   public synchronized void uninstallMod(String moduleName) {
@@ -505,7 +481,7 @@ public class VerticleManager implements ModuleReloader {
 
   private boolean doInstallMod(final String moduleName) {
     checkWorkerContext();
-    final CountDownLatch latch = new CountDownLatch(1);
+    final VertxCountDownLatch latch = new VertxCountDownLatch(1);
     final AtomicReference<Buffer> mod = new AtomicReference<>();
     HttpClient client = vertx.createHttpClient();
     if (proxyHost != null) {
@@ -561,15 +537,9 @@ public class VerticleManager implements ModuleReloader {
     }
     req.putHeader("user-agent", "Vert.x Module Installer");
     req.end();
-    while (true) {
-      try {
-        if (!latch.await(30, TimeUnit.SECONDS)) {
-          throw new IllegalStateException("Timed out waiting to download module");
-        }
-        break;
-      } catch (InterruptedException ignore) {
-      }
-    }
+	  if (!latch.await(30, TimeUnit.SECONDS)) {
+	    throw new IllegalStateException("Timed out waiting to download module");
+	  }
     Buffer modZipped = mod.get();
     if (modZipped != null) {
       return unzipModule(moduleName, modZipped);
@@ -905,19 +875,18 @@ public class VerticleManager implements ModuleReloader {
 
   private void redeploy(final Deployment deployment) {
     // Has to occur on a worker thread
-    AsyncResultHandler<String> handler = new AsyncResultHandler<String>() {
-      public void handle(AsyncResult<String> res) {
-        if (!res.succeeded()) {
-          res.exception.printStackTrace();
-        }
-      }
-    };
-    BlockingAction<Void> redeployAction = new BlockingAction<Void>(vertx, handler) {
+    BlockingAction<String> redeployAction = new BlockingAction<String>(vertx) {
       @Override
-      public Void action() throws Exception {
+      public String action() throws Exception {
         doDeployMod(true, deployment.name, deployment.modName, deployment.config, deployment.instances,
             null, null);
         return null;
+      }
+      @Override
+      protected void handle(AsyncResult<String> result) {
+        if (!result.succeeded()) {
+          log.error(result.exception);
+        }
       }
     };
     redeployAction.run();
