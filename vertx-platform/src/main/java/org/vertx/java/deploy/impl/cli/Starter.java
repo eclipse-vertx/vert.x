@@ -19,6 +19,7 @@ package org.vertx.java.deploy.impl.cli;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.impl.DefaultVertx;
+import org.vertx.java.core.impl.VertxCountDownLatch;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
@@ -32,7 +33,6 @@ import java.io.FileNotFoundException;
 import java.net.*;
 import java.util.Enumeration;
 import java.util.Scanner;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -212,21 +212,14 @@ public class Starter {
   private void addShutdownHook() {
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
-        final CountDownLatch latch = new CountDownLatch(1);
+        final VertxCountDownLatch latch = new VertxCountDownLatch(1);
         mgr.undeployAll(new SimpleHandler() {
           public void handle() {
             latch.countDown();
           }
         });
-        while (true) {
-          try {
-            if (!latch.await(30, TimeUnit.SECONDS)) {
-              log.error("Timed out waiting to undeploy");
-            }
-            break;
-          } catch (InterruptedException e) {
-            //OK - can get spurious interupts
-          }
+        if (!latch.await(30, TimeUnit.SECONDS)) {
+          log.error("Timed out waiting to undeploy");
         }
       }
     });
