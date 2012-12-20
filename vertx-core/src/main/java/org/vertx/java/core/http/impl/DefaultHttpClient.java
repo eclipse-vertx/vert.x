@@ -70,11 +70,7 @@ public class DefaultHttpClient implements HttpClient {
   private Handler<Exception> exceptionHandler;
   private int port = 80;
   private String host = "localhost";
-  private final ConnectionPool<ClientConnection> pool = new ConnectionPool<ClientConnection>() {
-    protected void connect(Handler<ClientConnection> connectHandler, Handler<Exception> connectErrorHandler, Context context) {
-      internalConnect(connectHandler, connectErrorHandler);
-    }
-  };
+  private final ConnectionPool<ClientConnection> pool = new DefaultHttpClientConnectionPool(this);
   private boolean keepAlive = true;
 
   public DefaultHttpClient(VertxInternal vertx) {
@@ -122,6 +118,14 @@ public class DefaultHttpClient implements HttpClient {
   public int getMaxPoolSize() {
     return pool.getMaxPoolSize();
   }
+
+  /**
+   * @see DefaultHttpClientConnectionPool#setDisableUsingOccupiedConnections
+   */
+  public void setDisableUsingOccupiedConnections(boolean disable) {
+    ((DefaultHttpClientConnectionPool)pool).setDisableUsingOccupiedConnections(disable);
+  }
+
 
   public DefaultHttpClient setKeepAlive(boolean keepAlive) {
     this.keepAlive = keepAlive;
@@ -380,7 +384,7 @@ public class DefaultHttpClient implements HttpClient {
     return vertx;
   }
 
-  private void internalConnect(final Handler<ClientConnection> connectHandler, final Handler<Exception> connectErrorHandler) {
+  void internalConnect(final Handler<ClientConnection> connectHandler, final Handler<Exception> connectErrorHandler) {
 
     if (bootstrap == null) {
       VertxWorkerPool pool = new VertxWorkerPool();
