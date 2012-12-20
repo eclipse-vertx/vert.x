@@ -61,6 +61,24 @@ function testMove() {
   });
 }
 
+function testMkDir() {
+
+  // arguments: string, boolean, handler
+  var dir1 = fileDir + "/foo/bar";
+  fs.mkDir(dir1, true, function(err, res) {
+    tu.azzert(err === null);
+    tu.azzert(res);
+      
+    // arguments: string, string, handler
+    var dir2 = fileDir + "/foos/bars";
+    fs.mkDir(dir2, 'rwxrwx--x', function(err, res) {
+      tu.azzert(err === null);
+      tu.azzert(res);
+      tu.testComplete();
+    });
+  });
+}
+
 function testReadDir() {
   var file1 = fileDir + "/foo.tmp";
   var file2 = fileDir + "/bar.tmp";
