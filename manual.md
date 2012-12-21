@@ -220,6 +220,9 @@ The `vertx run` command can take a few optional parameters, they are:
     
 * `-instances <instances>` The number of instances of the verticle to instantiate in the vert.x server. Each verticle instance is strictly single threaded so to scale your application across available cores you might want to deploy more than one instance. If omitted a single instance will be deployed. We'll talk more about scaling later on in this user manual.
 
+* `-includes <mod_list>` A comma separated list of module names to include in the classpath of this verticle.
+For more information on what including a module means please see the modules manual.
+
 * `-worker` This options determines whether the verticle is a worker verticle or not. Default is false (not a worker). This is discussed in detail later on in the manual.  
 
 * `-cluster` This option determines whether the vert.x server which is started will attempt to form a cluster with other vert.x instances on the network. Clustering vert.x instances allows vert.x to form a distributed event bus with other nodes. Default is false (not clustered).
