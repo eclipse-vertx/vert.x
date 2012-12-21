@@ -256,6 +256,10 @@ vertx.createHttpServer().requestHandler { req -&gt;
 <p><code>-instances &lt;instances&gt;</code> The number of instances of the verticle to instantiate in the vert.x server. Each verticle instance is strictly single threaded so to scale your application across available cores you might want to deploy more than one instance. If omitted a single instance will be deployed. We'll talk more about scaling later on in this user manual.</p>
 </li>
 <li>
+<p><code>-includes &lt;mod_list&gt;</code> A comma separated list of module names to include in the classpath of this verticle.
+For more information on what including a module means please see the modules manual.</p>
+</li>
+<li>
 <p><code>-worker</code> This options determines whether the verticle is a worker verticle or not. Default is false (not a worker). This is discussed in detail later on in the manual.<br/>
 </p>
 </li>

@@ -138,7 +138,7 @@ echo "&lt;html&gt;&lt;body&gt;Hello World&lt;/body&gt;&lt;/html&gt;" &gt; web/in
 
 container.with {
   // Deploy a MongoDB persistor module
-  deployModule('vertx.mongo-persistor-v1.0')
+  deployModule('vertx.mongo-persistor-v1.2')
 
   // Start the web server, with the config we defined above
   deployModule('vertx.web-server-v1.0', webServerConf)
@@ -191,7 +191,7 @@ container.with {
 <pre class="prettyprint">cp $VERTX_HOME/examples/groovy/webapp/StaticData.groovy .
 </pre>
 <p>We want to insert the static data only after the persistor verticle has completed starting up so we edit <code>App.groovy</code> as follows:</p>
-<pre class="prettyprint">deployModule('vertx.mongo-persistor-v1.0') {
+<pre class="prettyprint">deployModule('vertx.mongo-persistor-v1.2') {
     deployVerticle('StaticData.groovy')
 }
 </pre>
@@ -247,7 +247,7 @@ container.with {
 <p>Edit <code>App.groovy</code> and add the following, just after where the Mongo Persistor is deployed.</p>
 <pre class="prettyprint">// Deploy an auth manager to handle the authentication
 
-deployModule('vertx.auth-mgr-v1.0')
+deployModule('vertx.auth-mgr-v1.1')
 </pre>
 <p>We'll also need to tell the bridge to let through any login messages:</p>
 <pre class="prettyprint">inbound_permitted: [
