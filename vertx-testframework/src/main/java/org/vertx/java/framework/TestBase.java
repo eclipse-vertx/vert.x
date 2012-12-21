@@ -237,7 +237,7 @@ public class TestBase extends TestCase {
       }
     };
 
-    verticleManager.deployMod(modName, config, instances, null, doneHandler);
+    verticleManager.moduleManager().deployMod(modName, config, instances, null, doneHandler);
 
     if (!doneLatch.await(10, TimeUnit.SECONDS)) {
       throw new IllegalStateException("Timedout waiting for apps to start");

@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -42,6 +43,7 @@ public class VerticleManagerTest {
     }
   }
 
+  @AfterClass
   public static void afterClass() throws Exception {
     if(oldVertxModFolder != null){
       System.setProperty(VERTX_MOD_PROPERTY_NAME, oldVertxModFolder);
@@ -63,7 +65,7 @@ public class VerticleManagerTest {
   @Test
   public void testDoInstallModuleWithRepo() throws Exception {
     verticleManager = new VerticleManager(vertxInternal, "localhost:9093");
-    verticleManager.installMod(TEST_MODULE2);
+    verticleManager.moduleManager().installMod(TEST_MODULE2);
     assertTrue(new File("mods/" + TEST_MODULE2 + "/mod.json").exists());
   }
 
@@ -72,7 +74,7 @@ public class VerticleManagerTest {
     System.getProperties().setProperty(HTTP_PROXY_HOST_PROP_NAME, "localhost");
     System.getProperties().setProperty(HTTP_PROXY_PORT_PROP_NAME, "9093");
     verticleManager = new VerticleManager(vertxInternal);
-    verticleManager.installMod(TEST_MODULE1);
+    verticleManager.moduleManager().installMod(TEST_MODULE1);
     assertTrue(new File("mods/" + TEST_MODULE1 + "/mod.json").exists());
   }
 
@@ -82,10 +84,21 @@ public class VerticleManagerTest {
   }
 
   private void delete(File f) {
-    try {
-			vertxInternal.fileSystem().deleteSync(f.getAbsolutePath(), true);
-		} catch (Exception ex) {
-			log.error(ex);
+  	// At least my windows box is causing sometime trouble ...
+		for(int i=0; i < 5; i++) {
+	  	if (!f.exists()) {
+	  		break;
+	  	}
+	    try {
+				vertxInternal.fileSystem().deleteSync(f.getAbsolutePath(), true);
+			} catch (Exception ex) {
+				log.error(ex);
+				
+				try {
+					Thread.sleep(200);
+				} catch (InterruptedException ignore) {
+				}
+			}
 		}
   }
 }

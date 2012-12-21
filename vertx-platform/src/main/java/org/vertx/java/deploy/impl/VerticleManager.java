@@ -20,7 +20,6 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,11 +35,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.impl.BlockingAction;
@@ -50,7 +47,6 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Container;
-import org.vertx.java.deploy.ModuleRepository;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.deploy.VerticleFactory;
 
@@ -67,14 +63,10 @@ public class VerticleManager implements ModuleReloader {
   private final VertxInternal vertx;
   // deployment name --> deployment
   private final Map<String, Deployment> deployments = new ConcurrentHashMap<>();
-  // The user mods dir
-  private final File modRoot;
   private final CountDownLatch stopLatch = new CountDownLatch(1);
   private Map<String, String> factoryNames = new HashMap<>();
   private final Redeployer redeployer;
-  
-  // Allow multiple repositories to be registered
-  private final List<ModuleRepository> repositories = new ArrayList<>();
+  private final ModuleManager moduleManager;
 
   public VerticleManager(VertxInternal vertx) {
     this(vertx, null);
@@ -88,26 +80,10 @@ public class VerticleManager implements ModuleReloader {
     this.vertx = vertx;
     VertxLocator.vertx = vertx;
     VertxLocator.container = new Container(this);
-    if (modDir == null) {
-    	modDir = System.getProperty("vertx.mods");
-    }
-    if (modDir == null || modDir.trim().equals("")) {
-    	modDir = "mods";
-    } 
-    modRoot = new File(modDir);
-    if (modRoot.exists() && !modRoot.isDirectory()) {
-    	throw new RuntimeException("modRoot must be a directory: " + modRoot.getAbsolutePath());
-    }
-   
-    // Always initial with at least one repository
-    ModuleRepository defRepo = newModuleRepository(vertx, repo, modRoot);
-    if (defRepo == null) {
-    	throw new NullPointerException("newModuleRepository() must not return null");
-    }
-    this.repositories.add(defRepo);
     
-    this.redeployer = new Redeployer(vertx, modRoot, this);
-
+    this.moduleManager = new ModuleManager(vertx, this, repo, modDir);
+    this.redeployer = new Redeployer(vertx, this.moduleManager.modRoot(), this);
+    
     try (InputStream is = getClass().getClassLoader().getResourceAsStream("langs.properties")) {
       if (is == null) {
         log.warn("No language mappings found!");
@@ -125,23 +101,12 @@ public class VerticleManager implements ModuleReloader {
     }
   }
 
-  /**
-   * Allow subclasses to provide their own default ModuleRepository
-   * 
-   * @param vertx
-   * @param repo
-   * @param modRoot
-   * @return
-   */
-  protected ModuleRepository newModuleRepository(VertxInternal vertx, String repo, File modRoot) {
-    return new DefaultModuleRepository(vertx, repo, modRoot);
+  public final Redeployer redeployer() {
+  	return redeployer;
   }
 
-  /**
-   * @return The list of registered repositories
-   */
-  public final List<ModuleRepository> getModuleRepositories() {
-  	return this.repositories;
+  public final ModuleManager moduleManager() {
+  	return moduleManager;
   }
   
   public void block() {
@@ -233,16 +198,16 @@ public class VerticleManager implements ModuleReloader {
     // The user has specified a list of modules to include when deploying this verticle
     // so we walk the tree of modules adding tree of includes to classpath
     if (includes != null) {
-      String[] includedMods = parseIncludes(includes, null);
+      List<String> includedMods = ModuleConfig.getParameterList(includes);
       List<URL> includedURLs = new ArrayList<>(Arrays.asList(urls));
       for (String includedMod: includedMods) {
-        File modDir = new File(modRoot, includedMod);
-        JsonObject conf;
+        File modDir = new File(moduleManager.modRoot(), includedMod);
+        ModuleConfig conf;
         inner: while (true) {
-          conf = new ModuleConfig(modDir, includedMod).json();
-          if (conf == null) {
+          conf = new ModuleConfig(modDir, includedMod);
+          if (conf.json() == null) {
             // Try and install the module
-            if (!doInstallMod(includedMod)) {
+            if (!moduleManager.doInstallMod(includedMod)) {
               callDoneHandler(doneHandler, null);
             }
           } else {
@@ -251,7 +216,7 @@ public class VerticleManager implements ModuleReloader {
         }
         Map<String, String> includedJars = new HashMap<>();
         Set<String> includedModules = new HashSet<>();
-        includedURLs = processIncludes(main, includedURLs, includedMod, modDir, conf,
+        includedURLs = moduleManager.processIncludes(main, includedURLs, includedMod, modDir, conf,
             includedJars, includedModules);
       }
       theURLs = includedURLs.toArray(new URL[includedURLs.size()]);
@@ -288,229 +253,11 @@ public class VerticleManager implements ModuleReloader {
     return map;
   }
 
-  public void deployMod(final String modName, final JsonObject config,
-                        final int instances, final File currentModDir, final Handler<String> doneHandler) {
-
-    BlockingAction<Void> deployModuleAction = new BlockingAction<Void>(vertx, null) {
-
-      @Override
-      public Void action() throws Exception {
-        doDeployMod(false, null, modName, config, instances, currentModDir, wrapDoneHandler(doneHandler));
-        return null;
-      }
-    };
-
-    deployModuleAction.run();
-  }
-
-  public void installMod(final String moduleName) {
-    final CountDownLatch latch = new CountDownLatch(1);
-    AsyncResultHandler<Void> handler = new AsyncResultHandler<Void>() {
-      public void handle(AsyncResult<Void> res) {
-        if (res.succeeded()) {
-          latch.countDown();
-        } else {
-          res.exception.printStackTrace();
-        }
-      }
-    };
-
-    BlockingAction<Void> deployModuleAction = new BlockingAction<Void>(vertx, handler) {
-      @Override
-      public Void action() throws Exception {
-        doInstallMod(moduleName);
-        return null;
-      }
-    };
-
-    deployModuleAction.run();
-
-    while (true) {
-      try {
-        if (!latch.await(30, TimeUnit.SECONDS)) {
-          throw new IllegalStateException("Timed out waiting to install module");
-        }
-        break;
-      } catch (InterruptedException ignore) {
-      }
-    }
-  }
-
-  public void uninstallMod(String moduleName) {
-    log.info("Uninstalling module " + moduleName + " from directory " + modRoot);
-    File modDir = new File(modRoot, moduleName);
-    if (!modDir.exists()) {
-      log.error("Cannot find module to uninstall");
-    } else {
-      try {
-        vertx.fileSystem().deleteSync(modDir.getAbsolutePath(), true);
-        log.info("Module " + moduleName + " successfully uninstalled");
-      } catch (Exception e) {
-        log.error("Failed to delete directory: " + e.getMessage());
-      }
-    }
-  }
-
   private void checkWorkerContext() {
     Thread t = Thread.currentThread();
     if (!t.getName().startsWith("vert.x-worker-thread")) {
       throw new IllegalStateException("Not a worker thread");
     }
-  }
-
-  private void doDeployMod(final boolean redeploy, final String depName, final String modName,
-                             final JsonObject config,
-                             final int instances, final File currentModDir,
-                             final Handler<String> doneHandler) {
-    checkWorkerContext();
-
-    File modDir = new File(modRoot, modName);
-    ModuleConfig conf = new ModuleConfig(modDir, modName);
-    if (conf.json() != null) {
-      String main = conf.main();
-      if (main == null) {
-        log.error("Runnable module " + modName + " mod.json must contain a \"main\" field");
-        callDoneHandler(doneHandler, null);
-        return;
-      }
-      Boolean worker = conf.worker();
-      if (worker == null) {
-        worker = Boolean.FALSE;
-      }
-      Boolean preserveCwd = conf.preserveCwd();
-      if (preserveCwd == null) {
-        preserveCwd = Boolean.FALSE;
-      }
-      // If preserveCwd then use the current module directory instead, or the cwd if not in a module
-      File modDirToUse = preserveCwd ? currentModDir : modDir;
-
-      List<URL> urls = processIncludes(modName, new ArrayList<URL>(), modName, modDir, conf.json(),
-                                       new HashMap<String, String>(), new HashSet<String>());
-      if (urls == null) {
-        callDoneHandler(doneHandler, null);
-        return;
-      }
-
-      Boolean ar = conf.autoRedeploy();
-      final boolean autoRedeploy = ar == null ? false : ar;
-
-      doDeploy(depName, autoRedeploy, worker, main, modName, config,
-               urls.toArray(new URL[urls.size()]), instances, modDirToUse, new Handler<String>() {
-        @Override
-        public void handle(String deploymentID) {
-          if (deploymentID != null && !redeploy && autoRedeploy) {
-            redeployer.moduleDeployed(deployments.get(deploymentID));
-          }
-          callDoneHandler(doneHandler, deploymentID);
-        }
-      });
-    } else {
-      if (doInstallMod(modName)) {
-        doDeployMod(redeploy, depName, modName, config, instances, currentModDir, doneHandler);
-      } else {
-        callDoneHandler(doneHandler, null);
-      }
-    }
-  }
-
-  // We walk through the graph of includes making sure we only add each one once
-  // We keep track of what jars have been included so we can flag errors if paths
-  // are included more than once
-  // We make sure we only include each module once in the case of loops in the
-  // graph
-  private List<URL> processIncludes(String runModule, List<URL> urls, String modName, File modDir,
-                                    JsonObject conf,
-                                    Map<String, String> includedJars,
-                                    Set<String> includedModules) {
-    checkWorkerContext();
-    // Add the urls for this module
-    try {
-      urls.add(modDir.toURI().toURL());
-      File libDir = new File(modDir, "lib");
-      if (libDir.exists()) {
-        File[] jars = libDir.listFiles();
-        for (File jar: jars) {
-          URL jarURL = jar.toURI().toURL();
-          String sjarURL = jarURL.toString();
-          String jarName = sjarURL.substring(sjarURL.lastIndexOf("/") + 1);
-          String prevMod = includedJars.get(jarName);
-          if (prevMod != null) {
-            log.warn("Warning! jar file " + jarName + " is contained in module " +
-                     prevMod + " and also in module " + modName +
-                     " which are both included (perhaps indirectly) by module " +
-                     runModule);
-          }
-          includedJars.put(jarName, modName);
-          urls.add(jarURL);
-        }
-      }
-    } catch (MalformedURLException e) {
-      //Won't happen
-      log.error("malformed url", e);
-      return null;
-    }
-
-    includedModules.add(modName);
-
-    String sincludes = conf.getString("includes");
-    if (sincludes != null) {
-      String[] sarr = parseIncludes(sincludes, modName);
-      for (String include: sarr) {
-        if (includedModules.contains(include)) {
-          // Ignore - already included this one
-        } else {
-          File newmodDir = new File(modRoot, include);
-          inner: while (true) {
-            JsonObject newconf = new ModuleConfig(newmodDir, include).json();
-            if (newconf != null) {
-              urls = processIncludes(runModule, urls, include, newmodDir, newconf,
-                                     includedJars, includedModules);
-              if (urls == null) {
-                return null;
-              }
-              break inner;
-            } else {
-              // Module not installed - let's try to install it
-              if (!doInstallMod(include)) {
-                return null;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    return urls;
-  }
-
-  private String[] parseIncludes(String sincludes, String modName) {
-    sincludes = sincludes.trim();
-    if ("".equals(sincludes)) {
-      log.error("Empty include string " + ((modName != null) ? " in module " : ""));
-      return null;
-    }
-    String[] arr = sincludes.split(",");
-    if (arr != null) {
-      for (int i = 0; i < arr.length; i++) {
-        arr[i] = arr[i].trim();
-      }
-    }
-    return arr;
-  }
-
-  /**
-   * Try all registered repositories
-   * 
-   * @param moduleName
-   * @return
-   */
-  private boolean doInstallMod(final String moduleName) {
-  	for (ModuleRepository repo: this.repositories) {
-    	if (repo.installMod(moduleName) == true) {
-    		return true;
-    	}
-  	}
-  	return false;
   }
 
   // We calculate a path adjustment that can be used by the fileSystem object
@@ -531,7 +278,7 @@ public class VerticleManager implements ModuleReloader {
     }
   }
 
-  private void doDeploy(String depName,
+  final void doDeploy(String depName,
                           boolean autoRedeploy,
                           boolean worker, final String main,
                           final String modName,
@@ -540,8 +287,6 @@ public class VerticleManager implements ModuleReloader {
                           final File modDir,
                           final Handler<String> doneHandler) {
     checkWorkerContext();
-    //final AtomicReference<String> deploymentID = new AtomicReference<>();
-    final CountDownLatch latch = new CountDownLatch(1);
     final String deploymentName =
         depName != null ? depName : "deployment-" + UUID.randomUUID().toString();
 
@@ -608,7 +353,7 @@ public class VerticleManager implements ModuleReloader {
       // We load the VerticleFactory class using the verticle classloader - this allows
       // us to put language implementations in modules
 
-      Class clazz;
+      Class<?> clazz;
       try {
         clazz = cl.loadClass(factoryName);
       } catch (ClassNotFoundException e) {
@@ -786,19 +531,18 @@ public class VerticleManager implements ModuleReloader {
 
   private void redeploy(final Deployment deployment) {
     // Has to occur on a worker thread
-    AsyncResultHandler<String> handler = new AsyncResultHandler<String>() {
-      public void handle(AsyncResult<String> res) {
-        if (!res.succeeded()) {
-          res.exception.printStackTrace();
-        }
-      }
-    };
-    BlockingAction<String> redeployAction = new BlockingAction<String>(vertx, handler) {
+    BlockingAction<String> redeployAction = new BlockingAction<String>(vertx) {
       @Override
       public String action() throws Exception {
-        doDeployMod(true, deployment.name, deployment.modName, deployment.config, deployment.instances,
+        moduleManager.doDeployMod(true, deployment.name, deployment.modName, deployment.config, deployment.instances,
             null, null);
         return null;
+      }
+      @Override
+      protected void handle(AsyncResult<String> result) {
+        if (!result.succeeded()) {
+          log.error(result.exception);
+        }
       }
     };
     redeployAction.run();

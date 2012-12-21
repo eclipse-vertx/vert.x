@@ -103,7 +103,7 @@ public class ModuleConfig {
 	 * @param arg
 	 * @return Guaranteed to be non-null
 	 */
-	private List<String> getParameterList(String arg) {
+	public static List<String> getParameterList(String arg) {
 		if (arg == null) {
 			return Collections.emptyList();
 		}

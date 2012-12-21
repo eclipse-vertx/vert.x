@@ -93,11 +93,11 @@ public class Starter {
 
   private void installModule(String modName, CommandLineArgs args) {
     String repo = args.map.get("-repo");
-    new VerticleManager(vertx, repo).installMod(modName);
+    new VerticleManager(vertx, repo).moduleManager().installMod(modName);
   }
 
   private void uninstallModule(String modName) {
-    new VerticleManager(vertx).uninstallMod(modName);
+    new VerticleManager(vertx).moduleManager().uninstallMod(modName);
   }
 
   private void runVerticle(boolean module, String main, CommandLineArgs args) {
@@ -198,7 +198,7 @@ public class Starter {
       }
     };
     if (module) {
-      mgr.deployMod(main, conf, instances, null, doneHandler);
+      mgr.moduleManager().deployMod(main, conf, instances, null, doneHandler);
     } else {
       String includes = args.map.get("-includes");
       mgr.deployVerticle(worker, main, conf, urls, instances, null, includes, doneHandler);

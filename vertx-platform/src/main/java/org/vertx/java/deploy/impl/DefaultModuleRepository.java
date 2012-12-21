@@ -170,6 +170,9 @@ public class DefaultModuleRepository implements ModuleRepository {
     }
     req.putHeader("user-agent", "Vert.x Module Installer");
     req.end();
+    // TODO replace with VertxCountDownLatch ...
+    // TODO why wait here at all. Why not unzip upon reception of the buffer? Isn't that what vertx is all about?
+    // TODO For the user to explicitly add a latch is also poor. req should have some easy to use timeout build in.
     while (true) {
       try {
         if (!latch.await(30, TimeUnit.SECONDS)) {
