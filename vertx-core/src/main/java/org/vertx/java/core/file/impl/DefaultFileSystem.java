@@ -655,7 +655,7 @@ public class DefaultFileSystem implements FileSystem {
     final String path = PathAdjuster.adjust(vertx, p);
     return new BlockingAction<AsyncFile>(vertx, handler) {
       public AsyncFile action() throws Exception {
-        return doOpen(path, perms, read, write, createNew, flush, context);
+        return doOpen(path, perms, read, write, createNew, flush, context());
       }
     };
   }

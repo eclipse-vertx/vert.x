@@ -19,12 +19,13 @@ package org.vertx.java.deploy.impl.cli;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.impl.DefaultVertx;
+import org.vertx.java.core.impl.VertxCountDownLatch;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.deploy.impl.Args;
+import org.vertx.java.deploy.impl.CommandLineArgs;
 import org.vertx.java.deploy.impl.VerticleManager;
 
 import java.io.File;
@@ -32,7 +33,6 @@ import java.io.FileNotFoundException;
 import java.net.*;
 import java.util.Enumeration;
 import java.util.Scanner;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -59,7 +59,7 @@ public class Starter {
       displaySyntax();
     } else {
       String command = sargs[0].toLowerCase();
-      Args args = new Args(sargs);
+      CommandLineArgs args = new CommandLineArgs(sargs);
       if ("version".equals(command)) {
         log.info(VERSION);
       } else {
@@ -91,16 +91,16 @@ public class Starter {
     }
   }
 
-  private void installModule(String modName, Args args) {
+  private void installModule(String modName, CommandLineArgs args) {
     String repo = args.map.get("-repo");
-    new VerticleManager(vertx, repo).installMod(modName);
+    new VerticleManager(vertx, repo).moduleManager().installMod(modName);
   }
 
   private void uninstallModule(String modName) {
-    new VerticleManager(vertx).uninstallMod(modName);
+    new VerticleManager(vertx).moduleManager().uninstallMod(modName);
   }
 
-  private void runVerticle(boolean module, String main, Args args) {
+  private void runVerticle(boolean module, String main, CommandLineArgs args) {
     boolean clustered = args.map.get("-cluster") != null;
     if (clustered) {
       log.info("Starting clustering...");
@@ -198,7 +198,7 @@ public class Starter {
       }
     };
     if (module) {
-      mgr.deployMod(main, conf, instances, null, doneHandler);
+      mgr.moduleManager().deployMod(main, conf, instances, null, doneHandler);
     } else {
       String includes = args.map.get("-includes");
       mgr.deployVerticle(worker, main, conf, urls, instances, null, includes, doneHandler);
@@ -212,21 +212,14 @@ public class Starter {
   private void addShutdownHook() {
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
-        final CountDownLatch latch = new CountDownLatch(1);
+        final VertxCountDownLatch latch = new VertxCountDownLatch(1);
         mgr.undeployAll(new SimpleHandler() {
           public void handle() {
             latch.countDown();
           }
         });
-        while (true) {
-          try {
-            if (!latch.await(30, TimeUnit.SECONDS)) {
-              log.error("Timed out waiting to undeploy");
-            }
-            break;
-          } catch (InterruptedException e) {
-            //OK - can get spurious interupts
-          }
+        if (!latch.await(30, TimeUnit.SECONDS)) {
+          log.error("Timed out waiting to undeploy");
         }
       }
     });

@@ -24,17 +24,34 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class VertxThreadFactory implements ThreadFactory {
 
-  private String prefix;
+	public enum TYPE { ACCEPTOR, BACKGROUND, WORKER, TIMER };
+	
   private AtomicInteger threadCount = new AtomicInteger(0);
-
-  VertxThreadFactory(String prefix) {
-    this.prefix = prefix;
+  private final TYPE type;
+  
+  VertxThreadFactory(TYPE type) {
+    this.type = type;
   }
 
   public Thread newThread(Runnable runnable) {
-    Thread t = new Thread(runnable, prefix + threadCount.getAndIncrement());
+    String name = "vertx-" + type.name().toLowerCase() + "-thread-" + threadCount.getAndIncrement();
+    Thread t = new VertxThread(runnable, name, type);
     // All vert.x threads are daemons
     t.setDaemon(true);
     return t;
+  }
+  
+  public static class VertxThread extends Thread {
+  	
+  	public final TYPE type;
+  	
+  	public VertxThread(Runnable target, String name, TYPE type) {
+  		super(target, name);
+  		this.type = type;
+  	}
+  }
+  
+  public static boolean isWorker(final Thread t) {
+    return (t instanceof VertxThread) && ((VertxThread)t).type != TYPE.WORKER;
   }
 }

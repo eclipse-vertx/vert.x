@@ -93,7 +93,7 @@ public class TestClient extends TestClientBase {
       public void handle(Long timerID) {
         tu.checkContext();
         long dur = System.currentTimeMillis() - start;
-        tu.azzert(dur >= delay);
+        tu.azzert(dur >= delay, "Duration < delay?!? duration: " + dur + ", delay: " + delay);
         long maxDelay = (long)(delay * 1.5);
         tu.azzert(dur < maxDelay, "Timer accuracy: " + dur + " vs " + maxDelay); // 50% margin of error
         vertx.cancelTimer(timerID);
