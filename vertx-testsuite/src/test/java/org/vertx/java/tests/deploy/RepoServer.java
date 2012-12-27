@@ -19,8 +19,10 @@ public class RepoServer {
         if (req.uri.equals("/vertx-mods/mods/" + module2 + "/mod.zip")) {
           log.info("HANDLING repo request");
           req.response.sendFile(webroot + "mod2.zip");
-        } else if (req.uri.equals("http://vert-x.github.com/vertx-mods/mods/" + module1 + "/mod.zip")) {
+        } else if (req.uri.equals("http://vert-x.github.com:80/vertx-mods/mods/" + module1 + "/mod.zip")) {
           req.response.sendFile(webroot + "mod1.zip");
+        } else {
+        	log.error("File not found: " + req.uri);
         }
       }
     }).listen(9093, "localhost");

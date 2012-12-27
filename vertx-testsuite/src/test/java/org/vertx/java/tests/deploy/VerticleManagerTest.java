@@ -1,14 +1,17 @@
 package org.vertx.java.tests.deploy;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.impl.ActionFuture;
 import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
@@ -65,7 +68,9 @@ public class VerticleManagerTest {
   @Test
   public void testDoInstallModuleWithRepo() throws Exception {
     verticleManager = new VerticleManager(vertxInternal, "localhost:9093");
-    verticleManager.moduleManager().installMod(TEST_MODULE2);
+    AsyncResult<Void> res = verticleManager.moduleManager().installMod(TEST_MODULE2);
+    assertNotNull(res);
+    assertTrue(res.succeeded());
     assertTrue(new File("mods/" + TEST_MODULE2 + "/mod.json").exists());
   }
 
@@ -74,7 +79,8 @@ public class VerticleManagerTest {
     System.getProperties().setProperty(HTTP_PROXY_HOST_PROP_NAME, "localhost");
     System.getProperties().setProperty(HTTP_PROXY_PORT_PROP_NAME, "9093");
     verticleManager = new VerticleManager(vertxInternal);
-    verticleManager.moduleManager().installMod(TEST_MODULE1);
+    AsyncResult<Void> res = verticleManager.moduleManager().installMod(TEST_MODULE1);
+    assertTrue(res.succeeded());
     assertTrue(new File("mods/" + TEST_MODULE1 + "/mod.json").exists());
   }
 

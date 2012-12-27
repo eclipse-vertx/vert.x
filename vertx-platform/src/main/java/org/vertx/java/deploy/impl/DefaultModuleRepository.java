@@ -17,16 +17,17 @@
 package org.vertx.java.deploy.impl;
 
 import java.io.File;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
+import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
+import org.vertx.java.core.impl.ActionFuture;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.impl.VertxThreadFactory;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.utils.lang.Args;
@@ -114,80 +115,61 @@ public class DefaultModuleRepository implements ModuleRepository {
 	 * @param doneHandler
 	 */
 	@Override
-	public boolean installMod(final String moduleName) {
+	public ActionFuture<Void> installMod(final String moduleName, final AsyncResultHandler<Void> doneHandler) {
 		Args.notNull(moduleName, "moduleName");
+    
+    DownloadHttpClient client = new DownloadHttpClient(vertx, proxyHost, proxyPort);
+    client.setHost(repoHost);
+    client.setPort(repoPort);
+    
+    final String uri = REPO_URI_ROOT + moduleName + MODULE_ZIP_FILENAME;
+    
+    if (log.isInfoEnabled()) {
+	    String msg = "Attempting to install module '" + moduleName + "' from http://" + repoHost + ":" + repoPort + uri;
+	    if (proxyHost != null) {
+	      msg += ". Using proxy host " + proxyHost + ":" + proxyPort;
+	    }
+	    log.info(msg);
+    }
 
-    checkWorkerContext();
-    final CountDownLatch latch = new CountDownLatch(1);
-    final AtomicReference<Buffer> mod = new AtomicReference<>();
-    HttpClient client = vertx.createHttpClient();
-    if (proxyHost != null) {
-      client.setHost(proxyHost);
-      client.setPort(proxyPort);
-    } else {
-      client.setHost(repoHost);
-      client.setPort(repoPort);
-    }
-    client.exceptionHandler(new Handler<Exception>() {
-      public void handle(Exception e) {
-        log.error("Unable to connect to repository");
-        latch.countDown();
-      }
+    // The job executed on a worker thread after the data have been downloaded
+    client.backgroundHandler(new Handler<Buffer>() {
+			@Override
+			public void handle(Buffer buffer) {
+	    	log.info("Thread: " + Thread.currentThread().getName() + "; Context: " + vertx.getContext());
+	      unzipModule(moduleName, buffer);
+			}
     });
-    String uri = REPO_URI_ROOT + moduleName + MODULE_ZIP_FILENAME;
-    String msg = "Attempting to install module " + moduleName + " from http://"
-        + repoHost + ":" + repoPort + uri;
-    if (proxyHost != null) {
-      msg += " Using proxy host " + proxyHost + ":" + proxyPort;
-    }
-    log.info(msg);
-    if (proxyHost != null) {
-      uri = new StringBuffer("http://").append(DEFAULT_REPO_HOST).append(uri).toString();
-    }
+
+    // The doneHandler gets executed in the caller context (not the background)  
+    client.doneHandler(new AsyncResultHandler<Void>() {
+			@Override
+			public void handle(final AsyncResult<Void> event) {
+				if (event.succeeded()) {
+	        log.info("Successfully installed module '" + moduleName + "' from repository: " + uri, event.exception);
+	        if (doneHandler != null) {
+	        	doneHandler.handle(event);
+	        }
+				} else {
+	        log.error("Error while downloading module '" + moduleName + "' from repository: " + uri, event.exception);
+				}
+			}
+		});
+		
     HttpClientRequest req = client.get(uri, new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         if (resp.statusCode == 200) {
           log.info("Downloading module...");
-          resp.bodyHandler(new Handler<Buffer>() {
-            public void handle(Buffer buffer) {
-              mod.set(buffer);
-              latch.countDown();
-            }
-          });
-        } else if (resp.statusCode == 404) {
-          log.error("Can't find module " + moduleName + " in repository");
-          latch.countDown();
-        } else {
-          log.error("Failed to download module: " + resp.statusCode);
-          latch.countDown();
+        	log.info("Thread: " + Thread.currentThread().getName() + "; Context: " + vertx.getContext());
         }
       }
     });
-    if(proxyHost != null){
-      req.putHeader("host", proxyHost);
-    } else {
-      req.putHeader("host", repoHost);
-    }
-    req.putHeader("user-agent", "Vert.x Module Installer");
+
+    // TODO I'd prefer req.headers().setUserAgent("Vert.x Module Installer");
+    req.putHeader(HttpHeaders.Names.USER_AGENT, "Vert.x Module Installer");
     req.end();
-    // TODO replace with VertxCountDownLatch ...
-    // TODO why wait here at all. Why not unzip upon reception of the buffer? Isn't that what vertx is all about?
-    // TODO For the user to explicitly add a latch is also poor. req should have some easy to use timeout build in.
-    while (true) {
-      try {
-        if (!latch.await(30, TimeUnit.SECONDS)) {
-          throw new IllegalStateException("Timed out waiting to download module");
-        }
-        break;
-      } catch (InterruptedException ignore) {
-      }
-    }
-    Buffer modZipped = mod.get();
-    if (modZipped != null) {
-      return unzipModule(moduleName, modZipped);
-    } else {
-      return false;
-    }
+
+    return client.future();
 	}
 
 	/**
@@ -228,9 +210,13 @@ public class DefaultModuleRepository implements ModuleRepository {
 	}
 	
   private void checkWorkerContext() {
-    Thread t = Thread.currentThread();
-    if (!t.getName().startsWith("vert.x-worker-thread")) {
+    if (VertxThreadFactory.isWorker(Thread.currentThread()) == false) {
       throw new IllegalStateException("Not a worker thread");
     }
+  }
+  
+  @Override
+  public String toString() {
+  	return "http://" + repoHost + ":" + repoPort + REPO_URI_ROOT + MODULE_ZIP_FILENAME;
   }
 }

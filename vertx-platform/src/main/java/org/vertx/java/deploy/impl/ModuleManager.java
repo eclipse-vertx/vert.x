@@ -25,14 +25,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.impl.ActionFuture;
 import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.impl.VertxThreadFactory;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -90,6 +91,7 @@ public class ModuleManager {
 	 * @return
 	 */
 	private File initModRoot(final String modRoot) {
+		// TODO use VertxConfig once applied
 		String modDir = modRoot != null ? modRoot : System.getProperty(MODULE_ROOT_DIR_PROPERTY_NAME);
 		if (modDir == null || modDir.trim().isEmpty()) {
 			modDir = DEFAULT_MODULE_ROOT_DIR;
@@ -146,59 +148,34 @@ public class ModuleManager {
 	}
 
 	/**
-	 * Install a module asynchronously
-	 * TODO what is difference between deploy and install??
+	 * Install a module (sync)
 	 * 
 	 * @param moduleName
 	 */
-	// TODO No doneHandler?? or Future
-	public void installMod(final String moduleName) {
-    // TODO Replace with .. once BackgroundAction patch has been applied.
-    final CountDownLatch latch = new CountDownLatch(1);
-    BlockingAction<Void> deployModuleAction = new BlockingAction<Void>(vertx) {
-      @Override
-      public Void action() throws Exception {
-        doInstallMod(moduleName);
-        return null;
-      }
-      
-      @Override
-      protected void handle(final AsyncResult<Void> result) {
-        latch.countDown();
-        if (result.failed()) {
-          log.error(result.exception);
-        }
-      }
-    };
-
-    deployModuleAction.run();
-    // deployModuleAction.run().get(30, TimeUnit.SECONDS, "Timed out waiting to install module");
-
-    while (true) {
-      try {
-        if (!latch.await(30, TimeUnit.SECONDS)) {
-          throw new IllegalStateException("Timed out waiting to install module");
-        }
-        break;
-      } catch (InterruptedException ignore) {
-      }
-    }
-  }
+	public AsyncResult<Void> installMod(final String moduleName) {
+		return installMod(moduleName, 30, TimeUnit.SECONDS);
+	}
 
 	/**
-	 * Install the module (sync)
+	 * Install a module (sync)
 	 * 
 	 * @param moduleName
-	 * @return
 	 */
-  public boolean doInstallMod(final String moduleName) {
+	public AsyncResult<Void> installMod(final String moduleName, int timeout, TimeUnit unit) {
+    AsyncResult<Void> res = null;
   	for (ModuleRepository repo: this.moduleRepositories) {
-  		// TODO This is not really synchronous => change
-    	if (repo.installMod(moduleName) == true) {
-    		return true;
-    	}
+  		ActionFuture<Void> f = repo.installMod(moduleName, null);
+	    res = f.get(timeout, unit);
+	    if (res == null) {
+	      log.error("Timeout while waiting to download module '" + moduleName + "' from repository: " + repo.toString());
+	    } else if (res.failed()) {
+	    	log.error("Failed to install module '" + moduleName + "' from repository: " + repo.toString());
+	    } else {
+	    	log.info("Successfully installed module '" + moduleName + "' from repository: " + repo.toString());
+	    	break;
+	    }
   	}
-  	return false;
+  	return res;
   }
 
 	/**
@@ -292,7 +269,7 @@ public class ModuleManager {
       		urls.toArray(new URL[urls.size()]), instances, modDirToUse, doneHandler);
     } else {
     	// Install the module first and then try again
-      if (doInstallMod(modName)) {
+      if (installMod(modName).succeeded()) {
         doDeployMod(redeploy, depName, modName, config, instances, currentModDir, doneHandler);
       } else {
       	// Failed to install the module
@@ -358,7 +335,7 @@ public class ModuleManager {
             break inner;
           } else {
             // Module not installed - let's try to install it
-            if (!doInstallMod(include)) {
+            if (installMod(include).failed()) {
               return null;
             }
           }
@@ -373,8 +350,7 @@ public class ModuleManager {
    * 
    */
   private void checkWorkerContext() {
-    Thread t = Thread.currentThread();
-    if (!t.getName().startsWith("vert.x-worker-thread")) {
+    if (VertxThreadFactory.isWorker(Thread.currentThread()) == false) {
       throw new IllegalStateException("Not a worker thread");
     }
   }

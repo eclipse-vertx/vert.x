@@ -21,6 +21,7 @@ import java.util.concurrent.TimeoutException;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -31,12 +32,12 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
  */
 public abstract class BlockingAction<T> {
 
-	@SuppressWarnings("unused")
+//	@SuppressWarnings("unused")
 	private static final Logger log = LoggerFactory.getLogger(BlockingAction.class);
 
 	// The context when run() was invoked. Which is the context the handler() will 
-	// executed in (compared the background "action")
-	private Context context;
+	// executed in (compared to the background "action")
+	private volatile Context context;
 
 	private final VertxInternal vertx;
 	private final AsyncResultHandler<T> handler;
@@ -116,6 +117,7 @@ public abstract class BlockingAction<T> {
 
 		// Execute the background job
 		this.context = vertx.getOrAssignContext();
+		log.info("Context: " + context);
 		context.executeOnWorker(runner);
 		
 		return future;
@@ -187,4 +189,21 @@ public abstract class BlockingAction<T> {
 	protected void onTimeout(final String timeoutMessage, final ActionFuture<T> future) {
     doHandle(new AsyncResult<T>(new TimeoutException(timeoutMessage)), future);
 	}
+
+	/**
+	 * A little helper commonly used
+	 * @param <E>
+	 * 
+	 * @param doneHandler
+	 * @return
+	 */
+  protected <E> void callDoneHandler(final Handler<E> doneHandler, final E param) {
+    if (doneHandler != null) {
+	    context.execute(new Runnable() {
+	      public void run() {
+	        doneHandler.handle(param);
+	      }
+	    });
+    }
+  }
 }

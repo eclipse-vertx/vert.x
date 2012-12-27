@@ -16,6 +16,9 @@
 
 package org.vertx.java.deploy;
 
+import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.impl.ActionFuture;
+
 /**
  * Interface for module repository implementations
  * 
@@ -28,5 +31,5 @@ public interface ModuleRepository {
 	 * 
 	 * @param moduleName
 	 */
-	boolean installMod(String moduleName);
+	ActionFuture<Void> installMod(String moduleName, AsyncResultHandler<Void> doneHandler);
 }

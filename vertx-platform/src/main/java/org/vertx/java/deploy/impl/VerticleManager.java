@@ -43,6 +43,7 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.impl.VertxThreadFactory;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -207,7 +208,7 @@ public class VerticleManager implements ModuleReloader {
           conf = new ModuleConfig(modDir, includedMod);
           if (conf.json() == null) {
             // Try and install the module
-            if (!moduleManager.doInstallMod(includedMod)) {
+            if (moduleManager.installMod(includedMod).failed()) {
               callDoneHandler(doneHandler, null);
             }
           } else {
@@ -254,8 +255,7 @@ public class VerticleManager implements ModuleReloader {
   }
 
   private void checkWorkerContext() {
-    Thread t = Thread.currentThread();
-    if (!t.getName().startsWith("vert.x-worker-thread")) {
+    if (VertxThreadFactory.isWorker(Thread.currentThread()) == false) {
       throw new IllegalStateException("Not a worker thread");
     }
   }
