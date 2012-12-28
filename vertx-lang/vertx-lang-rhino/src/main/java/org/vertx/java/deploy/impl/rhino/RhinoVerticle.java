@@ -16,7 +16,21 @@
 
 package org.vertx.java.deploy.impl.rhino;
 
-import org.mozilla.javascript.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URL;
+import java.util.Scanner;
+
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Function;
+import org.mozilla.javascript.Script;
+import org.mozilla.javascript.Scriptable;
+import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.commonjs.module.ModuleScript;
 import org.mozilla.javascript.commonjs.module.Require;
 import org.mozilla.javascript.commonjs.module.RequireBuilder;
@@ -27,15 +41,6 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Verticle;
-
-import com.sun.script.javascript.JSAdapter;
-
-import java.io.*;
-import java.net.URI;
-import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Scanner;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -71,7 +76,7 @@ public class RhinoVerticle extends Verticle {
     Object jsStderr = Context.javaToJS(System.err, scope);
     ScriptableObject.putProperty(scope, "stderr", jsStderr);
   }
-  
+
   private static synchronized CoffeeScriptCompiler getCoffeeScriptCompiler(ClassLoader cl) {
     // Lazy load coffee script compiler
     if (RhinoVerticle.coffeeScriptCompiler == null) {
@@ -79,7 +84,7 @@ public class RhinoVerticle extends Verticle {
     }
     return RhinoVerticle.coffeeScriptCompiler;
   }
-  
+
   // Support for loading from CommonJS modules
   private static Require installRequire(final ClassLoader cl, Context cx, ScriptableObject scope) {
     RequireBuilder rb = new RequireBuilder();
@@ -95,13 +100,14 @@ public class RhinoVerticle extends Verticle {
             CachedModuleScript cachedModule = getLoadedModule(moduleId);
             if (cachedModule != null) {
               // cachedModule.getModule() is not public
-              // super.getModuleScript uses moduleSourceProvider.loadSource to check for modifications
+              // super.getModuleScript uses moduleSourceProvider.loadSource to
+              // check for modifications
               return super.getModuleScript(cx, moduleId, uri, uri, paths);
             }
 
             // If loading from classpath get a proper URI
             // Must check for each possible file to avoid getting other folders
-            // Could also use getResources and iterate           
+            // Could also use getResources and iterate
             if (uri == null) {
               URL url = cl.getResource(moduleId + File.separator + "package.json");
               if (url == null) {
@@ -112,8 +118,9 @@ public class RhinoVerticle extends Verticle {
               } else {
                 if (!moduleId.endsWith(".js") && !moduleId.endsWith(".coffee")) {
                   url = cl.getResource(moduleId + ".js"); // Try .js first
-                  if(url == null) {
-                      url = cl.getResource(moduleId + ".coffee"); // Then try .coffee
+                  if (url == null) {
+                    url = cl.getResource(moduleId + ".coffee"); // Then try
+                                                                // .coffee
                   }
                 } else {
                   url = cl.getResource(moduleId);
@@ -135,7 +142,7 @@ public class RhinoVerticle extends Verticle {
               if (packageFile.exists()) {
 
                 String conf = null;
-                try (Scanner scanner = new Scanner(packageFile).useDelimiter("\\A")){
+                try (Scanner scanner = new Scanner(packageFile).useDelimiter("\\A")) {
                   conf = scanner.next();
                 } catch (FileNotFoundException e) {
                 }
@@ -150,21 +157,22 @@ public class RhinoVerticle extends Verticle {
                 main = json.getString("main");
               }
 
-              // Allow loading modules from <dir>/<main>.js or <dir>/<main>.coffee
-              File mainFile = new File(uri.getPath(), main.endsWith(".js") ? main : main+".js");
+              // Allow loading modules from <dir>/<main>.js or
+              // <dir>/<main>.coffee
+              File mainFile = new File(uri.getPath(), main.endsWith(".js") ? main : main + ".js");
               if (!mainFile.exists() && !main.endsWith(".js") && !main.endsWith(".coffee")) {
-                  mainFile = new File(uri.getPath(), main+".coffee");
-                  if(mainFile.exists()) {
-                      uri = mainFile.toURI();
-                  }
+                mainFile = new File(uri.getPath(), main + ".coffee");
+                if (mainFile.exists()) {
+                  uri = mainFile.toURI();
+                }
               } else {
                 uri = mainFile.toURI();
-              } 
+              }
 
             }
 
             if (uri != null && uri.toString().endsWith(".coffee")) {
-                uri = getCoffeeScriptCompiler(cl).coffeeScriptToJavaScript(uri);                
+              uri = getCoffeeScriptCompiler(cl).coffeeScriptToJavaScript(uri);
             }
             return super.getModuleScript(cx, moduleId, uri, uri, paths);
           }
@@ -187,15 +195,15 @@ public class RhinoVerticle extends Verticle {
   }
 
   private static void loadScript(ClassLoader cl, Context cx, ScriptableObject scope, String scriptName) throws Exception {
-    if(scriptName != null && scriptName.endsWith(".coffee")) {
-        URL resource = cl.getResource(scriptName);
-        if(resource != null) {
-            getCoffeeScriptCompiler(cl).coffeeScriptToJavaScript(resource.toURI());
-            scriptName += ".js";
-        } else {
-            throw new FileNotFoundException("Cannot find script: " + scriptName);
-        }
-    } 
+    if (scriptName != null && scriptName.endsWith(".coffee")) {
+      URL resource = cl.getResource(scriptName);
+      if (resource != null) {
+        getCoffeeScriptCompiler(cl).coffeeScriptToJavaScript(resource.toURI());
+        scriptName += ".js";
+      } else {
+        throw new FileNotFoundException("Cannot find script: " + scriptName);
+      }
+    }
     InputStream is = cl.getResourceAsStream(scriptName);
     if (is == null) {
       throw new FileNotFoundException("Cannot find script: " + scriptName);
@@ -213,39 +221,7 @@ public class RhinoVerticle extends Verticle {
       Thread.currentThread().setContextClassLoader(old);
     }
   }
-  
-  private class Console extends ScriptableObject {
-    public Console(){
-      defineFunctionProperties(new String[]{ 
-          "log",
-          "error",
-          "warn",
-          "info"
-      }, Console.class, ScriptableObject.READONLY);
-    }
-    
-    public void log(Object message){
-      container.getLogger().debug(message);
-    }
-    
-    public void info(Object message){
-      container.getLogger().info(message);
-    }
-    
-    public void error(Object message){
-      container.getLogger().error(message);
-    }
-    
-    public void warn(Object message){
-      container.getLogger().warn(message);
-    }
-    
-    @Override
-    public String getClassName() {
-      return "Console";
-    }
-  }
-  
+
   public void start() throws Exception {
     Context cx = Context.enter();
     cx.setOptimizationLevel(2);
@@ -253,11 +229,13 @@ public class RhinoVerticle extends Verticle {
       scope = cx.initStandardObjects();
 
       addStandardObjectsToScope(scope);
-      scope.defineFunctionProperties(new String[]{"load"}, RhinoVerticle.class, ScriptableObject.DONTENUM);    
+      scope.defineFunctionProperties(new String[] { "load" }, RhinoVerticle.class, ScriptableObject.DONTENUM);
       scope.defineProperty("console", new Console(), ScriptableObject.DONTENUM);
 
-      // This is pretty ugly - we have to set some thread locals so we can get a reference to the scope and
-      // classloader in the load() method - this is because Rhino insists load() must be static
+      // This is pretty ugly - we have to set some thread locals so we can get a
+      // reference to the scope and
+      // classloader in the load() method - this is because Rhino insists load()
+      // must be static
       scopeThreadLocal.set(scope);
       clThreadLocal.set(cl);
 
@@ -286,6 +264,36 @@ public class RhinoVerticle extends Verticle {
       }
     }
   }
-}
 
-  
+  private class Console extends ScriptableObject {
+    public Console() {
+      defineFunctionProperties(new String[] {
+          "log",
+          "error",
+          "warn",
+          "info"
+      }, Console.class, ScriptableObject.READONLY);
+    }
+
+    public void log(Object message) {
+      container.getLogger().debug(message);
+    }
+
+    public void info(Object message) {
+      container.getLogger().info(message);
+    }
+
+    public void error(Object message) {
+      container.getLogger().error(message);
+    }
+
+    public void warn(Object message) {
+      container.getLogger().warn(message);
+    }
+
+    @Override
+    public String getClassName() {
+      return "Console";
+    }
+  }
+}
