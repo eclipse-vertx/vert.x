@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-var vertx = vertx || {};
-
-if (!vertx.eventBus) {
+module.exports = function(vertx){
   vertx.eventBus = new (function() {
     var that = this;
 

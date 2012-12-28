@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-var vertx = vertx || {};
-
-if (!vertx.setTimer) {
+module.exports = function(vertx){
 
   vertx.setTimer = function(delay, handler) {
     return org.vertx.java.deploy.impl.VertxLocator.vertx.setTimer(delay, handler);

@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-var vertx = vertx || {};
-
-if (!vertx.createHttpServer) {
-
+module.exports = function(vertx){
   (function() {
 
     function convertMap(j_map) {

@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-var vertx = vertx || {};
-
-if (!vertx.Pump) {
+module.exports = function(vertx){
   vertx.Pump = function(rs, ws) {
 
     var pumped = 0;

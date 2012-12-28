@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-var vertx = vertx || {};
-
-if (!vertx.createNetServer) {
+module.exports = function(vertx){
   vertx.createNetServer = function() {
     return org.vertx.java.deploy.impl.VertxLocator.vertx.createNetServer();
   }

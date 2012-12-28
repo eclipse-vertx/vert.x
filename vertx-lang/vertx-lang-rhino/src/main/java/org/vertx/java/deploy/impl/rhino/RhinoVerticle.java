@@ -28,9 +28,13 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Verticle;
 
+import com.sun.script.javascript.JSAdapter;
+
 import java.io.*;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Scanner;
 
 /**
@@ -97,7 +101,7 @@ public class RhinoVerticle extends Verticle {
 
             // If loading from classpath get a proper URI
             // Must check for each possible file to avoid getting other folders
-            // Could also use getResources and iterate
+            // Could also use getResources and iterate           
             if (uri == null) {
               URL url = cl.getResource(moduleId + File.separator + "package.json");
               if (url == null) {
@@ -209,7 +213,39 @@ public class RhinoVerticle extends Verticle {
       Thread.currentThread().setContextClassLoader(old);
     }
   }
-
+  
+  private class Console extends ScriptableObject {
+    public Console(){
+      defineFunctionProperties(new String[]{ 
+          "log",
+          "error",
+          "warn",
+          "info"
+      }, Console.class, ScriptableObject.READONLY);
+    }
+    
+    public void log(Object message){
+      container.getLogger().debug(message);
+    }
+    
+    public void info(Object message){
+      container.getLogger().info(message);
+    }
+    
+    public void error(Object message){
+      container.getLogger().error(message);
+    }
+    
+    public void warn(Object message){
+      container.getLogger().warn(message);
+    }
+    
+    @Override
+    public String getClassName() {
+      return "Console";
+    }
+  }
+  
   public void start() throws Exception {
     Context cx = Context.enter();
     cx.setOptimizationLevel(2);
@@ -217,7 +253,8 @@ public class RhinoVerticle extends Verticle {
       scope = cx.initStandardObjects();
 
       addStandardObjectsToScope(scope);
-      scope.defineFunctionProperties(new String[]{"load"}, RhinoVerticle.class, ScriptableObject.DONTENUM);
+      scope.defineFunctionProperties(new String[]{"load"}, RhinoVerticle.class, ScriptableObject.DONTENUM);    
+      scope.defineProperty("console", new Console(), ScriptableObject.DONTENUM);
 
       // This is pretty ugly - we have to set some thread locals so we can get a reference to the scope and
       // classloader in the load() method - this is because Rhino insists load() must be static

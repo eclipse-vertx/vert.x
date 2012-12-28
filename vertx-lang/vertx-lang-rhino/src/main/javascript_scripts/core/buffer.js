@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-var vertx = vertx || {};
-
-if (!vertx.Buffer)
+module.exports = function(vertx){
   vertx.Buffer = org.vertx.java.core.buffer.Buffer;
+}
