@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-var vertx = vertx || {};
-
-if (!vertx.createSockJSServer) {
+module.exports = function(vertx){
 
   vertx.createSockJSServer = function(httpServer) {
 

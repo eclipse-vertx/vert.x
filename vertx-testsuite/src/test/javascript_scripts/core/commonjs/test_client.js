@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-var tu = require("test_utils.js").get(),
+var tu = require("test_utils.js"),
     func1 = require("./module1");
 
 function testScriptLoading() {

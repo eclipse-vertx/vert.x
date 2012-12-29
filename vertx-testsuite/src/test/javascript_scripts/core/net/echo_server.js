@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-load('vertx.js')
-load('test_utils.js')
-
-var tu = new TestUtils();
+var vertx = require('vertx.js')
+var tu = require('test_utils.js')
 
 var server = vertx.createNetServer();
 

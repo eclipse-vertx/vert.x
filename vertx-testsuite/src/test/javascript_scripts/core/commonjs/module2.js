@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var tu = require("test_utils.js").get();
+var tu = require("test_utils.js");
 
 module.exports = function() {
   try {

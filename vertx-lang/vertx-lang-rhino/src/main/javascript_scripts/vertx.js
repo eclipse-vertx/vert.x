@@ -13,21 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 (function(){
-    load('core/buffer.js');
-    load('core/event_bus.js');
-    load('core/net.js');
-    load('core/http.js');
-    load('core/streams.js');
-    load('core/timers.js');
-    load('core/utils.js');
-    load('core/sockjs.js');
-    load('core/parse_tools.js');
-    load('core/shared_data.js');
-    load('core/filesystem.js');
-    load('core/deploy.js');
-    load('core/logger.js');
-    load('core/env.js');
+    var vertx = {};
+
+    require('core/buffer.js')(vertx);
+    require('core/event_bus.js')(vertx);
+    require('core/net.js')(vertx);
+    require('core/http.js')(vertx);
+    require('core/streams.js')(vertx);
+    require('core/timers.js')(vertx);
+    require('core/utils.js')(vertx);
+    require('core/sockjs.js')(vertx);
+    require('core/parse_tools.js')(vertx);
+    require('core/shared_data.js')(vertx);
+    require('core/filesystem.js')(vertx);
+    require('core/deploy.js')(vertx);
+    require('core/logger.js')(vertx);
+    require('core/env.js')(vertx);
+
     (this.module && module.exports) ? module.exports = vertx : this.vertx = vertx;
 })();

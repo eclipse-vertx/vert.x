@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-var vertx = vertx || {};
-
-if (!vertx.env) {
+module.exports = function(vertx){
   vertx.env = {};
   var j_map = org.vertx.java.deploy.impl.VertxLocator.container.getEnv();
   var j_iter = j_map.entrySet().iterator();

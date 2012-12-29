@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-var vertx = vertx || {};
-
-if (!vertx.deployVerticle) {
+module.exports = function(vertx){
   (function() {
 
     var VERTICLE = 0;

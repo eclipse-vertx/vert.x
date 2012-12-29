@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-var vertx = vertx || {};
-
-if (!vertx.fileSystem) {
+module.exports = function(vertx){
   vertx.fileSystem = {};
 
   (function() {

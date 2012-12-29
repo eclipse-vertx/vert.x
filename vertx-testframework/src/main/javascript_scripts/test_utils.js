@@ -58,12 +58,4 @@ var TestUtils = function() {
 
 };
 
-(function() {
-    var instance = null;
-    this.get =  function() {
-        if(instance == null){
-            instance = new TestUtils();
-		}
-        return instance;
-    };
-}).call((this.module && module.exports)? module.exports : this.TestUtils);
+(this.module && module.exports)? module.exports = new TestUtils() : this.TestUtils = new TestUtils();

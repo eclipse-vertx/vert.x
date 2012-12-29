@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-var vertx = vertx || {};
-
-if (!vertx.getMap) {
+module.exports = function(vertx){
 
   vertx.getMap = function(name) {
     return org.vertx.java.deploy.impl.VertxLocator.vertx.sharedData().getMap(name);

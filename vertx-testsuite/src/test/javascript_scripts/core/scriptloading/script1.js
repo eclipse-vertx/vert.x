@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-var tu = TestUtils.get();
+var tu = require('test_utils.js')
 
-function func1() {
-  load('core/scriptloading/script2.js');
+var globalVar = {}
+
+module.exports = function() {
+  var func2 = require('core/scriptloading/script2.js');
   tu.azzert(func2() === 'bar');
   return "foo";
 }

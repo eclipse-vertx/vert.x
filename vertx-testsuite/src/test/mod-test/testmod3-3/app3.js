@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-load("vertx.js");
+var vertx = require('vertx.js');
 
-function blaarg() {
+module.exports = function() {
   return "elephants";
 }
-
