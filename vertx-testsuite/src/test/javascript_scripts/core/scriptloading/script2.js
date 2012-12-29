@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-var tu = TestUtils.get();
+var tu = require('test_utils.js')
 
-function func2() {
+module.exports = function() {
   try {
-    load('does-not-exist.js');
+    require('does-not-exist.js');
     tu.azzert(false, 'Should throw exception');
   } catch (err) {
     // OK

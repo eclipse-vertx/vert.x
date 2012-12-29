@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-load('test_utils.js')
-load('vertx.js')
-
-var tu = new TestUtils();
+var tu = require('test_utils.js')
+var vertx = require('vertx.js')
 
 var server = vertx.createHttpServer();
 var client = vertx.createHttpClient().setPort(8080);

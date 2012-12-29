@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-load("test_utils.js")
-load("core/scriptloading/script1.js");
-
-var tu = TestUtils.get();
+var tu = require("test_utils.js")
+var func1 = require("core/scriptloading/script1.js");
 
 function testScriptLoading() {
   tu.azzert(func1() === 'foo');

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-load('test_utils.js')
-load('vertx.js')
+var tu = require('test_utils.js')
+var vertx = require('vertx.js')
 
 var eb = vertx.eventBus;
 

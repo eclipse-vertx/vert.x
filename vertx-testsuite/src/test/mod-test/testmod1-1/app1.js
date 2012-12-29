@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-load('test_utils.js')
-load('vertx.js')
-load('app2.js');
+var tu = require('test_utils.js')
+var vertx = require('vertx.js')
+var wibble = require('app2.js');
 
 console.log("in testmod1-1");
-
-var tu = new TestUtils();
 
 function testSimpleInclude() {
   tu.azzert("aardvarks" === wibble());
@@ -34,4 +32,3 @@ function vertxStop() {
   tu.unregisterAll();
   tu.appStopped();
 }
-

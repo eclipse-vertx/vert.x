@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-var tu = require("test_utils.js").get();
+var tu = require("test_utils.js");
 
 module.exports = function() {
   func2 = require('./module2');
