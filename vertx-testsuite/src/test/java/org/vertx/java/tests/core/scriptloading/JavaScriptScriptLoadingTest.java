@@ -40,5 +40,10 @@ public class JavaScriptScriptLoadingTest extends TestBase {
     startTest(getMethodName());
   }
 
+  @Test
+  public void testRequireGlobal() throws Exception {
+    startApp("core/scriptloading/test_client.js");
+    startTest(getMethodName());
+  }
 
 }

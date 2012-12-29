@@ -16,6 +16,8 @@
 
 var tu = require('test_utils.js')
 
+var globalVar = {}
+
 module.exports = function() {
   var func2 = require('core/scriptloading/script2.js');
   tu.azzert(func2() === 'bar');

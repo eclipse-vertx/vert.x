@@ -22,6 +22,11 @@ function testScriptLoading() {
   tu.testComplete();
 }
 
+function testRequireGlobal() {
+  tu.azzert(typeof(globalVar) === 'undefined');
+  tu.testComplete();
+}
+
 tu.registerTests(this);
 tu.appReady();
 
