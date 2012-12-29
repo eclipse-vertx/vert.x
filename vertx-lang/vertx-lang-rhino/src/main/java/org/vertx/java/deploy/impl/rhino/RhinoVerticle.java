@@ -140,7 +140,10 @@ public class RhinoVerticle extends Verticle {
           public URI getModule(String moduleId) throws Exception {
             URL url = cl.getResource(Paths.get("mods", moduleId, "package.json").toString());
             if (url == null) {
-              url = cl.getResource(Paths.get("mods", moduleId, "index.json").toString());
+              url = cl.getResource(Paths.get("mods", moduleId, "index.js").toString());
+            }
+            if (url == null) {
+              url = cl.getResource(Paths.get("mods", moduleId, "index.coffee").toString());
             }
 
             if (url != null) {
