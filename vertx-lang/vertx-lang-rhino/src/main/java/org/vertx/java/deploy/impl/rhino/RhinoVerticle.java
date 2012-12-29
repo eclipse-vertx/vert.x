@@ -24,6 +24,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Scanner;
 
 import org.mozilla.javascript.Context;
@@ -36,11 +38,13 @@ import org.mozilla.javascript.commonjs.module.Require;
 import org.mozilla.javascript.commonjs.module.RequireBuilder;
 import org.mozilla.javascript.commonjs.module.provider.SoftCachingModuleScriptProvider;
 import org.mozilla.javascript.commonjs.module.provider.UrlModuleSourceProvider;
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Verticle;
+import org.vertx.java.deploy.impl.VertxLocator;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -109,73 +113,131 @@ public class RhinoVerticle extends Verticle {
             // Must check for each possible file to avoid getting other folders
             // Could also use getResources and iterate
             if (uri == null) {
-              URL url = cl.getResource(moduleId + File.separator + "package.json");
-              if (url == null) {
-                url = cl.getResource(moduleId + File.separator + "index.json");
-              }
-              if (url != null) {
-                url = new File(url.getFile()).getParentFile().toURI().toURL();
-              } else {
-                if (!moduleId.endsWith(".js") && !moduleId.endsWith(".coffee")) {
-                  url = cl.getResource(moduleId + ".js"); // Try .js first
-                  if (url == null) {
-                    url = cl.getResource(moduleId + ".coffee"); // Then try
-                                                                // .coffee
-                  }
-                } else {
-                  url = cl.getResource(moduleId);
-                }
-              }
+              // Retrieve CommonJS package
+              uri = getModule(moduleId);
 
-              if (url != null) {
-                uri = url.toURI();
+              if (uri == null) {
+                // Retrieve script
+                uri = getScript(moduleId);
               }
             }
 
-            if (uri != null && uri.toString().startsWith("file:") && new File(uri).isDirectory()) {
-
-              String main = "index";
-
-              // Allow loading modules from <dir>/package.json
-              File packageFile = new File(uri.getPath(), "package.json");
-
-              if (packageFile.exists()) {
-
-                String conf = null;
-                try (Scanner scanner = new Scanner(packageFile).useDelimiter("\\A")) {
-                  conf = scanner.next();
-                } catch (FileNotFoundException e) {
-                }
-
-                JsonObject json;
-                try {
-                  json = new JsonObject(conf);
-                } catch (DecodeException e) {
-                  throw new IllegalStateException("Module " + moduleId + " package.json contains invalid json");
-                }
-
-                main = json.getString("main");
-              }
-
-              // Allow loading modules from <dir>/<main>.js or
-              // <dir>/<main>.coffee
-              File mainFile = new File(uri.getPath(), main.endsWith(".js") ? main : main + ".js");
-              if (!mainFile.exists() && !main.endsWith(".js") && !main.endsWith(".coffee")) {
-                mainFile = new File(uri.getPath(), main + ".coffee");
-                if (mainFile.exists()) {
-                  uri = mainFile.toURI();
-                }
-              } else {
-                uri = mainFile.toURI();
-              }
-
+            // If it is a CommonJS package then retrieve the main file to
+            // require.
+            if (isPackage(uri)) {
+              uri = getMainFile(uri);
             }
 
-            if (uri != null && uri.toString().endsWith(".coffee")) {
+            // If the required script is .coffee, then compile it.
+            if (isCoffeeScript(uri)) {
               uri = getCoffeeScriptCompiler(cl).coffeeScriptToJavaScript(uri);
             }
+
             return super.getModuleScript(cx, moduleId, uri, uri, paths);
           }
+
+          /* Retrieves the uri of a require as a CommonJS package */
+          public URI getModule(String moduleId) throws Exception {
+            URL url = cl.getResource(Paths.get("mods", moduleId, "package.json").toString());
+            if (url == null) {
+              url = cl.getResource(Paths.get("mods", moduleId, "index.json").toString());
+            }
+
+            if (url != null) {
+              return new File(url.toURI()).getParentFile().toURI();
+            }
+
+            return null;
+          }
+
+          /* Retrieves the uri of a require as a single script */
+          public URI getScript(String moduleId) throws Exception {
+            /*
+             * If no .js or .coffee extension specified, attempt to load them as
+             * such
+             */
+            if (!moduleId.endsWith(".js") && !moduleId.endsWith(".coffee")) {
+              URL url = cl.getResource(moduleId + ".js");
+              if (url != null) {
+                return url.toURI();
+              }
+
+              url = cl.getResource(moduleId + ".coffee");
+              if (url != null) {
+                return url.toURI();
+              }
+            } else {
+              URL url = cl.getResource(moduleId);
+              if (url != null) {
+                return url.toURI();
+              }
+            }
+
+            return null;
+          }
+
+          /* Gets the name of the main script file of a CommonJS Package */
+          private URI getMainFile(URI uri) throws Exception {
+            /* Retrieve the CommonJS package.json */
+
+            // See: http://www-01.ibm.com/support/docview.wss?uid=swg24018970
+            // PK64379; 6.1.0.15: ClassLoader.getResource Encodes Spaces in URLs
+            // Fix spaces in URI
+            Path packagePath = Paths.get(uri.toURL().getFile().replace("%20", " "));
+            File packageFile = packagePath.resolve("package.json").toFile();
+
+            String mainFileName = "index";
+
+            if (packageFile.exists()) {
+              JsonObject json;
+              try {
+                Buffer buffer = VertxLocator.vertx.fileSystem().readFileSync(packageFile.toString());
+                json = new JsonObject(buffer.toString());
+              } catch (DecodeException e) {
+                throw new IllegalStateException(packageFile.toString() + " contains invalid json");
+              }
+
+              mainFileName = json.getString("main", "index");
+            }
+
+            File mainFile = null;
+            // Load the main file directly
+            if (mainFileName.endsWith(".coffee") || mainFileName.endsWith(".js")) {
+              mainFile = packagePath.resolve(mainFileName).toFile();
+
+              if (mainFile.exists()) {
+                return mainFile.toURI();
+              }
+            } else {
+              // Try to load it as a .coffee
+              mainFile = packagePath.resolve(mainFileName + ".coffee").toFile();
+              if (mainFile.exists()) {
+                return mainFile.toURI();
+              }
+              // If not try to load it as a .js
+              mainFile = packagePath.resolve(mainFileName + ".js").toFile();
+              if (mainFile.exists()) {
+                return mainFile.toURI();
+              }
+
+              // If not, load the file as is without extensions
+              mainFile = packagePath.resolve(mainFileName).toFile();
+              if (mainFile.exists()) {
+                return mainFile.toURI();
+              }
+            }
+
+            throw new IllegalStateException(packageFile.toString() + " specifies an invalid main script, or could not be found");
+          }
+
+          private boolean isCoffeeScript(URI uri) {
+            return (uri != null && uri.toString().endsWith(".coffee"));
+          }
+
+          private boolean isPackage(URI uri) {
+            return uri != null && uri.toString().startsWith("file:") && new File(uri).isDirectory();
+          }
+
         });
 
     // Force export of vertxStop
