@@ -139,11 +139,12 @@ public class RhinoVerticle extends Verticle {
           /* Retrieves the uri of a require as a CommonJS package */
           public URI getModule(String moduleId) throws Exception {
             URL url = cl.getResource(Paths.get("mods", moduleId, "package.json").toString());
-            if (url == null) {
-              url = cl.getResource(Paths.get("mods", moduleId, "index.js").toString());
-            }
+            
             if (url == null) {
               url = cl.getResource(Paths.get("mods", moduleId, "index.coffee").toString());
+            }
+            if (url == null) {
+              url = cl.getResource(Paths.get("mods", moduleId, "index.js").toString());
             }
 
             if (url != null) {
