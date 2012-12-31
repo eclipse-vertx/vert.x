@@ -24,7 +24,9 @@ import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -44,6 +46,7 @@ public class DefaultHttpClientResponse extends HttpClientResponse {
   // Cache these for performance
   private Map<String, String> headers;
   private Map<String, String> trailers;
+  private List<String> cookies;
 
   DefaultHttpClientResponse(ClientConnection conn, HttpResponse response) {
     super(response.getStatus().getCode(), response.getStatus().getReasonPhrase());
@@ -67,6 +70,17 @@ public class DefaultHttpClientResponse extends HttpClientResponse {
       }
     }
     return trailers;
+  }
+
+  public List<String> cookies() {
+    if (cookies == null) {
+      cookies = new ArrayList<>();
+      cookies.addAll(response.getHeaders("Set-Cookie"));
+      if (trailer != null) {
+        cookies.addAll(trailer.getHeaders("Set-Cookie"));
+      }
+    }
+    return cookies;
   }
 
   public void dataHandler(Handler<Buffer> dataHandler) {
