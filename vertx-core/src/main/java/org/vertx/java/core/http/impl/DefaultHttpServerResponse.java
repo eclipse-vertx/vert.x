@@ -205,7 +205,12 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
       } else {
         DefaultHttpChunkTrailer trlrs = new DefaultHttpChunkTrailer();
         for (Map.Entry<String, Object> trailer: trailers.entrySet()) {
-          trlrs.addHeader(trailer.getKey(), trailer.getValue());
+          Object value = trailer.getValue();
+          if (value instanceof Iterable<?>) {
+            trlrs.setHeader(trailer.getKey(), (Iterable<?>) value);
+          } else {
+            trlrs.setHeader(trailer.getKey(), value);
+          }
         }
         channelFuture = conn.write(trlrs);
       }
