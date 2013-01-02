@@ -30,9 +30,6 @@ import vertx.tests.core.http.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -118,44 +115,6 @@ public class JavaHttpTest extends TestBase {
 
     assertTrue(latch.await(5, TimeUnit.SECONDS));
     vertx.stop();
-  }
-
-  @Test
-  public void testMultipleSetCookieHeaders() throws Exception {
-
-    final CountDownLatch latch = new CountDownLatch(1);
-
-    final Vertx vertx = Vertx.newVertx();
-
-    final HttpServer server = vertx.createHttpServer();
-    server.requestHandler(new Handler<HttpServerRequest>() {
-      public void handle(HttpServerRequest req) {
-        List<String> cookies = new ArrayList<>(2);
-        cookies.add("name=value");
-        cookies.add("name2=value2; Expires=Wed, 09-Jun-2021 10:18:14 GMT");
-        req.response.headers().put("Set-Cookie", cookies);
-        req.response.end();
-      }
-    });
-    server.listen(8080);
-
-    final HttpClient client = vertx.createHttpClient().setPort(8080);
-    final List<String> cookies = new ArrayList<>();
-    client.getNow("some-uri", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        cookies.addAll(resp.cookies());
-        server.close(new SimpleHandler() {
-          public void handle() {
-            client.close();
-            latch.countDown();
-          }
-        });
-      }
-    });
-
-    assertTrue(latch.await(5, TimeUnit.SECONDS));
-    vertx.stop();
-    assertEquals(2, cookies.size());
   }
 
   public void testSimpleGET() {
@@ -271,6 +230,18 @@ public class JavaHttpTest extends TestBase {
   }
 
   public void testResponseHeadersIndividually() {
+    startTest(getMethodName());
+  }
+
+  public void testResponseMultipleSetCookieInHeader() {
+    startTest(getMethodName());
+  }
+
+  public void testResponseMultipleSetCookieInTrailer() {
+    startTest(getMethodName());
+  }
+
+  public void testResponseMultipleSetCookieInHeaderAndTrailer() {
     startTest(getMethodName());
   }
 
