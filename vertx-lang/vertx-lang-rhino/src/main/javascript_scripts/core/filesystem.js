@@ -188,8 +188,13 @@ if (!vertx.fileSystem) {
           handler = arg1;
           break;
         case 3:
-          createParents = arg2;
-          perms = null;
+          if(typeof(arg1) === 'boolean') {
+            createParents = arg1;
+            perms=null;
+          } else {
+            createParents = false;
+            perms = arg1;
+          }
           handler = arg2;
           break;
         case 4:
@@ -207,7 +212,7 @@ if (!vertx.fileSystem) {
       var createParents;
       var perms;
       switch (arguments.length) {
-        case 2:
+        case 1:
           createParents = false;
           perms = null;
           break;
