@@ -26,24 +26,29 @@ public class CountingCompletionHandler {
 
   private final Context context;
 
-  CountingCompletionHandler(Context context) {
+  public CountingCompletionHandler(Context context) {
     this.context = context;
+  }
+
+  public CountingCompletionHandler(Context context, int required) {
+    this.context = context;
+    this.required = required;
   }
 
   int count;
   int required;
   Handler<Void> doneHandler;
 
-  synchronized void complete() {
+  public synchronized void complete() {
     count++;
     checkDone();
   }
 
-  synchronized void incRequired() {
+  public synchronized void incRequired() {
     required++;
   }
 
-  synchronized void setHandler(Handler<Void> doneHandler) {
+  public synchronized void setHandler(Handler<Void> doneHandler) {
     this.doneHandler = doneHandler;
     checkDone();
   }

@@ -45,19 +45,20 @@ import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.impl.*;
+import se.cgbystrom.netty.FlashPolicyHandler;
 
 import javax.net.ssl.SSLEngine;
 import java.net.*;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Values.WEBSOCKET;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
 import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
-
-import se.cgbystrom.netty.FlashPolicyHandler;
 
 /**
  *
@@ -94,6 +95,7 @@ public class DefaultHttpServer implements HttpServer {
         close();
       }
     });
+    tcpHelper.setReuseAddress(true);
   }
 
   public HttpServer requestHandler(Handler<HttpServerRequest> requestHandler) {
@@ -125,6 +127,7 @@ public class DefaultHttpServer implements HttpServer {
   }
 
   public HttpServer listen(int port, String host) {
+
     if (requestHandler == null && wsHandler == null) {
       throw new IllegalStateException("Set request or websocket handler first");
     }
@@ -133,8 +136,10 @@ public class DefaultHttpServer implements HttpServer {
     }
 
     synchronized (vertx.sharedHttpServers()) {
-      serverOrigin = (isSSL() ? "https" : "http") + "://" + host + ":" + port;
       id = new ServerID(port, host);
+
+      serverOrigin = (isSSL() ? "https" : "http") + "://" + host + ":" + port;
+
       DefaultHttpServer shared = vertx.sharedHttpServers().get(id);
       if (shared == null) {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
@@ -246,6 +251,7 @@ public class DefaultHttpServer implements HttpServer {
     }
     requestHandler = null;
     wsHandler = null;
+
   }
 
   public HttpServer setSSL(boolean ssl) {
@@ -383,22 +389,32 @@ public class DefaultHttpServer implements HttpServer {
 
     vertx.setContext(closeContext);
 
+    final CountDownLatch latch = new CountDownLatch(1);
+
     ChannelGroupFuture fut = serverChannelGroup.close();
-    if (done != null) {
-      fut.addListener(new ChannelGroupFutureListener() {
-        public void operationComplete(ChannelGroupFuture channelGroupFuture) throws Exception {
-          executeCloseDone(closeContext, done);
-        }
-      });
+    fut.addListener(new ChannelGroupFutureListener() {
+      public void operationComplete(ChannelGroupFuture channelGroupFuture) throws Exception {
+        latch.countDown();
+      }
+    });
+
+    // Always sync
+    try {
+      latch.await(10, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
     }
+
+    executeCloseDone(closeContext, done);
   }
 
   private void executeCloseDone(final Context closeContext, final Handler<Void> done) {
-    closeContext.execute(new Runnable() {
-      public void run() {
-        done.handle(null);
-      }
-    });
+    if (done != null) {
+      closeContext.execute(new Runnable() {
+        public void run() {
+          done.handle(null);
+        }
+      });
+    }
   }
 
   public class ServerHandler extends SimpleChannelUpstreamHandler {

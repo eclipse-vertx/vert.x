@@ -52,10 +52,12 @@ public abstract class BaseServer extends Verticle {
   }
 
   public void stop() {
+    //System.out.println("Closing server");
     server.close(new SimpleHandler() {
       public void handle() {
         tu.checkContext();
         tu.appStopped();
+
       }
     });
   }

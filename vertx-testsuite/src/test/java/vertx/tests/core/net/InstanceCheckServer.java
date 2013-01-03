@@ -39,6 +39,7 @@ public class InstanceCheckServer extends BaseServer {
 
         tu.checkContext();
         //We add the object id of the server to the set
+
         vertx.sharedData().getSet("instances").add(id);
         vertx.sharedData().getSet("connections").add(UUID.randomUUID().toString());
 

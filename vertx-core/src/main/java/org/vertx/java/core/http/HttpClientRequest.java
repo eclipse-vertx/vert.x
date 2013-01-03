@@ -21,7 +21,6 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.WriteStream;
 
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Represents a client-side HTTP request.<p>

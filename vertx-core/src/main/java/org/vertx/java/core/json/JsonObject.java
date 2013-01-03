@@ -16,13 +16,13 @@
 
 package org.vertx.java.core.json;
 
+import org.vertx.java.core.http.impl.ws.Base64;
+import org.vertx.java.core.json.impl.Json;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.vertx.java.core.http.impl.ws.Base64;
-import org.vertx.java.core.json.impl.Json;
 
 /**
  * 

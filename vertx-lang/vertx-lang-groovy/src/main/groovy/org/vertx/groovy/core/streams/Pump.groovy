@@ -16,12 +16,11 @@
 
 package org.vertx.groovy.core.streams
 
-import org.vertx.java.core.streams.ReadStream as JReadStream
-import org.vertx.java.core.streams.WriteStream as JWriteStream
-import org.vertx.java.core.streams.Pump as JPump
-
 import org.vertx.groovy.core.buffer.Buffer
 import org.vertx.java.core.Handler
+import org.vertx.java.core.streams.Pump as JPump
+import org.vertx.java.core.streams.ReadStream as JReadStream
+import org.vertx.java.core.streams.WriteStream as JWriteStream
 
 /**
  * Pumps data from a {@link ReadStream} to a {@link WriteStream} and performs flow control where necessary to
