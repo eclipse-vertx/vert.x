@@ -20,6 +20,8 @@ In this version of this tutorial we've written the script in Ruby. If you'd pref
 
 If you'd rather just run the complete code, the working example is present in the `webapp` directory of the examples in the distribution. Read the README there for instructions on how to run it.
 
+There's also a version of the tutorial using AngularJS in the `angularjs` directory of the distribution.
+
 You can also see the code in [github](https://github.com/purplefox/vert.x/tree/master/src/examples/python/webapp).
 
 ## Step 1. Install vert.x
@@ -111,7 +113,7 @@ Add a line to `app.py` which starts the persistor, so the file now looks like:
     # Deploy a MongoDB persistor module
 	import vertx
 	
-    vertx.deploy_module('vertx.mongo-persistor-v1.0')
+    vertx.deploy_module('vertx.mongo-persistor-v1.2')
 
     # Start the web server, with the config we defined above
 
@@ -187,7 +189,7 @@ We want to insert the static data only after the persistor verticle has complete
 
 	def after_deploy(): execfile('static_data.py')
 			
-    vertx.deploy_module('vertx.mongo-persistor-v1.0', after_deploy)
+    vertx.deploy_module('vertx.mongo-persistor-v1.2', after_deploy)
     
 The block that we're specifying in the call to `deploy_module` won't be invoked until the persistor is fully started. In that function we just load the static data script.
 
@@ -265,7 +267,7 @@ Edit `app.py` and add the following, just after where the Mongo Persistor is dep
 
     # Deploy an auth manager to handle the authentication
 
-    vertx.deploy_module('vertx.auth-mgr-v1.0')
+    vertx.deploy_module('vertx.auth-mgr-v1.1')
     
 We'll also need to tell the bridge to let through any login messages:
 

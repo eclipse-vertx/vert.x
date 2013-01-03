@@ -158,8 +158,7 @@ vertx.createHttpServer().requestHandler { req -&gt;
     req.response.sendFile "webroot/$file"
 }.listen(8080)
 </pre>
-<p>It's as simple as that! <br/>
-</p>
+<p>It's as simple as that!   </p>
 <p>The api documentation (JavaDoc and GroovyDoc) is <a href="http://vertx.io/docs.html">here</a>. Also please take a look at the core manual for Java or Groovy to see full documentation on how to use the API.</p>
 <h2 id="concepts-in-vertx">Concepts in vert.x</h2><br/>
 <p>In this section I'll give an overview of the main concepts in vert.x. Many of these concepts will be discussed in more depth later on in this manual.</p>
@@ -260,8 +259,7 @@ vertx.createHttpServer().requestHandler { req -&gt;
 For more information on what including a module means please see the modules manual.</p>
 </li>
 <li>
-<p><code>-worker</code> This options determines whether the verticle is a worker verticle or not. Default is false (not a worker). This is discussed in detail later on in the manual.<br/>
-</p>
+<p><code>-worker</code> This options determines whether the verticle is a worker verticle or not. Default is false (not a worker). This is discussed in detail later on in the manual.  </p>
 </li>
 <li>
 <p><code>-cluster</code> This option determines whether the vert.x server which is started will attempt to form a cluster with other vert.x instances on the network. Clustering vert.x instances allows vert.x to form a distributed event bus with other nodes. Default is false (not clustered).</p>
@@ -283,8 +281,7 @@ For more information on what including a module means please see the modules man
 <p>Run 10 instances of a Java verticle by source file</p>
 <pre class="prettyprint">vertx run MyVerticle.java -instances 10
 </pre>
-<p>Run 20 instances of a ruby worker verticle  <br/>
-</p>
+<p>Run 20 instances of a ruby worker verticle    </p>
 <pre class="prettyprint">vertx run order_worker.rb -instances 20 -worker
 </pre>
 <p>Run two JavaScript verticles on the same machine and let them cluster together with each other and any other servers on the network</p>
@@ -300,8 +297,7 @@ vertx run handler1.js -cluster -cluster-port 25501
     "num_widgets": 46
 }
 </pre>
-<p>The config will be available inside the verticle via the core API.  <br/>
-</p>
+<p>The config will be available inside the verticle via the core API.    </p>
 <h2 id="running-modules-from-the-command-line">Running modules from the command line</h2><br/>
 <p>While you can run a verticle directly from the command line using <code>vertx run</code> this can be kind of fiddly since you have to specify the classpath every time.</p>
 <p>An alternative is to package your application as a <em>module</em>. For detailed information on how to package your code as a module please see the modules manual.</p>

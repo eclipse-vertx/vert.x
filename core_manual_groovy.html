@@ -1768,8 +1768,7 @@ vertx.createSockJSBridge(server).bridge(config, [[:]], [[:]])
                          "collection": "orders"],
               "requires_auth": true]
 </pre>
-<p>This tells the bridge that any messages to save orders in the <code>orders</code> collection, will only be passed if the user is successful authenticated (i.e. logged in ok) first.  <br/>
-</p>
+<p>This tells the bridge that any messages to save orders in the <code>orders</code> collection, will only be passed if the user is successful authenticated (i.e. logged in ok) first.    </p>
 <p>When a message is sent from the client that requires authorisation, the client must pass a field <code>sessionID</code> with the message that contains the unique session ID that they obtained when they logged in with the <code>auth-mgr</code>.</p>
 <p>When the bridge receives such a message, it will send a message to the <code>auth-mgr</code> to see if the session is authorised for that message. If the session is authorised the bridge will cache the authorisation for a certain amount of time (five minutes by default)</p>
 <h1 id="file-system">File System</h1><br/>

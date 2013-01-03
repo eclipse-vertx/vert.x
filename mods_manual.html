@@ -179,8 +179,7 @@ mods/my-web-app/web-root/index.html
 </pre>
 <p>In the above case the web server expects the working directory to be the module directory.</p>
 <p>To solve this we internally adjust all paths such that, if you use the vert.x API for all file access then it will appear as if your working directory is the module directory. I.e. your web app will just work irrespective of where the module is actually installed :) </p>
-<p>If you don't want this behaviour you can set the field <code>preserve-cwd</code> to <code>true</code> in <code>mod.json</code>. See above for a description of this field. <br/>
-</p>
+<p>If you don't want this behaviour you can set the field <code>preserve-cwd</code> to <code>true</code> in <code>mod.json</code>. See above for a description of this field.   </p>
 <h2 id="packaging-and-installing-a-module-manually">Packaging and installing a module manually</h2><br/>
 <p>Packaging your own module is simple, simply create your vert.x application as normal, then put it all in a directory whose name is the module name, and provide a <code>mod.json</code> file as described above.</p>
 <p>To install it, simply copy the entire directory to your local <code>mods</code> directory, or the directory specified by <code>VERTX_MODS</code> if you have decided to set that.</p>
@@ -205,8 +204,7 @@ mods/my-web-app/web-root/index.html
 <p>You can tell Vert.x to use a different module repository to the default at <code>http://github.com/vert-x/vertx-mods</code> by specifying the <code>-repo</code> option when running <code>vertx run</code>, <code>vertx runmod</code> or <code>vertx install</code>. E.g.</p>
 <pre class="prettyprint">vertx install com.acme.my-module-v2.1.beta -repo http://internalrepo.acme.com
 </pre>
-<p>This is useful if you want to maintain your own private module repository.  <br/>
-</p>
+<p>This is useful if you want to maintain your own private module repository.    </p>
 <h2 id="including-the-resources-of-modules">Including the resources of modules</h2><br/>
 <p>Sometimes you might find that different modules are using the same or similar sets of resources, e.g. <code>.jar</code> files or scripts, or other resources.</p>
 <p>Instead of including the same resources in every module that needs them, you can put those resources in a module of their own, and then declare that other modules <code>includes</code> them.</p>
@@ -222,8 +220,7 @@ mods/my-web-app/web-root/index.html
 </pre>
 <p>A module can include many other modules - <code>includes</code> is a comma-separated list of module names.</p>
 <p>If modules that are included in turn include other modules, the entire graph of includes is walked (avoiding circular dependencies) to get the unique set of resources to include on the module path.</p>
-<p>If a jar is include more than once from different modules, a warning will be issued.  <br/>
-</p>
+<p>If a jar is include more than once from different modules, a warning will be issued.    </p>
 <p>Modules that <em>only</em> contain resources for re-use are called <em>non-runnable</em> modules and they don't require a <code>main</code> field in <code>mod.json</code>. It's also possible to include the resources of runnable modules into another module.</p>
 <h2 id="configuration">Configuration</h2><br/>
 <p>Configuration for a module (if any) should be specified using a JSON configuration file when deploying from the command line using <code>vertx runmod</code> or passed in when deploying a module programmatically.</p>

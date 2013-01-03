@@ -78,6 +78,7 @@
 <p>The only thing that needs to be written on the server is a simple script which tells Vert.x to start the persistor and the web server. The script can also contain configuration needed for the application.</p>
 <p>In this version of this tutorial we've written the script in JavaScript. If you'd prefer to write it in Ruby or Groovy, please see the Ruby or Groovy version of this tutorial.</p>
 <p>If you'd rather just run the complete code, the working example is present in the <code>webapp</code> directory of the examples in the distribution. Read the README there for instructions on how to run it.</p>
+<p>There's also a version of the tutorial using AngularJS in the <code>angularjs</code> directory of the distribution.</p>
 <p>You can also see the code in <a href="https://github.com/vert-x/vert.x/tree/master/vertx-examples/src/main/javascript/webapp">github</a>.</p>
 <h2 id="step-1-install-vertx">Step 1. Install vert.x</h2><br/>
 <p>If you haven't yet installed vert.x, <a href="install.html">do that now</a>. </p>
@@ -106,8 +107,7 @@ echo "&lt;html&gt;&lt;body&gt;Hello World&lt;/body&gt;&lt;/html&gt;" &gt; web/in
 <p>And run the web server:</p>
 <pre class="prettyprint">vertx run app.js
 </pre>
-<p>Point your browser at <code>http://localhost:8080</code>. You should see a page returned with 'Hello World'.  <br/>
-</p>
+<p>Point your browser at <code>http://localhost:8080</code>. You should see a page returned with 'Hello World'.    </p>
 <p>That's the web server done.</p>
 <h2 id="step-3-serve-the-client-side-app">Step 3. Serve the client-side app</h2><br/>
 <p>Now we have a working web server, we need to serve the actual client side app.</p>
@@ -121,8 +121,7 @@ echo "&lt;html&gt;&lt;body&gt;Hello World&lt;/body&gt;&lt;/html&gt;" &gt; web/in
 <p><img alt="Client Application" src="tutorial_1.png"/></p>
 <p>Take some time to click around the app. It's pretty self explanatory.</p>
 <p>In the centre there's a set of tabs which let you flick between the shop, and your cart.</p>
-<p>On the left hand bar there's a form which allows you to login.  <br/>
-</p>
+<p>On the left hand bar there's a form which allows you to login.    </p>
 <h3 id="step-4-get-the-persistor-up-and-running">Step 4. Get the Persistor up and running</h3><br/>
 <p>The Vert.x module repository contains a module called <code>vertx.mongo-persistor</code>. </p>
 <p>This module allows you to store/update/delete/find data in a MongoDB database. (For detailed info on modules please see the modules manual).</p>
@@ -142,7 +141,7 @@ var webServerConf = {
 
 // Start a MongoDB persistor module
 
-vertx.deployModule('vertx.mongo-persistor-v1.0');
+vertx.deployModule('vertx.mongo-persistor-v1.2');
 
 // Start the web server, with the config we defined above
 
@@ -191,7 +190,7 @@ vertx.deployModule('vertx.web-server-v1.0', webServerConf);
 <pre class="prettyprint">cp $VERTX_HOME/examples/javascript/webapp/static_data.js .
 </pre>
 <p>We want to insert the static data only after the persistor verticle has completed starting up so we edit <code>app.js</code> as follows:</p>
-<pre class="prettyprint">vertx.deployModule('vertx.mongo-persistor-v1.0', null, 1, function() {
+<pre class="prettyprint">vertx.deployModule('vertx.mongo-persistor-v1.2', null, 1, function() {
   load('static_data.js');
 });
 </pre>
@@ -201,8 +200,7 @@ vertx.deployModule('vertx.web-server-v1.0', webServerConf);
 </pre>
 <p>Refresh your browser.</p>
 <p>You should now see the catalogue displayed in the client side app:</p>
-<p><img alt="Client Application" src="tutorial_2.png"/><br/>
-</p>
+<p><img alt="Client Application" src="tutorial_2.png"/>  </p>
 <p>Now there is some stuff to buy, you should be able to add stuff to your cart, and view the contents of your cart by clicking on the cart tab.</p>
 <h2 id="step-7-requesting-data-from-the-server">Step 7. Requesting data from the server</h2><br/>
 <p>As previously mentioned, this isn't a tutorial on how to write a knockout.js client-side application, but let's take a quick look at the code in the client side app that requests the catalogue data and populates the shop.</p>
@@ -230,8 +228,7 @@ vertx.deployModule('vertx.web-server-v1.0', webServerConf);
       });
   };
 </pre>
-<p>The <code>onopen</code> is called when, unsurprisingly, the event bus connection is fully setup and open.<br/>
-</p>
+<p>The <code>onopen</code> is called when, unsurprisingly, the event bus connection is fully setup and open.  </p>
 <p>At that point we are calling the <code>send</code> function on the event bus to a send a JSON message to the address <code>vertx.mongopersistor</code>. This is the address of the MongoDB persistor module that we configured earlier.</p>
 <p>The JSON message that we're sending specifies that we want to find and return all albums in the database. (For a full description of the operations that the MongoDBPersistor module expects you can consult the README.md in the <code>mod-mongo-persistor</code> repository).</p>
 <p>The final argument that we pass to to <code>send</code> is a reply handler. This is a function that gets called when the persistor has processed the operation and sent the reply back here. The first argument to the reply handler is the reply itself.</p>
@@ -247,7 +244,7 @@ vertx.deployModule('vertx.web-server-v1.0', webServerConf);
 <p>Edit <code>app.js</code> and add the following, just after where the Mongo Persistor is deployed.</p>
 <pre class="prettyprint">// Deploy an auth manager to handle the authentication
 
-vertx.deployModule('vertx.auth-mgr-v1.0');
+vertx.deployModule('vertx.auth-mgr-v1.1');
 </pre>
 <p>We'll also need to tell the bridge to let through any login messages:</p>
 <pre class="prettyprint">inbound_permitted: [
@@ -363,8 +360,7 @@ see the manual).</p>
   bridge: true,
   ...
 </pre>
-<p>You'll also need to provide a key store. The keystore is just a Java keystore which contains the certificate for the server. It can be manipulated using the Java <code>keytool</code> command.      <br/>
-</p>
+<p>You'll also need to provide a key store. The keystore is just a Java keystore which contains the certificate for the server. It can be manipulated using the Java <code>keytool</code> command.        </p>
 <p>Copy the keystore from the distribution</p>
 <pre class="prettyprint">cp $VERTX_HOME/examples/javascript/webapp/server-keystore.jks .
 </pre>
@@ -400,8 +396,7 @@ vertx.eventBus.registerHandler("acme.timeService", function(message, replier) {
 </pre>
 <h3 id="packaging-up-your-code-as-a-module">Packaging up your code as a Module</h3><br/>
 <p>You can package up your entire application, or just individual Verticles as modules, so they can be easily reused by other applications, or started on the command line more easily.</p>
-<p>For an explanation of how to do this, please see the modules manual.  <br/>
-</p></div>
+<p>For an explanation of how to do this, please see the modules manual.    </p></div>
       </div>
     </div>
   </div>
