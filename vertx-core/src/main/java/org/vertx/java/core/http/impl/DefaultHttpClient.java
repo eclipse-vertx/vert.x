@@ -42,6 +42,7 @@ import org.vertx.java.core.net.impl.VertxWorkerPool;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLParameters;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -187,6 +188,11 @@ public class DefaultHttpClient implements HttpClient {
     return this;
   }
 
+  public DefaultHttpClient setVerifyHost(boolean verifyHost) {
+    tcpHelper.setVerifyHost(verifyHost);
+    return this;
+  }
+
   public DefaultHttpClient setKeyStorePath(String path) {
     tcpHelper.setKeyStorePath(path);
     return this;
@@ -297,6 +303,10 @@ public class DefaultHttpClient implements HttpClient {
     return tcpHelper.isSSL();
   }
 
+  public boolean isVerifyHost() {
+    return tcpHelper.isVerifyHost();
+  }
+
   public boolean isTrustAll() {
     return tcpHelper.isTrustAll();
   }
@@ -358,7 +368,12 @@ public class DefaultHttpClient implements HttpClient {
         public ChannelPipeline getPipeline() throws Exception {
           ChannelPipeline pipeline = Channels.pipeline();
           if (tcpHelper.isSSL()) {
-            SSLEngine engine = tcpHelper.getSSLContext().createSSLEngine();
+            SSLEngine engine = tcpHelper.getSSLContext().createSSLEngine(host, port);
+            if (tcpHelper.isVerifyHost()) {
+              SSLParameters sslParameters = engine.getSSLParameters();
+              sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+              engine.setSSLParameters(sslParameters);
+            }
             engine.setUseClientMode(true); //We are on the tcpHelper side of the connection
             pipeline.addLast("ssl", new SslHandler(engine));
           }

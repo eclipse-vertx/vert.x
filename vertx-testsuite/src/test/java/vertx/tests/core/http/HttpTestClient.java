@@ -73,6 +73,7 @@ public class HttpTestClient extends TestClientBase {
 
   public void testClientDefaults() {
     tu.azzert(!client.isSSL());
+    tu.azzert(client.isVerifyHost());
     tu.azzert(client.getKeyStorePassword() == null);
     tu.azzert(client.getKeyStorePath() == null);
     tu.azzert(client.getTrustStorePassword() == null);
@@ -94,6 +95,12 @@ public class HttpTestClient extends TestClientBase {
 
     tu.azzert(client.setSSL(true) == client);
     tu.azzert(client.isSSL());
+
+    tu.azzert(client.setVerifyHost(false) == client);
+    tu.azzert(!client.isVerifyHost());
+
+    tu.azzert(client.setVerifyHost(true) == client);
+    tu.azzert(client.isVerifyHost());
 
     String pwd = TestUtils.randomUnicodeString(10);
     tu.azzert(client.setKeyStorePassword(pwd) == client);
