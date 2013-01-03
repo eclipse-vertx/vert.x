@@ -68,5 +68,10 @@ public class JavaScriptFileSystemTest extends TestBase {
   public void testMkDir() throws Exception {
     startTest(getMethodName());
   }
+  
+  @Test
+  public void testMkDirSync() throws Exception {
+      startTest(getMethodName());
+  }
 
 }

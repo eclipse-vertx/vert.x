@@ -74,6 +74,15 @@ function testMkDir() {
   });
 }
 
+function testMkDirSync() {
+  var dir = fileDir + "/testMkDirSync";
+  fs.mkDirSync(dir);
+  fs.readDir(dir, function(err, res) {
+    tu.azzert(err === null, err);
+    tu.testComplete();
+  });
+}
+
 function testReadDir() {
   var file1 = fileDir + "/foo.tmp";
   var file2 = fileDir + "/bar.tmp";

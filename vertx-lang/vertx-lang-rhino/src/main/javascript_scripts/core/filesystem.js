@@ -212,7 +212,7 @@ if (!vertx.fileSystem) {
       var createParents;
       var perms;
       switch (arguments.length) {
-        case 2:
+        case 1:
           createParents = false;
           perms = null;
           break;
