@@ -64,16 +64,11 @@ function testMove() {
 function testMkDir() {
 
   // arguments: string, boolean, handler
-  var dir1 = fileDir + "/foo/bar";
-  fs.mkDir(dir1, true, function(err, res) {
-    tu.azzert(err === null);
-    tu.azzert(res);
-      
-    // arguments: string, string, handler
-    var dir2 = fileDir + "/foos/bars";
-    fs.mkDir(dir2, 'rwxrwx--x', function(err, res) {
-      tu.azzert(err === null);
-      tu.azzert(res);
+  var dir = fileDir + "/foo/bar";
+  fs.mkDir(dir, true, function(err, res) {
+    tu.azzert(err === null, err);
+    fs.readDir(dir, function(err, res) {
+      tu.azzert(err === null, err);
       tu.testComplete();
     });
   });

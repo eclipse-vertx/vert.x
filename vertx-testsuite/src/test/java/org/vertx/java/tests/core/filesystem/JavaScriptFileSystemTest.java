@@ -63,5 +63,10 @@ public class JavaScriptFileSystemTest extends TestBase {
   public void testProps() throws Exception {
     startTest(getMethodName());
   }
+  
+  @Test
+  public void testMkDir() throws Exception {
+    startTest(getMethodName());
+  }
 
 }
