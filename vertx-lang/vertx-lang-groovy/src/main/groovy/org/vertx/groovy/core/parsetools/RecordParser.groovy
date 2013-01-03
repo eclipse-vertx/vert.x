@@ -16,10 +16,9 @@
 
 package org.vertx.groovy.core.parsetools
 
-import org.vertx.java.core.parsetools.RecordParser as JRecordParser
-
 import org.vertx.groovy.core.buffer.Buffer
 import org.vertx.java.core.Handler
+import org.vertx.java.core.parsetools.RecordParser as JRecordParser
 
 /**
  * A helper class which allows you to easily parse protocols which are delimited by a sequence of bytes, or fixed

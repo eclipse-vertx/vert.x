@@ -16,12 +16,11 @@
 
 package org.vertx.groovy.core.file
 
-import org.vertx.java.core.file.FileSystem as JFileSystem
-
 import org.vertx.groovy.core.buffer.Buffer
 import org.vertx.java.core.AsyncResult
 import org.vertx.java.core.AsyncResultHandler
 import org.vertx.java.core.file.FileProps
+import org.vertx.java.core.file.FileSystem as JFileSystem
 import org.vertx.java.core.file.FileSystemProps
 
 /**

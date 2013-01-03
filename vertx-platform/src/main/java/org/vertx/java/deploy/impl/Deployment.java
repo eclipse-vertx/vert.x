@@ -20,8 +20,8 @@ import org.vertx.java.core.json.JsonObject;
 
 import java.io.File;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -33,8 +33,8 @@ public class Deployment {
   public final JsonObject config;
   public final URL[] urls;
   public final File modDir;
-  public final List<VerticleHolder> verticles = new ArrayList<>();
-  public final List<String> childDeployments = new ArrayList<>();
+  public final List<VerticleHolder> verticles = new CopyOnWriteArrayList<>();
+  public final List<String> childDeployments = new CopyOnWriteArrayList<>();
   public final String parentDeploymentName;
   public final boolean autoRedeploy;
 

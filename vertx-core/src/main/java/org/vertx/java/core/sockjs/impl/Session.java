@@ -28,7 +28,6 @@ import org.vertx.java.core.sockjs.SockJSSocket;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * The SockJS session implementation.

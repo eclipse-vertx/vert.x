@@ -259,6 +259,10 @@ public class JavaNetTest extends TestBase {
     sharedServers(getMethodName(), true, numInstances, 0, 0);
   }
 
+//  public void testLoop() throws Exception {
+//    super.runTestInLoop("testSharedServersMultipleInstances1StartAllStopAll", 100000);
+//  }
+
   @Test
   public void testSharedServersMultipleInstances1StartAllStopAll() throws Exception {
     int numInstances = Runtime.getRuntime().availableProcessors() * 2;
@@ -312,16 +316,16 @@ public class JavaNetTest extends TestBase {
 
     if (initialServers > 0) {
 
+      vertx.sharedData().getSet("connections").clear();
+      vertx.sharedData().getSet("servers").clear();
+      vertx.sharedData().getSet("instances").clear();
+      vertx.sharedData().getMap("params").put("numConnections", numConnections);
+
       // First start some servers
       String[] appNames = new String[initialServers];
       for (int i = 0; i < initialServers; i++) {
         appNames[i] = startApp(InstanceCheckServer.class.getName(), 1);
       }
-
-      vertx.sharedData().getSet("connections").clear();
-      vertx.sharedData().getSet("servers").clear();
-      vertx.sharedData().getSet("instances").clear();
-      vertx.sharedData().getMap("params").put("numConnections", numConnections);
 
       startTest(testName);
 

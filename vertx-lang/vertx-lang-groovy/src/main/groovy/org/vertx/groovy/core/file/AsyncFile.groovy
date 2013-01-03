@@ -16,13 +16,12 @@
 
 package org.vertx.groovy.core.file
 
-import org.vertx.java.core.file.AsyncFile as JAsyncFile
-
 import org.vertx.groovy.core.buffer.Buffer
 import org.vertx.groovy.core.streams.ReadStream
 import org.vertx.groovy.core.streams.WriteStream
 import org.vertx.java.core.AsyncResultHandler
 import org.vertx.java.core.Handler
+import org.vertx.java.core.file.AsyncFile as JAsyncFile
 
 /**
  * Represents a file on the file-system which can be read from, or written to asynchronously.<p>
