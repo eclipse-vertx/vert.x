@@ -61,7 +61,7 @@ public abstract class ConnectionPool<T> {
     boolean connect = false;
     T conn;
     outer: synchronized (this) {
-      conn = available.poll();
+      conn = selectConnection(available, connectionCount, maxPoolSize);
       if (conn != null) {
         break outer;
       } else {
@@ -142,6 +142,10 @@ public abstract class ConnectionPool<T> {
    * Implement this method in a sub-class to implement the actual connection creation for the specific type of connection
    */
   protected abstract void connect(final Handler<T> connectHandler, final Handler<Exception> connectErrorHandler, final Context context);
+
+  protected T selectConnection(Queue<T> available, int connectionCount, int maxPoolSize) {
+    return available.poll();
+  }
 
   private class Waiter {
     final Handler<T> handler;

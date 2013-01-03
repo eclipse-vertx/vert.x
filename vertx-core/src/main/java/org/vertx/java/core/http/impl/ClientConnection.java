@@ -156,6 +156,10 @@ class ClientConnection extends AbstractConnection {
     return !channel.isOpen();
   }
 
+  int getOutstandingRequestCount() {
+    return requests.size();
+  }
+
   //TODO - combine these with same in ServerConnection and NetSocket
 
   void handleInterestedOpsChanged() {
