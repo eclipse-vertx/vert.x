@@ -20,6 +20,8 @@ In this version of this tutorial we've written the script in JavaScript. If you'
 
 If you'd rather just run the complete code, the working example is present in the `webapp` directory of the examples in the distribution. Read the README there for instructions on how to run it.
 
+There's also a version of the tutorial using AngularJS in the `angularjs` directory of the distribution.
+
 You can also see the code in [github](https://github.com/vert-x/vert.x/tree/master/vertx-examples/src/main/javascript/webapp).
 
 ## Step 1. Install vert.x
@@ -115,7 +117,7 @@ Add a line to `app.js` which starts the persistor, so the file now looks like:
     
     // Start a MongoDB persistor module
     
-    vertx.deployModule('vertx.mongo-persistor-v1.0');
+    vertx.deployModule('vertx.mongo-persistor-v1.2');
 
     // Start the web server, with the config we defined above
 
@@ -186,7 +188,7 @@ Copy `static_data.js` into your directory as follows:
 
 We want to insert the static data only after the persistor verticle has completed starting up so we edit `app.js` as follows:
 
-    vertx.deployModule('vertx.mongo-persistor-v1.0', null, 1, function() {
+    vertx.deployModule('vertx.mongo-persistor-v1.2', null, 1, function() {
       load('static_data.js');
     });
     
@@ -265,7 +267,7 @@ Edit `app.js` and add the following, just after where the Mongo Persistor is dep
 
     // Deploy an auth manager to handle the authentication
 
-    vertx.deployModule('vertx.auth-mgr-v1.0');
+    vertx.deployModule('vertx.auth-mgr-v1.1');
     
 We'll also need to tell the bridge to let through any login messages:
 

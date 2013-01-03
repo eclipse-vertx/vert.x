@@ -312,8 +312,7 @@ function vertxStop() {
 <p>The server will now be running. Connect to it using telnet:</p>
 <pre class="prettyprint">telnet localhost 1234
 </pre>
-<p>And notice how data you send (and hit enter) is echoed back to you.         <br/>
-</p>
+<p>And notice how data you send (and hit enter) is echoed back to you.           </p>
 <p>Congratulations! You've written your first verticle.</p>
 <h2 id="loading-other-scripts">Loading other scripts.</h2><br/>
 <p>To load other scripts from within your verticle you use the <code>load</code> function. The argument to <code>load</code> is the name of the script you want to load. You can use <code>load</code> to load any other scripts in your verticle, or to load system scripts such as <code>vertx.js</code> which are always available to verticles.</p>
@@ -340,8 +339,7 @@ logger.info("I am logging something");
 <li>info</li>
 <li>warn</li>
 <li>error</li>
-<li>fatal         <br/>
-</li>
+<li>fatal           </li>
 </ul>
 <p>Which have the normal meanings you would expect.</p>
 <p>The log files by default go in a file called <code>vertx.log</code> in the system temp directory. On my Linux box this is <code>\tmp</code>.</p>
@@ -481,8 +479,7 @@ eb.registerHandler('test.address', myHandler);
     log.info('Yippee! The handler unregister has been propagated across the cluster');
 });
 </pre>
-<p>If you want your handler to live for the full lifetime of your verticle there is no need to unregister it explicitly - vert.x will automatically unregister any handlers when the verticle is stopped.  <br/>
-</p>
+<p>If you want your handler to live for the full lifetime of your verticle there is no need to unregister it explicitly - vert.x will automatically unregister any handlers when the verticle is stopped.    </p>
 <h3 id="publishing-messages">Publishing messages</h3><br/>
 <p>Publishing a message is also trivially easy. Just publish it specifying the address, for example:</p>
 <pre class="prettyprint">eb.publish('test.address', 'hello world');
@@ -548,8 +545,7 @@ eb.send('test.address', myObj);
 <h2 id="distributed-event-bus">Distributed event bus</h2><br/>
 <p>To make each vert.x instance on your network participate on the same event bus, start each vert.x instance with the <code>-cluster</code> command line switch.</p>
 <p>See the chapter in the main manual on <em>running vert.x</em> for more information on this. </p>
-<p>Once you've done that, any vert.x instances started in cluster mode will merge to form a distributed event bus. <br/>
-</p>
+<p>Once you've done that, any vert.x instances started in cluster mode will merge to form a distributed event bus.   </p>
 <h1 id="shared-data">Shared Data</h1><br/>
 <p>Sometimes it makes sense to allow different verticles instances to share data in a safe way. Vert.x allows simple <em>Map</em> and <em>Set</em> data structures to be shared between verticles.</p>
 <p>There is a caveat: To prevent issues due to mutable data, vert.x only allows simple immutable types such as number, boolean and string or Buffer to be used in shared data. With a Buffer, it is automatically copied when retrieved from the shared data, so different verticle instances never see the same object instance.</p>
@@ -578,8 +574,7 @@ set.add('some-value');
 // Do something with the set
 </pre>
 <p><strong>TODO</strong> - More on set API</p>
-<p>API - atomic updates etc  <br/>
-</p>
+<p>API - atomic updates etc    </p>
 <h1 id="buffers">Buffers</h1><br/>
 <p>Most data in vert.x is shuffled around using buffers.</p>
 <p>A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands automatically as necessary to accomodate any bytes written to it. You can perhaps think of a buffer as smart byte array.</p>
@@ -691,8 +686,7 @@ var str = buff.getString(pos, end, 'UTF-16'); // Read from pos to end interprete
 <li><code>length()</code>. To obtain the length of the buffer. The length of a buffer is the index of the byte in the buffer with the largest index + 1.</li>
 <li><code>copy()</code>. Copy the entire buffer</li>
 </ul>
-<p>See the JavaDoc for more detailed method level documentation.  <br/>
-</p>
+<p>See the JavaDoc for more detailed method level documentation.    </p>
 <h1 id="delayed-and-periodic-tasks">Delayed and Periodic Tasks</h1><br/>
 <p>It's very common in vert.x to want to perform an action after a delay, or periodically.</p>
 <p>In standard verticles you can't just make the thread sleep to introduce a delay, as that will block the event loop thread.</p>
@@ -743,8 +737,7 @@ vertx.setPeriodic(1000, function(id) {
 <pre class="prettyprint">var server = vertx.createNetServer();
 </pre>
 <h3 id="start-the-server-listening">Start the Server Listening</h3><br/>
-<p>To tell that server to listen for connections we do:  <br/>
-</p>
+<p>To tell that server to listen for connections we do:    </p>
 <pre class="prettyprint">var server = vertx.createNetServer();
 
 server.listen(1234, 'myhost');
@@ -761,8 +754,7 @@ server.connectHandler(function(sock) {
 
 server.listen(1234, 'localhost');
 </pre>
-<p>That's a bit more interesting. Now it displays 'A client has connected!' every time a client connects. <br/>
-</p>
+<p>That's a bit more interesting. Now it displays 'A client has connected!' every time a client connects.   </p>
 <p>The return value of the <code>connectHandler</code> method is the server itself, so multiple invocations can be chained together. That means we can rewrite the above as:</p>
 <pre class="prettyprint">var server = vertx.createNetServer();
 
@@ -775,8 +767,7 @@ server.connectHandler(function(sock) {
     log.info('A client has connected!');
 }).listen(1234, 'localhost');
 </pre>
-<p>This is a common pattern throughout the vert.x API.<br/>
-</p>
+<p>This is a common pattern throughout the vert.x API.  </p>
 <h3 id="closing-a-net-server">Closing a Net Server</h3><br/>
 <p>To close a net server just call the <code>close</code> function.</p>
 <pre class="prettyprint">server.close();
@@ -787,8 +778,7 @@ server.connectHandler(function(sock) {
   log.info('The server is now fully closed.');
 });
 </pre>
-<p>If you want your net server to last the entire lifetime of your verticle, you don't need to call <code>close</code> explicitly, the Vert.x container will automatically close any servers that you created when the verticle is stopped.  <br/>
-</p>
+<p>If you want your net server to last the entire lifetime of your verticle, you don't need to call <code>close</code> explicitly, the Vert.x container will automatically close any servers that you created when the verticle is stopped.    </p>
 <h3 id="netserver-properties">NetServer Properties</h3><br/>
 <p>NetServer has a set of properties you can set which affect its behaviour. Firstly there are bunch of properties used to tweak the TCP parameters, in most cases you won't need to set these:</p>
 <ul>
@@ -839,8 +829,7 @@ sock.write(myBuffer);
 <p>A string. In this case the string will encoded using UTF-8 and the result written to the wire.</p>
 <pre class="prettyprint">sock.write('hello');
 </pre>
-<p>A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.   <br/>
-</p>
+<p>A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.     </p>
 <pre class="prettyprint">sock.write('hello', 'UTF-16');
 </pre>
 <p>The <code>write</code> function is asynchronous and always returns immediately after the write has been queued.</p>
@@ -1177,8 +1166,7 @@ server.requestHandler(function(request) {
 <p>The request object has a property <code>query</code> which contains the query of the request. For example, if the request URI was:</p>
 <pre class="prettyprint">/a/b/c/page.html?param1=abc&amp;param2=xyz
 </pre>
-<p>Then <code>request.query</code> would contain the string <code>param1=abc&amp;param2=xyz</code>  <br/>
-</p>
+<p>Then <code>request.query</code> would contain the string <code>param1=abc&amp;param2=xyz</code>    </p>
 <h4 id="request-headers">Request Headers</h4><br/>
 <p>The request headers are available as the <code>headers()</code> function of the request object. The return value is just a JavaScript object (associative array).</p>
 <p>Note that the header keys are always lower-cased before being they are returned to you.</p>
@@ -1217,8 +1205,7 @@ server.requestHandler(function(request) {
 
 }).listen(8080, 'localhost');
 </pre>
-<p>The <code>dataHandler</code> may be called more than once depending on the size of the body.  <br/>
-</p>
+<p>The <code>dataHandler</code> may be called more than once depending on the size of the body.    </p>
 <p>You'll notice this is very similar to how data from <code>NetSocket</code> is read. </p>
 <p>The request object implements the <code>ReadStream</code> interface so you can pump the request body to a <code>WriteStream</code>. See the chapter on streams and pumps for a detailed explanation. </p>
 <p>In many cases, you know the body is not large and you just want to receive it in one go. To do this you could do something like the following:</p>
@@ -1257,8 +1244,7 @@ server.requestHandler(function(request) {
 
 }).listen(8080, 'localhost');
 </pre>
-<p>Simples, innit?  <br/>
-</p>
+<p>Simples, innit?    </p>
 <h3 id="http-server-responses">HTTP Server Responses</h3><br/>
 <p>As previously mentioned, the HTTP request object contains a property <code>response</code>. This is the HTTP response for the request. You use it to write the response back to the client.</p>
 <h3 id="setting-status-code-and-message">Setting Status Code and Message</h3><br/>
@@ -1273,10 +1259,8 @@ server.requestHandler(function(request) {
 
 }).listen(8080, 'localhost');
 </pre>
-<p>You can also use the <code>statusMessage</code> property to set the status message. If you do not set the status message a default message will be used.  <br/>
-</p>
-<p>The default value for <code>statusCode</code> is <code>200</code>.  <br/>
-</p>
+<p>You can also use the <code>statusMessage</code> property to set the status message. If you do not set the status message a default message will be used.    </p>
+<p>The default value for <code>statusCode</code> is <code>200</code>.    </p>
 <h4 id="writing-http-responses">Writing HTTP responses</h4><br/>
 <p>To write data to an HTTP response, you invoke the <code>write</code> function. This function can be invoked multiple times before the response is ended. It can be invoked in a few ways:</p>
 <p>With a single buffer:</p>
@@ -1286,8 +1270,7 @@ request.response.write(myBuffer);
 <p>A string. In this case the string will encoded using UTF-8 and the result written to the wire.</p>
 <pre class="prettyprint">request.response.write('hello');
 </pre>
-<p>A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.   <br/>
-</p>
+<p>A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.     </p>
 <pre class="prettyprint">request.response.write('hello', 'UTF-16');
 </pre>
 <p>The <code>write</code> function is asynchronous and always returns immediately after the write has been queued.</p>
@@ -1296,8 +1279,7 @@ request.response.write(myBuffer);
     log.info('It has actually been written');
 });
 </pre>
-<p>If you are just writing a single string or Buffer to the HTTP response you can write it and end the response in a single call to the <code>end</code> function. <br/>
-</p>
+<p>If you are just writing a single string or Buffer to the HTTP response you can write it and end the response in a single call to the <code>end</code> function.   </p>
 <p>The first call to <code>write</code> results in the response header being being written to the response.</p>
 <p>Consequently, if you are not using HTTP chunking then you must set the <code>Content-Length</code> header before writing to the response, since it will be too late otherwise. If you are using HTTP chunking you do not have to worry. </p>
 <h4 id="ending-http-responses">Ending HTTP responses</h4><br/>
@@ -1329,8 +1311,7 @@ request.response.write(myBuffer);
 <p>You put the HTTP response into chunked mode as follows:</p>
 <pre class="prettyprint">req.response.setChunked(true);
 </pre>
-<p>Default is non-chunked. When in chunked mode, each call to <code>response.write(...)</code> will result in a new HTTP chunk being written out.<br/>
-</p>
+<p>Default is non-chunked. When in chunked mode, each call to <code>response.write(...)</code> will result in a new HTTP chunk being written out.  </p>
 <p>When in chunked mode you can also write HTTP response trailers to the response. These are actually written in the final chunk of the response.</p>
 <p>As with headers, you can write trailers to the response by simply adding them to the trailers hash on the response object:</p>
 <pre class="prettyprint">request.response.trailers()['Some-Trailer'] = 'quux';
@@ -1392,8 +1373,7 @@ client.setHost('foo.com');
                .setHost('foo.com');
 </pre>
 <p>A single <code>HTTPClient</code> always connects to the same host and port. If you want to connect to different servers, create more instances.</p>
-<p>The default port is <code>80</code> and the default host is <code>localhost</code>. So if you don't explicitly set these values that's what the client will attempt to connect to.<br/>
-</p>
+<p>The default port is <code>80</code> and the default host is <code>localhost</code>. So if you don't explicitly set these values that's what the client will attempt to connect to.  </p>
 <h3 id="pooling-and-keep-alive">Pooling and Keep Alive</h3><br/>
 <p>By default the <code>HTTPClient</code> pools HTTP connections. As you make requests a connection is borrowed from the pool and returned when the HTTP response has ended.</p>
 <p>If you do not want connections to be pooled you can call <code>setKeepAlive</code> with <code>false</code>:</p>
@@ -1409,8 +1389,7 @@ client.setHost('foo.com');
                .setHost('foo.com').
                .setMaxPoolSize(10);
 </pre>
-<p>The default value is <code>1</code>.       <br/>
-</p>
+<p>The default value is <code>1</code>.         </p>
 <h3 id="closing-the-client">Closing the client</h3><br/>
 <p>Vert.x will automatically close any clients when the verticle is stopped, but if you want to close it explicitly you can:</p>
 <pre class="prettyprint">client.close
@@ -1460,8 +1439,7 @@ request.write(myBuffer);
 <p>A string. In this case the string will encoded using UTF-8 and the result written to the wire.</p>
 <pre class="prettyprint">request.write('hello');
 </pre>
-<p>A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.   <br/>
-</p>
+<p>A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.     </p>
 <pre class="prettyprint">request.write('hello', 'UTF-16');
 </pre>
 <p>The <code>write</code> function is asynchronous and always returns immediately after the write has been queued. The actual write might complete some time later.</p>
@@ -1470,8 +1448,7 @@ request.write(myBuffer);
     log.info('It has actually been written');
 });
 </pre>
-<p>If you are just writing a single string or Buffer to the HTTP request you can write it and end the request in a single call to the <code>end</code> function. <br/>
-</p>
+<p>If you are just writing a single string or Buffer to the HTTP request you can write it and end the request in a single call to the <code>end</code> function.   </p>
 <p>The first call to <code>write</code> results in the request header being being written to the request.</p>
 <p>Consequently, if you are not using HTTP chunking then you must set the <code>Content-Length</code> header before writing to the request, since it will be too late otherwise. If you are using HTTP chunking you do not have to worry. </p>
 <h4 id="ending-http-requests">Ending HTTP requests</h4><br/>
@@ -1492,8 +1469,7 @@ var request = client.post('/some-path', function(resp) {
 request.headers()['Some-Header'] = 'Some-Value';
 request.end();
 </pre>
-<p>Or you can use the <code>putHeader</code> method if you prefer a more fluent API:      <br/>
-</p>
+<p>Or you can use the <code>putHeader</code> method if you prefer a more fluent API:        </p>
 <pre class="prettyprint">client.post('/some-uri', function(resp) {
     log.info('Got a response, status code: ' + resp.statusCode);
 }).putHeader('Some-Header', 'Some-Value')
@@ -1513,8 +1489,7 @@ request.end();
 <p>You put the HTTP request into chunked mode as follows:</p>
 <pre class="prettyprint">request.setChunked(true);
 </pre>
-<p>Default is non-chunked. When in chunked mode, each call to <code>request.write(...)</code> will result in a new HTTP chunk being written out.<br/>
-</p>
+<p>Default is non-chunked. When in chunked mode, each call to <code>request.write(...)</code> will result in a new HTTP chunk being written out.  </p>
 <h3 id="http-client-responses">HTTP Client Responses</h3><br/>
 <p>Client responses are received as an argument to the response handler that is passed into one of the request methods on the HTTP client.</p>
 <p>The response object implements <code>ReadStream</code>, so it can be pumped to a <code>WriteStream</code> like any other <code>ReadStream</code>.</p>
@@ -1682,8 +1657,7 @@ routeMatcher.allWithRegEx('\/([^\/]+)\/([^\/]+)', function(req) {
 server.requestHandler(routeMatcher).listen(8080, 'localhost');
 </pre>
 <p>Run the above and point your browser at <code>http://localhost:8080/animals/cats</code>.</p>
-<p>It will display 'first is animals and second is cats'.       <br/>
-</p>
+<p>It will display 'first is animals and second is cats'.         </p>
 <h2 id="handling-requests-where-nothing-matches">Handling requests where nothing matches</h2><br/>
 <p>You can use the <code>noMatch</code> function to specify a handler that will be called if nothing matches. If you don't specify a no match handler and nothing matches, a 404 will be returned.</p>
 <pre class="prettyprint">routeMatcher.noMatch(function(req) { req.response.end("Nothing matched"); });
@@ -1768,8 +1742,7 @@ client.connectWebsocket('http://localhost:8080/some-uri', function(websocket) {
 </pre>
 <p>For more information see the <a href="http://dev.w3.org/html5/websockets/">WebSocket API documentation</a> </p>
 <h2 id="routing-websockets-with-pattern-matching">Routing WebSockets with Pattern Matching</h2><br/>
-<p><strong>TODO</strong> <br/>
-</p>
+<p><strong>TODO</strong>   </p>
 <h1 id="sockjs">SockJS</h1><br/>
 <p>WebSockets are a new technology, and many users are still using browsers that do not support them, or which support older, pre-final, versions.</p>
 <p>Moreover, WebSockets do not work well with many corporate proxies. This means that's it's not possible to guarantee a WebSocket connection is going to succeed for every user.</p>
@@ -1786,8 +1759,7 @@ client.connectWebsocket('http://localhost:8080/some-uri', function(websocket) {
 var sockJSServer = vertx.createSockJSServer(httpServer);
 </pre>
 <p>Each SockJS server can host multiple <em>applications</em>.</p>
-<p>Each application is defined by some configuration, and provides a handler which gets called when incoming SockJS connections arrive at the server.   <br/>
-</p>
+<p>Each application is defined by some configuration, and provides a handler which gets called when incoming SockJS connections arrive at the server.     </p>
 <p>For example, to create a SockJS echo application:</p>
 <pre class="prettyprint">var httpServer = vertx.createHttpServer();
 
@@ -1810,8 +1782,7 @@ httpServer.listen(8080);
 <li><code>insert_JSESSIONID</code>: Some hosting providers enable sticky sessions only to requests that have JSESSIONID cookie set. This setting controls if the server should set this cookie to a dummy value. By default setting JSESSIONID cookie is enabled. More sophisticated beaviour can be achieved by supplying a function.</li>
 <li><code>session_timeout</code>: The server sends a <code>close</code> event when a client receiving connection have not been seen for a while. This delay is configured by this setting. By default the <code>close</code> event will be emitted when a receiving connection wasn't seen for 5 seconds.</li>
 <li><code>heartbeat_period</code>: In order to keep proxies and load balancers from closing long running http requests we need to pretend that the connecion is active and send a heartbeat packet once in a while. This setting controlls how often this is done. By default a heartbeat packet is sent every 25 seconds.</li>
-<li><code>max_bytes_streaming</code>: Most streaming transports save responses on the client side and don't free memory used by delivered messages. Such transports need to be garbage-collected once in a while. <code>max_bytes_streaming</code> sets a minimum number of bytes that can be send over a single http streaming request before it will be closed. After that client needs to open new request. Setting this value to one effectively disables streaming and will make streaming transports to behave like polling transports. The default value is 128K.  <br/>
-</li>
+<li><code>max_bytes_streaming</code>: Most streaming transports save responses on the client side and don't free memory used by delivered messages. Such transports need to be garbage-collected once in a while. <code>max_bytes_streaming</code> sets a minimum number of bytes that can be send over a single http streaming request before it will be closed. After that client needs to open new request. Setting this value to one effectively disables streaming and will make streaming transports to behave like polling transports. The default value is 128K.    </li>
 <li><code>library_url</code>: Transports which don't support cross-domain communication natively ('eventsource' to name one) use an iframe trick. A simple page is served from the SockJS server (using its foreign domain) and is placed in an invisible iframe. Code run from this iframe doesn't need to worry about cross-domain issues, as it's being run from domain local to the SockJS server. This iframe also does need to load SockJS javascript client library, and this option lets you specify its url (if you're unsure, point it to the latest minified SockJS client release, this is the default). The default value is <code>http://cdn.sockjs.org/sockjs-0.1.min.js</code></li>
 </ul>
 <h2 id="reading-and-writing-data-from-a-sockjs-server">Reading and writing data from a SockJS server</h2><br/>
@@ -1850,8 +1821,7 @@ httpServer.listen(8080);
    };
 &lt;/script&gt;
 </pre>
-<p>As you can see the API is very similar to the WebSockets API.  <br/>
-</p>
+<p>As you can see the API is very similar to the WebSockets API.    </p>
 <h1 id="sockjs-eventbus-bridge">SockJS - EventBus Bridge</h1><br/>
 <h2 id="setting-up-the-bridge">Setting up the Bridge</h2><br/>
 <p>By connecting up SockJS and the vert.x event bus we create a distributed event bus which not only spans multiple vert.x instances on the server side, but can also include client side JavaScript running in browsers.</p>
@@ -1870,8 +1840,7 @@ sockJSServer.bridge({prefix : '/eventbus'}, [], [] );
 
 server.listen(8080);
 </pre>
-<p>The SockJS bridge currently only works with JSON event bus messages.  <br/>
-</p>
+<p>The SockJS bridge currently only works with JSON event bus messages.    </p>
 <h2 id="using-the-event-bus-from-client-side-javascript">Using the Event Bus from client side JavaScript</h2><br/>
 <p>Once you've set up a bridge, you can use the event bus from the client side as follows:</p>
 <p>In your web page, you need to load the script <code>vertxbus.js</code>, then you can access the vert.x event bus API. Here's a rough idea of how to use it. For a full working examples, please consult the bundled examples.</p>
@@ -1902,8 +1871,7 @@ server.listen(8080);
 </pre>
 <p>The parameter to the constructor is the URI where to connect to the event bus. Since we create our bridge with the prefix <code>eventbus</code> we will connect there.</p>
 <p>You can't actually do anything with the bridge until it is opened. When it is open the <code>onopen</code> handler will be called.</p>
-<p>The client side event bus API for registering and unregistering handlers and for sending messages is exactly the same as the server side one. Please consult the chapter on the event bus for full information.  <br/>
-</p>
+<p>The client side event bus API for registering and unregistering handlers and for sending messages is exactly the same as the server side one. Please consult the chapter on the event bus for full information.    </p>
 <p><strong>There is one more thing to do before getting this working, please read the following section....</strong></p>
 <h2 id="securing-the-bridge">Securing the Bridge</h2><br/>
 <p>If you started a bridge like in the above example without securing it, and attempted to send messages through it you'd find that the messages mysteriously disappeared. What happened to them?</p>
@@ -1994,8 +1962,7 @@ sockJSServer.bridge({prefix : '/eventbus'}, [{}], [{}]);
   requires_auth: true
 }
 </pre>
-<p>This tells the bridge that any messages to save orders in the <code>orders</code> collection, will only be passed if the user is successful authenticated (i.e. logged in ok) first.  <br/>
-</p>
+<p>This tells the bridge that any messages to save orders in the <code>orders</code> collection, will only be passed if the user is successful authenticated (i.e. logged in ok) first.    </p>
 <p>When a message is sent from the client that requires authorisation, the client must pass a field <code>sessionID</code> with the message that contains the unique session ID that they obtained when they logged in with the <code>auth-mgr</code>.</p>
 <p>When the bridge receives such a message, it will send a message to the <code>auth-mgr</code> to see if the session is authorised for that message. If the session is authorised the bridge will cache the authorisation for a certain amount of time (five minutes by default)</p>
 <h1 id="file-system">File System</h1><br/>
@@ -2042,8 +2009,7 @@ The first argument passed into the callback is an exception, if an error occurre
 r--r--r--
 </pre>
 <ul>
-<li><code>chmod(file, perms, dirPerms, handler)</code>.<br/>
-</li>
+<li><code>chmod(file, perms, dirPerms, handler)</code>.  </li>
 </ul>
 <p>Recursively change permissions on a directory. <code>file</code> is the directory name. <code>perms</code> is a Unix style permissions to apply recursively to any files in the directory. <code>dirPerms</code> is a Unix style permissions string to apply to the directory and any other child directories recursively.</p>
 <h2 id="props">props</h2><br/>
@@ -2147,8 +2113,7 @@ r--r--r--
   }
 });
 </pre>
-<p>The filter is a regular expression.  <br/>
-</p>
+<p>The filter is a regular expression.    </p>
 <h2 id="readfile">readFile</h2><br/>
 <p>Read the entire contents of a file in one go. <em>Be careful if using this with large files since the entire file will be stored in memory at once</em>.</p>
 <p><code>readFile(file)</code>. Where <code>file</code> is the file name of the file to read.</p>
