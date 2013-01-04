@@ -28,7 +28,9 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeoutException;
@@ -1360,6 +1362,60 @@ public class HttpTestClient extends TestClientBase {
         });
       }
     });
+    req.end();
+  }
+
+  public void testResponseMultipleSetCookieInHeader() {
+    testResponseMultipleSetCookie(true, false);
+  }
+
+  public void testResponseMultipleSetCookieInTrailer() {
+    testResponseMultipleSetCookie(false, true);
+  }
+
+  public void testResponseMultipleSetCookieInHeaderAndTrailer() {
+    testResponseMultipleSetCookie(true, true);
+  }
+
+  private void testResponseMultipleSetCookie(final boolean inHeader, final boolean inTrailer) {
+    final List<String> cookies = new ArrayList<>();
+    startServer(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+        tu.checkContext();
+        if (inHeader) {
+          final List<String> headers = new ArrayList<>();
+          headers.add("h1=h1v1");
+          headers.add("h2=h2v2; Expires=Wed, 09-Jun-2021 10:18:14 GMT");
+          cookies.addAll(headers);
+          req.response.headers().put("Set-Cookie", headers);
+        }
+        if (inTrailer) {
+          req.response.setChunked(true);
+          final List<String> trailers = new ArrayList<>();
+          trailers.add("t1=t1v1");
+          trailers.add("t2=t2v2; Expires=Wed, 09-Jun-2021 10:18:14 GMT");
+          cookies.addAll(trailers);
+          req.response.trailers().put("Set-Cookie", trailers);
+        }
+        req.response.end();
+      }
+    });
+
+    HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
+      public void handle(final HttpClientResponse resp) {
+        tu.checkContext();
+        resp.endHandler(new SimpleHandler() {
+          public void handle() {
+            tu.azzert(resp.cookies().size() == cookies.size());
+            for (int i = 0; i < cookies.size(); ++i) {
+              tu.azzert(cookies.get(i).equals(resp.cookies().get(i)));
+            }
+            tu.testComplete();
+          }
+        });
+      }
+    });
+
     req.end();
   }
 
