@@ -233,6 +233,18 @@ public class JavaHttpTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void testResponseMultipleSetCookieInHeader() {
+    startTest(getMethodName());
+  }
+
+  public void testResponseMultipleSetCookieInTrailer() {
+    startTest(getMethodName());
+  }
+
+  public void testResponseMultipleSetCookieInHeaderAndTrailer() {
+    startTest(getMethodName());
+  }
+
   public void testUseRequestAfterComplete() {
     startTest(getMethodName());
   }
