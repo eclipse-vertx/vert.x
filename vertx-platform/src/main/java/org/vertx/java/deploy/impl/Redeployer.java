@@ -52,6 +52,7 @@ public class Redeployer {
   private final Queue<Deployment> toDeploy = new ConcurrentLinkedQueue<>();
   private final Queue<Deployment> toUndeploy = new ConcurrentLinkedQueue<>();
   private Context ctx;
+  private boolean closed;
 
   public Redeployer(VertxInternal vertx, File modRoot, ModuleReloader reloader) {
     this.modRoot = modRoot;
@@ -66,21 +67,25 @@ public class Redeployer {
     this.vertx = vertx;
     timerID = vertx.setPeriodic(CHECK_PERIOD, new Handler<Long>() {
       public void handle(Long id) {
-        if (ctx == null) {
-          ctx = Redeployer.this.vertx.getContext();
-        } else {
-          checkContext();
-        }
-        try {
-          checkEvents();
-        } catch (Exception e) {
-          log.error("Failed to check events", e);
+        synchronized (Redeployer.this) {
+          if (!closed) {
+            if (ctx == null) {
+              ctx = Redeployer.this.vertx.getContext();
+            } else {
+              checkContext();
+            }
+            try {
+              checkEvents();
+            } catch (Exception e) {
+              log.error("Failed to check events", e);
+            }
+          }
         }
       }
     });
   }
 
-  public void close() {
+  public synchronized void close() {
     vertx.cancelTimer(timerID);
     Set<Deployment>  deps = new HashSet<>();
     for (Map.Entry<Path, Set<Deployment>> entry: watchedDeployments.entrySet()) {
@@ -88,12 +93,12 @@ public class Redeployer {
     }
     toUndeploy.addAll(deps);
     processUndeployments();
-    
     try {
 			watchService.close();
 		} catch (IOException ex) {
 			log.warn("Error while shutting down watch service: " + ex.getMessage(), ex);
 		}
+    closed = true;
   }
 
   public void moduleDeployed(Deployment deployment) {

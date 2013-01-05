@@ -46,6 +46,9 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -89,6 +92,8 @@ public class DefaultNetServer implements NetServer {
     listen(port, "0.0.0.0");
     return this;
   }
+
+  private static final AtomicInteger cnt = new AtomicInteger();
 
   public NetServer listen(int port, String host) {
     if (connectHandler == null) {
@@ -210,14 +215,22 @@ public class DefaultNetServer implements NetServer {
 
     vertx.setContext(closeContext);
 
+    final CountDownLatch latch = new CountDownLatch(1);
+
     ChannelGroupFuture fut = serverChannelGroup.close();
-    if (done != null) {
-      fut.addListener(new ChannelGroupFutureListener() {
-        public void operationComplete(ChannelGroupFuture channelGroupFuture) throws Exception {
-          executeCloseDone(closeContext, done);
-        }
-      });
+    fut.addListener(new ChannelGroupFutureListener() {
+      public void operationComplete(ChannelGroupFuture channelGroupFuture) throws Exception {
+        latch.countDown();
+      }
+    });
+
+    // Always sync
+    try {
+      latch.await(10, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
     }
+
+    executeCloseDone(closeContext, done);
   }
 
   private void checkConfigs(DefaultNetServer currentServer, DefaultNetServer newServer) {
@@ -225,11 +238,13 @@ public class DefaultNetServer implements NetServer {
   }
 
   private void executeCloseDone(final Context closeContext, final Handler<Void> done) {
-    closeContext.execute(new Runnable() {
+    if (done != null) {
+      closeContext.execute(new Runnable() {
       public void run() {
         done.handle(null);
       }
     });
+    }
   }
 
   public Boolean isTCPNoDelay() {

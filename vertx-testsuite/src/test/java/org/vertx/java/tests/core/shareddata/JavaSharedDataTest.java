@@ -17,7 +17,6 @@
 package org.vertx.java.tests.core.shareddata;
 
 import junit.framework.TestCase;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

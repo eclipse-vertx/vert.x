@@ -1,10 +1,5 @@
 package org.vertx.java.tests.deploy;
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.IOException;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -12,6 +7,11 @@ import org.junit.Test;
 import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.deploy.impl.VerticleManager;
+
+import java.io.File;
+import java.io.IOException;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="http://www.laufer-online.com">Jens Laufer</a>

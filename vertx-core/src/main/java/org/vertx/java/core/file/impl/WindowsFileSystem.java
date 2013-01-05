@@ -16,11 +16,6 @@
 
 package org.vertx.java.core.file.impl;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.attribute.PosixFilePermissions;
-
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.impl.BlockingAction;

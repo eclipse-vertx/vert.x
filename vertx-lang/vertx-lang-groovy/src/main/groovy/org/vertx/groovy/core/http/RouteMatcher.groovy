@@ -17,9 +17,8 @@
 
 package org.vertx.groovy.core.http
 
-import org.vertx.java.core.http.RouteMatcher as JRouteMatcher
-
 import org.vertx.java.core.Handler
+import org.vertx.java.core.http.RouteMatcher as JRouteMatcher
 
 /**
  * This class allows you to do route requests based on the HTTP verb and the request URI, in a manner similar

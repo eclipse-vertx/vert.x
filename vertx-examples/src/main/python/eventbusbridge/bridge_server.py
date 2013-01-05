@@ -26,6 +26,6 @@ def request_handler(req):
 
 
 # Create a bridge that lets everything through (be careful!)
-SockJSServer(server).bridge({"prefix": "/eventbus"}, [{"address": "wibble"}], [{}])
+SockJSServer(server).bridge({"prefix": "/eventbus"}, [{}], [{}])
 
 server.listen(8080)

@@ -17,7 +17,6 @@
 package org.vertx.groovy.core.eventbus
 
 import org.vertx.java.core.eventbus.Message as JMessage
-
 import org.vertx.java.core.json.JsonObject
 
 /*
