@@ -16,39 +16,6 @@
 
 package org.vertx.java.deploy.impl;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Properties;
-import java.util.Scanner;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
@@ -67,6 +34,20 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Container;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.deploy.VerticleFactory;
+
+import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  *
@@ -845,7 +826,7 @@ public class VerticleManager implements ModuleReloader {
 
   // Must be synchronized since called directly from different thread
   private void addVerticle(Deployment deployment, Verticle verticle,
-                                        VerticleFactory factory) {
+                           VerticleFactory factory) {
     String loggerName = "org.vertx.deployments." + deployment.name + "-" + deployment.verticles.size();
     Logger logger = LoggerFactory.getLogger(loggerName);
     Context context = vertx.getContext();
@@ -893,9 +874,9 @@ public class VerticleManager implements ModuleReloader {
             } catch (Throwable t) {
               vertx.reportException(t);
             }
-            count.complete();
             LoggerFactory.removeLogger(holder.loggerName);
             holder.context.runCloseHooks();
+            count.complete();
           }
         });
       }

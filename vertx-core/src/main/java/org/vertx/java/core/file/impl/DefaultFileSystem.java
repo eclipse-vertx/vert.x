@@ -42,7 +42,8 @@ import java.util.regex.Pattern;
  */
 public class DefaultFileSystem implements FileSystem {
 
-  private static final Logger log = LoggerFactory.getLogger(DefaultFileSystem.class);
+  @SuppressWarnings("unused")
+	private static final Logger log = LoggerFactory.getLogger(DefaultFileSystem.class);
 
   protected final VertxInternal vertx;
 

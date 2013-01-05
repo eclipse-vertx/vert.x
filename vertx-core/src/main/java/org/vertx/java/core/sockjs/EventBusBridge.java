@@ -94,6 +94,8 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   private void handleSocketClosed(SockJSSocket sock, Map<String, Handler<Message<JsonObject>>> handlers) {
     // On close unregister any handlers that haven't been unregistered
     for (Map.Entry<String, Handler<Message<JsonObject>>> entry: handlers.entrySet()) {
+      //call hook
+      handleUnregister(sock, entry.getKey());
       eb.unregisterHandler(entry.getKey(), entry.getValue());
     }
 

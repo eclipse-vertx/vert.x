@@ -20,6 +20,8 @@ import org.vertx.java.core.http.impl.HttpReadStreamBase;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -63,4 +65,8 @@ public abstract class HttpClientResponse extends HttpReadStreamBase {
    */
   public abstract Map<String, String> trailers();
 
+  /**
+   * @return The Set-Cookie headers (including trailers)
+   */
+  public abstract List<String> cookies();
 }

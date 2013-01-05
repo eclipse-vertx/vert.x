@@ -16,14 +16,10 @@
 
 package org.vertx.java.core.json;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 import org.vertx.java.core.http.impl.ws.Base64;
 import org.vertx.java.core.json.impl.Json;
+
+import java.util.*;
 
 /**
  * Represents a JSON array

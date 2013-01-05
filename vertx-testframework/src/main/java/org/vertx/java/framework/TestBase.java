@@ -123,6 +123,7 @@ public class TestBase extends TestCase {
 
   @Override
   protected void tearDown() throws Exception {
+    verticleManager.stop();
     try {
       throwAsserts();
     } finally {

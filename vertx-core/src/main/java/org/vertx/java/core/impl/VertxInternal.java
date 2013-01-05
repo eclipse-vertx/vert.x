@@ -17,7 +17,6 @@
 package org.vertx.java.core.impl;
 
 
-import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.http.impl.DefaultHttpServer;

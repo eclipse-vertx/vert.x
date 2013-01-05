@@ -45,7 +45,7 @@ public class Starter {
 
   private static final String CP_SEPARATOR = System.getProperty("path.separator");
 
-  private static final String VERSION = "vert.x-1.3.0.final";
+  private static final String VERSION = "vert.x-1.3.1.final";
 
   public static void main(String[] args) {
     new Starter(args);
@@ -263,75 +263,75 @@ public class Starter {
 
     String usage =
 
-"    vertx run <main> [-options]\n" +
-"        runs a verticle called <main> in its own instance of vert.x.\n" +
-"        <main> can be a JavaScript script, a Ruby script, A Groovy script, or a\n" +
-"        Java class.\n\n" +
+"    vertx run <main> [-options]                                                \n" +
+"        runs a verticle called <main> in its own instance of vert.x.           \n" +
+"        <main> can be a JavaScript script, a Ruby script, A Groovy script,     \n" +
+"        a Java class, a Java source file, or a Python Script.\n\n" +
 "    valid options are:\n" +
 "        -conf <config_file>    Specifies configuration that should be provided \n" +
 "                               to the verticle. <config_file> should reference \n" +
-"                               a text file containing a valid JSON object\n" +
-"                               which represents the configuration.\n" +
-"        -cp <path>             specifies the path on which to search for <main>\n" +
-"                               and any referenced resources.\n" +
-"                               Defaults to '.' (current directory).\n" +
-"        -instances <instances> specifies how many instances of the verticle will\n" +       // 80 chars at will
-"                               be deployed. Defaults to 1\n" +
-"        -repo <repo_host>      specifies the repository to use to install\n" +
-"                               any modules.\n" +
-"                               Default is vert-x.github.com/vertx-mods\n" +
-"        -worker                if specified then the verticle is a worker\n" +
-"                               verticle.\n" +
-"        -includes <mod_list>   optional comma separated list of modules\n" +
-"                               which will be added to the classpath of\n" +
-"                               the verticle.\n" +
-"        -cluster               if specified then the vert.x instance will form a\n" +
-"                               cluster with any other vert.x instances on the\n" +
-"                               network.\n" +
-"        -cluster-port          port to use for cluster communication.\n" +
-"                               Default is 25500.\n" +
-"        -cluster-host          host to bind to for cluster communication.\n" +
-"                               If this is not specified vert.x will attempt\n" +
-"                               to choose one from the available interfaces.\n\n" +
+"                               a text file containing a valid JSON object      \n" +
+"                               which represents the configuration.             \n" +
+"        -cp <path>             specifies the path on which to search for       \n" +
+"                               <main> and any referenced resources.            \n" +
+"                               Defaults to '.' (current directory).            \n" +
+"        -instances <instances> specifies how many instances of the verticle    \n" +
+"                               will be deployed. Defaults to 1                 \n" +
+"        -repo <repo_host>      specifies the repository to use to install      \n" +
+"                               any modules.                                    \n" +
+"                               Default is vert-x.github.com/vertx-mods         \n" +
+"        -worker                if specified then the verticle is a worker      \n" +
+"                               verticle.                                       \n" +
+"        -includes <mod_list>   optional comma separated list of modules        \n" +
+"                               which will be added to the classpath of         \n" +
+"                               the verticle.                                   \n" +
+"        -cluster               if specified then the vert.x instance will form \n" +
+"                               a cluster with any other vert.x instances on    \n" +
+"                               the network.                                    \n" +
+"        -cluster-port          port to use for cluster communication.          \n" +
+"                               Default is 25500.                               \n" +
+"        -cluster-host          host to bind to for cluster communication.      \n" +
+"                               If this is not specified vert.x will attempt    \n" +
+"                               to choose one from the available interfaces.  \n\n" +
 
-"    vertx runmod <modname> [-options]\n" +
-"        runs a module called <modname> in its own instance of vert.x.\n" +
-"        If the module is not already installed, Vert.x will attempt to install it\n" +
-"        Java class.\n\n" +
-"    valid options are:\n" +
+"    vertx runmod <modname> [-options]                                          \n" +
+"        runs a module called <modname> in its own instance of vert.x.          \n" +
+"        If the module is not already installed, Vert.x will attempt to install \n" +
+"        it from the repository before running it.                            \n\n" +
+"    valid options are:                                                         \n" +
 "        -conf <config_file>    Specifies configuration that should be provided \n" +
-"                               to the module. <config_file> should reference \n" +
-"                               a text file containing a valid JSON object\n" +
-"                               which represents the configuration.\n" +
-"        -instances <instances> specifies how many instances of the verticle will\n" +       // 80 chars at will
-"                               be deployed. Defaults to 1\n" +
-"        -repo <repo_host>      specifies the repository to use to get the module\n" +
-"                               from if it is not already installed.\n" +
-"                               Default is vert-x.github.com/vertx-mods\n" +
-"        -cluster               if specified then the vert.x instance will form a\n" +
-"                               cluster with any other vert.x instances on the\n" +
-"                               network.\n" +
-"        -cluster-port          port to use for cluster communication.\n" +
-"                               Default is 25500.\n" +
-"        -cluster-host          host to bind to for cluster communication.\n" +
-"                               If this is not specified vert.x will attempt\n" +
-"                               to choose one from the available interfaces.\n\n" +
+"                               to the module. <config_file> should reference   \n" +
+"                               a text file containing a valid JSON object      \n" +
+"                               which represents the configuration.             \n" +
+"        -instances <instances> specifies how many instances of the verticle    \n" +
+"                               will be deployed. Defaults to 1                 \n" +
+"        -repo <repo_host>      specifies the repository to use to get the      \n" +
+"                               module from if it is not already installed.     \n" +
+"                               Default is vert-x.github.com/vertx-mods         \n" +
+"        -cluster               if specified then the vert.x instance will form \n" +
+"                               a cluster with any other vert.x instances on    \n" +
+"                               the network.                                    \n" +
+"        -cluster-port          port to use for cluster communication.          \n" +
+"                               Default is 25500.                               \n" +
+"        -cluster-host          host to bind to for cluster communication.      \n" +
+"                               If this is not specified vert.x will attempt    \n" +
+"                               to choose one from the available interfaces.  \n\n" +
 
-"    vertx install <modname> [-options]\n" +
-"        attempts to install a module from a remote repository.\n" +
-"        Module will be installed into a local 'mods' directory unless the\n" +
-"        environment variable VERTX_MODS specifies a different location.\n\n" +
+"    vertx install <modname> [-options]                                         \n" +
+"        attempts to install a module from a remote repository.                 \n" +
+"        Module will be installed into a local 'mods' directory unless the      \n" +
+"        environment variable VERTX_MODS specifies a different location.      \n\n" +
 "    valid options are:\n" +
-"        -repo <repo_host>      specifies the repository to use to get the module\n" +
-"                               from if it is not already installed.\n" +
-"                               Default is vert-x.github.com/vertx-mods\n\n" +
+"        -repo <repo_host>      specifies the repository to use to get the      \n" +
+"                               module from if it is not already installed.     \n" +
+"                               Default is vert-x.github.com/vertx-mods       \n\n" +
 
-"    vertx uninstall <modname>\n" +
-"        attempts to uninstall a module from a remote repository.\n" +
-"        Module will be uninstalled from the local 'mods' directory unless the\n" +
-"        environment variable VERTX_MODS specifies a different location.\n\n" +
+"    vertx uninstall <modname>                                                  \n" +
+"        attempts to uninstall a module from a remote repository.               \n" +
+"        Module will be uninstalled from the local 'mods' directory unless the  \n" +
+"        environment variable VERTX_MODS specifies a different location.      \n\n" +
 
-"    vertx version\n" +
+"    vertx version                                                              \n" +
 "        displays the version";
 
      log.info(usage);

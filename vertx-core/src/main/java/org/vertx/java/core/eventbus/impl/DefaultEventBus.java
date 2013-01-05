@@ -264,26 +264,28 @@ public class DefaultEventBus implements EventBus {
     Context context = vertx.getOrAssignContext();
     Handlers handlers = handlerMap.get(address);
     if (handlers != null) {
-      int size = handlers.list.size();
-      // Requires a list traversal. This is tricky to optimise since we can't use a set since
-      // we need fast ordered traversal for the round robin
-      for (int i = 0; i < size; i++) {
-        HandlerHolder holder = handlers.list.get(i);
-        if (holder.handler == handler) {
-          handlers.list.remove(i);
-          holder.removed = true;
-          if (handlers.list.isEmpty()) {
-            handlerMap.remove(address);
-            if (subs != null && !holder.localOnly) {
-              removeSub(address, serverID, completionHandler);
+      synchronized (handlers) {
+        int size = handlers.list.size();
+        // Requires a list traversal. This is tricky to optimise since we can't use a set since
+        // we need fast ordered traversal for the round robin
+        for (int i = 0; i < size; i++) {
+          HandlerHolder holder = handlers.list.get(i);
+          if (holder.handler == handler) {
+            handlers.list.remove(i);
+            holder.removed = true;
+            if (handlers.list.isEmpty()) {
+              handlerMap.remove(address);
+              if (subs != null && !holder.localOnly) {
+                removeSub(address, serverID, completionHandler);
+              } else if (completionHandler != null) {
+                callCompletionHandler(completionHandler);
+              }
             } else if (completionHandler != null) {
               callCompletionHandler(completionHandler);
             }
-          } else if (completionHandler != null) {
-            callCompletionHandler(completionHandler);
+            getHandlerCloseHook(context).entries.remove(new HandlerEntry(address, handler));
+            return;
           }
-          getHandlerCloseHook(context).entries.remove(new HandlerEntry(address, handler));
-          return;
         }
       }
     }

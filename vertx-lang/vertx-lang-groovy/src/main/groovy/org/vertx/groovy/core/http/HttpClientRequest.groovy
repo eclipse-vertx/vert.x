@@ -16,11 +16,10 @@
 
 package org.vertx.groovy.core.http
 
-import org.vertx.java.core.http.HttpClientRequest as JHttpClientRequest
-
 import org.vertx.groovy.core.buffer.Buffer
 import org.vertx.groovy.core.streams.WriteStream
 import org.vertx.java.core.Handler
+import org.vertx.java.core.http.HttpClientRequest as JHttpClientRequest
 
 /**
  * Represents a client-side HTTP request.<p>

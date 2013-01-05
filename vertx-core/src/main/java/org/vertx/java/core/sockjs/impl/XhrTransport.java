@@ -166,7 +166,7 @@ class XhrTransport extends BaseTransport {
       if (log.isTraceEnabled()) log.trace("XHR poll closing listener");
       if (!closed) {
         try {
-          session.resetListener();
+          session.resetListener(true);
           req.response.end();
           req.response.close();
           closed = true;
@@ -207,7 +207,7 @@ class XhrTransport extends BaseTransport {
     public void close() {
       if (log.isTraceEnabled()) log.trace("XHR stream closing listener");
       if (!closed) {
-        session.resetListener();
+        session.resetListener(false);
         try {
           req.response.end();
           req.response.close();

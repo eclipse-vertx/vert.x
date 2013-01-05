@@ -16,12 +16,11 @@
 
 package org.vertx.groovy.core.sockjs
 
-import org.vertx.java.core.sockjs.SockJSServer as JSockJSServer
-
 import org.vertx.groovy.core.buffer.Buffer
 import org.vertx.java.core.Handler
 import org.vertx.java.core.json.JsonArray
 import org.vertx.java.core.json.JsonObject
+import org.vertx.java.core.sockjs.SockJSServer as JSockJSServer
 
 /**
  *

@@ -169,7 +169,7 @@ class JsonPTransport extends BaseTransport {
     public void close() {
       if (!closed) {
         try {
-          session.resetListener();
+          session.resetListener(true);
           req.response.end();
           req.response.close();
           closed = true;
