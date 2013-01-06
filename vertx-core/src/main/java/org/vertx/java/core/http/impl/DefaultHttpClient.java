@@ -374,7 +374,7 @@ public class DefaultHttpClient implements HttpClient {
               sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
               engine.setSSLParameters(sslParameters);
             }
-            engine.setUseClientMode(true); //We are on the tcpHelper side of the connection
+            engine.setUseClientMode(true); //We are on the client side of the connection
             pipeline.addLast("ssl", new SslHandler(engine));
           }
           pipeline.addLast("encoder", new HttpRequestEncoder());
