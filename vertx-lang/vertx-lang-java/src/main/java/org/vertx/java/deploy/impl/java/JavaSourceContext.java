@@ -16,17 +16,10 @@
 
 package org.vertx.java.deploy.impl.java;
 
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
-
-import javax.tools.*;
-import java.util.List;
-import java.net.URL;
 import javax.tools.JavaFileObject.Kind;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 
 /**
  *
@@ -35,41 +28,40 @@ import java.util.Collections;
  * @author Janne Hietam&auml;ki
  */
 public class JavaSourceContext {
-  private static final String FILE_SEP = System.getProperty("file.separator");
   private final static String REMOVE_COMMENTS_REGEXP = "(?://.*)|(/\\*(?:.|[\\n\\r])*?\\*/)";
 
   private final String className;
   private final File sourceRoot;
 
   public JavaSourceContext(File file) {
-	String packageName = parsePackage(file);
-	File rootDirectory = file.getParentFile();
-	if(packageName != null) {
-	  String[] pathTokens = packageName.split("\\.");
-    for(int i = pathTokens.length - 1; i >= 0; i--) {
-      String token = pathTokens[i];
-		  if(!token.equals(rootDirectory.getName())) {
-		    throw new RuntimeException("Package structure does not match directory structure: " + token + " != " + rootDirectory.getName());
-		  }
-		  rootDirectory = rootDirectory.getParentFile();
-	  }
-	}
-	sourceRoot = rootDirectory;
+    String packageName = parsePackage(file);
+    File rootDirectory = file.getParentFile();
+    if (packageName != null) {
+      String[] pathTokens = packageName.split("\\.");
+      for(int i = pathTokens.length - 1; i >= 0; i--) {
+        String token = pathTokens[i];
+        if (!token.equals(rootDirectory.getName())) {
+          throw new RuntimeException("Package structure does not match directory structure: " + token + " != " + rootDirectory.getName());
+        }
+        rootDirectory = rootDirectory.getParentFile();
+      }
+    }
+    sourceRoot = rootDirectory;
 
-	String fileName = file.getName();
+    String fileName = file.getName();
     String className = fileName.substring(0, fileName.length() - Kind.SOURCE.extension.length());
-    if(packageName != null) {
-    	className = packageName + "." + className;
-	}
+    if (packageName != null) {
+      className = packageName + "." + className;
+    }
     this.className = className;
   }
 
   public File getSourceRoot() {
-	return sourceRoot;
+	  return sourceRoot;
   }
 
   public String getClassName() {
-	return className;
+	  return className;
   }
 
   /*
@@ -82,17 +74,17 @@ public class JavaSourceContext {
     try {
       String source = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
       source = source.replaceAll(REMOVE_COMMENTS_REGEXP, " ");
-      for(String line : source.split("\\r?\\n")) {
-	    line = line.trim();
-	    if(line.length() > 0) {
-	      int idx = line.indexOf("package ");
-	      if(idx != -1) {
+      for (String line : source.split("\\r?\\n")) {
+        line = line.trim();
+        if (line.length() > 0) {
+          int idx = line.indexOf("package ");
+          if (idx != -1) {
             return line.substring(line.indexOf(" ", idx), line.indexOf(";", idx)).trim();
-	      }
-	      return null; // Package definition must be on the first non-comment line
-	    }
-	  }
-	  return null;
+          }
+          return null; // Package definition must be on the first non-comment line
+        }
+      }
+	    return null;
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
