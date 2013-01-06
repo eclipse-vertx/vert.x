@@ -20,6 +20,7 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import javax.tools.*;
+import java.net.URL;
 import javax.tools.JavaFileObject.Kind;
 import java.io.File;
 import java.util.Collections;
@@ -34,31 +35,28 @@ public class CompilingClassLoader extends ClassLoader {
 
   private static final Logger log = LoggerFactory.getLogger(CompilingClassLoader.class);
 
-  private final String className;
+  private final JavaSourceContext javaSourceContext;
   private final MemoryFileManager fileManager;
-
-  private static final String FILE_SEP = System.getProperty("file.separator");
 
   public CompilingClassLoader(ClassLoader loader, String sourceName) {
     super(loader);
-    String temp = sourceName.replace(FILE_SEP, ".");
-    this.className = temp.substring(0, sourceName.length() - Kind.SOURCE.extension.length());
-    File sourceFile = new File(sourceName).getAbsoluteFile();
+    URL resource = getResource(sourceName);
+    if(resource == null) {
+      throw new RuntimeException("Resource not found: " + sourceName);
+    }
+    File sourceFile = new File(resource.getFile());
     if (!sourceFile.canRead()) {
       throw new RuntimeException("File not found: " + sourceName);
     }
+
+    this.javaSourceContext = new JavaSourceContext(sourceFile);
+    
     try {
       DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
       JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
       StandardJavaFileManager standardFileManager = javaCompiler.getStandardFileManager(null, null, null);
 
-      File sourceRoot;
-      if (sourceName.contains(FILE_SEP)) {
-        sourceRoot = new File(".").getAbsoluteFile();
-      } else {
-        sourceRoot = sourceFile.getParentFile();
-      }
-      standardFileManager.setLocation(StandardLocation.SOURCE_PATH, Collections.singleton(sourceRoot));
+      standardFileManager.setLocation(StandardLocation.SOURCE_PATH, Collections.singleton(javaSourceContext.getSourceRoot()));
       fileManager = new MemoryFileManager(loader, standardFileManager);
       JavaFileObject javaFile = standardFileManager.getJavaFileForInput(StandardLocation.SOURCE_PATH, resolveMainClassName(), Kind.SOURCE);
       JavaCompiler.CompilationTask task = javaCompiler.getTask(null, fileManager, diagnostics, null, null, Collections.singleton(javaFile));
@@ -79,7 +77,7 @@ public class CompilingClassLoader extends ClassLoader {
   }
 
   public String resolveMainClassName() {
-    return className;
+    return javaSourceContext.getClassName();
   }
 
   @Override
