@@ -37,23 +37,25 @@ import java.util.Collections;
 public class JavaSourceContext {
   private static final String FILE_SEP = System.getProperty("file.separator");
   private final static String REMOVE_COMMENTS_REGEXP = "(?://.*)|(/\\*(?:.|[\\n\\r])*?\\*/)";
-	
+
   private final String className;
   private final File sourceRoot;
-  
+
   public JavaSourceContext(File file) {
 	String packageName = parsePackage(file);
 	File rootDirectory = file.getParentFile();
 	if(packageName != null) {
-	  for(String token : packageName.split("\\.")) {
-		if(!token.equals(rootDirectory.getName())) {
-		  throw new RuntimeException("Package structure does not match directory structure: " + token + " != " + rootDirectory.getName());
-		}
-		rootDirectory = rootDirectory.getParentFile();		
-	  }	   
+	  String[] pathTokens = packageName.split("\\.");
+    for(int i = pathTokens.length - 1; i >= 0; i--) {
+      String token = pathTokens[i];
+		  if(!token.equals(rootDirectory.getName())) {
+		    throw new RuntimeException("Package structure does not match directory structure: " + token + " != " + rootDirectory.getName());
+		  }
+		  rootDirectory = rootDirectory.getParentFile();
+	  }
 	}
 	sourceRoot = rootDirectory;
-	
+
 	String fileName = file.getName();
     String className = fileName.substring(0, fileName.length() - Kind.SOURCE.extension.length());
     if(packageName != null) {
@@ -61,20 +63,20 @@ public class JavaSourceContext {
 	}
     this.className = className;
   }
-  
+
   public File getSourceRoot() {
 	return sourceRoot;
   }
-  
+
   public String getClassName() {
 	return className;
   }
-  
-  /* 
+
+  /*
    * Parse package definition from a Java source file:
    * First remove all comments, split file into lines, find first non-empty line
    * Then, if the line starts with keyword "package", parse the package definition from it.
-   * 
+   *
    */
   private String parsePackage(File file) {
     try {
