@@ -1,17 +1,24 @@
 package org.foo;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.net.NetSocket;
-import org.vertx.java.core.streams.Pump;
+import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.deploy.Verticle;
+
+import java.lang.System;
+import com.acme.OtherClass;
 
 public class MyMain extends Verticle {
 
   public void start() {
-    vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
-      public void handle(final NetSocket socket) {
-        Pump.createPump(socket, socket).start();
+
+    vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+        System.out.println("Got request: " + req.uri);
+        req.response.headers().put("Content-Type", "text/html; charset=UTF-8");
+        // Make sure we can reference another source file:
+        OtherClass otherClass = new OtherClass();
+        req.response.end("<html><body><h1>Hello from vert.x! " + otherClass.date() + "</h1></body></html>");
       }
-    }).listen(1234);
+    }).listen(8080);
   }
 }
