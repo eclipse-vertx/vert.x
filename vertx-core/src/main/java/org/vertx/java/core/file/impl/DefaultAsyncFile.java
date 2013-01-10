@@ -88,7 +88,7 @@ public class DefaultAsyncFile implements AsyncFile {
 
   public void write(Buffer buffer, int position, AsyncResultHandler<Void> handler) {
     check();
-    ByteBuffer bb = buffer.getChannelBuffer().toByteBuffer();
+    ByteBuffer bb = buffer.getByteBuf().nioBuffer();
     doWrite(bb, position, handler);
   }
 
@@ -112,7 +112,7 @@ public class DefaultAsyncFile implements AsyncFile {
         public void writeBuffer(Buffer buffer) {
           check();
           final int length = buffer.length();
-          ByteBuffer bb = buffer.getChannelBuffer().toByteBuffer();
+          ByteBuffer bb = buffer.getByteBuf().nioBuffer();
 
           doWrite(bb, pos, new AsyncResultHandler<Void>() {
 

@@ -16,13 +16,18 @@
 
 package org.vertx.java.core.net.impl;
 
-import org.jboss.netty.channel.*;
-import org.jboss.netty.channel.socket.nio.NioSocketChannelConfig;
-import org.jboss.netty.handler.ssl.SslHandler;
-import org.jboss.netty.handler.stream.ChunkedFile;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.DefaultFileRegion;
+import io.netty.channel.FileRegion;
+import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.stream.ChunkedFile;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.FlowControlHandler;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -34,9 +39,7 @@ import javax.security.cert.X509Certificate;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 
 /**
  * Abstract base class for TCP connections.
@@ -59,36 +62,39 @@ public abstract class ConnectionBase {
 
   protected Handler<Exception> exceptionHandler;
   protected Handler<Void> closedHandler;
+  private volatile boolean writable = true;
+
+  protected void setWritable(boolean writable) {
+      this.writable = writable;
+  }
 
 
   /**
    * Pause the connection, see {@link ReadStream#pause}
    */
   public void pause() {
-    channel.setReadable(false);
+    channel.config().setAutoRead(false);
   }
 
   /**
    * Resume the connection, see {@link ReadStream#resume}
    */
   public void resume() {
-    channel.setReadable(true);
+    channel.config().setAutoRead(true);
   }
 
   /**
    * Set the max size for the write queue, see {@link WriteStream#setWriteQueueMaxSize}
    */
   public void setWriteQueueMaxSize(int size) {
-    NioSocketChannelConfig conf = (NioSocketChannelConfig) channel.getConfig();
-    conf.setWriteBufferLowWaterMark(size / 2);
-    conf.setWriteBufferHighWaterMark(size);
+    channel.pipeline().get(FlowControlHandler.class).setLimit(size / 2 , size);
   }
 
   /**
    * Is the write queue full?, see {@link WriteStream#writeQueueFull}
    */
   public boolean writeQueueFull() {
-    return !channel.isWritable();
+    return !writable;
   }
 
   /**
@@ -147,7 +153,7 @@ public abstract class ConnectionBase {
             if (channelFuture.isSuccess()) {
               doneHandler.handle(null);
             } else {
-              Throwable err = channelFuture.getCause();
+              Throwable err = channelFuture.cause();
               if (exceptionHandler != null && err instanceof Exception) {
                 exceptionHandler.handle((Exception) err);
               } else {
@@ -169,7 +175,7 @@ public abstract class ConnectionBase {
   }
 
   protected boolean isSSL() {
-    return channel.getPipeline().get(SslHandler.class) != null;
+    return channel.pipeline().get(SslHandler.class) != null;
   }
 
   protected ChannelFuture sendFile(File file) {
@@ -203,16 +209,17 @@ public abstract class ConnectionBase {
 
   public X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException {
     if (isSSL()) {
-      final ChannelHandlerContext sslHandlerContext = channel.getPipeline().getContext("ssl");
+      final ChannelHandlerContext sslHandlerContext = channel.pipeline().context("ssl");
       assert sslHandlerContext != null;
-      final SslHandler sslHandler = (SslHandler) sslHandlerContext.getHandler();
-      return sslHandler.getEngine().getSession().getPeerCertificateChain();
+      final SslHandler sslHandler = (SslHandler) sslHandlerContext.handler();
+      return sslHandler.engine().getSession().getPeerCertificateChain();
     } else {
       return null;
     }
   }
 
   public InetSocketAddress remoteAddress() {
-    return (InetSocketAddress)channel.getRemoteAddress();
+    return (InetSocketAddress)channel.remoteAddress();
   }
+  protected abstract void handleInterestedOpsChanged();
 }

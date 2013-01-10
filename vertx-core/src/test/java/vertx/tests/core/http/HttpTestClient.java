@@ -935,7 +935,6 @@ public class HttpTestClient extends TestClientBase {
   public void testRequestBodyBufferAtEnd() {
 
     final Buffer body = TestUtils.generateRandomBuffer(1000);
-
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
@@ -1214,7 +1213,6 @@ public class HttpTestClient extends TestClientBase {
 
   public void testRequestWriteBuffer() {
     final Buffer body = TestUtils.generateRandomBuffer(1000);
-
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
@@ -1587,7 +1585,6 @@ public class HttpTestClient extends TestClientBase {
   public void testResponseBodyBufferAtEnd() {
 
     final Buffer body = TestUtils.generateRandomBuffer(1000);
-
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
@@ -1861,7 +1858,6 @@ public class HttpTestClient extends TestClientBase {
   public void testResponseWriteBuffer() {
 
     final Buffer body = TestUtils.generateRandomBuffer(1000);
-
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();

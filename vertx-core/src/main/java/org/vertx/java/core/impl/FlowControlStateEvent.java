@@ -1,5 +1,5 @@
 /*
- * Copyright 2011-2012 the original author or authors.
+ * Copyright 2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,22 @@
 
 package org.vertx.java.core.impl;
 
-import io.netty.channel.EventLoop;
-
-import java.util.concurrent.Executor;
-
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public class WorkerContext extends Context {
+public final class FlowControlStateEvent {
+    private volatile boolean writable = true;
+    protected FlowControlStateEvent() {
+    }
 
-  public WorkerContext(VertxInternal vertx, Executor orderedBgExec) {
-    super(vertx, orderedBgExec);
-  }
+    /**
+     * Returns {@code true} if the state changed to writable
+     */
+    public boolean isWritable() {
+        return writable;
+    }
 
-  public void execute(Runnable task) {
-    executeOnOrderedWorkerExec(wrapTask(task));
-  }
-
-  public boolean isOnCorrectWorker(EventLoop worker) {
-    return false;
-  }
+    void updateWritable(boolean writable) {
+        this.writable = writable;
+    }
 }

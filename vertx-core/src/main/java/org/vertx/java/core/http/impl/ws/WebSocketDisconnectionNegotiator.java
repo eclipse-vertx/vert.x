@@ -18,47 +18,28 @@
 
 package org.vertx.java.core.http.impl.ws;
 
-import org.jboss.netty.channel.*;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundMessageHandlerAdapter;
 
-public class WebSocketDisconnectionNegotiator implements ChannelDownstreamHandler, ChannelUpstreamHandler {
+@ChannelHandler.Sharable
+public class WebSocketDisconnectionNegotiator extends ChannelInboundMessageHandlerAdapter<WebSocketFrame> {
 
   @Override
-  public void handleUpstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
-    if (this.closeRequest != null) {
-      if (e instanceof MessageEvent) {
-        Object message = ((MessageEvent) e).getMessage();
-        if (message instanceof WebSocketFrame) {
-          WebSocketFrame frame = (WebSocketFrame) message;
+  public void messageReceived(ChannelHandlerContext ctx, WebSocketFrame msg) throws Exception {
+    // TODO: Add ChannelListener.CLOSE ?
+    ctx.write(msg);
 
-          if (frame.getType() == WebSocketFrame.FrameType.CLOSE) {
-            ctx.sendDownstream(this.closeRequest);
-            return;
-          }
-        }
-      }
-    }
-
-    ctx.sendUpstream(e);
+    // pass to the next handler in the pipeline
+    ctx.nextInboundMessageBuffer().add(msg);
+    ctx.fireInboundBufferUpdated();
   }
 
   @Override
-  public void handleDownstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
-    if (e instanceof ChannelStateEvent) {
-      ChannelState state = ((ChannelStateEvent) e).getState();
-      if (state == ChannelState.OPEN && Boolean.FALSE.equals(((ChannelStateEvent) e).getValue())) {
-        closeRequested(ctx, (ChannelStateEvent) e);
-        return;
-      }
+  public boolean acceptInboundMessage(Object msg) throws Exception {
+    if (msg instanceof WebSocketFrame && ((WebSocketFrame) msg).getType() == WebSocketFrame.FrameType.CLOSE) {
+      return true;
     }
-
-    ctx.sendDownstream(e);
+    return false;
   }
-
-  public void closeRequested(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-    this.closeRequest = e;
-    DefaultWebSocketFrame closeFrame = new DefaultWebSocketFrame(WebSocketFrame.FrameType.CLOSE);
-    Channels.write(ctx.getChannel(), closeFrame);
-  }
-
-  private ChannelStateEvent closeRequest;
 }

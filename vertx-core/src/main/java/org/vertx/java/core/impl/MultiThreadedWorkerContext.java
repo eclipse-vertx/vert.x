@@ -17,7 +17,8 @@ package org.vertx.java.core.impl;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 
-import org.jboss.netty.channel.socket.nio.NioWorker;
+import io.netty.channel.EventLoop;
+import io.netty.channel.nio.NioEventLoop;
 
 import java.util.concurrent.Executor;
 
@@ -34,7 +35,7 @@ public class MultiThreadedWorkerContext extends Context {
     bgExec.execute(wrapTask(task));
   }
 
-  public boolean isOnCorrectWorker(NioWorker worker) {
+  public boolean isOnCorrectWorker(EventLoop worker) {
     return false;
   }
 }

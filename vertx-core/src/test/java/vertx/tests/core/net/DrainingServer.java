@@ -44,7 +44,7 @@ public class DrainingServer extends BaseServer {
         vertx.setPeriodic(0, new Handler<Long>() {
           public void handle(Long id) {
             tu.checkThread();
-            sock.write(buff);
+            sock.write(buff.copy());
             if (sock.writeQueueFull()) {
               vertx.cancelTimer(id);
               sock.drainHandler(new SimpleHandler() {
