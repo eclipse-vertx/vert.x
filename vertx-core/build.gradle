@@ -22,7 +22,7 @@ dependencies {
 	compile "org.codehaus.jackson:jackson-core-asl:$jacksonVersion"
 	compile "org.codehaus.jackson:jackson-mapper-asl:$jacksonVersion"
 	compile "com.hazelcast:hazelcast:$hazelcastVersion"
-	compile "io.netty:netty:$nettyVersion"
+	compile "io.netty:netty-all:$nettyVersion"
 
     testCompile project(":vertx-platform")
 }

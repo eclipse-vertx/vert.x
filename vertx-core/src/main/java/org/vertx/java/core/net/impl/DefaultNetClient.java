@@ -16,17 +16,20 @@
 
 package org.vertx.java.core.net.impl;
 
-import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.*;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioSocketChannel;
-import org.jboss.netty.handler.ssl.SslHandler;
-import org.jboss.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.EventLoopContext;
+import org.vertx.java.core.impl.ExceptionDispatchHandler;
+import org.vertx.java.core.impl.FlowControlHandler;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -46,13 +49,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DefaultNetClient implements NetClient {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultNetClient.class);
+    private static final ExceptionDispatchHandler EXCEPTION_DISPATCH_HANDLER = new ExceptionDispatchHandler();
 
   private final VertxInternal vertx;
   private final Context actualCtx;
   private final EventLoopContext eventLoopContext;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
-  private ClientBootstrap bootstrap;
-  private Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<>();
+  private Bootstrap bootstrap;
+  private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<>();
   private Handler<Exception> exceptionHandler;
   private int reconnectAttempts;
   private long reconnectInterval = 1000;
@@ -260,18 +264,22 @@ public class DefaultNetClient implements NetClient {
                        final int remainingAttempts) {
     if (bootstrap == null) {
       // Share the event loop thread to also serve the NetClient's network traffic.
-      VertxWorkerPool pool = new VertxWorkerPool();
+      VertxEventLoopGroup pool = new VertxEventLoopGroup();
       pool.addWorker(eventLoopContext.getWorker());
 
-      NioClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(
-          vertx.getClientAcceptorPool(), pool);
-      bootstrap = new ClientBootstrap(channelFactory);
 
       tcpHelper.checkSSL(vertx);
 
-      bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-        public ChannelPipeline getPipeline() throws Exception {
-          ChannelPipeline pipeline = Channels.pipeline();
+      bootstrap = new Bootstrap();
+      bootstrap.group(pool);
+      bootstrap.channel(NioSocketChannel.class);
+      bootstrap.handler(new ChannelInitializer<Channel>() {
+        @Override
+        protected void initChannel(Channel ch) throws Exception {
+          ChannelPipeline pipeline = ch.pipeline();
+          pipeline.addLast("exceptionDispatcher", EXCEPTION_DISPATCH_HANDLER);
+          pipeline.addLast("flowControl", new FlowControlHandler());
+
           if (tcpHelper.isSSL()) {
             SSLEngine engine = tcpHelper.getSSLContext().createSSLEngine();
             engine.setUseClientMode(true); //We are on the client side of the connection
@@ -279,22 +287,22 @@ public class DefaultNetClient implements NetClient {
           }
           pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());  // For large file / sendfile support
           pipeline.addLast("handler", new ClientHandler());
-          return pipeline;
         }
       });
     }
-    bootstrap.setOptions(tcpHelper.generateConnectionOptions(false));
+    // TODO: FIx me
+    tcpHelper.applyConnectionOptions(bootstrap);
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
-        final NioSocketChannel ch = (NioSocketChannel) channelFuture.getChannel();
+        final Channel ch = channelFuture.channel();
 
         if (channelFuture.isSuccess()) {
 
           if (tcpHelper.isSSL()) {
             // TCP connected, so now we must do the SSL handshake
 
-            SslHandler sslHandler = (SslHandler)ch.getPipeline().get("ssl");
+            SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
 
             ChannelFuture fut = sslHandler.handshake();
             fut.addListener(new ChannelFutureListener() {
@@ -312,118 +320,82 @@ public class DefaultNetClient implements NetClient {
           }
         } else {
           if (remainingAttempts > 0 || remainingAttempts == -1) {
-            actualCtx.execute(new Runnable() {
-              public void run() {
-                log.debug("Failed to create connection. Will retry in " + reconnectInterval + " milliseconds");
-                //Set a timer to retry connection
-                vertx.setTimer(reconnectInterval, new Handler<Long>() {
-                  public void handle(Long timerID) {
-                    connect(port, host, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts
-                        - 1);
-                  }
-                });
-              }
-            });
+            if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
+              log.debug("Failed to create connection. Will retry in " + reconnectInterval + " milliseconds");
+              //Set a timer to retry connection
+              vertx.setTimer(reconnectInterval, new Handler<Long>() {
+                public void handle(Long timerID) {
+                  connect(port, host, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts
+                                - 1);
+                }
+              });
+            } else {
+              actualCtx.execute(new Runnable() {
+                public void run() {
+                  log.debug("Failed to create connection. Will retry in " + reconnectInterval + " milliseconds");
+                  //Set a timer to retry connection
+                  vertx.setTimer(reconnectInterval, new Handler<Long>() {
+                    public void handle(Long timerID) {
+                      connect(port, host, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts
+                          - 1);
+                    }
+                  });
+                }
+              });
+            }
           } else {
-            failed(ch, channelFuture.getCause());
+            failed(ch, channelFuture.cause());
           }
         }
       }
     });
   }
 
-  private void connected(final NioSocketChannel ch, final Handler<NetSocket> connectHandler) {
-    actualCtx.execute(new Runnable() {
-      public void run() {
-        DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, actualCtx);
-        socketMap.put(ch, sock);
-        connectHandler.handle(sock);
-      }
-    });
-  }
-
-  private void failed(NioSocketChannel ch, final Throwable t) {
-  	ch.close();
-    if (t instanceof Exception && exceptionHandler != null) {
+  private void connected(final Channel ch, final Handler<NetSocket> connectHandler) {
+    if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
+      DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, actualCtx);
+      socketMap.put(ch, sock);
+      connectHandler.handle(sock);
+    } else {
       actualCtx.execute(new Runnable() {
         public void run() {
-          exceptionHandler.handle((Exception) t);
+          DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, actualCtx);
+          socketMap.put(ch, sock);
+          connectHandler.handle(sock);
         }
       });
+    }
+
+  }
+
+  private void failed(Channel ch, final Throwable t) {
+    ch.close();
+    if (t instanceof Exception && exceptionHandler != null) {
+      if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
+        exceptionHandler.handle((Exception) t);
+      } else {
+        actualCtx.execute(new Runnable() {
+          public void run() {
+            exceptionHandler.handle((Exception) t);
+          }
+        });
+      }
+
     } else {
       log.error("Unhandled exception", t);
     }
   }
 
-  private class ClientHandler extends SimpleChannelUpstreamHandler {
-
-    @Override
-    public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
+  private class ClientHandler extends VertxNetHandler {
+    public ClientHandler() {
+      super(socketMap);
     }
 
     @Override
-    public void channelClosed(ChannelHandlerContext chctx, ChannelStateEvent e) {
-      final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final DefaultNetSocket sock = socketMap.remove(ch);
-      if (sock != null) {
-        sock.getContext().execute(new Runnable() {
-          public void run() {
-            sock.handleClosed();
-          }
-        });
-      }
-    }
-
-    @Override
-    public void messageReceived(ChannelHandlerContext chctx, MessageEvent e) {
-      final DefaultNetSocket sock = socketMap.get(chctx.getChannel());
-      if (sock != null) {
-        final ChannelBuffer cb = (ChannelBuffer) e.getMessage();
-        NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-        // We need to do this since it's possible the server is being used from a worker context
-        if (actualCtx.isOnCorrectWorker(ch.getWorker())) {
-          sock.handleDataReceived(new Buffer(cb));
-        } else {
-          actualCtx.execute(new Runnable() {
-            public void run() {
-              sock.handleDataReceived(new Buffer(cb));
-            }
-          });
-        }
-      }
-    }
-
-    @Override
-    public void channelInterestChanged(ChannelHandlerContext chctx, ChannelStateEvent e) throws Exception {
-      final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final DefaultNetSocket sock = socketMap.get(ch);
-      ChannelState state = e.getState();
-      if (state == ChannelState.INTEREST_OPS) {
-        actualCtx.execute(new Runnable() {
-          public void run() {
-            sock.handleInterestedOpsChanged();
-          }
-        });
-      }
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext chctx, ExceptionEvent e) {
-      final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final NetSocket sock = socketMap.remove(ch);
-      final Throwable t = e.getCause();
-      if (sock != null && t instanceof Exception) {
-        actualCtx.execute(new Runnable() {
-          public void run() {
-            sock.handleException((Exception) t);
-            ch.close();
-          }
-        });
-      } else {
-        // Ignore - any exceptions before a channel exists will be passed manually via the failed(...) method
-      }
+    protected Context getContext(DefaultNetSocket connection) {
+      // TODO: Why ?
+      return actualCtx;
     }
   }
-
 }
 

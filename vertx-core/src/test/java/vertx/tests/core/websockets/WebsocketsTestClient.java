@@ -217,7 +217,7 @@ public class WebsocketsTestClient extends TestClientBase {
     final int numConnections = vertx.sharedData().<String, Integer>getMap("params").get("numConnections");
     final AtomicInteger counter = new AtomicInteger(0);
     for (int i = 0; i < numConnections; i++) {
-      client.connectWebsocket("someurl", new Handler<WebSocket>() {
+      client.connectWebsocket("http://somehost", new Handler<WebSocket>() {
         public void handle(WebSocket ws) {
           ws.closedHandler(new SimpleHandler() {
             public void handle() {

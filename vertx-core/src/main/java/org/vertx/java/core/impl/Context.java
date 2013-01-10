@@ -16,7 +16,7 @@
 
 package org.vertx.java.core.impl;
 
-import org.jboss.netty.channel.socket.nio.NioWorker;
+import io.netty.channel.EventLoop;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -100,7 +100,7 @@ public abstract class Context {
 
   public abstract void execute(Runnable handler);
 
-  public abstract boolean isOnCorrectWorker(NioWorker worker);
+  public abstract boolean isOnCorrectWorker(EventLoop worker);
 
   // This executes the task in the worker pool using the ordered executor of the context
   // It's used e.g. from BlockingActions

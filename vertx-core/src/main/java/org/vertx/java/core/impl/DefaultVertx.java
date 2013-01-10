@@ -16,12 +16,8 @@
 
 package org.vertx.java.core.impl;
 
-import org.jboss.netty.channel.DefaultChannelFuture;
-import org.jboss.netty.channel.socket.nio.NioClientBossPool;
-import org.jboss.netty.channel.socket.nio.NioServerBossPool;
-import org.jboss.netty.channel.socket.nio.NioWorker;
-import org.jboss.netty.channel.socket.nio.NioWorkerPool;
-import org.jboss.netty.util.*;
+import io.netty.channel.EventLoop;
+import io.netty.channel.EventLoopGroup;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.impl.ClusterManager;
@@ -48,7 +44,9 @@ import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -65,27 +63,18 @@ public class DefaultVertx extends VertxInternal {
   private final EventBus eventBus;
   private final SharedData sharedData = new SharedData();
 
-  //For now we use a hashed wheel with it's own thread for timeouts - ideally the event loop would have
-  //it's own hashed wheel
-  private HashedWheelTimer timer = new HashedWheelTimer(new VertxThreadFactory("vert.x-timer-thread"), 1,
-      TimeUnit.MILLISECONDS, 8192);
-  {
-    timer.start();
-  }
-
   private ExecutorService backgroundPool = VertxExecutorFactory.workerPool("vert.x-worker-thread-");
   private OrderedExecutorFactory orderedFact = new OrderedExecutorFactory(backgroundPool);
-  private NioWorkerPool corePool = VertxExecutorFactory.corePool("vert.x-core-thread-");
-  private NioServerBossPool serverBossPool = VertxExecutorFactory.serverAcceptorPool("vert.x-server-acceptor-thread-");
-  private NioClientBossPool clientBossPool = VertxExecutorFactory.clientAcceptorPool(this, "vert.x-client-acceptor-thread-");
+  private EventLoopGroup corePool = VertxExecutorFactory.corePool("vert.x-core-thread-");
+  private EventLoopGroup serverBossPool = VertxExecutorFactory.serverAcceptorPool("vert.x-server-acceptor-thread-");
+  private EventLoopGroup clientBossPool = VertxExecutorFactory.clientAcceptorPool(this, "vert.x-client-acceptor-thread-");
 
   private Map<ServerID, DefaultHttpServer> sharedHttpServers = new HashMap<>();
   private Map<ServerID, DefaultNetServer> sharedNetServers = new HashMap<>();
-
   private final ThreadLocal<Context> contextTL = new ThreadLocal<>();
 
+  private final ConcurrentMap<Long, InternalTimerHandler> timeouts = new ConcurrentHashMap<>();
   private final AtomicLong timeoutCounter = new AtomicLong(0);
-  private final Map<Long, TimeoutHolder> timeouts = new ConcurrentHashMap<>();
 
   private ClusterManager clusterManager;
 
@@ -101,24 +90,13 @@ public class DefaultVertx extends VertxInternal {
     this.clusterManager = new HazelcastClusterManager(this);
     this.eventBus = new DefaultEventBus(this, port, hostname, clusterManager);
   }
-
-  static {
-    // Stop netty renaming threads!
-    ThreadRenamingRunnable.setThreadNameDeterminer(ThreadNameDeterminer.CURRENT);
-    DefaultChannelFuture.setUseDeadLockChecker(false);
-  }
-
   /**
    * @return The FileSystem implementation for the OS
    */
   protected FileSystem getFileSystem() {
   	return Windows.isWindows() ? new WindowsFileSystem(this) : new DefaultFileSystem(this);
   }
-  
-  public Timer getTimer() {
-  	return timer;
-  }
-  
+
   public NetServer createNetServer() {
     return new DefaultNetServer(this);
   }
@@ -180,11 +158,11 @@ public class DefaultVertx extends VertxInternal {
   }
 
   public long setPeriodic(long delay, final Handler<Long> handler) {
-    return setTimeout(delay, true, handler);
+      return scheduleTimeout(-1, (EventLoopContext) getOrAssignContext(), handler, delay, true);
   }
 
   public long setTimer(long delay, final Handler<Long> handler) {
-    return setTimeout(delay, false, handler);
+      return scheduleTimeout(-1, (EventLoopContext) getOrAssignContext(), handler, delay, false);
   }
 
   public void runOnLoop(final Handler<Void> handler) {
@@ -201,16 +179,12 @@ public class DefaultVertx extends VertxInternal {
     return backgroundPool;
   }
 
-  public NioWorkerPool getCorePool() {
+  public EventLoopGroup getCorePool() {
     return corePool;
   }
 
-  public NioServerBossPool getServerAcceptorPool() {
+  public EventLoopGroup getServerAcceptorPool() {
     return serverBossPool;
-  }
-
-  public NioClientBossPool getClientAcceptorPool() {
-    return clientBossPool;
   }
 
   public Context getOrAssignContext() {
@@ -239,63 +213,48 @@ public class DefaultVertx extends VertxInternal {
     return sharedNetServers;
   }
 
-  private long setTimeout(final long delay, boolean periodic, final Handler<Long> handler) {
-    final Context context = getOrAssignContext();
-
-    InternalTimerHandler myHandler;
-    if (periodic) {
-      myHandler = new InternalTimerHandler(handler) {
-        public void run() {
-          super.run();
-          scheduleTimeout(timerID, context, this, delay); // And reschedule
-        }
-      };
-    } else {
-      myHandler = new InternalTimerHandler(handler) {
-        public void run() {
-          super.run();
-          timeouts.remove(timerID);
-        }
-      };
-    }
-    final long timerID = scheduleTimeout(-1, context, myHandler, delay);
-    myHandler.timerID = timerID;
-    return timerID;
-  }
-
   public boolean cancelTimer(long id) {
     return cancelTimeout(id);
   }
 
   public EventLoopContext createEventLoopContext() {
     getBackgroundPool();
-    NioWorker worker = getCorePool().nextWorker();
+    EventLoop worker = getCorePool().next();
     return new EventLoopContext(this, orderedFact.getExecutor(), worker);
   }
 
   private boolean cancelTimeout(long id) {
-    TimeoutHolder holder = timeouts.remove(id);
+    Future<?> holder = timeouts.remove(id).future;
     if (holder != null) {
-      holder.timeout.cancel();
-      return true;
+      return holder.cancel(false);
     } else {
       return false;
     }
   }
 
-  private long scheduleTimeout(long id, final Context context, final Runnable task, long delay) {
-    TimerTask ttask = new TimerTask() {
-      public void run(Timeout timeout) throws Exception {
-        context.execute(task);
-      }
-    };
+  private long scheduleTimeout(long id, final EventLoopContext context, final Handler<Long> handler, long delay, boolean periodic) {
+
     if (id != -1 && timeouts.get(id) == null) {
       //Been cancelled
       return -1;
     }
-    Timeout timeout = timer.newTimeout(ttask, delay, TimeUnit.MILLISECONDS);
+
     id = id != -1 ? id : timeoutCounter.getAndIncrement();
-    timeouts.put(id, new TimeoutHolder(timeout));
+    final long timerId = id;
+    final InternalTimerHandler task = new InternalTimerHandler(timerId, handler);
+    Future<?> future;
+    if (periodic) {
+      if (delay == 0) {
+        future = context.getWorker().scheduleAtFixedRate(task, delay, 10, TimeUnit.MILLISECONDS);
+
+      } else {
+        future = context.getWorker().scheduleAtFixedRate(task, delay, delay, TimeUnit.MILLISECONDS);
+      }
+    } else {
+      future = context.getWorker().schedule(task, delay, TimeUnit.MILLISECONDS);
+    }
+    task.future = future;
+    timeouts.put(id, task);
     return id;
   }
 
@@ -318,78 +277,66 @@ public class DefaultVertx extends VertxInternal {
   public Context getContext() {
     return contextTL.get();
   }
-  
+
   @Override
-	public void stop() {
+  public void stop() {
+    if (sharedHttpServers != null) {
+      for (HttpServer server : sharedHttpServers.values()) {
+        server.close();
+      }
+      sharedHttpServers = null;
+    }
 
-		if (sharedHttpServers != null) {
-			for (HttpServer server : sharedHttpServers.values()) {
-				server.close();
-			}
-			sharedHttpServers = null;
-		}
+    if (sharedNetServers != null) {
+      for (NetServer server : sharedNetServers.values()) {
+        server.close();
+      }
+      sharedNetServers = null;
+    }
 
-		if (sharedNetServers != null) {
-			for (NetServer server : sharedNetServers.values()) {
-				server.close();
-			}
-			sharedNetServers = null;
-		}
+    if (backgroundPool != null) {
+      backgroundPool.shutdown();
+    }
 
-		if (timer != null) {
-			timer.stop();
-			timer = null;
-		}
-
-		if (backgroundPool != null) {
-			backgroundPool.shutdown();
-		}
-
-		try {
-			if (backgroundPool != null) {
-				backgroundPool.awaitTermination(20, TimeUnit.SECONDS);
-				backgroundPool = null;
-			}
-		} catch (InterruptedException ex) {
-			// ignore
-		}
+    try {
+      if (backgroundPool != null) {
+        backgroundPool.awaitTermination(20, TimeUnit.SECONDS);
+        backgroundPool = null;
+      }
+    } catch (InterruptedException ex) {
+      // ignore
+    }
 
     if (clientBossPool != null) {
-      clientBossPool.releaseExternalResources();
+      clientBossPool.shutdown();
       clientBossPool = null;
     }
 
     if (serverBossPool != null) {
-      serverBossPool.releaseExternalResources();
+      serverBossPool.shutdown();
       serverBossPool = null;
     }
 
-		if (corePool != null) {
-			corePool.releaseExternalResources();
-			corePool = null;
-		}
+    if (corePool != null) {
+      corePool.shutdown();
+      corePool = null;
+    }
 
-		setContext(null);
-	}
+    setContext(null);
+  }
   
   private static class InternalTimerHandler implements Runnable {
     final Handler<Long> handler;
-    long timerID;
+    final long timerID;
+    volatile Future<?> future;
 
-    InternalTimerHandler(Handler<Long> runnable) {
+    InternalTimerHandler(long timerID, Handler<Long> runnable) {
+      this.timerID = timerID;
       this.handler = runnable;
     }
 
     public void run() {
       handler.handle(timerID);
-    }
-  }
-
-  private static class TimeoutHolder {
-    final Timeout timeout;
-
-    TimeoutHolder(Timeout timeout) {
-      this.timeout = timeout;
     }
   }
 }

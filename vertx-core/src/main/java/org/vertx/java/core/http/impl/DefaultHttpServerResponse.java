@@ -16,11 +16,10 @@
 
 package org.vertx.java.core.http.impl;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.handler.codec.http.*;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.handler.codec.http.*;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.impl.PathAdjuster;
@@ -33,7 +32,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import java.io.File;
 import java.util.Map;
 
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names;
+import static io.netty.handler.codec.http.HttpHeaders.Names;
 
 /**
  *
@@ -130,31 +129,31 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
   }
 
   public void writeBuffer(Buffer chunk) {
-    write(chunk.getChannelBuffer(), null);
+    write(chunk.getByteBuf(), null);
   }
 
   public DefaultHttpServerResponse write(Buffer chunk) {
-    return write(chunk.getChannelBuffer(), null);
+    return write(chunk.getByteBuf(), null);
   }
 
   public DefaultHttpServerResponse write(String chunk, String enc) {
-    return write(new Buffer(chunk, enc).getChannelBuffer(), null);
+    return write(new Buffer(chunk, enc).getByteBuf(), null);
   }
 
   public DefaultHttpServerResponse write(String chunk) {
-    return write(new Buffer(chunk).getChannelBuffer(), null);
+    return write(new Buffer(chunk).getByteBuf(), null);
   }
 
   public DefaultHttpServerResponse write(Buffer chunk, Handler<Void> doneHandler) {
-    return write(chunk.getChannelBuffer(), doneHandler);
+    return write(chunk.getByteBuf(), doneHandler);
   }
 
   public DefaultHttpServerResponse write(String chunk, String enc, Handler<Void> doneHandler) {
-    return write(new Buffer(chunk, enc).getChannelBuffer(), doneHandler);
+    return write(new Buffer(chunk, enc).getByteBuf(), doneHandler);
   }
 
   public DefaultHttpServerResponse write(String chunk, Handler<Void> doneHandler) {
-    return write(new Buffer(chunk).getChannelBuffer(), doneHandler);
+    return write(new Buffer(chunk).getByteBuf(), doneHandler);
   }
 
   public void end(String chunk) {
@@ -198,28 +197,24 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
 
     checkWritten();
     writeHead();
-    if (chunked) {
-      if (trailers == null) {
-        HttpChunk nettyChunk = new DefaultHttpChunk(ChannelBuffers.EMPTY_BUFFER);
-        channelFuture = conn.write(nettyChunk);
-      } else {
-        DefaultHttpChunkTrailer trlrs = new DefaultHttpChunkTrailer();
-        for (Map.Entry<String, Object> trailer: trailers.entrySet()) {
-          Object value = trailer.getValue();
-          if (value instanceof Iterable<?>) {
-            trlrs.setHeader(trailer.getKey(), (Iterable<?>) value);
-          } else {
-            trlrs.setHeader(trailer.getKey(), value);
-          }
+    if (trailers == null) {
+      channelFuture = conn.write(LastHttpContent.EMPTY_LAST_CONTENT);
+    } else {
+      LastHttpContent trlrs = new DefaultLastHttpContent();
+      for (Map.Entry<String, Object> trailer: trailers.entrySet()) {
+        Object value = trailer.getValue();
+        if (value instanceof Iterable<?>) {
+          trlrs.trailingHeaders().set(trailer.getKey(), (Iterable<?>) value);
+        } else {
+          trlrs.trailingHeaders().set(trailer.getKey(), value);
         }
-        channelFuture = conn.write(trlrs);
       }
+      channelFuture = conn.write(trlrs);
     }
 
     if (!keepAlive) {
       closeConnAfterWrite();
     }
-
     written = true;
     conn.responseComplete();
   }
@@ -251,7 +246,7 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
     } else {
       writeHeaders();
       if (!contentLengthSet()) {
-        response.setHeader(Names.CONTENT_LENGTH, String.valueOf(file.length()));
+        response.headers().set(Names.CONTENT_LENGTH, String.valueOf(file.length()));
       }
       if (!contentTypeSet()) {
         int li = filename.lastIndexOf('.');
@@ -259,7 +254,7 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
           String ext = filename.substring(li + 1, filename.length());
           String contentType = MimeMapping.getMimeTypeForExtension(ext);
           if (contentType != null) {
-            response.setHeader(Names.CONTENT_TYPE, contentType);
+            response.headers().set(Names.CONTENT_TYPE, contentType);
           }
         }
       }
@@ -279,7 +274,7 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
   }
 
   private void sendNotFound() {
-    statusCode = HttpResponseStatus.NOT_FOUND.getCode();
+    statusCode = HttpResponseStatus.NOT_FOUND.code();
     end("<html><body>Resource not found</body><html>");
   }
 
@@ -309,45 +304,53 @@ public class DefaultHttpServerResponse extends HttpServerResponse {
 
   private void writeHead() {
     if (!headWritten) {
-      HttpResponseStatus status = statusMessage == null ? HttpResponseStatus.valueOf(statusCode) :
-          new HttpResponseStatus(statusCode, statusMessage);
-      response.setStatus(status);
-      if (version == HttpVersion.HTTP_1_0 && keepAlive) {
-        response.setHeader("Connection", "Keep-Alive");
-      }
-      writeHeaders();
-      if (chunked) {
-        response.setHeader(Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
-      } else if (version != HttpVersion.HTTP_1_0 && !contentLengthSet()) {
-        response.setHeader(Names.CONTENT_LENGTH, "0");
-      }
+      prepareHeaders();
       channelFuture = conn.write(response);
       headWritten = true;
     }
   }
 
+  private void prepareHeaders() {
+    HttpResponseStatus status = statusMessage == null ? HttpResponseStatus.valueOf(statusCode) :
+            new HttpResponseStatus(statusCode, statusMessage);
+    response.setStatus(status);
+    if (version == HttpVersion.HTTP_1_0 && keepAlive) {
+      response.headers().set("Connection", "Keep-Alive");
+    }
+    writeHeaders();
+    if (chunked) {
+      response.headers().set(Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
+    } else if (version != HttpVersion.HTTP_1_0 && !contentLengthSet()) {
+      response.headers().set(Names.CONTENT_LENGTH, "0");
+    }
+  }
   private void writeHeaders() {
     if (headers != null) {
       for (Map.Entry<String, Object> header: headers.entrySet()) {
         String key = header.getKey();
         Object value = header.getValue();
         if (value instanceof Iterable<?>) {
-          response.setHeader(key, (Iterable<?>) value);
+          response.headers().set(key, (Iterable<?>) value);
         } else {
-          response.setHeader(key, value);
+          response.headers().set(key, value);
         }
       }
     }
   }
 
-  private DefaultHttpServerResponse write(ChannelBuffer chunk, final Handler<Void> doneHandler) {
+  private DefaultHttpServerResponse write(ByteBuf chunk, final Handler<Void> doneHandler) {
     checkWritten();
-    writeHead();
+    if (!headWritten) {
+      prepareHeaders();
+      conn.queueForWrite(response);
+      headWritten = true;
+    }
+
     if (version != HttpVersion.HTTP_1_0 && !chunked && !contentLengthSet()) {
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
           + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
     }
-    Object msg = chunked ? new DefaultHttpChunk(chunk) : chunk;
+    Object msg = chunked ? new DefaultHttpContent(chunk) : chunk;
     channelFuture = conn.write(msg);
     if (doneHandler != null) {
       conn.addFuture(doneHandler, channelFuture);

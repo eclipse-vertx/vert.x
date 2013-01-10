@@ -16,14 +16,13 @@
 
 package org.vertx.java.core.http.impl;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
-import org.jboss.netty.handler.codec.http.HttpChunk;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.HttpVersion;
+import io.netty.buffer.BufUtil;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.LastHttpContent;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
@@ -84,6 +83,10 @@ class ServerConnection extends AbstractConnection {
     if (paused || (msg instanceof HttpRequest && pendingResponse != null) || !pending.isEmpty()) {
       //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
       pending.add(msg);
+
+      // retain the msg as we will process it later
+      BufUtil.retain(msg);
+
       if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
         //We pause the channel too, to prevent the queue growing too large, but we don't do this
         //until the queue reaches a certain size, to avoid pausing it too often
@@ -145,9 +148,10 @@ class ServerConnection extends AbstractConnection {
     }
   }
 
-  void handleInterestedOpsChanged() {
+  @Override
+  public void handleInterestedOpsChanged() {
     try {
-      if (channel.isWritable()) {
+      if (!writeQueueFull()) {
         setContext();
         if (pendingResponse != null) {
           pendingResponse.handleDrained();
@@ -239,43 +243,25 @@ class ServerConnection extends AbstractConnection {
       String query = theURI.getQuery();
       HttpVersion ver = request.getProtocolVersion();
       boolean keepAlive = ver == HttpVersion.HTTP_1_1 ||
-          (ver == HttpVersion.HTTP_1_0 && "Keep-Alive".equalsIgnoreCase(request.getHeader("Connection")));
+          (ver == HttpVersion.HTTP_1_0 && "Keep-Alive".equalsIgnoreCase(request.headers().get("Connection")));
       DefaultHttpServerResponse resp = new DefaultHttpServerResponse(vertx, this, request.getProtocolVersion(), keepAlive);
       DefaultHttpServerRequest req = new DefaultHttpServerRequest(this, method, uri, path, query, resp, request);
       handleRequest(req, resp);
-
-      ChannelBuffer requestBody = request.getContent();
-
-      if (requestBody.readable()) {
-        if (!paused) {
-          handleChunk(new Buffer(requestBody));
-        } else {
-          // We need to requeue it
-          pending.add(new DefaultHttpChunk(requestBody));
-        }
-      }
-      if (!request.isChunked()) {
-        if (!paused) {
-          handleEnd();
-        } else {
-          // Requeue
-          pending.add(new DefaultHttpChunk(ChannelBuffers.EMPTY_BUFFER));
-        }
-      }
-    } else if (msg instanceof HttpChunk) {
-      HttpChunk chunk = (HttpChunk) msg;
-      if (chunk.getContent().readable()) {
-        Buffer buff = new Buffer(chunk.getContent());
+    }
+    if (msg instanceof HttpContent) {
+        HttpContent chunk = (HttpContent) msg;
+      if (chunk.data().isReadable()) {
+        Buffer buff = new Buffer(chunk.data());
         handleChunk(buff);
       }
 
       //TODO chunk trailers
-      if (chunk.isLast()) {
+      if (msg instanceof LastHttpContent) {
         if (!paused) {
           handleEnd();
         } else {
           // Requeue
-          pending.add(new DefaultHttpChunk(ChannelBuffers.EMPTY_BUFFER));
+          pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
         }
       }
     } else if (msg instanceof WebSocketFrame) {
@@ -288,7 +274,7 @@ class ServerConnection extends AbstractConnection {
 
   private void checkNextTick() {
     // Check if there are more pending messages in the queue that can be processed next time around
-    if (!sentCheck && !pending.isEmpty() && !paused && (pendingResponse == null || pending.peek() instanceof HttpChunk)) {
+    if (!sentCheck && !pending.isEmpty() && !paused && (pendingResponse == null || pending.peek() instanceof HttpContent)) {
       sentCheck = true;
       vertx.runOnLoop(new SimpleHandler() {
         public void handle() {
@@ -297,6 +283,8 @@ class ServerConnection extends AbstractConnection {
             Object msg = pending.poll();
             if (msg != null) {
               processMessage(msg);
+              // release the resource now as we processed it
+              BufUtil.release(msg);
             }
             if (channelPaused && pending.isEmpty()) {
               //Resume the actual channel
