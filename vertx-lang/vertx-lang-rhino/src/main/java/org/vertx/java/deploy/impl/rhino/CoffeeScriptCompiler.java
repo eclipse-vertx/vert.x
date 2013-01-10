@@ -18,6 +18,7 @@ package org.vertx.java.deploy.impl.rhino;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.JavaScriptException;
+import org.mozilla.javascript.Script;
 import org.mozilla.javascript.Scriptable;
 
 import java.io.*;
@@ -35,30 +36,18 @@ public class CoffeeScriptCompiler {
   private final Scriptable globalScope;
 
   public CoffeeScriptCompiler(ClassLoader classLoader) {
-    InputStream inputStream = classLoader.getResourceAsStream("coffee-script.js");
     try {
-      Reader reader = new InputStreamReader(inputStream, "UTF-8");
+      Context context = Context.enter();
       try {
-        Context context = Context.enter();
-        context.setOptimizationLevel(-1); // Without this, Rhino hits a 64K bytecode limit and fails
-        try {
-          globalScope = context.initStandardObjects();
-          context.evaluateReader(globalScope, reader, "coffee-script.js", 0, null);
-        } finally {
-          Context.exit();
-        }
+        globalScope = context.initStandardObjects();
+        Script coffeeCompiler = (Script) Class.forName("org.vertx.java.deploy.impl.rhino.coffee_script").newInstance();        
+        coffeeCompiler.exec(context, globalScope);
       } finally {
-        reader.close();
+        Context.exit();
       }
     } catch (Exception e) {
       throw new RuntimeException(e);
-    } finally {
-      try {
-        inputStream.close();
-      } catch (IOException e) {
-      }
     }
-
   }
 
   public URI coffeeScriptToJavaScript(URI coffeeScript) throws JavaScriptException,
