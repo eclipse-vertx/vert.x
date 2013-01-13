@@ -15,6 +15,7 @@
  */
 
 apply from: "$rootDir/gradle/maven.gradle"
+apply plugin: 'java'
 
 sourceSets {
 	main {
@@ -32,4 +33,17 @@ dependencies {
 
 artifacts {
 	platform jar
+}
+
+compileJava {
+	javaexec {
+        classpath sourceSets.main.compileClasspath
+        main = "org.mozilla.javascript.tools.jsc.Main"
+        args = [
+            '-opt', '9',
+            '-d', 'build/classes/main/',
+            '-package', 'org.vertx.java.deploy.impl.rhino',
+            'src/main/coffeescript/coffee-script.js'
+		]
+	}
 }
