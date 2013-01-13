@@ -1,0 +1,6 @@
+// Empty Json File. Comments have been enabled
+/* also supported */
+
+// An json file without open-close bracket is not allowed.
+{
+}

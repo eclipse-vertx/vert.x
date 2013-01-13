@@ -115,7 +115,6 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
         return iter.hasNext();
       }
 
-      @SuppressWarnings("unchecked")
       @Override
       public Object next() {
         return convertObject(iter.next());
@@ -184,7 +183,8 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
     return arr;
   }
 
-  private static Object convertObject(final Object obj) {
+  @SuppressWarnings("unchecked")
+	private static Object convertObject(final Object obj) {
     Object retVal = obj;
 
     if (obj != null) {

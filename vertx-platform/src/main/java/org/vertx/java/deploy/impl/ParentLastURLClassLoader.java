@@ -33,13 +33,11 @@ import java.util.List;
  */
 public class ParentLastURLClassLoader extends URLClassLoader {
 
-  private ClassLoader system;
-
-  private static final Logger log = LoggerFactory.getLogger(ParentLastURLClassLoader.class);
+  @SuppressWarnings("unused")
+	private static final Logger log = LoggerFactory.getLogger(ParentLastURLClassLoader.class);
 
   public ParentLastURLClassLoader(URL[] classpath, ClassLoader parent) {
     super(classpath, parent);
-    system = getSystemClassLoader();
   }
 
   @Override

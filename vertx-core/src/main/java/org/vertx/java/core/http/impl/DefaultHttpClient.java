@@ -46,11 +46,15 @@ import javax.net.ssl.SSLParameters;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class DefaultHttpClient implements HttpClient {
 
   private static final Logger log = LoggerFactory.getLogger(HttpClientRequest.class);
-
+  
+  public static final int DEFAULT_PORT = 80;
+  public static final String DEFAULT_HOST = "localhost";
+  
   private final VertxInternal vertx;
   private final EventLoopContext ctx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
@@ -58,8 +62,8 @@ public class DefaultHttpClient implements HttpClient {
   private NioClientSocketChannelFactory channelFactory;
   private Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<Channel, ClientConnection>();
   private Handler<Exception> exceptionHandler;
-  private int port = 80;
-  private String host = "localhost";
+  private String host = DEFAULT_HOST;
+  private int port = DEFAULT_PORT;
   private final ConnectionPool<ClientConnection> pool = new ConnectionPool<ClientConnection>() {
     protected void connect(Handler<ClientConnection> connectHandler, Handler<Exception> connectErrorHandler, Context context) {
       internalConnect(connectHandler, connectErrorHandler);
@@ -67,7 +71,12 @@ public class DefaultHttpClient implements HttpClient {
   };
   private boolean keepAlive = true;
 
-  public DefaultHttpClient(VertxInternal vertx) {
+  /**
+   * Constructor
+   * 
+   * @param vertx
+   */
+  public DefaultHttpClient(final VertxInternal vertx) {
     this.vertx = vertx;
     if (vertx.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
@@ -79,7 +88,11 @@ public class DefaultHttpClient implements HttpClient {
       }
     });
   }
-
+  
+  public final VertxInternal vertx() {
+  	return vertx;
+  }
+  
   public void exceptionHandler(Handler<Exception> handler) {
     this.exceptionHandler = handler;
   }
@@ -108,6 +121,14 @@ public class DefaultHttpClient implements HttpClient {
     return this;
   }
 
+  public final String getHost() {
+  	return this.host;
+  }
+
+  public final int getPort() {
+  	return this.port;
+  }
+  
   public void connectWebsocket(final String uri, final Handler<WebSocket> wsConnect) {
     connectWebsocket(uri, WebSocketVersion.RFC6455, wsConnect);
   }
@@ -173,7 +194,20 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   public HttpClientRequest request(String method, String uri, Handler<HttpClientResponse> responseHandler) {
-    return new DefaultHttpClientRequest(this, method, uri, responseHandler, ctx);
+  	ProxyConfig proxy = vertx.vertxConfig().proxyConfig();
+  	if (proxy.proxy() != null) {
+  		// If proxy host is configured, than we initiate a connection with the proxy
+  		// instead of the target host. But we need to tell the proxy where to 
+  		// forward the request to.
+  		String newUri = proxy.updateTargetUri(uri, null, this.host, this.port, null,  null);
+  		
+  		if (log.isDebugEnabled()) {
+  			log.debug("Changed URI from '" + uri + "' to '" + newUri + " because of proxy presence");
+  		}
+      uri = newUri;
+  	}
+
+		return new DefaultHttpClientRequest(this, method, uri, responseHandler, ctx);
   }
 
   public void close() {
@@ -385,46 +419,68 @@ public class DefaultHttpClient implements HttpClient {
       });
     }
     bootstrap.setOptions(tcpHelper.generateConnectionOptions(false));
-    ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
+    final InetSocketAddress addr[] = new InetSocketAddress[2];
+  	addr[0] = newInetSocketAddress(host, port);
+    ProxyConfig proxyCfg = vertx.vertxConfig().proxyConfig();
+    if (proxyCfg.proxy() != null) {
+    	addr[1] = addr[0];
+    	addr[0] = newInetSocketAddress(proxyCfg.proxyHost(), proxyCfg.proxyPort());
+    	log.info("Using Proxy: " + addr[0]);
+    }
+    final AtomicInteger failureCount = new AtomicInteger(0);
+    ChannelFuture future = bootstrap.connect(addr[0]);
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
-
         final NioSocketChannel ch = (NioSocketChannel) channelFuture.getChannel();
-
         if (channelFuture.isSuccess()) {
-
           if (tcpHelper.isSSL()) {
             // TCP connected, so now we must do the SSL handshake
-
             SslHandler sslHandler = (SslHandler)ch.getPipeline().get("ssl");
-
             ChannelFuture fut = sslHandler.handshake();
             fut.addListener(new ChannelFutureListener() {
-
               public void operationComplete(ChannelFuture channelFuture) throws Exception {
                 if (channelFuture.isSuccess()) {
                   connected(ch, connectHandler);
                 } else {
-                  failed(ch, connectErrorHandler, new SSLHandshakeException("Failed to create SSL connection"));
+                  failed(ch, connectErrorHandler, new SSLHandshakeException("Failed to create SSL connection"), addr[0]);
                 }
               }
             });
           } else {
             connected(ch, connectHandler);
           }
-
         } else {
-          failed(ch, connectErrorHandler, channelFuture.getCause());
+        	// retry without proxy, if proxy was configured previously
+        	int cnt = failureCount.getAndIncrement();
+          if (addr[1] != null && cnt == 0) {
+         		log.info("Retry without Proxy");
+          	bootstrap.connect(addr[1]).addListener(this);
+          } else {
+          	failed(ch, connectErrorHandler, channelFuture.getCause(), addr[0]);
+          }
         }
       }
     });
   }
 
+  private InetSocketAddress newInetSocketAddress(String host, int port) {
+  	if (port <= 0) {
+  		port = 80;
+  	}
+  	return new InetSocketAddress(host, port);
+  }
+  
   private void connected(final NioSocketChannel ch, final Handler<ClientConnection> connectHandler) {
     tcpHelper.runOnCorrectThread(ch, new Runnable() {
       public void run() {
+      	// TODO I'm not 100% sure the proxy should be provided in case proxy is enabled
+      	String shost = host + ":" + port;
+      	ProxyConfig cfg = vertx.vertxConfig().proxyConfig();
+      	if (cfg.proxy() != null) {
+      		shost = cfg.proxyHost() + ":" + cfg.proxyPort();
+      	}
         final ClientConnection conn = new ClientConnection(vertx, DefaultHttpClient.this, ch,
-            host + ":" + port, tcpHelper.isSSL(), keepAlive, ctx);
+            shost, tcpHelper.isSSL(), keepAlive, ctx);
         conn.closedHandler(new SimpleHandler() {
           public void handle() {
             pool.connectionClosed();
@@ -438,12 +494,15 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   private void failed(final NioSocketChannel ch, final Handler<Exception> connectionExceptionHandler,
-                      final Throwable t) {
+                      final Throwable t, InetSocketAddress addr) {
     //ch.close();
 
     // If no specific exception handler is provided, fall back to the HttpClient's exception handler.
     final Handler<Exception> exHandler = connectionExceptionHandler == null ? exceptionHandler : connectionExceptionHandler;
 
+    final HttpClientConnectException ex = new HttpClientConnectException(
+    		vertx.vertxConfig().proxyConfig().proxy(), this.host, this.port, t);
+    
     tcpHelper.runOnCorrectThread(ch, new Runnable() {
          public void run() {
            pool.connectionClosed();
@@ -455,11 +514,11 @@ public class DefaultHttpClient implements HttpClient {
       tcpHelper.runOnCorrectThread(ch, new Runnable() {
         public void run() {
           vertx.setContext(ctx);
-          exHandler.handle((Exception) t);
+          exHandler.handle(ex);
         }
       });
     } else {
-      log.error("Unhandled exception", t);
+      log.error(ex.getMessage());
     }
   }
 

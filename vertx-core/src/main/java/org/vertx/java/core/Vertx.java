@@ -20,6 +20,7 @@ import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.core.impl.VertxConfig;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.shareddata.SharedData;
@@ -151,4 +152,9 @@ public abstract class Vertx {
 	 * Stop the eventbus and any resource managed by the eventbus.
 	 */
 	public abstract void stop();
+  
+  /**
+   * @return system wide configs 
+   */
+  public abstract VertxConfig vertxConfig();
 }

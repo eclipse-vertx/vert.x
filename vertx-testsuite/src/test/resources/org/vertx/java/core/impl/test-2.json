@@ -1,0 +1,13 @@
+// VERTX Config File (json)
+{
+  // Proxy host setting
+  proxy: {
+    enable: false,
+    number: 123,
+    host: [ "<alt1>", "<alt2>", "http://www.mycompany.com:8181" ],
+    user: "<proxy_user>",
+    password: "<proxy_password>",
+    external: [],
+    internal: [ "*.mycompany.com" ]
+  }
+}

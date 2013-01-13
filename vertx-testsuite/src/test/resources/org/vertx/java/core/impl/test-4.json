@@ -1,0 +1,15 @@
+// VERTX Config File (json)
+{
+  // Proxy host setting
+  proxy: {
+    enable: false,
+    // Return the first non-null value
+    host: "${prop:proxy_host, env:VERTX_HTTP_PROXY_HOST, http://www.mycompany.com:8181}",
+    user: "${prop:proxy_user, env:VERTX_PROXY_USER}",
+    password: "${env:VERTX_PROXY_PASSWORD}",
+    // Comma separated values are converted into individual array entries
+    external: [ "${prop:proxy_externals}" ],
+    // They can be merged with default values
+    internal: [ "${prop:proxy_internals}", "*.mycompany.com" ]
+  }
+}

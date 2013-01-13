@@ -1,0 +1,13 @@
+// VERTX Config File (json)
+{
+  // Proxy host setting
+  proxy: {
+    enable: false,
+    // Empty entry get removed
+    host: [ "${prop:proxy_host}", "${env:VERTX_HTTP_PROXY_HOST}", "http://www.mycompany.com:8181" ],
+    user: "${env:VERTX_PROXY_USER}",
+    password: "${env:VERTX_PROXY_PASSWORD}",
+    external: [],
+    internal: [ "*.mycompany.com" ]
+  }
+}

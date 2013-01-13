@@ -16,325 +16,369 @@
 
 package org.vertx.java.deploy.impl.cli;
 
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.impl.DefaultVertx;
-import org.vertx.java.core.impl.VertxInternal;
-import org.vertx.java.core.json.DecodeException;
-import org.vertx.java.core.json.JsonObject;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.URI;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
+
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.impl.VertxConfig;
+import org.vertx.java.core.impl.VertxConfigFactory;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.deploy.impl.Args;
+import org.vertx.java.core.utils.StringUtils;
+import org.vertx.java.core.utils.SystemUtils;
+import org.vertx.java.deploy.ModuleRepository;
+import org.vertx.java.deploy.impl.DefaultModuleRepository;
+import org.vertx.java.deploy.impl.ModuleConfig;
 import org.vertx.java.deploy.impl.VerticleManager;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.net.*;
-import java.util.Enumeration;
-import java.util.Scanner;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import org.vertx.java.deploy.impl.VertxModule;
 
 /**
- *
+ * Command line starter
+ * 
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author Juergen Donnerstag
  */
 public class Starter {
 
-  private static final Logger log = LoggerFactory.getLogger(Starter.class);
+	private static final Logger log = LoggerFactory.getLogger(Starter.class);
 
-  private static final String CP_SEPARATOR = System.getProperty("path.separator");
+	private static final String CP_SEPARATOR = SystemUtils.getPathSeparator();
 
-  private static final String VERSION = "vert.x-1.3.1.final";
+	public static void main(String[] args) {
+		try {
+			Starter starter = new Starter();
+			if (starter.run(args) == false) {
+				starter.displaySyntax();
+			}
+		} catch (Throwable ex) {
+			log.error(ex);
+		}
+	}
+	
+	/**
+	 * Constructor
+	 */
+	public Starter() {
+	}
 
-  public static void main(String[] args) {
-    new Starter(args);
-  }
+	/**
+	 * Extension Point: subclass to handle additional parameter
+	 * 
+	 * @param sargs
+	 * @return
+	 * @throws Exception
+	 */
+	protected boolean run(final String[] sargs) throws Exception {
+		if (sargs.length < 1) {
+			return false;
+		}
 
-  private VertxInternal vertx = new DefaultVertx();
-  private VerticleManager mgr;
+		String command = sargs[0].toLowerCase();
+		if ("version".equals(command)) {
+			doVersion();
+			return true;
+		}
 
-  private Starter(String[] sargs) {
-    if (sargs.length < 1) {
-      displaySyntax();
-    } else {
-      String command = sargs[0].toLowerCase();
-      Args args = new Args(sargs);
-      if ("version".equals(command)) {
-        log.info(VERSION);
-      } else {
-        if (sargs.length < 2) {
-          displaySyntax();
-        } else {
-          String operand = sargs[1];
-          switch (command) {
-            case "version":
-              log.info(VERSION);
-              break;
-            case "run":
-              runVerticle(false, operand, args);
-              break;
-            case "runmod":
-              runVerticle(true, operand, args);
-              break;
-            case "install":
-              installModule(operand, args);
-              break;
-            case "uninstall":
-              uninstallModule(operand);
-              break;
-            default:
-              displaySyntax();
-          }
-        }
-      }
-    }
-  }
+		if (sargs.length < 2) {
+			return false;
+		}
+		CommandLineArgs args = new CommandLineArgs(sargs);
+		String operand = getOperand(sargs);
+		switch (command) {
+		case "run":
+			runVerticle(false, operand, args);
+			return true;
+		case "runmod":
+			runVerticle(true, operand, args);
+			return true;
+		case "install":
+			installModule(operand, args);
+			return true;
+		case "uninstall":
+			uninstallModule(operand);
+			return true;
+		}
+		return false;
+	}
 
-  private void installModule(String modName, Args args) {
-    String repo = args.map.get("-repo");
-    new VerticleManager(vertx, repo).installMod(modName);
-  }
+	protected String getOperand(final String[] args) {
+		return args[1];
+	}
+	
+	protected void doVersion() {
+		System.out.println(getVersion());
+	}
+	
+	/**
+	 * Install a module from the repository
+	 */
+	protected final void installModule(final String modName, final CommandLineArgs args) {
+		try (ExtendedDefaultVertx vertx = newExtendedDefaultVertx()) {
+			String repo = getParamRepository(args, null);
+			if (repo != null) {
+				ModuleRepository r = new DefaultModuleRepository(vertx, repo);
+				vertx.moduleManager(null).moduleRepositories().add(0, r);
+			}
+			if (doInstall(vertx, modName) == null) {
+				log.error("Timed out while waiting for module to install");
+			}
+		}
+	}
 
-  private void uninstallModule(String modName) {
-    new VerticleManager(vertx).uninstallMod(modName);
-  }
+	protected String getParamRepository(final CommandLineArgs args, VertxConfig config) {
+		if (config == null) {
+			config = getVertxConfig(args);
+		}
+		return args.get("-repo", config.cmdLineConfig("repository").asText());
+	}
+	
+	protected VertxConfig getVertxConfig(final CommandLineArgs args) {
+		VertxConfigFactory fac = new VertxConfigFactory();
+		String fname = args.get("--vertx.config");
+		if (fname != null) {
+			return fac.load(new File(fname), true, false);
+		}
+		return fac.load();
+	}
+	
+	/**
+	 * Extension point
+	 */
+	protected AsyncResult<Void> doInstall(ExtendedDefaultVertx vertx, String modName) {
+		return vertx.moduleManager(null).install(modName, null).get(30, TimeUnit.SECONDS);
+	}
+	
+	protected final void uninstallModule(String modName) {
+		try (ExtendedDefaultVertx vertx = newExtendedDefaultVertx()) {
+			doUninstall(vertx, modName);
+		}
+	}
 
-  private void runVerticle(boolean module, String main, Args args) {
-    boolean clustered = args.map.get("-cluster") != null;
-    if (clustered) {
-      log.info("Starting clustering...");
-      int clusterPort = args.getInt("-cluster-port");
-      if (clusterPort == -1) {
-        clusterPort = 25500;
-      }
-      String clusterHost = args.map.get("-cluster-host");
-      if (clusterHost == null) {
-        clusterHost = getDefaultAddress();
-        if (clusterHost == null) {
-          log.error("Unable to find a default network interface for clustering. Please specify one using -cluster-host");
-          return;
-        } else {
-          log.info("No cluster-host specified so using address " + clusterHost);
-        }
-      }
-      vertx = new DefaultVertx(clusterPort, clusterHost);
-    }
-    String repo = args.map.get("-repo");
-    mgr = new VerticleManager(vertx, repo);
+	/**
+	 * Extension point
+	 */
+	protected void doUninstall(ExtendedDefaultVertx vertx, String modName) {
+		vertx.moduleManager(null).uninstall(modName);
+	}
 
-    boolean worker = args.map.get("-worker") != null;
+	protected final void runVerticle(final boolean bModule, final String main, final CommandLineArgs args)
+			throws Exception {
+		
+		boolean clustered = false;
+		String clusterHost = null;
+		int clusterPort = 25500;
+		VertxConfig config = getVertxConfig(args);
+		if (config.cmdLineConfig("cluster").asBoolean(false) == true) {
+			clustered = true;
+			clusterHost = config.cmdLineConfig("cluster-host").asText();
+			clusterPort = config.cmdLineConfig("cluster-port").asInt(clusterPort);
+		}
+		
+		if (args.present("-cluster")) {
+			clustered = true;
+			clusterPort = args.getInt("-cluster-port", clusterPort, clusterPort);
+			clusterHost = args.get("-cluster-host", clusterHost);
+		}
 
-    String cp = args.map.get("-cp");
-    if (cp == null) {
-      cp = ".";
-    }
+		if (clustered) {
+			log.info("Starting clustering...");
+			if (clusterHost == null) {
+				clusterHost = getDefaultAddress();
+				if (clusterHost == null) {
+					log.error("Unable to find a default network interface for clustering. Please specify one using -cluster-host");
+					return;
+				} else {
+					log.info("No cluster-host specified so using address " + clusterHost);
+				}
+			}
+		}
 
-    // Convert to URL[]
+		try (ExtendedDefaultVertx vertx = newExtendedDefaultVertx(clusterHost, clusterPort)) {
 
-    String[] parts;
+			String repo = getParamRepository(args, config);
+			if (repo != null) {
+				ModuleRepository r = new DefaultModuleRepository(vertx, repo);
+				vertx.moduleManager(null).moduleRepositories().add(0, r);
+			}
 
-    if (cp.contains(CP_SEPARATOR)) {
-      parts = cp.split(CP_SEPARATOR);
-    } else {
-      parts = new String[] { cp };
-    }
-    int index = 0;
-    final URL[] urls = new URL[parts.length];
-    for (String part: parts) {
-      try {
-        URL url = new File(part).toURI().toURL();
-        urls[index++] = url;
-      } catch (MalformedURLException e) {
-        throw new IllegalArgumentException("Invalid path " + part + " in cp " + cp) ;
-      }
-    }
+			boolean worker = getParamWorker(args);
 
-    String sinstances = args.map.get("-instances");
-    int instances;
-    if (sinstances != null) {
-      try {
-        instances = Integer.parseInt(sinstances);
+			String cp = getParamClasspath(args, config);
+			List<URI> urls = classpath(cp);
+			
+			int instances = getParamInstances(args);
+			if (instances < 1) {
+				log.error("Invalid number of instances");
+				displaySyntax();
+				return;
+			}
 
-        if (instances != -1 && instances < 1) {
-          log.error("Invalid number of instances");
-          displaySyntax();
-          return;
-        }
-      } catch (NumberFormatException e) {
-        displaySyntax();
-        return;
-      }
-    } else {
-      instances = 1;
-    }
+			ModuleConfig conf = null;
+			String configFile = getParamVerticleConfigFile(args, config);
+			if (configFile != null) {
+				conf = new ModuleConfig(new File(configFile));
+			}
 
-    String configFile = args.map.get("-conf");
-    JsonObject conf;
+			final VerticleManager verticleManager = vertx.verticleManager();
+			VertxModule module = new VertxModule(vertx.moduleManager(null), null);
+			if (conf != null) {
+				module.config(conf);
+			}
+			// Allow to take main from the config
+			if (main != null && main.trim().length() > 0) {
+				module.config().main(main);
+			}
+			module.config().worker(worker);
+			module.classPath(urls, false);
 
-    if (configFile != null) {
-      try (Scanner scanner = new Scanner(new File(configFile)).useDelimiter("\\A")){
-        String sconf = scanner.next();
-        try {
-          conf = new JsonObject(sconf);
-        } catch (DecodeException e) {
-          log.error("Configuration file does not contain a valid JSON object");
-          return;
-        }
-      } catch (FileNotFoundException e) {
-        log.error("Config file " + configFile + " does not exist");
-        return;
-      }
-    } else {
-      conf = null;
-    }
+			// TODO This is the only remaining difference between Verticle and Module??
+			AsyncResult<String> res;
+			if (bModule) {
+				res = doRun(vertx, module, instances);
+			} else {
+				String includes = getParamIncludes(args, config);
+				if (includes != null) {
+					module.config().includes(includes);
+				}
+				res = doRun(vertx, module, instances);
+			}
 
-    Handler<String> doneHandler = new Handler<String>() {
-      public void handle(String id) {
-        if (id == null) {
-          // Failed to deploy
-          mgr.unblock();
-        }
-      }
-    };
-    if (module) {
-      mgr.deployMod(main, conf, instances, null, doneHandler);
-    } else {
-      String includes = args.map.get("-includes");
-      mgr.deployVerticle(worker, main, conf, urls, instances, null, includes, doneHandler);
-    }
+			if (res == null) {
+				log.error("Timeout: while deploying verticle or module");
+			} else if (res.failed()) {
+				log.error("Error while deploying verticle or module: " + res.exception.getMessage());
+			} else {
+				verticleManager.block();
+			}
+		}
+	}
 
-    addShutdownHook();
-    mgr.block();
-  }
+	protected String getParamIncludes(final CommandLineArgs args, VertxConfig config) {
+		return args.get("-includes", config.cmdLineConfig("includes").asText());
+	}
 
+	protected int getParamInstances(final CommandLineArgs args) {
+		return args.getInt("-instances", 1, -1);
+	}
 
-  private void addShutdownHook() {
-    Runtime.getRuntime().addShutdownHook(new Thread() {
-      public void run() {
-        final CountDownLatch latch = new CountDownLatch(1);
-        mgr.undeployAll(new SimpleHandler() {
-          public void handle() {
-            latch.countDown();
-          }
-        });
-        while (true) {
-          try {
-            if (!latch.await(30, TimeUnit.SECONDS)) {
-              log.error("Timed out waiting to undeploy");
-            }
-            break;
-          } catch (InterruptedException e) {
-            //OK - can get spurious interupts
-          }
-        }
-      }
-    });
-  }
+	protected boolean getParamWorker(final CommandLineArgs args) {
+		return args.present("-worker");
+	}
 
-  /*
-  Get default interface to use since the user hasn't specified one
-   */
-  private String getDefaultAddress() {
-    Enumeration<NetworkInterface> nets;
-    try {
-      nets = NetworkInterface.getNetworkInterfaces();
-    } catch (SocketException e) {
-      return null;
-    }
-    NetworkInterface netinf;
-    while (nets.hasMoreElements()) {
-      netinf = nets.nextElement();
+	protected String getParamVerticleConfigFile(final CommandLineArgs args, VertxConfig config) {
+		return args.get("-conf", config.cmdLineConfig("conf").asText());
+	}
 
-      Enumeration<InetAddress> addresses = netinf.getInetAddresses();
+	protected String getParamClasspath(final CommandLineArgs args, VertxConfig config) {
+		return StringUtils.join(CP_SEPARATOR, args.get("-cp", "."), config.cmdLineConfig("classpath").asText());
+	}
 
-      while (addresses.hasMoreElements()) {
-        InetAddress address = addresses.nextElement();
-        if (!address.isAnyLocalAddress() && !address.isMulticastAddress()
-            && !(address instanceof Inet6Address)) {
-          return address.getHostAddress();
-        }
-      }
-    }
-    return null;
-  }
+	/**
+	 * Extension point
+	 */
+	protected AsyncResult<String> doRun(ExtendedDefaultVertx vertx, VertxModule module, int instances) {
+		return vertx.verticleManager().deploy(null, module, instances, null, null).get(30, TimeUnit.SECONDS);
+	}
 
-  private void displaySyntax() {
+	private List<URI> classpath(String cp) {
+		String[] parts = StringUtils.split(CP_SEPARATOR, cp);
+		List<URI> urls = new ArrayList<>();
+		for (String part : parts) {
+			if (part != null && part.trim().length() > 0) {
+				URI url = new File(part).toURI();
+				urls.add(url);
+			}
+		}
+		return urls;
+	}
 
-    String usage =
+	/**
+	 * Get default interface to use since the user hasn't specified one
+	 */
+	private String getDefaultAddress() {
+		Enumeration<NetworkInterface> nets;
+		try {
+			nets = NetworkInterface.getNetworkInterfaces();
+		} catch (SocketException e) {
+			return null;
+		}
 
-"    vertx run <main> [-options]                                                \n" +
-"        runs a verticle called <main> in its own instance of vert.x.           \n" +
-"        <main> can be a JavaScript script, a Ruby script, A Groovy script,     \n" +
-"        a Java class, a Java source file, or a Python Script.\n\n" +
-"    valid options are:\n" +
-"        -conf <config_file>    Specifies configuration that should be provided \n" +
-"                               to the verticle. <config_file> should reference \n" +
-"                               a text file containing a valid JSON object      \n" +
-"                               which represents the configuration.             \n" +
-"        -cp <path>             specifies the path on which to search for       \n" +
-"                               <main> and any referenced resources.            \n" +
-"                               Defaults to '.' (current directory).            \n" +
-"        -instances <instances> specifies how many instances of the verticle    \n" +
-"                               will be deployed. Defaults to 1                 \n" +
-"        -repo <repo_host>      specifies the repository to use to install      \n" +
-"                               any modules.                                    \n" +
-"                               Default is vert-x.github.com/vertx-mods         \n" +
-"        -worker                if specified then the verticle is a worker      \n" +
-"                               verticle.                                       \n" +
-"        -includes <mod_list>   optional comma separated list of modules        \n" +
-"                               which will be added to the classpath of         \n" +
-"                               the verticle.                                   \n" +
-"        -cluster               if specified then the vert.x instance will form \n" +
-"                               a cluster with any other vert.x instances on    \n" +
-"                               the network.                                    \n" +
-"        -cluster-port          port to use for cluster communication.          \n" +
-"                               Default is 25500.                               \n" +
-"        -cluster-host          host to bind to for cluster communication.      \n" +
-"                               If this is not specified vert.x will attempt    \n" +
-"                               to choose one from the available interfaces.  \n\n" +
+		while (nets.hasMoreElements()) {
+			NetworkInterface netinf = nets.nextElement();
+			Enumeration<InetAddress> addresses = netinf.getInetAddresses();
 
-"    vertx runmod <modname> [-options]                                          \n" +
-"        runs a module called <modname> in its own instance of vert.x.          \n" +
-"        If the module is not already installed, Vert.x will attempt to install \n" +
-"        it from the repository before running it.                            \n\n" +
-"    valid options are:                                                         \n" +
-"        -conf <config_file>    Specifies configuration that should be provided \n" +
-"                               to the module. <config_file> should reference   \n" +
-"                               a text file containing a valid JSON object      \n" +
-"                               which represents the configuration.             \n" +
-"        -instances <instances> specifies how many instances of the verticle    \n" +
-"                               will be deployed. Defaults to 1                 \n" +
-"        -repo <repo_host>      specifies the repository to use to get the      \n" +
-"                               module from if it is not already installed.     \n" +
-"                               Default is vert-x.github.com/vertx-mods         \n" +
-"        -cluster               if specified then the vert.x instance will form \n" +
-"                               a cluster with any other vert.x instances on    \n" +
-"                               the network.                                    \n" +
-"        -cluster-port          port to use for cluster communication.          \n" +
-"                               Default is 25500.                               \n" +
-"        -cluster-host          host to bind to for cluster communication.      \n" +
-"                               If this is not specified vert.x will attempt    \n" +
-"                               to choose one from the available interfaces.  \n\n" +
+			while (addresses.hasMoreElements()) {
+				InetAddress address = addresses.nextElement();
+				if (!address.isAnyLocalAddress() && !address.isMulticastAddress() && !(address instanceof Inet6Address)) {
+					return address.getHostAddress();
+				}
+			}
+		}
+		return null;
+	}
 
-"    vertx install <modname> [-options]                                         \n" +
-"        attempts to install a module from a remote repository.                 \n" +
-"        Module will be installed into a local 'mods' directory unless the      \n" +
-"        environment variable VERTX_MODS specifies a different location.      \n\n" +
-"    valid options are:\n" +
-"        -repo <repo_host>      specifies the repository to use to get the      \n" +
-"                               module from if it is not already installed.     \n" +
-"                               Default is vert-x.github.com/vertx-mods       \n\n" +
+	protected final ExtendedDefaultVertx newExtendedDefaultVertx() {
+		return newExtendedDefaultVertx(null, 0);
+	}
 
-"    vertx uninstall <modname>                                                  \n" +
-"        attempts to uninstall a module from a remote repository.               \n" +
-"        Module will be uninstalled from the local 'mods' directory unless the  \n" +
-"        environment variable VERTX_MODS specifies a different location.      \n\n" +
-
-"    vertx version                                                              \n" +
-"        displays the version";
-
-     log.info(usage);
-  }
-
+	protected ExtendedDefaultVertx newExtendedDefaultVertx(String hostname, int port) {
+		return new ExtendedDefaultVertx(hostname, port);
+	}
+	
+	public final String getVersion() {
+		String className = Starter.class.getSimpleName() + ".class";
+		String classPath = this.getClass().getResource(className).toString();
+		if (!classPath.startsWith("jar")) {
+		  // Class not from JAR
+		  return "<unknown> (not a jar)";
+		}
+		String manifestPath = classPath.substring(0, classPath.lastIndexOf("!") + 1) + 
+		    "/META-INF/MANIFEST.MF";
+		Manifest manifest;
+		try {
+			manifest = new Manifest(new URL(manifestPath).openStream());
+		} catch (IOException ex) {
+		  return "<unknown> (" + ex.getMessage() + ")";
+		}
+		Attributes attr = manifest.getMainAttributes();
+		return attr.getValue("Vertx-Version");
+	}
+	
+	/**
+	 * Prints the help text
+	 */
+	protected void displaySyntax(final PrintWriter out) {
+		try (InputStream in = Starter.class.getResourceAsStream("help.txt");
+				InputStreamReader rin = new InputStreamReader(in);
+				BufferedReader bin = new BufferedReader(rin)) {
+			String line;
+			while (null != (line = bin.readLine())) {
+				out.println(line);
+				out.flush();
+			}
+		} catch (IOException ex) {
+			log.error("Help text not found !?!");
+		}
+	}
+	
+	private final void displaySyntax() {
+		displaySyntax(new PrintWriter(new OutputStreamWriter(System.out)));
+	}
 }
