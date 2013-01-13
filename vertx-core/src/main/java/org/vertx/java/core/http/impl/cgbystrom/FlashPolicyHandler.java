@@ -1,4 +1,4 @@
-package se.cgbystrom.netty;
+package org.vertx.java.core.http.impl.cgbystrom;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -27,6 +27,8 @@ import org.jboss.netty.util.CharsetUtil;
  * pipeline.addLast("encoder", new MyProtocolEncoder());
  * pipeline.addLast("handler", new MyBusinessLogicHandler());
  * </code>
+ *
+ * For license see LICENSE file in this directory
  */
 public class FlashPolicyHandler extends FrameDecoder {
     private static final String XML = "<cross-domain-policy><allow-access-from domain=\"*\" to-ports=\"*\" /></cross-domain-policy>";
