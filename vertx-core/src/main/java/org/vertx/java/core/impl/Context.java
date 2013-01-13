@@ -72,8 +72,7 @@ public abstract class Context {
     if (deploymentContext != null) {
       deploymentContext.reportException(t);
     } else {
-      t.printStackTrace();
-      log.error("context Unhandled exception", t);
+      log.error("Context unhandled exception", t);
     }
   }
 
@@ -113,14 +112,14 @@ public abstract class Context {
   protected Runnable wrapTask(final Runnable task) {
     return new Runnable() {
       public void run() {
-        String threadName = Thread.currentThread().getName();
+//        String threadName = Thread.currentThread().getName();
         try {
           vertx.setContext(Context.this);
           task.run();
         } catch (Throwable t) {
           reportException(t);
-        } finally {
-          Thread.currentThread().setName(threadName);
+//        } finally {
+//          Thread.currentThread().setName(threadName);
         }
       }
     };

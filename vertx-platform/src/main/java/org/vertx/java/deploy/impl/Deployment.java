@@ -19,7 +19,7 @@ package org.vertx.java.deploy.impl;
 import org.vertx.java.core.json.JsonObject;
 
 import java.io.File;
-import java.net.URL;
+import java.net.URI;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -31,7 +31,7 @@ public class Deployment {
   public final String modName;
   public final int instances;
   public final JsonObject config;
-  public final URL[] urls;
+  public final URI[] urls;
   public final File modDir;
   public final List<VerticleHolder> verticles = new CopyOnWriteArrayList<>();
   public final List<String> childDeployments = new CopyOnWriteArrayList<>();
@@ -39,7 +39,7 @@ public class Deployment {
   public final boolean autoRedeploy;
 
   public Deployment(String name, String modName, int instances, JsonObject config,
-             URL[] urls, File modDir, String parentDeploymentName,
+             URI[] urls, File modDir, String parentDeploymentName,
              boolean autoRedeploy) {
     this.name = name;
     this.modName = modName;
