@@ -57,6 +57,7 @@ vertx.create_sockjs_server	vertx-module.html#create_sockjs_server
 vertx.undeploy_verticle	vertx-module.html#undeploy_verticle
 vertx.create_http_server	vertx-module.html#create_http_server
 vertx.set_timer	vertx-module.html#set_timer
+vertx.exit	vertx-module.html#exit
 vertx.set_periodic	vertx-module.html#set_periodic
 vertx.cancel_timer	vertx-module.html#cancel_timer
 vertx.create_net_server	vertx-module.html#create_net_server

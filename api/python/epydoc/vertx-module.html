@@ -266,7 +266,8 @@
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vertx-module.html#undeploy_verticle" class="summary-sig-name">undeploy_verticle</a>(<span class="summary-sig-arg">id</span>)</span><br />
+          <td><span class="summary-sig"><a href="vertx-module.html#undeploy_verticle" class="summary-sig-name">undeploy_verticle</a>(<span class="summary-sig-arg">id</span>,
+        <span class="summary-sig-arg">handler</span>=<span class="summary-sig-default">None</span>)</span><br />
       Undeploy a verticle</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vertx-pysrc.html#undeploy_verticle">source&nbsp;code</a></span>
@@ -283,7 +284,8 @@
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vertx-module.html#undeploy_module" class="summary-sig-name">undeploy_module</a>(<span class="summary-sig-arg">id</span>)</span><br />
+          <td><span class="summary-sig"><a href="vertx-module.html#undeploy_module" class="summary-sig-name">undeploy_module</a>(<span class="summary-sig-arg">id</span>,
+        <span class="summary-sig-arg">handler</span>=<span class="summary-sig-default">None</span>)</span><br />
       Undeploy a module</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vertx-pysrc.html#undeploy_module">source&nbsp;code</a></span>
@@ -398,6 +400,23 @@
       
     </td>
   </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="exit"></a><span class="summary-sig-name">exit</span>()</span><br />
+      Cause the container to exit</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vertx-pysrc.html#exit">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
 </table>
 <!-- ==================== VARIABLES ==================== -->
 <a name="section-Variables"></a>
@@ -474,7 +493,7 @@
         <li><strong class="pname"><code>main</code></strong> - the main of the verticle to deploy</li>
         <li><strong class="pname"><code>config</code></strong> - dict configuration for the verticle</li>
         <li><strong class="pname"><code>instances</code></strong> - number of instances to deploy</li>
-        <li><strong class="pname"><code>handler</code></strong> - will be executed when deploy has completed</li>
+        <li><strong class="pname"><code>handler</code></strong> - an handler that will be called when deploy has completed</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -504,7 +523,7 @@
         <li><strong class="pname"><code>main</code></strong> - the main of the verticle to deploy</li>
         <li><strong class="pname"><code>config</code></strong> - dict configuration for the verticle</li>
         <li><strong class="pname"><code>instances</code></strong> - the number of instances to deploy</li>
-        <li><strong class="pname"><code>handler</code></strong> - handler will be executed when deploy has completed</li>
+        <li><strong class="pname"><code>handler</code></strong> - an handler that will be called when deploy has completed</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -534,7 +553,7 @@
         <li><strong class="pname"><code>module_name</code></strong> - The name of the module to deploy</li>
         <li><strong class="pname"><code>config</code></strong> - dict configuration for the module</li>
         <li><strong class="pname"><code>instances</code></strong> - Number of instances to deploy</li>
-        <li><strong class="pname"><code>handler</code></strong> - handler will be executed when deploy has completed</li>
+        <li><strong class="pname"><code>handler</code></strong> - an handler that will be called when deploy has completed</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -546,7 +565,8 @@
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">undeploy_verticle</span>(<span class="sig-arg">id</span>)</span>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">undeploy_verticle</span>(<span class="sig-arg">id</span>,
+        <span class="sig-arg">handler</span>=<span class="sig-default">None</span>)</span>
   </h3>
   </td><td align="right" valign="top"
     ><span class="codelink"><a href="vertx-pysrc.html#undeploy_verticle">source&nbsp;code</a></span>&nbsp;
@@ -559,6 +579,7 @@
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
         <li><strong class="pname"><code>id</code></strong> - the unique id of the deployment</li>
+        <li><strong class="pname"><code>handler</code></strong> - an handler that will be called when undeploy has completed</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -570,7 +591,8 @@
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">undeploy_module</span>(<span class="sig-arg">id</span>)</span>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">undeploy_module</span>(<span class="sig-arg">id</span>,
+        <span class="sig-arg">handler</span>=<span class="sig-default">None</span>)</span>
   </h3>
   </td><td align="right" valign="top"
     ><span class="codelink"><a href="vertx-pysrc.html#undeploy_module">source&nbsp;code</a></span>&nbsp;
@@ -583,6 +605,7 @@
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
         <li><strong class="pname"><code>id</code></strong> - the unique id of the module</li>
+        <li><strong class="pname"><code>handler</code></strong> - an handler that will be called when undeploy has completed</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -623,16 +646,16 @@
     </td>
   </tr></table>
   
-  <p>Sets a one-shot timer that will fire after a certain delay. This 
-  method will accept either a Proc or a block.</p>
+  <p>Sets a one-shot timer that will fire after a certain delay.</p>
   <p>Keyword arguments:</p>
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
         <li><strong class="pname"><code>delay</code></strong> - the delay, in milliseconds</li>
-        <li><strong class="pname"><code>handler</code></strong> - a block representing the code that will be run after the delay 
-          the unique id of the timer</li>
+        <li><strong class="pname"><code>handler</code></strong> - an handler that will be called when the timer fires</li>
     </ul></dd>
+    <dt>Returns:</dt>
+        <dd>the unique id of the timer</dd>
   </dl>
 </td></tr></table>
 </div>
@@ -657,9 +680,10 @@
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
         <li><strong class="pname"><code>delay</code></strong> - the period of the timer, in milliseconds</li>
-        <li><strong class="pname"><code>handler</code></strong> - a block representing the code that will be when the timer fires 
-          the unique id of the timer</li>
+        <li><strong class="pname"><code>handler</code></strong> - an handler that will be called each time the timer fires</li>
     </ul></dd>
+    <dt>Returns:</dt>
+        <dd>the unique id of the timer</dd>
   </dl>
 </td></tr></table>
 </div>
@@ -709,7 +733,7 @@
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>handler</code></strong> - a block representing the code that will be run ASAP</li>
+        <li><strong class="pname"><code>handler</code></strong> - an handler representing the code that will be run ASAP</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -739,7 +763,7 @@
   <tr>
     <td align="left" class="footer">
     Generated by Epydoc 3.0.1
-    on Wed Oct 24 12:27:57 2012
+    on Sun Jan 13 17:19:25 2013
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"
