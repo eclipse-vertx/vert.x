@@ -33,7 +33,6 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Container;
 import org.vertx.java.deploy.Verticle;
-import org.vertx.java.deploy.VerticleFactory;
 
 import java.io.*;
 import java.net.MalformedURLException;

@@ -13,34 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.vertx.java.framework;
 
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
+package org.vertx.java.deploy.impl;
+
+
 import org.vertx.java.deploy.Verticle;
+
+import java.util.ServiceLoader;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class TestClientBase extends Verticle {
+public interface VerticleFactory {
+	
+  public static final Iterable<VerticleFactory> factories = ServiceLoader.load(VerticleFactory.class);
 
-  private static final Logger log = LoggerFactory.getLogger(TestClientBase.class);
+  void init(VerticleManager manager);
 
-  protected TestUtils tu;
+  Verticle createVerticle(String main, ClassLoader parentCL) throws Exception;
 
-  private boolean stopped;
+  void reportException(Throwable t);
 
-  public void start() {
-    tu = new TestUtils(vertx);
-    tu.registerTests(this);
-  }
-
-  public void stop() {
-    if (stopped) {
-      throw new IllegalStateException("Already stopped");
-    }
-    tu.unregisterAll();
-    tu.appStopped();
-    stopped = true;
-  }
 }

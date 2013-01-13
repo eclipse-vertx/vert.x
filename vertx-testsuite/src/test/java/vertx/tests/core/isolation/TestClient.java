@@ -16,7 +16,7 @@
 
 package vertx.tests.core.isolation;
 
-import org.vertx.java.framework.TestClientBase;
+import org.vertx.java.testframework.TestClientBase;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

@@ -19,7 +19,7 @@ package org.vertx.java.tests.core.eventbus;
 import org.junit.Test;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.framework.TestBase;
+import org.vertx.java.testframework.TestBase;
 import vertx.tests.core.eventbus.LocalEchoClient;
 import vertx.tests.core.eventbus.LocalEchoPeer;
 

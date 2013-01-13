@@ -21,7 +21,6 @@ import org.vertx.java.core.impl.DeploymentHandle;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.deploy.Verticle;
-import org.vertx.java.deploy.VerticleFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

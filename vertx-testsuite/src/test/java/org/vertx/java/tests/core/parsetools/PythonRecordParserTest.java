@@ -1,6 +1,6 @@
 package org.vertx.java.tests.core.parsetools;
 
-import org.vertx.java.framework.TestBase;
+import org.vertx.java.testframework.TestBase;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

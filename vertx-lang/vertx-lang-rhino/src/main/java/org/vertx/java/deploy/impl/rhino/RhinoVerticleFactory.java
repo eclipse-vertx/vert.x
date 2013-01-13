@@ -20,7 +20,7 @@ import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.RhinoException;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.deploy.Verticle;
-import org.vertx.java.deploy.VerticleFactory;
+import org.vertx.java.deploy.impl.VerticleFactory;
 import org.vertx.java.deploy.impl.VerticleManager;
 
 

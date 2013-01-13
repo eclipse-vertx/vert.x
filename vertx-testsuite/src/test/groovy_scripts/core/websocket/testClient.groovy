@@ -19,7 +19,7 @@
 package core.websocket
 
 import org.vertx.groovy.core.buffer.Buffer
-import org.vertx.groovy.framework.TestUtils
+import org.vertx.groovy.testframework.TestUtils
 
 tu = new TestUtils(vertx)
 tu.checkContext()

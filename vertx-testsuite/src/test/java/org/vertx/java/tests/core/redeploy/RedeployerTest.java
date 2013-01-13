@@ -7,8 +7,8 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.impl.Deployment;
 import org.vertx.java.deploy.impl.ModuleReloader;
 import org.vertx.java.deploy.impl.Redeployer;
-import org.vertx.java.framework.TestBase;
-import org.vertx.java.framework.TestUtils;
+import org.vertx.java.testframework.TestBase;
+import org.vertx.java.testframework.TestUtils;
 
 import java.io.File;
 import java.io.FileWriter;

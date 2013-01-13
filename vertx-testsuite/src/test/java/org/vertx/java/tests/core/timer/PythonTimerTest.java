@@ -1,6 +1,6 @@
 package org.vertx.java.tests.core.timer;
 
-import org.vertx.java.framework.TestBase;
+import org.vertx.java.testframework.TestBase;
 
 /**
  * @author <a href="https://github.com/sjhorn">Scott Horn</a>

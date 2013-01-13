@@ -28,9 +28,9 @@ import org.vertx.java.core.file.FileSystemProps;
 import org.vertx.java.core.streams.Pump;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
-import org.vertx.java.core.utils.lang.Windows;
-import org.vertx.java.framework.TestClientBase;
-import org.vertx.java.framework.TestUtils;
+import org.vertx.java.core.impl.Windows;
+import org.vertx.java.testframework.TestClientBase;
+import org.vertx.java.testframework.TestUtils;
 
 import java.io.File;
 import java.io.IOException;

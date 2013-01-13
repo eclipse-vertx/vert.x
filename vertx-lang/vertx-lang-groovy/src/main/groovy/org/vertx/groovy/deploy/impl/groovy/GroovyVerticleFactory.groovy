@@ -20,7 +20,7 @@ import org.vertx.groovy.core.Vertx
 import org.vertx.groovy.deploy.Container
 import org.vertx.java.core.impl.VertxInternal
 import org.vertx.java.deploy.Verticle
-import org.vertx.java.deploy.VerticleFactory
+import org.vertx.java.deploy.impl.VerticleFactory
 import org.vertx.java.deploy.impl.VerticleManager
 import org.vertx.java.deploy.impl.VertxLocator
 

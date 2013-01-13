@@ -21,8 +21,8 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.*;
-import org.vertx.java.framework.TestClientBase;
-import org.vertx.java.framework.TestUtils;
+import org.vertx.java.testframework.TestClientBase;
+import org.vertx.java.testframework.TestUtils;
 
 import java.io.BufferedWriter;
 import java.io.File;

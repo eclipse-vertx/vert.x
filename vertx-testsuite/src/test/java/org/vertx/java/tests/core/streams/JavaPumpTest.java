@@ -23,7 +23,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.Pump;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
-import org.vertx.java.framework.TestUtils;
+import org.vertx.java.testframework.TestUtils;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

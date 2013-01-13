@@ -23,7 +23,7 @@ import org.vertx.java.core.Vertx;
 import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.framework.TestBase;
+import org.vertx.java.testframework.TestBase;
 import vertx.tests.core.filesystem.TestClient;
 
 import java.util.Map;

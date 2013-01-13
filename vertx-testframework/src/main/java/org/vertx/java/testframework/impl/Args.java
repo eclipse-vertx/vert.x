@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.vertx.java.core.utils.lang;
+package org.vertx.java.testframework.impl;
 
 import java.util.Collection;
 
