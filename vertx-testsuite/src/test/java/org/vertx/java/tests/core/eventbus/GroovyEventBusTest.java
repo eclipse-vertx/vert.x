@@ -16,7 +16,7 @@
 
 package org.vertx.java.tests.core.eventbus;
 
-import org.vertx.java.framework.TestBase;
+import org.vertx.java.testframework.TestBase;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

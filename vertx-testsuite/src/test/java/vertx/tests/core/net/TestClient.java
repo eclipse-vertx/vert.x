@@ -23,8 +23,8 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
-import org.vertx.java.framework.TestClientBase;
-import org.vertx.java.framework.TestUtils;
+import org.vertx.java.testframework.TestClientBase;
+import org.vertx.java.testframework.TestUtils;
 import vertx.tests.core.http.TLSTestParams;
 
 import java.util.Random;

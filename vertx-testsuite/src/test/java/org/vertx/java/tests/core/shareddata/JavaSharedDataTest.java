@@ -24,7 +24,7 @@ import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.shareddata.SharedData;
-import org.vertx.java.framework.TestUtils;
+import org.vertx.java.testframework.TestUtils;
 
 import java.util.Map;
 import java.util.Random;

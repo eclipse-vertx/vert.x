@@ -22,7 +22,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.deploy.Verticle;
-import org.vertx.java.framework.TestUtils;
+import org.vertx.java.testframework.TestUtils;
 
 import java.util.Set;
 

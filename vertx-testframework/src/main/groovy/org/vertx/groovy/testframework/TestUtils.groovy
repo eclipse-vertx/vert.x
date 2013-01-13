@@ -13,27 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.vertx.groovy.testframework
 
-package org.vertx.java.core.utils.lang;
+import org.vertx.groovy.core.Vertx
+import org.vertx.groovy.core.buffer.Buffer
+import org.vertx.java.core.Handler
 
-/**
- * Simple Windows specific utility
- * 
- * @author Juergen Donnerstag
- */
-public class Windows {
+class TestUtils extends org.vertx.java.testframework.TestUtils {
 
-	private static final boolean isWindows;
+  TestUtils(Vertx vertx) {
+    super(vertx.toJavaVertx())
+  }
 
-	static {
-		String os = System.getProperty("os.name").toLowerCase();
-		isWindows = (os.indexOf("win") >= 0);
-	}
+  // Provide a version of register which takes a closure
+  def register(testName, handler) {
+    super.register(testName, handler as Handler)
+  }
 
-	/**
-	 * @return true, if running on Windows
-	 */
-	public static boolean isWindows() {
-		return isWindows;
-	}
+  static Buffer generateRandomBuffer(int length) {
+    new Buffer(org.vertx.java.testframework.TestUtils.generateRandomBuffer(length, false, (byte) 0))
+  }
 }

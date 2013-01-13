@@ -19,7 +19,7 @@ package org.vertx.java.tests.core.buffer;
 import junit.framework.TestCase;
 import org.junit.Test;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.framework.TestUtils;
+import org.vertx.java.testframework.TestUtils;
 
 
 /**

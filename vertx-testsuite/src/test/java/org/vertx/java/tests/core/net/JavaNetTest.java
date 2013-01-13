@@ -27,7 +27,7 @@ import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.streams.Pump;
-import org.vertx.java.framework.TestBase;
+import org.vertx.java.testframework.TestBase;
 import vertx.tests.core.http.TLSTestParams;
 import vertx.tests.core.net.*;
 

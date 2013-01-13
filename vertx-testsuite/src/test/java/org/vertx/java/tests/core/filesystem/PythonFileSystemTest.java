@@ -3,7 +3,7 @@ package org.vertx.java.tests.core.filesystem;
 import org.junit.Test;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.framework.TestBase;
+import org.vertx.java.testframework.TestBase;
 
 /**
  * @author <a href="https://github.com/sjhorn">Scott Horn</a>

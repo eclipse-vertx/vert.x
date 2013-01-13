@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.framework;
+package org.vertx.java.testframework;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
@@ -26,7 +26,7 @@ import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.utils.lang.Args;
+import org.vertx.java.testframework.impl.Args;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

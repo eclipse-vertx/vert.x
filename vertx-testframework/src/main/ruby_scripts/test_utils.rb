@@ -1,6 +1,6 @@
 class TestUtils
   def initialize
-    @j_tu = org.vertx.java.framework.TestUtils.new( org.vertx.java.deploy.impl.VertxLocator.vertx)
+    @j_tu = org.vertx.java.testframework.TestUtils.new( org.vertx.java.deploy.impl.VertxLocator.vertx)
   end
 
   def azzert(result, message = nil)
@@ -48,16 +48,16 @@ class TestUtils
   end
 
   def TestUtils.gen_buffer(size)
-    j_buff = org.vertx.java.framework.TestUtils.generateRandomBuffer(size)
+    j_buff = org.vertx.java.testframework.TestUtils.generateRandomBuffer(size)
     Buffer.new(j_buff)
   end
 
   def TestUtils.random_unicode_string(size)
-    org.vertx.java.framework.TestUtils.randomUnicodeString(size)
+    org.vertx.java.testframework.TestUtils.randomUnicodeString(size)
   end
 
   def TestUtils.buffers_equal(buff1, buff2)
-    org.vertx.java.framework.TestUtils.buffersEqual(buff1._to_java_buffer, buff2._to_java_buffer)
+    org.vertx.java.testframework.TestUtils.buffersEqual(buff1._to_java_buffer, buff2._to_java_buffer)
   end
 
   def check_context

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.framework;
+package org.vertx.java.testframework;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

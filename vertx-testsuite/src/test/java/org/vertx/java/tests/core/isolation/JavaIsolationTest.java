@@ -17,7 +17,7 @@
 package org.vertx.java.tests.core.isolation;
 
 import org.junit.Test;
-import org.vertx.java.framework.TestBase;
+import org.vertx.java.testframework.TestBase;
 import vertx.tests.core.isolation.TestClient;
 
 /**

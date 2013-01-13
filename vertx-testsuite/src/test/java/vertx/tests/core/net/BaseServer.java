@@ -21,7 +21,7 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.deploy.Verticle;
-import org.vertx.java.framework.TestUtils;
+import org.vertx.java.testframework.TestUtils;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

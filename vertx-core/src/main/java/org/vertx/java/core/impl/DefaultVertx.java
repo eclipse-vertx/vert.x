@@ -42,7 +42,6 @@ import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
-import org.vertx.java.core.utils.lang.Windows;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -19,7 +19,7 @@ package vertx.tests.core.deploy;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.framework.TestClientBase;
+import org.vertx.java.testframework.TestClientBase;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

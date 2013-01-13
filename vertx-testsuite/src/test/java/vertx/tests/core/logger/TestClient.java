@@ -17,7 +17,7 @@
 package vertx.tests.core.logger;
 
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.framework.TestClientBase;
+import org.vertx.java.testframework.TestClientBase;
 
 /**
  *

@@ -21,7 +21,7 @@ import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.framework.TestClientBase;
+import org.vertx.java.testframework.TestClientBase;
 import org.vertx.java.tests.core.eventbus.Counter;
 
 import java.util.Map;

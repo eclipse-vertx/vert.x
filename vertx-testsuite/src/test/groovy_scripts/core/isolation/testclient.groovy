@@ -1,6 +1,6 @@
 package core.isolation
 
-import org.vertx.groovy.framework.TestUtils
+import org.vertx.groovy.testframework.TestUtils
 
 import java.util.concurrent.atomic.AtomicInteger
 

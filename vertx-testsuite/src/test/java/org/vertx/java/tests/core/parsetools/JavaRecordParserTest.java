@@ -21,7 +21,7 @@ import org.junit.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.parsetools.RecordParser;
-import org.vertx.java.framework.TestUtils;
+import org.vertx.java.testframework.TestUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;

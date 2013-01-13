@@ -16,7 +16,7 @@
 
 package core.eventbus
 
-import org.vertx.groovy.framework.TestUtils
+import org.vertx.groovy.testframework.TestUtils
 
 tu = new TestUtils(vertx)
 tu.checkContext()

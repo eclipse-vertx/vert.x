@@ -1,6 +1,6 @@
 
 import org.vertx.java.deploy.impl.VertxLocator
-import org.vertx.java.framework
+import org.vertx.java.testframework
 import org.vertx.java.core.Handler
 import java.lang
 
@@ -8,7 +8,7 @@ from core.buffer import Buffer
 
 class TestUtils(object):
     def __init__(self):
-        self.java_obj = org.vertx.java.framework.TestUtils(org.vertx.java.deploy.impl.VertxLocator.vertx)
+        self.java_obj = org.vertx.java.testframework.TestUtils(org.vertx.java.deploy.impl.VertxLocator.vertx)
 
     def azzert(self, result, message=None):
         try:
@@ -48,16 +48,16 @@ class TestUtils(object):
 
     @staticmethod
     def gen_buffer(size):
-        j_buff = org.vertx.java.framework.TestUtils.generateRandomBuffer(size)
+        j_buff = org.vertx.java.testframework.TestUtils.generateRandomBuffer(size)
         return Buffer(j_buff)
 
     @staticmethod
     def random_unicode_string(size):
-        return org.vertx.java.framework.TestUtils.randomUnicodeString(size)
+        return org.vertx.java.testframework.TestUtils.randomUnicodeString(size)
 
     @staticmethod
     def buffers_equal(buff1, buff2):
-        return org.vertx.java.framework.TestUtils.buffersEqual(buff1._to_java_buffer(), buff2._to_java_buffer())
+        return org.vertx.java.testframework.TestUtils.buffersEqual(buff1._to_java_buffer(), buff2._to_java_buffer())
 
 class TestHandler(org.vertx.java.core.Handler):
     """ Test handler """
