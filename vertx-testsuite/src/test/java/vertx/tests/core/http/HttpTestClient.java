@@ -541,8 +541,7 @@ public class HttpTestClient extends TestClientBase {
       public void handle(HttpServerRequest req) {
         tu.checkContext();
         tu.azzert(req.headers().size() == 1);
-        tu.azzert(req.headers().get("host").equals("localhost:8080"));
-        tu.azzert(req.headers().get("host").equals("localhost:8080"));
+        tu.azzert("localhost:8080".equals(req.headers().get("host")));
         req.response.end();
       }
     });

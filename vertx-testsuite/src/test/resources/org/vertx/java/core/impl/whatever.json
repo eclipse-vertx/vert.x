@@ -1,0 +1,4 @@
+// A standalone config file that gets merged
+{
+  abc: true
+}

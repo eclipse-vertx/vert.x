@@ -16,38 +16,60 @@
 
 package org.vertx.java.deploy.impl;
 
-import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.core.utils.Args;
 
 import java.io.File;
-import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.UUID;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class Deployment {
-  public final String name;
-  public final String modName;
-  public final int instances;
-  public final JsonObject config;
-  public final URL[] urls;
-  public final File modDir;
-  public final List<VerticleHolder> verticles = new CopyOnWriteArrayList<>();
-  public final List<String> childDeployments = new CopyOnWriteArrayList<>();
-  public final String parentDeploymentName;
-  public final boolean autoRedeploy;
+	// Every deployment has a unique name
+	public final String name;
 
-  public Deployment(String name, String modName, int instances, JsonObject config,
-             URL[] urls, File modDir, String parentDeploymentName,
-             boolean autoRedeploy) {
-    this.name = name;
-    this.modName = modName;
-    this.instances = instances;
-    this.config = config;
-    this.urls = urls;
-    this.modDir = modDir;
-    this.parentDeploymentName = parentDeploymentName;
-    this.autoRedeploy = autoRedeploy;
-  }
+	// One module can be associated with a deployment
+	// (A module may have dependencies on other modules)
+	public final VertxModule module;
+
+	// Number of instances of the same Verticle that are started
+	// on (hopefully) different threads
+	public final int instances;
+
+	// working directory (see preserve-cwd)
+	public final File currentModDir;
+
+	// One holder for each instance
+	public final List<VerticleHolder> verticles = new ArrayList<>();
+
+	// Deployment tree
+	public final List<String> childDeployments = new ArrayList<>();
+	public final String parentDeploymentName;
+
+	/**
+	 * Constructor
+	 */
+	public Deployment(final String name, final VertxModule module, final int instances, final File currentModDir,
+			final String parentDeploymentName) {
+		this.name = (name != null ? name : createName());
+		this.module = Args.notNull(module, "module");
+		this.instances = instances;
+		this.currentModDir = currentModDir;
+		this.parentDeploymentName = parentDeploymentName;
+	}
+
+	/**
+	 * Extension point:
+	 * 
+	 * @return
+	 */
+	protected String createName() {
+		return "deployment-" + UUID.randomUUID().toString();
+	}
+
+	public final boolean hasParent() {
+		return parentDeploymentName != null;
+	}
 }

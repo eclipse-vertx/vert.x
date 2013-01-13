@@ -28,7 +28,8 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
  */
 public class Json {
 
-  private static final Logger log = LoggerFactory.getLogger(Json.class);
+  @SuppressWarnings("unused")
+	private static final Logger log = LoggerFactory.getLogger(Json.class);
 
   private final static ObjectMapper mapper = new ObjectMapper();
   private final static ObjectMapper prettyMapper = new ObjectMapper();
@@ -61,6 +62,5 @@ public class Json {
 
   static {
  	 	prettyMapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
-  }
-
+ 	}
 }

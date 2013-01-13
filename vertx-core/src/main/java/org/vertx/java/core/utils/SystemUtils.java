@@ -13,27 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.vertx.java.core.utils.lang;
+package org.vertx.java.core.utils;
 
 /**
- * Simple Windows specific utility
+ * Collection of System utils. 
  * 
  * @author Juergen Donnerstag
  */
-public class Windows {
+public class SystemUtils {
 
-	private static final boolean isWindows;
-
-	static {
-		String os = System.getProperty("os.name").toLowerCase();
-		isWindows = (os.indexOf("win") >= 0);
+	public static final String getPathSeparator() {
+		return System.getProperty("path.separator");
 	}
 
-	/**
-	 * @return true, if running on Windows
-	 */
-	public static boolean isWindows() {
-		return isWindows;
+	public static String systemVar(final String propName, final String envName, final String def) {
+		String val = null;
+		if (StringUtils.isNotEmpty(propName)) {
+			val = System.getProperty(propName);
+		}
+		if (StringUtils.isEmpty(val) && StringUtils.isNotEmpty(envName)) {
+			val = System.getenv(envName);
+		}
+		if (StringUtils.isEmpty(val) ) {
+			val = def;
+		}
+		return val;
 	}
 }

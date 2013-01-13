@@ -1,12 +1,16 @@
 package org.vertx.java.tests.core.redeploy;
 
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.ConcurrentHashSet;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.impl.Deployment;
+import org.vertx.java.deploy.impl.ModuleManager;
 import org.vertx.java.deploy.impl.ModuleReloader;
 import org.vertx.java.deploy.impl.Redeployer;
+import org.vertx.java.deploy.impl.VertxModule;
 import org.vertx.java.framework.TestBase;
 import org.vertx.java.framework.TestUtils;
 
@@ -22,23 +26,29 @@ import java.util.concurrent.TimeUnit;
  */
 public class RedeployerTest extends TestBase {
 
-  private static final Logger log = LoggerFactory.getLogger(RedeployerTest.class);
+  @SuppressWarnings("unused")
+	private static final Logger log = LoggerFactory.getLogger(RedeployerTest.class);
+
+	@Rule
+	public TemporaryFolder tempFolder = new TemporaryFolder();
 
   TestReloader reloader;
   File modRoot;
   Redeployer red;
+  ModuleManager moduleManager;
 
   protected void setUp() throws Exception {
     super.setUp();
     reloader = new TestReloader();
-    modRoot = new File("reloader-test-mods");
-    modRoot.mkdir();
+  	tempFolder.create();
+    modRoot = tempFolder.getRoot();
     red = new Redeployer(vertx, modRoot, reloader);
+    moduleManager = new ModuleManager(vertx, modRoot);
   }
 
   protected void tearDown() throws Exception {
     red.close();
-    vertx.fileSystem().deleteSync(modRoot.getAbsolutePath(), true);
+    tempFolder.delete();
     super.tearDown();
   }
 
@@ -225,6 +235,6 @@ public class RedeployerTest extends TestBase {
   }
 
   private Deployment createDeployment(String name, String modName, String parentName) {
-     return new Deployment(name, modName, 1, null, null, null, parentName, true);
+     return new Deployment(name, new VertxModule(moduleManager, modName), 1, null, parentName);
   }
 }

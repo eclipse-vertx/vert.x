@@ -19,10 +19,12 @@ package org.vertx.java.deploy;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
+import org.vertx.java.deploy.impl.Deployment;
 import org.vertx.java.deploy.impl.VerticleManager;
 
 import java.io.File;
-import java.net.URL;
+import java.net.URI;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -87,7 +89,7 @@ public class Container {
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
   public void deployWorkerVerticle(String main, JsonObject config, int instances, Handler<String> doneHandler) {
-    URL[] currURLs = mgr.getDeploymentURLs();
+    List<URI> currURLs = mgr.getDeploymentURLs();
     File modDir = mgr.getDeploymentModDir();
     mgr.deployVerticle(true, main, config, currURLs, instances, modDir, null, doneHandler);
   }
@@ -184,7 +186,7 @@ public class Container {
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
   public void deployVerticle(String main, JsonObject config, int instances, Handler<String> doneHandler) {
-    URL[] currURLs = mgr.getDeploymentURLs();
+    List<URI> currURLs = mgr.getDeploymentURLs();
     File modDir = mgr.getDeploymentModDir();
     mgr.deployVerticle(false, main, config, currURLs, instances, modDir, null, doneHandler);
   }
@@ -202,7 +204,7 @@ public class Container {
    * @param deploymentID The deployment ID
    * @param doneHandler The handler will be called when undeployment is complete
    */
-  public void undeployVerticle(String deploymentID, Handler<Void> doneHandler) {
+  public void undeployVerticle(String deploymentID, Handler<Deployment> doneHandler) {
     mgr.undeploy(deploymentID, doneHandler);
   }
 
@@ -219,7 +221,7 @@ public class Container {
    * @param deploymentID The deployment ID
    * @param doneHandler The handler will be called when undeployment is complete
    */
-  public void undeployModule(String deploymentID, Handler<Void> doneHandler) {
+  public void undeployModule(String deploymentID, Handler<Deployment> doneHandler) {
     mgr.undeploy(deploymentID, doneHandler);
   }
 

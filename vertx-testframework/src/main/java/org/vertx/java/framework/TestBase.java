@@ -19,17 +19,17 @@ package org.vertx.java.framework;
 import junit.framework.TestCase;
 import org.junit.Test;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.deploy.impl.Deployment;
 import org.vertx.java.deploy.impl.VerticleManager;
 
 import java.lang.reflect.Method;
-import java.net.URL;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -47,7 +47,7 @@ public class TestBase extends TestCase {
 
   // A single Vertx and VerticleManager for <b>ALL</b> tests
   protected static VertxInternal vertx = new DefaultVertx();
-  private static VerticleManager verticleManager = new VerticleManager(vertx);
+  protected static VerticleManager verticleManager = new VerticleManager(vertx);
 
   private BlockingQueue<JsonObject> events = new LinkedBlockingQueue<>();
   private TestUtils tu = new TestUtils(vertx);
@@ -180,15 +180,15 @@ public class TestBase extends TestCase {
       log.error("*** The test framework requires at least 2 processors ***");
       fail("The test framework requires at least 2 processors");
     }
-    URL url;
+    URI url;
     if (main.endsWith(".js") || main.endsWith(".rb") || main.endsWith(".groovy") || main.endsWith(".py")) {
-      url = getClass().getClassLoader().getResource(main);
+      url = getClass().getClassLoader().getResource(main).toURI();
     } else {
       String classDir = main.replace('.', '/') + ".class";
-      url = getClass().getClassLoader().getResource(classDir);
+      url = getClass().getClassLoader().getResource(classDir).toURI();
       String surl = url.toString();
       String surlroot = surl.substring(0, surl.length() - classDir.length());
-      url = new URL(surlroot);
+      url = new URI(surlroot);
     }
 
     if (url == null) {
@@ -206,7 +206,9 @@ public class TestBase extends TestCase {
       }
     };
 
-    verticleManager.deployVerticle(worker, main, config, new URL[]{url}, instances, null, null, doneHandler);
+    List<URI> urls = new ArrayList<>();
+    urls.add(url);
+    verticleManager.deployVerticle(worker, main, config, urls, instances, null, null, doneHandler);
 
     if (!doneLatch.await(30, TimeUnit.SECONDS)) {
       throw new IllegalStateException("Timedout waiting for apps to start");
@@ -240,7 +242,7 @@ public class TestBase extends TestCase {
 
     verticleManager.deployMod(modName, config, instances, null, doneHandler);
 
-    if (!doneLatch.await(10, TimeUnit.SECONDS)) {
+    if (!doneLatch.await(30, TimeUnit.SECONDS)) {
       throw new IllegalStateException("Timedout waiting for apps to start");
     }
 
@@ -255,9 +257,10 @@ public class TestBase extends TestCase {
 
   protected void stopApp(String appName) throws Exception {
     final CountDownLatch latch = new CountDownLatch(1);
-    int instances = verticleManager.listInstances().get(appName);
-    verticleManager.undeploy(appName, new SimpleHandler() {
-      public void handle() {
+    int instances = verticleManager.deployment(appName).verticles.size();
+    verticleManager.undeploy(appName, new Handler<Deployment>() {
+	@Override
+	public void handle(Deployment event) {
         latch.countDown();
       }
     });
