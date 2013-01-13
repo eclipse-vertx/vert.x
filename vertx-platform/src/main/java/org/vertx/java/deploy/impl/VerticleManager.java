@@ -28,6 +28,7 @@ import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.impl.VertxThreadFactory;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -334,8 +335,7 @@ public class VerticleManager implements ModuleReloader {
   }
 
   private void checkWorkerContext() {
-    Thread t = Thread.currentThread();
-    if (!t.getName().startsWith("vert.x-worker-thread")) {
+  	if (VertxThreadFactory.isWorker(Thread.currentThread()) == false) {
       throw new IllegalStateException("Not a worker thread");
     }
   }
