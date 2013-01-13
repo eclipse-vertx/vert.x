@@ -21,6 +21,7 @@ import org.mozilla.javascript.commonjs.module.ModuleScript;
 import org.mozilla.javascript.commonjs.module.Require;
 import org.mozilla.javascript.commonjs.module.RequireBuilder;
 import org.mozilla.javascript.commonjs.module.provider.SoftCachingModuleScriptProvider;
+import org.mozilla.javascript.commonjs.module.provider.ModuleSource;
 import org.mozilla.javascript.commonjs.module.provider.UrlModuleSourceProvider;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
@@ -75,14 +76,31 @@ public class RhinoVerticle extends Verticle {
     }
     return RhinoVerticle.coffeeScriptCompiler;
   }
-  
+
+  private static final class CoffeeCompilingUrlModuleSourceProvider extends UrlModuleSourceProvider {
+    private final ClassLoader cl;
+
+    private CoffeeCompilingUrlModuleSourceProvider(Iterable<URI> privilegedUris, Iterable<URI> fallbackUris, ClassLoader cl) {
+      super(privilegedUris, fallbackUris);
+      this.cl = cl;
+    }
+
+    public ModuleSource loadSource(URI uri, URI base, Object validator) throws IOException ,java.net.URISyntaxException {
+      ModuleSource source = super.loadSource(uri, base, validator);
+      if (uri != null && uri.toString().endsWith(".coffee")) {
+        return getCoffeeScriptCompiler(cl).coffeeScriptToJavaScript(source);
+      }
+      return source;
+    }
+  }
+
   // Support for loading from CommonJS modules
   private static Require installRequire(final ClassLoader cl, Context cx, ScriptableObject scope) {
     RequireBuilder rb = new RequireBuilder();
     rb.setSandboxed(false);
 
     rb.setModuleScriptProvider(
-        new SoftCachingModuleScriptProvider(new UrlModuleSourceProvider(null, null)) {
+        new SoftCachingModuleScriptProvider(new CoffeeCompilingUrlModuleSourceProvider(null, null, cl)) {
 
           @Override
           public ModuleScript getModuleScript(Context cx, String moduleId, URI uri, URI base, Scriptable paths) throws Exception {
@@ -156,13 +174,9 @@ public class RhinoVerticle extends Verticle {
               } else {
                 uri = mainFile.toURI();
               } 
-
             }
 
-            if (uri != null && uri.toString().endsWith(".coffee")) {
-                uri = getCoffeeScriptCompiler(cl).coffeeScriptToJavaScript(uri);                
-            }
-            return super.getModuleScript(cx, moduleId, uri, uri, paths);
+            return super.getModuleScript(cx, moduleId, uri, uri, paths);  
           }
         });
 
@@ -183,26 +197,28 @@ public class RhinoVerticle extends Verticle {
   }
 
   private static void loadScript(ClassLoader cl, Context cx, ScriptableObject scope, String scriptName) throws Exception {
+    Reader reader;
     if(scriptName != null && scriptName.endsWith(".coffee")) {
-        URL resource = cl.getResource(scriptName);
-        if(resource != null) {
-            getCoffeeScriptCompiler(cl).coffeeScriptToJavaScript(resource.toURI());
-            scriptName += ".js";
-        } else {
-            throw new FileNotFoundException("Cannot find script: " + scriptName);
-        }
-    } 
-    InputStream is = cl.getResourceAsStream(scriptName);
-    if (is == null) {
-      throw new FileNotFoundException("Cannot find script: " + scriptName);
+      URL resource = cl.getResource(scriptName);
+      if(resource != null) {
+        reader = new StringReader(getCoffeeScriptCompiler(cl).coffeeScriptToJavaScript(resource.toURI()));
+      } else {
+        throw new FileNotFoundException("Cannot find script: " + scriptName);
+      }
+    } else {
+      InputStream is = cl.getResourceAsStream(scriptName);
+      if (is == null) {
+        throw new FileNotFoundException("Cannot find script: " + scriptName);
+      }
+      reader = new BufferedReader(new InputStreamReader(is));
     }
-    BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+
     ClassLoader old = Thread.currentThread().getContextClassLoader();
     Thread.currentThread().setContextClassLoader(cl);
     try {
       cx.evaluateReader(scope, reader, scriptName, 1, null);
       try {
-        is.close();
+        reader.close();
       } catch (IOException ignore) {
       }
     } finally {
