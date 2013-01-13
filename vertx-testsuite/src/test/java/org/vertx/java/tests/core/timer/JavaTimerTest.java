@@ -27,6 +27,7 @@ import vertx.tests.core.timer.TestClient;
  */
 public class JavaTimerTest extends TestBase {
 
+@SuppressWarnings("unused")
 private static final Logger log = LoggerFactory.getLogger(JavaTimerTest.class);
 
   @Override

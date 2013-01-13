@@ -1,0 +1,73 @@
+
+    vertx run <main> [-options]
+        Runs a verticle called <main> in its own instance of vert.x.
+        <main> can be a JavaScript script, a Ruby script, A Groovy script, or
+        a Java class.
+
+    	Options:
+        -conf <config_file>    Specifies configuration that should be provided
+                               to the verticle. <config_file> should reference
+                               a text file containing a valid JSON object
+                               which represents the configuration.
+        -cp <path>             Specifies the path on which to search for <main>
+                               and any referenced resources.
+                               Defaults to '.' (current directory).
+        -instances <instances> Specifies how many instances of the verticle 
+                               will be deployed. Defaults to 1.
+        -repo <repo_host>      Specifies the repository install missing modules.
+                               Default is http://vert-x.github.com/vertx-mods
+        -worker                If specified then the verticle is a worker
+                               verticle.
+        -includes <mod_list>   Optional comma separated list of modules
+                               which will be added to the classpath of
+                               the verticle.
+        -cluster               If specified then the vert.x instance will form
+                               a cluster with any other vert.x instances on the
+                               network.
+        -cluster-port          Port to use for cluster communication.
+                               Default is 25500.
+        -cluster-host          Host to bind to for cluster communication.
+                               If this is not specified vert.x will attempt
+                               to choose one from the available interfaces.
+
+    vertx runmod <modname> [-options]
+        Runs a module called <modname> in its own instance of vert.x.
+        If the module is not already installed, Vert.x will attempt to install 
+        it from a repository. The module's config file must contain the 'main' 
+        property which denotes the module entry point.
+
+    	Options:
+        -conf <config_file>    Specifies configuration that should be provided
+                               to the module. <config_file> should reference
+                               a text file containing a valid JSON object
+                               which represents the configuration.
+        -instances <instances> Specifies how many instances of the verticle will
+                               be deployed. Defaults to 1
+        -repo <repo_host>      Specifies the repository to use to get the module
+                               from if it is not already installed.
+                               Default is vert-x.github.com/vertx-mods
+        -cluster               If specified then the vert.x instance will form a
+                               cluster with any other vert.x instances on the
+                               network.
+        -cluster-port          Port to use for cluster communication.
+                               Default is 25500.
+        -cluster-host          Host to bind to for cluster communication.
+                               If this is not specified vert.x will attempt
+                               to choose one from the available interfaces.
+
+    vertx install <modname> [-options]
+        Attempts to install a module from a remote repository.
+        The module will be installed into a local 'mods' directory unless the
+        environment variable VERTX_MODS specifies a different location.
+
+        Options:
+        -repo <repo_host>      specifies the repository to use to get the module
+                               from if it is not already installed.
+                               Default is vert-x.github.com/vertx-mods
+
+    vertx uninstall <modname>
+        The module will be uninstalled from the local 'mods' directory unless the
+        environment variable VERTX_MODS specifies a different location.
+
+    vertx version
+        displays the version

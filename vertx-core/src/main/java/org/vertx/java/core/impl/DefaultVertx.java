@@ -42,7 +42,8 @@ import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
-import org.vertx.java.core.utils.lang.Windows;
+import org.vertx.java.core.utils.Args;
+import org.vertx.java.core.utils.Windows;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -75,13 +76,15 @@ public class DefaultVertx extends VertxInternal {
 
   //For now we use a hashed wheel with it's own thread for timeouts - ideally the event loop would have
   //it's own hashed wheel
-  private HashedWheelTimer timer = new HashedWheelTimer(new VertxThreadFactory("vert.x-timer-thread"), 1,
-      TimeUnit.MILLISECONDS, 8192);
+  private HashedWheelTimer timer = new HashedWheelTimer(
+  		new VertxThreadFactory(VertxThreadFactory.TYPE.TIMER), 
+  		1, TimeUnit.MILLISECONDS, 8192);
   {
     timer.start();
   }
   private final AtomicLong timeoutCounter = new AtomicLong(0);
   private final Map<Long, TimeoutHolder> timeouts = new ConcurrentHashMap<>();
+  private VertxConfig vertxConfig;
 
   public DefaultVertx() {
     configure();
@@ -95,7 +98,11 @@ public class DefaultVertx extends VertxInternal {
 
   public DefaultVertx(int port, String hostname) {
     configure();
-    this.eventBus = new DefaultEventBus(this, port, hostname);
+    if (hostname != null) {
+    	this.eventBus = new DefaultEventBus(this, port, hostname);
+    } else { 
+      this.eventBus = new DefaultEventBus(this);
+    }
   }
 
   /**
@@ -201,7 +208,8 @@ public class DefaultVertx extends VertxInternal {
       synchronized (this) {
         result = backgroundPool;
         if (result == null) {
-          backgroundPool = result = Executors.newFixedThreadPool(backgroundPoolSize, new VertxThreadFactory("vert.x-worker-thread-"));
+          backgroundPool = result = Executors.newFixedThreadPool(backgroundPoolSize, 
+          		new VertxThreadFactory(VertxThreadFactory.TYPE.BACKGROUND));
           orderedFact = new OrderedExecutorFactory(backgroundPool);
         }
       }
@@ -216,7 +224,8 @@ public class DefaultVertx extends VertxInternal {
       synchronized (this) {
         result = workerPool;
         if (result == null) {
-          ExecutorService corePool = Executors.newFixedThreadPool(corePoolSize, new VertxThreadFactory("vert.x-core-thread-"));
+          ExecutorService corePool = Executors.newFixedThreadPool(corePoolSize, 
+          		new VertxThreadFactory(VertxThreadFactory.TYPE.WORKER));
           workerPool = result = new NioWorkerPool(corePool, corePoolSize);
         }
       }
@@ -233,7 +242,8 @@ public class DefaultVertx extends VertxInternal {
       synchronized (this) {
         result = acceptorPool;
         if (result == null) {
-          acceptorPool = result = Executors.newCachedThreadPool(new VertxThreadFactory("vert.x-acceptor-thread-"));
+          acceptorPool = result = Executors.newCachedThreadPool(
+          		new VertxThreadFactory(VertxThreadFactory.TYPE.ACCEPTOR));
         }
       }
     }
@@ -341,6 +351,37 @@ public class DefaultVertx extends VertxInternal {
   public Context getContext() {
     return contextTL.get();
   }
+
+	public void setVertxConfig(final VertxConfig config) {
+		Args.notNull(config, "config");
+		this.vertxConfig = config;
+	}
+
+  @Override
+  public VertxConfig vertxConfig() {
+  	if (this.vertxConfig == null) {
+  		this.vertxConfig = createVertxConfig();
+  		if (this.vertxConfig == null) {
+  			throw new NullPointerException("Failed to create VertxConfig");
+  		}
+  		String proxy = this.vertxConfig.proxyConfig().proxy();
+      if (proxy != null) {
+      	// disguise password
+      	proxy = proxy.replaceFirst("(:?.+?://\\w+:).+?(:?@.+?)", "xxx");
+      	log.info("Using proxy host: " + proxy);
+      }
+  	}
+  	return this.vertxConfig;
+  }
+
+  /**
+   * Load the vertx config file. See {@link VertxConfigFactory} for more details.
+   * 
+   * @return
+   */
+  protected VertxConfig createVertxConfig() {
+ 		return new VertxConfigFactory().load();
+  }
   
   @Override
 	public void stop() {
@@ -403,7 +444,7 @@ public class DefaultVertx extends VertxInternal {
 
 		setContext(null);
 	}
-  
+
   private static class InternalTimerHandler implements Runnable {
     final Handler<Long> handler;
     long timerID;

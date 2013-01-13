@@ -27,7 +27,6 @@ public class JavaScriptIncludeTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-
   }
 
   @Override
@@ -76,7 +75,4 @@ public class JavaScriptIncludeTest extends TestBase {
     startMod("testmod7-1");
     startTest(getMethodName());
   }
-
-
-
 }

@@ -47,6 +47,10 @@ public class AsyncResult<T> {
     return exception != null;
   }
 
+  public AsyncResult() {
+  	this((T)null);
+  }
+
   /**
    * Create a successful AsyncResult
    * @param result The result
@@ -63,5 +67,10 @@ public class AsyncResult<T> {
   public AsyncResult(Exception exception) {
     this.exception = exception;
     this.result = null;
+  }
+  
+  @Override
+  public String toString() {
+  	return "Success: " + succeeded() + "; Result: " + result + "; Exception: " + exception;  
   }
 }

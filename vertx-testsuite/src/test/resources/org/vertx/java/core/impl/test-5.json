@@ -1,0 +1,7 @@
+{
+  // Merge json from separate file
+  whatever: "${file:src/test/resources/org/vertx/java/core/impl/whatever.json}",
+
+  // In fact every value provided is interpreted as json. E.g. if MERGE_JSON="{ enable: true }"
+  merge: "${prop:MERGE_JSON}"
+}

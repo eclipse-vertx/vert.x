@@ -105,7 +105,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
   public Map<String, Object> headers() {
     if (headers == null) {
-      headers = new LowerCaseKeyMap();
+      headers = new LowerCaseKeyMap<>();
     }
     return headers;
   }

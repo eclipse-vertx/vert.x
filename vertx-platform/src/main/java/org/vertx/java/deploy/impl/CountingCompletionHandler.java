@@ -16,50 +16,62 @@
 
 package org.vertx.java.deploy.impl;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.impl.ActionFuture;
 import org.vertx.java.core.impl.Context;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author Juergen Donnerstag
  */
-public class CountingCompletionHandler {
+public class CountingCompletionHandler<T> {
 
-  private final Context context;
+	private final Context context;
+	private final AtomicInteger count = new AtomicInteger(0);
+	private final AtomicInteger required = new AtomicInteger(0);
+	private final Handler<T> doneHandler;
+	private final ActionFuture<T> future;
+	private volatile T result;
 
-  public CountingCompletionHandler(Context context) {
-    this.context = context;
+	public CountingCompletionHandler(final Context context, final Handler<T> doneHandler) {
+		this.context = context;
+		this.doneHandler = doneHandler;
+		this.future = new ActionFuture<T>();
+	}
+
+	public final void incCompleted() {
+		count.incrementAndGet();
+		checkDone();
   }
 
-  public CountingCompletionHandler(Context context, int required) {
-    this.context = context;
-    this.required = required;
-  }
+	public final void incRequired() {
+		required.incrementAndGet();
+	}
 
-  int count;
-  int required;
-  Handler<Void> doneHandler;
+	public final void result(T result) {
+		this.result = result;
+	}
 
-  public synchronized void complete() {
-    count++;
-    checkDone();
-  }
+	public final ActionFuture<T> future() {
+		checkDone();
+		return this.future;
+	}
 
-  public synchronized void incRequired() {
-    required++;
-  }
-
-  public synchronized void setHandler(Handler<Void> doneHandler) {
-    this.doneHandler = doneHandler;
-    checkDone();
-  }
-
-  void checkDone() {
-    if (doneHandler != null && count == required) {
-      context.execute(new Runnable() {
-        public void run() {
-          doneHandler.handle(null);
-        }
-      });
-    }
-  }
+	public final void checkDone() {
+		if (count.get() == required.get() && future.result() == null) {
+			if (doneHandler != null) {
+				context.execute(new Runnable() {
+					public void run() {
+						doneHandler.handle(result);
+						future.countDown(new AsyncResult<T>(result));
+					}
+				});
+			} else {
+				future.countDown(new AsyncResult<T>(result));
+			}
+		}
+	}
 }
