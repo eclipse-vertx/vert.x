@@ -14,23 +14,37 @@
  * limitations under the License.
  */
 
-package vertx.tests.core.deploy;
+package vertx.tests.core.isolation;
 
-import org.vertx.java.deploy.Verticle;
+import org.vertx.java.testframework.TestClientBase;
+
+import java.util.concurrent.atomic.AtomicInteger;
+
 
 /**
+ *
+ * Test that different instances of the same app can't see each other via statics
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ChildVerticle extends Verticle {
+public class TestClient2 extends TestClientBase {
 
   @Override
-  public void start() throws Exception {
-    System.out.println("Child verticle start");
-    vertx.eventBus().send("test-handler", "started");
+  public void start() {
+    super.start();
+    tu.appReady();
   }
 
   @Override
-  public void stop() throws Exception {
-    vertx.eventBus().send("test-handler", "stopped");
+  public void stop() {
+    super.stop();
   }
+
+  private static final AtomicInteger counter = new AtomicInteger(0);
+
+  public void testIsolation() {
+    tu.azzert(counter.incrementAndGet() == 1);
+    tu.testComplete();
+  }
+
 }

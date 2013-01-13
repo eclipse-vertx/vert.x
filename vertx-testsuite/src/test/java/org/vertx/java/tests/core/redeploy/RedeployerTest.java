@@ -225,6 +225,6 @@ public class RedeployerTest extends TestBase {
   }
 
   private Deployment createDeployment(String name, String modName, String parentName) {
-     return new Deployment(name, modName, 1, null, null, null, parentName, true);
+     return new Deployment(name, modName, 1, null, null, null, parentName, null, true);
   }
 }
