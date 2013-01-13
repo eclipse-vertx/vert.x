@@ -33,6 +33,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
+import org.vertx.java.core.http.impl.cgbystrom.FlashPolicyHandler;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.impl.ws.Handshake;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
@@ -45,7 +46,6 @@ import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.impl.*;
-import se.cgbystrom.netty.FlashPolicyHandler;
 
 import javax.net.ssl.SSLEngine;
 import java.net.*;
