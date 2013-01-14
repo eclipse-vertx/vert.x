@@ -20,53 +20,99 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 
 /**
- * <p>Internal class used to run specific blocking actions on the worker pool.</p>
- *
- * <p>This class shouldn't be used directlty from user applications.</p>
- *
+ * Run specific blocking actions on the worker pool.
+ * 
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class BlockingAction<T>  {
+public abstract class BlockingAction<T> {
 
-  protected Context context;
+	private Context context;
 
-  private final VertxInternal vertx;
-  private final AsyncResultHandler handler;
+	private final VertxInternal vertx;
+	private final AsyncResultHandler<T> handler;
 
-  public BlockingAction(VertxInternal vertx, AsyncResultHandler handler) {
-    this.vertx = vertx;
-    this.handler = handler;
-  }
+	/**
+	 * Constructor
+	 * 
+	 * @param vertx
+	 */
+	public BlockingAction(VertxInternal vertx) {
+		this(vertx, null);
+	}
 
-  /**
-   * Run the blocking action using a thread from the worker pool.
-   */
-  public void run() {
-    context = vertx.getOrAssignContext();
+	/**
+	 * Constructor
+	 * 
+	 * @param vertx
+	 * @param handler
+	 */
+	public BlockingAction(VertxInternal vertx, AsyncResultHandler<T> handler) {
+		this.vertx = vertx;
+		this.handler = handler;
+	}
 
-    Runnable runner = new Runnable() {
-      public void run() {
-        AsyncResult<T> res;
-        try {
-          final T result = action();
-          res = new AsyncResult<>(result);
-        } catch (final Exception e) {
-          res = new AsyncResult<>(e);
-        }
-        if (handler != null) {
-          final AsyncResult<T> theRes = res;
-          context.execute(new Runnable() {
-            public void run() {
-              handler.handle(theRes);
-            }
-          });
-        }
-      }
-    };
+	/**
+	 * Determines the Context once the BlockingAction has started execution
+	 * (run()). Via this reader method it's made available to the handler.
+	 * 
+	 * @return
+	 */
+	public final Context context() {
+		return context;
+	}
 
-    context.executeOnWorker(runner);
-  }
+	/**
+	 * Run the blocking action using a thread from the worker pool.
+	 */
+	public void run() {
+		context = vertx.getOrAssignContext();
 
-  public abstract T action() throws Exception;
+		Runnable runner = new Runnable() {
+			@Override
+			public void run() {
+				// Execute the action and handle the return status
+				AsyncResult<T> res;
+				try {
+					final T result = action();
+					res = new AsyncResult<>(result);
+				} catch (final Exception e) {
+					res = new AsyncResult<>(e);
+				}
 
+				// Either execute the done-handler provided (if handler != null), or the
+				// subclassed handle() method. In any case, execute in the correct
+				// context.
+				final AsyncResult<T> theRes = res;
+				if (handler != null) {
+					context.execute(new Runnable() {
+						@Override
+						public void run() {
+							handler.handle(theRes);
+						}
+					});
+				} else {
+					context.execute(new Runnable() {
+						@Override
+						public void run() {
+							handle(theRes);
+						}
+					});
+				}
+			}
+		};
+
+		// Execute the background job
+		context.executeOnWorker(runner);
+	}
+
+	/**
+	 * Subclasses may provide respective functionality. It is only invoked if
+	 * handler == null. It gets executed by the right context.
+	 * 
+	 * @param result
+	 */
+	protected void handle(final AsyncResult<T> result) {
+	}
+
+	public abstract T action() throws Exception;
 }

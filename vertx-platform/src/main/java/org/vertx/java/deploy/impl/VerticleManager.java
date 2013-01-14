@@ -16,7 +16,6 @@
 
 package org.vertx.java.deploy.impl;
 
-
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
@@ -912,9 +911,9 @@ public class VerticleManager implements ModuleReloader {
         }
       }
     };
-    BlockingAction<Void> redeployAction = new BlockingAction<Void>(vertx, handler) {
+    BlockingAction<String> redeployAction = new BlockingAction<String>(vertx, handler) {
       @Override
-      public Void action() throws Exception {
+      public String action() throws Exception {
         doDeployMod(true, deployment.name, deployment.modName, deployment.config, deployment.instances,
             null, null);
         return null;
