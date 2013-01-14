@@ -21,7 +21,7 @@ import org.vertx.java.core.file.impl.FolderWatcher.WatchDirContext;
 import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.framework.TestUtils;
+import org.vertx.java.testframework.TestUtils;
 
 import static org.junit.Assert.*;
 

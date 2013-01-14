@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 import org.jboss.netty.util.internal.ConcurrentHashMap;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.utils.lang.Args;
+import org.vertx.java.core.utils.Args;
 
 /**
  * A generic FolderWatcher extending Java's WatchService with:
