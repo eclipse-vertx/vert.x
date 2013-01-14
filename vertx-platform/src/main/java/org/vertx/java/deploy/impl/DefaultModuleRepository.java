@@ -29,7 +29,7 @@ import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.utils.lang.Args;
+import org.vertx.java.core.utils.Args;
 import org.vertx.java.deploy.ModuleRepository;
 
 /**

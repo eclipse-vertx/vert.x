@@ -22,7 +22,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.utils.lang.Args;
+import org.vertx.java.core.utils.Args;
 
 /**
  * A little utility class combining all "get module config" work and make access more safe.

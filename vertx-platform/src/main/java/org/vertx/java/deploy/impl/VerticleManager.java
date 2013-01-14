@@ -16,19 +16,22 @@
 
 package org.vertx.java.deploy.impl;
 
-
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.http.HttpClient;
+import org.vertx.java.core.http.HttpClientRequest;
+import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Container;
-import org.vertx.java.deploy.ModuleRepository;
 import org.vertx.java.deploy.Verticle;
 
 import java.io.*;
@@ -50,10 +53,17 @@ import java.util.zip.ZipInputStream;
  * This class could benefit from some refactoring
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
+ *
  */
 public class VerticleManager implements ModuleReloader {
 
   private static final Logger log = LoggerFactory.getLogger(VerticleManager.class);
+  private static final String REPO_URI_ROOT = "/vertx-mods/mods/";
+  private static final String DEFAULT_REPO_HOST = "vert-x.github.com";
+  private static final int BUFFER_SIZE = 4096;
+  private static final String HTTP_PROXY_HOST_PROP_NAME = "http.proxyHost";
+  private static final String HTTP_PROXY_PORT_PROP_NAME = "http.proxyPort";
+  private static final String COLON = ":";
 
   private final VertxInternal vertx;
   // deployment name --> deployment
@@ -62,45 +72,49 @@ public class VerticleManager implements ModuleReloader {
   private final File modRoot;
   private final CountDownLatch stopLatch = new CountDownLatch(1);
   private Map<String, String> factoryNames = new HashMap<>();
+  private final String repoHost;
+  private final int repoPort;
+  private final String proxyHost;
+  private final int proxyPort;
   private final Map<String, ModuleClassLoader> moduleClassLoaders = new WeakHashMap<>();
+
   private final Redeployer redeployer;
-  
-  // Allow multiple repositories to be registered
-  private final List<ModuleRepository> repositories = new ArrayList<>();
 
   public VerticleManager(VertxInternal vertx) {
     this(vertx, null);
   }
 
   public VerticleManager(VertxInternal vertx, String repo) {
-  	this(vertx, repo, null);
-  }
-
-  public VerticleManager(VertxInternal vertx, String repo, String modDir) {
     this.vertx = vertx;
+    if (repo != null) {
+      if (repo.contains(COLON)) {
+        this.repoHost = repo.substring(0, repo.indexOf(COLON));
+        this.repoPort = Integer.parseInt( repo.substring(repo.indexOf(COLON)+1));
+      } else {
+        this.repoHost = repo;
+        this.repoPort = 80;
+      }
+    } else {
+      this.repoHost = DEFAULT_REPO_HOST;
+      this.repoPort = 80;
+    }
+    this.proxyHost = System.getProperty(HTTP_PROXY_HOST_PROP_NAME);
+    String tmpPort = System.getProperty(HTTP_PROXY_PORT_PROP_NAME);
+    this.proxyPort = tmpPort != null ? Integer.parseInt(tmpPort) : 80;
     VertxLocator.vertx = vertx;
     VertxLocator.container = new Container(this);
-    if (modDir == null) {
-    	modDir = System.getProperty("vertx.mods");
+    String modDir = System.getProperty("vertx.mods");
+    if (modDir != null && !modDir.trim().equals("")) {
+      modRoot = new File(modDir);
+    } else {
+      // Default to local module directory called 'mods'
+      modRoot = new File("mods");
     }
-    if (modDir == null || modDir.trim().equals("")) {
-    	modDir = "mods";
-    } 
-    modRoot = new File(modDir);
-    if (modRoot.exists() && !modRoot.isDirectory()) {
-    	throw new RuntimeException("modRoot must be a directory: " + modRoot.getAbsolutePath());
-    }
-   
-    // Always initial with at least one repository
-    ModuleRepository defRepo = newModuleRepository(vertx, repo, modRoot);
-    if (defRepo == null) {
-    	throw new NullPointerException("newModuleRepository() must not return null");
-    }
-    this.repositories.add(defRepo);
-    
     this.redeployer = new Redeployer(vertx, modRoot, this);
 
-    try (InputStream is = getClass().getClassLoader().getResourceAsStream("langs.properties")) {
+    InputStream is = null;
+    try {
+      is = getClass().getClassLoader().getResourceAsStream("langs.properties");
       if (is == null) {
         log.warn("No language mappings found!");
       } else {
@@ -114,28 +128,16 @@ public class VerticleManager implements ModuleReloader {
       }
     } catch (IOException e) {
       log.error("Failed to load langs.properties: " + e.getMessage());
+    } finally {
+      if (is != null) {
+        try {
+          is.close();
+        } catch (IOException ignore) {
+        }
+      }
     }
   }
 
-  /**
-   * Allow subclasses to provide their own default ModuleRepository
-   * 
-   * @param vertx
-   * @param repo
-   * @param modRoot
-   * @return
-   */
-  protected ModuleRepository newModuleRepository(VertxInternal vertx, String repo, File modRoot) {
-    return new DefaultModuleRepository(vertx, repo, modRoot);
-  }
-
-  /**
-   * @return The list of registered repositories
-   */
-  public final List<ModuleRepository> getModuleRepositories() {
-  	return this.repositories;
-  }
-  
   public void block() {
     while (true) {
       try {
@@ -237,7 +239,6 @@ public class VerticleManager implements ModuleReloader {
     ModuleClassLoader cl = new ModuleClassLoader(urls);
     if (includes != null) {
       loadIncludedModules(cl, includes);
-          conf = new ModuleConfig(modDir, includedMod).json();
     }
     doDeploy(null, false, worker, main, null, config, urls, instances, currentModDir, cl, doneHandler);
   }
@@ -344,32 +345,32 @@ public class VerticleManager implements ModuleReloader {
                            final Handler<String> doneHandler) {
     checkWorkerContext();
     File modDir = new File(modRoot, modName);
-    ModuleConfig conf = new ModuleConfig(modDir, modName);
-    if (conf.json() != null) {
-      String main = conf.main();
+    JsonObject conf = loadModuleConfig(modName, modDir);
+    if (conf != null) {
+      String main = conf.getString("main");
       if (main == null) {
         log.error("Runnable module " + modName + " mod.json must contain a \"main\" field");
         callDoneHandler(doneHandler, null);
         return;
       }
-      Boolean worker = conf.worker();
+      Boolean worker = conf.getBoolean("worker");
       if (worker == null) {
         worker = Boolean.FALSE;
       }
-      Boolean preserveCwd = conf.preserveCwd();
+      Boolean preserveCwd = conf.getBoolean("preserve-cwd");
       if (preserveCwd == null) {
         preserveCwd = Boolean.FALSE;
       }
       // If preserveCwd then use the current module directory instead, or the cwd if not in a module
       File modDirToUse = preserveCwd ? currentModDir : modDir;
 
-      List<URL> urls = processIncludes(modName, new ArrayList<URL>(), modName, modDir, conf.json(),
+      List<URL> urls = getModuleClasspath(modDir);
       if (urls == null) {
         callDoneHandler(doneHandler, null);
         return;
       }
 
-      Boolean ar = conf.autoRedeploy();
+      Boolean ar = conf.getBoolean("auto-redeploy");
       final boolean autoRedeploy = ar == null ? false : ar;
 
       // Is the classloader already loaded? If so use that one, otherwise create a new one
@@ -410,6 +411,31 @@ public class VerticleManager implements ModuleReloader {
       } else {
         callDoneHandler(doneHandler, null);
       }
+    }
+  }
+
+  private JsonObject loadModuleConfig(String modName, File modDir) {
+    checkWorkerContext();
+    if (modDir.exists()) {
+      try (Scanner scanner = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A")) {
+        String conf;
+        try {
+          conf = scanner.next();
+        } catch (NoSuchElementException e) {
+          throw new IllegalStateException("Module " + modName + " contains an empty mod.json file");
+        }
+        JsonObject json;
+        try {
+          json = new JsonObject(conf);
+        } catch (DecodeException e) {
+          throw new IllegalStateException("Module " + modName + " mod.json contains invalid json");
+        }
+        return json;
+      } catch (FileNotFoundException e) {
+        throw new IllegalStateException("Module " + modName + " does not contain a mod.json file");
+      }
+    } else {
+      return null;
     }
   }
 
@@ -459,7 +485,6 @@ public class VerticleManager implements ModuleReloader {
       log.error("malformed url", e);
       return null;
     }
-            JsonObject newconf = new ModuleConfig(newmodDir, include).json();
   }
 
   private String[] parseIncludeString(String sincludes) {
@@ -477,19 +502,140 @@ public class VerticleManager implements ModuleReloader {
     return arr;
   }
 
-  /**
-   * Try all registered repositories
-   * 
-   * @param moduleName
-   * @return
-   */
   private boolean doInstallMod(final String moduleName) {
-  	for (ModuleRepository repo: this.repositories) {
-    	if (repo.installMod(moduleName) == true) {
-    		return true;
-    	}
-  	}
-  	return false;
+    checkWorkerContext();
+    final CountDownLatch latch = new CountDownLatch(1);
+    final AtomicReference<Buffer> mod = new AtomicReference<>();
+    HttpClient client = vertx.createHttpClient();
+    if (proxyHost != null) {
+      client.setHost(proxyHost);
+      if (proxyPort != 80) {
+        client.setPort(proxyPort);
+      } else {
+        client.setPort(80);
+      }
+    } else {
+      client.setHost(repoHost);
+      client.setPort(repoPort);
+    }
+    client.exceptionHandler(new Handler<Exception>() {
+      public void handle(Exception e) {
+        log.error("Unable to connect to repository");
+        latch.countDown();
+      }
+    });
+    String uri = REPO_URI_ROOT + moduleName + "/mod.zip";
+    String msg = "Attempting to install module " + moduleName + " from http://"
+        + repoHost + ":" + repoPort + uri;
+    if (proxyHost != null) {
+      msg += " Using proxy host " + proxyHost + ":" + proxyPort;
+    }
+    log.info(msg);
+    if (proxyHost != null) {
+      uri = new StringBuilder("http://").append(DEFAULT_REPO_HOST).append(uri).toString();
+    }
+    HttpClientRequest req = client.get(uri, new Handler<HttpClientResponse>() {
+      public void handle(HttpClientResponse resp) {
+        if (resp.statusCode == 200) {
+          log.info("Downloading module...");
+          resp.bodyHandler(new Handler<Buffer>() {
+            public void handle(Buffer buffer) {
+              mod.set(buffer);
+              latch.countDown();
+            }
+          });
+        } else if (resp.statusCode == 404) {
+          log.error("Can't find module " + moduleName + " in repository");
+          latch.countDown();
+        } else {
+          log.error("Failed to download module: " + resp.statusCode);
+          latch.countDown();
+        }
+      }
+    });
+    if(proxyHost != null){
+      req.putHeader("host", proxyHost);
+    } else {
+      req.putHeader("host", repoHost);
+    }
+    req.putHeader("user-agent", "Vert.x Module Installer");
+    req.end();
+    while (true) {
+      try {
+        if (!latch.await(30, TimeUnit.SECONDS)) {
+          throw new IllegalStateException("Timed out waiting to download module");
+        }
+        break;
+      } catch (InterruptedException ignore) {
+      }
+    }
+    Buffer modZipped = mod.get();
+    if (modZipped != null) {
+      return unzipModule(moduleName, modZipped);
+    } else {
+      return false;
+    }
+  }
+
+  private boolean unzipModule(final String modName, final Buffer data) {
+    checkWorkerContext();
+
+    // We synchronize to prevent a race whereby it tries to unzip the same module at the
+    // same time (e.g. deployModule for the same module name has been called in parallel)
+    synchronized (modName.intern()) {
+
+      if (!modRoot.exists()) {
+        if (!modRoot.mkdir()) {
+          log.error("Failed to create directory " + modRoot);
+          return false;
+        }
+      }
+      log.info("Installing module into directory '" + modRoot + "'");
+      File fdest = new File(modRoot, modName);
+      if (fdest.exists()) {
+        // This can happen if the same module is requested to be installed
+        // at around the same time
+        // It's ok if this happens
+        return true;
+      }
+      try {
+        InputStream is = new ByteArrayInputStream(data.getBytes());
+        ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
+        ZipEntry entry;
+        while ((entry = zis.getNextEntry()) != null) {
+          if (!entry.getName().startsWith(modName)) {
+            log.error("Module must contain zipped directory with same name as module");
+            fdest.delete();
+            return false;
+          }
+          if (entry.isDirectory()) {
+            new File(modRoot, entry.getName()).mkdir();
+          } else {
+            int count;
+            byte[] buff = new byte[BUFFER_SIZE];
+            BufferedOutputStream dest = null;
+            try {
+              OutputStream fos = new FileOutputStream(new File(modRoot, entry.getName()));
+              dest = new BufferedOutputStream(fos, BUFFER_SIZE);
+              while ((count = zis.read(buff, 0, BUFFER_SIZE)) != -1) {
+                 dest.write(buff, 0, count);
+              }
+              dest.flush();
+            } finally {
+              if (dest != null) {
+                dest.close();
+              }
+            }
+          }
+        }
+        zis.close();
+      } catch (IOException e) {
+        log.error("Failed to unzip module", e);
+        return false;
+      }
+      log.info("Module " + modName +" successfully installed");
+      return true;
+    }
   }
 
   // We calculate a path adjustment that can be used by the fileSystem object
