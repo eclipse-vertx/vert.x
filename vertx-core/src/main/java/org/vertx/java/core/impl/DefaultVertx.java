@@ -27,6 +27,7 @@ import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.file.impl.DefaultFileSystem;
+import org.vertx.java.core.file.impl.FolderWatcher;
 import org.vertx.java.core.file.impl.WindowsFileSystem;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
@@ -43,6 +44,7 @@ import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -55,13 +57,12 @@ public class DefaultVertx extends VertxInternal {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultVertx.class);
 
-  private static final int DEFAULT_WORKER_POOL_SIZE = 20;
-
   private final FileSystem fileSystem = getFileSystem();
   private final EventBus eventBus;
   private final SharedData sharedData = new SharedData();
-
-  private int backgroundPoolSize;
+  private FolderWatcher folderWatcher;
+  
+  private int backgroundPoolSize = 20;
   private int corePoolSize = Runtime.getRuntime().availableProcessors();
   private ExecutorService backgroundPool;
   private OrderedExecutorFactory orderedFact;
@@ -101,7 +102,7 @@ public class DefaultVertx extends VertxInternal {
    * deal with configuration parameters
    */
   private void configure() {
-    this.backgroundPoolSize = Integer.getInteger("vertx.backgroundPoolSize", DEFAULT_WORKER_POOL_SIZE);
+    this.backgroundPoolSize = Integer.getInteger("vertx.backgroundPoolSize", 20);
   }
 
   /**
@@ -265,6 +266,20 @@ public class DefaultVertx extends VertxInternal {
     return sharedNetServers;
   }
 
+  /**
+   * Get the folder watcher. Lazy start if necessary.
+   */
+  public FolderWatcher folderWatcher(final boolean startIfNecessary) {
+  	if (startIfNecessary && (this.folderWatcher == null)) {
+  		try {
+				this.folderWatcher = new FolderWatcher();
+			} catch (IOException ex) {
+				log.error("Error while starting FolderWatcher", ex);
+			}
+  	}
+  	return this.folderWatcher;
+  }
+  
   private long setTimeout(final long delay, boolean periodic, final Handler<Long> handler) {
     final Context context = getOrAssignContext();
 
@@ -344,6 +359,11 @@ public class DefaultVertx extends VertxInternal {
   @Override
 	public void stop() {
 
+  	if (this.folderWatcher != null) {
+	  	this.folderWatcher.close();
+	  	this.folderWatcher = null;
+  	}
+  	
 		if (sharedHttpServers != null) {
 			for (HttpServer server : sharedHttpServers.values()) {
 				server.close();

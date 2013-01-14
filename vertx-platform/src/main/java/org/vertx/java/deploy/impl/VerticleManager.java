@@ -111,7 +111,10 @@ public class VerticleManager implements ModuleReloader {
       // Default to local module directory called 'mods'
       modRoot = new File("mods");
     }
-    this.redeployer = new Redeployer(vertx, modRoot, this);
+    this.redeployer = newRedeployer(vertx, modRoot);
+    if (this.redeployer == null) {
+    	throw new NullPointerException("newRedeployer() must not return null");
+    }
 
     InputStream is = null;
     try {
@@ -139,6 +142,17 @@ public class VerticleManager implements ModuleReloader {
     }
   }
 
+  /**
+   * Get a new Redeployer
+   * 
+   * @param vertx
+   * @param modRoot
+   * @return
+   */
+  protected Redeployer newRedeployer(final VertxInternal vertx, final File modRoot) {
+    return new DefaultRedeployer(vertx, modRoot, this);
+  }
+  
   public void block() {
     while (true) {
       try {
