@@ -17,6 +17,7 @@
 package org.vertx.java.deploy.impl.java;
 
 import org.vertx.java.deploy.Verticle;
+import org.vertx.java.deploy.impl.ModuleClassLoader;
 import org.vertx.java.deploy.impl.VerticleFactory;
 import org.vertx.java.deploy.impl.VerticleManager;
 
@@ -26,13 +27,14 @@ import org.vertx.java.deploy.impl.VerticleManager;
 public class JavaVerticleFactory implements VerticleFactory {
 
   private VerticleManager mgr;
-  
+  private ModuleClassLoader mcl;
+
   public JavaVerticleFactory() {
 	  super();
   }
 
   @Override
-  public void init(VerticleManager mgr) {
+  public void init(VerticleManager mgr, ModuleClassLoader mcl) {
 	  this.mgr = mgr;
   }
 
@@ -40,29 +42,21 @@ public class JavaVerticleFactory implements VerticleFactory {
     return main.endsWith(".java");
   }
 
-  public Verticle createVerticle(String main, ClassLoader loader) throws Exception {
+  public Verticle createVerticle(String main) throws Exception {
 
-    ClassLoader cl = loader;
     String className = main;
+    Class<?> clazz;
     if (isJavaSource(main)) {
-      CompilingClassLoader compilingLoader = new CompilingClassLoader(loader, main);
+      // TODO - is this right???
+      // Don't we want one CompilingClassloader per instance of this?
+      CompilingClassLoader compilingLoader = new CompilingClassLoader(mcl, main);
       className = compilingLoader.resolveMainClassName();
-      cl = compilingLoader;
-    }
-    Class<?> clazz = cl.loadClass(className);
-
-    Verticle verticle = (Verticle) clazz.newInstance();
-
-    // Sanity check - make sure app class didn't get loaded by the parent or system classloader
-    // This might happen if it's been put on the server classpath
-    // Out of the box busmods are ok though
-    ClassLoader system = ClassLoader.getSystemClassLoader();
-    ClassLoader appCL = clazz.getClassLoader();
-    if (!main.startsWith("org.vertx.java.busmods") && (appCL == cl.getParent() || (system != null && appCL == system))) {
-      throw new IllegalStateException("Do not add application classes to the vert.x classpath");
+      clazz = compilingLoader.loadClass(className);
+    } else {
+      clazz = mcl.loadClass(className);
     }
 
-    return verticle;
+    return (Verticle)clazz.newInstance();
   }
     
   public void reportException(Throwable t) {

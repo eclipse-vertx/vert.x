@@ -28,9 +28,9 @@ public interface VerticleFactory {
 	
   public static final Iterable<VerticleFactory> factories = ServiceLoader.load(VerticleFactory.class);
 
-  void init(VerticleManager manager);
+  void init(VerticleManager manager, ModuleClassLoader mcl);
 
-  Verticle createVerticle(String main, ClassLoader parentCL) throws Exception;
+  Verticle createVerticle(String main) throws Exception;
 
   void reportException(Throwable t);
 

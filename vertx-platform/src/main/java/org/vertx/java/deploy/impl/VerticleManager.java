@@ -179,6 +179,11 @@ public class VerticleManager implements ModuleReloader {
     return holder == null ? null : holder.logger;
   }
 
+  public String getModuleName() {
+    VerticleHolder holder = getVerticleHolder();
+    return holder == null ? null : holder.deployment.modName;
+  }
+
   private AsyncResultHandler<Void> createHandler(final Handler<String> doneHandler) {
     return new AsyncResultHandler<Void>() {
       @Override
@@ -231,13 +236,47 @@ public class VerticleManager implements ModuleReloader {
     };
   }
 
+  // Recurse up through the parent deployments and return the the module name for the first one
+  // which has one, or if there is no enclosing module just use the deployment name
+  private String getEnclosingModuleName() {
+    Deployment dep = getVerticleHolder().deployment;
+    while (dep != null) {
+      if (dep.modName != null) {
+        return dep.modName;
+      } else {
+        String parentDepName = dep.parentDeploymentName;
+        if (parentDepName != null) {
+          dep = deployments.get(parentDepName);
+        } else {
+          // Top level - deployed as verticle not module
+          // Just use the deployment name
+          return dep.name;
+        }
+      }
+    }
+    return null;
+  }
+
   private void doDeployVerticle(boolean worker, final String main,
                                 final JsonObject config, final URL[] urls,
                                 int instances, File currentModDir,
                                 String includes, Handler<String> doneHandler)
   {
     checkWorkerContext();
-    ModuleClassLoader cl = new ModuleClassLoader(urls);
+    ModuleClassLoader cl;
+    synchronized (moduleClassLoaders) {
+      // When deploying a verticle directly there is one module class loader per
+      // enclosing module + the name of the verticle.
+      // E.g. if a module A deploys "foo.js" as a verticle then all instances of foo.js deployed by the enclosing
+      // module will share a module class loader
+      String mcf = getEnclosingModuleName() + "." + main;
+      // When deploying a verticle we create a
+      cl = moduleClassLoaders.get(mcf);
+      if (cl == null) {
+        cl = new ModuleClassLoader(urls);
+        moduleClassLoaders.put(mcf, cl);
+      }
+    }
     if (includes != null) {
       loadIncludedModules(cl, includes);
     }
@@ -658,14 +697,14 @@ public class VerticleManager implements ModuleReloader {
   }
 
   private void doDeploy(String depName,
-                          boolean autoRedeploy,
-                          boolean worker, final String main,
-                          final String modName,
-                          final JsonObject config, final URL[] urls,
-                          int instances,
-                          final File modDir,
-                          final ModuleClassLoader cl,
-                          final Handler<String> doneHandler) {
+                        boolean autoRedeploy,
+                        boolean worker, final String main,
+                        final String modName,
+                        final JsonObject config, final URL[] urls,
+                        int instances,
+                        final File modDir,
+                        final ModuleClassLoader cl,
+                        final Handler<String> doneHandler) {
     checkWorkerContext();
 
     final String deploymentName =
@@ -686,6 +725,16 @@ public class VerticleManager implements ModuleReloader {
       if (factoryName == null) {
         throw new IllegalArgumentException("No language mapping found and no default specified in langs.properties");
       }
+    }
+
+    final VerticleFactory verticleFactory;
+
+    try {
+      verticleFactory = cl.getVerticleFactory(factoryName, this);
+    } catch (Exception e) {
+      log.error("Failed to instantiate verticle factory", e);
+      doneHandler.handle(null);
+      return;
     }
 
     final int instCount = instances;
@@ -724,29 +773,6 @@ public class VerticleManager implements ModuleReloader {
 
       Thread.currentThread().setContextClassLoader(cl);
 
-      // We load the VerticleFactory class using the verticle classloader - this allows
-      // us to put language implementations in modules
-
-      Class clazz;
-      try {
-        clazz = cl.loadClass(factoryName);
-      } catch (ClassNotFoundException e) {
-        log.error("Cannot find class " + factoryName + " to load");
-        callDoneHandler(doneHandler, null);
-        return;
-      }
-
-      final VerticleFactory verticleFactory;
-      try {
-        verticleFactory = (VerticleFactory)clazz.newInstance();
-      } catch (Exception e) {
-        log.error("Failed to instantiate VerticleFactory: " + e.getMessage());
-        callDoneHandler(doneHandler, null);
-        return;
-      }
-
-      verticleFactory.init(this);
-
       Runnable runner = new Runnable() {
         public void run() {
 
@@ -754,7 +780,7 @@ public class VerticleManager implements ModuleReloader {
           boolean error = true;
 
           try {
-            verticle = verticleFactory.createVerticle(main, cl);
+            verticle = verticleFactory.createVerticle(main);
             error = false;
           } catch (ClassNotFoundException e) {
             log.error("Cannot find verticle " + main);

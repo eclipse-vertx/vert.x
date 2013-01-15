@@ -20,6 +20,7 @@ import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.RhinoException;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.deploy.Verticle;
+import org.vertx.java.deploy.impl.ModuleClassLoader;
 import org.vertx.java.deploy.impl.VerticleFactory;
 import org.vertx.java.deploy.impl.VerticleManager;
 
@@ -34,23 +35,23 @@ public class RhinoVerticleFactory implements VerticleFactory {
   }
 
   private VerticleManager mgr;
+  private ModuleClassLoader mcl;
 
   public RhinoVerticleFactory() {
   }
 
   @Override
-  public void init(VerticleManager mgr) {
+  public void init(VerticleManager mgr, ModuleClassLoader mcl) {
 	  this.mgr = mgr;
+    this.mcl = mcl;
   }
 
-  public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
-    Verticle app = new RhinoVerticle(main, cl);
+  public Verticle createVerticle(String main) throws Exception {
+    Verticle app = new RhinoVerticle(main, mcl);
     return app;
   }
 
   public void reportException(Throwable t) {
-
-    //t.printStackTrace();
 
     Logger logger = mgr.getLogger();
 
