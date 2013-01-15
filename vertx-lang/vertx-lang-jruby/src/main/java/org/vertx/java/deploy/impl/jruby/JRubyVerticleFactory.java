@@ -16,16 +16,24 @@
 
 package org.vertx.java.deploy.impl.jruby;
 
+import org.jruby.CompatVersion;
 import org.jruby.RubyException;
 import org.jruby.RubyNameError;
 import org.jruby.embed.EvalFailedException;
+import org.jruby.embed.InvokeFailedException;
+import org.jruby.embed.LocalContextScope;
+import org.jruby.embed.ScriptingContainer;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.deploy.Verticle;
+import org.vertx.java.deploy.impl.ModuleClassLoader;
 import org.vertx.java.deploy.impl.VerticleFactory;
 import org.vertx.java.deploy.impl.VerticleManager;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Writer;
 import java.util.List;
 
 /**
@@ -34,22 +42,30 @@ import java.util.List;
 public class JRubyVerticleFactory implements VerticleFactory {
 
   private VerticleManager mgr;
+  private ModuleClassLoader mcl;
+  private ScriptingContainer scontainer;
 
   public JRubyVerticleFactory() {
   }
 
   @Override
-  public void init(VerticleManager mgr) {
+  public void init(VerticleManager mgr, ModuleClassLoader mcl) {
 	  this.mgr = mgr;
-  }
-
-  public Verticle createVerticle(String main, ClassLoader cl) throws Exception {
+    this.mcl = mcl;
     if (System.getProperty("jruby.home") == null) {
       throw new IllegalStateException("In order to deploy Ruby applications you must set JRUBY_HOME to point " +
           "at your JRuby installation");
     }
-    Verticle app = new JRubyVerticle(main, cl);
-    return app;
+    this.scontainer = new ScriptingContainer(LocalContextScope.CONCURRENT);
+    scontainer.setCompatVersion(CompatVersion.RUBY1_9);
+    scontainer.setClassLoader(mcl);
+    //Prevent JRuby from logging errors to stderr - we want to log ourselves
+    scontainer.setErrorWriter(new NullWriter());
+  }
+
+  @Override
+  public Verticle createVerticle(String main) throws Exception {
+    return new JRubyVerticle(main);
   }
 
   public void reportException(Throwable t) {
@@ -105,4 +121,61 @@ public class JRubyVerticleFactory implements VerticleFactory {
       backtrace.append(line).append('\n');
     }
   }
+
+  private class NullWriter extends Writer {
+
+    public void write(char[] cbuf, int off, int len) throws IOException {
+    }
+
+    public void flush() throws IOException {
+    }
+
+    public void close() throws IOException {
+    }
+  }
+
+  private class JRubyVerticle extends Verticle {
+
+    private final String scriptName;
+
+    JRubyVerticle(String scriptName) {
+      this.scriptName = scriptName;
+    }
+
+    public void start() throws Exception {
+      InputStream is = mcl.getResourceAsStream(scriptName);
+      if (is == null) {
+        throw new IllegalArgumentException("Cannot find verticle: " + scriptName);
+      }
+      // Inject vertx as a variable in the script
+      scontainer.runScriptlet(is, scriptName);
+      try {
+        is.close();
+      } catch (IOException ignore) {
+      }
+    }
+
+    public void stop() throws Exception {
+      try {
+        // We call the script with receiver = null - this causes the method to be called on the top level
+        // script
+        scontainer.callMethod(null, "vertx_stop");
+      } catch (InvokeFailedException e) {
+        Throwable cause = e.getCause();
+        if (cause instanceof RaiseException) {
+          // Gosh, this is a bit long winded!
+          RaiseException re = (RaiseException)cause;
+          String msg = "(NoMethodError) undefined method `vertx_stop'";
+          if (re.getMessage().startsWith(msg)) {
+            // OK - method is not mandatory
+            return;
+          }
+        }
+        throw e;
+      }
+    }
+
+
+  }
+
 }

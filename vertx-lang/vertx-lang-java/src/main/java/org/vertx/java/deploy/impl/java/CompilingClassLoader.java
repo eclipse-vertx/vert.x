@@ -50,7 +50,7 @@ public class CompilingClassLoader extends ClassLoader {
     }
 
     this.javaSourceContext = new JavaSourceContext(sourceFile);
-    
+
     try {
       DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
       JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
