@@ -71,7 +71,7 @@ public class HazelcastClusterManager implements ClusterManager {
       }
 
       // default instance
-      instance = Hazelcast.init(cfg);
+      instance = Hazelcast.newHazelcastInstance(cfg);
 
       // Properly shutdown all instances
       Runtime.getRuntime().addShutdownHook(new Thread() {
