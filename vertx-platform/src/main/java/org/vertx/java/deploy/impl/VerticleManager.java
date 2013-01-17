@@ -239,7 +239,8 @@ public class VerticleManager implements ModuleReloader {
   // Recurse up through the parent deployments and return the the module name for the first one
   // which has one, or if there is no enclosing module just use the deployment name
   private String getEnclosingModuleName() {
-    Deployment dep = getVerticleHolder().deployment;
+    VerticleHolder holder = getVerticleHolder();
+    Deployment dep = holder == null ? null : holder.deployment;
     while (dep != null) {
       if (dep.modName != null) {
         return dep.modName;
