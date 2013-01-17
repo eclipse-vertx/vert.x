@@ -173,12 +173,13 @@ def http_method(ssl, method, chunked):
         @req.end_handler
         def end_handler(stream):
             tu.check_context()
-            if not chunked:
-                req.response.put_header('Content-Length', body.length)
-            req.response.write_buffer(body)
-            if chunked:
-                req.response.put_trailer('trailer1', 'vtrailer1')
-                req.response.put_trailer('trailer2', 'vtrailer2')
+            if method != 'HEAD' and method != 'CONNECT':
+                if not chunked:
+                    req.response.put_header('Content-Length', body.length)
+                req.response.write_buffer(body)
+                if chunked:
+                    req.response.put_trailer('trailer1', 'vtrailer1')
+                    req.response.put_trailer('trailer2', 'vtrailer2')
             req.response.end()
 
     server.listen(8080)
@@ -207,10 +208,11 @@ def http_method(ssl, method, chunked):
         @resp.end_handler
         def end_handler(stream):
             tu.check_context()
-            tu.azzert(TestUtils.buffers_equal(sent_buff, body))
-            if chunked:
-                tu.azzert('vtrailer1' == resp.trailers['trailer1'])
-                tu.azzert('vtrailer2' == resp.trailers['trailer2'])
+            if method != 'HEAD' and method != 'CONNECT':
+                tu.azzert(TestUtils.buffers_equal(sent_buff, body))
+                if chunked:
+                    tu.azzert('vtrailer1' == resp.trailers['trailer1'])
+                    tu.azzert('vtrailer2' == resp.trailers['trailer2'])
             tu.test_complete()
 
     request = client.request(method, uri, response_handler)
