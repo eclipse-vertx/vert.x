@@ -476,7 +476,14 @@ public class HttpTestClient extends TestClientBase {
     getRequest(true, "HEAD", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         tu.checkContext();
-        tu.testComplete();
+        tu.azzert(Integer.valueOf(resp.headers().get("Content-Length")) == 41);
+        resp.endHandler(new SimpleHandler() {
+          @Override
+          protected void handle() {
+            tu.testComplete();
+          }
+        });
+
       }
     }).end();
   }
