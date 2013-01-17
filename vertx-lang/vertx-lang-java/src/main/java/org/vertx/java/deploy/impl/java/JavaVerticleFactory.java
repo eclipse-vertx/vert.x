@@ -36,6 +36,7 @@ public class JavaVerticleFactory implements VerticleFactory {
   @Override
   public void init(VerticleManager mgr, ModuleClassLoader mcl) {
 	  this.mgr = mgr;
+    this.mcl = mcl;
   }
 
   private boolean isJavaSource(String main) {

@@ -43,7 +43,7 @@ public class JRubyVerticleFactory implements VerticleFactory {
 
   private VerticleManager mgr;
   private ModuleClassLoader mcl;
-  private ScriptingContainer scontainer;
+
 
   public JRubyVerticleFactory() {
   }
@@ -56,11 +56,6 @@ public class JRubyVerticleFactory implements VerticleFactory {
       throw new IllegalStateException("In order to deploy Ruby applications you must set JRUBY_HOME to point " +
           "at your JRuby installation");
     }
-    this.scontainer = new ScriptingContainer(LocalContextScope.CONCURRENT);
-    scontainer.setCompatVersion(CompatVersion.RUBY1_9);
-    scontainer.setClassLoader(mcl);
-    //Prevent JRuby from logging errors to stderr - we want to log ourselves
-    scontainer.setErrorWriter(new NullWriter());
   }
 
   @Override
@@ -137,9 +132,15 @@ public class JRubyVerticleFactory implements VerticleFactory {
   private class JRubyVerticle extends Verticle {
 
     private final String scriptName;
+    private ScriptingContainer scontainer;
 
     JRubyVerticle(String scriptName) {
       this.scriptName = scriptName;
+      this.scontainer = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+      scontainer.setCompatVersion(CompatVersion.RUBY1_9);
+      scontainer.setClassLoader(mcl);
+      //Prevent JRuby from logging errors to stderr - we want to log ourselves
+      scontainer.setErrorWriter(new NullWriter());
     }
 
     public void start() throws Exception {
@@ -147,7 +148,6 @@ public class JRubyVerticleFactory implements VerticleFactory {
       if (is == null) {
         throw new IllegalArgumentException("Cannot find verticle: " + scriptName);
       }
-      // Inject vertx as a variable in the script
       scontainer.runScriptlet(is, scriptName);
       try {
         is.close();

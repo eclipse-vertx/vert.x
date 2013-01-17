@@ -37,7 +37,7 @@ public class JythonVerticleFactory implements VerticleFactory {
 
   private VerticleManager mgr;
   private ModuleClassLoader mcl;
-  private PythonInterpreter py;
+
 
   public JythonVerticleFactory() {
   }
@@ -46,8 +46,7 @@ public class JythonVerticleFactory implements VerticleFactory {
   public void init(VerticleManager mgr, ModuleClassLoader mcl) {
     this.mgr = mgr;
     System.setProperty("python.options.internalTablesImpl","weak");
-    Options.includeJavaStackInExceptions = false;
-    this.py = new PythonInterpreter(null, new PySystemState());
+
     this.mcl = mcl;
   }
 
@@ -62,9 +61,12 @@ public class JythonVerticleFactory implements VerticleFactory {
   private class JythonVerticle extends Verticle {
 
     private final String scriptName;
+    private PythonInterpreter py;
 
     JythonVerticle(String scriptName) {
       this.scriptName = scriptName;
+      Options.includeJavaStackInExceptions = false;
+      this.py = new PythonInterpreter(null, new PySystemState());
     }
 
     public void start() throws Exception {
