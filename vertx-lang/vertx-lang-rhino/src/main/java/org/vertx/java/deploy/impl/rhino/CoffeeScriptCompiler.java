@@ -20,6 +20,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.JavaScriptException;
 import org.mozilla.javascript.Script;
 import org.mozilla.javascript.Scriptable;
+import org.mozilla.javascript.commonjs.module.provider.ModuleSource;
 
 import java.io.*;
 import java.net.URI;
@@ -50,15 +51,26 @@ public class CoffeeScriptCompiler {
     }
   }
 
-  public URI coffeeScriptToJavaScript(URI coffeeScript) throws JavaScriptException,
+  public String coffeeScriptToJavaScript(URI coffeeScript) throws JavaScriptException,
       InvalidPathException, IOException, URISyntaxException {
-    File out = new File(new URI(coffeeScript.toString() + ".js"));
     Path path = Paths.get(coffeeScript);
     String coffee = new String(Files.readAllBytes(path));
-    Files.write(out.toPath(), compile(coffee).getBytes());
-    return out.toURI();
+    return compile(coffee);
   }
 
+  public ModuleSource coffeeScriptToJavaScript(ModuleSource source) throws JavaScriptException, InvalidPathException, IOException, URISyntaxException {
+    try (Reader reader = source.getReader()) {
+      StringBuilder coffee = new StringBuilder();
+      char[] buf = new char[4096];
+      int numRead;
+      while ((numRead = reader.read(buf)) != -1) {
+        coffee.append(new String(buf, 0, numRead));
+      }
+      String compiled = compile(coffee.toString());
+      return new ModuleSource(new StringReader(compiled), source.getSecurityDomain(), source.getUri(), source.getBase(), source.getValidator());
+    }
+  }
+  
   public String compile(String coffeeScriptSource) throws JavaScriptException {
     Context context = Context.enter();
     try {
@@ -77,10 +89,5 @@ public class CoffeeScriptCompiler {
     } finally {
       Context.exit();
     }
-  }
-
-  public static void main(String[] args) throws Exception {
-    CoffeeScriptCompiler c = new CoffeeScriptCompiler(CoffeeScriptCompiler.class.getClassLoader());
-    System.out.println(c.coffeeScriptToJavaScript(new File("test.coffee").toURI()));
   }
 }
