@@ -210,10 +210,12 @@ function httpMethod(ssl, method, chunked) {
       if (!chunked) {
         req.response.headers()['Content-Length'] =  '' + body.length();
       }
-      req.response.writeBuffer(body);
-      if (chunked) {
-        req.response.trailers()['trailer1'] = 'vtrailer1';
-        req.response.putTrailer('trailer2', 'vtrailer2');
+      if (method !== 'HEAD' && method !== 'CONNECT') {
+        req.response.writeBuffer(body);
+        if (chunked) {
+          req.response.trailers()['trailer1'] = 'vtrailer1';
+          req.response.putTrailer('trailer2', 'vtrailer2');
+        }
       }
       req.response.end();
     });
@@ -243,10 +245,12 @@ function httpMethod(ssl, method, chunked) {
 
     resp.endHandler(function() {
       tu.checkContext();
-      tu.azzert(tu.buffersEqual(sent_buff, body));
-      if (chunked) {
-        tu.azzert('vtrailer1' === resp.trailers()['trailer1']);
-        tu.azzert('vtrailer2' === resp.trailers()['trailer2']);
+      if (method !== 'HEAD' && method !== 'CONNECT') {
+        tu.azzert(tu.buffersEqual(sent_buff, body));
+        if (chunked) {
+          tu.azzert('vtrailer1' === resp.trailers()['trailer1']);
+          tu.azzert('vtrailer2' === resp.trailers()['trailer2']);
+        }
       }
       tu.testComplete();
     });

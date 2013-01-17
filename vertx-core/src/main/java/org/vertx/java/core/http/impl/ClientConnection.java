@@ -92,9 +92,9 @@ class ClientConnection extends AbstractConnection {
       }
 
       final ChannelPipeline p = channel.getPipeline();
-      SwitchingHttpResponseDecoder decoder = (SwitchingHttpResponseDecoder)p.get("decoder");
+      SwitchingHttpClientCodec codec = (SwitchingHttpClientCodec)p.get("codec");
 
-      decoder.setSwitch("wsdecoder", shake.getDecoder());
+      codec.setSwitch("wsdecoder", shake.getDecoder());
 
       wsHandshakeConnection = true;
 
@@ -107,7 +107,7 @@ class ClientConnection extends AbstractConnection {
                 public void handle(AsyncResult<Void> fut) {
                   if (fut.succeeded()) {
                     //We upgraded ok
-                    p.replace("encoder", "wsencoder", shake.getEncoder(false));
+                    p.addLast("wsencoder", shake.getEncoder(false));
                     ws = new DefaultWebSocket(vertx, null, ClientConnection.this, null);
                     wsConnect.handle(ws);
                   } else {

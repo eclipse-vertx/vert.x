@@ -461,6 +461,26 @@ public class HttpTestClient extends TestClientBase {
     }).end();
   }
 
+  public void testHeadNoBody() {
+    startServer(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+        tu.checkContext();
+        tu.azzert(req.method.equals("HEAD"));
+        // Head never contains a body but it can contain a Content-Length header
+        // Since headers from HEAD must correspond EXACTLY with corresponding headers for GET
+        req.response.putHeader("Content-Length", 41);
+        req.response.end();
+      }
+    });
+
+    getRequest(true, "HEAD", "some-uri", new Handler<HttpClientResponse>() {
+      public void handle(HttpClientResponse resp) {
+        tu.checkContext();
+        tu.testComplete();
+      }
+    }).end();
+  }
+
   public void testAbsoluteURI() {
     testURIAndPath("http://localhost:8080/this/is/a/path/foo.html", "/this/is/a/path/foo.html");
   }

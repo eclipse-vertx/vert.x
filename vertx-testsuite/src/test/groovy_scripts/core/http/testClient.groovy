@@ -207,10 +207,12 @@ def httpMethod(ssl, method, chunked)  {
     req.response.setChunked(chunked)
     req.endHandler {
       tu.checkContext()
-      if (!chunked) {
-        req.response.headers['content-length'] = body.length
+      if (method != 'HEAD' && method != 'CONNECT') {
+        if (!chunked) {
+          req.response.headers['content-length'] = body.length
+        }
+        req.response << body
       }
-      req.response << body
       if (chunked) {
         req.response.trailers['trailer1'] = 'vtrailer1'
         req.response.trailers['trailer2'] = 'vtrailer2'
@@ -243,10 +245,12 @@ def httpMethod(ssl, method, chunked)  {
 
     resp.endHandler {
       tu.checkContext()
-      tu.azzert(TestUtils.buffersEqual(sentBuff, body))
-      if (chunked) {
-        tu.azzert(resp.trailers['trailer1'] == 'vtrailer1')
-        tu.azzert(resp.trailers['trailer2'] == 'vtrailer2')
+      if (method != 'HEAD' && method != 'CONNECT') {
+        tu.azzert(TestUtils.buffersEqual(sentBuff, body))
+        if (chunked) {
+          tu.azzert(resp.trailers['trailer1'] == 'vtrailer1')
+          tu.azzert(resp.trailers['trailer2'] == 'vtrailer2')
+        }
       }
       tu.testComplete()
     }

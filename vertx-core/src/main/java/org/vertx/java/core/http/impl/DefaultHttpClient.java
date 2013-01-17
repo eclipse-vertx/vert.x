@@ -377,8 +377,7 @@ public class DefaultHttpClient implements HttpClient {
             engine.setUseClientMode(true); //We are on the client side of the connection
             pipeline.addLast("ssl", new SslHandler(engine));
           }
-          pipeline.addLast("encoder", new HttpRequestEncoder());
-          pipeline.addLast("decoder", new SwitchingHttpResponseDecoder());
+          pipeline.addLast("codec", new SwitchingHttpClientCodec());
           pipeline.addLast("handler", new ClientHandler());
           return pipeline;
         }
