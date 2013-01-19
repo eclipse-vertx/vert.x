@@ -144,7 +144,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   }
 
   private void internalHandleRegister(final SockJSSocket sock, final String address, Map<String, Handler<Message<JsonObject>>> handlers) {
-    if (handleRegister(sock, address)) {
+    if (handlePreRegister(sock, address)) {
       Handler<Message<JsonObject>> handler = new Handler<Message<JsonObject>>() {
         public void handle(final Message<JsonObject> msg) {
           Match curMatch = checkMatches(false, address, msg.body);
@@ -162,10 +162,12 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       };
       handlers.put(address, handler);
       eb.registerHandler(address, handler);
+      handlePostRegister(sock,address);
     }
   }
 
-  private void internalHandleUnregister(SockJSSocket sock, String address, Map<String,
+
+    private void internalHandleUnregister(SockJSSocket sock, String address, Map<String,
       Handler<Message<JsonObject>>> handlers) {
     if (handleUnregister(sock, address)) {
       Handler<Message<JsonObject>> handler = handlers.remove(address);
@@ -453,8 +455,18 @@ public class EventBusBridge implements Handler<SockJSSocket> {
    * @param address The address
    * @return true to let the registration occur, false otherwise
    */
-  protected boolean handleRegister(SockJSSocket sock, String address) {
+  protected boolean handlePreRegister(SockJSSocket sock, String address) {
     return true;
+  }
+
+
+   /**
+    * Client is done registering a handler
+    * @param sock The socket
+    * @param address The address
+    */
+  protected void handlePostRegister(SockJSSocket sock, String address) {
+
   }
 
   /**
