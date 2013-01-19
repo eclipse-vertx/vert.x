@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 
 /**
- * Utility factory for creating vert.x thread pools
+ * Util factory for creating vert.x thread pools
  * 
  * @author swilliams
  *
