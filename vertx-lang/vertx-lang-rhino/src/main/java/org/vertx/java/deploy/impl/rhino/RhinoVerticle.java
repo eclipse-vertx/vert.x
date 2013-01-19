@@ -183,7 +183,7 @@ public class RhinoVerticle extends Verticle {
   }
 
   private static void loadScript(ClassLoader cl, Context cx, ScriptableObject scope, String scriptName) throws Exception {
-    if(scriptName != null && scriptName.endsWith(".coffee")) {
+    if (scriptName != null && scriptName.endsWith(".coffee")) {
         URL resource = cl.getResource(scriptName);
         if(resource != null) {
             getCoffeeScriptCompiler(cl).coffeeScriptToJavaScript(resource.toURI());

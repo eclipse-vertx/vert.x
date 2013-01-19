@@ -271,6 +271,9 @@ public class VerticleManager implements ModuleReloader {
       // E.g. if a module A deploys "foo.js" as a verticle then all instances of foo.js deployed by the enclosing
       // module will share a module class loader
       String mcf = getEnclosingModuleName() + "." + main;
+
+      System.out.println("Mcf name is " + mcf);
+
       // When deploying a verticle we create a
       cl = moduleClassLoaders.get(mcf);
       if (cl == null) {
