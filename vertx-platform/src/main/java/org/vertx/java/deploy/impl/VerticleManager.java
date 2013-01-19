@@ -137,6 +137,15 @@ public class VerticleManager implements ModuleReloader {
         }
       }
     }
+
+    Set<String> propertyNames = System.getProperties().stringPropertyNames();
+    for (String propertyName : propertyNames) {
+      if (propertyName.startsWith("vertx.langs.")) {
+        String lang = propertyName.replaceFirst("vertx.langs.", "");
+        String value = System.getProperty(propertyName);
+        factoryNames.put(lang, value);
+      }
+    }
   }
 
   public void block() {
