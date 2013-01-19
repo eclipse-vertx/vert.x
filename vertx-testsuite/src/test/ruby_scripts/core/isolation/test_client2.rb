@@ -18,11 +18,9 @@ require "test_utils"
 
 @tu = TestUtils.new
 
-def test_isolation
-
-  # Make sure global variables aren't visible between applications
-  @tu.azzert($test_global == nil)
-  $test_global = 123
+def test_isolated_global_init2
+  $test_global = 2
+  puts "set to 2"
   @tu.test_complete
 end
 

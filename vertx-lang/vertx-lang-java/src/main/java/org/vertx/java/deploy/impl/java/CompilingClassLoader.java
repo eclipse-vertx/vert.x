@@ -20,9 +20,9 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import javax.tools.*;
-import java.net.URL;
 import javax.tools.JavaFileObject.Kind;
 import java.io.File;
+import java.net.URL;
 import java.util.Collections;
 
 /**

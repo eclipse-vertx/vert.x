@@ -19,8 +19,6 @@ package org.vertx.java.deploy.impl.jython;
 import org.python.core.Options;
 import org.python.core.PySystemState;
 import org.python.util.PythonInterpreter;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.deploy.impl.ModuleClassLoader;
 import org.vertx.java.deploy.impl.VerticleFactory;

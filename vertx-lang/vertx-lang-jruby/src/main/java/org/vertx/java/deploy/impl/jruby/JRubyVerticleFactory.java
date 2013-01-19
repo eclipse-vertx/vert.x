@@ -18,6 +18,7 @@ package org.vertx.java.deploy.impl.jruby;
 
 import org.jruby.CompatVersion;
 import org.jruby.RubyException;
+import org.jruby.RubyModule;
 import org.jruby.RubyNameError;
 import org.jruby.embed.EvalFailedException;
 import org.jruby.embed.InvokeFailedException;
@@ -31,10 +32,9 @@ import org.vertx.java.deploy.impl.ModuleClassLoader;
 import org.vertx.java.deploy.impl.VerticleFactory;
 import org.vertx.java.deploy.impl.VerticleManager;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Writer;
+import java.io.*;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -43,7 +43,7 @@ public class JRubyVerticleFactory implements VerticleFactory {
 
   private VerticleManager mgr;
   private ModuleClassLoader mcl;
-
+  private ScriptingContainer scontainer;
 
   public JRubyVerticleFactory() {
   }
@@ -56,6 +56,12 @@ public class JRubyVerticleFactory implements VerticleFactory {
       throw new IllegalStateException("In order to deploy Ruby applications you must set JRUBY_HOME to point " +
           "at your JRuby installation");
     }
+    this.scontainer = new ScriptingContainer(LocalContextScope.CONCURRENT);
+    scontainer.setCompatVersion(CompatVersion.RUBY1_9);
+    scontainer.setClassLoader(mcl);
+//    //Prevent JRuby from logging errors to stderr - we want to log ourselves
+    scontainer.setErrorWriter(new NullWriter());
+    System.out.println("init jvf");
   }
 
   @Override
@@ -129,37 +135,46 @@ public class JRubyVerticleFactory implements VerticleFactory {
     }
   }
 
+  private static final AtomicInteger seq = new AtomicInteger();
+
   private class JRubyVerticle extends Verticle {
 
     private final String scriptName;
-    private ScriptingContainer scontainer;
+    private RubyModule wrappingModule;
 
     JRubyVerticle(String scriptName) {
       this.scriptName = scriptName;
-      this.scontainer = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
-      scontainer.setCompatVersion(CompatVersion.RUBY1_9);
-      scontainer.setClassLoader(mcl);
-      //Prevent JRuby from logging errors to stderr - we want to log ourselves
-      scontainer.setErrorWriter(new NullWriter());
     }
 
     public void start() throws Exception {
-      InputStream is = mcl.getResourceAsStream(scriptName);
-      if (is == null) {
-        throw new IllegalArgumentException("Cannot find verticle: " + scriptName);
-      }
-      scontainer.runScriptlet(is, scriptName);
-      try {
-        is.close();
-      } catch (IOException ignore) {
+      try (InputStream is = mcl.getResourceAsStream(scriptName)) {
+        if (is == null) {
+          throw new IllegalArgumentException("Cannot find verticle: " + scriptName);
+        }
+        // Read the whole file into a string and wrap it in a module to provide a degree of isolation
+        // - note there is one JRuby runtime per
+        // verticle _type_ or module _type_ so any verticles/module instances of the same type
+        // will share a runtime and need to be wrapped so ivars, cvars etc don't collide
+        //StringBuilder svert = new StringBuilder("Module.new do;extend self;");
+        String modName = "Mod___VertxInternalVert__" + seq.incrementAndGet();
+        StringBuilder svert = new StringBuilder("module ").append(modName).append(";extend self;");
+        BufferedReader br = new BufferedReader(new InputStreamReader(is));
+        for (String line = br.readLine(); line != null; line = br.readLine()) {
+          svert.append(line).append("\n");
+        }
+        br.close();
+        svert.append(";end;").append(modName);
+        wrappingModule = (RubyModule)scontainer.runScriptlet(svert.toString());
       }
     }
+
+
 
     public void stop() throws Exception {
       try {
         // We call the script with receiver = null - this causes the method to be called on the top level
         // script
-        scontainer.callMethod(null, "vertx_stop");
+        scontainer.callMethod(wrappingModule, "vertx_stop");
       } catch (InvokeFailedException e) {
         Throwable cause = e.getCause();
         if (cause instanceof RaiseException) {
@@ -174,8 +189,5 @@ public class JRubyVerticleFactory implements VerticleFactory {
         throw e;
       }
     }
-
-
   }
-
 }
