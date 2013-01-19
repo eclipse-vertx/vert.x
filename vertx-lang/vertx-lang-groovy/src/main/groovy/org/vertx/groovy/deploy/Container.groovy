@@ -21,7 +21,7 @@ import org.vertx.java.core.json.JsonObject
 import org.vertx.java.core.logging.Logger
 
 /**
- * This class represents the container in which a verticle runs.<p>
+ * This class represents the scontainer in which a verticle runs.<p>
  * An instance of this class will be created by the system and made available to
  * a running Verticle.
  * It contains methods to programmatically deploy other verticles, undeploy
@@ -258,7 +258,7 @@ class Container {
   }
 
   /**
-   * Cause the container to exit
+   * Cause the scontainer to exit
    */
   void exit() {
     jContainer.exit()

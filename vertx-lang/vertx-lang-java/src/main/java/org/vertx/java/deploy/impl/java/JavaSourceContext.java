@@ -17,9 +17,10 @@
 package org.vertx.java.deploy.impl.java;
 
 import javax.tools.JavaFileObject.Kind;
-import java.io.*;
-import java.nio.file.Files;
+import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 /**
  *

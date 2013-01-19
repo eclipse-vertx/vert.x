@@ -34,8 +34,8 @@ public class ModuleClassLoader extends URLClassLoader {
   private static final Logger log = LoggerFactory.getLogger(ModuleClassLoader.class);
 
   private final List<ModuleClassLoader> parents = new CopyOnWriteArrayList<>();
-
-  private ClassLoader system;
+  private final ClassLoader system;
+  private VerticleFactory factory;
 
   public ModuleClassLoader(URL[] classpath) {
     super(classpath, null);
@@ -44,6 +44,19 @@ public class ModuleClassLoader extends URLClassLoader {
 
   public void addParent(ModuleClassLoader parent) {
     parents.add(parent);
+  }
+
+  // We load the VerticleFactory class using the module classloader - this allows
+  // us to put language implementations in modules
+  // And we maintain a single VerticleFactory per classloader
+  public synchronized VerticleFactory getVerticleFactory(String factoryName, VerticleManager mgr)
+      throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+    if (factory == null) {
+      Class clazz = loadClass(factoryName);
+      factory = (VerticleFactory)clazz.newInstance();
+      factory.init(mgr, this);
+    }
+    return factory;
   }
 
   @Override

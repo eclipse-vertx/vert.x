@@ -33,7 +33,7 @@ class TestUtils
   end
 
   def register_all(object)
-    methods = object.private_methods
+    methods = object.methods
     methods.each do |meth|
       if meth.to_s.start_with? 'test_'
         register(meth) {
@@ -49,7 +49,7 @@ class TestUtils
 
   def TestUtils.gen_buffer(size)
     j_buff = org.vertx.java.testframework.TestUtils.generateRandomBuffer(size)
-    Buffer.new(j_buff)
+    Vertx::Buffer.new(j_buff)
   end
 
   def TestUtils.random_unicode_string(size)

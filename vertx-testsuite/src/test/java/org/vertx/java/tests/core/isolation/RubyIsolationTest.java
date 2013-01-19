@@ -34,17 +34,18 @@ public class RubyIsolationTest extends TestBase {
     super.tearDown();
   }
 
+//  @Test
+//  public void test_isolated_global() throws Exception {
+//    startApp("core/isolation/test_client1.rb");
+//    startApp("core/isolation/test_client2.rb");
+//    startTest("test_isolated_global_init1");
+//    startTest("test_isolated_global_init2");
+//    startTest("test_isolated_global");
+//  }
+
   @Test
-  public void test_isolation() throws Exception {
-    int numInstances = 10;
-    for (int i = 0; i < numInstances; i++) {
-      startApp("core/isolation/test_client.rb");
-    }
-    startApp("core/isolation/test_client.rb", numInstances);
-    startTest(getMethodName(), false);
-    for (int i = 0; i < numInstances * 2; i++) {
-      waitTestComplete();
-    }
+  public void testFoo() {
+
   }
 
 
