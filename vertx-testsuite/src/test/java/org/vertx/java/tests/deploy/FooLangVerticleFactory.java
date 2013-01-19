@@ -2,6 +2,7 @@ package org.vertx.java.tests.deploy;
 
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.deploy.Verticle;
+import org.vertx.java.deploy.impl.ModuleClassLoader;
 import org.vertx.java.deploy.impl.VerticleFactory;
 import org.vertx.java.deploy.impl.VerticleManager;
 
@@ -9,14 +10,17 @@ public class FooLangVerticleFactory implements VerticleFactory {
 
   private VerticleManager manager;
 
+  @SuppressWarnings("unused")
+  private ModuleClassLoader mcl;
+
   @Override
-  public void init(VerticleManager manager) {
+  public void init(VerticleManager manager, ModuleClassLoader mcl) {
     this.manager = manager;
+    this.mcl = mcl;
   }
 
   @Override
-  public Verticle createVerticle(String main, ClassLoader parentCL)
-      throws Exception {
+  public Verticle createVerticle(String main) throws Exception {
 
     return new Verticle() {
 
