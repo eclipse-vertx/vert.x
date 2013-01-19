@@ -38,11 +38,14 @@ public abstract class BusModBase extends Verticle {
   /**
    * Start the busmod
    */
-  public void start() {
+  public final void start() {
     eb = vertx.eventBus();
     config = container.getConfig();
     logger = container.getLogger();
+    startMod();
   }
+
+  public abstract void startMod();
 
   protected void sendOK(Message<JsonObject> message) {
     sendOK(message, null);
