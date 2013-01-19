@@ -1,11 +1,9 @@
 package org.foo;
 
+import com.acme.OtherClass;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.deploy.Verticle;
-
-import java.lang.System;
-import com.acme.OtherClass;
 
 public class MyMain extends Verticle {
 

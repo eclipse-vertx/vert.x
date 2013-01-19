@@ -25,10 +25,10 @@ import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.file.FileProps;
 import org.vertx.java.core.file.FileSystemException;
 import org.vertx.java.core.file.FileSystemProps;
+import org.vertx.java.core.impl.Windows;
 import org.vertx.java.core.streams.Pump;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
-import org.vertx.java.core.impl.Windows;
 import org.vertx.java.testframework.TestClientBase;
 import org.vertx.java.testframework.TestUtils;
 
