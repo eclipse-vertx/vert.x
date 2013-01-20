@@ -55,23 +55,20 @@ public class DefaultVertx extends VertxInternal {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultVertx.class);
 
-  private static final int DEFAULT_WORKER_POOL_SIZE = 20;
+//  private static final int DEFAULT_WORKER_POOL_SIZE = 20;
 
   private final FileSystem fileSystem = getFileSystem();
   private final EventBus eventBus;
   private final SharedData sharedData = new SharedData();
 
-  private int backgroundPoolSize = Integer.getInteger("vertx.backgroundPoolSize", DEFAULT_WORKER_POOL_SIZE);
-  private ExecutorService backgroundPool =
-      Executors.newFixedThreadPool(backgroundPoolSize, new VertxThreadFactory("vert.x-worker-thread-"));
+  private ThreadPoolExecutor backgroundPool = VertxExecutorFactory.workerPool("vert.x-worker-thread-");
   private OrderedExecutorFactory orderedFact = new OrderedExecutorFactory(backgroundPool);
 
   private int corePoolSize = Runtime.getRuntime().availableProcessors();
   private NioWorkerPool corePool =
-      new NioWorkerPool(Executors.newFixedThreadPool(corePoolSize, new VertxThreadFactory("vert.x-core-thread-")), corePoolSize);
+      new NioWorkerPool(VertxExecutorFactory.eventPool("vert.x-core-thread-"), corePoolSize);
 
-  private ExecutorService acceptorPool =
-      Executors.newCachedThreadPool(new VertxThreadFactory("vert.x-acceptor-thread-"));
+  private ThreadPoolExecutor acceptorPool = VertxExecutorFactory.acceptorPool("vert.x-acceptor-thread-");
 
   private Map<ServerID, DefaultHttpServer> sharedHttpServers = new HashMap<>();
   private Map<ServerID, DefaultNetServer> sharedNetServers = new HashMap<>();
