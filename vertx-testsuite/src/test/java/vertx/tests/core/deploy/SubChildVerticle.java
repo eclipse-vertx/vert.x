@@ -16,22 +16,21 @@
 
 package vertx.tests.core.deploy;
 
-import org.vertx.java.core.Handler;
 import org.vertx.java.deploy.Verticle;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ChildVerticle extends Verticle {
+public class SubChildVerticle extends Verticle {
 
   @Override
   public void start() throws Exception {
-    System.out.println("Child verticle start");
-    container.deployVerticle(SubChildVerticle.class.getName());
-
+    System.out.println("SubChild verticle start");
+    vertx.eventBus().send("test-handler", "started");
   }
 
   @Override
   public void stop() throws Exception {
+    vertx.eventBus().send("test-handler", "stopped");
   }
 }
