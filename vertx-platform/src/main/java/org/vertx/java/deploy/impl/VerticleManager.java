@@ -272,9 +272,6 @@ public class VerticleManager implements ModuleReloader {
       // module will share a module class loader
       String mcf = getEnclosingModuleName() + "." + main;
 
-      System.out.println("Mcf name is " + mcf);
-
-      // When deploying a verticle we create a
       cl = moduleClassLoaders.get(mcf);
       if (cl == null) {
         cl = new ModuleClassLoader(urls);
@@ -768,7 +765,9 @@ public class VerticleManager implements ModuleReloader {
 
     if (parentDeploymentName != null) {
       ModuleClassLoader deployingClassloader = getVerticleHolder().deployment.classloader;
-      cl.addParent(deployingClassloader);      
+      cl.addParent(deployingClassloader);
+      Deployment parentDeployment = deployments.get(parentDeploymentName);
+      parentDeployment.childDeployments.add(deploymentName);
     }
 
     for (int i = 0; i < instances; i++) {
