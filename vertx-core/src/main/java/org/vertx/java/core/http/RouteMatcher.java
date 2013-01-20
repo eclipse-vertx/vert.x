@@ -94,8 +94,9 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param pattern The simple pattern
    * @param handler The handler to call
    */
-  public void get(String pattern, Handler<HttpServerRequest> handler) {
+  public RouteMatcher get(String pattern, Handler<HttpServerRequest> handler) {
     addPattern(pattern, handler, getBindings);
+    return this;
   }
 
   /**
@@ -103,8 +104,9 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param pattern The simple pattern
    * @param handler The handler to call
    */
-  public void put(String pattern, Handler<HttpServerRequest> handler) {
+  public RouteMatcher put(String pattern, Handler<HttpServerRequest> handler) {
     addPattern(pattern, handler, putBindings);
+    return this;
   }
 
   /**
@@ -112,8 +114,9 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param pattern The simple pattern
    * @param handler The handler to call
    */
-  public void post(String pattern, Handler<HttpServerRequest> handler) {
+  public RouteMatcher post(String pattern, Handler<HttpServerRequest> handler) {
     addPattern(pattern, handler, postBindings);
+    return this;
   }
 
   /**
@@ -121,8 +124,9 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param pattern The simple pattern
    * @param handler The handler to call
    */
-  public void delete(String pattern, Handler<HttpServerRequest> handler) {
+  public RouteMatcher delete(String pattern, Handler<HttpServerRequest> handler) {
     addPattern(pattern, handler, deleteBindings);
+    return this;
   }
 
   /**
@@ -130,8 +134,9 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param pattern The simple pattern
    * @param handler The handler to call
    */
-  public void options(String pattern, Handler<HttpServerRequest> handler) {
+  public RouteMatcher options(String pattern, Handler<HttpServerRequest> handler) {
     addPattern(pattern, handler, optionsBindings);
+    return this;
   }
 
   /**
@@ -139,8 +144,9 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param pattern The simple pattern
    * @param handler The handler to call
    */
-  public void head(String pattern, Handler<HttpServerRequest> handler) {
+  public RouteMatcher head(String pattern, Handler<HttpServerRequest> handler) {
     addPattern(pattern, handler, headBindings);
+    return this;
   }
 
   /**
@@ -148,8 +154,9 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param pattern The simple pattern
    * @param handler The handler to call
    */
-  public void trace(String pattern, Handler<HttpServerRequest> handler) {
+  public RouteMatcher trace(String pattern, Handler<HttpServerRequest> handler) {
     addPattern(pattern, handler, traceBindings);
+    return this;
   }
 
   /**
@@ -157,8 +164,9 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param pattern The simple pattern
    * @param handler The handler to call
    */
-  public void connect(String pattern, Handler<HttpServerRequest> handler) {
+  public RouteMatcher connect(String pattern, Handler<HttpServerRequest> handler) {
     addPattern(pattern, handler, connectBindings);
+    return this;
   }
 
   /**
@@ -166,8 +174,9 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param pattern The simple pattern
    * @param handler The handler to call
    */
-  public void patch(String pattern, Handler<HttpServerRequest> handler) {
+  public RouteMatcher patch(String pattern, Handler<HttpServerRequest> handler) {
     addPattern(pattern, handler, patchBindings);
+    return this;
   }
 
   /**
@@ -175,7 +184,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param pattern The simple pattern
    * @param handler The handler to call
    */
-  public void all(String pattern, Handler<HttpServerRequest> handler) {
+  public RouteMatcher all(String pattern, Handler<HttpServerRequest> handler) {
     addPattern(pattern, handler, getBindings);
     addPattern(pattern, handler, putBindings);
     addPattern(pattern, handler, postBindings);
@@ -185,6 +194,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
     addPattern(pattern, handler, traceBindings);
     addPattern(pattern, handler, connectBindings);
     addPattern(pattern, handler, patchBindings);
+    return this;
   }
 
   /**
@@ -192,8 +202,9 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param regex A regular expression
    * @param handler The handler to call
    */
-  public void getWithRegEx(String regex, Handler<HttpServerRequest> handler) {
+  public RouteMatcher getWithRegEx(String regex, Handler<HttpServerRequest> handler) {
     addRegEx(regex, handler, getBindings);
+    return this;
   }
 
   /**
@@ -201,8 +212,9 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param regex A regular expression
    * @param handler The handler to call
    */
-  public void putWithRegEx(String regex, Handler<HttpServerRequest> handler) {
+  public RouteMatcher putWithRegEx(String regex, Handler<HttpServerRequest> handler) {
     addRegEx(regex, handler, putBindings);
+    return this;
   }
 
   /**
@@ -210,8 +222,9 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param regex A regular expression
    * @param handler The handler to call
    */
-  public void postWithRegEx(String regex, Handler<HttpServerRequest> handler) {
+  public RouteMatcher postWithRegEx(String regex, Handler<HttpServerRequest> handler) {
     addRegEx(regex, handler, postBindings);
+    return this;
   }
 
   /**
@@ -219,8 +232,9 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param regex A regular expression
    * @param handler The handler to call
    */
-  public void deleteWithRegEx(String regex, Handler<HttpServerRequest> handler) {
+  public RouteMatcher deleteWithRegEx(String regex, Handler<HttpServerRequest> handler) {
     addRegEx(regex, handler, deleteBindings);
+    return this;
   }
 
   /**
@@ -228,8 +242,9 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param regex A regular expression
    * @param handler The handler to call
    */
-  public void optionsWithRegEx(String regex, Handler<HttpServerRequest> handler) {
+  public RouteMatcher optionsWithRegEx(String regex, Handler<HttpServerRequest> handler) {
     addRegEx(regex, handler, optionsBindings);
+    return this;
   }
 
   /**
@@ -237,8 +252,9 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param regex A regular expression
    * @param handler The handler to call
    */
-  public void headWithRegEx(String regex, Handler<HttpServerRequest> handler) {
+  public RouteMatcher headWithRegEx(String regex, Handler<HttpServerRequest> handler) {
     addRegEx(regex, handler, headBindings);
+    return this;
   }
 
   /**
@@ -246,8 +262,9 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param regex A regular expression
    * @param handler The handler to call
    */
-  public void traceWithRegEx(String regex, Handler<HttpServerRequest> handler) {
+  public RouteMatcher traceWithRegEx(String regex, Handler<HttpServerRequest> handler) {
     addRegEx(regex, handler, traceBindings);
+    return this;
   }
 
   /**
@@ -255,8 +272,9 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param regex A regular expression
    * @param handler The handler to call
    */
-  public void connectWithRegEx(String regex, Handler<HttpServerRequest> handler) {
+  public RouteMatcher connectWithRegEx(String regex, Handler<HttpServerRequest> handler) {
     addRegEx(regex, handler, connectBindings);
+    return this;
   }
 
   /**
@@ -264,8 +282,9 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param regex A regular expression
    * @param handler The handler to call
    */
-  public void patchWithRegEx(String regex, Handler<HttpServerRequest> handler) {
+  public RouteMatcher patchWithRegEx(String regex, Handler<HttpServerRequest> handler) {
     addRegEx(regex, handler, patchBindings);
+    return this;
   }
 
   /**
@@ -273,7 +292,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param regex A regular expression
    * @param handler The handler to call
    */
-  public void allWithRegEx(String regex, Handler<HttpServerRequest> handler) {
+  public RouteMatcher allWithRegEx(String regex, Handler<HttpServerRequest> handler) {
     addRegEx(regex, handler, getBindings);
     addRegEx(regex, handler, putBindings);
     addRegEx(regex, handler, postBindings);
@@ -283,6 +302,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
     addRegEx(regex, handler, traceBindings);
     addRegEx(regex, handler, connectBindings);
     addRegEx(regex, handler, patchBindings);
+    return this;
   }
 
   /**
@@ -290,8 +310,9 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * If this handler is not specified default behaviour is to return a 404
    * @param handler
    */
-  public void noMatch(Handler<HttpServerRequest> handler) {
+  public RouteMatcher noMatch(Handler<HttpServerRequest> handler) {
     noMatchHandler = handler;
+    return this;
   }
 
 
