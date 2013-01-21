@@ -36,7 +36,6 @@ public class JythonVerticleFactory implements VerticleFactory {
   private VerticleManager mgr;
   private ModuleClassLoader mcl;
 
-
   public JythonVerticleFactory() {
   }
 
