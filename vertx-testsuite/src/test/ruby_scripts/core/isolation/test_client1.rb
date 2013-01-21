@@ -18,23 +18,52 @@ require "test_utils"
 
 @tu = TestUtils.new
 
-def test_isolated_global_init1
-  $test_global = 1
-  puts "set to 1"
+def test_isolated_global_init1_1
+  $test_global = "foo"
   @tu.test_complete
 end
 
-def test_isolated_global
-  puts "global is #{$test_global}"
-  @tu.azzert($test_global == 1)
+# Globals should not be visible between different verticle types
+def test_isolated_global1
+  @tu.azzert($test_global === "foo")
+  @tu.test_complete
 end
+
+def test_isolated_global_init1_2
+  $test_global = 1
+  @tu.test_complete
+end
+
+@called = false
+
+def test_isolated_global_init2_1
+  $test_global = "foo"
+  @called = true
+  @tu.test_complete
+end
+
+def test_isolated_global_init2_2
+  if !@called
+    $test_global = "bar"
+    @tu.test_complete
+  end
+end
+
+# Globals should be visible between verticles of same type
+def test_isolated_global2
+  if !@called
+    @tu.azzert($test_global == "bar")
+    @tu.test_complete
+  end
+end
+
+
 
 def vertx_stop
   @tu.unregister_all
   @tu.app_stopped
 end
 
-$test_global = nil
 @tu.register_all(self)
 @tu.app_ready
 
