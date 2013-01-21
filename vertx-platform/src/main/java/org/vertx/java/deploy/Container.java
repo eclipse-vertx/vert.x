@@ -38,9 +38,9 @@ import java.util.Map;
 public class Container {
 
   private final VerticleManager mgr;
-  
+
   public Container(final VerticleManager mgr) {
-    this.mgr = mgr;    
+    this.mgr = mgr;
   }
 
   /**
