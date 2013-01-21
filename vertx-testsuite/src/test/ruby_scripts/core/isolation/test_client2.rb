@@ -18,9 +18,8 @@ require "test_utils"
 
 @tu = TestUtils.new
 
-def test_isolated_global_init2
-  $test_global = 2
-  puts "set to 2"
+def test_isolated_global_init1_2
+  $test_global = "bar"
   @tu.test_complete
 end
 
