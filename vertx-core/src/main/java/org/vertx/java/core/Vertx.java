@@ -136,6 +136,11 @@ public abstract class Vertx {
   public abstract void runOnLoop(Handler<Void> handler);
 
   /**
+   * Put the handler on the worker queue so it will be run asynchronously in the worker pool
+   */
+  public abstract void runOnWorker(Handler<Void> handler);
+
+  /**
    * Is the current thread an event loop thread?
    * @return true if current thread is an event loop thread
    */

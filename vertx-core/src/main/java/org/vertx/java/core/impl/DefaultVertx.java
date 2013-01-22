@@ -185,6 +185,15 @@ public class DefaultVertx extends VertxInternal {
     });
   }
 
+  public void runOnWorker(final Handler<Void> handler) {
+    Context context = getOrAssignContext();
+    context.executeOnWorker(new Runnable() {
+      public void run() {
+        handler.handle(null);
+      }
+    });
+  }
+
   // The background pool is used for making blocking calls to legacy synchronous APIs
   public ExecutorService getBackgroundPool() {
     return backgroundPool;
