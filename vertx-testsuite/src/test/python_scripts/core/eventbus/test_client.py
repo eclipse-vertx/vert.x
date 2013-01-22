@@ -88,7 +88,7 @@ class EventBusTest(object):
                 tu.azzert(False, "handler already called") 
             tu.azzert(msg.body['message'] == json['message'])
             EventBus.unregister_handler(id)
-            self.received = True 
+            self.received = True
 
             def timer_complete(id):
                 tu.test_complete()
