@@ -45,6 +45,8 @@ public class JRubyVerticleFactory implements VerticleFactory {
   private ModuleClassLoader mcl;
   private ScriptingContainer scontainer;
 
+  private static final AtomicInteger seq = new AtomicInteger();
+
   public JRubyVerticleFactory() {
   }
 
@@ -134,7 +136,6 @@ public class JRubyVerticleFactory implements VerticleFactory {
     }
   }
 
-  private static final AtomicInteger seq = new AtomicInteger();
 
   private class JRubyVerticle extends Verticle {
 

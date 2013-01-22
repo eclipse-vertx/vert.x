@@ -113,7 +113,6 @@ class RouteMatcherTest(object):
 
 
     def test_route_no_match(self):
-        global client
         def response_handler(resp):
             tu.azzert(404 == resp.status_code)
             tu.test_complete()
