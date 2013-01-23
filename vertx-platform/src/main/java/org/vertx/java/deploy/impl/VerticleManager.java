@@ -723,19 +723,26 @@ public class VerticleManager implements ModuleReloader {
     log.debug("Deploying name : " + deploymentName + " main: " + main +
         " instances: " + instances);
 
-    int dotIndex = main.lastIndexOf('.');
-    String extension = dotIndex > -1 ? main.substring(dotIndex + 1) : null;
     String factoryName = null;
-    if (extension != null) {
-      factoryName = factoryNames.get(extension);
+    int marker = -1;
+    if ((marker = main.indexOf(':')) > -1) {
+      // prefix
+      factoryName = factoryNames.get(main.substring(0, marker));
     }
+    else if ((marker = main.lastIndexOf('.')) > -1) {
+      // suffix
+      factoryName = factoryNames.get(main.substring(marker + 1));
+    }
+
     if (factoryName == null) {
-      // Use the default
+      // default
       factoryName = factoryNames.get("default");
       if (factoryName == null) {
-        throw new IllegalArgumentException("No language mapping found and no default specified in langs.properties");
+        // double check
+        throw new IllegalArgumentException("No language mapping found in " + factoryNames + " and no default specified in langs.properties for '" + main + "'");
       }
     }
+
 
     final VerticleFactory verticleFactory;
 

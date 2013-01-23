@@ -38,7 +38,9 @@ public class FooLangVerticleFactory implements VerticleFactory {
   }
 
   @Override
-  public Verticle createVerticle(String main) throws Exception {
+  public Verticle createVerticle(final String main) throws Exception {
+
+    System.out.println("createVerticle: " + main);
 
     return new Verticle() {
 
@@ -48,6 +50,9 @@ public class FooLangVerticleFactory implements VerticleFactory {
         String foo = config.getString("foo", "bar");
         if (foo.equalsIgnoreCase("bar")) {
           throw new Exception("foo must not be bar!");
+        }
+        if (!(main.startsWith("foo:") || main.endsWith("foo"))) {
+          throw new Exception("main must either start or end with foo!");
         }
       }};
   }
