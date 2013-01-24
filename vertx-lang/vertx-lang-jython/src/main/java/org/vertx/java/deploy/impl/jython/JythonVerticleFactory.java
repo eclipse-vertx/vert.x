@@ -38,7 +38,7 @@ public class JythonVerticleFactory implements VerticleFactory {
   private VerticleManager mgr;
   private ModuleClassLoader mcl;
   private PythonInterpreter py;
-  private String stopFuncName;
+  private StringBuilder stopFuncName;
   private static final AtomicInteger seq = new AtomicInteger();
 
   public JythonVerticleFactory() {
@@ -94,9 +94,9 @@ public class JythonVerticleFactory implements VerticleFactory {
         sWrap.append("\t\treturn None\n");
 
         // And then we have to add a top level wrapper method that calls the actual vertx_stop method
-        String stopFuncVar = "v" + genName;
+        StringBuilder stopFuncVar = new StringBuilder("v").append(genName);
         sWrap.append(stopFuncVar).append(" = ").append(funcName).append("()\n");
-        stopFuncName = funcName + "_stop";
+        stopFuncName = new StringBuilder(funcName).append("_stop");
         sWrap.append("def ").append(stopFuncName).append("():\n");
         sWrap.append("\tif ").append(stopFuncVar).append(" is not None:\n");
         sWrap.append("\t\t").append(stopFuncVar).append("()\n");
@@ -117,7 +117,7 @@ public class JythonVerticleFactory implements VerticleFactory {
     }
 
     public void stop() throws Exception {
-      py.exec(stopFuncName + "()");
+      py.exec(stopFuncName.toString() + "()");
       py.cleanup();
     }
   }
