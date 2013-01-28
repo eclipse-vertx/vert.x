@@ -7,6 +7,10 @@
 ##############################################################################
 
 # Add default JVM options here. You can also use JAVA_OPTS and VERTX_OPTS to pass JVM options to this script.
+
+# If you're deploying and undeploying a lot of verticles with dynamic languages it's recommended to enable GC'ing
+# of generated classes and prevent OOM due to a lot of gc
+# DEFAULT_JVM_OPTS="-XX:+CMSClassUnloadingEnabled -XX:-UseGCOverheadLimit"
 DEFAULT_JVM_OPTS=""
 
 APP_NAME="vertx"

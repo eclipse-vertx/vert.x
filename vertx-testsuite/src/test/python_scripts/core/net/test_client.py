@@ -19,9 +19,11 @@ from core.buffer import Buffer
 tu = TestUtils()
 
 tu.check_context()
-server = None
+
 
 class NetTest(object):
+
+    server = None
 
     def test_echo(self):
         global server, client

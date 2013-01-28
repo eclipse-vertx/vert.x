@@ -33,6 +33,7 @@ sourceSets {
 }
 
 dependencies {
+  compile files('../extralibs/jython.jar')
 	compile "junit:junit:$junitVersion" // provide exportable components
   compile project(':vertx-testframework')
 }

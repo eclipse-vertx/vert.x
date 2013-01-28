@@ -34,4 +34,6 @@ public interface VerticleFactory {
 
   void reportException(Throwable t);
 
+  void close();
+
 }

@@ -20,6 +20,8 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
@@ -506,6 +508,7 @@ public class TestClient extends TestClientBase {
   }
 
   public void testServerDrainHandler() {
+    Context ctx = ((VertxInternal)vertx).getContext();
     client.connect(1234, new Handler<NetSocket>() {
       public void handle(final NetSocket sock) {
         tu.checkContext();

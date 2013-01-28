@@ -41,7 +41,6 @@ public class TestClient extends TestClientBase {
   }
 
   public void testDeploy() {
-    System.out.println("In testdeploy");
     final Thread t = Thread.currentThread();
     eb.registerHandler("test-handler", new Handler<Message<String>>() {
       public void handle(Message<String> message) {

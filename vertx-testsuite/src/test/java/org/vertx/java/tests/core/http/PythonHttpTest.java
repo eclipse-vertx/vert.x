@@ -33,7 +33,7 @@ public class PythonHttpTest  extends TestBase {
     public void test_put_ssl() {
       startTest(getMethodName());
     }
-    
+
     public void test_post() {
       startTest(getMethodName());
     }

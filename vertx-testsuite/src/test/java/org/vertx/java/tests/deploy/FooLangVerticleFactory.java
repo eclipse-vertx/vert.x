@@ -62,4 +62,7 @@ public class FooLangVerticleFactory implements VerticleFactory {
     t.printStackTrace();
   }
 
+  public void close() {
+  }
+
 }

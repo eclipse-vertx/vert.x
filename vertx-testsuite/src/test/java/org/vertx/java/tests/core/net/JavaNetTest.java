@@ -365,6 +365,8 @@ public class JavaNetTest extends TestBase {
   @Test
   public void testNoContext() throws Exception {
 
+    System.out.println("In test nocontext");
+
     final CountDownLatch latch = new CountDownLatch(1);
 
     Vertx vertx = Vertx.newVertx();
@@ -398,7 +400,6 @@ public class JavaNetTest extends TestBase {
 
     assertTrue(latch.await(5, TimeUnit.SECONDS));
   }
-
 
   @Test
   public void testFanout() throws Exception {
