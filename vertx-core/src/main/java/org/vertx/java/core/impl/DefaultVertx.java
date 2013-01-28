@@ -48,14 +48,12 @@ import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
+/**                                                e
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class DefaultVertx extends VertxInternal {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultVertx.class);
-
-//  private static final int DEFAULT_WORKER_POOL_SIZE = 20;
 
   private final FileSystem fileSystem = getFileSystem();
   private final EventBus eventBus;
@@ -282,7 +280,7 @@ public class DefaultVertx extends VertxInternal {
     }
     Timeout timeout = timer.newTimeout(ttask, delay, TimeUnit.MILLISECONDS);
     id = id != -1 ? id : timeoutCounter.getAndIncrement();
-    timeouts.put(id, new TimeoutHolder(timeout, context));
+    timeouts.put(id, new TimeoutHolder(timeout));
     return id;
   }
 
@@ -379,11 +377,9 @@ public class DefaultVertx extends VertxInternal {
 
   private static class TimeoutHolder {
     final Timeout timeout;
-    // final Context context;
 
-    TimeoutHolder(Timeout timeout, Context context) {
+    TimeoutHolder(Timeout timeout) {
       this.timeout = timeout;
-      // this.context = context;
     }
   }
 }

@@ -87,7 +87,7 @@ public class TCPSSLHelper {
   This code will go away if Netty acts like a proper event loop.
    */
   public void runOnCorrectThread(NioSocketChannel nch, Runnable runnable) {
-    nch.getWorker().executeInIoThread(runnable, false);
+    nch.getWorker().executeInIoThread(runnable, true);
   }
 
   public Map<String, Object> generateConnectionOptions(boolean server) {

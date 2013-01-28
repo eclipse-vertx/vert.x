@@ -2194,7 +2194,6 @@ public class HttpTestClient extends TestClientBase {
 
     final Handler<String> checkEndHandler = new Handler<String>() {
       public void handle(final String name) {
-        System.out.println(name + " exception called");
         if (clientExceptions.get() == 1 && req2Exceptions.get() ==1  && req3Exceptions.get() ==1) {
           tu.checkContext();
           tu.testComplete();

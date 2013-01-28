@@ -16,7 +16,6 @@
 
 package vertx.tests.core.deploy;
 
-import org.vertx.java.core.Handler;
 import org.vertx.java.deploy.Verticle;
 
 /**
@@ -26,9 +25,7 @@ public class ChildVerticle extends Verticle {
 
   @Override
   public void start() throws Exception {
-    System.out.println("Child verticle start");
     container.deployVerticle(SubChildVerticle.class.getName());
-
   }
 
   @Override

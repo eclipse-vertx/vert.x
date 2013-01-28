@@ -123,7 +123,6 @@ public class TestBase extends TestCase {
 
   @Override
   protected void tearDown() throws Exception {
-    verticleManager.stop();
     try {
       throwAsserts();
     } finally {
@@ -134,19 +133,20 @@ public class TestBase extends TestCase {
         }
         events.clear();
         vertx.eventBus().unregisterHandler(EVENTS_ADDRESS, handler);
-        vertx.setContext(null);
-        
       } catch (Exception e) {
         e.printStackTrace();
         throw e;
       }
     }
+    if (verticleManager.checkNoModules() > 0) {
+      fail("Module references remain after test");
+    }
+    verticleManager.stop();
   }
 
   protected String startApp(String main) throws Exception {
     return startApp(false, main, true);
   }
-
 
   protected String startApp(String main, JsonObject config) throws Exception {
     return startApp(false, main, config, 1, true);
