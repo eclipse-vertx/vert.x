@@ -16,6 +16,7 @@
 
 package org.vertx.java.core.impl;
 
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -23,6 +24,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -32,15 +34,13 @@ public abstract class Context {
   private static final Logger log = LoggerFactory.getLogger(Context.class);
 
   private final VertxInternal vertx;
-  
   private DeploymentHandle deploymentContext;
   private Path pathAdjustment;
-
   private Map<Object, Runnable> closeHooks;
-
   private final Executor bgExec;
-
   private final ClassLoader tccl;
+  private AtomicInteger outstandingTasks = new AtomicInteger();
+  private volatile Handler<Void> closedHandler;
 
   protected Context(VertxInternal vertx, Executor bgExec) {
     this.vertx = vertx;
@@ -100,14 +100,42 @@ public abstract class Context {
     }
   }
 
+  private void close() {
+    vertx.setContext(null);
+    Thread.currentThread().setContextClassLoader(null);
+  }
+
   public abstract void execute(Runnable handler);
 
-  public void executeOnWorker(final Runnable task) {
+  protected void executeOnWorker(final Runnable task) {
+    incOustanding();
     bgExec.execute(new Runnable() {
       public void run() {
         wrapTask(task).run();
       }
     });
+  }
+
+  protected void incOustanding() {
+    if (closedHandler != null) {
+      outstandingTasks.incrementAndGet();
+    }
+  }
+
+  protected void decOustanding() {
+    if (closedHandler != null) {
+      if (outstandingTasks.decrementAndGet() == 0) {
+        // Now there are no more oustanding tasks we can close the context
+        close();
+        closedHandler.handle(null);
+      }
+    }
+  }
+
+  public void closedHandler(Handler<Void> closedHandler) {
+    this.closedHandler = closedHandler;
+    // Start with 1 - this represents the stop task itself
+    this.outstandingTasks.set(1);
   }
 
   protected Runnable wrapTask(final Runnable task) {
@@ -122,6 +150,7 @@ public abstract class Context {
         } finally {
           Thread.currentThread().setName(threadName);
         }
+        decOustanding();
       }
     };
   }

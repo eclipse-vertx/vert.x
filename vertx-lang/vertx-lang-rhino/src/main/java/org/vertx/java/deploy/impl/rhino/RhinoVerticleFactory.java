@@ -25,7 +25,6 @@ import org.mozilla.javascript.commonjs.module.provider.UrlModuleSourceProvider;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.deploy.impl.ModuleClassLoader;
 import org.vertx.java.deploy.impl.VerticleFactory;
@@ -81,6 +80,9 @@ public class RhinoVerticleFactory implements VerticleFactory {
     } else {
       logger.error("Exception in JavaScript verticle", t);
     }
+  }
+
+  public void close() {
   }
 
   public static void load(String moduleName) throws Exception {

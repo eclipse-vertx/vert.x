@@ -56,14 +56,14 @@ module Vertx
 
   # Undeploy a verticle
   # @param id [String] The unique id of the deployment
-  def Vertx.undeploy_verticle(id)
-    org.vertx.java.deploy.impl.VertxLocator.container.undeployVerticle(id)
+  def Vertx.undeploy_verticle(id, &block)
+    org.vertx.java.deploy.impl.VertxLocator.container.undeployVerticle(id, block)
   end
 
   # Undeploy a module
   # @param id [String] The unique id of the deployment
-  def Vertx.undeploy_module(id)
-    org.vertx.java.deploy.impl.VertxLocator.container.undeployModule(id)
+  def Vertx.undeploy_module(id, &block)
+    org.vertx.java.deploy.impl.VertxLocator.container.undeployModule(id, block)
   end
 
   # Cause the container to exit

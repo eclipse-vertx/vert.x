@@ -42,6 +42,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -77,7 +78,7 @@ public class VerticleManager implements ModuleReloader {
   private final int repoPort;
   private final String proxyHost;
   private final int proxyPort;
-  private final Map<String, ModuleClassLoader> moduleClassLoaders = new WeakHashMap<>();
+  final ConcurrentMap<String, ModuleReference> modules = new ConcurrentHashMap<>();
 
   private final Redeployer redeployer;
 
@@ -273,24 +274,28 @@ public class VerticleManager implements ModuleReloader {
                                 String includes, Handler<String> doneHandler)
   {
     checkWorkerContext();
-    ModuleClassLoader cl;
-    synchronized (moduleClassLoaders) {
-      // When deploying a verticle directly there is one module class loader per
-      // enclosing module + the name of the verticle.
-      // E.g. if a module A deploys "foo.js" as a verticle then all instances of foo.js deployed by the enclosing
-      // module will share a module class loader
-      String mcf = getEnclosingModuleName() + "." + main;
 
-      cl = moduleClassLoaders.get(mcf);
-      if (cl == null) {
-        cl = new ModuleClassLoader(urls);
-        moduleClassLoaders.put(mcf, cl);
+    // There is one module class loader per enclosing module + the name of the verticle.
+    // If there is no enclosing module, there is one per top level verticle deployment.
+    // E.g. if a module A deploys "foo.js" as a verticle then all instances of foo.js deployed by the enclosing
+    // module will share a module class loader
+    String depName = genDepName();
+    String enclosingModName = getEnclosingModuleName();
+    String moduleKey = (enclosingModName == null ? depName : enclosingModName) + "." + main;
+
+    ModuleReference mr = modules.get(moduleKey);
+    if (mr == null) {
+      mr = new ModuleReference(this, moduleKey, new ModuleClassLoader(urls));
+      ModuleReference prev = modules.putIfAbsent(moduleKey, mr);
+      if (prev != null) {
+        mr = prev;
       }
     }
+
     if (includes != null) {
-      loadIncludedModules(cl, includes);
+      loadIncludedModules(mr, includes);
     }
-    doDeploy(null, false, worker, main, null, config, urls, instances, currentModDir, cl, doneHandler);
+    doDeploy(depName, false, worker, main, null, config, urls, instances, currentModDir, mr, doneHandler);
   }
 
 
@@ -423,30 +428,33 @@ public class VerticleManager implements ModuleReloader {
       Boolean ar = conf.getBoolean("auto-redeploy");
       final boolean autoRedeploy = ar == null ? false : ar;
 
-      // Is the classloader already loaded? If so use that one, otherwise create a new one
-
-      // Unfortunately there is no ConcurrentWeakHashMap in the JDK so we synchronize
-
-      ModuleClassLoader cl;
-      synchronized (moduleClassLoaders) {
-        cl = moduleClassLoaders.get(modName);
-        if (cl == null) {
-          cl = new ModuleClassLoader(urls.toArray(new URL[urls.size()]));
-          moduleClassLoaders.put(modName, cl);
+      ModuleReference mr = modules.get(modName);
+      if (mr == null) {
+        mr = new ModuleReference(this, modName, new ModuleClassLoader(urls.toArray(new URL[urls.size()])));
+        ModuleReference prev = modules.putIfAbsent(modName, mr);
+        if (prev != null) {
+          mr = prev;
         }
+      }
+      String enclosingModName = getEnclosingModuleName();
+      if (enclosingModName != null) {
+        //If enclosed in another module then the enclosing module classloader becomes a parent of this one
+        ModuleReference parentRef = modules.get(enclosingModName);
+        mr.mcl.addParent(parentRef);
+        parentRef.incRef();
       }
 
       // Now load any included modules
       String includes = conf.getString("includes");
       if (includes != null) {
-        if (!loadIncludedModules(cl, includes)) {
+        if (!loadIncludedModules(mr, includes)) {
           callDoneHandler(doneHandler, null);
           return;
         }
       }
 
       doDeploy(depName, autoRedeploy, worker, main, modName, config,
-          urls.toArray(new URL[urls.size()]), instances, modDirToUse, cl, new Handler<String>() {
+          urls.toArray(new URL[urls.size()]), instances, modDirToUse, mr, new Handler<String>() {
         @Override
         public void handle(String deploymentID) {
           if (deploymentID != null && !redeploy && autoRedeploy) {
@@ -489,29 +497,31 @@ public class VerticleManager implements ModuleReloader {
     }
   }
 
-  private boolean loadIncludedModules(ModuleClassLoader cl, String includesString) {
+  private boolean loadIncludedModules(ModuleReference mr, String includesString) {
     checkWorkerContext();
     for (String moduleName: parseIncludeString(includesString)) {
-      synchronized (moduleClassLoaders) {
-        ModuleClassLoader includedCl = moduleClassLoaders.get(moduleName);
-        if (includedCl == null) {
-          File modDir = new File(modRoot, moduleName);
-          if (!modDir.exists()) {
-            if (!doInstallMod(moduleName)) {
-              return false;
-            }
+      ModuleReference includedMr = modules.get(moduleName);
+      if (includedMr == null) {
+        File modDir = new File(modRoot, moduleName);
+        if (!modDir.exists()) {
+          if (!doInstallMod(moduleName)) {
+            return false;
           }
-          List<URL> urls = getModuleClasspath(modDir);
-          includedCl = new ModuleClassLoader(urls.toArray(new URL[urls.size()]));
-          JsonObject conf = loadModuleConfig(moduleName, modDir);
-          String includes = conf.getString("includes");
-          if (includes != null) {
-            loadIncludedModules(includedCl, includes);
-          }
-          moduleClassLoaders.put(moduleName, includedCl);
         }
-        cl.addParent(includedCl);
+        List<URL> urls = getModuleClasspath(modDir);
+        includedMr = new ModuleReference(this, moduleName, new ModuleClassLoader(urls.toArray(new URL[urls.size()])));
+        JsonObject conf = loadModuleConfig(moduleName, modDir);
+        String includes = conf.getString("includes");
+        if (includes != null) {
+          loadIncludedModules(includedMr, includes);
+        }
+        ModuleReference prev = modules.putIfAbsent(moduleName, includedMr);
+        if (prev != null) {
+          includedMr = prev;
+        }
       }
+      includedMr.incRef();
+      mr.mcl.addParent(includedMr);
     }
     return true;
   }
@@ -706,19 +716,23 @@ public class VerticleManager implements ModuleReloader {
     }
   }
 
-  private void doDeploy(String depName,
+  private String genDepName() {
+    return "deployment-" + UUID.randomUUID().toString();
+  }
+
+  private void doDeploy(final String depName,
                         boolean autoRedeploy,
                         boolean worker, final String main,
                         final String modName,
                         final JsonObject config, final URL[] urls,
                         int instances,
                         final File modDir,
-                        final ModuleClassLoader cl,
+                        final ModuleReference mr,
                         final Handler<String> doneHandler) {
     checkWorkerContext();
 
     final String deploymentName =
-        depName != null ? depName : "deployment-" + UUID.randomUUID().toString();
+        depName != null ? depName : genDepName();
 
     log.debug("Deploying name : " + deploymentName + " main: " + main +
         " instances: " + instances);
@@ -740,7 +754,8 @@ public class VerticleManager implements ModuleReloader {
     final VerticleFactory verticleFactory;
 
     try {
-      verticleFactory = cl.getVerticleFactory(factoryName, this);
+      // TODO not one verticle factory per module ref, but one per language per module ref
+      verticleFactory = mr.getVerticleFactory(factoryName, this);
     } catch (Exception e) {
       log.error("Failed to instantiate verticle factory", e);
       doneHandler.handle(null);
@@ -769,75 +784,79 @@ public class VerticleManager implements ModuleReloader {
     String parentDeploymentName = getDeploymentName();
     final Deployment deployment = new Deployment(deploymentName, modName, instances,
         config == null ? new JsonObject() : config.copy(), urls, modDir, parentDeploymentName,
-        cl, autoRedeploy);
+        mr, autoRedeploy);
+    mr.incRef();
     deployments.put(deploymentName, deployment);
 
     if (parentDeploymentName != null) {
-      ModuleClassLoader deployingClassloader = getVerticleHolder().deployment.classloader;
-      cl.addParent(deployingClassloader);
       Deployment parentDeployment = deployments.get(parentDeploymentName);
       parentDeployment.childDeployments.add(deploymentName);
     }
 
-    for (int i = 0; i < instances; i++) {
+    ClassLoader oldTCCL = Thread.currentThread().getContextClassLoader();
+    Thread.currentThread().setContextClassLoader(mr.mcl);
+    try {
 
-      // Launch the verticle instance
+      for (int i = 0; i < instances; i++) {
 
-      Thread.currentThread().setContextClassLoader(cl);
+        // Launch the verticle instance
 
-      Runnable runner = new Runnable() {
-        public void run() {
+        Runnable runner = new Runnable() {
+          public void run() {
 
-          Verticle verticle = null;
-          boolean error = true;
+            Verticle verticle = null;
+            boolean error = true;
 
-          try {
-            verticle = verticleFactory.createVerticle(main);
-            error = false;
-          } catch (ClassNotFoundException e) {
-            log.error("Cannot find verticle " + main);
-          } catch (Throwable t) {
-            log.error("Failed to create verticle", t);
-          }
-
-          if (error) {
-            doUndeploy(deploymentName, new SimpleHandler() {
-              public void handle() {
-                aggHandler.done(false);
-              }
-            });
-            return;
-          }
-
-          //Inject vertx
-          verticle.setVertx(vertx);
-          verticle.setContainer(new Container(VerticleManager.this));
-
-          try {
-            addVerticle(deployment, verticle, verticleFactory);
-            if (modDir != null) {
-              setPathAdjustment(modDir);
+            try {
+              verticle = verticleFactory.createVerticle(main);
+              error = false;
+            } catch (ClassNotFoundException e) {
+              log.error("Cannot find verticle " + main);
+            } catch (Throwable t) {
+              log.error("Failed to create verticle", t);
             }
-            verticle.start();
-            aggHandler.done(true);
-          } catch (Throwable t) {
-            t.printStackTrace();
-            vertx.reportException(t);
-            doUndeploy(deploymentName, new SimpleHandler() {
-              public void handle() {
-                aggHandler.done(false);
+
+            if (error) {
+              doUndeploy(deploymentName, new SimpleHandler() {
+                public void handle() {
+                  aggHandler.done(false);
+                }
+              });
+              return;
+            }
+
+            //Inject vertx
+            verticle.setVertx(vertx);
+            verticle.setContainer(new Container(VerticleManager.this));
+
+            try {
+              addVerticle(deployment, verticle, verticleFactory);
+              if (modDir != null) {
+                setPathAdjustment(modDir);
               }
-            });
+              verticle.start();
+              aggHandler.done(true);
+            } catch (Throwable t) {
+              t.printStackTrace();
+              vertx.reportException(t);
+              doUndeploy(deploymentName, new SimpleHandler() {
+                public void handle() {
+                  aggHandler.done(false);
+                }
+              });
+            }
+
           }
+        };
 
+        if (worker) {
+          vertx.startInBackground(runner);
+        } else {
+          vertx.startOnEventLoop(runner);
         }
-      };
-
-      if (worker) {
-        vertx.startInBackground(runner);
-      } else {
-        vertx.startOnEventLoop(runner);
       }
+    } finally {
+      Thread.currentThread().setContextClassLoader(oldTCCL);
     }
   }
 
@@ -865,16 +884,19 @@ public class VerticleManager implements ModuleReloader {
   }
 
   private void doUndeploy(String name, final Handler<Void> doneHandler) {
-     CountingCompletionHandler count = new CountingCompletionHandler(vertx.getOrAssignContext());
-     doUndeploy(name, count);
-     if (doneHandler != null) {
-       count.setHandler(doneHandler);
-     }
+    CountingCompletionHandler count = new CountingCompletionHandler(vertx.getOrAssignContext());
+    doUndeploy(name, count);
+    if (doneHandler != null) {
+      count.setHandler(doneHandler);
+    }
   }
 
-  private void doUndeploy(String name, final CountingCompletionHandler count) {
+  private void doUndeploy(String name, final CountingCompletionHandler parentCount) {
 
     final Deployment deployment = deployments.remove(name);
+
+    final CountingCompletionHandler count = new CountingCompletionHandler(vertx.getOrAssignContext());
+    parentCount.incRequired();
 
     // Depth first - undeploy children first
     for (String childDeployment: deployment.childDeployments) {
@@ -886,14 +908,23 @@ public class VerticleManager implements ModuleReloader {
         count.incRequired();
         holder.context.execute(new Runnable() {
           public void run() {
+            // The closed handler will be called when there are no more outstanding tasks for the context
+            // Remember that the vertxStop() method might schedule other async operations and they in turn might schedule
+            // others
+            // We need to set it from inside the stop task to prevent race conditions
+            holder.context.closedHandler(new SimpleHandler() {
+              @Override
+              protected void handle() {
+                LoggerFactory.removeLogger(holder.loggerName);
+                holder.context.runCloseHooks();
+                count.complete();
+              }
+            });
             try {
               holder.verticle.stop();
             } catch (Throwable t) {
               vertx.reportException(t);
             }
-            LoggerFactory.removeLogger(holder.loggerName);
-            holder.context.runCloseHooks();
-            count.complete();
           }
         });
       }
@@ -905,6 +936,13 @@ public class VerticleManager implements ModuleReloader {
         parent.childDeployments.remove(name);
       }
     }
+
+    count.setHandler(new SimpleHandler() {
+      protected void handle() {
+        deployment.moduleReference.decRef();
+        parentCount.complete();
+      }
+    });
   }
 
   public void reloadModules(final Set<Deployment> deps) {
@@ -964,5 +1002,14 @@ public class VerticleManager implements ModuleReloader {
   public void stop() {
     redeployer.close();
   }
+
+  // For debug only
+  public int checkNoModules() {
+    for (String key: modules.keySet()) {
+      System.out.println("Module remains: " + key);
+    }
+    return modules.size();
+  }
+
 
 }

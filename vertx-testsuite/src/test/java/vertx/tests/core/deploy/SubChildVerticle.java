@@ -25,7 +25,6 @@ public class SubChildVerticle extends Verticle {
 
   @Override
   public void start() throws Exception {
-    System.out.println("SubChild verticle start");
     vertx.eventBus().send("test-handler", "started");
   }
 

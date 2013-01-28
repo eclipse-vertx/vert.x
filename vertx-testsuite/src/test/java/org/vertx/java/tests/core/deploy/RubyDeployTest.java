@@ -40,9 +40,9 @@ public class RubyDeployTest extends TestBase {
     startTest(getMethodName());
   }
 
-  @Test
-  public void test_undeploy() throws Exception {
-    startTest(getMethodName());
-  }
+//  @Test
+//  public void test_undeploy() throws Exception {
+//    startTest(getMethodName());
+//  }
 
 }
