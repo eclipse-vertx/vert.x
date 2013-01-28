@@ -39,6 +39,7 @@ class ModuleReference {
   synchronized void incRef() {
     refCount++;
   }
+
   synchronized void decRef() {
     refCount--;
     if (refCount == 0) {
