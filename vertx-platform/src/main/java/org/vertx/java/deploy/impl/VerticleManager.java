@@ -742,8 +742,7 @@ public class VerticleManager implements ModuleReloader {
     if ((marker = main.indexOf(':')) > -1) {
       // prefix
       factoryName = factoryNames.get(main.substring(0, marker));
-    }
-    else if ((marker = main.lastIndexOf('.')) > -1) {
+    } else if ((marker = main.lastIndexOf('.')) > -1) {
       // suffix
       factoryName = factoryNames.get(main.substring(marker + 1));
     }
@@ -756,7 +755,6 @@ public class VerticleManager implements ModuleReloader {
         throw new IllegalArgumentException("No language mapping found in " + factoryNames + " and no default specified in langs.properties for '" + main + "'");
       }
     }
-
 
     final VerticleFactory verticleFactory;
 
