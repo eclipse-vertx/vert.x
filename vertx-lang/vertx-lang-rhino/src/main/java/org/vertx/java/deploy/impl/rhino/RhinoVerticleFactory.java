@@ -270,10 +270,7 @@ public class RhinoVerticleFactory implements VerticleFactory {
         // classloader in the load() method - this is because Rhino insists load() must be static
         scopeThreadLocal.set(scope);
         clThreadLocal.set(cl);
-
-        Thread.currentThread().setContextClassLoader(cl);
         Require require = installRequire(cl, cx, scope);
-
         Scriptable script = require.requireMain(cx, scriptName);
         try {
           stopFunction = (Function) script.get("vertxStop", scope);
@@ -295,6 +292,9 @@ public class RhinoVerticleFactory implements VerticleFactory {
           Context.exit();
         }
       }
+      // Make sure we remove the threadlocals or we will have a leak
+      scopeThreadLocal.remove();
+      clThreadLocal.remove();
     }
   }
 }

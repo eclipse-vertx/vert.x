@@ -530,7 +530,7 @@ public class DefaultEventBus implements EventBus {
         holder.timeoutID = vertx.setTimer(PING_REPLY_INTERVAL, new Handler<Long>() {
           public void handle(Long timerID) {
             // Didn't get pong in time - consider connection dead
-            log.info("No pong from server " + serverID + " - will consider it dead, timerID: " + timerID + " holder " + holder);
+            log.warn("No pong from server " + serverID + " - will consider it dead, timerID: " + timerID + " holder " + holder);
             cleanupConnection(holder.theServerID, holder, true);
           }
         });

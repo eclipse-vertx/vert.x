@@ -14,9 +14,23 @@
 
 import vertx
 
-vertx.deploy_verticle('child.py')
-vertx.deploy_verticle('child.py')
-vertx.deploy_verticle('child.py')
+def deployit(count):
+    def handler(deploy_id):
+        print "deployed ", count
+        if deploy_id is not None:
+            undeployit(deploy_id, count)
+    #child_name = 'child%d.py' % count
+    print "deploying ", count
+    vertx.deploy_verticle("child.py", handler=handler)
 
+def undeployit(deploy_id, count):
+    def handler():
+        newcount = count + 1
+        if newcount < 10:
+            deployit(newcount)
+        else:
+            print "done!"
+    vertx.undeploy_verticle(deploy_id, handler=handler)
 
+deployit(0)
 

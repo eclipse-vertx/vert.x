@@ -897,7 +897,9 @@ public class VerticleManager implements ModuleReloader {
   }
 
   private void doUndeploy(String name, final CountingCompletionHandler parentCount) {
-
+    if (name == null) {
+      throw new NullPointerException("deployment id is null");
+    }
     final Deployment deployment = deployments.remove(name);
 
     final CountingCompletionHandler count = new CountingCompletionHandler(vertx.getOrAssignContext());
