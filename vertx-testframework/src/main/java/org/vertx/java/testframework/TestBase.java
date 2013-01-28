@@ -197,11 +197,13 @@ public class TestBase extends TestCase {
     }
 
     final CountDownLatch doneLatch = new CountDownLatch(1);
-    final AtomicReference<String> res = new AtomicReference<>(null);
+    final AtomicReference<String> res = new AtomicReference<>();
 
     Handler<String> doneHandler = new Handler<String>() {
       public void handle(String deploymentName) {
-        startedApps.add(deploymentName);
+        if (deploymentName != null) {
+          startedApps.add(deploymentName);
+        }
         res.set(deploymentName);
         doneLatch.countDown();
       }
@@ -213,13 +215,15 @@ public class TestBase extends TestCase {
       throw new IllegalStateException("Timedout waiting for apps to start");
     }
 
-    if (await) {
+    String deployID = res.get();
+
+    if (deployID != null && await) {
       for (int i = 0; i < instances; i++) {
         waitAppReady();
       }
     }
 
-    return res.get();
+    return deployID;
   }
 
   public String startMod(String modName) throws Exception {
@@ -233,7 +237,9 @@ public class TestBase extends TestCase {
 
     Handler<String> doneHandler = new Handler<String>() {
       public void handle(String deploymentName) {
-        startedApps.add(deploymentName);
+        if (deploymentName != null) {
+          startedApps.add(deploymentName);
+        }
         res.set(deploymentName);
         doneLatch.countDown();
       }
@@ -245,13 +251,15 @@ public class TestBase extends TestCase {
       throw new IllegalStateException("Timedout waiting for apps to start");
     }
 
-    if (await) {
+    String deployID = res.get();
+
+    if (deployID != null && await) {
       for (int i = 0; i < instances; i++) {
         waitAppReady();
       }
     }
 
-    return res.get();
+    return deployID;
   }
 
   protected void stopApp(String appName) throws Exception {

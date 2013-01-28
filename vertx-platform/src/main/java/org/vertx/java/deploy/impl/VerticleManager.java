@@ -510,14 +510,14 @@ public class VerticleManager implements ModuleReloader {
         }
         List<URL> urls = getModuleClasspath(modDir);
         includedMr = new ModuleReference(this, moduleName, new ModuleClassLoader(urls.toArray(new URL[urls.size()])));
+        ModuleReference prev = modules.putIfAbsent(moduleName, includedMr);
+        if (prev != null) {
+          includedMr = prev;
+        }
         JsonObject conf = loadModuleConfig(moduleName, modDir);
         String includes = conf.getString("includes");
         if (includes != null) {
           loadIncludedModules(includedMr, includes);
-        }
-        ModuleReference prev = modules.putIfAbsent(moduleName, includedMr);
-        if (prev != null) {
-          includedMr = prev;
         }
       }
       includedMr.incRef();

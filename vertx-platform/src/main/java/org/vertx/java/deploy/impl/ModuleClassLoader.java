@@ -30,6 +30,11 @@ public class ModuleClassLoader extends URLClassLoader {
 
   private static final Logger log = LoggerFactory.getLogger(ModuleClassLoader.class);
 
+  // When loading resources or classes we need to catch any circular dependencies
+  private static ThreadLocal<Set<ModuleClassLoader>> circDepTL = new ThreadLocal<>();
+  // And we need to keep track of the recurse depth so we know when we can remove the thread local
+  private static ThreadLocal<Integer> recurseDepth = new ThreadLocal<>();
+
   private final Set<ModuleReference> parents = new ConcurrentHashSet<>();
   private final ClassLoader system;
 
@@ -43,12 +48,15 @@ public class ModuleClassLoader extends URLClassLoader {
   }
 
   public void close() {
+    clearParents();
+  }
+
+  private void clearParents() {
     for (ModuleReference parent: parents) {
       parent.decRef();
     }
     parents.clear();
   }
-
 
   @Override
   protected synchronized Class<?> loadClass(String name, boolean resolve)
@@ -61,12 +69,21 @@ public class ModuleClassLoader extends URLClassLoader {
         try {
           c = findClass(name);
         } catch (ClassNotFoundException e) {
-          for (ModuleReference parent: parents) {
-            try {
-              return parent.mcl.loadClass(name);
-            } catch (ClassNotFoundException e1) {
-              // Try the next one
+          try {
+            // Detect circular hierarchy
+            incRecurseDepth();
+            Set<ModuleClassLoader> walked = getWalked();
+            walked.add(this);
+            for (ModuleReference parent: parents) {
+              checkAlreadyWalked(walked, parent);
+              try {
+                return parent.mcl.loadClass(name);
+              } catch (ClassNotFoundException e1) {
+                // Try the next one
+              }
             }
+          } finally {
+            checkClearTLs();
           }
           // If we get here then none of the parents could find it, so try the system
           return system.loadClass(name);
@@ -89,22 +106,68 @@ public class ModuleClassLoader extends URLClassLoader {
             name.startsWith("org.vertx."));
   }
 
+  private Set<ModuleClassLoader> getWalked() {
+    Set<ModuleClassLoader> walked = circDepTL.get();
+    if (walked == null) {
+      walked = new HashSet<>();
+      circDepTL.set(walked);
+    }
+    return walked;
+  }
+
+  private void checkAlreadyWalked(Set<ModuleClassLoader> walked, ModuleReference mr) {
+    if (walked.contains(mr.mcl)) {
+      // Break the circular dep and reduce the ref count
+      // We need to do this on ALL the parents in case there is another circular dep there
+      clearParents();
+      throw new IllegalStateException("Circular dependency in module includes.");
+    }
+  }
+
+  private void incRecurseDepth() {
+    Integer depth = recurseDepth.get();
+    recurseDepth.set(depth == null ? 1 : depth + 1);
+  }
+
+  private int decRecurseDepth() {
+    Integer depth = recurseDepth.get();
+    depth = depth - 1;
+    recurseDepth.set(depth);
+    return depth;
+  }
+
   @Override
   public URL getResource(String name) {
-    // First try with this class loader
-    URL url = findResource(name);
-    if (url == null) {
-      //Now try with the parents
-      for (ModuleReference parent: parents) {
-        url = parent.mcl.getResource(name);
-        if (url != null) {
-          return url;
+    incRecurseDepth();
+    try {
+      // First try with this class loader
+      URL url = findResource(name);
+      if (url == null) {
+        // Detect circular hierarchy
+        Set<ModuleClassLoader> walked = getWalked();
+        walked.add(this);
+        //Now try with the parents
+        for (ModuleReference parent: parents) {
+          checkAlreadyWalked(walked, parent);
+          url = parent.mcl.getResource(name);
+          if (url != null) {
+            return url;
+          }
         }
+        // If got here then none of the parents know about it, so try the system
+        url = system.getResource(name);
       }
-      // If got here then none of the parents know about it, so try the system
-      url = system.getResource(name);
+      return url;
+    } finally {
+      checkClearTLs();
     }
-    return url;
+  }
+
+  private void checkClearTLs() {
+    if (decRecurseDepth() == 0) {
+      circDepTL.remove();
+      recurseDepth.remove();
+    }
   }
 
   @Override
@@ -115,10 +178,20 @@ public class ModuleClassLoader extends URLClassLoader {
     // Local ones
     addURLs(totURLs, findResources(name));
 
-    // Parent ones
-    for (ModuleReference parent: parents) {
-      Enumeration<URL> urls = parent.mcl.getResources(name);
-      addURLs(totURLs, urls);
+    try {
+      // Detect circular hierarchy
+      incRecurseDepth();
+      Set<ModuleClassLoader> walked = getWalked();
+      walked.add(this);
+
+      // Parent ones
+      for (ModuleReference parent: parents) {
+        checkAlreadyWalked(walked, parent);
+        Enumeration<URL> urls = parent.mcl.getResources(name);
+        addURLs(totURLs, urls);
+      }
+    } finally {
+      checkClearTLs();
     }
 
     // And system too
