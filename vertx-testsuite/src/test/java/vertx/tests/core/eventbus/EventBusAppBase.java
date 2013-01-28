@@ -46,7 +46,6 @@ public abstract class EventBusAppBase extends TestClientBase {
       eb = (DefaultEventBus)vertx.eventBus();
     } else {
       int port = Counter.portCounter.getAndIncrement();
-      log.info("Start DefaultEventBus: Port=" + port);
       eb = new DefaultEventBus((VertxInternal)vertx, port, "localhost");
     }
 
