@@ -31,6 +31,8 @@ import org.vertx.java.core.Handler
 import org.vertx.java.core.impl.DefaultVertx
 import org.vertx.java.core.impl.VertxInternal
 import org.vertx.java.core.shareddata.SharedData
+import org.vertx.java.deploy.impl.VertxLocator
+
 
 /**
  * The control centre of vert.x<p>
@@ -53,6 +55,13 @@ class Vertx {
     this.jVertex = jVertex
     this.eventBus = new EventBus(jVertex.eventBus())
     this.fileSystem = new org.vertx.groovy.core.file.FileSystem(jVertex.fileSystem)
+  }
+
+  /**
+   * Create a non clustered Vertx instance
+   */
+  static Vertx locate() {
+    return new Vertx(VertxLocator.vertx)
   }
 
   /**
