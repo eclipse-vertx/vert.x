@@ -63,4 +63,7 @@ public class JavaVerticleFactory implements VerticleFactory {
   public void reportException(Throwable t) {
     mgr.getLogger().error("Exception in Java verticle script", t);
   }
+
+  public void close() {
+  }
 }

@@ -1,5 +1,6 @@
 package org.vertx.java.deploy.impl;
 
+import org.vertx.java.core.impl.ConcurrentHashSet;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -7,11 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.*;
 
 /**
  * Each module (not module instance) is assigned it's own ModuleClassLoader.
@@ -33,31 +30,25 @@ public class ModuleClassLoader extends URLClassLoader {
 
   private static final Logger log = LoggerFactory.getLogger(ModuleClassLoader.class);
 
-  private final List<ModuleClassLoader> parents = new CopyOnWriteArrayList<>();
+  private final Set<ModuleReference> parents = new ConcurrentHashSet<>();
   private final ClassLoader system;
-  private VerticleFactory factory;
 
   public ModuleClassLoader(URL[] classpath) {
     super(classpath, null);
     system = getSystemClassLoader();
   }
 
-  public void addParent(ModuleClassLoader parent) {
+  public void addParent(ModuleReference parent) {
     parents.add(parent);
   }
 
-  // We load the VerticleFactory class using the module classloader - this allows
-  // us to put language implementations in modules
-  // And we maintain a single VerticleFactory per classloader
-  public synchronized VerticleFactory getVerticleFactory(String factoryName, VerticleManager mgr)
-      throws ClassNotFoundException, InstantiationException, IllegalAccessException {
-    if (factory == null) {
-      Class clazz = loadClass(factoryName);
-      factory = (VerticleFactory)clazz.newInstance();
-      factory.init(mgr, this);
+  public void close() {
+    for (ModuleReference parent: parents) {
+      parent.decRef();
     }
-    return factory;
+    parents.clear();
   }
+
 
   @Override
   protected synchronized Class<?> loadClass(String name, boolean resolve)
@@ -70,9 +61,9 @@ public class ModuleClassLoader extends URLClassLoader {
         try {
           c = findClass(name);
         } catch (ClassNotFoundException e) {
-          for (ClassLoader parent: parents) {
+          for (ModuleReference parent: parents) {
             try {
-              return parent.loadClass(name);
+              return parent.mcl.loadClass(name);
             } catch (ClassNotFoundException e1) {
               // Try the next one
             }
@@ -104,8 +95,8 @@ public class ModuleClassLoader extends URLClassLoader {
     URL url = findResource(name);
     if (url == null) {
       //Now try with the parents
-      for (ModuleClassLoader parent: parents) {
-        url = parent.getResource(name);
+      for (ModuleReference parent: parents) {
+        url = parent.mcl.getResource(name);
         if (url != null) {
           return url;
         }
@@ -125,8 +116,8 @@ public class ModuleClassLoader extends URLClassLoader {
     addURLs(totURLs, findResources(name));
 
     // Parent ones
-    for (ModuleClassLoader parent: parents) {
-      Enumeration<URL> urls = parent.getResources(name);
+    for (ModuleReference parent: parents) {
+      Enumeration<URL> urls = parent.mcl.getResources(name);
       addURLs(totURLs, urls);
     }
 

@@ -126,7 +126,6 @@ public class DefaultNetSocket extends NetSocket {
 
   protected void handleClosed() {
     setContext();
-
     if (endHandler != null) {
       try {
         endHandler.handle(null);

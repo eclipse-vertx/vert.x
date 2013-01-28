@@ -12,11 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-execfile("src/test/python_scripts/core/scriptloading/script2.py")
+#class Foo(object):
+#
+#    @staticmethod
+#    def func1(tu):
+#        tu.azzert(Bar.func2() == 'bar')
+#        return "foo"
 
-class Foo(object):
+print "#################### IN FooClass"
 
-    @staticmethod
-    def func1(tu):
-        tu.azzert(Bar.func2() == 'bar')
-        return "foo"
+class FooClass(object):
+
+    def foo(self):
+        "bar"

@@ -30,9 +30,6 @@ __author__ = "Scott Horn"
 __email__ = "scott@hornmicro.com"
 __credits__ = "Based entirely on work by Tim Fox http://tfox.org"
 
-class Vertx(object):
-    config = None
-
 def create_http_server(**kwargs):
     """ Return a HttpServer """
     return HttpServer(**kwargs)
@@ -69,7 +66,7 @@ def deploy_verticle(main, config=None, instances=1, handler=None):
     """
     if config != None:
         config = org.vertx.java.core.json.JsonObject(map_to_java(config))
-  
+
     org.vertx.java.deploy.impl.VertxLocator.container.deployVerticle(main, config, instances, DoneHandler(handler))
 
 def deploy_worker_verticle(main, config=None, instances=1, handler=None):
@@ -121,9 +118,7 @@ def config():
     """Get config for the verticle
     @return: dict config for the verticle
     """
-    if Vertx.config is None:
-        Vertx.config = map_from_java(org.vertx.java.deploy.impl.VertxLocator.container.getConfig().toMap())
-    return Vertx.config
+    return map_from_java(org.vertx.java.deploy.impl.VertxLocator.container.getConfig().toMap())
 
 def java_vertx():
     return org.vertx.java.deploy.impl.VertxLocator.vertx
@@ -165,7 +160,7 @@ def run_on_loop(handler):
     @param handler: an handler representing the code that will be run ASAP
     """
     java_vertx().runOnLoop(DoneHandler(handler))
- 
+
 def exit():
     """ Cause the container to exit """
     org.vertx.java.deploy.impl.VertxLocator.container.exit()

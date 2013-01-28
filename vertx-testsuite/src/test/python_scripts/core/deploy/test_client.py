@@ -18,9 +18,12 @@ from core.event_bus import EventBus
 
 tu = TestUtils()
 
-handler_id = None
+
 
 class DeployTest(object):
+
+    handler_id = None
+
     def test_deploy(self):
         global handler_id
         def handler(message):
@@ -34,7 +37,7 @@ class DeployTest(object):
         global handler_id
         def handler(message):
             if message.body == "stopped":
-                tu.test_complete()        
+                tu.test_complete()
         handler_id = EventBus.register_handler("test-handler", False, handler)
         conf = {'foo' : 'bar'}
         def deploy_handler(id):

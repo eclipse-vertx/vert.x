@@ -33,6 +33,7 @@ public class EventLoopContext extends Context {
   }
 
   public void execute(Runnable task) {
+    incOustanding();
     worker.executeInIoThread(wrapTask(task), true);
   }
 
