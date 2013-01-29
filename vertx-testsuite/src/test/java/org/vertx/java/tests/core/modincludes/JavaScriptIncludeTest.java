@@ -57,7 +57,6 @@ public class JavaScriptIncludeTest extends TestBase {
   public void testCircularInclude() throws Exception {
     String deployID = startMod("testmod4-1");
     assertNull(deployID); // Null implies module deploy fails - which it will because of circular deps
-    //startTest(getMethodName());
   }
 
   @Test
@@ -77,7 +76,5 @@ public class JavaScriptIncludeTest extends TestBase {
     startMod("testmod7-1");
     startTest(getMethodName());
   }
-
-
 
 }
