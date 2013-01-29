@@ -93,8 +93,6 @@ public class DefaultNetServer implements NetServer {
     return this;
   }
 
-  private static final AtomicInteger cnt = new AtomicInteger();
-
   public NetServer listen(int port, String host) {
     if (connectHandler == null) {
       throw new IllegalStateException("Set connect handler first");

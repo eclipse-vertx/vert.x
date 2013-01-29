@@ -65,7 +65,7 @@ public class VerticleManager implements ModuleReloader {
   private static final int BUFFER_SIZE = 4096;
   private static final String HTTP_PROXY_HOST_PROP_NAME = "http.proxyHost";
   private static final String HTTP_PROXY_PORT_PROP_NAME = "http.proxyPort";
-  private static final String COLON = ":";
+  private static final char COLON = ':';
 
   private final VertxInternal vertx;
   // deployment name --> deployment
@@ -79,7 +79,6 @@ public class VerticleManager implements ModuleReloader {
   private final String proxyHost;
   private final int proxyPort;
   final ConcurrentMap<String, ModuleReference> modules = new ConcurrentHashMap<>();
-
   private final Redeployer redeployer;
 
   public VerticleManager(VertxInternal vertx) {
@@ -89,9 +88,10 @@ public class VerticleManager implements ModuleReloader {
   public VerticleManager(VertxInternal vertx, String repo) {
     this.vertx = vertx;
     if (repo != null) {
-      if (repo.contains(COLON)) {
-        this.repoHost = repo.substring(0, repo.indexOf(COLON));
-        this.repoPort = Integer.parseInt( repo.substring(repo.indexOf(COLON)+1));
+      int colonIndex = repo.indexOf(COLON);
+      if (colonIndex != -1) {
+        this.repoHost = repo.substring(0, colonIndex);
+        this.repoPort = Integer.parseInt(repo.substring(colonIndex + 1));
       } else {
         this.repoHost = repo;
         this.repoPort = 80;
