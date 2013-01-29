@@ -22,7 +22,6 @@ include 'vertx-lang-groovy'
 include 'vertx-lang-java'
 include 'vertx-lang-jruby'
 include 'vertx-lang-jython'
-include 'vertx-lang-rhino'
 
 include 'vertx-testsuite'
 

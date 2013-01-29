@@ -63,12 +63,22 @@ public class ModuleClassLoader extends URLClassLoader {
       throws ClassNotFoundException {
     Class<?> c = findLoadedClass(name);
     if (c == null) {
+      // If a system class then we always try to load with the system class loader first
+      // In some case, e.g. with some org.vertx classes it won't find it, since some vert.x produced
+      // modules might contain org.vertx.* classes, in which case we continue
       if (isSystemClass(name)) {
-        c = system.loadClass(name);
-      } else {
         try {
+          c = system.loadClass(name);
+        } catch (ClassNotFoundException e) {
+          // Ok continue
+        }
+      }
+      if (c == null) {
+        try {
+          // Now try and load the class with this class loader
           c = findClass(name);
         } catch (ClassNotFoundException e) {
+          // Not found - maybe the parent class loaders can load it?
           try {
             // Detect circular hierarchy
             incRecurseDepth();
@@ -77,15 +87,18 @@ public class ModuleClassLoader extends URLClassLoader {
             for (ModuleReference parent: parents) {
               checkAlreadyWalked(walked, parent);
               try {
+                // Try with the parent
                 return parent.mcl.loadClass(name);
               } catch (ClassNotFoundException e1) {
                 // Try the next one
               }
             }
           } finally {
+            // Make sure we clear the thread locals afterwards
             checkClearTLs();
           }
           // If we get here then none of the parents could find it, so try the system
+          // It IS valid for vert.x users to add classes on the system classpath, but it is frowned upon.
           return system.loadClass(name);
         }
       }
