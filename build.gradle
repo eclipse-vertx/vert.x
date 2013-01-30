@@ -192,7 +192,7 @@ task nonJavadocs(type: Copy) {
   outputs.dir destinationDir
   
   doFirst {
-    ['groovy/api', 'javascript/api', 'python/api', 'ruby/api'].each { dir->
+    ['groovy/api', 'python/api', 'ruby/api'].each { dir->
       mkdir("$rootDir/build/$rootProject.name-$version/api-docs/$dir")
     }
   }
