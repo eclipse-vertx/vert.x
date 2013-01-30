@@ -475,8 +475,6 @@ public class VerticleManager implements ModuleReloader {
     }
   }
 
-
-
   private void doDeployMod(final boolean redeploy, final String depName, final String modName,
                            final JsonObject config,
                            final int instances, final File currentModDir,

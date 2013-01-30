@@ -61,6 +61,7 @@ public class ModuleClassLoader extends URLClassLoader {
   @Override
   protected synchronized Class<?> loadClass(String name, boolean resolve)
       throws ClassNotFoundException {
+
     Class<?> c = findLoadedClass(name);
     if (c == null) {
       // If a system class then we always try to load with the system class loader first
@@ -185,7 +186,6 @@ public class ModuleClassLoader extends URLClassLoader {
 
   @Override
   public Enumeration<URL> getResources(String name) throws IOException {
-
     final List<URL> totURLs = new ArrayList<>();
 
     // Local ones

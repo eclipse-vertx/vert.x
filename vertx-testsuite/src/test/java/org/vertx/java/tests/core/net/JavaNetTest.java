@@ -365,8 +365,6 @@ public class JavaNetTest extends TestBase {
   @Test
   public void testNoContext() throws Exception {
 
-    System.out.println("In test nocontext");
-
     final CountDownLatch latch = new CountDownLatch(1);
 
     Vertx vertx = Vertx.newVertx();

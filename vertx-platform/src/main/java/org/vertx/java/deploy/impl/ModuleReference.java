@@ -29,6 +29,7 @@ class ModuleReference {
   final String moduleKey;
   final ModuleClassLoader mcl;
   int refCount = 0;
+  private VerticleFactory factory;
 
   ModuleReference(final VerticleManager mgr, final String moduleKey, final ModuleClassLoader mcl) {
     this.mgr = mgr;
@@ -51,8 +52,6 @@ class ModuleReference {
     }
   }
 
-  private VerticleFactory factory;
-
   // We load the VerticleFactory class using the module classloader - this allows
   // us to put language implementations in modules
   // And we maintain a single VerticleFactory per classloader
@@ -61,6 +60,15 @@ class ModuleReference {
     if (factory == null) {
       Class clazz = mcl.loadClass(factoryName);
       factory = (VerticleFactory)clazz.newInstance();
+      // Sanity check - verticle factories must always be loaded by the mcl otherwise
+      // you can get strange effects - e.g. in Rhino if a script subsequently tries to load a Java class
+      // it sometimes uses the script classloader (not the context classloader) and if this is the system classloader
+      // then it won't find the class if it's in a module
+      // This can happen if the user puts verticle factory classes on the system classpath - so we check this
+      // here and abort if so
+      if (!(factory.getClass().getClassLoader() instanceof ModuleClassLoader)) {
+        throw new IllegalStateException("Don't add VerticleFactory classes to the system classpath");
+      }
       factory.init(mgr, mcl);
     }
     return factory;
