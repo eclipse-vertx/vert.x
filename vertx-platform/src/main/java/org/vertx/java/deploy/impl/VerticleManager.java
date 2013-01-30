@@ -66,6 +66,8 @@ public class VerticleManager implements ModuleReloader {
   private static final String HTTP_PROXY_HOST_PROP_NAME = "http.proxyHost";
   private static final String HTTP_PROXY_PORT_PROP_NAME = "http.proxyPort";
   private static final char COLON = ':';
+  private static final String LANG_IMPLS_SYS_PROP_ROOT = "vertx.langs.";
+  private static final String LANG_PROPS_FILE_NAME = "langs.properties";
 
   private final VertxInternal vertx;
   // deployment name --> deployment
@@ -73,13 +75,15 @@ public class VerticleManager implements ModuleReloader {
   // The user mods dir
   private final File modRoot;
   private final CountDownLatch stopLatch = new CountDownLatch(1);
-  private Map<String, LanguageImplInfo> factoryNames = new HashMap<>();
   private final String repoHost;
   private final int repoPort;
   private final String proxyHost;
   private final int proxyPort;
   final ConcurrentMap<String, ModuleReference> modules = new ConcurrentHashMap<>();
   private final Redeployer redeployer;
+  private Map<String, LanguageImplInfo> languageImpls = new ConcurrentHashMap<>();
+  private Map<String, String> extensionMappings = new ConcurrentHashMap();
+  private String defaultLanguageImplName;
 
   private static class LanguageImplInfo {
     final String moduleName;
@@ -87,6 +91,9 @@ public class VerticleManager implements ModuleReloader {
     private LanguageImplInfo(String moduleName, String factoryName) {
       this.moduleName = moduleName;
       this.factoryName = factoryName;
+    }
+    public String toString() {
+      return (moduleName == null ? ":" : (moduleName + ":")) + factoryName;
     }
   }
 
@@ -122,7 +129,7 @@ public class VerticleManager implements ModuleReloader {
       modRoot = new File("mods");
     }
     this.redeployer = new Redeployer(vertx, modRoot, this);
-    loadFactoryNames();
+    loadLanguageMappings();
   }
 
   public void block() {
@@ -371,20 +378,48 @@ public class VerticleManager implements ModuleReloader {
     }
   }
 
-  private void loadFactoryNames() {
-    // First try loading them from the langs.properties file
+  private void loadLanguageMappings() {
+    // The only language that Vert.x understands out of the box is Java, so we add the default runtime and
+    // extension mapping for that. This can be overridden in langs.properties
+    languageImpls.put("java", new LanguageImplInfo(null, "org.vertx.java.deploy.impl.java.JavaVerticleFactory"));
+    extensionMappings.put("java", "java");
+    extensionMappings.put("class", "java");
+    defaultLanguageImplName = "java";
+
+    // First try loading mappings from the LANG_PROPS_FILE_NAMEs file
+    // This file is structured as follows:
+    //   It should contain one line for every language implementation that is to be used with Vert.x
+    //     That line should be structured as follows:
+    //       <lang_impl_name>=[module_name:]<factory_name>
+    //     Where:
+    //       <lang_impl_name> is the name you want to give to the language implementation, e.g. 'jython'
+    //       module_name is the (optional) name of a module that contains the language implementation
+    //         if ommitted it will be assumed the language implementation is included as part of the Vert.x installation
+    //         - this is only true for the Java implementation
+    //         if included the module_name should be followed by a colon
+    //       factory_name is the FQCN of a VerticleFactory for the language implementation
+    //     Examples:
+    //       rhino=vertx.lang-rhino-v1.0.0:org.vertx.java.deploy.impl.rhino.RhinoVerticleFactory
+    //       java=org.vertx.java.deploy.impl.java.JavaVerticleFactory
+    //   The file should also contain one line for every extension mapping - this maps a file extension to
+    //   a <lang_impl_name> as specified above
+    //     Examples:
+    //       .js=rhino
+    //       .rb=jruby
+    //   The file can also contain a line representing the default language runtime to be used when no extension or
+    //   prefix maps, e.g.
+    //     .=java
+
     InputStream is = null;
     try {
-      is = getClass().getClassLoader().getResourceAsStream("langs.properties");
-      if (is == null) {
-        log.warn("No language mappings found!");
-      } else {
+      is = getClass().getClassLoader().getResourceAsStream(LANG_PROPS_FILE_NAME);
+      if (is != null) {
         Properties props = new Properties();
         props.load(new BufferedInputStream(is));
-        loadFactoryNames(props);
+        loadLanguageMappings(props);
       }
     } catch (IOException e) {
-      log.error("Failed to load langs.properties: " + e.getMessage());
+      log.error("Failed to load " + LANG_PROPS_FILE_NAME + " " + e.getMessage());
     } finally {
       if (is != null) {
         try {
@@ -398,33 +433,45 @@ public class VerticleManager implements ModuleReloader {
     Properties sysProps = new Properties();
     Set<String> propertyNames = System.getProperties().stringPropertyNames();
     for (String propertyName : propertyNames) {
-      if (propertyName.startsWith("vertx.langs.")) {
-        String lang = propertyName.replaceFirst("vertx.langs.", "");
+      if (propertyName.startsWith(LANG_IMPLS_SYS_PROP_ROOT)) {
+        String lang = propertyName.substring(LANG_IMPLS_SYS_PROP_ROOT.length());
         String value = System.getProperty(propertyName);
         sysProps.put(lang, value);
       }
     }
-    loadFactoryNames(sysProps);
+    loadLanguageMappings(sysProps);
   }
 
-  private void loadFactoryNames(Properties props) {
+  private void loadLanguageMappings(Properties props) {
     Enumeration<?> en = props.propertyNames();
     while (en.hasMoreElements()) {
       String propName = (String)en.nextElement();
       String propVal = props.getProperty(propName);
-      // value is made up of an optional module name followed by colon followed by the
-      // FQCN of the factory
-      int colonIndex = propVal.indexOf(COLON);
-      String moduleName;
-      String factoryName;
-      if (colonIndex != -1) {
-        moduleName = propVal.substring(0, colonIndex);
-        factoryName = propVal.substring(colonIndex + 1);
+      if (propName.startsWith(".")) {
+        // This is an extension mapping
+        if (propName.equals(".")) {
+          // The default mapping
+          defaultLanguageImplName = propVal;
+        } else {
+          propName = propName.substring(1);
+          extensionMappings.put(propName, propVal);
+        }
       } else {
-        moduleName = null;
-        factoryName = propVal;
+        // value is made up of an optional module name followed by colon followed by the
+        // FQCN of the factory
+        int colonIndex = propVal.indexOf(COLON);
+        String moduleName;
+        String factoryName;
+        if (colonIndex != -1) {
+          moduleName = propVal.substring(0, colonIndex);
+          factoryName = propVal.substring(colonIndex + 1);
+        } else {
+          moduleName = null;
+          factoryName = propVal;
+        }
+        LanguageImplInfo langImpl = new LanguageImplInfo(moduleName, factoryName);
+        languageImpls.put(propName, langImpl);
       }
-      factoryNames.put(propName, new LanguageImplInfo(moduleName, factoryName));
     }
   }
 
@@ -773,22 +820,45 @@ public class VerticleManager implements ModuleReloader {
     log.debug("Deploying name : " + deploymentName + " main: " + main +
         " instances: " + instances);
 
-    LanguageImplInfo langImplInfo = null;
-    int marker = -1;
-    if ((marker = main.indexOf(':')) > -1) {
-      // prefix
-      langImplInfo = factoryNames.get(main.substring(0, marker));
-    } else if ((marker = main.lastIndexOf('.')) > -1) {
-      // suffix
-      langImplInfo = factoryNames.get(main.substring(marker + 1));
-    }
+    // How we determine which language implementation to use:
+    // 1. Look for a prefix on the main, e.g. 'groovy:org.foo.myproject.MyGroovyMain' would force the groovy
+    //    language impl to be used
+    // 2. If there is no prefix, then look at the extension, if any. If there is an extension mapping for that
+    //    extension, use that.
+    // 3. No prefix and no extension mapping - use the default runtime
 
-    if (langImplInfo == null) {
-      // default
-      langImplInfo = factoryNames.get("default");
+    LanguageImplInfo langImplInfo = null;
+
+    // Look for a prefix
+    int prefixMarker = main.indexOf(COLON);
+    if (prefixMarker != -1) {
+      String prefix = main.substring(0, prefixMarker);
+      langImplInfo = languageImpls.get(prefix);
       if (langImplInfo == null) {
-        // double check
-        throw new IllegalArgumentException("No language mapping found in " + factoryNames + " and no default specified in langs.properties for '" + main + "'");
+        throw new IllegalStateException("No language implementation known for prefix " + prefix);
+      }
+    }
+    if (langImplInfo == null) {
+      // No prefix - now look at the extension
+      int extensionMarker = main.lastIndexOf('.');
+      if (extensionMarker != -1) {
+        String extension = main.substring(extensionMarker + 1);
+        String langImplName = extensionMappings.get(extension);
+        if (langImplName != null) {
+          langImplInfo = languageImpls.get(langImplName);
+          if (langImplInfo == null) {
+            throw new IllegalStateException("Extension mapping for " + extension + " specified as " + langImplName +
+                                            ", but no language implementation known for that name");
+          }
+        }
+      }
+    }
+    if (langImplInfo == null) {
+      // Use the default
+      langImplInfo = languageImpls.get(defaultLanguageImplName);
+      if (langImplInfo == null) {
+        throw new IllegalStateException("Default language implementation is " + defaultLanguageImplName +
+                                        " but no language implementation known for that name");
       }
     }
 
