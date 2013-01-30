@@ -39,6 +39,8 @@ dependencies {
 }
 
 test {
+  outputs.upToDateWhen { false }
+
   testLogging.showStandardStreams = true
 
 	systemProperty 'vertx.test.timeout', 15

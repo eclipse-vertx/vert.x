@@ -40,8 +40,6 @@ public class FooLangVerticleFactory implements VerticleFactory {
   @Override
   public Verticle createVerticle(final String main) throws Exception {
 
-    System.out.println("createVerticle: " + main);
-
     return new Verticle() {
 
       @Override
