@@ -192,7 +192,7 @@ task nonJavadocs(type: Copy) {
   outputs.dir destinationDir
   
   doFirst {
-    ['groovy/api', 'python/api', 'ruby/api'].each { dir->
+    ['groovy/api', 'python/api'].each { dir->
       mkdir("$rootDir/build/$rootProject.name-$version/api-docs/$dir")
     }
   }
@@ -203,9 +203,6 @@ task nonJavadocs(type: Copy) {
   }
   into('python') {
     from file('vertx-lang/vertx-lang-jython/build/docs/python')
-  }
-  into('ruby') {
-    from file('vertx-lang/vertx-lang-jruby/build/docs/ruby')
   }
 }
 
