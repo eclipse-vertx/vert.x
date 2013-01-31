@@ -1,7 +1,7 @@
 
 import org.vertx.java.deploy.impl.VertxLocator
-import org.vertx.java.testframework
-import org.vertx.java.core.Handler
+import org.vertx.java.testframework.TestUtils
+from org.vertx.java.core import Handler
 import java.lang
 
 from core.buffer import Buffer
@@ -59,7 +59,7 @@ class TestUtils(object):
     def buffers_equal(buff1, buff2):
         return org.vertx.java.testframework.TestUtils.buffersEqual(buff1._to_java_buffer(), buff2._to_java_buffer())
 
-class TestHandler(org.vertx.java.core.Handler):
+class TestHandler(Handler):
     """ Test handler """
     def __init__(self, handler):
         self.handler = handler

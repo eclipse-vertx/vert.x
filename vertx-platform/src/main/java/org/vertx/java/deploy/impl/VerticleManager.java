@@ -358,6 +358,7 @@ public class VerticleManager implements ModuleReloader {
 
     ModuleReference mr = modules.get(moduleKey);
     if (mr == null) {
+
       mr = new ModuleReference(this, moduleKey, new ModuleClassLoader(urls), false);
       ModuleReference prev = modules.putIfAbsent(moduleKey, mr);
       if (prev != null) {
