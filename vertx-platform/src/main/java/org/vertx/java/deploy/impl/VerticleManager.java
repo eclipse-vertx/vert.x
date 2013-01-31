@@ -27,6 +27,7 @@ import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
@@ -357,7 +358,7 @@ public class VerticleManager implements ModuleReloader {
 
     ModuleReference mr = modules.get(moduleKey);
     if (mr == null) {
-      mr = new ModuleReference(this, moduleKey, new ModuleClassLoader(urls));
+      mr = new ModuleReference(this, moduleKey, new ModuleClassLoader(urls), false);
       ModuleReference prev = modules.putIfAbsent(moduleKey, mr);
       if (prev != null) {
         mr = prev;
@@ -511,7 +512,9 @@ public class VerticleManager implements ModuleReloader {
 
       ModuleReference mr = modules.get(modName);
       if (mr == null) {
-        mr = new ModuleReference(this, modName, new ModuleClassLoader(urls.toArray(new URL[urls.size()])));
+        Boolean bres = conf.getBoolean("resident");
+        boolean res = bres != null && bres;
+        mr = new ModuleReference(this, modName, new ModuleClassLoader(urls.toArray(new URL[urls.size()])), res);
         ModuleReference prev = modules.putIfAbsent(modName, mr);
         if (prev != null) {
           mr = prev;
@@ -590,12 +593,15 @@ public class VerticleManager implements ModuleReloader {
           }
         }
         List<URL> urls = getModuleClasspath(modDir);
-        includedMr = new ModuleReference(this, moduleName, new ModuleClassLoader(urls.toArray(new URL[urls.size()])));
+        JsonObject conf = loadModuleConfig(moduleName, modDir);
+        Boolean bres = conf.getBoolean("resident");
+        boolean res = bres != null && bres;
+        includedMr = new ModuleReference(this, moduleName, new ModuleClassLoader(urls.toArray(new URL[urls.size()])),
+                                         res);
         ModuleReference prev = modules.putIfAbsent(moduleName, includedMr);
         if (prev != null) {
           includedMr = prev;
         }
-        JsonObject conf = loadModuleConfig(moduleName, modDir);
         String includes = conf.getString("includes");
         if (includes != null) {
           loadIncludedModules(includedMr, includes);
@@ -1027,7 +1033,6 @@ public class VerticleManager implements ModuleReloader {
             // The closed handler will be called when there are no more outstanding tasks for the context
             // Remember that the vertxStop() method might schedule other async operations and they in turn might schedule
             // others
-            // We need to set it from inside the stop task to prevent race conditions
             holder.context.closedHandler(new SimpleHandler() {
               @Override
               protected void handle() {
@@ -1121,10 +1126,14 @@ public class VerticleManager implements ModuleReloader {
 
   // For debug only
   public int checkNoModules() {
-    for (String key: modules.keySet()) {
-      System.out.println("Module remains: " + key);
+    int count = 0;
+    for (Map.Entry<String, ModuleReference> entry: modules.entrySet()) {
+      if (!entry.getValue().resident) {
+        System.out.println("Module remains: " + entry.getKey());
+        count++;
+      }
     }
-    return modules.size();
+    return count;
   }
 
 

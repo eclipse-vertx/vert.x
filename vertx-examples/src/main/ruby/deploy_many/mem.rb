@@ -13,7 +13,7 @@ def undeploy_it(deploy_id, count)
   Vertx::undeploy_verticle(deploy_id) do
     # puts "undeployed"
     count = count + 1
-    if count < 1000
+    if count < 10000
       deploy_it(count)
     else
       puts "done!"
@@ -22,3 +22,7 @@ def undeploy_it(deploy_id, count)
 end
 
 deploy_it(0)
+
+#Vertx::deploy_verticle("child1.rb")
+#Vertx::deploy_verticle("child2.rb")
+#Vertx::deploy_verticle("child3.rb")

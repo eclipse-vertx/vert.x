@@ -30,11 +30,19 @@ class ModuleReference {
   final ModuleClassLoader mcl;
   int refCount = 0;
   private VerticleFactory factory;
+  // Resident modules do not get unloaded when all referencing modules are unloaded.
+  // They are used for modules such as language implementations, e.g. JRuby
+  // Language impls often contain a lot of classes. If you continually load the classes
+  // then throw away the classloader then you have a very large hit on permgen, and you can get OOM
+  // even if you have permgen GC enabled.
+  final boolean resident;
 
-  ModuleReference(final VerticleManager mgr, final String moduleKey, final ModuleClassLoader mcl) {
+  ModuleReference(final VerticleManager mgr, final String moduleKey, final ModuleClassLoader mcl,
+                  boolean resident) {
     this.mgr = mgr;
     this.moduleKey = moduleKey;
     this.mcl = mcl;
+    this.resident = resident;
   }
 
   synchronized void incRef() {
@@ -43,7 +51,7 @@ class ModuleReference {
 
   synchronized void decRef() {
     refCount--;
-    if (refCount == 0) {
+    if (!resident && refCount == 0) {
       mgr.modules.remove(moduleKey);
       mcl.close();
       if (factory != null) {

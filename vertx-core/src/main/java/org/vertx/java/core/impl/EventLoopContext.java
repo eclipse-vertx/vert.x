@@ -33,8 +33,10 @@ public class EventLoopContext extends Context {
   }
 
   public void execute(Runnable task) {
-    incOustanding();
-    worker.executeInIoThread(wrapTask(task), true);
+    Runnable wrapped = wrapTask(task);
+    if (wrapped != null) {
+      worker.executeInIoThread(wrapped, true);
+    }
   }
 
   public NioWorker getWorker() {
