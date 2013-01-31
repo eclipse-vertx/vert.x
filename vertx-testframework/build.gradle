@@ -38,7 +38,6 @@ dependencies {
 
   compile project(':vertx-lang-groovy')
   compile project(':vertx-lang-java')
-	compile project(':vertx-lang-jython')
 
 	groovy "org.codehaus.groovy:groovy-all:$groovyVersion"
 

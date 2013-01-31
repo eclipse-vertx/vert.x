@@ -20,7 +20,6 @@ include 'vertx-testframework'
 
 include 'vertx-lang-groovy'
 include 'vertx-lang-java'
-include 'vertx-lang-jython'
 
 include 'vertx-testsuite'
 
