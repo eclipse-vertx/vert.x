@@ -201,9 +201,6 @@ task nonJavadocs(type: Copy) {
   into('groovy') {
     from file('vertx-lang/vertx-lang-groovy/build/docs/groovy')
   }
-  into('python') {
-    from file('vertx-lang/vertx-lang-jython/build/docs/python')
-  }
 }
 
 task createDocs(dependsOn: [subprojects.classes, 'javadocs', 'nonJavadocs']) {
