@@ -34,4 +34,4 @@ groovydoc {
 	outputs.dir destinationDir
 }
 
-javadoc.dependsOn groovydoc
+//javadoc.dependsOn groovydoc

@@ -36,8 +36,10 @@ def setup(setup_func):
 
 def teardown(teardown_func):
     def delete_handler(err, result):
+        print "teaddown handler called"
         teardown_func()
     FileSystem.delete_recursive(FILEDIR, delete_handler)
+    print "called delete_rec"
 
 class FileSystemTest(object):
 
@@ -137,6 +139,7 @@ class FileSystemTest(object):
                         tu.check_context
                         def close_handler2(err, result):
                             tu.check_context()
+                            print "test complete"
                             tu.test_complete()
                         file.close(close_handler2)
                     read_stream.end_handler(end_handler)
@@ -147,9 +150,12 @@ class FileSystemTest(object):
 
 def vertx_stop():
     tu.check_context()
+    print "in vertx_stop"
     def run():
+      print "in run"
       tu.unregister_all()
       tu.app_stopped()
+      print "called app_stopped"
     teardown(run)
 
 tu.register_all(FileSystemTest())

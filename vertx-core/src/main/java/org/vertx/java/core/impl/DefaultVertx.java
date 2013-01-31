@@ -18,10 +18,7 @@ package org.vertx.java.core.impl;
 
 import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.jboss.netty.channel.socket.nio.NioWorkerPool;
-import org.jboss.netty.util.HashedWheelTimer;
-import org.jboss.netty.util.Timeout;
-import org.jboss.netty.util.Timer;
-import org.jboss.netty.util.TimerTask;
+import org.jboss.netty.util.*;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
@@ -93,6 +90,11 @@ public class DefaultVertx extends VertxInternal {
 
   public DefaultVertx(int port, String hostname) {
     this.eventBus = new DefaultEventBus(this, port, hostname);
+  }
+
+  static {
+    // Stop netty renaming threads!
+    ThreadRenamingRunnable.setThreadNameDeterminer(ThreadNameDeterminer.CURRENT);
   }
 
   /**
@@ -243,7 +245,7 @@ public class DefaultVertx extends VertxInternal {
         }
       };
     }
-    long timerID = scheduleTimeout(-1, context, myHandler, delay);
+    final long timerID = scheduleTimeout(-1, context, myHandler, delay);
     myHandler.timerID = timerID;
     return timerID;
   }

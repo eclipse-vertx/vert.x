@@ -40,7 +40,8 @@ public abstract class Context {
   private final Executor bgExec;
   private final ClassLoader tccl;
   private AtomicInteger outstandingTasks = new AtomicInteger();
-  private volatile Handler<Void> closedHandler;
+  private Handler<Void> closedHandler;
+  private boolean closed;
 
   protected Context(VertxInternal vertx, Executor bgExec) {
     this.vertx = vertx;
@@ -103,34 +104,31 @@ public abstract class Context {
   private void close() {
     vertx.setContext(null);
     Thread.currentThread().setContextClassLoader(null);
+    closed = true;
   }
 
   public abstract void execute(Runnable handler);
 
   protected void executeOnWorker(final Runnable task) {
-    incOustanding();
-    bgExec.execute(new Runnable() {
-      public void run() {
-        wrapTask(task).run();
-      }
-    });
-  }
-
-  protected void incOustanding() {
-    if (closedHandler != null) {
-      outstandingTasks.incrementAndGet();
+    final Runnable wrapped = wrapTask(task);
+    if (wrapped != null) {
+      bgExec.execute(new Runnable() {
+        public void run() {
+          wrapped.run();
+        }
+      });
     }
   }
 
-  protected void decOustanding() {
-    if (closedHandler != null) {
-      if (outstandingTasks.decrementAndGet() == 0) {
-        // Now there are no more oustanding tasks we can close the context
-        close();
-        closedHandler.handle(null);
-      }
+  private void decOustanding() {
+    if (outstandingTasks.decrementAndGet() == 0) {
+      // Now there are no more oustanding tasks we can close the context
+      close();
+      closedHandler.handle(null);
     }
   }
+
+  private boolean justSet;
 
   public void closedHandler(Handler<Void> closedHandler) {
     this.closedHandler = closedHandler;
@@ -138,19 +136,34 @@ public abstract class Context {
     this.outstandingTasks.set(1);
   }
 
+  private boolean isClosedHandlerSet() {
+    return closedHandler != null;
+  }
+
   protected Runnable wrapTask(final Runnable task) {
+    if (closed) {
+      return null;
+    }
+    // TODO this is ugly - refactor
+    final boolean hasClosedHandler = isClosedHandlerSet();
+    if (hasClosedHandler) {
+      outstandingTasks.incrementAndGet();
+    }
     return new Runnable() {
       public void run() {
-        String threadName = Thread.currentThread().getName();
+        boolean closedHandlerSet = isClosedHandlerSet();
         try {
           vertx.setContext(Context.this);
           task.run();
         } catch (Throwable t) {
           reportException(t);
-        } finally {
-          Thread.currentThread().setName(threadName);
         }
-        decOustanding();
+        boolean closedHandlerNowSet = isClosedHandlerSet();
+        // The closed handler could have been set in the task itself, we check this and if so
+        // we decrement
+        if (hasClosedHandler || (!closedHandlerSet && closedHandlerNowSet)) {
+          decOustanding();
+        }
       }
     };
   }

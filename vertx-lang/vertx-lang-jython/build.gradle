@@ -55,4 +55,4 @@ task pydoc(type: Exec) {
   }	
 }
 
-javadoc.dependsOn pydoc
+//javadoc.dependsOn pydoc
