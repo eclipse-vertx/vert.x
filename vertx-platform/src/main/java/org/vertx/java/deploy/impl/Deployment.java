@@ -28,6 +28,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class Deployment {
   public final String name;
+  public final String main;
   public final String modName;
   public final int instances;
   public final JsonObject config;
@@ -39,11 +40,12 @@ public class Deployment {
   public final ModuleReference moduleReference;
   public final boolean autoRedeploy;
 
-  public Deployment(String name, String modName, int instances, JsonObject config,
+  public Deployment(String name, String main, String modName, int instances, JsonObject config,
                    URL[] urls, File modDir, String parentDeploymentName,
                    ModuleReference moduleReference,
                    boolean autoRedeploy) {
     this.name = name;
+    this.main = main;
     this.modName = modName;
     this.instances = instances;
     this.config = config;

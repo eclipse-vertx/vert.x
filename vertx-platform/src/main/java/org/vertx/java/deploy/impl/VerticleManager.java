@@ -27,7 +27,6 @@ import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.impl.Context;
-import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
@@ -334,7 +333,7 @@ public class VerticleManager implements ModuleReloader {
         } else {
           // Top level - deployed as verticle not module
           // Just use the deployment name
-          return dep.name;
+          return dep.name + "." + dep.main;
         }
       }
     }
@@ -358,8 +357,7 @@ public class VerticleManager implements ModuleReloader {
 
     ModuleReference mr = modules.get(moduleKey);
     if (mr == null) {
-
-      mr = new ModuleReference(this, moduleKey, new ModuleClassLoader(urls), false);
+      mr = new ModuleReference(this, moduleKey, new ModuleClassLoader(moduleKey, urls), false);
       ModuleReference prev = modules.putIfAbsent(moduleKey, mr);
       if (prev != null) {
         mr = prev;
@@ -515,7 +513,7 @@ public class VerticleManager implements ModuleReloader {
       if (mr == null) {
         Boolean bres = conf.getBoolean("resident");
         boolean res = bres != null && bres;
-        mr = new ModuleReference(this, modName, new ModuleClassLoader(urls.toArray(new URL[urls.size()])), res);
+        mr = new ModuleReference(this, modName, new ModuleClassLoader(modName, urls.toArray(new URL[urls.size()])), res);
         ModuleReference prev = modules.putIfAbsent(modName, mr);
         if (prev != null) {
           mr = prev;
@@ -597,7 +595,7 @@ public class VerticleManager implements ModuleReloader {
         JsonObject conf = loadModuleConfig(moduleName, modDir);
         Boolean bres = conf.getBoolean("resident");
         boolean res = bres != null && bres;
-        includedMr = new ModuleReference(this, moduleName, new ModuleClassLoader(urls.toArray(new URL[urls.size()])),
+        includedMr = new ModuleReference(this, moduleName, new ModuleClassLoader(moduleName, urls.toArray(new URL[urls.size()])),
                                          res);
         ModuleReference prev = modules.putIfAbsent(moduleName, includedMr);
         if (prev != null) {
@@ -903,7 +901,7 @@ public class VerticleManager implements ModuleReloader {
     final AggHandler aggHandler = new AggHandler();
 
     String parentDeploymentName = getDeploymentName();
-    final Deployment deployment = new Deployment(deploymentName, modName, instances,
+    final Deployment deployment = new Deployment(deploymentName, main, modName, instances,
         config == null ? new JsonObject() : config.copy(), urls, modDir, parentDeploymentName,
         mr, autoRedeploy);
     mr.incRef();
