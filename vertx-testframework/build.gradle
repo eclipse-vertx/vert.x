@@ -16,24 +16,8 @@
 
 apply from: "$rootDir/gradle/maven.gradle"
 
-sourceSets {
-	main {
-		resources {
-			srcDirs "src/main/python_scripts", "src/main/javascript_scripts", "src/main/ruby_scripts", "src/main/groovy"
-			exclude '**/*$py.class'
-		}
-	}
-//	test {
-//		resources {
-//			srcDirs "src/test/python_scripts", "src/test/javascript_scripts", "src/test/ruby_scripts"
-//		}
-//	}
-}
-
 dependencies {
 	compile "junit:junit:$junitVersion" // provide exportable components
-	
 	compile project(':vertx-platform')
-
   compile project(':vertx-lang-java')
 }
