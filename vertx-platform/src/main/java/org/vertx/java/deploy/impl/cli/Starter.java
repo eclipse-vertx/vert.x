@@ -45,7 +45,7 @@ public class Starter {
 
   private static final String CP_SEPARATOR = System.getProperty("path.separator");
 
-  private static final String VERSION = "vert.x-1.3.1.final";
+  private static final String VERSION = "vert.x-2.0.0-SNAPSHOT";
 
   public static void main(String[] args) {
     new Starter(args);
