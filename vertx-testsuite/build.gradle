@@ -36,12 +36,21 @@ dependencies {
   compile project(':vertx-testframework')
 }
 
+// Delete the rhino module that gets downloaded
+task cleanRhinoStuff(type: Delete) {
+  delete { file("src/test/mod-test").listFiles().find { it.name ==~ /vertx.lang-rhino.+/ } }
+}
+
+clean {
+  dependsOn cleanRhinoStuff
+}
+
+test {
+  dependsOn cleanRhinoStuff
+}
+
 test {
   outputs.upToDateWhen { false }
-
-  delete fileTree(dir: "vertx-testsuite/src/test/mod-test", include: "vertx.lang-rhino*")
-
-  println "deleted!!!!!"
 
   testLogging.showStandardStreams = true
 
