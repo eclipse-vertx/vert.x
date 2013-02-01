@@ -39,12 +39,12 @@ dependencies {
 test {
   outputs.upToDateWhen { false }
 
+  delete(fileTree("./src/test/mod-test") { include "vertx.lang-rhino*" })
+
   testLogging.showStandardStreams = true
 
 	systemProperty 'vertx.test.timeout', 15
   systemProperty 'vertx.mods', "$projectDir/src/test/mod-test"
 
 	jvmArgs '-server', '-Xms128m', '-Xmx1024m', '-XX:MaxPermSize=128m', '-XX:NewRatio=2'
-
-	//forkEvery 50 // FIXME This may not be necessary
 }
