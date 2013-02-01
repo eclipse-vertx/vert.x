@@ -152,7 +152,7 @@ task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
     from subprojects.configurations.platform
     from subprojects.configurations.compile
     // Don't just include everything!!
-    includes = ["groovy*.jar", "jackson*.jar", "netty*.jar", "hazelcast*.jar", "vertx*.jar"]
+    includes = ["jackson*.jar", "netty*.jar", "hazelcast*.jar", "vertx*.jar"]
   }
   doLast {
     project.ant.chmod(file: "build/$rootProject.name-$version/bin", perm: 'ugo+x')
@@ -182,28 +182,7 @@ task javadocs(type: Javadoc, dependsOn: subprojects.javadoc) {
   outputs.dir destinationDir
 }
 
-task nonJavadocs(type: Copy) {
-  group = null       // hide the task
-  description = null // hide the task
-
-  destinationDir file("build/$rootProject.name-$version/api-docs")
-  
-  inputs.files subprojects.docsDir
-  outputs.dir destinationDir
-  
-  doFirst {
-    ['groovy/api', 'python/api'].each { dir->
-      mkdir("$rootDir/build/$rootProject.name-$version/api-docs/$dir")
-    }
-  }
-  
-  // TODO make this less ugly
-  into('groovy') {
-    from file('vertx-lang/vertx-lang-groovy/build/docs/groovy')
-  }
-}
-
-task createDocs(dependsOn: [subprojects.classes, 'javadocs', 'nonJavadocs']) {
+task createDocs(dependsOn: [subprojects.classes, 'javadocs']) {
   group = 'vert.x'
   description = 'Build all of the various docs for the project'
 }

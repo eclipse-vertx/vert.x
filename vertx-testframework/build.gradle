@@ -15,20 +15,19 @@
  */
 
 apply from: "$rootDir/gradle/maven.gradle"
-apply plugin: 'groovy'
 
 sourceSets {
 	main {
 		resources {
-			srcDirs "src/main/python_scripts", "src/main/javascript_scripts", "src/main/ruby_scripts"
+			srcDirs "src/main/python_scripts", "src/main/javascript_scripts", "src/main/ruby_scripts", "src/main/groovy"
 			exclude '**/*$py.class'
 		}
 	}
-	test {
-		resources {
-			srcDirs "src/test/python_scripts", "src/test/javascript_scripts", "src/test/ruby_scripts"
-		}
-	}
+//	test {
+//		resources {
+//			srcDirs "src/test/python_scripts", "src/test/javascript_scripts", "src/test/ruby_scripts"
+//		}
+//	}
 }
 
 dependencies {
@@ -36,11 +35,5 @@ dependencies {
 	
 	compile project(':vertx-platform')
 
-  compile project(':vertx-lang-groovy')
   compile project(':vertx-lang-java')
-
-	groovy "org.codehaus.groovy:groovy-all:$groovyVersion"
-
 }
-
-javadoc.dependsOn groovydoc
