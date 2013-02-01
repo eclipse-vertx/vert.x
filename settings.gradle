@@ -21,13 +21,3 @@ include 'vertx-lang-java'
 include 'vertx-testsuite'
 
 rootProject.name='vert.x'
-
-rootProject.children.each { project->
-	if (project.name.startsWith('vertx-lang-')) {
-		String projectDirName = "vertx-lang/${project.name}"
-		project.projectDir = new File(settingsDir, projectDirName)
-		project.buildFileName = "build.gradle"
-		assert project.projectDir.isDirectory()
-		assert project.buildFile.isFile()
-	}
-}
