@@ -17,6 +17,7 @@
 package org.vertx.java.deploy.impl;
 
 
+import com.sun.servicetag.SystemEnvironment;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
@@ -1014,8 +1015,8 @@ public class VerticleManager implements ModuleReloader {
     if (name == null) {
       throw new NullPointerException("deployment id is null");
     }
-    final Deployment deployment = deployments.remove(name);
 
+    final Deployment deployment = deployments.remove(name);
     final CountingCompletionHandler count = new CountingCompletionHandler(vertx.getOrAssignContext());
     parentCount.incRequired();
 

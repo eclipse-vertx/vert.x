@@ -55,11 +55,7 @@ public class CountingCompletionHandler {
 
   void checkDone() {
     if (doneHandler != null && count == required) {
-      context.execute(new Runnable() {
-        public void run() {
-          doneHandler.handle(null);
-        }
-      });
+      doneHandler.handle(null);
     }
   }
 }
