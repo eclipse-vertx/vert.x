@@ -38,9 +38,12 @@ public class ModuleClassLoader extends URLClassLoader {
   private final Set<ModuleReference> parents = new ConcurrentHashSet<>();
   private final ClassLoader system;
 
-  public ModuleClassLoader(URL[] classpath) {
+  private String cname;
+
+  public ModuleClassLoader(String cname, URL[] classpath) {
     super(classpath, null);
     system = getSystemClassLoader();
+    this.cname = cname;
   }
 
   public void addParent(ModuleReference parent) {
