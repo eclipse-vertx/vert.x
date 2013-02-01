@@ -39,7 +39,9 @@ dependencies {
 test {
   outputs.upToDateWhen { false }
 
-  delete(fileTree("./src/test/mod-test") { include "vertx.lang-rhino*" })
+  delete fileTree(dir: "vertx-testsuite/src/test/mod-test", include: "vertx.lang-rhino*")
+
+  println "deleted!!!!!"
 
   testLogging.showStandardStreams = true
 
