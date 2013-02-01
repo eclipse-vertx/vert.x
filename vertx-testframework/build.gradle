@@ -19,5 +19,4 @@ apply from: "$rootDir/gradle/maven.gradle"
 dependencies {
 	compile "junit:junit:$junitVersion" // provide exportable components
 	compile project(':vertx-platform')
-  compile project(':vertx-lang-java')
 }

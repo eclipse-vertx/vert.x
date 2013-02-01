@@ -17,7 +17,6 @@
 include 'vertx-core'
 include 'vertx-platform'
 include 'vertx-testframework'
-include 'vertx-lang-java'
 include 'vertx-testsuite'
 
 rootProject.name='vert.x'
