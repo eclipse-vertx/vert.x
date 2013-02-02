@@ -250,6 +250,7 @@ public class JavaNetTest extends TestBase {
   @Test
   public void testSharedServersMultipleInstances2() throws Exception {
     int numInstances = Runtime.getRuntime().availableProcessors() - 1;
+    numInstances = numInstances > 0 ? numInstances : 1;
     sharedServers(getMethodName(), true, numInstances, 0, 0);
   }
 
@@ -258,10 +259,6 @@ public class JavaNetTest extends TestBase {
     int numInstances = Runtime.getRuntime().availableProcessors() + 1;
     sharedServers(getMethodName(), true, numInstances, 0, 0);
   }
-
-//  public void testLoop() throws Exception {
-//    super.runTestInLoop("testSharedServersMultipleInstances1StartAllStopAll", 100000);
-//  }
 
   @Test
   public void testSharedServersMultipleInstances1StartAllStopAll() throws Exception {
@@ -272,6 +269,7 @@ public class JavaNetTest extends TestBase {
   @Test
   public void testSharedServersMultipleInstances2StartAllStopAll() throws Exception {
     int numInstances = Runtime.getRuntime().availableProcessors() - 1;
+    numInstances = numInstances > 0 ? numInstances : 1;
     sharedServers(getMethodName(), true, numInstances, numInstances, numInstances);
   }
 
@@ -291,6 +289,7 @@ public class JavaNetTest extends TestBase {
   @Test
   public void testSharedServersMultipleInstances2StartAllStopSome() throws Exception {
     int numInstances = Runtime.getRuntime().availableProcessors() - 1;
+    numInstances = numInstances > 0 ? numInstances : 1;
     sharedServers(getMethodName(), true, numInstances, numInstances, numInstances / 2);
   }
 
