@@ -23,8 +23,28 @@ dependencies {
 	compile "org.codehaus.jackson:jackson-mapper-asl:$jacksonVersion"
 	compile "com.hazelcast:hazelcast:$hazelcastVersion"
 	compile "io.netty:netty:$nettyVersion"
+  testCompile "junit:junit:$junitVersion"
+  testCompile project(':vertx-testframework')
 }
 
 artifacts {
 	platform jar
+}
+
+sourceSets {
+  test {
+    resources {
+      srcDirs "../src/dist/conf"
+    }
+  }
+}
+
+test {
+  outputs.upToDateWhen { false }
+
+  testLogging.showStandardStreams = true
+
+  systemProperty 'vertx.test.timeout', 15
+
+  jvmArgs '-server', '-Xms128m', '-Xmx1024m', '-XX:MaxPermSize=128m', '-XX:NewRatio=2'
 }

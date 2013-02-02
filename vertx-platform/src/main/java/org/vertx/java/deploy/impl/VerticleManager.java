@@ -17,7 +17,6 @@
 package org.vertx.java.deploy.impl;
 
 
-import com.sun.servicetag.SystemEnvironment;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
@@ -358,7 +357,7 @@ public class VerticleManager implements ModuleReloader {
 
     ModuleReference mr = modules.get(moduleKey);
     if (mr == null) {
-      mr = new ModuleReference(this, moduleKey, new ModuleClassLoader(moduleKey, urls), false);
+      mr = new ModuleReference(this, moduleKey, new ModuleClassLoader(urls), false);
       ModuleReference prev = modules.putIfAbsent(moduleKey, mr);
       if (prev != null) {
         mr = prev;
@@ -514,7 +513,7 @@ public class VerticleManager implements ModuleReloader {
       if (mr == null) {
         Boolean bres = conf.getBoolean("resident");
         boolean res = bres != null && bres;
-        mr = new ModuleReference(this, modName, new ModuleClassLoader(modName, urls.toArray(new URL[urls.size()])), res);
+        mr = new ModuleReference(this, modName, new ModuleClassLoader(urls.toArray(new URL[urls.size()])), res);
         ModuleReference prev = modules.putIfAbsent(modName, mr);
         if (prev != null) {
           mr = prev;
@@ -596,7 +595,7 @@ public class VerticleManager implements ModuleReloader {
         JsonObject conf = loadModuleConfig(moduleName, modDir);
         Boolean bres = conf.getBoolean("resident");
         boolean res = bres != null && bres;
-        includedMr = new ModuleReference(this, moduleName, new ModuleClassLoader(moduleName, urls.toArray(new URL[urls.size()])),
+        includedMr = new ModuleReference(this, moduleName, new ModuleClassLoader(urls.toArray(new URL[urls.size()])),
                                          res);
         ModuleReference prev = modules.putIfAbsent(moduleName, includedMr);
         if (prev != null) {
@@ -737,8 +736,9 @@ public class VerticleManager implements ModuleReloader {
           return false;
         }
       }
-      log.info("Installing module into directory '" + modRoot + "'");
+
       File fdest = new File(modRoot, modName);
+      log.info("Installing module into directory " + fdest.getAbsolutePath());
       if (fdest.exists()) {
         // This can happen if the same module is requested to be installed
         // at around the same time
@@ -1082,10 +1082,13 @@ public class VerticleManager implements ModuleReloader {
     }
   }
 
-  public synchronized void undeploy(String name, final Handler<Void> doneHandler) {
-    final Deployment dep = deployments.get(name);
+  public synchronized void undeploy(String deploymentID, final Handler<Void> doneHandler) {
+    if (deploymentID == null) {
+      throw new NullPointerException("deploymentID is null");
+    }
+    final Deployment dep = deployments.get(deploymentID);
     if (dep == null) {
-      throw new IllegalArgumentException("There is no deployment with name " + name);
+      throw new IllegalArgumentException("There is no deployment with id " + deploymentID);
     }
     Handler<Void> wrappedHandler = new SimpleHandler() {
       public void handle() {
@@ -1097,7 +1100,7 @@ public class VerticleManager implements ModuleReloader {
         }
       }
     };
-    doUndeploy(name, wrappedHandler);
+    doUndeploy(deploymentID, wrappedHandler);
   }
 
   private void redeploy(final Deployment deployment) {
