@@ -18,6 +18,8 @@ apply from: "$rootDir/gradle/maven.gradle"
 
 dependencies {
 	compile project(':vertx-core')
+  testCompile "junit:junit:$junitVersion"
+  testCompile project(':vertx-testframework')
 }
 
 artifacts {
@@ -30,4 +32,36 @@ jar {
 			'Main-Class': 'org.vertx.java.deploy.impl.cli.Starter'
 		)
 	}
+}
+
+sourceSets {
+  test {
+    resources {
+      srcDirs "../src/dist/conf"
+    }
+  }
+}
+
+// Cleanup the modules placed in the mod-test directory during the test suite
+task cleanTestTmpModules(type: Delete) {
+  delete { file("src/test/mod-test").listFiles().find { it.name ==~ /vertx.+/ } }
+}
+
+clean {
+  dependsOn cleanTestTmpModules
+}
+
+test {
+  dependsOn cleanTestTmpModules
+}
+
+test {
+  outputs.upToDateWhen { false }
+
+  testLogging.showStandardStreams = true
+
+  systemProperty 'vertx.test.timeout', 15
+  systemProperty 'vertx.mods', "$projectDir/src/test/mod-test"
+
+  jvmArgs '-server', '-Xms128m', '-Xmx1024m', '-XX:MaxPermSize=128m', '-XX:NewRatio=2'
 }

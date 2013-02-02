@@ -10,7 +10,7 @@ function deploy_it(count) {
 function undeploy_it(deploy_id, count) {
   vertx.undeployVerticle(deploy_id, function() {
     count++;
-    if (count < 3) {
+    if (count < 10000) {
       deploy_it(count);
     } else {
       console.log("done!");
@@ -18,7 +18,5 @@ function undeploy_it(deploy_id, count) {
   });
 }
 
-vertx.setTimer(10000, function() {
-  deploy_it(0)
-})
+deploy_it(0)
 
