@@ -94,6 +94,7 @@ public class JavaWebsocketTest extends TestBase {
   @Test
   public void testSharedServersMultipleInstances2() throws Exception {
     int numInstances = Runtime.getRuntime().availableProcessors() - 1;
+    numInstances = numInstances > 0 ? numInstances : 1;
     sharedServers(getMethodName(), true, numInstances, 0, 0);
   }
 
@@ -112,6 +113,7 @@ public class JavaWebsocketTest extends TestBase {
   @Test
   public void testSharedServersMultipleInstances2StartAllStopAll() throws Exception {
     int numInstances = Runtime.getRuntime().availableProcessors() - 1;
+    numInstances = numInstances > 0 ? numInstances : 1;
     sharedServers(getMethodName(), true, numInstances, numInstances, numInstances);
   }
 
@@ -131,6 +133,7 @@ public class JavaWebsocketTest extends TestBase {
   @Test
   public void testSharedServersMultipleInstances2StartAllStopSome() throws Exception {
     int numInstances = Runtime.getRuntime().availableProcessors() - 1;
+    numInstances = numInstances > 0 ? numInstances : 1;
     sharedServers(getMethodName(), true, numInstances, numInstances, numInstances / 2);
   }
 
