@@ -195,7 +195,7 @@ public class VerticleManager implements ModuleReloader {
   }
 
   public synchronized void undeployAll(final Handler<Void> doneHandler) {
-    final CountingCompletionHandler count = new CountingCompletionHandler(vertx.getOrAssignContext());
+    final CountingCompletionHandler count = new CountingCompletionHandler(vertx);
     if (!deployments.isEmpty()) {
       // We do it this way since undeploy is itself recursive - we don't want
       // to attempt to undeploy the same verticle twice if it's a child of
@@ -1004,7 +1004,7 @@ public class VerticleManager implements ModuleReloader {
   }
 
   private void doUndeploy(String name, final Handler<Void> doneHandler) {
-    CountingCompletionHandler count = new CountingCompletionHandler(vertx.getOrAssignContext());
+    CountingCompletionHandler count = new CountingCompletionHandler(vertx);
     doUndeploy(name, count);
     if (doneHandler != null) {
       count.setHandler(doneHandler);
@@ -1017,7 +1017,7 @@ public class VerticleManager implements ModuleReloader {
     }
 
     final Deployment deployment = deployments.remove(name);
-    final CountingCompletionHandler count = new CountingCompletionHandler(vertx.getOrAssignContext());
+    final CountingCompletionHandler count = new CountingCompletionHandler(vertx);
     parentCount.incRequired();
 
     // Depth first - undeploy children first

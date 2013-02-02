@@ -18,6 +18,8 @@ package org.vertx.java.deploy.impl;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.DefaultVertx;
+import org.vertx.java.core.impl.VertxInternal;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -25,14 +27,11 @@ import org.vertx.java.core.impl.Context;
 public class CountingCompletionHandler {
 
   private final Context context;
+  private VertxInternal vertx;
 
-  public CountingCompletionHandler(Context context) {
-    this.context = context;
-  }
-
-  public CountingCompletionHandler(Context context, int required) {
-    this.context = context;
-    this.required = required;
+  public CountingCompletionHandler(VertxInternal vertx) {
+    this.vertx = vertx;
+    this.context = vertx.getOrAssignContext();
   }
 
   int count;
@@ -55,11 +54,15 @@ public class CountingCompletionHandler {
 
   void checkDone() {
     if (doneHandler != null && count == required) {
-      context.execute(new Runnable() {
+      if (vertx.getContext() == context) {
+        doneHandler.handle(null);
+      } else {
+        context.execute(new Runnable() {
         public void run() {
           doneHandler.handle(null);
         }
       });
+      }
     }
   }
 }
