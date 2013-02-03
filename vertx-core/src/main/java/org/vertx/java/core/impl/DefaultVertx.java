@@ -56,14 +56,10 @@ public class DefaultVertx extends VertxInternal {
   private final EventBus eventBus;
   private final SharedData sharedData = new SharedData();
 
-  private ThreadPoolExecutor backgroundPool = VertxExecutorFactory.workerPool("vert.x-worker-thread-");
+  private ExecutorService backgroundPool = VertxExecutorFactory.workerPool("vert.x-worker-thread-");
   private OrderedExecutorFactory orderedFact = new OrderedExecutorFactory(backgroundPool);
-
-  private int corePoolSize = Runtime.getRuntime().availableProcessors();
-  private NioWorkerPool corePool =
-      new NioWorkerPool(VertxExecutorFactory.eventPool("vert.x-core-thread-"), corePoolSize);
-
-  private ThreadPoolExecutor acceptorPool = VertxExecutorFactory.acceptorPool("vert.x-acceptor-thread-");
+  private VertxNioWorkerPool corePool = VertxExecutorFactory.corePool("vert.x-core-thread-");
+  private ExecutorService acceptorPool = VertxExecutorFactory.acceptorPool("vert.x-acceptor-thread-");
 
   private Map<ServerID, DefaultHttpServer> sharedHttpServers = new HashMap<>();
   private Map<ServerID, DefaultNetServer> sharedNetServers = new HashMap<>();
@@ -324,10 +320,6 @@ public class DefaultVertx extends VertxInternal {
 			timer = null;
 		}
 
-		if (eventBus != null) {
-			eventBus.close(null);
-		}
-
 		if (backgroundPool != null) {
 			backgroundPool.shutdown();
 		}
@@ -356,7 +348,7 @@ public class DefaultVertx extends VertxInternal {
 
 		// log.info("Release external resources from worker pool");
 		if (corePool != null) {
-			corePool.releaseExternalResources();
+			corePool.close();
 			corePool = null;
 		}
 		// log.info("Release external resources: done");

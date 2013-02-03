@@ -15,72 +15,44 @@
  */
 package org.vertx.java.core.impl;
 
+import org.jboss.netty.channel.socket.nio.NioWorkerPool;
+
 import java.util.concurrent.*;
 
 
 /**
  * Util factory for creating vert.x thread pools
+ *
+ * The pools shouldn't be too configurable by the user otherwise they
+ * can get into problems. Vert.x requires quite specific behaviour from each pool
+ * and things can easily break if they are configured incorrectly.
  * 
  * @author swilliams
+ * @author <a href="http://tfox.org">Tim Fox</a>
  *
  */
 public class VertxExecutorFactory {
 
-  public static final long EVENT_POOL_KEEP_ALIVE = 60L;
-
-  public static final long WORKER_POOL_KEEP_ALIVE = 60L;
-
   public static final int WORKER_POOL_MAX_SIZE = 20;
 
-  public static final long ACCEPTOR_POOL_KEEP_ALIVE = 60L;
-
-  public static ThreadPoolExecutor eventPool(String poolName) {
-    int cores = Runtime.getRuntime().availableProcessors();
-    int corePoolSize = Integer.getInteger("vertx.pool.event.coreSize", cores);
-    int maximumPoolSize = Integer.getInteger("vertx.pool.event.maxSize", cores);
-    long keepAliveTime = Long.getLong("vertx.pool.event.keepAlive", EVENT_POOL_KEEP_ALIVE);
-    boolean preStart = Boolean.getBoolean("vertx.pool.event.preStart");
-    TimeUnit unit = TimeUnit.SECONDS;
-    BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>(Integer.getInteger("vertx.pool.event.queueSize", Integer.MAX_VALUE));
-    ThreadFactory threadFactory = new VertxThreadFactory(poolName);
-    RejectedExecutionHandler handler = new ThreadPoolExecutor.CallerRunsPolicy();
-    ThreadPoolExecutor exec = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory, handler);
-    if (preStart) {
-      exec.prestartAllCoreThreads();
-    }
-    return exec;
+  // The core pool needs to be fixed with a backing queue
+  public static VertxNioWorkerPool corePool(String poolName) {
+    int corePoolSize = Integer.getInteger("vertx.pool.core.size", Runtime.getRuntime().availableProcessors());
+    ExecutorService exec = Executors.newFixedThreadPool(corePoolSize, new VertxThreadFactory(poolName));
+    return new VertxNioWorkerPool(exec, corePoolSize);
   }
 
-  public static ThreadPoolExecutor workerPool(String poolName) {
-    int corePoolSize = Integer.getInteger("vertx.pool.worker.coreSize", WORKER_POOL_MAX_SIZE);
-    int maximumPoolSize = Integer.getInteger("vertx.pool.worker.maxSize", WORKER_POOL_MAX_SIZE);
-    long keepAliveTime = Long.getLong("vertx.pool.worker.keepAlive", WORKER_POOL_KEEP_ALIVE);
-    boolean preStart = Boolean.getBoolean("vertx.pool.event.preStart");
-    TimeUnit unit = TimeUnit.SECONDS;
-    BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>(Integer.getInteger("vertx.pool.worker.queueSize", Integer.MAX_VALUE));
-    ThreadFactory threadFactory = new VertxThreadFactory(poolName);
-    RejectedExecutionHandler handler = new ThreadPoolExecutor.CallerRunsPolicy();
-    ThreadPoolExecutor exec = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory, handler);
-    if (preStart) {
-      exec.prestartAllCoreThreads();
-    }
-    return exec;
+  // The worker pool needs to be fixed with a backing queue
+  public static ExecutorService workerPool(String poolName) {
+    int maxSize = Integer.getInteger("vertx.pool.worker.size", WORKER_POOL_MAX_SIZE);
+    return Executors.newFixedThreadPool(maxSize, new VertxThreadFactory(poolName));
   }
 
-  public static ThreadPoolExecutor acceptorPool(String poolName) {
-    int corePoolSize = Integer.getInteger("vertx.pool.acceptor.coreSize", 0);
-    int maximumPoolSize = Integer.getInteger("vertx.pool.acceptor.maxSize", Integer.MAX_VALUE);
-    long keepAliveTime = Long.getLong("vertx.pool.acceptor.keepAlive", ACCEPTOR_POOL_KEEP_ALIVE);
-    boolean preStart = Boolean.getBoolean("vertx.pool.event.preStart");
-    TimeUnit unit = TimeUnit.SECONDS;
-    BlockingQueue<Runnable> workQueue = new SynchronousQueue<>();
-    ThreadFactory threadFactory = new VertxThreadFactory(poolName);
-    RejectedExecutionHandler handler = new ThreadPoolExecutor.CallerRunsPolicy();
-    ThreadPoolExecutor exec = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory, handler);
-    if (preStart) {
-      exec.prestartAllCoreThreads();
-    }
-    return exec;
+  // The acceptor pool needs to be a cached pool - this is because Netty servers anc clients (in 3.x) will
+  // take a thread out of the pool and not return it until they are closed
+  // This means if the pool was fixed then servers will hang if too many are created
+  public static ExecutorService acceptorPool(String poolName) {
+    return Executors.newCachedThreadPool(new VertxThreadFactory(poolName));
   }
 
 }
