@@ -54,7 +54,6 @@ public class DefaultHttpClient implements HttpClient {
   private final EventLoopContext ctx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private ClientBootstrap bootstrap;
-  private NioClientSocketChannelFactory channelFactory;
   private Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<Channel, ClientConnection>();
   private Handler<Exception> exceptionHandler;
   private int port = 80;
@@ -357,7 +356,7 @@ public class DefaultHttpClient implements HttpClient {
       pool.addWorker(ctx.getWorker());
       Integer bossThreads = tcpHelper.getClientBossThreads();
       int threads = bossThreads == null ? 1 : bossThreads;
-      channelFactory = new NioClientSocketChannelFactory(
+      NioClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(
           vertx.getAcceptorPool(), threads, pool, vertx.getTimer());
       bootstrap = new ClientBootstrap(channelFactory);
 

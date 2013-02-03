@@ -141,7 +141,6 @@ public class TestBase extends TestCase {
     if (verticleManager.checkNoModules() > 0) {
       fail("Module references remain after test");
     }
-    verticleManager.stop();
   }
 
   protected String startApp(String main) throws Exception {

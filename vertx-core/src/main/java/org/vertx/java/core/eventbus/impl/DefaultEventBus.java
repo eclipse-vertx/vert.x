@@ -300,7 +300,6 @@ public class DefaultEventBus implements EventBus {
 		if (clusterMgr != null) {
 			clusterMgr.close();
 		}
-		
 		if (server != null) {
 			server.close(doneHandler);
 		}
