@@ -18,18 +18,18 @@ package org.vertx.java.platform.impl.resolver;/*
 
 import org.vertx.java.core.Vertx;
 
-public class OldResolver extends HttpRepoResolver {
+/*
+This resolver works with the old github-based Vert.x module repository used in Vert.x 1.x
+ */
+public class Vertx1xResolver extends HttpRepoResolver {
 
-  private static final String REPO_URI_ROOT = "/vertx-mods/mods/";
-  //private static final String DEFAULT_REPO_HOST = "vert-x.github.com";
-
-  public OldResolver(Vertx vertx, String proxyHost, int proxyPort, String repoHost, int repoPort) {
-    super(vertx, proxyHost, proxyPort, repoHost, repoPort);
+  public Vertx1xResolver(Vertx vertx, String proxyHost, int proxyPort, String repoID) {
+    super(vertx, proxyHost, proxyPort, repoID);
   }
 
   @Override
   protected String getRepoURI(String moduleName) {
-    return REPO_URI_ROOT + moduleName + ".zip";
+    return contentRoot + moduleName + "/mod.zip";
   }
 
 }

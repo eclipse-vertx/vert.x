@@ -22,9 +22,6 @@ import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.http.HttpClient;
-import org.vertx.java.core.http.HttpClientRequest;
-import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
@@ -35,6 +32,9 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.platform.Container;
 import org.vertx.java.platform.Verticle;
 import org.vertx.java.platform.VerticleFactory;
+import org.vertx.java.platform.impl.resolver.MavenRepoResolver;
+import org.vertx.java.platform.impl.resolver.Vertx1xResolver;
+import org.vertx.java.platform.impl.resolver.RepoResolver;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -47,7 +47,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -69,6 +68,7 @@ public class VerticleManager implements ModuleReloader {
   private static final char COLON = ':';
   private static final String LANG_IMPLS_SYS_PROP_ROOT = "vertx.langs.";
   private static final String LANG_PROPS_FILE_NAME = "langs.properties";
+  private static final String REPOS_FILE_NAME = "repos.txt";
 
   private final VertxInternal vertx;
   // deployment name --> deployment
@@ -85,6 +85,7 @@ public class VerticleManager implements ModuleReloader {
   private Map<String, LanguageImplInfo> languageImpls = new ConcurrentHashMap<>();
   private Map<String, String> extensionMappings = new ConcurrentHashMap();
   private String defaultLanguageImplName;
+  private List<RepoResolver> defaultRepos = new ArrayList<>();
 
   private static class LanguageImplInfo {
     final String moduleName;
@@ -129,6 +130,7 @@ public class VerticleManager implements ModuleReloader {
     }
     this.redeployer = new Redeployer(vertx, modRoot, this);
     loadLanguageMappings();
+    loadDefaultRepos();
   }
 
   public void block() {
@@ -409,9 +411,7 @@ public class VerticleManager implements ModuleReloader {
     //   prefix maps, e.g.
     //     .=java
 
-    InputStream is = null;
-    try {
-      is = getClass().getClassLoader().getResourceAsStream(LANG_PROPS_FILE_NAME);
+    try (InputStream is = getClass().getClassLoader().getResourceAsStream(LANG_PROPS_FILE_NAME)) {
       if (is != null) {
         Properties props = new Properties();
         props.load(new BufferedInputStream(is));
@@ -419,13 +419,6 @@ public class VerticleManager implements ModuleReloader {
       }
     } catch (IOException e) {
       log.error("Failed to load " + LANG_PROPS_FILE_NAME + " " + e.getMessage());
-    } finally {
-      if (is != null) {
-        try {
-          is.close();
-        } catch (IOException ignore) {
-        }
-      }
     }
 
     // Then override any with system properties
@@ -647,79 +640,58 @@ public class VerticleManager implements ModuleReloader {
     return arr;
   }
 
+  private void loadDefaultRepos() {
+    try (InputStream is = getClass().getClassLoader().getResourceAsStream(REPOS_FILE_NAME)) {
+      if (is != null) {
+        BufferedReader rdr = new BufferedReader(new InputStreamReader(is));
+        String line;
+        while ((line = rdr.readLine()) != null) {
+          line = line.trim();
+          if (line.isEmpty() || line.startsWith("#")) {
+            // blank line or comment
+            continue;
+          }
+          int colonPos = line.indexOf(':');
+          if (colonPos == -1 || colonPos == line.length() - 1) {
+            throw new IllegalArgumentException("Invalid repo: " + line);
+          }
+          String type = line.substring(0, colonPos);
+          String repoID = line.substring(colonPos + 1);
+          RepoResolver resolver;
+          switch (type) {
+            case "maven":
+              resolver = new MavenRepoResolver(vertx, proxyHost, proxyPort, repoID);
+              break;
+            case "vert.x-1.x":
+              resolver = new Vertx1xResolver(vertx, proxyHost, proxyPort, repoID);
+              break;
+            default:
+              throw new IllegalArgumentException("Unknown repo type: " + type);
+          }
+          defaultRepos.add(resolver);
+        }
+      }
+    } catch (IOException e) {
+      log.error("Failed to load " + LANG_PROPS_FILE_NAME + " " + e.getMessage());
+    }
+  }
+
   private boolean doInstallMod(final String moduleName) {
     checkWorkerContext();
-    final CountDownLatch latch = new CountDownLatch(1);
-    final AtomicReference<Buffer> mod = new AtomicReference<>();
-    HttpClient client = vertx.createHttpClient();
-    if (proxyHost != null) {
-      client.setHost(proxyHost);
-      if (proxyPort != 80) {
-        client.setPort(proxyPort);
-      } else {
-        client.setPort(80);
-      }
-    } else {
-      client.setHost(repoHost);
-      client.setPort(repoPort);
-    }
-    client.exceptionHandler(new Handler<Exception>() {
-      public void handle(Exception e) {
-        log.error("Unable to connect to repository");
-        latch.countDown();
-      }
-    });
-    String uri = REPO_URI_ROOT + moduleName + "/mod.zip";
-    String msg = "Attempting to install module " + moduleName + " from http://"
-        + repoHost + ":" + repoPort + uri;
-    if (proxyHost != null) {
-      msg += " Using proxy host " + proxyHost + ":" + proxyPort;
-    }
-    log.info(msg);
-    if (proxyHost != null) {
-      uri = new StringBuilder("http://").append(DEFAULT_REPO_HOST).append(uri).toString();
-    }
-    HttpClientRequest req = client.get(uri, new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        if (resp.statusCode == 200) {
-          log.info("Downloading module...");
-          resp.bodyHandler(new Handler<Buffer>() {
-            public void handle(Buffer buffer) {
-              mod.set(buffer);
-              latch.countDown();
-            }
-          });
-        } else if (resp.statusCode == 404) {
-          log.error("Can't find module " + moduleName + " in repository");
-          latch.countDown();
-        } else {
-          log.error("Failed to download module: " + resp.statusCode);
-          latch.countDown();
-        }
-      }
-    });
-    if(proxyHost != null){
-      req.putHeader("host", proxyHost);
-    } else {
-      req.putHeader("host", repoHost);
-    }
-    req.putHeader("user-agent", "Vert.x Module Installer");
-    req.end();
-    while (true) {
-      try {
-        if (!latch.await(30, TimeUnit.SECONDS)) {
-          throw new IllegalStateException("Timed out waiting to download module");
-        }
-        break;
-      } catch (InterruptedException ignore) {
-      }
-    }
-    Buffer modZipped = mod.get();
-    if (modZipped != null) {
-      return unzipModule(moduleName, modZipped);
-    } else {
+    if (defaultRepos.isEmpty()) {
+      log.warn("No repositories configured!");
       return false;
     }
+    for (RepoResolver resolver: defaultRepos) {
+      Buffer modZipped = resolver.getModule(moduleName);
+      if (modZipped != null) {
+        return unzipModule(moduleName, modZipped);
+      } else {
+        return false;
+      }
+    }
+    log.error("Module " + moduleName + "not found in any repositories");
+    return false;
   }
 
   private boolean unzipModule(final String modName, final Buffer data) {
