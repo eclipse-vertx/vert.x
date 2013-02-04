@@ -25,7 +25,7 @@ import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.streams.Pump;
-import org.vertx.java.deploy.Verticle;
+import org.vertx.java.platform.Verticle;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;

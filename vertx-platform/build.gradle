@@ -29,7 +29,7 @@ artifacts {
 jar {
 	manifest {
 		attributes(
-			'Main-Class': 'org.vertx.java.deploy.impl.cli.Starter'
+			'Main-Class': 'org.vertx.java.platform.impl.cli.Starter'
 		)
 	}
 }

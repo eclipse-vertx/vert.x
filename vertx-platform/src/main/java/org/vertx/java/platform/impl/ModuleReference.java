@@ -15,7 +15,11 @@
  *
  */
 
-package org.vertx.java.deploy.impl;
+package org.vertx.java.platform.impl;
+
+import org.vertx.java.core.Vertx;
+import org.vertx.java.platform.Container;
+import org.vertx.java.platform.VerticleFactory;
 
 /**
  *
@@ -63,12 +67,12 @@ class ModuleReference {
   // We load the VerticleFactory class using the module classloader - this allows
   // us to put language implementations in modules
   // And we maintain a single VerticleFactory per classloader
-  public synchronized VerticleFactory getVerticleFactory(String factoryName, VerticleManager mgr)
+  public synchronized VerticleFactory getVerticleFactory(String factoryName, Vertx vertx, Container container)
       throws ClassNotFoundException, InstantiationException, IllegalAccessException {
     if (factory == null) {
       Class clazz = mcl.loadClass(factoryName);
       factory = (VerticleFactory)clazz.newInstance();
-      factory.init(mgr, mcl);
+      factory.init(vertx, container, mcl);
     }
     return factory;
   }

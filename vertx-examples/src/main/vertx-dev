@@ -169,4 +169,4 @@ eval splitJvmOpts $DEFAULT_JVM_OPTS $JAVA_OPTS $VERTX_OPTS
 
 exec "$JAVACMD" "${JVM_OPTS[@]}" -Dpython.options.internalTablesImpl=weak\
  -Djava.util.logging.config.file=$APP_HOME/src/dist/conf/logging.properties\
- -classpath "$CLASSPATH" org.vertx.java.deploy.impl.cli.Starter "$@"
+ -classpath "$CLASSPATH" org.vertx.java.platform.impl.cli.Starter "$@"

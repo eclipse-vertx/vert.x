@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.deploy.impl;
+package org.vertx.java.platform.impl;
 
 
 import org.vertx.java.core.AsyncResult;
@@ -32,8 +32,9 @@ import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.deploy.Container;
-import org.vertx.java.deploy.Verticle;
+import org.vertx.java.platform.Container;
+import org.vertx.java.platform.Verticle;
+import org.vertx.java.platform.VerticleFactory;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -119,8 +120,6 @@ public class VerticleManager implements ModuleReloader {
     this.proxyHost = System.getProperty(HTTP_PROXY_HOST_PROP_NAME);
     String tmpPort = System.getProperty(HTTP_PROXY_PORT_PROP_NAME);
     this.proxyPort = tmpPort != null ? Integer.parseInt(tmpPort) : 80;
-    VertxLocator.vertx = vertx;
-    VertxLocator.container = new Container(this);
     String modDir = System.getProperty("vertx.mods");
     if (modDir != null && !modDir.trim().equals("")) {
       modRoot = new File(modDir);
@@ -381,7 +380,7 @@ public class VerticleManager implements ModuleReloader {
   private void loadLanguageMappings() {
     // The only language that Vert.x understands out of the box is Java, so we add the default runtime and
     // extension mapping for that. This can be overridden in langs.properties
-    languageImpls.put("java", new LanguageImplInfo(null, "org.vertx.java.deploy.impl.java.JavaVerticleFactory"));
+    languageImpls.put("java", new LanguageImplInfo(null, "org.vertx.java.platform.impl.java.JavaVerticleFactory"));
     extensionMappings.put("java", "java");
     extensionMappings.put("class", "java");
     defaultLanguageImplName = "java";
@@ -399,8 +398,8 @@ public class VerticleManager implements ModuleReloader {
     //         if included the module_name should be followed by a colon
     //       factory_name is the FQCN of a VerticleFactory for the language implementation
     //     Examples:
-    //       rhino=vertx.lang-rhino-v1.0.0:org.vertx.java.deploy.impl.rhino.RhinoVerticleFactory
-    //       java=org.vertx.java.deploy.impl.java.JavaVerticleFactory
+    //       rhino=vertx.lang-rhino-v1.0.0:org.vertx.java.platform.impl.rhino.RhinoVerticleFactory
+    //       java=org.vertx.java.platform.impl.java.JavaVerticleFactory
     //   The file should also contain one line for every extension mapping - this maps a file extension to
     //   a <lang_impl_name> as specified above
     //     Examples:
@@ -875,7 +874,7 @@ public class VerticleManager implements ModuleReloader {
 
     try {
       // TODO not one verticle factory per module ref, but one per language per module ref
-      verticleFactory = mr.getVerticleFactory(langImplInfo.factoryName, this);
+      verticleFactory = mr.getVerticleFactory(langImplInfo.factoryName, vertx, new Container(this));
     } catch (Exception e) {
       log.error("Failed to instantiate verticle factory", e);
       doneHandler.handle(null);

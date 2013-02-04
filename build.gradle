@@ -175,7 +175,7 @@ task javadocs(type: Javadoc, dependsOn: subprojects.javadoc) {
   classpath = files(subprojects.configurations.compile)
 
   excludes = ["**/impl/**"]
-  includes = ["**/core/**", "**/deploy/**"]
+  includes = ["**/core/**", "**/platform/**"]
 
   destinationDir file("build/$rootProject.name-$version/api-docs/java/api")
   inputs.files classpath

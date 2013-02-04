@@ -29,7 +29,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.deploy.impl.VerticleManager;
+import org.vertx.java.platform.impl.VerticleManager;
 
 /**
  * @author swilliams

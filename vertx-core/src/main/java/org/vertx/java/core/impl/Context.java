@@ -128,8 +128,6 @@ public abstract class Context {
     }
   }
 
-  private boolean justSet;
-
   public void closedHandler(Handler<Void> closedHandler) {
     this.closedHandler = closedHandler;
     // Start with 1 - this represents the stop task itself

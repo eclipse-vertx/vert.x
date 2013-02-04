@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.deploy.impl.cli;
+package org.vertx.java.platform.impl.cli;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
@@ -24,8 +24,8 @@ import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.deploy.impl.Args;
-import org.vertx.java.deploy.impl.VerticleManager;
+import org.vertx.java.platform.impl.Args;
+import org.vertx.java.platform.impl.VerticleManager;
 
 import java.io.File;
 import java.io.FileNotFoundException;

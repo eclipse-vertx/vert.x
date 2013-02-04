@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.deploy;
+package org.vertx.java.platform;
 
 import org.vertx.java.core.Vertx;
 
