@@ -686,8 +686,6 @@ public class VerticleManager implements ModuleReloader {
       Buffer modZipped = resolver.getModule(moduleName);
       if (modZipped != null) {
         return unzipModule(moduleName, modZipped);
-      } else {
-        return false;
       }
     }
     log.error("Module " + moduleName + "not found in any repositories");
