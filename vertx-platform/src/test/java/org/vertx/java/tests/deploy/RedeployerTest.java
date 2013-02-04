@@ -4,9 +4,9 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.ConcurrentHashSet;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.deploy.impl.Deployment;
-import org.vertx.java.deploy.impl.ModuleReloader;
-import org.vertx.java.deploy.impl.Redeployer;
+import org.vertx.java.platform.impl.Deployment;
+import org.vertx.java.platform.impl.ModuleReloader;
+import org.vertx.java.platform.impl.Redeployer;
 import org.vertx.java.testframework.TestBase;
 import org.vertx.java.testframework.TestUtils;
 

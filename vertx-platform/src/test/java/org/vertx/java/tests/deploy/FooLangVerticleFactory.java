@@ -12,13 +12,17 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */package org.vertx.java.tests.deploy;
+ */
+package org.vertx.java.tests.deploy;
 
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.deploy.Verticle;
-import org.vertx.java.deploy.impl.ModuleClassLoader;
-import org.vertx.java.deploy.impl.VerticleFactory;
-import org.vertx.java.deploy.impl.VerticleManager;
+import org.vertx.java.core.logging.Logger;
+import org.vertx.java.platform.Container;
+import org.vertx.java.platform.Verticle;
+import org.vertx.java.platform.impl.ModuleClassLoader;
+import org.vertx.java.platform.VerticleFactory;
+import org.vertx.java.platform.impl.VerticleManager;
 
 /**
  * @author swilliams
@@ -26,15 +30,12 @@ import org.vertx.java.deploy.impl.VerticleManager;
  */
 public class FooLangVerticleFactory implements VerticleFactory {
 
-  private VerticleManager manager;
-
   @SuppressWarnings("unused")
-  private ModuleClassLoader mcl;
+  private ClassLoader cl;
 
   @Override
-  public void init(VerticleManager manager, ModuleClassLoader mcl) {
-    this.manager = manager;
-    this.mcl = mcl;
+  public void init(Vertx vertx, Container container, ClassLoader cl) {
+    this.cl = cl;
   }
 
   @Override
@@ -44,7 +45,7 @@ public class FooLangVerticleFactory implements VerticleFactory {
 
       @Override
       public void start() throws Exception {
-        JsonObject config = manager.getConfig();
+        JsonObject config = container.getConfig();
         String foo = config.getString("foo", "bar");
         if (foo.equalsIgnoreCase("bar")) {
           throw new Exception("foo must not be bar!");
@@ -56,7 +57,7 @@ public class FooLangVerticleFactory implements VerticleFactory {
   }
 
   @Override
-  public void reportException(Throwable t) {
+  public void reportException(Logger logger, Throwable t) {
     t.printStackTrace();
   }
 

@@ -1,4 +1,4 @@
-package org.vertx.java.deploy.impl;
+package org.vertx.java.platform.impl;
 
 import org.vertx.java.core.impl.ConcurrentHashSet;
 import org.vertx.java.core.logging.Logger;

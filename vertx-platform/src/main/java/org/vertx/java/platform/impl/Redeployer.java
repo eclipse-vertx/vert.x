@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.deploy.impl;
+package org.vertx.java.platform.impl;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.Context;

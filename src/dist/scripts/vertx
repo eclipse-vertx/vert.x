@@ -172,4 +172,4 @@ exec "$JAVACMD" \
     "${JVM_OPTS[@]}" \
     -Djava.util.logging.config.file=${VERTX_JUL_CONFIG:-${APP_HOME}/conf/logging.properties} \
     -classpath "$CLASSPATH" \
-    org.vertx.java.deploy.impl.cli.Starter "$@"
+    org.vertx.java.platform.impl.cli.Starter "$@"

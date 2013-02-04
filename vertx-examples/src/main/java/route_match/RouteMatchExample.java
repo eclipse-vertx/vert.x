@@ -19,7 +19,7 @@ package route_match;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
-import org.vertx.java.deploy.Verticle;
+import org.vertx.java.platform.Verticle;
 
 public class RouteMatchExample extends Verticle {
 

@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package org.vertx.java.deploy.impl;
+package org.vertx.java.platform.impl;
 
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.DeploymentHandle;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.deploy.Verticle;
+import org.vertx.java.platform.Verticle;
+import org.vertx.java.platform.VerticleFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -49,6 +50,6 @@ class VerticleHolder implements DeploymentHandle {
   }
 
   public void reportException(Throwable t) {
-    factory.reportException(t);
+    factory.reportException(logger, t);
   }
 }

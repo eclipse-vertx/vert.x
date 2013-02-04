@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-package org.vertx.java.deploy.impl;
+package org.vertx.java.platform;
 
 
-import org.vertx.java.deploy.Verticle;
+import org.vertx.java.core.Vertx;
+import org.vertx.java.core.logging.Logger;
+import org.vertx.java.platform.Verticle;
+import org.vertx.java.platform.impl.ModuleClassLoader;
+import org.vertx.java.platform.impl.VerticleManager;
 
 import java.util.ServiceLoader;
 
@@ -25,14 +29,12 @@ import java.util.ServiceLoader;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface VerticleFactory {
-	
-  public static final Iterable<VerticleFactory> factories = ServiceLoader.load(VerticleFactory.class);
 
-  void init(VerticleManager manager, ModuleClassLoader mcl);
+  void init(Vertx vertx, Container container, ClassLoader cl);
 
   Verticle createVerticle(String main) throws Exception;
 
-  void reportException(Throwable t);
+  void reportException(Logger logger, Throwable t);
 
   void close();
 

@@ -14,29 +14,30 @@
  * limitations under the License.
  */
 
-package org.vertx.java.deploy.impl.java;
+package org.vertx.java.platform.impl.java;
 
-import org.vertx.java.deploy.Verticle;
-import org.vertx.java.deploy.impl.ModuleClassLoader;
-import org.vertx.java.deploy.impl.VerticleFactory;
-import org.vertx.java.deploy.impl.VerticleManager;
+import org.vertx.java.core.Vertx;
+import org.vertx.java.core.logging.Logger;
+import org.vertx.java.platform.Container;
+import org.vertx.java.platform.Verticle;
+import org.vertx.java.platform.impl.ModuleClassLoader;
+import org.vertx.java.platform.VerticleFactory;
+import org.vertx.java.platform.impl.VerticleManager;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class JavaVerticleFactory implements VerticleFactory {
 
-  private VerticleManager mgr;
-  private ModuleClassLoader mcl;
+  private ClassLoader cl;
 
   public JavaVerticleFactory() {
 	  super();
   }
 
   @Override
-  public void init(VerticleManager mgr, ModuleClassLoader mcl) {
-	  this.mgr = mgr;
-    this.mcl = mcl;
+  public void init(Vertx vertx, Container container, ClassLoader cl) {
+    this.cl = cl;
   }
 
   private boolean isJavaSource(String main) {
@@ -50,18 +51,18 @@ public class JavaVerticleFactory implements VerticleFactory {
     if (isJavaSource(main)) {
       // TODO - is this right???
       // Don't we want one CompilingClassloader per instance of this?
-      CompilingClassLoader compilingLoader = new CompilingClassLoader(mcl, main);
+      CompilingClassLoader compilingLoader = new CompilingClassLoader(cl, main);
       className = compilingLoader.resolveMainClassName();
       clazz = compilingLoader.loadClass(className);
     } else {
-      clazz = mcl.loadClass(className);
+      clazz = cl.loadClass(className);
     }
 
     return (Verticle)clazz.newInstance();
   }
     
-  public void reportException(Throwable t) {
-    mgr.getLogger().error("Exception in Java verticle script", t);
+  public void reportException(Logger logger, Throwable t) {
+    logger.error("Exception in Java verticle script", t);
   }
 
   public void close() {

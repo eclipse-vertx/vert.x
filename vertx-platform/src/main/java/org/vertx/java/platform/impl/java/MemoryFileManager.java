@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.deploy.impl.java;
+package org.vertx.java.platform.impl.java;
 
 import javax.tools.*;
 import java.io.ByteArrayOutputStream;
