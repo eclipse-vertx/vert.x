@@ -29,7 +29,7 @@ public class Vertx1xResolver extends HttpRepoResolver {
 
   @Override
   protected String getRepoURI(String moduleName) {
-    return contentRoot + moduleName + "/mod.zip";
+    return contentRoot + "/" + moduleName + "/mod.zip";
   }
 
 }
