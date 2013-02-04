@@ -44,7 +44,7 @@ sourceSets {
 
 // Cleanup the modules placed in the mod-test directory during the test suite
 task cleanTestTmpModules(type: Delete) {
-  delete { file("src/test/mod-test").listFiles().find { it.name ==~ /vertx.+/ } }
+  delete { file("src/test/mod-test").listFiles().find { it.name ==~ /vert-x.+/ } }
 }
 
 clean {
