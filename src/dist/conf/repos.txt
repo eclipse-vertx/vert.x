@@ -1,0 +1,8 @@
+# Maven central
+maven:http://repo2.maven.org/maven2/
+
+# Sonatype snapshots
+maven:http://oss.sonatype.org/content/repositories/snapshots/
+
+# The old Vert.x 1.x repository in github
+vert.x-1.x:http://vert-x.github.com/vertx-mods/mods/

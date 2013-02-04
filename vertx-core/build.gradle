@@ -47,4 +47,6 @@ test {
   systemProperty 'vertx.test.timeout', 15
 
   jvmArgs '-server', '-Xms128m', '-Xmx1024m', '-XX:MaxPermSize=128m', '-XX:NewRatio=2'
+
+  testLogging { exceptionFormat "full" }
 }

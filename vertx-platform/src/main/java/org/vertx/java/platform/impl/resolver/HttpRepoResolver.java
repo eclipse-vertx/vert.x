@@ -25,6 +25,7 @@ import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
+import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -36,15 +37,26 @@ public abstract class HttpRepoResolver implements RepoResolver {
   private final Vertx vertx;
   private final String proxyHost;
   private final int proxyPort;
-  private final String repoHost;
-  private final int repoPort;
+  protected final String repoHost;
+  protected final int repoPort;
+  protected final String contentRoot;
 
-  public HttpRepoResolver(Vertx vertx, String proxyHost, int proxyPort, String repoHost, int repoPort) {
+  public HttpRepoResolver(Vertx vertx, String proxyHost, int proxyPort, String repoID) {
     this.vertx = vertx;
     this.proxyHost = proxyHost;
     this.proxyPort = proxyPort;
-    this.repoHost = repoHost;
-    this.repoPort = repoPort;
+    try {
+      URI uri = new URI(repoID);
+      repoHost = uri.getHost();
+      int port = uri.getPort();
+      if (port == -1) {
+        port = 80;
+      }
+      repoPort = port;
+      contentRoot = uri.getPath();
+    } catch (Exception e) {
+      throw new IllegalArgumentException(repoID + " is not a valid repository identifier");
+    }
   }
 
   protected abstract String getRepoURI(String moduleName);
@@ -100,7 +112,7 @@ public abstract class HttpRepoResolver implements RepoResolver {
         }
       }
     });
-    if(proxyHost != null){
+    if (proxyHost != null){
       req.putHeader("host", proxyHost);
     } else {
       req.putHeader("host", repoHost);
