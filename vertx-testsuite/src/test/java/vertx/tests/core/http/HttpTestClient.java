@@ -510,7 +510,28 @@ public class HttpTestClient extends TestClientBase {
     }).end();
   }
 
-  public void testParamsAmpersand() {
+    public void testTheRemoteAddress() {
+        testRemoteAddress("http://localhost:8080/this/is/a/path/foo.html", "127.0.0.1");
+    }
+
+    private void testRemoteAddress(final String uri, final String ip) {
+        startServer(new Handler<HttpServerRequest>() {
+            public void handle(HttpServerRequest req) {
+                tu.checkContext();
+                tu.azzert(ip.equals(req.remoteAddress.getHostName()));
+                req.response.end();
+            }
+        });
+
+        getRequest(true, "GET", uri, new Handler<HttpClientResponse>() {
+            public void handle(HttpClientResponse resp) {
+                tu.checkContext();
+                tu.testComplete();
+            }
+        }).end();
+    }
+
+    public void testParamsAmpersand() {
     testParams('&');
   }
 
