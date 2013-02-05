@@ -256,11 +256,6 @@ public class DefaultHttpClient implements HttpClient {
     return this;
   }
 
-  public DefaultHttpClient setBossThreads(int threads) {
-    tcpHelper.setClientBossThreads(threads);
-    return this;
-  }
-
   public Boolean isTCPNoDelay() {
     return tcpHelper.isTCPNoDelay();
   }
@@ -291,10 +286,6 @@ public class DefaultHttpClient implements HttpClient {
 
   public Long getConnectTimeout() {
     return tcpHelper.getConnectTimeout();
-  }
-
-  public Integer getBossThreads() {
-    return tcpHelper.getClientBossThreads();
   }
 
   public boolean isSSL() {
@@ -354,10 +345,8 @@ public class DefaultHttpClient implements HttpClient {
       // Share the event loop thread to also serve the HttpClient's network traffic.
       VertxWorkerPool pool = new VertxWorkerPool();
       pool.addWorker(ctx.getWorker());
-      Integer bossThreads = tcpHelper.getClientBossThreads();
-      int threads = bossThreads == null ? 1 : bossThreads;
       NioClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(
-          vertx.getAcceptorPool(), threads, pool, vertx.getTimer());
+          vertx.getClientAcceptorPool(), pool);
       bootstrap = new ClientBootstrap(channelFactory);
 
       tcpHelper.checkSSL(vertx);

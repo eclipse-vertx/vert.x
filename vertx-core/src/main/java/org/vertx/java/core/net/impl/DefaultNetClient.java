@@ -145,10 +145,6 @@ public class DefaultNetClient implements NetClient {
     return tcpHelper.getConnectTimeout();
   }
 
-  public Integer getBossThreads() {
-    return tcpHelper.getClientBossThreads();
-  }
-
   public NetClient setTCPNoDelay(boolean tcpNoDelay) {
     tcpHelper.setTCPNoDelay(tcpNoDelay);
     return this;
@@ -186,11 +182,6 @@ public class DefaultNetClient implements NetClient {
 
   public NetClient setConnectTimeout(long timeout) {
     tcpHelper.setConnectTimeout(timeout);
-    return this;
-  }
-
-  public NetClient setBossThreads(int threads) {
-    tcpHelper.setClientBossThreads(threads);
     return this;
   }
 
@@ -264,10 +255,8 @@ public class DefaultNetClient implements NetClient {
       VertxWorkerPool pool = new VertxWorkerPool();
       pool.addWorker(ctx.getWorker());
 
-      Integer bossThreads = tcpHelper.getClientBossThreads();
-      int threads = bossThreads == null ? 1 : bossThreads;
       NioClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(
-          vertx.getAcceptorPool(), threads, pool, vertx.getTimer());
+          vertx.getClientAcceptorPool(), pool);
       bootstrap = new ClientBootstrap(channelFactory);
 
       tcpHelper.checkSSL(vertx);

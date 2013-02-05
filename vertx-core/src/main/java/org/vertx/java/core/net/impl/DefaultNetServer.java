@@ -110,7 +110,7 @@ public class DefaultNetServer implements NetServer {
 
         ChannelFactory factory =
             new NioServerSocketChannelFactory(
-                vertx.getAcceptorPool(),
+                vertx.getServerAcceptorPool(),
                 availableWorkers);
         ServerBootstrap bootstrap = new ServerBootstrap(factory);
 
