@@ -55,6 +55,14 @@ public class VertxWorkerPool implements WorkerPool<NioWorker> {
     }
   }
 
+  public void shutdown() {
+
+  }
+
+  public void rebuildSelectors() {
+
+  }
+
   private WorkerHolder findHolder(NioWorker worker) {
     WorkerHolder wh = new WorkerHolder(worker);
     for (WorkerHolder holder: workers) {

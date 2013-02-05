@@ -15,6 +15,8 @@
  */
 package org.vertx.java.core.impl;
 
+import org.jboss.netty.channel.socket.nio.NioClientBossPool;
+import org.jboss.netty.channel.socket.nio.NioServerBossPool;
 import org.jboss.netty.channel.socket.nio.NioWorkerPool;
 
 import java.util.concurrent.*;
@@ -34,12 +36,13 @@ import java.util.concurrent.*;
 public class VertxExecutorFactory {
 
   public static final int WORKER_POOL_MAX_SIZE = 20;
+  public static final int ACCEPTOR_POOL_MAX_SIZE = 4;
 
   // The core pool needs to be fixed with a backing queue
-  public static VertxNioWorkerPool corePool(String poolName) {
+  public static NioWorkerPool corePool(String poolName) {
     int corePoolSize = Integer.getInteger("vertx.pool.core.size", Runtime.getRuntime().availableProcessors());
     ExecutorService exec = Executors.newFixedThreadPool(corePoolSize, new VertxThreadFactory(poolName));
-    return new VertxNioWorkerPool(exec, corePoolSize);
+    return new NioWorkerPool(exec, corePoolSize);
   }
 
   // The worker pool needs to be fixed with a backing queue
@@ -48,11 +51,18 @@ public class VertxExecutorFactory {
     return Executors.newFixedThreadPool(maxSize, new VertxThreadFactory(poolName));
   }
 
-  // The acceptor pool needs to be a cached pool - this is because Netty servers anc clients (in 3.x) will
-  // take a thread out of the pool and not return it until they are closed
-  // This means if the pool was fixed then servers will hang if too many are created
-  public static ExecutorService acceptorPool(String poolName) {
-    return Executors.newCachedThreadPool(new VertxThreadFactory(poolName));
+  // The acceptor pools need to be fixed with a backing queue
+
+  public static NioServerBossPool serverAcceptorPool(String poolName) {
+    int acceptorPoolSize = Integer.getInteger("vertx.pool.acceptor.size", ACCEPTOR_POOL_MAX_SIZE);
+    ExecutorService exec = Executors.newFixedThreadPool(acceptorPoolSize, new VertxThreadFactory(poolName));
+    return new NioServerBossPool(exec, acceptorPoolSize);
+  }
+
+  public static NioClientBossPool clientAcceptorPool(String poolName) {
+    int acceptorPoolSize = Integer.getInteger("vertx.pool.acceptor.size", ACCEPTOR_POOL_MAX_SIZE);
+    ExecutorService exec = Executors.newFixedThreadPool(acceptorPoolSize, new VertxThreadFactory(poolName));
+    return new NioClientBossPool(exec, acceptorPoolSize);
   }
 
 }

@@ -178,12 +178,6 @@ public interface NetClient {
   NetClient setConnectTimeout(long timeout);
 
   /**
-   * Set the number of boss threads to use. Boss threads are used to make connections.
-   * @return a reference to this so multiple method calls can be chained together
-   */
-  NetClient setBossThreads(int threads);
-
-  /**
    * @return true if Nagle's algorithm is disabled.
    */
   Boolean isTCPNoDelay();
@@ -227,12 +221,6 @@ public interface NetClient {
    * @return The connect timeout in milliseconds
    */
   Long getConnectTimeout();
-
-  /**
-   *
-   * @return The number of boss threads
-   */
-  Integer getBossThreads();
 
   /**
    *

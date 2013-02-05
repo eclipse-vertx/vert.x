@@ -145,7 +145,7 @@ public class DefaultHttpServer implements HttpServer {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
         ChannelFactory factory =
             new NioServerSocketChannelFactory(
-                vertx.getAcceptorPool(),
+                vertx.getServerAcceptorPool(),
                 availableWorkers);
         ServerBootstrap bootstrap = new ServerBootstrap(factory);
         bootstrap.setOptions(tcpHelper.generateConnectionOptions(true));
