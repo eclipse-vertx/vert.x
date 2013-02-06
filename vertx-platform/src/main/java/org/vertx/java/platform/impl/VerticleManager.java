@@ -60,8 +60,6 @@ import java.util.zip.ZipInputStream;
 public class VerticleManager implements ModuleReloader {
 
   private static final Logger log = LoggerFactory.getLogger(VerticleManager.class);
-  private static final String REPO_URI_ROOT = "/vertx-mods/mods/";
-  private static final String DEFAULT_REPO_HOST = "vert-x.github.com";
   private static final int BUFFER_SIZE = 4096;
   private static final String HTTP_PROXY_HOST_PROP_NAME = "http.proxyHost";
   private static final String HTTP_PROXY_PORT_PROP_NAME = "http.proxyPort";
@@ -76,8 +74,6 @@ public class VerticleManager implements ModuleReloader {
   // The user mods dir
   private final File modRoot;
   private final CountDownLatch stopLatch = new CountDownLatch(1);
-  private final String repoHost;
-  private final int repoPort;
   private final String proxyHost;
   private final int proxyPort;
   final ConcurrentMap<String, ModuleReference> modules = new ConcurrentHashMap<>();
@@ -100,24 +96,7 @@ public class VerticleManager implements ModuleReloader {
   }
 
   public VerticleManager(VertxInternal vertx) {
-    this(vertx, null);
-  }
-
-  public VerticleManager(VertxInternal vertx, String repo) {
     this.vertx = vertx;
-    if (repo != null) {
-      int colonIndex = repo.indexOf(COLON);
-      if (colonIndex != -1) {
-        this.repoHost = repo.substring(0, colonIndex);
-        this.repoPort = Integer.parseInt(repo.substring(colonIndex + 1));
-      } else {
-        this.repoHost = repo;
-        this.repoPort = 80;
-      }
-    } else {
-      this.repoHost = DEFAULT_REPO_HOST;
-      this.repoPort = 80;
-    }
     this.proxyHost = System.getProperty(HTTP_PROXY_HOST_PROP_NAME);
     String tmpPort = System.getProperty(HTTP_PROXY_PORT_PROP_NAME);
     this.proxyPort = tmpPort != null ? Integer.parseInt(tmpPort) : 80;
