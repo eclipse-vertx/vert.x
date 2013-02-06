@@ -69,12 +69,17 @@ public class VerticleManager implements ModuleReloader {
   private static final String LANG_PROPS_FILE_NAME = "langs.properties";
   private static final String REPOS_FILE_NAME = "repos.txt";
   private static final String LOCAL_MODS_DIR = "mods";
+  private static final String SYS_MODS_DIR = "sys-mods";
+  private static final String VERTX_HOME_SYS_PROP = "vertx.home";
+  private static final String TEMP_DIR = System.getProperty("java.io.tmpdir");
+  private static final String FILE_SEP = System.getProperty("file.separator");
 
   private final VertxInternal vertx;
   // deployment name --> deployment
   private final Map<String, Deployment> deployments = new ConcurrentHashMap<>();
   // The user mods dir
   private final File modRoot;
+  private final File systemModRoot;
   private final CountDownLatch stopLatch = new CountDownLatch(1);
   private final String proxyHost;
   private final int proxyPort;
@@ -108,6 +113,12 @@ public class VerticleManager implements ModuleReloader {
     } else {
       // Default to local module directory
       modRoot = new File(LOCAL_MODS_DIR);
+    }
+    String vertxHome = System.getProperty(VERTX_HOME_SYS_PROP);
+    if (vertxHome == null || modDir != null) {
+      systemModRoot = modRoot;
+    } else {
+      systemModRoot = new File(vertxHome, SYS_MODS_DIR);
     }
     this.redeployer = new Redeployer(vertx, modRoot, this);
     loadLanguageMappings();
@@ -152,11 +163,6 @@ public class VerticleManager implements ModuleReloader {
   public Logger getLogger() {
     VerticleHolder holder = getVerticleHolder();
     return holder == null ? null : holder.logger;
-  }
-
-  public String getModuleName() {
-    VerticleHolder holder = getVerticleHolder();
-    return holder == null ? null : holder.deployment.modName;
   }
 
   public void deployVerticle(final boolean worker, final String main,
@@ -448,14 +454,28 @@ public class VerticleManager implements ModuleReloader {
     }
   }
 
+  private File locateModule(String modName) {
+    File modDir = new File(modRoot, modName);
+    if (modDir.exists()) {
+      return modDir;
+    } else if (!systemModRoot.equals(modRoot)) {
+      modDir = new File(systemModRoot, modName);
+      if (modDir.exists()) {
+        return modDir;
+      }
+    }
+    return null;
+  }
+
+
   private void doDeployMod(final boolean redeploy, final String depName, final String modName,
                            final JsonObject config,
                            final int instances, final File currentModDir,
                            final Handler<String> doneHandler) {
     checkWorkerContext();
-    File modDir = new File(modRoot, modName);
-    JsonObject conf = loadModuleConfig(modName, modDir);
-    if (conf != null) {
+    File modDir = locateModule(modName);
+    if (modDir != null) {
+      JsonObject conf = loadModuleConfig(modName, modDir);
       String main = conf.getString("main");
       if (main == null) {
         log.error("Runnable module " + modName + " mod.json must contain a \"main\" field");
@@ -530,26 +550,22 @@ public class VerticleManager implements ModuleReloader {
 
   private JsonObject loadModuleConfig(String modName, File modDir) {
     checkWorkerContext();
-    if (modDir.exists()) {
-      try (Scanner scanner = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A")) {
-        String conf;
-        try {
-          conf = scanner.next();
-        } catch (NoSuchElementException e) {
-          throw new IllegalStateException("Module " + modName + " contains an empty mod.json file");
-        }
-        JsonObject json;
-        try {
-          json = new JsonObject(conf);
-        } catch (DecodeException e) {
-          throw new IllegalStateException("Module " + modName + " mod.json contains invalid json");
-        }
-        return json;
-      } catch (FileNotFoundException e) {
-        throw new IllegalStateException("Module " + modName + " does not contain a mod.json file");
+    try (Scanner scanner = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A")) {
+      String conf;
+      try {
+        conf = scanner.next();
+      } catch (NoSuchElementException e) {
+        throw new IllegalStateException("Module " + modName + " contains an empty mod.json file");
       }
-    } else {
-      return null;
+      JsonObject json;
+      try {
+        json = new JsonObject(conf);
+      } catch (DecodeException e) {
+        throw new IllegalStateException("Module " + modName + " mod.json contains invalid json");
+      }
+      return json;
+    } catch (FileNotFoundException e) {
+      throw new IllegalStateException("Module " + modName + " does not contain a mod.json file");
     }
   }
 
@@ -558,12 +574,13 @@ public class VerticleManager implements ModuleReloader {
     for (String moduleName: parseIncludeString(includesString)) {
       ModuleReference includedMr = modules.get(moduleName);
       if (includedMr == null) {
-        File modDir = new File(modRoot, moduleName);
-        if (!modDir.exists()) {
+        File modDir = locateModule(moduleName);
+        if (modDir == null) {
           if (!doInstallMod(moduleName)) {
             return false;
           }
         }
+        modDir = locateModule(moduleName);
         List<URL> urls = getModuleClasspath(modDir);
         JsonObject conf = loadModuleConfig(moduleName, modDir);
         Boolean bres = conf.getBoolean("resident");
@@ -682,19 +699,33 @@ public class VerticleManager implements ModuleReloader {
 
       if (!modRoot.exists()) {
         if (!modRoot.mkdir()) {
-          log.error("Failed to create directory " + modRoot);
+          log.error("Failed to create mods dir " + modRoot);
+          return false;
+        }
+      }
+      if (!systemModRoot.exists()) {
+        if (!systemModRoot.mkdir()) {
+          log.error("Failed to create sys mods dir " + modRoot);
           return false;
         }
       }
 
       File fdest = new File(modRoot, modName);
+      File sdest = new File(systemModRoot, modName);
       log.info("Installing module into directory " + fdest.getAbsolutePath());
-      if (fdest.exists()) {
+      if (fdest.exists() || sdest.exists()) {
         // This can happen if the same module is requested to be installed
         // at around the same time
         // It's ok if this happens
         return true;
       }
+
+      // Unzip into temp dir first
+      String tdir = TEMP_DIR + FILE_SEP + "vertx-" + UUID.randomUUID().toString();
+      new File(tdir).mkdir();
+
+      File tdest = new File(tdir);
+
       try {
         InputStream is = new ByteArrayInputStream(data.getBytes());
         ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
@@ -702,17 +733,16 @@ public class VerticleManager implements ModuleReloader {
         while ((entry = zis.getNextEntry()) != null) {
           if (!entry.getName().startsWith(modName)) {
             log.error("Module must contain zipped directory with same name as module");
-            fdest.delete();
             return false;
           }
           if (entry.isDirectory()) {
-            new File(modRoot, entry.getName()).mkdir();
+            new File(tdest, entry.getName()).mkdir();
           } else {
             int count;
             byte[] buff = new byte[BUFFER_SIZE];
             BufferedOutputStream dest = null;
             try {
-              OutputStream fos = new FileOutputStream(new File(modRoot, entry.getName()));
+              OutputStream fos = new FileOutputStream(new File(tdest, entry.getName()));
               dest = new BufferedOutputStream(fos, BUFFER_SIZE);
               while ((count = zis.read(buff, 0, BUFFER_SIZE)) != -1) {
                  dest.write(buff, 0, count);
@@ -726,9 +756,21 @@ public class VerticleManager implements ModuleReloader {
           }
         }
         zis.close();
-      } catch (IOException e) {
+
+        // Check if it's a system module
+        File tmpModDir = new File(tdest, modName);
+        JsonObject conf = loadModuleConfig(modName, tmpModDir);
+        Boolean bSystem = conf.getBoolean("system");
+        boolean system = bSystem != null && bSystem;
+
+        // Now copy it to the proper directory
+        String moveFrom = tmpModDir.getAbsolutePath();
+        vertx.fileSystem().moveSync(moveFrom, system ? sdest.getAbsolutePath() : fdest.getAbsolutePath());
+      } catch (Exception e) {
         log.error("Failed to unzip module", e);
         return false;
+      } finally {
+        tdest.delete();
       }
       log.info("Module " + modName +" successfully installed");
       return true;

@@ -47,7 +47,7 @@ if $cygwin ; then
     [ -n "$JAVA_HOME" ] && JAVA_HOME=`cygpath --unix "$JAVA_HOME"`
 fi
 
-# Attempt to set APP_HOME
+# Attempt to set VERTX_HOME
 # Resolve links: $0 may be a link
 PRG="$0"
 # Need this for relative symlinks.
@@ -62,13 +62,13 @@ while [ -h "$PRG" ] ; do
 done
 SAVED="`pwd`"
 cd "`dirname \"$PRG\"`/../../.."
-APP_HOME="`pwd -P`"
+VERTX_HOME="`pwd -P`"
 cd "$SAVED"
 
-CLASSPATH=$APP_HOME/extralibs/*:$APP_HOME/vertx-core/build/libs/*:\
-$APP_HOME/vertx-platform/build/libs/*:\
-$APP_HOME/vertx-core/build/deps/compile/*:\
-$APP_HOME/src/dist/conf
+CLASSPATH=$VERTX_HOME/extralibs/*:$VERTX_HOME/vertx-core/build/libs/*:\
+$VERTX_HOME/vertx-platform/build/libs/*:\
+$VERTX_HOME/vertx-core/build/deps/compile/*:\
+$VERTX_HOME/src/dist/conf
 
 # Determine the Java command to use to start the JVM.
 if [ -n "$JAVA_HOME" ] ; then
@@ -110,12 +110,12 @@ fi
 
 # For Darwin, add options to specify how the application appears in the dock
 if $darwin; then
-    GRADLE_OPTS="$GRADLE_OPTS \"-Xdock:name=$APP_NAME\" \"-Xdock:icon=$APP_HOME/media/vertx.icns\""
+    GRADLE_OPTS="$GRADLE_OPTS \"-Xdock:name=$APP_NAME\" \"-Xdock:icon=$VERTX_HOME/media/vertx.icns\""
 fi
 
 # For Cygwin, switch paths to Windows format before running java
 if $cygwin ; then
-    APP_HOME=`cygpath --path --mixed "$APP_HOME"`
+    VERTX_HOME=`cygpath --path --mixed "$VERTX_HOME"`
     CLASSPATH=`cygpath --path --mixed "$CLASSPATH"`
 
     # We build the pattern for arguments to be converted via cygpath
@@ -168,5 +168,6 @@ function splitJvmOpts() {
 eval splitJvmOpts $DEFAULT_JVM_OPTS $JAVA_OPTS $VERTX_OPTS
 
 exec "$JAVACMD" "${JVM_OPTS[@]}" -Dpython.options.internalTablesImpl=weak\
- -Djava.util.logging.config.file=$APP_HOME/src/dist/conf/logging.properties\
+ -Djava.util.logging.config.file=$VERTX_HOME/src/dist/conf/logging.properties\
+ -Dvertx.home=.\
  -classpath "$CLASSPATH" org.vertx.java.platform.impl.cli.Starter "$@"

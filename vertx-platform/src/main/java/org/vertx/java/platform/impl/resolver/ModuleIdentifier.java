@@ -27,7 +27,6 @@ public class ModuleIdentifier {
   <group (usually reverse domain name)>.<name>-v<version>
    */
   public ModuleIdentifier(String moduleIdentifier) {
-    System.out.println("Mod identifier is:" + moduleIdentifier);
     int versionPos = moduleIdentifier.lastIndexOf("-v");
     if (versionPos == -1) {
       throw genModuleNameException(moduleIdentifier, "does not have a version suffix");
@@ -46,10 +45,6 @@ public class ModuleIdentifier {
       throw genModuleNameException(moduleIdentifier, "missing group");
     }
     group = withoutVers.substring(0, namePos);
-
-    System.out.println("group is:" + group);
-    System.out.println("name is:" + name);
-    System.out.println("version is:" + version);
   }
 
   private IllegalArgumentException genModuleNameException(String moduleName, String msg) {
