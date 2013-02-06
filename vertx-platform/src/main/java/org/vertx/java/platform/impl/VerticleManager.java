@@ -353,7 +353,7 @@ public class VerticleManager implements ModuleReloader {
     }
 
     if (includes != null) {
-      loadIncludedModules(mr, includes);
+      loadIncludedModules(currentModDir, mr, includes);
     }
     doDeploy(depName, false, worker, main, null, config, urls, instances, currentModDir, mr, doneHandler);
   }
@@ -454,7 +454,14 @@ public class VerticleManager implements ModuleReloader {
     }
   }
 
-  private File locateModule(String modName) {
+  private File locateModule(File currentModDir, String modName) {
+    if (currentModDir != null) {
+      // Nested modules - look inside current module dir
+      File modDir = new File(new File(currentModDir, LOCAL_MODS_DIR), modName);
+      if (modDir.exists()) {
+        return modDir;
+      }
+    }
     File modDir = new File(modRoot, modName);
     if (modDir.exists()) {
       return modDir;
@@ -473,7 +480,7 @@ public class VerticleManager implements ModuleReloader {
                            final int instances, final File currentModDir,
                            final Handler<String> doneHandler) {
     checkWorkerContext();
-    File modDir = locateModule(modName);
+    File modDir = locateModule(currentModDir, modName);
     if (modDir != null) {
       JsonObject conf = loadModuleConfig(modName, modDir);
       String main = conf.getString("main");
@@ -523,7 +530,7 @@ public class VerticleManager implements ModuleReloader {
       // Now load any included modules
       String includes = conf.getString("includes");
       if (includes != null) {
-        if (!loadIncludedModules(mr, includes)) {
+        if (!loadIncludedModules(modDir, mr, includes)) {
           callDoneHandler(doneHandler, null);
           return;
         }
@@ -569,18 +576,18 @@ public class VerticleManager implements ModuleReloader {
     }
   }
 
-  private boolean loadIncludedModules(ModuleReference mr, String includesString) {
+  private boolean loadIncludedModules(File currentModuleDir, ModuleReference mr, String includesString) {
     checkWorkerContext();
     for (String moduleName: parseIncludeString(includesString)) {
       ModuleReference includedMr = modules.get(moduleName);
       if (includedMr == null) {
-        File modDir = locateModule(moduleName);
+        File modDir = locateModule(currentModuleDir, moduleName);
         if (modDir == null) {
           if (!doInstallMod(moduleName)) {
             return false;
           }
         }
-        modDir = locateModule(moduleName);
+        modDir = locateModule(currentModuleDir, moduleName);
         List<URL> urls = getModuleClasspath(modDir);
         JsonObject conf = loadModuleConfig(moduleName, modDir);
         Boolean bres = conf.getBoolean("resident");
@@ -593,7 +600,7 @@ public class VerticleManager implements ModuleReloader {
         }
         String includes = conf.getString("includes");
         if (includes != null) {
-          loadIncludedModules(includedMr, includes);
+          loadIncludedModules(modDir, includedMr, includes);
         }
       }
       includedMr.incRef();
@@ -860,7 +867,7 @@ public class VerticleManager implements ModuleReloader {
 
     // Include the language impl module as a parent of the classloader
     if (langImplInfo.moduleName != null) {
-      loadIncludedModules(mr, langImplInfo.moduleName);
+      loadIncludedModules(modDir, mr, langImplInfo.moduleName);
     }
 
     final VerticleFactory verticleFactory;
