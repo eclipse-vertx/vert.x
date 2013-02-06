@@ -63,10 +63,12 @@ public class VerticleManager implements ModuleReloader {
   private static final int BUFFER_SIZE = 4096;
   private static final String HTTP_PROXY_HOST_PROP_NAME = "http.proxyHost";
   private static final String HTTP_PROXY_PORT_PROP_NAME = "http.proxyPort";
+  private static final String MODS_DIR_PROP_NAME = "vertx.mods";
   private static final char COLON = ':';
   private static final String LANG_IMPLS_SYS_PROP_ROOT = "vertx.langs.";
   private static final String LANG_PROPS_FILE_NAME = "langs.properties";
   private static final String REPOS_FILE_NAME = "repos.txt";
+  private static final String LOCAL_MODS_DIR = "mods";
 
   private final VertxInternal vertx;
   // deployment name --> deployment
@@ -100,12 +102,12 @@ public class VerticleManager implements ModuleReloader {
     this.proxyHost = System.getProperty(HTTP_PROXY_HOST_PROP_NAME);
     String tmpPort = System.getProperty(HTTP_PROXY_PORT_PROP_NAME);
     this.proxyPort = tmpPort != null ? Integer.parseInt(tmpPort) : 80;
-    String modDir = System.getProperty("vertx.mods");
+    String modDir = System.getProperty(MODS_DIR_PROP_NAME);
     if (modDir != null && !modDir.trim().equals("")) {
       modRoot = new File(modDir);
     } else {
-      // Default to local module directory called 'mods'
-      modRoot = new File("mods");
+      // Default to local module directory
+      modRoot = new File(LOCAL_MODS_DIR);
     }
     this.redeployer = new Redeployer(vertx, modRoot, this);
     loadLanguageMappings();
