@@ -315,7 +315,9 @@ public class Starter {
 
 "    vertx install <modname> [-options]                                         \n" +
 "        attempts to install a module from a remote repository.                 \n" +
-"        Module will be installed into a local 'mods' directory unless the      \n" +
+"        Module will be installed into a local 'mods' directory or, if the      \n" +
+"        module is marked as a system module, the sys-mods directory in the     \n" +
+"        Vert.x installation unless the                                         \n" +
 "        environment variable VERTX_MODS specifies a different location.      \n\n" +
 "    valid options are:\n" +
 "        -repo <repo_host>      specifies the repository to use to get the      \n" +

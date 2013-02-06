@@ -1204,9 +1204,6 @@ public class TestClient extends TestClientBase {
     createFileWithJunk(fileName, 1234);
     testFSProps(fileName, new Handler<FileSystemProps>() {
       public void handle(FileSystemProps props) {
-//        System.out.println("Total space:" + props.totalSpace);
-//        System.out.println("Unallocated space:" + props.unallocatedSpace);
-//        System.out.println("Usable space:" + props.usableSpace);
         tu.azzert(props.totalSpace > 0);
         tu.azzert(props.unallocatedSpace > 0);
         tu.azzert(props.usableSpace > 0);

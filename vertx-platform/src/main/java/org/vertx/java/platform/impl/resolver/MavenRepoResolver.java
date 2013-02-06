@@ -30,23 +30,14 @@ public class MavenRepoResolver extends HttpRepoResolver {
   @Override
   protected String getRepoURI(String moduleName) {
     ModuleIdentifier mi = new ModuleIdentifier(moduleName);
-
-    // http://repo2.maven.org/maven2/org/jruby/jruby-complete/1.7.2/jruby-complete-1.7.2.jar
-    // http://oss.sonatype.org/content/repositories/snapshots/org/vert-x/lang-rhino/1.0.0-SNAPSHOT/lang-rhino-1.0.0-SNAPSHOT.zip
-
     StringBuilder uri = new StringBuilder(contentRoot);
     uri.append('/');
     String[] parts = mi.group.split("\\.");
-
     for (String part: parts) {
       uri.append(part).append('/');
     }
-
     uri.append(mi.name).append('/').append(mi.version).append('/').
         append(mi.name).append('-').append(mi.version).append(".zip");
-
-    System.out.println("uri is " + uri);
-
     return uri.toString();
   }
 }
