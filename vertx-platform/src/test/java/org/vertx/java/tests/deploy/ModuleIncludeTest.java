@@ -81,4 +81,10 @@ public class ModuleIncludeTest extends TestBase {
     startTest(getMethodName());
   }
 
+  @Test
+  public void testNestedIncludesJar() throws Exception {
+    startMod("testmod8-1");
+    startTest(getMethodName());
+  }
+
 }
