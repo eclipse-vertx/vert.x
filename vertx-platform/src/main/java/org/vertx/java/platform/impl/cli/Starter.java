@@ -78,7 +78,7 @@ public class Starter {
               runVerticle(true, operand, args);
               break;
             case "install":
-              installModule(operand, args);
+              installModule(operand);
               break;
             case "uninstall":
               uninstallModule(operand);
@@ -91,7 +91,7 @@ public class Starter {
     }
   }
 
-  private void installModule(String modName, Args args) {
+  private void installModule(String modName) {
     new VerticleManager(vertx).installMod(modName);
   }
 
