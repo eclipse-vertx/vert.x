@@ -139,9 +139,9 @@ public abstract class Context {
   }
 
   protected Runnable wrapTask(final Runnable task) {
-    if (closed) {
-      return null;
-    }
+//    if (closed) {
+//      return null;
+//    }
     // TODO this is ugly - refactor
     final boolean hasClosedHandler = isClosedHandlerSet();
     if (hasClosedHandler) {
