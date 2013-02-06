@@ -92,8 +92,7 @@ public class Starter {
   }
 
   private void installModule(String modName, Args args) {
-    String repo = args.map.get("-repo");
-    new VerticleManager(vertx, repo).installMod(modName);
+    new VerticleManager(vertx).installMod(modName);
   }
 
   private void uninstallModule(String modName) {
@@ -120,8 +119,7 @@ public class Starter {
       }
       vertx = new DefaultVertx(clusterPort, clusterHost);
     }
-    String repo = args.map.get("-repo");
-    mgr = new VerticleManager(vertx, repo);
+    mgr = new VerticleManager(vertx);
 
     boolean worker = args.map.get("-worker") != null;
 
@@ -277,8 +275,6 @@ public class Starter {
 "                               Defaults to '.' (current directory).            \n" +
 "        -instances <instances> specifies how many instances of the verticle    \n" +
 "                               will be deployed. Defaults to 1                 \n" +
-"        -repo <repo_host>      specifies the repository to use to install      \n" +
-"                               any modules.                                    \n" +
 "                               Default is vert-x.github.com/vertx-mods         \n" +
 "        -worker                if specified then the verticle is a worker      \n" +
 "                               verticle.                                       \n" +
