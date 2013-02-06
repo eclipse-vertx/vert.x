@@ -45,6 +45,7 @@ public class VertxExecutorFactory {
     return new NioWorkerPool(exec, corePoolSize);
   }
 
+
   // The worker pool needs to be fixed with a backing queue
   public static ExecutorService workerPool(String poolName) {
     int maxSize = Integer.getInteger("vertx.pool.worker.size", WORKER_POOL_MAX_SIZE);
