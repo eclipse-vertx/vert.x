@@ -90,6 +90,6 @@ public abstract class Verticle {
    */
   public void start(AsyncResultHandler<Void> doneHandler) throws Exception {
     start();
-    doneHandler.handle(new AsyncResult<>((Void)null));
+    new AsyncResult<Void>().setResult(null).setHandler(doneHandler);
   }
 }

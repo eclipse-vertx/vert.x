@@ -299,13 +299,15 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   private void authorise(final JsonObject message, final String sessionID,
                          final AsyncResultHandler<Boolean> handler) {
     // If session id is in local cache we'll consider them authorised
+    final AsyncResult<Boolean> res = new AsyncResult<>();
     if (authCache.containsKey(sessionID)) {
-      handler.handle(new AsyncResult<>(true));
+      res.setResult(true).setHandler(handler);
     } else {
       eb.send(authAddress, message, new Handler<Message<JsonObject>>() {
         public void handle(Message<JsonObject> reply) {
           boolean authed = reply.body.getString("status").equals("ok");
-          handler.handle(new AsyncResult<>(authed));
+          //handler.handle(new AsyncResult<>(authed));
+          res.setResult(authed).setHandler(handler);
         }
       });
     }

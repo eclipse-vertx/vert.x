@@ -153,7 +153,7 @@ public class LocalEchoPeer extends EventBusAppBase {
           }
         }, new AsyncResultHandler<Void>() {
       public void handle(AsyncResult<Void> event) {
-        if (event.exception == null) {
+        if (event.succeeded()) {
           tu.testComplete();
         } else {
           tu.azzert(false, "Failed to register");

@@ -26,42 +26,58 @@ public class AsyncResult<T> {
   /**
    * The result of the operation. This will be null if the operation failed.
    */
-  public final T result;
+  public T result;
 
   /**
    * An exception describing failure. This will be null if the operation succeeded.
    */
-  public final Exception exception;
+  public Exception exception;
+
+  private boolean failed;
+  private boolean succeeded;
+  private AsyncResultHandler<T> handler;
 
   /**
    * Did it succeeed?
    */
   public boolean succeeded() {
-    return exception == null;
+    return succeeded;
   }
 
   /**
    * Did it fail?
    */
   public boolean failed() {
-    return exception != null;
+    return failed;
   }
 
-  /**
-   * Create a successful AsyncResult
-   * @param result The result
-   */
-  public AsyncResult(T result) {
+  public boolean complete() {
+    return failed || succeeded;
+  }
+
+  public AsyncResult<T> setHandler(AsyncResultHandler<T> handler) {
+    this.handler = handler;
+    checkCallHandler();
+    return this;
+  }
+
+  public AsyncResult<T> setResult(T result) {
     this.result = result;
-    this.exception = null;
+    succeeded = true;
+    checkCallHandler();
+    return this;
   }
 
-  /**
-   * Create a failed AsyncResult
-   * @param exception The exception
-   */
-  public AsyncResult(Exception exception) {
+  public AsyncResult<T> setFailure(Exception exception) {
     this.exception = exception;
-    this.result = null;
+    failed = true;
+    checkCallHandler();
+    return this;
+  }
+
+  private void checkCallHandler() {
+    if (handler != null && complete()) {
+      handler.handle(this);
+    }
   }
 }
