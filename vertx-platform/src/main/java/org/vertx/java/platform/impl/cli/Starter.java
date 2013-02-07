@@ -199,7 +199,7 @@ public class Starter {
       mgr.deployMod(main, conf, instances, null, doneHandler);
     } else {
       String includes = args.map.get("-includes");
-      mgr.deployVerticle(worker, main, conf, urls, instances, null, includes, doneHandler);
+      mgr.deployVerticle(worker, false, main, conf, urls, instances, null, includes, doneHandler);
     }
 
     addShutdownHook();

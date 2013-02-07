@@ -165,7 +165,7 @@ public class VerticleManager implements ModuleReloader {
     return holder == null ? null : holder.logger;
   }
 
-  public void deployVerticle(final boolean worker, final String main,
+  public void deployVerticle(final boolean worker, final boolean multiThreaded, final String main,
                              final JsonObject config, final URL[] urls,
                              final int instances, final File currentModDir,
                              final String includes,
@@ -173,7 +173,7 @@ public class VerticleManager implements ModuleReloader {
     BlockingAction<Void> deployModuleAction = new BlockingAction<Void>(vertx, createHandler(doneHandler)) {
       @Override
       public Void action() throws Exception {
-        doDeployVerticle(worker, main, config, urls, instances, currentModDir,
+        doDeployVerticle(worker, multiThreaded, main, config, urls, instances, currentModDir,
             includes, wrapDoneHandler(doneHandler));
         return null;
       }
@@ -328,7 +328,7 @@ public class VerticleManager implements ModuleReloader {
     return null;
   }
 
-  private void doDeployVerticle(boolean worker, final String main,
+  private void doDeployVerticle(boolean worker, boolean multiThreaded, final String main,
                                 final JsonObject config, final URL[] urls,
                                 int instances, File currentModDir,
                                 String includes, Handler<String> doneHandler)
@@ -355,7 +355,7 @@ public class VerticleManager implements ModuleReloader {
     if (includes != null) {
       loadIncludedModules(currentModDir, mr, includes);
     }
-    doDeploy(depName, false, worker, main, null, config, urls, instances, currentModDir, mr, doneHandler);
+    doDeploy(depName, false, worker, multiThreaded, main, null, config, urls, instances, currentModDir, mr, doneHandler);
   }
 
 
@@ -493,6 +493,14 @@ public class VerticleManager implements ModuleReloader {
       if (worker == null) {
         worker = Boolean.FALSE;
       }
+      Boolean multiThreaded = conf.getBoolean("multi-threaded");
+      if (multiThreaded == null) {
+        multiThreaded = Boolean.FALSE;
+      } else {
+        if (!worker) {
+          throw new IllegalArgumentException("Multi-threaded modules must be workers");
+        }
+      }
       Boolean preserveCwd = conf.getBoolean("preserve-cwd");
       if (preserveCwd == null) {
         preserveCwd = Boolean.FALSE;
@@ -536,7 +544,7 @@ public class VerticleManager implements ModuleReloader {
         }
       }
 
-      doDeploy(depName, autoRedeploy, worker, main, modName, config,
+      doDeploy(depName, autoRedeploy, worker, multiThreaded, main, modName, config,
           urls.toArray(new URL[urls.size()]), instances, modDirToUse, mr, new Handler<String>() {
         @Override
         public void handle(String deploymentID) {
@@ -808,7 +816,8 @@ public class VerticleManager implements ModuleReloader {
 
   private void doDeploy(final String depName,
                         boolean autoRedeploy,
-                        boolean worker, final String main,
+                        boolean worker, boolean multiThreaded,
+                        final String main,
                         final String modName,
                         final JsonObject config, final URL[] urls,
                         int instances,
@@ -872,9 +881,11 @@ public class VerticleManager implements ModuleReloader {
 
     final VerticleFactory verticleFactory;
 
+    final Container container = new Container(this);
+
     try {
       // TODO not one verticle factory per module ref, but one per language per module ref
-      verticleFactory = mr.getVerticleFactory(langImplInfo.factoryName, vertx, new Container(this));
+      verticleFactory = mr.getVerticleFactory(langImplInfo.factoryName, vertx, container);
     } catch (Exception e) {
       log.error("Failed to instantiate verticle factory", e);
       doneHandler.handle(null);
@@ -943,10 +954,8 @@ public class VerticleManager implements ModuleReloader {
               });
               return;
             }
-
-            //Inject vertx
+            verticle.setContainer(container);
             verticle.setVertx(vertx);
-            verticle.setContainer(new Container(VerticleManager.this));
 
             try {
               addVerticle(deployment, verticle, verticleFactory);
@@ -978,7 +987,7 @@ public class VerticleManager implements ModuleReloader {
         };
 
         if (worker) {
-          vertx.startInBackground(runner);
+          vertx.startInBackground(runner, multiThreaded);
         } else {
           vertx.startOnEventLoop(runner);
         }

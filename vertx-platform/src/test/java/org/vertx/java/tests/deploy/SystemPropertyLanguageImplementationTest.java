@@ -62,12 +62,11 @@ public class SystemPropertyLanguageImplementationTest {
     Handler<String> doneHandler = new Handler<String>() {
       @Override
       public void handle(String event) {
-        // TODO Auto-generated method stub
         latch.countDown();
       }
     };
 
-    verticleManager.deployVerticle(false, main, config, urls, 1, currentModDir, includes, doneHandler);
+    verticleManager.deployVerticle(false, false, main, config, urls, 1, currentModDir, includes, doneHandler);
 
     boolean await = false;
 

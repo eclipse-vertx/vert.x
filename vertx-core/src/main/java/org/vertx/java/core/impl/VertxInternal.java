@@ -46,7 +46,7 @@ public abstract class VertxInternal extends Vertx {
 
   public abstract Context startOnEventLoop(Runnable runnable);
 
-  public abstract Context startInBackground(Runnable runnable);
+  public abstract Context startInBackground(Runnable runnable, boolean multiThreaded);
 
   public abstract Context getOrAssignContext();
 

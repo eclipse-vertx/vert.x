@@ -23,11 +23,14 @@ import java.util.concurrent.Executor;
  */
 public class WorkerContext extends Context {
 
-  public WorkerContext(VertxInternal vertx, Executor bgExec) {
-    super(vertx, bgExec);
+  public WorkerContext(VertxInternal vertx, Executor orderedBgExec) {
+    super(vertx, orderedBgExec);
   }
 
   public void execute(Runnable task) {
-    super.executeOnWorker(task);
+    final Runnable wrapped = wrapTask(task);
+    if (wrapped != null) {
+      executeOnOrderedWorkerExec(wrapped);
+    }
   }
 }
