@@ -143,6 +143,8 @@ public class TestUtils {
     handlers.clear();
   }
 
+
+
   private void sendMessage(JsonObject msg) {
     try {
       vertx.eventBus().publish(TestBase.EVENTS_ADDRESS, msg);
