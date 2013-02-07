@@ -41,6 +41,8 @@ public class FooLangVerticleFactory implements VerticleFactory {
   @Override
   public Verticle createVerticle(final String main) throws Exception {
 
+    System.out.println("main: " + main);
+
     return new Verticle() {
 
       @Override
@@ -58,7 +60,7 @@ public class FooLangVerticleFactory implements VerticleFactory {
 
   @Override
   public void reportException(Logger logger, Throwable t) {
-    t.printStackTrace();
+    logger.error("Exception in Foo verticle!", t);
   }
 
   public void close() {

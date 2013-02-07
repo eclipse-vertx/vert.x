@@ -450,6 +450,7 @@ public class VerticleManager implements ModuleReloader {
         }
         LanguageImplInfo langImpl = new LanguageImplInfo(moduleName, factoryName);
         languageImpls.put(propName, langImpl);
+        extensionMappings.put(propName, propName); // automatically register the name as a mapping
       }
     }
   }
@@ -941,9 +942,9 @@ public class VerticleManager implements ModuleReloader {
               verticle = verticleFactory.createVerticle(main);
               error = false;
             } catch (ClassNotFoundException e) {
-              log.error("Cannot find verticle " + main);
+              log.error("Cannot find verticle " + main + " in " + verticleFactory.getClass().getName(), e);
             } catch (Throwable t) {
-              log.error("Failed to create verticle", t);
+              log.error("Failed to create verticle " + main + " in " + verticleFactory.getClass().getName(), t);
             }
 
             if (error) {
@@ -968,7 +969,7 @@ public class VerticleManager implements ModuleReloader {
                   if (ar.succeeded()) {
                     aggHandler.done(true);
                   } else {
-                    log.error("Failed to deploy verticle", ar.exception);
+                    log.error("Failed to deploy verticle " + main + " in " + verticleFactory.getClass().getName(), ar.exception);
                     aggHandler.done(false);
                   }
                 }
