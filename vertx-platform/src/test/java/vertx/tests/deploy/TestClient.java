@@ -66,7 +66,8 @@ public class TestClient extends TestClientBase {
       new Handler<String>() {
         public void handle(final String deploymentID) {
           tu.azzert(Thread.currentThread() == t);
-          vertx.setTimer(100, new Handler<Long>() {
+          // Give it at least a second - especially for CI on Amazon
+          vertx.setTimer(1000, new Handler<Long>() {
             public void handle(Long tid) {
               eb.registerHandler("test-handler", new Handler<Message<String>>() {
                 public void handle(Message<String> message) {
@@ -113,7 +114,8 @@ public class TestClient extends TestClientBase {
         new Handler<String>() {
           public void handle(final String deploymentID) {
             tu.azzert(Thread.currentThread() == t);
-            vertx.setTimer(100, new Handler<Long>() {
+            // Give it at least a second - especially for CI on Amazon
+            vertx.setTimer(1000, new Handler<Long>() {
               public void handle(Long tid) {
                 eb.registerHandler("test-handler", new Handler<Message<String>>() {
                   public void handle(Message<String> message) {
