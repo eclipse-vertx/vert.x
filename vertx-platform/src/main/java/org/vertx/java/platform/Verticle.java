@@ -70,7 +70,8 @@ public abstract class Verticle {
    * Vert.x calls the start method when the verticle is deployed
    * @throws Exception
    */
-  public abstract void start() throws Exception;
+  public void start() throws Exception {
+  }
 
   /**
    * Vert.x calls the stop method when the verticle is undeployed.
