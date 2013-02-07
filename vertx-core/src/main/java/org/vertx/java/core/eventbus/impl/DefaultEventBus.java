@@ -368,7 +368,6 @@ public class DefaultEventBus implements EventBus {
     try {
       message.sender = serverID;
       if (replyHandler != null) {
-        //message.replyAddress = UUID.randomUUID().toString();
         message.replyAddress = prefix + String.valueOf(seq.incrementAndGet());
         registerHandler(message.replyAddress, replyHandler, null, true, true);
       }
