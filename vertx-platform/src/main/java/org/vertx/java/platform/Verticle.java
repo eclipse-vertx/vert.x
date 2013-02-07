@@ -16,6 +16,9 @@
 
 package org.vertx.java.platform;
 
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 
 /**
@@ -75,5 +78,17 @@ public abstract class Verticle {
    * @throws Exception
    */
   public void stop() throws Exception {
+  }
+
+  /**
+   * Override this method to signify that start is complete sometime _after_ the start() method has returned
+   * This is useful if your verticle deploys other verticles or modules and you don't want this verticle to
+   * be considered started until the other modules and verticles have been started.
+   * @param doneHandler When you are happy your verticle is started call this handler
+   * @throws Exception
+   */
+  public void start(AsyncResultHandler<Void> doneHandler) throws Exception {
+    start();
+    doneHandler.handle(new AsyncResult<>((Void)null));
   }
 }
