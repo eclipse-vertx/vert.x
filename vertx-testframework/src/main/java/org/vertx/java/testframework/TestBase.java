@@ -74,6 +74,7 @@ public class TestBase extends TestCase {
 
   @Override
   protected void setUp() throws Exception {
+    EventLog.clear();
     handler = new Handler<Message<JsonObject>>() {
       public void handle(Message<JsonObject> message) {
         try {
@@ -141,6 +142,8 @@ public class TestBase extends TestCase {
     if (verticleManager.checkNoModules() > 0) {
       fail("Module references remain after test");
     }
+    EventLog.addEvent("teardown complete");
+    EventLog.clear();
   }
 
   protected String startApp(String main) throws Exception {
@@ -176,6 +179,7 @@ public class TestBase extends TestCase {
   }
 
   protected String startApp(boolean worker, String main, JsonObject config, int instances, boolean await) throws Exception {
+    EventLog.addEvent("Starting app " + main);
     URL url;
     if (main.endsWith(".js") || main.endsWith(".rb") || main.endsWith(".groovy") || main.endsWith(".py")) {
       url = getClass().getClassLoader().getResource(main);
@@ -207,14 +211,17 @@ public class TestBase extends TestCase {
     verticleManager.deployVerticle(worker, main, config, new URL[]{url}, instances, null, null, doneHandler);
 
     if (!doneLatch.await(30, TimeUnit.SECONDS)) {
-      throw new IllegalStateException("Timedout waiting for apps to start");
+      throw new IllegalStateException("Timed out waiting for apps to start");
     }
+
+    EventLog.addEvent("App deployed");
 
     String deployID = res.get();
 
     if (deployID != null && await) {
       for (int i = 0; i < instances; i++) {
         waitAppReady();
+        EventLog.addEvent("App is ready");
       }
     }
 
@@ -258,6 +265,7 @@ public class TestBase extends TestCase {
   }
 
   protected void stopApp(String appName) throws Exception {
+    EventLog.addEvent("Stopping app " + appName);
     final CountDownLatch latch = new CountDownLatch(1);
     int instances = verticleManager.listInstances().get(appName);
     verticleManager.undeploy(appName, new SimpleHandler() {
@@ -268,9 +276,11 @@ public class TestBase extends TestCase {
     if (!latch.await(30, TimeUnit.SECONDS)) {
       throw new IllegalStateException("Timedout waiting for app to stop");
     }
+    EventLog.addEvent("App is undeployed");
     for (int i = 0; i < instances; i++) {
       waitAppStopped();
     }
+    EventLog.addEvent("Waited for app to stop");
     startedApps.remove(appName);
   }
 
@@ -280,9 +290,12 @@ public class TestBase extends TestCase {
 
   protected void startTest(String testName, boolean wait) {
     log.info("Starting test: " + testName);
+    EventLog.addEvent("Starting test " + testName);
     tu.startTest(testName);
     if (wait) {
+      EventLog.addEvent("Waiting for test to complete");
       waitTestComplete();
+      EventLog.addEvent("Test is now complete");
     }
   }
 
@@ -326,6 +339,7 @@ public class TestBase extends TestCase {
     }
 
     if (message == null) {
+      EventLog.dump();
       throw new IllegalStateException("Timed out waiting for event");
     }
 

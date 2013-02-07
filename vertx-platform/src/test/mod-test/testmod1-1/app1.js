@@ -31,7 +31,9 @@ tu.registerTests(this);
 tu.appReady();
 
 function vertxStop() {
+  org.vertx.java.testframework.EventLog.addEvent("in vertxStop of app1.js");
   tu.unregisterAll();
   tu.appStopped();
+  org.vertx.java.testframework.EventLog.addEvent("Sent app stopped");
 }
 
