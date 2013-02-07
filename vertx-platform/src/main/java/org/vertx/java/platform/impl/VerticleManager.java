@@ -953,8 +953,17 @@ public class VerticleManager implements ModuleReloader {
               if (modDir != null) {
                 setPathAdjustment(modDir);
               }
-              verticle.start();
-              aggHandler.done(true);
+              verticle.start(new AsyncResultHandler<Void>() {
+                @Override
+                public void handle(AsyncResult<Void> ar) {
+                  if (ar.succeeded()) {
+                    aggHandler.done(true);
+                  } else {
+                    log.error("Failed to deploy verticle", ar.exception);
+                    aggHandler.done(false);
+                  }
+                }
+              });
             } catch (Throwable t) {
               t.printStackTrace();
               vertx.reportException(t);
