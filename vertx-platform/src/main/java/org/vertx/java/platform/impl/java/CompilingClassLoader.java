@@ -46,7 +46,7 @@ public class CompilingClassLoader extends ClassLoader {
     }
     File sourceFile = new File(resource.getFile());
     if (!sourceFile.canRead()) {
-      throw new RuntimeException("File not found: " + sourceName);
+      throw new RuntimeException("File not found: " + sourceFile.getAbsolutePath());
     }
 
     this.javaSourceContext = new JavaSourceContext(sourceFile);
