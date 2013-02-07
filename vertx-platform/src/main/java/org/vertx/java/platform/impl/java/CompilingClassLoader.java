@@ -22,7 +22,9 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import javax.tools.*;
 import javax.tools.JavaFileObject.Kind;
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.Collections;
 
 /**
@@ -44,7 +46,13 @@ public class CompilingClassLoader extends ClassLoader {
     if(resource == null) {
       throw new RuntimeException("Resource not found: " + sourceName);
     }
-    File sourceFile = new File(resource.getFile());
+    //Need to urldecode it too, since bug in JDK URL class which does not url decode it, so if it contains spaces you are screwed
+    File sourceFile;
+    try {
+      sourceFile = new File(URLDecoder.decode(resource.getFile(), "UTF-8"));
+    } catch (UnsupportedEncodingException e) {
+      throw new IllegalStateException("Failed to decode " + e.getMessage());
+    }
     if (!sourceFile.canRead()) {
       throw new RuntimeException("File not found: " + sourceFile.getAbsolutePath() + " current dir is: " + new File(".").getAbsolutePath());
     }
