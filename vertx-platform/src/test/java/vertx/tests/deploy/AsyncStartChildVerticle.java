@@ -16,17 +16,25 @@
 
 package vertx.tests.deploy;
 
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.Handler;
 import org.vertx.java.platform.Verticle;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ChildVerticle extends Verticle {
+public class AsyncStartChildVerticle extends Verticle {
 
   @Override
-  public void start() throws Exception {
-    container.deployVerticle(SubChildVerticle.class.getName());
-    System.out.println("in child verticle start");
+  public void start(final AsyncResultHandler<Void> doneHandler) throws Exception {
+    container.deployVerticle(SubChildVerticle.class.getName(), new Handler<String>() {
+      @Override
+      public void handle(String event) {
+        doneHandler.handle(new AsyncResult<>((Void)null));
+      }
+    });
+    vertx.sharedData().getMap("mymap").put("childstarted", "true");
   }
 
   @Override

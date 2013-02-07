@@ -190,6 +190,25 @@ public class Container {
   }
 
   /**
+   * Deploy a verticle programmatically
+   * @param main The main of the verticle
+   * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
+   */
+  public void deployVerticle(String main, Handler<String> doneHandler) {
+    this.deployVerticle(main, null, 1, doneHandler);
+  }
+
+  /**
+   * Deploy a verticle programmatically
+   * @param main The main of the verticle
+   * @param config JSON config to provide to the verticle
+   * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
+   */
+  public void deployVerticle(String main, JsonObject config, Handler<String> doneHandler) {
+    this.deployVerticle(main, config, 1, doneHandler);
+  }
+
+  /**
    * Undeploy a verticle
    * @param deploymentID The deployment ID
    */
