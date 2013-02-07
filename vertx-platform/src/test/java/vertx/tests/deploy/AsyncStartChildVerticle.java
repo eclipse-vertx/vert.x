@@ -31,7 +31,7 @@ public class AsyncStartChildVerticle extends Verticle {
     container.deployVerticle(SubChildVerticle.class.getName(), new Handler<String>() {
       @Override
       public void handle(String event) {
-        doneHandler.handle(new AsyncResult<>((Void)null));
+        new AsyncResult<Void>().setResult(null).setHandler(doneHandler);
       }
     });
     vertx.sharedData().getMap("mymap").put("childstarted", "true");

@@ -57,7 +57,6 @@ public class DefaultNetClient implements NetClient {
 
   public DefaultNetClient(VertxInternal vertx) {
     this.vertx = vertx;
-
     if (vertx.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }

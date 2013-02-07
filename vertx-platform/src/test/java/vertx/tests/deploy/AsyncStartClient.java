@@ -28,7 +28,7 @@ public class AsyncStartClient extends TestClientBase {
     super.start();
     container.deployVerticle(AsyncStartChildVerticle.class.getName(), new Handler<String>() {
       public void handle(String deployID) {
-        doneHandler.handle(new AsyncResult<>((Void)null));
+        new AsyncResult<Void>().setResult(null).setHandler(doneHandler);
         tu.appReady();
       }
     });
