@@ -37,12 +37,27 @@ public class JavaDeployTest extends TestBase {
   }
 
   @Test
-  public void testDeploy() throws Exception {
+  public void testDeployVerticle() throws Exception {
     startTest(getMethodName());
   }
 
   @Test
-  public void testUndeploy() throws Exception {
+  public void testUndeployVerticle() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testDeployModule() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testUndeployModule() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testDeployNestedModule() throws Exception {
     startTest(getMethodName());
   }
 
