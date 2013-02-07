@@ -88,12 +88,13 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
   @Override
   public void get(final String subName, final AsyncResultHandler<ServerIDs> completionHandler) {
     ServerIDs entries = cache.get(subName);
+    AsyncResult<ServerIDs> result = new AsyncResult<>();
     if (entries != null && entries.isInitialised()) {
-      completionHandler.handle(new AsyncResult<>(entries));
+      result.setResult(entries).setHandler(completionHandler);
     } else {
       new BlockingAction<Collection<HazelcastServerID>>(vertx, new AsyncResultHandler<Collection<HazelcastServerID>>() {
         public void handle(AsyncResult<Collection<HazelcastServerID>> result) {
-          AsyncResult<ServerIDs> sresult;
+          AsyncResult<ServerIDs> sresult = new AsyncResult<>();
           if (result.succeeded()) {
             Collection<HazelcastServerID> entries = result.result;
             ServerIDs sids;
@@ -112,11 +113,11 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
               sids = prev;
             }
             sids.setInitialised();
-            sresult = new AsyncResult<>(sids);
+            sresult.setResult(sids);
           } else {
-            sresult = new AsyncResult<>(result.exception);
+            sresult.setFailure(result.exception);
           }
-          completionHandler.handle(sresult);
+          sresult.setHandler(completionHandler);
         }
       }) {
         public Collection<HazelcastServerID> action() throws Exception {

@@ -229,7 +229,7 @@ public class VerticleManager implements ModuleReloader {
         if (res.succeeded()) {
           latch.countDown();
         } else {
-          res.exception.printStackTrace();
+          log.error("Failed to install", res.exception);
         }
       }
     };
@@ -1116,7 +1116,7 @@ public class VerticleManager implements ModuleReloader {
     AsyncResultHandler<String> handler = new AsyncResultHandler<String>() {
       public void handle(AsyncResult<String> res) {
         if (!res.succeeded()) {
-          res.exception.printStackTrace();
+          log.error("Failed to redeploy", res.exception);
         }
       }
     };

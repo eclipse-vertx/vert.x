@@ -382,7 +382,7 @@ public class DefaultEventBus implements EventBus {
         if (subs != null) {
           subs.get(message.address, new AsyncResultHandler<ServerIDs>() {
             public void handle(AsyncResult<ServerIDs> event) {
-              if (event.exception == null) {
+              if (event.succeeded()) {
                 ServerIDs serverIDs = event.result;
                 if (!serverIDs.isEmpty()) {
                   sendToSubs(serverIDs, message);
@@ -426,7 +426,7 @@ public class DefaultEventBus implements EventBus {
       if (completionHandler == null) {
         completionHandler = new AsyncResultHandler<Void>() {
           public void handle(AsyncResult<Void> event) {
-            if (event.exception != null) {
+            if (event.failed()) {
               log.error("Failed to remove entry", event.exception);
             }
           }
@@ -458,8 +458,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   private void callCompletionHandler(AsyncResultHandler<Void> completionHandler) {
-    AsyncResult<Void> f = new AsyncResult<>((Void)null);
-    completionHandler.handle(f);
+    AsyncResult<Void> f = new AsyncResult<Void>().setHandler(completionHandler).setResult(null);
   }
 
   private void cleanSubsForServerID(ServerID theServerID) {
@@ -542,15 +541,15 @@ public class DefaultEventBus implements EventBus {
     subs.remove(subName, theServerID, new AsyncResultHandler<Boolean>() {
       public void handle(AsyncResult<Boolean> event) {
         if (completionHandler != null) {
-          AsyncResult<Void> result;
-          if (event.exception != null) {
-            result = new AsyncResult<>(event.exception);
+          AsyncResult<Void> ar = new AsyncResult<>();
+          if (event.failed()) {
+            ar.setFailure(event.exception);
           } else {
-            result = new AsyncResult<>((Void)null);
+            ar.setResult(null);
           }
-          completionHandler.handle(result);
+          ar.setHandler(completionHandler);
         } else {
-          if (event.exception != null) {
+          if (event.failed()) {
             log.error("Failed to remove subscription", event.exception);
           }
         }
