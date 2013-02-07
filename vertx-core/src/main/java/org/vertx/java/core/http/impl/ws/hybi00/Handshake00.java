@@ -129,17 +129,17 @@ public class Handshake00 implements Handshake {
     response.endHandler(new SimpleHandler() {
       public void handle() {
         byte[] bytes = buff.getBytes();
-        AsyncResult<Void> res;
+        AsyncResult<Void> res = new AsyncResult<>();
         try {
           if (challenge.verify(bytes)) {
-            res = new AsyncResult<>((Void)null);
+            res.setResult(null);
           } else {
-            res = new AsyncResult<>(new Exception("Invalid websocket handshake response"));
+            res.setFailure(new Exception("Invalid websocket handshake response"));
           }
         } catch (Exception e) {
-          res = new AsyncResult<>(e);
+          res.setFailure(e);
         }
-        doneHandler.handle(res);
+        res.setHandler(doneHandler);
       }
     });
   }

@@ -35,6 +35,7 @@ public class AsyncResult<T> {
 
   private boolean failed;
   private boolean succeeded;
+  private AsyncResultHandler<T> handler;
 
   /**
    * Did it succeeed?
@@ -54,23 +55,24 @@ public class AsyncResult<T> {
     return failed || succeeded;
   }
 
-  private AsyncResultHandler<T> handler;
-
-  public void setHandler(AsyncResultHandler<T> handler) {
+  public AsyncResult<T> setHandler(AsyncResultHandler<T> handler) {
     this.handler = handler;
     checkCallHandler();
+    return this;
   }
 
-  public void setResult(T result) {
+  public AsyncResult<T> setResult(T result) {
     this.result = result;
     succeeded = true;
     checkCallHandler();
+    return this;
   }
 
-  public void setFailure(Exception exception) {
+  public AsyncResult<T> setFailure(Exception exception) {
     this.exception = exception;
     failed = true;
     checkCallHandler();
+    return this;
   }
 
   private void checkCallHandler() {
@@ -78,7 +80,4 @@ public class AsyncResult<T> {
       handler.handle(this);
     }
   }
-
-   TODO What we should do is refactor all the core and platform APIs and create two forms of each method - one
-   using the old style - pass in a handler, the other using the "promise" style API
 }

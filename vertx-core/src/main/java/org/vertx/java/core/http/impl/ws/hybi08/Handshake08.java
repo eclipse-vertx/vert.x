@@ -97,13 +97,13 @@ public class Handshake08 implements Handshake {
 
   public void onComplete(HttpClientResponse response, final AsyncResultHandler<Void> doneHandler) throws Exception {
     String challengeResponse = response.headers().get("sec-websocket-accept");
-    AsyncResult<Void> res;
+    AsyncResult<Void> res = new AsyncResult<>();
     if (challenge.verify(challengeResponse)) {
-      res = new AsyncResult<>((Void)null);
+      res.setResult(null);
     } else {
-      res = new AsyncResult<>(new Exception("Invalid websocket handshake response"));
+      res.setFailure(new Exception("Invalid websocket handshake response"));
     }
-    doneHandler.handle(res);
+    res.setHandler(doneHandler);
   }
 
   public ChannelHandler getEncoder(boolean server) {
