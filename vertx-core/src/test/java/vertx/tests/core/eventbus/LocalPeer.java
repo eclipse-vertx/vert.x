@@ -53,7 +53,7 @@ public class LocalPeer extends EventBusAppBase {
             tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
             eb.unregisterHandler("some-address", this, new AsyncResultHandler<Void>() {
               public void handle(AsyncResult<Void> event) {
-                if (event.exception == null) {
+                if (event.succeeded()) {
                   tu.testComplete();
                 } else {
                   tu.azzert(false, "Failed to unregister");
@@ -63,7 +63,7 @@ public class LocalPeer extends EventBusAppBase {
           }
         }, new AsyncResultHandler<Void>() {
       public void handle(AsyncResult<Void> event) {
-        if (event.exception == null) {
+        if (event.succeeded()) {
           tu.testComplete();
         } else {
           tu.azzert(false, "Failed to register");
@@ -71,7 +71,6 @@ public class LocalPeer extends EventBusAppBase {
       }
     }
     );
-
   }
 
   public void testPubSubMultipleHandlersInitialise() {
@@ -91,7 +90,7 @@ public class LocalPeer extends EventBusAppBase {
             tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
             eb.unregisterHandler(address, this, new AsyncResultHandler<Void>() {
               public void handle(AsyncResult<Void> event) {
-                if (event.exception == null) {
+                if (event.succeeded()) {
                   tu.testComplete();
                 } else {
                   tu.azzert(false, "Failed to unregister");
@@ -102,7 +101,7 @@ public class LocalPeer extends EventBusAppBase {
           }
         }, new AsyncResultHandler<Void>() {
       public void handle(AsyncResult<Void> event) {
-        if (event.exception == null) {
+        if (event.succeeded()) {
           tu.testComplete();
         } else {
           tu.azzert(false, "Failed to register");
@@ -123,7 +122,7 @@ public class LocalPeer extends EventBusAppBase {
             tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
             eb.unregisterHandler(address, this, new AsyncResultHandler<Void>() {
               public void handle(AsyncResult<Void> event) {
-                if (event.exception == null) {
+                if (event.succeeded()) {
                   tu.testComplete();
                 } else {
                   tu.azzert(false, "Failed to unregister");
@@ -134,7 +133,7 @@ public class LocalPeer extends EventBusAppBase {
           }
         }, new AsyncResultHandler<Void>() {
       public void handle(AsyncResult<Void> event) {
-        if (event.exception == null) {
+        if (event.succeeded()) {
           tu.testComplete();
         } else {
           tu.azzert(false, "Failed to register");
@@ -159,7 +158,7 @@ public class LocalPeer extends EventBusAppBase {
                 public void handle(Long id) {
                   eb.unregisterHandler("some-address", hndlr, new AsyncResultHandler<Void>() {
                     public void handle(AsyncResult<Void> event) {
-                      if (event.exception == null) {
+                      if (event.succeeded()) {
                         tu.testComplete();
                       } else {
                         tu.azzert(false, "Failed to unregister");
@@ -175,7 +174,7 @@ public class LocalPeer extends EventBusAppBase {
           }
         }, new AsyncResultHandler<Void>() {
       public void handle(AsyncResult<Void> event) {
-        if (event.exception == null) {
+        if (event.succeeded()) {
           tu.testComplete();
         } else {
           tu.azzert(false, "Failed to register");
@@ -203,7 +202,7 @@ public class LocalPeer extends EventBusAppBase {
           }
         }, new AsyncResultHandler<Void>() {
       public void handle(AsyncResult<Void> event) {
-        if (event.exception == null) {
+        if (event.succeeded()) {
           tu.testComplete();
         } else {
           tu.azzert(false, "Failed to register");
