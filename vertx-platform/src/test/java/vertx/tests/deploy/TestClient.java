@@ -40,7 +40,7 @@ public class TestClient extends TestClientBase {
     super.stop();
   }
 
-  public void testDeploy() {
+  public void testDeployVerticle() {
     final Thread t = Thread.currentThread();
     eb.registerHandler("test-handler", new Handler<Message<String>>() {
       public void handle(Message<String> message) {
@@ -60,7 +60,7 @@ public class TestClient extends TestClientBase {
     });
   }
 
-  public void testUndeploy() {
+  public void testUndeployVerticle() {
     final Thread t = Thread.currentThread();
     container.deployVerticle("vertx.tests.deploy.ChildVerticle", null, 1,
       new Handler<String>() {
@@ -85,6 +85,73 @@ public class TestClient extends TestClientBase {
           });
         }
       });
+  }
+
+  public void testDeployModule() {
+    final Thread t = Thread.currentThread();
+    eb.registerHandler("test-handler", new Handler<Message<String>>() {
+      public void handle(Message<String> message) {
+        tu.azzert(Thread.currentThread() == t);
+        if ("started".equals(message.body)) {
+          eb.unregisterHandler("test-handler", this);
+          tu.testComplete();
+        }
+      }
+    });
+
+    container.deployModule("testmod-deploy1", null, 1, new Handler<String>() {
+      public void handle(String deployID) {
+        tu.azzert(Thread.currentThread() == t);
+        tu.azzert(deployID != null);
+      }
+    });
+  }
+
+  public void testUndeployModule() {
+    final Thread t = Thread.currentThread();
+    container.deployModule("testmod-deploy1", null, 1,
+        new Handler<String>() {
+          public void handle(final String deploymentID) {
+            tu.azzert(Thread.currentThread() == t);
+            vertx.setTimer(100, new Handler<Long>() {
+              public void handle(Long tid) {
+                eb.registerHandler("test-handler", new Handler<Message<String>>() {
+                  public void handle(Message<String> message) {
+                    if ("stopped".equals(message.body)) {
+                      eb.unregisterHandler("test-handler", this);
+                      tu.testComplete();
+                    }
+                  }
+                });
+                container.undeployModule(deploymentID, new Handler<Void>() {
+                  public void handle(Void v) {
+                    tu.azzert(Thread.currentThread() == t);
+                  }
+                });
+              }
+            });
+          }
+        });
+  }
+
+  public void testDeployNestedModule() {
+    final Thread t = Thread.currentThread();
+    eb.registerHandler("test-handler", new Handler<Message<String>>() {
+      public void handle(Message<String> message) {
+        tu.azzert(Thread.currentThread() == t);
+        if ("started".equals(message.body)) {
+          eb.unregisterHandler("test-handler", this);
+          tu.testComplete();
+        }
+      }
+    });
+
+    container.deployModule("testmod-deploy2", null, 1, new Handler<String>() {
+      public void handle(String deployID) {
+        tu.azzert(Thread.currentThread() == t);
+        tu.azzert(deployID != null);
+      }
+    });
   }
 }
 
