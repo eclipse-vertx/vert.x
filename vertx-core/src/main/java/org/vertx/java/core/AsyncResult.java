@@ -26,42 +26,59 @@ public class AsyncResult<T> {
   /**
    * The result of the operation. This will be null if the operation failed.
    */
-  public final T result;
+  public T result;
 
   /**
    * An exception describing failure. This will be null if the operation succeeded.
    */
-  public final Exception exception;
+  public Exception exception;
+
+  private boolean failed;
+  private boolean succeeded;
 
   /**
    * Did it succeeed?
    */
   public boolean succeeded() {
-    return exception == null;
+    return succeeded;
   }
 
   /**
    * Did it fail?
    */
   public boolean failed() {
-    return exception != null;
+    return failed;
   }
 
-  /**
-   * Create a successful AsyncResult
-   * @param result The result
-   */
-  public AsyncResult(T result) {
+  public boolean complete() {
+    return failed || succeeded;
+  }
+
+  private AsyncResultHandler<T> handler;
+
+  public void setHandler(AsyncResultHandler<T> handler) {
+    this.handler = handler;
+    checkCallHandler();
+  }
+
+  public void setResult(T result) {
     this.result = result;
-    this.exception = null;
+    succeeded = true;
+    checkCallHandler();
   }
 
-  /**
-   * Create a failed AsyncResult
-   * @param exception The exception
-   */
-  public AsyncResult(Exception exception) {
+  public void setFailure(Exception exception) {
     this.exception = exception;
-    this.result = null;
+    failed = true;
+    checkCallHandler();
   }
+
+  private void checkCallHandler() {
+    if (handler != null && complete()) {
+      handler.handle(this);
+    }
+  }
+
+   TODO What we should do is refactor all the core and platform APIs and create two forms of each method - one
+   using the old style - pass in a handler, the other using the "promise" style API
 }
