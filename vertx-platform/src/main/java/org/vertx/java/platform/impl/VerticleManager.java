@@ -86,7 +86,7 @@ public class VerticleManager implements ModuleReloader {
   final ConcurrentMap<String, ModuleReference> modules = new ConcurrentHashMap<>();
   private final Redeployer redeployer;
   private Map<String, LanguageImplInfo> languageImpls = new ConcurrentHashMap<>();
-  private Map<String, String> extensionMappings = new ConcurrentHashMap();
+  private Map<String, String> extensionMappings = new ConcurrentHashMap<>();
   private String defaultLanguageImplName;
   private List<RepoResolver> defaultRepos = new ArrayList<>();
 
@@ -556,6 +556,8 @@ public class VerticleManager implements ModuleReloader {
 
   private JsonObject loadModuleConfig(String modName, File modDir) {
     checkWorkerContext();
+    // It's not clear to me whether the try-with-resources construct will 
+    // close this correctly, the IDE complains about a resource leak. - Pid
     try (Scanner scanner = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A")) {
       String conf;
       try {
