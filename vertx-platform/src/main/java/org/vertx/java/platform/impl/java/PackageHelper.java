@@ -18,9 +18,11 @@ package org.vertx.java.platform.impl.java;
 import javax.tools.JavaFileObject;
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.JarURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -47,7 +49,13 @@ public class PackageHelper {
     Enumeration<URL> urlEnumeration = classLoader.getResources(javaPackageName);
     while (urlEnumeration.hasMoreElements()) {
       URL resource = urlEnumeration.nextElement();
-      File directory = new File(resource.getFile());
+      //Need to urldecode it too, since bug in JDK URL class which does not url decode it, so if it contains spaces you are screwed
+      File directory;
+      try {
+        directory = new File(URLDecoder.decode(resource.getFile(), "UTF-8"));
+      } catch (UnsupportedEncodingException e) {
+        throw new IllegalStateException("Failed to decode " + e.getMessage());
+      }
       if (directory.isDirectory()) {
         result.addAll(browseDir(packageName, directory));
       } else {
