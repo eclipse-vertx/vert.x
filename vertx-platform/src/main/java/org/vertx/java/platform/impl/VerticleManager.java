@@ -484,28 +484,20 @@ public class VerticleManager implements ModuleReloader {
     File modDir = locateModule(currentModDir, modName);
     if (modDir != null) {
       JsonObject conf = loadModuleConfig(modName, modDir);
-      String main = conf.getString("main");
+      ModuleFields fields = new ModuleFields(conf);
+      String main = fields.getMain();
       if (main == null) {
         log.error("Runnable module " + modName + " mod.json must contain a \"main\" field");
         callDoneHandler(doneHandler, null);
         return;
       }
-      Boolean worker = conf.getBoolean("worker");
-      if (worker == null) {
-        worker = Boolean.FALSE;
-      }
-      Boolean multiThreaded = conf.getBoolean("multi-threaded");
-      if (multiThreaded == null) {
-        multiThreaded = Boolean.FALSE;
-      } else {
-        if (!worker) {
+      boolean worker = fields.isWorker();
+      boolean multiThreaded = fields.isMultiThreaded();
+      if (multiThreaded && !worker) {
           throw new IllegalArgumentException("Multi-threaded modules must be workers");
-        }
       }
-      Boolean preserveCwd = conf.getBoolean("preserve-cwd");
-      if (preserveCwd == null) {
-        preserveCwd = Boolean.FALSE;
-      }
+      boolean preserveCwd = fields.isPreserveCurrentWorkingDirectory();
+
       // If preserveCwd then use the current module directory instead, or the cwd if not in a module
       File modDirToUse = preserveCwd ? currentModDir : modDir;
 
@@ -515,13 +507,9 @@ public class VerticleManager implements ModuleReloader {
         return;
       }
 
-      Boolean ar = conf.getBoolean("auto-redeploy");
-      final boolean autoRedeploy = ar == null ? false : ar;
-
       ModuleReference mr = modules.get(modName);
       if (mr == null) {
-        Boolean bres = conf.getBoolean("resident");
-        boolean res = bres != null && bres;
+        boolean res = fields.isResident();
         mr = new ModuleReference(this, modName, new ModuleClassLoader(urls.toArray(new URL[urls.size()])), res);
         ModuleReference prev = modules.putIfAbsent(modName, mr);
         if (prev != null) {
@@ -537,13 +525,15 @@ public class VerticleManager implements ModuleReloader {
       }
 
       // Now load any included modules
-      String includes = conf.getString("includes");
+      String includes = fields.getIncludes();
       if (includes != null) {
         if (!loadIncludedModules(modDir, mr, includes)) {
           callDoneHandler(doneHandler, null);
           return;
         }
       }
+
+      final boolean autoRedeploy = fields.isAutoRedeploy();
 
       doDeploy(depName, autoRedeploy, worker, multiThreaded, main, modName, config,
           urls.toArray(new URL[urls.size()]), instances, modDirToUse, mr, new Handler<String>() {
@@ -599,15 +589,16 @@ public class VerticleManager implements ModuleReloader {
         modDir = locateModule(currentModuleDir, moduleName);
         List<URL> urls = getModuleClasspath(modDir);
         JsonObject conf = loadModuleConfig(moduleName, modDir);
-        Boolean bres = conf.getBoolean("resident");
-        boolean res = bres != null && bres;
+        ModuleFields fields = new ModuleFields(conf);
+
+        boolean res = fields.isResident();
         includedMr = new ModuleReference(this, moduleName, new ModuleClassLoader(urls.toArray(new URL[urls.size()])),
                                          res);
         ModuleReference prev = modules.putIfAbsent(moduleName, includedMr);
         if (prev != null) {
           includedMr = prev;
         }
-        String includes = conf.getString("includes");
+        String includes = fields.getIncludes();
         if (includes != null) {
           loadIncludedModules(modDir, includedMr, includes);
         }
@@ -776,8 +767,9 @@ public class VerticleManager implements ModuleReloader {
         // Check if it's a system module
         File tmpModDir = new File(tdest, modName);
         JsonObject conf = loadModuleConfig(modName, tmpModDir);
-        Boolean bSystem = conf.getBoolean("system");
-        boolean system = bSystem != null && bSystem;
+        ModuleFields fields = new ModuleFields(conf);
+
+        boolean system = fields.isSystem();
 
         // Now copy it to the proper directory
         String moveFrom = tmpModDir.getAbsolutePath();
