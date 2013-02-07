@@ -76,7 +76,18 @@ public class Container {
    * @param instances The number of instances to deploy (defaults to 1)
    */
   public void deployWorkerVerticle(String main, JsonObject config, int instances) {
-    deployWorkerVerticle(main, config, instances, null);
+    deployWorkerVerticle(main, config, instances, false, null);
+  }
+
+  /**
+   * Deploy a worker verticle programmatically
+   * @param main The main of the verticle
+   * @param config JSON config to provide to the verticle
+   * @param instances The number of instances to deploy (defaults to 1)
+   * @param multiThreaded if true then the verticle will be deployed as a multi-threaded worker
+   */
+  public void deployWorkerVerticle(String main, JsonObject config, int instances, boolean multiThreaded) {
+    deployWorkerVerticle(main, config, instances, multiThreaded, null);
   }
 
   /**
@@ -86,10 +97,10 @@ public class Container {
    * @param instances The number of instances to deploy (defaults to 1)
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
-  public void deployWorkerVerticle(String main, JsonObject config, int instances, Handler<String> doneHandler) {
+  public void deployWorkerVerticle(String main, JsonObject config, int instances, boolean multiThreaded, Handler<String> doneHandler) {
     URL[] currURLs = mgr.getDeploymentURLs();
     File modDir = mgr.getDeploymentModDir();
-    mgr.deployVerticle(true, main, config, currURLs, instances, modDir, null, doneHandler);
+    mgr.deployVerticle(true, multiThreaded, main, config, currURLs, instances, modDir, null, doneHandler);
   }
 
   /**
@@ -186,7 +197,7 @@ public class Container {
   public void deployVerticle(String main, JsonObject config, int instances, Handler<String> doneHandler) {
     URL[] currURLs = mgr.getDeploymentURLs();
     File modDir = mgr.getDeploymentModDir();
-    mgr.deployVerticle(false, main, config, currURLs, instances, modDir, null, doneHandler);
+    mgr.deployVerticle(false, false, main, config, currURLs, instances, modDir, null, doneHandler);
   }
 
   /**

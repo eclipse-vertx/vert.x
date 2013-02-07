@@ -37,15 +37,15 @@ public abstract class Context {
   private DeploymentHandle deploymentContext;
   private Path pathAdjustment;
   private Map<Object, Runnable> closeHooks;
-  private final Executor bgExec;
   private final ClassLoader tccl;
   private AtomicInteger outstandingTasks = new AtomicInteger();
   private Handler<Void> closedHandler;
   private boolean closed;
+  protected final Executor orderedBgExec;
 
-  protected Context(VertxInternal vertx, Executor bgExec) {
+  protected Context(VertxInternal vertx, Executor orderedBgExec) {
     this.vertx = vertx;
-  	this.bgExec = bgExec;
+    this.orderedBgExec = orderedBgExec;
     this.tccl = Thread.currentThread().getContextClassLoader();
   }
 
@@ -109,15 +109,10 @@ public abstract class Context {
 
   public abstract void execute(Runnable handler);
 
-  protected void executeOnWorker(final Runnable task) {
-    final Runnable wrapped = wrapTask(task);
-    if (wrapped != null) {
-      bgExec.execute(new Runnable() {
-        public void run() {
-          wrapped.run();
-        }
-      });
-    }
+  // This executes the task in the worker pool using the ordered executor of the context
+  // It's used e.g. from BlockingActions
+  protected void executeOnOrderedWorkerExec(final Runnable task) {
+    orderedBgExec.execute(wrapTask(task));
   }
 
   private void decOustanding() {

@@ -147,8 +147,8 @@ public class DefaultVertx extends VertxInternal {
     return context;
   }
 
-  public Context startInBackground(final Runnable runnable) {
-    Context context  = createWorkerContext();
+  public Context startInBackground(final Runnable runnable, final boolean multiThreaded) {
+    Context context  = createWorkerContext(multiThreaded);
     context.execute(runnable);
     return context;
   }
@@ -289,9 +289,13 @@ public class DefaultVertx extends VertxInternal {
     return id;
   }
 
-  private Context createWorkerContext() {
+  private Context createWorkerContext(boolean multiThreaded) {
     getBackgroundPool();
-    return new WorkerContext(this, orderedFact.getExecutor());
+    if (multiThreaded) {
+      return new MultiThreadedWorkerContext(this, orderedFact.getExecutor(), backgroundPool);
+    } else {
+      return new WorkerContext(this, orderedFact.getExecutor());
+    }
   }
 
   public void setContext(Context context) {

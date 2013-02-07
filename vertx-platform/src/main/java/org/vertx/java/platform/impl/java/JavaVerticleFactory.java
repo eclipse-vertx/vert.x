@@ -57,7 +57,6 @@ public class JavaVerticleFactory implements VerticleFactory {
     } else {
       clazz = cl.loadClass(className);
     }
-
     return (Verticle)clazz.newInstance();
   }
     
