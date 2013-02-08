@@ -60,10 +60,10 @@ public class VertxExecutorFactory {
     return new NioServerBossPool(exec, acceptorPoolSize);
   }
 
-  public static NioClientBossPool clientAcceptorPool(String poolName) {
+  public static NioClientBossPool clientAcceptorPool(VertxInternal vertx, String poolName) {
     int acceptorPoolSize = Integer.getInteger("vertx.pool.acceptor.size", ACCEPTOR_POOL_MAX_SIZE);
     ExecutorService exec = Executors.newFixedThreadPool(acceptorPoolSize, new VertxThreadFactory(poolName));
-    return new NioClientBossPool(exec, acceptorPoolSize);
+    return new NioClientBossPool(exec, acceptorPoolSize, vertx.getTimer(), null);
   }
 
 }

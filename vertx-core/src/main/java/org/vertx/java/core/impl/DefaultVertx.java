@@ -59,17 +59,6 @@ public class DefaultVertx extends VertxInternal {
   private final EventBus eventBus;
   private final SharedData sharedData = new SharedData();
 
-  private ExecutorService backgroundPool = VertxExecutorFactory.workerPool("vert.x-worker-thread-");
-  private OrderedExecutorFactory orderedFact = new OrderedExecutorFactory(backgroundPool);
-  private NioWorkerPool corePool = VertxExecutorFactory.corePool("vert.x-core-thread-");
-  private NioServerBossPool serverBossPool = VertxExecutorFactory.serverAcceptorPool("vert.x-server-acceptor-thread-");
-  private NioClientBossPool clientBossPool = VertxExecutorFactory.clientAcceptorPool("vert.x-client-acceptor-thread-");
-
-  private Map<ServerID, DefaultHttpServer> sharedHttpServers = new HashMap<>();
-  private Map<ServerID, DefaultNetServer> sharedNetServers = new HashMap<>();
-
-  private final ThreadLocal<Context> contextTL = new ThreadLocal<>();
-
   //For now we use a hashed wheel with it's own thread for timeouts - ideally the event loop would have
   //it's own hashed wheel
   private HashedWheelTimer timer = new HashedWheelTimer(new VertxThreadFactory("vert.x-timer-thread"), 1,
@@ -77,6 +66,18 @@ public class DefaultVertx extends VertxInternal {
   {
     timer.start();
   }
+
+  private ExecutorService backgroundPool = VertxExecutorFactory.workerPool("vert.x-worker-thread-");
+  private OrderedExecutorFactory orderedFact = new OrderedExecutorFactory(backgroundPool);
+  private NioWorkerPool corePool = VertxExecutorFactory.corePool("vert.x-core-thread-");
+  private NioServerBossPool serverBossPool = VertxExecutorFactory.serverAcceptorPool("vert.x-server-acceptor-thread-");
+  private NioClientBossPool clientBossPool = VertxExecutorFactory.clientAcceptorPool(this, "vert.x-client-acceptor-thread-");
+
+  private Map<ServerID, DefaultHttpServer> sharedHttpServers = new HashMap<>();
+  private Map<ServerID, DefaultNetServer> sharedNetServers = new HashMap<>();
+
+  private final ThreadLocal<Context> contextTL = new ThreadLocal<>();
+
   private final AtomicLong timeoutCounter = new AtomicLong(0);
   private final Map<Long, TimeoutHolder> timeouts = new ConcurrentHashMap<>();
 

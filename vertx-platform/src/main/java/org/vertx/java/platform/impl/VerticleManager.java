@@ -270,7 +270,12 @@ public class VerticleManager implements ModuleReloader {
     }
   }
 
-  public void pullInDependencies(String moduleName) {
+  public boolean pullInDependencies(String moduleName) {
+    log.info("Attempting to pull in dependencies for module: " + moduleName);
+    return doPullInDependencies(modRoot, moduleName);
+  }
+
+  private boolean doPullInDependencies(File modRoot, String moduleName) {
     File modDir = new File(modRoot, moduleName);
     if (!modDir.exists()) {
       log.error("Cannot find module to uninstall");
@@ -289,6 +294,37 @@ public class VerticleManager implements ModuleReloader {
     if (deploys != null) {
       mods.addAll(Arrays.asList(parseIncludeString(deploys)));
     }
+    if (!mods.isEmpty()) {
+      File internalModsDir = new File(modDir, "mods");
+      if (!internalModsDir.exists()) {
+        internalModsDir.mkdir();
+      }
+      for (String modName: mods) {
+        File internalModDir = new File(internalModsDir, modName);
+        if (!internalModDir.exists()) {
+          boolean installed = false;
+          for (RepoResolver resolver: defaultRepos) {
+            Buffer modZipped = resolver.getModule(modName);
+            if (modZipped != null) {
+              if (!unzipModuleData(modName, internalModsDir, modZipped)) {
+                return false;
+              } else {
+                installed = true;
+                break;
+              }
+            }
+          }
+          if (!installed) {
+            log.error("Failed to find module " + modName + " in any repositories");
+            return false;
+          }
+          log.info("Module " + modName + " successfully installed in mods dir of " + modName);
+          // Now recurse so we bring in all of the deps
+          doPullInDependencies(internalModsDir, modName);
+        }
+      }
+    }
+    return true;
   }
 
   private AsyncResultHandler<Void> createHandler(final Handler<String> doneHandler) {
@@ -576,7 +612,6 @@ public class VerticleManager implements ModuleReloader {
   }
 
   private JsonObject loadModuleConfig(String modName, File modDir) {
-    checkWorkerContext();
     // It's not clear to me whether the try-with-resources construct will 
     // close this correctly, the IDE complains about a resource leak. - Pid
     try (Scanner scanner = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A")) {
@@ -751,60 +786,69 @@ public class VerticleManager implements ModuleReloader {
 
       // Unzip into temp dir first
       String tdir = TEMP_DIR + FILE_SEP + "vertx-" + UUID.randomUUID().toString();
-      new File(tdir).mkdir();
-
       File tdest = new File(tdir);
+      tdest.mkdir();
 
+      if (!unzipModuleData(modName, tdest, data)) {
+        return false;
+      }
+
+      // Check if it's a system module
+      File tmpModDir = new File(tdest, modName);
+      JsonObject conf = loadModuleConfig(modName, tmpModDir);
+      ModuleFields fields = new ModuleFields(conf);
+
+      boolean system = fields.isSystem();
+
+      // Now copy it to the proper directory
+      String moveFrom = tmpModDir.getAbsolutePath();
       try {
-        InputStream is = new ByteArrayInputStream(data.getBytes());
-        ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
-        ZipEntry entry;
-        while ((entry = zis.getNextEntry()) != null) {
-          if (!entry.getName().startsWith(modName)) {
-            log.error("Module must contain zipped directory with same name as module");
-            return false;
-          }
-          if (entry.isDirectory()) {
-            new File(tdest, entry.getName()).mkdir();
-          } else {
-            int count;
-            byte[] buff = new byte[BUFFER_SIZE];
-            BufferedOutputStream dest = null;
-            try {
-              OutputStream fos = new FileOutputStream(new File(tdest, entry.getName()));
-              dest = new BufferedOutputStream(fos, BUFFER_SIZE);
-              while ((count = zis.read(buff, 0, BUFFER_SIZE)) != -1) {
-                 dest.write(buff, 0, count);
-              }
-              dest.flush();
-            } finally {
-              if (dest != null) {
-                dest.close();
-              }
-            }
-          }
-        }
-        zis.close();
-
-        // Check if it's a system module
-        File tmpModDir = new File(tdest, modName);
-        JsonObject conf = loadModuleConfig(modName, tmpModDir);
-        ModuleFields fields = new ModuleFields(conf);
-
-        boolean system = fields.isSystem();
-
-        // Now copy it to the proper directory
-        String moveFrom = tmpModDir.getAbsolutePath();
         vertx.fileSystem().moveSync(moveFrom, system ? sdest.getAbsolutePath() : fdest.getAbsolutePath());
       } catch (Exception e) {
-        log.error("Failed to unzip module", e);
+        log.error("Failed to move module", e);
         return false;
-      } finally {
-        tdest.delete();
       }
       log.info("Module " + modName +" successfully installed");
       return true;
     }
+  }
+
+  private boolean unzipModuleData(String modName, final File directory, final Buffer data) {
+    try (InputStream is = new ByteArrayInputStream(data.getBytes())) {
+      ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
+      ZipEntry entry;
+      while ((entry = zis.getNextEntry()) != null) {
+        if (!entry.getName().startsWith(modName)) {
+          log.error("Module must contain zipped directory with same name as module");
+          return false;
+        }
+        if (entry.isDirectory()) {
+          new File(directory, entry.getName()).mkdir();
+        } else {
+          int count;
+          byte[] buff = new byte[BUFFER_SIZE];
+          BufferedOutputStream dest = null;
+          try {
+            OutputStream fos = new FileOutputStream(new File(directory, entry.getName()));
+            dest = new BufferedOutputStream(fos, BUFFER_SIZE);
+            while ((count = zis.read(buff, 0, BUFFER_SIZE)) != -1) {
+              dest.write(buff, 0, count);
+            }
+            dest.flush();
+          } finally {
+            if (dest != null) {
+              dest.close();
+            }
+          }
+        }
+      }
+    } catch (Exception e) {
+      log.error("Failed to unzip module", e);
+      return false;
+    } finally {
+      directory.delete();
+    }
+    return true;
   }
 
   // We calculate a path adjustment that can be used by the fileSystem object
