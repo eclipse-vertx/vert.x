@@ -72,7 +72,7 @@ class EventSourceTransport extends BaseTransport {
       if (log.isTraceEnabled()) log.trace("EventSource, sending frame");
       if (!headersWritten) {
         req.response.headers().put("Content-Type", "text/event-stream; charset=UTF-8");
-        req.response.headers().put("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        setNoCacheHeaders(req);
         setJSESSIONID(config, req);
         req.response.setChunked(true);
         req.response.write("\r\n");

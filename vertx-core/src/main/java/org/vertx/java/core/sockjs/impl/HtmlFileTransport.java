@@ -110,7 +110,7 @@ class HtmlFileTransport extends BaseTransport {
       if (!headersWritten) {
         String htmlFile = HTML_FILE_TEMPLATE.replace("{{ callback }}", callback);
         req.response.headers().put("Content-Type", "text/html; charset=UTF-8");
-        req.response.headers().put("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        setNoCacheHeaders(req);
         req.response.setChunked(true);
         setJSESSIONID(config, req);
         req.response.write(htmlFile);

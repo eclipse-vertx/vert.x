@@ -21,8 +21,6 @@ server = vertx.create_http_server()
 def request_handler(req):
     if req.uri == "/":
         req.response.send_file("sockjs/index.html")
-    elif req.uri == "/sockjs-0.2.1.min.js":
-        req.response.send_file("sockjs/sockjs-0.2.1.min.js")
 
 sjs_server = vertx.create_sockjs_server(server)
 
