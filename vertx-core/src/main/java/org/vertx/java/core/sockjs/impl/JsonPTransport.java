@@ -118,7 +118,7 @@ class JsonPTransport extends BaseTransport {
         } else {
           setJSESSIONID(config, req);
           req.response.headers().put("Content-Type", "text/plain; charset=UTF-8");
-          req.response.headers().put("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+          setNoCacheHeaders(req);
           req.response.end("ok");
           if (log.isTraceEnabled()) log.trace("send handled ok");
         }
@@ -149,7 +149,7 @@ class JsonPTransport extends BaseTransport {
       if (!headersWritten) {
         req.response.setChunked(true);
         req.response.headers().put("Content-Type", "application/javascript; charset=UTF-8");
-        req.response.headers().put("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        setNoCacheHeaders(req);
         setJSESSIONID(config, req);
         headersWritten = true;
       }
