@@ -424,6 +424,17 @@ public class DefaultSockJSServer implements SockJSServer {
         });
       }
     });
+    installApp(new JsonObject().putString("prefix", "/cookie_needed_echo")
+      .putNumber("max_bytes_streaming", 4096).putBoolean("insert_JSESSIONID", true),
+      new Handler<SockJSSocket>() {
+        public void handle(final SockJSSocket sock) {
+          sock.dataHandler(new Handler<Buffer>() {
+            public void handle(Buffer buff) {
+              sock.writeBuffer(buff);
+            }
+          });
+        }
+      });
 
   }
 

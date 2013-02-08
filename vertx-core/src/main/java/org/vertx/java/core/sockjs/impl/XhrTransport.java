@@ -88,6 +88,7 @@ class XhrTransport extends BaseTransport {
     rm.postWithRegEx(re, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
         if (log.isTraceEnabled()) log.trace("XHR, post, " + req.uri);
+        req.response.headers().put("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
         String sessionID = req.params().get("param0");
         Session session = getSession(config.getLong("session_timeout"), config.getLong("heartbeat_period"), sessionID, sockHandler);
         session.register(streaming? new XhrStreamingListener(config.getInteger("max_bytes_streaming"), req, session) : new XhrPollingListener(req, session));
@@ -100,17 +101,16 @@ class XhrTransport extends BaseTransport {
     req.bodyHandler(new Handler<Buffer>() {
       public void handle(Buffer buff) {
         String msgs = buff.toString();
-
         if (msgs.equals("")) {
           req.response.statusCode = 500;
           req.response.end("Payload expected.");
           return;
         }
-
         if (!session.handleMessages(msgs)) {
           sendInvalidJSON(req.response);
         } else {
           req.response.headers().put("Content-Type", "text/plain; charset=UTF-8");
+          req.response.headers().put("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
           setJSESSIONID(config, req);
           setCORS(req);
           req.response.statusCode = 204;
