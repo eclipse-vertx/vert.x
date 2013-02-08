@@ -270,6 +270,27 @@ public class VerticleManager implements ModuleReloader {
     }
   }
 
+  public void pullInDependencies(String moduleName) {
+    File modDir = new File(modRoot, moduleName);
+    if (!modDir.exists()) {
+      log.error("Cannot find module to uninstall");
+    }
+    JsonObject conf = loadModuleConfig(moduleName, modDir);
+    if (conf == null) {
+      log.error("Module " + moduleName + " does not contain a mod.json");
+    }
+    ModuleFields fields = new ModuleFields(conf);
+    List<String> mods = new ArrayList<>();
+    String includes = fields.getIncludes();
+    if (includes != null) {
+      mods.addAll(Arrays.asList(parseIncludeString(includes)));
+    }
+    String deploys = fields.getDeploys();
+    if (deploys != null) {
+      mods.addAll(Arrays.asList(parseIncludeString(deploys)));
+    }
+  }
+
   private AsyncResultHandler<Void> createHandler(final Handler<String> doneHandler) {
     return new AsyncResultHandler<Void>() {
       @Override
@@ -718,7 +739,6 @@ public class VerticleManager implements ModuleReloader {
 
       File fdest = new File(modRoot, modName);
       File sdest = new File(systemModRoot, modName);
-      log.info("Installing module into directory " + fdest.getAbsolutePath());
       if (fdest.exists() || sdest.exists()) {
         // This can happen if the same module is requested to be installed
         // at around the same time
