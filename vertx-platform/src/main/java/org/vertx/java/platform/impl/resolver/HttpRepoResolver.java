@@ -83,20 +83,21 @@ public abstract class HttpRepoResolver implements RepoResolver {
       }
     });
     String uri = getRepoURI(moduleName);
-    String msg = "Attempting to install module " + moduleName + " from http://"
-        + repoHost + ":" + repoPort + uri;
-    if (proxyHost != null) {
-      msg += " Using proxy host " + proxyHost + ":" + proxyPort;
-    }
-    log.info(msg);
+
     if (proxyHost != null) {
       // We use an absolute URI
       uri = new StringBuilder("http://").append(repoHost).append(uri).toString();
     }
+    final String theURI = uri;
     HttpClientRequest req = client.get(uri, new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         if (resp.statusCode == 200) {
-          log.info("Downloading module...");
+          String msg = "Downloading module " + moduleName + " from http://"
+              + repoHost + ":" + repoPort + theURI;
+          if (proxyHost != null) {
+            msg += " Using proxy host " + proxyHost + ":" + proxyPort;
+          }
+          log.info(msg);
           resp.bodyHandler(new Handler<Buffer>() {
             public void handle(Buffer buffer) {
               mod.set(buffer);
@@ -104,10 +105,9 @@ public abstract class HttpRepoResolver implements RepoResolver {
             }
           });
         } else if (resp.statusCode == 404) {
-          log.error("Can't find module " + moduleName + " in repository");
           latch.countDown();
         } else {
-          log.error("Failed to download module: " + resp.statusCode);
+          log.error("Failed to query repository: " + resp.statusCode);
           latch.countDown();
         }
       }

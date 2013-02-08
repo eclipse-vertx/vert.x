@@ -83,12 +83,19 @@ public class Starter {
             case "uninstall":
               uninstallModule(operand);
               break;
+            case "pulldeps":
+              pullDependencies(operand);
+              break;
             default:
               displaySyntax();
           }
         }
       }
     }
+  }
+
+  private void pullDependencies(String modName) {
+    new VerticleManager(vertx).pullInDependencies(modName);
   }
 
   private void installModule(String modName) {
@@ -328,6 +335,14 @@ public class Starter {
 "        attempts to uninstall a module from a remote repository.               \n" +
 "        Module will be uninstalled from the local 'mods' directory unless the  \n" +
 "        environment variable VERTX_MODS specifies a different location.      \n\n" +
+
+"    vertx pulldeps <modname>                                                   \n" +
+"        Pulls in the tree of dependencies of the module and puts them in the   \n" +
+"        nested module directory (mods) of the module. This allows the module   \n" +
+"        to be a completely self contained unit containing all the modules it   \n" +
+"        needs to run.                                                          \n" +
+"        Vert.x will consult the 'includes' and 'deploys' fields to determine   \n" +
+"        which modules to pull in.                                            \n\n" +
 
 "    vertx version                                                              \n" +
 "        displays the version";
