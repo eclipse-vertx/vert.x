@@ -125,12 +125,15 @@ class BaseTransport {
 
   static void setCORS(HttpServerRequest req) {
     String origin = req.headers().get("origin");
-    if (origin == null) {
+    if (origin == null || "null".equals(origin)) {
       origin = "*";
     }
     req.response.headers().put("Access-Control-Allow-Origin", origin);
     req.response.headers().put("Access-Control-Allow-Credentials", "true");
-    req.response.headers().put("Access-Control-Allow-Headers", "Content-Type");
+    String hdr = req.headers().get("Access-Control-Request-Headers");
+    if (hdr != null) {
+      req.response.headers().put("Access-Control-Allow-Headers", hdr);
+    }
   }
 
   static Handler<HttpServerRequest> createInfoHandler(final JsonObject config) {
