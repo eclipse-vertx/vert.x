@@ -66,8 +66,9 @@ public class PrefixLanguageImplementationTest {
     Handler<String> doneHandler = new Handler<String>() {
       @Override
       public void handle(String event) {
-        // TODO Auto-generated method stub
-        latch.countDown();
+        if (event != null && event.startsWith("deployment-")) {
+          latch.countDown();
+        }
       }
     };
 
@@ -79,12 +80,52 @@ public class PrefixLanguageImplementationTest {
       await = latch.await(5000L, TimeUnit.MILLISECONDS);
 
     } catch (InterruptedException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      //
+    } catch (Throwable e) {
+      Assert.fail(e.getMessage());
     }
 
-    if (!await)  {
-      Assert.fail("Probably not deployed");
+    if (!await) {
+      Assert.fail("Probably not deployed still waiting for " + latch.getCount());
+    }
+  }
+
+  @Test
+  public void deployFooVerticleFailure() {
+    String main = "expectedfailure:expected-to-fail.test";
+
+    JsonObject config = new JsonObject();
+    config.putString("foo", "foo");
+
+    URL[] urls = new URL[0];
+    File currentModDir = new File(System.getProperty("java.io.tmpdir"));
+    String includes = null;
+
+    final CountDownLatch latch = new CountDownLatch(1);
+    Handler<String> doneHandler = new Handler<String>() {
+      @Override
+      public void handle(String event) {
+        if (event != null && event.startsWith("deployment-")) {
+          latch.countDown();
+        }
+      }
+    };
+
+    verticleManager.deployVerticle(false, false, main, config, urls, 1, currentModDir, includes, doneHandler);
+
+    boolean await = false;
+
+    try {
+      await = latch.await(250L, TimeUnit.MILLISECONDS);
+
+    } catch (InterruptedException e) {
+      //
+    } catch (Throwable e) {
+      Assert.fail(e.getMessage());
+    }
+
+    if (!await) {
+      Assert.assertEquals(1, latch.getCount());
     }
   }
 

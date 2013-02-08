@@ -20,9 +20,7 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.platform.Container;
 import org.vertx.java.platform.Verticle;
-import org.vertx.java.platform.impl.ModuleClassLoader;
 import org.vertx.java.platform.VerticleFactory;
-import org.vertx.java.platform.impl.VerticleManager;
 
 /**
  * @author swilliams
@@ -58,7 +56,7 @@ public class FooLangVerticleFactory implements VerticleFactory {
 
   @Override
   public void reportException(Logger logger, Throwable t) {
-    t.printStackTrace();
+    logger.error("Exception in Foo verticle!", t);
   }
 
   public void close() {
