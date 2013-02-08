@@ -26,7 +26,8 @@ import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.platform.impl.VerticleManager;
+import org.vertx.java.platform.impl.DefaultPlatformManager;
+import org.vertx.java.platform.impl.PlatformManagerInternal;
 
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -45,9 +46,9 @@ public class TestBase extends TestCase {
 
   public static final String EVENTS_ADDRESS = "__test_events";
 
-  // A single Vertx and VerticleManager for <b>ALL</b> tests
+  // A single Vertx and DefaultPlatformManager for <b>ALL</b> tests
   protected static VertxInternal vertx = new DefaultVertx();
-  private static VerticleManager verticleManager = new VerticleManager(vertx);
+  private static PlatformManagerInternal platformManager = new DefaultPlatformManager(vertx);
 
   private BlockingQueue<JsonObject> events = new LinkedBlockingQueue<>();
   private TestUtils tu = new TestUtils(vertx);
@@ -139,7 +140,7 @@ public class TestBase extends TestCase {
         throw e;
       }
     }
-    if (verticleManager.checkNoModules() > 0) {
+    if (platformManager.checkNoModules() > 0) {
       fail("Module references remain after test");
     }
     //EventLog.addEvent("teardown complete");
@@ -208,7 +209,7 @@ public class TestBase extends TestCase {
       }
     };
 
-    verticleManager.deployVerticle(worker, false, main, config, new URL[]{url}, instances, null, null, doneHandler);
+    platformManager.deployVerticle(worker, false, main, config, new URL[]{url}, instances, null, null, doneHandler);
 
     if (!doneLatch.await(30, TimeUnit.SECONDS)) {
       throw new IllegalStateException("Timed out waiting for apps to start");
@@ -247,7 +248,7 @@ public class TestBase extends TestCase {
       }
     };
 
-    verticleManager.deployMod(modName, config, instances, null, doneHandler);
+    platformManager.deployMod(modName, config, instances, null, doneHandler);
 
     if (!doneLatch.await(30, TimeUnit.SECONDS)) {
       throw new IllegalStateException("Timedout waiting for apps to start");
@@ -267,8 +268,8 @@ public class TestBase extends TestCase {
   protected void stopApp(String appName) throws Exception {
     //EventLog.addEvent("Stopping app " + appName);
     final CountDownLatch latch = new CountDownLatch(1);
-    int instances = verticleManager.listInstances().get(appName);
-    verticleManager.undeploy(appName, new SimpleHandler() {
+    int instances = platformManager.listInstances().get(appName);
+    platformManager.undeploy(appName, new SimpleHandler() {
       public void handle() {
         latch.countDown();
       }

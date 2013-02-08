@@ -33,8 +33,8 @@ import org.vertx.java.platform.Container;
 import org.vertx.java.platform.Verticle;
 import org.vertx.java.platform.VerticleFactory;
 import org.vertx.java.platform.impl.resolver.MavenRepoResolver;
-import org.vertx.java.platform.impl.resolver.Vertx1xResolver;
 import org.vertx.java.platform.impl.resolver.RepoResolver;
+import org.vertx.java.platform.impl.resolver.Vertx1xResolver;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -57,9 +57,9 @@ import java.util.zip.ZipInputStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  *
  */
-public class VerticleManager implements ModuleReloader {
+public class DefaultPlatformManager implements PlatformManagerInternal, ModuleReloader {
 
-  private static final Logger log = LoggerFactory.getLogger(VerticleManager.class);
+  private static final Logger log = LoggerFactory.getLogger(DefaultPlatformManager.class);
   private static final int BUFFER_SIZE = 4096;
   private static final String HTTP_PROXY_HOST_PROP_NAME = "http.proxyHost";
   private static final String HTTP_PROXY_PORT_PROP_NAME = "http.proxyPort";
@@ -83,7 +83,7 @@ public class VerticleManager implements ModuleReloader {
   private final CountDownLatch stopLatch = new CountDownLatch(1);
   private final String proxyHost;
   private final int proxyPort;
-  final ConcurrentMap<String, ModuleReference> modules = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, ModuleReference> modules = new ConcurrentHashMap<>();
   private final Redeployer redeployer;
   private Map<String, LanguageImplInfo> languageImpls = new ConcurrentHashMap<>();
   private Map<String, String> extensionMappings = new ConcurrentHashMap<>();
@@ -102,7 +102,7 @@ public class VerticleManager implements ModuleReloader {
     }
   }
 
-  public VerticleManager(VertxInternal vertx) {
+  public DefaultPlatformManager(VertxInternal vertx) {
     this.vertx = vertx;
     this.proxyHost = System.getProperty(HTTP_PROXY_HOST_PROP_NAME);
     String tmpPort = System.getProperty(HTTP_PROXY_PORT_PROP_NAME);
@@ -325,6 +325,43 @@ public class VerticleManager implements ModuleReloader {
       }
     }
     return true;
+  }
+
+  public void reloadModules(final Set<Deployment> deps) {
+    for (final Deployment deployment: deps) {
+      if (deployments.containsKey(deployment.name)) {
+        doUndeploy(deployment.name, new SimpleHandler() {
+          public void handle() {
+            redeploy(deployment);
+          }
+        });
+      } else {
+        // This will be the case if the previous deployment failed, e.g.
+        // a code error in a user verticle
+        redeploy(deployment);
+      }
+    }
+  }
+
+  public synchronized void undeploy(String deploymentID, final Handler<Void> doneHandler) {
+    if (deploymentID == null) {
+      throw new NullPointerException("deploymentID is null");
+    }
+    final Deployment dep = deployments.get(deploymentID);
+    if (dep == null) {
+      throw new IllegalArgumentException("There is no deployment with id " + deploymentID);
+    }
+    Handler<Void> wrappedHandler = new SimpleHandler() {
+      public void handle() {
+        if (dep.modName != null && dep.autoRedeploy) {
+          redeployer.moduleUndeployed(dep);
+        }
+        if (doneHandler != null) {
+          doneHandler.handle(null);
+        }
+      }
+    };
+    doUndeploy(deploymentID, wrappedHandler);
   }
 
   private AsyncResultHandler<Void> createHandler(final Handler<String> doneHandler) {
@@ -1142,43 +1179,6 @@ public class VerticleManager implements ModuleReloader {
     });
   }
 
-  public void reloadModules(final Set<Deployment> deps) {
-    for (final Deployment deployment: deps) {
-      if (deployments.containsKey(deployment.name)) {
-        doUndeploy(deployment.name, new SimpleHandler() {
-          public void handle() {
-            redeploy(deployment);
-          }
-        });
-      } else {
-        // This will be the case if the previous deployment failed, e.g.
-        // a code error in a user verticle
-        redeploy(deployment);
-      }
-    }
-  }
-
-  public synchronized void undeploy(String deploymentID, final Handler<Void> doneHandler) {
-    if (deploymentID == null) {
-      throw new NullPointerException("deploymentID is null");
-    }
-    final Deployment dep = deployments.get(deploymentID);
-    if (dep == null) {
-      throw new IllegalArgumentException("There is no deployment with id " + deploymentID);
-    }
-    Handler<Void> wrappedHandler = new SimpleHandler() {
-      public void handle() {
-        if (dep.modName != null && dep.autoRedeploy) {
-          redeployer.moduleUndeployed(dep);
-        }
-        if (doneHandler != null) {
-          doneHandler.handle(null);
-        }
-      }
-    };
-    doUndeploy(deploymentID, wrappedHandler);
-  }
-
   private void redeploy(final Deployment deployment) {
     // Has to occur on a worker thread
     AsyncResultHandler<String> handler = new AsyncResultHandler<String>() {
@@ -1213,6 +1213,10 @@ public class VerticleManager implements ModuleReloader {
       }
     }
     return count;
+  }
+
+  public void removeModule(String moduleKey) {
+    modules.remove(moduleKey);
   }
 
 

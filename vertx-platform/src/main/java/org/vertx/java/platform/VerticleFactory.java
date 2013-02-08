@@ -19,11 +19,6 @@ package org.vertx.java.platform;
 
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.platform.Verticle;
-import org.vertx.java.platform.impl.ModuleClassLoader;
-import org.vertx.java.platform.impl.VerticleManager;
-
-import java.util.ServiceLoader;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

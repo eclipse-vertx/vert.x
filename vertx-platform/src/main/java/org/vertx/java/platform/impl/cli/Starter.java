@@ -24,8 +24,9 @@ import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.platform.PlatformManager;
 import org.vertx.java.platform.impl.Args;
-import org.vertx.java.platform.impl.VerticleManager;
+import org.vertx.java.platform.impl.DefaultPlatformManager;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -52,7 +53,7 @@ public class Starter {
   }
 
   private VertxInternal vertx = new DefaultVertx();
-  private VerticleManager mgr;
+  private PlatformManager mgr;
 
   private Starter(String[] sargs) {
     if (sargs.length < 1) {
@@ -95,15 +96,15 @@ public class Starter {
   }
 
   private void pullDependencies(String modName) {
-    new VerticleManager(vertx).pullInDependencies(modName);
+    new DefaultPlatformManager(vertx).pullInDependencies(modName);
   }
 
   private void installModule(String modName) {
-    new VerticleManager(vertx).installMod(modName);
+    new DefaultPlatformManager(vertx).installMod(modName);
   }
 
   private void uninstallModule(String modName) {
-    new VerticleManager(vertx).uninstallMod(modName);
+    new DefaultPlatformManager(vertx).uninstallMod(modName);
   }
 
   private void runVerticle(boolean module, String main, Args args) {
@@ -126,7 +127,7 @@ public class Starter {
       }
       vertx = new DefaultVertx(clusterPort, clusterHost);
     }
-    mgr = new VerticleManager(vertx);
+    mgr = new DefaultPlatformManager(vertx);
 
     boolean worker = args.map.get("-worker") != null;
 

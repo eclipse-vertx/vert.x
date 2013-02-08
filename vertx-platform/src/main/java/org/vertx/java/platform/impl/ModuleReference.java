@@ -29,7 +29,7 @@ import org.vertx.java.platform.VerticleFactory;
  *
  */
 class ModuleReference {
-  final VerticleManager mgr;
+  final PlatformManagerInternal mgr;
   final String moduleKey;
   final ModuleClassLoader mcl;
   int refCount = 0;
@@ -41,7 +41,7 @@ class ModuleReference {
   // even if you have permgen GC enabled.
   final boolean resident;
 
-  ModuleReference(final VerticleManager mgr, final String moduleKey, final ModuleClassLoader mcl,
+  ModuleReference(final PlatformManagerInternal mgr, final String moduleKey, final ModuleClassLoader mcl,
                   boolean resident) {
     this.mgr = mgr;
     this.moduleKey = moduleKey;
@@ -56,7 +56,7 @@ class ModuleReference {
   synchronized void decRef() {
     refCount--;
     if (!resident && refCount == 0) {
-      mgr.modules.remove(moduleKey);
+      mgr.removeModule(moduleKey);
       mcl.close();
       if (factory != null) {
         factory.close();

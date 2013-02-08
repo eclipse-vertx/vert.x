@@ -19,7 +19,7 @@ package org.vertx.java.platform;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.platform.impl.VerticleManager;
+import org.vertx.java.platform.impl.PlatformManagerInternal;
 
 import java.io.File;
 import java.net.URL;
@@ -37,9 +37,9 @@ import java.util.Map;
  */
 public class Container {
 
-  private final VerticleManager mgr;
+  private final PlatformManagerInternal mgr;
 
-  public Container(final VerticleManager mgr) {
+  public Container(final PlatformManagerInternal mgr) {
     this.mgr = mgr;
   }
 

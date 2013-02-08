@@ -15,21 +15,18 @@
  */
 package org.vertx.java.tests.deploy;
 
-import java.io.File;
-import java.net.URL;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.platform.impl.VerticleManager;
+import org.vertx.java.platform.PlatformManager;
+import org.vertx.java.platform.impl.DefaultPlatformManager;
+
+import java.io.File;
+import java.net.URL;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author swilliams
@@ -37,7 +34,7 @@ import org.vertx.java.platform.impl.VerticleManager;
  */
 public class PrefixLanguageImplementationTest {
 
-  private VerticleManager verticleManager;
+  private PlatformManager platformManager;
   private VertxInternal vertxInternal;
 
   @BeforeClass
@@ -48,7 +45,7 @@ public class PrefixLanguageImplementationTest {
   @Before
   public void before() throws Exception {
     vertxInternal = new DefaultVertx();
-    verticleManager = new VerticleManager(vertxInternal);
+    platformManager = new DefaultPlatformManager(vertxInternal);
   }
 
   @Test
@@ -72,7 +69,7 @@ public class PrefixLanguageImplementationTest {
       }
     };
 
-    verticleManager.deployVerticle(false, false, main, config, urls, 1, currentModDir, includes, doneHandler);
+    platformManager.deployVerticle(false, false, main, config, urls, 1, currentModDir, includes, doneHandler);
 
     boolean await = false;
 
@@ -111,7 +108,7 @@ public class PrefixLanguageImplementationTest {
       }
     };
 
-    verticleManager.deployVerticle(false, false, main, config, urls, 1, currentModDir, includes, doneHandler);
+    platformManager.deployVerticle(false, false, main, config, urls, 1, currentModDir, includes, doneHandler);
 
     boolean await = false;
 
