@@ -36,7 +36,21 @@ public interface PlatformManager {
 
   /**
    * Deploy a verticle
-   * @param worker Is it a worker verticle?
+   * @param main The main, e.g. app.js, foo.rb, org.mycompany.MyMain, etc
+   * @param config Any JSON config to pass to the verticle, or null if none
+   * @param classpath The classpath for the verticle
+   * @param instances The number of instances to deploy
+   * @param includes Comma separated list of modules to include, or null if none
+   * @param doneHandler Handler will be called with deploymentID when deployed, or null if it fails to deploy
+   */
+  void deployVerticle(String main,
+                      JsonObject config, URL[] classpath,
+                      int instances,
+                      String includes,
+                      Handler<String> doneHandler);
+
+  /**
+   * Deploy a worker verticle
    * @param multiThreaded Is it a multi-threaded worker verticle?
    * @param main The main, e.g. app.js, foo.rb, org.mycompany.MyMain, etc
    * @param config Any JSON config to pass to the verticle, or null if none
@@ -45,11 +59,11 @@ public interface PlatformManager {
    * @param includes Comma separated list of modules to include, or null if none
    * @param doneHandler Handler will be called with deploymentID when deployed, or null if it fails to deploy
    */
-  void deployVerticle(boolean worker, boolean multiThreaded, String main,
-                      JsonObject config, URL[] classpath,
-                      int instances,
-                      String includes,
-                      Handler<String> doneHandler);
+  void deployWorkerVerticle(boolean multiThreaded, String main,
+                            JsonObject config, URL[] classpath,
+                            int instances,
+                            String includes,
+                            Handler<String> doneHandler);
 
   /**
    * Deploy a module

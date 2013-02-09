@@ -226,7 +226,11 @@ public class Starter {
       mgr.deployModule(main, conf, instances, doneHandler);
     } else {
       String includes = args.map.get("-includes");
-      mgr.deployVerticle(worker, false, main, conf, urls, instances, includes, doneHandler);
+      if (worker) {
+        mgr.deployWorkerVerticle(false, main, conf, urls, instances, includes, doneHandler);
+      } else {
+        mgr.deployVerticle(main, conf, urls, instances, includes, doneHandler);
+      }
     }
 
     addShutdownHook(mgr);

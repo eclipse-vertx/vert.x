@@ -128,28 +128,20 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     this.exitHandler = handler;
   }
 
-  public void deployVerticle(final boolean worker, final boolean multiThreaded, final String main,
-                             final JsonObject config, URL[] classpath,
-                             final int instances,
-                             final String includes,
-                             final Handler<String> doneHandler) {
-    final File currentModDir = getDeploymentModDir();
-    final URL[] cp;
-    if (classpath == null) {
-      // Use the current modules/verticle's classpath
-      cp = getDeploymentURLs();
-    } else {
-      cp = classpath;
-    }
-    BlockingAction<Void> deployModuleAction = new BlockingAction<Void>(vertx, createHandler(doneHandler)) {
-      @Override
-      public Void action() throws Exception {
-        doDeployVerticle(worker, multiThreaded, main, config, cp, instances, currentModDir,
-            includes, wrapDoneHandler(doneHandler));
-        return null;
-      }
-    };
-    deployModuleAction.run();
+  public void deployVerticle(String main,
+                             JsonObject config, URL[] classpath,
+                             int instances,
+                             String includes,
+                             Handler<String> doneHandler) {
+    deployVerticle(false, false, main, config, classpath, instances, includes, doneHandler);
+  }
+
+  public void deployWorkerVerticle(boolean multiThreaded, String main,
+                                   JsonObject config, URL[] classpath,
+                                   int instances,
+                                   String includes,
+                                   Handler<String> doneHandler) {
+    deployVerticle(true, multiThreaded, main, config, classpath, instances, includes, doneHandler);
   }
 
   public void deployModule(final String moduleName, final JsonObject config,
@@ -301,6 +293,30 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   public Logger getLogger() {
     VerticleHolder holder = getVerticleHolder();
     return holder == null ? null : holder.logger;
+  }
+
+  private void deployVerticle(final boolean worker, final boolean multiThreaded, final String main,
+                              final JsonObject config, URL[] classpath,
+                              final int instances,
+                              final String includes,
+                              final Handler<String> doneHandler) {
+    final File currentModDir = getDeploymentModDir();
+    final URL[] cp;
+    if (classpath == null) {
+      // Use the current modules/verticle's classpath
+      cp = getDeploymentURLs();
+    } else {
+      cp = classpath;
+    }
+    BlockingAction<Void> deployModuleAction = new BlockingAction<Void>(vertx, createHandler(doneHandler)) {
+      @Override
+      public Void action() throws Exception {
+        doDeployVerticle(worker, multiThreaded, main, config, cp, instances, currentModDir,
+            includes, wrapDoneHandler(doneHandler));
+        return null;
+      }
+    };
+    deployModuleAction.run();
   }
 
   private String getDeploymentName() {
