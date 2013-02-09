@@ -55,7 +55,6 @@ public class PrefixLanguageImplementationTest {
     config.putString("foo", "foo");
 
     URL[] urls = new URL[0];
-    File currentModDir = new File(System.getProperty("java.io.tmpdir"));
     String includes = null;
 
     final CountDownLatch latch = new CountDownLatch(1);
@@ -68,7 +67,7 @@ public class PrefixLanguageImplementationTest {
       }
     };
 
-    platformManager.deployVerticle(false, false, main, config, urls, 1, currentModDir, includes, doneHandler);
+    platformManager.deployVerticle(false, false, main, config, urls, 1, includes, doneHandler);
 
     boolean await = false;
 
@@ -94,7 +93,6 @@ public class PrefixLanguageImplementationTest {
     config.putString("foo", "foo");
 
     URL[] urls = new URL[0];
-    File currentModDir = new File(System.getProperty("java.io.tmpdir"));
     String includes = null;
 
     final CountDownLatch latch = new CountDownLatch(1);
@@ -107,7 +105,7 @@ public class PrefixLanguageImplementationTest {
       }
     };
 
-    platformManager.deployVerticle(false, false, main, config, urls, 1, currentModDir, includes, doneHandler);
+    platformManager.deployVerticle(false, false, main, config, urls, 1, includes, doneHandler);
 
     boolean await = false;
 

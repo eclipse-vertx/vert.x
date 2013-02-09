@@ -18,7 +18,17 @@ package org.vertx.java.platform;/*
 
 public interface PlatformManagerFactory {
 
+  /**
+   * Create a non clustered platform manager
+   * @return The instance
+   */
   PlatformManager createPlatformManager();
 
+  /**
+   * Create a clustered platform manager
+   * @param clusterPort The cluster port to listen on
+   * @param clusterHost The cluster host to listen on
+   * @return The instance
+   */
   PlatformManager createPlatformManager(int clusterPort, String clusterHost);
 }

@@ -25,7 +25,6 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.platform.PlatformLocator;
 import org.vertx.java.platform.PlatformManager;
 import org.vertx.java.platform.impl.Args;
-import org.vertx.java.platform.impl.DefaultPlatformManager;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -98,11 +97,11 @@ public class Starter {
   }
 
   private void installModule(String modName) {
-    createPM().installMod(modName);
+    createPM().installModule(modName);
   }
 
   private void uninstallModule(String modName) {
-    createPM().uninstallMod(modName);
+    createPM().uninstallModule(modName);
   }
 
   private PlatformManager createPM() {
@@ -224,10 +223,10 @@ public class Starter {
       }
     };
     if (module) {
-      mgr.deployMod(main, conf, instances, null, doneHandler);
+      mgr.deployModule(main, conf, instances, doneHandler);
     } else {
       String includes = args.map.get("-includes");
-      mgr.deployVerticle(worker, false, main, conf, urls, instances, null, includes, doneHandler);
+      mgr.deployVerticle(worker, false, main, conf, urls, instances, includes, doneHandler);
     }
 
     addShutdownHook(mgr);

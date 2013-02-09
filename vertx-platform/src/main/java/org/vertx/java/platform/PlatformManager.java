@@ -18,49 +18,98 @@ package org.vertx.java.platform;/*
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxFactory;
 import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.platform.impl.Deployment;
 
 import java.io.File;
 import java.net.URL;
 import java.util.Map;
-import java.util.ServiceLoader;
-import java.util.Set;
 
 /**
  * Public interface for PlatformManager
  *
  * It's the role of a PlatformManager to deploy and undeploy modules and verticles. It's also used to install
  * modules, and for various other tasks.
+ *
+ * The Platform Manager basically represents the Vert.x container in which verticles and modules run.
  */
 public interface PlatformManager {
 
-  static PlatformManager instance = ServiceLoader.load(PlatformManagerFactory.class).iterator().next().createPlatformManager();
-
+  /**
+   * Deploy a verticle
+   * @param worker Is it a worker verticle?
+   * @param multiThreaded Is it a multi-threaded worker verticle?
+   * @param main The main, e.g. app.js, foo.rb, org.mycompany.MyMain, etc
+   * @param config Any JSON config to pass to the verticle, or null if none
+   * @param classpath The classpath for the verticle
+   * @param instances The number of instances to deploy
+   * @param includes Comma separated list of modules to include, or null if none
+   * @param doneHandler Handler will be called with deploymentID when deployed, or null if it fails to deploy
+   */
   void deployVerticle(boolean worker, boolean multiThreaded, String main,
-                      JsonObject config, URL[] urls,
-                      int instances, File currentModDir,
+                      JsonObject config, URL[] classpath,
+                      int instances,
                       String includes,
                       Handler<String> doneHandler);
 
-  void deployMod(String modName, JsonObject config,
-                 int instances, File currentModDir, Handler<String> doneHandler);
+  /**
+   * Deploy a module
+   * @param moduleName The name of the module to deploy
+   * @param config Any JSON config to pass to the verticle, or null if none
+   * @param instances The number of instances to deploy
+   * @param doneHandler Handler will be called with deploymentID when deployed, or null if it fails to deploy
+   */
+  void deployModule(String moduleName, JsonObject config,
+                    int instances, Handler<String> doneHandler);
 
+  /**
+   * Undeploy a deployment
+   * @param deploymentID The ID of the deployment to undeploy, as given in the doneHandler when deploying
+   * @param doneHandler The done handler will be called when deployment is complete or fails
+   */
   void undeploy(String deploymentID, Handler<Void> doneHandler);
 
+  /**
+   * Undeploy all verticles and modules
+   * @param doneHandler The done handler will be called when complete
+   */
   void undeployAll(Handler<Void> doneHandler) ;
 
+  /**
+   * List all deployments, with deployment ID and number of instances
+   * @return
+   */
   Map<String, Integer> listInstances();
 
-  void installMod(String moduleName);
+  /**
+   * Install a module into the filesystem
+   * Vert.x will search in the configured repos to locate the module
+   * @param moduleName The name of the module
+   */
+  void installModule(String moduleName);
 
-  void uninstallMod(String moduleName);
+  /**
+   * Uninstall a module from the filesystem
+   * @param moduleName
+   */
+  void uninstallModule(String moduleName);
 
+  /**
+   * Pull in all the dependencies (the 'includes' and the 'deploys' fields in mod.json) and copy them into an
+   * internal mods directory in the module. This allows a self contained module to be created.
+   * @param moduleName The name of the module
+   * @return true if succeeded
+   */
   boolean pullInDependencies(String moduleName);
 
+  /**
+   * Register a handler that will be called when the platform exits because of a verticle calling container.exit()
+   * @param handler The handler
+   */
   void registerExitHandler(Handler<Void> handler);
 
+  /**
+   * @return A reference to the Vertx instance used by the platform manager
+   */
   Vertx getVertx();
 
   // debug only

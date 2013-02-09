@@ -20,21 +20,12 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.platform.PlatformManager;
 
-import java.io.File;
-import java.net.URL;
-
 /**
  * Internal interface - not designed to be publicly used
  */
 public interface PlatformManagerInternal extends PlatformManager {
 
   JsonObject getConfig();
-
-  String getDeploymentName();
-
-  URL[] getDeploymentURLs();
-
-  File getDeploymentModDir();
 
   Logger getLogger();
 

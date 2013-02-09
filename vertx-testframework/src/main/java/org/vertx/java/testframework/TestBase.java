@@ -22,15 +22,11 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.impl.DefaultVertx;
-import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.platform.PlatformLocator;
 import org.vertx.java.platform.PlatformManager;
-import org.vertx.java.platform.impl.DefaultPlatformManager;
-import org.vertx.java.platform.impl.PlatformManagerInternal;
 
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -212,7 +208,7 @@ public class TestBase extends TestCase {
       }
     };
 
-    platformManager.deployVerticle(worker, false, main, config, new URL[]{url}, instances, null, null, doneHandler);
+    platformManager.deployVerticle(worker, false, main, config, new URL[]{url}, instances, null, doneHandler);
 
     if (!doneLatch.await(30, TimeUnit.SECONDS)) {
       throw new IllegalStateException("Timed out waiting for apps to start");
@@ -251,7 +247,7 @@ public class TestBase extends TestCase {
       }
     };
 
-    platformManager.deployMod(modName, config, instances, null, doneHandler);
+    platformManager.deployModule(modName, config, instances, doneHandler);
 
     if (!doneLatch.await(30, TimeUnit.SECONDS)) {
       throw new IllegalStateException("Timedout waiting for apps to start");
