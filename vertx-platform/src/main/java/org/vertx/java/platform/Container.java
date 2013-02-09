@@ -21,7 +21,6 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.platform.impl.PlatformManagerInternal;
 
-import java.io.File;
 import java.net.URL;
 import java.util.Map;
 
@@ -98,9 +97,7 @@ public class Container {
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
   public void deployWorkerVerticle(String main, JsonObject config, int instances, boolean multiThreaded, Handler<String> doneHandler) {
-    URL[] currURLs = mgr.getDeploymentURLs();
-    File modDir = mgr.getDeploymentModDir();
-    mgr.deployVerticle(true, multiThreaded, main, config, currURLs, instances, modDir, null, doneHandler);
+    mgr.deployVerticle(true, multiThreaded, main, config, null, instances, null, doneHandler);
   }
 
   /**
@@ -147,8 +144,7 @@ public class Container {
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
   public void deployModule(String moduleName, JsonObject config, int instances, Handler<String> doneHandler) {
-    File modDir = mgr.getDeploymentModDir();
-    mgr.deployMod(moduleName, config, instances, modDir, doneHandler);
+    mgr.deployModule(moduleName, config, instances, doneHandler);
   }
 
   /**
@@ -195,9 +191,7 @@ public class Container {
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
   public void deployVerticle(String main, JsonObject config, int instances, Handler<String> doneHandler) {
-    URL[] currURLs = mgr.getDeploymentURLs();
-    File modDir = mgr.getDeploymentModDir();
-    mgr.deployVerticle(false, false, main, config, currURLs, instances, modDir, null, doneHandler);
+    mgr.deployVerticle(false, false, main, config, null, instances, null, doneHandler);
   }
 
   /**
