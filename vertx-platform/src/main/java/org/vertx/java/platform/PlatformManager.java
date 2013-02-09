@@ -20,7 +20,6 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.json.JsonObject;
 
-import java.io.File;
 import java.net.URL;
 import java.util.Map;
 
