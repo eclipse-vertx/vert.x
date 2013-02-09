@@ -17,6 +17,8 @@ package org.vertx.java.platform;/*
  */
 
 public interface PlatformManagerFactory {
+
   PlatformManager createPlatformManager();
+
   PlatformManager createPlatformManager(int clusterPort, String clusterHost);
 }
