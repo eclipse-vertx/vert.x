@@ -21,7 +21,6 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.platform.impl.PlatformManagerInternal;
 
-import java.net.URL;
 import java.util.Map;
 
 /**

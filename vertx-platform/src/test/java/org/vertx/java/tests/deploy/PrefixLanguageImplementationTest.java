@@ -17,14 +17,10 @@ package org.vertx.java.tests.deploy;
 
 import org.junit.*;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.impl.DefaultVertx;
-import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.PlatformLocator;
 import org.vertx.java.platform.PlatformManager;
-import org.vertx.java.platform.impl.DefaultPlatformManager;
 
-import java.io.File;
 import java.net.URL;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
