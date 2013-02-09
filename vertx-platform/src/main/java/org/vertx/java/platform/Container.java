@@ -97,7 +97,7 @@ public class Container {
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
   public void deployWorkerVerticle(String main, JsonObject config, int instances, boolean multiThreaded, Handler<String> doneHandler) {
-    mgr.deployVerticle(true, multiThreaded, main, config, null, instances, null, doneHandler);
+    mgr.deployWorkerVerticle(multiThreaded, main, config, null, instances, null, doneHandler);
   }
 
   /**
@@ -191,7 +191,7 @@ public class Container {
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
   public void deployVerticle(String main, JsonObject config, int instances, Handler<String> doneHandler) {
-    mgr.deployVerticle(false, false, main, config, null, instances, null, doneHandler);
+    mgr.deployVerticle(main, config, null, instances, null, doneHandler);
   }
 
   /**

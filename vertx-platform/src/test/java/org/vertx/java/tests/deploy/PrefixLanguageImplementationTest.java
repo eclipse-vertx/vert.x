@@ -67,7 +67,7 @@ public class PrefixLanguageImplementationTest {
       }
     };
 
-    platformManager.deployVerticle(false, false, main, config, urls, 1, includes, doneHandler);
+    platformManager.deployVerticle(main, config, urls, 1, includes, doneHandler);
 
     boolean await = false;
 
@@ -105,7 +105,7 @@ public class PrefixLanguageImplementationTest {
       }
     };
 
-    platformManager.deployVerticle(false, false, main, config, urls, 1, includes, doneHandler);
+    platformManager.deployVerticle(main, config, urls, 1, includes, doneHandler);
 
     boolean await = false;
 

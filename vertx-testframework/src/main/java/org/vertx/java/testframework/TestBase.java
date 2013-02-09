@@ -208,7 +208,11 @@ public class TestBase extends TestCase {
       }
     };
 
-    platformManager.deployVerticle(worker, false, main, config, new URL[]{url}, instances, null, doneHandler);
+    if (worker) {
+      platformManager.deployWorkerVerticle(false, main, config, new URL[]{url}, instances, null, doneHandler);
+    } else {
+      platformManager.deployVerticle(main, config, new URL[]{url}, instances, null, doneHandler);
+    }
 
     if (!doneLatch.await(30, TimeUnit.SECONDS)) {
       throw new IllegalStateException("Timed out waiting for apps to start");
