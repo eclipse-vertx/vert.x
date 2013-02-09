@@ -210,7 +210,7 @@ public class LocalEchoClient extends EventBusAppBase {
   private <T> Handler<Message<T>> echoHandler(final Object msg) {
     Handler<Message<T>> handler = new Handler<Message<T>>() {
       public void handle(Message reply) {
-        tu.checkContext();
+        tu.checkThread();
         if (msg == null) {
           tu.azzert(reply.body == null);
         } else {

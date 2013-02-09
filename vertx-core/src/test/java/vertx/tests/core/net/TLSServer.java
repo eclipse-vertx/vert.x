@@ -61,7 +61,7 @@ public class TLSServer extends Verticle {
   public void stop() {
     server.close(new SimpleHandler() {
       public void handle() {
-        tu.checkContext();
+        tu.checkThread();
         tu.appStopped();
       }
     });
@@ -71,10 +71,10 @@ public class TLSServer extends Verticle {
     return new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
 
-        tu.checkContext();
+        tu.checkThread();
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
-            tu.checkContext();
+            tu.checkThread();
             socket.write(buffer);
           }
         });

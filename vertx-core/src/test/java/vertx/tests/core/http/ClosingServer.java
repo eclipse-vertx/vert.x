@@ -35,7 +35,7 @@ public class ClosingServer extends Verticle {
     tu = new TestUtils(vertx);
     server = vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
 
         req.response.end();
 

@@ -16,29 +16,20 @@ package org.vertx.java.platform.impl;/*
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 
-import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.logging.Logger;
 import org.vertx.java.platform.PlatformManager;
-
-import java.io.File;
-import java.net.URL;
+import org.vertx.java.platform.PlatformManagerFactory;
 
 /**
- * Internal interface - not designed to be publicly used
+ * Don't use this class directly to create PlatformManager instances - instead use the
+ * PlatformLocator class
  */
-public interface PlatformManagerInternal extends PlatformManager {
+public class DefaultPlatformManagerFactory implements PlatformManagerFactory {
 
-  JsonObject getConfig();
+  public PlatformManager createPlatformManager() {
+    return new DefaultPlatformManager();
+  }
 
-  String getDeploymentName();
-
-  URL[] getDeploymentURLs();
-
-  File getDeploymentModDir();
-
-  Logger getLogger();
-
-  void removeModule(String moduleKey);
-
-  void exit();
+  public PlatformManager createPlatformManager(int clusterPort, String clusterHost) {
+    return new DefaultPlatformManager(clusterPort, clusterHost);
+  }
 }

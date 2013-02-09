@@ -20,12 +20,15 @@ import junit.framework.TestCase;
 import org.junit.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.platform.PlatformLocator;
+import org.vertx.java.platform.PlatformManager;
 import org.vertx.java.platform.impl.DefaultPlatformManager;
 import org.vertx.java.platform.impl.PlatformManagerInternal;
 
@@ -47,8 +50,8 @@ public class TestBase extends TestCase {
   public static final String EVENTS_ADDRESS = "__test_events";
 
   // A single Vertx and DefaultPlatformManager for <b>ALL</b> tests
-  protected static VertxInternal vertx = new DefaultVertx();
-  private static PlatformManagerInternal platformManager = new DefaultPlatformManager(vertx);
+  private static PlatformManager platformManager = PlatformLocator.factory.createPlatformManager();
+  protected static Vertx vertx = platformManager.getVertx();
 
   private BlockingQueue<JsonObject> events = new LinkedBlockingQueue<>();
   private TestUtils tu = new TestUtils(vertx);

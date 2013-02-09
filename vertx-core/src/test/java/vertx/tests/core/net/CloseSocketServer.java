@@ -31,7 +31,7 @@ public class CloseSocketServer extends BaseServer {
   protected Handler<NetSocket> getConnectHandler() {
     return new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
-        tu.checkContext();
+        tu.checkThread();
         socket.close();
       }
     };

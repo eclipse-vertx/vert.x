@@ -54,7 +54,7 @@ public abstract class BaseServer extends Verticle {
   public void stop() {
     server.close(new SimpleHandler() {
       public void handle() {
-        tu.checkContext();
+        tu.checkThread();
         tu.appStopped();
 
       }

@@ -36,7 +36,7 @@ public class CountServer extends Verticle {
     tu = new TestUtils(vertx);
     server = vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         req.response.headers().put("count", req.headers().get("count"));
         req.response.end();
       }
@@ -48,7 +48,7 @@ public class CountServer extends Verticle {
   public void stop() {
     server.close(new SimpleHandler() {
       public void handle() {
-        tu.checkContext();
+        tu.checkThread();
         tu.appStopped();
       }
     });

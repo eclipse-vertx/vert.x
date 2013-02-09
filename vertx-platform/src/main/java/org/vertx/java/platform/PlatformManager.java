@@ -17,18 +17,26 @@ package org.vertx.java.platform;/*
  */
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxFactory;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.impl.Deployment;
 
 import java.io.File;
 import java.net.URL;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
 
 /**
- * TODO
+ * Public interface for PlatformManager
+ *
+ * It's the role of a PlatformManager to deploy and undeploy modules and verticles. It's also used to install
+ * modules, and for various other tasks.
  */
 public interface PlatformManager {
+
+  static PlatformManager instance = ServiceLoader.load(PlatformManagerFactory.class).iterator().next().createPlatformManager();
 
   void deployVerticle(final boolean worker, final boolean multiThreaded, final String main,
                       final JsonObject config, final URL[] urls,
@@ -51,10 +59,11 @@ public interface PlatformManager {
 
   boolean pullInDependencies(String moduleName);
 
-  void reloadModules(final Set<Deployment> deps);
+  void registerExitHandler(Handler<Void> handler);
 
-  void block();
+  Vertx getVertx();
 
-  void unblock();
+  // debug only
+  int checkNoModules();
 
 }

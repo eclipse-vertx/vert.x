@@ -17,6 +17,7 @@
 package org.vertx.java.platform.impl;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
@@ -46,15 +47,15 @@ public class Redeployer {
   private final Map<WatchKey, Path> watchKeys = new HashMap<>();
   private final Map<Path, Path> moduleDirs = new HashMap<>();
   private final WatchService watchService;
-  private final VertxInternal vertx;
+  private final Vertx vertx;
   private final Map<Path, Long> changing = new HashMap<>();
   private final long timerID;
   private final Queue<Deployment> toDeploy = new ConcurrentLinkedQueue<>();
   private final Queue<Deployment> toUndeploy = new ConcurrentLinkedQueue<>();
-  private Context ctx;
+  private Thread thread;
   private boolean closed;
 
-  public Redeployer(VertxInternal vertx, File modRoot, ModuleReloader reloader) {
+  public Redeployer(Vertx vertx, File modRoot, ModuleReloader reloader) {
     this.modRoot = modRoot;
     this.reloader = reloader;
     try {
@@ -69,11 +70,7 @@ public class Redeployer {
       public void handle(Long id) {
         synchronized (Redeployer.this) {
           if (!closed) {
-            if (ctx == null) {
-              ctx = Redeployer.this.vertx.getContext();
-            } else {
-              checkContext();
-            }
+            checkThread();
             try {
               checkEvents();
             } catch (Exception e) {
@@ -276,10 +273,13 @@ public class Redeployer {
 //    log.info("watcheddeployments:" + size);
 //  }
 
-  private void checkContext() {
+  private void checkThread() {
     //Sanity check
-    if (vertx.getContext() != ctx) {
-      throw new IllegalStateException("Got context: " + vertx.getContext() + " expected " + ctx);
+    Thread curr = Thread.currentThread();
+    if (thread == null) {
+      thread = curr;
+    } else if (curr != thread) {
+      throw new IllegalStateException("Wrong thread: " + curr + " expected " + thread);
     }
   }
 

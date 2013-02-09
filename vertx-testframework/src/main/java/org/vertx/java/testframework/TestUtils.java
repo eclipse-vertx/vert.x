@@ -42,15 +42,13 @@ public class TestUtils {
 
   private static final Logger log = LoggerFactory.getLogger(TestUtils.class);
 
-  private final VertxInternal vertx;
+  private final Vertx vertx;
   private final Thread th;
-  private final Context context;
   private Map<String, Handler<Message<JsonObject>>> handlers = new HashMap<>();
 
   public TestUtils(final Vertx vertx) {
-  	this.vertx = (VertxInternal) Args.notNull(vertx, "vertx");
+  	this.vertx = Args.notNull(vertx, "vertx");
     this.th = Thread.currentThread();
-    this.context = this.vertx.getContext();
   }
 
   public void azzert(boolean result) {
@@ -229,12 +227,8 @@ public class TestUtils {
     return true;
   }
 
-  public void checkContext() {
-    if (context == null) {
-      throw new IllegalStateException("Don't call checkContext if utils were created with a null context");
-    }
+  public void checkThread() {
     azzert(th == Thread.currentThread(), "Expected:" + th + " Actual:" + Thread.currentThread());
-    azzert(context.equals(vertx.getContext()), "Expected:" + context + " Actual:" + vertx.getContext());
   }
 
 }

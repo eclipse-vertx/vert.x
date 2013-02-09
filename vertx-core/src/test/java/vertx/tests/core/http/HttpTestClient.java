@@ -54,7 +54,7 @@ public class HttpTestClient extends TestClientBase {
     if (server != null) {
       server.close(new SimpleHandler() {
         public void handle() {
-          tu.checkContext();
+          tu.checkThread();
           HttpTestClient.super.stop();
         }
       });
@@ -443,7 +443,7 @@ public class HttpTestClient extends TestClientBase {
   private void testSimpleRequest(final String method, final boolean specificMethod) {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         tu.azzert(req.method.equals(method));
         req.response.end();
       }
@@ -451,7 +451,7 @@ public class HttpTestClient extends TestClientBase {
 
     getRequest(specificMethod, method, "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
         tu.testComplete();
       }
     }).end();
@@ -460,7 +460,7 @@ public class HttpTestClient extends TestClientBase {
   public void testHeadNoBody() {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         tu.azzert(req.method.equals("HEAD"));
         // Head never contains a body but it can contain a Content-Length header
         // Since headers from HEAD must correspond EXACTLY with corresponding headers for GET
@@ -471,7 +471,7 @@ public class HttpTestClient extends TestClientBase {
 
     getRequest(true, "HEAD", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
         tu.azzert(Integer.valueOf(resp.headers().get("Content-Length")) == 41);
         resp.endHandler(new SimpleHandler() {
           @Override
@@ -495,7 +495,7 @@ public class HttpTestClient extends TestClientBase {
   private void testURIAndPath(final String uri, final String path) {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         tu.azzert(uri.equals(req.uri));
         tu.azzert(path.equals(req.path));
         req.response.end();
@@ -504,7 +504,7 @@ public class HttpTestClient extends TestClientBase {
 
     getRequest(true, "GET", uri, new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
         tu.testComplete();
       }
     }).end();
@@ -523,7 +523,7 @@ public class HttpTestClient extends TestClientBase {
     final String query = generateQueryString(params, delim);
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         tu.azzert(query.equals(req.query));
         tu.azzert(req.params().size() == params.size());
         for (Map.Entry<String, String> entry : req.params().entrySet()) {
@@ -535,7 +535,7 @@ public class HttpTestClient extends TestClientBase {
 
     getRequest(true, "GET", "some-uri/?" + query, new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
         tu.testComplete();
       }
     }).end();
@@ -544,7 +544,7 @@ public class HttpTestClient extends TestClientBase {
   public void testNoParams() {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         tu.azzert(req.query == null);
         tu.azzert(req.params().isEmpty());
         req.response.end();
@@ -553,7 +553,7 @@ public class HttpTestClient extends TestClientBase {
 
     getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
         tu.testComplete();
       }
     }).end();
@@ -562,7 +562,7 @@ public class HttpTestClient extends TestClientBase {
   public void testDefaultRequestHeaders() {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         tu.azzert(req.headers().size() == 1);
         tu.azzert(req.headers().get("host").equals("localhost:8080"));
         tu.azzert(req.headers().get("host").equals("localhost:8080"));
@@ -572,7 +572,7 @@ public class HttpTestClient extends TestClientBase {
 
     getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
         tu.testComplete();
       }
     }).end();
@@ -590,7 +590,7 @@ public class HttpTestClient extends TestClientBase {
     final Map<String, String> headers = genMap(10);
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         tu.azzert(req.headers().size() == 1 + headers.size());
         for (Map.Entry<String, String> entry : headers.entrySet()) {
           tu.azzert(entry.getValue().equals(req.headers().get(entry.getKey())));
@@ -601,7 +601,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
         tu.testComplete();
       }
     });
@@ -619,7 +619,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         tu.azzert(req.headers().get("Foo").equals("foo"));
         tu.azzert(req.headers().get("foo").equals("foo"));
         tu.azzert(req.headers().get("fOO").equals("foo"));
@@ -645,7 +645,7 @@ public class HttpTestClient extends TestClientBase {
         tu.azzert(resp.headers().containsKey("Quux"));
         tu.azzert(resp.headers().containsKey("quux"));
         tu.azzert(resp.headers().containsKey("qUUX"));
-        tu.checkContext();
+        tu.checkThread();
         tu.testComplete();
       }
     });
@@ -679,7 +679,7 @@ public class HttpTestClient extends TestClientBase {
       @Override
       public void handle(Exception event) {
         tu.azzert(event instanceof TimeoutException, "Expected to end with timeout exception but ended with other exception: " + event);
-        tu.checkContext();
+        tu.checkThread();
         tu.testComplete();
       }
     });
@@ -711,7 +711,7 @@ public class HttpTestClient extends TestClientBase {
         tu.azzert(exception.get() != null, "Expected an exception to be set");
         tu.azzert(!(exception.get() instanceof TimeoutException), 
         		"Expected to not end with timeout exception, but did: " + exception.get());
-        tu.checkContext();
+        tu.checkThread();
         tu.testComplete();
       }
     });
@@ -748,7 +748,7 @@ public class HttpTestClient extends TestClientBase {
       @Override
       public void handle(Long event) {
         tu.azzert(exception.get() == null, "Did not expect any exception");
-        tu.checkContext();
+        tu.checkThread();
         tu.testComplete();
       }
     });
@@ -779,7 +779,7 @@ public class HttpTestClient extends TestClientBase {
         //Delay a bit to let any response come back
         vertx.setTimer(500, new Handler<Long>() {
           public void handle(Long event) {
-            tu.checkContext();
+            tu.checkThread();
             tu.testComplete();
           }
         });
@@ -793,13 +793,13 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
       }
     });
 
     HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
       }
     });
 
@@ -937,7 +937,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(body, buff));
@@ -949,7 +949,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
         tu.testComplete();
       }
     });
@@ -983,7 +983,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(bodyBuff, buff));
@@ -995,7 +995,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
         tu.testComplete();
       }
     });
@@ -1011,7 +1011,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
           }
@@ -1021,7 +1021,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
         tu.testComplete();
       }
     });
@@ -1057,7 +1057,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(body, buff));
@@ -1069,7 +1069,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
       }
     });
 
@@ -1168,7 +1168,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(bodyBuff, buff));
@@ -1180,7 +1180,7 @@ public class HttpTestClient extends TestClientBase {
 
     final HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
         tu.testComplete();
       }
     });
@@ -1216,7 +1216,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(body, buff));
@@ -1228,7 +1228,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
         tu.testComplete();
       }
     });
@@ -1255,7 +1255,7 @@ public class HttpTestClient extends TestClientBase {
   private void testStatusCode(final int code, final String statusMessage) {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         if (code != -1) {
           req.response.statusCode = code;
         }
@@ -1268,7 +1268,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
         if (code != -1) {
           tu.azzert(resp.statusCode == code);
         } else {
@@ -1296,7 +1296,7 @@ public class HttpTestClient extends TestClientBase {
     final Map<String, String> headers = genMap(10);
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         if (individually) {
           for (Map.Entry<String, String> header : headers.entrySet()) {
             req.response.headers().put(header.getKey(), header.getValue());
@@ -1310,7 +1310,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
         tu.azzert(resp.headers().size() == headers.size() + 1);
         for (Map.Entry<String, String> entry : headers.entrySet()) {
           tu.azzert(entry.getValue().equals(resp.headers().get(entry.getKey())));
@@ -1334,7 +1334,7 @@ public class HttpTestClient extends TestClientBase {
     final Map<String, String> trailers = genMap(10);
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         req.response.setChunked(true);
         if (individually) {
           for (Map.Entry<String, String> header : trailers.entrySet()) {
@@ -1349,7 +1349,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(final HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
         resp.endHandler(new SimpleHandler() {
           public void handle() {
             tu.azzert(resp.trailers().size() == trailers.size());
@@ -1368,7 +1368,7 @@ public class HttpTestClient extends TestClientBase {
   public void testResponseNoTrailers() {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         req.response.setChunked(true);
         req.response.end();
       }
@@ -1376,7 +1376,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(final HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
         resp.endHandler(new SimpleHandler() {
           public void handle() {
             tu.azzert(resp.trailers().isEmpty());
@@ -1404,7 +1404,7 @@ public class HttpTestClient extends TestClientBase {
     final List<String> cookies = new ArrayList<>();
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         if (inHeader) {
           final List<String> headers = new ArrayList<>();
           headers.add("h1=h1v1");
@@ -1426,7 +1426,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(final HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
         resp.endHandler(new SimpleHandler() {
           public void handle() {
             tu.azzert(resp.cookies().size() == cookies.size());
@@ -1446,7 +1446,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
 
         Handler<Void> handler = new SimpleHandler() {
           public void handle() {
@@ -1576,7 +1576,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
       }
     });
 
@@ -1589,14 +1589,14 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         req.response.end(body);
       }
     });
 
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
         resp.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(body, buff));
@@ -1634,7 +1634,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
 
         if (encoding == null) {
           req.response.end(body);
@@ -1646,7 +1646,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
         resp.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(bodyBuff, buff));
@@ -1663,7 +1663,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         try {
           req.response.write("foo");
           tu.azzert(false, "Should throw exception");
@@ -1676,7 +1676,7 @@ public class HttpTestClient extends TestClientBase {
 
     getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
       }
     }).end();
   }
@@ -1706,7 +1706,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
 
         if (chunked) {
           req.response.setChunked(true);
@@ -1728,7 +1728,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
         resp.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(body, buff));
@@ -1815,7 +1815,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         if (chunked) {
           req.response.setChunked(true);
         } else {
@@ -1845,7 +1845,7 @@ public class HttpTestClient extends TestClientBase {
 
     final HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
         resp.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(bodyBuff, buff));
@@ -1863,7 +1863,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         req.response.setChunked(true);
         req.response.writeBuffer(body);
         req.response.end();
@@ -1872,7 +1872,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        tu.checkContext();
+        tu.checkThread();
         resp.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(body, buff));
@@ -2032,7 +2032,7 @@ public class HttpTestClient extends TestClientBase {
       public void handle(final HttpServerRequest req) {
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
-            tu.checkContext();
+            tu.checkThread();
             tu.azzert(TestUtils.buffersEqual(toSend, data));
             req.response.end();
           }
@@ -2043,7 +2043,7 @@ public class HttpTestClient extends TestClientBase {
       public void handle(HttpClientResponse resp) {
         resp.endHandler(new SimpleHandler() {
           public void handle() {
-            tu.checkContext();
+            tu.checkThread();
             tu.testComplete();
           }
         });
@@ -2053,7 +2053,7 @@ public class HttpTestClient extends TestClientBase {
     req.setChunked(true);
     req.continueHandler(new SimpleHandler() {
       public void handle() {
-        tu.checkContext();
+        tu.checkThread();
         req.write(toSend);
         req.end();
       }
@@ -2070,7 +2070,7 @@ public class HttpTestClient extends TestClientBase {
         req.response.headers().put("HTTP/1.1", "100 Continue");
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
-            tu.checkContext();
+            tu.checkThread();
             tu.azzert(TestUtils.buffersEqual(toSend, data));
             req.response.end();
           }
@@ -2082,7 +2082,7 @@ public class HttpTestClient extends TestClientBase {
       public void handle(HttpClientResponse resp) {
         resp.endHandler(new SimpleHandler() {
           public void handle() {
-            tu.checkContext();
+            tu.checkThread();
             tu.testComplete();
           }
         });
@@ -2093,7 +2093,7 @@ public class HttpTestClient extends TestClientBase {
     req.setChunked(true);
     req.continueHandler(new SimpleHandler() {
       public void handle() {
-        tu.checkContext();
+        tu.checkThread();
         req.write(toSend);
         req.end();
       }
@@ -2112,13 +2112,13 @@ public class HttpTestClient extends TestClientBase {
     final Buffer buff = TestUtils.generateRandomBuffer(10000);
     vertx.setPeriodic(0, new Handler<Long>() {
       public void handle(Long id) {
-        tu.checkContext();
+        tu.checkThread();
         req.write(buff);
         if (req.writeQueueFull()) {
           vertx.cancelTimer(id);
           req.drainHandler(new SimpleHandler() {
             public void handle() {
-              tu.checkContext();
+              tu.checkThread();
               tu.azzert(!req.writeQueueFull());
               tu.testComplete();
             }
@@ -2137,14 +2137,14 @@ public class HttpTestClient extends TestClientBase {
         resp.pause();
         final Handler<Message<Buffer>> resumeHandler = new Handler<Message<Buffer>>() {
           public void handle(Message<Buffer> message) {
-            tu.checkContext();
+            tu.checkThread();
             resp.resume();
           }
         };
         vertx.eventBus().registerHandler("client_resume", resumeHandler);
         resp.endHandler(new SimpleHandler() {
           public void handle() {
-            tu.checkContext();
+            tu.checkThread();
             vertx.eventBus().unregisterHandler("client_resume", resumeHandler);
           }
         });
@@ -2195,7 +2195,7 @@ public class HttpTestClient extends TestClientBase {
     final Handler<String> checkEndHandler = new Handler<String>() {
       public void handle(final String name) {
         if (clientExceptions.get() == 1 && req2Exceptions.get() ==1  && req3Exceptions.get() ==1) {
-          tu.checkContext();
+          tu.checkThread();
           tu.testComplete();
         }
       }
@@ -2309,7 +2309,7 @@ public class HttpTestClient extends TestClientBase {
 
     HttpClientRequest req = client.get("someurl", new Handler<HttpClientResponse>() {
       public void handle(final HttpClientResponse response) {
-        tu.checkContext();
+        tu.checkThread();
         response.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
             tu.azzert("bar".equals(data.toString()));
@@ -2353,7 +2353,7 @@ public class HttpTestClient extends TestClientBase {
   Handler<Exception> createNoConnectHandler() {
     return new Handler<Exception>() {
       public void handle(Exception e) {
-        tu.checkContext();
+        tu.checkThread();
         tu.testComplete();
       }
     };

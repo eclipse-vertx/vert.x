@@ -37,7 +37,7 @@ public class InstanceCheckServer extends BaseServer {
 
       public void handle(final NetSocket socket) {
 
-        tu.checkContext();
+        tu.checkThread();
         //We add the object id of the server to the set
 
         vertx.sharedData().getSet("instances").add(id);

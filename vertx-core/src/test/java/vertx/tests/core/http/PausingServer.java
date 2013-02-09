@@ -38,25 +38,25 @@ public class PausingServer extends Verticle {
     tu = new TestUtils(vertx);
     server = vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
         req.response.setChunked(true);
         req.pause();
         final Handler<Message<Buffer>> resumeHandler = new Handler<Message<Buffer>>() {
           public void handle(Message message) {
-            tu.checkContext();
+            tu.checkThread();
             req.resume();
           }
         };
         vertx.eventBus().registerHandler("server_resume", resumeHandler);
         req.endHandler(new SimpleHandler() {
           public void handle() {
-            tu.checkContext();
+            tu.checkThread();
             vertx.eventBus().unregisterHandler("server_resume", resumeHandler);
           }
         });
         req.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
-            tu.checkContext();
+            tu.checkThread();
             req.response.write(buffer);
           }
         });
@@ -69,7 +69,7 @@ public class PausingServer extends Verticle {
   public void stop() {
     server.close(new SimpleHandler() {
       public void handle() {
-        tu.checkContext();
+        tu.checkThread();
         tu.appStopped();
       }
     });
