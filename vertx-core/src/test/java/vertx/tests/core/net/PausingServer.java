@@ -34,24 +34,24 @@ public class PausingServer extends BaseServer {
   protected Handler<NetSocket> getConnectHandler() {
     return new Handler<NetSocket>() {
       public void handle(final NetSocket sock) {
-        tu.checkContext();
+        tu.checkThread();
         sock.pause();
         final Handler<Message<Buffer>> resumeHandler = new Handler<Message<Buffer>>() {
           public void handle(Message<Buffer> message) {
-            tu.checkContext();
+            tu.checkThread();
             sock.resume();
           }
         };
         vertx.eventBus().registerHandler("server_resume", resumeHandler);
         sock.closedHandler(new SimpleHandler() {
           public void handle() {
-            tu.checkContext();
+            tu.checkThread();
             vertx.eventBus().unregisterHandler("server_resume", resumeHandler);
           }
         });
         sock.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
-            tu.checkContext();
+            tu.checkThread();
           }
         });
       }

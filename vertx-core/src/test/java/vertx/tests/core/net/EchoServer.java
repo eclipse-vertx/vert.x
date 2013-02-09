@@ -36,10 +36,10 @@ public class EchoServer extends BaseServer {
   protected Handler<NetSocket> getConnectHandler() {
     return new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
-        tu.checkContext();
+        tu.checkThread();
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
-            tu.checkContext();
+            tu.checkThread();
             socket.write(buffer);
           }
         });

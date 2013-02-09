@@ -18,12 +18,11 @@ package org.vertx.java.platform.impl.cli;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.impl.DefaultVertx;
-import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.platform.PlatformLocator;
 import org.vertx.java.platform.PlatformManager;
 import org.vertx.java.platform.impl.Args;
 import org.vertx.java.platform.impl.DefaultPlatformManager;
@@ -52,8 +51,7 @@ public class Starter {
     new Starter(args);
   }
 
-  private VertxInternal vertx = new DefaultVertx();
-  private PlatformManager mgr;
+  private CountDownLatch stopLatch = new CountDownLatch(1);
 
   private Starter(String[] sargs) {
     if (sargs.length < 1) {
@@ -96,19 +94,40 @@ public class Starter {
   }
 
   private void pullDependencies(String modName) {
-    new DefaultPlatformManager(vertx).pullInDependencies(modName);
+    createPM().pullInDependencies(modName);
   }
 
   private void installModule(String modName) {
-    new DefaultPlatformManager(vertx).installMod(modName);
+    createPM().installMod(modName);
   }
 
   private void uninstallModule(String modName) {
-    new DefaultPlatformManager(vertx).uninstallMod(modName);
+    createPM().uninstallMod(modName);
+  }
+
+  private PlatformManager createPM() {
+    PlatformManager pm = PlatformLocator.factory.createPlatformManager();
+    registerExitHandler(pm);
+    return pm;
+  }
+
+  private PlatformManager createPM(int port, String host) {
+    PlatformManager pm =  PlatformLocator.factory.createPlatformManager(port, host);
+    registerExitHandler(pm);
+    return pm;
+  }
+
+  private void registerExitHandler(PlatformManager mgr) {
+    mgr.registerExitHandler(new SimpleHandler() {
+      public void handle() {
+        unblock();
+      }
+    });
   }
 
   private void runVerticle(boolean module, String main, Args args) {
     boolean clustered = args.map.get("-cluster") != null;
+    PlatformManager mgr;
     if (clustered) {
       log.info("Starting clustering...");
       int clusterPort = args.getInt("-cluster-port");
@@ -125,9 +144,10 @@ public class Starter {
           log.info("No cluster-host specified so using address " + clusterHost);
         }
       }
-      vertx = new DefaultVertx(clusterPort, clusterHost);
+      mgr = createPM(clusterPort, clusterHost);
+    } else {
+      mgr = createPM();
     }
-    mgr = new DefaultPlatformManager(vertx);
 
     boolean worker = args.map.get("-worker") != null;
 
@@ -199,7 +219,7 @@ public class Starter {
       public void handle(String id) {
         if (id == null) {
           // Failed to deploy
-          mgr.unblock();
+          unblock();
         }
       }
     };
@@ -210,12 +230,27 @@ public class Starter {
       mgr.deployVerticle(worker, false, main, conf, urls, instances, null, includes, doneHandler);
     }
 
-    addShutdownHook();
-    mgr.block();
+    addShutdownHook(mgr);
+    block();
+  }
+
+  private void block() {
+    while (true) {
+      try {
+        stopLatch.await();
+        break;
+      } catch (InterruptedException e) {
+        //Ignore
+      }
+    }
+  }
+
+  private void unblock() {
+    stopLatch.countDown();
   }
 
 
-  private void addShutdownHook() {
+  private void addShutdownHook(final PlatformManager mgr) {
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
         final CountDownLatch latch = new CountDownLatch(1);

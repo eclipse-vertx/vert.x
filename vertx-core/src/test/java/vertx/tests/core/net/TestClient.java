@@ -304,7 +304,7 @@ public class TestClient extends TestClientBase {
   private Handler<NetSocket> getEchoHandler() {
     return new Handler<NetSocket>() {
       public void handle(NetSocket socket) {
-        tu.checkContext();
+        tu.checkThread();
         final int numChunks = 100;
         final int chunkSize = 100;
 
@@ -313,7 +313,7 @@ public class TestClient extends TestClientBase {
 
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
-            tu.checkContext();
+            tu.checkThread();
             received.appendBuffer(buffer);
             if (received.length() == sent.length()) {
               tu.azzert(TestUtils.buffersEqual(sent, received));
@@ -352,7 +352,7 @@ public class TestClient extends TestClientBase {
     client.connect(1234, new Handler<NetSocket>() {
       public void handle(NetSocket socket) {
 
-        tu.checkContext();
+        tu.checkThread();
 
         final String str = TestUtils.randomUnicodeString(1000);
         final Buffer sentBuff = enc == null ? new Buffer(str) : new Buffer(str, enc);
@@ -362,7 +362,7 @@ public class TestClient extends TestClientBase {
 
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
-            tu.checkContext();
+            tu.checkThread();
             received.appendBuffer(buffer);
             if (received.length() == sentBuff.length()) {
               String rec = enc == null ? received.toString() : received.toString(enc);
@@ -395,7 +395,7 @@ public class TestClient extends TestClientBase {
     for (int i = 0; i < numConnections; i++) {
       Handler<NetSocket> handler =  new Handler<NetSocket>() {
         public void handle(NetSocket sock) {
-          tu.checkContext();
+          tu.checkThread();
           sock.close();
           if (connCount.incrementAndGet() == numConnections) {
             tu.testComplete();
@@ -439,17 +439,17 @@ public class TestClient extends TestClientBase {
   void clientCloseHandlers(final boolean closeFromClient) {
     client.connect(1234, new Handler<NetSocket>() {
       public void handle(NetSocket sock) {
-        tu.checkContext();
+        tu.checkThread();
         final AtomicInteger counter = new AtomicInteger(0);
         sock.endHandler(new SimpleHandler() {
           public void handle() {
-            tu.checkContext();
+            tu.checkThread();
             tu.azzert(counter.incrementAndGet() == 1);
           }
         });
         sock.closedHandler(new SimpleHandler() {
           public void handle() {
-            tu.checkContext();
+            tu.checkThread();
             tu.azzert(counter.incrementAndGet() == 2);
             tu.testComplete();
           }
@@ -481,7 +481,7 @@ public class TestClient extends TestClientBase {
     client.connect(1234, new Handler<NetSocket>() {
 
       public void handle(final NetSocket sock) {
-        tu.checkContext();
+        tu.checkThread();
         tu.azzert(!sock.writeQueueFull());
         sock.setWriteQueueMaxSize(1000);
         final Buffer buff = TestUtils.generateRandomBuffer(10000);
@@ -492,7 +492,7 @@ public class TestClient extends TestClientBase {
               vertx.cancelTimer(id);
               sock.drainHandler(new SimpleHandler() {
                 public void handle() {
-                  tu.checkContext();
+                  tu.checkThread();
                   tu.azzert(!sock.writeQueueFull());
                   tu.testComplete();
                 }
@@ -511,7 +511,7 @@ public class TestClient extends TestClientBase {
     Context ctx = ((VertxInternal)vertx).getContext();
     client.connect(1234, new Handler<NetSocket>() {
       public void handle(final NetSocket sock) {
-        tu.checkContext();
+        tu.checkThread();
         sock.pause();
         setHandlers(sock);
         sock.dataHandler(new Handler<Buffer>() {
@@ -538,7 +538,7 @@ public class TestClient extends TestClientBase {
             }
           }
         });
-        tu.checkContext();
+        tu.checkThread();
         doWrite(sentBuff, sock, numSends, sendSize);
       }
     });
@@ -559,7 +559,7 @@ public class TestClient extends TestClientBase {
     //The server delays starting for a a few seconds, but it should still connect
     client.connect(1234, new Handler<NetSocket>() {
       public void handle(NetSocket sock) {
-        tu.checkContext();
+        tu.checkThread();
         tu.testComplete();
       }
     });
@@ -571,7 +571,7 @@ public class TestClient extends TestClientBase {
 
     client.exceptionHandler(new Handler<Exception>() {
       public void handle(Exception e) {
-        tu.checkContext();
+        tu.checkThread();
         tu.testComplete();
       }
     });
@@ -579,7 +579,7 @@ public class TestClient extends TestClientBase {
     //The server delays starting for a a few seconds, and it should run out of attempts before that
     client.connect(1234, new Handler<NetSocket>() {
       public void handle(NetSocket sock) {
-        tu.checkContext();
+        tu.checkThread();
         tu.azzert(false, "Should not connect");
       }
     });
@@ -645,7 +645,7 @@ public class TestClient extends TestClientBase {
 
     client.connect(4043, new Handler<NetSocket>() {
       public void handle(NetSocket socket) {
-        tu.checkContext();
+        tu.checkThread();
         if (!shouldPass) {
           tu.azzert(false, "Should not connect");
           return;
@@ -658,7 +658,7 @@ public class TestClient extends TestClientBase {
 
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
-            tu.checkContext();
+            tu.checkThread();
             received.appendBuffer(buffer);
             if (received.length() == sent.length()) {
               tu.azzert(TestUtils.buffersEqual(sent, received));
@@ -778,14 +778,14 @@ public class TestClient extends TestClientBase {
   void setHandlers(final NetSocket sock) {
     final Handler<Message<Buffer>> resumeHandler = new Handler<Message<Buffer>>() {
       public void handle(Message<Buffer> message) {
-        tu.checkContext();
+        tu.checkThread();
         sock.resume();
       }
     };
     vertx.eventBus().registerHandler("client_resume", resumeHandler);
     sock.closedHandler(new SimpleHandler() {
       public void handle() {
-        tu.checkContext();
+        tu.checkThread();
         vertx.eventBus().unregisterHandler("client_resume", resumeHandler);
       }
     });
@@ -794,7 +794,7 @@ public class TestClient extends TestClientBase {
   Handler<Exception> createNoConnectHandler() {
     return new Handler<Exception>() {
       public void handle(Exception e) {
-        tu.checkContext();
+        tu.checkThread();
         tu.testComplete();
       }
     };
@@ -809,13 +809,13 @@ public class TestClient extends TestClientBase {
     if (count == 0) {
       sock.write(b, new SimpleHandler() {
         public void handle() {
-          tu.checkContext();
+          tu.checkThread();
         }
       });
     } else {
       sock.write(b, new SimpleHandler() {
         public void handle() {
-          tu.checkContext();
+          tu.checkThread();
           doWrite(sentBuff, sock, c, sendSize);
         }
       });

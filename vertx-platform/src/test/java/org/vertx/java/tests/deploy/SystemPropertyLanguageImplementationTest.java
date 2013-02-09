@@ -20,6 +20,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.platform.PlatformLocator;
 import org.vertx.java.platform.PlatformManager;
 import org.vertx.java.platform.impl.DefaultPlatformManager;
 
@@ -35,7 +36,6 @@ import java.util.concurrent.TimeUnit;
 public class SystemPropertyLanguageImplementationTest {
 
   private PlatformManager platformManager;
-  private VertxInternal vertxInternal;
 
   @BeforeClass
   public static void beforeClass() {
@@ -44,8 +44,7 @@ public class SystemPropertyLanguageImplementationTest {
 
   @Before
   public void before() throws Exception {
-    vertxInternal = new DefaultVertx();
-    platformManager = new DefaultPlatformManager(vertxInternal);
+    platformManager = PlatformLocator.factory.createPlatformManager();
   }
 
   @Test

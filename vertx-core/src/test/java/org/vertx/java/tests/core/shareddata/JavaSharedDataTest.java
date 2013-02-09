@@ -40,8 +40,8 @@ public class JavaSharedDataTest extends TestCase {
   
   @Before
   public void setUp() {
-    vertx = new DefaultVertx();
-    sharedData = new DefaultVertx().sharedData();
+    vertx = Vertx.newVertx();
+    sharedData = vertx.sharedData();
   }
   
   @After

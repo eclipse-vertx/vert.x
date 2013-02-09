@@ -36,7 +36,7 @@ public class DrainingServer extends Verticle {
     tu = new TestUtils(vertx);
     server = vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
 
         req.response.setChunked(true);
 
@@ -47,13 +47,13 @@ public class DrainingServer extends Verticle {
         //Send data until the buffer is full
         vertx.setPeriodic(0, new Handler<Long>() {
           public void handle(Long id) {
-            tu.checkContext();
+            tu.checkThread();
             req.response.write(buff);
             if (req.response.writeQueueFull()) {
               vertx.cancelTimer(id);
               req.response.drainHandler(new SimpleHandler() {
                 public void handle() {
-                  tu.checkContext();
+                  tu.checkThread();
                   tu.azzert(!req.response.writeQueueFull());
                   tu.testComplete();
                 }
@@ -73,7 +73,7 @@ public class DrainingServer extends Verticle {
   public void stop() {
     server.close(new SimpleHandler() {
       public void handle() {
-        tu.checkContext();
+        tu.checkThread();
         tu.appStopped();
       }
     });

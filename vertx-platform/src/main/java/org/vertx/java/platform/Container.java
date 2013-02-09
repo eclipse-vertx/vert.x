@@ -273,7 +273,7 @@ public class Container {
    * Cause the container to exit
    */
   public void exit() {
-    mgr.unblock();
+    mgr.exit();
   }
 
   /**

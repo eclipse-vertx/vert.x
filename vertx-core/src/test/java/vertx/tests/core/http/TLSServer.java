@@ -55,11 +55,11 @@ public class TLSServer extends Verticle {
     server.requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
 
-        tu.checkContext();
+        tu.checkThread();
 
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
-            tu.checkContext();
+            tu.checkThread();
             tu.azzert("foo".equals(buffer.toString()));
             req.response.end("bar");
           }
@@ -73,7 +73,7 @@ public class TLSServer extends Verticle {
   public void stop() {
     server.close(new SimpleHandler() {
       public void handle() {
-        tu.checkContext();
+        tu.checkThread();
         tu.appStopped();
       }
     });

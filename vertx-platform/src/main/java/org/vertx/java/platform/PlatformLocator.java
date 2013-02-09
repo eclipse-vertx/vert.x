@@ -1,4 +1,4 @@
-package org.vertx.java.platform.impl;/*
+package org.vertx.java.platform;/*
  * Copyright 2013 Red Hat, Inc.
  *
  * Red Hat licenses this file to you under the Apache License, version 2.0
@@ -16,29 +16,13 @@ package org.vertx.java.platform.impl;/*
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 
-import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.platform.PlatformManager;
-
-import java.io.File;
-import java.net.URL;
+import java.util.ServiceLoader;
 
 /**
- * Internal interface - not designed to be publicly used
+ * Use this class to get an instance of a PlatformManagerFactory so you can create PlatformManager instances
  */
-public interface PlatformManagerInternal extends PlatformManager {
+public class PlatformLocator {
 
-  JsonObject getConfig();
+  public static PlatformManagerFactory factory = ServiceLoader.load(PlatformManagerFactory.class).iterator().next();
 
-  String getDeploymentName();
-
-  URL[] getDeploymentURLs();
-
-  File getDeploymentModDir();
-
-  Logger getLogger();
-
-  void removeModule(String moduleKey);
-
-  void exit();
 }

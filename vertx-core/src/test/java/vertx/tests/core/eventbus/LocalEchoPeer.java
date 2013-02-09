@@ -145,7 +145,7 @@ public class LocalEchoPeer extends EventBusAppBase {
           boolean handled = false;
 
           public void handle(Message msg) {
-            tu.checkContext();
+            tu.checkThread();
             tu.azzert(!handled);
             eb.unregisterHandler(LocalEchoClient.ECHO_ADDRESS, this);
             handled = true;

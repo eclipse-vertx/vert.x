@@ -109,7 +109,7 @@ public class LocalClient extends EventBusAppBase {
         boolean handled;
 
         public void handle(Message<Buffer> msg) {
-          tu.checkContext();
+          tu.checkThread();
           tu.azzert(!handled);
           tu.azzert(TestUtils.buffersEqual(buff, msg.body));
           int c = count.incrementAndGet();

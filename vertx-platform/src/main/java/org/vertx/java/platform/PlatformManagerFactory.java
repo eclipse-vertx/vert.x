@@ -1,4 +1,4 @@
-package org.vertx.java.platform.impl;/*
+package org.vertx.java.platform;/*
  * Copyright 2013 Red Hat, Inc.
  *
  * Red Hat licenses this file to you under the Apache License, version 2.0
@@ -16,29 +16,7 @@ package org.vertx.java.platform.impl;/*
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 
-import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.platform.PlatformManager;
-
-import java.io.File;
-import java.net.URL;
-
-/**
- * Internal interface - not designed to be publicly used
- */
-public interface PlatformManagerInternal extends PlatformManager {
-
-  JsonObject getConfig();
-
-  String getDeploymentName();
-
-  URL[] getDeploymentURLs();
-
-  File getDeploymentModDir();
-
-  Logger getLogger();
-
-  void removeModule(String moduleKey);
-
-  void exit();
+public interface PlatformManagerFactory {
+  PlatformManager createPlatformManager();
+  PlatformManager createPlatformManager(int clusterPort, String clusterHost);
 }

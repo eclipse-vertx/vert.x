@@ -474,7 +474,7 @@ public class TestClient extends TestClientBase {
                          final Handler<FileProps> afterOK) throws Exception {
     AsyncResultHandler<FileProps> handler = new AsyncResultHandler<FileProps>() {
       public void handle(AsyncResult<FileProps> ar) {
-        tu.checkContext();
+        tu.checkThread();
         if (ar.failed()) {
           if (shouldPass) {
             tu.exception(ar.exception, "stat failed");
@@ -564,7 +564,7 @@ public class TestClient extends TestClientBase {
     Files.createSymbolicLink(Paths.get(TEST_DIR + pathSep + linkName), Paths.get(fileName));
     AsyncResultHandler<String> handler = new AsyncResultHandler<String>() {
       public void handle(AsyncResult<String> ar) {
-        tu.checkContext();
+        tu.checkThread();
         if (ar.failed()) {
           tu.exception(ar.exception, "Read failed");
         } else {
@@ -772,7 +772,7 @@ public class TestClient extends TestClientBase {
                            final Handler<String[]> afterOK) throws Exception {
     AsyncResultHandler<String[]> handler = new AsyncResultHandler<String[]>() {
       public void handle(AsyncResult<String[]> ar) {
-        tu.checkContext();
+        tu.checkThread();
         if (ar.failed()) {
           if (shouldPass) {
             tu.exception(ar.exception, "read failed");
@@ -808,7 +808,7 @@ public class TestClient extends TestClientBase {
     createFile(fileName, content);
     AsyncResultHandler<Buffer> handler = new AsyncResultHandler<Buffer>() {
       public void handle(AsyncResult<Buffer> ar) {
-        tu.checkContext();
+        tu.checkThread();
         if (ar.failed()) {
           tu.exception(ar.exception, "failed to read");
         } else {
@@ -826,7 +826,7 @@ public class TestClient extends TestClientBase {
     final String fileName = "some-file.dat";
     AsyncResultHandler<Void> handler = new AsyncResultHandler<Void>() {
       public void handle(AsyncResult<Void> ar) {
-        tu.checkContext();
+        tu.checkThread();
         if (ar.failed()) {
           tu.exception(ar.exception, "failed to write");
         } else {
@@ -858,7 +858,7 @@ public class TestClient extends TestClientBase {
     vertx.fileSystem().open(TEST_DIR + pathSep + fileName, null, false, true, true, true, new AsyncResultHandler<AsyncFile>() {
       int count;
       public void handle(final AsyncResult<AsyncFile> arr) {
-        tu.checkContext();
+        tu.checkThread();
         if (arr.succeeded()) {
           for (int i = 0; i < chunks; i++) {
             Buffer chunk = buff.getBuffer(i * chunkSize, (i + 1) * chunkSize);
@@ -870,7 +870,7 @@ public class TestClient extends TestClientBase {
 										arr.result.close(new AsyncResultHandler<Void>() {
 											@Override
 											public void handle(AsyncResult<Void> ar) {
-												tu.checkContext();
+												tu.checkThread();
 												if (ar.failed()) {
 													tu.exception(ar.exception, "failed to close");
 												} else {
@@ -912,7 +912,7 @@ public class TestClient extends TestClientBase {
     vertx.fileSystem().open(TEST_DIR + pathSep + fileName, null, true, false, false, new AsyncResultHandler<AsyncFile>() {
       int reads;
       public void handle(final AsyncResult<AsyncFile> arr) {
-        tu.checkContext();
+        tu.checkThread();
         if (arr.succeeded()) {
           final Buffer buff = new Buffer(chunks * chunkSize);
           for (int i = 0; i < chunks; i++) {
@@ -923,7 +923,7 @@ public class TestClient extends TestClientBase {
 										arr.result.close(new AsyncResultHandler<Void>() {
 											@Override
 											public void handle(AsyncResult<Void> ar) {
-												tu.checkContext();
+												tu.checkThread();
 												if (ar.failed()) {
 													tu.exception(ar.exception, "failed to close");
 												} else {
@@ -955,13 +955,13 @@ public class TestClient extends TestClientBase {
     final Buffer buff = new Buffer(content);
     vertx.fileSystem().open(TEST_DIR + pathSep + fileName, new AsyncResultHandler<AsyncFile>() {
       public void handle(AsyncResult<AsyncFile> ar) {
-        tu.checkContext();
+        tu.checkThread();
         if (ar.succeeded()) {
           WriteStream ws = ar.result.getWriteStream();
 
           ws.exceptionHandler(new Handler<Exception>() {
             public void handle(Exception e) {
-              tu.checkContext();
+              tu.checkThread();
               tu.exception(e, "caught exception on stream");
             }
           });
@@ -974,7 +974,7 @@ public class TestClient extends TestClientBase {
 
           ar.result.close(new AsyncResultHandler<Void>() {
             public void handle(AsyncResult<Void> ar) {
-              tu.checkContext();
+              tu.checkThread();
               if (ar.failed()) {
                 tu.exception(ar.exception, "failed to close");
               } else {
@@ -1007,21 +1007,21 @@ public class TestClient extends TestClientBase {
 
     vertx.fileSystem().open(TEST_DIR + pathSep + fileName, null, true, false, false, new AsyncResultHandler<AsyncFile>() {
       public void handle(final AsyncResult<AsyncFile> ar) {
-        tu.checkContext();
+        tu.checkThread();
         if (ar.succeeded()) {
           ReadStream rs = ar.result.getReadStream();
           final Buffer buff = new Buffer();
 
           rs.dataHandler(new Handler<Buffer>() {
             public void handle(Buffer data) {
-              tu.checkContext();
+              tu.checkThread();
               buff.appendBuffer(data);
             }
           });
 
           rs.exceptionHandler(new Handler<Exception>() {
             public void handle(Exception e) {
-              tu.checkContext();
+              tu.checkThread();
               tu.exception(e, "caught exception");
             }
           });
@@ -1031,11 +1031,11 @@ public class TestClient extends TestClientBase {
 							ar.result.close(new AsyncResultHandler<Void>() {
 								@Override
 								public void handle(AsyncResult<Void> ar) {
-									tu.checkContext();
+									tu.checkThread();
 									if (ar.failed()) {
 										tu.exception(ar.exception, "failed to close");
 									} else {
-										tu.checkContext();
+										tu.checkThread();
 										tu.azzert(TestUtils.buffersEqual(buff, new Buffer(content)));
 										tu.testComplete();
 									}
@@ -1061,7 +1061,7 @@ public class TestClient extends TestClientBase {
 
     vertx.fileSystem().open(TEST_DIR + pathSep + fileName1, null, true, false, false, new AsyncResultHandler<AsyncFile>() {
       public void handle(final AsyncResult<AsyncFile> arr) {
-        tu.checkContext();
+        tu.checkThread();
         if (arr.succeeded()) {
           final ReadStream rs = arr.result.getReadStream();
 
@@ -1069,7 +1069,7 @@ public class TestClient extends TestClientBase {
           vertx.fileSystem().open(TEST_DIR + pathSep + fileName2, null, true, true, true, new AsyncResultHandler<AsyncFile>() {
 
             public void handle(final AsyncResult<AsyncFile> ar) {
-              tu.checkContext();
+              tu.checkThread();
               if (ar.succeeded()) {
 
                 WriteStream ws = ar.result.getWriteStream();
@@ -1077,17 +1077,17 @@ public class TestClient extends TestClientBase {
                 p.start();
                 rs.endHandler(new SimpleHandler() {
                   public void handle() {
-                    tu.checkContext();
+                    tu.checkThread();
 										arr.result.close(new AsyncResultHandler<Void>() {
 											@Override
 											public void handle(AsyncResult<Void> car) {
-												tu.checkContext();
+												tu.checkThread();
 												if (car.failed()) {
 													tu.exception(car.exception, "failed to close");
 												} else {
 													ar.result.close(new AsyncResultHandler<Void>() {
 														public void handle(AsyncResult<Void> ar) {
-															tu.checkContext();
+															tu.checkThread();
 															if (ar.failed()) {
 																tu.exception(ar.exception, "failed to close");
 															} else {
@@ -1138,7 +1138,7 @@ public class TestClient extends TestClientBase {
     final String fileName = "some-file.dat";
     AsyncResultHandler<Void> handler = new AsyncResultHandler<Void>() {
       public void handle(AsyncResult<Void> ar) {
-        tu.checkContext();
+        tu.checkThread();
         if (ar.failed()) {
           if (shouldPass) {
             tu.exception(ar.exception, "failed to create");
@@ -1183,7 +1183,7 @@ public class TestClient extends TestClientBase {
 
     AsyncResultHandler<Boolean> handler = new AsyncResultHandler<Boolean>() {
       public void handle(AsyncResult<Boolean> ar) {
-        tu.checkContext();
+        tu.checkThread();
         if (ar.succeeded()) {
           if (exists) {
             tu.azzert(ar.result);
@@ -1215,7 +1215,7 @@ public class TestClient extends TestClientBase {
                            final Handler<FileSystemProps> afterOK) throws Exception {
     AsyncResultHandler<FileSystemProps> handler = new AsyncResultHandler<FileSystemProps>() {
       public void handle(AsyncResult<FileSystemProps> ar) {
-        tu.checkContext();
+        tu.checkThread();
         if (ar.failed()) {
           tu.exception(ar.exception, "props failed");
         } else {
@@ -1230,7 +1230,7 @@ public class TestClient extends TestClientBase {
   private AsyncResultHandler<Void> createHandler(final boolean shouldPass, final Handler<Void> afterOK) {
     return new AsyncResultHandler<Void>() {
       public void handle(AsyncResult<Void> event) {
-        tu.checkContext();
+        tu.checkThread();
         if (event.failed()) {
           if (shouldPass) {
             tu.exception(event.exception, "operation failed");

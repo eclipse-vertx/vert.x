@@ -42,7 +42,7 @@ public class TestClient extends TestClientBase {
     id.set(vertx.setTimer(1, new Handler<Long>() {
       int count;
       public void handle(Long timerID) {
-        tu.checkContext();
+        tu.checkThread();
         tu.azzert(id.get() == timerID.longValue());
         tu.azzert(count == 0);
         count++;
@@ -56,7 +56,7 @@ public class TestClient extends TestClientBase {
     // catch it
     vertx.setTimer(10, new Handler<Long>() {
       public void handle(Long timerID) {
-        tu.checkContext();
+        tu.checkThread();
         tu.testComplete();
       }
     });
@@ -69,7 +69,7 @@ public class TestClient extends TestClientBase {
     id.set(vertx.setPeriodic(delay, new Handler<Long>() {
       int count;
       public void handle(Long timerID) {
-        tu.checkContext();
+        tu.checkThread();
         tu.azzert(id.get() == timerID.longValue());
         count++;
         if (count == numFires) {
@@ -91,7 +91,7 @@ public class TestClient extends TestClientBase {
     final long delay = 500;
     vertx.setTimer(delay, new Handler<Long>() {
       public void handle(Long timerID) {
-        tu.checkContext();
+        tu.checkThread();
         long dur = System.currentTimeMillis() - start;
         tu.azzert(dur >= delay);
         long maxDelay = (long)(delay * 1.5);

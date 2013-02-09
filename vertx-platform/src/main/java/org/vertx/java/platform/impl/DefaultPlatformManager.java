@@ -17,13 +17,11 @@
 package org.vertx.java.platform.impl;
 
 
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
@@ -89,20 +87,21 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private Map<String, String> extensionMappings = new ConcurrentHashMap<>();
   private String defaultLanguageImplName;
   private List<RepoResolver> defaultRepos = new ArrayList<>();
+  private Handler<Void> exitHandler;
 
-  private static class LanguageImplInfo {
-    final String moduleName;
-    final String factoryName;
-    private LanguageImplInfo(String moduleName, String factoryName) {
-      this.moduleName = moduleName;
-      this.factoryName = factoryName;
-    }
-    public String toString() {
-      return (moduleName == null ? ":" : (moduleName + ":")) + factoryName;
-    }
+  DefaultPlatformManager() {
+    this(new DefaultVertx());
   }
 
-  public DefaultPlatformManager(VertxInternal vertx) {
+  DefaultPlatformManager(String hostname) {
+    this(new DefaultVertx(hostname));
+  }
+
+  DefaultPlatformManager(int port, String hostname) {
+    this(new DefaultVertx(port, hostname));
+  }
+
+  private DefaultPlatformManager(VertxInternal vertx) {
     this.vertx = vertx;
     this.proxyHost = System.getProperty(HTTP_PROXY_HOST_PROP_NAME);
     String tmpPort = System.getProperty(HTTP_PROXY_PORT_PROP_NAME);
@@ -125,19 +124,15 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     loadDefaultRepos();
   }
 
-  public void block() {
-    while (true) {
-      try {
-        stopLatch.await();
-        break;
-      } catch (InterruptedException e) {
-        //Ignore
-      }
-    }
+
+  public void registerExitHandler(Handler<Void> handler) {
+    this.exitHandler = handler;
   }
 
-  public void unblock() {
-    stopLatch.countDown();
+  public void exit() {
+    if (exitHandler != null) {
+      exitHandler.handle(null);
+    }
   }
 
   public JsonObject getConfig() {
@@ -362,6 +357,10 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       }
     };
     doUndeploy(deploymentID, wrappedHandler);
+  }
+
+  public Vertx getVertx() {
+    return this.vertx;
   }
 
   private AsyncResultHandler<Void> createHandler(final Handler<String> doneHandler) {
@@ -1218,6 +1217,19 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   public void removeModule(String moduleKey) {
     modules.remove(moduleKey);
   }
+
+  private static class LanguageImplInfo {
+    final String moduleName;
+    final String factoryName;
+    private LanguageImplInfo(String moduleName, String factoryName) {
+      this.moduleName = moduleName;
+      this.factoryName = factoryName;
+    }
+    public String toString() {
+      return (moduleName == null ? ":" : (moduleName + ":")) + factoryName;
+    }
+  }
+
 
 
 }

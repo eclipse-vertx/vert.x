@@ -38,16 +38,16 @@ public class CloseHandlerServer extends BaseServer {
     return new Handler<NetSocket>() {
       final AtomicInteger counter = new AtomicInteger(0);
       public void handle(final NetSocket sock) {
-        tu.checkContext();
+        tu.checkThread();
         sock.endHandler(new SimpleHandler() {
           public void handle() {
-            tu.checkContext();
+            tu.checkThread();
             tu.azzert(counter.incrementAndGet() == 1);
           }
         });
         sock.closedHandler(new SimpleHandler() {
           public void handle() {
-            tu.checkContext();
+            tu.checkThread();
             tu.azzert(counter.incrementAndGet() == 2);
             tu.testComplete();
           }

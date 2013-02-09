@@ -40,7 +40,7 @@ public class InstanceCheckServer extends Verticle {
     tu = new TestUtils(vertx);
     server = vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        tu.checkContext();
+        tu.checkThread();
 
          //We add the object id of the server to the set
         vertx.sharedData().getSet("instances").add(id);
@@ -57,7 +57,7 @@ public class InstanceCheckServer extends Verticle {
   public void stop() {
     server.close(new SimpleHandler() {
       public void handle() {
-        tu.checkContext();
+        tu.checkThread();
         tu.appStopped();
       }
     });

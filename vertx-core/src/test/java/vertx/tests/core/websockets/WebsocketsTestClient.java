@@ -46,7 +46,7 @@ public class WebsocketsTestClient extends TestClientBase {
     if (server != null) {
       server.close(new SimpleHandler() {
         public void handle() {
-          tu.checkContext();
+          tu.checkThread();
           WebsocketsTestClient.super.stop();
         }
       });
@@ -109,12 +109,12 @@ public class WebsocketsTestClient extends TestClientBase {
 
     server = vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
-        tu.checkContext();
+        tu.checkThread();
         tu.azzert(path.equals(ws.path));
 
         ws.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
-            tu.checkContext();
+            tu.checkThread();
             //Echo it back
             ws.writeBuffer(data);
           }
@@ -128,11 +128,11 @@ public class WebsocketsTestClient extends TestClientBase {
 
     client.connectWebsocket(path, version, new Handler<WebSocket>() {
       public void handle(final WebSocket ws) {
-        tu.checkContext();
+        tu.checkThread();
         final Buffer received = new Buffer();
         ws.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
-            tu.checkContext();
+            tu.checkThread();
             received.appendBuffer(data);
             if (received.length() == bsize * sends) {
               ws.close();
@@ -193,7 +193,7 @@ public class WebsocketsTestClient extends TestClientBase {
     server = vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
 
-        tu.checkContext();
+        tu.checkThread();
         tu.azzert(path.equals(ws.path));
         ws.reject();
       }
