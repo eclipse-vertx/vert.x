@@ -38,22 +38,22 @@ public interface PlatformManager {
 
   static PlatformManager instance = ServiceLoader.load(PlatformManagerFactory.class).iterator().next().createPlatformManager();
 
-  void deployVerticle(final boolean worker, final boolean multiThreaded, final String main,
-                      final JsonObject config, final URL[] urls,
-                      final int instances, final File currentModDir,
-                      final String includes,
-                      final Handler<String> doneHandler);
+  void deployVerticle(boolean worker, boolean multiThreaded, String main,
+                      JsonObject config, URL[] urls,
+                      int instances, File currentModDir,
+                      String includes,
+                      Handler<String> doneHandler);
 
-  void deployMod(final String modName, final JsonObject config,
-                 final int instances, final File currentModDir, final Handler<String> doneHandler);
+  void deployMod(String modName, JsonObject config,
+                 int instances, File currentModDir, Handler<String> doneHandler);
 
-  void undeploy(String deploymentID, final Handler<Void> doneHandler);
+  void undeploy(String deploymentID, Handler<Void> doneHandler);
 
-  void undeployAll(final Handler<Void> doneHandler) ;
+  void undeployAll(Handler<Void> doneHandler) ;
 
   Map<String, Integer> listInstances();
 
-  void installMod(final String moduleName);
+  void installMod(String moduleName);
 
   void uninstallMod(String moduleName);
 
