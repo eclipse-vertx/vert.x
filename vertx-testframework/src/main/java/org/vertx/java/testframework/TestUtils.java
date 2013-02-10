@@ -140,7 +140,7 @@ public class TestUtils {
   }
 
   private void sendMessage(JsonObject msg) {
-    //EventLog.addEvent("Sending message: " + msg.encode());
+    EventLog.addEvent("Sending message: " + msg.encode());
     try {
       vertx.eventBus().publish(TestBase.EVENTS_ADDRESS, msg);
     } catch (Exception e) {
