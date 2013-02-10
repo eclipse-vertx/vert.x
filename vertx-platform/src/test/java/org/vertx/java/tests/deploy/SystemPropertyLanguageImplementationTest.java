@@ -57,7 +57,7 @@ public class SystemPropertyLanguageImplementationTest {
     Handler<String> doneHandler = new Handler<String>() {
       @Override
       public void handle(String event) {
-        if (event != null && event.startsWith("deployment-")) {
+        if (event != null) {
           latch.countDown();
         }
       }
@@ -65,15 +65,15 @@ public class SystemPropertyLanguageImplementationTest {
 
     platformManager.deployVerticle(main, config, urls, 1, includes, doneHandler);
 
-    boolean await = false;
+    boolean await;
 
-    try {
-      await = latch.await(1000L, TimeUnit.MILLISECONDS);
-
-    } catch (InterruptedException e) {
-      //
-    } catch (Throwable e) {
-      Assert.fail(e.getMessage());
+    while (true) {
+      try {
+        await = latch.await(5000, TimeUnit.MILLISECONDS);
+        break;
+      } catch (InterruptedException e) {
+        //
+      }
     }
 
     if (!await) {
@@ -95,7 +95,8 @@ public class SystemPropertyLanguageImplementationTest {
     Handler<String> doneHandler = new Handler<String>() {
       @Override
       public void handle(String event) {
-        if (event != null && event.startsWith("deployment-")) {
+        // null means deploy failed
+        if (event == null) {
           latch.countDown();
         }
       }
@@ -103,15 +104,15 @@ public class SystemPropertyLanguageImplementationTest {
 
     platformManager.deployVerticle(main, config, urls, 1, includes, doneHandler);
 
-    boolean await = false;
+    boolean await;
 
-    try {
-      await = latch.await(250L, TimeUnit.MILLISECONDS);
-
-    } catch (InterruptedException e) {
-      //
-    } catch (Throwable e) {
-      Assert.fail(e.getMessage());
+    while (true) {
+      try {
+        await = latch.await(5000, TimeUnit.MILLISECONDS);
+        break;
+      } catch (InterruptedException e) {
+        //
+      }
     }
 
     if (!await) {
