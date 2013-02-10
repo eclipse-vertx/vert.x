@@ -30,6 +30,10 @@ import java.util.Map;
  * modules, and for various other tasks.
  *
  * The Platform Manager basically represents the Vert.x container in which verticles and modules run.
+ *
+ * The Platform Manager is used by the Vert.x CLI to run/install/etc modules and verticles but you could also
+ * use it if you want to embed the entire Vert.x container in an application, or write some other tool (e.g.
+ * a build tool, or a test tool) which needs to do stuff with the container
  */
 public interface PlatformManager {
 
