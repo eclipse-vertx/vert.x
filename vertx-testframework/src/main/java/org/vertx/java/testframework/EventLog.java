@@ -20,6 +20,9 @@ package org.vertx.java.testframework;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+/** For tracking down Heisenbugs that only appear when running CI and disappear when you add normal logging
+ *
+ */
 public class EventLog {
 
   public static void addEvent(String event) {
