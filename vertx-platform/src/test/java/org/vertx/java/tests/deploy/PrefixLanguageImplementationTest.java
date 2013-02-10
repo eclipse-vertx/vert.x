@@ -57,7 +57,7 @@ public class PrefixLanguageImplementationTest {
     Handler<String> doneHandler = new Handler<String>() {
       @Override
       public void handle(String event) {
-        if (event != null && event.startsWith("deployment-")) {
+        if (event != null) {
           latch.countDown();
         }
       }
@@ -65,15 +65,15 @@ public class PrefixLanguageImplementationTest {
 
     platformManager.deployVerticle(main, config, urls, 1, includes, doneHandler);
 
-    boolean await = false;
+    boolean await;
 
-    try {
-      await = latch.await(5000L, TimeUnit.MILLISECONDS);
-
-    } catch (InterruptedException e) {
-      //
-    } catch (Throwable e) {
-      Assert.fail(e.getMessage());
+    while (true) {
+      try {
+        await = latch.await(5000L, TimeUnit.MILLISECONDS);
+        break;
+      } catch (InterruptedException e) {
+        //
+      }
     }
 
     if (!await) {
@@ -95,7 +95,8 @@ public class PrefixLanguageImplementationTest {
     Handler<String> doneHandler = new Handler<String>() {
       @Override
       public void handle(String event) {
-        if (event != null && event.startsWith("deployment-")) {
+        // null means failed to deploy
+        if (event == null) {
           latch.countDown();
         }
       }
@@ -103,15 +104,14 @@ public class PrefixLanguageImplementationTest {
 
     platformManager.deployVerticle(main, config, urls, 1, includes, doneHandler);
 
-    boolean await = false;
-
-    try {
-      await = latch.await(250L, TimeUnit.MILLISECONDS);
-
-    } catch (InterruptedException e) {
-      //
-    } catch (Throwable e) {
-      Assert.fail(e.getMessage());
+    boolean await;
+    while (true) {
+      try {
+        await = latch.await(5000, TimeUnit.MILLISECONDS);
+        break;
+      } catch (InterruptedException e) {
+        //
+      }
     }
 
     if (!await) {
