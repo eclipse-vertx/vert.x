@@ -30,6 +30,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.platform.Container;
 import org.vertx.java.platform.Verticle;
 import org.vertx.java.platform.VerticleFactory;
+import org.vertx.java.platform.impl.resolver.BintrayRepoResolver;
 import org.vertx.java.platform.impl.resolver.MavenRepoResolver;
 import org.vertx.java.platform.impl.resolver.RepoResolver;
 import org.vertx.java.platform.impl.resolver.Vertx1xResolver;
@@ -85,7 +86,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private Map<String, LanguageImplInfo> languageImpls = new ConcurrentHashMap<>();
   private Map<String, String> extensionMappings = new ConcurrentHashMap<>();
   private String defaultLanguageImplName;
-  private List<RepoResolver> defaultRepos = new ArrayList<>();
+  private Map<String, List<RepoResolver>> defaultRepos = new HashMap<>();
   private Handler<Void> exitHandler;
 
   DefaultPlatformManager() {
@@ -361,25 +362,17 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       for (String modName: mods) {
         File internalModDir = new File(internalModsDir, modName);
         if (!internalModDir.exists()) {
-          boolean installed = false;
-          for (RepoResolver resolver: defaultRepos) {
-            Buffer modZipped = resolver.getModule(modName);
-            if (modZipped != null) {
-              if (!unzipModuleData(modName, internalModsDir, modZipped)) {
-                return false;
-              } else {
-                installed = true;
-                break;
-              }
+          Buffer modZipped = getModule(modName);
+          if (modZipped != null) {
+            internalModDir.mkdir();
+            if (!unzipModuleData(internalModDir, modZipped)) {
+              return false;
+            } else {
+              log.info("Module " + modName + " successfully installed in mods dir of " + modName);
+              // Now recurse so we bring in all of the deps
+              doPullInDependencies(internalModsDir, modName);
             }
           }
-          if (!installed) {
-            log.error("Failed to find module " + modName + " in any repositories");
-            return false;
-          }
-          log.info("Module " + modName + " successfully installed in mods dir of " + modName);
-          // Now recurse so we bring in all of the deps
-          doPullInDependencies(internalModsDir, modName);
         }
       }
     }
@@ -554,7 +547,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       } else {
         // value is made up of an optional module name followed by colon followed by the
         // FQCN of the factory
-        int colonIndex = propVal.indexOf(COLON);
+        int colonIndex = propVal.lastIndexOf(COLON);
         String moduleName;
         String factoryName;
         if (colonIndex != -1) {
@@ -784,13 +777,18 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
             case "maven":
               resolver = new MavenRepoResolver(vertx, proxyHost, proxyPort, repoID);
               break;
-            case "vert.x-1.x":
-              resolver = new Vertx1xResolver(vertx, proxyHost, proxyPort, repoID);
+            case "bintray":
+              resolver = new BintrayRepoResolver(vertx, proxyHost, proxyPort, repoID);
               break;
             default:
               throw new IllegalArgumentException("Unknown repo type: " + type);
           }
-          defaultRepos.add(resolver);
+          List<RepoResolver> resolvers = defaultRepos.get(type);
+          if (resolvers == null) {
+            resolvers = new ArrayList<>();
+            defaultRepos.put(type, resolvers);
+          }
+          resolvers.add(resolver);
         }
       }
     } catch (IOException e) {
@@ -804,15 +802,38 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       log.warn("No repositories configured!");
       return false;
     }
-    for (RepoResolver resolver: defaultRepos) {
-      Buffer modZipped = resolver.getModule(moduleName);
+    Buffer mod = getModule(moduleName);
+    if (mod != null) {
+      return unzipModule(moduleName, mod);
+    }
+    return false;
+  }
+
+  private Buffer getModule(String moduleName) {
+    int colonPos = moduleName.indexOf(COLON);
+    if (colonPos == -1) {
+      throw new IllegalArgumentException(moduleName + " A module name must start with a prefix followed by a colon " +
+          "which represents the type of repository in which the module is stored");
+    }
+    if (colonPos == moduleName.length() - 1) {
+      throw new IllegalArgumentException("Invalid module name, no name after prefix. " + moduleName);
+    }
+    String prefix = moduleName.substring(0, colonPos);
+    String rest = moduleName.substring(colonPos + 1);
+    List<RepoResolver> resolvers = defaultRepos.get(prefix);
+    if (resolvers == null) {
+      throw new IllegalArgumentException("No resolvers for prefix: " + prefix);
+    }
+    for (RepoResolver resolver: resolvers) {
+      Buffer modZipped = resolver.getModule(rest);
       if (modZipped != null) {
-        return unzipModule(moduleName, modZipped);
+        return modZipped;
       }
     }
     log.error("Module " + moduleName + "not found in any repositories");
-    return false;
+    return null;
   }
+
 
   private boolean unzipModule(final String modName, final Buffer data) {
     checkWorkerContext();
@@ -848,19 +869,18 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       File tdest = new File(tdir);
       tdest.mkdir();
 
-      if (!unzipModuleData(modName, tdest, data)) {
+      if (!unzipModuleData(tdest, data)) {
         return false;
       }
 
       // Check if it's a system module
-      File tmpModDir = new File(tdest, modName);
-      JsonObject conf = loadModuleConfig(modName, tmpModDir);
+      JsonObject conf = loadModuleConfig(modName, tdest);
       ModuleFields fields = new ModuleFields(conf);
 
       boolean system = fields.isSystem();
 
       // Now copy it to the proper directory
-      String moveFrom = tmpModDir.getAbsolutePath();
+      String moveFrom = tdest.getAbsolutePath();
       try {
         vertx.fileSystem().moveSync(moveFrom, system ? sdest.getAbsolutePath() : fdest.getAbsolutePath());
       } catch (Exception e) {
@@ -872,15 +892,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
   }
 
-  private boolean unzipModuleData(String modName, final File directory, final Buffer data) {
+  private boolean unzipModuleData(final File directory, final Buffer data) {
     try (InputStream is = new ByteArrayInputStream(data.getBytes())) {
       ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
       ZipEntry entry;
       while ((entry = zis.getNextEntry()) != null) {
-        if (!entry.getName().startsWith(modName)) {
-          log.error("Module must contain zipped directory with same name as module");
-          return false;
-        }
         if (entry.isDirectory()) {
           new File(directory, entry.getName()).mkdir();
         } else {
@@ -905,7 +921,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       log.error("Failed to unzip module", e);
       return false;
     } finally {
-      directory.delete();
+      //directory.delete();
     }
     return true;
   }
@@ -1252,7 +1268,5 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       return (moduleName == null ? ":" : (moduleName + ":")) + factoryName;
     }
   }
-
-
 
 }
