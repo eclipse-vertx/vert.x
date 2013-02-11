@@ -26,6 +26,7 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -62,9 +63,25 @@ public abstract class HttpRepoResolver implements RepoResolver {
   protected abstract String getRepoURI(String moduleName);
 
   public Buffer getModule(final String moduleName) {
-    final CountDownLatch latch = new CountDownLatch(1);
-    final AtomicReference<Buffer> mod = new AtomicReference<>();
-    HttpClient client = vertx.createHttpClient();
+    String uri = getRepoURI(moduleName);
+    CountDownLatch latch = new CountDownLatch(1);
+    AtomicReference<Buffer> mod = new AtomicReference<>();
+    getModule(moduleName, repoHost, repoPort, uri, latch, mod);
+    while (true) {
+      try {
+        if (!latch.await(30, TimeUnit.SECONDS)) {
+          throw new IllegalStateException("Timed out waiting to download module");
+        }
+        break;
+      } catch (InterruptedException ignore) {
+      }
+    }
+    return mod.get();
+  }
+
+  public void getModule(final String moduleName,
+                        final String host, final int port, String uri, final CountDownLatch latch, final AtomicReference<Buffer> mod) {
+    final HttpClient client = vertx.createHttpClient();
     if (proxyHost != null) {
       client.setHost(proxyHost);
       if (proxyPort != 80) {
@@ -73,20 +90,19 @@ public abstract class HttpRepoResolver implements RepoResolver {
         client.setPort(80);
       }
     } else {
-      client.setHost(repoHost);
-      client.setPort(repoPort);
+      client.setHost(host);
+      client.setPort(port);
     }
     client.exceptionHandler(new Handler<Exception>() {
       public void handle(Exception e) {
         log.error("Unable to connect to repository");
-        latch.countDown();
+        end(client, latch);
       }
     });
-    String uri = getRepoURI(moduleName);
-
     if (proxyHost != null) {
       // We use an absolute URI
-      uri = new StringBuilder("http://").append(repoHost).append(uri).toString();
+      // FIXME - check this!
+      uri = new StringBuilder("http://").append(host).append(":").append(port).append(uri).toString();
     }
     final String theURI = uri;
     HttpClientRequest req = client.get(uri, new Handler<HttpClientResponse>() {
@@ -101,33 +117,45 @@ public abstract class HttpRepoResolver implements RepoResolver {
           resp.bodyHandler(new Handler<Buffer>() {
             public void handle(Buffer buffer) {
               mod.set(buffer);
-              latch.countDown();
+              end(client, latch);
             }
           });
+          return;
         } else if (resp.statusCode == 404) {
-          latch.countDown();
+          // NOOP
+        } else if (resp.statusCode == 302) {
+          // follow redirects
+          String location = resp.headers().get("location");
+          if (location == null) {
+            log.error("HTTP redirect with no location header");
+          } else {
+            URI redirectURI;
+            try {
+              redirectURI = new URI(location);
+              getModule(moduleName, redirectURI.getHost(), redirectURI.getPort() != -1 ? redirectURI.getPort() : 80, redirectURI.getPath(), latch, mod);
+              return;
+            } catch (URISyntaxException e) {
+              log.error("Invalid redirect URI: " + location);
+            }
+          }
         } else {
           log.error("Failed to query repository: " + resp.statusCode);
-          latch.countDown();
         }
+        end(client, latch);
       }
     });
     if (proxyHost != null){
       req.putHeader("host", proxyHost);
     } else {
-      req.putHeader("host", repoHost);
+      req.putHeader("host", host);
     }
     req.putHeader("user-agent", "Vert.x Module Installer");
     req.end();
-    while (true) {
-      try {
-        if (!latch.await(30, TimeUnit.SECONDS)) {
-          throw new IllegalStateException("Timed out waiting to download module");
-        }
-        break;
-      } catch (InterruptedException ignore) {
-      }
-    }
-    return mod.get();
   }
+
+  private void end(HttpClient client, CountDownLatch latch)  {
+    client.close();
+    latch.countDown();
+  }
+
 }

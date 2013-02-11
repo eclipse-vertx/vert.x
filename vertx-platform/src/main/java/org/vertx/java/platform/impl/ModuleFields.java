@@ -85,7 +85,7 @@ public class ModuleFields {
   }
 
   public String getAuthor() {
-    return conf.getString("author");
+    return conf.getString("authors");
   }
 
   private boolean getBooleanField(String name) {
