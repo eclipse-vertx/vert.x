@@ -33,7 +33,6 @@ import org.vertx.java.platform.VerticleFactory;
 import org.vertx.java.platform.impl.resolver.BintrayRepoResolver;
 import org.vertx.java.platform.impl.resolver.MavenRepoResolver;
 import org.vertx.java.platform.impl.resolver.RepoResolver;
-import org.vertx.java.platform.impl.resolver.Vertx1xResolver;
 
 import java.io.*;
 import java.net.MalformedURLException;
