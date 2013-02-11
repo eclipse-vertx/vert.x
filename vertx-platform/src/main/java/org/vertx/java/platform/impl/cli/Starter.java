@@ -26,13 +26,14 @@ import org.vertx.java.platform.PlatformLocator;
 import org.vertx.java.platform.PlatformManager;
 import org.vertx.java.platform.impl.Args;
 
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.*;
 import java.net.*;
 import java.util.Enumeration;
 import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
 /**
  *
@@ -43,8 +44,6 @@ public class Starter {
   private static final Logger log = LoggerFactory.getLogger(Starter.class);
 
   private static final String CP_SEPARATOR = System.getProperty("path.separator");
-
-  private static final String VERSION = "vert.x-2.0.0.snapshot";
 
   public static void main(String[] args) {
     new Starter(args);
@@ -59,16 +58,13 @@ public class Starter {
       String command = sargs[0].toLowerCase();
       Args args = new Args(sargs);
       if ("version".equals(command)) {
-        log.info(VERSION);
+        log.info(getVersion());
       } else {
         if (sargs.length < 2) {
           displaySyntax();
         } else {
           String operand = sargs[1];
           switch (command) {
-            case "version":
-              log.info(VERSION);
-              break;
             case "run":
               runVerticle(false, operand, args);
               break;
@@ -301,6 +297,24 @@ public class Starter {
       }
     }
     return null;
+  }
+
+  public final String getVersion() {
+    String className = getClass().getSimpleName() + ".class";
+    String classPath = getClass().getResource(className).toString();
+    if (!classPath.startsWith("jar")) {
+      // Class not from JAR
+      return "<unknown> (not a jar)";
+    }
+    String manifestPath = classPath.substring(0, classPath.lastIndexOf("!") + 1) + "/META-INF/MANIFEST.MF";
+    Manifest manifest;
+    try (InputStream is = new URL(manifestPath).openStream()) {
+      manifest = new Manifest(is);
+    } catch (IOException ex) {
+      return "<unknown> (" + ex.getMessage() + ")";
+    }
+    Attributes attr = manifest.getMainAttributes();
+    return attr.getValue("Vertx-Version");
   }
 
   private void displaySyntax() {

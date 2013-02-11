@@ -29,7 +29,9 @@ artifacts {
 jar {
 	manifest {
 		attributes(
-			'Main-Class': 'org.vertx.java.platform.impl.cli.Starter'
+        'Main-Class': 'org.vertx.java.deploy.impl.cli.Starter',
+        'Implementation-Title': 'Vertx (see http://vertx.io/)',
+        'Vertx-Version': version
 		)
 	}
 }
