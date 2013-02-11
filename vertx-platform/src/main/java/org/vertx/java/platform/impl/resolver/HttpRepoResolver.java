@@ -136,6 +136,8 @@ public abstract class HttpRepoResolver implements RepoResolver {
               return;
             } catch (URISyntaxException e) {
               log.error("Invalid redirect URI: " + location);
+            } finally {
+              client.close();
             }
           }
         } else {
