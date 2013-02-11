@@ -829,7 +829,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         return modZipped;
       }
     }
-    log.error("Module " + moduleName + "not found in any repositories");
+    log.error("Module " + moduleName + " not found in any repositories");
     return null;
   }
 
@@ -920,7 +920,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       log.error("Failed to unzip module", e);
       return false;
     } finally {
-      //directory.delete();
+      directory.delete();
     }
     return true;
   }

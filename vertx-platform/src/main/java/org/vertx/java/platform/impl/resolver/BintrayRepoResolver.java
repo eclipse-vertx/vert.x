@@ -56,6 +56,7 @@ public class BintrayRepoResolver extends HttpRepoResolver {
     uri.append('/');
     uri.append(user).append('/').append(repo).append('/').
         append(modName).append('/').append(modName).append('-').append(version).append(".zip");
+
     return uri.toString();
   }
 }
