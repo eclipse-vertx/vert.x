@@ -1177,22 +1177,15 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         count.incRequired();
         holder.context.execute(new Runnable() {
           public void run() {
-            // The closed handler will be called when there are no more outstanding tasks for the context
-            // Remember that the vertxStop() method might schedule other async operations and they in turn might schedule
-            // others
-            holder.context.closedHandler(new SimpleHandler() {
-              @Override
-              protected void handle() {
-                LoggerFactory.removeLogger(holder.loggerName);
-                holder.context.runCloseHooks();
-                count.complete();
-              }
-            });
             try {
               holder.verticle.stop();
             } catch (Throwable t) {
               vertx.reportException(t);
             }
+            LoggerFactory.removeLogger(holder.loggerName);
+            holder.context.runCloseHooks();
+            holder.context.close();
+            count.complete();
           }
         });
       }

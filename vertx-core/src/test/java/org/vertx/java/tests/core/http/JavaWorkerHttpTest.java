@@ -1,5 +1,4 @@
-package org.vertx.java.core.impl;
-/*
+package org.vertx.java.tests.core.http;/*
  * Copyright 2013 Red Hat, Inc.
  *
  * Red Hat licenses this file to you under the Apache License, version 2.0
@@ -17,24 +16,30 @@ package org.vertx.java.core.impl;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 
-import org.jboss.netty.channel.socket.nio.NioWorker;
+import org.vertx.java.testframework.TestBase;
 
-import java.util.concurrent.Executor;
+import org.junit.Test;
+import vertx.tests.core.http.WorkerHttpTestClient;
 
-public class MultiThreadedWorkerContext extends Context {
 
-  private Executor bgExec;
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
+public class JavaWorkerHttpTest extends TestBase {
 
-  public MultiThreadedWorkerContext(VertxInternal vertx, Executor orderedBgExec, Executor bgExec) {
-    super(vertx, orderedBgExec);
-    this.bgExec = bgExec;
+  @Override
+  protected void setUp() throws Exception {
+    super.setUp();
+    startApp(true, WorkerHttpTestClient.class.getName());
   }
 
-  public void execute(Runnable task) {
-    bgExec.execute(wrapTask(task));
+  @Override
+  protected void tearDown() throws Exception {
+    super.tearDown();
   }
 
-  public boolean isOnCorrectWorker(NioWorker worker) {
-    return false;
+  @Test
+  public void testWorker() throws Exception {
+    startTest(getMethodName());
   }
 }
