@@ -17,7 +17,6 @@
 package org.vertx.java.core.impl;
 
 import org.jboss.netty.channel.socket.nio.NioWorker;
-import org.vertx.java.core.Handler;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -25,7 +24,6 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -39,8 +37,6 @@ public abstract class Context {
   private Path pathAdjustment;
   private Map<Object, Runnable> closeHooks;
   private final ClassLoader tccl;
-  private AtomicInteger outstandingTasks = new AtomicInteger();
-  private Handler<Void> closedHandler;
   private boolean closed;
   protected final Executor orderedBgExec;
 
@@ -112,54 +108,29 @@ public abstract class Context {
     orderedBgExec.execute(wrapTask(task));
   }
 
-  private void decOustanding() {
-    int cnt = outstandingTasks.decrementAndGet();
-    if (cnt == 0) {
-      closedHandler.handle(null);
-      // Now there are no more oustanding tasks we can close the context
-      close();
-    }
-  }
-
-  private void close() {
-    vertx.setContext(null);
-    Thread.currentThread().setContextClassLoader(null);
+  public void close() {
+    unsetContext();
     closed = true;
   }
 
-  public void closedHandler(Handler<Void> closedHandler) {
-    this.closedHandler = closedHandler;
-    // Start with 1 - this represents the stop task itself
-    this.outstandingTasks.set(1);
-  }
-
-  private boolean isClosedHandlerSet() {
-    return closedHandler != null;
+  private void unsetContext() {
+    vertx.setContext(null);
+    Thread.currentThread().setContextClassLoader(null);
   }
 
   protected Runnable wrapTask(final Runnable task) {
-    if (closed) {
-      return null;
-    }
-    // TODO this is ugly - refactor
-    final boolean hasClosedHandler = isClosedHandlerSet();
-    if (hasClosedHandler) {
-      outstandingTasks.incrementAndGet();
-    }
     return new Runnable() {
       public void run() {
-        boolean closedHandlerSet = isClosedHandlerSet();
         try {
           vertx.setContext(Context.this);
           task.run();
         } catch (Throwable t) {
           reportException(t);
         }
-        boolean closedHandlerNowSet = isClosedHandlerSet();
-        // The closed handler could have been set in the task itself, we check this and if so
-        // we decrement
-        if (hasClosedHandler || (!closedHandlerSet && closedHandlerNowSet)) {
-          decOustanding();
+        if (closed) {
+          // We allow tasks to be run after the context is closed but we make sure we unset the context afterwards
+          // to avoid any leaks
+          unsetContext();
         }
       }
     };

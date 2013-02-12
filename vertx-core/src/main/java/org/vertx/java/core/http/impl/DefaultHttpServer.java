@@ -88,9 +88,6 @@ public class DefaultHttpServer implements HttpServer {
 
   public DefaultHttpServer(VertxInternal vertx) {
     this.vertx = vertx;
-    if (vertx.isWorker()) {
-      throw new IllegalStateException("Cannot be used in a worker application");
-    }
     // This is kind of fiddly - this class might be used by a worker, in which case the context is not
     // an event loop context - but we need an event loop context so that netty can deliver any messages for the connection
     // Therefore, if the current context is not an event loop one, we need to create one and register that with the

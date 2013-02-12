@@ -30,10 +30,7 @@ public class WorkerContext extends Context {
   }
 
   public void execute(Runnable task) {
-    final Runnable wrapped = wrapTask(task);
-    if (wrapped != null) {
-      executeOnOrderedWorkerExec(wrapped);
-    }
+    executeOnOrderedWorkerExec(wrapTask(task));
   }
 
   public boolean isOnCorrectWorker(NioWorker worker) {

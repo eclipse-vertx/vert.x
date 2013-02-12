@@ -51,7 +51,8 @@ public class DefaultHttpClient implements HttpClient {
   private static final Logger log = LoggerFactory.getLogger(HttpClientRequest.class);
 
   private final VertxInternal vertx;
-  private final EventLoopContext ctx;
+  private final Context actualCtx;
+  private final EventLoopContext eventLoopContext;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private ClientBootstrap bootstrap;
   private Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<Channel, ClientConnection>();
@@ -67,15 +68,23 @@ public class DefaultHttpClient implements HttpClient {
 
   public DefaultHttpClient(VertxInternal vertx) {
     this.vertx = vertx;
-    if (vertx.isWorker()) {
-      throw new IllegalStateException("Cannot be used in a worker application");
-    }
-    ctx = (EventLoopContext) vertx.getOrAssignContext();
-    ctx.putCloseHook(this, new Runnable() {
+    // This is kind of fiddly - this class might be used by a worker, in which case the context is not
+    // an event loop context - but we need an event loop context so that netty can deliver any messages for the connection
+    // Therefore, if the current context is not an event loop one, we need to create one and register that with the
+    // handler manager when registering handlers
+    // We then do a check when messages are delivered that we're on the right worker before delivering the message
+    // All of this will be massively simplified in Netty 4.0 when the event loop becomes a first class citizen
+    actualCtx = vertx.getOrAssignContext();
+    actualCtx.putCloseHook(this, new Runnable() {
       public void run() {
         close();
       }
     });
+    if (actualCtx instanceof EventLoopContext) {
+      eventLoopContext = (EventLoopContext)actualCtx;
+    } else {
+      eventLoopContext = vertx.createEventLoopContext();
+    }
   }
 
   public void exceptionHandler(Handler<Exception> handler) {
@@ -119,7 +128,7 @@ public class DefaultHttpClient implements HttpClient {
           connectWebsocket(uri, wsVersion, wsConnect);
         }
       }
-    }, exceptionHandler, ctx);
+    }, exceptionHandler, actualCtx);
   }
 
   public void getNow(String uri, Handler<HttpClientResponse> responseHandler) {
@@ -171,7 +180,7 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   public HttpClientRequest request(String method, String uri, Handler<HttpClientResponse> responseHandler) {
-    return new DefaultHttpClientRequest(this, method, uri, responseHandler, ctx);
+    return new DefaultHttpClientRequest(this, method, uri, responseHandler, actualCtx);
   }
 
   public void close() {
@@ -344,7 +353,7 @@ public class DefaultHttpClient implements HttpClient {
     if (bootstrap == null) {
       // Share the event loop thread to also serve the HttpClient's network traffic.
       VertxWorkerPool pool = new VertxWorkerPool();
-      pool.addWorker(ctx.getWorker());
+      pool.addWorker(eventLoopContext.getWorker());
       NioClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(
           vertx.getClientAcceptorPool(), pool);
       bootstrap = new ClientBootstrap(channelFactory);
@@ -407,17 +416,16 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   private void connected(final NioSocketChannel ch, final Handler<ClientConnection> connectHandler) {
-    ctx.execute(new Runnable() {
+    actualCtx.execute(new Runnable() {
       public void run() {
         final ClientConnection conn = new ClientConnection(vertx, DefaultHttpClient.this, ch,
-            host + ":" + port, tcpHelper.isSSL(), keepAlive, ctx);
+            host + ":" + port, tcpHelper.isSSL(), keepAlive, actualCtx);
         conn.closedHandler(new SimpleHandler() {
           public void handle() {
             pool.connectionClosed();
           }
         });
         connectionMap.put(ch, conn);
-        vertx.setContext(ctx);
         connectHandler.handle(conn);
       }
     });
@@ -430,7 +438,7 @@ public class DefaultHttpClient implements HttpClient {
     // If no specific exception handler is provided, fall back to the HttpClient's exception handler.
     final Handler<Exception> exHandler = connectionExceptionHandler == null ? exceptionHandler : connectionExceptionHandler;
 
-    ctx.execute(new Runnable() {
+    actualCtx.execute(new Runnable() {
          public void run() {
            pool.connectionClosed();
            ch.close();
@@ -438,9 +446,8 @@ public class DefaultHttpClient implements HttpClient {
        });
 
     if (t instanceof Exception && exHandler != null) {
-      ctx.execute(new Runnable() {
+      actualCtx.execute(new Runnable() {
         public void run() {
-          vertx.setContext(ctx);
           exHandler.handle((Exception) t);
         }
       });
@@ -456,7 +463,7 @@ public class DefaultHttpClient implements HttpClient {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final ClientConnection conn = connectionMap.remove(ch);
       if (conn != null) {
-        ctx.execute(new Runnable() {
+        actualCtx.execute(new Runnable() {
           public void run() {
             conn.handleClosed();
           }
@@ -468,7 +475,7 @@ public class DefaultHttpClient implements HttpClient {
     public void channelInterestChanged(ChannelHandlerContext chctx, ChannelStateEvent e) throws Exception {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final ClientConnection conn = connectionMap.get(ch);
-      ctx.execute(new Runnable() {
+      actualCtx.execute(new Runnable() {
         public void run() {
           conn.handleInterestedOpsChanged();
         }
@@ -481,7 +488,7 @@ public class DefaultHttpClient implements HttpClient {
       final ClientConnection conn = connectionMap.get(ch);
       final Throwable t = e.getCause();
       if (conn != null && t instanceof Exception) {
-        ctx.execute(new Runnable() {
+        actualCtx.execute(new Runnable() {
           public void run() {
             conn.handleException((Exception) t);
           }
@@ -495,10 +502,10 @@ public class DefaultHttpClient implements HttpClient {
     public void messageReceived(ChannelHandlerContext chctx, final MessageEvent e) throws Exception {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       // We need to do this since it's possible the server is being used from a worker context
-      if (ctx.isOnCorrectWorker(ch.getWorker())) {
+      if (eventLoopContext.isOnCorrectWorker(ch.getWorker())) {
         doMessageReceived(ch, e);
       } else {
-        ctx.execute(new Runnable() {
+        actualCtx.execute(new Runnable() {
           public void run() {
             doMessageReceived(ch, e);
           }
