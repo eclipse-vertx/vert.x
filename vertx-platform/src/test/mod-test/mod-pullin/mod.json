@@ -1,0 +1,4 @@
+{
+  "includes":"maven:io.vertx:mod-pullin-a:2.0.0,maven:io.vertx:mod-pullin-b:1.0.1",
+  "deploys":"maven:io.vertx:mod-pullin-c:0.1,maven:io.vertx:mod-pullin-d:1.2-beta"
+}

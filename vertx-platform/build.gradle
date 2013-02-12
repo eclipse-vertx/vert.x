@@ -39,14 +39,14 @@ jar {
 sourceSets {
   test {
     resources {
-      srcDirs "../src/dist/conf"
+      srcDirs "src/test/resources/testconf"
     }
   }
 }
 
 // Cleanup the modules placed in the mod-test directory during the test suite
 task cleanTestTmpModules(type: Delete) {
-  delete { file("src/test/mod-test").listFiles().find { it.name ==~ /maven:.+/ } }
+  delete { file("src/test/mod-test").listFiles().findAll { it.name ==~ /maven:.+/ } }
 }
 
 clean {

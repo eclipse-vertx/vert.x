@@ -46,7 +46,7 @@ public class TestBase extends TestCase {
   public static final String EVENTS_ADDRESS = "__test_events";
 
   // A single Vertx and DefaultPlatformManager for <b>ALL</b> tests
-  private static PlatformManager platformManager = PlatformLocator.factory.createPlatformManager();
+  protected static PlatformManager platformManager = PlatformLocator.factory.createPlatformManager();
   protected static Vertx vertx = platformManager.getVertx();
 
   private BlockingQueue<JsonObject> events = new LinkedBlockingQueue<>();
@@ -268,7 +268,7 @@ public class TestBase extends TestCase {
     return deployID;
   }
 
-  protected void stopApp(String appName) throws Exception {
+  protected void stopApp(String appName, boolean wait) throws Exception {
     //EventLog.addEvent("Stopping app " + appName);
     final CountDownLatch latch = new CountDownLatch(1);
     Integer instances = platformManager.listInstances().get(appName);
@@ -282,11 +282,17 @@ public class TestBase extends TestCase {
       throw new IllegalStateException("Timedout waiting for app to stop");
     }
     //EventLog.addEvent("App is undeployed");
-    for (int i = 0; i < instances; i++) {
-      waitAppStopped();
+    if (wait) {
+      for (int i = 0; i < instances; i++) {
+        waitAppStopped();
+      }
     }
     EventLog.addEvent("Waited for app to stop");
     startedApps.remove(appName);
+  }
+
+  protected void stopApp(String appName) throws Exception {
+    stopApp(appName, true);
   }
 
   protected void startTest(String testName) {

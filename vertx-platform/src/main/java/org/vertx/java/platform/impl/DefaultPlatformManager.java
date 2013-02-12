@@ -117,7 +117,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
     this.redeployer = new Redeployer(vertx, modRoot, this);
     loadLanguageMappings();
-    loadDefaultRepos();
+    loadRepos();
   }
 
 
@@ -751,7 +751,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     return arr;
   }
 
-  private void loadDefaultRepos() {
+  private void loadRepos() {
     try (InputStream is = getClass().getClassLoader().getResourceAsStream(REPOS_FILE_NAME)) {
       if (is != null) {
         BufferedReader rdr = new BufferedReader(new InputStreamReader(is));
