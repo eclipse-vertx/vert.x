@@ -73,14 +73,6 @@ public abstract class Verticle {
   }
 
   /**
-   * Vert.x calls the stop method when the verticle is undeployed.
-   * Put any cleanup code for your verticle in here
-   * @throws Exception
-   */
-  public void stop() throws Exception {
-  }
-
-  /**
    * Override this method to signify that start is complete sometime _after_ the start() method has returned
    * This is useful if your verticle deploys other verticles or modules and you don't want this verticle to
    * be considered started until the other modules and verticles have been started.
@@ -91,4 +83,13 @@ public abstract class Verticle {
     start();
     new AsyncResult<Void>().setResult(null).setHandler(doneHandler);
   }
+
+  /**
+   * Vert.x calls the stop method when the verticle is undeployed.
+   * Put any cleanup code for your verticle in here
+   * @throws Exception
+   */
+  public void stop() throws Exception {
+  }
+
 }

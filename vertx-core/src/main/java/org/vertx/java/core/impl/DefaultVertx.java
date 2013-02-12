@@ -260,7 +260,7 @@ public class DefaultVertx extends VertxInternal {
     return cancelTimeout(id);
   }
 
-  public Context createEventLoopContext() {
+  public EventLoopContext createEventLoopContext() {
     getBackgroundPool();
     NioWorker worker = getCorePool().nextWorker();
     return new EventLoopContext(this, orderedFact.getExecutor(), worker);

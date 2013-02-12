@@ -50,6 +50,7 @@ import org.vertx.java.core.net.impl.*;
 import javax.net.ssl.SSLEngine;
 import java.net.*;
 import java.nio.charset.Charset;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -70,7 +71,8 @@ public class DefaultHttpServer implements HttpServer {
 
   private final VertxInternal vertx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
-  private final EventLoopContext ctx;
+  private final Context actualCtx;
+  private final EventLoopContext eventLoopContext;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
   private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
@@ -89,12 +91,23 @@ public class DefaultHttpServer implements HttpServer {
     if (vertx.isWorker()) {
       throw new IllegalStateException("Cannot be used in a worker application");
     }
-    ctx = (EventLoopContext)vertx.getOrAssignContext();
-    ctx.putCloseHook(this, new Runnable() {
+    // This is kind of fiddly - this class might be used by a worker, in which case the context is not
+    // an event loop context - but we need an event loop context so that netty can deliver any messages for the connection
+    // Therefore, if the current context is not an event loop one, we need to create one and register that with the
+    // handler manager when registering handlers
+    // We then do a check when messages are delivered that we're on the right worker before delivering the message
+    // All of this will be massively simplified in Netty 4.0 when the event loop becomes a first class citizen
+    actualCtx = vertx.getOrAssignContext();
+    actualCtx.putCloseHook(this, new Runnable() {
       public void run() {
         close();
       }
     });
+    if (actualCtx instanceof EventLoopContext) {
+      eventLoopContext = (EventLoopContext)actualCtx;
+    } else {
+      eventLoopContext = vertx.createEventLoopContext();
+    }
     tcpHelper.setReuseAddress(true);
   }
 
@@ -201,11 +214,11 @@ public class DefaultHttpServer implements HttpServer {
       }
       if (requestHandler != null) {
         // Share the event loop thread to also serve the HttpServer's network traffic.
-        actualServer.reqHandlerManager.addHandler(requestHandler, ctx);
+        actualServer.reqHandlerManager.addHandler(requestHandler, eventLoopContext);
       }
       if (wsHandler != null) {
         // Share the event loop thread to also serve the HttpServer's network traffic.
-        actualServer.wsHandlerManager.addHandler(wsHandler, ctx);
+        actualServer.wsHandlerManager.addHandler(wsHandler, eventLoopContext);
       }
     }
     listening = true;
@@ -219,7 +232,7 @@ public class DefaultHttpServer implements HttpServer {
   public void close(final Handler<Void> done) {
     if (!listening) {
       if (done != null) {
-        executeCloseDone(ctx, done);
+        executeCloseDone(actualCtx, done);
       }
       return;
     }
@@ -230,22 +243,22 @@ public class DefaultHttpServer implements HttpServer {
       if (actualServer != null) {
 
         if (requestHandler != null) {
-          actualServer.reqHandlerManager.removeHandler(requestHandler, ctx);
+          actualServer.reqHandlerManager.removeHandler(requestHandler, eventLoopContext);
         }
         if (wsHandler != null) {
-          actualServer.wsHandlerManager.removeHandler(wsHandler, ctx);
+          actualServer.wsHandlerManager.removeHandler(wsHandler, eventLoopContext);
         }
 
         if (actualServer.reqHandlerManager.hasHandlers() || actualServer.wsHandlerManager.hasHandlers()) {
           // The actual server still has handlers so we don't actually close it
           if (done != null) {
-            executeCloseDone(ctx, done);
+            executeCloseDone(actualCtx, done);
           }
         } else {
           // No Handlers left so close the actual server
           // The done handler needs to be executed on the context that calls close, NOT the context
           // of the actual server
-          actualServer.actualClose(ctx, done);
+          actualServer.actualClose(actualCtx, done);
         }
       }
     }
@@ -438,10 +451,22 @@ public class DefaultHttpServer implements HttpServer {
     }
 
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
+    public void messageReceived(ChannelHandlerContext chctx, final MessageEvent e) throws Exception {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
+      final ServerConnection conn = connectionMap.get(ch);
+      if (conn == null || conn.getContext().isOnCorrectWorker(ch.getWorker())) {
+        doMessageReceived(conn, ch, e);
+      } else {
+        conn.getContext().execute(new Runnable() {
+          public void run() {
+            doMessageReceived(conn, ch, e);
+          }
+        });
+      }
+    }
+
+    private void doMessageReceived(ServerConnection conn, final NioSocketChannel ch, MessageEvent e) {
       Object msg = e.getMessage();
-      ServerConnection conn = connectionMap.get(ch);
       if (msg instanceof HttpRequest) {
 
         final HttpRequest request = (HttpRequest) msg;
@@ -468,15 +493,20 @@ public class DefaultHttpServer implements HttpServer {
           }
 
           final Handshake shake;
-          if (HandshakeRFC6455.matches(request)) {
-            shake = new HandshakeRFC6455();
-          } else if (Handshake08.matches(request)) {
-            shake = new Handshake08();
-          } else if (Handshake00.matches(request)) {
-            shake = new Handshake00();
-          } else {
-            log.error("Unrecognised websockets handshake");
-            ch.write(new DefaultHttpResponse(HTTP_1_1, NOT_FOUND));
+          try {
+            if (HandshakeRFC6455.matches(request)) {
+              shake = new HandshakeRFC6455();
+            } else if (Handshake08.matches(request)) {
+              shake = new Handshake08();
+            } else if (Handshake00.matches(request)) {
+              shake = new Handshake00();
+            } else {
+              log.error("Unrecognised websockets handshake");
+              ch.write(new DefaultHttpResponse(HTTP_1_1, NOT_FOUND));
+              return;
+            }
+          } catch (NoSuchAlgorithmException ex) {
+            log.error("Failed to create ws handshake", ex);
             return;
           }
 

@@ -19,10 +19,7 @@ package org.vertx.java.platform.impl;
 
 import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.impl.BlockingAction;
-import org.vertx.java.core.impl.Context;
-import org.vertx.java.core.impl.DefaultVertx;
-import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.impl.*;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;

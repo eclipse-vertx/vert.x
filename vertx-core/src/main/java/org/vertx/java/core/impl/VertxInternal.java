@@ -68,4 +68,6 @@ public abstract class VertxInternal extends Vertx {
 	 * @return
 	 */
   public abstract void setContext(Context context);
+
+  public abstract EventLoopContext createEventLoopContext();
 }

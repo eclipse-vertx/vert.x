@@ -42,4 +42,8 @@ public class EventLoopContext extends Context {
   public NioWorker getWorker() {
     return worker;
   }
+
+  public boolean isOnCorrectWorker(NioWorker worker) {
+    return this.worker == worker;
+  }
 }
