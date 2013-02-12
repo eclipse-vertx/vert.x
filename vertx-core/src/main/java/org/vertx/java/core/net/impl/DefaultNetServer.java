@@ -57,7 +57,8 @@ public class DefaultNetServer implements NetServer {
   private static final Logger log = LoggerFactory.getLogger(DefaultNetServer.class);
 
   private final VertxInternal vertx;
-  private final EventLoopContext ctx;
+  private final Context actualCtx;
+  private final EventLoopContext eventLoopContext;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<Channel, DefaultNetSocket>();
   private Handler<NetSocket> connectHandler;
@@ -70,15 +71,23 @@ public class DefaultNetServer implements NetServer {
 
   public DefaultNetServer(VertxInternal vertx) {
     this.vertx = vertx;
-    if (vertx.isWorker()) {
-      throw new IllegalStateException("Cannot be used in a worker application.");
-    }
-    ctx = (EventLoopContext) vertx.getOrAssignContext();
-    ctx.putCloseHook(this, new Runnable() {
+    // This is kind of fiddly - this class might be used by a worker, in which case the context is not
+    // an event loop context - but we need an event loop context so that netty can deliver any messages for the connection
+    // Therefore, if the current context is not an event loop one, we need to create one and register that with the
+    // handler manager when registering handlers
+    // We then do a check when messages are delivered that we're on the right worker before delivering the message
+    // All of this will be massively simplified in Netty 4.0 when the event loop becomes a first class citizen
+    actualCtx = vertx.getOrAssignContext();
+    actualCtx.putCloseHook(this, new Runnable() {
       public void run() {
         close();
       }
     });
+    if (actualCtx instanceof EventLoopContext) {
+      eventLoopContext = (EventLoopContext)actualCtx;
+    } else {
+      eventLoopContext = vertx.createEventLoopContext();
+    }
     tcpHelper.setReuseAddress(true);
   }
 
@@ -161,7 +170,7 @@ public class DefaultNetServer implements NetServer {
         actualServer = shared;
       }
       // Share the event loop thread to also serve the NetServer's network traffic.
-      actualServer.handlerManager.addHandler(connectHandler, ctx);
+      actualServer.handlerManager.addHandler(connectHandler, eventLoopContext);
     }
     return this;
   }
@@ -173,7 +182,7 @@ public class DefaultNetServer implements NetServer {
   public void close(final Handler<Void> done) {
     if (!listening) {
       if (done != null) {
-        executeCloseDone(ctx, done);
+        executeCloseDone(actualCtx, done);
       }
       return;
     }
@@ -181,18 +190,18 @@ public class DefaultNetServer implements NetServer {
     synchronized (vertx.sharedNetServers()) {
 
       if (actualServer != null) {
-        actualServer.handlerManager.removeHandler(connectHandler, ctx);
+        actualServer.handlerManager.removeHandler(connectHandler, eventLoopContext);
 
         if (actualServer.handlerManager.hasHandlers()) {
           // The actual server still has handlers so we don't actually close it
           if (done != null) {
-            executeCloseDone(ctx, done);
+            executeCloseDone(actualCtx, done);
           }
         } else {
           // No Handlers left so close the actual server
           // The done handler needs to be executed on the context that calls close, NOT the context
           // of the actual server
-          actualServer.actualClose(ctx, done);
+          actualServer.actualClose(actualCtx, done);
         }
       }
     }
@@ -448,11 +457,20 @@ public class DefaultNetServer implements NetServer {
 
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
-      Channel ch = e.getChannel();
-      DefaultNetSocket sock = socketMap.get(ch);
+      NioSocketChannel ch = (NioSocketChannel) e.getChannel();
+      final DefaultNetSocket sock = socketMap.get(ch);
       if (sock != null) {
-        ChannelBuffer buff = (ChannelBuffer) e.getMessage();
-        sock.handleDataReceived(new Buffer(buff.slice()));
+        final ChannelBuffer buff = (ChannelBuffer) e.getMessage();
+        // We need to do this since it's possible the server is being used from a worker context
+        if (sock.getContext().isOnCorrectWorker(ch.getWorker())) {
+          sock.handleDataReceived(new Buffer(buff.slice()));
+        } else {
+          sock.getContext().execute(new Runnable() {
+            public void run() {
+              sock.handleDataReceived(new Buffer(buff.slice()));
+            }
+          });
+        }
       }
     }
 
@@ -462,9 +480,6 @@ public class DefaultNetServer implements NetServer {
       final NetSocket sock = socketMap.remove(ch);
       ch.close();
       final Throwable t = e.getCause();
-
-      log.error("Exception on netserver", t);
-
       if (sock != null && t instanceof Exception) {
         sock.getContext().execute(new Runnable() {
           public void run() {

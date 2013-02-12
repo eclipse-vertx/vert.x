@@ -24,6 +24,7 @@ import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.EventLoopContext;
 import org.vertx.java.core.impl.VertxInternal;
@@ -31,6 +32,7 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.impl.CountingCompletionHandler;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -303,7 +305,7 @@ public class DefaultNetClient implements NetClient {
           }
         } else {
           if (remainingAttempts > 0 || remainingAttempts == -1) {
-            tcpHelper.runOnCorrectThread(ch, new Runnable() {
+            ctx.execute(new Runnable() {
               public void run() {
                 vertx.setContext(ctx);
                 log.debug("Failed to create connection. Will retry in " + reconnectInterval + " milliseconds");
@@ -325,7 +327,7 @@ public class DefaultNetClient implements NetClient {
   }
 
   private void connected(final NioSocketChannel ch, final Handler<NetSocket> connectHandler) {
-    tcpHelper.runOnCorrectThread(ch, new Runnable() {
+    ctx.execute(new Runnable() {
       public void run() {
         vertx.setContext(ctx);
         DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, ctx);
@@ -338,7 +340,7 @@ public class DefaultNetClient implements NetClient {
   private void failed(NioSocketChannel ch, final Throwable t) {
   	ch.close();
     if (t instanceof Exception && exceptionHandler != null) {
-      tcpHelper.runOnCorrectThread(ch, new Runnable() {
+      ctx.execute(new Runnable() {
         public void run() {
           vertx.setContext(ctx);
           exceptionHandler.handle((Exception) t);
@@ -360,7 +362,7 @@ public class DefaultNetClient implements NetClient {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final DefaultNetSocket sock = socketMap.remove(ch);
       if (sock != null) {
-        tcpHelper.runOnCorrectThread(ch, new Runnable() {
+        sock.getContext().execute(new Runnable() {
           public void run() {
             sock.handleClosed();
           }
@@ -369,11 +371,21 @@ public class DefaultNetClient implements NetClient {
     }
 
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
-      DefaultNetSocket sock = socketMap.get(ctx.getChannel());
+    public void messageReceived(ChannelHandlerContext chctx, MessageEvent e) {
+      final DefaultNetSocket sock = socketMap.get(chctx.getChannel());
       if (sock != null) {
-        ChannelBuffer cb = (ChannelBuffer) e.getMessage();
-        sock.handleDataReceived(new Buffer(cb));
+        final ChannelBuffer cb = (ChannelBuffer) e.getMessage();
+        NioSocketChannel ch = (NioSocketChannel) e.getChannel();
+        // We need to do this since it's possible the server is being used from a worker context
+        if (ctx.isOnCorrectWorker(ch.getWorker())) {
+          sock.handleDataReceived(new Buffer(cb));
+        } else {
+          ctx.execute(new Runnable() {
+            public void run() {
+              sock.handleDataReceived(new Buffer(cb));
+            }
+          });
+        }
       }
     }
 
@@ -383,7 +395,7 @@ public class DefaultNetClient implements NetClient {
       final DefaultNetSocket sock = socketMap.get(ch);
       ChannelState state = e.getState();
       if (state == ChannelState.INTEREST_OPS) {
-        tcpHelper.runOnCorrectThread(ch, new Runnable() {
+        ctx.execute(new Runnable() {
           public void run() {
             sock.handleInterestedOpsChanged();
           }
@@ -397,7 +409,7 @@ public class DefaultNetClient implements NetClient {
       final NetSocket sock = socketMap.remove(ch);
       final Throwable t = e.getCause();
       if (sock != null && t instanceof Exception) {
-        tcpHelper.runOnCorrectThread(ch, new Runnable() {
+        ctx.execute(new Runnable() {
           public void run() {
             sock.handleException((Exception) t);
             ch.close();

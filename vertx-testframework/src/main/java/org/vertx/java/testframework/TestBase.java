@@ -269,18 +269,19 @@ public class TestBase extends TestCase {
   }
 
   protected void stopApp(String appName) throws Exception {
-    EventLog.addEvent("Stopping app " + appName);
+    //EventLog.addEvent("Stopping app " + appName);
     final CountDownLatch latch = new CountDownLatch(1);
-    int instances = platformManager.listInstances().get(appName);
+    Integer instances = platformManager.listInstances().get(appName);
     platformManager.undeploy(appName, new SimpleHandler() {
       public void handle() {
         latch.countDown();
       }
     });
     if (!latch.await(30, TimeUnit.SECONDS)) {
+      EventLog.dump();
       throw new IllegalStateException("Timedout waiting for app to stop");
     }
-    EventLog.addEvent("App is undeployed");
+    //EventLog.addEvent("App is undeployed");
     for (int i = 0; i < instances; i++) {
       waitAppStopped();
     }

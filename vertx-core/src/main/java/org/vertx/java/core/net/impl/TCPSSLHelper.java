@@ -17,7 +17,6 @@
 package org.vertx.java.core.net.impl;
 
 import org.jboss.netty.channel.FixedReceiveBufferSizePredictor;
-import org.jboss.netty.channel.socket.nio.NioSocketChannel;
 import org.vertx.java.core.file.impl.PathAdjuster;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
@@ -76,16 +75,6 @@ public class TCPSSLHelper {
 
   public enum ClientAuth {
     NONE, REQUEST, REQUIRED
-  }
-
-  /*
-  Currently Netty does not provide all events for a connection on the same thread - e.g. connection open
-  connection bound etc are provided on the acceptor thread.
-  In vert.x we must ensure all events are executed on the correct event loop for the context
-  This code will go away if Netty acts like a proper event loop.
-   */
-  public void runOnCorrectThread(NioSocketChannel nch, Runnable runnable) {
-    nch.getWorker().executeInIoThread(runnable, true);
   }
 
   public Map<String, Object> generateConnectionOptions(boolean server) {

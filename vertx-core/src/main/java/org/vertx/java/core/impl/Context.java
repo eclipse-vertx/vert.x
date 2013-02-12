@@ -16,6 +16,7 @@
 
 package org.vertx.java.core.impl;
 
+import org.jboss.netty.channel.socket.nio.NioWorker;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -101,13 +102,9 @@ public abstract class Context {
     }
   }
 
-  private void close() {
-    vertx.setContext(null);
-    Thread.currentThread().setContextClassLoader(null);
-    closed = true;
-  }
-
   public abstract void execute(Runnable handler);
+
+  public abstract boolean isOnCorrectWorker(NioWorker worker);
 
   // This executes the task in the worker pool using the ordered executor of the context
   // It's used e.g. from BlockingActions
@@ -116,11 +113,18 @@ public abstract class Context {
   }
 
   private void decOustanding() {
-    if (outstandingTasks.decrementAndGet() == 0) {
+    int cnt = outstandingTasks.decrementAndGet();
+    if (cnt == 0) {
       closedHandler.handle(null);
       // Now there are no more oustanding tasks we can close the context
       close();
     }
+  }
+
+  private void close() {
+    vertx.setContext(null);
+    Thread.currentThread().setContextClassLoader(null);
+    closed = true;
   }
 
   public void closedHandler(Handler<Void> closedHandler) {

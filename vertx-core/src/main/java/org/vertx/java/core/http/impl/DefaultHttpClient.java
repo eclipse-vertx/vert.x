@@ -407,7 +407,7 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   private void connected(final NioSocketChannel ch, final Handler<ClientConnection> connectHandler) {
-    tcpHelper.runOnCorrectThread(ch, new Runnable() {
+    ctx.execute(new Runnable() {
       public void run() {
         final ClientConnection conn = new ClientConnection(vertx, DefaultHttpClient.this, ch,
             host + ":" + port, tcpHelper.isSSL(), keepAlive, ctx);
@@ -430,7 +430,7 @@ public class DefaultHttpClient implements HttpClient {
     // If no specific exception handler is provided, fall back to the HttpClient's exception handler.
     final Handler<Exception> exHandler = connectionExceptionHandler == null ? exceptionHandler : connectionExceptionHandler;
 
-    tcpHelper.runOnCorrectThread(ch, new Runnable() {
+    ctx.execute(new Runnable() {
          public void run() {
            pool.connectionClosed();
            ch.close();
@@ -438,7 +438,7 @@ public class DefaultHttpClient implements HttpClient {
        });
 
     if (t instanceof Exception && exHandler != null) {
-      tcpHelper.runOnCorrectThread(ch, new Runnable() {
+      ctx.execute(new Runnable() {
         public void run() {
           vertx.setContext(ctx);
           exHandler.handle((Exception) t);
@@ -456,7 +456,7 @@ public class DefaultHttpClient implements HttpClient {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final ClientConnection conn = connectionMap.remove(ch);
       if (conn != null) {
-        tcpHelper.runOnCorrectThread(ch, new Runnable() {
+        ctx.execute(new Runnable() {
           public void run() {
             conn.handleClosed();
           }
@@ -468,7 +468,7 @@ public class DefaultHttpClient implements HttpClient {
     public void channelInterestChanged(ChannelHandlerContext chctx, ChannelStateEvent e) throws Exception {
       final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
       final ClientConnection conn = connectionMap.get(ch);
-      tcpHelper.runOnCorrectThread(ch, new Runnable() {
+      ctx.execute(new Runnable() {
         public void run() {
           conn.handleInterestedOpsChanged();
         }
@@ -481,7 +481,7 @@ public class DefaultHttpClient implements HttpClient {
       final ClientConnection conn = connectionMap.get(ch);
       final Throwable t = e.getCause();
       if (conn != null && t instanceof Exception) {
-        tcpHelper.runOnCorrectThread(ch, new Runnable() {
+        ctx.execute(new Runnable() {
           public void run() {
             conn.handleException((Exception) t);
           }
@@ -492,9 +492,21 @@ public class DefaultHttpClient implements HttpClient {
     }
 
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
+    public void messageReceived(ChannelHandlerContext chctx, final MessageEvent e) throws Exception {
+      final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
+      // We need to do this since it's possible the server is being used from a worker context
+      if (ctx.isOnCorrectWorker(ch.getWorker())) {
+        doMessageReceived(ch, e);
+      } else {
+        ctx.execute(new Runnable() {
+          public void run() {
+            doMessageReceived(ch, e);
+          }
+        });
+      }
+    }
 
-      Channel ch = e.getChannel();
+    private void doMessageReceived(Channel ch, MessageEvent e) {
       ClientConnection conn = connectionMap.get(ch);
       Object msg = e.getMessage();
       if (msg instanceof HttpResponse) {
