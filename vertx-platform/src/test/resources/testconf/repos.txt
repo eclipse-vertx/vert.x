@@ -1,0 +1,9 @@
+# Repo for tests
+maven:http://localhost:9192/maven2
+bintray:http://localhost:9192/content
+
+# Maven central
+maven:http://repo2.maven.org/maven2
+
+# Sonatype snapshots
+maven:http://oss.sonatype.org/content/repositories/snapshots

@@ -147,6 +147,35 @@ public class Container {
   }
 
   /**
+   * Deploy a module programmatically
+   * @param moduleName The main of the module to deploy
+   * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
+   */
+  public void deployModule(String moduleName, Handler<String> doneHandler) {
+    mgr.deployModule(moduleName, null, 1, doneHandler);
+  }
+
+  /**
+   * Deploy a module programmatically
+   * @param moduleName The main of the module to deploy
+   * @param config JSON config to provide to the module
+   * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
+   */
+  public void deployModule(String moduleName, JsonObject config, Handler<String> doneHandler) {
+    mgr.deployModule(moduleName, config, 1, doneHandler);
+  }
+
+  /**
+   * Deploy a module programmatically
+   * @param moduleName The main of the module to deploy
+   *                   * @param instances The number of instances to deploy (defaults to 1)
+   * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
+   */
+  public void deployModule(String moduleName, int instances, Handler<String> doneHandler) {
+    mgr.deployModule(moduleName, null, instances, doneHandler);
+  }
+
+  /**
    * Deploy a worker verticle programmatically
    * @param main The main of the verticle
    */
@@ -210,6 +239,15 @@ public class Container {
    */
   public void deployVerticle(String main, JsonObject config, Handler<String> doneHandler) {
     this.deployVerticle(main, config, 1, doneHandler);
+  }
+
+  /**
+   * Deploy a verticle programmatically
+   * @param main The main of the verticle
+   * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
+   */
+  public void deployVerticle(String main, int instances, Handler<String> doneHandler) {
+    this.deployVerticle(main, null, instances, doneHandler);
   }
 
   /**
