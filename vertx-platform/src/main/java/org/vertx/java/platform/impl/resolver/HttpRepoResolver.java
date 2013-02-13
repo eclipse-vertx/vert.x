@@ -67,7 +67,7 @@ public abstract class HttpRepoResolver implements RepoResolver {
     String uri = getRepoURI(moduleName);
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<Buffer> mod = new AtomicReference<>();
-    getModule(moduleName, repoHost, repoPort, uri, latch, mod);
+    getModule(repoHost, repoPort, uri, latch, mod);
     while (true) {
       try {
         if (!latch.await(300, TimeUnit.SECONDS)) {
@@ -80,8 +80,7 @@ public abstract class HttpRepoResolver implements RepoResolver {
     return mod.get();
   }
 
-  public void getModule(final String moduleName,
-                        final String host, final int port, String uri, final CountDownLatch latch, final AtomicReference<Buffer> mod) {
+  public void getModule(final String host, final int port, String uri, final CountDownLatch latch, final AtomicReference<Buffer> mod) {
     final HttpClient client = vertx.createHttpClient();
     if (proxyHost != null) {
       client.setHost(proxyHost);
@@ -126,7 +125,7 @@ public abstract class HttpRepoResolver implements RepoResolver {
             public void handle(Buffer event) {
               buff.appendBuffer(event);
               long percent = Math.round(100 * (double)buff.length() / contentLength);
-              if (percent >= lastPercent + 1) {
+              if (percent > lastPercent) {
                 System.out.print("\rDownloading " + percent + "%");
                 lastPercent = percent;
               }
@@ -154,7 +153,7 @@ public abstract class HttpRepoResolver implements RepoResolver {
             URI redirectURI;
             try {
               redirectURI = new URI(location);
-              getModule(moduleName, redirectURI.getHost(), redirectURI.getPort() != -1 ? redirectURI.getPort() : 80, redirectURI.getPath(), latch, mod);
+              getModule(redirectURI.getHost(), redirectURI.getPort() != -1 ? redirectURI.getPort() : 80, redirectURI.getPath(), latch, mod);
               return;
             } catch (URISyntaxException e) {
               log.error("Invalid redirect URI: " + location);
