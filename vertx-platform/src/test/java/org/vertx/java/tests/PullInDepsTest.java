@@ -33,6 +33,10 @@ public class PullInDepsTest extends TestBase {
     super.tearDown();
   }
 
+//  public void testFoo() throws Exception {
+//    super.runTestInLoop("testPullInDeps", 10000);
+//  }
+
   @Test
   public void testPullInDeps() throws Exception {
     String deployID = startMod("mod-maven-server", null, 1, false);

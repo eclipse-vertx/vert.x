@@ -11,3 +11,5 @@ vertx.createHttpServer().requestHandler(function(req) {
     req.response.sendFile(file)
   }
 }).listen(9192)
+
+console.log("Maven server started!")
