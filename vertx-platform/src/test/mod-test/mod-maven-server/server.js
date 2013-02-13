@@ -12,4 +12,4 @@ vertx.createHttpServer().requestHandler(function(req) {
   }
 }).listen(9192)
 
-console.log("Maven server started!")
+console.log("Maven server started! on localhost: " + 9192)
