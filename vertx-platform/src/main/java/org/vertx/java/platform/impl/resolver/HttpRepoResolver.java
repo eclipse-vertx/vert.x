@@ -106,10 +106,11 @@ public abstract class HttpRepoResolver implements RepoResolver {
       uri = new StringBuilder("http://").append(host).append(":").append(port).append(uri).toString();
     }
     final String theURI = uri;
+
     HttpClientRequest req = client.get(uri, new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         if (resp.statusCode == 200) {
-          String msg= "Downloading module " + moduleName + " from ";
+          String msg= "Downloading ";
           if (proxyHost == null) {
             msg += "http://" + repoHost + ":" + repoPort + theURI;
           } else {
@@ -117,9 +118,24 @@ public abstract class HttpRepoResolver implements RepoResolver {
             msg += " Using proxy host " + proxyHost + ":" + proxyPort;
           }
           log.info(msg);
-          resp.bodyHandler(new Handler<Buffer>() {
-            public void handle(Buffer buffer) {
-              mod.set(buffer);
+          final Buffer buff = new Buffer();
+          final int contentLength = Integer.valueOf(resp.headers().get("content-length"));
+          resp.dataHandler(new Handler<Buffer>() {
+            long lastPercent = 0;
+            public void handle(Buffer event) {
+              buff.appendBuffer(event);
+              long percent = Math.round(100 * (double)buff.length() / contentLength);
+              if (percent >= lastPercent + 1) {
+                System.out.print("\rDownloading " + percent + "%");
+                lastPercent = percent;
+              }
+            }
+          });
+          resp.endHandler(new SimpleHandler() {
+            @Override
+            protected void handle() {
+              System.out.println("");
+              mod.set(buff);
               end(client, latch);
             }
           });
