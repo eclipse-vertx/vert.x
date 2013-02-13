@@ -278,7 +278,21 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   public void deployModuleFromZip(String zipFileName, JsonObject config,
                                   int instances, Handler<String> doneHandler) {
+    Buffer data;
+    try {
+      data = vertx.fileSystem().readFileSync(zipFileName);
+    } catch (Exception e) {
+      log.error("Failed to read file: " + zipFileName);
+      doneHandler.handle(null);
+      return;
+    }
+    final String modName = zipFileName.substring(0, zipFileName.length() - 4);
 
+    if (unzipModule(modName, data)) {
+      deployModule(modName, config, instances, doneHandler);
+    } else {
+      doneHandler.handle(null);
+    }
   }
 
   public void exit() {
@@ -848,25 +862,31 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
   }
 
+  private boolean checkModDirs() {
+    if (!modRoot.exists()) {
+      if (!modRoot.mkdir()) {
+        log.error("Failed to create mods dir " + modRoot);
+        return false;
+      }
+    }
+    if (!systemModRoot.exists()) {
+      if (!systemModRoot.mkdir()) {
+        log.error("Failed to create sys mods dir " + modRoot);
+        return false;
+      }
+    }
+    return true;
+  }
+
 
   private boolean unzipModule(final String modName, final Buffer data) {
-    checkWorkerContext();
 
     // We synchronize to prevent a race whereby it tries to unzip the same module at the
     // same time (e.g. deployModule for the same module name has been called in parallel)
     synchronized (modName.intern()) {
 
-      if (!modRoot.exists()) {
-        if (!modRoot.mkdir()) {
-          log.error("Failed to create mods dir " + modRoot);
-          return false;
-        }
-      }
-      if (!systemModRoot.exists()) {
-        if (!systemModRoot.mkdir()) {
-          log.error("Failed to create sys mods dir " + modRoot);
-          return false;
-        }
+      if (!checkModDirs()) {
+        return false;
       }
 
       File fdest = new File(modRoot, modName);
@@ -875,6 +895,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         // This can happen if the same module is requested to be installed
         // at around the same time
         // It's ok if this happens
+        log.warn("Module " + modName + " is already installed");
         return true;
       }
 
