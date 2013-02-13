@@ -44,7 +44,7 @@ test {
 
   testLogging.showStandardStreams = true
 
-  systemProperty 'vertx.test.timeout', 15
+  systemProperty 'vertx.test.timeout', 60
 
   jvmArgs '-server', '-Xms128m', '-Xmx1024m', '-XX:MaxPermSize=128m', '-XX:NewRatio=2'
 

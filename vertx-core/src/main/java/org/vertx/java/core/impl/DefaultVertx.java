@@ -24,7 +24,9 @@ import org.jboss.netty.channel.socket.nio.NioWorkerPool;
 import org.jboss.netty.util.*;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
+import org.vertx.java.core.eventbus.impl.ClusterManager;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
+import org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.file.impl.DefaultFileSystem;
 import org.vertx.java.core.file.impl.WindowsFileSystem;
@@ -57,6 +59,8 @@ public class DefaultVertx extends VertxInternal {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultVertx.class);
 
+  public static final int DEFAULT_CLUSTER_PORT = 2550;
+
   private final FileSystem fileSystem = getFileSystem();
   private final EventBus eventBus;
   private final SharedData sharedData = new SharedData();
@@ -83,16 +87,19 @@ public class DefaultVertx extends VertxInternal {
   private final AtomicLong timeoutCounter = new AtomicLong(0);
   private final Map<Long, TimeoutHolder> timeouts = new ConcurrentHashMap<>();
 
+  private ClusterManager clusterManager;
+
   public DefaultVertx() {
     this.eventBus = new DefaultEventBus(this);
   }
 
   public DefaultVertx(String hostname) {
-    this.eventBus = new DefaultEventBus(this, hostname);
+    this(DEFAULT_CLUSTER_PORT, hostname);
   }
 
   public DefaultVertx(int port, String hostname) {
-    this.eventBus = new DefaultEventBus(this, port, hostname);
+    this.clusterManager = new HazelcastClusterManager(this);
+    this.eventBus = new DefaultEventBus(this, port, hostname, clusterManager);
   }
 
   static {
