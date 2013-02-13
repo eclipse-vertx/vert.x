@@ -46,11 +46,11 @@ public class TestBase extends TestCase {
   public static final String EVENTS_ADDRESS = "__test_events";
 
   // A single Vertx and DefaultPlatformManager for <b>ALL</b> tests
-  protected static PlatformManager platformManager = PlatformLocator.factory.createPlatformManager();
-  protected static Vertx vertx = platformManager.getVertx();
+  protected PlatformManager platformManager;// = PlatformLocator.factory.createPlatformManager();
+  protected Vertx vertx ;//= platformManager.getVertx();
 
   private BlockingQueue<JsonObject> events = new LinkedBlockingQueue<>();
-  private TestUtils tu = new TestUtils(vertx);
+  private TestUtils tu;// = new TestUtils(vertx);
   private volatile Handler<Message<JsonObject>> handler;
   private List<AssertHolder> failedAsserts = new ArrayList<>();
   private List<String> startedApps = new CopyOnWriteArrayList<>();
@@ -74,6 +74,9 @@ public class TestBase extends TestCase {
 
   @Override
   protected void setUp() throws Exception {
+    platformManager = PlatformLocator.factory.createPlatformManager();
+    vertx = platformManager.getVertx();
+    tu = new TestUtils(vertx);
     EventLog.clear();
     handler = new Handler<Message<JsonObject>>() {
       public void handle(Message<JsonObject> message) {
@@ -144,6 +147,8 @@ public class TestBase extends TestCase {
     }
     EventLog.addEvent("teardown complete");
     EventLog.clear();
+    vertx.stop();
+    platformManager.stop();
   }
 
   protected String startApp(String main) throws Exception {

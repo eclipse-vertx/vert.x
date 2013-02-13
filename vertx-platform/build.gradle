@@ -46,7 +46,7 @@ sourceSets {
 
 // Cleanup the modules placed in the mod-test directory during the test suite
 task cleanTestTmpModules(type: Delete) {
-  delete { file("src/test/mod-test").listFiles().findAll { it.name ==~ /maven:.+/ } }
+  delete { file("src/test/mod-test").listFiles().findAll { it.name ==~ /maven:.+/ || it.name ==~ /bintray:.+/} }
 }
 
 clean {
