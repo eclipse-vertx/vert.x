@@ -105,6 +105,16 @@ public abstract class HttpRepoResolver implements RepoResolver {
       uri = new StringBuilder("http://").append(host).append(":").append(port).append(uri).toString();
     }
     final String theURI = uri;
+
+    String msg= "ATTEMPTING to Download module " + moduleName + " from ";
+    if (proxyHost == null) {
+      msg += "http://" + repoHost + ":" + repoPort + theURI;
+    } else {
+      msg += theURI;
+      msg += " Using proxy host " + proxyHost + ":" + proxyPort;
+    }
+    log.info(msg);
+
     HttpClientRequest req = client.get(uri, new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         if (resp.statusCode == 200) {
