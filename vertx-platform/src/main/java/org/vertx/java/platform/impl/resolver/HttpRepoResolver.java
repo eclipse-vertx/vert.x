@@ -107,6 +107,7 @@ public abstract class HttpRepoResolver implements RepoResolver {
     }
     final String theURI = uri;
 
+    System.out.println("Attempting to get from " + uri + " host: " + host + " port: " + port);
     HttpClientRequest req = client.get(uri, new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         if (resp.statusCode == 200) {
@@ -142,7 +143,9 @@ public abstract class HttpRepoResolver implements RepoResolver {
           return;
         } else if (resp.statusCode == 404) {
           // NOOP
+          System.out.println("404");
         } else if (resp.statusCode == 302) {
+          System.out.println("302");
           // follow redirects
           String location = resp.headers().get("location");
           if (location == null) {
