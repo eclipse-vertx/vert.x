@@ -36,6 +36,7 @@ public class PullInDepsTest extends TestBase {
   @Test
   public void testPullInDeps() throws Exception {
     String deployID = startMod("mod-maven-server", null, 1, false);
+    Thread.sleep(1000); // For CI
     assertTrue(platformManager.pullInDependencies("mod-pullin"));
     stopApp(deployID, false);
     assertFileExists("src/test/mod-test/mod-pullin/mods");
