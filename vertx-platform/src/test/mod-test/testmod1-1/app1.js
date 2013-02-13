@@ -18,8 +18,6 @@ load('test_utils.js')
 load('vertx.js')
 load('app2.js');
 
-console.log("in testmod1-1");
-
 var tu = new TestUtils();
 
 function testSimpleInclude() {

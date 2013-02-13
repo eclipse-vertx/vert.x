@@ -1,0 +1,2 @@
+A fake module server pretending to be a bintray repo for testing
+We need to write this in java so it doesn't try to download the rhino lang module

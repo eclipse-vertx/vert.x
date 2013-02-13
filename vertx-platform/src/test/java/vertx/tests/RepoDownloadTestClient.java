@@ -19,6 +19,7 @@ package vertx.tests;
  */
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.testframework.TestClientBase;
 
 public class RepoDownloadTestClient extends TestClientBase {
@@ -31,6 +32,16 @@ public class RepoDownloadTestClient extends TestClientBase {
 
   public void testMavenDownload() {
     container.deployModule("mod-maven-server", new Handler<String>() {
+      public void handle(String deployID) {
+        if (deployID != null) {
+          container.deployModule("maven:io.vertx:mod-maven-test:1.0.0");
+        }
+      }
+    });
+  }
+
+  public void testMavenDownloadWithProxy() {
+    container.deployModule("mod-proxy-maven-server", new Handler<String>() {
       public void handle(String deployID) {
         if (deployID != null) {
           container.deployModule("maven:io.vertx:mod-maven-test:1.0.0");

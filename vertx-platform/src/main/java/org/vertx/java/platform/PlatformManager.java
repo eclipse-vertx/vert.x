@@ -129,7 +129,13 @@ public interface PlatformManager {
    */
   Vertx getVertx();
 
+  /**
+   * Stop the platform manager
+   */
+  void stop();
+
   // debug only
   int checkNoModules();
+
 
 }

@@ -108,9 +108,11 @@ public abstract class HttpRepoResolver implements RepoResolver {
     HttpClientRequest req = client.get(uri, new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         if (resp.statusCode == 200) {
-          String msg = "Downloading module " + moduleName + " from http://"
-              + repoHost + ":" + repoPort + theURI;
-          if (proxyHost != null) {
+          String msg= "Downloading module " + moduleName + " from ";
+          if (proxyHost == null) {
+            msg += "http://" + repoHost + ":" + repoPort + theURI;
+          } else {
+            msg += theURI;
             msg += " Using proxy host " + proxyHost + ":" + proxyPort;
           }
           log.info(msg);
