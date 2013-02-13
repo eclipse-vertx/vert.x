@@ -276,6 +276,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     return this.vertx;
   }
 
+  public void deployModuleFromZip(String zipFileName, JsonObject config,
+                                  int instances, Handler<String> doneHandler) {
+
+  }
+
   public void exit() {
     if (exitHandler != null) {
       exitHandler.handle(null);
@@ -831,6 +836,19 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
 
+  private File unzipIntoTmpDir(Buffer data) {
+    String tdir = TEMP_DIR + FILE_SEP + "vertx-" + UUID.randomUUID().toString();
+    File tdest = new File(tdir);
+    tdest.mkdir();
+
+    if (!unzipModuleData(tdest, data)) {
+      return null;
+    } else {
+      return tdest;
+    }
+  }
+
+
   private boolean unzipModule(final String modName, final Buffer data) {
     checkWorkerContext();
 
@@ -861,11 +879,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       }
 
       // Unzip into temp dir first
-      String tdir = TEMP_DIR + FILE_SEP + "vertx-" + UUID.randomUUID().toString();
-      File tdest = new File(tdir);
-      tdest.mkdir();
-
-      if (!unzipModuleData(tdest, data)) {
+      File tdest = unzipIntoTmpDir(data);
+      if (tdest == null) {
         return false;
       }
 
