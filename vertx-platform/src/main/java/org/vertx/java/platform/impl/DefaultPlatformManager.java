@@ -817,6 +817,10 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       log.warn("No repositories configured!");
       return false;
     }
+    if (locateModule(null, moduleName) != null) {
+      log.error("Module is already installed");
+      return false;
+    }
     Buffer mod = getModule(moduleName);
     if (mod != null) {
       return unzipModule(moduleName, mod);
