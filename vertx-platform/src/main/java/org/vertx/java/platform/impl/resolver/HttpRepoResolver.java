@@ -17,6 +17,7 @@ package org.vertx.java.platform.impl.resolver;/*
  */
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
@@ -69,7 +70,7 @@ public abstract class HttpRepoResolver implements RepoResolver {
     getModule(moduleName, repoHost, repoPort, uri, latch, mod);
     while (true) {
       try {
-        if (!latch.await(30, TimeUnit.SECONDS)) {
+        if (!latch.await(300, TimeUnit.SECONDS)) {
           throw new IllegalStateException("Timed out waiting to download module");
         }
         break;
@@ -105,16 +106,6 @@ public abstract class HttpRepoResolver implements RepoResolver {
       uri = new StringBuilder("http://").append(host).append(":").append(port).append(uri).toString();
     }
     final String theURI = uri;
-
-    String msg= "ATTEMPTING to Download module " + moduleName + " from ";
-    if (proxyHost == null) {
-      msg += "http://" + repoHost + ":" + repoPort + theURI;
-    } else {
-      msg += theURI;
-      msg += " Using proxy host " + proxyHost + ":" + proxyPort;
-    }
-    log.info(msg);
-
     HttpClientRequest req = client.get(uri, new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         if (resp.statusCode == 200) {

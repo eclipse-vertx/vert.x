@@ -46,8 +46,8 @@ public class TestBase extends TestCase {
   public static final String EVENTS_ADDRESS = "__test_events";
 
   // A single Vertx and DefaultPlatformManager for <b>ALL</b> tests
-  protected PlatformManager platformManager;// = PlatformLocator.factory.createPlatformManager();
-  protected Vertx vertx ;//= platformManager.getVertx();
+  protected PlatformManager platformManager;
+  protected Vertx vertx;
 
   private BlockingQueue<JsonObject> events = new LinkedBlockingQueue<>();
   private TestUtils tu;// = new TestUtils(vertx);

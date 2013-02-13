@@ -54,7 +54,6 @@ public class DefaultEventBus implements EventBus {
   private static final Buffer PONG = new Buffer(new byte[] { (byte)1 });
   private static final long PING_INTERVAL = 20000;
   private static final long PING_REPLY_INTERVAL = 20000;
-  public static final int DEFAULT_CLUSTER_PORT = 2550;
   private final VertxInternal vertx;
   private final ServerID serverID;
   private NetServer server;
@@ -68,26 +67,18 @@ public class DefaultEventBus implements EventBus {
   public DefaultEventBus(VertxInternal vertx) {
     // Just some dummy server ID
     this.vertx = vertx;
-    this.serverID = new ServerID(DEFAULT_CLUSTER_PORT, "localhost");
+    this.serverID = new ServerID(-1, "localhost");
     this.server = null;
     this.subs = null;
     this.clusterMgr = null;
   }
 
-  public DefaultEventBus(VertxInternal vertx, String hostname) {
-    this(vertx, DEFAULT_CLUSTER_PORT, hostname);
-  }
-
-  public DefaultEventBus(VertxInternal vertx, int port, String hostname) {
+  public DefaultEventBus(VertxInternal vertx, int port, String hostname, ClusterManager clusterManager) {
     this.vertx = vertx;
     this.serverID = new ServerID(port, hostname);
-    this.clusterMgr = createClusterManager(vertx);
+    this.clusterMgr = clusterManager;
     this.subs = clusterMgr.getSubsMap("subs");
     this.server = setServer();
-  }
-
-  protected ClusterManager createClusterManager(final VertxInternal vertx) {
-    return new HazelcastClusterManager(vertx);
   }
   
   public void send(String address, JsonObject message, final Handler<Message<JsonObject>> replyHandler) {
