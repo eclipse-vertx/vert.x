@@ -81,7 +81,8 @@ public interface PlatformManager {
   /**
    * Deploy a module from a zip file.
    * The zip must contain a valid Vert.x module. Vert.x will automatically install the module from the zip into the
-   * local mods dir or the system mods dir (if it's a system module), or VERTX_MODS if set
+   * local mods dir or the system mods dir (if it's a system module), or VERTX_MODS if set, and then deploy the
+   * module
    * @param zipFileName The name of the zip file that contains the module
    * @param config Any JSON config to pass to the verticle, or null if none
    * @param instances The number of instances to deploy
