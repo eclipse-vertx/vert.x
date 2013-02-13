@@ -24,14 +24,20 @@ public class ProxyRepoDownloadTest extends TestBase {
 
   @Override
   protected void setUp() throws Exception {
-//    System.setProperty("http.proxyHost", "127.0.0.1");
-//    System.setProperty("http.proxyPort", "9193");
+    System.setProperty("http.proxyHost", "127.0.0.1");
+    System.setProperty("http.proxyPort", "9193");
     super.setUp();
-//    startApp(RepoDownloadTestClient.class.getName());
+    startApp(RepoDownloadTestClient.class.getName());
+  }
+
+  protected void tearDown() throws Exception {
+    super.tearDown();
+    System.clearProperty("http.proxyHost");
+    System.clearProperty("http.proxyPort");
   }
 
   @Test
   public void testMavenDownloadWithProxy() throws Exception {
-    //startTest(getMethodName());
+    startTest(getMethodName());
   }
 }
