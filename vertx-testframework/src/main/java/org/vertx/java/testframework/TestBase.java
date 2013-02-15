@@ -46,8 +46,8 @@ public class TestBase extends TestCase {
   public static final String EVENTS_ADDRESS = "__test_events";
 
   // A single Vertx and DefaultPlatformManager for <b>ALL</b> tests
-  protected PlatformManager platformManager;
-  protected Vertx vertx;
+  protected static PlatformManager platformManager = PlatformLocator.factory.createPlatformManager();
+  protected Vertx vertx = platformManager.getVertx();
 
   private BlockingQueue<JsonObject> events = new LinkedBlockingQueue<>();
   private TestUtils tu;// = new TestUtils(vertx);
@@ -74,8 +74,6 @@ public class TestBase extends TestCase {
 
   @Override
   protected void setUp() throws Exception {
-    platformManager = PlatformLocator.factory.createPlatformManager();
-    vertx = platformManager.getVertx();
     tu = new TestUtils(vertx);
     EventLog.clear();
     handler = new Handler<Message<JsonObject>>() {
@@ -147,8 +145,6 @@ public class TestBase extends TestCase {
     }
     EventLog.addEvent("teardown complete");
     EventLog.clear();
-    vertx.stop();
-    platformManager.stop();
   }
 
   protected String startApp(String main) throws Exception {
@@ -186,7 +182,7 @@ public class TestBase extends TestCase {
   protected String startApp(boolean worker, String main, JsonObject config, int instances, boolean await) throws Exception {
     EventLog.addEvent("Starting app " + main);
     URL url;
-    if (main.endsWith(".js") || main.endsWith(".rb") || main.endsWith(".groovy") || main.endsWith(".py")) {
+    if (main.endsWith(".js") || main.endsWith(".rb") || main.endsWith(".groovy") || main.endsWith(".py") || main.endsWith(".java")) {
       url = getClass().getClassLoader().getResource(main);
     } else {
       String classDir = main.replace('.', '/') + ".class";
