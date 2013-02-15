@@ -111,8 +111,9 @@ task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
     from file('src/dist/client')
   }
   into('conf') {
-    from file('src/dist/conf')
+    from file('vertx-platform/src/main/resources')
     filter(org.apache.tools.ant.filters.ReplaceTokens, tokens:[version: rootProject.version])
+    exclude "**/META_INF/**"
   }
   into('examples') {
     from file("vertx-examples/src/main")
