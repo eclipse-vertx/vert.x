@@ -40,7 +40,7 @@
 
    function send(message) {
 
-     if (sock.readyState == SockJS.OPEN) {
+     if (sock.readyState === SockJS.OPEN) {
         console.log("sending message")
         sock.send(message);
      } else {
