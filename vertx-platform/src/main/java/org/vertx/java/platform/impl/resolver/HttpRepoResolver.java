@@ -131,7 +131,7 @@ public abstract class HttpRepoResolver implements RepoResolver {
             msg += theURI;
             msg += " Using proxy host " + proxyHost + ":" + proxyPort;
           }
-          log.info(msg);
+          log.info(msg + ". Please wait.");
           final AtomicInteger written = new AtomicInteger();
           final int contentLength = Integer.valueOf(resp.headers().get("content-length"));
           resp.dataHandler(new Handler<Buffer>() {
