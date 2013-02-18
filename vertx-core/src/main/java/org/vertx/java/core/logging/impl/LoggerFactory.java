@@ -15,6 +15,7 @@
 
 package org.vertx.java.core.logging.impl;
 
+import org.apache.log4j.LogManager;
 import org.vertx.java.core.logging.Logger;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -88,5 +89,4 @@ public class LoggerFactory {
   public static void removeLogger(String name) {
     loggers.remove(name);
   }
-
 }

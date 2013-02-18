@@ -25,6 +25,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.platform.PlatformLocator;
 import org.vertx.java.platform.PlatformManager;
 import org.vertx.java.platform.impl.Args;
+import org.vertx.java.platform.impl.resolver.HttpRepoResolver;
 
 import java.io.*;
 import java.net.*;
@@ -46,6 +47,9 @@ public class Starter {
   private static final String CP_SEPARATOR = System.getProperty("path.separator");
 
   public static void main(String[] args) {
+    // Show download stats - they don't display properly in Gradle so we only have them when running
+    // on the command line
+    HttpRepoResolver.suppressDownloadCounter = false;
     new Starter(args);
   }
 

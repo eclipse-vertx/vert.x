@@ -22,6 +22,6 @@ import org.vertx.java.core.buffer.Buffer;
  */
 public interface RepoResolver {
 
-  public Buffer getModule(String moduleName);
+  public boolean getModule(String filename, String moduleName);
 
 }
