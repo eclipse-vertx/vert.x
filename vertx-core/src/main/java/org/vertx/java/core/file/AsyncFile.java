@@ -86,6 +86,6 @@ public interface AsyncFile {
    * Same as {@link #flush} but the handler will be called when the flush is complete or if an error occurs
    * @param handler
    */
-  void flush(AsyncResultHandler handler);
+  void flush(AsyncResultHandler<Void> handler);
 
 }
