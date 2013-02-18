@@ -16,13 +16,13 @@ import java.util.*;
  * A ModuleClassLoader can have multiple parents, this always includes the class loader of the module that deployed it
  * (or null if is a top level module), plus the class loaders of any modules that this module includes.
  *
- * If the class to be loaded is a system class, the system classloader is called directly.
+ * If the class to be loaded is a system class, the loadingClassLoader classloader is called directly.
  *
  * Otherwise this class loader always tries to the load the class itself. If it can't find the class it iterates
- * through its parents trying to load the class. If none of the parents can find it, the system classloader is tried.
+ * through its parents trying to load the class. If none of the parents can find it, the loadingClassLoader classloader is tried.
  *
  * When locating resources this class loader always looks for the resources itself, then it asks the parents to look,
- * and finally the system classloader is asked.
+ * and finally the loadingClassLoader classloader is asked.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -36,11 +36,11 @@ public class ModuleClassLoader extends URLClassLoader {
   private static ThreadLocal<Integer> recurseDepth = new ThreadLocal<>();
 
   private final Set<ModuleReference> parents = new ConcurrentHashSet<>();
-  private final ClassLoader system;
+  private final ClassLoader loadingClassLoader;
 
   public ModuleClassLoader(URL[] classpath) {
     super(classpath);
-    system = getSystemClassLoader();
+    loadingClassLoader = Thread.currentThread().getContextClassLoader();
   }
 
   public void addParent(ModuleReference parent) {
@@ -63,12 +63,12 @@ public class ModuleClassLoader extends URLClassLoader {
       throws ClassNotFoundException {
     Class<?> c = findLoadedClass(name);
     if (c == null) {
-      // If a system class then we always try to load with the system class loader first
+      // If a loadingClassLoader class then we always try to load with the loadingClassLoader class loader first
       // In some case, e.g. with some org.vertx classes it won't find it, since some vert.x produced
       // modules might contain org.vertx.* classes, in which case we continue
       if (isSystemClass(name)) {
         try {
-          c = system.loadClass(name);
+          c = loadingClassLoader.loadClass(name);
         } catch (ClassNotFoundException e) {
           // Ok continue
         }
@@ -97,9 +97,9 @@ public class ModuleClassLoader extends URLClassLoader {
             // Make sure we clear the thread locals afterwards
             checkClearTLs();
           }
-          // If we get here then none of the parents could find it, so try the system
-          // It IS valid for vert.x users to add classes on the system classpath, but it is frowned upon.
-          return system.loadClass(name);
+          // If we get here then none of the parents could find it, so try the loadingClassLoader
+          // It IS valid for vert.x users to add classes on the loadingClassLoader classpath, but it is frowned upon.
+          return loadingClassLoader.loadClass(name);
         }
       }
     }
@@ -110,7 +110,7 @@ public class ModuleClassLoader extends URLClassLoader {
   }
 
   /*
-  A system class is any class whose loading should be delegated to the system class loader
+  A loadingClassLoader class is any class whose loading should be delegated to the loadingClassLoader class loader
   This includes all JDK classes and all vert.x internal classes. We don't want this stuff to be ever loaded
   by a module class loader
    */
@@ -167,8 +167,8 @@ public class ModuleClassLoader extends URLClassLoader {
             return url;
           }
         }
-        // If got here then none of the parents know about it, so try the system
-        url = system.getResource(name);
+        // If got here then none of the parents know about it, so try the loadingClassLoader
+        url = loadingClassLoader.getResource(name);
       }
       return url;
     } finally {
@@ -206,8 +206,8 @@ public class ModuleClassLoader extends URLClassLoader {
       checkClearTLs();
     }
 
-    // And system too
-    addURLs(totURLs, system.getResources(name));
+    // And loadingClassLoader too
+    addURLs(totURLs, loadingClassLoader.getResources(name));
 
     return new Enumeration<URL>() {
       Iterator<URL> iter = totURLs.iterator();
