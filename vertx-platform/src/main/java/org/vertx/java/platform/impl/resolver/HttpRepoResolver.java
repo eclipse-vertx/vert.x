@@ -113,6 +113,8 @@ public abstract class HttpRepoResolver implements RepoResolver {
     }
     final String theURI = uri;
 
+    System.out.println("Trying to connect on " + uri);
+
     HttpClientRequest req = client.get(uri, new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         final OutputStream os;
