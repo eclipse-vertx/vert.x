@@ -65,10 +65,10 @@ cd "`dirname \"$PRG\"`/../../.."
 VERTX_HOME="`pwd -P`"
 cd "$SAVED"
 
-CLASSPATH=$VERTX_HOME/extralibs/*:$VERTX_HOME/vertx-core/build/libs/*:\
+CLASSPATH=$VERTX_HOME/src/dist/conf:$VERTX_HOME/extralibs/*:$VERTX_HOME/vertx-core/build/libs/*:\
 $VERTX_HOME/vertx-platform/build/libs/*:\
-$VERTX_HOME/vertx-core/build/deps/compile/*:\
-$VERTX_HOME/src/dist/conf
+$VERTX_HOME/vertx-core/build/deps/compile/*
+
 
 # Determine the Java command to use to start the JVM.
 if [ -n "$JAVA_HOME" ] ; then

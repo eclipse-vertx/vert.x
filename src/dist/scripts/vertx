@@ -69,7 +69,7 @@ cd "`dirname \"$PRG\"`/.."
 VERTX_HOME="`pwd -P`"
 cd "$SAVED"
 
-CLASSPATH=${CLASSPATH}:${VERTX_HOME}/lib/*:${VERTX_HOME}/conf
+CLASSPATH=${CLASSPATH}:${VERTX_HOME}/conf:${VERTX_HOME}/lib/*
 
 # Determine the Java command to use to start the JVM.
 if [ -n "$JAVA_HOME" ] ; then
