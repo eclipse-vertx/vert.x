@@ -108,13 +108,15 @@ public class ModuleClassLoader extends URLClassLoader {
   }
 
   /*
-  A platformClassLoader class is any class whose loading should be delegated to the platformClassLoader class loader
+  A system class is any class whose loading should be delegated to the platformClassLoader class loader
   This includes all JDK classes and all vert.x internal classes. We don't want this stuff to be ever loaded
   by a module class loader
    */
   private boolean isSystemClass(String name) {
+    // TODO tidy this up
     return (name.startsWith("java.") || name.startsWith("com.sun.") || name.startsWith("sun.") || name.startsWith("javax.") ||
-            name.startsWith("org.vertx."));
+        name.startsWith("org.vertx.java.core") || name.startsWith("org.vertx.java.platform") || name.equals("org.vertx.java.busmods.BusModBase") ||
+        name.startsWith("org.vertx.java.testframework") || name.startsWith("org.vertx.java.tests"));
   }
 
   private Set<ModuleClassLoader> getWalked() {
