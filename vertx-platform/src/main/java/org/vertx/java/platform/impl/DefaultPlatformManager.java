@@ -101,8 +101,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   private DefaultPlatformManager(VertxInternal vertx) {
-    this.platformClassLoader = this.getClass().getClassLoader();
-    System.out.println("Platform classloader is " + platformClassLoader);
+    this.platformClassLoader = Thread.currentThread().getContextClassLoader();
     this.vertx = vertx;
     this.proxyHost = System.getProperty(HTTP_PROXY_HOST_PROP_NAME);
     String tmpPort = System.getProperty(HTTP_PROXY_PORT_PROP_NAME);
