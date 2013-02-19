@@ -86,6 +86,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private String defaultLanguageImplName;
   private Map<String, List<RepoResolver>> defaultRepos = new HashMap<>();
   private Handler<Void> exitHandler;
+  private final ClassLoader platformClassLoader;
 
   DefaultPlatformManager() {
     this(new DefaultVertx());
@@ -100,6 +101,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   private DefaultPlatformManager(VertxInternal vertx) {
+    this.platformClassLoader = this.getClass().getClassLoader();
+    System.out.println("Platform classloader is " + platformClassLoader);
     this.vertx = vertx;
     this.proxyHost = System.getProperty(HTTP_PROXY_HOST_PROP_NAME);
     String tmpPort = System.getProperty(HTTP_PROXY_PORT_PROP_NAME);
@@ -464,7 +467,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
     ModuleReference mr = modules.get(moduleKey);
     if (mr == null) {
-      mr = new ModuleReference(this, moduleKey, new ModuleClassLoader(urls), false);
+      mr = new ModuleReference(this, moduleKey, new ModuleClassLoader(platformClassLoader, urls), false);
       ModuleReference prev = modules.putIfAbsent(moduleKey, mr);
       if (prev != null) {
         mr = prev;
@@ -629,7 +632,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       ModuleReference mr = modules.get(modName);
       if (mr == null) {
         boolean res = fields.isResident();
-        mr = new ModuleReference(this, modName, new ModuleClassLoader(urls.toArray(new URL[urls.size()])), res);
+        mr = new ModuleReference(this, modName,
+                                 new ModuleClassLoader(platformClassLoader, urls.toArray(new URL[urls.size()])), res);
         ModuleReference prev = modules.putIfAbsent(modName, mr);
         if (prev != null) {
           mr = prev;
@@ -712,7 +716,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         ModuleFields fields = new ModuleFields(conf);
 
         boolean res = fields.isResident();
-        includedMr = new ModuleReference(this, moduleName, new ModuleClassLoader(urls.toArray(new URL[urls.size()])),
+        includedMr = new ModuleReference(this, moduleName,
+                                         new ModuleClassLoader(platformClassLoader, urls.toArray(new URL[urls.size()])),
                                          res);
         ModuleReference prev = modules.putIfAbsent(moduleName, includedMr);
         if (prev != null) {
