@@ -97,9 +97,7 @@ public class ModuleClassLoader extends URLClassLoader {
             // Make sure we clear the thread locals afterwards
             checkClearTLs();
           }
-          // If we get here then none of the parents could find it, so try the platformClassLoader
-          // It IS valid for vert.x users to add classes on the platformClassLoader classpath, but it is frowned upon.
-          return platformClassLoader.loadClass(name);
+          throw e;
         }
       }
     }
@@ -115,7 +113,7 @@ public class ModuleClassLoader extends URLClassLoader {
   by a module class loader
    */
   private boolean isSystemClass(String name) {
-    return (name.startsWith("java.") || name.startsWith("com.sun.") || name.startsWith("javax.") ||
+    return (name.startsWith("java.") || name.startsWith("com.sun.") || name.startsWith("sun.") || name.startsWith("javax.") ||
             name.startsWith("org.vertx."));
   }
 
