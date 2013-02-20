@@ -31,8 +31,8 @@ import org.vertx.java.core.Vertx;
  */
 public class MavenRepoResolver extends HttpRepoResolver {
 
-  public MavenRepoResolver(Vertx vertx, String proxyHost, int proxyPort, String repoID) {
-    super(vertx, proxyHost, proxyPort, repoID);
+  public MavenRepoResolver(Vertx vertx, String repoID) {
+    super(vertx, repoID);
   }
 
   @Override

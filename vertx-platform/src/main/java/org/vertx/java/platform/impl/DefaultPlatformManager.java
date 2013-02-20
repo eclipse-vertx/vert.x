@@ -18,7 +18,6 @@ package org.vertx.java.platform.impl;
 
 
 import org.vertx.java.core.*;
-import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.*;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
@@ -41,7 +40,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.ZipEntry;
@@ -58,8 +56,6 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   private static final Logger log = LoggerFactory.getLogger(DefaultPlatformManager.class);
   private static final int BUFFER_SIZE = 4096;
-  private static final String HTTP_PROXY_HOST_PROP_NAME = "http.proxyHost";
-  private static final String HTTP_PROXY_PORT_PROP_NAME = "http.proxyPort";
   private static final String MODS_DIR_PROP_NAME = "vertx.mods";
   private static final char COLON = ':';
   private static final String LANG_IMPLS_SYS_PROP_ROOT = "vertx.langs.";
@@ -77,8 +73,6 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   // The user mods dir
   private final File modRoot;
   private final File systemModRoot;
-  private final String proxyHost;
-  private final int proxyPort;
   private final ConcurrentMap<String, ModuleReference> modules = new ConcurrentHashMap<>();
   private final Redeployer redeployer;
   private Map<String, LanguageImplInfo> languageImpls = new ConcurrentHashMap<>();
@@ -103,9 +97,6 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private DefaultPlatformManager(VertxInternal vertx) {
     this.platformClassLoader = Thread.currentThread().getContextClassLoader();
     this.vertx = vertx;
-    this.proxyHost = System.getProperty(HTTP_PROXY_HOST_PROP_NAME);
-    String tmpPort = System.getProperty(HTTP_PROXY_PORT_PROP_NAME);
-    this.proxyPort = tmpPort != null ? Integer.parseInt(tmpPort) : 80;
     String modDir = System.getProperty(MODS_DIR_PROP_NAME);
     if (modDir != null && !modDir.trim().equals("")) {
       modRoot = new File(modDir);
@@ -789,10 +780,10 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           RepoResolver resolver;
           switch (type) {
             case "maven":
-              resolver = new MavenRepoResolver(vertx, proxyHost, proxyPort, repoID);
+              resolver = new MavenRepoResolver(vertx, repoID);
               break;
             case "bintray":
-              resolver = new BintrayRepoResolver(vertx, proxyHost, proxyPort, repoID);
+              resolver = new BintrayRepoResolver(vertx, repoID);
               break;
             default:
               throw new IllegalArgumentException("Unknown repo type: " + type);

@@ -35,8 +35,8 @@ import java.lang.String;
  */
 public class BintrayRepoResolver extends HttpRepoResolver {
 
-  public BintrayRepoResolver(Vertx vertx, String proxyHost, int proxyPort, String repoID) {
-    super(vertx, proxyHost, proxyPort, repoID);
+  public BintrayRepoResolver(Vertx vertx, String repoID) {
+    super(vertx, repoID);
   }
 
   @Override

@@ -41,19 +41,18 @@ public abstract class HttpRepoResolver implements RepoResolver {
 
   private static final Logger log = LoggerFactory.getLogger(HttpRepoResolver.class);
 
+  private static final String HTTP_PROXY_HOST_PROP_NAME = "http.proxyHost";
+  private static final String HTTP_PROXY_PORT_PROP_NAME = "http.proxyPort";
+
   private final Vertx vertx;
-  private final String proxyHost;
-  private final int proxyPort;
   protected final String repoHost;
   protected final int repoPort;
   protected final String contentRoot;
 
   public static boolean suppressDownloadCounter = true;
 
-  public HttpRepoResolver(Vertx vertx, String proxyHost, int proxyPort, String repoID) {
+  public HttpRepoResolver(Vertx vertx,String repoID) {
     this.vertx = vertx;
-    this.proxyHost = proxyHost;
-    this.proxyPort = proxyPort;
     try {
       URI uri = new URI(repoID);
       repoHost = uri.getHost();
@@ -69,6 +68,14 @@ public abstract class HttpRepoResolver implements RepoResolver {
   }
 
   protected abstract String getRepoURI(String moduleName);
+
+  private String getProxyHost() {
+    return System.getProperty(HTTP_PROXY_HOST_PROP_NAME);
+  }
+
+  private int getProxyPort() {
+    return Integer.valueOf(System.getProperty(HTTP_PROXY_PORT_PROP_NAME, "80"));
+  }
 
   public boolean getModule(String filename, String moduleName) {
     String uri = getRepoURI(moduleName);
@@ -90,6 +97,8 @@ public abstract class HttpRepoResolver implements RepoResolver {
   public void getModule(final String filename, final String host, final int port, String uri, final CountDownLatch latch,
                         final AtomicReference<Boolean> res) {
     final HttpClient client = vertx.createHttpClient();
+    final String proxyHost = getProxyHost();
+    final int proxyPort = getProxyPort();
     if (proxyHost != null) {
       client.setHost(proxyHost);
       if (proxyPort != 80) {
@@ -112,8 +121,6 @@ public abstract class HttpRepoResolver implements RepoResolver {
       uri = new StringBuilder("http://").append(host).append(":").append(port).append(uri).toString();
     }
     final String theURI = uri;
-
-    System.out.println("Trying to connect on " + uri);
 
     HttpClientRequest req = client.get(uri, new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {

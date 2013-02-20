@@ -25,6 +25,5 @@ public class Server extends Verticle {
         }
       }
     }).listen(9193, "127.0.0.1");
-    System.out.println("repo proxy server listening on 127.0.0.1:91923");
   }
 }
