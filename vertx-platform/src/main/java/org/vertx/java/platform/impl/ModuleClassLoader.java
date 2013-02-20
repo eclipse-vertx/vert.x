@@ -110,14 +110,18 @@ public class ModuleClassLoader extends URLClassLoader {
 
   /*
   A system class is any class whose loading should be delegated to the platform class loader
-  This includes all JDK classes and all vert.x internal classes. We don't want this stuff to be ever loaded
-  by a module class loader
+  This includes all JDK classes and all vert.x internal classes. This stuff needs to be loaded by the platform
+  class loader.
    */
   private boolean isSystemClass(String name) {
-    // TODO tidy this up
-    return (name.startsWith("java.") || name.startsWith("com.sun.") || name.startsWith("sun.") ||
-        name.startsWith("javax.") || name.startsWith("org.w3c") ||
+    return (
+        // Contained in JDK
+        name.startsWith("java.") || name.startsWith("com.sun.") || name.startsWith("sun.") ||
+        name.startsWith("javax.") ||
+        name.startsWith("org.w3c") ||
+        // Vert.x itself
         name.startsWith("org.vertx.java.core") || name.startsWith("org.vertx.java.platform") ||
+        // Some test related stuff
         name.equals("org.vertx.java.busmods.BusModBase") ||
         name.startsWith("org.vertx.java.testframework") || name.startsWith("org.vertx.java.tests") ||
         name.startsWith("org.vertx.testtools"));
