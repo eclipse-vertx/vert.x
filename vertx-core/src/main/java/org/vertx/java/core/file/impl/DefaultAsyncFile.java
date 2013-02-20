@@ -82,7 +82,7 @@ public class DefaultAsyncFile implements AsyncFile {
     closeInternal(null);
   }
 
-  public void close(AsyncResultHandler handler) {
+  public void close(AsyncResultHandler<Void> handler) {
     closeInternal(handler);
   }
 
@@ -277,11 +277,11 @@ public class DefaultAsyncFile implements AsyncFile {
     doFlush(null);
   }
 
-  public void flush(AsyncResultHandler handler) {
+  public void flush(AsyncResultHandler<Void> handler) {
     doFlush(handler);
   }
 
-  private void doFlush(AsyncResultHandler handler) {
+  private void doFlush(AsyncResultHandler<Void> handler) {
     checkClosed();
     checkContext();
     new BlockingAction<Void>(vertx, handler) {

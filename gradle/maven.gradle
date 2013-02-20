@@ -21,29 +21,29 @@ apply plugin: 'signing'
 // custom maven tasks
 
 task sourceJar(type: Jar) {
-	description = 'Builds a source jar artifact suitable for maven deployment.'
-	classifier = 'sources'
-	from sourceSets.main.java
+  description = 'Builds a source jar artifact suitable for maven deployment.'
+  classifier = 'sources'
+  from sourceSets.main.java
 }
 
 task javadocJar(type: Jar) {
-	description = 'Builds a javadoc jar artifact suitable for maven deployment.'
-	classifier = 'javadoc'
-	from javadoc.destinationDir
+  description = 'Builds a javadoc jar artifact suitable for maven deployment.'
+  classifier = 'javadoc'
+  from javadoc.destinationDir
 }
 javadocJar.dependsOn javadoc
 
 build.dependsOn sourceJar, javadocJar
 
 artifacts {
-	archives sourceJar, javadocJar
+  archives sourceJar, javadocJar
 }
 
 if (!hasProperty('sonatypeUsername')) {
-	ext.sonatypeUsername = ''
+  ext.sonatypeUsername = ''
 }
 if (!hasProperty('sonatypePassword')) {
-	ext.sonatypePassword = ''
+  ext.sonatypePassword = ''
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -52,79 +52,99 @@ if (!hasProperty('sonatypePassword')) {
 ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
 
 signing {
-	required { isReleaseVersion && gradle.taskGraph.hasTask("uploadArchives") }
-	sign configurations.archives
+  required { isReleaseVersion && gradle.taskGraph.hasTask("uploadArchives") }
+  sign configurations.archives
 }
 
 uploadArchives {
-	group 'build'
-	description = "Does a maven deploy of archives artifacts"
+  group 'build'
+  description = "Does a maven deploy of archives artifacts"
 
-	repositories {
-		mavenDeployer {
-			configuration = configurations.archives
+  repositories {
+    mavenDeployer {
+      configuration = configurations.archives
 
-			repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-				authentication(userName: sonatypeUsername, password: sonatypePassword)
-			}
+      repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+        authentication(userName: sonatypeUsername, password: sonatypePassword)
+      }
 
-			snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-				authentication(userName: sonatypeUsername, password: sonatypePassword)
-			}
+      snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+        authentication(userName: sonatypeUsername, password: sonatypePassword)
+      }
 
-			if (isReleaseVersion) {
-				beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-			}
-
-			configurePom(pom)
-		}
-	}
+      if (isReleaseVersion) {
+        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+      }
+    }
+  }
 }
 
 install {
-	group = 'build'
-	description = "Does a maven install of archives artifacts to local m2 cache"
-	configurePom(repositories.mavenInstaller.pom)
+  group = 'build'
+  description = "Does a maven install of archives artifacts to local m2 cache"
 }
 
+ext {
+  ext.poms = []
+  afterEvaluate {
+    poms*.whenConfigured { pom ->
+      pomModifications.each {
+        configure(pom, it)
+      }
+    }
+  }
+  pomModifications = []
+  modifyPom = { pomModifications << it }
+}
+
+tasks.withType(Upload) {
+  repositories.withType(org.gradle.api.artifacts.maven.MavenResolver) {
+    poms << it.pom
+  }
+}
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // configuration methods
 
-def configurePom(def pom) {
-	pom.project {
-		name rootProject.name
-		description 'vert.x - Effortless asynchronous application development for the modern web and enterprise'
-		groupId rootProject.group
-		inceptionYear '2011'
-		packaging 'jar'
-		url 'http://vertx.io'
-		
-		developers {
-            developer {
-                id 'purplefox'
-                name 'Tim Fox'
-                email 'tim@tfox.org'
-            }
-        }
+modifyPom {
+  project {
+    name rootProject.name
+    description 'vert.x - Effortless asynchronous application development for the modern web and enterprise'
+    groupId rootProject.group
+    inceptionYear '2011'
+    packaging 'jar'
+    url 'http://vertx.io'
 
-		scm {
-	        connection 'scm:https://vert-x@github.com/purplefox/vert.x'
-	        developerConnection 'scm:git@github.com:purplefox/vert.x.git'
-	        url 'https://github.com/purplefox/vert.x'
-		}
-		
-		licenses {
-			license {
-				name 'The Apache Software License, Version 2.0'
-				url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-				distribution 'repo'
-			}
-		}
+    developers {
+      developer {
+        id 'purplefox'
+        name 'Tim Fox'
+        email 'tim@tfox.org'
+      }
+      developer {
+        id 'pidster'
+        name 'Pid'
+        email 'pid@pidster.com'
+      }
+    }
 
-		properties {
-			setProperty('project.build.sourceEncoding', 'UTF8')
-		}
-	}
+    scm {
+      connection 'scm:https://vert-x@github.com/purplefox/vert.x'
+      developerConnection 'scm:git@github.com:purplefox/vert.x.git'
+      url 'https://github.com/purplefox/vert.x'
+    }
+
+    licenses {
+      license {
+        name 'The Apache Software License, Version 2.0'
+        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+        distribution 'repo'
+      }
+    }
+
+    properties {
+      setProperty('project.build.sourceEncoding', 'UTF8')
+    }
+  }
 }
 

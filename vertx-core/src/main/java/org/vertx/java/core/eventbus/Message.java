@@ -17,8 +17,6 @@
 package org.vertx.java.core.eventbus;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
 
 /**
  * Represents a message on the event bus.<p>
@@ -26,8 +24,6 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class Message<T>  {
-
-  private static final Logger log = LoggerFactory.getLogger(Message.class);
 
   protected Message() {
   }

@@ -668,24 +668,17 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   private JsonObject loadModuleConfig(String modName, File modDir) {
-    // It's not clear to me whether the try-with-resources construct will 
-    // close this correctly, the IDE complains about a resource leak. - Pid
-    try (Scanner scanner = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A")) {
-      String conf;
-      try {
-        conf = scanner.next();
-      } catch (NoSuchElementException e) {
-        throw new IllegalStateException("Module " + modName + " contains an empty mod.json file");
-      }
-      JsonObject json;
-      try {
-        json = new JsonObject(conf);
-      } catch (DecodeException e) {
-        throw new IllegalStateException("Module " + modName + " mod.json contains invalid json");
-      }
-      return json;
+    // Checked the byte code produced, .close() is called correctly, so the warning can be suppressed
+    try (@SuppressWarnings("resource") Scanner scanner = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A")) {
+      String conf = scanner.next();
+      return new JsonObject(conf);
+
     } catch (FileNotFoundException e) {
       throw new IllegalStateException("Module " + modName + " does not contain a mod.json file");
+    } catch (NoSuchElementException e) {
+      throw new IllegalStateException("Module " + modName + " contains an empty mod.json file");
+    } catch (DecodeException e) {
+      throw new IllegalStateException("Module " + modName + " mod.json contains invalid json");
     }
   }
 
@@ -923,8 +916,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   private boolean unzipModuleData(final File directory, final String fileName, boolean deleteZip) {
-    try (InputStream is = new BufferedInputStream(new FileInputStream(fileName))) {
-      ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
+    try (InputStream is = new BufferedInputStream(new FileInputStream(fileName)); ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is))) {
       ZipEntry entry;
       while ((entry = zis.getNextEntry()) != null) {
         if (entry.isDirectory()) {
