@@ -75,8 +75,6 @@ uploadArchives {
 			if (isReleaseVersion) {
 				beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 			}
-
-			configurePom(pom)
 		}
 	}
 }
@@ -84,47 +82,69 @@ uploadArchives {
 install {
 	group = 'build'
 	description = "Does a maven install of archives artifacts to local m2 cache"
-	configurePom(repositories.mavenInstaller.pom)
 }
 
+ext {
+  ext.poms = []
+  afterEvaluate {
+    poms*.whenConfigured { pom ->
+      pomModifications.each {
+        configure(pom, it)
+      }
+    }
+  }
+  pomModifications = []
+  modifyPom = { pomModifications << it }
+}
+
+tasks.withType(Upload) {
+  repositories.withType(org.gradle.api.artifacts.maven.MavenResolver) {
+    poms << it.pom
+  }
+}
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // configuration methods
 
-def configurePom(def pom) {
-	pom.project {
-		name rootProject.name
-		description 'vert.x - Effortless asynchronous application development for the modern web and enterprise'
-		groupId rootProject.group
-		inceptionYear '2011'
-		packaging 'jar'
-		url 'http://vertx.io'
-		
-		developers {
-            developer {
-                id 'purplefox'
-                name 'Tim Fox'
-                email 'tim@tfox.org'
-            }
-        }
+modifyPom {
+  project {
+    name rootProject.name
+    description 'vert.x - Effortless asynchronous application development for the modern web and enterprise'
+    groupId rootProject.group
+    inceptionYear '2011'
+    packaging 'jar'
+    url 'http://vertx.io'
 
-		scm {
-	        connection 'scm:https://vert-x@github.com/purplefox/vert.x'
-	        developerConnection 'scm:git@github.com:purplefox/vert.x.git'
-	        url 'https://github.com/purplefox/vert.x'
-		}
-		
-		licenses {
-			license {
-				name 'The Apache Software License, Version 2.0'
-				url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-				distribution 'repo'
-			}
-		}
+    developers {
+      developer {
+        id 'purplefox'
+        name 'Tim Fox'
+        email 'tim@tfox.org'
+      }
+      developer {
+        id 'pidster'
+        name 'Pid'
+        email 'pid@pidster.com'
+      }
+    }
 
-		properties {
-			setProperty('project.build.sourceEncoding', 'UTF8')
-		}
-	}
+    scm {
+      connection 'scm:https://vert-x@github.com/purplefox/vert.x'
+      developerConnection 'scm:git@github.com:purplefox/vert.x.git'
+      url 'https://github.com/purplefox/vert.x'
+    }
+
+    licenses {
+      license {
+        name 'The Apache Software License, Version 2.0'
+        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+        distribution 'repo'
+      }
+    }
+
+    properties {
+      setProperty('project.build.sourceEncoding', 'UTF8')
+    }
+  }
 }
 
