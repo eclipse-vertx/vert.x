@@ -358,7 +358,7 @@ public interface EventBus {
    * @param resultHandler Optional completion handler. If specified, when the unregister has been
    * propagated to all nodes of the event bus, the handler will be called.
    */
-  void unregisterHandler(String address, Handler<? extends Message> handler,
+  void unregisterHandler(String address, @SuppressWarnings("rawtypes") Handler<? extends Message> handler,
                          AsyncResultHandler<Void> resultHandler);
 
   /**
@@ -366,7 +366,7 @@ public interface EventBus {
    * @param address The address the handler was registered at
    * @param handler The handler
    */
-  void unregisterHandler(String address, Handler<? extends Message> handler);
+  void unregisterHandler(String address, @SuppressWarnings("rawtypes") Handler<? extends Message> handler);
 
   /**
    * Registers a handler against the specified address
@@ -375,7 +375,7 @@ public interface EventBus {
    * @param resultHandler Optional completion handler. If specified, when the register has been
    * propagated to all nodes of the event bus, the handler will be called.
    */
-  void registerHandler(String address, Handler<? extends Message> handler,
+  void registerHandler(String address, @SuppressWarnings("rawtypes") Handler<? extends Message> handler,
                        AsyncResultHandler<Void> resultHandler);
 
   /**
@@ -383,7 +383,7 @@ public interface EventBus {
    * @param address The address to register it at
    * @param handler The handler
    */
-  void registerHandler(String address, Handler<? extends Message> handler);
+  void registerHandler(String address, @SuppressWarnings("rawtypes") Handler<? extends Message> handler);
 
   /**
    * Registers a local handler against the specified address. The handler info won't
@@ -391,6 +391,6 @@ public interface EventBus {
    * @param address The address to register it at
    * @param handler The handler
    */
-  void registerLocalHandler(String address, Handler<? extends Message> handler);
+  void registerLocalHandler(String address, @SuppressWarnings("rawtypes") Handler<? extends Message> handler);
 }
 
