@@ -63,15 +63,11 @@ public class ModuleClassLoader extends URLClassLoader {
       throws ClassNotFoundException {
     Class<?> c = findLoadedClass(name);
     if (c == null) {
-      // If a platform class loader class then we always try to load with the platform class loader class loader first
-      // In some case, e.g. with some org.vertx classes it won't find it, since some vert.x produced
-      // modules might contain org.vertx.* classes, in which case we continue
-      if (isSystemClass(name)) {
-        try {
-          c = platformClassLoader.loadClass(name);
-        } catch (ClassNotFoundException e) {
-          // Ok continue
-        }
+      // Try with the platform class loader first
+      try {
+        c = platformClassLoader.loadClass(name);
+      } catch (ClassNotFoundException e) {
+        // Ok continue
       }
       if (c == null) {
         try {
@@ -100,31 +96,12 @@ public class ModuleClassLoader extends URLClassLoader {
             // Make sure we clear the thread locals afterwards
             checkClearTLs();
           }
-          // If we get here then we load with the platform class loader
-          c = platformClassLoader.loadClass(name);
+          // If we get here then we give up
+          throw e;
         }
       }
     }
     return c;
-  }
-
-  /*
-  A system class is any class whose loading should be delegated to the platform class loader
-  This includes all JDK classes and all vert.x internal classes. This stuff needs to be loaded by the platform
-  class loader.
-   */
-  private boolean isSystemClass(String name) {
-    return (
-        // Contained in JDK
-        name.startsWith("java.") || name.startsWith("com.sun.") || name.startsWith("sun.") ||
-        name.startsWith("javax.") ||
-        name.startsWith("org.w3c") ||
-        // Vert.x itself
-        name.startsWith("org.vertx.java.core") || name.startsWith("org.vertx.java.platform") ||
-        // Some test related stuff
-        name.equals("org.vertx.java.busmods.BusModBase") ||
-        name.startsWith("org.vertx.java.testframework") || name.startsWith("org.vertx.java.tests") ||
-        name.startsWith("org.vertx.testtools"));
   }
 
   private Set<ModuleClassLoader> getWalked() {
