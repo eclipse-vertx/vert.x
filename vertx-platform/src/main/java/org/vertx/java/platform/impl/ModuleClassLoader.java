@@ -77,6 +77,9 @@ public class ModuleClassLoader extends URLClassLoader {
         try {
           // Now try and load the class with this class loader
           c = findClass(name);
+          if (resolve) {
+            resolveClass(c);
+          }
         } catch (ClassNotFoundException e) {
           // Not found - maybe the parent class loaders can load it?
           try {
@@ -97,13 +100,10 @@ public class ModuleClassLoader extends URLClassLoader {
             // Make sure we clear the thread locals afterwards
             checkClearTLs();
           }
-          // If we get here then we give up
-          throw e;
+          // If we get here then we load with the platform class loader
+          c = platformClassLoader.loadClass(name);
         }
       }
-    }
-    if (resolve) {
-      resolveClass(c);
     }
     return c;
   }
