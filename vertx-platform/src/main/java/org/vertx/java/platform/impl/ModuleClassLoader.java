@@ -16,13 +16,13 @@ import java.util.*;
  * A ModuleClassLoader can have multiple parents, this always includes the class loader of the module that deployed it
  * (or null if is a top level module), plus the class loaders of any modules that this module includes.
  *
- * If the class to be loaded is a system class, the platformClassLoader classloader is called directly.
+ * If the class to be loaded is a system class, the platform class loader classloader is called directly.
  *
  * Otherwise this class loader always tries to the load the class itself. If it can't find the class it iterates
- * through its parents trying to load the class. If none of the parents can find it, the platformClassLoader classloader is tried.
+ * through its parents trying to load the class. If none of the parents can find it, the platform class loader classloader is tried.
  *
  * When locating resources this class loader always looks for the resources itself, then it asks the parents to look,
- * and finally the platformClassLoader classloader is asked.
+ * and finally the platform class loader classloader is asked.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -63,7 +63,7 @@ public class ModuleClassLoader extends URLClassLoader {
       throws ClassNotFoundException {
     Class<?> c = findLoadedClass(name);
     if (c == null) {
-      // If a platformClassLoader class then we always try to load with the platformClassLoader class loader first
+      // If a platform class loader class then we always try to load with the platform class loader class loader first
       // In some case, e.g. with some org.vertx classes it won't find it, since some vert.x produced
       // modules might contain org.vertx.* classes, in which case we continue
       if (isSystemClass(name)) {
@@ -97,6 +97,7 @@ public class ModuleClassLoader extends URLClassLoader {
             // Make sure we clear the thread locals afterwards
             checkClearTLs();
           }
+          // If we get here then we give up
           throw e;
         }
       }
@@ -108,15 +109,18 @@ public class ModuleClassLoader extends URLClassLoader {
   }
 
   /*
-  A system class is any class whose loading should be delegated to the platformClassLoader class loader
+  A system class is any class whose loading should be delegated to the platform class loader
   This includes all JDK classes and all vert.x internal classes. We don't want this stuff to be ever loaded
   by a module class loader
    */
   private boolean isSystemClass(String name) {
     // TODO tidy this up
-    return (name.startsWith("java.") || name.startsWith("com.sun.") || name.startsWith("sun.") || name.startsWith("javax.") ||
-        name.startsWith("org.vertx.java.core") || name.startsWith("org.vertx.java.platform") || name.equals("org.vertx.java.busmods.BusModBase") ||
-        name.startsWith("org.vertx.java.testframework") || name.startsWith("org.vertx.java.tests"));
+    return (name.startsWith("java.") || name.startsWith("com.sun.") || name.startsWith("sun.") ||
+        name.startsWith("javax.") || name.startsWith("org.w3c") ||
+        name.startsWith("org.vertx.java.core") || name.startsWith("org.vertx.java.platform") ||
+        name.equals("org.vertx.java.busmods.BusModBase") ||
+        name.startsWith("org.vertx.java.testframework") || name.startsWith("org.vertx.java.tests") ||
+        name.startsWith("org.vertx.testtools"));
   }
 
   private Set<ModuleClassLoader> getWalked() {
@@ -167,7 +171,7 @@ public class ModuleClassLoader extends URLClassLoader {
             return url;
           }
         }
-        // If got here then none of the parents know about it, so try the platformClassLoader
+        // If got here then none of the parents know about it, so try the platform class loader
         url = platformClassLoader.getResource(name);
       }
       return url;
@@ -206,7 +210,7 @@ public class ModuleClassLoader extends URLClassLoader {
       checkClearTLs();
     }
 
-    // And platformClassLoader too
+    // And platform class loader too
     addURLs(totURLs, platformClassLoader.getResources(name));
 
     return new Enumeration<URL>() {
