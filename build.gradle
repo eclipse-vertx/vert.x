@@ -58,7 +58,11 @@ subprojects {
   
   dependencies {
     testCompile "junit:junit:$junitVersion"
-    testCompile "io.vertx:vertx-testframework:$testframeworkversion"
+    testCompile "io.vertx:vertx-testframework:$testframeworkversion", {
+      exclude group: "io.vertx"
+      exclude group: "junit"
+    }
+    testCompile project(":vertx-platform")
   }
   
   javadoc {
