@@ -44,16 +44,11 @@ public class RepoDownloadTestClient extends TestClientBase {
     container.deployModule("mod-proxy-maven-server", new Handler<String>() {
       public void handle(String deployID) {
         if (deployID != null) {
-          System.out.println("maven proxy server deployed ok");
-          System.out.println("depoloying maven test module");
           container.deployModule("maven:io.vertx:mod-maven-test:1.0.0", new Handler<String>() {
             @Override
             public void handle(String event) {
-              System.out.println("depoloying maven test module deployed ok " + event);
             }
           });
-        } else {
-          System.out.println("not deployed ok");
         }
       }
     });
