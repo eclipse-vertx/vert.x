@@ -18,8 +18,6 @@ apply from: "$rootDir/gradle/maven.gradle"
 
 dependencies {
 	compile project(':vertx-core')
-  testCompile "junit:junit:$junitVersion"
-  testCompile project(':vertx-testframework')
 }
 
 artifacts {

@@ -49,37 +49,21 @@ subprojects {
 
   defaultTasks = ['classes']
   group = rootProject.group
-  
+
   repositories {
+    mavenLocal()
+    maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
     mavenCentral()
   }
   
   dependencies {
     testCompile "junit:junit:$junitVersion"
+    testCompile "io.vertx:vertx-testframework:$testframeworkversion"
   }
   
   javadoc {
     destinationDir = file("build/docs/java/api")
   }
-
-  task collectDeps(type: Copy) {
-    destinationDir = file("build/deps")
-    into("compile") {
-      from configurations.compile
-      exclude "vertx-*.jar"
-    }
-    into("test") {
-      from configurations.testCompile
-      exclude "vertx-*.jar"
-    }
-  }
-}
-
-defaultTasks = ['preflight']
-
-task preflight(dependsOn: subprojects.collectDeps) {
-  group = null
-  description = null
 }
 
 task test(dependsOn: [subprojects.test]) {
@@ -97,7 +81,7 @@ task clean(type: Delete, dependsOn: [subprojects.clean]) {
   }
 }
 
-task assemble(type: Copy, dependsOn: ['preflight', subprojects.assemble]) {
+task assemble(type: Copy, dependsOn: [subprojects.assemble]) {
   group = 'vert.x'
   description 'Build the parent and all of the vert.x subprojects'
 
