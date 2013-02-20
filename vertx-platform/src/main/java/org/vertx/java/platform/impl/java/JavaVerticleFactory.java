@@ -43,7 +43,6 @@ public class JavaVerticleFactory implements VerticleFactory {
   }
 
   public Verticle createVerticle(String main) throws Exception {
-
     String className = main;
     Class<?> clazz;
     if (isJavaSource(main)) {
