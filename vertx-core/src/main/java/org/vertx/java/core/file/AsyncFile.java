@@ -44,7 +44,7 @@ public interface AsyncFile {
    * Close the file. The actual close happens asynchronously.
    * The handler will be called when the close is complete, or an error occurs.
    */
-  void close(AsyncResultHandler handler);
+  void close(AsyncResultHandler<Void> handler);
 
   /**
    * Write a {@link Buffer} to the file at position {@code position} in the file, asynchronously.

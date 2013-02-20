@@ -35,11 +35,24 @@ A committer with appropriate access to the `org.vert-x` group at OSS Sonatype (M
     sonatypeUsername=myusername
     sonatypePassword=XXXXXXXXX
 
-
-
 To sign, hash and upload the JARs to Maven Central execute:
 
     ./mk uploadArchives
+
+
+## Eclipse IDE
+
+The current build contains a cyclic dependency between the compile and testCompile phases of the vertx-core and vertx-platform projects.
+
+While Gradle resolves this satisfactorily, Eclipse issues an error.  To change this to a warning, change the preference to a warning:
+
+ Preferences->Java->Compiler->Building->Build path problems->Circular dependencies
+
+
+
+
+
+
 
 
 
