@@ -45,7 +45,7 @@ public class PrefixLanguageImplementationTest {
 
   @Test
   public void deployFooVerticle() {
-    String main = "foo:test.bar";
+    String main = "test.foo";
 
     JsonObject config = new JsonObject();
     config.putString("foo", "foo");

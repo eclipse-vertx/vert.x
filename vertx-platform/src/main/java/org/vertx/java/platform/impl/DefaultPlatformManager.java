@@ -976,7 +976,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private void doDeploy(final String depName,
                         boolean autoRedeploy,
                         boolean worker, boolean multiThreaded,
-                        final String main,
+                        String theMain,
                         final String modName,
                         final JsonObject config, final URL[] urls,
                         int instances,
@@ -988,8 +988,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     final String deploymentName =
         depName != null ? depName : genDepName();
 
-    log.debug("Deploying name : " + deploymentName + " main: " + main +
-        " instances: " + instances);
+    log.debug("Deploying name : " + deploymentName + " main: " + theMain +
+              " instances: " + instances);
 
     // How we determine which language implementation to use:
     // 1. Look for a prefix on the main, e.g. 'groovy:org.foo.myproject.MyGroovyMain' would force the groovy
@@ -1000,14 +1000,18 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
     LanguageImplInfo langImplInfo = null;
 
+    final String main;
     // Look for a prefix
-    int prefixMarker = main.indexOf(COLON);
+    int prefixMarker = theMain.indexOf(COLON);
     if (prefixMarker != -1) {
-      String prefix = main.substring(0, prefixMarker);
+      String prefix = theMain.substring(0, prefixMarker);
       langImplInfo = languageImpls.get(prefix);
       if (langImplInfo == null) {
         throw new IllegalStateException("No language implementation known for prefix " + prefix);
       }
+      main = theMain.substring(prefixMarker + 1);
+    } else {
+      main = theMain;
     }
     if (langImplInfo == null) {
       // No prefix - now look at the extension
@@ -1121,7 +1125,9 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
               if (modDir != null) {
                 setPathAdjustment(modDir);
               }
-              verticle.start(new AsyncResultHandler<Void>() {
+              VoidResult vr = new VoidResult();
+              verticle.start(vr);
+              vr.setHandler(new AsyncResultHandler<Void>() {
                 @Override
                 public void handle(AsyncResult<Void> ar) {
                   if (ar.succeeded()) {

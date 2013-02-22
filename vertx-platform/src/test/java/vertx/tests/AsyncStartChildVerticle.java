@@ -19,6 +19,7 @@ package vertx.tests;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VoidResult;
 import org.vertx.java.platform.Verticle;
 
 /**
@@ -27,11 +28,11 @@ import org.vertx.java.platform.Verticle;
 public class AsyncStartChildVerticle extends Verticle {
 
   @Override
-  public void start(final AsyncResultHandler<Void> doneHandler) throws Exception {
+  public void start(final VoidResult startedResult) throws Exception {
     container.deployVerticle(SubChildVerticle.class.getName(), new Handler<String>() {
       @Override
       public void handle(String event) {
-        new AsyncResult<Void>().setResult(null).setHandler(doneHandler);
+        startedResult.setResult();
       }
     });
     vertx.sharedData().getMap("mymap").put("childstarted", "true");

@@ -19,6 +19,7 @@ package org.vertx.java.platform;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VoidResult;
 
 /**
  * A verticle is the unit of deployment in vert.x<p>
@@ -76,12 +77,12 @@ public abstract class Verticle {
    * Override this method to signify that start is complete sometime _after_ the start() method has returned
    * This is useful if your verticle deploys other verticles or modules and you don't want this verticle to
    * be considered started until the other modules and verticles have been started.
-   * @param doneHandler When you are happy your verticle is started call this handler
+   * @param startedResult When you are happy your verticle is started set the result
    * @throws Exception
    */
-  public void start(AsyncResultHandler<Void> doneHandler) throws Exception {
+  public void start(VoidResult startedResult) throws Exception {
     start();
-    new AsyncResult<Void>().setResult(null).setHandler(doneHandler);
+    startedResult.setResult();
   }
 
   /**
