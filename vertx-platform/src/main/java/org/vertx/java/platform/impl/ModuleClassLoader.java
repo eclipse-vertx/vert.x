@@ -16,9 +16,7 @@ import java.util.*;
  * A ModuleClassLoader can have multiple parents, this always includes the class loader of the module that deployed it
  * (or null if is a top level module), plus the class loaders of any modules that this module includes.
  *
- * If the class to be loaded is a system class, the platform class loader classloader is called directly.
- *
- * Otherwise this class loader always tries to the load the class itself. If it can't find the class it iterates
+ * This class loader always tries to the load the class itself. If it can't find the class it iterates
  * through its parents trying to load the class. If none of the parents can find it, the platform class loader classloader is tried.
  *
  * When locating resources this class loader always looks for the resources itself, then it asks the parents to look,
@@ -63,41 +61,36 @@ public class ModuleClassLoader extends URLClassLoader {
       throws ClassNotFoundException {
     Class<?> c = findLoadedClass(name);
     if (c == null) {
-      // Try with the platform class loader first
       try {
-        c = platformClassLoader.loadClass(name);
+        // First try and load the class with the module classloader
+        c = findClass(name);
+        if (resolve) {
+          resolveClass(c);
+        }
       } catch (ClassNotFoundException e) {
-        // Ok continue
-      }
-      if (c == null) {
+        // Not found - maybe the parent class loaders can load it?
         try {
-          // Now try and load the class with this class loader
-          c = findClass(name);
-          if (resolve) {
-            resolveClass(c);
-          }
-        } catch (ClassNotFoundException e) {
-          // Not found - maybe the parent class loaders can load it?
-          try {
-            // Detect circular hierarchy
-            incRecurseDepth();
-            Set<ModuleClassLoader> walked = getWalked();
-            walked.add(this);
-            for (ModuleReference parent: parents) {
-              checkAlreadyWalked(walked, parent);
-              try {
-                // Try with the parent
-                return parent.mcl.loadClass(name);
-              } catch (ClassNotFoundException e1) {
-                // Try the next one
-              }
+          // Detect circular hierarchy
+          incRecurseDepth();
+          Set<ModuleClassLoader> walked = getWalked();
+          walked.add(this);
+          for (ModuleReference parent: parents) {
+            checkAlreadyWalked(walked, parent);
+            try {
+              // Try with the parent
+              c = parent.mcl.loadClass(name);
+              break;
+            } catch (ClassNotFoundException e1) {
+              // Try the next one
             }
-          } finally {
-            // Make sure we clear the thread locals afterwards
-            checkClearTLs();
           }
-          // If we get here then we give up
-          throw e;
+        } finally {
+          // Make sure we clear the thread locals afterwards
+          checkClearTLs();
+        }
+        if (c == null) {
+          // If we get here then the module classloaders couldn't load it so we try the platform class loader
+          c = platformClassLoader.loadClass(name);
         }
       }
     }
