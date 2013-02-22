@@ -622,6 +622,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         return;
       }
 
+
+
       ModuleReference mr = modules.get(modName);
       if (mr == null) {
         boolean res = fields.isResident();
