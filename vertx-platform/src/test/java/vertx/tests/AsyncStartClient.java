@@ -19,16 +19,17 @@ package vertx.tests;/*
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VoidResult;
 import org.vertx.java.testframework.TestClientBase;
 
 public class AsyncStartClient extends TestClientBase {
 
   @Override
-  public void start(final AsyncResultHandler<Void> doneHandler) throws Exception {
+  public void start(final VoidResult startedResult) throws Exception {
     super.start();
     container.deployVerticle(AsyncStartChildVerticle.class.getName(), new Handler<String>() {
       public void handle(String deployID) {
-        new AsyncResult<Void>().setResult(null).setHandler(doneHandler);
+        startedResult.setResult();
         tu.appReady();
       }
     });

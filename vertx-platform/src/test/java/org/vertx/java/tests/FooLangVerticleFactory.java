@@ -48,8 +48,8 @@ public class FooLangVerticleFactory implements VerticleFactory {
         if (foo.equalsIgnoreCase("bar")) {
           throw new Exception("foo must not be bar!");
         }
-        if (!(main.startsWith("foo:") || main.endsWith("foo"))) {
-          throw new Exception("main must either start or end with foo!");
+        if (!(main.endsWith("foo"))) {
+          throw new Exception("main must end with foo!");
         }
       }};
   }
