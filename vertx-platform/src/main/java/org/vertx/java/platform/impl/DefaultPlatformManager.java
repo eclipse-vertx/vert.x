@@ -125,6 +125,9 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
                              int instances,
                              String includes,
                              Handler<String> doneHandler) {
+    if (main == null) {
+      throw new NullPointerException("main cannot be null");
+    }
     deployVerticle(false, false, main, config, classpath, instances, includes, doneHandler);
   }
 
