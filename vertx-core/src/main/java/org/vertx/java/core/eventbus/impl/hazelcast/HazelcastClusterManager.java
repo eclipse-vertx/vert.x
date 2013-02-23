@@ -61,7 +61,7 @@ public class HazelcastClusterManager implements ClusterManager {
 
   /**
    * Create the singleton Hazelcast instance if necessary
-   * @return
+   * @return a hazelcast instance
    */
   private synchronized HazelcastInstance initHazelcast() {
     if (instance == null) {
@@ -88,7 +88,7 @@ public class HazelcastClusterManager implements ClusterManager {
   /**
    * Get the Hazelcast config
    * @param configfile May be null in which case it gets the default (cluster.xml) will be used.
-   * @return
+   * @return a config object
    */
 	protected Config getConfig(String configfile) {
 		if (configfile == null) {
@@ -115,7 +115,7 @@ public class HazelcastClusterManager implements ClusterManager {
 	 * @param name A unique name by which the the MultiMap can be identified within the cluster. 
 	 *     See the cluster config file (e.g. cluster.xml in case of HazelcastClusterManager) for
 	 *     additional MultiMap config parameters.
-	 * @return
+	 * @return subscription map
 	 */
   public SubsMap getSubsMap(final String name) {
     MultiMap<String, HazelcastServerID> map = instance.getMultiMap(name);
@@ -131,7 +131,7 @@ public class HazelcastClusterManager implements ClusterManager {
   
   /**
    * Provide access to the singleton Hazelcast instance, e.g. to properly close it.
-   * @return
+   * @return hazelcast instance
    */
   public HazelcastInstance getInstance() {
   	return instance;
