@@ -106,7 +106,7 @@ public interface PlatformManager {
 
   /**
    * List all deployments, with deployment ID and number of instances
-   * @return
+   * @return map of instances
    */
   Map<String, Integer> listInstances();
 

@@ -59,15 +59,17 @@ public abstract class VertxInternal extends Vertx {
 
 	/**
 	 * Get the current context
-	 * @return
+	 * @return the context
 	 */
 	public abstract Context getContext();
 
 	/**
 	 * Set the current context
-	 * @return
 	 */
   public abstract void setContext(Context context);
 
+  /**
+   * @return event loop context
+   */
   public abstract EventLoopContext createEventLoopContext();
 }

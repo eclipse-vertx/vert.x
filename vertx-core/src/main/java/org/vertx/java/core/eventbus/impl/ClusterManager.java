@@ -27,7 +27,7 @@ public interface ClusterManager {
 	 * to send messages.
 	 * 
 	 * @param name A unique name by which the the MultiMap can be identified within the cluster. 
-	 * @return
+	 * @return subscription map
 	 */
   SubsMap getSubsMap(String name);
 
