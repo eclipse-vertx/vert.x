@@ -97,11 +97,11 @@ You can deploy and undeploy verticles programmatically from inside another verti
 
 ## Deploying a simple verticle
 
-To deploy a verticle programmatically call the function `deployVerticle` on the `container` variable. The return value of `deployVerticle` is the unique id of the deployment, which can be used later to undeploy the verticle.
+To deploy a verticle programmatically call the function `deployVerticle` on the `container` variable. 
 
 To deploy a single instance of a verticle :
 
-    String id = container.deployVerticle(main);    
+    container.deployVerticle(main);    
     
 Where `main` is the name of the "main" of the Verticle (i.e. the name of the script if it's a Ruby or JavaScript verticle or the fully qualified class name if it's a Java verticle). See the chapter on "running vert.x" in the main manual for a description of what a main is.
     
@@ -209,9 +209,13 @@ The `deployVerticle` method deploys standard (non worker) verticles. If you want
 
 ## Undeploying a Verticle
 
-Any verticles that you deploy programmatically from within a verticle, and all of their children are automatically undeployed when the parent verticle is undeployed, so in most cases you will not need to undeploy a verticle manually, however if you do want to do this, it can be done by calling the function `undeployVerticle` passing in the deployment id that was returned from the call to `deployVerticle`
+Any verticles that you deploy programmatically from within a verticle, and all of their children are automatically undeployed when the parent verticle is undeployed, so in most cases you will not need to undeploy a verticle manually, however if you do want to do this, it can be done by calling the function `undeployVerticle` passing in the deployment id. The deployment id is passed as a parameter to the handler called after completing the deployment.
 
-    String deploymentID = container.deployVerticle(main);  
+    container.deployVerticle(main, new Handler<String>() {
+        public void handle(String deploymentID) {
+           this.deploymentID = deploymentID;
+        }
+    });  
     
     container.undeployVerticle(deploymentID);    
 
