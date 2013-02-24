@@ -157,7 +157,7 @@ Then create a file 'config.json" with the actual JSON config in it (see main man
         },
         "verticle2_conf": {
             "age": 1234,
-            "shoe_size": 12
+            "shoe_size": 12,
             "pi": 3.14159
         }, 
         "verticle3_conf": {
