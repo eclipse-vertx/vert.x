@@ -440,13 +440,13 @@ Currently data can only be shared between verticles in the *same vert.x instance
 
 To use a shared map to share data between verticles first we get a reference to the map, and then use it like any other instance of `java.util.concurrent.ConcurrentMap`
 
-    ConcurrentMap<String, Integer> map = vertx.sharedData().getMap('demo.mymap');
+    ConcurrentMap<String, Integer> map = vertx.sharedData().getMap("demo.mymap");
     
     map.put("some-key", 123);
     
 And then, in a different verticle you can access it:
 
-    ConcurrentMap<String, Integer> map = vertx.sharedData().getMap('demo.mymap');
+    ConcurrentMap<String, Integer> map = vertx.sharedData().getMap("demo.mymap");
     
     // etc
     
@@ -455,13 +455,13 @@ And then, in a different verticle you can access it:
 
 To use a shared set to share data between verticles first we get a reference to the set.
 
-    Set<String> set = vertx.sharedData().getSet('demo.myset');
+    Set<String> set = vertx.sharedData().getSet("demo.myset");
     
     set.add("some-value");
     
 And then, in a different verticle:
 
-    Set<String> set = vertx.sharedData().getSet('demo.myset');
+    Set<String> set = vertx.sharedData().getSet("demo.myset");
     
     // etc  
         
