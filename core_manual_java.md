@@ -552,8 +552,8 @@ A usage example would be using a Java verticle to send or receive JSON messages 
 
     EventBus eb = vertx.eventBus();
     
-    JsonObject obj = new JsonObject().setString("foo", "wibble")
-                                     .setNumber("age", 1000);
+    JsonObject obj = new JsonObject().putString("foo", "wibble")
+                                     .putNumber("age", 1000);
                                      
     eb.send("some-address", obj);
     
