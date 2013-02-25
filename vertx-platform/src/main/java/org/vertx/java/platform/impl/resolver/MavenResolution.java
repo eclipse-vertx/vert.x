@@ -35,59 +35,27 @@ import org.vertx.java.core.http.HttpClientResponse;
 public class MavenResolution extends HttpResolution {
 
   protected String contentRoot;
-  protected String groupID;
-  protected String artifactID;
-  protected String version;
-  protected String uriRoot;
+  protected MavenIdentifier identifier;
 
   public MavenResolution(Vertx vertx, String repoHost, int repoPort, String moduleName, String filename,
                          String contentRoot) {
     super(vertx, repoHost, repoPort, moduleName, filename);
     this.contentRoot = contentRoot;
-    String[] parts = moduleName.split(":");
-    if (parts.length != 3) {
-      throw new IllegalArgumentException(moduleName + " must be of the form <group_id>:<artifact_id>:<version>");
-    }
-
-    groupID = parts[0];
-    artifactID = parts[1];
-    version = parts[2];
-
-    StringBuilder uri = new StringBuilder(contentRoot);
-    uri.append('/');
-    String[] groupParts = groupID.split("\\.");
-    for (String groupPart: groupParts) {
-      uri.append(groupPart).append('/');
-    }
-    uri.append(artifactID).append('/').append(version).append('/');
-    uriRoot = uri.toString();
+    identifier = new MavenIdentifier(moduleName);
   }
 
   protected void getModule() {
     createClient(repoHost, repoPort);
-    if (version.endsWith("-SNAPSHOT")) {
+    if (identifier.version.endsWith("-SNAPSHOT")) {
       addHandler(200, new Handler<HttpClientResponse>() {
         @Override
         public void handle(HttpClientResponse resp) {
           resp.bodyHandler(new Handler<Buffer>() {
             @Override
             public void handle(Buffer metaData) {
-              String actualURI;
               // Extract the timestamp - easier this way than parsing the xml
               String data = metaData.toString();
-              int pos = data.indexOf("<snapshot>");
-              if (pos != -1) {
-                int pos2 = data.indexOf("<timestamp>", pos);
-                String ts = data.substring(pos2 + 11, pos2 + 26);
-                int pos3 = data.indexOf("<buildNumber>", pos);
-                int pos4 = data.indexOf("<", pos3 + 12);
-                String bn = data.substring(pos3 + 13, pos4);
-                // Timestamped SNAPSHOT
-                actualURI = getVersionedResourceName(ts, bn);
-              } else {
-                // Non timestamped SNAPSHOT
-                actualURI = getResourceName();
-              }
+              String actualURI = getResourceName(data, contentRoot, identifier);
               addHandler(200, new Handler<HttpClientResponse>() {
                 @Override
                 public void handle(HttpClientResponse resp) {
@@ -107,7 +75,7 @@ public class MavenResolution extends HttpResolution {
         }
       });
       // First we make a request to maven-metadata.xml
-      makeRequest(repoHost, repoPort, uriRoot + "maven-metadata.xml");
+      makeRequest(repoHost, repoPort, contentRoot + identifier.uriRoot + "maven-metadata.xml");
     } else {
       addHandler(200, new Handler<HttpClientResponse>() {
         @Override
@@ -115,16 +83,32 @@ public class MavenResolution extends HttpResolution {
           downloadToFile(resp);
         }
       });
-      makeRequest(repoHost, repoPort, getResourceName());
+      makeRequest(repoHost, repoPort, getNonVersionedResourceName(contentRoot, identifier));
     }
   }
 
-  private String getResourceName() {
-    return uriRoot + artifactID + "-" + version + ".zip";
+  public static String getResourceName(String data, String contentRoot, MavenIdentifier identifier) {
+    int pos = data.indexOf("<snapshot>");
+    String actualURI;
+    if (pos != -1) {
+      int pos2 = data.indexOf("<timestamp>", pos);
+      String timestamp = data.substring(pos2 + 11, pos2 + 26);
+      int pos3 = data.indexOf("<buildNumber>", pos);
+      int pos4 = data.indexOf("<", pos3 + 12);
+      String buildNumber = data.substring(pos3 + 13, pos4);
+      // Timestamped SNAPSHOT
+      actualURI = contentRoot + "/" + identifier.uriRoot + identifier.artifactID + "-" +
+          identifier.version.substring(0, identifier.version.length() - 9) + "-" +
+          timestamp + "-" + buildNumber + ".zip";
+    } else {
+      // Non timestamped SNAPSHOT
+      actualURI = getNonVersionedResourceName(contentRoot, identifier);
+    }
+    return actualURI;
   }
 
-  private String getVersionedResourceName(String timestamp, String buildNumber) {
-    return uriRoot + artifactID + "-" + version.substring(0, version.length() - 9) + "-" +
-           timestamp + "-" + buildNumber + ".zip";
+  private static String getNonVersionedResourceName(String contentRoot, MavenIdentifier identifier) {
+    return contentRoot + "/" + identifier.uriRoot + identifier.artifactID + "-" + identifier.version + ".zip";
   }
+
 }

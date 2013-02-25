@@ -150,7 +150,7 @@ public abstract class HttpResolution {
 
   protected void downloadToFile(HttpClientResponse resp) {
     final OutputStream os;
-    String msg= "Downloading ";
+    log.info("Downloading " + moduleName + ". Please wait...");
     try {
       os = new BufferedOutputStream(new FileOutputStream(filename));
     } catch (IOException e) {
@@ -158,7 +158,6 @@ public abstract class HttpResolution {
       end(false);
       return;
     }
-    log.info(msg + ". Please wait...");
     final AtomicInteger written = new AtomicInteger();
     final int contentLength = Integer.valueOf(resp.headers().get("content-length"));
     resp.dataHandler(new Handler<Buffer>() {

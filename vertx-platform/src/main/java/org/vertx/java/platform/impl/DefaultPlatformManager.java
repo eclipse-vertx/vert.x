@@ -27,6 +27,7 @@ import org.vertx.java.platform.Container;
 import org.vertx.java.platform.Verticle;
 import org.vertx.java.platform.VerticleFactory;
 import org.vertx.java.platform.impl.resolver.BintrayRepoResolver;
+import org.vertx.java.platform.impl.resolver.MavenLocalRepoResolver;
 import org.vertx.java.platform.impl.resolver.MavenRepoResolver;
 import org.vertx.java.platform.impl.resolver.RepoResolver;
 
@@ -677,7 +678,6 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     try (@SuppressWarnings("resource") Scanner scanner = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A")) {
       String conf = scanner.next();
       return new JsonObject(conf);
-
     } catch (FileNotFoundException e) {
       throw new IllegalStateException("Module " + modName + " does not contain a mod.json file");
     } catch (NoSuchElementException e) {
@@ -779,6 +779,10 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           switch (type) {
             case "maven":
               resolver = new MavenRepoResolver(vertx, repoID);
+              break;
+            case "mavenLocal":
+              resolver = new MavenLocalRepoResolver(repoID);
+              type = "maven";
               break;
             case "bintray":
               resolver = new BintrayRepoResolver(vertx, repoID);
