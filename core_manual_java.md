@@ -1151,6 +1151,15 @@ Functions:
 * `exceptionHandler(handler)`: Will be called if an exception occurs on the `ReadStream`.
 * `endHandler(handler)`: Will be called when end of stream is reached. This might be when EOF is reached if the `ReadStream` represents a file, or when end of request is reached if it's an HTTP request, or when the connection is closed if it's a TCP socket.
 
+To access the `ReadStream` of a local file, you use the `getReadStream()` method declared in the `AsyncFile` interface.
+  
+    vertx.fileSystem().open("/tmp/dataStore", "r--------", new AsyncResultHandler<AsyncFile>() {
+        public void handle(AsyncResult<AsyncFile> result) {
+            ReadStream readStream = result.result.getReadStream();
+        }
+    });
+
+
 ## WriteStream
 
 `WriteStream` is implemented by , `HttpClientRequest`, `HttpServerResponse`, `WebSocket`, `NetSocket`, and `SockJSSocket`.
@@ -1162,6 +1171,14 @@ Functions:
 * `writeQueueFull()`: returns `true` if the write queue is considered full.
 * `exceptionHandler(handler)`: Will be called if an exception occurs on the `WriteStream`.
 * `drainHandler(handler)`: The handler will be called if the `WriteStream` is considered no longer full.
+
+To access the `WriteStream` of a local file, you use the `getWriteStream()` method declared in the `AsyncFile` interface.
+  
+    vertx.fileSystem().open("/tmp/dataSink", "w--------", new AsyncResultHandler<AsyncFile>() {
+        public void handle(AsyncResult<AsyncFile> result) {
+            WriteStream readStream = result.result.getWriteStream();
+        }
+    });
 
 ## Pump
 
