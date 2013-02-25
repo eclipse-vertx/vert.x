@@ -1141,7 +1141,7 @@ Let's look at the methods on `ReadStream` and `WriteStream` in more detail:
 
 ## ReadStream
 
-`ReadStream` is implemented by `AsyncFile`, `HttpClientResponse`, `HttpServerRequest`, `WebSocket`, `NetSocket` and `SockJSSocket`.
+`ReadStream` is implemented by `HttpClientResponse`, `HttpServerRequest`, `WebSocket`, `NetSocket` and `SockJSSocket`.
 
 Functions:
 
@@ -1153,7 +1153,7 @@ Functions:
 
 ## WriteStream
 
-`WriteStream` is implemented by `AsyncFile`, `HttpClientRequest`, `HttpServerResponse`, `WebSocket`, `NetSocket` and `SockJSSocket`
+`WriteStream` is implemented by , `HttpClientRequest`, `HttpServerResponse`, `WebSocket`, `NetSocket`, and `SockJSSocket`.
 
 Functions:
 
