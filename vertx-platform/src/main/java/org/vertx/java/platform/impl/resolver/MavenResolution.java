@@ -87,7 +87,7 @@ public class MavenResolution extends HttpResolution {
     }
   }
 
-  public static String getResourceName(String data, String contentRoot, MavenIdentifier identifier) {
+  static String getResourceName(String data, String contentRoot, MavenIdentifier identifier) {
     int pos = data.indexOf("<snapshot>");
     String actualURI;
     if (pos != -1) {
