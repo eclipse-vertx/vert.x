@@ -19,15 +19,6 @@ import org.vertx.java.core.Vertx;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  *
- * This resolver works with any HTTP server that can serve modules from GETs to Maven style urls
- *
- * Maven module names must be of the form:
- *
- * group_id:artifact_id:version
- *
- * e.g.
- *
- * org.mycompany.foo:foo_module:1.0.2-SNAPSHOT
  */
 public class MavenRepoResolver extends HttpRepoResolver {
 
@@ -36,26 +27,10 @@ public class MavenRepoResolver extends HttpRepoResolver {
   }
 
   @Override
-  protected String getRepoURI(String moduleName) {
-
-    String[] parts = moduleName.split(":");
-    if (parts.length != 3) {
-      throw new IllegalArgumentException(moduleName + " must be of the form <group_id>:<artifact_id>:<version>");
-    }
-
-    String groupID = parts[0];
-    String artifactID = parts[1];
-    String version = parts[2];
-
-    StringBuilder uri = new StringBuilder(contentRoot);
-    uri.append('/');
-    String[] groupParts = groupID.split("\\.");
-    for (String groupPart: groupParts) {
-      uri.append(groupPart).append('/');
-    }
-    uri.append(artifactID).append('/').append(version).append('/').
-        append(artifactID).append('-').append(version).append(".zip");
-    return uri.toString();
+  public boolean getModule(String filename, String moduleName) {
+    HttpResolution res = new MavenResolution(vertx, repoHost, repoPort, moduleName, filename, contentRoot);
+    res.getModule();
+    return res.waitResult();
   }
 
 }

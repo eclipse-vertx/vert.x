@@ -27,6 +27,7 @@ import org.vertx.java.platform.PlatformManager;
 import org.vertx.java.platform.impl.Args;
 import org.vertx.java.platform.impl.ModuleClassLoader;
 import org.vertx.java.platform.impl.resolver.HttpRepoResolver;
+import org.vertx.java.platform.impl.resolver.HttpResolution;
 
 import java.io.*;
 import java.net.*;
@@ -50,7 +51,7 @@ public class Starter {
   public static void main(String[] args) {
     // Show download stats - they don't display properly in Gradle so we only have them when running
     // on the command line
-    HttpRepoResolver.suppressDownloadCounter = false;
+    HttpResolution.suppressDownloadCounter = false;
     ModuleClassLoader.reverseLoadOrder = false;
     new Starter(args);
   }

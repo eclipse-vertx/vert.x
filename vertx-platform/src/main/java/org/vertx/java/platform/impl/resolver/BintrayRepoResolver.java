@@ -18,21 +18,6 @@ package org.vertx.java.platform.impl.resolver;/*
 
 import org.vertx.java.core.Vertx;
 
-import java.lang.Override;
-import java.lang.String;
-
-/**
- * Bintray module names must be in the form:
- *
- * user:repo:module_name:version
- *
- * Given a module name in that form, this resolver will look for the module at:
- *
- * content_root/<user>/<repo>/<module-name>/<module-name>-<version>.zip
- *
- * That's the recommended path for users to put modules in bintray, Vert.x can still find modules in bintray in
- * other paths if you use the GenericHttpRepoResolver
- */
 public class BintrayRepoResolver extends HttpRepoResolver {
 
   public BintrayRepoResolver(Vertx vertx, String repoID) {
@@ -40,23 +25,10 @@ public class BintrayRepoResolver extends HttpRepoResolver {
   }
 
   @Override
-  protected String getRepoURI(String moduleName) {
-
-    String[] parts = moduleName.split(":");
-    if (parts.length != 4) {
-      throw new IllegalArgumentException(moduleName + " must be of the form <user>:<repo>:<module_name>:<version>");
-    }
-
-    String user = parts[0];
-    String repo = parts[1];
-    String modName = parts[2];
-    String version = parts[3];
-
-    StringBuilder uri = new StringBuilder(contentRoot);
-    uri.append('/');
-    uri.append(user).append('/').append(repo).append('/').
-        append(modName).append('/').append(modName).append('-').append(version).append(".zip");
-
-    return uri.toString();
+  public boolean getModule(String filename, String moduleName) {
+    HttpResolution res = new BintrayResolution(vertx, repoHost, repoPort, moduleName, filename, contentRoot);
+    res.getModule();
+    return res.waitResult();
   }
+
 }

@@ -1,7 +1,5 @@
 package org.vertx.java.platform.impl.resolver;
 
-import org.vertx.java.core.buffer.Buffer;
-
 /*
  * Copyright 2008-2011 Red Hat, Inc.
  *
