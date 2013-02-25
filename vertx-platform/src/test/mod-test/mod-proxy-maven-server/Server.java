@@ -3,9 +3,6 @@ import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.platform.Verticle;
 import org.vertx.java.testframework.TestUtils;
 
-import java.lang.String;
-import java.lang.System;
-
 public class Server extends Verticle {
 
   public void start() {

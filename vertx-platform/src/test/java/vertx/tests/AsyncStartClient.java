@@ -16,8 +16,6 @@ package vertx.tests;/*
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidResult;
 import org.vertx.java.testframework.TestClientBase;

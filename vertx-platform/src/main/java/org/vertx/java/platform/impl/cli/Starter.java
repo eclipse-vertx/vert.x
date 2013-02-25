@@ -26,10 +26,12 @@ import org.vertx.java.platform.PlatformLocator;
 import org.vertx.java.platform.PlatformManager;
 import org.vertx.java.platform.impl.Args;
 import org.vertx.java.platform.impl.ModuleClassLoader;
-import org.vertx.java.platform.impl.resolver.HttpRepoResolver;
 import org.vertx.java.platform.impl.resolver.HttpResolution;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.*;
 import java.util.Enumeration;
 import java.util.Scanner;
