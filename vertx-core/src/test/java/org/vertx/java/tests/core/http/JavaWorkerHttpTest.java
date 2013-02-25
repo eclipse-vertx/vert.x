@@ -16,9 +16,8 @@ package org.vertx.java.tests.core.http;/*
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 
-import org.vertx.java.testframework.TestBase;
-
 import org.junit.Test;
+import org.vertx.java.testframework.TestBase;
 import vertx.tests.core.http.WorkerHttpTestClient;
 
 

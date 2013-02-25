@@ -19,22 +19,10 @@
 package org.vertx.java.tests.core.net;
 
 import org.junit.Test;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.net.NetClient;
-import org.vertx.java.core.net.NetServer;
-import org.vertx.java.core.net.NetSocket;
-import org.vertx.java.core.streams.Pump;
 import org.vertx.java.testframework.TestBase;
-import vertx.tests.core.http.TLSTestParams;
-import vertx.tests.core.net.*;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import vertx.tests.core.net.WorkerTestClient;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

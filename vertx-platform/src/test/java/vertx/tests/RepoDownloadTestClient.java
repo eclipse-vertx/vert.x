@@ -19,7 +19,6 @@ package vertx.tests;
  */
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.testframework.TestClientBase;
 
 public class RepoDownloadTestClient extends TestClientBase {

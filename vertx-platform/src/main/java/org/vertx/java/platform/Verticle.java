@@ -16,8 +16,6 @@
 
 package org.vertx.java.platform;
 
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VoidResult;
 
