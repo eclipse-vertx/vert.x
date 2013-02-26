@@ -1,8 +1,6 @@
 package org.vertx.java.platform.impl.resolver;
 
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.Vertx;
+import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
@@ -148,11 +146,11 @@ public abstract class HttpResolution {
 
   // Standard handlers
 
-  protected void downloadToFile(HttpClientResponse resp) {
+  protected void downloadToFile(String file, HttpClientResponse resp) {
     final OutputStream os;
     log.info("Downloading " + moduleName + ". Please wait...");
     try {
-      os = new BufferedOutputStream(new FileOutputStream(filename));
+      os = new BufferedOutputStream(new FileOutputStream(file));
     } catch (IOException e) {
       log.error("Failed to open file", e);
       end(false);
@@ -205,6 +203,5 @@ public abstract class HttpResolution {
   private int getProxyPort() {
     return Integer.valueOf(System.getProperty(HTTP_PROXY_PORT_PROP_NAME, "80"));
   }
-
 
 }

@@ -20,6 +20,8 @@ package org.vertx.java.platform.impl.resolver;
  */
 public interface RepoResolver {
 
-  public boolean getModule(String filename, String moduleName);
+  boolean getModule(String filename, String moduleName);
+
+  boolean isOldStyle();
 
 }

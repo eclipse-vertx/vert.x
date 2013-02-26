@@ -43,12 +43,12 @@ public class BintrayResolution extends HttpResolution {
 
   private final String uri;
 
-  public BintrayResolution(Vertx vertx, String repoHost, int repoPort, String moduleName, String filename, String contentRoot) {
+  public BintrayResolution(Vertx vertx, String repoHost, int repoPort, String moduleName, final String filename, String contentRoot) {
     super(vertx, repoHost, repoPort, moduleName, filename);
     addHandler(200, new Handler<HttpClientResponse>() {
       @Override
       public void handle(HttpClientResponse resp) {
-        downloadToFile(resp);
+        downloadToFile(filename, resp);
       }
     });
     addHandler(404, new Handler<HttpClientResponse>() {

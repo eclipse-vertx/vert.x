@@ -26,10 +26,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.platform.Container;
 import org.vertx.java.platform.Verticle;
 import org.vertx.java.platform.VerticleFactory;
-import org.vertx.java.platform.impl.resolver.BintrayRepoResolver;
-import org.vertx.java.platform.impl.resolver.MavenLocalRepoResolver;
-import org.vertx.java.platform.impl.resolver.MavenRepoResolver;
-import org.vertx.java.platform.impl.resolver.RepoResolver;
+import org.vertx.java.platform.impl.resolver.*;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -280,7 +277,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   public void deployModuleFromZip(String zipFileName, JsonObject config,
                                   int instances, Handler<String> doneHandler) {
     final String modName = zipFileName.substring(0, zipFileName.length() - 4);
-    if (unzipModule(modName, zipFileName, false)) {
+    if (unzipModule(modName, new ModuleZipInfo(false, zipFileName), false)) {
       deployModule(modName, config, instances, doneHandler);
     } else {
       doneHandler.handle(null);
@@ -369,10 +366,10 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       for (String modName: mods) {
         File internalModDir = new File(internalModsDir, modName);
         if (!internalModDir.exists()) {
-          String fileName = getModule(modName);
-          if (fileName != null) {
+          ModuleZipInfo zipInfo = getModule(modName);
+          if (zipInfo.filename != null) {
             internalModDir.mkdir();
-            if (!unzipModuleData(internalModDir, fileName, true)) {
+            if (!unzipModuleData(internalModDir, zipInfo, true)) {
               return false;
             } else {
               log.info("Module " + modName + " successfully installed in mods dir of " + modName);
@@ -623,8 +620,6 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         return;
       }
 
-
-
       ModuleReference mr = modules.get(modName);
       if (mr == null) {
         boolean res = fields.isResident();
@@ -777,15 +772,18 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           String repoID = line.substring(colonPos + 1);
           RepoResolver resolver;
           switch (type) {
-            case "maven":
-              resolver = new MavenRepoResolver(vertx, repoID);
-              break;
             case "mavenLocal":
               resolver = new MavenLocalRepoResolver(repoID);
               type = "maven";
               break;
+            case "maven":
+              resolver = new MavenRepoResolver(vertx, repoID);
+              break;
             case "bintray":
               resolver = new BintrayRepoResolver(vertx, repoID);
+              break;
+            case "old":
+              resolver = new OldRepoResolver(vertx, repoID);
               break;
             default:
               throw new IllegalArgumentException("Unknown repo type: " + type);
@@ -813,23 +811,25 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       log.error("Module is already installed");
       return false;
     }
-    String fileName = getModule(moduleName);
-    if (fileName != null) {
-      return unzipModule(moduleName, fileName, true);
+    ModuleZipInfo info = getModule(moduleName);
+    if (info != null) {
+      return unzipModule(moduleName, info, true);
     }
     return false;
   }
 
-  private String getModule(String moduleName) {
+  private ModuleZipInfo getModule(String moduleName) {
     int colonPos = moduleName.indexOf(COLON);
-    if (colonPos == -1) {
-      throw new IllegalArgumentException(moduleName + " A module name must start with a prefix followed by a colon " +
-          "which represents the type of repository in which the module is stored");
-    }
     if (colonPos == moduleName.length() - 1) {
       throw new IllegalArgumentException("Invalid module name, no name after prefix. " + moduleName);
     }
-    String prefix = moduleName.substring(0, colonPos);
+    String prefix;
+    if (colonPos == -1) {
+      // Default to old Vert.x 1.x repo
+      prefix = "old";
+    } else {
+      prefix = moduleName.substring(0, colonPos);
+    }
     String rest = moduleName.substring(colonPos + 1);
     List<RepoResolver> resolvers = defaultRepos.get(prefix);
     if (resolvers == null) {
@@ -838,7 +838,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     String fileName = generateTmpFileName() + ".zip";
     for (RepoResolver resolver: resolvers) {
       if (resolver.getModule(fileName, rest)) {
-        return fileName;
+        return new ModuleZipInfo(resolver.isOldStyle(), fileName);
       }
     }
     log.error("Module " + moduleName + " not found in any repositories");
@@ -850,12 +850,12 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
 
-  private File unzipIntoTmpDir(String fileName, boolean deleteZip) {
+  private File unzipIntoTmpDir(ModuleZipInfo zipInfo, boolean deleteZip) {
     String tdir = generateTmpFileName();
     File tdest = new File(tdir);
     tdest.mkdir();
 
-    if (!unzipModuleData(tdest, fileName, deleteZip)) {
+    if (!unzipModuleData(tdest, zipInfo, deleteZip)) {
       return null;
     } else {
       return tdest;
@@ -879,7 +879,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
 
-  private boolean unzipModule(final String modName, final String fileName, boolean deleteZip) {
+  private boolean unzipModule(final String modName, final ModuleZipInfo zipInfo, boolean deleteZip) {
     // We synchronize to prevent a race whereby it tries to unzip the same module at the
     // same time (e.g. deployModule for the same module name has been called in parallel)
     synchronized (modName.intern()) {
@@ -899,7 +899,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       }
 
       // Unzip into temp dir first
-      File tdest = unzipIntoTmpDir(fileName, deleteZip);
+      File tdest = unzipIntoTmpDir(zipInfo, deleteZip);
       if (tdest == null) {
         return false;
       }
@@ -924,26 +924,37 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
   }
 
-  private boolean unzipModuleData(final File directory, final String fileName, boolean deleteZip) {
-    try (InputStream is = new BufferedInputStream(new FileInputStream(fileName)); ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is))) {
+  private String removeTopDir(String entry) {
+    int pos = entry.indexOf(FILE_SEP);
+    if (pos != -1) {
+      entry = entry.substring(pos + 1);
+    }
+    return entry;
+  }
+
+  private boolean unzipModuleData(final File directory, final ModuleZipInfo zipinfo, boolean deleteZip) {
+    try (InputStream is = new BufferedInputStream(new FileInputStream(zipinfo.filename)); ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is))) {
       ZipEntry entry;
       while ((entry = zis.getNextEntry()) != null) {
-        if (entry.isDirectory()) {
-          new File(directory, entry.getName()).mkdir();
-        } else {
-          int count;
-          byte[] buff = new byte[BUFFER_SIZE];
-          BufferedOutputStream dest = null;
-          try {
-            OutputStream fos = new FileOutputStream(new File(directory, entry.getName()));
-            dest = new BufferedOutputStream(fos, BUFFER_SIZE);
-            while ((count = zis.read(buff, 0, BUFFER_SIZE)) != -1) {
-              dest.write(buff, 0, count);
-            }
-            dest.flush();
-          } finally {
-            if (dest != null) {
-              dest.close();
+        String entryName = zipinfo.oldStyle ? removeTopDir(entry.getName()) : entry.getName();
+        if (!entryName.isEmpty()) {
+          if (entry.isDirectory()) {
+            new File(directory, entryName).mkdir();
+          } else {
+            int count;
+            byte[] buff = new byte[BUFFER_SIZE];
+            BufferedOutputStream dest = null;
+            try {
+              OutputStream fos = new FileOutputStream(new File(directory, entryName));
+              dest = new BufferedOutputStream(fos, BUFFER_SIZE);
+              while ((count = zis.read(buff, 0, BUFFER_SIZE)) != -1) {
+                dest.write(buff, 0, count);
+              }
+              dest.flush();
+            } finally {
+              if (dest != null) {
+                dest.close();
+              }
             }
           }
         }
@@ -954,7 +965,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     } finally {
       directory.delete();
       if (deleteZip) {
-        new File(fileName).delete();
+        new File(zipinfo.filename).delete();
       }
     }
     return true;
@@ -1301,5 +1312,16 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       return (moduleName == null ? ":" : (moduleName + ":")) + factoryName;
     }
   }
+
+  private static final class ModuleZipInfo {
+    final boolean oldStyle;
+    final String filename;
+
+    private ModuleZipInfo(boolean oldStyle, String filename) {
+      this.oldStyle = oldStyle;
+      this.filename = filename;
+    }
+  }
+
 
 }

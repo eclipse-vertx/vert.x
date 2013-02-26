@@ -24,11 +24,9 @@ public class MavenIdentifier {
     if (parts.length != 3) {
       throw new IllegalArgumentException(moduleName + " must be of the form <group_id>:<artifact_id>:<version>");
     }
-
     groupID = parts[0];
     artifactID = parts[1];
     version = parts[2];
-
     StringBuilder uri = new StringBuilder('/');
     String[] groupParts = groupID.split("\\.");
     for (String groupPart: groupParts) {
@@ -38,8 +36,8 @@ public class MavenIdentifier {
     uriRoot = uri.toString();
   }
 
-  public String groupID;
-  public String artifactID;
-  public String version;
-  public String uriRoot;
+  public final String groupID;
+  public final String artifactID;
+  public final String version;
+  public final String uriRoot;
 }

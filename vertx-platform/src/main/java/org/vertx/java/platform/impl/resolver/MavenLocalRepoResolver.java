@@ -77,4 +77,8 @@ public class MavenLocalRepoResolver implements RepoResolver {
       return false;
     }
   }
+
+  public boolean isOldStyle() {
+    return false;
+  }
 }

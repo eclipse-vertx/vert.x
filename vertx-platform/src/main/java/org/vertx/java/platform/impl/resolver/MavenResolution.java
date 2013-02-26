@@ -46,6 +46,13 @@ public class MavenResolution extends HttpResolution {
 
   protected void getModule() {
     createClient(repoHost, repoPort);
+    addHandler(404, new Handler<HttpClientResponse>() {
+      @Override
+      public void handle(HttpClientResponse resp) {
+        //NOOP
+        end(false);
+      }
+    });
     if (identifier.version.endsWith("-SNAPSHOT")) {
       addHandler(200, new Handler<HttpClientResponse>() {
         @Override
@@ -59,19 +66,12 @@ public class MavenResolution extends HttpResolution {
               addHandler(200, new Handler<HttpClientResponse>() {
                 @Override
                 public void handle(HttpClientResponse resp) {
-                  downloadToFile(resp);
+                  downloadToFile(filename, resp);
                 }
               });
               makeRequest(repoHost, repoPort, actualURI);
             }
           });
-        }
-      });
-      addHandler(404, new Handler<HttpClientResponse>() {
-        @Override
-        public void handle(HttpClientResponse resp) {
-          //NOOP
-          end(false);
         }
       });
       // First we make a request to maven-metadata.xml
@@ -80,7 +80,7 @@ public class MavenResolution extends HttpResolution {
       addHandler(200, new Handler<HttpClientResponse>() {
         @Override
         public void handle(HttpClientResponse resp) {
-          downloadToFile(resp);
+          downloadToFile(filename, resp);
         }
       });
       makeRequest(repoHost, repoPort, getNonVersionedResourceName(contentRoot, identifier));
