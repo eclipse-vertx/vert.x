@@ -75,7 +75,7 @@ public class MavenResolution extends HttpResolution {
         }
       });
       // First we make a request to maven-metadata.xml
-      makeRequest(repoHost, repoPort, contentRoot + identifier.uriRoot + "maven-metadata.xml");
+      makeRequest(repoHost, repoPort, contentRoot + "/" + identifier.uriRoot + "maven-metadata.xml");
     } else {
       addHandler(200, new Handler<HttpClientResponse>() {
         @Override

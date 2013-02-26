@@ -95,7 +95,6 @@ public abstract class HttpResolution {
     }
     client.exceptionHandler(new Handler<Exception>() {
       public void handle(Exception e) {
-        log.error("Unable to connect to repository");
         end(false);
       }
     });
