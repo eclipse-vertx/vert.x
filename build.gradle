@@ -140,6 +140,8 @@ task assemble(type: Copy, dependsOn: [subprojects.assemble]) {
   into('lib') {
     from subprojects.configurations.compile    
     from subprojects.jar
+    // Don't just include everything!!
+    includes = ["jackson*.jar", "netty*.jar", "hazelcast*.jar", "vertx*.jar"]
   }
   doLast {
     project.ant.chmod(file: "build/$rootProject.name-$version/bin", perm: 'ugo+x')
@@ -161,7 +163,7 @@ task javadocs(type: Javadoc, dependsOn: subprojects.javadoc) {
   source = subprojects.sourceSets.main.java
   classpath = files(subprojects.configurations.compile)
 
-  // excludes = ["**/impl/**"]
+  excludes = ["**/impl/**"]
   includes = ["**/core/**", "**/platform/**"]
 
   destinationDir file("build/$rootProject.name-$version/api-docs/java/api")
