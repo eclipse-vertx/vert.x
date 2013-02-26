@@ -849,7 +849,6 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     return TEMP_DIR + FILE_SEP + "vertx-" + UUID.randomUUID().toString();
   }
 
-
   private File unzipIntoTmpDir(ModuleZipInfo zipInfo, boolean deleteZip) {
     String tdir = generateTmpFileName();
     File tdest = new File(tdir);
