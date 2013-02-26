@@ -19,7 +19,6 @@ package org.vertx.java.platform;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
-import org.vertx.java.platform.impl.PlatformManagerInternal;
 
 import java.util.Map;
 
@@ -33,39 +32,27 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Container {
-
-  private final PlatformManagerInternal mgr;
-
-  public Container(final PlatformManagerInternal mgr) {
-    this.mgr = mgr;
-  }
+public interface Container {
 
   /**
    * Deploy a worker verticle programmatically
    * @param main The main of the verticle
    */
-  public void deployWorkerVerticle(String main) {
-    deployWorkerVerticle(main, null, 1);
-  }
+  void deployWorkerVerticle(String main);
 
   /**
    * Deploy a worker verticle programmatically
    * @param main The main of the verticle
    * @param instances The number of instances to deploy (defaults to 1)
    */
-  public void deployWorkerVerticle(String main, int instances) {
-    deployWorkerVerticle(main, null, instances);
-  }
+  void deployWorkerVerticle(String main, int instances);
 
   /**
    * Deploy a worker verticle programmatically
    * @param main The main of the verticle
    * @param config JSON config to provide to the verticle
    */
-  public void deployWorkerVerticle(String main, JsonObject config) {
-    deployWorkerVerticle(main, config, 1);
-  }
+  void deployWorkerVerticle(String main, JsonObject config);
 
   /**
    * Deploy a worker verticle programmatically
@@ -73,9 +60,7 @@ public class Container {
    * @param config JSON config to provide to the verticle
    * @param instances The number of instances to deploy (defaults to 1)
    */
-  public void deployWorkerVerticle(String main, JsonObject config, int instances) {
-    deployWorkerVerticle(main, config, instances, false, null);
-  }
+  void deployWorkerVerticle(String main, JsonObject config, int instances);
 
   /**
    * Deploy a worker verticle programmatically
@@ -84,9 +69,7 @@ public class Container {
    * @param instances The number of instances to deploy (defaults to 1)
    * @param multiThreaded if true then the verticle will be deployed as a multi-threaded worker
    */
-  public void deployWorkerVerticle(String main, JsonObject config, int instances, boolean multiThreaded) {
-    deployWorkerVerticle(main, config, instances, multiThreaded, null);
-  }
+  void deployWorkerVerticle(String main, JsonObject config, int instances, boolean multiThreaded);
 
   /**
    * Deploy a worker verticle programmatically
@@ -95,35 +78,27 @@ public class Container {
    * @param instances The number of instances to deploy (defaults to 1)
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
-  public void deployWorkerVerticle(String main, JsonObject config, int instances, boolean multiThreaded, Handler<String> doneHandler) {
-    mgr.deployWorkerVerticle(multiThreaded, main, config, null, instances, null, doneHandler);
-  }
+  void deployWorkerVerticle(String main, JsonObject config, int instances, boolean multiThreaded, Handler<String> doneHandler);
 
   /**
    * Deploy a module programmatically
    * @param moduleName The main of the module to deploy
    */
-  public void deployModule(String moduleName) {
-    deployModule(moduleName, null, 1);
-  }
+  void deployModule(String moduleName);
 
   /**
    * Deploy a module programmatically
    * @param moduleName The main of the module to deploy
    * @param instances The number of instances to deploy (defaults to 1)
    */
-  public void deployModule(String moduleName, int instances) {
-    deployModule(moduleName, null, instances);
-  }
+  void deployModule(String moduleName, int instances);
 
   /**
    * Deploy a module programmatically
    * @param moduleName The main of the module to deploy
    * @param config JSON config to provide to the module
    */
-  public void deployModule(String moduleName, JsonObject config) {
-    deployModule(moduleName, config, 1);
-  }
+  void deployModule(String moduleName, JsonObject config);
 
   /**
    * Deploy a module programmatically
@@ -131,9 +106,7 @@ public class Container {
    * @param config JSON config to provide to the module
    * @param instances The number of instances to deploy (defaults to 1)
    */
-  public void deployModule(String moduleName, JsonObject config, int instances) {
-    deployModule(moduleName, config, instances, null);
-  }
+  void deployModule(String moduleName, JsonObject config, int instances);
 
   /**
    * Deploy a module programmatically
@@ -142,18 +115,14 @@ public class Container {
    * @param instances The number of instances to deploy (defaults to 1)
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
-  public void deployModule(String moduleName, JsonObject config, int instances, Handler<String> doneHandler) {
-    mgr.deployModule(moduleName, config, instances, doneHandler);
-  }
+  void deployModule(String moduleName, JsonObject config, int instances, Handler<String> doneHandler);
 
   /**
    * Deploy a module programmatically
    * @param moduleName The main of the module to deploy
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
-  public void deployModule(String moduleName, Handler<String> doneHandler) {
-    mgr.deployModule(moduleName, null, 1, doneHandler);
-  }
+  void deployModule(String moduleName, Handler<String> doneHandler);
 
   /**
    * Deploy a module programmatically
@@ -161,9 +130,7 @@ public class Container {
    * @param config JSON config to provide to the module
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
-  public void deployModule(String moduleName, JsonObject config, Handler<String> doneHandler) {
-    mgr.deployModule(moduleName, config, 1, doneHandler);
-  }
+  void deployModule(String moduleName, JsonObject config, Handler<String> doneHandler);
 
   /**
    * Deploy a module programmatically
@@ -171,35 +138,27 @@ public class Container {
    *                   * @param instances The number of instances to deploy (defaults to 1)
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
-  public void deployModule(String moduleName, int instances, Handler<String> doneHandler) {
-    mgr.deployModule(moduleName, null, instances, doneHandler);
-  }
+  void deployModule(String moduleName, int instances, Handler<String> doneHandler);
 
   /**
    * Deploy a worker verticle programmatically
    * @param main The main of the verticle
    */
-  public void deployVerticle(String main) {
-    deployVerticle(main, null, 1);
-  }
+  void deployVerticle(String main);
 
   /**
    * Deploy a verticle programmatically
    * @param main The main of the verticle
    * @param instances The number of instances to deploy (defaults to 1)
    */
-  public void deployVerticle(String main, int instances) {
-    deployVerticle(main, null, instances);
-  }
+  void deployVerticle(String main, int instances);
 
   /**
    * Deploy a verticle programmatically
    * @param main The main of the verticle
    * @param config JSON config to provide to the verticle
    */
-  public void deployVerticle(String main, JsonObject config) {
-    deployVerticle(main, config, 1);
-  }
+  void deployVerticle(String main, JsonObject config);
 
   /**
    * Deploy a verticle programmatically
@@ -207,9 +166,7 @@ public class Container {
    * @param config JSON config to provide to the verticle
    * @param instances The number of instances to deploy (defaults to 1)
    */
-  public void deployVerticle(String main, JsonObject config, int instances) {
-    deployVerticle(main, config, instances, null);
-  }
+  void deployVerticle(String main, JsonObject config, int instances);
 
   /**
    * Deploy a verticle programmatically
@@ -218,18 +175,14 @@ public class Container {
    * @param instances The number of instances to deploy (defaults to 1)
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
-  public void deployVerticle(String main, JsonObject config, int instances, Handler<String> doneHandler) {
-    mgr.deployVerticle(main, config, null, instances, null, doneHandler);
-  }
+  void deployVerticle(String main, JsonObject config, int instances, Handler<String> doneHandler);
 
   /**
    * Deploy a verticle programmatically
    * @param main The main of the verticle
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
-  public void deployVerticle(String main, Handler<String> doneHandler) {
-    this.deployVerticle(main, null, 1, doneHandler);
-  }
+  void deployVerticle(String main, Handler<String> doneHandler);
 
   /**
    * Deploy a verticle programmatically
@@ -237,82 +190,62 @@ public class Container {
    * @param config JSON config to provide to the verticle
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
-  public void deployVerticle(String main, JsonObject config, Handler<String> doneHandler) {
-    this.deployVerticle(main, config, 1, doneHandler);
-  }
+  void deployVerticle(String main, JsonObject config, Handler<String> doneHandler);
 
   /**
    * Deploy a verticle programmatically
    * @param main The main of the verticle
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
-  public void deployVerticle(String main, int instances, Handler<String> doneHandler) {
-    this.deployVerticle(main, null, instances, doneHandler);
-  }
+  void deployVerticle(String main, int instances, Handler<String> doneHandler);
 
   /**
    * Undeploy a verticle
    * @param deploymentID The deployment ID
    */
-  public void undeployVerticle(String deploymentID) {
-    undeployVerticle(deploymentID, null);
-  }
+  void undeployVerticle(String deploymentID);
 
   /**
    * Undeploy a module
    * @param deploymentID The deployment ID
    * @param doneHandler The handler will be called when undeployment is complete
    */
-  public void undeployVerticle(String deploymentID, Handler<Void> doneHandler) {
-    mgr.undeploy(deploymentID, doneHandler);
-  }
+  void undeployVerticle(String deploymentID, Handler<Void> doneHandler);
 
   /**
    * Undeploy a module
    * @param deploymentID The deployment ID
    */
-  public void undeployModule(String deploymentID) {
-    undeployModule(deploymentID, null);
-  }
+  void undeployModule(String deploymentID);
 
   /**
    * Undeploy a module
    * @param deploymentID The deployment ID
    * @param doneHandler The handler will be called when undeployment is complete
    */
-  public void undeployModule(String deploymentID, Handler<Void> doneHandler) {
-    mgr.undeploy(deploymentID, doneHandler);
-  }
+  void undeployModule(String deploymentID, Handler<Void> doneHandler);
 
   /**
    * Get the verticle configuration
    * @return a JSON object representing the configuration
    */
-  public JsonObject getConfig() {
-    return mgr.getConfig();
-  }
+  JsonObject getConfig();
 
   /**
    * Get the verticle logger
    * @return The logger
    */
-  public Logger getLogger() {
-    return mgr.getLogger();
-  }
+  Logger getLogger();
 
   /**
    * Cause the container to exit
    */
-  public void exit() {
-    mgr.exit();
-  }
+  void exit();
 
   /**
    * Get an umodifiable map of system, environment variables.
    * @return The map
    */
-  public Map<String, String> getEnv() {
-    return System.getenv();
-  }
+  Map<String, String> getEnv();
 
 }

@@ -1063,7 +1063,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
     final VerticleFactory verticleFactory;
 
-    final Container container = new Container(this);
+    final Container container = new DefaultContainer(this);
 
     try {
       // TODO not one verticle factory per module ref, but one per language per module ref
