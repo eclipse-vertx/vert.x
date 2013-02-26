@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 the original author or authors.
+ * Copyright 2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,30 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.vertx.java.core.impl;
-
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxFactory;
+package org.vertx.java.core.impl.management;
 
 /**
- * @author pidster
+ * @author swilliams
  *
  */
-public class DefaultVertxFactory implements VertxFactory {
+public interface EventBusMXBean {
 
-  @Override
-  public Vertx createVertx() {
-    return new DefaultVertx();
-  }
+  int getPort();
 
-  @Override
-  public Vertx createVertx(String hostname) {
-    return new DefaultVertx(hostname);
-  }
-
-  @Override
-  public Vertx createVertx(int port, String hostname) {
-    return new DefaultVertx(port, hostname);
-  }
+  String getHostname();
 
 }

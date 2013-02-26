@@ -25,6 +25,7 @@ import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.impl.management.ManagementRegistry;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -70,6 +71,7 @@ public class DefaultEventBus implements EventBus {
     this.server = null;
     this.subs = null;
     this.clusterMgr = null;
+    ManagementRegistry.registerEventBus(serverID);
   }
 
   public DefaultEventBus(VertxInternal vertx, int port, String hostname, ClusterManager clusterManager) {
@@ -78,6 +80,7 @@ public class DefaultEventBus implements EventBus {
     this.clusterMgr = clusterManager;
     this.subs = clusterMgr.getSubsMap("subs");
     this.server = setServer();
+    ManagementRegistry.registerEventBus(serverID);
   }
   
   public void send(String address, JsonObject message, final Handler<Message<JsonObject>> replyHandler) {
