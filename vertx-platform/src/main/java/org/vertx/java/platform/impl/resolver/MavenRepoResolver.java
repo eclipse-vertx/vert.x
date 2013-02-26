@@ -33,4 +33,8 @@ public class MavenRepoResolver extends HttpRepoResolver {
     return res.waitResult();
   }
 
+  public boolean isOldStyle() {
+    return false;
+  }
+
 }

@@ -1,4 +1,8 @@
-package org.vertx.java.platform.impl.resolver;/*
+package org.vertx.java.platform.impl.resolver;
+
+import org.vertx.java.core.Vertx;
+
+/*
  * Copyright 2013 Red Hat, Inc.
  *
  * Red Hat licenses this file to you under the Apache License, version 2.0
@@ -15,24 +19,20 @@ package org.vertx.java.platform.impl.resolver;/*
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+public class OldRepoResolver extends HttpRepoResolver {
 
-import org.vertx.java.core.Vertx;
-
-public class BintrayRepoResolver extends HttpRepoResolver {
-
-  public BintrayRepoResolver(Vertx vertx, String repoID) {
+  public OldRepoResolver(Vertx vertx, String repoID) {
     super(vertx, repoID);
   }
 
   @Override
   public boolean getModule(String filename, String moduleName) {
-    HttpResolution res = new BintrayResolution(vertx, repoHost, repoPort, moduleName, filename, contentRoot);
+    HttpResolution res = new OldRepoResolution(vertx, repoHost, repoPort, moduleName, filename, contentRoot);
     res.getModule();
     return res.waitResult();
   }
 
   public boolean isOldStyle() {
-    return false;
+    return true;
   }
-
 }
