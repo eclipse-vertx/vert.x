@@ -168,11 +168,10 @@ fi
 function splitJvmOpts() {
     JVM_OPTS=("$@")
 }
-eval splitJvmOpts $DEFAULT_JVM_OPTS $JAVA_OPTS $VERTX_OPTS
+eval splitJvmOpts $DEFAULT_JVM_OPTS $JAVA_OPTS $JMX_OPTS $VERTX_OPTS
 
 exec "$JAVACMD" \
     "${JVM_OPTS[@]}" \
-    "${JMX_OPTS}"  \
     -Djava.util.logging.config.file=${VERTX_JUL_CONFIG:-${VERTX_HOME}/conf/logging.properties} \
     -Dvertx.home=$VERTX_HOME\
     -classpath "$CLASSPATH" \
