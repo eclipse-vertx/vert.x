@@ -13,6 +13,8 @@
 # DEFAULT_JVM_OPTS="-XX:+CMSClassUnloadingEnabled -XX:-UseGCOverheadLimit"
 DEFAULT_JVM_OPTS=""
 
+JMX_OPTS="-Dcom.sun.management.jmxremote -Dvertx.management.jmx=true -Dhazelcast.jmx=true"
+
 APP_NAME="vertx"
 APP_BASE_NAME=`basename "$0"`
 
@@ -170,6 +172,7 @@ eval splitJvmOpts $DEFAULT_JVM_OPTS $JAVA_OPTS $VERTX_OPTS
 
 exec "$JAVACMD" \
     "${JVM_OPTS[@]}" \
+    "${JMX_OPTS}"  \
     -Djava.util.logging.config.file=${VERTX_JUL_CONFIG:-${VERTX_HOME}/conf/logging.properties} \
     -Dvertx.home=$VERTX_HOME\
     -classpath "$CLASSPATH" \
