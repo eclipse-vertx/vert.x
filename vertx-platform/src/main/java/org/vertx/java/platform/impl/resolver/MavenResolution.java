@@ -89,18 +89,21 @@ public class MavenResolution extends HttpResolution {
 
   static String getResourceName(String data, String contentRoot, MavenIdentifier identifier) {
     int pos = data.indexOf("<snapshot>");
-    String actualURI;
+    String actualURI = null;
     if (pos != -1) {
       int pos2 = data.indexOf("<timestamp>", pos);
-      String timestamp = data.substring(pos2 + 11, pos2 + 26);
-      int pos3 = data.indexOf("<buildNumber>", pos);
-      int pos4 = data.indexOf("<", pos3 + 12);
-      String buildNumber = data.substring(pos3 + 13, pos4);
-      // Timestamped SNAPSHOT
-      actualURI = contentRoot + "/" + identifier.uriRoot + identifier.artifactID + "-" +
-          identifier.version.substring(0, identifier.version.length() - 9) + "-" +
-          timestamp + "-" + buildNumber + ".zip";
-    } else {
+      if (pos2 != -1) {
+        String timestamp = data.substring(pos2 + 11, pos2 + 26);
+        int pos3 = data.indexOf("<buildNumber>", pos);
+        int pos4 = data.indexOf("<", pos3 + 12);
+        String buildNumber = data.substring(pos3 + 13, pos4);
+        // Timestamped SNAPSHOT
+        actualURI = contentRoot + "/" + identifier.uriRoot + identifier.artifactID + "-" +
+            identifier.version.substring(0, identifier.version.length() - 9) + "-" +
+            timestamp + "-" + buildNumber + ".zip";
+      }
+    }
+    if (actualURI == null) {
       // Non timestamped SNAPSHOT
       actualURI = getNonVersionedResourceName(contentRoot, identifier);
     }
