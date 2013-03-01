@@ -1058,7 +1058,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
     // Include the language impl module as a parent of the classloader
     if (langImplInfo.moduleName != null) {
-      loadIncludedModules(modDir, mr, langImplInfo.moduleName);
+      if (!loadIncludedModules(modDir, mr, langImplInfo.moduleName)) {
+        log.error("Failed to load module: " + langImplInfo.moduleName);
+        doneHandler.handle(null);
+        return;
+      }
     }
 
     final VerticleFactory verticleFactory;
