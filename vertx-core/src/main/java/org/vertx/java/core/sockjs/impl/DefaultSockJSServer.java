@@ -93,7 +93,7 @@ public class DefaultSockJSServer implements SockJSServer {
       config.putString("prefix", "/");
     }
     if (config.getString("library_url") == null) {
-      config.putString("library_url", "http://cdn.sockjs.org/sockjs-0.2.1.min.js");
+      config.putString("library_url", "http://cdn.sockjs.org/sockjs-0.3.4.min.js");
     }
     if (config.getArray("disabled_transports") == null) {
       config.putArray("disabled_transports", new JsonArray());
