@@ -43,7 +43,7 @@ allprojects {
 
 subprojects {
   apply plugin: 'java'
-  
+
   sourceCompatibility = '1.7'
   targetCompatibility = '1.7'
 
@@ -55,7 +55,7 @@ subprojects {
     maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
     mavenCentral()
   }
-  
+
   dependencies {
     testCompile "junit:junit:$junitVersion"
     testCompile "io.vertx:vertx-testframework:$testframeworkversion", {
@@ -64,7 +64,7 @@ subprojects {
     }
     testCompile project(":vertx-platform")
   }
-  
+
   javadoc {
     destinationDir = file("build/docs/java/api")
   }
