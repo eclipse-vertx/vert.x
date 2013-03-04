@@ -397,7 +397,6 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     };
   }
 
-
   private Handler<String> wrapDoneHandler(final Handler<String> doneHandler) {
     if (doneHandler == null) {
       return null;
@@ -558,8 +557,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           moduleName = propVal.substring(0, colonIndex);
           factoryName = propVal.substring(colonIndex + 1);
         } else {
-          moduleName = null;
-          factoryName = propVal;
+          throw new IllegalArgumentException("Language mapping: " + propVal + " does not specify an implementing module");
         }
         LanguageImplInfo langImpl = new LanguageImplInfo(moduleName, factoryName);
         languageImpls.put(propName, langImpl);
