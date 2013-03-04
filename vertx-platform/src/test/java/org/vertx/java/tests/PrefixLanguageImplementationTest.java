@@ -31,96 +31,103 @@ import java.util.concurrent.TimeUnit;
  */
 public class PrefixLanguageImplementationTest {
 
-  private PlatformManager platformManager;
+  // Commented out - Vert.x requires all languages other than Java to be implemented as modules!
 
-  @BeforeClass
-  public static void beforeClass() {
-    System.setProperty("vertx.langs.foo", FooLangVerticleFactory.class.getName());
-  }
-
-  @Before
-  public void before() throws Exception {
-    platformManager = PlatformLocator.factory.createPlatformManager();
-  }
+  //private PlatformManager platformManager;
 
   @Test
-  public void deployFooVerticle() {
-    String main = "test.foo";
+  public void testDummy() {
 
-    JsonObject config = new JsonObject();
-    config.putString("foo", "foo");
-
-    URL[] urls = new URL[0];
-    String includes = null;
-
-    final CountDownLatch latch = new CountDownLatch(1);
-    Handler<String> doneHandler = new Handler<String>() {
-      @Override
-      public void handle(String event) {
-        if (event != null) {
-          latch.countDown();
-        }
-      }
-    };
-
-    platformManager.deployVerticle(main, config, urls, 1, includes, doneHandler);
-
-    boolean await;
-
-    while (true) {
-      try {
-        await = latch.await(5000L, TimeUnit.MILLISECONDS);
-        break;
-      } catch (InterruptedException e) {
-        //
-      }
-    }
-
-    if (!await) {
-      Assert.fail("Probably not deployed still waiting for " + latch.getCount());
-    }
   }
 
-  @Test
-  public void deployFooVerticleFailure() {
-    String main = "expectedfailure:expected-to-fail.test";
-
-    JsonObject config = new JsonObject();
-    config.putString("foo", "foo");
-
-    URL[] urls = new URL[0];
-    String includes = null;
-
-    final CountDownLatch latch = new CountDownLatch(1);
-    Handler<String> doneHandler = new Handler<String>() {
-      @Override
-      public void handle(String event) {
-        // null means failed to deploy
-        if (event == null) {
-          latch.countDown();
-        }
-      }
-    };
-
-    platformManager.deployVerticle(main, config, urls, 1, includes, doneHandler);
-
-    boolean await;
-    while (true) {
-      try {
-        await = latch.await(5000, TimeUnit.MILLISECONDS);
-        break;
-      } catch (InterruptedException e) {
-        //
-      }
-    }
-
-    if (!await) {
-      Assert.assertEquals(1, latch.getCount());
-    }
-  }
-
-  @AfterClass
-  public static void cleanup() {
-    System.clearProperty("vertx.langs.foo");
-  }
+//  @BeforeClass
+//  public static void beforeClass() {
+//    System.setProperty("vertx.langs.foo", FooLangVerticleFactory.class.getName());
+//  }
+//
+//  @Before
+//  public void before() throws Exception {
+//    platformManager = PlatformLocator.factory.createPlatformManager();
+//  }
+//
+//  @Test
+//  public void deployFooVerticle() {
+//    String main = "test.foo";
+//
+//    JsonObject config = new JsonObject();
+//    config.putString("foo", "foo");
+//
+//    URL[] urls = new URL[0];
+//    String includes = null;
+//
+//    final CountDownLatch latch = new CountDownLatch(1);
+//    Handler<String> doneHandler = new Handler<String>() {
+//      @Override
+//      public void handle(String event) {
+//        if (event != null) {
+//          latch.countDown();
+//        }
+//      }
+//    };
+//
+//    platformManager.deployVerticle(main, config, urls, 1, includes, doneHandler);
+//
+//    boolean await;
+//
+//    while (true) {
+//      try {
+//        await = latch.await(5000L, TimeUnit.MILLISECONDS);
+//        break;
+//      } catch (InterruptedException e) {
+//        //
+//      }
+//    }
+//
+//    if (!await) {
+//      Assert.fail("Probably not deployed still waiting for " + latch.getCount());
+//    }
+//  }
+//
+//  @Test
+//  public void deployFooVerticleFailure() {
+//    String main = "expectedfailure:expected-to-fail.test";
+//
+//    JsonObject config = new JsonObject();
+//    config.putString("foo", "foo");
+//
+//    URL[] urls = new URL[0];
+//    String includes = null;
+//
+//    final CountDownLatch latch = new CountDownLatch(1);
+//    Handler<String> doneHandler = new Handler<String>() {
+//      @Override
+//      public void handle(String event) {
+//        // null means failed to deploy
+//        if (event == null) {
+//          latch.countDown();
+//        }
+//      }
+//    };
+//
+//    platformManager.deployVerticle(main, config, urls, 1, includes, doneHandler);
+//
+//    boolean await;
+//    while (true) {
+//      try {
+//        await = latch.await(5000, TimeUnit.MILLISECONDS);
+//        break;
+//      } catch (InterruptedException e) {
+//        //
+//      }
+//    }
+//
+//    if (!await) {
+//      Assert.assertEquals(1, latch.getCount());
+//    }
+//  }
+//
+//  @AfterClass
+//  public static void cleanup() {
+//    System.clearProperty("vertx.langs.foo");
+//  }
 }
