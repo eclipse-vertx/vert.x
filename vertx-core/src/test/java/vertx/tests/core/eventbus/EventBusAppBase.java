@@ -38,6 +38,9 @@ public abstract class EventBusAppBase extends TestClientBase {
   protected Map<String, Object> data;
   protected DefaultEventBus eb;
 
+  private static HazelcastClusterManager clusterManager;
+  private static final boolean USE_SEPARATE_HAZELCAST_NODES = false;
+
   @Override
   public void start() {
     super.start();
@@ -48,10 +51,20 @@ public abstract class EventBusAppBase extends TestClientBase {
       eb = (DefaultEventBus)vertx.eventBus();
     } else {
       int port = Counter.portCounter.getAndIncrement();
-      // FIXME - this test is a hack - we shouldn't be creating multiple eventbuses with a single vert.x
-      // using private API!!
-      ClusterManager clusterManager = new HazelcastClusterManager((VertxInternal)vertx);
-      eb = new DefaultEventBus((VertxInternal)vertx, port, "localhost", clusterManager);
+
+      ClusterManager cm;
+      if (USE_SEPARATE_HAZELCAST_NODES) {
+        // The tests can be run with actual separate Hazelcast nodes but they run a LOT slower
+        cm = new HazelcastClusterManager((VertxInternal)vertx);
+      } else {
+        synchronized (EventBusAppBase.this) {
+          if (clusterManager == null) {
+            clusterManager = new HazelcastClusterManager((VertxInternal)vertx);
+          }
+          cm = clusterManager;
+        }
+      }
+      eb = new DefaultEventBus((VertxInternal)vertx, port, "localhost", cm);
     }
 
     tu.appReady();

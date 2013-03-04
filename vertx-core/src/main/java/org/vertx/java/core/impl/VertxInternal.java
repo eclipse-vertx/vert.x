@@ -17,10 +17,12 @@
 package org.vertx.java.core.impl;
 
 
+import com.hazelcast.core.HazelcastInstance;
 import org.jboss.netty.channel.socket.nio.NioClientBossPool;
 import org.jboss.netty.channel.socket.nio.NioServerBossPool;
 import org.jboss.netty.util.Timer;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.eventbus.impl.ClusterManager;
 import org.vertx.java.core.http.impl.DefaultHttpServer;
 import org.vertx.java.core.net.impl.DefaultNetServer;
 import org.vertx.java.core.net.impl.ServerID;
@@ -72,4 +74,6 @@ public abstract class VertxInternal extends Vertx {
    * @return event loop context
    */
   public abstract EventLoopContext createEventLoopContext();
+
+  public abstract ClusterManager getClusterManager();
 }

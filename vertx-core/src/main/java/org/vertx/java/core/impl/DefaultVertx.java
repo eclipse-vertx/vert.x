@@ -16,6 +16,7 @@
 
 package org.vertx.java.core.impl;
 
+import com.hazelcast.core.HazelcastInstance;
 import org.jboss.netty.channel.DefaultChannelFuture;
 import org.jboss.netty.channel.socket.nio.NioClientBossPool;
 import org.jboss.netty.channel.socket.nio.NioServerBossPool;
@@ -26,6 +27,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.impl.ClusterManager;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
+import org.vertx.java.core.eventbus.impl.hazelcast.HazelCastVInstance;
 import org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.file.impl.DefaultFileSystem;
@@ -98,8 +100,13 @@ public class DefaultVertx extends VertxInternal {
   }
 
   public DefaultVertx(int port, String hostname) {
+    System.out.println("** CREATING HAZELCAST CLUSTERMANAGER");
     this.clusterManager = new HazelcastClusterManager(this);
     this.eventBus = new DefaultEventBus(this, port, hostname, clusterManager);
+  }
+
+  public ClusterManager getClusterManager() {
+    return clusterManager;
   }
 
   static {

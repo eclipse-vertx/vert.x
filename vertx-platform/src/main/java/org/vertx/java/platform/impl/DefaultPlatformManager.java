@@ -18,6 +18,7 @@ package org.vertx.java.platform.impl;
 
 
 import org.vertx.java.core.*;
+import org.vertx.java.core.eventbus.impl.hazelcast.HazelCastVInstance;
 import org.vertx.java.core.impl.*;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
@@ -26,6 +27,8 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.platform.Container;
 import org.vertx.java.platform.Verticle;
 import org.vertx.java.platform.VerticleFactory;
+import org.vertx.java.platform.impl.ha.impl.HAManager;
+import org.vertx.java.platform.impl.ha.impl.hazelcast.HazelcastClusterInfoManager;
 import org.vertx.java.platform.impl.resolver.*;
 
 import java.io.*;
@@ -79,6 +82,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private Map<String, List<RepoResolver>> defaultRepos = new HashMap<>();
   private Handler<Void> exitHandler;
   private final ClassLoader platformClassLoader;
+  private HAManager haManager;
+
+  private void createHAManager() {
+    haManager = new HAManager(this, new HazelcastClusterInfoManager(vertx.getClusterManager()));
+  }
 
   DefaultPlatformManager() {
     this(new DefaultVertx());
@@ -86,16 +94,19 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   DefaultPlatformManager(String hostname) {
     this(new DefaultVertx(hostname));
+    createHAManager();
   }
 
   DefaultPlatformManager(int port, String hostname) {
     this(new DefaultVertx(port, hostname));
+    createHAManager();
   }
 
   private DefaultPlatformManager(VertxInternal vertx) {
     this.platformClassLoader = Thread.currentThread().getContextClassLoader();
     this.vertx = vertx;
     String modDir = System.getProperty(MODS_DIR_PROP_NAME);
+    System.out.println("mods dir is " + modDir);
     if (modDir != null && !modDir.trim().equals("")) {
       modRoot = new File(modDir);
     } else {
@@ -138,11 +149,24 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   public void deployModule(final String moduleName, final JsonObject config,
-                           final int instances, final Handler<String> doneHandler) {
+                           final int instances, final Handler<String> handler) {
+    deployModule(moduleName, config, instances, false, handler);
+  }
+
+  public void deployModule(final String moduleName, final JsonObject config,
+                           final int instances, final boolean ha, final Handler<String> handler) {
+    final Handler<String> doneHandler = new Handler<String>() {
+      public void handle(String depID) {
+        if (ha && haManager != null) {
+          haManager.addToHA(moduleName, config, instances);
+        }
+        if (handler != null) {
+          handler.handle(depID);
+        }
+      }
+    };
     final File currentModDir = getDeploymentModDir();
     BlockingAction<Void> deployModuleAction = new BlockingAction<Void>(vertx, createHandler(doneHandler)) {
-
-      @Override
       public Void action() throws Exception {
         doDeployMod(false, null, moduleName, config, instances, currentModDir, wrapDoneHandler(doneHandler));
         return null;
@@ -275,10 +299,10 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   public void deployModuleFromZip(String zipFileName, JsonObject config,
-                                  int instances, Handler<String> doneHandler) {
+                                  int instances, boolean ha, Handler<String> doneHandler) {
     final String modName = zipFileName.substring(0, zipFileName.length() - 4);
     if (unzipModule(modName, new ModuleZipInfo(false, zipFileName), false)) {
-      deployModule(modName, config, instances, doneHandler);
+      deployModule(modName, config, instances, ha, doneHandler);
     } else {
       doneHandler.handle(null);
     }
@@ -298,6 +322,10 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   public Logger getLogger() {
     VerticleHolder holder = getVerticleHolder();
     return holder == null ? null : holder.logger;
+  }
+
+  public void simulateNodeFailure() {
+    haManager.simulateCrash();
   }
 
   private void deployVerticle(final boolean worker, final boolean multiThreaded, final String main,
@@ -1166,7 +1194,6 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
                 }
               });
             }
-
           }
         };
 

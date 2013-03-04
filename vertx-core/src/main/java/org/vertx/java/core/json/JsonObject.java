@@ -19,6 +19,7 @@ package org.vertx.java.core.json;
 import org.vertx.java.core.http.impl.ws.Base64;
 import org.vertx.java.core.json.impl.Json;
 
+import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,7 @@ import java.util.Set;
  * 
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JsonObject extends JsonElement {
+public class JsonObject extends JsonElement implements Serializable {
 
   final Map<String, Object> map;
 

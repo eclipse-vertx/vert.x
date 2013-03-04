@@ -52,6 +52,7 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
    While the get is in progress the entry listener may be being called, so we merge any
    pre-existing entries so we don't lose any. Hazelcast doesn't seem to have any consistent
    way to get an initial state plus a stream of updates.
+   Note that it doesn't matter if we have some stale entries in the map.
     */
   private ConcurrentMap<String, ServerIDs> cache = new ConcurrentHashMap<>();
 
@@ -181,7 +182,5 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
   public void entryEvicted(EntryEvent<String, HazelcastServerID> entry) {
     entryRemoved(entry);
   }
-
-
 
 }

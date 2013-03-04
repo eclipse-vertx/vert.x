@@ -73,8 +73,12 @@ public interface PlatformManager {
    * @param moduleName The name of the module to deploy
    * @param config Any JSON config to pass to the verticle, or null if none
    * @param instances The number of instances to deploy
+   * @param ha If true then high availability will be enabled for the module
    * @param doneHandler Handler will be called with deploymentID when deployed, or null if it fails to deploy
    */
+  void deployModule(String moduleName, JsonObject config,
+                    int instances, boolean ha, Handler<String> doneHandler);
+
   void deployModule(String moduleName, JsonObject config,
                     int instances, Handler<String> doneHandler);
 
@@ -86,10 +90,11 @@ public interface PlatformManager {
    * @param zipFileName The name of the zip file that contains the module
    * @param config Any JSON config to pass to the verticle, or null if none
    * @param instances The number of instances to deploy
+   * @param ha If true then high availability will be enabled for the module
    * @param doneHandler Handler will be called with deploymentID when deployed, or null if it fails to deploy
    */
   void deployModuleFromZip(String zipFileName, JsonObject config,
-                           int instances, Handler<String> doneHandler);
+                           int instances, boolean ha, Handler<String> doneHandler);
 
   /**
    * Undeploy a deployment
@@ -149,6 +154,8 @@ public interface PlatformManager {
 
   // debug only
   int checkNoModules();
+
+  void simulateNodeFailure();
 
 
 }

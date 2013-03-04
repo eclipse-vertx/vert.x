@@ -84,22 +84,22 @@ public class DefaultContainer implements Container {
 
   @Override
   public void deployModule(String moduleName, JsonObject config, int instances, Handler<String> doneHandler) {
-    mgr.deployModule(moduleName, config, instances, doneHandler);
+    mgr.deployModule(moduleName, config, instances, false, doneHandler);
   }
 
   @Override
   public void deployModule(String moduleName, Handler<String> doneHandler) {
-    mgr.deployModule(moduleName, null, 1, doneHandler);
+    mgr.deployModule(moduleName, null, 1, false, doneHandler);
   }
 
   @Override
   public void deployModule(String moduleName, JsonObject config, Handler<String> doneHandler) {
-    mgr.deployModule(moduleName, config, 1, doneHandler);
+    mgr.deployModule(moduleName, config, 1, false, doneHandler);
   }
 
   @Override
   public void deployModule(String moduleName, int instances, Handler<String> doneHandler) {
-    mgr.deployModule(moduleName, null, instances, doneHandler);
+    mgr.deployModule(moduleName, null, instances, false, doneHandler);
   }
 
   @Override

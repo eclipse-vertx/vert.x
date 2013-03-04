@@ -156,6 +156,12 @@ public class Starter {
       mgr = createPM();
     }
 
+    boolean ha = args.map.get("-ha") != null;
+    if (ha && !clustered) {
+      log.error("When deploying module as ha, -cluster must be specified too");
+      return;
+    }
+
     String sinstances = args.map.get("-instances");
     int instances;
     if (sinstances != null) {
@@ -204,9 +210,9 @@ public class Starter {
       }
     };
     if (zip) {
-      mgr.deployModuleFromZip(main, conf, instances, doneHandler);
+      mgr.deployModuleFromZip(main, conf, instances, ha, doneHandler);
     } else if (module) {
-      mgr.deployModule(main, conf, instances, doneHandler);
+      mgr.deployModule(main, conf, instances, ha, doneHandler);
     } else {
       boolean worker = args.map.get("-worker") != null;
 
@@ -382,7 +388,9 @@ public class Starter {
 "                               Default is 25500.                               \n" +
 "        -cluster-host          host to bind to for cluster communication.      \n" +
 "                               If this is not specified vert.x will attempt    \n" +
-"                               to choose one from the available interfaces.  \n\n" +
+"                               to choose one from the available interfaces.    \n" +
+"        -ha                    if specified then high availability will be     \n" +
+"                               enabled for the module.                       \n\n" +
 
 "    vertx runzip <zipfilename> [-options]                                      \n" +
 "        installs then deploys a module which is contained in the zip specified \n" +

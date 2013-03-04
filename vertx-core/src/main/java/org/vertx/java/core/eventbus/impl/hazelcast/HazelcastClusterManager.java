@@ -16,9 +16,6 @@
 
 package org.vertx.java.core.eventbus.impl.hazelcast;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MultiMap;
 import org.vertx.java.core.eventbus.impl.ClusterManager;
@@ -26,10 +23,6 @@ import org.vertx.java.core.eventbus.impl.SubsMap;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 
 /**
  * A cluster manager based on a HazelcastInstance singleton.
@@ -43,12 +36,7 @@ public class HazelcastClusterManager implements ClusterManager {
 
   private static final Logger log = LoggerFactory.getLogger(HazelcastClusterManager.class);
 
-  // Hazelcast config file
-  private static final String CONFIG_FILE = "cluster.xml";
-  
-  // Default instance (singleton)
-  private static HazelcastInstance instance;
-
+  private HazelcastInstance instance;
   private final VertxInternal vertx;
 
   /**
@@ -56,56 +44,12 @@ public class HazelcastClusterManager implements ClusterManager {
    */
   public HazelcastClusterManager(final VertxInternal vertx) {
   	this.vertx = vertx;
-    initHazelcast();
+    instance = new HazelCastVInstance().getInstance();
   }
 
-  /**
-   * Create the singleton Hazelcast instance if necessary
-   * @return a hazelcast instance
-   */
-  private synchronized HazelcastInstance initHazelcast() {
-    if (instance == null) {
-      Config cfg = getConfig(null);
-      if (cfg == null) {
-        log.warn("Cannot find cluster.xml on classpath. Using default cluster configuration");
-      }
-
-      // default instance
-      instance = Hazelcast.newHazelcastInstance(cfg);
-
-      // Properly shutdown all instances
-      Runtime.getRuntime().addShutdownHook(new Thread() {
-        @Override
-        public void run() {
-          Hazelcast.shutdownAll();
-        }
-      });
-    }
-
+  public HazelcastInstance getInstance() {
     return instance;
   }
-
-  /**
-   * Get the Hazelcast config
-   * @param configfile May be null in which case it gets the default (cluster.xml) will be used.
-   * @return a config object
-   */
-	protected Config getConfig(String configfile) {
-		if (configfile == null) {
-			configfile = CONFIG_FILE;
-		}
-
-		Config cfg = null;
-		try (InputStream is = HazelcastClusterManager.class.getClassLoader().getResourceAsStream(configfile);
-		    InputStream bis = new BufferedInputStream(is)) {
-			if (is != null) {
-				cfg = new XmlConfigBuilder(bis).build();
-			}
-		} catch (IOException ex) {
-			// ignore
-		}
-		return cfg;
-	}
 
 	/**
 	 * Every eventbus handler has an ID. SubsMap (subscriber map) is a MultiMap which 
@@ -122,18 +66,8 @@ public class HazelcastClusterManager implements ClusterManager {
     return new HazelcastSubsMap(vertx, map);
   }
 
-  /**
-   * Because it implements a singleton, close() needs to be a noop
-   */
   public void close() {
- 		// hazelcast.getLifecycleService().shutdown();
+    //instance.getLifecycleService().shutdown();
   }
-  
-  /**
-   * Provide access to the singleton Hazelcast instance, e.g. to properly close it.
-   * @return hazelcast instance
-   */
-  public HazelcastInstance getInstance() {
-  	return instance;
-  }
+
 }

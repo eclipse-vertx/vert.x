@@ -19,6 +19,7 @@ package org.vertx.java.core.json;
 import org.vertx.java.core.http.impl.ws.Base64;
 import org.vertx.java.core.json.impl.Json;
 
+import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -26,7 +27,7 @@ import java.util.*;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JsonArray extends JsonElement implements Iterable<Object> {
+public class JsonArray extends JsonElement implements Iterable<Object>, Serializable {
 
   final List<Object> list;
 
