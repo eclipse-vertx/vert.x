@@ -18,6 +18,8 @@ apply from: "$rootDir/gradle/maven.gradle"
 
 dependencies {
 	compile project(':vertx-core')
+
+  // testCompile project(":vertx-platform")
 }
 
 artifacts {

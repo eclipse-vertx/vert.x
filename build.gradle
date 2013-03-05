@@ -62,7 +62,7 @@ subprojects {
       exclude group: "io.vertx"
       exclude group: "junit"
     }
-    testCompile project(":vertx-platform")
+    // testCompile project(":vertx-platform")
   }
   
   javadoc {
@@ -178,7 +178,7 @@ task javadocs(type: Javadoc, dependsOn: subprojects.javadoc) {
   excludes = ["**/impl/**"]
   includes = ["**/core/**", "**/platform/**"]
 
-  destinationDir file("build/$rootProject.name-$version/api-docs/java/api")
+  destinationDir file("build/${rootProject.name}-$version/api-docs/java/api")
   inputs.files classpath
   outputs.dir destinationDir
 }
@@ -205,13 +205,13 @@ task distTar(type: Tar, dependsOn: ['assemble', 'minifyClient', 'createDocs']) {
 
   compression = org.gradle.api.tasks.bundling.Compression.GZIP
   destinationDir file('build/distributions')
-  inputs.files files("build/$rootProject.name-$version")
+  inputs.files files("build/${rootProject.name}-$version")
   outputs.dir destinationDir
   baseName = rootProject.name
   version = rootProject.version
   extension = 'tar.gz'
   from 'build'
-  include "$rootProject.name-$version/**"
+  include "${rootProject.name}-$version/**"
 }
 
 task dist(dependsOn: ['distTar', 'distZip']){
