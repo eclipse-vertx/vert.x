@@ -23,6 +23,8 @@ dependencies {
 	compile "org.codehaus.jackson:jackson-mapper-asl:$jacksonVersion"
 	compile "com.hazelcast:hazelcast:$hazelcastVersion"
 	compile "io.netty:netty:$nettyVersion"
+
+    testCompile project(":vertx-platform")
 }
 
 artifacts {
