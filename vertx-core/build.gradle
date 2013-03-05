@@ -29,6 +29,7 @@ artifacts {
 	platform jar
 }
 
+/*
 sourceSets {
   test {
     resources {
@@ -36,6 +37,7 @@ sourceSets {
     }
   }
 }
+*/
 
 test {
   outputs.upToDateWhen { false }
@@ -47,16 +49,4 @@ test {
   jvmArgs '-server', '-Xms128m', '-Xmx1024m', '-XX:MaxPermSize=128m', '-XX:NewRatio=2'
 
   testLogging { exceptionFormat "full" }
-}
-
-task collectDeps(type: Copy) {
-  destinationDir = file("build/deps")
-  into("compile") {
-    from configurations.compile
-    exclude "vertx-*.jar"
-  }
-  into("test") {
-    from configurations.testCompile
-    exclude "vertx-*.jar"
-  }
 }

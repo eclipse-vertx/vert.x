@@ -34,6 +34,7 @@ jar {
 	}
 }
 
+/*
 sourceSets {
   test {
     resources {
@@ -41,10 +42,12 @@ sourceSets {
     }
   }
 }
+*/
 
 // Cleanup the modules placed in the mod-test directory during the test suite
 task cleanTestTmpModules(type: Delete) {
   delete { file("src/test/mod-test").listFiles().findAll { it.name ==~ /maven:.+/ || it.name ==~ /bintray:.+/} }
+  delete 'reloader-test-mods'
 }
 
 clean {
@@ -66,16 +69,4 @@ test {
   jvmArgs '-server', '-Xms128m', '-Xmx1024m', '-XX:MaxPermSize=128m', '-XX:NewRatio=2'
 
   testLogging { exceptionFormat "full" }
-}
-
-task collectDeps(type: Copy) {
-  destinationDir = file("build/deps")
-  into("compile") {
-    from configurations.compile
-    exclude "vertx-*.jar"
-  }
-  into("test") {
-    from configurations.testCompile
-    exclude "vertx-*.jar"
-  }
 }
