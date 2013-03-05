@@ -47,12 +47,13 @@ public class MavenLocalRepoResolver implements RepoResolver {
     return repo.replace("~", homeDir);
   }
 
-  @Override
-  public boolean getModule(String filename, String moduleName) {
-    MavenIdentifier id = new MavenIdentifier(moduleName);
-    //First look at the maven metadata
-    String metaDataFileName = repoID + "/" + id.uriRoot + "maven-metadata-remote.xml";
-    File metaDataFile = new File(metaDataFileName);
+  private boolean getModuleForMetaData(String filename, 
+		  							   MavenIdentifier id,
+									   File metaDataFile) {
+    if(!metaDataFile.exists()) {
+		return false;
+	};
+	//First look at the maven metadata
     if (metaDataFile.exists()) {
       try (Scanner scanner = new Scanner(metaDataFile).useDelimiter("\\A")) {
         String data = scanner.next();
@@ -76,6 +77,21 @@ public class MavenLocalRepoResolver implements RepoResolver {
     } else {
       return false;
     }
+  }
+
+  @Override
+  public boolean getModule(String filename, String moduleName) {
+    MavenIdentifier id = new MavenIdentifier(moduleName);
+    //First look at the local maven metadata
+	File localMetaDataFile = 
+		new File(repoID + "/" + id.uriRoot + "maven-metadata-local.xml");
+	File remoteMetaDataFile = 
+		new File(repoID + "/" + id.uriRoot + "maven-metadata-remote.xml");
+
+	if(localMetaDataFile.lastModified() > remoteMetaDataFile.lastModified())
+		return getModuleForMetaData(filename, id, localMetaDataFile);
+	else
+		return getModuleForMetaData(filename, id, remoteMetaDataFile);
   }
 
   public boolean isOldStyle() {
