@@ -1,7 +1,5 @@
 package org.vertx.java.platform.impl;
 
-import java.util.regex.Pattern;
-
 /*
  * Copyright 2013 Red Hat, Inc.
  *

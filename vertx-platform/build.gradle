@@ -48,7 +48,16 @@ sourceSets {
 
 // Cleanup the modules placed in the mod-test directory during the test suite
 task cleanTestTmpModules(type: Delete) {
-  delete { file("src/test/mod-test").listFiles().findAll { it.name ==~ /maven:.+/ || it.name ==~ /bintray:.+/} }
+  delete { file("src/test/mod-test").listFiles().findAll {
+    it.name ==~ /io.vertx#lang-rhino.+/ ||
+    it.name ==~ /io.vertx#mod-maven-test.+/ ||
+    it.name ==~ /purplefox#mod-bintray-test.+/
+    }
+  }
+  delete { file(".").listFiles().findAll {
+    it.name ==~ /io.vertx#my-mod.+/
+    }
+  }
   delete 'reloader-test-mods'
 }
 

@@ -1,10 +1,9 @@
 package org.vertx.java.platform.impl.resolver;
 
-import org.vertx.java.core.*;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.platform.impl.ModuleIdentifier;
-
-import java.util.UUID;
 
 /*
  * Copyright 2013 Red Hat, Inc.

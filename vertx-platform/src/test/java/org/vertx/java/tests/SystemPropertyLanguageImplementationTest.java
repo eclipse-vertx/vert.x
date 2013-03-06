@@ -15,15 +15,7 @@
  */
 package org.vertx.java.tests;
 
-import org.junit.*;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.platform.PlatformLocator;
-import org.vertx.java.platform.PlatformManager;
-
-import java.net.URL;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import org.junit.Test;
 
 /**
  * @author swilliams

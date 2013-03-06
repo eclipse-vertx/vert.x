@@ -15,19 +15,13 @@
  */
 package org.vertx.java.core.impl.management;
 
+import org.vertx.java.core.net.impl.ServerID;
+
+import javax.management.*;
 import java.lang.management.ManagementFactory;
 import java.util.Hashtable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
-
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
-
-import org.vertx.java.core.net.impl.ServerID;
 
 /**
  * @author swilliams
