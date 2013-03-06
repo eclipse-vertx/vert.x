@@ -6,11 +6,7 @@ import org.vertx.java.platform.impl.ModuleIdentifier;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.Override;
-import java.lang.String;
-import java.lang.System;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Scanner;
 
