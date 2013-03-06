@@ -17,6 +17,7 @@ package org.vertx.java.platform.impl.resolver;/*
  */
 
 import org.vertx.java.core.Vertx;
+import org.vertx.java.platform.impl.ModuleIdentifier;
 
 public class BintrayRepoResolver extends HttpRepoResolver {
 
@@ -25,8 +26,8 @@ public class BintrayRepoResolver extends HttpRepoResolver {
   }
 
   @Override
-  public boolean getModule(String filename, String moduleName) {
-    HttpResolution res = new BintrayResolution(vertx, repoHost, repoPort, moduleName, filename, contentRoot);
+  public boolean getModule(String filename, ModuleIdentifier modID) {
+    HttpResolution res = new BintrayResolution(vertx, repoHost, repoPort, modID, filename, contentRoot);
     res.getModule();
     return res.waitResult();
   }

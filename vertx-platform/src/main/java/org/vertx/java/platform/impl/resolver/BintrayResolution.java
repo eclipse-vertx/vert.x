@@ -5,6 +5,7 @@ import org.vertx.java.core.Vertx;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.platform.impl.ModuleIdentifier;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -43,8 +44,8 @@ public class BintrayResolution extends HttpResolution {
 
   private final String uri;
 
-  public BintrayResolution(Vertx vertx, String repoHost, int repoPort, String moduleName, final String filename, String contentRoot) {
-    super(vertx, repoHost, repoPort, moduleName, filename);
+  public BintrayResolution(Vertx vertx, String repoHost, int repoPort, ModuleIdentifier moduleID, final String filename, String contentRoot) {
+    super(vertx, repoHost, repoPort, moduleID, filename);
     addHandler(200, new Handler<HttpClientResponse>() {
       @Override
       public void handle(HttpClientResponse resp) {
@@ -63,15 +64,11 @@ public class BintrayResolution extends HttpResolution {
         handle302(resp);
       }
     });
-    String[] parts = moduleName.split(":");
-    if (parts.length != 4) {
-      throw new IllegalArgumentException(moduleName + " must be of the form <user>:<repo>:<module_name>:<version>");
-    }
 
-    String user = parts[0];
-    String repo = parts[1];
-    String modName = parts[2];
-    String version = parts[3];
+    String user = moduleID.getOwner();
+    String repo = "vertx-mods";
+    String modName = moduleID.getName();
+    String version = moduleID.getVersion();
 
     StringBuilder sb = new StringBuilder(contentRoot);
     sb.append('/');

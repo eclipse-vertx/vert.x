@@ -1,5 +1,7 @@
 package org.vertx.java.platform.impl.resolver;
 
+import org.vertx.java.platform.impl.ModuleIdentifier;
+
 /*
  * Copyright 2008-2011 Red Hat, Inc.
  *
@@ -20,7 +22,7 @@ package org.vertx.java.platform.impl.resolver;
  */
 public interface RepoResolver {
 
-  boolean getModule(String filename, String moduleName);
+  boolean getModule(String filename, ModuleIdentifier moduleIdentifier);
 
   boolean isOldStyle();
 

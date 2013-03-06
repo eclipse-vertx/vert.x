@@ -111,7 +111,7 @@ public class Redeployer {
   private void processDeployments() {
     Deployment dep;
     while ((dep = toDeploy.poll()) != null) {
-      File fmodDir = new File(modRoot, dep.modName);
+      File fmodDir = new File(modRoot, dep.modID.toString());
       Path modDir = fmodDir.toPath();
       Set<Deployment> deps = watchedDeployments.get(modDir);
       if (deps == null) {
@@ -132,7 +132,7 @@ public class Redeployer {
   private void processUndeployments() {
     Deployment dep;
     while ((dep = toUndeploy.poll()) != null) {
-      File modDir = new File(modRoot, dep.modName);
+      File modDir = new File(modRoot, dep.modID.toString());
       Path pModDir = modDir.toPath();
       Set<Deployment> deps = watchedDeployments.get(pModDir);
       deps.remove(dep);

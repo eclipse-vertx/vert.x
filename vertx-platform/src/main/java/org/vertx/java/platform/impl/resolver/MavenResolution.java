@@ -4,6 +4,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClientResponse;
+import org.vertx.java.platform.impl.ModuleIdentifier;
 
 /*
  * Copyright 2013 Red Hat, Inc.
@@ -24,24 +25,19 @@ import org.vertx.java.core.http.HttpClientResponse;
  *
  * This resolver works with any HTTP server that can serve modules from GETs to Maven style urls
  *
- * Maven module names must be of the form:
- *
- * group_id:artifact_id:version
- *
- * e.g.
- *
- * org.mycompany.foo:foo_module:1.0.2-SNAPSHOT
  */
 public class MavenResolution extends HttpResolution {
 
   protected String contentRoot;
-  protected MavenIdentifier identifier;
+  protected ModuleIdentifier moduleIdentifier;
+  protected String uriRoot;
 
-  public MavenResolution(Vertx vertx, String repoHost, int repoPort, String moduleName, String filename,
+  public MavenResolution(Vertx vertx, String repoHost, int repoPort, ModuleIdentifier moduleIdentifier, String filename,
                          String contentRoot) {
-    super(vertx, repoHost, repoPort, moduleName, filename);
+    super(vertx, repoHost, repoPort, moduleIdentifier, filename);
     this.contentRoot = contentRoot;
-    identifier = new MavenIdentifier(moduleName);
+    this.moduleIdentifier = moduleIdentifier;
+    uriRoot = getMavenURI(moduleIdentifier);
   }
 
   protected void getModule() {
@@ -53,7 +49,7 @@ public class MavenResolution extends HttpResolution {
         end(false);
       }
     });
-    if (identifier.version.endsWith("-SNAPSHOT")) {
+    if (moduleIdentifier.getVersion().endsWith("-SNAPSHOT")) {
       addHandler(200, new Handler<HttpClientResponse>() {
         @Override
         public void handle(HttpClientResponse resp) {
@@ -62,7 +58,7 @@ public class MavenResolution extends HttpResolution {
             public void handle(Buffer metaData) {
               // Extract the timestamp - easier this way than parsing the xml
               String data = metaData.toString();
-              String actualURI = getResourceName(data, contentRoot, identifier);
+              String actualURI = getResourceName(data, contentRoot, moduleIdentifier, uriRoot);
               addHandler(200, new Handler<HttpClientResponse>() {
                 @Override
                 public void handle(HttpClientResponse resp) {
@@ -75,7 +71,7 @@ public class MavenResolution extends HttpResolution {
         }
       });
       // First we make a request to maven-metadata.xml
-      makeRequest(repoHost, repoPort, contentRoot + "/" + identifier.uriRoot + "maven-metadata.xml");
+      makeRequest(repoHost, repoPort, contentRoot + "/" + uriRoot + "maven-metadata.xml");
     } else {
       addHandler(200, new Handler<HttpClientResponse>() {
         @Override
@@ -83,11 +79,11 @@ public class MavenResolution extends HttpResolution {
           downloadToFile(filename, resp);
         }
       });
-      makeRequest(repoHost, repoPort, getNonVersionedResourceName(contentRoot, identifier));
+      makeRequest(repoHost, repoPort, getNonVersionedResourceName(contentRoot, moduleIdentifier, uriRoot));
     }
   }
 
-  static String getResourceName(String data, String contentRoot, MavenIdentifier identifier) {
+  static String getResourceName(String data, String contentRoot, ModuleIdentifier identifier, String uriRoot) {
     int pos = data.indexOf("<snapshot>");
     String actualURI = null;
     if (pos != -1) {
@@ -98,20 +94,30 @@ public class MavenResolution extends HttpResolution {
         int pos4 = data.indexOf("<", pos3 + 12);
         String buildNumber = data.substring(pos3 + 13, pos4);
         // Timestamped SNAPSHOT
-        actualURI = contentRoot + "/" + identifier.uriRoot + identifier.artifactID + "-" +
-            identifier.version.substring(0, identifier.version.length() - 9) + "-" +
+        actualURI = contentRoot + "/" + uriRoot + identifier.getName() + "-" +
+            identifier.getVersion().substring(0, identifier.getVersion().length() - 9) + "-" +
             timestamp + "-" + buildNumber + ".zip";
       }
     }
     if (actualURI == null) {
       // Non timestamped SNAPSHOT
-      actualURI = getNonVersionedResourceName(contentRoot, identifier);
+      actualURI = getNonVersionedResourceName(contentRoot, identifier, uriRoot);
     }
     return actualURI;
   }
 
-  private static String getNonVersionedResourceName(String contentRoot, MavenIdentifier identifier) {
-    return contentRoot + "/" + identifier.uriRoot + identifier.artifactID + "-" + identifier.version + ".zip";
+  static String getMavenURI(ModuleIdentifier moduleIdentifier) {
+    StringBuilder uri = new StringBuilder('/');
+    String[] groupParts = moduleIdentifier.getOwner().split("\\.");
+    for (String groupPart: groupParts) {
+      uri.append(groupPart).append('/');
+    }
+    uri.append(moduleIdentifier.getName()).append('/').append(moduleIdentifier.getVersion()).append('/');
+    return uri.toString();
+  }
+
+  private static String getNonVersionedResourceName(String contentRoot, ModuleIdentifier identifier, String uriRoot) {
+    return contentRoot + "/" + uriRoot + identifier.getName() + "-" + identifier.getVersion() + ".zip";
   }
 
 }

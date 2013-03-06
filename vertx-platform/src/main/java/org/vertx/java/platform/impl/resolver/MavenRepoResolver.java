@@ -1,6 +1,7 @@
 package org.vertx.java.platform.impl.resolver;
 
 import org.vertx.java.core.Vertx;
+import org.vertx.java.platform.impl.ModuleIdentifier;
 
 /*
  * Copyright 2008-2011 Red Hat, Inc.
@@ -27,8 +28,8 @@ public class MavenRepoResolver extends HttpRepoResolver {
   }
 
   @Override
-  public boolean getModule(String filename, String moduleName) {
-    HttpResolution res = new MavenResolution(vertx, repoHost, repoPort, moduleName, filename, contentRoot);
+  public boolean getModule(String filename, ModuleIdentifier moduleIdentifier) {
+    HttpResolution res = new MavenResolution(vertx, repoHost, repoPort, moduleIdentifier, filename, contentRoot);
     res.getModule();
     return res.waitResult();
   }
