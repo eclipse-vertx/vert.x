@@ -42,32 +42,44 @@ public class MavenLocalRepoResolver implements RepoResolver {
     return repo.replace("~", homeDir);
   }
 
-  @Override
-  public boolean getModule(String filename, ModuleIdentifier moduleIdentifier) {
-    //First look at the maven metadata
-    String uriRoot = MavenResolution.getMavenURI(moduleIdentifier);
-    String metaDataFileName = repoID + "/" + uriRoot + "maven-metadata-remote.xml";
-    File metaDataFile = new File(metaDataFileName);
-    if (metaDataFile.exists()) {
-      try (Scanner scanner = new Scanner(metaDataFile).useDelimiter("\\A")) {
-        String data = scanner.next();
-        String fileName = MavenResolution.getResourceName(data, repoID, moduleIdentifier, uriRoot);
-        File file = new File(fileName);
-        if (file.exists()) {
-          try {
-            Files.copy(file.toPath(), Paths.get(filename));
-            return true;
-          } catch (IOException e) {
-            log.error("Failed to copy file", e);
-            return false;
-          }
-        } else {
+  private boolean getModuleForMetaData(String filename,
+                                       ModuleIdentifier id,
+                                       File metaDataFile,
+                                       String uriRoot) {
+    try (Scanner scanner = new Scanner(metaDataFile).useDelimiter("\\A")) {
+      String data = scanner.next();
+      String fileName = MavenResolution.getResourceName(data, repoID, id, uriRoot);
+      File file = new File(fileName);
+      if (file.exists()) {
+        try {
+          Files.copy(file.toPath(), Paths.get(filename));
+          return true;
+        } catch (IOException e) {
+          log.error("Failed to copy file", e);
           return false;
         }
-      } catch (IOException e) {
-        log.error("Failed to read file", e);
+      } else {
         return false;
       }
+    } catch (IOException e) {
+      log.error("Failed to read file", e);
+      return false;
+    }
+  }
+
+  @Override
+  public boolean getModule(String filename, ModuleIdentifier moduleIdentifier) {
+    String uriRoot = MavenResolution.getMavenURI(moduleIdentifier);
+    File localMetaDataFile =
+        new File(repoID + "/" + uriRoot + "maven-metadata-local.xml");
+    File remoteMetaDataFile =
+        new File(repoID + "/" + uriRoot + "maven-metadata-remote.xml");
+    boolean lExists = localMetaDataFile.exists();
+    boolean rExists = remoteMetaDataFile.exists();
+    if ((lExists && !rExists) || (lExists && rExists && localMetaDataFile.lastModified() >= remoteMetaDataFile.lastModified())) {
+      return getModuleForMetaData(filename, moduleIdentifier, localMetaDataFile, uriRoot);
+    } else if (rExists) {
+      return getModuleForMetaData(filename, moduleIdentifier, remoteMetaDataFile, uriRoot);
     } else {
       return false;
     }
