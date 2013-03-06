@@ -19,6 +19,7 @@ package org.vertx.java.platform.impl.resolver;/*
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.platform.impl.ModuleIdentifier;
 
 import java.net.URI;
 
@@ -47,6 +48,6 @@ public abstract class HttpRepoResolver implements RepoResolver {
     }
   }
 
-  public abstract boolean getModule(String filename, String moduleName);
+  public abstract boolean getModule(String filename, ModuleIdentifier moduleIdentifier);
 
 }

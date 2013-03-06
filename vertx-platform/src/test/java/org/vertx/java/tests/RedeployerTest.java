@@ -5,6 +5,7 @@ import org.vertx.java.core.impl.ConcurrentHashSet;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.platform.impl.Deployment;
+import org.vertx.java.platform.impl.ModuleIdentifier;
 import org.vertx.java.platform.impl.ModuleReloader;
 import org.vertx.java.platform.impl.Redeployer;
 import org.vertx.java.testframework.TestBase;
@@ -27,12 +28,17 @@ public class RedeployerTest extends TestBase {
   TestReloader reloader;
   File modRoot;
   Redeployer red;
+  String modName = "io.vertx#my-mod#1.0";
+  File modDir;
 
+  @Override
   protected void setUp() throws Exception {
     super.setUp();
     reloader = new TestReloader();
     modRoot = new File("reloader-test-mods");
     modRoot.mkdir();
+    modDir = createModDir(modName);
+    createFile(modDir, "foo.js", TestUtils.randomAlphaString(1000));
     red = new Redeployer(vertx, modRoot, reloader);
   }
 
@@ -43,10 +49,7 @@ public class RedeployerTest extends TestBase {
   }
 
   public void testCreateFile() throws Exception {
-    String modName = "my-mod";
-    File modDir = createModDir(modName);
-    createFile(modDir, "foo.js", TestUtils.randomAlphaString(1000));
-    Deployment dep = createDeployment("dep1", "my-mod", null);
+    Deployment dep = createDeployment("dep1", null);
     red.moduleDeployed(dep);
     Thread.sleep(500);
     createFile(modDir, "blah.txt", TestUtils.randomAlphaString(1000));
@@ -54,10 +57,7 @@ public class RedeployerTest extends TestBase {
   }
 
   public void testModifyFile() throws Exception {
-    String modName = "my-mod";
-    File modDir = createModDir(modName);
-    createFile(modDir, "foo.js", TestUtils.randomAlphaString(1000));
-    Deployment dep = createDeployment("dep1", "my-mod", null);
+    Deployment dep = createDeployment("dep1", null);
     red.moduleDeployed(dep);
     Thread.sleep(500);
     modifyFile(modDir, "blah.txt");
@@ -65,11 +65,8 @@ public class RedeployerTest extends TestBase {
   }
 
   public void testDeleteFile() throws Exception {
-    String modName = "my-mod";
-    File modDir = createModDir(modName);
-    createFile(modDir, "foo.js", TestUtils.randomAlphaString(1000));
     createFile(modDir, "blah.txt", TestUtils.randomAlphaString(1000));
-    Deployment dep = createDeployment("dep1", "my-mod", null);
+    Deployment dep = createDeployment("dep1", null);
     red.moduleDeployed(dep);
     Thread.sleep(500);
     deleteFile(modDir, "blah.txt");
@@ -77,10 +74,7 @@ public class RedeployerTest extends TestBase {
   }
 
   public void testCreateDirectory() throws Exception {
-    String modName = "my-mod";
-    File modDir = createModDir(modName);
-    createFile(modDir, "foo.js", TestUtils.randomAlphaString(1000));
-    Deployment dep = createDeployment("dep1", "my-mod", null);
+    Deployment dep = createDeployment("dep1", null);
     red.moduleDeployed(dep);
     Thread.sleep(500);
     createDirectory(modDir, "some-dir");
@@ -88,11 +82,8 @@ public class RedeployerTest extends TestBase {
   }
 
   public void testCreateFileInSubDirectory() throws Exception {
-    String modName = "my-mod";
-    File modDir = createModDir(modName);
-    createFile(modDir, "foo.js", TestUtils.randomAlphaString(1000));
     createDirectory(modDir, "some-dir");
-    Deployment dep = createDeployment("dep1", "my-mod", null);
+    Deployment dep = createDeployment("dep1", null);
     red.moduleDeployed(dep);
     Thread.sleep(500);
     File subDir = new File(modDir, "some-dir");
@@ -101,13 +92,10 @@ public class RedeployerTest extends TestBase {
   }
 
   public void testDeleteFileInSubDirectory() throws Exception {
-    String modName = "my-mod";
-    File modDir = createModDir(modName);
-    createFile(modDir, "foo.js", TestUtils.randomAlphaString(1000));
     createDirectory(modDir, "some-dir");
     File subDir = new File(modDir, "some-dir");
     createFile(subDir, "bar.txt", TestUtils.randomAlphaString(1000));
-    Deployment dep = createDeployment("dep1", "my-mod", null);
+    Deployment dep = createDeployment("dep1", null);
     red.moduleDeployed(dep);
     Thread.sleep(500);
     deleteFile(subDir, "bar.txt");
@@ -115,13 +103,10 @@ public class RedeployerTest extends TestBase {
   }
 
   public void testModifyFileInSubDirectory() throws Exception {
-    String modName = "my-mod";
-    File modDir = createModDir(modName);
-    createFile(modDir, "foo.js", TestUtils.randomAlphaString(1000));
     createDirectory(modDir, "some-dir");
     File subDir = new File(modDir, "some-dir");
     createFile(subDir, "bar.txt", TestUtils.randomAlphaString(1000));
-    Deployment dep = createDeployment("dep1", "my-mod", null);
+    Deployment dep = createDeployment("dep1", null);
     red.moduleDeployed(dep);
     Thread.sleep(500);
     modifyFile(subDir, "bar.txt");
@@ -129,13 +114,10 @@ public class RedeployerTest extends TestBase {
   }
 
   public void testDeleteSubDir() throws Exception {
-    String modName = "my-mod";
-    File modDir = createModDir(modName);
-    createFile(modDir, "foo.js", TestUtils.randomAlphaString(1000));
     createDirectory(modDir, "some-dir");
     File subDir = new File(modDir, "some-dir");
     createFile(subDir, "bar.txt", TestUtils.randomAlphaString(1000));
-    Deployment dep = createDeployment("dep1", "my-mod", null);
+    Deployment dep = createDeployment("dep1", null);
     red.moduleDeployed(dep);
     Thread.sleep(500);
     vertx.fileSystem().deleteSync(subDir.getAbsolutePath(), true);
@@ -143,15 +125,14 @@ public class RedeployerTest extends TestBase {
   }
 
   public void testReloadMultipleDeps() throws Exception {
-    String modName = "my-mod";
-    File modDir = createModDir(modName);
     createModDir("other-mod");
-    createFile(modDir, "foo.js", TestUtils.randomAlphaString(1000));
-    Deployment dep1 = createDeployment("dep1", "my-mod", null);
+    Deployment dep1 = createDeployment("dep1", null);
     red.moduleDeployed(dep1);
-    Deployment dep2 = createDeployment("dep2", "my-mod", null);
+    Deployment dep2 = createDeployment("dep2", null);
     red.moduleDeployed(dep2);
-    Deployment dep3 = createDeployment("dep3", "other-mod", null);
+    String otherModName = "io.vertx#other-mod#1.0";
+    Deployment dep3 = createDeployment("dep3", otherModName, null);
+    createModDir(otherModName);
     red.moduleDeployed(dep3);
     Thread.sleep(500);
     createFile(modDir, "blah.txt", TestUtils.randomAlphaString(1000));
@@ -224,7 +205,11 @@ public class RedeployerTest extends TestBase {
     }
   }
 
+  private Deployment createDeployment(String name, String parentName) {
+    return createDeployment(name, modName, parentName);
+  }
+
   private Deployment createDeployment(String name, String modName, String parentName) {
-     return new Deployment(name, null, modName, 1, null, null, null, parentName, null, true);
+     return new Deployment(name, null, new ModuleIdentifier(modName), 1, null, null, null, parentName, null, true);
   }
 }

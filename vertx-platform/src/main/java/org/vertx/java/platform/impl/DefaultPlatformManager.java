@@ -71,12 +71,12 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   // The user mods dir
   private final File modRoot;
   private final File systemModRoot;
-  private final ConcurrentMap<String, ModuleReference> modules = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, ModuleReference> moduleRefs = new ConcurrentHashMap<>();
   private final Redeployer redeployer;
   private Map<String, LanguageImplInfo> languageImpls = new ConcurrentHashMap<>();
   private Map<String, String> extensionMappings = new ConcurrentHashMap<>();
   private String defaultLanguageImplName;
-  private Map<String, List<RepoResolver>> defaultRepos = new HashMap<>();
+  private List<RepoResolver> repos = new ArrayList<>();
   private Handler<Void> exitHandler;
   private final ClassLoader platformClassLoader;
 
@@ -139,12 +139,13 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   public void deployModule(final String moduleName, final JsonObject config,
                            final int instances, final Handler<String> doneHandler) {
+    final ModuleIdentifier modID = new ModuleIdentifier(moduleName);
     final File currentModDir = getDeploymentModDir();
     BlockingAction<Void> deployModuleAction = new BlockingAction<Void>(vertx, createHandler(doneHandler)) {
 
       @Override
       public Void action() throws Exception {
-        doDeployMod(false, null, moduleName, config, instances, currentModDir, wrapDoneHandler(doneHandler));
+        doDeployMod(false, null, modID, config, instances, currentModDir, wrapDoneHandler(doneHandler));
         return null;
       }
     };
@@ -161,7 +162,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
     Handler<Void> wrappedHandler = new SimpleHandler() {
       public void handle() {
-        if (dep.modName != null && dep.autoRedeploy) {
+        if (dep.modID != null && dep.autoRedeploy) {
           redeployer.moduleUndeployed(dep);
         }
         if (doneHandler != null) {
@@ -202,6 +203,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   public void installModule(final String moduleName) {
     final CountDownLatch latch = new CountDownLatch(1);
     final AtomicReference<Exception> result = new AtomicReference<>();
+    final ModuleIdentifier modID = new ModuleIdentifier(moduleName);
     AsyncResultHandler<Void> handler = new AsyncResultHandler<Void>() {
       public void handle(AsyncResult<Void> res) {
         result.set(res.exception);
@@ -212,7 +214,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     BlockingAction<Void> installModuleAction = new BlockingAction<Void>(vertx, handler) {
       @Override
       public Void action() throws Exception {
-        doInstallMod(moduleName);
+        doInstallMod(modID);
         return null;
       }
     };
@@ -251,7 +253,13 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   public boolean pullInDependencies(String moduleName) {
     log.info("Attempting to pull in dependencies for module: " + moduleName);
-    return doPullInDependencies(modRoot, moduleName);
+    ModuleIdentifier modID = new ModuleIdentifier(moduleName);
+    try {
+      return doPullInDependencies(modRoot, modID);
+    } catch (Exception e) {
+      log.error("Failed to pull in dependencies", e);
+      return false;
+    }
   }
 
   public void reloadModules(final Set<Deployment> deps) {
@@ -277,7 +285,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   public void deployModuleFromZip(String zipFileName, JsonObject config,
                                   int instances, Handler<String> doneHandler) {
     final String modName = zipFileName.substring(0, zipFileName.length() - 4);
-    if (unzipModule(modName, new ModuleZipInfo(false, zipFileName), false)) {
+    ModuleIdentifier modID = new ModuleIdentifier("__vertx_tmp#" + modName + "#__vertx_tmp");
+    if (unzipModule(modID, new ModuleZipInfo(false, zipFileName), false)) {
       deployModule(modName, config, instances, doneHandler);
     } else {
       doneHandler.handle(null);
@@ -308,7 +317,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     final File currentModDir = getDeploymentModDir();
     final URL[] cp;
     if (classpath == null) {
-      // Use the current modules/verticle's classpath
+      // Use the current moduleRefs/verticle's classpath
       cp = getDeploymentURLs();
     } else {
       cp = classpath;
@@ -339,14 +348,14 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     return holder == null ? null : holder.deployment.modDir;
   }
 
-  private boolean doPullInDependencies(File modRoot, String moduleName) {
-    File modDir = new File(modRoot, moduleName);
+  private boolean doPullInDependencies(File modRoot, ModuleIdentifier modID) {
+    File modDir = new File(modRoot, modID.toString());
     if (!modDir.exists()) {
       log.error("Cannot find module to uninstall");
     }
-    JsonObject conf = loadModuleConfig(moduleName, modDir);
+    JsonObject conf = loadModuleConfig(modID, modDir);
     if (conf == null) {
-      log.error("Module " + moduleName + " does not contain a mod.json");
+      log.error("Module " + modID + " does not contain a mod.json");
     }
     ModuleFields fields = new ModuleFields(conf);
     List<String> mods = new ArrayList<>();
@@ -366,7 +375,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       for (String modName: mods) {
         File internalModDir = new File(internalModsDir, modName);
         if (!internalModDir.exists()) {
-          ModuleZipInfo zipInfo = getModule(modName);
+          ModuleIdentifier theModID = new ModuleIdentifier(modName);
+          ModuleZipInfo zipInfo = getModule(theModID);
           if (zipInfo.filename != null) {
             internalModDir.mkdir();
             if (!unzipModuleData(internalModDir, zipInfo, true)) {
@@ -374,7 +384,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
             } else {
               log.info("Module " + modName + " successfully installed in mods dir of " + modName);
               // Now recurse so we bring in all of the deps
-              doPullInDependencies(internalModsDir, modName);
+              doPullInDependencies(internalModsDir, theModID);
             }
           }
         }
@@ -420,12 +430,12 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   // Recurse up through the parent deployments and return the the module name for the first one
   // which has one, or if there is no enclosing module just use the deployment name
-  private String getEnclosingModuleName() {
+  private ModuleIdentifier getEnclosingModID() {
     VerticleHolder holder = getVerticleHolder();
     Deployment dep = holder == null ? null : holder.deployment;
     while (dep != null) {
-      if (dep.modName != null) {
-        return dep.modName;
+      if (dep.modID != null) {
+        return dep.modID;
       } else {
         String parentDepName = dep.parentDeploymentName;
         if (parentDepName != null) {
@@ -433,11 +443,15 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         } else {
           // Top level - deployed as verticle not module
           // Just use the deployment name
-          return dep.name + "." + dep.main;
+          return createInternalModIDForVerticle(dep.name);
         }
       }
     }
-    return null;
+    return null; // We are at the top level already
+  }
+
+  private ModuleIdentifier createInternalModIDForVerticle(String depName) {
+    return new ModuleIdentifier("__vertx#" + depName + "#__vertx");
   }
 
   private void doDeployVerticle(boolean worker, boolean multiThreaded, final String main,
@@ -448,17 +462,24 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     checkWorkerContext();
 
     // There is one module class loader per enclosing module + the name of the verticle.
-    // If there is no enclosing module, there is one per top level verticle deployment.
+    // If there is no enclosing module, there is one per top level verticle deployment
     // E.g. if a module A deploys "foo.js" as a verticle then all instances of foo.js deployed by the enclosing
     // module will share a module class loader
     String depName = genDepName();
-    String enclosingModName = getEnclosingModuleName();
-    String moduleKey = (enclosingModName == null ? depName : enclosingModName) + "." + main;
+    ModuleIdentifier enclosingModName = getEnclosingModID();
+    String moduleKey;
+    if (enclosingModName == null) {
+      // We are at the top level - just use the deployment name as the key
+      moduleKey = createInternalModIDForVerticle(depName).toString();
+    } else {
+      // Use the enclosing module name / or enclosing verticle PLUS the main
+      moduleKey = enclosingModName.toString() + "#" + main;
+    }
 
-    ModuleReference mr = modules.get(moduleKey);
+    ModuleReference mr = moduleRefs.get(moduleKey);
     if (mr == null) {
       mr = new ModuleReference(this, moduleKey, new ModuleClassLoader(platformClassLoader, urls), false);
-      ModuleReference prev = modules.putIfAbsent(moduleKey, mr);
+      ModuleReference prev = moduleRefs.putIfAbsent(moduleKey, mr);
       if (prev != null) {
         mr = prev;
       }
@@ -566,19 +587,19 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
   }
 
-  private File locateModule(File currentModDir, String modName) {
+  private File locateModule(File currentModDir, ModuleIdentifier modID) {
     if (currentModDir != null) {
-      // Nested modules - look inside current module dir
-      File modDir = new File(new File(currentModDir, LOCAL_MODS_DIR), modName);
+      // Nested moduleRefs - look inside current module dir
+      File modDir = new File(new File(currentModDir, LOCAL_MODS_DIR), modID.toString());
       if (modDir.exists()) {
         return modDir;
       }
     }
-    File modDir = new File(modRoot, modName);
+    File modDir = new File(modRoot, modID.toString());
     if (modDir.exists()) {
       return modDir;
     } else if (!systemModRoot.equals(modRoot)) {
-      modDir = new File(systemModRoot, modName);
+      modDir = new File(systemModRoot, modID.toString());
       if (modDir.exists()) {
         return modDir;
       }
@@ -587,18 +608,18 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
 
-  private void doDeployMod(final boolean redeploy, final String depName, final String modName,
+  private void doDeployMod(final boolean redeploy, final String depName, final ModuleIdentifier modID,
                            final JsonObject config,
                            final int instances, final File currentModDir,
                            final Handler<String> doneHandler) {
     checkWorkerContext();
-    File modDir = locateModule(currentModDir, modName);
+    File modDir = locateModule(currentModDir, modID);
     if (modDir != null) {
-      JsonObject conf = loadModuleConfig(modName, modDir);
+      JsonObject conf = loadModuleConfig(modID, modDir);
       ModuleFields fields = new ModuleFields(conf);
       String main = fields.getMain();
       if (main == null) {
-        log.error("Runnable module " + modName + " mod.json must contain a \"main\" field");
+        log.error("Runnable module " + modID + " mod.json must contain a \"main\" field");
         callDoneHandler(doneHandler, null);
         return;
       }
@@ -618,25 +639,25 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         return;
       }
 
-      ModuleReference mr = modules.get(modName);
+      ModuleReference mr = moduleRefs.get(modID.toString());
       if (mr == null) {
         boolean res = fields.isResident();
-        mr = new ModuleReference(this, modName,
+        mr = new ModuleReference(this, modID.toString(),
                                  new ModuleClassLoader(platformClassLoader, urls.toArray(new URL[urls.size()])), res);
-        ModuleReference prev = modules.putIfAbsent(modName, mr);
+        ModuleReference prev = moduleRefs.putIfAbsent(modID.toString(), mr);
         if (prev != null) {
           mr = prev;
         }
       }
-      String enclosingModName = getEnclosingModuleName();
-      if (enclosingModName != null) {
+      ModuleIdentifier enclosingModID = getEnclosingModID();
+      if (enclosingModID != null) {
         //If enclosed in another module then the enclosing module classloader becomes a parent of this one
-        ModuleReference parentRef = modules.get(enclosingModName);
+        ModuleReference parentRef = moduleRefs.get(enclosingModID.toString());
         mr.mcl.addParent(parentRef);
         parentRef.incRef();
       }
 
-      // Now load any included modules
+      // Now load any included moduleRefs
       String includes = fields.getIncludes();
       if (includes != null) {
         if (!loadIncludedModules(modDir, mr, includes)) {
@@ -647,7 +668,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
       final boolean autoRedeploy = fields.isAutoRedeploy();
 
-      doDeploy(depName, autoRedeploy, worker, multiThreaded, main, modName, config,
+      doDeploy(depName, autoRedeploy, worker, multiThreaded, main, modID, config,
           urls.toArray(new URL[urls.size()]), instances, modDirToUse, mr, new Handler<String>() {
         @Override
         public void handle(String deploymentID) {
@@ -658,49 +679,50 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         }
       });
     } else {
-      if (doInstallMod(modName)) {
-        doDeployMod(redeploy, depName, modName, config, instances, currentModDir, doneHandler);
+      if (doInstallMod(modID)) {
+        doDeployMod(redeploy, depName, modID, config, instances, currentModDir, doneHandler);
       } else {
         callDoneHandler(doneHandler, null);
       }
     }
   }
 
-  private JsonObject loadModuleConfig(String modName, File modDir) {
+  private JsonObject loadModuleConfig(ModuleIdentifier modID, File modDir) {
     // Checked the byte code produced, .close() is called correctly, so the warning can be suppressed
     try (@SuppressWarnings("resource") Scanner scanner = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A")) {
       String conf = scanner.next();
       return new JsonObject(conf);
     } catch (FileNotFoundException e) {
-      throw new IllegalStateException("Module " + modName + " does not contain a mod.json file");
+      throw new IllegalStateException("Module " + modID + " does not contain a mod.json file");
     } catch (NoSuchElementException e) {
-      throw new IllegalStateException("Module " + modName + " contains an empty mod.json file");
+      throw new IllegalStateException("Module " + modID + " contains an empty mod.json file");
     } catch (DecodeException e) {
-      throw new IllegalStateException("Module " + modName + " mod.json contains invalid json");
+      throw new IllegalStateException("Module " + modID + " mod.json contains invalid json");
     }
   }
 
   private boolean loadIncludedModules(File currentModuleDir, ModuleReference mr, String includesString) {
     checkWorkerContext();
     for (String moduleName: parseIncludeString(includesString)) {
-      ModuleReference includedMr = modules.get(moduleName);
+      ModuleIdentifier modID = new ModuleIdentifier(moduleName);
+      ModuleReference includedMr = moduleRefs.get(moduleName);
       if (includedMr == null) {
-        File modDir = locateModule(currentModuleDir, moduleName);
+        File modDir = locateModule(currentModuleDir, modID);
         if (modDir == null) {
-          if (!doInstallMod(moduleName)) {
+          if (!doInstallMod(modID)) {
             return false;
           }
         }
-        modDir = locateModule(currentModuleDir, moduleName);
+        modDir = locateModule(currentModuleDir, modID);
         List<URL> urls = getModuleClasspath(modDir);
-        JsonObject conf = loadModuleConfig(moduleName, modDir);
+        JsonObject conf = loadModuleConfig(modID, modDir);
         ModuleFields fields = new ModuleFields(conf);
 
         boolean res = fields.isResident();
         includedMr = new ModuleReference(this, moduleName,
                                          new ModuleClassLoader(platformClassLoader, urls.toArray(new URL[urls.size()])),
                                          res);
-        ModuleReference prev = modules.putIfAbsent(moduleName, includedMr);
+        ModuleReference prev = moduleRefs.putIfAbsent(moduleName, includedMr);
         if (prev != null) {
           includedMr = prev;
         }
@@ -786,12 +808,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
             default:
               throw new IllegalArgumentException("Unknown repo type: " + type);
           }
-          List<RepoResolver> resolvers = defaultRepos.get(type);
-          if (resolvers == null) {
-            resolvers = new ArrayList<>();
-            defaultRepos.put(type, resolvers);
-          }
-          resolvers.add(resolver);
+          repos.add(resolver);
         }
       }
     } catch (IOException e) {
@@ -799,47 +816,31 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
   }
 
-  private boolean doInstallMod(final String moduleName) {
+  private boolean doInstallMod(final ModuleIdentifier modID) {
     checkWorkerContext();
-    if (defaultRepos.isEmpty()) {
+    if (repos.isEmpty()) {
       log.warn("No repositories configured!");
       return false;
     }
-    if (locateModule(null, moduleName) != null) {
+    if (locateModule(null, modID) != null) {
       log.error("Module is already installed");
       return false;
     }
-    ModuleZipInfo info = getModule(moduleName);
+    ModuleZipInfo info = getModule(modID);
     if (info != null) {
-      return unzipModule(moduleName, info, true);
+      return unzipModule(modID, info, true);
     }
     return false;
   }
 
-  private ModuleZipInfo getModule(String moduleName) {
-    int colonPos = moduleName.indexOf(COLON);
-    if (colonPos == moduleName.length() - 1) {
-      throw new IllegalArgumentException("Invalid module name, no name after prefix. " + moduleName);
-    }
-    String prefix;
-    if (colonPos == -1) {
-      // Default to old Vert.x 1.x repo
-      prefix = "old";
-    } else {
-      prefix = moduleName.substring(0, colonPos);
-    }
-    String rest = moduleName.substring(colonPos + 1);
-    List<RepoResolver> resolvers = defaultRepos.get(prefix);
-    if (resolvers == null) {
-      throw new IllegalArgumentException("No resolvers for prefix: " + prefix);
-    }
+  private ModuleZipInfo getModule(ModuleIdentifier modID) {
     String fileName = generateTmpFileName() + ".zip";
-    for (RepoResolver resolver: resolvers) {
-      if (resolver.getModule(fileName, rest)) {
+    for (RepoResolver resolver: repos) {
+      if (resolver.getModule(fileName, modID)) {
         return new ModuleZipInfo(resolver.isOldStyle(), fileName);
       }
     }
-    log.error("Module " + moduleName + " not found in any repositories");
+    log.error("Module " + modID + " not found in any repositories");
     return null;
   }
 
@@ -876,9 +877,10 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
 
-  private boolean unzipModule(final String modName, final ModuleZipInfo zipInfo, boolean deleteZip) {
+  private boolean unzipModule(final ModuleIdentifier modID, final ModuleZipInfo zipInfo, boolean deleteZip) {
     // We synchronize to prevent a race whereby it tries to unzip the same module at the
     // same time (e.g. deployModule for the same module name has been called in parallel)
+    String modName = modID.toString();
     synchronized (modName.intern()) {
 
       if (!checkModDirs()) {
@@ -891,7 +893,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         // This can happen if the same module is requested to be installed
         // at around the same time
         // It's ok if this happens
-        log.warn("Module " + modName + " is already installed");
+        log.warn("Module " + modID + " is already installed");
         return true;
       }
 
@@ -902,7 +904,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       }
 
       // Check if it's a system module
-      JsonObject conf = loadModuleConfig(modName, tdest);
+      JsonObject conf = loadModuleConfig(modID, tdest);
       ModuleFields fields = new ModuleFields(conf);
 
       boolean system = fields.isSystem();
@@ -916,7 +918,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         return false;
       }
 
-      log.info("Module " + modName +" successfully installed");
+      log.info("Module " + modID +" successfully installed");
       return true;
     }
   }
@@ -970,7 +972,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   // We calculate a path adjustment that can be used by the fileSystem object
   // so that the *effective* working directory can be the module directory
-  // this allows modules to read and write the file system as if they were
+  // this allows moduleRefs to read and write the file system as if they were
   // in the module dir, even though the actual working directory will be
   // wherever vertx run or vertx start was called from
   private void setPathAdjustment(File modDir) {
@@ -994,7 +996,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
                         boolean autoRedeploy,
                         boolean worker, boolean multiThreaded,
                         String theMain,
-                        final String modName,
+                        final ModuleIdentifier modID,
                         final JsonObject config, final URL[] urls,
                         int instances,
                         final File modDir,
@@ -1096,7 +1098,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     final AggHandler aggHandler = new AggHandler();
 
     String parentDeploymentName = getDeploymentName();
-    final Deployment deployment = new Deployment(deploymentName, main, modName, instances,
+    final Deployment deployment = new Deployment(deploymentName, main, modID, instances,
         config == null ? new JsonObject() : config.copy(), urls, modDir, parentDeploymentName,
         mr, autoRedeploy);
     mr.incRef();
@@ -1274,7 +1276,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     BlockingAction<Void> redeployAction = new BlockingAction<Void>(vertx, handler) {
       @Override
       public Void action() throws Exception {
-        doDeployMod(true, deployment.name, deployment.modName, deployment.config, deployment.instances,
+        doDeployMod(true, deployment.name, deployment.modID, deployment.config, deployment.instances,
             null, null);
         return null;
       }
@@ -1289,7 +1291,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   // For debug only
   public int checkNoModules() {
     int count = 0;
-    for (Map.Entry<String, ModuleReference> entry: modules.entrySet()) {
+    for (Map.Entry<String, ModuleReference> entry: moduleRefs.entrySet()) {
       if (!entry.getValue().resident) {
         System.out.println("Module remains: " + entry.getKey());
         count++;
@@ -1299,7 +1301,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   public void removeModule(String moduleKey) {
-    modules.remove(moduleKey);
+    moduleRefs.remove(moduleKey);
   }
 
   private static class LanguageImplInfo {

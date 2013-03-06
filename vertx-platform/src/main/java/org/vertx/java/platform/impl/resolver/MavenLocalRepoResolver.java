@@ -2,8 +2,7 @@ package org.vertx.java.platform.impl.resolver;
 
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.platform.impl.resolver.MavenIdentifier;
-import org.vertx.java.platform.impl.resolver.RepoResolver;
+import org.vertx.java.platform.impl.ModuleIdentifier;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,15 +47,15 @@ public class MavenLocalRepoResolver implements RepoResolver {
   }
 
   @Override
-  public boolean getModule(String filename, String moduleName) {
-    MavenIdentifier id = new MavenIdentifier(moduleName);
+  public boolean getModule(String filename, ModuleIdentifier moduleIdentifier) {
     //First look at the maven metadata
-    String metaDataFileName = repoID + "/" + id.uriRoot + "maven-metadata-remote.xml";
+    String uriRoot = MavenResolution.getMavenURI(moduleIdentifier);
+    String metaDataFileName = repoID + "/" + uriRoot + "maven-metadata-remote.xml";
     File metaDataFile = new File(metaDataFileName);
     if (metaDataFile.exists()) {
       try (Scanner scanner = new Scanner(metaDataFile).useDelimiter("\\A")) {
         String data = scanner.next();
-        String fileName = MavenResolution.getResourceName(data, repoID, id);
+        String fileName = MavenResolution.getResourceName(data, repoID, moduleIdentifier, uriRoot);
         File file = new File(fileName);
         if (file.exists()) {
           try {

@@ -7,6 +7,7 @@ import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.platform.impl.ModuleIdentifier;
 
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
@@ -48,7 +49,7 @@ public abstract class HttpResolution {
   private final Vertx vertx;
   protected final String repoHost;
   protected final int repoPort;
-  protected final String moduleName;
+  protected final ModuleIdentifier modID;
   protected final String filename;
   protected final String proxyHost = getProxyHost();
   protected final int proxyPort = getProxyPort();
@@ -69,11 +70,11 @@ public abstract class HttpResolution {
     return result;
   }
 
-  public HttpResolution(Vertx vertx, String repoHost, int repoPort, String moduleName, String filename) {
+  public HttpResolution(Vertx vertx, String repoHost, int repoPort, ModuleIdentifier modID, String filename) {
     this.vertx = vertx;
     this.repoHost = repoHost;
     this.repoPort = repoPort;
-    this.moduleName = moduleName;
+    this.modID = modID;
     this.filename = filename;
   }
 
@@ -126,7 +127,6 @@ public abstract class HttpResolution {
         if (handler != null) {
           handler.handle(resp);
         } else {
-          log.error("Failed to query repository: " + resp.statusCode);
           end(false);
         }
       }
@@ -147,7 +147,7 @@ public abstract class HttpResolution {
 
   protected void downloadToFile(String file, HttpClientResponse resp) {
     final OutputStream os;
-    log.info("Downloading " + moduleName + ". Please wait...");
+    log.info("Downloading " + modID + ". Please wait...");
     try {
       os = new BufferedOutputStream(new FileOutputStream(file));
     } catch (IOException e) {

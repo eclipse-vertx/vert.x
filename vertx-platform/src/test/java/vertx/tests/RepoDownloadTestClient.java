@@ -30,20 +30,20 @@ public class RepoDownloadTestClient extends TestClientBase {
   }
 
   public void testMavenDownload() {
-    container.deployModule("mod-maven-server", new Handler<String>() {
+    container.deployModule("io.vertx#mod-maven-server#1.0", new Handler<String>() {
       public void handle(String deployID) {
         if (deployID != null) {
-          container.deployModule("maven:io.vertx:mod-maven-test:1.0.0");
+          container.deployModule("io.vertx#mod-maven-test#1.0.0");
         }
       }
     });
   }
 
   public void testMavenDownloadWithProxy() {
-    container.deployModule("mod-proxy-maven-server", new Handler<String>() {
+    container.deployModule("io.vertx#mod-proxy-maven-server#1.0", new Handler<String>() {
       public void handle(String deployID) {
         if (deployID != null) {
-          container.deployModule("maven:io.vertx:mod-maven-test:1.0.0", new Handler<String>() {
+          container.deployModule("io.vertx#mod-maven-test#1.0.0", new Handler<String>() {
             @Override
             public void handle(String event) {
             }
@@ -54,10 +54,10 @@ public class RepoDownloadTestClient extends TestClientBase {
   }
 
   public void testBintrayDownload() {
-    container.deployModule("mod-bintray-server", new Handler<String>() {
+    container.deployModule("io.vertx#mod-bintray-server#1.0", new Handler<String>() {
       public void handle(String deployID) {
         if (deployID != null) {
-          container.deployModule("bintray:purplefox:vertx-mods:mod-bintray-test:1.0.0");
+          container.deployModule("purplefox#mod-bintray-test#1.0.0");
         }
       }
     });
