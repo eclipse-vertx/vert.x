@@ -121,11 +121,14 @@ public abstract class Context {
   protected Runnable wrapTask(final Runnable task) {
     return new Runnable() {
       public void run() {
+        String threadName = Thread.currentThread().getName();
         try {
           vertx.setContext(Context.this);
           task.run();
         } catch (Throwable t) {
           reportException(t);
+        } finally {
+          Thread.currentThread().setName(threadName);
         }
         if (closed) {
           // We allow tasks to be run after the context is closed but we make sure we unset the context afterwards
