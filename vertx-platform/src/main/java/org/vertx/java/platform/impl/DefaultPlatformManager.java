@@ -236,7 +236,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   public synchronized void uninstallModule(String moduleName) {
     log.info("Uninstalling module " + moduleName + " from directory " + modRoot);
-    File modDir = new File(modRoot, moduleName);
+    File modDir = moduleFile(modRoot, moduleName);
     if (!modDir.exists()) {
       log.error("Cannot find module to uninstall");
     } else {
@@ -276,7 +276,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   public void deployModuleFromZip(String zipFileName, JsonObject config,
                                   int instances, Handler<String> doneHandler) {
-    final String modName = zipFileName.substring(0, zipFileName.length() - 4);
+    final String modName = 
+		moduleNameFromFileName(zipFileName.substring(0, zipFileName.length() - 4));
     if (unzipModule(modName, new ModuleZipInfo(false, zipFileName), false)) {
       deployModule(modName, config, instances, doneHandler);
     } else {
@@ -340,7 +341,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   private boolean doPullInDependencies(File modRoot, String moduleName) {
-    File modDir = new File(modRoot, moduleName);
+    File modDir = moduleFile(modRoot,moduleName);
     if (!modDir.exists()) {
       log.error("Cannot find module to uninstall");
     }
@@ -364,7 +365,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         internalModsDir.mkdir();
       }
       for (String modName: mods) {
-        File internalModDir = new File(internalModsDir, modName);
+        File internalModDir = moduleFile(internalModsDir, modName);
         if (!internalModDir.exists()) {
           ModuleZipInfo zipInfo = getModule(modName);
           if (zipInfo.filename != null) {
@@ -566,19 +567,27 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
   }
 
+  private File moduleFile(File parent, String moduleName) {
+  	return new File(parent, moduleName.replace(COLON,File.pathSeparatorChar));
+  }
+
+  private String moduleNameFromFileName(String fileName) {
+  	return fileName.replace(File.pathSeparatorChar, COLON);
+  }
+  
   private File locateModule(File currentModDir, String modName) {
     if (currentModDir != null) {
       // Nested modules - look inside current module dir
-      File modDir = new File(new File(currentModDir, LOCAL_MODS_DIR), modName);
+      File modDir = moduleFile(new File(currentModDir, LOCAL_MODS_DIR), modName);
       if (modDir.exists()) {
         return modDir;
       }
     }
-    File modDir = new File(modRoot, modName);
+    File modDir = moduleFile(modRoot, modName);
     if (modDir.exists()) {
       return modDir;
     } else if (!systemModRoot.equals(modRoot)) {
-      modDir = new File(systemModRoot, modName);
+      modDir = moduleFile(systemModRoot, modName);
       if (modDir.exists()) {
         return modDir;
       }
@@ -885,8 +894,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         return false;
       }
 
-      File fdest = new File(modRoot, modName);
-      File sdest = new File(systemModRoot, modName);
+      File fdest = moduleFile(modRoot, modName);
+      File sdest = moduleFile(systemModRoot, modName);
       if (fdest.exists() || sdest.exists()) {
         // This can happen if the same module is requested to be installed
         // at around the same time
