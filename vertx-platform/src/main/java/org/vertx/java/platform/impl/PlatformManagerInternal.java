@@ -32,4 +32,6 @@ public interface PlatformManagerInternal extends PlatformManager {
   void removeModule(String moduleKey);
 
   void exit();
+
+  String getNodeID();
 }

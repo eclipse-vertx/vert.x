@@ -16,6 +16,7 @@ package org.vertx.java.platform;/*
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 
+import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.json.JsonObject;
@@ -74,11 +75,19 @@ public interface PlatformManager {
    * @param config Any JSON config to pass to the verticle, or null if none
    * @param instances The number of instances to deploy
    * @param ha If true then high availability will be enabled for the module
+   * @param group The failover group. Defaults to the default group if null
    * @param doneHandler Handler will be called with deploymentID when deployed, or null if it fails to deploy
    */
   void deployModule(String moduleName, JsonObject config,
-                    int instances, boolean ha, Handler<String> doneHandler);
+                    int instances, boolean ha, String group, Handler<String> doneHandler);
 
+  /**
+   * Deploy a module
+   * @param moduleName The name of the module to deploy
+   * @param config Any JSON config to pass to the verticle, or null if none
+   * @param instances The number of instances to deploy
+   * @param doneHandler Handler will be called with deploymentID when deployed, or null if it fails to deploy
+   */
   void deployModule(String moduleName, JsonObject config,
                     int instances, Handler<String> doneHandler);
 
@@ -91,10 +100,11 @@ public interface PlatformManager {
    * @param config Any JSON config to pass to the verticle, or null if none
    * @param instances The number of instances to deploy
    * @param ha If true then high availability will be enabled for the module
+   * @param group The failover group. Defaults to the default group if null
    * @param doneHandler Handler will be called with deploymentID when deployed, or null if it fails to deploy
    */
   void deployModuleFromZip(String zipFileName, JsonObject config,
-                           int instances, boolean ha, Handler<String> doneHandler);
+                           int instances, boolean ha, String group, Handler<String> doneHandler);
 
   /**
    * Undeploy a deployment

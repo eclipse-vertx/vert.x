@@ -100,7 +100,6 @@ public class DefaultVertx extends VertxInternal {
   }
 
   public DefaultVertx(int port, String hostname) {
-    System.out.println("** CREATING HAZELCAST CLUSTERMANAGER");
     this.clusterManager = new HazelcastClusterManager(this);
     this.eventBus = new DefaultEventBus(this, port, hostname, clusterManager);
   }

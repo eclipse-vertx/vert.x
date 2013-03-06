@@ -28,5 +28,6 @@ public interface ClusterInfoManager {
   void leave();
   void update(JsonObject clusterInfo);
   void crashHandler(Handler<JsonObject> clusterInfo);
+  void quorumHandler(Handler<Boolean> handler);
   void simulateCrash();
 }

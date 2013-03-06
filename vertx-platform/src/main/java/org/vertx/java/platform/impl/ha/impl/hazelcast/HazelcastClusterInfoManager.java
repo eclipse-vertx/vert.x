@@ -9,6 +9,8 @@ import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.impl.ha.impl.ClusterInfoManager;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /*
@@ -37,14 +39,18 @@ public class HazelcastClusterInfoManager implements ClusterInfoManager, Membersh
   private IMap<String, JsonObject> map;
   private Handler<JsonObject> handler;
   private String nodeID;
+  private int quorumSize;
+  private boolean attainedQuorum;
+  private Handler<Boolean> quorumHandler;
 
-  public HazelcastClusterInfoManager(ClusterManager cm) {
+  public HazelcastClusterInfoManager(ClusterManager cm, int quorumSize) {
     if (cm instanceof HazelcastClusterManager) {
       // If the event is also clustered using Hazelcast we reuse the Hazelcast instance
       this.instance = ((HazelcastClusterManager)cm).getInstance();
     } else {
       this.instance = new HazelCastVInstance().getInstance();
     }
+    this.quorumSize = quorumSize;
     instance.getCluster().addMembershipListener(this);
     nodeID = instance.getCluster().getLocalMember().getUuid();
     map = instance.getMap(MAP_NAME);
@@ -54,8 +60,17 @@ public class HazelcastClusterInfoManager implements ClusterInfoManager, Membersh
     return nodeID;
   }
 
+  /*
+  The quorum handler will be called with true when the quorum is attained
+  and false when there is not a quorum any more
+   */
+  public synchronized void quorumHandler(Handler<Boolean> handler) {
+    this.quorumHandler = handler;
+    checkQuorum();
+  }
+
   @Override
-  public void leave() {
+  public synchronized void leave() {
     if (!map.containsKey(nodeID)) {
       throw new IllegalStateException("member not in map");
     }
@@ -65,7 +80,7 @@ public class HazelcastClusterInfoManager implements ClusterInfoManager, Membersh
   }
 
   @Override
-  public void simulateCrash() {
+  public synchronized void simulateCrash() {
     if (!map.containsKey(nodeID)) {
       throw new IllegalStateException("member not in map");
     }
@@ -74,25 +89,42 @@ public class HazelcastClusterInfoManager implements ClusterInfoManager, Membersh
   }
 
   @Override
-  public void update(JsonObject clusterInfo) {
+  public synchronized void update(JsonObject clusterInfo) {
     map.put(nodeID, clusterInfo);
+    System.out.println("node " + nodeID + " putting cluster info");
   }
 
   @Override
-  public void memberAdded(MembershipEvent membershipEvent) {
-    // Do nothing
+  public synchronized void memberAdded(MembershipEvent membershipEvent) {
+    checkQuorum();
   }
 
   @Override
-  public void memberRemoved(MembershipEvent membershipEvent) {
-    Member member = membershipEvent.getMember();
-    String failedNodeID = member.getUuid();
-    JsonObject clusterInfo = map.get(failedNodeID);
-    if (clusterInfo == null) {
-      // Clean close - do nothing
-    } else {
-      checkFailover(failedNodeID, clusterInfo);
+  public synchronized void memberRemoved(MembershipEvent membershipEvent) {
+    checkQuorum();
+    if (attainedQuorum) {
+      Member member = membershipEvent.getMember();
+      System.out.println("node " + nodeID + " received notification of member removed, node: " + member.getUuid());
+      String failedNodeID = member.getUuid();
+      JsonObject clusterInfo = map.get(failedNodeID);
+      if (clusterInfo == null) {
+        // Clean close - do nothing
+      } else {
+        checkFailover(failedNodeID, clusterInfo);
+      }
     }
+  }
+
+  private void checkQuorum() {
+    boolean attained = instance.getCluster().getMembers().size() >= quorumSize;
+    if (quorumHandler != null) {
+      if (!attainedQuorum && attained) {
+        quorumHandler.handle(true);
+      } else if (attainedQuorum && !attained) {
+        quorumHandler.handle(false);
+      }
+    }
+    this.attainedQuorum = attained;
   }
 
   /*
@@ -105,30 +137,37 @@ public class HazelcastClusterInfoManager implements ClusterInfoManager, Membersh
     if (apps != null) {
       for (Object obj: apps) {
         JsonObject app = (JsonObject)obj;
-        String chosen = chooseHashedNode(failedNodeID.hashCode());
-        if (chosen.equals(this.nodeID)) {
+        String group = app.getString("group");
+        String moduleName = app.getString("module_name");
+        String chosen = chooseHashedNode(group, moduleName.hashCode());
+        if (chosen != null && chosen.equals(this.nodeID)) {
+          System.out.println("node " + nodeID + " is handling failure of app " + moduleName + " from node " + failedNodeID);
           handler.handle(app);
+          break;
         }
       }
     }
   }
 
-  private String chooseHashedNode(int hashCode) {
+  private String chooseHashedNode(String group, int hashCode) {
     Set<Member> members = instance.getCluster().getMembers();
-    int size = members.size();
-    int pos = hashCode % size;
-    int count = 0;
-    Member chosen = null;
+    ArrayList<String> matchingMembers = new ArrayList<>();
     for (Member member: members) {
-      if (count == pos) {
-        chosen = member;
-        break;
+      JsonObject clusterInfo = map.get(member.getUuid());
+      if (clusterInfo == null) {
+        throw new IllegalStateException("Can't find member in map");
+      }
+      String memberGroup = clusterInfo.getString("group");
+      if (group.equals(memberGroup)) {
+        matchingMembers.add(member.getUuid());
       }
     }
-    if (chosen == null) {
-      throw new IllegalStateException("Can't find member");
+    if (!matchingMembers.isEmpty()) {
+      int pos = hashCode % matchingMembers.size();
+      return matchingMembers.get(pos);
+    } else {
+      return null;
     }
-    return chosen.getUuid();
   }
 
   @Override

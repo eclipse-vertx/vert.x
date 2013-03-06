@@ -84,22 +84,22 @@ public class DefaultContainer implements Container {
 
   @Override
   public void deployModule(String moduleName, JsonObject config, int instances, Handler<String> doneHandler) {
-    mgr.deployModule(moduleName, config, instances, false, doneHandler);
+    mgr.deployModule(moduleName, config, instances, false, null, doneHandler);
   }
 
   @Override
   public void deployModule(String moduleName, Handler<String> doneHandler) {
-    mgr.deployModule(moduleName, null, 1, false, doneHandler);
+    mgr.deployModule(moduleName, null, 1, false, null, doneHandler);
   }
 
   @Override
   public void deployModule(String moduleName, JsonObject config, Handler<String> doneHandler) {
-    mgr.deployModule(moduleName, config, 1, false, doneHandler);
+    mgr.deployModule(moduleName, config, 1, false, null, doneHandler);
   }
 
   @Override
   public void deployModule(String moduleName, int instances, Handler<String> doneHandler) {
-    mgr.deployModule(moduleName, null, instances, false, doneHandler);
+    mgr.deployModule(moduleName, null, instances, false, null, doneHandler);
   }
 
   @Override
@@ -180,6 +180,10 @@ public class DefaultContainer implements Container {
   @Override
   public Map<String, String> getEnv() {
     return System.getenv();
+  }
+
+  public String getNodeID() {
+    return mgr.getNodeID();
   }
 
 }

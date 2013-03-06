@@ -5,9 +5,13 @@ import org.junit.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.PlatformLocator;
 import org.vertx.java.platform.PlatformManager;
+import org.vertx.java.platform.impl.PlatformManagerInternal;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -31,35 +35,48 @@ import java.util.concurrent.TimeUnit;
 public class HATest   {
 
   @Test
-  public void testFailover() throws Exception {
+  public void testFailover1() throws Exception {
+    testFailover(10);
+  }
 
-    final CountDownLatch latch = new CountDownLatch(1);
+  private void testFailover(int nodes) throws Exception {
 
-    final PlatformManager pm1 = PlatformLocator.factory.createPlatformManager(5155, "localhost");
-    PlatformManager pm2 = PlatformLocator.factory.createPlatformManager(5156, "localhost");
+    final CountDownLatch latch = new CountDownLatch(nodes);
 
-    pm2.getVertx().eventBus().registerHandler("hatest", new Handler<Message<String>>() {
-      int count;
-      public void handle(Message<String> msg) {
-        count++;
-        // We should receive the message twice - once when deployed and once when redeployed after failover
-        if (count == 2) {
-          latch.countDown();
-        }
+    final Map<String, PlatformManager> pms = new HashMap<>();
+
+    int portBase = 5155;
+    for (int i = 0; i < nodes; i++) {
+      PlatformManagerInternal pim = (PlatformManagerInternal)PlatformLocator.factory.createPlatformManager(portBase + i, "localhost");
+      pms.put(pim.getNodeID(), pim);
+    }
+
+    final Map.Entry<String, PlatformManager> pimEntry = pms.entrySet().iterator().next();
+    pimEntry.getValue().getVertx().eventBus().registerHandler("hatest", new Handler<Message<JsonObject>>() {
+      public void handle(Message<JsonObject> msg) {
+        System.out.println("Received message " + msg.body);
+        String nodeID = msg.body.getString("node_id");
+        System.out.println("node id is " + nodeID);
+
+        //pimEntry.getValue().simulateNodeFailure();
+        System.out.println("Killing node " + nodeID);
+        pms.get(nodeID).simulateNodeFailure();
+        pms.remove(nodeID);
+        latch.countDown();
       }
     });
-
-    pm1.deployModule("failovermod1", null, 1, true, new Handler<String>() {
+    pimEntry.getValue().deployModule("failovermod1", null, 1, true, null, new Handler<String>() {
       @Override
       public void handle(String depID) {
         assertTrue(depID != null);
-        pm1.simulateNodeFailure();
       }
     });
 
-    if (!latch.await(30, TimeUnit.SECONDS)) {
+    if (!latch.await(60000, TimeUnit.SECONDS)) {
       throw new IllegalStateException("Timed out");
     }
 
+    assertTrue(pms.isEmpty());
   }
 }
+

@@ -84,8 +84,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private final ClassLoader platformClassLoader;
   private HAManager haManager;
 
-  private void createHAManager() {
-    haManager = new HAManager(this, new HazelcastClusterInfoManager(vertx.getClusterManager()));
+  private void createHAManager(int quorumSize, String group) {
+    haManager = new HAManager(this, new HazelcastClusterInfoManager(vertx.getClusterManager(), quorumSize), group);
   }
 
   DefaultPlatformManager() {
@@ -94,19 +94,23 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   DefaultPlatformManager(String hostname) {
     this(new DefaultVertx(hostname));
-    createHAManager();
+    createHAManager(0, null);
   }
 
   DefaultPlatformManager(int port, String hostname) {
     this(new DefaultVertx(port, hostname));
-    createHAManager();
+    createHAManager(0, null);
+  }
+
+  DefaultPlatformManager(int port, String hostname, int quorumSize, String group) {
+    this(new DefaultVertx(port, hostname));
+    createHAManager(quorumSize, group);
   }
 
   private DefaultPlatformManager(VertxInternal vertx) {
     this.platformClassLoader = Thread.currentThread().getContextClassLoader();
     this.vertx = vertx;
     String modDir = System.getProperty(MODS_DIR_PROP_NAME);
-    System.out.println("mods dir is " + modDir);
     if (modDir != null && !modDir.trim().equals("")) {
       modRoot = new File(modDir);
     } else {
@@ -123,7 +127,6 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     loadLanguageMappings();
     loadRepos();
   }
-
 
   public void registerExitHandler(Handler<Void> handler) {
     this.exitHandler = handler;
@@ -150,15 +153,17 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   public void deployModule(final String moduleName, final JsonObject config,
                            final int instances, final Handler<String> handler) {
-    deployModule(moduleName, config, instances, false, handler);
+    deployModule(moduleName, config, instances, false, null, handler);
   }
 
   public void deployModule(final String moduleName, final JsonObject config,
-                           final int instances, final boolean ha, final Handler<String> handler) {
+                           final int instances, final boolean ha,
+                           final String group, final Handler<String> handler) {
+
     final Handler<String> doneHandler = new Handler<String>() {
       public void handle(String depID) {
         if (ha && haManager != null) {
-          haManager.addToHA(moduleName, config, instances);
+          haManager.addToHA(moduleName, config, instances, group);
         }
         if (handler != null) {
           handler.handle(depID);
@@ -172,7 +177,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         return null;
       }
     };
-    deployModuleAction.run();
+    if (haManager != null) {
+      haManager.runWhenQuorumAttained(deployModuleAction);
+    } else {
+      deployModuleAction.run();
+    }
   }
 
   public synchronized void undeploy(String deploymentID, final Handler<Void> doneHandler) {
@@ -299,10 +308,10 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   public void deployModuleFromZip(String zipFileName, JsonObject config,
-                                  int instances, boolean ha, Handler<String> doneHandler) {
+                                  int instances, boolean ha, String group, Handler<String> doneHandler) {
     final String modName = zipFileName.substring(0, zipFileName.length() - 4);
     if (unzipModule(modName, new ModuleZipInfo(false, zipFileName), false)) {
-      deployModule(modName, config, instances, ha, doneHandler);
+      deployModule(modName, config, instances, ha, group, doneHandler);
     } else {
       doneHandler.handle(null);
     }
@@ -326,6 +335,10 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   public void simulateNodeFailure() {
     haManager.simulateCrash();
+  }
+
+  public String getNodeID() {
+    return haManager.getNodeID();
   }
 
   private void deployVerticle(final boolean worker, final boolean multiThreaded, final String main,

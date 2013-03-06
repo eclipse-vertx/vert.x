@@ -162,6 +162,8 @@ public class Starter {
       return;
     }
 
+    String group = args.map.get("-group");
+
     String sinstances = args.map.get("-instances");
     int instances;
     if (sinstances != null) {
@@ -210,9 +212,9 @@ public class Starter {
       }
     };
     if (zip) {
-      mgr.deployModuleFromZip(main, conf, instances, ha, doneHandler);
+      mgr.deployModuleFromZip(main, conf, instances, ha, group, doneHandler);
     } else if (module) {
-      mgr.deployModule(main, conf, instances, ha, doneHandler);
+      mgr.deployModule(main, conf, instances, ha, group, doneHandler);
     } else {
       boolean worker = args.map.get("-worker") != null;
 
