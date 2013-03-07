@@ -285,7 +285,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   public void deployModuleFromZip(String zipFileName, JsonObject config,
                                   int instances, Handler<String> doneHandler) {
     final String modName = zipFileName.substring(0, zipFileName.length() - 4);
-    ModuleIdentifier modID = new ModuleIdentifier("__vertx_tmp#" + modName + "#__vertx_tmp");
+    ModuleIdentifier modID = new ModuleIdentifier("__vertx_tmp-" + modName + "-__vertx_tmp");
     if (unzipModule(modID, new ModuleZipInfo(false, zipFileName), false)) {
       deployModule(modName, config, instances, doneHandler);
     } else {
