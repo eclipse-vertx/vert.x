@@ -39,6 +39,22 @@ artifacts {
   archives sourceJar, javadocJar
 }
 
+def loadProperties(String sourceFileName) {
+  def config = new Properties()
+  def propFile = new File(sourceFileName)
+  if (propFile.canRead()) {
+    config.load(new FileInputStream(propFile))
+    for (Map.Entry property in config) {
+      project.ext[property.key] = property.value;
+    }
+  }
+}
+
+// We  have to explicitly load props from the user home dir - on CI we set
+// GRADLE_USER_HOME to a different dir to avoid problems with concurrent builds corrupting
+// a shared Maven local and using Gradle wrapper concurrently
+loadProperties("${System.getProperty('user.home')}/.gradle/gradle.properties")
+
 if (!hasProperty('sonatypeUsername')) {
   ext.sonatypeUsername = ''
 }
