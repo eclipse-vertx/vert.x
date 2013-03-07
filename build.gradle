@@ -21,7 +21,12 @@ buildscript {
     flatDir {
       dir 'extralibs'
     }
-    mavenLocal()
+    if (System.getenv("JENKINS_HOME") == null) {
+      // We don't want to use mavenLocal when running on CI - mavenLocal is only useful in Gradle for
+      // publishing artifacts locally for development purposes - maven local is also not threadsafe when there
+      // are concurrent builds
+      mavenLocal()
+    }
     maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
     mavenCentral()
   }
@@ -51,7 +56,9 @@ subprojects {
   group = rootProject.group
 
   repositories {
-    mavenLocal()
+    if (System.getenv("JENKINS_HOME") == null) {
+      mavenLocal()
+    }
     maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
     mavenCentral()
   }
@@ -62,7 +69,6 @@ subprojects {
       exclude group: "io.vertx"
       exclude group: "junit"
     }
-    // testCompile project(":vertx-platform")
   }
   
   javadoc {
