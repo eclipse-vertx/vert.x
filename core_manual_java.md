@@ -662,7 +662,7 @@ To be notified when a connection occurs we need to call the `connectHandler` met
         public void handle(NetSocket sock) {
             log.info("A client has connected!");
         }
-    })  
+    });
 
     server.listen(1234, "localhost");
     
