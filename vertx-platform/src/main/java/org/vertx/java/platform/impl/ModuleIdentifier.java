@@ -19,27 +19,24 @@ package org.vertx.java.platform.impl;
  */
 public class ModuleIdentifier {
 
-  private static final String SEPARATOR = "#";
+  private static final String SEPARATOR = "~";
+  private static final String SPLIT_REGEX = "\\" + SEPARATOR;
 
   private final String owner;
   private final String name;
   private final String version;
   private final String stringForm;
 
-  private static final String regex = ".*[?/<>|*:\"\\\\].*";
-
-  public static void validate(String stringForm) {
-    new ModuleIdentifier(stringForm);
-  }
+  private static final String LEGAL = "[A-Za-z0-9!£$()-_+=@~;,]+";
 
   public ModuleIdentifier(String stringForm) {
     if (stringForm == null) {
       throw new NullPointerException("stringForm cannot be null");
     }
     this.stringForm = stringForm;
-    String[] parts = stringForm.split(SEPARATOR);
+    String[] parts = stringForm.split(SPLIT_REGEX);
     if (parts.length != 3) {
-      throw createException("Should be of form owner#name#version");
+      throw createException("Should be of form owner" + SEPARATOR + "name" + SEPARATOR + "version");
     }
     if (parts[0].isEmpty()) {
       throw createException("owner should not be empty");
@@ -59,7 +56,7 @@ public class ModuleIdentifier {
   }
 
   private void checkIllegalChars(String str) {
-    if (str.matches(regex)) {
+    if (!str.matches(LEGAL)) {
       throw new IllegalArgumentException("Module identifier: " + str + " contains illegal characters");
     }
   }
@@ -83,4 +80,9 @@ public class ModuleIdentifier {
   public String getVersion() {
     return version;
   }
+
+  public static ModuleIdentifier createInternalModIDForVerticle(String depName) {
+    return new ModuleIdentifier("__vertx" + SEPARATOR + depName + SEPARATOR + "__vertx");
+  }
+
 }

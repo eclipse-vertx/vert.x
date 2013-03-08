@@ -443,15 +443,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         } else {
           // Top level - deployed as verticle not module
           // Just use the deployment name
-          return createInternalModIDForVerticle(dep.name);
+          return ModuleIdentifier.createInternalModIDForVerticle(dep.name);
         }
       }
     }
     return null; // We are at the top level already
-  }
-
-  private ModuleIdentifier createInternalModIDForVerticle(String depName) {
-    return new ModuleIdentifier("__vertx#" + depName + "#__vertx");
   }
 
   private void doDeployVerticle(boolean worker, boolean multiThreaded, final String main,
@@ -470,7 +466,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     String moduleKey;
     if (enclosingModName == null) {
       // We are at the top level - just use the deployment name as the key
-      moduleKey = createInternalModIDForVerticle(depName).toString();
+      moduleKey = ModuleIdentifier.createInternalModIDForVerticle(depName).toString();
     } else {
       // Use the enclosing module name / or enclosing verticle PLUS the main
       moduleKey = enclosingModName.toString() + "#" + main;

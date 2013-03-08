@@ -31,21 +31,22 @@ public class PullInDepsTest extends TestBase {
   @Override
   protected void tearDown() throws Exception {
     super.tearDown();
+    vertx.fileSystem().deleteSync("src/test/mod-test/io.vertx~mod-pullin~1.0/mods", true);
   }
 
   @Test
   public void testPullInDeps() throws Exception {
-    String deployID = startMod("io.vertx#mod-maven-server#1.0", null, 1, false);
-    assertTrue(platformManager.pullInDependencies("io.vertx#mod-pullin#1.0"));
+    String deployID = startMod("io.vertx~mod-maven-server~1.0", null, 1, false);
+    assertTrue(platformManager.pullInDependencies("io.vertx~mod-pullin~1.0"));
     stopApp(deployID, false);
-    assertFileExists("src/test/mod-test/io.vertx#mod-pullin#1.0/mods");
-    assertFileExists("src/test/mod-test/io.vertx#mod-pullin#1.0/mods/io.vertx#mod-pullin-a#2.0.0");
-    assertFileExists("src/test/mod-test/io.vertx#mod-pullin#1.0/mods/io.vertx#mod-pullin-b#1.0.1");
-    assertFileExists("src/test/mod-test/io.vertx#mod-pullin#1.0/mods/io.vertx#mod-pullin-c#0.1");
-    assertFileExists("src/test/mod-test/io.vertx#mod-pullin#1.0/mods/io.vertx#mod-pullin-d#1.2-beta");
+    assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods");
+    assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-a~2.0.0");
+    assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-b~1.0.1");
+    assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-c~0.1");
+    assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-d~1.2-beta");
     // Nested
-    assertFileExists("src/test/mod-test/io.vertx#mod-pullin#1.0/mods/io.vertx#mod-pullin-d#1.2-beta/mods/io.vertx#mod-pullin-e#2.2");
-    vertx.fileSystem().deleteSync("src/test/mod-test/io.vertx#mod-pullin#1.0/mods", true);
+    assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-d~1.2-beta/mods/io.vertx~mod-pullin-e~2.2");
+
   }
 
   private void assertFileExists(String fileName) {
