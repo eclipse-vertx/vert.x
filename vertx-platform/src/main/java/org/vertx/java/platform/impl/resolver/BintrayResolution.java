@@ -52,12 +52,6 @@ public class BintrayResolution extends HttpResolution {
         downloadToFile(filename, resp);
       }
     });
-    addHandler(404, new Handler<HttpClientResponse>() {
-      @Override
-      public void handle(HttpClientResponse resp) {
-        //NOOP
-      }
-    });
     addHandler(302, new Handler<HttpClientResponse>() {
       @Override
       public void handle(HttpClientResponse resp) {
