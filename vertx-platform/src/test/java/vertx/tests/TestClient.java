@@ -100,7 +100,7 @@ public class TestClient extends TestClientBase {
       }
     });
 
-    container.deployModule("io.vertx#testmod-deploy1#1.0", null, 1, new Handler<String>() {
+    container.deployModule("io.vertx~testmod-deploy1~1.0", null, 1, new Handler<String>() {
       public void handle(String deployID) {
         tu.azzert(Thread.currentThread() == t);
         tu.azzert(deployID != null);
@@ -110,7 +110,7 @@ public class TestClient extends TestClientBase {
 
   public void testUndeployModule() {
     final Thread t = Thread.currentThread();
-    container.deployModule("io.vertx#testmod-deploy1#1.0", null, 1,
+    container.deployModule("io.vertx~testmod-deploy1~1.0", null, 1,
         new Handler<String>() {
           public void handle(final String deploymentID) {
             tu.azzert(Thread.currentThread() == t);
@@ -148,7 +148,7 @@ public class TestClient extends TestClientBase {
       }
     });
 
-    container.deployModule("io.vertx#testmod-deploy2#1.0", null, 1, new Handler<String>() {
+    container.deployModule("io.vertx~testmod-deploy2~1.0", null, 1, new Handler<String>() {
       public void handle(String deployID) {
         tu.azzert(Thread.currentThread() == t);
         tu.azzert(deployID != null);

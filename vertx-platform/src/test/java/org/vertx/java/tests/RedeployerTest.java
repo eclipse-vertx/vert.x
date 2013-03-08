@@ -28,7 +28,7 @@ public class RedeployerTest extends TestBase {
   TestReloader reloader;
   File modRoot;
   Redeployer red;
-  String modName = "io.vertx#my-mod#1.0";
+  String modName = "io.vertx~my-mod~1.0";
   File modDir;
 
   @Override
@@ -130,7 +130,7 @@ public class RedeployerTest extends TestBase {
     red.moduleDeployed(dep1);
     Deployment dep2 = createDeployment("dep2", null);
     red.moduleDeployed(dep2);
-    String otherModName = "io.vertx#other-mod#1.0";
+    String otherModName = "io.vertx~other-mod~1.0";
     Deployment dep3 = createDeployment("dep3", otherModName, null);
     createModDir(otherModName);
     red.moduleDeployed(dep3);

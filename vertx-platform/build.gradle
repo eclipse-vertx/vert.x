@@ -36,22 +36,13 @@ jar {
 	}
 }
 
-/*
-sourceSets {
-  test {
-    resources {
-      srcDirs "src/test/resources/testconf"
-    }
-  }
-}
-*/
 
 // Cleanup the modules placed in the mod-test directory during the test suite
 task cleanTestTmpModules(type: Delete) {
   delete { file("src/test/mod-test").listFiles().findAll {
-    it.name ==~ /io.vertx#lang-rhino.+/ ||
-    it.name ==~ /io.vertx#mod-maven-test.+/ ||
-    it.name ==~ /purplefox#mod-bintray-test.+/
+    it.name ==~ /io.vertx~lang-rhino.+/ ||
+    it.name ==~ /io.vertx~mod-maven-test.+/ ||
+    it.name ==~ /purplefox~mod-bintray-test.+/
     }
   }
   delete { file(".").listFiles().findAll {
