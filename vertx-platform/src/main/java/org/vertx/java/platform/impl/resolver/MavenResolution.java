@@ -42,13 +42,6 @@ public class MavenResolution extends HttpResolution {
 
   protected void getModule() {
     createClient(repoHost, repoPort);
-    addHandler(404, new Handler<HttpClientResponse>() {
-      @Override
-      public void handle(HttpClientResponse resp) {
-        //NOOP
-        end(false);
-      }
-    });
     if (moduleIdentifier.getVersion().endsWith("-SNAPSHOT")) {
       addHandler(200, new Handler<HttpClientResponse>() {
         @Override

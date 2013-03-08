@@ -139,7 +139,14 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   public void deployModule(final String moduleName, final JsonObject config,
                            final int instances, final Handler<String> doneHandler) {
-    final ModuleIdentifier modID = new ModuleIdentifier(moduleName);
+    final ModuleIdentifier modID;
+    try {
+      modID = new ModuleIdentifier(moduleName);
+    } catch (IllegalArgumentException e) {
+      log.error(e.getMessage());
+      doneHandler.handle(null);
+      return;
+    }
     final File currentModDir = getDeploymentModDir();
     BlockingAction<Void> deployModuleAction = new BlockingAction<Void>(vertx, createHandler(doneHandler)) {
 
