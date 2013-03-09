@@ -914,16 +914,32 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
       // Now copy it to the proper directory
       String moveFrom = tdest.getAbsolutePath();
-      try {
-        vertx.fileSystem().moveSync(moveFrom, system ? sdest.getAbsolutePath() : fdest.getAbsolutePath());
-      } catch (Exception e) {
-        log.error("Failed to move module", e);
+      boolean moved = safeMove(moveFrom, system ? sdest.getAbsolutePath() : fdest.getAbsolutePath());
+      if (moved) {
+        log.info("Module " + modID +" successfully installed");
+        return true;
+      } else {
         return false;
       }
-
-      log.info("Module " + modID +" successfully installed");
-      return true;
     }
+  }
+
+  // We actually do a copy and delete since move doesn't always work across volumes
+  private boolean safeMove(String source, String dest) {
+    // Try and move first - it's more efficient
+    try {
+      vertx.fileSystem().moveSync(source, dest);
+    } catch (Exception e) {
+      // And fall back to copying
+      try {
+        vertx.fileSystem().copySync(source, dest, true);
+        vertx.fileSystem().deleteSync(source, true);
+      } catch (Exception e2) {
+        log.error("Failed to copy module", e2);
+        return false;
+      }
+    }
+    return true;
   }
 
   private String removeTopDir(String entry) {
