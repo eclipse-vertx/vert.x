@@ -96,6 +96,7 @@ public class ModuleClassLoader extends URLClassLoader {
                 // Try the next one
               }
             }
+            walked.remove(this);
           } finally {
             // Make sure we clear the thread locals afterwards
             checkClearTLs();
@@ -128,7 +129,7 @@ public class ModuleClassLoader extends URLClassLoader {
       // Break the circular dep and reduce the ref count
       // We need to do this on ALL the parents in case there is another circular dep there
       clearParents();
-      throw new IllegalStateException("Circular dependency in module includes.");
+      throw new IllegalStateException("Circular dependency in module includes. " + mr.moduleKey);
     }
   }
 
@@ -162,6 +163,7 @@ public class ModuleClassLoader extends URLClassLoader {
             return url;
           }
         }
+        walked.remove(this);
         // If got here then none of the parents know about it, so try the platform class loader
         url = platformClassLoader.getResource(name);
       }
@@ -197,6 +199,7 @@ public class ModuleClassLoader extends URLClassLoader {
         Enumeration<URL> urls = parent.mcl.getResources(name);
         addURLs(totURLs, urls);
       }
+      walked.remove(this);
     } finally {
       checkClearTLs();
     }
