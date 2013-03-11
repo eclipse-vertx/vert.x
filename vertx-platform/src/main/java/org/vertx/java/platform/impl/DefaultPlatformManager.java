@@ -1079,9 +1079,23 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     if (langImplInfo.moduleName != null) {
       if (!loadIncludedModules(modDir, mr, langImplInfo.moduleName)) {
         log.error("Failed to load module: " + langImplInfo.moduleName);
-        doneHandler.handle(null);
+        callDoneHandler(doneHandler, null);
         return;
       }
+    }
+
+
+    String parentDeploymentName = getDeploymentName();
+
+    if (parentDeploymentName != null) {
+      Deployment parentDeployment = deployments.get(parentDeploymentName);
+      if (parentDeployment == null) {
+        // This means the parent has already been undeployed - we must not deploy the child
+        log.warn("Parent has been undeployed!");
+        callDoneHandler(doneHandler, null);
+        return;
+      }
+      parentDeployment.childDeployments.add(deploymentName);
     }
 
     final VerticleFactory verticleFactory;
@@ -1093,7 +1107,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       verticleFactory = mr.getVerticleFactory(langImplInfo.factoryName, vertx, container);
     } catch (Exception e) {
       log.error("Failed to instantiate verticle factory", e);
-      doneHandler.handle(null);
+      callDoneHandler(doneHandler, null);
       return;
     }
 
@@ -1116,17 +1130,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
     final AggHandler aggHandler = new AggHandler();
 
-    String parentDeploymentName = getDeploymentName();
     final Deployment deployment = new Deployment(deploymentName, main, modID, instances,
         config == null ? new JsonObject() : config.copy(), urls, modDir, parentDeploymentName,
         mr, autoRedeploy);
     mr.incRef();
     deployments.put(deploymentName, deployment);
-
-    if (parentDeploymentName != null) {
-      Deployment parentDeployment = deployments.get(parentDeploymentName);
-      parentDeployment.childDeployments.add(deploymentName);
-    }
 
     ClassLoader oldTCCL = Thread.currentThread().getContextClassLoader();
     Thread.currentThread().setContextClassLoader(mr.mcl);
