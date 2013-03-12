@@ -52,7 +52,7 @@ goto fail
 if not "%VERTX_MODS%" == "" set VERTX_MODULE_OPTS="-Dvertx.mods=%VERTX_MODS%"
 
 @rem Configure JUL using custom properties file
-if "%VERTX_JUL_CONFIG%" == "" set VERTX_JUL_CONFIG="%VERTX_HOME%\conf\logging.properties"
+if "%VERTX_JUL_CONFIG%" == "" set VERTX_JUL_CONFIG=%APP_HOME%\conf\logging.properties
 
 @rem Get command-line arguments, handling Windowz variants
 
