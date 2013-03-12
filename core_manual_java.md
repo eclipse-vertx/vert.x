@@ -97,11 +97,11 @@ You can deploy and undeploy verticles programmatically from inside another verti
 
 ## Deploying a simple verticle
 
-To deploy a verticle programmatically call the function `deployVerticle` on the `container` variable. The return value of `deployVerticle` is the unique id of the deployment, which can be used later to undeploy the verticle.
+To deploy a verticle programmatically call the function `deployVerticle` on the `container` variable. 
 
 To deploy a single instance of a verticle :
 
-    String id = container.deployVerticle(main);    
+    container.deployVerticle(main);    
     
 Where `main` is the name of the "main" of the Verticle (i.e. the name of the script if it's a Ruby or JavaScript verticle or the fully qualified class name if it's a Java verticle). See the chapter on "running vert.x" in the main manual for a description of what a main is.
     
@@ -157,7 +157,7 @@ Then create a file 'config.json" with the actual JSON config in it (see main man
         },
         "verticle2_conf": {
             "age": 1234,
-            "shoe_size": 12
+            "shoe_size": 12,
             "pi": 3.14159
         }, 
         "verticle3_conf": {
@@ -209,9 +209,13 @@ The `deployVerticle` method deploys standard (non worker) verticles. If you want
 
 ## Undeploying a Verticle
 
-Any verticles that you deploy programmatically from within a verticle, and all of their children are automatically undeployed when the parent verticle is undeployed, so in most cases you will not need to undeploy a verticle manually, however if you do want to do this, it can be done by calling the function `undeployVerticle` passing in the deployment id that was returned from the call to `deployVerticle`
+Any verticles that you deploy programmatically from within a verticle, and all of their children are automatically undeployed when the parent verticle is undeployed, so in most cases you will not need to undeploy a verticle manually, however if you do want to do this, it can be done by calling the function `undeployVerticle` passing in the deployment id. The deployment id is passed as a parameter to the handler called after completing the deployment.
 
-    String deploymentID = container.deployVerticle(main);  
+    container.deployVerticle(main, new Handler<String>() {
+        public void handle(String deploymentID) {
+           this.deploymentID = deploymentID;
+        }
+    });  
     
     container.undeployVerticle(deploymentID);    
 
@@ -436,13 +440,13 @@ Currently data can only be shared between verticles in the *same vert.x instance
 
 To use a shared map to share data between verticles first we get a reference to the map, and then use it like any other instance of `java.util.concurrent.ConcurrentMap`
 
-    ConcurrentMap<String, Integer> map = vertx.sharedData().getMap('demo.mymap');
+    ConcurrentMap<String, Integer> map = vertx.sharedData().getMap("demo.mymap");
     
     map.put("some-key", 123);
     
 And then, in a different verticle you can access it:
 
-    ConcurrentMap<String, Integer> map = vertx.sharedData().getMap('demo.mymap');
+    ConcurrentMap<String, Integer> map = vertx.sharedData().getMap("demo.mymap");
     
     // etc
     
@@ -451,13 +455,13 @@ And then, in a different verticle you can access it:
 
 To use a shared set to share data between verticles first we get a reference to the set.
 
-    Set<String> set = vertx.sharedData().getSet('demo.myset');
+    Set<String> set = vertx.sharedData().getSet("demo.myset");
     
     set.add("some-value");
     
 And then, in a different verticle:
 
-    Set<String> set = vertx.sharedData().getSet('demo.myset');
+    Set<String> set = vertx.sharedData().getSet("demo.myset");
     
     // etc  
         
@@ -548,8 +552,8 @@ A usage example would be using a Java verticle to send or receive JSON messages 
 
     EventBus eb = vertx.eventBus();
     
-    JsonObject obj = new JsonObject().setString("foo", "wibble")
-                                     .setNumber("age", 1000);
+    JsonObject obj = new JsonObject().putString("foo", "wibble")
+                                     .putNumber("age", 1000);
                                      
     eb.send("some-address", obj);
     
@@ -1137,7 +1141,7 @@ Let's look at the methods on `ReadStream` and `WriteStream` in more detail:
 
 ## ReadStream
 
-`ReadStream` is implemented by `AsyncFile`, `HttpClientResponse`, `HttpServerRequest`, `WebSocket`, `NetSocket` and `SockJSSocket`.
+`ReadStream` is implemented by `HttpClientResponse`, `HttpServerRequest`, `WebSocket`, `NetSocket` and `SockJSSocket`.
 
 Functions:
 
@@ -1147,9 +1151,18 @@ Functions:
 * `exceptionHandler(handler)`: Will be called if an exception occurs on the `ReadStream`.
 * `endHandler(handler)`: Will be called when end of stream is reached. This might be when EOF is reached if the `ReadStream` represents a file, or when end of request is reached if it's an HTTP request, or when the connection is closed if it's a TCP socket.
 
+To access the `ReadStream` of a local file, you use the `getReadStream()` method declared in the `AsyncFile` interface.
+  
+    vertx.fileSystem().open("/tmp/dataStore", "r--------", new AsyncResultHandler<AsyncFile>() {
+        public void handle(AsyncResult<AsyncFile> result) {
+            ReadStream readStream = result.result.getReadStream();
+        }
+    });
+
+
 ## WriteStream
 
-`WriteStream` is implemented by `AsyncFile`, `HttpClientRequest`, `HttpServerResponse`, `WebSocket`, `NetSocket` and `SockJSSocket`
+`WriteStream` is implemented by , `HttpClientRequest`, `HttpServerResponse`, `WebSocket`, `NetSocket`, and `SockJSSocket`.
 
 Functions:
 
@@ -1158,6 +1171,14 @@ Functions:
 * `writeQueueFull()`: returns `true` if the write queue is considered full.
 * `exceptionHandler(handler)`: Will be called if an exception occurs on the `WriteStream`.
 * `drainHandler(handler)`: The handler will be called if the `WriteStream` is considered no longer full.
+
+To access the `WriteStream` of a local file, you use the `getWriteStream()` method declared in the `AsyncFile` interface.
+  
+    vertx.fileSystem().open("/tmp/dataSink", "w--------", new AsyncResultHandler<AsyncFile>() {
+        public void handle(AsyncResult<AsyncFile> result) {
+            WriteStream readStream = result.result.getWriteStream();
+        }
+    });
 
 ## Pump
 
