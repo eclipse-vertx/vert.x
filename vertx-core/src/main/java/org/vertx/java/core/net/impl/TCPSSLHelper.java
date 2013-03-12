@@ -96,6 +96,9 @@ public class TCPSSLHelper {
     if (soLinger != null) {
       options.put(prefix + "soLinger", soLinger);
     }
+    if (tcpKeepAlive != null) {
+      options.put(prefix + "keepAlive", tcpKeepAlive);
+    }
     if (trafficClass != null) {
       options.put(prefix + "trafficClass", trafficClass);
     }
