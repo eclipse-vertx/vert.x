@@ -42,9 +42,6 @@ public abstract class BaseMessage<T> extends Message<T> {
   protected BaseMessage(boolean send, String address, T body) {
     this.send = send;
     this.body = body;
-    if (address == null) {
-      throw new IllegalArgumentException("address must be specified");
-    }
     this.address = address;
     this.body = body;
   }

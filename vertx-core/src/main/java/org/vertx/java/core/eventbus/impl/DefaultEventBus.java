@@ -345,7 +345,7 @@ public class DefaultEventBus implements EventBus {
     } else if (message == null) {
       bm = new StringMessage(send, address, null);
     } else {
-      throw new IllegalArgumentException("Cannot send object of class " + message.getClass() + " on the event bus");
+      throw new IllegalArgumentException("Cannot send object of class " + message.getClass() + " on the event bus: " + message);
     }
     return bm;
   }
