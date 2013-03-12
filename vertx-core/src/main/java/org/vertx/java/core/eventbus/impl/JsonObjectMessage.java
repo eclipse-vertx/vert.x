@@ -26,13 +26,13 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class JsonObjectMessage extends BaseMessage<JsonObject> {
+public class JsonObjectMessage extends BaseMessage<JsonObject> {
 
   private static final Logger log = LoggerFactory.getLogger(JsonObjectMessage.class);
 
   private byte[] encoded;
 
-  JsonObjectMessage(boolean send, String address, JsonObject body) {
+  public JsonObjectMessage(boolean send, String address, JsonObject body) {
     super(send, address, body);
   }
 
@@ -85,10 +85,6 @@ class JsonObjectMessage extends BaseMessage<JsonObject> {
 
   protected byte type() {
     return MessageFactory.TYPE_JSON;
-  }
-
-  protected BaseMessage createReplyMessage(JsonObject reply) {
-    return new JsonObjectMessage(true, replyAddress, reply);
   }
 
 }

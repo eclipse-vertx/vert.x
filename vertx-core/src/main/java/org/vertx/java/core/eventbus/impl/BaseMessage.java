@@ -20,6 +20,8 @@ import org.jboss.netty.util.CharsetUtil;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.json.JsonArray;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetSocket;
@@ -47,11 +49,56 @@ public abstract class BaseMessage<T> extends Message<T> {
     this.body = body;
   }
 
-  public void reply(T message, Handler<Message<T>> replyHandler) {
-    if (bus != null && replyAddress != null) {
-      BaseMessage<T> replyMessage = createReplyMessage(message);
-      bus.sendReply(sender, replyMessage, replyHandler);
-    }
+  protected void doReply(Object message, Handler<Message> replyHandler) {
+    sendReply(DefaultEventBus.createMessage(true, replyAddress, message), replyHandler);
+  }
+
+  protected void doReply(JsonObject message, Handler<Message> replyHandler) {
+    sendReply(new JsonObjectMessage(true, replyAddress, message), replyHandler);
+  }
+
+  protected void doReply(JsonArray message, Handler<Message> replyHandler) {
+    sendReply(new JsonArrayMessage(true, replyAddress, message), replyHandler);
+  }
+
+  protected void doReply(String message, Handler<Message> replyHandler) {
+    sendReply(new StringMessage(true, replyAddress, message), replyHandler);
+  }
+
+  protected void doReply(Buffer message, Handler<Message> replyHandler) {
+    sendReply(new BufferMessage(true, replyAddress, message), replyHandler);
+  }
+
+  protected void doReply(byte[] message, Handler<Message> replyHandler) {
+    sendReply(new ByteArrayMessage(true, replyAddress, message), replyHandler);
+  }
+
+  protected void doReply(Integer message, Handler<Message> replyHandler) {
+    sendReply(new IntMessage(true, replyAddress, message), replyHandler);
+  }
+
+  protected void doReply(Long message, Handler<Message> replyHandler) {
+    sendReply(new LongMessage(true, replyAddress, message), replyHandler);
+  }
+
+  protected void doReply(Short message, Handler<Message> replyHandler) {
+    sendReply(new ShortMessage(true, replyAddress, message), replyHandler);
+  }
+
+  protected void doReply(Character message, Handler<Message> replyHandler) {
+    sendReply(new CharacterMessage(true, replyAddress, message), replyHandler);
+  }
+
+  protected void doReply(Boolean message, Handler<Message> replyHandler) {
+    sendReply(new BooleanMessage(true, replyAddress, message), replyHandler);
+  }
+
+  protected void doReply(Float message, Handler<Message> replyHandler) {
+    sendReply(new FloatMessage(true, replyAddress, message), replyHandler);
+  }
+
+  protected void doReply(Double message, Handler<Message> replyHandler) {
+    sendReply(new DoubleMessage(true, replyAddress, message), replyHandler);
   }
 
   protected BaseMessage(Buffer readBuff) {
@@ -121,6 +168,9 @@ public abstract class BaseMessage<T> extends Message<T> {
 
   protected abstract int getBodyLength();
 
-  protected abstract BaseMessage createReplyMessage(T reply);
-
+  private void sendReply(BaseMessage msg, Handler<Message> replyHandler) {
+    if (bus != null && replyAddress != null) {
+      bus.sendReply(sender, msg, replyHandler);
+    }
+  }
 }

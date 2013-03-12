@@ -65,8 +65,4 @@ class IntMessage extends BaseMessage<Integer> {
     return MessageFactory.TYPE_INT;
   }
 
-  protected BaseMessage createReplyMessage(Integer reply) {
-    return new IntMessage(true, replyAddress, reply);
-  }
-
 }

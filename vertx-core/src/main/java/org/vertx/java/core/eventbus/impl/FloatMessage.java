@@ -65,8 +65,4 @@ class FloatMessage extends BaseMessage<Float> {
     return MessageFactory.TYPE_FLOAT;
   }
 
-  protected BaseMessage createReplyMessage(Float reply) {
-    return new FloatMessage(true, replyAddress, reply);
-  }
-
 }

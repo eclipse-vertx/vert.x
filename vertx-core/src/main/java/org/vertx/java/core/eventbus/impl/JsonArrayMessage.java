@@ -87,8 +87,4 @@ class JsonArrayMessage extends BaseMessage<JsonArray> {
     return MessageFactory.TYPE_JSON;
   }
 
-  protected BaseMessage createReplyMessage(JsonArray reply) {
-    return new JsonArrayMessage(true, replyAddress, reply);
-  }
-
 }

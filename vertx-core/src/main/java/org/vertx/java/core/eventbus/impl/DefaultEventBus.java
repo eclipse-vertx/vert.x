@@ -314,7 +314,7 @@ public class DefaultEventBus implements EventBus {
     sendOrPub(dest, message, replyHandler);
   }
 
-  private BaseMessage createMessage(boolean send, String address, Object message) {
+  static BaseMessage createMessage(boolean send, String address, Object message) {
     BaseMessage bm;
     if (message instanceof String) {
       bm = new StringMessage(send, address, (String)message);
@@ -342,6 +342,8 @@ public class DefaultEventBus implements EventBus {
       bm = new CharacterMessage(send, address, (Character)message);
     } else if (message instanceof Byte) {
       bm = new ByteMessage(send, address, (Byte)message);
+    } else if (message == null) {
+      bm = new StringMessage(send, address, null);
     } else {
       throw new IllegalArgumentException("Cannot send object of class " + message.getClass() + " on the event bus");
     }

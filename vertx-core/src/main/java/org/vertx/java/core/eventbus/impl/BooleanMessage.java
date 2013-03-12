@@ -66,12 +66,4 @@ class BooleanMessage extends BaseMessage<Boolean> {
     return MessageFactory.TYPE_BOOLEAN;
   }
 
-  protected void handleReply(Boolean reply, Handler<Message<Boolean>> replyHandler) {
-    bus.send(replyAddress, reply, replyHandler);
-  }
-
-  protected BaseMessage createReplyMessage(Boolean reply) {
-    return new BooleanMessage(true, replyAddress, reply);
-  }
-
 }

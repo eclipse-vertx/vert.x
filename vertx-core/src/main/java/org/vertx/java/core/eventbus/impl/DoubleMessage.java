@@ -65,8 +65,4 @@ class DoubleMessage extends BaseMessage<Double> {
     return MessageFactory.TYPE_DOUBLE;
   }
 
-  protected BaseMessage createReplyMessage(Double reply) {
-    return new DoubleMessage(true, replyAddress, reply);
-  }
-
 }

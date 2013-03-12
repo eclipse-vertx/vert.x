@@ -65,8 +65,4 @@ class ShortMessage extends BaseMessage<Short> {
     return MessageFactory.TYPE_SHORT;
   }
 
-  protected BaseMessage createReplyMessage(Short reply) {
-    return new ShortMessage(true, replyAddress, reply);
-  }
-
 }

@@ -79,8 +79,4 @@ class ByteArrayMessage extends BaseMessage<byte[]> {
     return MessageFactory.TYPE_BYTEARRAY;
   }
 
-  protected BaseMessage createReplyMessage(byte[] reply) {
-    return new ByteArrayMessage(true, replyAddress, reply);
-  }
-
 }
