@@ -48,7 +48,7 @@
 
     <br>
 
-    <div data-bind="visible: sessionID() != ''">
+    <div data-bind="visible: loggedIn()">
       <h3>Logged in as</h3>
 
       <h3><strong data-bind="text: username"></strong></h3>
@@ -174,7 +174,7 @@
     $('.tabs').tabs();
   })
 </script>
-<script src='http://cdn.sockjs.org/sockjs-0.3.4.min.js'></script>
+<script src='js3rdparty/sockjs-min-0.3.4.js'></script>
 <script src='js3rdparty/knockout-2.0.0.js'></script>
 <script src='js/vertxbus.js'></script>
 <script src='js/client_app.js'></script>

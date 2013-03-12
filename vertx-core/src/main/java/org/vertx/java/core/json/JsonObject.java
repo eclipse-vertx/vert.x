@@ -99,6 +99,17 @@ public class JsonObject extends JsonElement {
     return this;
   }
 
+  public JsonObject putValue(String fieldName, Object value) {
+    if (value instanceof JsonObject) {
+      putObject(fieldName, (JsonObject)value);
+    } else if (value instanceof JsonArray) {
+      putArray(fieldName, (JsonArray)value);
+    } else {
+      map.put(fieldName, value);
+    }
+    return this;
+  }
+
   public String getString(String fieldName) {
     return (String) map.get(fieldName);
   }
@@ -118,10 +129,10 @@ public class JsonObject extends JsonElement {
   public JsonElement getElement(String fieldName) {
     Object element = map.get(fieldName);
     if (element instanceof Map<?,?>){
-      return this.getObject(fieldName);
+      return getObject(fieldName);
     }
     if (element instanceof List<?>){
-      return this.getArray(fieldName);
+      return getArray(fieldName);
     }
     throw new ClassCastException();
   }
@@ -186,6 +197,18 @@ public class JsonObject extends JsonElement {
 
   public Set<String> getFieldNames() {
     return map.keySet();
+  }
+
+  public Object getValue(String fieldName) {
+    Object obj = map.get(fieldName);
+    if (obj != null) {
+      if (obj instanceof Map) {
+        obj = new JsonObject((Map)obj);
+      } else if (obj instanceof List) {
+        obj = new JsonArray((List)obj);
+      }
+    }
+    return obj;
   }
 
   @SuppressWarnings("unchecked")

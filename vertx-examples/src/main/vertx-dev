@@ -65,7 +65,8 @@ cd "`dirname \"$PRG\"`/../../.."
 VERTX_HOME="`pwd -P`"
 cd "$SAVED"
 
-CLASSPATH=$VERTX_HOME/vertx-platform/src/main/resources:$VERTX_HOME/extralibs/*:$VERTX_HOME/vertx-core/build/libs/*:\
+CLASSPATH=$VERTX_HOME/vertx-platform/src/main/resources:\
+$VERTX_HOME/extralibs/*:$VERTX_HOME/vertx-core/build/libs/*:\
 $VERTX_HOME/vertx-platform/build/libs/*:\
 $VERTX_HOME/vertx-core/build/deps/compile/*
 
@@ -168,6 +169,6 @@ function splitJvmOpts() {
 eval splitJvmOpts $DEFAULT_JVM_OPTS $JAVA_OPTS $VERTX_OPTS
 
 exec "$JAVACMD" "${JVM_OPTS[@]}" -Dpython.options.internalTablesImpl=weak\
- -Djava.util.logging.config.file=$VERTX_HOME/src/dist/conf/logging.properties\
+ -Djava.util.logging.config.file=$VERTX_HOME/vertx-platform/src/main/resources/logging.properties\
  -Dvertx.home=.\
  -classpath "$CLASSPATH" org.vertx.java.platform.impl.cli.Starter "$@"

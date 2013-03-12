@@ -82,13 +82,25 @@ public class DefaultEventBus implements EventBus {
     this.server = setServer();
     ManagementRegistry.registerEventBus(serverID);
   }
+
+  public void publish(String address, Object message) {
+    sendOrPub(createMessage(false, address, message), null);
+  }
+
+  public void send(String address, Object message, final Handler<Message> replyHandler) {
+    sendOrPub(createMessage(true, address, message), replyHandler);
+  }
+
+  public void send(String address, Object message) {
+    sendOrPub(createMessage(true, address, message), null);
+  }
   
   public void send(String address, JsonObject message, final Handler<Message<JsonObject>> replyHandler) {
     sendOrPub(new JsonObjectMessage(true, address, message), replyHandler);
   }
 
   public void send(String address, JsonObject message) {
-    send(address, message, null);
+    sendOrPub(new JsonObjectMessage(true, address, message), null);
   }
 
   public void send(String address, JsonArray message, final Handler<Message<JsonArray>> replyHandler) {
@@ -96,7 +108,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, JsonArray message) {
-    send(address, message, null);
+    sendOrPub(new JsonArrayMessage(true, address, message), null);
   }
 
   public void send(String address, Buffer message, final Handler<Message<Buffer>> replyHandler) {
@@ -104,7 +116,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, Buffer message) {
-    send(address, message, null);
+    sendOrPub(new BufferMessage(true, address, message), null);
   }
 
   public void send(String address, byte[] message, final Handler<Message<byte[]>> replyHandler) {
@@ -112,7 +124,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, byte[] message) {
-    send(address, message, null);
+    sendOrPub(new ByteArrayMessage(true, address, message), null);
   }
 
   public void send(String address, String message, final Handler<Message<String>> replyHandler) {
@@ -120,7 +132,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, String message) {
-    send(address, message, null);
+    sendOrPub(new StringMessage(true, address, message), null);
   }
 
   public void send(String address, Integer message, final Handler<Message<Integer>> replyHandler) {
@@ -128,7 +140,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, Integer message) {
-    send(address, message, null);
+    sendOrPub(new IntMessage(true, address, message), null);
   }
 
   public void send(String address, Long message, final Handler<Message<Long>> replyHandler) {
@@ -136,7 +148,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, Long message) {
-    send(address, message, null);
+    sendOrPub(new LongMessage(true, address, message), null);
   }
 
   public void send(String address, Float message, final Handler<Message<Float>> replyHandler) {
@@ -144,7 +156,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, Float message) {
-    send(address, message, null);
+    sendOrPub(new FloatMessage(true, address, message), null);
   }
 
   public void send(String address, Double message, final Handler<Message<Double>> replyHandler) {
@@ -152,7 +164,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, Double message) {
-    send(address, message, null);
+    sendOrPub(new DoubleMessage(true, address, message), null);
   }
 
   public void send(String address, Boolean message, final Handler<Message<Boolean>> replyHandler) {
@@ -160,7 +172,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, Boolean message) {
-    send(address, message, null);
+    sendOrPub(new BooleanMessage(true, address, message), null);
   }
 
   public void send(String address, Short message, final Handler<Message<Short>> replyHandler) {
@@ -168,7 +180,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, Short message) {
-    send(address, message, null);
+    sendOrPub(new ShortMessage(true, address, message), null);
   }
 
   public void send(String address, Character message, final Handler<Message<Character>> replyHandler) {
@@ -176,7 +188,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, Character message) {
-    send(address, message, null);
+    sendOrPub(new CharacterMessage(true, address, message), null);
   }
 
   public void send(String address, Byte message, final Handler<Message<Byte>> replyHandler) {
@@ -184,7 +196,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public void send(String address, Byte message) {
-    send(address, message, null);
+    sendOrPub(new ByteMessage(true, address, message), null);
   }
 
   public void publish(String address, JsonObject message) {
@@ -300,6 +312,40 @@ public class DefaultEventBus implements EventBus {
 
   void sendReply(final ServerID dest, final BaseMessage message, final Handler replyHandler) {
     sendOrPub(dest, message, replyHandler);
+  }
+
+  private BaseMessage createMessage(boolean send, String address, Object message) {
+    BaseMessage bm;
+    if (message instanceof String) {
+      bm = new StringMessage(send, address, (String)message);
+    } else if (message instanceof Buffer) {
+      bm = new BufferMessage(send, address, (Buffer)message);
+    } else if (message instanceof JsonObject) {
+      bm = new JsonObjectMessage(send, address, (JsonObject)message);
+    } else if (message instanceof JsonArray) {
+      bm = new JsonArrayMessage(send, address, (JsonArray)message);
+    } else if (message instanceof byte[]) {
+      bm = new ByteArrayMessage(send, address, (byte[])message);
+    } else if (message instanceof Integer) {
+      bm = new IntMessage(send, address, (Integer)message);
+    } else if (message instanceof Long) {
+      bm = new LongMessage(send, address, (Long)message);
+    } else if (message instanceof Float) {
+      bm = new FloatMessage(send, address, (Float)message);
+    } else if (message instanceof Double) {
+      bm = new DoubleMessage(send, address, (Double)message);
+    } else if (message instanceof Boolean) {
+      bm = new BooleanMessage(send, address, (Boolean)message);
+    } else if (message instanceof Short) {
+      bm = new ShortMessage(send, address, (Short)message);
+    } else if (message instanceof Character) {
+      bm = new CharacterMessage(send, address, (Character)message);
+    } else if (message instanceof Byte) {
+      bm = new ByteMessage(send, address, (Byte)message);
+    } else {
+      throw new IllegalArgumentException("Cannot send object of class " + message.getClass() + " on the event bus");
+    }
+    return bm;
   }
 
   private NetServer setServer() {
@@ -575,17 +621,17 @@ public class DefaultEventBus implements EventBus {
 
     holder.context.execute(new Runnable() {
       public void run() {
-	      // Need to check handler is still there - the handler might have been removed after the message were sent but
-	      // before it was received
-	      try {
-	        if (!holder.removed) {
-	          holder.handler.handle(copied);
-	        }
-	      } finally {
-	        if (holder.replyHandler) {
-	          unregisterHandler(msg.address, holder.handler);
-	        }
-	      }
+        // Need to check handler is still there - the handler might have been removed after the message were sent but
+        // before it was received
+        try {
+          if (!holder.removed) {
+            holder.handler.handle(copied);
+          }
+        } finally {
+          if (holder.replyHandler) {
+            unregisterHandler(msg.address, holder.handler);
+          }
+        }
       }
     });
   }

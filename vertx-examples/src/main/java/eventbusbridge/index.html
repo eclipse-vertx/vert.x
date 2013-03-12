@@ -81,7 +81,7 @@
   function publish(address,  message) {
     if (eb) {
       var json = {text: message};
-      eb.publish(address, json);
+      eb.publish(address, 123.2);
       $('#sent').append($("<code>").text("Address:" + address + " Message:" + message));
       $('#sent').append($("</code><br>"));
     }
@@ -90,7 +90,7 @@
   function subscribe(address) {
     if (eb) {
       eb.registerHandler(address, function(msg, replyTo) {
-        $('#received').append("Address:" + address + " Message:" + msg.text + "<br>");
+        $('#received').append("Address:" + address + " Message:" + msg + "<br>");
       });
       $('#subscribed').append($("<code>").text("Address:" + address));
       $('#subscribed').append($("</code><br>"));

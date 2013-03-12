@@ -43,7 +43,7 @@ allprojects {
 
   configurations {
     platform
-  }
+  } 
 }
 
 subprojects {
@@ -54,7 +54,7 @@ subprojects {
 
   defaultTasks = ['classes']
   group = rootProject.group
-
+  
   repositories {
     if (System.getenv("JENKINS_HOME") == null) {
       mavenLocal()
@@ -229,3 +229,6 @@ task release(dependsOn: ['clean', 'test', 'dist']) {
   group = 'vert.x'
   description 'Clean and fully test the current version before creating the distribution'
 }
+
+
+

@@ -281,7 +281,11 @@ class Session extends SockJSSocket implements Shareable {
       if (dataHandler != null) {
         for (String msg : msgArr) {
           if (!paused) {
-            dataHandler.handle(new Buffer(msg));
+            try {
+              dataHandler.handle(new Buffer(msg));
+            } catch (Throwable t) {
+              log.error("Unhandle exception", t);
+            }
           } else {
             pendingReads.add(msg);
           }
