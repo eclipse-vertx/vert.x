@@ -30,7 +30,7 @@ import org.vertx.java.core.net.impl.ServerID;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class BaseMessage<T> extends Message<T> {
+public abstract class BaseMessage<U> extends Message<U> {
 
   private static final Logger log = LoggerFactory.getLogger(BaseMessage.class);
 
@@ -39,62 +39,62 @@ public abstract class BaseMessage<T> extends Message<T> {
   protected String address;
   boolean send; // Is it a send or a publish?
 
-  protected BaseMessage(boolean send, String address, T body) {
+  protected BaseMessage(boolean send, String address, U body) {
     this.send = send;
     this.body = body;
     this.address = address;
     this.body = body;
   }
 
-  protected void doReply(Object message, Handler<Message> replyHandler) {
+  protected <T> void doReply(Object message, Handler<Message<T>> replyHandler) {
     sendReply(DefaultEventBus.createMessage(true, replyAddress, message), replyHandler);
   }
 
-  protected void doReply(JsonObject message, Handler<Message> replyHandler) {
+  protected <T> void doReply(JsonObject message, Handler<Message<T>> replyHandler) {
     sendReply(new JsonObjectMessage(true, replyAddress, message), replyHandler);
   }
 
-  protected void doReply(JsonArray message, Handler<Message> replyHandler) {
+  protected <T> void doReply(JsonArray message, Handler<Message<T>> replyHandler) {
     sendReply(new JsonArrayMessage(true, replyAddress, message), replyHandler);
   }
 
-  protected void doReply(String message, Handler<Message> replyHandler) {
+  protected <T> void doReply(String message, Handler<Message<T>> replyHandler) {
     sendReply(new StringMessage(true, replyAddress, message), replyHandler);
   }
 
-  protected void doReply(Buffer message, Handler<Message> replyHandler) {
+  protected <T> void doReply(Buffer message, Handler<Message<T>> replyHandler) {
     sendReply(new BufferMessage(true, replyAddress, message), replyHandler);
   }
 
-  protected void doReply(byte[] message, Handler<Message> replyHandler) {
+  protected <T> void doReply(byte[] message, Handler<Message<T>> replyHandler) {
     sendReply(new ByteArrayMessage(true, replyAddress, message), replyHandler);
   }
 
-  protected void doReply(Integer message, Handler<Message> replyHandler) {
+  protected <T> void doReply(Integer message, Handler<Message<T>> replyHandler) {
     sendReply(new IntMessage(true, replyAddress, message), replyHandler);
   }
 
-  protected void doReply(Long message, Handler<Message> replyHandler) {
+  protected <T> void doReply(Long message, Handler<Message<T>> replyHandler) {
     sendReply(new LongMessage(true, replyAddress, message), replyHandler);
   }
 
-  protected void doReply(Short message, Handler<Message> replyHandler) {
+  protected <T> void doReply(Short message, Handler<Message<T>> replyHandler) {
     sendReply(new ShortMessage(true, replyAddress, message), replyHandler);
   }
 
-  protected void doReply(Character message, Handler<Message> replyHandler) {
-    sendReply(new CharacterMessage(true, replyAddress, message), replyHandler);
+  protected <T> void doReply(Character message, Handler<Message<T>> replyHandler) {
+     sendReply(new CharacterMessage(true, replyAddress, message), replyHandler);
   }
 
-  protected void doReply(Boolean message, Handler<Message> replyHandler) {
+  protected <T> void doReply(Boolean message, Handler<Message<T>> replyHandler) {
     sendReply(new BooleanMessage(true, replyAddress, message), replyHandler);
   }
 
-  protected void doReply(Float message, Handler<Message> replyHandler) {
+  protected <T> void doReply(Float message, Handler<Message<T>> replyHandler) {
     sendReply(new FloatMessage(true, replyAddress, message), replyHandler);
   }
 
-  protected void doReply(Double message, Handler<Message> replyHandler) {
+  protected <T> void doReply(Double message, Handler<Message<T>> replyHandler) {
     sendReply(new DoubleMessage(true, replyAddress, message), replyHandler);
   }
 
@@ -157,7 +157,7 @@ public abstract class BaseMessage<T> extends Message<T> {
 
   protected abstract byte type();
 
-  protected abstract Message<T> copy();
+  protected abstract Message<U> copy();
 
   protected abstract void readBody(int pos, Buffer readBuff);
 
@@ -165,7 +165,7 @@ public abstract class BaseMessage<T> extends Message<T> {
 
   protected abstract int getBodyLength();
 
-  private void sendReply(BaseMessage msg, Handler<Message> replyHandler) {
+  private <T> void sendReply(BaseMessage msg, Handler<Message<T>> replyHandler) {
     if (bus != null && replyAddress != null) {
       bus.sendReply(sender, msg, replyHandler);
     }

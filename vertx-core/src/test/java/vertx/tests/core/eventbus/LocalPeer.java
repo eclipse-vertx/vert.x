@@ -212,5 +212,36 @@ public class LocalPeer extends EventBusAppBase {
     );
   }
 
+  public void testReplyDifferentTypeInitialise() {
+    final String address = UUID.randomUUID().toString();
+    Set<String> addresses = vertx.sharedData().getSet("addresses");
+    addresses.add(address);
+    eb.registerHandler(address, new Handler<Message<Buffer>>() {
+          boolean handled = false;
+
+          public void handle(Message<Buffer> msg) {
+            tu.checkThread();
+            tu.azzert(!handled);
+            tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body));
+            eb.unregisterHandler(address, this);
+            handled = true;
+            msg.reply("reply" + address);
+          }
+        }, new AsyncResultHandler<Void>() {
+          public void handle(AsyncResult<Void> event) {
+            if (event.succeeded()) {
+              tu.testComplete();
+            } else {
+              tu.azzert(false, "Failed to register");
+            }
+          }
+        }
+    );
+  }
+
+  public void testReplyUntypedHandlerInitialise() {
+    testReplyDifferentTypeInitialise();
+  }
+
 
 }

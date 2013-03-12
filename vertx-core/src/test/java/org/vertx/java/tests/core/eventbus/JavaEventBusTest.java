@@ -105,6 +105,16 @@ public class JavaEventBusTest extends TestBase {
   }
 
   @Test
+  public void testReplyDifferentType() {
+    runPeerTest(getMethodName());
+  }
+
+  @Test
+  public void testReplyUntypedHandler() {
+    runPeerTest(getMethodName());
+  }
+
+  @Test
   public void testLocal1() {
     startTest(getMethodName());
   }
