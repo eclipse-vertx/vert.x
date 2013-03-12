@@ -65,8 +65,4 @@ class CharacterMessage extends BaseMessage<Character> {
     return MessageFactory.TYPE_CHARACTER;
   }
 
-  protected BaseMessage createReplyMessage(Character reply) {
-    return new CharacterMessage(true, replyAddress, reply);
-  }
-
 }

@@ -73,8 +73,4 @@ class BufferMessage extends BaseMessage<Buffer> {
     return MessageFactory.TYPE_BUFFER;
   }
 
-  protected BaseMessage createReplyMessage(Buffer reply) {
-    return new BufferMessage(true, replyAddress, reply);
-  }
-
 }

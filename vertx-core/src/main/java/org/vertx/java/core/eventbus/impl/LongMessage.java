@@ -65,8 +65,4 @@ class LongMessage extends BaseMessage<Long> {
     return MessageFactory.TYPE_LONG;
   }
 
-  protected BaseMessage createReplyMessage(Long reply) {
-    return new LongMessage(true, replyAddress, reply);
-  }
-
 }

@@ -79,8 +79,4 @@ class StringMessage extends BaseMessage<String> {
     return MessageFactory.TYPE_STRING;
   }
 
-  protected BaseMessage createReplyMessage(String reply) {
-    return new StringMessage(true, replyAddress, reply);
-  }
-
 }

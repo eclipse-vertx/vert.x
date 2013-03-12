@@ -65,8 +65,4 @@ class ByteMessage extends BaseMessage<Byte> {
     return MessageFactory.TYPE_BYTE;
   }
 
-  protected BaseMessage createReplyMessage(Byte reply) {
-    return new ByteMessage(true, replyAddress, reply);
-  }
-
 }
