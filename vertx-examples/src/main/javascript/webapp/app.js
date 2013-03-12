@@ -58,7 +58,7 @@ var webServerConf = {
 
 // Deploy a MongoDB persistor module
 
-vertx.deployModule('vertx.mongo-persistor-v1.2', null, 1, function() {
+vertx.deployModule('vertx~mongo-persistor~1.2', null, 1, function() {
 
   // And when it's deployed run a script to load it with some reference
   // data for the demo
@@ -67,8 +67,8 @@ vertx.deployModule('vertx.mongo-persistor-v1.2', null, 1, function() {
 
 // Deploy an auth manager to handle the authentication
 
-vertx.deployModule('vertx.auth-mgr-v1.1');
+vertx.deployModule('vertx~auth-mgr~1.1');
 
 // Start the web server, with the config we defined above
 
-vertx.deployModule('vertx.web-server-v1.0', webServerConf);
+vertx.deployModule('vertx~web-server~1.0', webServerConf);

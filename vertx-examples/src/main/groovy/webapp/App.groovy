@@ -71,7 +71,7 @@ container.with {
 
   // Deploy a MongoDB persistor module
 
-  deployModule('vertx.mongo-persistor-v1.2') {
+  deployModule('vertx~mongo-persistor~1.2') {
 
     // And when it's deployed run a script to load it with some reference
     // data for the demo
@@ -80,10 +80,10 @@ container.with {
 
   // Deploy an auth manager to handle the authentication
 
-  deployModule('vertx.auth-mgr-v1.1')
+  deployModule('vertx~auth-mgr~1.1')
 
   // Start the web server, with the config we defined above
 
-  deployModule('vertx.web-server-v1.0', webServerConf)
+  deployModule('vertx~web-server~1.0', webServerConf)
 
 }

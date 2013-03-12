@@ -35,9 +35,22 @@ var vertx = vertx || {};
     var handlerMap = {};
     var replyHandlers = {};
     var state = vertx.EventBus.CONNECTING;
+    var sessionID = null;
   
     that.onopen = null;
     that.onclose = null;
+
+    that.login = function(username, password, replyHandler) {
+      sendOrPub("send", 'vertx.basicauthmanager.login', {username: username, password: password}, function(reply) {
+        if (reply.status === 'ok') {
+          that.sessionID = reply.sessionID;
+        }
+        if (replyHandler) {
+          delete reply.sessionID;
+          replyHandler(reply)
+        }
+      });
+    }
   
     that.send = function(address, message, replyHandler) {
       sendOrPub("send", address, message, replyHandler)
@@ -140,12 +153,14 @@ var vertx = vertx || {};
   
     function sendOrPub(sendOrPub, address, message, replyHandler) {
       checkSpecified("address", 'string', address);
-      checkSpecified("message", 'object', message);
       checkSpecified("replyHandler", 'function', replyHandler, true);
       checkOpen();
       var envelope = { type : sendOrPub,
                        address: address,
                        body: message };
+      if (that.sessionID) {
+        envelope.sessionID = that.sessionID;
+      }
       if (replyHandler) {
         var replyAddress = makeUUID();
         envelope.replyAddress = replyAddress;

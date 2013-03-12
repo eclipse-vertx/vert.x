@@ -70,7 +70,7 @@
   });
 
   that.orderReady = ko.computed(function() {
-    var or =  that.items().length > 0 && that.sessionID() != '';
+    var or =  that.items().length > 0 && that.loggedIn;
     return or;
   });
 
@@ -84,7 +84,6 @@
 
     var orderItems = ko.toJS(that.items);
     var orderMsg = {
-      sessionID: that.sessionID(),
       action: "save",
       collection: "orders",
       document: {
@@ -106,13 +105,13 @@
 
   that.username = ko.observable('');
   that.password = ko.observable('');
-  that.sessionID = ko.observable('');
+  that.loggedIn = ko.observable(false);
 
   that.login = function() {
     if (that.username().trim() != '' && that.password().trim() != '') {
-      eb.send('vertx.basicauthmanager.login', {username: that.username(), password: that.password()}, function (reply) {
+      eb.login(that.username(), that.password(), function (reply) {
         if (reply.status === 'ok') {
-          that.sessionID(reply.sessionID);
+          that.loggedIn(true);
         } else {
           alert('invalid login');
         }

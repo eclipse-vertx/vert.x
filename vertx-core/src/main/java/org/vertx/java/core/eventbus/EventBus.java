@@ -66,6 +66,21 @@ public interface EventBus {
   void close(Handler<Void> doneHandler);
 
   /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   */
+  void send(String address, Object message);
+
+  /**
+   * Send a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
+  void send(String address, Object message, Handler<Message> replyHandler);
+
+  /**
    * Send a JSON object as a message
    * @param address The address to send it to
    * @param message The message
@@ -259,7 +274,14 @@ public interface EventBus {
    * @param message The message
    */
   void send(String address, Byte message);
-  
+
+  /**
+   * Publish a message
+   * @param address The address to publish it to
+   * @param message The message
+   */
+  void publish(String address, Object message);
+
   /**
    * Publish a JSON object as a message
    * @param address The address to publish it to

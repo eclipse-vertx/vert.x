@@ -20,7 +20,7 @@ function CartController($scope, $filter) {
   $scope.orderSubmitted = false;
   $scope.username = '';
   $scope.password = '';
-  $scope.sessionID = '';
+  $scope.loggedIn = false;
 
   var eb = new vertx.EventBus(window.location.protocol + '//' + window.location.hostname + ':' + window.location.port + '/eventbus');
 
@@ -72,7 +72,7 @@ function CartController($scope, $filter) {
   };
 
   $scope.orderReady = function() {
-    return $scope.items.length > 0 && $scope.sessionID != '';
+    return $scope.items.length > 0 && $scope.loggedIn;
   };
 
   $scope.submitOrder = function() {
@@ -82,7 +82,6 @@ function CartController($scope, $filter) {
 
     var orderItems = $filter('json')($scope.items);
     var orderMsg = {
-      sessionID: $scope.sessionID,
       action: "save",
       collection: "orders",
       document: {
@@ -109,7 +108,7 @@ function CartController($scope, $filter) {
     if ($scope.username.trim() != '' && $scope.password.trim() != '') {
       eb.send('vertx.basicauthmanager.login', {username: $scope.username, password: $scope.password}, function (reply) {
         if (reply.status === 'ok') {
-          $scope.sessionID = reply.sessionID;
+          $scope.loggedIn = true;
           $scope.$apply();
         } else {
           alert('invalid login');

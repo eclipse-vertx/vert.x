@@ -52,3 +52,4 @@ test {
 
   testLogging { exceptionFormat "full" }
 }
+

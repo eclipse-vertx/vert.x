@@ -139,12 +139,12 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   public void deployModule(final String moduleName, final JsonObject config,
                            final int instances, final Handler<String> doneHandler) {
-    final ModuleIdentifier modID;
+     final ModuleIdentifier modID;
     try {
       modID = new ModuleIdentifier(moduleName);
-    } catch (IllegalArgumentException e) {
+    } catch (RuntimeException e) {
       log.error(e.getMessage());
-      doneHandler.handle(null);
+      callDoneHandler(doneHandler, null);
       return;
     }
     final File currentModDir = getDeploymentModDir();
@@ -296,7 +296,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     if (unzipModule(modID, new ModuleZipInfo(false, zipFileName), false)) {
       deployModule(modID.toString(), config, instances, doneHandler);
     } else {
-      doneHandler.handle(null);
+      callDoneHandler(doneHandler, null);
     }
   }
 
@@ -406,9 +406,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       public void handle(AsyncResult<Void> ar) {
         if (ar.failed()) {
           log.error("Failed to deploy verticle", ar.exception);
-          if (doneHandler != null) {
-            doneHandler.handle(null);
-          }
+          callDoneHandler(doneHandler, null);
         }
       }
     };
