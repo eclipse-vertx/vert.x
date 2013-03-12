@@ -169,7 +169,7 @@ public abstract class Message<T>  {
    * The same as {@code reply(JsonObject message)} but you can specify handler for the reply - i.e.
    * to receive the reply to the reply.
    */
-  public void reply(Object message, Handler<Message> replyHandler) {
+  public <T> void reply(Object message, Handler<Message<T>> replyHandler) {
     doReply(message, replyHandler);
   }
 
@@ -177,7 +177,7 @@ public abstract class Message<T>  {
    * The same as {@code reply(JsonObject message)} but you can specify handler for the reply - i.e.
    * to receive the reply to the reply.
    */
-  public void reply(JsonObject message, Handler<Message> replyHandler) {
+  public <T> void reply(JsonObject message, Handler<Message<T>> replyHandler) {
     doReply(message, replyHandler);
   }
 
@@ -185,7 +185,7 @@ public abstract class Message<T>  {
    * The same as {@code reply(JsonArray message)} but you can specify handler for the reply - i.e.
    * to receive the reply to the reply.
    */
-  public void reply(JsonArray message, Handler<Message> replyHandler) {
+  public <T> void reply(JsonArray message, Handler<Message<T>> replyHandler) {
     doReply(message, replyHandler);
   }
 
@@ -193,7 +193,7 @@ public abstract class Message<T>  {
    * The same as {@code reply(String message)} but you can specify handler for the reply - i.e.
    * to receive the reply to the reply.
    */
-  public void reply(String message, Handler<Message> replyHandler) {
+  public <T> void reply(String message, Handler<Message<T>> replyHandler) {
     doReply(message, replyHandler);
   }
 
@@ -201,7 +201,7 @@ public abstract class Message<T>  {
    * The same as {@code reply(Buffer message)} but you can specify handler for the reply - i.e.
    * to receive the reply to the reply.
    */
-  public void reply(Buffer message, Handler<Message> replyHandler) {
+  public <T> void reply(Buffer message, Handler<Message<T>> replyHandler) {
     doReply(message, replyHandler);
   }
 
@@ -209,7 +209,7 @@ public abstract class Message<T>  {
    * The same as {@code reply(byte[] message)} but you can specify handler for the reply - i.e.
    * to receive the reply to the reply.
    */
-  public void reply(byte[] message, Handler<Message> replyHandler) {
+  public <T> void reply(byte[] message, Handler<Message<T>> replyHandler) {
     doReply(message, replyHandler);
   }
 
@@ -217,7 +217,7 @@ public abstract class Message<T>  {
    * The same as {@code reply(Integer message)} but you can specify handler for the reply - i.e.
    * to receive the reply to the reply.
    */
-  public void reply(Integer message, Handler<Message> replyHandler) {
+  public <T> void reply(Integer message, Handler<Message<T>> replyHandler) {
     doReply(message, replyHandler);
   }
 
@@ -225,7 +225,7 @@ public abstract class Message<T>  {
    * The same as {@code reply(Long message)} but you can specify handler for the reply - i.e.
    * to receive the reply to the reply.
    */
-  public void reply(Long message, Handler<Message> replyHandler) {
+  public <T> void reply(Long message, Handler<Message<T>> replyHandler) {
     doReply(message, replyHandler);
   }
 
@@ -233,7 +233,7 @@ public abstract class Message<T>  {
    * The same as {@code reply(Short message)} but you can specify handler for the reply - i.e.
    * to receive the reply to the reply.
    */
-  public void reply(Short message, Handler<Message> replyHandler) {
+  public <T> void reply(Short message, Handler<Message<T>> replyHandler) {
     doReply(message, replyHandler);
   }
 
@@ -241,7 +241,7 @@ public abstract class Message<T>  {
    * The same as {@code reply(Character message)} but you can specify handler for the reply - i.e.
    * to receive the reply to the reply.
    */
-  public void reply(Character message, Handler<Message> replyHandler) {
+  public <T> void reply(Character message, Handler<Message<T>> replyHandler) {
     doReply(message, replyHandler);
   }
 
@@ -249,7 +249,7 @@ public abstract class Message<T>  {
    * The same as {@code reply(Boolean message)} but you can specify handler for the reply - i.e.
    * to receive the reply to the reply.
    */
-  public void reply(Boolean message, Handler<Message> replyHandler) {
+  public <T> void reply(Boolean message, Handler<Message<T>> replyHandler) {
     doReply(message, replyHandler);
   }
 
@@ -257,7 +257,7 @@ public abstract class Message<T>  {
    * The same as {@code reply(Float message)} but you can specify handler for the reply - i.e.
    * to receive the reply to the reply.
    */
-  public void reply(Float message, Handler<Message> replyHandler) {
+  public <T> void reply(Float message, Handler<Message<T>> replyHandler) {
     doReply(message, replyHandler);
   }
 
@@ -265,34 +265,34 @@ public abstract class Message<T>  {
    * The same as {@code reply(Double message)} but you can specify handler for the reply - i.e.
    * to receive the reply to the reply.
    */
-  public void reply(Double message, Handler<Message> replyHandler) {
+  public <T> void reply(Double message, Handler<Message<T>> replyHandler) {
     doReply(message, replyHandler);
   }
 
-  protected abstract void doReply(Object message, Handler<Message> replyHandler);
+  protected abstract <T> void doReply(Object message, Handler<Message<T>> replyHandler);
 
-  protected abstract void doReply(JsonObject message, Handler<Message> replyHandler);
+  protected abstract <T> void doReply(JsonObject message, Handler<Message<T>> replyHandler);
 
-  protected abstract void doReply(JsonArray message, Handler<Message> replyHandler);
+  protected abstract <T> void doReply(JsonArray message, Handler<Message<T>> replyHandler);
 
-  protected abstract void doReply(String message, Handler<Message> replyHandler);
+  protected abstract <T> void doReply(String message, Handler<Message<T>> replyHandler);
 
-  protected abstract void doReply(Buffer message, Handler<Message> replyHandler);
+  protected abstract <T> void doReply(Buffer message, Handler<Message<T>> replyHandler);
 
-  protected abstract void doReply(byte[] message, Handler<Message> replyHandler);
+  protected abstract <T> void doReply(byte[] message, Handler<Message<T>> replyHandler);
 
-  protected abstract void doReply(Integer message, Handler<Message> replyHandler);
+  protected abstract <T> void doReply(Integer message, Handler<Message<T>> replyHandler);
 
-  protected abstract void doReply(Long message, Handler<Message> replyHandler);
+  protected abstract <T> void doReply(Long message, Handler<Message<T>> replyHandler);
 
-  protected abstract void doReply(Short message, Handler<Message> replyHandler);
+  protected abstract <T> void doReply(Short message, Handler<Message<T>> replyHandler);
 
-  protected abstract void doReply(Character message, Handler<Message> replyHandler);
+  protected abstract <T> void doReply(Character message, Handler<Message<T>> replyHandler);
 
-  protected abstract void doReply(Boolean message, Handler<Message> replyHandler);
+  protected abstract <T> void doReply(Boolean message, Handler<Message<T>> replyHandler);
 
-  protected abstract void doReply(Float message, Handler<Message> replyHandler);
+  protected abstract <T> void doReply(Float message, Handler<Message<T>> replyHandler);
 
-  protected abstract void doReply(Double message, Handler<Message> replyHandler);
+  protected abstract <T> void doReply(Double message, Handler<Message<T>> replyHandler);
 
 }

@@ -95,7 +95,7 @@ public class DefaultEventBus implements EventBus {
     sendOrPub(createMessage(true, address, message), null);
   }
   
-  public void send(String address, JsonObject message, final Handler<Message<JsonObject>> replyHandler) {
+  public <T> void send(String address, JsonObject message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new JsonObjectMessage(true, address, message), replyHandler);
   }
 
@@ -103,7 +103,7 @@ public class DefaultEventBus implements EventBus {
     sendOrPub(new JsonObjectMessage(true, address, message), null);
   }
 
-  public void send(String address, JsonArray message, final Handler<Message<JsonArray>> replyHandler) {
+  public <T> void send(String address, JsonArray message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new JsonArrayMessage(true, address, message), replyHandler);
   }
 
@@ -111,7 +111,7 @@ public class DefaultEventBus implements EventBus {
     sendOrPub(new JsonArrayMessage(true, address, message), null);
   }
 
-  public void send(String address, Buffer message, final Handler<Message<Buffer>> replyHandler) {
+  public <T> void send(String address, Buffer message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new BufferMessage(true, address, message), replyHandler);
   }
 
@@ -119,7 +119,7 @@ public class DefaultEventBus implements EventBus {
     sendOrPub(new BufferMessage(true, address, message), null);
   }
 
-  public void send(String address, byte[] message, final Handler<Message<byte[]>> replyHandler) {
+  public <T> void send(String address, byte[] message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new ByteArrayMessage(true, address, message), replyHandler);
   }
 
@@ -127,7 +127,7 @@ public class DefaultEventBus implements EventBus {
     sendOrPub(new ByteArrayMessage(true, address, message), null);
   }
 
-  public void send(String address, String message, final Handler<Message<String>> replyHandler) {
+  public <T> void send(String address, String message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new StringMessage(true, address, message), replyHandler);
   }
 
@@ -135,7 +135,7 @@ public class DefaultEventBus implements EventBus {
     sendOrPub(new StringMessage(true, address, message), null);
   }
 
-  public void send(String address, Integer message, final Handler<Message<Integer>> replyHandler) {
+  public <T> void send(String address, Integer message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new IntMessage(true, address, message), replyHandler);
   }
 
@@ -143,7 +143,7 @@ public class DefaultEventBus implements EventBus {
     sendOrPub(new IntMessage(true, address, message), null);
   }
 
-  public void send(String address, Long message, final Handler<Message<Long>> replyHandler) {
+  public <T> void send(String address, Long message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new LongMessage(true, address, message), replyHandler);
   }
 
@@ -151,7 +151,7 @@ public class DefaultEventBus implements EventBus {
     sendOrPub(new LongMessage(true, address, message), null);
   }
 
-  public void send(String address, Float message, final Handler<Message<Float>> replyHandler) {
+  public <T> void send(String address, Float message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new FloatMessage(true, address, message), replyHandler);
   }
 
@@ -159,7 +159,7 @@ public class DefaultEventBus implements EventBus {
     sendOrPub(new FloatMessage(true, address, message), null);
   }
 
-  public void send(String address, Double message, final Handler<Message<Double>> replyHandler) {
+  public <T> void send(String address, Double message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new DoubleMessage(true, address, message), replyHandler);
   }
 
@@ -167,7 +167,7 @@ public class DefaultEventBus implements EventBus {
     sendOrPub(new DoubleMessage(true, address, message), null);
   }
 
-  public void send(String address, Boolean message, final Handler<Message<Boolean>> replyHandler) {
+  public <T> void send(String address, Boolean message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new BooleanMessage(true, address, message), replyHandler);
   }
 
@@ -175,7 +175,7 @@ public class DefaultEventBus implements EventBus {
     sendOrPub(new BooleanMessage(true, address, message), null);
   }
 
-  public void send(String address, Short message, final Handler<Message<Short>> replyHandler) {
+  public <T> void send(String address, Short message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new ShortMessage(true, address, message), replyHandler);
   }
 
@@ -183,7 +183,7 @@ public class DefaultEventBus implements EventBus {
     sendOrPub(new ShortMessage(true, address, message), null);
   }
 
-  public void send(String address, Character message, final Handler<Message<Character>> replyHandler) {
+  public <T> void send(String address, Character message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new CharacterMessage(true, address, message), replyHandler);
   }
 
@@ -191,7 +191,7 @@ public class DefaultEventBus implements EventBus {
     sendOrPub(new CharacterMessage(true, address, message), null);
   }
 
-  public void send(String address, Byte message, final Handler<Message<Byte>> replyHandler) {
+  public <T> void send(String address, Byte message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new ByteMessage(true, address, message), replyHandler);
   }
 

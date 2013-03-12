@@ -90,6 +90,34 @@ public class LocalClient extends EventBusAppBase {
     }
   }
 
+  public void testReplyDifferentType() {
+    Buffer buff = TestUtils.generateRandomBuffer(1000);
+    data.put("buffer", buff);
+    Set<String> addresses = vertx.sharedData().getSet("addresses");
+    for (final String address: addresses) {
+      eb.send(address, buff, new Handler<Message<String>>() {
+        public void handle(Message<String> reply) {
+          tu.azzert(("reply" + address).equals(reply.body));
+          tu.testComplete();
+        }
+      });
+    }
+  }
+
+  public void testReplyUntypedHandler() {
+    Buffer buff = TestUtils.generateRandomBuffer(1000);
+    data.put("buffer", buff);
+    Set<String> addresses = vertx.sharedData().getSet("addresses");
+    for (final String address: addresses) {
+      eb.send(address, buff, new Handler<Message>() {
+        public void handle(Message reply) {
+          tu.azzert(("reply" + address).equals(reply.body));
+          tu.testComplete();
+        }
+      });
+    }
+  }
+
   public void testLocal1() {
     testLocal(true);
   }
