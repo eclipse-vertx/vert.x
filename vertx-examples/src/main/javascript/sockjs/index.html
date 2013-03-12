@@ -36,7 +36,7 @@
 
    function send(message) {
 
-     if (sock.readyState == WebSocket.OPEN) {
+     if (sock.readyState === SockJS.OPEN) {
         console.log("sending message")
         sock.send(message);
      } else {
