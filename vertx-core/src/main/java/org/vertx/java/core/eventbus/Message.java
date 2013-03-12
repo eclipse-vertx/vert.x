@@ -18,8 +18,6 @@ package org.vertx.java.core.eventbus;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.eventbus.impl.BaseMessage;
-import org.vertx.java.core.eventbus.impl.JsonObjectMessage;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
@@ -188,7 +186,7 @@ public abstract class Message<T>  {
    * to receive the reply to the reply.
    */
   public void reply(JsonArray message, Handler<Message> replyHandler) {
-    doReply(message, null);
+    doReply(message, replyHandler);
   }
 
   /**
@@ -196,7 +194,7 @@ public abstract class Message<T>  {
    * to receive the reply to the reply.
    */
   public void reply(String message, Handler<Message> replyHandler) {
-    doReply(message, null);
+    doReply(message, replyHandler);
   }
 
   /**
@@ -204,7 +202,7 @@ public abstract class Message<T>  {
    * to receive the reply to the reply.
    */
   public void reply(Buffer message, Handler<Message> replyHandler) {
-    doReply(message, null);
+    doReply(message, replyHandler);
   }
 
   /**
@@ -212,7 +210,7 @@ public abstract class Message<T>  {
    * to receive the reply to the reply.
    */
   public void reply(byte[] message, Handler<Message> replyHandler) {
-    doReply(message, null);
+    doReply(message, replyHandler);
   }
 
   /**
@@ -220,7 +218,7 @@ public abstract class Message<T>  {
    * to receive the reply to the reply.
    */
   public void reply(Integer message, Handler<Message> replyHandler) {
-    doReply(message, null);
+    doReply(message, replyHandler);
   }
 
   /**
@@ -228,7 +226,7 @@ public abstract class Message<T>  {
    * to receive the reply to the reply.
    */
   public void reply(Long message, Handler<Message> replyHandler) {
-    doReply(message, null);
+    doReply(message, replyHandler);
   }
 
   /**
@@ -236,7 +234,7 @@ public abstract class Message<T>  {
    * to receive the reply to the reply.
    */
   public void reply(Short message, Handler<Message> replyHandler) {
-    doReply(message, null);
+    doReply(message, replyHandler);
   }
 
   /**
@@ -244,7 +242,7 @@ public abstract class Message<T>  {
    * to receive the reply to the reply.
    */
   public void reply(Character message, Handler<Message> replyHandler) {
-    doReply(message, null);
+    doReply(message, replyHandler);
   }
 
   /**
@@ -252,7 +250,7 @@ public abstract class Message<T>  {
    * to receive the reply to the reply.
    */
   public void reply(Boolean message, Handler<Message> replyHandler) {
-    doReply(message, null);
+    doReply(message, replyHandler);
   }
 
   /**
@@ -260,7 +258,7 @@ public abstract class Message<T>  {
    * to receive the reply to the reply.
    */
   public void reply(Float message, Handler<Message> replyHandler) {
-    doReply(message, null);
+    doReply(message, replyHandler);
   }
 
   /**
@@ -268,7 +266,7 @@ public abstract class Message<T>  {
    * to receive the reply to the reply.
    */
   public void reply(Double message, Handler<Message> replyHandler) {
-    doReply(message, null);
+    doReply(message, replyHandler);
   }
 
   protected abstract void doReply(Object message, Handler<Message> replyHandler);
