@@ -65,6 +65,10 @@ public class RouteMatcherTestClient extends TestClientBase {
     testRouteWithPattern6("GET");
   }
 
+  public void testRouteWithPattern7GET() {
+    testRouteWithPattern6("GET");
+  }
+
   // There's no need to repeat patterns 1-6 for all HTTP methods
 
   public void testRouteWithPatternPUT() {
@@ -174,6 +178,12 @@ public class RouteMatcherTestClient extends TestClientBase {
     Map<String, String> params = new HashMap<>();
     params.put("name", "foo");
     testRoute(false, "/:name/", params, method, "/foo/");
+  }
+
+  private void testRouteWithPattern7(String method)  {
+    Map<String, String> params = new HashMap<>();
+    params.put("my_name", "foo");
+    testRoute(false, "/:my_name/", params, method, "/foo/");
   }
 
   private void testRouteWithRegex(String method) {

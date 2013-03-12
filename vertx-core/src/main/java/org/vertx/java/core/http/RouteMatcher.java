@@ -318,7 +318,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
 
   private void addPattern(String input, Handler<HttpServerRequest> handler, List<PatternBinding> bindings) {
     // We need to search for any :<token name> tokens in the String and replace them with named capture groups
-    Matcher m =  Pattern.compile(":([A-Za-z][A-Za-z0-9]*)").matcher(input);
+    Matcher m =  Pattern.compile(":([A-Za-z][A-Za-z0-9_]*)").matcher(input);
     StringBuffer sb = new StringBuffer();
     Set<String> groups = new HashSet<>();
     while (m.find()) {
