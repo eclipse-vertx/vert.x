@@ -59,6 +59,10 @@ public class JavaRouteMatcherTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void testRouteWithPattern7GET() {
+    startTest(getMethodName());
+  }
+
   public void testRouteWithPatternPUT() {
     startTest(getMethodName());
   }
