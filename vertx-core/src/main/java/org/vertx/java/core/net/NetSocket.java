@@ -25,6 +25,9 @@ import org.vertx.java.core.net.impl.ConnectionBase;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+
 /**
  * Represents a socket-like interface to a TCP/SSL connection on either the
  * client or the server side.<p>
@@ -109,6 +112,10 @@ public abstract class NetSocket extends ConnectionBase implements ReadStream, Wr
   /** {@inheritDoc} */
   public abstract void drainHandler(Handler<Void> drainHandler);
 
+  /**
+   * Return the remote address for this socket
+   */
+  public abstract InetSocketAddress getRemoteAddress();
 
 }
 

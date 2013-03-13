@@ -21,6 +21,7 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.*;
+import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.testframework.TestClientBase;
 import org.vertx.java.testframework.TestUtils;
 
@@ -2410,6 +2411,21 @@ public class HttpTestClient extends TestClientBase {
     testSharedServersMultipleInstances1();
   }
 
+  public void testRemoteAddress() {
+    startServer(new Handler<HttpServerRequest>() {
+      @Override
+      public void handle(HttpServerRequest request) {
+        tu.azzert(request.getRemoteAddress().getHostName().equals("localhost"));
+        request.response.end();
+      }
+    });
+    client.getNow("/", new Handler<HttpClientResponse>() {
+      @Override
+      public void handle(HttpClientResponse resp) {
+        tu.testComplete();
+      }
+    });
+  }
 
   // -------------------------------------------------------------------------------------------
 

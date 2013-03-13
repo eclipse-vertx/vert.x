@@ -16,6 +16,7 @@
 
 package vertx.tests.core.net;
 
+import org.junit.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
@@ -29,6 +30,7 @@ import org.vertx.java.testframework.TestClientBase;
 import org.vertx.java.testframework.TestUtils;
 import vertx.tests.core.http.TLSTestParams;
 
+import java.net.InetSocketAddress;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -773,6 +775,25 @@ public class TestClient extends TestClientBase {
         }
       });
     }
+  }
+
+  public void testRemoteAddress() throws Exception {
+    vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
+      @Override
+      public void handle(NetSocket socket) {
+        InetSocketAddress addr = socket.getRemoteAddress();
+        tu.azzert(addr.getHostName().equals("localhost"));
+      }
+    }).listen(1234);
+    vertx.createNetClient().connect(1234, new Handler<NetSocket>() {
+      @Override
+      public void handle(NetSocket socket) {
+        InetSocketAddress addr = socket.getRemoteAddress();
+        tu.azzert(addr.getHostName().equals("localhost"));
+        tu.azzert(addr.getPort() == 1234);
+        tu.testComplete();
+      }
+    });
   }
 
   void setHandlers(final NetSocket sock) {

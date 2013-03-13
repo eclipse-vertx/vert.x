@@ -33,6 +33,8 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetSocket;
 
 import java.io.File;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.util.UUID;
 
@@ -118,6 +120,10 @@ public class DefaultNetSocket extends NetSocket {
   public void sendFile(String filename) {
     File f = new File(PathAdjuster.adjust(vertx, filename));
     super.sendFile(f);
+  }
+
+  public InetSocketAddress getRemoteAddress() {
+    return super.remoteAddress();
   }
 
   protected Context getContext() {

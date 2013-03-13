@@ -31,6 +31,8 @@ import org.vertx.java.testframework.TestBase;
 import vertx.tests.core.http.TLSTestParams;
 import vertx.tests.core.net.*;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -405,24 +407,10 @@ public class JavaNetTest extends TestBase {
   }
 
   @Test
-  public void testServerAlreadyListening() throws Exception {
-    vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
-      @Override
-      public void handle(NetSocket event) {
-
-      }
-    }).listen(1234);
-    try {
-      Vertx.newVertx().createNetServer().connectHandler(new Handler<NetSocket>() {
-        @Override
-        public void handle(NetSocket event) {
-
-        }
-      }).listen(1234);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      //Ok
-    }
+  public void testRemoteAddress() throws Exception {
+    startTest(getMethodName());
   }
+
+
 }
 

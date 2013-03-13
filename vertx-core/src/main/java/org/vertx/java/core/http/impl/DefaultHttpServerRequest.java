@@ -25,6 +25,8 @@ import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -96,6 +98,10 @@ public class DefaultHttpServerRequest extends HttpServerRequest {
 
   public void endHandler(Handler<Void> handler) {
     this.endHandler = handler;
+  }
+
+  public InetSocketAddress getRemoteAddress() {
+    return conn.remoteAddress();
   }
 
   void handleData(Buffer data) {

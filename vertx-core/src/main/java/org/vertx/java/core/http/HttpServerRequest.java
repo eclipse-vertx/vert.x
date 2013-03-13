@@ -20,6 +20,7 @@ import org.vertx.java.core.http.impl.HttpReadStreamBase;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
+import java.net.InetSocketAddress;
 import java.util.Map;
 
 /**
@@ -86,4 +87,9 @@ public abstract class HttpServerRequest extends HttpReadStreamBase {
    * Returns a map of all the parameters in the request
    */
   public abstract Map<String, String> params();
+
+  /**
+   * Return the remote (client side) address of the request
+   */
+  public abstract InetSocketAddress getRemoteAddress();
 }
