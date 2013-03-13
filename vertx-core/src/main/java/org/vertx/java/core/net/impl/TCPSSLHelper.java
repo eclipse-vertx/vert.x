@@ -91,7 +91,7 @@ public class TCPSSLHelper {
       // We need to set a FixedReceiveBufferSizePredictor, since otherwise
       // Netty will ignore our setting and use an adaptive buffer which can
       // get very large
-      options.put(prefix + "receiveBufferSizePredictor", new FixedReceiveBufferSizePredictor(1024));
+      options.put(prefix + "receiveBufferSizePredictor", new FixedReceiveBufferSizePredictor(tcpReceiveBufferSize));
     }
     if (soLinger != null) {
       options.put(prefix + "soLinger", soLinger);

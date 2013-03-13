@@ -159,8 +159,8 @@ public class DefaultNetServer implements NetServer {
           Channel serverChannel = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
           serverChannelGroup.add(serverChannel);
           log.trace("Net server listening on " + host + ":" + port);
-        } catch (UnknownHostException e) {
-          log.error("Failed to bind", e);
+        } catch (ChannelException | UnknownHostException e) {
+          throw new IllegalArgumentException(e.getMessage());
         }
         vertx.sharedNetServers().put(id, this);
         actualServer = this;
