@@ -403,5 +403,26 @@ public class JavaNetTest extends TestBase {
     startApp(FanoutServer.class.getName());
     startTest(getMethodName());
   }
+
+  @Test
+  public void testServerAlreadyListening() throws Exception {
+    vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
+      @Override
+      public void handle(NetSocket event) {
+
+      }
+    }).listen(1234);
+    try {
+      Vertx.newVertx().createNetServer().connectHandler(new Handler<NetSocket>() {
+        @Override
+        public void handle(NetSocket event) {
+
+        }
+      }).listen(1234);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      //Ok
+    }
+  }
 }
 

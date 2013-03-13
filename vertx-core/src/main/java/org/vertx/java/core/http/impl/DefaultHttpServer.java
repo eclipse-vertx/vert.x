@@ -200,8 +200,8 @@ public class DefaultHttpServer implements HttpServer {
         try {
           Channel serverChannel = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
           serverChannelGroup.add(serverChannel);
-        } catch (UnknownHostException e) {
-          log.error("Failed to bind", e);
+        } catch (ChannelException | UnknownHostException e) {
+          throw new IllegalArgumentException(e.getMessage());
         }
         vertx.sharedHttpServers().put(id, this);
         actualServer = this;
