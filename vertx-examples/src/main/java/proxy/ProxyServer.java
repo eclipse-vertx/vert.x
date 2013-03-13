@@ -23,7 +23,7 @@ import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.platform.Verticle;
+import org.vertx.java.deploy.Verticle;
 
 public class ProxyServer extends Verticle {
 

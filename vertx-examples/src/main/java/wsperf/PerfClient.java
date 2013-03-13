@@ -22,7 +22,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.WebSocket;
-import org.vertx.java.platform.Verticle;
+import org.vertx.java.deploy.Verticle;
 
 import java.util.HashSet;
 import java.util.LinkedList;

@@ -16,7 +16,7 @@ package resourceload;
  * limitations under the License.
  */
 
-import org.vertx.java.platform.Verticle;
+import org.vertx.java.deploy.Verticle;
 
 import java.net.URL;
 
