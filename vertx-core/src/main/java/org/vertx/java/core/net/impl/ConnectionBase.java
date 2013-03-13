@@ -32,6 +32,9 @@ import org.vertx.java.core.streams.WriteStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 /**
  * Abstract base class for TCP connections.
@@ -54,6 +57,7 @@ public abstract class ConnectionBase {
 
   protected Handler<Exception> exceptionHandler;
   protected Handler<Void> closedHandler;
+
 
   /**
    * Pause the connection, see {@link ReadStream#pause}
@@ -193,5 +197,9 @@ public abstract class ConnectionBase {
       handleException(e);
       return null;
     }
+  }
+
+  public InetSocketAddress remoteAddress() {
+    return (InetSocketAddress)channel.getRemoteAddress();
   }
 }
