@@ -500,7 +500,7 @@ public class DefaultHttpServer implements HttpServer {
           if (conn == null) {
             HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
             if (reqHandler != null) {
-              conn = new ServerConnection(vertx, ch, reqHandler.context);
+              conn = new ServerConnection(vertx, ch, reqHandler.context, serverOrigin);
               conn.requestHandler(reqHandler.handler);
               connectionMap.put(ch, conn);
               conn.handleMessage(msg);
@@ -577,7 +577,7 @@ public class DefaultHttpServer implements HttpServer {
           throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
         }
 
-        final ServerConnection wsConn = new ServerConnection(vertx, ch, wsHandler.context);
+        final ServerConnection wsConn = new ServerConnection(vertx, ch, wsHandler.context, serverOrigin);
         wsConn.wsHandler(wsHandler.handler);
 
         Runnable connectRunnable = new Runnable() {

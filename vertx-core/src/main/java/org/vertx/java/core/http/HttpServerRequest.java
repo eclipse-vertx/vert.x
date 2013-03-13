@@ -23,6 +23,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import java.net.InetSocketAddress;
 import javax.security.cert.X509Certificate;
+import java.net.URI;
 import java.util.Map;
 
 /**
@@ -101,4 +102,10 @@ public abstract class HttpServerRequest extends HttpReadStreamBase {
    * @throws SSLPeerUnverifiedException SSL peer's identity has not been verified.
   */
   public abstract X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException;
+
+  /**
+   * Get the absolute URI corresponding to the the HTTP request
+   * @return the URI
+   */
+  public abstract URI getAbsoluteURI();
 }

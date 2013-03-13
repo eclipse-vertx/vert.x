@@ -29,6 +29,8 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +51,7 @@ public class DefaultHttpServerRequest extends HttpServerRequest {
   //Cache this for performance
   private Map<String, String> params;
   private Map<String, String> headers;
+  private URI absoluteURI;
 
   DefaultHttpServerRequest(ServerConnection conn,
                            String method, String uri, String path, String query,
@@ -104,6 +107,23 @@ public class DefaultHttpServerRequest extends HttpServerRequest {
 
   public InetSocketAddress getRemoteAddress() {
     return conn.remoteAddress();
+  }
+
+  public URI getAbsoluteURI() {
+    if (absoluteURI == null) {
+      try {
+        if (uri.startsWith("http:") || uri.startsWith("https")) {
+          absoluteURI = new URI(uri);
+        } else if (uri.startsWith("/")) {
+          absoluteURI = new URI(conn.getServerOrigin() + uri);
+        } else {
+          absoluteURI = new URI(conn.getServerOrigin() + "/" + uri);
+        }
+      } catch (URISyntaxException e) {
+        log.error("Failed to create abs uri", e);
+      }
+    }
+    return absoluteURI;
   }
 
   void handleData(Buffer data) {
