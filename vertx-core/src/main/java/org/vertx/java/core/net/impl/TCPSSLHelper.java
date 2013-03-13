@@ -86,21 +86,17 @@ public class TCPSSLHelper {
     }
     if (tcpReceiveBufferSize != null) {
       bootstrap.childOption(ChannelOption.SO_RCVBUF, tcpReceiveBufferSize);
-
-      // We need to set a FixedReceiveBufferSizePredictor, since otherwise
-      // Netty will ignore our setting and use an adaptive buffer which can
-      // get very large
     }
     if (soLinger != null) {
-       // TODO: Fix me
-       //bootstrap.childOption(ChannelOption.SO_LINGER, soLinger);
+      // TODO: Fix me
+      //bootstrap.childOption(ChannelOption.SO_LINGER, soLinger);
     }
     if (tcpKeepAlive != null) {
-        bootstrap.childOption(ChannelOption.SO_KEEPALIVE, tcpKeepAlive);
+      bootstrap.childOption(ChannelOption.SO_KEEPALIVE, tcpKeepAlive);
     }
 
     if (trafficClass != null) {
-     bootstrap.childOption(ChannelOption.IP_TOS, trafficClass);
+      bootstrap.childOption(ChannelOption.IP_TOS, trafficClass);
     }
     if (reuseAddress != null) {
       bootstrap.option(ChannelOption.SO_REUSEADDR, reuseAddress);
