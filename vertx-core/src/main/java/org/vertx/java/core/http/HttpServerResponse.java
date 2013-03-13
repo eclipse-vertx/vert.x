@@ -83,7 +83,9 @@ public abstract class HttpServerResponse implements WriteStream {
   /**
    * Put an HTTP header - fluent API
    * @param name The header name
-   * @param value The header value
+   * @param value The header value. As well as the usual types, value also accepts Iterable<?> objects
+   *              you can use this to when you have multiple headers with the same name that you wish to set
+   *              e.g. multiple Set-Cookie headers
    * @return A reference to this, so multiple method calls can be chained.
    */
   public abstract HttpServerResponse putHeader(String name, Object value);
