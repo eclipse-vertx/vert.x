@@ -16,10 +16,9 @@
 
 package org.vertx.java.core.http.impl;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.handler.codec.http.*;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelFuture;
+import io.netty.handler.codec.http.*;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
@@ -118,37 +117,37 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
   public void writeBuffer(Buffer chunk) {
     check();
-    write(chunk.getChannelBuffer(), null);
+    write(chunk.getByteBuf(), null);
   }
 
   public DefaultHttpClientRequest write(Buffer chunk) {
     check();
-    return write(chunk.getChannelBuffer(), null);
+    return write(chunk.getByteBuf(), null);
   }
 
   public DefaultHttpClientRequest write(String chunk) {
     check();
-    return write(new Buffer(chunk).getChannelBuffer(), null);
+    return write(new Buffer(chunk).getByteBuf(), null);
   }
 
   public DefaultHttpClientRequest write(String chunk, String enc) {
     check();
-    return write(new Buffer(chunk, enc).getChannelBuffer(), null);
+    return write(new Buffer(chunk, enc).getByteBuf(), null);
   }
 
   public DefaultHttpClientRequest write(Buffer chunk, Handler<Void> doneHandler) {
     check();
-    return write(chunk.getChannelBuffer(), doneHandler);
+    return write(chunk.getByteBuf(), doneHandler);
   }
 
   public DefaultHttpClientRequest write(String chunk, Handler<Void> doneHandler) {
     checkComplete();
-    return write(new Buffer(chunk).getChannelBuffer(), doneHandler);
+    return write(new Buffer(chunk).getByteBuf(), doneHandler);
   }
 
   public DefaultHttpClientRequest write(String chunk, String enc, Handler<Void> doneHandler) {
     check();
-    return write(new Buffer(chunk, enc).getChannelBuffer(), doneHandler);
+    return write(new Buffer(chunk, enc).getByteBuf(), doneHandler);
   }
 
   public void setWriteQueueMaxSize(int maxSize) {
@@ -229,7 +228,9 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     if (conn != null) {
       if (!headWritten) {
         // No body
-        writeHead();
+        prepareHeaders();
+        conn.queueForWrite(request);
+        writeEndChunk();
       } else if (chunked) {
         //Body written - we use HTTP chunking so must send an empty buffer
         writeEndChunk();
@@ -304,8 +305,8 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
       //they can capture any exceptions on connection
       client.getConnection(new Handler<ClientConnection>() {
         public void handle(ClientConnection conn) {
-          if (!conn.isClosed()) {
-            connected(conn);
+            if (!conn.isClosed()) {
+                connected(conn);
           } else {
             connect();
           }
@@ -326,7 +327,6 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     if (pendingMaxSize != -1) {
       conn.setWriteQueueMaxSize(pendingMaxSize);
     }
-
     if (pendingChunks != null || writeHead || completed) {
       writeHead();
       headWritten = true;
@@ -338,9 +338,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
       }
     }
     if (completed) {
-      if (chunked) {
-        writeEndChunk();
-      }
+      writeEndChunk();
       conn.endRequest();
     }
   }
@@ -354,27 +352,31 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   }
 
   private void writeHead() {
-    request.setChunked(chunked);
+    prepareHeaders();
+    conn.write(request);
+  }
+
+  private void prepareHeaders() {
+    request.headers().remove(HttpHeaders.Names.TRANSFER_ENCODING);
     if (!raw) {
-      request.setHeader(HttpHeaders.Names.HOST, conn.hostHeader);
+      request.headers().set(HttpHeaders.Names.HOST, conn.hostHeader);
       if (chunked) {
-        request.setHeader(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
+        HttpHeaders.setTransferEncodingChunked(request);
       }
     }
     writeHeaders();
-    conn.write(request);
   }
 
   private void writeHeaders() {
     if (headers != null) {
       for (Map.Entry<String, Object> header: headers.entrySet()) {
         String key = header.getKey();
-        request.setHeader(key, header.getValue());
+        request.headers().set(key, header.getValue());
       }
     }
   }
 
-  private DefaultHttpClientRequest write(ChannelBuffer buff, Handler<Void> doneHandler) {
+  private DefaultHttpClientRequest write(ByteBuf buff, Handler<Void> doneHandler) {
 
     written += buff.readableBytes();
 
@@ -385,13 +387,14 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
     if (conn == null) {
       if (pendingChunks == null) {
-        pendingChunks = new LinkedList<>();
+        pendingChunks = new LinkedList<PendingChunk>();
       }
       pendingChunks.add(new PendingChunk(buff, doneHandler));
       connect();
     } else {
       if (!headWritten) {
-        writeHead();
+        prepareHeaders();
+        conn.queueForWrite(request);
         headWritten = true;
       }
       sendChunk(buff, doneHandler);
@@ -399,8 +402,8 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     return this;
   }
 
-  private void sendChunk(ChannelBuffer buff, Handler<Void> doneHandler) {
-    Object write = chunked ? new DefaultHttpChunk(buff) : buff;
+  private void sendChunk(ByteBuf buff, Handler<Void> doneHandler) {
+    Object write = chunked ? new DefaultHttpContent(buff) : buff;
     ChannelFuture writeFuture = conn.write(write);
     if (doneHandler != null) {
       conn.addFuture(doneHandler, writeFuture);
@@ -408,7 +411,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   }
 
   private void writeEndChunk() {
-    conn.write(new DefaultHttpChunk(ChannelBuffers.EMPTY_BUFFER));
+    conn.write(LastHttpContent.EMPTY_LAST_CONTENT);
   }
 
   private void check() {
@@ -422,10 +425,10 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   }
 
   private static class PendingChunk {
-    final ChannelBuffer chunk;
+    final ByteBuf chunk;
     final Handler<Void> doneHandler;
 
-    private PendingChunk(ChannelBuffer chunk, Handler<Void> doneHandler) {
+    private PendingChunk(ByteBuf chunk, Handler<Void> doneHandler) {
       this.chunk = chunk;
       this.doneHandler = doneHandler;
     }

@@ -16,8 +16,8 @@
 
 package org.vertx.java.core.http.impl;
 
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
@@ -35,6 +35,11 @@ public abstract class AbstractConnection extends ConnectionBase {
     super(vertx, channel, context);
   }
 
+  void queueForWrite(Object obj) {
+    channel.outboundMessageBuffer().add(obj);
+  }
+
+
   ChannelFuture write(Object obj) {
     if (channel.isOpen()) {
       return channel.write(obj);
@@ -42,5 +47,4 @@ public abstract class AbstractConnection extends ConnectionBase {
       return null;
     }
   }
-
 }

@@ -18,9 +18,9 @@
 
 package org.vertx.java.core.http.impl.ws;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.util.CharsetUtil;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.util.CharsetUtil;
 
 /**
  * The default {@link WebSocketFrame} implementation.
@@ -32,24 +32,24 @@ import org.jboss.netty.util.CharsetUtil;
 public class DefaultWebSocketFrame implements WebSocketFrame {
 
   private FrameType type;
-  private ChannelBuffer binaryData;
+  private ByteBuf binaryData;
 
   /**
    * Creates a new empty text frame.
    */
   public DefaultWebSocketFrame() {
-    this(null, ChannelBuffers.EMPTY_BUFFER);
+    this(null, Unpooled.EMPTY_BUFFER);
   }
 
   public DefaultWebSocketFrame(FrameType frameType) {
-    this(frameType, ChannelBuffers.EMPTY_BUFFER);
+    this(frameType, Unpooled.EMPTY_BUFFER);
   }
 
   /**
    * Creates a new text frame from with the specified string.
    */
   public DefaultWebSocketFrame(String textData) {
-    this(FrameType.TEXT, ChannelBuffers.copiedBuffer(textData, CharsetUtil.UTF_8));
+    this(FrameType.TEXT, Unpooled.copiedBuffer(textData, CharsetUtil.UTF_8));
   }
 
   /**
@@ -61,7 +61,7 @@ public class DefaultWebSocketFrame implements WebSocketFrame {
    * @throws IllegalArgumentException if If <tt>(type &amp; 0x80 == 0)</tt> and the data is not encoded
    *                                  in UTF-8
    */
-  public DefaultWebSocketFrame(FrameType type, ChannelBuffer binaryData) {
+  public DefaultWebSocketFrame(FrameType type, ByteBuf binaryData) {
     this.type = type;
     this.binaryData = binaryData;
   }
@@ -78,7 +78,7 @@ public class DefaultWebSocketFrame implements WebSocketFrame {
     return this.type == FrameType.BINARY;
   }
 
-  public ChannelBuffer getBinaryData() {
+  public ByteBuf getBinaryData() {
     return binaryData;
   }
 
@@ -86,12 +86,12 @@ public class DefaultWebSocketFrame implements WebSocketFrame {
     return getBinaryData().toString(CharsetUtil.UTF_8);
   }
 
-  public void setBinaryData(ChannelBuffer binaryData) {
+  public void setBinaryData(ByteBuf binaryData) {
     this.binaryData = binaryData;
   }
 
   public void setTextData(String textData) {
-    this.binaryData = ChannelBuffers.copiedBuffer(textData, CharsetUtil.UTF_8);
+    this.binaryData = Unpooled.copiedBuffer(textData, CharsetUtil.UTF_8);
   }
 
   @Override

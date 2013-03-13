@@ -17,9 +17,7 @@
 package org.vertx.java.core.impl;
 
 
-import org.jboss.netty.channel.socket.nio.NioClientBossPool;
-import org.jboss.netty.channel.socket.nio.NioServerBossPool;
-import org.jboss.netty.util.Timer;
+import io.netty.channel.EventLoopGroup;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.http.impl.DefaultHttpServer;
 import org.vertx.java.core.net.impl.DefaultNetServer;
@@ -37,9 +35,7 @@ import java.util.concurrent.ExecutorService;
  */
 public abstract class VertxInternal extends Vertx {
 
-  public abstract NioServerBossPool getServerAcceptorPool();
-
-  public abstract NioClientBossPool getClientAcceptorPool();
+  public abstract EventLoopGroup getServerAcceptorPool();
 
   public abstract ExecutorService getBackgroundPool();
 
@@ -54,8 +50,6 @@ public abstract class VertxInternal extends Vertx {
   public abstract Map<ServerID, DefaultHttpServer> sharedHttpServers();
 
   public abstract Map<ServerID, DefaultNetServer> sharedNetServers();
-
-  public abstract Timer getTimer();
 
 	/**
 	 * Get the current context

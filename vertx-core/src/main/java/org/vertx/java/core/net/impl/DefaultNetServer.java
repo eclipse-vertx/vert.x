@@ -17,22 +17,27 @@
 
 package org.vertx.java.core.net.impl;
 
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.*;
-import org.jboss.netty.channel.group.ChannelGroup;
-import org.jboss.netty.channel.group.ChannelGroupFuture;
-import org.jboss.netty.channel.group.ChannelGroupFutureListener;
-import org.jboss.netty.channel.group.DefaultChannelGroup;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioSocketChannel;
-import org.jboss.netty.channel.socket.nio.NioWorker;
-import org.jboss.netty.handler.ssl.SslHandler;
-import org.jboss.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelException;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoop;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.ChannelGroupFuture;
+import io.netty.channel.group.ChannelGroupFutureListener;
+import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.EventLoopContext;
+import org.vertx.java.core.impl.ExceptionDispatchHandler;
+import org.vertx.java.core.impl.FlowControlHandler;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -55,6 +60,7 @@ import java.util.concurrent.TimeUnit;
 public class DefaultNetServer implements NetServer {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultNetServer.class);
+  private static final ExceptionDispatchHandler EXCEPTION_DISPATCH_HANDLER = new ExceptionDispatchHandler();
 
   private final VertxInternal vertx;
   private final Context actualCtx;
@@ -66,7 +72,7 @@ public class DefaultNetServer implements NetServer {
   private boolean listening;
   private ServerID id;
   private DefaultNetServer actualServer;
-  private final VertxWorkerPool availableWorkers = new VertxWorkerPool();
+  private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
 
   public DefaultNetServer(VertxInternal vertx) {
@@ -116,17 +122,17 @@ public class DefaultNetServer implements NetServer {
       if (shared == null) {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
 
-        ChannelFactory factory =
-            new NioServerSocketChannelFactory(
-                vertx.getServerAcceptorPool(),
-                availableWorkers);
-        ServerBootstrap bootstrap = new ServerBootstrap(factory);
-
+        ServerBootstrap bootstrap = new ServerBootstrap();
+        bootstrap.group(vertx.getServerAcceptorPool(), availableWorkers);
+        bootstrap.channel(NioServerSocketChannel.class);
         tcpHelper.checkSSL(vertx);
 
-        bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-          public ChannelPipeline getPipeline() {
-            ChannelPipeline pipeline = Channels.pipeline();
+        bootstrap.childHandler(new ChannelInitializer<Channel>() {
+          @Override
+          protected void initChannel(Channel ch) throws Exception {
+            ChannelPipeline pipeline = ch.pipeline();
+            pipeline.addLast("exceptionDispatcher", EXCEPTION_DISPATCH_HANDLER);
+            pipeline.addLast("flowControl", new FlowControlHandler());
             if (tcpHelper.isSSL()) {
               SSLEngine engine = tcpHelper.getSSLContext().createSSLEngine();
               engine.setUseClientMode(false);
@@ -148,15 +154,14 @@ public class DefaultNetServer implements NetServer {
             }
             pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());  // For large file / sendfile support
             pipeline.addLast("handler", new ServerHandler());
-            return pipeline;
-          }
+            }
         });
 
-        bootstrap.setOptions(tcpHelper.generateConnectionOptions(true));
+        tcpHelper.applyConnectionOptions(bootstrap);
 
         try {
           //TODO - currently bootstrap.bind is blocking - need to make it non blocking by not using bootstrap directly
-          Channel serverChannel = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
+          Channel serverChannel = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port)).syncUninterruptibly().channel();
           serverChannelGroup.add(serverChannel);
           log.trace("Net server listening on " + host + ":" + port);
         } catch (ChannelException | UnknownHostException e) {
@@ -383,13 +388,15 @@ public class DefaultNetServer implements NetServer {
     return this;
   }
 
-  private class ServerHandler extends SimpleChannelHandler {
+  private class ServerHandler extends VertxNetHandler {
+    public ServerHandler() {
+      super(socketMap);
+    }
 
     @Override
-    public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
-
-      final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      NioWorker worker = ch.getWorker();
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+      final Channel ch = ctx.channel();
+      EventLoop worker = ch.eventLoop();
 
       //Choose a handler
       final HandlerHolder<NetSocket> handler = handlerManager.chooseHandler(worker);
@@ -399,7 +406,7 @@ public class DefaultNetServer implements NetServer {
       }
 
       if (tcpHelper.isSSL()) {
-        SslHandler sslHandler = (SslHandler)ch.getPipeline().get("ssl");
+        SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
 
         ChannelFuture fut = sslHandler.handshake();
         fut.addListener(new ChannelFutureListener() {
@@ -408,87 +415,28 @@ public class DefaultNetServer implements NetServer {
             if (channelFuture.isSuccess()) {
               connected(ch, handler);
             } else {
-              log.error("Client from origin " + ch.getRemoteAddress() + " failed to connect over ssl");
+              log.error("Client from origin " + ch.remoteAddress() + " failed to connect over ssl");
             }
           }
         });
-
       } else {
-        connected(ch, handler);
+          connected(ch, handler);
       }
     }
 
-    private void connected(final NioSocketChannel ch, final HandlerHolder<NetSocket> handler) {
-      handler.context.execute(new Runnable() {
-        public void run() {
-          DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, handler.context);
-          socketMap.put(ch, sock);
-          handler.handler.handle(sock);
-        }
-      });
-    }
-
-    @Override
-    public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-      final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final DefaultNetSocket sock = socketMap.get(ch);
-      ChannelState state = e.getState();
-      if (state == ChannelState.INTEREST_OPS) {
-        sock.getContext().execute(new Runnable() {
-          public void run() {
-            sock.handleInterestedOpsChanged();
-          }
-        });
-      }
-    }
-
-    @Override
-    public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
-      final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final DefaultNetSocket sock = socketMap.remove(ch);
-      if (sock != null) {
-        sock.getContext().execute(new Runnable() {
-          public void run() {
-            sock.handleClosed();
-          }
-        });
-      }
-    }
-
-    @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
-      NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final DefaultNetSocket sock = socketMap.get(ch);
-      if (sock != null) {
-        final ChannelBuffer buff = (ChannelBuffer) e.getMessage();
-        // We need to do this since it's possible the server is being used from a worker context
-        if (sock.getContext().isOnCorrectWorker(ch.getWorker())) {
-          sock.handleDataReceived(new Buffer(buff.slice()));
-        } else {
-          sock.getContext().execute(new Runnable() {
-            public void run() {
-              sock.handleDataReceived(new Buffer(buff.slice()));
-            }
-          });
-        }
-      }
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-      final NioSocketChannel ch = (NioSocketChannel) e.getChannel();
-      final NetSocket sock = socketMap.remove(ch);
-      ch.close();
-      final Throwable t = e.getCause();
-      if (sock != null && t instanceof Exception) {
-        sock.getContext().execute(new Runnable() {
-          public void run() {
-            sock.handleException((Exception) t);
-          }
-        });
+    private void connected(final Channel ch, final HandlerHolder<NetSocket> handler) {
+      if (handler.context.isOnCorrectWorker(ch.eventLoop())) {
+        DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, handler.context);
+        socketMap.put(ch, sock);
+        handler.handler.handle(sock);
       } else {
-        // Ignore - any exceptions not associated with any sock (e.g. failure in ssl handshake) will
-        // be communicated explicitly
+        handler.context.execute(new Runnable() {
+          public void run() {
+            DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, handler.context);
+            socketMap.put(ch, sock);
+            handler.handler.handle(sock);
+          }
+        });
       }
     }
   }
