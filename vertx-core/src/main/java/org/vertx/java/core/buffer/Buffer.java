@@ -15,10 +15,10 @@
  */
 package org.vertx.java.core.buffer;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.buffer.DynamicChannelBuffer;
-import org.jboss.netty.util.CharsetUtil;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.util.CharsetUtil;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -42,8 +42,7 @@ import java.nio.charset.Charset;
  */
 public class Buffer {
 
-  // vert.x buffers are always dynamic
-  private DynamicChannelBuffer buffer;
+  private final ByteBuf buffer;
 
   /**
    * Create an empty buffer
@@ -60,21 +59,21 @@ public class Buffer {
    * automatic re-allocations as data is written to it.
    */
   public Buffer(int initialSizeHint) {
-    this(ChannelBuffers.dynamicBuffer(initialSizeHint));
+     buffer = Unpooled.buffer(initialSizeHint);
   }
 
   /**
    * Create a new Buffer that contains the contents of a {@code byte[]}
    */
   public Buffer(byte[] bytes) {
-    this(ChannelBuffers.wrappedBuffer(bytes));
+      this(Unpooled.wrappedBuffer(bytes));
   }
 
   /**
    * Create a new Buffer that contains the contents of a {@code String str} encoded according to the encoding {@code enc}
    */
   public Buffer(String str, String enc) {
-    this(ChannelBuffers.copiedBuffer(str, Charset.forName(enc)));
+      this(Unpooled.copiedBuffer(str, Charset.forName(enc)));
   }
 
   /**
@@ -85,18 +84,17 @@ public class Buffer {
   }
 
   /**
-   * Create a new Buffer from a Netty {@code ChannelBuffer} instance.
+   * Create a new Buffer from a Netty {@code ByteBuf} instance.
    * This method is meant for internal use only.
    */
-  public Buffer(ChannelBuffer buffer) {
-    if (buffer instanceof DynamicChannelBuffer) {
-      this.buffer = (DynamicChannelBuffer) buffer;
-    } else {
-      //TODO - if Netty could provide a DynamicChannelBuffer constructor which took a HeapBuffer this would
-      //save an extra copy
-      this.buffer = (DynamicChannelBuffer) ChannelBuffers.dynamicBuffer(buffer.readableBytes());
-      this.buffer.writeBytes(buffer, 0, buffer.readableBytes());
+  public Buffer(ByteBuf buffer) {
+    // TODO: Think about if we can improve this
+    if (buffer.maxCapacity() != Integer.MAX_VALUE) {
+      // the buffer is on its maxCapacity, we will need to copy it to have some room in there as
+      // buffers in vert.x are not limited at all time
+      buffer = Unpooled.buffer(buffer.writerIndex()).writeBytes(buffer);
     }
+    this.buffer = new UnreleasableByteBuf(buffer);
   }
 
   /**
@@ -219,8 +217,8 @@ public class Buffer {
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
   public Buffer appendBuffer(Buffer buff) {
-    ChannelBuffer cb = buff.getChannelBuffer();
-    buffer.writeBytes(buff.getChannelBuffer());
+    ByteBuf cb = buff.getByteBuf();
+    buffer.writeBytes(buff.getByteBuf());
     cb.readerIndex(0); // Need to reset readerindex since Netty write modifies readerIndex of source!
     return this;
   }
@@ -372,7 +370,7 @@ public class Buffer {
    */
   public Buffer setBuffer(int pos, Buffer b) {
     ensureWritable(pos, b.length());
-    buffer.setBytes(pos, b.getChannelBuffer());
+    buffer.setBytes(pos, b.getByteBuf());
     return this;
   }
 
@@ -428,10 +426,10 @@ public class Buffer {
   }
 
   /**
-   * Returns the Buffer as a Netty {@code ChannelBuffer}.<p>
+   * Returns the Buffer as a Netty {@code ByteBuf}.<p>
    * This method is meant for internal use only.
    */
-  public ChannelBuffer getChannelBuffer() {
+  public ByteBuf getByteBuf() {
     return buffer;
   }
 
@@ -456,7 +454,7 @@ public class Buffer {
     int over = ni - cap;
     if (over > 0) {
       buffer.writerIndex(cap);
-      buffer.ensureWritableBytes(over);
+      buffer.ensureWritable(over);
     }
     //We have to make sure that the writerindex is always positioned on the last bit of data set in the buffer
     if (ni > buffer.writerIndex()) {

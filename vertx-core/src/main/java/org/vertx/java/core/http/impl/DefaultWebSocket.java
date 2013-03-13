@@ -81,7 +81,7 @@ public class DefaultWebSocket extends ServerWebSocket {
   }
 
   public void writeBinaryFrame(Buffer data) {
-    WebSocketFrame frame = new DefaultWebSocketFrame(WebSocketFrame.FrameType.BINARY, data.getChannelBuffer());
+    WebSocketFrame frame = new DefaultWebSocketFrame(WebSocketFrame.FrameType.BINARY, data.getByteBuf());
     writeFrame(frame);
   }
 
