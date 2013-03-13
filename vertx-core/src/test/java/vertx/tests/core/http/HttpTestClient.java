@@ -2423,6 +2423,23 @@ public class HttpTestClient extends TestClientBase {
     });
   }
 
+  public void testGetAbsoluteURI() {
+    startServer(new Handler<HttpServerRequest>() {
+      @Override
+      public void handle(HttpServerRequest request) {
+        System.out.println("uri is:" + request.getAbsoluteURI());
+        tu.azzert("http://localhost:8080/foo".equals(request.getAbsoluteURI().toString()));
+        request.response.end();
+      }
+    });
+    client.getNow("/foo", new Handler<HttpClientResponse>() {
+      @Override
+      public void handle(HttpClientResponse resp) {
+        tu.testComplete();
+      }
+    });
+  }
+
   // -------------------------------------------------------------------------------------------
 
   private String generateQueryString(Map<String, String> params, char delim) {

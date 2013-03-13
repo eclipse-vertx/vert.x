@@ -59,9 +59,11 @@ class ServerConnection extends AbstractConnection {
   private boolean paused;
   private boolean sentCheck;
   private final Queue<Object> pending = new LinkedList<>();
+  private final String serverOrigin;
 
-  ServerConnection(VertxInternal vertx, Channel channel, Context context) {
+  ServerConnection(VertxInternal vertx, Channel channel, Context context, String serverOrigin) {
     super(vertx, channel, context);
+    this.serverOrigin = serverOrigin;
   }
 
   @Override
@@ -114,6 +116,10 @@ class ServerConnection extends AbstractConnection {
   //Close without checking thread - used when server is closed
   void internalClose() {
     channel.close();
+  }
+
+  String getServerOrigin() {
+    return serverOrigin;
   }
 
   private void handleRequest(DefaultHttpServerRequest req, DefaultHttpServerResponse resp) {
