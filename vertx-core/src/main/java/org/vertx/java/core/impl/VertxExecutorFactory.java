@@ -15,9 +15,8 @@
  */
 package org.vertx.java.core.impl;
 
-import org.jboss.netty.channel.socket.nio.NioClientBossPool;
-import org.jboss.netty.channel.socket.nio.NioServerBossPool;
-import org.jboss.netty.channel.socket.nio.NioWorkerPool;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
 import org.vertx.java.core.impl.management.ManagementRegistry;
 
 import java.util.concurrent.ExecutorService;
@@ -41,11 +40,11 @@ public class VertxExecutorFactory {
   public static final int ACCEPTOR_POOL_MAX_SIZE = 4;
 
   // The core pool needs to be fixed with a backing queue
-  public static NioWorkerPool corePool(String poolName) {
+  public static EventLoopGroup corePool(String poolName) {
     int corePoolSize = Integer.getInteger("vertx.pool.core.size", Runtime.getRuntime().availableProcessors());
-    ExecutorService exec = Executors.newFixedThreadPool(corePoolSize, new VertxThreadFactory(poolName));
-    ManagementRegistry.registerThreadPool("Core", exec);
-    return new NioWorkerPool(exec, corePoolSize);
+    //ExecutorService exec = Executors.newFixedThreadPool(corePoolSize, new VertxThreadFactory(poolName));
+    //ManagementRegistry.registerThreadPool("Core", exec);
+    return new NioEventLoopGroup(corePoolSize, new VertxThreadFactory(poolName));
   }
 
 
@@ -59,18 +58,17 @@ public class VertxExecutorFactory {
 
   // The acceptor pools need to be fixed with a backing queue
 
-  public static NioServerBossPool serverAcceptorPool(String poolName) {
+  public static EventLoopGroup serverAcceptorPool(String poolName) {
     int acceptorPoolSize = Integer.getInteger("vertx.pool.acceptor.size", ACCEPTOR_POOL_MAX_SIZE);
     ExecutorService exec = Executors.newFixedThreadPool(acceptorPoolSize, new VertxThreadFactory(poolName));
     ManagementRegistry.registerThreadPool("ServerAcceptor", exec);
-    return new NioServerBossPool(exec, acceptorPoolSize);
+    return new NioEventLoopGroup(acceptorPoolSize, new VertxThreadFactory(poolName));
   }
 
-  public static NioClientBossPool clientAcceptorPool(VertxInternal vertx, String poolName) {
+  public static EventLoopGroup clientAcceptorPool(VertxInternal vertx, String poolName) {
     int acceptorPoolSize = Integer.getInteger("vertx.pool.acceptor.size", ACCEPTOR_POOL_MAX_SIZE);
-    ExecutorService exec = Executors.newFixedThreadPool(acceptorPoolSize, new VertxThreadFactory(poolName));
-    ManagementRegistry.registerThreadPool("ClientAcceptor", exec);
-    return new NioClientBossPool(exec, acceptorPoolSize, vertx.getTimer(), null);
+    //ExecutorService exec = Executors.newFixedThreadPool(acceptorPoolSize, new VertxThreadFactory(poolName));
+    //ManagementRegistry.registerThreadPool("ClientAcceptor", exec);
+    return new NioEventLoopGroup(acceptorPoolSize, new VertxThreadFactory(poolName));
   }
-
 }

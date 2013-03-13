@@ -16,7 +16,7 @@
 
 package org.vertx.java.core.http;
 
-import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
@@ -53,7 +53,7 @@ public abstract class HttpServerResponse implements WriteStream {
   /**
    * The HTTP status code of the response. The default is {@code 200} representing {@code OK}.
    */
-  public int statusCode = HttpResponseStatus.OK.getCode();
+  public int statusCode = HttpResponseStatus.OK.code();
 
   /**
    * The HTTP status message of the response. If this is not specified a default value will be used depending on what

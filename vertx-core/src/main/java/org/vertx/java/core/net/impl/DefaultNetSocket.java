@@ -16,11 +16,11 @@
 
 package org.vertx.java.core.net.impl;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.util.CharsetUtil;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.util.CharsetUtil;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
@@ -59,16 +59,16 @@ public class DefaultNetSocket extends NetSocket {
   }
 
   public void writeBuffer(Buffer data) {
-    doWrite(data.getChannelBuffer());
+    doWrite(data.getByteBuf());
   }
 
   public NetSocket write(Buffer data) {
-    doWrite(data.getChannelBuffer());
+    doWrite(data.getByteBuf());
     return this;
   }
 
   public NetSocket write(String str) {
-    doWrite(ChannelBuffers.copiedBuffer(str, CharsetUtil.UTF_8));
+    doWrite(Unpooled.copiedBuffer(str, CharsetUtil.UTF_8));
     return this;
   }
 
@@ -76,18 +76,18 @@ public class DefaultNetSocket extends NetSocket {
     if (enc == null) {
       write(str);
     } else {
-      doWrite(ChannelBuffers.copiedBuffer(str, Charset.forName(enc)));
+      doWrite(Unpooled.copiedBuffer(str, Charset.forName(enc)));
     }
     return this;
   }
 
   public NetSocket write(Buffer data, Handler<Void> doneHandler) {
-    addFuture(doneHandler, doWrite(data.getChannelBuffer()));
+    addFuture(doneHandler, doWrite(data.getByteBuf()));
     return this;
   }
 
   public NetSocket write(String str, Handler<Void> doneHandler) {
-    addFuture(doneHandler, doWrite(ChannelBuffers.copiedBuffer(str, CharsetUtil.UTF_8)));
+    addFuture(doneHandler, doWrite(Unpooled.copiedBuffer(str, CharsetUtil.UTF_8)));
     return this;
   }
 
@@ -95,7 +95,7 @@ public class DefaultNetSocket extends NetSocket {
     if (enc == null) {
       write(str, enc);
     } else {
-      addFuture(doneHandler, doWrite(ChannelBuffers.copiedBuffer(str, Charset.forName(enc))));
+      addFuture(doneHandler, doWrite(Unpooled.copiedBuffer(str, Charset.forName(enc))));
     }
     return this;
   }
@@ -145,7 +145,7 @@ public class DefaultNetSocket extends NetSocket {
     }
   }
 
-  void handleInterestedOpsChanged() {
+  public void handleInterestedOpsChanged() {
     setContext();
     callDrainHandler();
   }
@@ -166,13 +166,17 @@ public class DefaultNetSocket extends NetSocket {
     channel.close();
   }
 
-  private ChannelFuture doWrite(ChannelBuffer buff) {
+  public void setInternalWritable(boolean  writable) {
+    setWritable(writable);
+  }
+
+  private ChannelFuture doWrite(ByteBuf buff) {
     return channel.write(buff);
   }
 
   private void callDrainHandler() {
     if (drainHandler != null) {
-      if (channel.isWritable()) {
+      if (!writeQueueFull()) {
         try {
           drainHandler.handle(null);
         } catch (Throwable t) {

@@ -18,24 +18,25 @@
 
 package org.vertx.java.core.http.impl.ws;
 
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundMessageHandlerAdapter;
 
 import static org.vertx.java.core.http.impl.ws.WebSocketFrame.FrameType;
 
-public class PingHandler extends SimpleChannelUpstreamHandler {
+@ChannelHandler.Sharable
+public class PingHandler extends ChannelInboundMessageHandlerAdapter<WebSocketFrame> {
 
   @Override
-  public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-    if (e.getMessage() instanceof WebSocketFrame) {
-      WebSocketFrame frame = (WebSocketFrame) e.getMessage();
+  public void messageReceived(ChannelHandlerContext ctx, WebSocketFrame frame) throws Exception {
+    ctx.channel().write(new DefaultWebSocketFrame(FrameType.PONG, frame.getBinaryData()));
+  }
 
-      if (frame.getType() == FrameType.PING) {
-        ctx.getChannel().write(new DefaultWebSocketFrame(FrameType.PONG, frame.getBinaryData()));
-        return;
-      }
+  @Override
+  public boolean acceptInboundMessage(Object msg) throws Exception {
+    if (msg instanceof WebSocketFrame) {
+      return ((WebSocketFrame) msg).getType() == FrameType.PING;
     }
-    super.messageReceived(ctx, e);
+    return false;
   }
 }

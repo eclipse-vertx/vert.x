@@ -18,7 +18,7 @@
 
 package org.vertx.java.core.http.impl.ws;
 
-import org.jboss.netty.buffer.ChannelBuffer;
+import io.netty.buffer.ByteBuf;
 
 /**
  * A Web Socket frame that represents either text or binary data.
@@ -58,7 +58,7 @@ public interface WebSocketFrame {
   /**
    * Returns the content of this frame as-is, with no UTF-8 decoding.
    */
-  ChannelBuffer getBinaryData();
+  ByteBuf getBinaryData();
 
   /**
    * Converts the content of this frame into a UTF-8 string and returns the
@@ -74,7 +74,7 @@ public interface WebSocketFrame {
    * @throws IllegalArgumentException if If <tt>(type &amp; 0x80 == 0)</tt> and the data is not encoded
    *                                  in UTF-8
    */
-  void setBinaryData(ChannelBuffer binaryData);
+  void setBinaryData(ByteBuf binaryData);
 
   void setTextData(String textData);
 

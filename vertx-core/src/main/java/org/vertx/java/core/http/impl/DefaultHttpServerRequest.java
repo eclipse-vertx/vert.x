@@ -16,8 +16,8 @@
 
 package org.vertx.java.core.http.impl;
 
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.QueryStringDecoder;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.QueryStringDecoder;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
@@ -61,7 +61,7 @@ public class DefaultHttpServerRequest extends HttpServerRequest {
 
   public Map<String, String> headers() {
     if (headers == null) {
-      headers = HeaderUtils.simplifyHeaders(request.getHeaders());
+      headers = HeaderUtils.simplifyHeaders(request.headers().entries());
     }
     return headers;
   }
@@ -69,11 +69,11 @@ public class DefaultHttpServerRequest extends HttpServerRequest {
   public Map<String, String> params() {
     if (params == null) {
       QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri);
-      Map<String, List<String>> prms = queryStringDecoder.getParameters();
+      Map<String, List<String>> prms = queryStringDecoder.parameters();
       if (prms.isEmpty()) {
-        params = new HashMap<>();
+        params = new HashMap<String, String>();
       } else {
-        params = new HashMap<>(prms.size());
+        params = new HashMap<String, String>(prms.size());
         for (Map.Entry<String, List<String>> entry: prms.entrySet()) {
           params.put(entry.getKey(), entry.getValue().get(0));
         }

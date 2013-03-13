@@ -16,8 +16,8 @@
 
 package org.vertx.java.core.http.impl;
 
-import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
-import org.jboss.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.HttpResponse;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClientResponse;
@@ -42,21 +42,21 @@ public class DefaultHttpClientResponse extends HttpClientResponse {
   private Handler<Void> endHandler;
   private Handler<Exception> exceptionHandler;
   private final HttpResponse response;
-  private HttpChunkTrailer trailer;
+  private LastHttpContent trailer;
   // Cache these for performance
   private Map<String, String> headers;
   private Map<String, String> trailers;
   private List<String> cookies;
 
   DefaultHttpClientResponse(ClientConnection conn, HttpResponse response) {
-    super(response.getStatus().getCode(), response.getStatus().getReasonPhrase());
+    super(response.getStatus().code(), response.getStatus().reasonPhrase());
     this.conn = conn;
     this.response = response;
   }
 
   public Map<String, String> headers() {
     if (headers == null) {
-      headers = HeaderUtils.simplifyHeaders(response.getHeaders());
+      headers = HeaderUtils.simplifyHeaders(response.headers().entries());
     }
     return headers;
   }
@@ -64,9 +64,9 @@ public class DefaultHttpClientResponse extends HttpClientResponse {
   public Map<String, String> trailers() {
     if (trailers == null) {
       if (trailer == null) {
-        trailers = new HashMap<>();
+        trailers = new HashMap<String, String>();
       } else {
-        trailers = HeaderUtils.simplifyHeaders(trailer.getHeaders());
+        trailers = HeaderUtils.simplifyHeaders(trailer.trailingHeaders().entries());
       }
     }
     return trailers;
@@ -74,10 +74,10 @@ public class DefaultHttpClientResponse extends HttpClientResponse {
 
   public List<String> cookies() {
     if (cookies == null) {
-      cookies = new ArrayList<>();
-      cookies.addAll(response.getHeaders("Set-Cookie"));
+      cookies = new ArrayList<String>();
+      cookies.addAll(response.headers().getAll("Set-Cookie"));
       if (trailer != null) {
-        cookies.addAll(trailer.getHeaders("Set-Cookie"));
+        cookies.addAll(trailer.trailingHeaders().getAll("Set-Cookie"));
       }
     }
     return cookies;
@@ -109,7 +109,7 @@ public class DefaultHttpClientResponse extends HttpClientResponse {
     }
   }
 
-  void handleEnd(HttpChunkTrailer trailer) {
+  void handleEnd(LastHttpContent trailer) {
     this.trailer = trailer;
     if (endHandler != null) {
       endHandler.handle(null);

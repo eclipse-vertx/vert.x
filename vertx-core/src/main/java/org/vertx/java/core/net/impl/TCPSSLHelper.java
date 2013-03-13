@@ -16,7 +16,9 @@
 
 package org.vertx.java.core.net.impl;
 
-import org.jboss.netty.channel.FixedReceiveBufferSizePredictor;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.ChannelOption;
 import org.vertx.java.core.file.impl.PathAdjuster;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
@@ -31,8 +33,6 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Helper class for TCP and SSL attributes
@@ -77,43 +77,64 @@ public class TCPSSLHelper {
     NONE, REQUEST, REQUIRED
   }
 
-  public Map<String, Object> generateConnectionOptions(boolean server) {
-    Map<String, Object> options = new HashMap<>();
-    String prefix = (server ? "child." : "");
+  public void applyConnectionOptions(ServerBootstrap bootstrap) {
     if (tcpNoDelay != null) {
-      options.put(prefix +"tcpNoDelay", tcpNoDelay);
+      bootstrap.childOption(ChannelOption.TCP_NODELAY, tcpNoDelay);
     }
     if (tcpSendBufferSize != null) {
-      options.put(prefix + "sendBufferSize", tcpSendBufferSize);
+      bootstrap.childOption(ChannelOption.SO_SNDBUF, tcpSendBufferSize);
     }
     if (tcpReceiveBufferSize != null) {
-      options.put(prefix + "receiveBufferSize", tcpReceiveBufferSize);
+      bootstrap.childOption(ChannelOption.SO_RCVBUF, tcpReceiveBufferSize);
+
       // We need to set a FixedReceiveBufferSizePredictor, since otherwise
       // Netty will ignore our setting and use an adaptive buffer which can
       // get very large
-      options.put(prefix + "receiveBufferSizePredictor", new FixedReceiveBufferSizePredictor(tcpReceiveBufferSize));
     }
     if (soLinger != null) {
-      options.put(prefix + "soLinger", soLinger);
+       // TODO: Fix me
+       //bootstrap.childOption(ChannelOption.SO_LINGER, soLinger);
     }
     if (tcpKeepAlive != null) {
-      options.put(prefix + "keepAlive", tcpKeepAlive);
+        bootstrap.childOption(ChannelOption.SO_KEEPALIVE, tcpKeepAlive);
+    }
+
+    if (trafficClass != null) {
+     bootstrap.childOption(ChannelOption.IP_TOS, trafficClass);
+    }
+    if (reuseAddress != null) {
+      bootstrap.option(ChannelOption.SO_REUSEADDR, reuseAddress);
+    }
+    if (acceptBackLog != null) {
+      bootstrap.option(ChannelOption.SO_BACKLOG, acceptBackLog);
+    }
+  }
+
+  public void applyConnectionOptions(Bootstrap bootstrap) {
+    if (tcpNoDelay != null) {
+      bootstrap.option(ChannelOption.TCP_NODELAY, tcpNoDelay);
+    }
+    if (tcpSendBufferSize != null) {
+      bootstrap.option(ChannelOption.SO_SNDBUF, tcpSendBufferSize);
+    }
+    if (tcpReceiveBufferSize != null) {
+      bootstrap.option(ChannelOption.SO_RCVBUF, tcpReceiveBufferSize);
+
+      // We need to set a FixedReceiveBufferSizePredictor, since otherwise
+      // Netty will ignore our setting and use an adaptive buffer which can
+      // get very large
+      //options.put(prefix + "receiveBufferSizePredictor", new FixedReceiveBufferSizePredictor(1024));
+    }
+    if (soLinger != null) {
+      // TODO: Fix me
+      //bootstrap.childOption(ChannelOption.SO_LINGER, soLinger);
     }
     if (trafficClass != null) {
-      options.put(prefix + "trafficClass", trafficClass);
+      bootstrap.option(ChannelOption.IP_TOS, trafficClass);
     }
-    if (server) {
-      if (reuseAddress != null) {
-        options.put("reuseAddress", reuseAddress);
-      }
-      if (acceptBackLog != null) {
-        options.put("backlog", acceptBackLog);
-      }
+    if (connectTimeout != null) {
+      bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout.intValue());
     }
-    if (!server && connectTimeout != null) {
-      options.put("connectTimeoutMillis", connectTimeout);
-    }
-    return options;
   }
 
   public Boolean isTCPNoDelay() {
