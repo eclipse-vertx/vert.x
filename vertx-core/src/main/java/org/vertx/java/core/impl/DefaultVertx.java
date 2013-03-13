@@ -158,11 +158,11 @@ public class DefaultVertx extends VertxInternal {
   }
 
   public long setPeriodic(long delay, final Handler<Long> handler) {
-      return scheduleTimeout(-1, (EventLoopContext) getOrAssignContext(), handler, delay, true);
+    return scheduleTimeout(getOrAssignContext(), handler, delay, true);
   }
 
   public long setTimer(long delay, final Handler<Long> handler) {
-      return scheduleTimeout(-1, (EventLoopContext) getOrAssignContext(), handler, delay, false);
+    return scheduleTimeout(getOrAssignContext(), handler, delay, false);
   }
 
   public void runOnLoop(final Handler<Void> handler) {
@@ -218,7 +218,6 @@ public class DefaultVertx extends VertxInternal {
   }
 
   public EventLoopContext createEventLoopContext() {
-    getBackgroundPool();
     EventLoop worker = getCorePool().next();
     return new EventLoopContext(this, orderedFact.getExecutor(), worker);
   }
@@ -232,30 +231,40 @@ public class DefaultVertx extends VertxInternal {
     }
   }
 
-  private long scheduleTimeout(long id, final EventLoopContext context, final Handler<Long> handler, long delay, boolean periodic) {
+  private long scheduleTimeout(final Context context, final Handler<Long> handler, long delay, boolean periodic) {
 
-    if (id != -1 && timeouts.get(id) == null) {
-      //Been cancelled
-      return -1;
+    long timerId = timeoutCounter.getAndIncrement();
+    InternalTimerHandler task = new InternalTimerHandler(timerId, handler);
+    final Runnable wrapped = context.wrapTask(task);
+    Runnable toRun;
+    EventLoop el;
+    if (context instanceof EventLoopContext) {
+      el = ((EventLoopContext)context).getWorker();
+      toRun = wrapped;
+    } else {
+      // On worker context
+      el = getCorePool().next();
+      toRun = new Runnable() {
+        public void run() {
+          // Make sure the timer gets executed on the worker context
+          context.execute(wrapped);
+        }
+      };
     }
 
-    id = id != -1 ? id : timeoutCounter.getAndIncrement();
-    final long timerId = id;
-    final InternalTimerHandler task = new InternalTimerHandler(timerId, handler);
     Future<?> future;
     if (periodic) {
       if (delay == 0) {
-        future = context.getWorker().scheduleAtFixedRate(task, delay, 10, TimeUnit.MILLISECONDS);
-
+        future = el.scheduleAtFixedRate(toRun, delay, 10, TimeUnit.MILLISECONDS);
       } else {
-        future = context.getWorker().scheduleAtFixedRate(task, delay, delay, TimeUnit.MILLISECONDS);
+        future = el.scheduleAtFixedRate(toRun, delay, delay, TimeUnit.MILLISECONDS);
       }
     } else {
-      future = context.getWorker().schedule(task, delay, TimeUnit.MILLISECONDS);
+      future = el.schedule(toRun, delay, TimeUnit.MILLISECONDS);
     }
     task.future = future;
-    timeouts.put(id, task);
-    return id;
+    timeouts.put(timerId, task);
+    return timerId;
   }
 
   private Context createWorkerContext(boolean multiThreaded) {
