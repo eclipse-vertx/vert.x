@@ -28,6 +28,7 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.sockjs.EventBusBridge;
+import org.vertx.java.core.sockjs.EventBusBridgeHook;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
@@ -47,6 +48,7 @@ public class DefaultSockJSServer implements SockJSServer {
   private RouteMatcher rm = new RouteMatcher();
   private WebSocketMatcher wsMatcher = new WebSocketMatcher();
   private final Map<String, Session> sessions;
+  private EventBusBridgeHook hook;
 
   public DefaultSockJSServer(final VertxInternal vertx, final HttpServer httpServer) {
     this.vertx = vertx;
@@ -99,6 +101,10 @@ public class DefaultSockJSServer implements SockJSServer {
       config.putArray("disabled_transports", new JsonArray());
     }
     return config;
+  }
+  
+  public void setHook(EventBusBridgeHook hook) {
+	  this.hook = hook;
   }
 
   public void installApp(JsonObject config,
@@ -180,17 +186,29 @@ public class DefaultSockJSServer implements SockJSServer {
   }
 
   public void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted) {
-    installApp(sjsConfig, new EventBusBridge(vertx, inboundPermitted, outboundPermitted));
+	  EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted);
+    if (hook != null) {
+      busBridge.setHook(hook);
+    }
+    installApp(sjsConfig, busBridge);
   }
 
   public void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
                      long authTimeout) {
-    installApp(sjsConfig, new EventBusBridge(vertx, inboundPermitted, outboundPermitted, authTimeout));
+	  EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted, authTimeout);
+	  if (hook != null) {
+		  busBridge.setHook(hook);
+	  }
+    installApp(sjsConfig, busBridge);
   }
 
   public void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
                      long authTimeout, String authAddress) {
-    installApp(sjsConfig, new EventBusBridge(vertx, inboundPermitted, outboundPermitted, authTimeout, authAddress));
+	  EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted, authTimeout, authAddress);
+	  if (hook != null) {
+		  busBridge.setHook(hook);
+	  }
+    installApp(sjsConfig, busBridge);
   }
 
   private Handler<HttpServerRequest> createChunkingTestHandler() {
