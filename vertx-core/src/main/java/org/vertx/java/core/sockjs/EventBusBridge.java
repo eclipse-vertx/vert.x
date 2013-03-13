@@ -142,7 +142,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   }
 
   private void internalHandleRegister(final SockJSSocket sock, final String address, Map<String, Handler<Message>> handlers) {
-    if (handleRegister(sock, address)) {
+    if (handlePreRegister(sock, address)) {
       Handler<Message> handler = new Handler<Message>() {
         public void handle(final Message msg) {
           Match curMatch = checkMatches(false, address, msg.body);
@@ -160,6 +160,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       };
       handlers.put(address, handler);
       eb.registerHandler(address, handler);
+      handlePostRegister(sock, address);
     }
   }
 
@@ -459,13 +460,21 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   }
 
   /**
-   * Client is registering a handler
+   * Client is about to register a handler
    * @param sock The socket
    * @param address The address
    * @return true to let the registration occur, false otherwise
    */
-  protected boolean handleRegister(SockJSSocket sock, String address) {
+  protected boolean handlePreRegister(SockJSSocket sock, String address) {
     return true;
+  }
+
+  /**
+   * Called after client has registered
+   * @param sock The socket
+   * @param address The address
+   */
+  protected void handlePostRegister(SockJSSocket sock, String address) {
   }
 
   /**
