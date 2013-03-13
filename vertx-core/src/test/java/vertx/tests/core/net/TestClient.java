@@ -782,8 +782,7 @@ public class TestClient extends TestClientBase {
       @Override
       public void handle(NetSocket socket) {
         InetSocketAddress addr = socket.getRemoteAddress();
-        System.out.println("Remote host is " + addr.getHostName());
-        //tu.azzert(addr.getHostName().equals("localhost"));
+        tu.azzert(addr.getHostName().startsWith("localhost"));
       }
     }).listen(1234);
     vertx.createNetClient().connect(1234, new Handler<NetSocket>() {
