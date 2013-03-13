@@ -2415,8 +2415,7 @@ public class HttpTestClient extends TestClientBase {
     startServer(new Handler<HttpServerRequest>() {
       @Override
       public void handle(HttpServerRequest request) {
-        System.out.println("remote host is: " + request.getRemoteAddress().getHostName());
-        //tu.azzert(request.getRemoteAddress().getHostName().equals("localhost"));
+        tu.azzert(request.getRemoteAddress().getHostName().startsWith("localhost"));
         request.response.end();
       }
     });
