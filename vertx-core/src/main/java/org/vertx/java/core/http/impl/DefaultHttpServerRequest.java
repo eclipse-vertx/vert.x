@@ -136,6 +136,10 @@ public class DefaultHttpServerRequest extends HttpServerRequest {
     return conn.getPeerCertificateChain();
   }
 
+  public HttpRequest getNettyRequest() {
+    return request;
+  }
+
   void handleEnd() {
     if (endHandler != null) {
       endHandler.handle(null);
