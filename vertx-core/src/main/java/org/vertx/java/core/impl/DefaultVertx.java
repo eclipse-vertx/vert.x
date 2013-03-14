@@ -243,6 +243,8 @@ public class DefaultVertx extends VertxInternal {
       toRun = wrapped;
     } else {
       // On worker context
+      // TODO - for worker there's probably little point in using the event loop netty scheduling
+      // we could just use our own hashed wheel timer
       el = getCorePool().next();
       toRun = new Runnable() {
         public void run() {
