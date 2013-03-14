@@ -146,8 +146,8 @@ public class DefaultNetClient implements NetClient {
     return tcpHelper.isReuseAddress();
   }
 
-  public Boolean isSoLinger() {
-    return tcpHelper.isSoLinger();
+  public Integer getSoLinger() {
+    return tcpHelper.getSoLinger();
   }
 
   public Integer getTrafficClass() {
@@ -183,8 +183,12 @@ public class DefaultNetClient implements NetClient {
     return this;
   }
 
-  public NetClient setSoLinger(boolean linger) {
-    tcpHelper.setSoLinger(linger);
+  public NetClient setSoLinger(int linger) {
+    if (linger < 0) {
+      tcpHelper.setSoLinger(null);
+    } else {
+      tcpHelper.setSoLinger(linger);
+    }
     return this;
   }
 

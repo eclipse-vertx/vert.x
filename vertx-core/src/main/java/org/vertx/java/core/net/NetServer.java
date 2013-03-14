@@ -142,9 +142,10 @@ public interface NetServer {
 
   /**
    * Set the TCP soLinger setting for connections created by this instance to {@code reuse}.
+   * Using a negative value will disable soLinger.
    * @return a reference to this so multiple method calls can be chained together
    */
-  NetServer setSoLinger(boolean linger);
+  NetServer setSoLinger(int soLinger);
 
   /**
    * Set the TCP trafficClass setting for connections created by this instance to {@code reuse}.
@@ -189,7 +190,7 @@ public interface NetServer {
    *
    * @return the value of TCP so linger
    */
-  Boolean isSoLinger();
+  Integer getSoLinger();
 
   /**
    *
