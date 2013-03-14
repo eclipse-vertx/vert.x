@@ -41,7 +41,6 @@ public abstract class BaseServer extends Verticle {
 
   public void start() {
     tu = new TestUtils(vertx);
-    System.out.println("Creating echo server in base server with context " + ((DefaultVertx)vertx).getContext());
     server = vertx.createNetServer();
     server.connectHandler(getConnectHandler());
     Integer port = vertx.sharedData().<String, Integer>getMap("params").get("listenport");
