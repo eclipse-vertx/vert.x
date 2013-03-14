@@ -37,11 +37,18 @@ public class TestClient extends TestClientBase {
     super.stop();
   }
 
-  public void testOneOff() throws Exception {
+  public void testTimer() throws Exception {
+    timer(1);
+  }
+
+  private void timer(long delay) throws Exception {
     final AtomicLong id = new AtomicLong(-1);
-    id.set(vertx.setTimer(1, new Handler<Long>() {
+    id.set(vertx.setTimer(delay, new Handler<Long>() {
       int count;
+      boolean fired;
       public void handle(Long timerID) {
+        tu.azzert(!fired);
+        fired = true;
         tu.checkThread();
         tu.azzert(id.get() == timerID.longValue());
         tu.azzert(count == 0);
@@ -63,14 +70,17 @@ public class TestClient extends TestClientBase {
   }
 
   public void testPeriodic() throws Exception {
+    periodic(10);
+  }
+
+  private void periodic(long delay) throws Exception {
     final int numFires = 10;
-    final long delay = 100;
     final AtomicLong id = new AtomicLong(-1);
     id.set(vertx.setPeriodic(delay, new Handler<Long>() {
       int count;
       public void handle(Long timerID) {
         tu.checkThread();
-        tu.azzert(id.get() == timerID.longValue());
+        tu.azzert(id.get() == timerID);
         count++;
         if (count == numFires) {
           vertx.cancelTimer(timerID);
@@ -101,4 +111,5 @@ public class TestClient extends TestClientBase {
       }
     });
   }
+
 }

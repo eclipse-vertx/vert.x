@@ -27,11 +27,15 @@ import vertx.tests.core.timer.TestClient;
  */
 public class JavaTimerTest extends TestBase {
 
-private static final Logger log = LoggerFactory.getLogger(JavaTimerTest.class);
+  private static final Logger log = LoggerFactory.getLogger(JavaTimerTest.class);
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
+    doSetUp();
+  }
+
+  protected void doSetUp() throws Exception {
     startApp(TestClient.class.getName());
   }
 
@@ -41,7 +45,7 @@ private static final Logger log = LoggerFactory.getLogger(JavaTimerTest.class);
   }
 
   @Test
-  public void testOneOff() throws Exception {
+  public void testTimer() throws Exception {
     startTest(getMethodName());
   }
 

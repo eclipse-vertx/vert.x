@@ -487,7 +487,7 @@ public class TestClient extends TestClientBase {
         tu.azzert(!sock.writeQueueFull());
         sock.setWriteQueueMaxSize(1000);
         final Buffer buff = TestUtils.generateRandomBuffer(10000);
-        vertx.setPeriodic(0, new Handler<Long>() {
+        vertx.setPeriodic(1, new Handler<Long>() {
           public void handle(Long id) {
             sock.write(buff.copy());
             if (sock.writeQueueFull()) {

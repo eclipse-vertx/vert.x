@@ -23,6 +23,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelHandlerUtil;
 import io.netty.channel.ChannelInboundMessageHandler;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.impl.ConnectionBase;
 import org.vertx.java.core.net.impl.VertxStateHandler;
 
@@ -31,10 +32,16 @@ import java.util.Map;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
+
 public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxStateHandler<C> implements ChannelHandlerUtil.SingleInboundMessageHandler<Object>, ChannelInboundMessageHandler<Object> {
-  protected VertxHttpHandler(Map<Channel, C> connectionMap) {
+
+  private VertxInternal vertx;
+
+  protected VertxHttpHandler(Map<Channel, C> connectionMap, VertxInternal vertx) {
     super(connectionMap);
+    this.vertx = vertx;
   }
+
   @Override
   public MessageBuf<Object> newInboundBuffer(ChannelHandlerContext channelHandlerContext) throws Exception {
     return Unpooled.messageBuffer();
@@ -75,8 +82,8 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxSt
       Context context = getContext(connection);
       // We need to do this since it's possible the server is being used from a worker context
       if (context.isOnCorrectWorker(ch.eventLoop())) {
-       doMessageReceived(connection, chctx, msg);
-
+        vertx.setContext(context);
+        doMessageReceived(connection, chctx, msg);
       } else {
         BufUtil.retain(msg);
         context.execute(new Runnable() {
