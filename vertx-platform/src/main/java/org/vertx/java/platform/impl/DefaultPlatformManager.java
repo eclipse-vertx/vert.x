@@ -1187,7 +1187,6 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
                 }
               });
             } catch (Throwable t) {
-              t.printStackTrace();
               vertx.reportException(t);
               doUndeploy(deploymentName, new SimpleHandler() {
                 public void handle() {
@@ -1195,7 +1194,6 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
                 }
               });
             }
-
           }
         };
 

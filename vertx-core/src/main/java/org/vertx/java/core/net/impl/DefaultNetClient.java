@@ -380,7 +380,6 @@ public class DefaultNetClient implements NetClient {
           }
         });
       }
-
     } else {
       log.error("Unhandled exception", t);
     }
