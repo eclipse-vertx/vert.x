@@ -258,8 +258,12 @@ public class DefaultHttpClient implements HttpClient {
     return this;
   }
 
-  public DefaultHttpClient setSoLinger(boolean linger) {
-    tcpHelper.setSoLinger(linger);
+  public DefaultHttpClient setSoLinger(int linger) {
+    if (linger < 0) {
+      tcpHelper.setSoLinger(null);
+    } else {
+      tcpHelper.setSoLinger(linger);
+    }
     return this;
   }
 
@@ -293,8 +297,8 @@ public class DefaultHttpClient implements HttpClient {
     return tcpHelper.isReuseAddress();
   }
 
-  public Boolean isSoLinger() {
-    return tcpHelper.isSoLinger();
+  public Integer getSoLinger() {
+    return tcpHelper.getSoLinger();
   }
 
   public Integer getTrafficClass() {

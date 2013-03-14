@@ -21,7 +21,6 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.*;
-import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.testframework.TestClientBase;
 import org.vertx.java.testframework.TestUtils;
 
@@ -78,7 +77,7 @@ public class HttpTestClient extends TestClientBase {
     tu.azzert(client.getTrustStorePassword() == null);
     tu.azzert(client.getTrustStorePath() == null);
     tu.azzert(client.isReuseAddress() == null);
-    tu.azzert(client.isSoLinger() == null);
+    tu.azzert(client.getSoLinger() == null);
     tu.azzert(client.isTCPKeepAlive());
     tu.azzert(client.isTCPNoDelay());
     tu.azzert(client.getReceiveBufferSize() == null);
@@ -122,10 +121,10 @@ public class HttpTestClient extends TestClientBase {
     tu.azzert(client.setReuseAddress(false) == client);
     tu.azzert(!client.isReuseAddress());
 
-    tu.azzert(client.setSoLinger(true) == client);
-    tu.azzert(client.isSoLinger());
-    tu.azzert(client.setSoLinger(false) == client);
-    tu.azzert(!client.isSoLinger());
+    tu.azzert(client.setSoLinger(10) == client);
+    tu.azzert(client.getSoLinger() != null);
+    tu.azzert(client.setSoLinger(-1) == client);
+    tu.azzert(client.getSoLinger() == null);
 
     tu.azzert(client.setTCPKeepAlive(true) == client);
     tu.azzert(client.isTCPKeepAlive());
@@ -189,7 +188,7 @@ public class HttpTestClient extends TestClientBase {
     tu.azzert(server.getTrustStorePassword() == null);
     tu.azzert(server.getTrustStorePath() == null);
     tu.azzert(server.isReuseAddress());
-    tu.azzert(server.isSoLinger() == null);
+    tu.azzert(server.getSoLinger() == null);
     tu.azzert(server.isTCPKeepAlive());
     tu.azzert(server.isTCPNoDelay());
     tu.azzert(server.getReceiveBufferSize() == null);
@@ -231,10 +230,10 @@ public class HttpTestClient extends TestClientBase {
     tu.azzert(server.setReuseAddress(false) == server);
     tu.azzert(!server.isReuseAddress());
 
-    tu.azzert(server.setSoLinger(true) == server);
-    tu.azzert(server.isSoLinger());
-    tu.azzert(server.setSoLinger(false) == server);
-    tu.azzert(!server.isSoLinger());
+    tu.azzert(server.setSoLinger(10) == server);
+    tu.azzert(server.getSoLinger() != null);
+    tu.azzert(server.setSoLinger(-1) == server);
+    tu.azzert(server.getSoLinger() == null);
 
     tu.azzert(server.setTCPKeepAlive(true) == server);
     tu.azzert(server.isTCPKeepAlive());

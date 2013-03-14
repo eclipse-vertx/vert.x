@@ -258,9 +258,10 @@ public interface HttpClient {
 
   /**
    * Set the TCP soLinger setting for connections created by this instance to {@code linger}.
+   * Using a negative value will disable soLinger.
    * @return a reference to this so multiple method calls can be chained together
    */
-  HttpClient setSoLinger(boolean linger);
+  HttpClient setSoLinger(int linger);
 
   /**
    * Set the TCP trafficClass setting for connections created by this instance to {@code trafficClass}.
@@ -305,7 +306,7 @@ public interface HttpClient {
    *
    * @return the value of TCP so linger
    */
-  Boolean isSoLinger();
+  Integer getSoLinger();
 
   /**
    *
