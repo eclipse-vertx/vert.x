@@ -2427,7 +2427,6 @@ public class HttpTestClient extends TestClientBase {
     startServer(new Handler<HttpServerRequest>() {
       @Override
       public void handle(HttpServerRequest request) {
-        System.out.println("uri is:" + request.getAbsoluteURI());
         tu.azzert("http://localhost:8080/foo".equals(request.getAbsoluteURI().toString()));
         request.response.end();
       }

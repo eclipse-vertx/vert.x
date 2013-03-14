@@ -84,7 +84,6 @@ public class DefaultNetServer implements NetServer {
     // We then do a check when messages are delivered that we're on the right worker before delivering the message
     // All of this will be massively simplified in Netty 4.0 when the event loop becomes a first class citizen
     actualCtx = vertx.getOrAssignContext();
-    System.out.println("Creating ns wit context " + actualCtx);
     actualCtx.putCloseHook(this, new Runnable() {
       public void run() {
         close();
@@ -95,8 +94,6 @@ public class DefaultNetServer implements NetServer {
     } else {
       eventLoopContext = vertx.createEventLoopContext();
     }
-    System.out.println("el context is " + eventLoopContext);
-    System.out.println("el worker is " + eventLoopContext.getWorker());
     tcpHelper.setReuseAddress(true);
   }
 
@@ -401,8 +398,6 @@ public class DefaultNetServer implements NetServer {
       final Channel ch = ctx.channel();
       EventLoop worker = ch.eventLoop();
 
-      System.out.println("channel active, el is " + worker);
-
       //Choose a handler
       final HandlerHolder<NetSocket> handler = handlerManager.chooseHandler(worker);
       if (handler == null) {
@@ -430,8 +425,6 @@ public class DefaultNetServer implements NetServer {
     }
 
     private void connected(final Channel ch, final HandlerHolder<NetSocket> handler) {
-      System.out.println("handler context is " + handler.context);
-      System.out.println("current context is " + vertx.getOrAssignContext());
       if (handler.context.isOnCorrectWorker(ch.eventLoop())) {
         vertx.setContext(handler.context);
         DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, handler.context);
