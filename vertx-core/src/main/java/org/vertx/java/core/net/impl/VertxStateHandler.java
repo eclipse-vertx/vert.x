@@ -60,7 +60,6 @@ public abstract class VertxStateHandler<C extends ConnectionBase> extends Channe
 
   @Override
   public void exceptionCaught(ChannelHandlerContext chctx, final Throwable t) throws Exception {
-    t.printStackTrace();
     final Channel ch = chctx.channel();
     final C sock = connectionMap.remove(ch);
     if (sock != null && t instanceof Exception) {

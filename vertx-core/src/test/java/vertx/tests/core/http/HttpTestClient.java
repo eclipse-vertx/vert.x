@@ -2167,13 +2167,14 @@ public class HttpTestClient extends TestClientBase {
     final int numGets = 1000;
     int maxPoolSize = 10;
     client.setKeepAlive(keepAlive).setMaxPoolSize(maxPoolSize);
+    final AtomicInteger cnt = new AtomicInteger(0);
     for (int i = 0; i < numGets; i++) {
       final int theCount = i;
       HttpClientRequest req = client.get(path, new Handler<HttpClientResponse>() {
         public void handle(final HttpClientResponse response) {
           tu.azzert(response.statusCode == 200);
           tu.azzert(theCount == Integer.parseInt(response.headers().get("count")));
-          if (theCount == numGets - 1) {
+          if (cnt.incrementAndGet() == numGets) {
             tu.testComplete();
           }
         }
