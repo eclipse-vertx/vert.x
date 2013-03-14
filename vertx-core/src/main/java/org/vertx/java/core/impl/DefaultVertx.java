@@ -223,9 +223,9 @@ public class DefaultVertx extends VertxInternal {
   }
 
   private boolean cancelTimeout(long id) {
-    Future<?> holder = timeouts.remove(id).future;
-    if (holder != null) {
-      return holder.cancel(false);
+    InternalTimerHandler handler = timeouts.remove(id);
+    if (handler != null) {
+      return handler.future.cancel(false);
     } else {
       return false;
     }
