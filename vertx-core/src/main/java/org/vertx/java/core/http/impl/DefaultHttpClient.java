@@ -425,6 +425,7 @@ public class DefaultHttpClient implements HttpClient {
 
   private void connected(final Channel ch, final Handler<ClientConnection> connectHandler) {
     if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
+      vertx.setContext(actualCtx);
       final ClientConnection conn = new ClientConnection(vertx, DefaultHttpClient.this, ch,
                 host + ":" + port, tcpHelper.isSSL(), keepAlive, actualCtx);
       conn.closedHandler(new SimpleHandler() {
@@ -460,6 +461,7 @@ public class DefaultHttpClient implements HttpClient {
 
     boolean onEventLoop = actualCtx.isOnCorrectWorker(ch.eventLoop());
     if (onEventLoop) {
+      vertx.setContext(actualCtx);
       pool.connectionClosed();
       ch.close();
       if (t instanceof Exception && exHandler != null) {
@@ -489,7 +491,7 @@ public class DefaultHttpClient implements HttpClient {
 
   private class ClientHandler extends VertxHttpHandler<ClientConnection> {
     public ClientHandler() {
-      super(DefaultHttpClient.this.connectionMap);
+      super(DefaultHttpClient.this.connectionMap, vertx);
     }
 
     @Override
@@ -503,7 +505,8 @@ public class DefaultHttpClient implements HttpClient {
       final Channel ch = chctx.channel();
       // We need to do this since it's possible the server is being used from a worker context
       if (eventLoopContext.isOnCorrectWorker(ch.eventLoop())) {
-          doMessageReceived(connectionMap.get(ch), chctx, msg);
+        vertx.setContext(actualCtx);
+        doMessageReceived(connectionMap.get(ch), chctx, msg);
       } else {
         BufUtil.retain(msg);
         actualCtx.execute(new Runnable() {

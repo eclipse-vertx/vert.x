@@ -1898,7 +1898,7 @@ public class HttpTestClient extends TestClientBase {
             tu.azzert(("This is content " + theCount).equals(buff.toString()), buff.toString());
             //We write the response back after a random time to increase the chances of responses written in the
             //wrong order if we didn't implement pipelining correctly
-            vertx.setTimer((long) (10 * Math.random()), new Handler<Long>() {
+            vertx.setTimer(1 + (long) (10 * Math.random()), new Handler<Long>() {
               public void handle(Long timerID) {
                 req.response.headers().put("count", String.valueOf(theCount));
                 req.response.write(buff);
@@ -2107,7 +2107,7 @@ public class HttpTestClient extends TestClientBase {
     tu.azzert(!req.writeQueueFull());
     req.setWriteQueueMaxSize(1000);
     final Buffer buff = TestUtils.generateRandomBuffer(10000);
-    vertx.setPeriodic(0, new Handler<Long>() {
+    vertx.setPeriodic(1, new Handler<Long>() {
       public void handle(Long id) {
         tu.checkThread();
         req.write(buff);

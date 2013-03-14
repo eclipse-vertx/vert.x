@@ -45,7 +45,7 @@ public class DrainingServer extends Verticle {
 
         final Buffer buff = TestUtils.generateRandomBuffer(10000);
         //Send data until the buffer is full
-        vertx.setPeriodic(0, new Handler<Long>() {
+        vertx.setPeriodic(1, new Handler<Long>() {
           public void handle(Long id) {
             tu.checkThread();
             req.response.write(buff);

@@ -233,44 +233,32 @@ public class DefaultVertx extends VertxInternal {
 
   private long scheduleTimeout(final Context context, final Handler<Long> handler, long delay, boolean periodic) {
 
+    if (delay < 1) {
+      throw new IllegalArgumentException("Cannot schedule a timer with delay < 1 ms");
+    }
+
     long timerId = timeoutCounter.getAndIncrement();
     final InternalTimerHandler task = new InternalTimerHandler(timerId, handler);
     final Runnable wrapped = context.wrapTask(task);
-    Runnable toRun;
+
+    final Runnable toRun;
     final EventLoop el;
     if (context instanceof EventLoopContext) {
       el = ((EventLoopContext)context).getWorker();
       toRun = wrapped;
     } else {
       // On worker context
-      // TODO - for worker there's probably little point in using the event loop netty scheduling
-      // we could just use our own hashed wheel timer
       el = getCorePool().next();
       toRun = new Runnable() {
         public void run() {
-          // Make sure the timer gets executed on the worker context
-          context.execute(wrapped);
+        // Make sure the timer gets executed on the worker context
+        context.execute(wrapped);
         }
       };
     }
-
     Future<?> future;
     if (periodic) {
-      if (delay == 0) {
-        future = el.submit(new Runnable() {
-          @Override
-          public void run() {
-             Future<?> future = task.future;
-             if (future != null && future.isCancelled()) {
-                 return;
-             }
-             task.run();
-             task.future = el.submit(this);
-          }
-        });
-      } else {
-        future = el.scheduleAtFixedRate(toRun, delay, delay, TimeUnit.MILLISECONDS);
-      }
+      future = el.scheduleAtFixedRate(toRun, delay, delay, TimeUnit.MILLISECONDS);
     } else {
       future = el.schedule(toRun, delay, TimeUnit.MILLISECONDS);
     }
