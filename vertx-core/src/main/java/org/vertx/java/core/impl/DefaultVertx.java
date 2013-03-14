@@ -234,10 +234,10 @@ public class DefaultVertx extends VertxInternal {
   private long scheduleTimeout(final Context context, final Handler<Long> handler, long delay, boolean periodic) {
 
     long timerId = timeoutCounter.getAndIncrement();
-    InternalTimerHandler task = new InternalTimerHandler(timerId, handler);
+    final InternalTimerHandler task = new InternalTimerHandler(timerId, handler);
     final Runnable wrapped = context.wrapTask(task);
     Runnable toRun;
-    EventLoop el;
+    final EventLoop el;
     if (context instanceof EventLoopContext) {
       el = ((EventLoopContext)context).getWorker();
       toRun = wrapped;
@@ -255,7 +255,17 @@ public class DefaultVertx extends VertxInternal {
     Future<?> future;
     if (periodic) {
       if (delay == 0) {
-        future = el.scheduleAtFixedRate(toRun, delay, 10, TimeUnit.MILLISECONDS);
+        future = el.submit(new Runnable() {
+          @Override
+          public void run() {
+             Future<?> future = task.future;
+             if (future != null && future.isCancelled()) {
+                 return;
+             }
+             task.run();
+             task.future = el.submit(this);
+          }
+        });
       } else {
         future = el.scheduleAtFixedRate(toRun, delay, delay, TimeUnit.MILLISECONDS);
       }
