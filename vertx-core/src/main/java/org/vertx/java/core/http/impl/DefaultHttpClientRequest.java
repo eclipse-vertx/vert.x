@@ -61,6 +61,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   private long currentTimeoutTimerId = -1;
   private Map<String, Object> headers;
   private boolean exceptionOccurred;
+  private long lastDataReceived;
 
   DefaultHttpClientRequest(final DefaultHttpClient client, final String method, final String uri,
                            final Handler<HttpClientResponse> respHandler,
@@ -247,10 +248,17 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     currentTimeoutTimerId = client.getVertx().setTimer(timeoutMs, new Handler<Long>() {
       @Override
       public void handle(Long event) {
-        handleException(new TimeoutException("The timeout period of " + timeoutMs + "ms has been exceeded"));
+        handleTimeout(timeoutMs);
       }
     });
     return this;
+  }
+
+  // Data has been received on the response
+  void dataReceived() {
+    if (currentTimeoutTimerId != -1) {
+      lastDataReceived = System.currentTimeMillis();
+    }
   }
 
   void handleDrained() {
@@ -260,11 +268,11 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   }
 
   void handleException(Exception e) {
+    cancelOutstandingTimeoutTimer();
     exceptionOccurred = true;
     if (exceptionHandler != null) {
-      exceptionHandler.handle(e); // the handler cancels the timer.
+      exceptionHandler.handle(e);
     } else {
-      cancelOutstandingTimeoutTimer();
       log.error("Unhandled exception", e);
     }
   }
@@ -292,10 +300,30 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   }
 
   private void cancelOutstandingTimeoutTimer() {
-    if(currentTimeoutTimerId != -1) {
+    if (currentTimeoutTimerId != -1) {
       client.getVertx().cancelTimer(currentTimeoutTimerId);
       currentTimeoutTimerId = -1;
     }
+  }
+
+  private void handleTimeout(long timeoutMs) {
+    if (lastDataReceived == 0) {
+      timeout(timeoutMs);
+    } else {
+      long now = System.currentTimeMillis();
+      long timeSinceLastData = now - lastDataReceived;
+      if (timeSinceLastData >= timeoutMs) {
+        timeout(timeoutMs);
+      } else {
+        // reschedule
+        lastDataReceived = 0;
+        setTimeout(timeoutMs - timeSinceLastData);
+      }
+    }
+  }
+
+  private void timeout(long timeoutMs) {
+    handleException(new TimeoutException("The timeout period of " + timeoutMs + "ms has been exceeded"));
   }
 
   private void connect() {

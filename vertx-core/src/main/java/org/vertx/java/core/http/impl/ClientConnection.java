@@ -264,7 +264,7 @@ class ClientConnection extends AbstractConnection {
       throw new IllegalStateException("No response handler");
     }
     setContext();
-    DefaultHttpClientResponse nResp = new DefaultHttpClientResponse(this, resp);
+    DefaultHttpClientResponse nResp = new DefaultHttpClientResponse(req, this, resp);
     currentResponse = nResp;
     req.handleResponse(nResp);
   }
@@ -276,10 +276,6 @@ class ClientConnection extends AbstractConnection {
     } catch (Throwable t) {
       handleHandlerException(t);
     }
-  }
-
-  void handleResponseEnd() {
-    handleResponseEnd(null);
   }
 
   void handleResponseEnd(LastHttpContent trailer) {
