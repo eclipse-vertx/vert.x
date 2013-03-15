@@ -392,6 +392,17 @@ public class DefaultNetServer implements NetServer {
     return this;
   }
 
+  @Override
+  public NetServer setUsePooledBuffers(boolean pooledBuffers) {
+    tcpHelper.setUsePooledBuffers(pooledBuffers);
+    return this;
+  }
+
+  @Override
+  public boolean isUsePooledBuffers() {
+    return tcpHelper.isUsePooledBuffers();
+  }
+
   private class ServerHandler extends VertxNetHandler {
     public ServerHandler() {
       super(DefaultNetServer.this.vertx, socketMap);

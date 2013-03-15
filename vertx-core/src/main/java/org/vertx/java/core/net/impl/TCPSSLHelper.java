@@ -18,6 +18,8 @@ package org.vertx.java.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.ChannelOption;
 import org.vertx.java.core.file.impl.PathAdjuster;
 import org.vertx.java.core.impl.VertxInternal;
@@ -61,6 +63,7 @@ public class TCPSSLHelper {
   private Integer trafficClass;
   private Integer acceptBackLog;
   private Long connectTimeout;
+  private boolean usePooledBuffers;
 
   private SSLContext sslContext;
 
@@ -103,6 +106,12 @@ public class TCPSSLHelper {
     if (acceptBackLog != null) {
       bootstrap.option(ChannelOption.SO_BACKLOG, acceptBackLog);
     }
+    if (usePooledBuffers) {
+      bootstrap.childOption(ChannelOption.ALLOCATOR, new PooledByteBufAllocator());
+    } else {
+      bootstrap.childOption(ChannelOption.ALLOCATOR, UnpooledByteBufAllocator.DEFAULT);
+    }
+
   }
 
   public void applyConnectionOptions(Bootstrap bootstrap) {
@@ -129,6 +138,11 @@ public class TCPSSLHelper {
     }
     if (connectTimeout != null) {
       bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout.intValue());
+    }
+    if (usePooledBuffers) {
+      bootstrap.option(ChannelOption.ALLOCATOR, new PooledByteBufAllocator());
+    } else {
+      bootstrap.option(ChannelOption.ALLOCATOR, UnpooledByteBufAllocator.DEFAULT);
     }
   }
 
@@ -282,6 +296,14 @@ public class TCPSSLHelper {
       throw new IllegalArgumentException("acceptBackLog must be >= 0");
     }
     this.acceptBackLog = acceptBackLog;
+  }
+
+  public void setUsePooledBuffers(boolean usePooledBuffers) {
+    this.usePooledBuffers = usePooledBuffers;
+  }
+
+  public boolean isUsePooledBuffers() {
+    return usePooledBuffers;
   }
 
   /*
