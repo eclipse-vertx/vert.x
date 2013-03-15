@@ -20,6 +20,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelStateHandlerAdapter;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.FlowControlStateEvent;
+import org.vertx.java.core.impl.VertxInternal;
 
 import java.util.Map;
 
@@ -27,8 +28,10 @@ import java.util.Map;
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public abstract class VertxStateHandler<C extends ConnectionBase> extends ChannelStateHandlerAdapter {
+  protected final VertxInternal vertx;
   protected final Map<Channel, C> connectionMap;
-  protected VertxStateHandler(Map<Channel, C> connectionMap) {
+  protected VertxStateHandler(VertxInternal vertx, Map<Channel, C> connectionMap) {
+    this.vertx = vertx;
     this.connectionMap = connectionMap;
   }
 
@@ -46,6 +49,7 @@ public abstract class VertxStateHandler<C extends ConnectionBase> extends Channe
         conn.setWritable(evt.isWritable());
         Context context = getContext(conn);
         if (context.isOnCorrectWorker(ch.eventLoop())) {
+          vertx.setContext(context);
           conn.handleInterestedOpsChanged();
         } else {
           context.execute(new Runnable() {
@@ -65,6 +69,7 @@ public abstract class VertxStateHandler<C extends ConnectionBase> extends Channe
     if (sock != null && t instanceof Exception) {
       Context context = getContext(sock);
       if (context.isOnCorrectWorker(ch.eventLoop())) {
+        vertx.setContext(context);
         sock.handleException((Exception) t);
         ch.close();
       } else {
@@ -86,8 +91,8 @@ public abstract class VertxStateHandler<C extends ConnectionBase> extends Channe
     final C sock = connectionMap.remove(ch);
     if (sock != null) {
       Context context = getContext(sock);
-
       if (context.isOnCorrectWorker(ch.eventLoop())) {
+        vertx.setContext(context);
         sock.handleClosed();
       } else {
         context.execute(new Runnable() {

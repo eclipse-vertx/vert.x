@@ -22,6 +22,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundByteHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.VertxInternal;
 
 import java.util.Map;
 
@@ -29,8 +30,9 @@ import java.util.Map;
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public class VertxNetHandler extends VertxStateHandler<DefaultNetSocket> implements ChannelInboundByteHandler {
-  public VertxNetHandler(Map<Channel, DefaultNetSocket> connectionMap) {
-    super(connectionMap);
+
+  public VertxNetHandler(VertxInternal vertx, Map<Channel, DefaultNetSocket> connectionMap) {
+    super(vertx, connectionMap);
   }
 
   @Override
@@ -59,6 +61,7 @@ public class VertxNetHandler extends VertxStateHandler<DefaultNetSocket> impleme
       Context context = getContext(sock);
       // We need to do this since it's possible the server is being used from a worker context
       if (context.isOnCorrectWorker(ch.eventLoop())) {
+        vertx.setContext(context);
         sock.handleDataReceived(new Buffer(in.slice()));
       } else {
         final ByteBuf buf = in.readBytes(in.readableBytes());

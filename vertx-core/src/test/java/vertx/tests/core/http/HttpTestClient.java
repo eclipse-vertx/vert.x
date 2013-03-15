@@ -679,6 +679,7 @@ public class HttpTestClient extends TestClientBase {
             req.response.write("foo");
             if (++count == numChunks) {
               req.response.end();
+              vertx.cancelTimer(timerID);
             }
           }
         });

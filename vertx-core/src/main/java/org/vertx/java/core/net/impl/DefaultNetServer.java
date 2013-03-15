@@ -394,7 +394,7 @@ public class DefaultNetServer implements NetServer {
 
   private class ServerHandler extends VertxNetHandler {
     public ServerHandler() {
-      super(socketMap);
+      super(DefaultNetServer.this.vertx, socketMap);
     }
 
     @Override

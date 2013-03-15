@@ -325,6 +325,7 @@ public class DefaultNetClient implements NetClient {
         } else {
           if (remainingAttempts > 0 || remainingAttempts == -1) {
             if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
+              vertx.setContext(actualCtx);
               log.debug("Failed to create connection. Will retry in " + reconnectInterval + " milliseconds");
               //Set a timer to retry connection
               vertx.setTimer(reconnectInterval, new Handler<Long>() {
@@ -357,6 +358,7 @@ public class DefaultNetClient implements NetClient {
 
   private void connected(final Channel ch, final Handler<NetSocket> connectHandler) {
     if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
+      vertx.setContext(actualCtx);
       DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, actualCtx);
       socketMap.put(ch, sock);
       connectHandler.handle(sock);
@@ -376,6 +378,7 @@ public class DefaultNetClient implements NetClient {
     ch.close();
     if (t instanceof Exception && exceptionHandler != null) {
       if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
+        vertx.setContext(actualCtx);
         exceptionHandler.handle((Exception) t);
       } else {
         actualCtx.execute(new Runnable() {
@@ -391,7 +394,7 @@ public class DefaultNetClient implements NetClient {
 
   private class ClientHandler extends VertxNetHandler {
     public ClientHandler() {
-      super(socketMap);
+      super(DefaultNetClient.this.vertx, socketMap);
     }
 
     @Override
