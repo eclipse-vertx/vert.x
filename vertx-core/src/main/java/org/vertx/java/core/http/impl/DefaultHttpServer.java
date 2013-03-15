@@ -327,8 +327,12 @@ public class DefaultHttpServer implements HttpServer {
     return this;
   }
 
-  public HttpServer setSoLinger(boolean linger) {
-    tcpHelper.setSoLinger(linger);
+  public HttpServer setSoLinger(int linger) {
+    if (linger < 0) {
+      tcpHelper.setSoLinger(null);
+    } else {
+      tcpHelper.setSoLinger(linger);
+    }
     return this;
   }
 
@@ -362,8 +366,8 @@ public class DefaultHttpServer implements HttpServer {
     return tcpHelper.isReuseAddress();
   }
 
-  public Boolean isSoLinger() {
-    return tcpHelper.isSoLinger();
+  public Integer getSoLinger() {
+    return tcpHelper.getSoLinger();
   }
 
   public Integer getTrafficClass() {

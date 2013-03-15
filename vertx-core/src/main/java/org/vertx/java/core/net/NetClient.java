@@ -161,9 +161,11 @@ public interface NetClient {
 
   /**
    * Set the TCP soLinger setting for connections created by this instance to {@code linger}.
+   * Using a negative value will disable soLinger.
    * @return a reference to this so multiple method calls can be chained together
+   *
    */
-  NetClient setSoLinger(boolean linger);
+  NetClient setSoLinger(int linger);
 
   /**
    * Set the TCP trafficClass setting for connections created by this instance to {@code trafficClass}.
@@ -208,7 +210,7 @@ public interface NetClient {
    *
    * @return the value of TCP so linger
    */
-  Boolean isSoLinger();
+  Integer getSoLinger();
 
   /**
    *

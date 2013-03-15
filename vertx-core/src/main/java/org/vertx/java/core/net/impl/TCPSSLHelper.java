@@ -57,7 +57,7 @@ public class TCPSSLHelper {
   private Integer tcpReceiveBufferSize;
   private Boolean tcpKeepAlive = true;
   private Boolean reuseAddress;
-  private Boolean soLinger;
+  private Integer soLinger;
   private Integer trafficClass;
   private Integer acceptBackLog;
   private Long connectTimeout;
@@ -88,8 +88,7 @@ public class TCPSSLHelper {
       bootstrap.childOption(ChannelOption.SO_RCVBUF, tcpReceiveBufferSize);
     }
     if (soLinger != null) {
-      // TODO: Fix me
-      //bootstrap.childOption(ChannelOption.SO_LINGER, soLinger);
+        bootstrap.option(ChannelOption.SO_LINGER, soLinger);
     }
     if (tcpKeepAlive != null) {
       bootstrap.childOption(ChannelOption.SO_KEEPALIVE, tcpKeepAlive);
@@ -122,8 +121,8 @@ public class TCPSSLHelper {
       //options.put(prefix + "receiveBufferSizePredictor", new FixedReceiveBufferSizePredictor(1024));
     }
     if (soLinger != null) {
-      // TODO: Fix me
-      //bootstrap.childOption(ChannelOption.SO_LINGER, soLinger);
+        bootstrap.option(ChannelOption.SO_LINGER, soLinger);
+
     }
     if (trafficClass != null) {
       bootstrap.option(ChannelOption.IP_TOS, trafficClass);
@@ -153,7 +152,7 @@ public class TCPSSLHelper {
     return reuseAddress;
   }
 
-  public Boolean isSoLinger() {
+  public Integer getSoLinger() {
     return soLinger;
   }
 
@@ -187,7 +186,7 @@ public class TCPSSLHelper {
     this.reuseAddress = reuse;
   }
 
-  public void setSoLinger(Boolean linger) {
+  public void setSoLinger(Integer linger) {
     this.soLinger = linger;
   }
 
