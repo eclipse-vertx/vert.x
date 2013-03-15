@@ -35,7 +35,6 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
-import org.vertx.java.core.impl.ConnectionPool;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.EventLoopContext;
 import org.vertx.java.core.impl.ExceptionDispatchHandler;
@@ -67,7 +66,11 @@ public class DefaultHttpClient implements HttpClient {
   private Handler<Exception> exceptionHandler;
   private int port = 80;
   private String host = "localhost";
-  private final ConnectionPool<ClientConnection> pool = new DefaultHttpClientConnectionPool(this);
+  private final HttpConnectionPool pool = new HttpConnectionPool()  {
+    protected void connect(Handler<ClientConnection> connectHandler, Handler<Exception> connectErrorHandler, Context context) {
+      internalConnect(connectHandler, connectErrorHandler);
+    }
+  };
   private boolean keepAlive = true;
 
   public DefaultHttpClient(VertxInternal vertx) {
@@ -103,14 +106,6 @@ public class DefaultHttpClient implements HttpClient {
   public int getMaxPoolSize() {
     return pool.getMaxPoolSize();
   }
-
-  /**
-   * @see DefaultHttpClientConnectionPool#setDisableUsingOccupiedConnections
-   */
-  public void setDisableUsingOccupiedConnections(boolean disable) {
-    ((DefaultHttpClientConnectionPool)pool).setDisableUsingOccupiedConnections(disable);
-  }
-
 
   public DefaultHttpClient setKeepAlive(boolean keepAlive) {
     this.keepAlive = keepAlive;
