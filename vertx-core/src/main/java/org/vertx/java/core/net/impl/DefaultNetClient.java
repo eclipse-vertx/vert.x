@@ -264,6 +264,15 @@ public class DefaultNetClient implements NetClient {
     return this;
   }
 
+  public NetClient setUsePooledBuffers(boolean pooledBuffers) {
+    tcpHelper.setUsePooledBuffers(pooledBuffers);
+    return this;
+  }
+
+  public boolean isUsePooledBuffers() {
+    return tcpHelper.isUsePooledBuffers();
+  }
+
   private void connect(final int port, final String host, final Handler<NetSocket> connectHandler,
                        final int remainingAttempts) {
     if (bootstrap == null) {

@@ -398,6 +398,15 @@ public class DefaultHttpServer implements HttpServer {
     return tcpHelper.getTrustStorePassword();
   }
 
+  public HttpServer setUsePooledBuffers(boolean pooledBuffers) {
+    tcpHelper.setUsePooledBuffers(pooledBuffers);
+    return this;
+  }
+
+  public boolean isUsePooledBuffers() {
+    return tcpHelper.isUsePooledBuffers();
+  }
+
   private void actualClose(final Context closeContext, final Handler<Void> done) {
     if (id != null) {
       vertx.sharedHttpServers().remove(id);
