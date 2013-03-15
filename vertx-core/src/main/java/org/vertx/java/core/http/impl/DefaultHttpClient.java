@@ -494,7 +494,7 @@ public class DefaultHttpClient implements HttpClient {
 
   private class ClientHandler extends VertxHttpHandler<ClientConnection> {
     public ClientHandler() {
-      super(DefaultHttpClient.this.connectionMap, vertx);
+      super(vertx, DefaultHttpClient.this.connectionMap);
     }
 
     @Override

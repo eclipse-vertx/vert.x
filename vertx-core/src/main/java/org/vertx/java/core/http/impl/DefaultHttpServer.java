@@ -442,7 +442,7 @@ public class DefaultHttpServer implements HttpServer {
 
   public class ServerHandler extends VertxHttpHandler<ServerConnection> {
     public ServerHandler() {
-      super(DefaultHttpServer.this.connectionMap, vertx);
+      super(vertx, DefaultHttpServer.this.connectionMap);
     }
 
     private void sendError(String err, HttpResponseStatus status, Channel ch) {
