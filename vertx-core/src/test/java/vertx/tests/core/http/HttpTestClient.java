@@ -663,6 +663,49 @@ public class HttpTestClient extends TestClientBase {
     // TODO
   }
 
+  public void testRequestTimeoutExtendedWhenResponseChunksReceived() {
+    final long timeout = 500;
+    startServer(new Handler<HttpServerRequest>() {
+      int numChunks = 10;
+      int count = 0;
+      long interval = timeout * 2 / numChunks;
+
+      public void handle(final HttpServerRequest req) {
+        //Send chunks so total request > timeout but each chunk < timeout
+        req.response.setChunked(true);
+        vertx.setPeriodic(interval, new Handler<Long>() {
+          @Override
+          public void handle(Long timerID) {
+            req.response.write("foo");
+            if (++count == numChunks) {
+              req.response.end();
+            }
+          }
+        });
+      }
+    });
+
+    final long start = System.currentTimeMillis();
+    final HttpClientRequest req = getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
+      public void handle(HttpClientResponse resp) {
+        tu.azzert(resp.statusCode == 200);
+        resp.endHandler(new Handler<Void>() {
+          public void handle(Void event) {
+            tu.testComplete();
+          }
+        });
+      }
+    });
+    req.exceptionHandler( new Handler<Exception>() {
+      @Override
+      public void handle(Exception event) {
+        tu.azzert(false, "Should not be called");
+      }
+    });
+    req.setTimeout(timeout);
+    req.end();
+  }
+
   public void testRequestTimesoutWhenIndicatedPeriodExpiresWithoutAResponseFromRemoteServer() {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {

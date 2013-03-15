@@ -497,6 +497,10 @@ public class JavaHttpTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void testRequestTimeoutExtendedWhenResponseChunksReceived() {
+    startTest(getMethodName());
+  }
+
   public void testRequestTimeoutCanceledWhenRequestHasAnOtherError() {
     startTest(getMethodName());
   }

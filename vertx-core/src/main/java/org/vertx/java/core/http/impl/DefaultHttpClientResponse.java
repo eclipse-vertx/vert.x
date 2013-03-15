@@ -37,6 +37,7 @@ public class DefaultHttpClientResponse extends HttpClientResponse {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultHttpClientResponse.class);
 
+  private final DefaultHttpClientRequest request;
   private final ClientConnection conn;
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
@@ -48,8 +49,9 @@ public class DefaultHttpClientResponse extends HttpClientResponse {
   private Map<String, String> trailers;
   private List<String> cookies;
 
-  DefaultHttpClientResponse(ClientConnection conn, HttpResponse response) {
+  DefaultHttpClientResponse(DefaultHttpClientRequest request, ClientConnection conn, HttpResponse response) {
     super(response.getStatus().code(), response.getStatus().reasonPhrase());
+    this.request = request;
     this.conn = conn;
     this.response = response;
   }
@@ -104,6 +106,7 @@ public class DefaultHttpClientResponse extends HttpClientResponse {
   }
 
   void handleChunk(Buffer data) {
+    request.dataReceived();
     if (dataHandler != null) {
       dataHandler.handle(data);
     }
