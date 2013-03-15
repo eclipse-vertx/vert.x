@@ -336,6 +336,15 @@ public class DefaultHttpClient implements HttpClient {
     return tcpHelper.getTrustStorePassword();
   }
 
+  public HttpClient setUsePooledBuffers(boolean pooledBuffers) {
+    tcpHelper.setUsePooledBuffers(pooledBuffers);
+    return this;
+  }
+
+  public boolean isUsePooledBuffers() {
+    return tcpHelper.isUsePooledBuffers();
+  }
+
   public void getConnection(Handler<ClientConnection> handler, Handler<Exception> connectionExceptionHandler, Context context) {
     pool.getConnection(handler, connectionExceptionHandler, context);
   }
