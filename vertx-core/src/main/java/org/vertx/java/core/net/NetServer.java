@@ -160,6 +160,13 @@ public interface NetServer {
   NetServer setAcceptBacklog(int backlog);
 
   /**
+   * Set if vertx should use pooled buffers for performance reasons. Doing so will give the best throughput but
+   * may need a bit higher memory footprint.
+   * @return a reference to this so multiple method calls can be chained together
+   */
+  NetServer setUsePooledBuffers(boolean pooledBuffers);
+
+  /**
    * @return true if Nagle's algorithm is disabled.
    */
   Boolean isTCPNoDelay();
@@ -234,4 +241,8 @@ public interface NetServer {
    */
   String getTrustStorePassword();
 
+  /**
+   * @return {@code true} if pooled buffers are used
+   */
+  boolean isUsePooledBuffers();
 }
