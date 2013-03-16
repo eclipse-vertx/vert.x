@@ -1,3 +1,4 @@
+package webapp;
 import org.vertx.java.core.json.*;
 import org.vertx.java.deploy.Verticle;
 import org.vertx.java.core.Handler;
@@ -40,7 +41,6 @@ public class App extends Verticle {
 		sb.append(	"} ],");
 		// This defines which messages from the server we will let through to the client
 		sb.append(	"\"outbound_permitted\": [ {} ]");
-		
 		sb.append("}");
 		JsonObject webServerConf = new JsonObject(sb.toString());
 		// Now we deploy the modules that we need
@@ -57,8 +57,8 @@ public class App extends Verticle {
 		// Deploy an auth manager to handle the authentication
 		container.deployModule("vertx.auth-mgr-v1.1");
 		
+		
 		// Start the web server, with the config we defined above
 		container.deployModule("vertx.web-server-v1.0", webServerConf);
-		
     }
 } 
