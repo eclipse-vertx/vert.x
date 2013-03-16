@@ -439,7 +439,7 @@ public class DefaultHttpClient implements HttpClient {
     if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
       vertx.setContext(actualCtx);
       final ClientConnection conn = new ClientConnection(vertx, DefaultHttpClient.this, ch,
-                host + ":" + port, tcpHelper.isSSL(), keepAlive, actualCtx);
+                host + ":" + port, keepAlive, actualCtx);
       conn.closedHandler(new SimpleHandler() {
         public void handle() {
           pool.connectionClosed();
@@ -451,7 +451,7 @@ public class DefaultHttpClient implements HttpClient {
         actualCtx.execute(new Runnable() {
           public void run() {
             final ClientConnection conn = new ClientConnection(vertx, DefaultHttpClient.this, ch,
-                    host + ":" + port, tcpHelper.isSSL(), keepAlive, actualCtx);
+                    host + ":" + port, keepAlive, actualCtx);
             conn.closedHandler(new SimpleHandler() {
                     public void handle() {
                         pool.connectionClosed();
