@@ -303,7 +303,6 @@ public class DefaultNetClient implements NetClient {
         }
       });
     }
-    // TODO: FIx me
     tcpHelper.applyConnectionOptions(bootstrap);
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {

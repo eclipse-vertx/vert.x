@@ -17,6 +17,7 @@
 package vertx.tests.core.http;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VoidResult;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.platform.Verticle;
@@ -31,7 +32,7 @@ public class ClosingServer extends Verticle {
 
   private HttpServer server;
 
-  public void start() {
+  public void start(final VoidResult startedResult) {
     tu = new TestUtils(vertx);
     server = vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
@@ -43,9 +44,15 @@ public class ClosingServer extends Verticle {
 
         server.close();
       }
-    }).listen(8080);
+    });
+    server.listen(8080, new Handler<HttpServer>() {
+        @Override
+        public void handle(HttpServer event) {
+          tu.appReady();
+          startedResult.setResult();
+        }
+    });
 
-    tu.appReady();
   }
 
   public void stop() {

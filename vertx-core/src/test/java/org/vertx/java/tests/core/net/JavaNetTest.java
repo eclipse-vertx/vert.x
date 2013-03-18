@@ -31,8 +31,6 @@ import org.vertx.java.testframework.TestBase;
 import vertx.tests.core.http.TLSTestParams;
 import vertx.tests.core.net.*;
 
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -377,7 +375,16 @@ public class JavaNetTest extends TestBase {
         p.start();
       }
     });
-    server.listen(1234);
+
+    final CountDownLatch listenLatch = new CountDownLatch(1);
+    server.listen(1234, new Handler<NetServer>() {
+        @Override
+        public void handle(NetServer event) {
+          listenLatch.countDown();
+        }
+    });
+
+    assertTrue(listenLatch.await(5, TimeUnit.SECONDS));
 
     final NetClient client = vertx.createNetClient();
     client.connect(1234, new Handler<NetSocket>() {

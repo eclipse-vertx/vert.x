@@ -313,65 +313,68 @@ public class RouteMatcherTestClient extends TestClientBase {
 
     final HttpServer server = vertx.createHttpServer();
     server.requestHandler(matcher);
-    server.listen(8080, "localhost");
+    server.listen(8080, "localhost", new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        final HttpClient client = vertx.createHttpClient().setPort(8080).setHost("localhost");
 
-    final HttpClient client = vertx.createHttpClient().setPort(8080).setHost("localhost");
-
-    Handler<HttpClientResponse> respHandler = new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        if (shouldPass) {
-          tu.azzert(200 == resp.statusCode);
-          closeClientAndServer(client, server);
-        } else if (noMatchHandler) {
-          tu.azzert(200 == resp.statusCode);
-          resp.bodyHandler(new Handler<Buffer>() {
-            public void handle(Buffer body) {
-              tu.azzert(noMatchResponseBody.equals(body.toString()));
+        Handler<HttpClientResponse> respHandler = new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            if (shouldPass) {
+              tu.azzert(200 == resp.statusCode);
+              closeClientAndServer(client, server);
+            } else if (noMatchHandler) {
+              tu.azzert(200 == resp.statusCode);
+              resp.bodyHandler(new Handler<Buffer>() {
+                public void handle(Buffer body) {
+                  tu.azzert(noMatchResponseBody.equals(body.toString()));
+                  closeClientAndServer(client, server);
+                }
+              });
+            } else {
+              tu.azzert(404 == resp.statusCode);
               closeClientAndServer(client, server);
             }
-          });
-        } else {
-          tu.azzert(404 == resp.statusCode);
-          closeClientAndServer(client, server);
+          }
+        };
+
+        final HttpClientRequest req;
+
+        switch (method) {
+          case "GET":
+            req = client.get(uri, respHandler);
+            break;
+          case "PUT":
+            req = client.put(uri, respHandler);
+            break;
+          case "POST":
+            req = client.post(uri, respHandler);
+            break;
+          case "DELETE":
+            req = client.delete(uri, respHandler);
+            break;
+          case "OPTIONS":
+            req = client.options(uri, respHandler);
+            break;
+          case "HEAD":
+            req = client.head(uri, respHandler);
+            break;
+          case "TRACE":
+            req = client.trace(uri, respHandler);
+            break;
+          case "PATCH":
+            req = client.patch(uri, respHandler);
+            break;
+          case "CONNECT":
+            req = client.connect(uri, respHandler);
+            break;
+          default:
+            throw new IllegalArgumentException("Invalid method:" + method);
         }
+
+        req.end();
       }
-    };
-
-    final HttpClientRequest req;
-
-    switch (method) {
-      case "GET":
-        req = client.get(uri, respHandler);
-        break;
-      case "PUT":
-        req = client.put(uri, respHandler);
-        break;
-      case "POST":
-        req = client.post(uri, respHandler);
-        break;
-      case "DELETE":
-        req = client.delete(uri, respHandler);
-        break;
-      case "OPTIONS":
-        req = client.options(uri, respHandler);
-        break;
-      case "HEAD":
-        req = client.head(uri, respHandler);
-        break;
-      case "TRACE":
-        req = client.trace(uri, respHandler);
-        break;
-      case "PATCH":
-        req = client.patch(uri, respHandler);
-        break;
-      case "CONNECT":
-        req = client.connect(uri, respHandler);
-        break;
-      default:
-        throw new IllegalArgumentException("Invalid method:" + method);
-    }
-
-    req.end();
+    });
   }
 
   private void closeClientAndServer(HttpClient client, HttpServer server) {
