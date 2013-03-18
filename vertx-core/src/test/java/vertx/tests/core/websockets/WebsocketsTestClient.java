@@ -123,37 +123,41 @@ public class WebsocketsTestClient extends TestClientBase {
         });
       }
 
-    }).listen(8080, "localhost");
+    });
+    server.listen(8080, "localhost", new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        final int bsize = 100;
+        final int sends = 10;
 
-    final int bsize = 100;
-    final int sends = 10;
-
-    client.connectWebsocket(path, version, new Handler<WebSocket>() {
-      public void handle(final WebSocket ws) {
-        tu.checkThread();
-        final Buffer received = new Buffer();
-        ws.dataHandler(new Handler<Buffer>() {
-          public void handle(Buffer data) {
+        client.connectWebsocket(path, version, new Handler<WebSocket>() {
+          public void handle(final WebSocket ws) {
             tu.checkThread();
-            received.appendBuffer(data);
-            if (received.length() == bsize * sends) {
-              ws.close();
-              tu.testComplete();
-            }
+            final Buffer received = new Buffer();
+             ws.dataHandler(new Handler<Buffer>() {
+               public void handle(Buffer data) {
+                 tu.checkThread();
+                 received.appendBuffer(data);
+                 if (received.length() == bsize * sends) {
+                   ws.close();
+                   tu.testComplete();
+                 }
+               }
+             });
+             final Buffer sent = new Buffer();
+               for (int i = 0; i < sends; i++) {
+               if (binary) {
+                 Buffer buff = new Buffer(TestUtils.generateRandomByteArray(bsize));
+                 ws.writeBinaryFrame(buff);
+                 sent.appendBuffer(buff);
+               } else {
+                 String str = TestUtils.randomAlphaString(bsize);
+                 ws.writeTextFrame(str);
+                 sent.appendBuffer(new Buffer(str, "UTF-8"));
+               }
+             }
           }
         });
-        final Buffer sent = new Buffer();
-        for (int i = 0; i < sends; i++) {
-          if (binary) {
-            Buffer buff = new Buffer(TestUtils.generateRandomByteArray(bsize));
-            ws.writeBinaryFrame(buff);
-            sent.appendBuffer(buff);
-          } else {
-            String str = TestUtils.randomAlphaString(bsize);
-            ws.writeTextFrame(str);
-            sent.appendBuffer(new Buffer(str, "UTF-8"));
-          }
-        }
       }
     });
   }
@@ -169,19 +173,23 @@ public class WebsocketsTestClient extends TestClientBase {
         tu.azzert(path.equals(ws.path()));
         ws.writeBinaryFrame(buff);
       }
-    }).listen(8080, "localhost");
-
-    client.connectWebsocket(path, version, new Handler<WebSocket>() {
-      public void handle(final WebSocket ws) {
-        final Buffer received = new Buffer();
-        ws.dataHandler(new Handler<Buffer>() {
-          public void handle(Buffer data) {
-            received.appendBuffer(data);
-            if (received.length() == buff.length()) {
-              tu.azzert(TestUtils.buffersEqual(buff, received));
-              ws.close();
-              tu.testComplete();
-            }
+    });
+    server.listen(8080, "localhost", new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        client.connectWebsocket(path, version, new Handler<WebSocket>() {
+          public void handle(final WebSocket ws) {
+            final Buffer received = new Buffer();
+            ws.dataHandler(new Handler<Buffer>() {
+              public void handle(Buffer data) {
+                received.appendBuffer(data);
+                if (received.length() == buff.length()) {
+                  tu.azzert(TestUtils.buffersEqual(buff, received));
+                  ws.close();
+                  tu.testComplete();
+                }
+              }
+            });
           }
         });
       }
@@ -200,17 +208,21 @@ public class WebsocketsTestClient extends TestClientBase {
         ws.reject();
       }
 
-    }).listen(8080, "localhost");
-
-    client.exceptionHandler(new Handler<Exception>() {
-      public void handle(Exception e) {
-        tu.testComplete();
-      }
     });
+    server.listen(8080, "localhost", new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        client.exceptionHandler(new Handler<Exception>() {
+          public void handle(Exception e) {
+            tu.testComplete();
+          }
+        });
 
-    client.connectWebsocket(path, version, new Handler<WebSocket>() {
-      public void handle(final WebSocket ws) {
-        tu.azzert(false, "Should not be called");
+        client.connectWebsocket(path, version, new Handler<WebSocket>() {
+          public void handle(final WebSocket ws) {
+            tu.azzert(false, "Should not be called");
+          }
+        });
       }
     });
   }

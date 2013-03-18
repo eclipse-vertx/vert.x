@@ -21,6 +21,6 @@ public class Server extends Verticle {
           req.response().sendFile("." + req.path());
         }
       }
-    }).listen(9193, "127.0.0.1");
+    }).listen(9193, "127.0.0.1", null);
   }
 }

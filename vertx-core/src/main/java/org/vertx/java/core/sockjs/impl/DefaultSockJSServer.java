@@ -350,7 +350,12 @@ public class DefaultSockJSServer implements SockJSServer {
     HttpServer httpServer = vertx.createHttpServer();
     DefaultSockJSServer sjsServer = (DefaultSockJSServer)vertx.createSockJSServer(httpServer);
     sjsServer.installTestApplications();
-    httpServer.listen(8081);
+    httpServer.listen(8081, new Handler<HttpServer>() {
+        @Override
+        public void handle(HttpServer event) {
+            // NOOP
+        }
+    });
     Thread.sleep(Long.MAX_VALUE);
   }
 

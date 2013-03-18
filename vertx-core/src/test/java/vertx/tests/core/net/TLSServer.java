@@ -16,15 +16,15 @@
 
 package vertx.tests.core.net;
 
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.Handler;
+import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.platform.Verticle;
 import org.vertx.java.testframework.TestUtils;
 import vertx.tests.core.http.TLSTestParams;
+
+import java.util.concurrent.CountDownLatch;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -35,7 +35,7 @@ public class TLSServer extends Verticle {
 
   private NetServer server;
 
-  public void start() {
+  public void start(final Future<Void> startedResult) {
     tu = new TestUtils(vertx);
     server = vertx.createNetServer();
 
@@ -55,8 +55,14 @@ public class TLSServer extends Verticle {
     }
 
     server.connectHandler(getConnectHandler());
-    server.listen(4043);
-    tu.appReady();
+    final CountDownLatch latch = new CountDownLatch(1);
+    server.listen(4043, new Handler<NetServer>() {
+      @Override
+      public void handle(NetServer event) {
+        tu.appReady();
+        startedResult.setResult(null);
+      }
+    });
   }
 
   public void stop() {

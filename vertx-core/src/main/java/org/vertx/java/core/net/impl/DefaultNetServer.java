@@ -57,6 +57,8 @@ public class DefaultNetServer implements NetServer {
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<Channel, DefaultNetSocket>();
   private Handler<NetSocket> connectHandler;
+  private Handler<Exception> exceptionHandler;
+
   private ChannelGroup serverChannelGroup;
   private boolean listening;
   private ServerID id;
@@ -65,6 +67,8 @@ public class DefaultNetServer implements NetServer {
   private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
   private String host;
   private int port;
+
+  private ChannelFuture bindFuture;
 
   public DefaultNetServer(VertxInternal vertx) {
     this.vertx = vertx;
@@ -94,14 +98,15 @@ public class DefaultNetServer implements NetServer {
     return this;
   }
 
-  @Override
-  public NetServer listen(int port) {
-    listen(port, "0.0.0.0");
-    return this;
+  public void listen(int port) {
+    listen(port, "0.0.0.0", null);
   }
 
-  @Override
-  public NetServer listen(int port, String host) {
+  public void listen(int port, Handler<NetServer> listenHandler) {
+    listen(port, "0.0.0.0", listenHandler);
+  }
+
+  public void listen(final int port, final String host, final Handler<NetServer> listenHandler) {
     if (connectHandler == null) {
       throw new IllegalStateException("Set connect handler first");
     }
@@ -155,12 +160,16 @@ public class DefaultNetServer implements NetServer {
         tcpHelper.applyConnectionOptions(bootstrap);
 
         try {
-          //TODO - currently bootstrap.bind is blocking - need to make it non blocking by not using bootstrap directly
-          Channel serverChannel = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port)).syncUninterruptibly().channel();
-          serverChannelGroup.add(serverChannel);
-          // If we specified 0 as port then we need to find out the actual port chosen
-          this.port = ((InetSocketAddress)serverChannel.localAddress()).getPort();
-          log.trace("Net server listening on " + host + ":" + port);
+
+          bindFuture = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port)).addListener(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture future) throws Exception {
+              if (future.isSuccess()) {
+                log.trace("Net server listening on " + host + ":" + port);
+              }
+            }
+          });
+          serverChannelGroup.add(bindFuture.channel());
         } catch (ChannelException | UnknownHostException e) {
           throw new IllegalArgumentException(e.getMessage());
         }
@@ -171,13 +180,53 @@ public class DefaultNetServer implements NetServer {
         checkConfigs(actualServer, this);
         actualServer = shared;
       }
-      // Share the event loop thread to also serve the NetServer's network traffic.
-      actualServer.handlerManager.addHandler(connectHandler, eventLoopContext);
+      if (connectHandler != null) {
+        // Share the event loop thread to also serve the NetServer's network traffic.
+        actualServer.handlerManager.addHandler(connectHandler, eventLoopContext);
+      }
+
+      // just add it to the future so it gets notified once the bind is complete
+      actualServer.bindFuture.addListener(new ChannelFutureListener() {
+        @Override
+        public void operationComplete(ChannelFuture future) throws Exception {
+          if (future.isSuccess()) {
+            if (listenHandler != null) {
+              if (eventLoopContext.isOnCorrectWorker(future.channel().eventLoop())) {
+                vertx.setContext(eventLoopContext);
+                listenHandler.handle(DefaultNetServer.this);
+              } else {
+                eventLoopContext.execute(new Runnable() {
+                  @Override
+                  public void run() {
+                    listenHandler.handle(DefaultNetServer.this);
+                  }
+                });
+              }
+            }
+          } else {
+              Handler<Exception> exceptionHandler = exceptionHandler();
+              if (exceptionHandler != null) {
+                  exceptionHandler.handle((Exception) future.cause());
+              }
+            close();
+          }
+        }
+      });
+
     }
+  }
+
+  @Override
+  public NetServer exceptionHandler(Handler<Exception> exceptionHandler) {
+    this.exceptionHandler = exceptionHandler;
     return this;
   }
 
   @Override
+  public Handler<Exception> exceptionHandler() {
+    return exceptionHandler;
+  }
+
   public void close() {
     close(null);
   }

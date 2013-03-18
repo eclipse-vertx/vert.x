@@ -16,10 +16,7 @@
 
 package vertx.tests.core.http;
 
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.VoidHandler;
+import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
@@ -34,7 +31,7 @@ public class DrainingServer extends Verticle {
   protected TestUtils tu;
   private HttpServer server;
 
-  public void start() {
+  public void start(final Future<Void> startedResult) {
     tu = new TestUtils(vertx);
     server = vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
@@ -67,9 +64,14 @@ public class DrainingServer extends Verticle {
           }
         });
       }
-    }).listen(8080);
-
-    tu.appReady();
+    });
+    server.listen(8080, new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        tu.appReady();
+        startedResult.setResult(null);
+      }
+    });
   }
 
   public void stop() {

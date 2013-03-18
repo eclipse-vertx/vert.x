@@ -18,6 +18,7 @@ package vertx.tests.core.websockets;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.ServerWebSocket;
@@ -37,7 +38,7 @@ public class InstanceCheckServer extends Verticle {
 
   private final String id = UUID.randomUUID().toString();
 
-  public void start() {
+  public void start(final Future<Void> result) {
     tu = new TestUtils(vertx);
     server = vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
@@ -49,9 +50,15 @@ public class InstanceCheckServer extends Verticle {
 
         ws.close();
       }
-    }).listen(8080);
+    });
+    server.listen(8080, new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        tu.appReady();
+        result.setResult(null);
+      }
+    });
 
-    tu.appReady();
   }
 
   public void stop() {

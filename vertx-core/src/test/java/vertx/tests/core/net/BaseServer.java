@@ -18,11 +18,13 @@ package vertx.tests.core.net;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.platform.Verticle;
 import org.vertx.java.testframework.TestUtils;
+
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -39,17 +41,22 @@ public abstract class BaseServer extends Verticle {
     this.sendAppReady = sendAppReady;
   }
 
-  public void start() {
+  public void start(final Future<Void> startedResult) {
     tu = new TestUtils(vertx);
     server = vertx.createNetServer();
     server.connectHandler(getConnectHandler());
     Integer port = vertx.sharedData().<String, Integer>getMap("params").get("listenport");
     int p = port == null ? 1234: port;
-    server.listen(p);
 
-    if (sendAppReady) {
-      tu.appReady();
-    }
+    server.listen(p, new Handler<NetServer>() {
+      @Override
+      public void handle(NetServer event) {
+        if (sendAppReady) {
+          tu.appReady();
+        }
+        startedResult.setResult(null);
+      }
+    });
   }
 
   public void stop() {

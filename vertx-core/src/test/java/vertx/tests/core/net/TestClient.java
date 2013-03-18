@@ -46,6 +46,12 @@ public class TestClient extends TestClientBase {
   public void start() {
     super.start();
     client = vertx.createNetClient();
+    /*client.exceptionHandler(new Handler<Exception>() {
+        @Override
+        public void handle(Exception event) {
+            event.printStackTrace();
+        }
+    });*/
     tu.appReady();
   }
 
@@ -768,16 +774,21 @@ public class TestClient extends TestClientBase {
         InetSocketAddress addr = socket.remoteAddress();
         tu.azzert(addr.getHostName().startsWith("localhost"));
       }
-    }).listen(1234);
-    vertx.createNetClient().connect(1234, new AsyncResultHandler<NetSocket>() {
+    }).listen(1234,  new Handler<NetServer>() {
       @Override
-      public void handle(AsyncResult<NetSocket> res) {
-        InetSocketAddress addr = res.result().remoteAddress();
-        tu.azzert(addr.getHostName().equals("localhost"));
-        tu.azzert(addr.getPort() == 1234);
-        tu.testComplete();
+      public void handle(NetServer event) {
+        vertx.createNetClient().connect(1234, new AsyncResultHandler<NetSocket>() {
+          @Override
+          public void handle(AsyncResult<NetSocket> result) {
+            NetSocket socket = result.result();
+            InetSocketAddress addr = socket.remoteAddress();
+            tu.azzert(addr.getHostName().equals("localhost"));
+            tu.azzert(addr.getPort() == 1234);
+            tu.testComplete();
+          }
+        });
       }
-    });
+   });
   }
 
   void setHandlers(final NetSocket sock) {
