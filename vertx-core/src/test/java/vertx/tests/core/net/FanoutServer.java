@@ -18,6 +18,7 @@ package vertx.tests.core.net;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidResult;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
@@ -25,6 +26,7 @@ import org.vertx.java.platform.Verticle;
 import org.vertx.java.testframework.TestUtils;
 
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -35,7 +37,7 @@ public class FanoutServer extends Verticle {
 
   private NetServer server;
 
-  public void start() {
+  public void start(final VoidResult startedResult) throws Exception {
     tu = new TestUtils(vertx);
 
     final Set<String> connections = vertx.sharedData().getSet("conns");
@@ -61,8 +63,14 @@ public class FanoutServer extends Verticle {
         });
       }
     });
-    server.listen(1234);
-    tu.appReady();
+    final CountDownLatch latch = new CountDownLatch(1);
+    server.listen(1234, new Handler<Void>() {
+      @Override
+      public void handle(Void event) {
+        tu.appReady();
+        startedResult.setResult();
+      }
+    });
   }
 
   public void stop() {

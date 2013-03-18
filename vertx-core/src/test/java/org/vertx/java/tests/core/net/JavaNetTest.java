@@ -377,7 +377,16 @@ public class JavaNetTest extends TestBase {
         p.start();
       }
     });
-    server.listen(1234);
+
+    final CountDownLatch listenLatch = new CountDownLatch(1);
+    server.listen(1234, new Handler<Void>() {
+        @Override
+        public void handle(Void event) {
+          listenLatch.countDown();
+        }
+    });
+
+    assertTrue(listenLatch.await(5, TimeUnit.SECONDS));
 
     final NetClient client = vertx.createNetClient();
     client.connect(1234, new Handler<NetSocket>() {

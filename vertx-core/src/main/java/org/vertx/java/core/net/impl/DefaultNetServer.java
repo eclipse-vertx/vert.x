@@ -74,6 +74,7 @@ public class DefaultNetServer implements NetServer {
   private DefaultNetServer actualServer;
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
+  private ChannelFuture bindFuture;
 
   public DefaultNetServer(VertxInternal vertx) {
     this.vertx = vertx;
@@ -102,12 +103,12 @@ public class DefaultNetServer implements NetServer {
     return this;
   }
 
-  public NetServer listen(int port) {
-    listen(port, "0.0.0.0");
+  public NetServer listen(int port, Handler<Void> listenHandler) {
+    listen(port, "0.0.0.0", listenHandler);
     return this;
   }
 
-  public NetServer listen(int port, String host) {
+  public NetServer listen(final int port, final String host, final Handler<Void> listenHandler) {
     if (connectHandler == null) {
       throw new IllegalStateException("Set connect handler first");
     }
@@ -160,10 +161,15 @@ public class DefaultNetServer implements NetServer {
         tcpHelper.applyConnectionOptions(bootstrap);
 
         try {
-          //TODO - currently bootstrap.bind is blocking - need to make it non blocking by not using bootstrap directly
-          Channel serverChannel = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port)).syncUninterruptibly().channel();
-          serverChannelGroup.add(serverChannel);
-          log.trace("Net server listening on " + host + ":" + port);
+          bindFuture = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port)).addListener(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture future) throws Exception {
+              if (future.isSuccess()) {
+                log.trace("Net server listening on " + host + ":" + port);
+              }
+            }
+          });
+          serverChannelGroup.add(bindFuture.channel());
         } catch (ChannelException | UnknownHostException e) {
           throw new IllegalArgumentException(e.getMessage());
         }
@@ -174,6 +180,18 @@ public class DefaultNetServer implements NetServer {
         checkConfigs(actualServer, this);
         actualServer = shared;
       }
+      // just add it to the future so it gets notified once the bind is complete
+      actualServer.bindFuture.addListener(new ChannelFutureListener() {
+        @Override
+        public void operationComplete(ChannelFuture future) throws Exception {
+          if (future.isSuccess()) {
+            listenHandler.handle(null);
+          } else {
+            // TODO: Mabye introduce an exceptionHandler like in the client ?
+            close();
+          }
+        }
+      });
       // Share the event loop thread to also serve the NetServer's network traffic.
       actualServer.handlerManager.addHandler(connectHandler, eventLoopContext);
     }
