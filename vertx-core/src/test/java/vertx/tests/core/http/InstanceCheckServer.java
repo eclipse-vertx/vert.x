@@ -46,7 +46,7 @@ public class InstanceCheckServer extends Verticle {
         vertx.sharedData().getSet("instances").add(id);
         vertx.sharedData().getSet("requests").add(UUID.randomUUID().toString());
 
-        req.response.end();
+        req.response().end();
 
       }
     }).listen(8080);

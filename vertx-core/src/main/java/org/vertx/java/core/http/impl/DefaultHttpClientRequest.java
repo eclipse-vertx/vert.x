@@ -103,6 +103,10 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     return this;
   }
 
+  public boolean isChunked() {
+    return chunked;
+  }
+
   public Map<String, Object> headers() {
     if (headers == null) {
       headers = new LowerCaseKeyMap();
@@ -188,9 +192,10 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     };
   }
 
-  public void continueHandler(Handler<Void> handler) {
+  public HttpClientRequest continueHandler(Handler<Void> handler) {
     check();
     this.continueHandler = handler;
+    return this;
   }
 
   public DefaultHttpClientRequest sendHead() {
@@ -282,7 +287,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     if (!exceptionOccurred) {
       cancelOutstandingTimeoutTimer();
       try {
-        if (resp.statusCode == 100) {
+        if (resp.statusCode() == 100) {
           if (continueHandler != null) {
             continueHandler.handle(null);
           }

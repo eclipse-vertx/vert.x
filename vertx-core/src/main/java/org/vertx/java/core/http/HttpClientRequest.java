@@ -24,7 +24,7 @@ import java.util.Map;
 
 /**
  * Represents a client-side HTTP request.<p>
- * Instances of this class are created by an {@link HttpClient} instance, via one of the methods corresponding to the
+ * Instances are created by an {@link HttpClient} instance, via one of the methods corresponding to the
  * specific HTTP methods, or the generic {@link HttpClient#request} method.<p>
  * Once a request has been obtained, headers can be set on it, and data can be written to its body if required. Once
  * you are ready to send the request, the {@link #end()} method should be called.<p>
@@ -66,6 +66,12 @@ public interface HttpClientRequest extends WriteStream {
    * @return A reference to this, so multiple method calls can be chained.
    */
   HttpClientRequest setChunked(boolean chunked);
+
+  /**
+   *
+   * @return Is the request chunked?
+   */
+  boolean isChunked();
 
   /**
    * @return The HTTP headers
@@ -131,8 +137,9 @@ public interface HttpClientRequest extends WriteStream {
    * has been set using this method, then the {@code handler} will be called.<p>
    * You can then continue to write data to the request body and later end it. This is normally used in conjunction with
    * the {@link #sendHead()} method to force the request header to be written before the request has ended.
+   * @return A reference to this, so multiple method calls can be chained.
    */
-  void continueHandler(Handler<Void> handler);
+  HttpClientRequest continueHandler(Handler<Void> handler);
 
   /**
    * Forces the head of the request to be written before {@link #end()} is called on the request or any data is

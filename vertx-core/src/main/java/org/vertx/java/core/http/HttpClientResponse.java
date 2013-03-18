@@ -16,16 +16,19 @@
 
 package org.vertx.java.core.http;
 
-import org.vertx.java.core.http.impl.HttpReadStreamBase;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.http.impl.BodyHandlerImpl;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.streams.ReadStream;
 
 import java.util.List;
 import java.util.Map;
 
 /**
  * Represents a client-side HTTP response.<p>
- * An instance of this class is provided to the user via a {@link org.vertx.java.core.Handler}
+ * An instance is provided to the user via a {@link org.vertx.java.core.Handler}
  * instance that was specified when one of the HTTP method operations, or the
  * generic {@link HttpClient#request(String, String, org.vertx.java.core.Handler)}
  * method was called on an instance of {@link HttpClient}.<p>
@@ -35,37 +38,39 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class HttpClientResponse extends HttpReadStreamBase {
-
-  private static final Logger log = LoggerFactory.getLogger(HttpClientResponse.class);
-
-  protected HttpClientResponse(int statusCode, String statusMessage) {
-    this.statusCode = statusCode;
-    this.statusMessage = statusMessage;
-  }
+public interface HttpClientResponse extends ReadStream {
 
   /**
    * The HTTP status code of the response
    */
-  public final int statusCode;
+  int statusCode();
 
   /**
    * The HTTP status message of the response
    */
-  public final String statusMessage;
+  String statusMessage();
 
   /**
    * @return The HTTP headers
    */
-  public abstract Map<String, String> headers();
+  Map<String, String> headers();
 
   /**
    * @return The HTTP trailers
    */
-  public abstract Map<String, String> trailers();
+  Map<String, String> trailers();
 
   /**
    * @return The Set-Cookie headers (including trailers)
    */
-  public abstract List<String> cookies();
+  List<String> cookies();
+
+  /**
+   * Convenience method for receiving the entire request body in one piece. This saves the user having to manually
+   * set a data and end handler and append the chunks of the body until the whole body received.
+   * Don't use this if your request body is large - you could potentially run out of RAM.
+   *
+   * @param bodyHandler This handler will be called after all the body has been received
+   */
+  void bodyHandler(Handler<Buffer> bodyHandler);
 }

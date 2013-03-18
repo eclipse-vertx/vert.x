@@ -36,7 +36,7 @@ public class WorkerHttpTestClient extends TestClientBase {
     final HttpServer server = vertx.createHttpServer();
     server.requestHandler(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        req.response.end();
+        req.response().end();
       }
     });
     server.listen(8080);

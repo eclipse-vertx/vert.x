@@ -27,7 +27,7 @@ import java.util.Map;
 
 /**
  * Represents a server-side HTTP response.<p>
- * An instance of this class is created and associated to every instance of
+ * Instances of this class are created and associated to every instance of
  * {@link HttpServerRequest} that is created.<p>
  * It allows the developer to control the HTTP response that is sent back to the
  * client for a partcularHTTP request. It contains methods that allow HTTP
@@ -42,24 +42,30 @@ import java.util.Map;
  * Instances of this class are not thread-safe<p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class HttpServerResponse implements WriteStream {
-
-  @SuppressWarnings("unused")
-	private static final Logger log = LoggerFactory.getLogger(HttpServerResponse.class);
-  
-  protected HttpServerResponse() {
-  }
+public interface HttpServerResponse extends WriteStream {
 
   /**
    * The HTTP status code of the response. The default is {@code 200} representing {@code OK}.
    */
-  public int statusCode = HttpResponseStatus.OK.code();
+  int getStatusCode();
+
+  /**
+   * Set the status code
+   * @return A reference to this, so multiple method calls can be chained.
+   */
+  HttpServerResponse setStatusCode(int statusCode);
 
   /**
    * The HTTP status message of the response. If this is not specified a default value will be used depending on what
-   * {@link #statusCode} has been set to.
+   * {@link #setStatusCode} has been set to.
    */
-  public String statusMessage = null;
+  String getStatusMessage();
+
+  /**
+   * Set the status message
+   * @return A reference to this, so multiple method calls can be chained.
+   */
+  HttpServerResponse setStatusMessage(String statusMessage);
 
   /**
    * If {@code chunked} is {@code true}, this response will use HTTP chunked encoding, and each call to write to the body
@@ -73,12 +79,17 @@ public abstract class HttpServerResponse implements WriteStream {
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public abstract HttpServerResponse setChunked(boolean chunked);
+  HttpServerResponse setChunked(boolean chunked);
+
+  /**
+   * Is the response chunked?
+   */
+  boolean isChunked();
 
   /**
    * @return The HTTP headers
    */
-  public abstract Map<String, Object> headers();
+  Map<String, Object> headers();
 
   /**
    * Put an HTTP header - fluent API
@@ -88,12 +99,12 @@ public abstract class HttpServerResponse implements WriteStream {
    *              e.g. multiple Set-Cookie headers
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public abstract HttpServerResponse putHeader(String name, Object value);
+  HttpServerResponse putHeader(String name, Object value);
 
   /**
    * @return The HTTP trailers
    */
-  public abstract Map<String, Object> trailers();
+  Map<String, Object> trailers();
 
   /**
    * Put an HTTP trailer - fluent API
@@ -101,42 +112,42 @@ public abstract class HttpServerResponse implements WriteStream {
    * @param value The trailer value
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public abstract HttpServerResponse putTrailer(String name, Object value);
+  HttpServerResponse putTrailer(String name, Object value);
 
   /**
    * Set a close handler for the response. This will be called if the underlying connection closes before the response
    * is complete.
    * @param handler
    */
-  public abstract void closeHandler(Handler<Void> handler);
+  void closeHandler(Handler<Void> handler);
 
   /**
    * Write a {@link Buffer} to the response body.
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public abstract HttpServerResponse write(Buffer chunk);
+  HttpServerResponse write(Buffer chunk);
 
   /**
    * Write a {@link String} to the response body, encoded using the encoding {@code enc}.
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public abstract HttpServerResponse write(String chunk, String enc);
+  HttpServerResponse write(String chunk, String enc);
 
   /**
    * Write a {@link String} to the response body, encoded in UTF-8.
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public abstract HttpServerResponse write(String chunk);
+  HttpServerResponse write(String chunk);
 
   /**
    * Write a {@link Buffer} to the response body. The {@code doneHandler} is called after the buffer is actually written to the wire.<p>
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public abstract HttpServerResponse write(Buffer chunk, Handler<Void> doneHandler);
+  HttpServerResponse write(Buffer chunk, Handler<Void> doneHandler);
 
   /**
    * Write a {@link String} to the response body, encoded with encoding {@code enc}. The {@code doneHandler} is called
@@ -144,7 +155,7 @@ public abstract class HttpServerResponse implements WriteStream {
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public abstract HttpServerResponse write(String chunk, String enc, Handler<Void> doneHandler);
+  HttpServerResponse write(String chunk, String enc, Handler<Void> doneHandler);
 
   /**
    * Write a {@link String} to the response body, encoded in UTF-8. The {@code doneHandler} is called after the buffer
@@ -152,30 +163,30 @@ public abstract class HttpServerResponse implements WriteStream {
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  public abstract HttpServerResponse write(String chunk, Handler<Void> doneHandler);
+  HttpServerResponse write(String chunk, Handler<Void> doneHandler);
 
   /**
    * Same as {@link #end(Buffer)} but writes a String with the default encoding before ending the response.
    */
-  public abstract void end(String chunk);
+  void end(String chunk);
 
   /**
    * Same as {@link #end(Buffer)} but writes a String with the specified encoding before ending the response.
    */
-  public abstract void end(String chunk, String enc);
+  void end(String chunk, String enc);
 
   /**
    * Same as {@link #end()} but writes some data to the response body before ending. If the response is not chunked and
    * no other data has been written then the Content-Length header will be automatically set
    */
-  public abstract void end(Buffer chunk);
+  void end(Buffer chunk);
 
   /**
    * Ends the response. If no data has been written to the response body,
    * the actual response won't get written until this method gets called.<p>
    * Once the response has ended, it cannot be used any more.
    */
-  public abstract void end();
+  void end();
 
   /**
    * Tell the kernel to stream a file as specified by {@code filename} directly
@@ -183,11 +194,11 @@ public abstract class HttpServerResponse implements WriteStream {
    * (where supported by the underlying operating system.
    * This is a very efficient way to serve files.<p>
    */
-  public abstract HttpServerResponse sendFile(String filename);
+  HttpServerResponse sendFile(String filename);
 
   /**
    * Close the underlying TCP connection
    */
-  public abstract void close();
+  void close();
 
 }

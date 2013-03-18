@@ -61,7 +61,7 @@ public class TLSServer extends Verticle {
           public void handle(Buffer buffer) {
             tu.checkThread();
             tu.azzert("foo".equals(buffer.toString()));
-            req.response.end("bar");
+            req.response().end("bar");
           }
         });
       }
