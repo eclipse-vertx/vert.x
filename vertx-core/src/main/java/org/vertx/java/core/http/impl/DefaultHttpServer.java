@@ -19,6 +19,8 @@ package org.vertx.java.core.http.impl;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelException;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -88,11 +90,13 @@ public class DefaultHttpServer implements HttpServer {
   private final EventLoopContext eventLoopContext;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
+  private Handler<Exception> exceptionHandler;
   private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
   private ChannelGroup serverChannelGroup;
   private boolean listening;
   private String serverOrigin;
 
+  private ChannelFuture bindFuture;
   private ServerID id;
   private DefaultHttpServer actualServer;
   private VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
@@ -145,11 +149,26 @@ public class DefaultHttpServer implements HttpServer {
     return wsHandler;
   }
 
-  public HttpServer listen(int port) {
-    return listen(port, "0.0.0.0");
+  @Override
+  public HttpServer exceptionHandler(Handler<Exception> exceptionHandler) {
+    this.exceptionHandler = exceptionHandler;
+    return this;
   }
 
-  public HttpServer listen(int port, String host) {
+  @Override
+  public Handler<Exception> exceptionHandler() {
+    return exceptionHandler;
+  }
+
+  public void listen(int port) {
+    listen(port, "0.0.0.0", null);
+  }
+
+  public void listen(int port, Handler<HttpServer> listenHandler) {
+    listen(port, "0.0.0.0", listenHandler);
+  }
+
+  public void listen(int port, String host, final Handler<HttpServer> listenHandler) {
 
     if (requestHandler == null && wsHandler == null) {
       throw new IllegalStateException("Set request or websocket handler first");
@@ -157,6 +176,7 @@ public class DefaultHttpServer implements HttpServer {
     if (listening) {
       throw new IllegalStateException("Listen already called");
     }
+    listening = true;
 
     synchronized (vertx.sharedHttpServers()) {
       id = new ServerID(port, host);
@@ -207,7 +227,8 @@ public class DefaultHttpServer implements HttpServer {
         });
 
         try {
-          Channel serverChannel = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port)).syncUninterruptibly().channel();
+          bindFuture = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
+          Channel serverChannel = bindFuture.channel();
           serverChannelGroup.add(serverChannel);
         } catch (ChannelException | UnknownHostException e) {
           throw new IllegalArgumentException(e.getMessage());
@@ -226,9 +247,34 @@ public class DefaultHttpServer implements HttpServer {
         // Share the event loop thread to also serve the HttpServer's network traffic.
         actualServer.wsHandlerManager.addHandler(wsHandler, eventLoopContext);
       }
+
+      actualServer.bindFuture.addListener(new ChannelFutureListener() {
+        @Override
+        public void operationComplete(ChannelFuture future) throws Exception {
+          if (future.isSuccess()) {
+            if (listenHandler != null) {
+              if (eventLoopContext.isOnCorrectWorker(future.channel().eventLoop())) {
+                vertx.setContext(eventLoopContext);
+                listenHandler.handle(DefaultHttpServer.this);
+              } else {
+                eventLoopContext.execute(new Runnable() {
+                  @Override
+                  public void run() {
+                    listenHandler.handle(DefaultHttpServer.this);
+                  }
+                });
+              }
+            }
+          } else {
+            Handler<Exception> exceptionHandler = exceptionHandler();
+            if (exceptionHandler != null) {
+                exceptionHandler.handle((Exception) future.cause());
+            }
+            close();
+          }
+        }
+      });
     }
-    listening = true;
-    return this;
   }
 
   public void close() {
