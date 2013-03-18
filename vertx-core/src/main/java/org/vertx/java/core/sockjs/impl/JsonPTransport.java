@@ -45,13 +45,13 @@ class JsonPTransport extends BaseTransport {
 
     rm.getWithRegEx(jsonpRE, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        if (log.isTraceEnabled()) log.trace("JsonP, get: " + req.uri);
+        if (log.isTraceEnabled()) log.trace("JsonP, get: " + req.uri());
         String callback = req.params().get("callback");
         if (callback == null) {
           callback = req.params().get("c");
           if (callback == null) {
-            req.response.statusCode = 500;
-            req.response.end("\"callback\" parameter required\n");
+            req.response().setStatusCode(500);
+            req.response().end("\"callback\" parameter required\n");
             return;
           }
         }
@@ -66,15 +66,15 @@ class JsonPTransport extends BaseTransport {
 
     rm.postWithRegEx(jsonpSendRE, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        if (log.isTraceEnabled()) log.trace("JsonP, post: " + req.uri);
+        if (log.isTraceEnabled()) log.trace("JsonP, post: " + req.uri());
         String sessionID = req.params().get("param0");
         final Session session = sessions.get(sessionID);
         if (session != null) {
           handleSend(req, session);
         } else {
-          req.response.statusCode = 404;
+          req.response().setStatusCode(404);
           setJSESSIONID(config, req);
-          req.response.end();
+          req.response().end();
         }
       }
     });
@@ -93,14 +93,14 @@ class JsonPTransport extends BaseTransport {
         } else if ("text/plain".equalsIgnoreCase(ct)) {
           urlEncoded = false;
         } else {
-          req.response.statusCode = 500;
-          req.response.end("Invalid Content-Type");
+          req.response().setStatusCode(500);
+          req.response().end("Invalid Content-Type");
           return;
         }
 
         if (body.equals("") || urlEncoded && (!body.startsWith("d=") || body.length() <= 2)) {
-          req.response.statusCode = 500;
-          req.response.end("Payload expected.");
+          req.response().setStatusCode(500);
+          req.response().end("Payload expected.");
           return;
         }
 
@@ -114,12 +114,12 @@ class JsonPTransport extends BaseTransport {
         }
 
         if (!session.handleMessages(body)) {
-          sendInvalidJSON(req.response);
+          sendInvalidJSON(req.response());
         } else {
           setJSESSIONID(config, req);
-          req.response.headers().put("Content-Type", "text/plain; charset=UTF-8");
+          req.response().headers().put("Content-Type", "text/plain; charset=UTF-8");
           setNoCacheHeaders(req);
-          req.response.end("ok");
+          req.response().end("ok");
           if (log.isTraceEnabled()) log.trace("send handled ok");
         }
       }
@@ -138,7 +138,7 @@ class JsonPTransport extends BaseTransport {
       this.req = req;
       this.session = session;
       this.callback = callback;
-      addCloseHandler(req.response, session);
+      addCloseHandler(req.response(), session);
     }
 
 
@@ -147,8 +147,8 @@ class JsonPTransport extends BaseTransport {
       if (log.isTraceEnabled()) log.trace("JsonP, sending frame");
 
       if (!headersWritten) {
-        req.response.setChunked(true);
-        req.response.headers().put("Content-Type", "application/javascript; charset=UTF-8");
+        req.response().setChunked(true);
+        req.response().headers().put("Content-Type", "application/javascript; charset=UTF-8");
         setNoCacheHeaders(req);
         setJSESSIONID(config, req);
         headersWritten = true;
@@ -163,7 +163,7 @@ class JsonPTransport extends BaseTransport {
 
       //End the response and close the HTTP connection
 
-      req.response.write(sb.toString());
+      req.response().write(sb.toString());
       close();
     }
 
@@ -171,8 +171,8 @@ class JsonPTransport extends BaseTransport {
       if (!closed) {
         try {
           session.resetListener(true);
-          req.response.end();
-          req.response.close();
+          req.response().end();
+          req.response().close();
           closed = true;
         } catch (IllegalStateException e) {
           // Underlying connection might alreadu be closed - that's fine

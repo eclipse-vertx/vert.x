@@ -69,13 +69,13 @@ class HtmlFileTransport extends BaseTransport {
 
     rm.getWithRegEx(htmlFileRE, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        if (log.isTraceEnabled()) log.trace("HtmlFile, get: " + req.uri);
+        if (log.isTraceEnabled()) log.trace("HtmlFile, get: " + req.uri());
         String callback = req.params().get("callback");
         if (callback == null) {
           callback = req.params().get("c");
           if (callback == null) {
-            req.response.statusCode = 500;
-            req.response.end("\"callback\" parameter required\n");
+            req.response().setStatusCode(500);
+            req.response().end("\"callback\" parameter required\n");
             return;
           }
         }
@@ -102,18 +102,18 @@ class HtmlFileTransport extends BaseTransport {
       this.req = req;
       this.callback = callback;
       this.session = session;
-      addCloseHandler(req.response, session);
+      addCloseHandler(req.response(), session);
     }
 
     public void sendFrame(String body) {
       if (log.isTraceEnabled()) log.trace("HtmlFile, sending frame");
       if (!headersWritten) {
         String htmlFile = HTML_FILE_TEMPLATE.replace("{{ callback }}", callback);
-        req.response.headers().put("Content-Type", "text/html; charset=UTF-8");
+        req.response().headers().put("Content-Type", "text/html; charset=UTF-8");
         setNoCacheHeaders(req);
-        req.response.setChunked(true);
+        req.response().setChunked(true);
         setJSESSIONID(config, req);
-        req.response.write(htmlFile);
+        req.response().write(htmlFile);
         headersWritten = true;
       }
       body = escapeForJavaScript(body);
@@ -122,7 +122,7 @@ class HtmlFileTransport extends BaseTransport {
       sb.append(body);
       sb.append("\");\n</script>\r\n");
       Buffer buff = new Buffer(sb.toString());
-      req.response.write(buff);
+      req.response().write(buff);
       bytesSent += buff.length();
       if (bytesSent >= maxBytesStreaming) {
         if (log.isTraceEnabled()) log.trace("More than maxBytes sent so closing connection");
@@ -135,8 +135,8 @@ class HtmlFileTransport extends BaseTransport {
       if (!closed) {
         try {
           session.resetListener(false);
-          req.response.end();
-          req.response.close();
+          req.response().end();
+          req.response().close();
           closed = true;
         } catch (IllegalStateException e) {
           // Underlying connection might alreadu be closed - that's fine

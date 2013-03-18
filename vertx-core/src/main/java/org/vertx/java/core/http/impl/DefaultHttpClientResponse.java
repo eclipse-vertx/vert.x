@@ -16,8 +16,8 @@
 
 package org.vertx.java.core.http.impl;
 
-import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.LastHttpContent;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClientResponse;
@@ -33,27 +33,40 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultHttpClientResponse extends HttpClientResponse {
+public class DefaultHttpClientResponse extends BodyHandlerImpl implements HttpClientResponse  {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultHttpClientResponse.class);
 
+  private final int statusCode;
+  private final String statusMessage;
   private final DefaultHttpClientRequest request;
   private final ClientConnection conn;
+
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Exception> exceptionHandler;
   private final HttpResponse response;
   private LastHttpContent trailer;
+
   // Cache these for performance
   private Map<String, String> headers;
   private Map<String, String> trailers;
   private List<String> cookies;
 
   DefaultHttpClientResponse(DefaultHttpClientRequest request, ClientConnection conn, HttpResponse response) {
-    super(response.getStatus().code(), response.getStatus().reasonPhrase());
+    statusCode = response.getStatus().code();
+    statusMessage = response.getStatus().reasonPhrase();
     this.request = request;
     this.conn = conn;
     this.response = response;
+  }
+
+  public int statusCode() {
+    return statusCode;
+  }
+
+  public String statusMessage() {
+    return statusMessage;
   }
 
   public Map<String, String> headers() {

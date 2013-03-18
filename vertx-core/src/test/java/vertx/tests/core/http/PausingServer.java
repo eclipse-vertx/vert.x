@@ -39,7 +39,7 @@ public class PausingServer extends Verticle {
     server = vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
         tu.checkThread();
-        req.response.setChunked(true);
+        req.response().setChunked(true);
         req.pause();
         final Handler<Message<Buffer>> resumeHandler = new Handler<Message<Buffer>>() {
           public void handle(Message message) {
@@ -57,7 +57,7 @@ public class PausingServer extends Verticle {
         req.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
             tu.checkThread();
-            req.response.write(buffer);
+            req.response().write(buffer);
           }
         });
       }

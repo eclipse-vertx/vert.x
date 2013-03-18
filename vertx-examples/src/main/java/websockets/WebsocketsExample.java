@@ -39,7 +39,7 @@ public class WebsocketsExample extends Verticle {
       }
     }).requestHandler(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        if (req.path.equals("/")) req.response.sendFile("websockets/ws.html"); // Serve the html
+        if (req.path.equals("/")) req.response().sendFile("websockets/ws.html"); // Serve the html
       }
     }).listen(8080);
   }

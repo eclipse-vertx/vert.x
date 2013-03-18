@@ -21,7 +21,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
@@ -35,8 +34,6 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.io.File;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -234,24 +231,9 @@ class ServerConnection extends AbstractConnection {
 
   private void processMessage(Object msg) {
     if (msg instanceof HttpRequest) {
-
       HttpRequest request = (HttpRequest) msg;
-
-      String method = request.getMethod().toString();
-      URI theURI;
-      try {
-        theURI = new URI(request.getUri());
-      } catch (URISyntaxException e) {
-        throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
-      }
-      String uri = request.getUri();
-      String path = theURI.getPath();
-      String query = theURI.getQuery();
-      HttpVersion ver = request.getProtocolVersion();
-      boolean keepAlive = ver == HttpVersion.HTTP_1_1 ||
-          (ver == HttpVersion.HTTP_1_0 && "Keep-Alive".equalsIgnoreCase(request.headers().get("Connection")));
-      DefaultHttpServerResponse resp = new DefaultHttpServerResponse(vertx, this, request.getProtocolVersion(), keepAlive);
-      DefaultHttpServerRequest req = new DefaultHttpServerRequest(this, method, uri, path, query, resp, request);
+      DefaultHttpServerResponse resp = new DefaultHttpServerResponse(vertx, this, request);
+      DefaultHttpServerRequest req = new DefaultHttpServerRequest(this, request, resp);
       handleRequest(req, resp);
     }
     if (msg instanceof HttpContent) {

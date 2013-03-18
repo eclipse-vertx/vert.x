@@ -68,7 +68,7 @@ public class DefaultSockJSServer implements SockJSServer {
       @Override
       public void handle(HttpServerRequest req) {
         if (log.isTraceEnabled()) {
-          log.trace("Got request in sockjs server: " + req.uri);
+          log.trace("Got request in sockjs server: " + req.uri());
         }
         rm.handle(req);
       }
@@ -123,8 +123,8 @@ public class DefaultSockJSServer implements SockJSServer {
     rm.getWithRegEx(prefix + "\\/?", new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         if (log.isTraceEnabled()) log.trace("Returning welcome response");
-        req.response.headers().put("Content-Type", "text/plain; charset=UTF-8");
-        req.response.end("Welcome to SockJS!\n");
+        req.response().headers().put("Content-Type", "text/plain; charset=UTF-8");
+        req.response().end("Welcome to SockJS!\n");
       }
     });
 
@@ -178,9 +178,9 @@ public class DefaultSockJSServer implements SockJSServer {
 
     rm.getWithRegEx(prefix + "\\/.+", new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        if (log.isTraceEnabled()) log.trace("Request: " + req.uri + " does not match, returning 404");
-        req.response.statusCode = 404;
-        req.response.end();
+        if (log.isTraceEnabled()) log.trace("Request: " + req.uri() + " does not match, returning 404");
+        req.response().setStatusCode(404);
+        req.response().end();
       }
     });
   }
@@ -248,10 +248,10 @@ public class DefaultSockJSServer implements SockJSServer {
       }
 
       public void handle(HttpServerRequest req) {
-        req.response.headers().put("Content-Type", "application/javascript; charset=UTF-8");
+        req.response().headers().put("Content-Type", "application/javascript; charset=UTF-8");
 
         BaseTransport.setCORS(req);
-        req.response.setChunked(true);
+        req.response().setChunked(true);
 
         Buffer h = new Buffer(2);
         h.appendString("h\n");
@@ -272,7 +272,7 @@ public class DefaultSockJSServer implements SockJSServer {
         setTimeout(timeouts, 625, h);
         setTimeout(timeouts, 3125, h);
 
-        runTimeouts(timeouts, req.response);
+        runTimeouts(timeouts, req.response());
 
       }
     };
@@ -285,16 +285,16 @@ public class DefaultSockJSServer implements SockJSServer {
         try {
           if (log.isTraceEnabled()) log.trace("In Iframe handler");
           if (etag != null && etag.equals(req.headers().get("if-none-match"))) {
-            req.response.statusCode = 304;
-            req.response.end();
+            req.response().setStatusCode(304);
+            req.response().end();
           } else {
-            req.response.headers().put("Content-Type", "text/html; charset=UTF-8");
-            req.response.headers().put("Cache-Control", "public,max-age=31536000");
+            req.response().headers().put("Content-Type", "text/html; charset=UTF-8");
+            req.response().headers().put("Cache-Control", "public,max-age=31536000");
             long oneYear = 365 * 24 * 60 * 60 * 1000;
             String expires = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz").format(new Date(System.currentTimeMillis() + oneYear));
-            req.response.headers().put("Expires", expires);
-            req.response.headers().put("ETag", etag);
-            req.response.end(iframeHTML);
+            req.response().headers().put("Expires", expires);
+            req.response().headers().put("ETag", etag);
+            req.response().end(iframeHTML);
           }
         } catch (Exception e) {
           log.error("Failed to server iframe", e);

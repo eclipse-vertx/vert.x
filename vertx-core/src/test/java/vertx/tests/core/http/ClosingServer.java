@@ -37,7 +37,7 @@ public class ClosingServer extends Verticle {
       public void handle(final HttpServerRequest req) {
         tu.checkThread();
 
-        req.response.end();
+        req.response().end();
 
         // close the server
 
