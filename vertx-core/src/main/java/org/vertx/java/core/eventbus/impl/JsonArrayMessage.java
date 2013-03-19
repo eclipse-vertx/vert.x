@@ -47,7 +47,6 @@ class JsonArrayMessage extends BaseMessage<JsonArray> {
     super(readBuff);
   }
 
-  @Override
   protected void readBody(int pos, Buffer readBuff) {
     boolean isNull = readBuff.getByte(pos) == (byte)0;
     if (!isNull) {
@@ -60,7 +59,6 @@ class JsonArrayMessage extends BaseMessage<JsonArray> {
     }
   }
 
-  @Override
   protected void writeBody(Buffer buff) {
     if (body == null) {
       buff.appendByte((byte)0);
@@ -71,7 +69,6 @@ class JsonArrayMessage extends BaseMessage<JsonArray> {
     }
   }
 
-  @Override
   protected int getBodyLength() {
     if (body == null) {
       return 1;
@@ -82,12 +79,10 @@ class JsonArrayMessage extends BaseMessage<JsonArray> {
     }
   }
 
-  @Override
-  protected Message<JsonArray> copy() {
+  protected Message copy() {
     return new JsonArrayMessage(this);
   }
 
-  @Override
   protected byte type() {
     return MessageFactory.TYPE_JSON;
   }

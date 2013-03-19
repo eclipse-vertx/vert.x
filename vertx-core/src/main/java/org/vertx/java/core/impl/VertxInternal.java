@@ -33,37 +33,37 @@ import java.util.concurrent.ExecutorService;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface VertxInternal extends Vertx {
+public abstract class VertxInternal extends Vertx {
 
-  EventLoopGroup getServerAcceptorPool();
+  public abstract EventLoopGroup getServerAcceptorPool();
 
-  ExecutorService getBackgroundPool();
+  public abstract ExecutorService getBackgroundPool();
 
-  Context startOnEventLoop(Runnable runnable);
+  public abstract Context startOnEventLoop(Runnable runnable);
 
-  Context startInBackground(Runnable runnable, boolean multiThreaded);
+  public abstract Context startInBackground(Runnable runnable, boolean multiThreaded);
 
-  Context getOrAssignContext();
+  public abstract Context getOrAssignContext();
 
-  void reportException(Throwable t);
+  public abstract void reportException(Throwable t);
 
-  Map<ServerID, DefaultHttpServer> sharedHttpServers();
+  public abstract Map<ServerID, DefaultHttpServer> sharedHttpServers();
 
-  Map<ServerID, DefaultNetServer> sharedNetServers();
+  public abstract Map<ServerID, DefaultNetServer> sharedNetServers();
 
 	/**
 	 * Get the current context
 	 * @return the context
 	 */
-	Context getContext();
+	public abstract Context getContext();
 
 	/**
 	 * Set the current context
 	 */
-  void setContext(Context context);
+  public abstract void setContext(Context context);
 
   /**
    * @return event loop context
    */
-  EventLoopContext createEventLoopContext();
+  public abstract EventLoopContext createEventLoopContext();
 }

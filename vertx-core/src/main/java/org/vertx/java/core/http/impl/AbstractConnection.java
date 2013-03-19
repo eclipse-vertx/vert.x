@@ -39,6 +39,7 @@ public abstract class AbstractConnection extends ConnectionBase {
     channel.outboundMessageBuffer().add(obj);
   }
 
+
   ChannelFuture write(Object obj) {
     if (channel.isOpen()) {
       return channel.write(obj);

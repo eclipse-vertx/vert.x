@@ -21,8 +21,8 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.ReadStream;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.security.cert.X509Certificate;
 import java.net.InetSocketAddress;
+import javax.security.cert.X509Certificate;
 import java.net.URI;
 import java.util.Map;
 
@@ -39,7 +39,7 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
+public interface HttpServerRequest extends ReadStream {
 
   /**
    * The HTTP method for the request. One of GET, PUT, POST, DELETE, TRACE, CONNECT, OPTIONS or HEAD

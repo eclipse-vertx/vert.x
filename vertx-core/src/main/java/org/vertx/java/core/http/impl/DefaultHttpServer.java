@@ -103,7 +103,6 @@ public class DefaultHttpServer implements HttpServer {
     tcpHelper.setReuseAddress(true);
   }
 
-  @Override
   public HttpServer requestHandler(Handler<HttpServerRequest> requestHandler) {
     if (listening) {
       throw new IllegalStateException("Please set handler before server is listening");
@@ -112,12 +111,10 @@ public class DefaultHttpServer implements HttpServer {
     return this;
   }
 
-  @Override
   public Handler<HttpServerRequest> requestHandler() {
     return requestHandler;
   }
 
-  @Override
   public HttpServer websocketHandler(Handler<ServerWebSocket> wsHandler) {
     if (listening) {
       throw new IllegalStateException("Please set handler before server is listening");
@@ -126,17 +123,14 @@ public class DefaultHttpServer implements HttpServer {
     return this;
   }
 
-  @Override
   public Handler<ServerWebSocket> websocketHandler() {
     return wsHandler;
   }
 
-  @Override
   public HttpServer listen(int port) {
     return listen(port, "0.0.0.0");
   }
 
-  @Override
   public HttpServer listen(int port, String host) {
 
     if (requestHandler == null && wsHandler == null) {
@@ -219,12 +213,10 @@ public class DefaultHttpServer implements HttpServer {
     return this;
   }
 
-  @Override
   public void close() {
     close(null);
   }
 
-  @Override
   public void close(final Handler<Void> done) {
     if (!listening) {
       if (done != null) {
@@ -263,73 +255,60 @@ public class DefaultHttpServer implements HttpServer {
 
   }
 
-  @Override
   public HttpServer setSSL(boolean ssl) {
     tcpHelper.setSSL(ssl);
     return this;
   }
 
-  @Override
   public HttpServer setKeyStorePath(String path) {
     tcpHelper.setKeyStorePath(path);
     return this;
   }
 
-  @Override
   public HttpServer setKeyStorePassword(String pwd) {
     tcpHelper.setKeyStorePassword(pwd);
     return this;
   }
 
-  @Override
   public HttpServer setTrustStorePath(String path) {
     tcpHelper.setTrustStorePath(path);
     return this;
   }
 
-  @Override
   public HttpServer setTrustStorePassword(String pwd) {
     tcpHelper.setTrustStorePassword(pwd);
     return this;
   }
 
-  @Override
   public HttpServer setClientAuthRequired(boolean required) {
     tcpHelper.setClientAuthRequired(required);
     return this;
   }
 
-  @Override
   public HttpServer setTCPNoDelay(boolean tcpNoDelay) {
     tcpHelper.setTCPNoDelay(tcpNoDelay);
     return this;
   }
 
-  @Override
   public HttpServer setSendBufferSize(int size) {
     tcpHelper.setSendBufferSize(size);
     return this;
   }
 
-  @Override
   public HttpServer setReceiveBufferSize(int size) {
     tcpHelper.setReceiveBufferSize(size);
     return this;
   }
-
-  @Override
   public HttpServer setTCPKeepAlive(boolean keepAlive) {
     tcpHelper.setTCPKeepAlive(keepAlive);
     return this;
   }
 
-  @Override
   public HttpServer setReuseAddress(boolean reuse) {
     tcpHelper.setReuseAddress(reuse);
     return this;
   }
 
-  @Override
   public HttpServer setSoLinger(int linger) {
     if (linger < 0) {
       tcpHelper.setSoLinger(null);
@@ -339,96 +318,74 @@ public class DefaultHttpServer implements HttpServer {
     return this;
   }
 
-  @Override
   public HttpServer setTrafficClass(int trafficClass) {
     tcpHelper.setTrafficClass(trafficClass);
     return this;
   }
 
-  @Override
   public HttpServer setAcceptBacklog(int backlog) {
     tcpHelper.setAcceptBacklog(backlog);
     return this;
   }
 
-  @Override
   public Boolean isTCPNoDelay() {
     return tcpHelper.isTCPNoDelay();
   }
 
-  @Override
   public Integer getSendBufferSize() {
     return tcpHelper.getSendBufferSize();
   }
 
-  @Override
   public Integer getReceiveBufferSize() {
     return tcpHelper.getReceiveBufferSize();
   }
 
-  @Override
   public Boolean isTCPKeepAlive() {
     return tcpHelper.isTCPKeepAlive();
   }
 
-  @Override
   public Boolean isReuseAddress() {
     return tcpHelper.isReuseAddress();
   }
 
-  @Override
   public Integer getSoLinger() {
     return tcpHelper.getSoLinger();
   }
 
-  @Override
   public Integer getTrafficClass() {
     return tcpHelper.getTrafficClass();
   }
 
-  @Override
   public Integer getAcceptBacklog() {
     return tcpHelper.getAcceptBacklog();
   }
 
-  @Override
   public boolean isSSL() {
     return tcpHelper.isSSL();
   }
 
-  @Override
   public String getKeyStorePath() {
     return tcpHelper.getKeyStorePath();
   }
 
-  @Override
   public String getKeyStorePassword() {
     return tcpHelper.getKeyStorePassword();
   }
 
-  @Override
   public String getTrustStorePath() {
     return tcpHelper.getTrustStorePath();
   }
 
-  @Override
   public String getTrustStorePassword() {
     return tcpHelper.getTrustStorePassword();
   }
 
-  @Override
-  public boolean isClientAuthRequired() {
-    return tcpHelper.getClientAuth() == TCPSSLHelper.ClientAuth.REQUIRED;
-  }
-
-  @Override
   public HttpServer setUsePooledBuffers(boolean pooledBuffers) {
     tcpHelper.setUsePooledBuffers(pooledBuffers);
     return this;
   }
 
-  @Override
-  public Boolean isUsePooledBuffers() {
+  public boolean isUsePooledBuffers() {
     return tcpHelper.isUsePooledBuffers();
   }
 
@@ -629,9 +586,9 @@ public class DefaultHttpServer implements HttpServer {
           }
         };
 
-        final DefaultServerWebSocket ws = new DefaultServerWebSocket(vertx, theURI.getPath(), wsConn, connectRunnable);
+        final DefaultWebSocket ws = new DefaultWebSocket(vertx, theURI.getPath(), wsConn, connectRunnable);
         wsConn.handleWebsocketConnect(ws);
-        if (ws.isRejected()) {
+        if (ws.rejected) {
           if (firstHandler == null) {
             firstHandler = wsHandler;
           }

@@ -30,170 +30,71 @@ import org.vertx.java.core.net.impl.ServerID;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class BaseMessage<U> implements Message<U> {
+public abstract class BaseMessage<U> extends Message<U> {
 
   private static final Logger log = LoggerFactory.getLogger(BaseMessage.class);
 
-  protected U body;
   protected ServerID sender;
   protected DefaultEventBus bus;
   protected String address;
-  protected String replyAddress;
-  protected boolean send; // Is it a send or a publish?
+  boolean send; // Is it a send or a publish?
 
   protected BaseMessage(boolean send, String address, U body) {
     this.send = send;
     this.body = body;
     this.address = address;
+    this.body = body;
   }
 
-  @Override
-  public U body() {
-    return body;
-  }
-
-  @Override
-  public String replyAddress() {
-    return replyAddress;
-  }
-
-  @Override
-  public void reply() {
-    sendReply(DefaultEventBus.createMessage(true, replyAddress, null), null);
-  }
-
-  @Override
-  public void reply(Object message) {
-    reply(message, null);
-  }
-
-  @Override
-  public void reply(JsonObject message) {
-    reply(message, null);
-  }
-
-  @Override
-  public void reply(JsonArray message) {
-    reply(message, null);
-  }
-
-  @Override
-  public void reply(String message) {
-    reply(message, null);
-  }
-
-  @Override
-  public void reply(Buffer message) {
-    reply(message, null);
-  }
-
-  @Override
-  public void reply(byte[] message) {
-    reply(message, null);
-  }
-
-  @Override
-  public void reply(Integer message) {
-    reply(message, null);
-  }
-
-  @Override
-  public void reply(Long message) {
-    reply(message, null);
-  }
-
-  @Override
-  public void reply(Short message) {
-    reply(message, null);
-  }
-
-  @Override
-  public void reply(Character message) {
-    reply(message, null);
-  }
-
-  @Override
-  public void reply(Boolean message) {
-    reply(message, null);
-  }
-
-  @Override
-  public void reply(Float message) {
-    reply(message, null);
-  }
-
-  @Override
-  public void reply(Double message) {
-    reply(message, null);
-  }
-
-  @Override
-  public <T> void reply(Handler<Message<T>> replyHandler) {
-    sendReply(DefaultEventBus.createMessage(true, replyAddress, null), replyHandler);
-  }
-
-  @Override
-  public <T> void reply(Object message, Handler<Message<T>> replyHandler) {
+  protected <T> void doReply(Object message, Handler<Message<T>> replyHandler) {
     sendReply(DefaultEventBus.createMessage(true, replyAddress, message), replyHandler);
   }
 
-  @Override
-  public <T> void reply(JsonObject message, Handler<Message<T>> replyHandler) {
+  protected <T> void doReply(JsonObject message, Handler<Message<T>> replyHandler) {
     sendReply(new JsonObjectMessage(true, replyAddress, message), replyHandler);
   }
 
-  @Override
-  public <T> void reply(JsonArray message, Handler<Message<T>> replyHandler) {
+  protected <T> void doReply(JsonArray message, Handler<Message<T>> replyHandler) {
     sendReply(new JsonArrayMessage(true, replyAddress, message), replyHandler);
   }
 
-  @Override
-  public <T> void reply(String message, Handler<Message<T>> replyHandler) {
+  protected <T> void doReply(String message, Handler<Message<T>> replyHandler) {
     sendReply(new StringMessage(true, replyAddress, message), replyHandler);
   }
 
-  @Override
-  public <T> void reply(Buffer message, Handler<Message<T>> replyHandler) {
+  protected <T> void doReply(Buffer message, Handler<Message<T>> replyHandler) {
     sendReply(new BufferMessage(true, replyAddress, message), replyHandler);
   }
 
-  @Override
-  public <T> void reply(byte[] message, Handler<Message<T>> replyHandler) {
+  protected <T> void doReply(byte[] message, Handler<Message<T>> replyHandler) {
     sendReply(new ByteArrayMessage(true, replyAddress, message), replyHandler);
   }
 
-  @Override
-  public <T> void reply(Integer message, Handler<Message<T>> replyHandler) {
+  protected <T> void doReply(Integer message, Handler<Message<T>> replyHandler) {
     sendReply(new IntMessage(true, replyAddress, message), replyHandler);
   }
 
-  @Override
-  public <T> void reply(Long message, Handler<Message<T>> replyHandler) {
+  protected <T> void doReply(Long message, Handler<Message<T>> replyHandler) {
     sendReply(new LongMessage(true, replyAddress, message), replyHandler);
   }
 
-  @Override
-  public <T> void reply(Short message, Handler<Message<T>> replyHandler) {
+  protected <T> void doReply(Short message, Handler<Message<T>> replyHandler) {
     sendReply(new ShortMessage(true, replyAddress, message), replyHandler);
   }
 
-  @Override
-  public <T> void reply(Character message, Handler<Message<T>> replyHandler) {
+  protected <T> void doReply(Character message, Handler<Message<T>> replyHandler) {
      sendReply(new CharacterMessage(true, replyAddress, message), replyHandler);
   }
 
-  @Override
-  public <T> void reply(Boolean message, Handler<Message<T>> replyHandler) {
+  protected <T> void doReply(Boolean message, Handler<Message<T>> replyHandler) {
     sendReply(new BooleanMessage(true, replyAddress, message), replyHandler);
   }
 
-  @Override
-  public <T> void reply(Float message, Handler<Message<T>> replyHandler) {
+  protected <T> void doReply(Float message, Handler<Message<T>> replyHandler) {
     sendReply(new FloatMessage(true, replyAddress, message), replyHandler);
   }
 
-  @Override
-  public <T> void reply(Double message, Handler<Message<T>> replyHandler) {
+  protected <T> void doReply(Double message, Handler<Message<T>> replyHandler) {
     sendReply(new DoubleMessage(true, replyAddress, message), replyHandler);
   }
 

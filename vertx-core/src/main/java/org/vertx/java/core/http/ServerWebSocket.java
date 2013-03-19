@@ -16,18 +16,28 @@
 
 package org.vertx.java.core.http;
 
+import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
+
 /**
  * Represents a server side WebSocket that is passed into a the websocketHandler of an {@link HttpServer}<p>
  * Instances of this class are not thread-safe<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface ServerWebSocket extends WebSocketBase<ServerWebSocket> {
+public abstract class ServerWebSocket extends WebSocket {
+
+  private static final Logger log = LoggerFactory.getLogger(ServerWebSocket.class);
+
+  protected ServerWebSocket(String path, String binaryHandlerID, String textHandlerID) {
+    super(binaryHandlerID, textHandlerID);
+    this.path = path;
+  }
 
   /**
    * The path the websocket is attempting to connect at
    */
-  String path();
+  public final String path;
 
   /**
    * Reject the WebSocket<p>
@@ -37,5 +47,5 @@ public interface ServerWebSocket extends WebSocketBase<ServerWebSocket> {
    * You might use this method, if for example you only want to accept websockets
    * with a particular path.
    */
-  ServerWebSocket reject();
+  public abstract void reject();
 }

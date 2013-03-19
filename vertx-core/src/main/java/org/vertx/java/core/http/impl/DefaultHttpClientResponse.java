@@ -33,7 +33,7 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultHttpClientResponse extends BodyHandlerImpl<HttpClientResponse> implements HttpClientResponse  {
+public class DefaultHttpClientResponse extends BodyHandlerImpl implements HttpClientResponse  {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultHttpClientResponse.class);
 
@@ -61,17 +61,14 @@ public class DefaultHttpClientResponse extends BodyHandlerImpl<HttpClientRespons
     this.response = response;
   }
 
-  @Override
   public int statusCode() {
     return statusCode;
   }
 
-  @Override
   public String statusMessage() {
     return statusMessage;
   }
 
-  @Override
   public Map<String, String> headers() {
     if (headers == null) {
       headers = HeaderUtils.simplifyHeaders(response.headers().entries());
@@ -79,7 +76,6 @@ public class DefaultHttpClientResponse extends BodyHandlerImpl<HttpClientRespons
     return headers;
   }
 
-  @Override
   public Map<String, String> trailers() {
     if (trailers == null) {
       if (trailer == null) {
@@ -91,7 +87,6 @@ public class DefaultHttpClientResponse extends BodyHandlerImpl<HttpClientRespons
     return trailers;
   }
 
-  @Override
   public List<String> cookies() {
     if (cookies == null) {
       cookies = new ArrayList<String>();
@@ -103,34 +98,24 @@ public class DefaultHttpClientResponse extends BodyHandlerImpl<HttpClientRespons
     return cookies;
   }
 
-  @Override
-  public HttpClientResponse dataHandler(Handler<Buffer> dataHandler) {
+  public void dataHandler(Handler<Buffer> dataHandler) {
     this.dataHandler = dataHandler;
-    return this;
   }
 
-  @Override
-  public HttpClientResponse endHandler(Handler<Void> endHandler) {
+  public void endHandler(Handler<Void> endHandler) {
     this.endHandler = endHandler;
-    return this;
   }
 
-  @Override
-  public HttpClientResponse exceptionHandler(Handler<Exception> exceptionHandler) {
+  public void exceptionHandler(Handler<Exception> exceptionHandler) {
     this.exceptionHandler = exceptionHandler;
-    return this;
   }
 
-  @Override
-  public HttpClientResponse pause() {
-    conn.doPause();
-    return this;
+  public void pause() {
+    conn.pause();
   }
 
-  @Override
-  public HttpClientResponse resume() {
-    conn.doResume();
-    return this;
+  public void resume() {
+    conn.resume();
   }
 
   void handleChunk(Buffer data) {

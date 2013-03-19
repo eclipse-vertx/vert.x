@@ -36,7 +36,6 @@ class CharacterMessage extends BaseMessage<Character> {
     super(readBuff);
   }
 
-  @Override
   protected void readBody(int pos, Buffer readBuff) {
     boolean isNull = readBuff.getByte(pos) == (byte)0;
     if (!isNull) {
@@ -44,7 +43,6 @@ class CharacterMessage extends BaseMessage<Character> {
     }
   }
 
-  @Override
   protected void writeBody(Buffer buff) {
     if (body == null) {
       buff.appendByte((byte)0);
@@ -54,18 +52,15 @@ class CharacterMessage extends BaseMessage<Character> {
     }
   }
 
-  @Override
   protected int getBodyLength() {
     return 1 + (body == null ? 0 : 2);
   }
 
-  @Override
-  protected Message<Character> copy() {
+  protected Message copy() {
     // No need to copy since everything is immutable
     return this;
   }
 
-  @Override
   protected byte type() {
     return MessageFactory.TYPE_CHARACTER;
   }

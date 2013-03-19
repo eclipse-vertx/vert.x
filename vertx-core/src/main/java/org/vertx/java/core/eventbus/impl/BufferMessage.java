@@ -36,7 +36,6 @@ class BufferMessage extends BaseMessage<Buffer> {
     super(readBuff);
   }
 
-  @Override
   protected void readBody(int pos, Buffer readBuff) {
     boolean isNull = readBuff.getByte(pos) == (byte)0;
     if (!isNull) {
@@ -48,7 +47,6 @@ class BufferMessage extends BaseMessage<Buffer> {
     }
   }
 
-  @Override
   protected void writeBody(Buffer buff) {
     if (body == null) {
       buff.appendByte((byte)0);
@@ -59,13 +57,11 @@ class BufferMessage extends BaseMessage<Buffer> {
     }
   }
 
-  @Override
   protected int getBodyLength() {
     return 1 + (body == null ? 0 : 4 + body.length());
   }
 
-  @Override
-  protected Message<Buffer> copy() {
+  protected Message copy() {
     BufferMessage copied = new BufferMessage(send, address, body == null ? null : body.copy());
     copied.replyAddress = this.replyAddress;
     copied.bus = this.bus;
@@ -73,7 +69,6 @@ class BufferMessage extends BaseMessage<Buffer> {
     return copied;
   }
 
-  @Override
   protected byte type() {
     return MessageFactory.TYPE_BUFFER;
   }

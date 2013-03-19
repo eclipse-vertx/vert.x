@@ -17,7 +17,7 @@ package org.vertx.java.core;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class VoidResult extends FutureResult<Void> {
+public class VoidResult extends AsyncResult<Void> {
   public void setResult() {
     super.setResult(null);
   }

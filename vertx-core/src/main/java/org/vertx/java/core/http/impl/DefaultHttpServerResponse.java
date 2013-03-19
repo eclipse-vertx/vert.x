@@ -135,37 +135,39 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponse setWriteQueueMaxSize(int size) {
+  public void setWriteQueueMaxSize(int size) {
     checkWritten();
-    conn.doSetWriteQueueMaxSize(size);
-    return this;
+    conn.setWriteQueueMaxSize(size);
   }
 
   @Override
   public boolean writeQueueFull() {
     checkWritten();
-    return conn.doWriteQueueFull();
+    return conn.writeQueueFull();
   }
 
   @Override
-  public HttpServerResponse drainHandler(Handler<Void> handler) {
+  public void drainHandler(Handler<Void> handler) {
     checkWritten();
     this.drainHandler = handler;
     conn.handleInterestedOpsChanged(); //If the channel is already drained, we want to call it immediately
-    return this;
   }
 
   @Override
-  public HttpServerResponse exceptionHandler(Handler<Exception> handler) {
+  public void exceptionHandler(Handler<Exception> handler) {
     checkWritten();
     this.exceptionHandler = handler;
-    return this;
   }
 
   @Override
   public void closeHandler(Handler<Void> handler) {
     checkWritten();
     this.closeHandler = handler;
+  }
+
+  @Override
+  public void writeBuffer(Buffer chunk) {
+    write(chunk.getByteBuf(), null);
   }
 
   @Override

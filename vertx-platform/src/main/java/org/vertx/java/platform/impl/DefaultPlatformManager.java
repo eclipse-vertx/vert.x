@@ -212,8 +212,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     final AtomicReference<Exception> result = new AtomicReference<>();
     final ModuleIdentifier modID = new ModuleIdentifier(moduleName);
     AsyncResultHandler<Void> handler = new AsyncResultHandler<Void>() {
-      public void handle(FutureResult<Void> res) {
-        result.set(res.exception());
+      public void handle(AsyncResult<Void> res) {
+        result.set(res.exception);
         latch.countDown();
       }
     };
@@ -403,9 +403,9 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private AsyncResultHandler<Void> createHandler(final Handler<String> doneHandler) {
     return new AsyncResultHandler<Void>() {
       @Override
-      public void handle(FutureResult<Void> ar) {
+      public void handle(AsyncResult<Void> ar) {
         if (ar.failed()) {
-          log.error("Failed to deploy verticle", ar.exception());
+          log.error("Failed to deploy verticle", ar.exception);
           callDoneHandler(doneHandler, null);
         }
       }
@@ -1177,11 +1177,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
               verticle.start(vr);
               vr.setHandler(new AsyncResultHandler<Void>() {
                 @Override
-                public void handle(FutureResult<Void> ar) {
+                public void handle(AsyncResult<Void> ar) {
                   if (ar.succeeded()) {
                     aggHandler.done(true);
                   } else {
-                    log.error("Failed to deploy verticle " + main + " in " + verticleFactory.getClass().getName(), ar.exception());
+                    log.error("Failed to deploy verticle " + main + " in " + verticleFactory.getClass().getName(), ar.exception);
                     aggHandler.done(false);
                   }
                 }
@@ -1290,9 +1290,9 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private void redeploy(final Deployment deployment) {
     // Has to occur on a worker thread
     AsyncResultHandler<String> handler = new AsyncResultHandler<String>() {
-      public void handle(FutureResult<String> res) {
+      public void handle(AsyncResult<String> res) {
         if (!res.succeeded()) {
-          log.error("Failed to redeploy", res.exception());
+          log.error("Failed to redeploy", res.exception);
         }
       }
     };

@@ -959,7 +959,7 @@ public class HttpTestClient extends TestClientBase {
     }
 
     try {
-      req.write(buff);
+      req.writeBuffer(buff);
       tu.azzert(false, "Should throw exception");
     } catch (IllegalStateException e) {
       //OK
@@ -1275,7 +1275,7 @@ public class HttpTestClient extends TestClientBase {
       }
     });
     req.setChunked(true);
-    req.write(body);
+    req.writeBuffer(body);
     req.end();
   }
 
@@ -1592,7 +1592,7 @@ public class HttpTestClient extends TestClientBase {
         }
 
         try {
-          resp.write(buff);
+          resp.writeBuffer(buff);
           tu.azzert(false, "Should throw exception");
         } catch (IllegalStateException e) {
           //OK
@@ -1905,7 +1905,7 @@ public class HttpTestClient extends TestClientBase {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
         req.response().setChunked(true);
-        req.response().write(body);
+        req.response().writeBuffer(body);
         req.response().end();
       }
     });

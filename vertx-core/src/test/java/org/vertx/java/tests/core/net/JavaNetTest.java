@@ -20,7 +20,6 @@ import org.junit.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxFactory;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -32,6 +31,8 @@ import org.vertx.java.testframework.TestBase;
 import vertx.tests.core.http.TLSTestParams;
 import vertx.tests.core.net.*;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -367,7 +368,7 @@ public class JavaNetTest extends TestBase {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
-    Vertx vertx = VertxFactory.newVertx();
+    Vertx vertx = Vertx.newVertx();
 
     final NetServer server = vertx.createNetServer();
     server.connectHandler(new Handler<NetSocket>() {

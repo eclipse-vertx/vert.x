@@ -91,25 +91,25 @@ public class TCPSSLHelper {
       bootstrap.childOption(ChannelOption.SO_RCVBUF, tcpReceiveBufferSize);
     }
     if (soLinger != null) {
-      bootstrap.option(ChannelOption.SO_LINGER, soLinger);
+        bootstrap.option(ChannelOption.SO_LINGER, soLinger);
     }
-    if (trafficClass != null) {
-      bootstrap.childOption(ChannelOption.IP_TOS, trafficClass);
-    }
-    if (usePooledBuffers) {
-      bootstrap.childOption(ChannelOption.ALLOCATOR, new PooledByteBufAllocator());
-    } else {
-      bootstrap.childOption(ChannelOption.ALLOCATOR, UnpooledByteBufAllocator.DEFAULT);
-    }
-
     if (tcpKeepAlive != null) {
       bootstrap.childOption(ChannelOption.SO_KEEPALIVE, tcpKeepAlive);
+    }
+
+    if (trafficClass != null) {
+      bootstrap.childOption(ChannelOption.IP_TOS, trafficClass);
     }
     if (reuseAddress != null) {
       bootstrap.option(ChannelOption.SO_REUSEADDR, reuseAddress);
     }
     if (acceptBackLog != null) {
       bootstrap.option(ChannelOption.SO_BACKLOG, acceptBackLog);
+    }
+    if (usePooledBuffers) {
+      bootstrap.childOption(ChannelOption.ALLOCATOR, new PooledByteBufAllocator());
+    } else {
+      bootstrap.childOption(ChannelOption.ALLOCATOR, UnpooledByteBufAllocator.DEFAULT);
     }
 
   }
@@ -123,9 +123,15 @@ public class TCPSSLHelper {
     }
     if (tcpReceiveBufferSize != null) {
       bootstrap.option(ChannelOption.SO_RCVBUF, tcpReceiveBufferSize);
+
+      // We need to set a FixedReceiveBufferSizePredictor, since otherwise
+      // Netty will ignore our setting and use an adaptive buffer which can
+      // get very large
+      //options.put(prefix + "receiveBufferSizePredictor", new FixedReceiveBufferSizePredictor(1024));
     }
     if (soLinger != null) {
-      bootstrap.option(ChannelOption.SO_LINGER, soLinger);
+        bootstrap.option(ChannelOption.SO_LINGER, soLinger);
+
     }
     if (trafficClass != null) {
       bootstrap.option(ChannelOption.IP_TOS, trafficClass);

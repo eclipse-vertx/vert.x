@@ -30,6 +30,8 @@ import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.io.File;
 import java.util.LinkedList;
@@ -40,13 +42,16 @@ import java.util.Queue;
  */
 class ServerConnection extends AbstractConnection {
 
+  @SuppressWarnings("unused")
+	private static final Logger log = LoggerFactory.getLogger(ServerConnection.class);
+
   private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
 
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
   private DefaultHttpServerRequest currentRequest;
   private DefaultHttpServerResponse pendingResponse;
-  private DefaultServerWebSocket ws;
+  private DefaultWebSocket ws;
   private boolean channelPaused;
   private boolean paused;
   private boolean sentCheck;
@@ -58,12 +63,14 @@ class ServerConnection extends AbstractConnection {
     this.serverOrigin = serverOrigin;
   }
 
+  @Override
   public void pause() {
     if (!paused) {
       paused = true;
     }
   }
 
+  @Override
   public void resume() {
     if (paused) {
       paused = false;
@@ -82,7 +89,7 @@ class ServerConnection extends AbstractConnection {
       if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
         //We pause the channel too, to prevent the queue growing too large, but we don't do this
         //until the queue reaches a certain size, to avoid pausing it too often
-        super.doPause();
+        super.pause();
         channelPaused = true;
       }
     } else {
@@ -147,7 +154,7 @@ class ServerConnection extends AbstractConnection {
   @Override
   public void handleInterestedOpsChanged() {
     try {
-      if (!doWriteQueueFull()) {
+      if (!writeQueueFull()) {
         setContext();
         if (pendingResponse != null) {
           pendingResponse.handleDrained();
@@ -160,7 +167,7 @@ class ServerConnection extends AbstractConnection {
     }
   }
 
-  void handleWebsocketConnect(DefaultServerWebSocket ws) {
+  void handleWebsocketConnect(DefaultWebSocket ws) {
     try {
       if (wsHandler != null) {
         setContext();
@@ -269,7 +276,7 @@ class ServerConnection extends AbstractConnection {
             }
             if (channelPaused && pending.isEmpty()) {
               //Resume the actual channel
-              ServerConnection.super.doResume();
+              ServerConnection.super.resume();
               channelPaused = false;
             }
           }

@@ -33,7 +33,6 @@ public class PingMessage extends StringMessage {
     super(readBuff);
   }
 
-  @Override
   protected byte type() {
     return MessageFactory.TYPE_PING;
   }

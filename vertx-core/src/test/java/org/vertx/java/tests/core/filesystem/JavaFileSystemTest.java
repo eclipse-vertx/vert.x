@@ -17,10 +17,9 @@
 package org.vertx.java.tests.core.filesystem;
 
 import org.junit.Test;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxFactory;
 import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -337,7 +336,7 @@ public class JavaFileSystemTest extends TestBase {
 
   private AsyncResultHandler createHandler() {
     return new AsyncResultHandler<Void>() {
-      public void handle(FutureResult<Void> event) {
+      public void handle(AsyncResult<Void> event) {
       }
     };
   }
@@ -345,9 +344,9 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testExistsNoContext() throws Exception {
     final CountDownLatch latch = new CountDownLatch(1);
-    final Vertx vertx = VertxFactory.newVertx();
+    final Vertx vertx = Vertx.newVertx();
     vertx.fileSystem().exists(TMP_DIR + "/foo", new AsyncResultHandler<Boolean>() {
-      public void handle(FutureResult event) {
+      public void handle(AsyncResult event) {
         assert(vertx.isEventLoop());
         latch.countDown();
       }
@@ -358,9 +357,9 @@ public class JavaFileSystemTest extends TestBase {
   @Test
   public void testOpenNoContext() throws Exception {
     final CountDownLatch latch = new CountDownLatch(1);
-    final Vertx vertx = VertxFactory.newVertx();
+    final Vertx vertx = Vertx.newVertx();
     vertx.fileSystem().open(TMP_DIR + "/foo", new AsyncResultHandler<AsyncFile>() {
-      public void handle(FutureResult event) {
+      public void handle(AsyncResult event) {
         assert (vertx.isEventLoop());
         latch.countDown();
       }

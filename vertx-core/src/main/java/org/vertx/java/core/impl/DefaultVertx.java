@@ -43,13 +43,17 @@ import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**                                                e
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultVertx implements VertxInternal {
+public class DefaultVertx extends VertxInternal {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultVertx.class);
 
@@ -197,7 +201,7 @@ public class DefaultVertx implements VertxInternal {
     if (ctx != null) {
       ctx.reportException(t);
     } else {
-      log.error("default vertx Unhandled exception ", t);
+      log.error(" default vertx Unhandled exception ", t);
     }
   }
 

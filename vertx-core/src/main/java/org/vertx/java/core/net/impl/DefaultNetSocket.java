@@ -28,16 +28,20 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.file.impl.PathAdjuster;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetSocket;
 
 import java.io.File;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.util.UUID;
 
-public class DefaultNetSocket extends ConnectionBase implements NetSocket {
+public class DefaultNetSocket extends NetSocket {
 
-  private final String writeHandlerID;
+  @SuppressWarnings("unused")
+	private static final Logger log = LoggerFactory.getLogger(DefaultNetSocket.class);
 
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
@@ -45,34 +49,29 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   private Handler<Message<Buffer>> writeHandler;
 
   public DefaultNetSocket(VertxInternal vertx, Channel channel, Context context) {
-    super(vertx, channel, context);
-    this.writeHandlerID = UUID.randomUUID().toString();
+    super(vertx, channel, UUID.randomUUID().toString(), context);
     writeHandler = new Handler<Message<Buffer>>() {
       public void handle(Message<Buffer> msg) {
-        write(msg.body());
+        writeBuffer(msg.body);
       }
     };
     vertx.eventBus().registerLocalHandler(writeHandlerID, writeHandler);
   }
 
-  @Override
-  public String writeHandlerID() {
-    return writeHandlerID;
+  public void writeBuffer(Buffer data) {
+    doWrite(data.getByteBuf());
   }
 
-  @Override
   public NetSocket write(Buffer data) {
     doWrite(data.getByteBuf());
     return this;
   }
 
-  @Override
   public NetSocket write(String str) {
     doWrite(Unpooled.copiedBuffer(str, CharsetUtil.UTF_8));
     return this;
   }
 
-  @Override
   public NetSocket write(String str, String enc) {
     if (enc == null) {
       write(str);
@@ -82,19 +81,16 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
     return this;
   }
 
-  @Override
   public NetSocket write(Buffer data, Handler<Void> doneHandler) {
     addFuture(doneHandler, doWrite(data.getByteBuf()));
     return this;
   }
 
-  @Override
   public NetSocket write(String str, Handler<Void> doneHandler) {
     addFuture(doneHandler, doWrite(Unpooled.copiedBuffer(str, CharsetUtil.UTF_8)));
     return this;
   }
 
-  @Override
   public NetSocket write(String str, String enc, Handler<Void> doneHandler) {
     if (enc == null) {
       write(str, enc);
@@ -104,68 +100,30 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
     return this;
   }
 
-  @Override
-  public NetSocket dataHandler(Handler<Buffer> dataHandler) {
+  public void dataHandler(Handler<Buffer> dataHandler) {
     this.dataHandler = dataHandler;
-    return this;
   }
 
-  @Override
-  public NetSocket pause() {
-    doPause();
-    return this;
-  }
-
-  @Override
-  public NetSocket resume() {
-    doResume();
-    return this;
-  }
-
-  @Override
-  public NetSocket setWriteQueueMaxSize(int maxSize) {
-    doSetWriteQueueMaxSize(maxSize);
-    return this;
-  }
-
-  @Override
-  public boolean writeQueueFull() {
-    return doWriteQueueFull();
-  }
-
-  @Override
-  public NetSocket endHandler(Handler<Void> endHandler) {
+  public void endHandler(Handler<Void> endHandler) {
     this.endHandler = endHandler;
-    return this;
   }
 
-  @Override
-  public NetSocket drainHandler(Handler<Void> drainHandler) {
+  public void drainHandler(Handler<Void> drainHandler) {
     this.drainHandler = drainHandler;
     vertx.runOnLoop(new SimpleHandler() {
       public void handle() {
         callDrainHandler(); //If the channel is already drained, we want to call it immediately
       }
     });
-    return this;
   }
 
-  @Override
-  public NetSocket sendFile(String filename) {
+  public void sendFile(String filename) {
     File f = new File(PathAdjuster.adjust(vertx, filename));
     super.sendFile(f);
-    return this;
   }
 
-  @Override
-  public InetSocketAddress remoteAddress() {
+  public InetSocketAddress getRemoteAddress() {
     return super.remoteAddress();
-  }
-
-  @Override
-  public NetSocket exceptionHandler(Handler<Exception> handler) {
-    this.exceptionHandler = handler;
-    return this;
   }
 
   protected Context getContext() {
@@ -208,6 +166,10 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
     channel.close();
   }
 
+  public void setInternalWritable(boolean  writable) {
+    setWritable(writable);
+  }
+
   private ChannelFuture doWrite(ByteBuf buff) {
     return channel.write(buff);
   }
@@ -223,6 +185,5 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
       }
     }
   }
-
 }
 
