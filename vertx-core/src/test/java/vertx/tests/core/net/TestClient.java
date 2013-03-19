@@ -311,7 +311,6 @@ public class TestClient extends TestClientBase {
   private Handler<NetSocket> getEchoHandler() {
     return new Handler<NetSocket>() {
       public void handle(NetSocket socket) {
-          System.out.println("YAY");
         tu.checkThread();
         final int numChunks = 100;
         final int chunkSize = 100;
