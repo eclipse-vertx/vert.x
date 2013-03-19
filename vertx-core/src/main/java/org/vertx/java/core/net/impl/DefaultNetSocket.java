@@ -21,6 +21,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.util.CharsetUtil;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
@@ -83,19 +84,19 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   }
 
   @Override
-  public NetSocket write(Buffer data, Handler<Void> doneHandler) {
+  public NetSocket write(Buffer data, AsyncResultHandler<Void> doneHandler) {
     addFuture(doneHandler, doWrite(data.getByteBuf()));
     return this;
   }
 
   @Override
-  public NetSocket write(String str, Handler<Void> doneHandler) {
+  public NetSocket write(String str, AsyncResultHandler<Void> doneHandler) {
     addFuture(doneHandler, doWrite(Unpooled.copiedBuffer(str, CharsetUtil.UTF_8)));
     return this;
   }
 
   @Override
-  public NetSocket write(String str, String enc, Handler<Void> doneHandler) {
+  public NetSocket write(String str, String enc, AsyncResultHandler<Void> doneHandler) {
     if (enc == null) {
       write(str, enc);
     } else {

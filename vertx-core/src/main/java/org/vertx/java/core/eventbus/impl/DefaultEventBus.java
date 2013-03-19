@@ -16,10 +16,7 @@
 
 package org.vertx.java.core.eventbus.impl;
 
-import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.FutureResult;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
@@ -348,7 +345,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   @Override
-  public void close(Handler<Void> doneHandler) {
+  public void close(AsyncResultHandler<Void> doneHandler) {
 		if (clusterMgr != null) {
 			clusterMgr.close();
 		}
@@ -477,7 +474,7 @@ public class DefaultEventBus implements EventBus {
                   receiveMessage(message);
                 }
               } else {
-                log.error("Failed to send message", event.exception());
+                log.error("Failed to send message", event.cause());
               }
             }
           });
@@ -514,7 +511,7 @@ public class DefaultEventBus implements EventBus {
         completionHandler = new AsyncResultHandler<Void>() {
           public void handle(FutureResult<Void> event) {
             if (event.failed()) {
-              log.error("Failed to remove entry", event.exception());
+              log.error("Failed to remove entry", event.cause());
             }
           }
         };
@@ -545,7 +542,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   private void callCompletionHandler(AsyncResultHandler<Void> completionHandler) {
-    FutureResult<Void> f = new FutureResult<Void>().setHandler(completionHandler).setResult(null);
+    completionHandler.handle(new VoidResult().setResult());
   }
 
   private void cleanSubsForServerID(ServerID theServerID) {
@@ -625,23 +622,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   private void removeSub(String subName, ServerID theServerID, final AsyncResultHandler<Void> completionHandler) {
-    subs.remove(subName, theServerID, new AsyncResultHandler<Boolean>() {
-      public void handle(FutureResult<Boolean> event) {
-        if (completionHandler != null) {
-          FutureResult<Void> ar = new FutureResult<>();
-          if (event.failed()) {
-            ar.setFailure(event.exception());
-          } else {
-            ar.setResult(null);
-          }
-          ar.setHandler(completionHandler);
-        } else {
-          if (event.failed()) {
-            log.error("Failed to remove subscription", event.exception());
-          }
-        }
-      }
-    });
+    subs.remove(subName, theServerID, completionHandler);
   }
 
   // Called when a message is incoming

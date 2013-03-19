@@ -27,7 +27,33 @@ public class FutureResult<T> {
   private boolean succeeded;
   private AsyncResultHandler<T> handler;
   private T result;
-  private Exception exception;
+  private Throwable throwable;
+
+  /**
+   * Create a FutureResult that hasn't completed yet
+   */
+  public FutureResult() {
+  }
+
+  /**
+   * Create a VoidResult that has already completed
+   * @param t The Throwable or null if succeeded
+   */
+  public FutureResult(Throwable t) {
+    if (t == null) {
+      setFailure(t);
+    } else {
+      setResult(null);
+    }
+  }
+
+  /**
+   * Create a FutureResult that has already succeeded
+   * @param result The result
+   */
+  public FutureResult(T result) {
+    setResult(result);
+  }
 
   /**
    * The result of the operation. This will be null if the operation failed.
@@ -39,8 +65,8 @@ public class FutureResult<T> {
   /**
    * An exception describing failure. This will be null if the operation succeeded.
    */
-  public Exception exception() {
-    return exception;
+  public Throwable cause() {
+    return throwable;
   }
 
   /**
@@ -86,8 +112,8 @@ public class FutureResult<T> {
   /**
    * Set the failure. Any handler will be called, if there is one
    */
-  public FutureResult<T> setFailure(Exception exception) {
-    this.exception = exception;
+  public FutureResult<T> setFailure(Throwable throwable) {
+    this.throwable = throwable;
     failed = true;
     checkCallHandler();
     return this;

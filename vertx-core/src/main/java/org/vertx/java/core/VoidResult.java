@@ -18,7 +18,27 @@ package org.vertx.java.core;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class VoidResult extends FutureResult<Void> {
-  public void setResult() {
+
+  /**
+   * Create a VoidResult that hasn't completed yet
+    */
+  public VoidResult() {
+    super();
+  }
+
+  /**
+   * Create a VoidResult that has already completed
+   * @param t The Throwable or null if succeeded
+   */
+  public VoidResult(Throwable t) {
+    super(t);
+  }
+
+  /**
+   * Mark the result as succeeded
+   */
+  public VoidResult setResult() {
     super.setResult(null);
+    return this;
   }
 }

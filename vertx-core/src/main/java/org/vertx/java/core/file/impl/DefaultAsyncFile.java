@@ -19,6 +19,7 @@ package org.vertx.java.core.file.impl;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VoidResult;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.file.FileSystemException;
@@ -132,7 +133,7 @@ public class DefaultAsyncFile implements AsyncFile {
                   closedDeferred.run();
                 }
               } else {
-                handleException(deferred.exception());
+                handleException(deferred.cause());
               }
             }
           });
@@ -173,11 +174,11 @@ public class DefaultAsyncFile implements AsyncFile {
           return this;
         }
 
-        void handleException(Exception e) {
-          if (exceptionHandler != null) {
-            exceptionHandler.handle(e);
+        void handleException(Throwable t) {
+          if (exceptionHandler != null && t instanceof Exception) {
+            exceptionHandler.handle((Exception)t);
           } else {
-            log.error("Unhandled exception", e);
+            log.error("Unhandled exception", t);
           }
         }
       };
@@ -219,7 +220,7 @@ public class DefaultAsyncFile implements AsyncFile {
                     }
                   }
                 } else {
-                  handleException(ar.exception());
+                  handleException(ar.cause());
                 }
               }
             });
@@ -264,12 +265,12 @@ public class DefaultAsyncFile implements AsyncFile {
           return this;
         }
 
-        void handleException(Exception e) {
-          if (exceptionHandler != null) {
+        void handleException(Throwable t) {
+          if (exceptionHandler != null && t instanceof Exception) {
             checkContext();
-            exceptionHandler.handle(e);
+            exceptionHandler.handle((Exception)t);
           } else {
-            log.error("Unhandled exception", e);
+            log.error("Unhandled exception", t);
           }
         }
 
@@ -337,7 +338,7 @@ public class DefaultAsyncFile implements AsyncFile {
           context.execute(new Runnable() {
             public void run() {
               writesOutstanding -= buff.limit();
-              new FutureResult<Void>().setResult(null).setHandler(handler);
+              handler.handle(new VoidResult().setResult());
             }
           });
         }
@@ -348,7 +349,7 @@ public class DefaultAsyncFile implements AsyncFile {
           final Exception e = (Exception) exc;
           context.execute(new Runnable() {
             public void run() {
-              new FutureResult<Void>().setFailure(e).setHandler(handler);
+              handler.handle(new VoidResult().setResult());
             }
           });
         } else {

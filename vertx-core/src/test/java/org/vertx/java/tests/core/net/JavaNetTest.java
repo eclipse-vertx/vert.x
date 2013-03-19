@@ -17,10 +17,7 @@
 package org.vertx.java.tests.core.net;
 
 import org.junit.Test;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxFactory;
+import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -383,8 +380,8 @@ public class JavaNetTest extends TestBase {
       public void handle(NetSocket socket) {
         socket.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
-            server.close(new SimpleHandler() {
-              public void handle() {
+            server.close(new AsyncResultHandler<Void>() {
+              public void handle(FutureResult<Void> res) {
                 client.close();
                 latch.countDown();
               }

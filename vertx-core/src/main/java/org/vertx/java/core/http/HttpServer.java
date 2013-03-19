@@ -16,6 +16,7 @@
 
 package org.vertx.java.core.http;
 
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.ServerSSLSupport;
 import org.vertx.java.core.ServerTCPSupport;
@@ -84,5 +85,5 @@ public interface HttpServer extends ServerSSLSupport<HttpServer>, ServerTCPSuppo
    * Close the server. Any open HTTP connections will be closed. The {@code doneHandler} will be called when the close
    * is complete.
    */
-  void close(final Handler<Void> doneHandler);
+  void close(final AsyncResultHandler<Void> doneHandler);
 }

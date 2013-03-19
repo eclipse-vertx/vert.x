@@ -478,9 +478,9 @@ public class TestClient extends TestClientBase {
         tu.checkThread();
         if (ar.failed()) {
           if (shouldPass) {
-            tu.exception(ar.exception(), "stat failed");
+            tu.exception(ar.cause(), "stat failed");
           } else {
-            tu.azzert(ar.exception() instanceof FileSystemException);
+            tu.azzert(ar.cause() instanceof FileSystemException);
             if (afterOK != null) {
               afterOK.handle(ar.result());
             }
@@ -567,7 +567,7 @@ public class TestClient extends TestClientBase {
       public void handle(FutureResult<String> ar) {
         tu.checkThread();
         if (ar.failed()) {
-          tu.exception(ar.exception(), "Read failed");
+          tu.exception(ar.cause(), "Read failed");
         } else {
           tu.azzert(fileName.equals(ar.result()));
           tu.testComplete();
@@ -776,9 +776,9 @@ public class TestClient extends TestClientBase {
         tu.checkThread();
         if (ar.failed()) {
           if (shouldPass) {
-            tu.exception(ar.exception(), "read failed");
+            tu.exception(ar.cause(), "read failed");
           } else {
-            tu.azzert(ar.exception() instanceof FileSystemException);
+            tu.azzert(ar.cause() instanceof FileSystemException);
             if (afterOK != null) {
               afterOK.handle(null);
             }
@@ -811,7 +811,7 @@ public class TestClient extends TestClientBase {
       public void handle(FutureResult<Buffer> ar) {
         tu.checkThread();
         if (ar.failed()) {
-          tu.exception(ar.exception(), "failed to read");
+          tu.exception(ar.cause(), "failed to read");
         } else {
           tu.azzert(TestUtils.buffersEqual(new Buffer(content), ar.result()));
           tu.testComplete();
@@ -829,7 +829,7 @@ public class TestClient extends TestClientBase {
       public void handle(FutureResult<Void> ar) {
         tu.checkThread();
         if (ar.failed()) {
-          tu.exception(ar.exception(), "failed to write");
+          tu.exception(ar.cause(), "failed to write");
         } else {
           tu.azzert(fileExists(fileName));
           tu.azzert(fileLength(fileName) == content.length);
@@ -873,7 +873,7 @@ public class TestClient extends TestClientBase {
                       public void handle(FutureResult<Void> ar) {
                         tu.checkThread();
                         if (ar.failed()) {
-                          tu.exception(ar.exception(), "failed to close");
+                          tu.exception(ar.cause(), "failed to close");
                         } else {
                           tu.azzert(fileExists(fileName));
                           byte[] readBytes;
@@ -891,13 +891,13 @@ public class TestClient extends TestClientBase {
                     });
                   }
                 } else {
-                  tu.exception(ar.exception(), "Failed to write");
+                  tu.exception(ar.cause(), "Failed to write");
                 }
               }
             });
           }
         } else {
-          tu.exception(arr.exception(), "Failed to open");
+          tu.exception(arr.cause(), "Failed to open");
         }
       }
     });
@@ -926,7 +926,7 @@ public class TestClient extends TestClientBase {
                       public void handle(FutureResult<Void> ar) {
                         tu.checkThread();
                         if (ar.failed()) {
-                          tu.exception(ar.exception(), "failed to close");
+                          tu.exception(ar.cause(), "failed to close");
                         } else {
                           tu.azzert(TestUtils.buffersEqual(expected, buff));
                           tu.azzert(buff == arb.result());
@@ -936,13 +936,13 @@ public class TestClient extends TestClientBase {
                     });
                   }
                 } else {
-                  tu.exception(arb.exception(), "failed to read");
+                  tu.exception(arb.cause(), "failed to read");
                 }
               }
             });
           }
         } else {
-          tu.exception(arr.exception(), "failed to open file");
+          tu.exception(arr.cause(), "failed to open file");
         }
       }
     });
@@ -977,7 +977,7 @@ public class TestClient extends TestClientBase {
             public void handle(FutureResult<Void> ar) {
               tu.checkThread();
               if (ar.failed()) {
-                tu.exception(ar.exception(), "failed to close");
+                tu.exception(ar.cause(), "failed to close");
               } else {
                 tu.azzert(fileExists(fileName));
                 byte[] readBytes;
@@ -993,7 +993,7 @@ public class TestClient extends TestClientBase {
             }
           });
         } else {
-          tu.exception(ar.exception(), "failed to open");
+          tu.exception(ar.cause(), "failed to open");
         }
       }
     });
@@ -1034,7 +1034,7 @@ public class TestClient extends TestClientBase {
 								public void handle(FutureResult<Void> ar) {
 									tu.checkThread();
 									if (ar.failed()) {
-										tu.exception(ar.exception(), "failed to close");
+										tu.exception(ar.cause(), "failed to close");
 									} else {
 										tu.checkThread();
 										tu.azzert(TestUtils.buffersEqual(buff, new Buffer(content)));
@@ -1045,7 +1045,7 @@ public class TestClient extends TestClientBase {
             }
           });
         } else {
-          tu.exception(ar.exception(), "failed to open");
+          tu.exception(ar.cause(), "failed to open");
         }
       }
     });
@@ -1084,13 +1084,13 @@ public class TestClient extends TestClientBase {
                       public void handle(FutureResult<Void> car) {
                         tu.checkThread();
                         if (car.failed()) {
-                          tu.exception(car.exception(), "failed to close");
+                          tu.exception(car.cause(), "failed to close");
                         } else {
                           ar.result().close(new AsyncResultHandler<Void>() {
                             public void handle(FutureResult<Void> ar) {
                               tu.checkThread();
                               if (ar.failed()) {
-                                tu.exception(ar.exception(), "failed to close");
+                                tu.exception(ar.cause(), "failed to close");
                               } else {
                                 tu.azzert(fileExists(fileName2));
                                 byte[] readBytes;
@@ -1111,12 +1111,12 @@ public class TestClient extends TestClientBase {
                   }
                 });
               } else {
-                tu.exception(ar.exception(), "failed to open");
+                tu.exception(ar.cause(), "failed to open");
               }
             }
           });
         } else {
-          tu.exception(arr.exception(), "failed to open");
+          tu.exception(arr.cause(), "failed to open");
         }
       }
     });
@@ -1142,9 +1142,9 @@ public class TestClient extends TestClientBase {
         tu.checkThread();
         if (ar.failed()) {
           if (shouldPass) {
-            tu.exception(ar.exception(), "failed to create");
+            tu.exception(ar.cause(), "failed to create");
           } else {
-            tu.azzert(ar.exception() instanceof FileSystemException);
+            tu.azzert(ar.cause() instanceof FileSystemException);
             tu.testComplete();
           }
         } else {
@@ -1193,7 +1193,7 @@ public class TestClient extends TestClientBase {
           }
           tu.testComplete();
         } else {
-          tu.exception(ar.exception(), "failed to check");
+          tu.exception(ar.cause(), "failed to check");
         }
       }
     };
@@ -1218,7 +1218,7 @@ public class TestClient extends TestClientBase {
       public void handle(FutureResult<FileSystemProps> ar) {
         tu.checkThread();
         if (ar.failed()) {
-          tu.exception(ar.exception(), "props failed");
+          tu.exception(ar.cause(), "props failed");
         } else {
           afterOK.handle(ar.result());
           tu.testComplete();
@@ -1234,9 +1234,9 @@ public class TestClient extends TestClientBase {
         tu.checkThread();
         if (event.failed()) {
           if (shouldPass) {
-            tu.exception(event.exception(), "operation failed");
+            tu.exception(event.cause(), "operation failed");
           } else {
-            tu.azzert(event.exception() instanceof FileSystemException);
+            tu.azzert(event.cause() instanceof FileSystemException);
             if (afterOK != null) {
               afterOK.handle(null);
             }

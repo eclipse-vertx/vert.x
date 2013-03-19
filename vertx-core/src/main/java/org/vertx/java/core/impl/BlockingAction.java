@@ -49,7 +49,7 @@ public abstract class BlockingAction<T>  {
         final FutureResult<T> res = new FutureResult<>();
         try {
           res.setResult(action());
-        } catch (final Exception e) {
+        } catch (Exception e) {
           res.setFailure(e);
         }
         if (handler != null) {

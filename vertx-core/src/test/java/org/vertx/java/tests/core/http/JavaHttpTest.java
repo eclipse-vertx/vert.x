@@ -17,10 +17,7 @@
 package org.vertx.java.tests.core.http;
 
 import org.junit.Test;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxFactory;
+import org.vertx.java.core.*;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServer;
@@ -105,8 +102,8 @@ public class JavaHttpTest extends TestBase {
     final HttpClient client = vertx.createHttpClient().setPort(8080);
     client.getNow("some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        server.close(new SimpleHandler() {
-          public void handle() {
+        server.close(new AsyncResultHandler<Void>() {
+          public void handle(FutureResult<Void> res) {
             client.close();
             latch.countDown();
           }

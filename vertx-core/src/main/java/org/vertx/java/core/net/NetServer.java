@@ -16,6 +16,7 @@
 
 package org.vertx.java.core.net;
 
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.ServerSSLSupport;
 import org.vertx.java.core.ServerTCPSupport;
@@ -64,5 +65,5 @@ public interface NetServer extends ServerSSLSupport<NetServer>, ServerTCPSupport
    * Close the server. This will close any currently open connections. The event handler {@code done} will be called
    * when the close is complete.
    */
-  void close(final Handler<Void> done);
+  void close(AsyncResultHandler<Void> doneHandler);
 }

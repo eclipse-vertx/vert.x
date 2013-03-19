@@ -99,10 +99,10 @@ public interface Vertx {
   boolean cancelTimer(long id);
 
   /**
-   * Put the handler on the event queue for this loop so it will be run asynchronously ASAP after this event has
+   * Put the handler on the event queue for the current loop so it will be run asynchronously ASAP after this event has
    * been processed
    */
-  void runOnLoop(Handler<Void> handler);
+  void runOnLoop(Handler<Void> action);
 
   /**
    * Is the current thread an event loop thread?

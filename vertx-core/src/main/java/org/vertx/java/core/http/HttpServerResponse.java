@@ -16,6 +16,7 @@
 
 package org.vertx.java.core.http;
 
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.WriteStream;
@@ -144,7 +145,7 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  HttpServerResponse write(Buffer chunk, Handler<Void> doneHandler);
+  HttpServerResponse write(Buffer chunk, AsyncResultHandler<Void> doneHandler);
 
   /**
    * Write a {@link String} to the response body, encoded with encoding {@code enc}. The {@code doneHandler} is called
@@ -152,7 +153,7 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  HttpServerResponse write(String chunk, String enc, Handler<Void> doneHandler);
+  HttpServerResponse write(String chunk, String enc, AsyncResultHandler<Void> doneHandler);
 
   /**
    * Write a {@link String} to the response body, encoded in UTF-8. The {@code doneHandler} is called after the buffer
@@ -160,7 +161,7 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  HttpServerResponse write(String chunk, Handler<Void> doneHandler);
+  HttpServerResponse write(String chunk, AsyncResultHandler<Void> doneHandler);
 
   /**
    * Same as {@link #end(Buffer)} but writes a String with the default encoding before ending the response.

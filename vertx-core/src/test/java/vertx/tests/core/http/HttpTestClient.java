@@ -16,6 +16,8 @@
 
 package vertx.tests.core.http;
 
+import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
@@ -52,8 +54,8 @@ public class HttpTestClient extends TestClientBase {
   public void stop() {
     client.close();
     if (server != null) {
-      server.close(new SimpleHandler() {
-        public void handle() {
+      server.close(new AsyncResultHandler<Void>() {
+        public void handle(FutureResult<Void> result) {
           tu.checkThread();
           HttpTestClient.super.stop();
         }
@@ -304,17 +306,17 @@ public class HttpTestClient extends TestClientBase {
     tu.azzert(req.sendHead() == req);
     tu.azzert(req.write("foo", "UTF-8") == req);
     tu.azzert(req.write("foo") == req);
-    tu.azzert(req.write("foo", "UTF-8", new SimpleHandler() {
-      public void handle() {
+    tu.azzert(req.write("foo", "UTF-8", new AsyncResultHandler<Void>() {
+      public void handle(FutureResult<Void> result) {
       }
     }) == req);
-    tu.azzert(req.write("foo", new SimpleHandler() {
-      public void handle() {
+    tu.azzert(req.write("foo", new AsyncResultHandler<Void>() {
+      public void handle(FutureResult<Void> result) {
       }
     }) == req);
     tu.azzert(req.write(new Buffer("foo")) == req);
-    tu.azzert(req.write(new Buffer("foo"), new SimpleHandler() {
-      public void handle() {
+    tu.azzert(req.write(new Buffer("foo"), new AsyncResultHandler<Void>() {
+      public void handle(FutureResult<Void> result) {
       }
     }) == req);
     tu.testComplete();
@@ -344,17 +346,17 @@ public class HttpTestClient extends TestClientBase {
           tu.azzert(req.response().setChunked(true) == req.response());
           tu.azzert(req.response().write("foo", "UTF-8") == req.response());
           tu.azzert(req.response().write("foo") == req.response());
-          tu.azzert(req.response().write("foo", "UTF-8", new SimpleHandler() {
-            public void handle() {
+          tu.azzert(req.response().write("foo", "UTF-8", new AsyncResultHandler<Void>() {
+            public void handle(FutureResult<Void> result) {
             }
           }) == req.response());
-          tu.azzert(req.response().write("foo", new SimpleHandler() {
-            public void handle() {
+          tu.azzert(req.response().write("foo", new AsyncResultHandler<Void>() {
+            public void handle(FutureResult<Void> result) {
             }
           }) == req.response());
           tu.azzert(req.response().write(new Buffer("foo")) == req.response());
-          tu.azzert(req.response().write(new Buffer("foo"), new SimpleHandler() {
-            public void handle() {
+          tu.azzert(req.response().write(new Buffer("foo"), new AsyncResultHandler<Void>() {
+            public void handle(FutureResult<Void> result) {
             }
           }) == req.response());
         }
@@ -849,9 +851,12 @@ public class HttpTestClient extends TestClientBase {
 
     req.end();
 
+    AsyncResultHandler<Void> writeHandler = new AsyncResultHandler<Void>() {
+      public void handle(FutureResult<Void> result) {
+      }
+    };
     Handler<Void> handler = new SimpleHandler() {
-      public void handle() {
-
+      protected void handle() {
       }
     };
     Buffer buff = new Buffer();
@@ -938,21 +943,21 @@ public class HttpTestClient extends TestClientBase {
       //OK
     }
     try {
-      req.write(buff, handler);
+      req.write(buff, writeHandler);
       tu.azzert(false, "Should throw exception");
     } catch (IllegalStateException e) {
       //OK
     }
 
     try {
-      req.write("foo", handler);
+      req.write("foo", writeHandler);
       tu.azzert(false, "Should throw exception");
     } catch (IllegalStateException e) {
       //OK
     }
 
     try {
-      req.write("foo", "UTF-8", handler);
+      req.write("foo", "UTF-8", writeHandler);
       tu.azzert(false, "Should throw exception");
     } catch (IllegalStateException e) {
       //OK
@@ -1140,8 +1145,8 @@ public class HttpTestClient extends TestClientBase {
     if (remaining > 0) {
       Buffer b = TestUtils.generateRandomBuffer(chunkSize);
       totBuffer.appendBuffer(b);
-      req.write(b, new SimpleHandler() {
-        public void handle() {
+      req.write(b, new AsyncResultHandler<Void>() {
+        public void handle(FutureResult<Void> res) {
           writeChunk(remaining - 1, chunkSize, req, totBuffer);
         }
       });
@@ -1234,8 +1239,8 @@ public class HttpTestClient extends TestClientBase {
       req.headers().put("Content-Length", bodyBuff.length());
     }
     if (waitCompletion) {
-      Handler<Void> doneHandler = new SimpleHandler() {
-        public void handle() {
+      AsyncResultHandler<Void> doneHandler = new AsyncResultHandler<Void>() {
+        public void handle(FutureResult<Void> res) {
           req.end();
         }
       };
@@ -1492,7 +1497,11 @@ public class HttpTestClient extends TestClientBase {
 
         Handler<Void> handler = new SimpleHandler() {
           public void handle() {
+          }
+        };
 
+        AsyncResultHandler<Void> writeHandler = new AsyncResultHandler<Void>() {
+          public void handle(FutureResult<Void> res) {
           }
         };
         
@@ -1571,21 +1580,21 @@ public class HttpTestClient extends TestClientBase {
           //OK
         }
         try {
-          resp.write(buff, handler);
+          resp.write(buff, writeHandler);
           tu.azzert(false, "Should throw exception");
         } catch (IllegalStateException e) {
           //OK
         }
 
         try {
-          resp.write("foo", handler);
+          resp.write("foo", writeHandler);
           tu.azzert(false, "Should throw exception");
         } catch (IllegalStateException e) {
           //OK
         }
 
         try {
-          resp.write("foo", "UTF-8", handler);
+          resp.write("foo", "UTF-8", writeHandler);
           tu.azzert(false, "Should throw exception");
         } catch (IllegalStateException e) {
           //OK
@@ -1785,8 +1794,8 @@ public class HttpTestClient extends TestClientBase {
     if (remaining > 0) {
       Buffer b = TestUtils.generateRandomBuffer(chunkSize);
       totBuffer.appendBuffer(b);
-      resp.write(b, new SimpleHandler() {
-        public void handle() {
+      resp.write(b, new AsyncResultHandler<Void>() {
+        public void handle(FutureResult<Void> res) {
           writeChunk(remaining - 1, chunkSize, resp, totBuffer);
         }
       });
@@ -1863,8 +1872,8 @@ public class HttpTestClient extends TestClientBase {
           req.response().headers().put("Content-Length", bodyBuff.length());
         }
         if (waitCompletion) {
-          Handler<Void> doneHandler = new SimpleHandler() {
-            public void handle() {
+          AsyncResultHandler<Void> doneHandler = new AsyncResultHandler<Void>() {
+            public void handle(FutureResult<Void> res) {
               req.response().end();
             }
           };

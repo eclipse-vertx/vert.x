@@ -262,7 +262,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
                   log.debug("Inbound message for address " + address + " rejected because sessionID is not authorised");
                 }
               } else {
-                log.error("Error in performing authorisation", res.exception());
+                log.error("Error in performing authorisation", res.cause());
               }
             }
           });

@@ -16,6 +16,8 @@
 
 package vertx.tests.core.net;
 
+import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
@@ -827,14 +829,14 @@ public class TestClient extends TestClientBase {
     count--;
     final int c = count;
     if (count == 0) {
-      sock.write(b, new SimpleHandler() {
-        public void handle() {
+      sock.write(b, new AsyncResultHandler<Void>() {
+        public void handle(FutureResult<Void> res) {
           tu.checkThread();
         }
       });
     } else {
-      sock.write(b, new SimpleHandler() {
-        public void handle() {
+      sock.write(b, new AsyncResultHandler<Void>() {
+        public void handle(FutureResult<Void> res) {
           tu.checkThread();
           doWrite(sentBuff, sock, c, sendSize);
         }

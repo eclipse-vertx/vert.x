@@ -26,7 +26,9 @@ import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VoidResult;
 import org.vertx.java.core.impl.*;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -177,10 +179,10 @@ public class DefaultNetServer implements NetServer {
   }
 
   @Override
-  public void close(final Handler<Void> done) {
+  public void close(final AsyncResultHandler<Void> done) {
     if (!listening) {
       if (done != null) {
-        executeCloseDone(actualCtx, done);
+        executeCloseDone(actualCtx, done, null);
       }
       return;
     }
@@ -193,7 +195,7 @@ public class DefaultNetServer implements NetServer {
         if (actualServer.handlerManager.hasHandlers()) {
           // The actual server still has handlers so we don't actually close it
           if (done != null) {
-            executeCloseDone(actualCtx, done);
+            executeCloseDone(actualCtx, done, null);
           }
         } else {
           // No Handlers left so close the actual server
@@ -374,7 +376,7 @@ public class DefaultNetServer implements NetServer {
     return tcpHelper.isUsePooledBuffers();
   }
 
-  private void actualClose(final Context closeContext, final Handler<Void> done) {
+  private void actualClose(final Context closeContext, final AsyncResultHandler<Void> done) {
     if (id != null) {
       vertx.sharedNetServers().remove(id);
     }
@@ -403,18 +405,18 @@ public class DefaultNetServer implements NetServer {
     } catch (InterruptedException e) {
     }
 
-    executeCloseDone(closeContext, done);
+    executeCloseDone(closeContext, done, fut.cause());
   }
 
   private void checkConfigs(DefaultNetServer currentServer, DefaultNetServer newServer) {
     //TODO check configs are the same
   }
 
-  private void executeCloseDone(final Context closeContext, final Handler<Void> done) {
+  private void executeCloseDone(final Context closeContext, final AsyncResultHandler<Void> done, final Exception e) {
     if (done != null) {
       closeContext.execute(new Runnable() {
         public void run() {
-          done.handle(null);
+          done.handle(new VoidResult(e));
         }
       });
     }

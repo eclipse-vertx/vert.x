@@ -63,7 +63,7 @@ public interface EventBus {
 	 * 
 	 * @param doneHandler
 	 */
-  void close(Handler<Void> doneHandler);
+  void close(AsyncResultHandler<Void> doneHandler);
 
   /**
    * Send a message
@@ -380,15 +380,15 @@ public interface EventBus {
    * @param resultHandler Optional completion handler. If specified, when the unregister has been
    * propagated to all nodes of the event bus, the handler will be called.
    */
-  EventBus unregisterHandler(String address, @SuppressWarnings("rawtypes") Handler<? extends Message> handler,
-                         AsyncResultHandler<Void> resultHandler);
+  EventBus unregisterHandler(String address, Handler<? extends Message> handler,
+                            AsyncResultHandler<Void> resultHandler);
 
   /**
    * Unregisters a handler given the address and the handler
    * @param address The address the handler was registered at
    * @param handler The handler
    */
-  EventBus unregisterHandler(String address, @SuppressWarnings("rawtypes") Handler<? extends Message> handler);
+  EventBus unregisterHandler(String address, Handler<? extends Message> handler);
 
   /**
    * Registers a handler against the specified address
@@ -397,15 +397,15 @@ public interface EventBus {
    * @param resultHandler Optional completion handler. If specified, when the register has been
    * propagated to all nodes of the event bus, the handler will be called.
    */
-  EventBus registerHandler(String address, @SuppressWarnings("rawtypes") Handler<? extends Message> handler,
-                       AsyncResultHandler<Void> resultHandler);
+  EventBus registerHandler(String address, Handler<? extends Message> handler,
+                           AsyncResultHandler<Void> resultHandler);
 
   /**
    * Registers a handler against the specified address
    * @param address The address to register it at
    * @param handler The handler
    */
-  EventBus registerHandler(String address, @SuppressWarnings("rawtypes") Handler<? extends Message> handler);
+  EventBus registerHandler(String address, Handler<? extends Message> handler);
 
   /**
    * Registers a local handler against the specified address. The handler info won't
@@ -413,6 +413,6 @@ public interface EventBus {
    * @param address The address to register it at
    * @param handler The handler
    */
-  EventBus registerLocalHandler(String address, @SuppressWarnings("rawtypes") Handler<? extends Message> handler);
+  EventBus registerLocalHandler(String address, Handler<? extends Message> handler);
 }
 

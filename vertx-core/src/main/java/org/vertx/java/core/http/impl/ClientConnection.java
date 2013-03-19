@@ -24,6 +24,7 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.WebSocket;
@@ -313,7 +314,7 @@ class ClientConnection extends AbstractConnection {
     }
   }
 
-  protected void addFuture(Handler<Void> doneHandler, ChannelFuture future) {
+  protected void addFuture(AsyncResultHandler<Void> doneHandler, ChannelFuture future) {
     super.addFuture(doneHandler, future);
   }
 

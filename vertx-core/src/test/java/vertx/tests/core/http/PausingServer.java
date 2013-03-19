@@ -16,6 +16,8 @@
 
 package vertx.tests.core.http;
 
+import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
@@ -67,8 +69,8 @@ public class PausingServer extends Verticle {
   }
 
   public void stop() {
-    server.close(new SimpleHandler() {
-      public void handle() {
+    server.close(new AsyncResultHandler<Void>() {
+      public void handle(FutureResult<Void> res) {
         tu.checkThread();
         tu.appStopped();
       }

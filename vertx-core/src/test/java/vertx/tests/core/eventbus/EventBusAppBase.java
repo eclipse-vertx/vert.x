@@ -16,6 +16,8 @@
 
 package vertx.tests.core.eventbus;
 
+import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.eventbus.impl.ClusterManager;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
@@ -60,8 +62,8 @@ public abstract class EventBusAppBase extends TestClientBase {
   @Override
   public void stop() {
     if (!isLocal()) {
-      eb.close(new SimpleHandler() {
-        public void handle() {
+      eb.close(new AsyncResultHandler<Void>() {
+        public void handle(FutureResult<Void> result) {
           EventBusAppBase.super.stop();
         }
       });

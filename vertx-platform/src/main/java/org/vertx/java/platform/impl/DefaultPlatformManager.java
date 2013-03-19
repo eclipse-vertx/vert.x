@@ -209,11 +209,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   public void installModule(final String moduleName) {
     final CountDownLatch latch = new CountDownLatch(1);
-    final AtomicReference<Exception> result = new AtomicReference<>();
+    final AtomicReference<Throwable> result = new AtomicReference<>();
     final ModuleIdentifier modID = new ModuleIdentifier(moduleName);
     AsyncResultHandler<Void> handler = new AsyncResultHandler<Void>() {
       public void handle(FutureResult<Void> res) {
-        result.set(res.exception());
+        result.set(res.cause());
         latch.countDown();
       }
     };
@@ -237,7 +237,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       } catch (InterruptedException ignore) {
       }
     }
-    Exception e = result.get();
+    Throwable e = result.get();
     if (e != null) {
       log.error("Failed to install module", e);
     }
@@ -405,7 +405,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       @Override
       public void handle(FutureResult<Void> ar) {
         if (ar.failed()) {
-          log.error("Failed to deploy verticle", ar.exception());
+          log.error("Failed to deploy verticle", ar.cause());
           callDoneHandler(doneHandler, null);
         }
       }
@@ -1181,7 +1181,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
                   if (ar.succeeded()) {
                     aggHandler.done(true);
                   } else {
-                    log.error("Failed to deploy verticle " + main + " in " + verticleFactory.getClass().getName(), ar.exception());
+                    log.error("Failed to deploy verticle " + main + " in " + verticleFactory.getClass().getName(), ar.cause());
                     aggHandler.done(false);
                   }
                 }
@@ -1292,7 +1292,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     AsyncResultHandler<String> handler = new AsyncResultHandler<String>() {
       public void handle(FutureResult<String> res) {
         if (!res.succeeded()) {
-          log.error("Failed to redeploy", res.exception());
+          log.error("Failed to redeploy", res.cause());
         }
       }
     };

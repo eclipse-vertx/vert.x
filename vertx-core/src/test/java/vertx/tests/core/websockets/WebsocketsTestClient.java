@@ -16,6 +16,8 @@
 
 package vertx.tests.core.websockets;
 
+import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
@@ -44,8 +46,8 @@ public class WebsocketsTestClient extends TestClientBase {
   public void stop() {
     client.close();
     if (server != null) {
-      server.close(new SimpleHandler() {
-        public void handle() {
+      server.close(new AsyncResultHandler<Void>() {
+        public void handle(FutureResult<Void> result) {
           tu.checkThread();
           WebsocketsTestClient.super.stop();
         }

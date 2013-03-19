@@ -19,8 +19,10 @@ package org.vertx.java.core.net.impl;
 import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidResult;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.FlowControlHandler;
 import org.vertx.java.core.impl.VertxInternal;
@@ -117,24 +119,25 @@ public abstract class ConnectionBase {
     }
   }
 
-  protected void addFuture(final Handler<Void> doneHandler, final ChannelFuture future) {
+  protected void addFuture(final AsyncResultHandler<Void> doneHandler, final ChannelFuture future) {
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(final ChannelFuture channelFuture) throws Exception {
-        setContext();
-        vertx.runOnLoop(new SimpleHandler() {
-          public void handle() {
-            if (channelFuture.isSuccess()) {
-              doneHandler.handle(null);
-            } else {
-              Throwable err = channelFuture.cause();
-              if (exceptionHandler != null && err instanceof Exception) {
-                exceptionHandler.handle((Exception) err);
+        if (doneHandler != null || exceptionHandler != null) {
+          context.execute(new Runnable() {
+            public void run() {
+              Throwable t = channelFuture.cause();
+              if (doneHandler != null) {
+                doneHandler.handle(new VoidResult(t));
+              }
+              // TODO - do we really need to send the exception to the connection exception handler too?
+              if (t instanceof Exception) {
+                handleException((Exception)t);
               } else {
-                log.error("Unhandled exception", err);
+                vertx.reportException(t);
               }
             }
-          }
-        });
+          });
+        }
       }
     });
   }

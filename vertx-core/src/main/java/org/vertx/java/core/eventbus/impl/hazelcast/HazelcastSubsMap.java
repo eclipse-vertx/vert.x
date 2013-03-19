@@ -115,7 +115,7 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
             sids.setInitialised();
             sresult.setResult(sids);
           } else {
-            sresult.setFailure(result.exception());
+            sresult.setFailure(result.cause());
           }
           sresult.setHandler(completionHandler);
         }
@@ -128,7 +128,7 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
   }
 
   @Override
-  public void remove(final String subName, final ServerID serverID, final AsyncResultHandler<Boolean> completionHandler) {
+  public void remove(final String subName, final ServerID serverID, final AsyncResultHandler<Void> completionHandler) {
     new BlockingAction<Boolean>(vertx, completionHandler) {
       public Boolean action() throws Exception {
         return map.remove(subName, new HazelcastServerID(serverID));

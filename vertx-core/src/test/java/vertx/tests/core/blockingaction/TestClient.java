@@ -72,7 +72,7 @@ public class TestClient extends TestClientBase {
       new BlockingAction<String>((VertxInternal)vertx, new AsyncResultHandler<String>() {
         public void handle(FutureResult<String> event) {
           tu.azzert(!event.succeeded());
-          tu.azzert("Wibble".equals(event.exception().getMessage()));
+          tu.azzert("Wibble".equals(event.cause().getMessage()));
           agg.complete();
         }
       }) {
