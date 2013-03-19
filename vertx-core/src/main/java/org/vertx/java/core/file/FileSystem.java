@@ -35,12 +35,12 @@ public interface FileSystem {
    * Copy a file from the path {@code from} to path {@code to}, asynchronously.<p>
    * The copy will fail if the destination already exists.<p>
    */
-  void copy(String from, String to, AsyncResultHandler<Void> handler);
+  FileSystem copy(String from, String to, AsyncResultHandler<Void> handler);
 
   /**
    * Synchronous version of {@link #copy(String, String, AsyncResultHandler)}
    */
-  void copySync(String from, String to) throws Exception;
+  FileSystem copySync(String from, String to) throws Exception;
 
   /**
    * Copy a file from the path {@code from} to path {@code to}, asynchronously.<p>
@@ -48,46 +48,46 @@ public interface FileSystem {
    * will be copied recursively to the destination {@code to}.<p>
    * The copy will fail if the destination if the destination already exists.<p>
    */
-  void copy(String from, String to, boolean recursive, AsyncResultHandler<Void> handler);
+  FileSystem copy(String from, String to, boolean recursive, AsyncResultHandler<Void> handler);
 
   /**
    * Synchronous version of {@link #copy(String, String, boolean, AsyncResultHandler)}
    */
-  void copySync(String from, String to, boolean recursive) throws Exception;
+  FileSystem copySync(String from, String to, boolean recursive) throws Exception;
 
   /**
    * Move a file from the path {@code from} to path {@code to}, asynchronously.<p>
    * The move will fail if the destination already exists.<p>
    */
-  void move(String from, String to, AsyncResultHandler<Void> handler);
+  FileSystem move(String from, String to, AsyncResultHandler<Void> handler);
 
   /**
    * Synchronous version of {@link #move(String, String, AsyncResultHandler)}
    */
-  void moveSync(String from, String to) throws Exception;
+  FileSystem moveSync(String from, String to) throws Exception;
 
   /**
    * Truncate the file represented by {@code path} to length {@code len} in bytes, asynchronously.<p>
    * The operation will fail if the file does not exist or {@code len} is less than {@code zero}.
    */
-  void truncate(String path, long len, AsyncResultHandler<Void> handler);
+  FileSystem truncate(String path, long len, AsyncResultHandler<Void> handler);
 
   /**
    * Synchronous version of {@link #truncate(String, long, AsyncResultHandler)}
    */
-  void truncateSync(String path, long len) throws Exception;
+  FileSystem truncateSync(String path, long len) throws Exception;
 
   /**
    * Change the permissions on the file represented by {@code path} to {@code perms}, asynchronously.
    * The permission String takes the form rwxr-x--- as
    * specified <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.<p>
    */
-  void chmod(String path, String perms, AsyncResultHandler<Void> handler);
+  FileSystem chmod(String path, String perms, AsyncResultHandler<Void> handler);
 
   /**
    * Synchronous version of {@link #chmod(String, String, AsyncResultHandler)}
    */
-  void chmodSync(String path, String perms) throws Exception;
+  FileSystem chmodSync(String path, String perms) throws Exception;
 
   /**
    * Change the permissions on the file represented by {@code path} to {@code perms}, asynchronously.
@@ -96,18 +96,18 @@ public interface FileSystem {
    * If the file is directory then all contents will also have their permissions changed recursively. Any directory permissions will
    * be set to {@code dirPerms}, whilst any normal file permissions will be set to {@code perms}.<p>
    */
-  void chmod(String path, String perms, String dirPerms, AsyncResultHandler<Void> handler);
+  FileSystem chmod(String path, String perms, String dirPerms, AsyncResultHandler<Void> handler);
 
   /**
    * Synchronous version of {@link #chmod(String, String, String, AsyncResultHandler)}
    */
-  void chmodSync(String path, String perms, String dirPerms) throws Exception;
+  FileSystem chmodSync(String path, String perms, String dirPerms) throws Exception;
 
   /**
    * Obtain properties for the file represented by {@code path}, asynchronously.
    * If the file is a link, the link will be followed.
    */
-  void props(String path, AsyncResultHandler<FileProps> handler);
+  FileSystem props(String path, AsyncResultHandler<FileProps> handler);
 
   /**
    * Synchronous version of {@link #props(String, AsyncResultHandler)}
@@ -118,7 +118,7 @@ public interface FileSystem {
    * Obtain properties for the link represented by {@code path}, asynchronously.
    * The link will not be followed.
    */
-  void lprops(String path, AsyncResultHandler<FileProps> handler);
+  FileSystem lprops(String path, AsyncResultHandler<FileProps> handler);
 
   /**
    * Synchronous version of {@link #lprops(String, AsyncResultHandler)}
@@ -128,37 +128,37 @@ public interface FileSystem {
   /**
    * Create a hard link on the file system from {@code link} to {@code existing}, asynchronously.
    */
-  void link(String link, String existing, AsyncResultHandler<Void> handler);
+  FileSystem link(String link, String existing, AsyncResultHandler<Void> handler);
 
   /**
    * Synchronous version of {@link #link(String, String, AsyncResultHandler)}
    */
-  void linkSync(String link, String existing) throws Exception;
+  FileSystem linkSync(String link, String existing) throws Exception;
 
   /**
    * Create a symbolic link on the file system from {@code link} to {@code existing}, asynchronously.
    */
-  void symlink(String link, String existing, AsyncResultHandler<Void> handler);
+  FileSystem symlink(String link, String existing, AsyncResultHandler<Void> handler);
 
   /**
    * Synchronous version of {@link #link(String, String, AsyncResultHandler)}
    */
-  void symlinkSync(String link, String existing) throws Exception;
+  FileSystem symlinkSync(String link, String existing) throws Exception;
 
   /**
    * Unlinks the link on the file system represented by the path {@code link}, asynchronously.
    */
-  void unlink(String link, AsyncResultHandler<Void> handler);
+  FileSystem unlink(String link, AsyncResultHandler<Void> handler);
 
   /**
    * Synchronous version of {@link #unlink(String, AsyncResultHandler)}
    */
-  void unlinkSync(String link) throws Exception;
+  FileSystem unlinkSync(String link) throws Exception;
 
   /**
    * Returns the path representing the file that the symbolic link specified by {@code link} points to, asynchronously.
    */
-  void readSymlink(String link, AsyncResultHandler<String> handler);
+  FileSystem readSymlink(String link, AsyncResultHandler<String> handler);
 
   /**
    * Synchronous version of {@link #readSymlink(String, AsyncResultHandler)}
@@ -168,35 +168,35 @@ public interface FileSystem {
   /**
    * Deletes the file represented by the specified {@code path}, asynchronously.
    */
-  void delete(String path, AsyncResultHandler<Void> handler);
+  FileSystem delete(String path, AsyncResultHandler<Void> handler);
 
   /**
    * Synchronous version of {@link #delete(String, AsyncResultHandler)}
    */
-  void deleteSync(String path) throws Exception;
+  FileSystem deleteSync(String path) throws Exception;
 
   /**
    * Deletes the file represented by the specified {@code path}, asynchronously.<p>
    * If the path represents a directory and {@code recursive = true} then the directory and its contents will be
    * deleted recursively.
    */
-  void delete(String path, boolean recursive, AsyncResultHandler<Void> handler);
+  FileSystem delete(String path, boolean recursive, AsyncResultHandler<Void> handler);
 
   /**
    * Synchronous version of {@link #delete(String, boolean, AsyncResultHandler)}
    */
-  void deleteSync(String path, boolean recursive) throws Exception;
+  FileSystem deleteSync(String path, boolean recursive) throws Exception;
 
   /**
    * Create the directory represented by {@code path}, asynchronously.<p>
    * The operation will fail if the directory already exists.
    */
-  void mkdir(String path, AsyncResultHandler<Void> handler);
+  FileSystem mkdir(String path, AsyncResultHandler<Void> handler);
 
   /**
    * Synchronous version of {@link #mkdir(String, AsyncResultHandler)}
    */
-  void mkdirSync(String path) throws Exception;
+  FileSystem mkdirSync(String path) throws Exception;
 
   /**
    * Create the directory represented by {@code path}, asynchronously.<p>
@@ -204,12 +204,12 @@ public interface FileSystem {
    * will also be created.<p>
    * The operation will fail if the directory already exists.
    */
-  void mkdir(String path, boolean createParents, AsyncResultHandler<Void> handler);
+  FileSystem mkdir(String path, boolean createParents, AsyncResultHandler<Void> handler);
 
   /**
    * Synchronous version of {@link #mkdir(String, boolean, AsyncResultHandler)}
    */
-  void mkdirSync(String path, boolean createParents) throws Exception;
+  FileSystem mkdirSync(String path, boolean createParents) throws Exception;
 
   /**
    * Create the directory represented by {@code path}, asynchronously.<p>
@@ -218,12 +218,12 @@ public interface FileSystem {
    * in <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.<p>
    * The operation will fail if the directory already exists.
    */
-  void mkdir(String path, String perms, AsyncResultHandler<Void> handler);
+  FileSystem mkdir(String path, String perms, AsyncResultHandler<Void> handler);
 
   /**
    * Synchronous version of {@link #mkdir(String, String, AsyncResultHandler)}
    */
-  void mkdirSync(String path, String perms) throws Exception;
+  FileSystem mkdirSync(String path, String perms) throws Exception;
 
   /**
    * Create the directory represented by {@code path}, asynchronously.<p>
@@ -234,18 +234,18 @@ public interface FileSystem {
    * will also be created.<p>
    * The operation will fail if the directory already exists.<p>
    */
-  void mkdir(String path, String perms, boolean createParents, AsyncResultHandler<Void> handler);
+  FileSystem mkdir(String path, String perms, boolean createParents, AsyncResultHandler<Void> handler);
 
   /**
    * Synchronous version of {@link #mkdir(String, String, boolean, AsyncResultHandler)}
    */
-  void mkdirSync(String path, String perms, boolean createParents) throws Exception;
+  FileSystem mkdirSync(String path, String perms, boolean createParents) throws Exception;
 
   /**
    * Read the contents of the directory specified by {@code path}, asynchronously.<p>
    * The result is an array of String representing the paths of the files inside the directory.
    */
-  void readDir(String path, AsyncResultHandler<String[]> handler);
+  FileSystem readDir(String path, AsyncResultHandler<String[]> handler);
 
   /**
    * Synchronous version of {@link #readDir(String, AsyncResultHandler)}
@@ -258,7 +258,7 @@ public interface FileSystem {
    * match  @{filter}will be returned.<p>
    * The result is an array of String representing the paths of the files inside the directory.
    */
-  void readDir(String path, String filter, AsyncResultHandler<String[]> handler);
+  FileSystem readDir(String path, String filter, AsyncResultHandler<String[]> handler);
 
   /**
    * Synchronous version of {@link #readDir(String, String, AsyncResultHandler)}
@@ -269,7 +269,7 @@ public interface FileSystem {
    * Reads the entire file as represented by the path {@code path} as a {@link Buffer}, asynchronously.<p>
    * Do not user this method to read very large files or you risk running out of available RAM.
    */
-  void readFile(String path, AsyncResultHandler<Buffer> handler);
+  FileSystem readFile(String path, AsyncResultHandler<Buffer> handler);
 
   /**
    * Synchronous version of {@link #readFile(String, AsyncResultHandler)}
@@ -280,19 +280,19 @@ public interface FileSystem {
    * Creates the file, and writes the specified {@code Buffer data} to the file represented by the path {@code path},
    * asynchronously.
    */
-  void writeFile(String path, Buffer data, AsyncResultHandler<Void> handler);
+  FileSystem writeFile(String path, Buffer data, AsyncResultHandler<Void> handler);
 
   /**
    * Synchronous version of {@link #writeFile(String, Buffer, AsyncResultHandler)}
    */
-  void writeFileSync(String path, Buffer data) throws Exception;
+  FileSystem writeFileSync(String path, Buffer data) throws Exception;
 
   /**
    * Open the file represented by {@code path}, asynchronously.<p>
    * The file is opened for both reading and writing. If the file does not already exist it will be created.
    * Write operations will not automatically flush to storage.
    */
-  void open(String path, AsyncResultHandler<AsyncFile> handler);
+  FileSystem open(String path, AsyncResultHandler<AsyncFile> handler);
 
   /**
    * Synchronous version of {@link #open(String, AsyncResultHandler)}
@@ -305,7 +305,7 @@ public interface FileSystem {
    * permissions as specified by {@code perms}.
    * Write operations will not automatically flush to storage.
    */
-  void open(String path, String perms, AsyncResultHandler<AsyncFile> handler);
+  FileSystem open(String path, String perms, AsyncResultHandler<AsyncFile> handler);
 
   /**
    * Synchronous version of {@link #open(String, String, AsyncResultHandler)}
@@ -319,7 +319,7 @@ public interface FileSystem {
    * the operation will fail.
    * Write operations will not automatically flush to storage.
    */
-  void open(String path, String perms, boolean createNew, AsyncResultHandler<AsyncFile> handler);
+  FileSystem open(String path, String perms, boolean createNew, AsyncResultHandler<AsyncFile> handler);
 
   /**
    * Synchronous version of {@link #open(String, String, boolean, AsyncResultHandler)}
@@ -335,7 +335,7 @@ public interface FileSystem {
    * the operation will fail.<p>
    * Write operations will not automatically flush to storage.
    */
-  void open(String path, String perms, boolean read, boolean write, boolean createNew, AsyncResultHandler<AsyncFile> handler);
+  FileSystem open(String path, String perms, boolean read, boolean write, boolean createNew, AsyncResultHandler<AsyncFile> handler);
 
   /**
    * Synchronous version of {@link #open(String, String, boolean, boolean, boolean, AsyncResultHandler)}
@@ -352,7 +352,7 @@ public interface FileSystem {
    * If {@code flush} is {@code true} then all writes will be automatically flushed through OS buffers to the underlying
    * storage on each write.
    */
-  void open(String path, String perms, boolean read, boolean write, boolean createNew,
+  FileSystem open(String path, String perms, boolean read, boolean write, boolean createNew,
       boolean flush, AsyncResultHandler<AsyncFile> handler);
 
   /**
@@ -363,27 +363,27 @@ public interface FileSystem {
   /**
    * Creates an empty file with the specified {@code path}, asynchronously.
    */
-  void createFile(String path, AsyncResultHandler<Void> handler);
+  FileSystem createFile(String path, AsyncResultHandler<Void> handler);
 
   /**
    * Synchronous version of {@link #createFile(String, AsyncResultHandler)}
    */
-  void createFileSync(String path) throws Exception;
+  FileSystem createFileSync(String path) throws Exception;
 
   /**
    * Creates an empty file with the specified {@code path} and permissions {@code perms}, asynchronously.
    */
-  void createFile(String path, String perms, AsyncResultHandler<Void> handler);
+  FileSystem createFile(String path, String perms, AsyncResultHandler<Void> handler);
 
   /**
    * Synchronous version of {@link #createFile(String, String, AsyncResultHandler)}
    */
-  void createFileSync(String path, String perms) throws Exception;
+  FileSystem createFileSync(String path, String perms) throws Exception;
 
   /**
    * Determines whether the file as specified by the path {@code path} exists, asynchronously.
    */
-  void exists(String path, AsyncResultHandler<Boolean> handler);
+  FileSystem exists(String path, AsyncResultHandler<Boolean> handler);
 
   /**
    * Synchronous version of {@link #exists(String, AsyncResultHandler)}
@@ -393,7 +393,7 @@ public interface FileSystem {
   /**
    * Returns properties of the file-system being used by the specified {@code path}, asynchronously.
    */
-  void fsProps(String path, AsyncResultHandler<FileSystemProps> handler);
+  FileSystem fsProps(String path, AsyncResultHandler<FileSystemProps> handler);
 
   /**
    * Synchronous version of {@link #fsProps(String, AsyncResultHandler)}

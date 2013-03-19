@@ -22,7 +22,7 @@ import org.vertx.java.core.VertxFactory;
  * @author pidster
  *
  */
-public class DefaultVertxFactory implements VertxFactory {
+public class DefaultVertxFactory extends VertxFactory {
 
   @Override
   public Vertx createVertx() {

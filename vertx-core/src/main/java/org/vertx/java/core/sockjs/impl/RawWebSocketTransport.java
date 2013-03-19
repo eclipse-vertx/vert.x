@@ -21,7 +21,7 @@ import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
-import org.vertx.java.core.http.WebSocket;
+import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.WebSocketMatcher;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -34,49 +34,57 @@ class RawWebSocketTransport {
 
   private static final Logger log = LoggerFactory.getLogger(WebSocketTransport.class);
 
-  private class RawWSSockJSSocket extends SockJSSocket {
+  private class RawWSSockJSSocket extends SockJSSocketBase {
 
-    private WebSocket ws;
+    private ServerWebSocket ws;
 
-    RawWSSockJSSocket(Vertx vertx, WebSocket ws) {
+    RawWSSockJSSocket(Vertx vertx, ServerWebSocket ws) {
       super(vertx);
       this.ws = ws;
     }
 
-    public void dataHandler(Handler<Buffer> handler) {
+    public SockJSSocket dataHandler(Handler<Buffer> handler) {
       ws.dataHandler(handler);
+      return this;
     }
 
-    public void pause() {
+    public SockJSSocket pause() {
       ws.pause();
+      return this;
     }
 
-    public void resume() {
+    public SockJSSocket resume() {
       ws.resume();
+      return this;
     }
 
-    public void writeBuffer(Buffer data) {
-      ws.writeBuffer(data);
+    public SockJSSocket write(Buffer data) {
+      ws.write(data);
+      return this;
     }
 
-    public void setWriteQueueMaxSize(int maxQueueSize) {
+    public SockJSSocket setWriteQueueMaxSize(int maxQueueSize) {
       ws.setWriteQueueMaxSize(maxQueueSize);
+      return this;
     }
 
     public boolean writeQueueFull() {
       return ws.writeQueueFull();
     }
 
-    public void drainHandler(Handler<Void> handler) {
+    public SockJSSocket drainHandler(Handler<Void> handler) {
       ws.drainHandler(handler);
+      return this;
     }
 
-    public void exceptionHandler(Handler<Exception> handler) {
+    public SockJSSocket exceptionHandler(Handler<Exception> handler) {
       ws.exceptionHandler(handler);
+      return this;
     }
 
-    public void endHandler(Handler<Void> endHandler) {
+    public SockJSSocket endHandler(Handler<Void> endHandler) {
       ws.endHandler(endHandler);
+      return this;
     }
 
     public void close() {

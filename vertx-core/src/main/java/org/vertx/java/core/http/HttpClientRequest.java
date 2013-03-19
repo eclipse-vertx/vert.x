@@ -58,7 +58,7 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface HttpClientRequest extends WriteStream {
+public interface HttpClientRequest extends WriteStream<HttpClientRequest> {
 
   /**
    * If chunked is true then the request will be set into HTTP chunked mode

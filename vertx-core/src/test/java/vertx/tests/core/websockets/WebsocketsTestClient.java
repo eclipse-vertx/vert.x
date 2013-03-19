@@ -110,13 +110,13 @@ public class WebsocketsTestClient extends TestClientBase {
     server = vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
         tu.checkThread();
-        tu.azzert(path.equals(ws.path));
+        tu.azzert(path.equals(ws.path()));
 
         ws.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
             tu.checkThread();
             //Echo it back
-            ws.writeBuffer(data);
+            ws.write(data);
           }
         });
       }
@@ -164,7 +164,7 @@ public class WebsocketsTestClient extends TestClientBase {
 
     server = vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
-        tu.azzert(path.equals(ws.path));
+        tu.azzert(path.equals(ws.path()));
         ws.writeBinaryFrame(buff);
       }
     }).listen(8080, "localhost");
@@ -194,7 +194,7 @@ public class WebsocketsTestClient extends TestClientBase {
       public void handle(final ServerWebSocket ws) {
 
         tu.checkThread();
-        tu.azzert(path.equals(ws.path));
+        tu.azzert(path.equals(ws.path()));
         ws.reject();
       }
 

@@ -59,21 +59,21 @@ public class Buffer {
    * automatic re-allocations as data is written to it.
    */
   public Buffer(int initialSizeHint) {
-     buffer = Unpooled.buffer(initialSizeHint);
+    buffer = Unpooled.buffer(initialSizeHint);
   }
 
   /**
    * Create a new Buffer that contains the contents of a {@code byte[]}
    */
   public Buffer(byte[] bytes) {
-      this(Unpooled.wrappedBuffer(bytes));
+    this(Unpooled.wrappedBuffer(bytes));
   }
 
   /**
    * Create a new Buffer that contains the contents of a {@code String str} encoded according to the encoding {@code enc}
    */
   public Buffer(String str, String enc) {
-      this(Unpooled.copiedBuffer(str, Charset.forName(enc)));
+    this(Unpooled.copiedBuffer(str, Charset.forName(enc)));
   }
 
   /**
@@ -113,6 +113,7 @@ public class Buffer {
 
   /**
    * Returns the {@code byte} at position {@code pos} in the Buffer.
+   *
    * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 1} is greater than the length of the Buffer.
    */
   public byte getByte(int pos) {
@@ -446,8 +447,6 @@ public class Buffer {
     return this;
   }
 
-  //TODO this is all a bit of a pain - if we can just throw exceptions if people set stuff outside of the buffer
-  //like Netty that would be preferable
   private void ensureWritable(int pos, int len) {
     int ni = pos + len;
     int cap = buffer.capacity();

@@ -26,23 +26,26 @@ import org.vertx.java.core.buffer.Buffer;
  * Any class that implements this interface can be used by a {@link Pump} to pump data from a {@code ReadStream}
  * to it.<p>
  *
+ * This interface exposes a fluent api and the type T represents the type of the object that implements
+ * the interface to allow method chaining
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface WriteStream {
+public interface WriteStream<T> extends ExceptionSupport<T> {
 
   /**
    * Write some data to the stream. The data is put on an internal write queue, and the write actually happens
    * asynchronously. To avoid running out of memory by putting too much on the write queue,
    * check the {@link #writeQueueFull} method before writing. This is done automatically if using a {@link Pump}.
    */
-  void writeBuffer(Buffer data);
+  T write(Buffer data);
 
   /**
    * Set the maximum size of the write queue to {@code maxSize}. You will still be able to write to the stream even
    * if there is more than {@code maxSize} bytes in the write queue. This is used as an indicator by classes such as
    * {@code Pump} to provide flow control.
    */
-  void setWriteQueueMaxSize(int maxSize);
+  T setWriteQueueMaxSize(int maxSize);
 
   /**
    * This will return {@code true} if there are more bytes in the write queue than the value set using {@link
@@ -54,10 +57,5 @@ public interface WriteStream {
    * Set a drain handler on the stream. If the write queue is full, then the handler will be called when the write
    * queue has been reduced to maxSize / 2. See {@link Pump} for an example of this being used.
    */
-  void drainHandler(Handler<Void> handler);
-
-  /**
-   * Set an exception handler on the stream
-   */
-  void exceptionHandler(Handler<Exception> handler);
+  T drainHandler(Handler<Void> handler);
 }

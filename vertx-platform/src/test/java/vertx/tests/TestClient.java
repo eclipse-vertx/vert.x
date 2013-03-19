@@ -45,7 +45,7 @@ public class TestClient extends TestClientBase {
     eb.registerHandler("test-handler", new Handler<Message<String>>() {
       public void handle(Message<String> message) {
         tu.azzert(Thread.currentThread() == t);
-        if ("started".equals(message.body)) {
+        if ("started".equals(message.body())) {
           eb.unregisterHandler("test-handler", this);
           tu.testComplete();
         }
@@ -71,7 +71,7 @@ public class TestClient extends TestClientBase {
             public void handle(Long tid) {
               eb.registerHandler("test-handler", new Handler<Message<String>>() {
                 public void handle(Message<String> message) {
-                  if ("stopped".equals(message.body)) {
+                  if ("stopped".equals(message.body())) {
                     eb.unregisterHandler("test-handler", this);
                     tu.testComplete();
                   }
@@ -93,7 +93,7 @@ public class TestClient extends TestClientBase {
     eb.registerHandler("test-handler", new Handler<Message<String>>() {
       public void handle(Message<String> message) {
         tu.azzert(Thread.currentThread() == t);
-        if ("started".equals(message.body)) {
+        if ("started".equals(message.body())) {
           eb.unregisterHandler("test-handler", this);
           tu.testComplete();
         }
@@ -119,7 +119,7 @@ public class TestClient extends TestClientBase {
               public void handle(Long tid) {
                 eb.registerHandler("test-handler", new Handler<Message<String>>() {
                   public void handle(Message<String> message) {
-                    if ("stopped".equals(message.body)) {
+                    if ("stopped".equals(message.body())) {
                       eb.unregisterHandler("test-handler", this);
                       tu.testComplete();
                     }
@@ -141,7 +141,7 @@ public class TestClient extends TestClientBase {
     eb.registerHandler("test-handler", new Handler<Message<String>>() {
       public void handle(Message<String> message) {
         tu.azzert(Thread.currentThread() == t);
-        if ("started".equals(message.body)) {
+        if ("started".equals(message.body())) {
           eb.unregisterHandler("test-handler", this);
           tu.testComplete();
         }

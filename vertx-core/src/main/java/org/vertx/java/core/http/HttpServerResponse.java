@@ -16,11 +16,8 @@
 
 package org.vertx.java.core.http;
 
-import io.netty.handler.codec.http.HttpResponseStatus;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.streams.WriteStream;
 
 import java.util.Map;
@@ -42,7 +39,7 @@ import java.util.Map;
  * Instances of this class are not thread-safe<p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface HttpServerResponse extends WriteStream {
+public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
 
   /**
    * The HTTP status code of the response. The default is {@code 200} representing {@code OK}.

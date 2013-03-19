@@ -17,9 +17,9 @@
 package org.vertx.java.core;
 
 /**
- * Handler for {@link AsyncResult}
+ * Handler for {@link FutureResult}
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface AsyncResultHandler<T> extends Handler<AsyncResult<T>> {
+public interface AsyncResultHandler<T> extends Handler<FutureResult<T>> {
 }

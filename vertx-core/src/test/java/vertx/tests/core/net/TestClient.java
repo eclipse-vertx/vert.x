@@ -780,14 +780,14 @@ public class TestClient extends TestClientBase {
     vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
       @Override
       public void handle(NetSocket socket) {
-        InetSocketAddress addr = socket.getRemoteAddress();
+        InetSocketAddress addr = socket.remoteAddress();
         tu.azzert(addr.getHostName().startsWith("localhost"));
       }
     }).listen(1234);
     vertx.createNetClient().connect(1234, new Handler<NetSocket>() {
       @Override
       public void handle(NetSocket socket) {
-        InetSocketAddress addr = socket.getRemoteAddress();
+        InetSocketAddress addr = socket.remoteAddress();
         tu.azzert(addr.getHostName().equals("localhost"));
         tu.azzert(addr.getPort() == 1234);
         tu.testComplete();

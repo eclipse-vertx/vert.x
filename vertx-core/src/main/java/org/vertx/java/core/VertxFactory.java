@@ -15,16 +15,52 @@
  */
 package org.vertx.java.core;
 
+import java.util.ServiceLoader;
+
 /**
  * @author pidster
  *
  */
-public interface VertxFactory {
+public class VertxFactory {
 
-	Vertx createVertx();
-	
-	Vertx createVertx(String hostname);
-	
-	Vertx createVertx(int port, String hostname);
+  /**
+   * Create a non clustered Vertx instance
+   */
+  public static Vertx newVertx() {
+    return loadFactory().createVertx();
+  }
 
+  /**
+   * Create a clustered Vertx instance listening for cluster connections on the default port 25500
+   * @param hostname The hostname or ip address to listen for cluster connections
+   */
+  public static Vertx newVertx(String hostname) {
+    return loadFactory().createVertx(hostname);
+  }
+
+  /**
+   * Create a clustered Vertx instance
+   * @param port The port to listen for cluster connections
+   * @param hostname The hostname or ip address to listen for cluster connections
+   */
+  public static Vertx newVertx(int port, String hostname) {
+    return loadFactory().createVertx(port, hostname);
+  }
+
+  private static VertxFactory loadFactory() {
+    ServiceLoader<VertxFactory> factories = ServiceLoader.load(VertxFactory.class);
+    return factories.iterator().next();
+  }
+
+  protected Vertx createVertx() {
+    return null;
+  }
+
+  protected Vertx createVertx(String hostname) {
+    return null;
+  }
+
+  protected Vertx createVertx(int port, String hostname) {
+    return null;
+  }
 }

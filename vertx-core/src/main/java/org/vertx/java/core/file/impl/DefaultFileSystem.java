@@ -43,7 +43,7 @@ import java.util.regex.Pattern;
 public class DefaultFileSystem implements FileSystem {
 
   @SuppressWarnings("unused")
-	private static final Logger log = LoggerFactory.getLogger(DefaultFileSystem.class);
+  private static final Logger log = LoggerFactory.getLogger(DefaultFileSystem.class);
 
   protected final VertxInternal vertx;
 
@@ -51,249 +51,298 @@ public class DefaultFileSystem implements FileSystem {
     this.vertx = vertx;
   }
 
-  public void copy(String from, String to, AsyncResultHandler<Void> handler) {
+  public FileSystem copy(String from, String to, AsyncResultHandler<Void> handler) {
     copyInternal(from, to, handler).run();
+    return this;
   }
 
-  public void copySync(String from, String to) throws Exception {
+  public FileSystem copySync(String from, String to) throws Exception {
     copyInternal(from, to, null).action();
+    return this;
   }
 
-  public void copy(String from, String to, boolean recursive, AsyncResultHandler<Void> handler) {
+  public FileSystem copy(String from, String to, boolean recursive, AsyncResultHandler<Void> handler) {
     copyInternal(from, to, recursive, handler).run();
+    return this;
   }
 
-  public void copySync(String from, String to, boolean recursive) throws Exception {
+  public FileSystem copySync(String from, String to, boolean recursive) throws Exception {
     copyInternal(from, to, recursive, null).action();
+    return this;
   }
 
-  public void move(String from, String to, AsyncResultHandler<Void> handler) {
+  public FileSystem move(String from, String to, AsyncResultHandler<Void> handler) {
     moveInternal(from, to, handler).run();
+    return this;
   }
 
-  public void moveSync(String from, String to) throws Exception {
+  public FileSystem moveSync(String from, String to) throws Exception {
     moveInternal(from, to, null).action();
+    return this;
   }
 
-  public void truncate(String path, long len, AsyncResultHandler<Void> handler) {
+  public FileSystem truncate(String path, long len, AsyncResultHandler<Void> handler) {
     truncateInternal(path, len, handler).run();
+    return this;
   }
 
-  public void truncateSync(String path, long len) throws Exception {
+  public FileSystem truncateSync(String path, long len) throws Exception {
     truncateInternal(path, len, null).action();
+    return this;
   }
 
-  public void chmod(String path, String perms, AsyncResultHandler<Void> handler) {
+  public FileSystem chmod(String path, String perms, AsyncResultHandler<Void> handler) {
     chmodInternal(path, perms, handler).run();
+    return this;
   }
 
-  public void chmodSync(String path, String perms) throws Exception {
+  public FileSystem chmodSync(String path, String perms) throws Exception {
     chmodInternal(path, perms, null).action();
+    return this;
   }
 
-  public void chmod(String path, String perms, String dirPerms, AsyncResultHandler<Void> handler) {
+  public FileSystem chmod(String path, String perms, String dirPerms, AsyncResultHandler<Void> handler) {
     chmodInternal(path, perms, dirPerms, handler).run();
+    return this;
   }
 
-  public void chmodSync(String path, String perms, String dirPerms) throws Exception {
+  public FileSystem chmodSync(String path, String perms, String dirPerms) throws Exception {
     chmodInternal(path, perms, dirPerms, null).action();
+    return this;
   }
 
-  public void props(String path, AsyncResultHandler<FileProps> handler) {
+  public FileSystem props(String path, AsyncResultHandler<FileProps> handler) {
     propsInternal(path, handler).run();
+    return this;
   }
 
   public FileProps propsSync(String path) throws Exception {
     return propsInternal(path, null).action();
   }
 
-  public void lprops(String path, AsyncResultHandler<FileProps> handler) {
+  public FileSystem lprops(String path, AsyncResultHandler<FileProps> handler) {
     lpropsInternal(path, handler).run();
+    return this;
   }
 
   public FileProps lpropsSync(String path) throws Exception {
     return lpropsInternal(path, null).action();
   }
 
-  public void link(String link, String existing, AsyncResultHandler<Void> handler) {
+  public FileSystem link(String link, String existing, AsyncResultHandler<Void> handler) {
     linkInternal(link, existing, handler).run();
+    return this;
   }
 
-  public void linkSync(String link, String existing) throws Exception {
+  public FileSystem linkSync(String link, String existing) throws Exception {
     linkInternal(link, existing, null).action();
+    return this;
   }
 
-  public void symlink(String link, String existing, AsyncResultHandler<Void> handler) {
+  public FileSystem symlink(String link, String existing, AsyncResultHandler<Void> handler) {
     symlinkInternal(link, existing, handler).run();
+    return this;
   }
 
-  public void symlinkSync(String link, String existing) throws Exception {
+  public FileSystem symlinkSync(String link, String existing) throws Exception {
     symlinkInternal(link, existing, null).action();
+    return this;
   }
 
-  public void unlink(String link, AsyncResultHandler<Void> handler) {
+  public FileSystem unlink(String link, AsyncResultHandler<Void> handler) {
     unlinkInternal(link, handler).run();
+    return this;
   }
 
-  public void unlinkSync(String link) throws Exception {
+  public FileSystem unlinkSync(String link) throws Exception {
     unlinkInternal(link, null).action();
+    return this;
   }
 
-  public void readSymlink(String link, AsyncResultHandler<String> handler) {
+  public FileSystem readSymlink(String link, AsyncResultHandler<String> handler) {
     readSymlinkInternal(link, handler).run();
+    return this;
   }
 
   public String readSymlinkSync(String link) throws Exception {
     return readSymlinkInternal(link, null).action();
   }
 
-  public void delete(String path, AsyncResultHandler<Void> handler) {
+  public FileSystem delete(String path, AsyncResultHandler<Void> handler) {
     deleteInternal(path, handler).run();
+    return this;
   }
 
-  public void deleteSync(String path) throws Exception {
+  public FileSystem deleteSync(String path) throws Exception {
     deleteInternal(path, null).action();
+    return this;
   }
 
-  public void delete(String path, boolean recursive, AsyncResultHandler<Void> handler) {
+  public FileSystem delete(String path, boolean recursive, AsyncResultHandler<Void> handler) {
     deleteInternal(path, recursive, handler).run();
+    return this;
   }
 
-  public void deleteSync(String path, boolean recursive) throws Exception {
+  public FileSystem deleteSync(String path, boolean recursive) throws Exception {
     deleteInternal(path, recursive, null).action();
+    return this;
   }
 
-  public void mkdir(String path, AsyncResultHandler<Void> handler) {
+  public FileSystem mkdir(String path, AsyncResultHandler<Void> handler) {
     mkdirInternal(path, handler).run();
+    return this;
   }
 
-  public void mkdirSync(String path) throws Exception {
+  public FileSystem mkdirSync(String path) throws Exception {
     mkdirInternal(path, null).action();
+    return this;
   }
 
-  public void mkdir(String path, boolean createParents, AsyncResultHandler<Void> handler) {
+  public FileSystem mkdir(String path, boolean createParents, AsyncResultHandler<Void> handler) {
     mkdirInternal(path, createParents, handler).run();
+    return this;
   }
 
-  public void mkdirSync(String path, boolean createParents) throws Exception {
+  public FileSystem mkdirSync(String path, boolean createParents) throws Exception {
     mkdirInternal(path, createParents, null).action();
+    return this;
   }
 
-  public void mkdir(String path, String perms, AsyncResultHandler<Void> handler) {
+  public FileSystem mkdir(String path, String perms, AsyncResultHandler<Void> handler) {
     mkdirInternal(path, perms, handler).run();
+    return this;
   }
 
-  public void mkdirSync(String path, String perms) throws Exception {
+  public FileSystem mkdirSync(String path, String perms) throws Exception {
     mkdirInternal(path, perms, null).action();
+    return this;
   }
 
-  public void mkdir(String path, String perms, boolean createParents, AsyncResultHandler<Void> handler) {
+  public FileSystem mkdir(String path, String perms, boolean createParents, AsyncResultHandler<Void> handler) {
     mkdirInternal(path, perms, createParents, handler).run();
+    return this;
   }
 
-  public void mkdirSync(String path, String perms, boolean createParents) throws Exception {
+  public FileSystem mkdirSync(String path, String perms, boolean createParents) throws Exception {
     mkdirInternal(path, perms, createParents, null).action();
+    return this;
   }
 
-  public void readDir(String path, AsyncResultHandler<String[]> handler) {
+  public FileSystem readDir(String path, AsyncResultHandler<String[]> handler) {
     readDirInternal(path, handler).run();
+    return this;
   }
 
   public String[] readDirSync(String path) throws Exception {
     return readDirInternal(path, null).action();
   }
 
-  public void readDir(String path, String filter, AsyncResultHandler<String[]> handler) {
+  public FileSystem readDir(String path, String filter, AsyncResultHandler<String[]> handler) {
     readDirInternal(path, filter, handler).run();
+    return this;
   }
 
   public String[] readDirSync(String path, String filter) throws Exception {
     return readDirInternal(path, filter, null).action();
   }
 
-  public void readFile(String path, AsyncResultHandler<Buffer> handler) {
+  public FileSystem readFile(String path, AsyncResultHandler<Buffer> handler) {
     readFileInternal(path, handler).run();
+    return this;
   }
 
   public Buffer readFileSync(String path) throws Exception {
     return readFileInternal(path, null).action();
   }
 
-  public void writeFile(String path, Buffer data, AsyncResultHandler<Void> handler) {
+  public FileSystem writeFile(String path, Buffer data, AsyncResultHandler<Void> handler) {
     writeFileInternal(path, data, handler).run();
+    return this;
   }
 
-  public void writeFileSync(String path, Buffer data) throws Exception {
+  public FileSystem writeFileSync(String path, Buffer data) throws Exception {
     writeFileInternal(path, data, null).action();
+    return this;
   }
 
-  public void open(String path, AsyncResultHandler<AsyncFile> handler) {
+  public FileSystem open(String path, AsyncResultHandler<AsyncFile> handler) {
     openInternal(path, handler).run();
+    return this;
   }
 
   public AsyncFile openSync(String path) throws Exception {
     return openInternal(path, null).action();
   }
 
-  public void open(String path, String perms, AsyncResultHandler<AsyncFile> handler) {
+  public FileSystem open(String path, String perms, AsyncResultHandler<AsyncFile> handler) {
     openInternal(path, perms, handler).run();
+    return this;
   }
 
   public AsyncFile openSync(String path, String perms) throws Exception {
     return openInternal(path, perms, null).action();
   }
 
-  public void open(String path, String perms, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
+  public FileSystem open(String path, String perms, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
     openInternal(path, perms, createNew, handler).run();
+    return this;
   }
 
   public AsyncFile openSync(String path, String perms, boolean createNew) throws Exception {
     return openInternal(path, perms, createNew, null).action();
   }
 
-  public void open(String path, String perms, boolean read, boolean write, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
+  public FileSystem open(String path, String perms, boolean read, boolean write, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
     openInternal(path, perms, read, write, createNew, handler).run();
+    return this;
   }
 
   public AsyncFile openSync(String path, String perms, boolean read, boolean write, boolean createNew) throws Exception {
     return openInternal(path, perms, read, write, createNew, null).action();
   }
 
-  public void open(String path, String perms, boolean read, boolean write, boolean createNew,
-                   boolean flush, AsyncResultHandler<AsyncFile> handler) {
+  public FileSystem open(String path, String perms, boolean read, boolean write, boolean createNew,
+                         boolean flush, AsyncResultHandler<AsyncFile> handler) {
     openInternal(path, perms, read, write, createNew, flush, handler).run();
+    return this;
   }
 
   public AsyncFile openSync(String path, String perms, boolean read, boolean write, boolean createNew, boolean flush) throws Exception {
     return openInternal(path, perms, read, write, createNew, flush, null).action();
   }
 
-  public void createFile(String path, AsyncResultHandler<Void> handler) {
+  public FileSystem createFile(String path, AsyncResultHandler<Void> handler) {
     createFileInternal(path, handler).run();
+    return this;
   }
 
-  public void createFileSync(String path) throws Exception {
+  public FileSystem createFileSync(String path) throws Exception {
     createFileInternal(path, null).action();
+    return this;
   }
 
-  public void createFile(String path, String perms, AsyncResultHandler<Void> handler) {
+  public FileSystem createFile(String path, String perms, AsyncResultHandler<Void> handler) {
     createFileInternal(path, perms, handler).run();
+    return this;
   }
 
-  public void createFileSync(String path, String perms) throws Exception {
+  public FileSystem createFileSync(String path, String perms) throws Exception {
     createFileInternal(path, perms, null).action();
+    return this;
   }
 
-  public void exists(String path, AsyncResultHandler<Boolean> handler) {
+  public FileSystem exists(String path, AsyncResultHandler<Boolean> handler) {
     existsInternal(path, handler).run();
+    return this;
   }
 
   public boolean existsSync(String path) throws Exception {
     return existsInternal(path, null).action();
   }
 
-  public void fsProps(String path, AsyncResultHandler<FileSystemProps> handler) {
+  public FileSystem fsProps(String path, AsyncResultHandler<FileSystemProps> handler) {
     fsPropsInternal(path, handler).run();
+    return this;
   }
 
   public FileSystemProps fsPropsSync(String path) throws Exception {
@@ -362,28 +411,28 @@ public class DefaultFileSystem implements FileSystem {
   }
 
   private BlockingAction<Void> truncateInternal(String p, final long len, AsyncResultHandler<Void> handler) {
-     final String path = PathAdjuster.adjust(vertx, p);
-     return new BlockingAction<Void>(vertx, handler) {
-       public Void action() throws Exception {
-         if (len < 0) {
-           throw new FileSystemException("Cannot truncate file to size < 0");
-         }
-         if (!Files.exists(Paths.get(path))) {
-           throw new FileSystemException("Cannot truncate file " + path + ". Does not exist");
-         }
+    final String path = PathAdjuster.adjust(vertx, p);
+    return new BlockingAction<Void>(vertx, handler) {
+      public Void action() throws Exception {
+        if (len < 0) {
+          throw new FileSystemException("Cannot truncate file to size < 0");
+        }
+        if (!Files.exists(Paths.get(path))) {
+          throw new FileSystemException("Cannot truncate file " + path + ". Does not exist");
+        }
 
-         RandomAccessFile raf = null;
-         try {
-           raf = new RandomAccessFile(path, "rw");
-           raf.getChannel().truncate(len);
-         } catch (FileNotFoundException e) {
-           throw new FileSystemException("Cannot open file " + path + ". Either it is a directory or you don't have permission to change it");
-         } finally {
-           if (raf != null) raf.close();
-         }
-         return null;
-       }
-     };
+        RandomAccessFile raf = null;
+        try {
+          raf = new RandomAccessFile(path, "rw");
+          raf.getChannel().truncate(len);
+        } catch (FileNotFoundException e) {
+          throw new FileSystemException("Cannot open file " + path + ". Either it is a directory or you don't have permission to change it");
+        } finally {
+          if (raf != null) raf.close();
+        }
+        return null;
+      }
+    };
   }
 
   private BlockingAction<Void> chmodInternal(String path, String perms, AsyncResultHandler<Void> handler) {
@@ -441,7 +490,7 @@ public class DefaultFileSystem implements FileSystem {
           } else {
             attrs = Files.readAttributes(target, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
           }
-          return new FileProps(attrs);
+          return new DefaultFileProps(attrs);
         } catch (NoSuchFileException e) {
           throw new FileSystemException("No such file: " + target);
         }
@@ -507,6 +556,7 @@ public class DefaultFileSystem implements FileSystem {
               Files.delete(file);
               return FileVisitResult.CONTINUE;
             }
+
             public FileVisitResult postVisitDirectory(Path dir, IOException e) throws IOException {
               if (e == null) {
                 Files.delete(dir);
@@ -651,7 +701,7 @@ public class DefaultFileSystem implements FileSystem {
   }
 
   private BlockingAction<AsyncFile> openInternal(String p, final String perms, final boolean read, final boolean write, final boolean createNew,
-                   final boolean flush, AsyncResultHandler<AsyncFile> handler) {
+                                                 final boolean flush, AsyncResultHandler<AsyncFile> handler) {
     final String path = PathAdjuster.adjust(vertx, p);
     return new BlockingAction<AsyncFile>(vertx, handler) {
       public AsyncFile action() throws Exception {
@@ -661,7 +711,7 @@ public class DefaultFileSystem implements FileSystem {
   }
 
   protected AsyncFile doOpen(String path, String perms, boolean read, boolean write, boolean createNew,
-                           boolean flush, Context context) throws Exception {
+                             boolean flush, Context context) throws Exception {
     return new DefaultAsyncFile(vertx, path, perms, read, write, createNew, flush, context);
   }
 
@@ -703,7 +753,7 @@ public class DefaultFileSystem implements FileSystem {
     return new BlockingAction<FileSystemProps>(vertx, handler) {
       public FileSystemProps action() throws Exception {
         FileStore fs = Files.getFileStore(target);
-        return new FileSystemProps(fs.getTotalSpace(), fs.getUnallocatedSpace(), fs.getUsableSpace());
+        return new DefaultFileSystemProps(fs.getTotalSpace(), fs.getUnallocatedSpace(), fs.getUsableSpace());
       }
     };
   }

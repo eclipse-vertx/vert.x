@@ -179,7 +179,7 @@ class ClientConnection extends AbstractConnection {
       try {
         ctx.pipeline().addAfter(ctx.name(), "websocketConverter", WebSocketConvertHandler.INSTANCE);
         handshaker.finishHandshake(channel, response);
-        ws = new DefaultWebSocket(vertx, null, ClientConnection.this, null);
+        ws = new DefaultWebSocket(vertx, ClientConnection.this);
         if (context.isOnCorrectWorker(ctx.channel().eventLoop())) {
           vertx.setContext(context);
           wsConnect.handle(ws);
@@ -233,7 +233,7 @@ class ClientConnection extends AbstractConnection {
   @Override
   public void handleInterestedOpsChanged() {
     try {
-      if (!writeQueueFull()) {
+      if (!doWriteQueueFull()) {
         if (currentRequest != null) {
           setContext();
           currentRequest.handleDrained();

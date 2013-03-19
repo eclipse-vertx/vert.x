@@ -18,7 +18,6 @@ package org.vertx.java.core.impl;
  */
 
 import io.netty.channel.EventLoop;
-import io.netty.channel.nio.NioEventLoop;
 
 import java.util.concurrent.Executor;
 
