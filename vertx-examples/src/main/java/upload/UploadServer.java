@@ -49,7 +49,7 @@ public class UploadServer extends Verticle {
                 file.close(new AsyncResultHandler<Void>() {
                   public void handle(AsyncResult<Void> ar) {
                     if (ar.exception == null) {
-                      req.response().end();
+                      req.response.end();
                       long end = System.currentTimeMillis();
                       System.out.println("Uploaded " + pump.getBytesPumped() + " bytes to " + filename + " in " + (end - start) + " ms");
                     } else {

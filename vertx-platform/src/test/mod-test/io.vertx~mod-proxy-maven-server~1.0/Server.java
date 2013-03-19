@@ -14,11 +14,11 @@ public class Server extends Verticle {
         // It's being proxied so should be absolute url
         tu.azzert(req.uri.equals("http://localhost:9192/maven2/io/vertx/mod-maven-test/1.0.0/mod-maven-test-1.0.0.zip"));
         if (req.path.indexOf("..") != -1) {
-          req.response().statusCode = 403;
-          req.response().end();
+          req.response.statusCode = 403;
+          req.response.end();
         } else {
           //Clearly in a real server you would check the path for better security!!
-          req.response().sendFile("." + req.path);
+          req.response.sendFile("." + req.path);
         }
       }
     }).listen(9193, "127.0.0.1");

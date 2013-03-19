@@ -29,14 +29,14 @@ public class RouteMatchExample extends Verticle {
 
     rm.get("/details/:user/:id", new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        req.response().end("User: " + req.params().get("user") + " ID: " + req.params().get("id"));
+        req.response.end("User: " + req.params().get("user") + " ID: " + req.params().get("id"));
       }
     });
 
     // Catch all - serve the index page
     rm.getWithRegEx(".*", new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        req.response().sendFile("route_match/index.html");
+        req.response.sendFile("route_match/index.html");
       }
     });
 

@@ -38,23 +38,23 @@ public class DrainingServer extends Verticle {
       public void handle(final HttpServerRequest req) {
         tu.checkThread();
 
-        req.response().setChunked(true);
+        req.response.setChunked(true);
 
-        tu.azzert(!req.response().writeQueueFull());
-        req.response().setWriteQueueMaxSize(1000);
+        tu.azzert(!req.response.writeQueueFull());
+        req.response.setWriteQueueMaxSize(1000);
 
         final Buffer buff = TestUtils.generateRandomBuffer(10000);
         //Send data until the buffer is full
         vertx.setPeriodic(1, new Handler<Long>() {
           public void handle(Long id) {
             tu.checkThread();
-            req.response().write(buff);
-            if (req.response().writeQueueFull()) {
+            req.response.write(buff);
+            if (req.response.writeQueueFull()) {
               vertx.cancelTimer(id);
-              req.response().drainHandler(new SimpleHandler() {
+              req.response.drainHandler(new SimpleHandler() {
                 public void handle() {
                   tu.checkThread();
-                  tu.azzert(!req.response().writeQueueFull());
+                  tu.azzert(!req.response.writeQueueFull());
                   tu.testComplete();
                 }
               });

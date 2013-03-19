@@ -18,7 +18,12 @@ package org.vertx.java.core.http.impl;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.BufUtil;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContent;
@@ -30,7 +35,11 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
-import org.vertx.java.core.impl.*;
+import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.EventLoopContext;
+import org.vertx.java.core.impl.ExceptionDispatchHandler;
+import org.vertx.java.core.impl.FlowControlHandler;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.impl.TCPSSLHelper;
@@ -103,26 +112,14 @@ public class DefaultHttpClient implements HttpClient {
     return this;
   }
 
-  public boolean isKeepAlive() {
-    return keepAlive;
-  }
-
   public DefaultHttpClient setPort(int port) {
     this.port = port;
     return this;
   }
 
-  public int getPort() {
-    return port;
-  }
-
   public DefaultHttpClient setHost(String host) {
     this.host = host;
     return this;
-  }
-
-  public String getHost() {
-    return host;
   }
 
   public void connectWebsocket(final String uri, final Handler<WebSocket> wsConnect) {

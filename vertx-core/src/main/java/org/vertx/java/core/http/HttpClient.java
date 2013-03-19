@@ -64,12 +64,6 @@ public interface HttpClient {
   HttpClient setKeepAlive(boolean keepAlive);
 
   /**
-   *
-   * @return Is the client keep alive?
-   */
-  boolean isKeepAlive();
-
-  /**
    * Set the port that the client will attempt to connect to the server on to {@code port}. The default value is
    * {@code 80}
    * @return A reference to this, so multiple invocations can be chained together.
@@ -77,23 +71,11 @@ public interface HttpClient {
   HttpClient setPort(int port);
 
   /**
-   *
-   * @return The port
-   */
-  int getPort();
-
-  /**
    * Set the host that the client will attempt to connect to the server on to {@code host}. The default value is
    * {@code localhost}
    * @return A reference to this, so multiple invocations can be chained together.
    */
   HttpClient setHost(String host);
-
-  /**
-   *
-   * @return The host
-   */
-  String getHost();
 
   /**
    * Attempt to connect an HTML5 websocket to the specified URI<p>
@@ -391,5 +373,4 @@ public interface HttpClient {
    * @return {@code true} if pooled buffers are used
    */
   boolean isUsePooledBuffers();
-
 }

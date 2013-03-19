@@ -16,9 +16,9 @@
 
 package org.vertx.java.core.http;
 
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.streams.ReadStream;
+import org.vertx.java.core.http.impl.HttpReadStreamBase;
+import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import java.net.InetSocketAddress;
@@ -28,7 +28,7 @@ import java.util.Map;
 
 /**
  * Represents a server-side HTTP request.<p>
- * Instances are created for each request that is handled by the server
+ * An instance of this class is created for each request that is handled by the server
  * and is passed to the user via the {@link org.vertx.java.core.Handler} instance
  * registered with the {@link HttpServer} using the method {@link HttpServer#requestHandler(org.vertx.java.core.Handler)}.<p>
  * Each instance of this class is associated with a corresponding {@link HttpServerResponse} instance via
@@ -39,34 +39,44 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface HttpServerRequest extends ReadStream {
+public abstract class HttpServerRequest extends HttpReadStreamBase {
+
+  private static final Logger log = LoggerFactory.getLogger(HttpServerRequest.class);
+
+  protected HttpServerRequest(String method, String uri, String path, String query, HttpServerResponse response) {
+    this.method = method;
+    this.uri = uri;
+    this.path = path;
+    this.query = query;
+    this.response = response;
+  }
 
   /**
    * The HTTP method for the request. One of GET, PUT, POST, DELETE, TRACE, CONNECT, OPTIONS or HEAD
    */
-  String method();
+  public final String method;
 
   /**
    * The uri of the request. For example
    * http://www.somedomain.com/somepath/somemorepath/somresource.foo?someparam=32&someotherparam=x
    */
-  String uri();
+  public final String uri;
 
   /**
    * The path part of the uri. For example /somepath/somemorepath/somresource.foo
    */
-  String path();
+  public final String path;
 
   /**
    * The query part of the uri. For example someparam=32&someotherparam=x
    */
-  String query();
+  public final String query;
 
   /**
    * The response. Each instance of this class has an {@link HttpServerResponse} instance attached to it. This is used
    * to send the response back to the client.
    */
-  HttpServerResponse response();
+  public final HttpServerResponse response;
 
   /**
    * A map of all headers in the request, If the request contains multiple headers with the same key, the values
@@ -74,37 +84,28 @@ public interface HttpServerRequest extends ReadStream {
    * as specified <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">here</a>.
    * The headers will be automatically lower-cased when they reach the server
    */
-  Map<String, String> headers();
+  public abstract Map<String, String> headers();
 
   /**
    * Returns a map of all the parameters in the request
    */
-  Map<String, String> params();
+  public abstract Map<String, String> params();
 
   /**
    * Return the remote (client side) address of the request
    */
-  InetSocketAddress remoteAddress();
+  public abstract InetSocketAddress getRemoteAddress();
 
   /**
    * @return an array of the peer certificates.  Returns null if connection is
    *         not SSL.
    * @throws SSLPeerUnverifiedException SSL peer's identity has not been verified.
   */
-  X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
+  public abstract X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException;
 
   /**
    * Get the absolute URI corresponding to the the HTTP request
    * @return the URI
    */
-  URI absoluteURI();
-
-  /**
-   * Convenience method for receiving the entire request body in one piece. This saves the user having to manually
-   * set a data and end handler and append the chunks of the body until the whole body received.
-   * Don't use this if your request body is large - you could potentially run out of RAM.
-   *
-   * @param bodyHandler This handler will be called after all the body has been received
-   */
-  void bodyHandler(Handler<Buffer> bodyHandler);
+  public abstract URI getAbsoluteURI();
 }
