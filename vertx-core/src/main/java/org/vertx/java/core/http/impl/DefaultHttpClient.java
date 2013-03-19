@@ -85,50 +85,61 @@ public class DefaultHttpClient implements HttpClient {
     }
   }
 
+  @Override
   public void exceptionHandler(Handler<Exception> handler) {
     this.exceptionHandler = handler;
   }
 
+  @Override
   public DefaultHttpClient setMaxPoolSize(int maxConnections) {
     pool.setMaxPoolSize(maxConnections);
     return this;
   }
 
+  @Override
   public int getMaxPoolSize() {
     return pool.getMaxPoolSize();
   }
 
+  @Override
   public DefaultHttpClient setKeepAlive(boolean keepAlive) {
     this.keepAlive = keepAlive;
     return this;
   }
 
+  @Override
   public boolean isKeepAlive() {
     return keepAlive;
   }
 
+  @Override
   public DefaultHttpClient setPort(int port) {
     this.port = port;
     return this;
   }
 
+  @Override
   public int getPort() {
     return port;
   }
 
+  @Override
   public DefaultHttpClient setHost(String host) {
     this.host = host;
     return this;
   }
 
+  @Override
   public String getHost() {
     return host;
   }
 
+  @Override
   public void connectWebsocket(final String uri, final Handler<WebSocket> wsConnect) {
     connectWebsocket(uri, WebSocketVersion.RFC6455, wsConnect);
   }
 
+  @Override
   public void connectWebsocket(final String uri, final WebSocketVersion wsVersion, final Handler<WebSocket> wsConnect) {
     getConnection(new Handler<ClientConnection>() {
       public void handle(final ClientConnection conn) {
@@ -141,10 +152,12 @@ public class DefaultHttpClient implements HttpClient {
     }, exceptionHandler, actualCtx);
   }
 
+  @Override
   public void getNow(String uri, Handler<HttpClientResponse> responseHandler) {
     getNow(uri, null, responseHandler);
   }
 
+  @Override
   public void getNow(String uri, Map<String, ? extends Object> headers, Handler<HttpClientResponse> responseHandler) {
     HttpClientRequest req = get(uri, responseHandler);
     if (headers != null) {
@@ -153,46 +166,57 @@ public class DefaultHttpClient implements HttpClient {
     req.end();
   }
 
+  @Override
   public HttpClientRequest options(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("OPTIONS", uri, responseHandler);
   }
 
+  @Override
   public HttpClientRequest get(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("GET", uri, responseHandler);
   }
 
+  @Override
   public HttpClientRequest head(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("HEAD", uri, responseHandler);
   }
 
+  @Override
   public HttpClientRequest post(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("POST", uri, responseHandler);
   }
 
+  @Override
   public HttpClientRequest put(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("PUT", uri, responseHandler);
   }
 
+  @Override
   public HttpClientRequest delete(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("DELETE", uri, responseHandler);
   }
 
+  @Override
   public HttpClientRequest trace(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("TRACE", uri, responseHandler);
   }
 
+  @Override
   public HttpClientRequest connect(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("CONNECT", uri, responseHandler);
   }
 
+  @Override
   public HttpClientRequest patch(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("PATCH", uri, responseHandler);
   }
 
+  @Override
   public HttpClientRequest request(String method, String uri, Handler<HttpClientResponse> responseHandler) {
     return new DefaultHttpClientRequest(this, method, uri, responseHandler, actualCtx);
   }
 
+  @Override
   public void close() {
     pool.close();
     for (ClientConnection conn : connectionMap.values()) {
@@ -200,66 +224,79 @@ public class DefaultHttpClient implements HttpClient {
     }
   }
 
+  @Override
   public DefaultHttpClient setSSL(boolean ssl) {
     tcpHelper.setSSL(ssl);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setVerifyHost(boolean verifyHost) {
     tcpHelper.setVerifyHost(verifyHost);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setKeyStorePath(String path) {
     tcpHelper.setKeyStorePath(path);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setKeyStorePassword(String pwd) {
     tcpHelper.setKeyStorePassword(pwd);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setTrustStorePath(String path) {
     tcpHelper.setTrustStorePath(path);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setTrustStorePassword(String pwd) {
     tcpHelper.setTrustStorePassword(pwd);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setTrustAll(boolean trustAll) {
     tcpHelper.setTrustAll(trustAll);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setTCPNoDelay(boolean tcpNoDelay) {
     tcpHelper.setTCPNoDelay(tcpNoDelay);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setSendBufferSize(int size) {
     tcpHelper.setSendBufferSize(size);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setReceiveBufferSize(int size) {
     tcpHelper.setReceiveBufferSize(size);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setTCPKeepAlive(boolean keepAlive) {
     tcpHelper.setTCPKeepAlive(keepAlive);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setReuseAddress(boolean reuse) {
     tcpHelper.setReuseAddress(reuse);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setSoLinger(int linger) {
     if (linger < 0) {
       tcpHelper.setSoLinger(null);
@@ -269,86 +306,94 @@ public class DefaultHttpClient implements HttpClient {
     return this;
   }
 
+  @Override
   public DefaultHttpClient setTrafficClass(int trafficClass) {
     tcpHelper.setTrafficClass(trafficClass);
     return this;
   }
 
-  public DefaultHttpClient setConnectTimeout(long timeout) {
-    tcpHelper.setConnectTimeout(timeout);
-    return this;
-  }
-
+  @Override
   public Boolean isTCPNoDelay() {
     return tcpHelper.isTCPNoDelay();
   }
 
+  @Override
   public Integer getSendBufferSize() {
     return tcpHelper.getSendBufferSize();
   }
 
+  @Override
   public Integer getReceiveBufferSize() {
     return tcpHelper.getReceiveBufferSize();
   }
 
+  @Override
   public Boolean isTCPKeepAlive() {
     return tcpHelper.isTCPKeepAlive();
   }
 
+  @Override
   public Boolean isReuseAddress() {
     return tcpHelper.isReuseAddress();
   }
 
+  @Override
   public Integer getSoLinger() {
     return tcpHelper.getSoLinger();
   }
 
+  @Override
   public Integer getTrafficClass() {
     return tcpHelper.getTrafficClass();
   }
 
-  public Long getConnectTimeout() {
-    return tcpHelper.getConnectTimeout();
-  }
-
+  @Override
   public boolean isSSL() {
     return tcpHelper.isSSL();
   }
 
+  @Override
   public boolean isVerifyHost() {
     return tcpHelper.isVerifyHost();
   }
 
+  @Override
   public boolean isTrustAll() {
     return tcpHelper.isTrustAll();
   }
 
+  @Override
   public String getKeyStorePath() {
     return tcpHelper.getKeyStorePath();
   }
 
+  @Override
   public String getKeyStorePassword() {
     return tcpHelper.getKeyStorePassword();
   }
 
+  @Override
   public String getTrustStorePath() {
     return tcpHelper.getTrustStorePath();
   }
 
+  @Override
   public String getTrustStorePassword() {
     return tcpHelper.getTrustStorePassword();
   }
 
+  @Override
   public HttpClient setUsePooledBuffers(boolean pooledBuffers) {
     tcpHelper.setUsePooledBuffers(pooledBuffers);
     return this;
   }
 
-  public boolean isUsePooledBuffers() {
+  @Override
+  public Boolean isUsePooledBuffers() {
     return tcpHelper.isUsePooledBuffers();
   }
 
-  public void getConnection(Handler<ClientConnection> handler, Handler<Exception> connectionExceptionHandler, Context context) {
+  void getConnection(Handler<ClientConnection> handler, Handler<Exception> connectionExceptionHandler, Context context) {
     pool.getConnection(handler, connectionExceptionHandler, context);
   }
 
@@ -469,8 +514,6 @@ public class DefaultHttpClient implements HttpClient {
 
   private void failed(final Channel ch, final Handler<Exception> connectionExceptionHandler,
                       final Throwable t) {
-    //ch.close();
-
     // If no specific exception handler is provided, fall back to the HttpClient's exception handler.
     final Handler<Exception> exHandler = connectionExceptionHandler == null ? exceptionHandler : connectionExceptionHandler;
 

@@ -18,9 +18,6 @@ package org.vertx.java.core.http;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.http.impl.BodyHandlerImpl;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.streams.ReadStream;
 
 import java.util.List;
@@ -38,7 +35,7 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface HttpClientResponse extends ReadStream {
+public interface HttpClientResponse extends ReadStream<HttpClientResponse> {
 
   /**
    * The HTTP status code of the response

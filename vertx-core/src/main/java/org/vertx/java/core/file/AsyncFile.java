@@ -33,8 +33,6 @@ import org.vertx.java.core.streams.WriteStream;
  */
 public interface AsyncFile {
 
-  public static final int BUFFER_SIZE = 8192;
-
   /**
    * Close the file. The actual close happens asynchronously.
    */
@@ -54,7 +52,7 @@ public interface AsyncFile {
    * there are no guarantees as to order in which those writes actually occur.<p>
    * The handler will be called when the write is complete, or if an error occurs.
    */
-  void write(Buffer buffer, int position, AsyncResultHandler<Void> handler);
+  AsyncFile write(Buffer buffer, int position, AsyncResultHandler<Void> handler);
 
   /**
    * Reads {@code length} bytes of data from the file at position {@code position} in the file, asynchronously.
@@ -63,29 +61,29 @@ public interface AsyncFile {
    * When multiple reads are invoked on the same file there are no guarantees as to order in which those reads actually occur.<p>
    * The handler will be called when the close is complete, or if an error occurs.
    */
-  void read(Buffer buffer, int offset, int position, int length, AsyncResultHandler<Buffer> handler);
+  AsyncFile read(Buffer buffer, int offset, int position, int length, AsyncResultHandler<Buffer> handler);
 
   /**
    * Return a {@link WriteStream} instance operating on this {@code AsyncFile}.
    */
-  WriteStream getWriteStream();
+  WriteStream writeStream();
 
   /**
    * Return a {@code ReadStream} instance operating on this {@code AsyncFile}.
    */
-  ReadStream getReadStream();
+  ReadStream readStream();
 
   /**
    * Flush any writes made to this file to underlying persistent storage.<p>
    * If the file was opened with {@code flush} set to {@code true} then calling this method will have no effect.<p>
    * The actual flush will happen asynchronously.
    */
-  void flush();
+  AsyncFile flush();
 
   /**
    * Same as {@link #flush} but the handler will be called when the flush is complete or if an error occurs
    * @param handler
    */
-  void flush(AsyncResultHandler<Void> handler);
+  AsyncFile flush(AsyncResultHandler<Void> handler);
 
 }

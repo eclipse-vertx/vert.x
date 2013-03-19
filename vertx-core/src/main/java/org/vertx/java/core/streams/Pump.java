@@ -39,7 +39,6 @@ public class Pump {
 
   private final ReadStream readStream;
   private final WriteStream writeStream;
-
   private int pumped;
 
   /**
@@ -94,7 +93,7 @@ public class Pump {
 
   private final Handler<Buffer> dataHandler = new Handler<Buffer>() {
     public void handle(Buffer buffer) {
-      writeStream.writeBuffer(buffer);
+      writeStream.write(buffer);
       pumped += buffer.length();
       if (writeStream.writeQueueFull()) {
         readStream.pause();

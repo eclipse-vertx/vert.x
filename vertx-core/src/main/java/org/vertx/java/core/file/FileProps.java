@@ -16,7 +16,6 @@
 
 package org.vertx.java.core.file;
 
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Date;
 
 /**
@@ -24,56 +23,46 @@ import java.util.Date;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class FileProps {
+public interface FileProps {
 
   /**
    * The date the file was created
    */
-  public final Date creationTime;
+  Date creationTime();
 
   /**
    * The date the file was last accessed
    */
-  public final Date lastAccessTime;
+  Date lastAccessTime();
 
   /**
    * The date the file was last modified
    */
-  public final Date lastModifiedTime;
+  Date lastModifiedTime();
 
   /**
    * Is the file a directory?
    */
-  public final boolean isDirectory;
+  boolean isDirectory();
 
   /**
    * Is the file some other type? (I.e. not a directory, regular file or symbolic link)
    */
-  public final boolean isOther;
+  boolean isOther();
 
   /**
    * Is the file a regular file?
    */
-  public final boolean isRegularFile;
+  boolean isRegularFile();
 
   /**
    * Is the file a symbolic link?
    */
-  public final boolean isSymbolicLink;
+  boolean isSymbolicLink();
 
   /**
    * The size of the file, in bytes
    */
-  public final long size;
+  long size();
 
-  public FileProps(BasicFileAttributes attrs) {
-    creationTime = new Date(attrs.creationTime().toMillis());
-    lastModifiedTime = new Date(attrs.lastModifiedTime().toMillis());
-    lastAccessTime = new Date(attrs.lastAccessTime().toMillis());
-    isDirectory = attrs.isDirectory();
-    isOther = attrs.isOther();
-    isRegularFile = attrs.isRegularFile();
-    isSymbolicLink = attrs.isSymbolicLink();
-    size = attrs.size();
-  }
 }

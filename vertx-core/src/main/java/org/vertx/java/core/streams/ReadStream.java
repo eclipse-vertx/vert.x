@@ -25,32 +25,30 @@ import org.vertx.java.core.buffer.Buffer;
  * Any class that implements this interface can be used by a {@link Pump} to pump data from it
  * to a {@link WriteStream}.<p>
  *
+ * This interface exposes a fluent api and the type T represents the type of the object that implements
+ * the interface to allow method chaining
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface ReadStream {
+public interface ReadStream<T> extends ExceptionSupport<T> {
 
   /**
    * Set a data handler. As data is read, the handler will be called with the data.
    */
-  void dataHandler(Handler<Buffer> handler);
+  T dataHandler(Handler<Buffer> handler);
 
   /**
    * Pause the {@code ReadStream}. While the stream is paused, no data will be sent to the {@code dataHandler}
    */
-  void pause();
+  T pause();
 
   /**
    * Resume reading. If the {@code ReadStream} has been paused, reading will recommence on it.
    */
-  void resume();
-
-  /**
-   * Set an exception handler.
-   */
-  void exceptionHandler(Handler<Exception> handler);
+  T resume();
 
   /**
    * Set an end handler. Once the stream has ended, and there is no more data to be read, this handler will be called.
    */
-  void endHandler(Handler<Void> endHandler);
+  T endHandler(Handler<Void> endHandler);
 }

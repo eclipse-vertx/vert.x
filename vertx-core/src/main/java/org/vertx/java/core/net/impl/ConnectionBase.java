@@ -16,12 +16,7 @@
 
 package org.vertx.java.core.net.impl;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.DefaultFileRegion;
-import io.netty.channel.FileRegion;
+import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
 import org.vertx.java.core.Handler;
@@ -31,8 +26,6 @@ import org.vertx.java.core.impl.FlowControlHandler;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.streams.ReadStream;
-import org.vertx.java.core.streams.WriteStream;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
@@ -64,39 +57,6 @@ public abstract class ConnectionBase {
   protected Handler<Void> closedHandler;
   private volatile boolean writable = true;
 
-  protected void setWritable(boolean writable) {
-      this.writable = writable;
-  }
-
-
-  /**
-   * Pause the connection, see {@link ReadStream#pause}
-   */
-  public void pause() {
-    channel.config().setAutoRead(false);
-  }
-
-  /**
-   * Resume the connection, see {@link ReadStream#resume}
-   */
-  public void resume() {
-    channel.config().setAutoRead(true);
-  }
-
-  /**
-   * Set the max size for the write queue, see {@link WriteStream#setWriteQueueMaxSize}
-   */
-  public void setWriteQueueMaxSize(int size) {
-    channel.pipeline().get(FlowControlHandler.class).setLimit(size / 2 , size);
-  }
-
-  /**
-   * Is the write queue full?, see {@link WriteStream#writeQueueFull}
-   */
-  public boolean writeQueueFull() {
-    return !writable;
-  }
-
   /**
    * Close the connection
    */
@@ -105,17 +65,30 @@ public abstract class ConnectionBase {
   }
 
   /**
-   * Set an exception handler on the connection
-   */
-  public void exceptionHandler(Handler<Exception> handler) {
-    this.exceptionHandler = handler;
-  }
-
-  /**
    * Set a closed handler on the connection
    */
   public void closedHandler(Handler<Void> handler) {
     this.closedHandler = handler;
+  }
+
+  public void doPause() {
+    channel.config().setAutoRead(false);
+  }
+
+  public void doResume() {
+    channel.config().setAutoRead(true);
+  }
+
+  public void doSetWriteQueueMaxSize(int size) {
+    channel.pipeline().get(FlowControlHandler.class).setLimit(size / 2 , size);
+  }
+
+  public boolean doWriteQueueFull() {
+    return !writable;
+  }
+
+  protected void setWritable(boolean writable) {
+    this.writable = writable;
   }
 
   protected Context getContext() {

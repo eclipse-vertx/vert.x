@@ -94,6 +94,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
   }
 
+  @Override
   public DefaultHttpClientRequest setChunked(boolean chunked) {
     check();
     if (written > 0) {
@@ -103,10 +104,12 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     return this;
   }
 
+  @Override
   public boolean isChunked() {
     return chunked;
   }
 
+  @Override
   public Map<String, Object> headers() {
     if (headers == null) {
       headers = new LowerCaseKeyMap();
@@ -114,74 +117,82 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     return headers;
   }
 
+  @Override
   public HttpClientRequest putHeader(String name, Object value) {
     check();
     headers().put(name, value);
     return this;
   }
 
-  public void writeBuffer(Buffer chunk) {
-    check();
-    write(chunk.getByteBuf(), null);
-  }
-
+  @Override
   public DefaultHttpClientRequest write(Buffer chunk) {
     check();
     return write(chunk.getByteBuf(), null);
   }
 
+  @Override
   public DefaultHttpClientRequest write(String chunk) {
     check();
     return write(new Buffer(chunk).getByteBuf(), null);
   }
 
+  @Override
   public DefaultHttpClientRequest write(String chunk, String enc) {
     check();
     return write(new Buffer(chunk, enc).getByteBuf(), null);
   }
 
+  @Override
   public DefaultHttpClientRequest write(Buffer chunk, Handler<Void> doneHandler) {
     check();
     return write(chunk.getByteBuf(), doneHandler);
   }
 
+  @Override
   public DefaultHttpClientRequest write(String chunk, Handler<Void> doneHandler) {
     checkComplete();
     return write(new Buffer(chunk).getByteBuf(), doneHandler);
   }
 
+  @Override
   public DefaultHttpClientRequest write(String chunk, String enc, Handler<Void> doneHandler) {
     check();
     return write(new Buffer(chunk, enc).getByteBuf(), doneHandler);
   }
 
-  public void setWriteQueueMaxSize(int maxSize) {
+  @Override
+  public HttpClientRequest setWriteQueueMaxSize(int maxSize) {
     check();
     if (conn != null) {
-      conn.setWriteQueueMaxSize(maxSize);
+      conn.doSetWriteQueueMaxSize(maxSize);
     } else {
       pendingMaxSize = maxSize;
     }
+    return this;
   }
 
+  @Override
   public boolean writeQueueFull() {
     check();
     if (conn != null) {
-      return conn.writeQueueFull();
+      return conn.doWriteQueueFull();
     } else {
       return false;
     }
   }
 
-  public void drainHandler(Handler<Void> handler) {
+  @Override
+  public HttpClientRequest drainHandler(Handler<Void> handler) {
     check();
     this.drainHandler = handler;
     if (conn != null) {
       conn.handleInterestedOpsChanged(); //If the channel is already drained, we want to call it immediately
     }
+    return this;
   }
 
-  public void exceptionHandler(final Handler<Exception> handler) {
+  @Override
+  public HttpClientRequest exceptionHandler(final Handler<Exception> handler) {
     check();
     this.exceptionHandler = new Handler<Exception>() {
       @Override
@@ -190,14 +201,17 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
         handler.handle(event);
       }
     };
+    return this;
   }
 
+  @Override
   public HttpClientRequest continueHandler(Handler<Void> handler) {
     check();
     this.continueHandler = handler;
     return this;
   }
 
+  @Override
   public DefaultHttpClientRequest sendHead() {
     check();
     if (conn != null) {
@@ -212,14 +226,17 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     return this;
   }
 
+  @Override
   public void end(String chunk) {
     end(new Buffer(chunk));
   }
 
+  @Override
   public void end(String chunk, String enc) {
     end(new Buffer(chunk, enc));
   }
 
+  @Override
   public void end(Buffer chunk) {
     if (!chunked && !contentLengthSet()) {
       headers().put(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(chunk.length()));
@@ -228,6 +245,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     end();
   }
 
+  @Override
   public void end() {
     check();
     completed = true;
@@ -358,7 +376,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     // we need to write it now
 
     if (pendingMaxSize != -1) {
-      conn.setWriteQueueMaxSize(pendingMaxSize);
+      conn.doSetWriteQueueMaxSize(pendingMaxSize);
     }
     if (pendingChunks != null || writeHead || completed) {
       writeHead();

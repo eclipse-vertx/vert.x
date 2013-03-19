@@ -19,6 +19,7 @@ package org.vertx.java.core.sockjs.impl;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxFactory;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.WebSocketMatcher;
@@ -340,7 +341,7 @@ public class DefaultSockJSServer implements SockJSServer {
 
   // For debug only
   public static void main(String[] args) throws Exception {
-    Vertx vertx = Vertx.newVertx();
+    Vertx vertx = VertxFactory.newVertx();
     HttpServer httpServer = vertx.createHttpServer();
     DefaultSockJSServer sjsServer = (DefaultSockJSServer)vertx.createSockJSServer(httpServer);
     sjsServer.installTestApplications();
@@ -358,7 +359,7 @@ public class DefaultSockJSServer implements SockJSServer {
       public void handle(final SockJSSocket sock) {
         sock.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
-            sock.writeBuffer(buff);
+            sock.write(buff);
           }
         });
       }
@@ -379,7 +380,7 @@ public class DefaultSockJSServer implements SockJSServer {
           public void handle(final SockJSSocket sock) {
             sock.dataHandler(new Handler<Buffer>() {
               public void handle(Buffer buff) {
-                sock.writeBuffer(buff);
+                sock.write(buff);
               }
             });
           }
@@ -390,7 +391,7 @@ public class DefaultSockJSServer implements SockJSServer {
       public void handle(final SockJSSocket sock) {
         final long timerID = vertx.setPeriodic(1000, new Handler<Long>() {
           public void handle(Long id) {
-            sock.writeBuffer(new Buffer("tick!"));
+            sock.write(new Buffer("tick!"));
           }
         });
         sock.endHandler(new SimpleHandler() {
@@ -417,7 +418,7 @@ public class DefaultSockJSServer implements SockJSServer {
             for (int i = 0; i < num; i++) {
               buff.appendByte((byte)'x');
             }
-            sock.writeBuffer(buff);
+            sock.write(buff);
           }
         });
       }
@@ -427,7 +428,7 @@ public class DefaultSockJSServer implements SockJSServer {
                new Handler<SockJSSocket>() {
       final Set<String> connections = vertx.sharedData().getSet("conns");
       public void handle(final SockJSSocket sock) {
-        connections.add(sock.writeHandlerID);
+        connections.add(sock.writeHandlerID());
         sock.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
             for (String actorID : connections) {
@@ -437,7 +438,7 @@ public class DefaultSockJSServer implements SockJSServer {
         });
         sock.endHandler(new SimpleHandler() {
           public void handle() {
-            connections.remove(sock.writeHandlerID);
+            connections.remove(sock.writeHandlerID());
           }
         });
       }
@@ -448,7 +449,7 @@ public class DefaultSockJSServer implements SockJSServer {
         public void handle(final SockJSSocket sock) {
           sock.dataHandler(new Handler<Buffer>() {
             public void handle(Buffer buff) {
-              sock.writeBuffer(buff);
+              sock.write(buff);
             }
           });
         }

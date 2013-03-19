@@ -17,25 +17,31 @@
 package org.vertx.java.core;
 
 /**
- * Represents a result that is returned asynchronously from an operation.<p>
+ * Represents a result that may not have occurred yet.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class AsyncResult<T> {
-
-  /**
-   * The result of the operation. This will be null if the operation failed.
-   */
-  public T result;
-
-  /**
-   * An exception describing failure. This will be null if the operation succeeded.
-   */
-  public Exception exception;
+public class FutureResult<T> {
 
   private boolean failed;
   private boolean succeeded;
   private AsyncResultHandler<T> handler;
+  private T result;
+  private Exception exception;
+
+  /**
+   * The result of the operation. This will be null if the operation failed.
+   */
+  public T result() {
+    return result;
+  }
+
+  /**
+   * An exception describing failure. This will be null if the operation succeeded.
+   */
+  public Exception exception() {
+    return exception;
+  }
 
   /**
    * Did it succeeed?
@@ -51,24 +57,36 @@ public class AsyncResult<T> {
     return failed;
   }
 
+  /**
+   * Has it completed?
+   */
   public boolean complete() {
     return failed || succeeded;
   }
 
-  public AsyncResult<T> setHandler(AsyncResultHandler<T> handler) {
+  /**
+   * Set a handler for the result. It will get called when it's complete
+   */
+  public FutureResult<T> setHandler(AsyncResultHandler<T> handler) {
     this.handler = handler;
     checkCallHandler();
     return this;
   }
 
-  public AsyncResult<T> setResult(T result) {
+  /**
+   * Set the result. Any handler will be called, if there is one
+   */
+  public FutureResult<T> setResult(T result) {
     this.result = result;
     succeeded = true;
     checkCallHandler();
     return this;
   }
 
-  public AsyncResult<T> setFailure(Exception exception) {
+  /**
+   * Set the failure. Any handler will be called, if there is one
+   */
+  public FutureResult<T> setFailure(Exception exception) {
     this.exception = exception;
     failed = true;
     checkCallHandler();
