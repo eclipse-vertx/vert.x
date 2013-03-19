@@ -83,7 +83,7 @@ public class LocalClient extends EventBusAppBase {
     for (final String address: addresses) {
       eb.send(address, buff, new Handler<Message<Buffer>>() {
         public void handle(Message<Buffer> reply) {
-          tu.azzert(("reply" + address).equals(reply.body().toString()));
+          tu.azzert(("reply" + address).equals(reply.body.toString()));
           tu.testComplete();
         }
       });
@@ -97,7 +97,7 @@ public class LocalClient extends EventBusAppBase {
     for (final String address: addresses) {
       eb.send(address, buff, new Handler<Message<String>>() {
         public void handle(Message<String> reply) {
-          tu.azzert(("reply" + address).equals(reply.body()));
+          tu.azzert(("reply" + address).equals(reply.body));
           tu.testComplete();
         }
       });
@@ -111,7 +111,7 @@ public class LocalClient extends EventBusAppBase {
     for (final String address: addresses) {
       eb.send(address, buff, new Handler<Message>() {
         public void handle(Message reply) {
-          tu.azzert(("reply" + address).equals(reply.body()));
+          tu.azzert(("reply" + address).equals(reply.body));
           tu.testComplete();
         }
       });
@@ -139,7 +139,7 @@ public class LocalClient extends EventBusAppBase {
         public void handle(Message<Buffer> msg) {
           tu.checkThread();
           tu.azzert(!handled);
-          tu.azzert(TestUtils.buffersEqual(buff, msg.body()));
+          tu.azzert(TestUtils.buffersEqual(buff, msg.body));
           int c = count.incrementAndGet();
           tu.azzert(c <= numHandlers);
           eb.unregisterHandler(address, this);
@@ -167,7 +167,7 @@ public class LocalClient extends EventBusAppBase {
       boolean handled = false;
       public void handle(Message<String> received) {
         tu.azzert(!handled);
-        tu.azzert(msg.equals(received.body()));
+        tu.azzert(msg.equals(received.body));
         handled = true;
         eb.unregisterHandler(idRef.get(), this);
         vertx.setTimer(100, new Handler<Long>() {

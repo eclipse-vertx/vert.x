@@ -18,7 +18,14 @@
 package org.vertx.java.core.net.impl;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelException;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoop;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.ChannelGroupFutureListener;
@@ -27,12 +34,17 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.impl.*;
+import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.EventLoopContext;
+import org.vertx.java.core.impl.ExceptionDispatchHandler;
+import org.vertx.java.core.impl.FlowControlHandler;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -85,19 +97,16 @@ public class DefaultNetServer implements NetServer {
     tcpHelper.setReuseAddress(true);
   }
 
-  @Override
   public NetServer connectHandler(Handler<NetSocket> connectHandler) {
     this.connectHandler = connectHandler;
     return this;
   }
 
-  @Override
   public NetServer listen(int port) {
     listen(port, "0.0.0.0");
     return this;
   }
 
-  @Override
   public NetServer listen(int port, String host) {
     if (connectHandler == null) {
       throw new IllegalStateException("Set connect handler first");
@@ -171,12 +180,10 @@ public class DefaultNetServer implements NetServer {
     return this;
   }
 
-  @Override
   public void close() {
     close(null);
   }
 
-  @Override
   public void close(final Handler<Void> done) {
     if (!listening) {
       if (done != null) {
@@ -203,175 +210,6 @@ public class DefaultNetServer implements NetServer {
         }
       }
     }
-  }
-
-  @Override
-  public Boolean isTCPNoDelay() {
-    return tcpHelper.isTCPNoDelay();
-  }
-
-  @Override
-  public Integer getSendBufferSize() {
-    return tcpHelper.getSendBufferSize();
-  }
-
-  @Override
-  public Integer getReceiveBufferSize() {
-    return tcpHelper.getReceiveBufferSize();
-  }
-
-  @Override
-  public Boolean isTCPKeepAlive() {
-    return tcpHelper.isTCPKeepAlive();
-  }
-
-  @Override
-  public Boolean isReuseAddress() {
-    return tcpHelper.isReuseAddress();
-  }
-
-  @Override
-  public Integer getSoLinger() {
-    return tcpHelper.getSoLinger();
-  }
-
-  @Override
-  public Integer getTrafficClass() {
-    return tcpHelper.getTrafficClass();
-  }
-
-  @Override
-  public Integer getAcceptBacklog() {
-    return tcpHelper.getAcceptBacklog();
-  }
-
-  @Override
-  public NetServer setTCPNoDelay(boolean tcpNoDelay) {
-    tcpHelper.setTCPNoDelay(tcpNoDelay);
-    return this;
-  }
-
-  @Override
-  public NetServer setSendBufferSize(int size) {
-    tcpHelper.setSendBufferSize(size);
-    return this;
-  }
-
-  @Override
-  public NetServer setReceiveBufferSize(int size) {
-    tcpHelper.setReceiveBufferSize(size);
-    return this;
-  }
-
-  @Override
-  public NetServer setTCPKeepAlive(boolean keepAlive) {
-    tcpHelper.setTCPKeepAlive(keepAlive);
-    return this;
-  }
-
-  @Override
-  public NetServer setReuseAddress(boolean reuse) {
-    tcpHelper.setReuseAddress(reuse);
-    return this;
-  }
-
-  @Override
-  public NetServer setSoLinger(int linger) {
-    if (linger < 0) {
-      tcpHelper.setSoLinger(null);
-    } else {
-      tcpHelper.setSoLinger(linger);
-    }
-    return this;
-  }
-
-  @Override
-  public NetServer setTrafficClass(int trafficClass) {
-    tcpHelper.setTrafficClass(trafficClass);
-    return this;
-  }
-
-  @Override
-  public NetServer setAcceptBacklog(int backlog) {
-    tcpHelper.setAcceptBacklog(backlog);
-    return this;
-  }
-
-  @Override
-  public boolean isSSL() {
-    return tcpHelper.isSSL();
-  }
-
-  @Override
-  public String getKeyStorePath() {
-    return tcpHelper.getKeyStorePath();
-  }
-
-  @Override
-  public String getKeyStorePassword() {
-    return tcpHelper.getKeyStorePassword();
-  }
-
-  @Override
-  public String getTrustStorePath() {
-    return tcpHelper.getTrustStorePath();
-  }
-
-  @Override
-  public String getTrustStorePassword() {
-    return tcpHelper.getTrustStorePassword();
-  }
-
-  @Override
-  public boolean isClientAuthRequired() {
-    return tcpHelper.getClientAuth() == TCPSSLHelper.ClientAuth.REQUIRED;
-  }
-
-  @Override
-  public NetServer setSSL(boolean ssl) {
-    tcpHelper.setSSL(ssl);
-    return this;
-  }
-
-  @Override
-  public NetServer setKeyStorePath(String path) {
-    tcpHelper.setKeyStorePath(path);
-    return this;
-  }
-
-  @Override
-  public NetServer setKeyStorePassword(String pwd) {
-    tcpHelper.setKeyStorePassword(pwd);
-    return this;
-  }
-
-  @Override
-  public NetServer setTrustStorePath(String path) {
-    tcpHelper.setTrustStorePath(path);
-    return this;
-  }
-
-  @Override
-  public NetServer setTrustStorePassword(String pwd) {
-    tcpHelper.setTrustStorePassword(pwd);
-    return this;
-  }
-
-  @Override
-  public NetServer setClientAuthRequired(boolean required) {
-    tcpHelper.setClientAuthRequired(required);
-    return this;
-  }
-
-  @Override
-  public NetServer setUsePooledBuffers(boolean pooledBuffers) {
-    tcpHelper.setUsePooledBuffers(pooledBuffers);
-    return this;
-  }
-
-  @Override
-  public Boolean isUsePooledBuffers() {
-    return tcpHelper.isUsePooledBuffers();
   }
 
   private void actualClose(final Context closeContext, final Handler<Void> done) {
@@ -413,11 +251,156 @@ public class DefaultNetServer implements NetServer {
   private void executeCloseDone(final Context closeContext, final Handler<Void> done) {
     if (done != null) {
       closeContext.execute(new Runnable() {
-        public void run() {
-          done.handle(null);
-        }
-      });
+      public void run() {
+        done.handle(null);
+      }
+    });
     }
+  }
+
+  public Boolean isTCPNoDelay() {
+    return tcpHelper.isTCPNoDelay();
+  }
+
+  public Integer getSendBufferSize() {
+    return tcpHelper.getSendBufferSize();
+  }
+
+  public Integer getReceiveBufferSize() {
+    return tcpHelper.getReceiveBufferSize();
+  }
+
+  public Boolean isTCPKeepAlive() {
+    return tcpHelper.isTCPKeepAlive();
+  }
+
+  public Boolean isReuseAddress() {
+    return tcpHelper.isReuseAddress();
+  }
+
+  public Integer getSoLinger() {
+    return tcpHelper.getSoLinger();
+  }
+
+  public Integer getTrafficClass() {
+    return tcpHelper.getTrafficClass();
+  }
+
+  public Integer getAcceptBacklog() {
+    return tcpHelper.getAcceptBacklog();
+  }
+
+  public NetServer setTCPNoDelay(boolean tcpNoDelay) {
+    tcpHelper.setTCPNoDelay(tcpNoDelay);
+    return this;
+  }
+
+  public NetServer setSendBufferSize(int size) {
+    tcpHelper.setSendBufferSize(size);
+    return this;
+  }
+
+  public NetServer setReceiveBufferSize(int size) {
+    tcpHelper.setReceiveBufferSize(size);
+    return this;
+  }
+
+  public NetServer setTCPKeepAlive(boolean keepAlive) {
+    tcpHelper.setTCPKeepAlive(keepAlive);
+    return this;
+  }
+
+  public NetServer setReuseAddress(boolean reuse) {
+    tcpHelper.setReuseAddress(reuse);
+    return this;
+  }
+
+  public NetServer setSoLinger(int linger) {
+    if (linger < 0) {
+      tcpHelper.setSoLinger(null);
+    } else {
+      tcpHelper.setSoLinger(linger);
+    }
+    return this;
+  }
+
+  public NetServer setTrafficClass(int trafficClass) {
+    tcpHelper.setTrafficClass(trafficClass);
+    return this;
+  }
+
+  public NetServer setAcceptBacklog(int backlog) {
+    tcpHelper.setAcceptBacklog(backlog);
+    return this;
+  }
+
+  public boolean isSSL() {
+    return tcpHelper.isSSL();
+  }
+
+  public String getKeyStorePath() {
+    return tcpHelper.getKeyStorePath();
+  }
+
+  public String getKeyStorePassword() {
+    return tcpHelper.getKeyStorePassword();
+  }
+
+  public String getTrustStorePath() {
+    return tcpHelper.getTrustStorePath();
+  }
+
+  public String getTrustStorePassword() {
+    return tcpHelper.getTrustStorePassword();
+  }
+
+  public TCPSSLHelper.ClientAuth getClientAuth() {
+    return tcpHelper.getClientAuth();
+  }
+
+  public SSLContext getSSLContext() {
+    return tcpHelper.getSSLContext();
+  }
+
+  public NetServer setSSL(boolean ssl) {
+    tcpHelper.setSSL(ssl);
+    return this;
+  }
+
+  public NetServer setKeyStorePath(String path) {
+    tcpHelper.setKeyStorePath(path);
+    return this;
+  }
+
+  public NetServer setKeyStorePassword(String pwd) {
+    tcpHelper.setKeyStorePassword(pwd);
+    return this;
+  }
+
+  public NetServer setTrustStorePath(String path) {
+    tcpHelper.setTrustStorePath(path);
+    return this;
+  }
+
+  public NetServer setTrustStorePassword(String pwd) {
+    tcpHelper.setTrustStorePassword(pwd);
+    return this;
+  }
+
+  public NetServer setClientAuthRequired(boolean required) {
+    tcpHelper.setClientAuthRequired(required);
+    return this;
+  }
+
+  @Override
+  public NetServer setUsePooledBuffers(boolean pooledBuffers) {
+    tcpHelper.setUsePooledBuffers(pooledBuffers);
+    return this;
+  }
+
+  @Override
+  public boolean isUsePooledBuffers() {
+    return tcpHelper.isUsePooledBuffers();
   }
 
   private class ServerHandler extends VertxNetHandler {

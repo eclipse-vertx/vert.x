@@ -18,8 +18,8 @@ package org.vertx.java.core.eventbus.impl.hazelcast;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.eventbus.impl.ServerIDs;
 import org.vertx.java.core.eventbus.impl.SubsMap;
 import org.vertx.java.core.impl.BlockingAction;
@@ -88,15 +88,15 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
   @Override
   public void get(final String subName, final AsyncResultHandler<ServerIDs> completionHandler) {
     ServerIDs entries = cache.get(subName);
-    FutureResult<ServerIDs> result = new FutureResult<>();
+    AsyncResult<ServerIDs> result = new AsyncResult<>();
     if (entries != null && entries.isInitialised()) {
       result.setResult(entries).setHandler(completionHandler);
     } else {
       new BlockingAction<Collection<HazelcastServerID>>(vertx, new AsyncResultHandler<Collection<HazelcastServerID>>() {
-        public void handle(FutureResult<Collection<HazelcastServerID>> result) {
-          FutureResult<ServerIDs> sresult = new FutureResult<>();
+        public void handle(AsyncResult<Collection<HazelcastServerID>> result) {
+          AsyncResult<ServerIDs> sresult = new AsyncResult<>();
           if (result.succeeded()) {
-            Collection<HazelcastServerID> entries = result.result();
+            Collection<HazelcastServerID> entries = result.result;
             ServerIDs sids;
             if (entries != null) {
               sids = new ServerIDs(entries.size());
@@ -115,7 +115,7 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
             sids.setInitialised();
             sresult.setResult(sids);
           } else {
-            sresult.setFailure(result.exception());
+            sresult.setFailure(result.exception);
           }
           sresult.setHandler(completionHandler);
         }

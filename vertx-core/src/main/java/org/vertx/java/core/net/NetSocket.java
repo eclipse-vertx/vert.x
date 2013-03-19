@@ -16,12 +16,17 @@
 
 package org.vertx.java.core.net;
 
+import io.netty.channel.Channel;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.net.impl.ConnectionBase;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 /**
  * Represents a socket-like interface to a TCP/SSL connection on either the
@@ -35,7 +40,7 @@ import java.net.InetSocketAddress;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface NetSocket extends ReadStream<NetSocket>, WriteStream<NetSocket> {
+public abstract class NetSocket extends ConnectionBase implements ReadStream, WriteStream {
 
   /**
    * When a {@code NetSocket} is created it automatically registers an event handler with the event bus, the ID of that
@@ -44,66 +49,73 @@ public interface NetSocket extends ReadStream<NetSocket>, WriteStream<NetSocket>
    * that buffer will be received by this instance in its own event loop and written to the underlying connection. This
    * allows you to write data to other connections which are owned by different event loops.
    */
-  String writeHandlerID();
+  public final String writeHandlerID;
+
+  /** {@inheritDoc} */
+  public abstract void writeBuffer(Buffer data);
 
   /**
    * Write a {@link Buffer} to the request body.
    * @return A reference to this, so multiple method calls can be chained.
    */
-  NetSocket write(Buffer data);
+  public abstract NetSocket write(Buffer data);
 
   /**
    * Write a {@link String} to the connection, encoded in UTF-8.
    * @return A reference to this, so multiple method calls can be chained.
    */
-  NetSocket write(String str);
+  public abstract NetSocket write(String str);
 
   /**
    * Write a {@link String} to the connection, encoded using the encoding {@code enc}.
    * @return A reference to this, so multiple method calls can be chained.
    */
-   NetSocket write(String str, String enc);
+  public abstract NetSocket write(String str, String enc);
 
   /**
    * Write a {@link Buffer} to the connection. The {@code doneHandler} is called after the buffer is actually written to the wire.
    * @return A reference to this, so multiple method calls can be chained.
    */
-  NetSocket write(Buffer data, Handler<Void> doneHandler);
+  public abstract NetSocket write(Buffer data, Handler<Void> doneHandler);
 
   /**
    * Write a {@link String} to the connection, encoded in UTF-8. The {@code doneHandler} is called after the buffer is
    * actually written to the wire.
    * @return A reference to this, so multiple method calls can be chained.
    */
-  NetSocket write(String str, Handler<Void> doneHandler);
+  public abstract NetSocket write(String str, Handler<Void> doneHandler);
 
   /**
    * Write a {@link String} to the connection, encoded with encoding {@code enc}. The {@code doneHandler} is called after
    * the buffer is actually written to the wire.
    * @return A reference to this, so multiple method calls can be chained.
    */
-  NetSocket write(String str, String enc, Handler<Void> doneHandler);
+  public abstract NetSocket write(String str, String enc, Handler<Void> doneHandler);
 
   /**
    * Tell the kernel to stream a file as specified by {@code filename} directly from disk to the outgoing connection,
    * bypassing userspace altogether (where supported by the underlying operating system. This is a very efficient way to stream files.
    */
-  NetSocket sendFile(String filename);
+  public abstract void sendFile(String filename);
+
+  protected NetSocket(VertxInternal vertx, Channel channel, String writeHandlerID, Context context) {
+    super(vertx, channel, context);
+    this.writeHandlerID = writeHandlerID;
+  }
+
+  /** {@inheritDoc} */
+  public abstract void dataHandler(Handler<Buffer> dataHandler);
+
+  /** {@inheritDoc} */
+  public abstract void endHandler(Handler<Void> endHandler);
+
+  /** {@inheritDoc} */
+  public abstract void drainHandler(Handler<Void> drainHandler);
 
   /**
    * Return the remote address for this socket
    */
-  InetSocketAddress remoteAddress();
-
-  /**
-   * Close the NetSocket
-   */
-  void close();
-
-  /**
-   * Set a handler that will be called when the NetSocket is closed
-   */
-  void closedHandler(Handler<Void> handler);
+  public abstract InetSocketAddress getRemoteAddress();
 
 }
 

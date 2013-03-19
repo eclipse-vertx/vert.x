@@ -38,7 +38,7 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultHttpServerRequest extends BodyHandlerImpl<HttpServerRequest> implements HttpServerRequest {
+public class DefaultHttpServerRequest extends BodyHandlerImpl implements HttpServerRequest {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultHttpServerRequest.class);
 
@@ -143,33 +143,28 @@ public class DefaultHttpServerRequest extends BodyHandlerImpl<HttpServerRequest>
   }
 
   @Override
-  public HttpServerRequest dataHandler(Handler<Buffer> dataHandler) {
+  public void dataHandler(Handler<Buffer> dataHandler) {
     this.dataHandler = dataHandler;
-    return this;
   }
 
   @Override
-  public HttpServerRequest exceptionHandler(Handler<Exception> handler) {
+  public void exceptionHandler(Handler<Exception> handler) {
     this.exceptionHandler = handler;
-    return this;
   }
 
   @Override
-  public HttpServerRequest pause() {
+  public void pause() {
     conn.pause();
-    return this;
   }
 
   @Override
-  public HttpServerRequest resume() {
+  public void resume() {
     conn.resume();
-    return this;
   }
 
   @Override
-  public HttpServerRequest endHandler(Handler<Void> handler) {
+  public void endHandler(Handler<Void> handler) {
     this.endHandler = handler;
-    return this;
   }
 
   @Override

@@ -19,7 +19,6 @@ package vertx.tests.core.eventbus;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.testframework.TestUtils;
 
@@ -213,22 +212,20 @@ public class LocalEchoClient extends EventBusAppBase {
       public void handle(Message reply) {
         tu.checkThread();
         if (msg == null) {
-          tu.azzert(reply.body() == null);
+          tu.azzert(reply.body == null);
         } else {
           if (!(msg instanceof byte[])) {
-            tu.azzert(msg.equals(reply.body()), "Expecting " + msg + " got " + reply.body());
+            tu.azzert(msg.equals(reply.body), "Expecting " + msg + " got " + reply.body);
           } else {
-            TestUtils.byteArraysEqual((byte[])msg, (byte[])reply.body());
+            TestUtils.byteArraysEqual((byte[])msg, (byte[])reply.body);
           }
-          //if (!isLocal() || (msg instanceof Buffer) || (msg instanceof byte[]) || (msg instanceof JsonObject)) {
-          // Bytes and Booleans are never copied since cached in the JVM
-          if ((!isLocal() && !(msg instanceof Byte) && !(msg instanceof Boolean)) ||
-              (isLocal() && ((msg instanceof Buffer) || (msg instanceof byte[]) || (msg instanceof JsonObject) || (msg instanceof JsonArray)))) {
+          // Bytes are never copied since they are cached in the JVM
+          if ((!isLocal() && !(msg instanceof Byte)) ||  ((msg instanceof Buffer) || (msg instanceof byte[]) || (msg instanceof JsonObject))) {
             // Should be copied
-            tu.azzert(msg != reply.body());
+            tu.azzert(msg != reply.body);
           } else {
             // Shouldn't be copied
-            tu.azzert(msg == reply.body());
+            tu.azzert(msg == reply.body);
           }
         }
         eb.unregisterHandler(ECHO_ADDRESS, this);

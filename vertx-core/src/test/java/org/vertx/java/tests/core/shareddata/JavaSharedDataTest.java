@@ -21,7 +21,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxFactory;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.testframework.TestUtils;
@@ -40,7 +39,7 @@ public class JavaSharedDataTest extends TestCase {
   
   @Before
   public void setUp() {
-    vertx = VertxFactory.newVertx();
+    vertx = Vertx.newVertx();
     sharedData = vertx.sharedData();
   }
   

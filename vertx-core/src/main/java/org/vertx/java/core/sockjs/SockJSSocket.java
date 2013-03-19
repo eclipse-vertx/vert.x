@@ -16,8 +16,15 @@
 
 package org.vertx.java.core.sockjs;
 
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
+import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
+
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *
@@ -29,7 +36,10 @@ import org.vertx.java.core.streams.WriteStream;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface SockJSSocket extends ReadStream<SockJSSocket>, WriteStream<SockJSSocket> {
+public abstract class SockJSSocket implements ReadStream, WriteStream {
+
+  private final Handler<Message<Buffer>> writeHandler;
+  protected final Vertx vertx;
 
   /**
    * When a {@code SockJSSocket} is created it automatically registers an event handler with the event bus, the ID of that
@@ -38,7 +48,29 @@ public interface SockJSSocket extends ReadStream<SockJSSocket>, WriteStream<Sock
    * that buffer will be received by this instance in its own event loop and written to the underlying socket. This
    * allows you to write data to other sockets which are owned by different event loops.
    */
-  String writeHandlerID();
+  public final String writeHandlerID;
 
-  void close();
+  public static AtomicInteger cnt = new AtomicInteger();
+
+  protected SockJSSocket(Vertx vertx) {
+    this.vertx = vertx;
+    this.writeHandler = new Handler<Message<Buffer>>() {
+      public void handle(Message<Buffer> buff) {
+        writeBuffer(buff.body);
+      }
+    };
+    this.writeHandlerID = UUID.randomUUID().toString();
+    vertx.eventBus().registerLocalHandler(writeHandlerID, writeHandler);
+    cnt.incrementAndGet();
+  }
+
+  public void close() {
+    vertx.eventBus().unregisterHandler(writeHandlerID, writeHandler);
+  }
+
+  protected void finalize() throws Throwable {
+    cnt.decrementAndGet();
+    super.finalize();
+  }
+
 }

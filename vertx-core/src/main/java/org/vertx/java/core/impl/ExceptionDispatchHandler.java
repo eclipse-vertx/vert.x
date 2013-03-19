@@ -15,7 +15,13 @@
  */
 package org.vertx.java.core.impl;
 
-import io.netty.channel.*;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerAdapter;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelOperationHandler;
+import io.netty.channel.ChannelPromise;
+import io.netty.channel.FileRegion;
 
 import java.net.SocketAddress;
 

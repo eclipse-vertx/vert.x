@@ -17,31 +17,25 @@
 package org.vertx.java.core;
 
 /**
- * Represents a result that may not have occurred yet.
+ * Represents a result that is returned asynchronously from an operation.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class FutureResult<T> {
-
-  private boolean failed;
-  private boolean succeeded;
-  private AsyncResultHandler<T> handler;
-  private T result;
-  private Exception exception;
+public class AsyncResult<T> {
 
   /**
    * The result of the operation. This will be null if the operation failed.
    */
-  public T result() {
-    return result;
-  }
+  public T result;
 
   /**
    * An exception describing failure. This will be null if the operation succeeded.
    */
-  public Exception exception() {
-    return exception;
-  }
+  public Exception exception;
+
+  private boolean failed;
+  private boolean succeeded;
+  private AsyncResultHandler<T> handler;
 
   /**
    * Did it succeeed?
@@ -57,36 +51,24 @@ public class FutureResult<T> {
     return failed;
   }
 
-  /**
-   * Has it completed?
-   */
   public boolean complete() {
     return failed || succeeded;
   }
 
-  /**
-   * Set a handler for the result. It will get called when it's complete
-   */
-  public FutureResult<T> setHandler(AsyncResultHandler<T> handler) {
+  public AsyncResult<T> setHandler(AsyncResultHandler<T> handler) {
     this.handler = handler;
     checkCallHandler();
     return this;
   }
 
-  /**
-   * Set the result. Any handler will be called, if there is one
-   */
-  public FutureResult<T> setResult(T result) {
+  public AsyncResult<T> setResult(T result) {
     this.result = result;
     succeeded = true;
     checkCallHandler();
     return this;
   }
 
-  /**
-   * Set the failure. Any handler will be called, if there is one
-   */
-  public FutureResult<T> setFailure(Exception exception) {
+  public AsyncResult<T> setFailure(Exception exception) {
     this.exception = exception;
     failed = true;
     checkCallHandler();

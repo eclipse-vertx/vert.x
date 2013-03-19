@@ -25,99 +25,130 @@ import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
 
+import java.util.ServiceLoader;
+
 /**
  * The control centre of vert.x<p>
  * You should normally only use a single instance of this class throughout your application. If you are running in the
  * vert.x container an instance will be provided to you.<p>
- * If you are using vert.x embedded, you can create an instance using one of the static {@code VertxFactory.newVertx} methods.<p>
+ * If you are using vert.x embedded, you can create an instance using one of the static {@code newVertx} methods.<p>
  * This class acts as a factory for TCP/SSL and HTTP/HTTPS servers and clients, SockJS servers, and provides an
  * instance of the event bus, file system and shared data classes, as well as methods for setting and cancelling
  * timers.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface Vertx {
+public abstract class Vertx {
+
+  private static VertxFactory loadFactory() {
+	  ServiceLoader<VertxFactory> factories = ServiceLoader.load(VertxFactory.class);
+	  return factories.iterator().next();
+  }
+
+  /**
+   * Create a non clustered Vertx instance
+   */
+  public static Vertx newVertx() {
+  	return loadFactory().createVertx();
+  }
+
+  /**
+   * Create a clustered Vertx instance listening for cluster connections on the default port 25500
+   * @param hostname The hostname or ip address to listen for cluster connections
+   */
+  public static Vertx newVertx(String hostname) {
+	  return loadFactory().createVertx(hostname);
+  }
+
+  /**
+   * Create a clustered Vertx instance
+   * @param port The port to listen for cluster connections
+   * @param hostname The hostname or ip address to listen for cluster connections
+   */
+  public static Vertx newVertx(int port, String hostname) {
+	  return loadFactory().createVertx(port, hostname);
+  }
 
   /**
    * Create a TCP/SSL server
    */
-  NetServer createNetServer();
+  public abstract NetServer createNetServer();
 
   /**
    * Create a TCP/SSL client
    */
-  NetClient createNetClient();
+  public abstract NetClient createNetClient();
 
   /**
    * Create an HTTP/HTTPS server
    */
-  HttpServer createHttpServer();
+  public abstract HttpServer createHttpServer();
 
   /**
    * Create a HTTP/HTTPS client
    */
-  HttpClient createHttpClient();
+  public abstract HttpClient createHttpClient();
 
   /**
    * Create a SockJS server that wraps an HTTP server
    */
-  SockJSServer createSockJSServer(HttpServer httpServer);
+  public abstract SockJSServer createSockJSServer(HttpServer httpServer);
 
   /**
    * The File system object
    */
-  FileSystem fileSystem();
+  public abstract FileSystem fileSystem();
 
   /**
    * The event bus
    */
-  EventBus eventBus();
+  public abstract EventBus eventBus();
 
   /**
    * The shared data object
    */
-  SharedData sharedData();
+  public abstract SharedData sharedData();
 
   /**
    * Set a one-shot timer to fire after {@code delay} milliseconds, at which point {@code handler} will be called with
    * the id of the timer.
    * @return the unique ID of the timer
    */
-  long setTimer(long delay, Handler<Long> handler);
+  public abstract long setTimer(long delay, Handler<Long> handler);
 
   /**
    * Set a periodic timer to fire every {@code delay} milliseconds, at which point {@code handler} will be called with
    * the id of the timer.
    * @return the unique ID of the timer
    */
-  long setPeriodic(long delay, Handler<Long> handler);
+  public abstract long setPeriodic(long delay, Handler<Long> handler);
 
   /**
    * Cancel the timer with the specified {@code id}. Returns {@code} true if the timer was successfully cancelled, or
    * {@code false} if the timer does not exist.
    */
-  boolean cancelTimer(long id);
+  public abstract boolean cancelTimer(long id);
 
   /**
    * Put the handler on the event queue for this loop so it will be run asynchronously ASAP after this event has
    * been processed
    */
-  void runOnLoop(Handler<Void> handler);
+  public abstract void runOnLoop(Handler<Void> handler);
 
   /**
    * Is the current thread an event loop thread?
    * @return true if current thread is an event loop thread
    */
-  boolean isEventLoop();
+  public abstract boolean isEventLoop();
 
   /**
    * Is the current thread an worker thread?
    * @return true if current thread is an worker thread
    */
-  boolean isWorker();
+  public abstract boolean isWorker();
 
   /**
 	 * Stop the eventbus and any resource managed by the eventbus.
 	 */
-	void stop();
+	public abstract void stop();
 }

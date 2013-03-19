@@ -1,5 +1,6 @@
 package org.vertx.java.tests.core.timer;
 
+import org.vertx.java.testframework.TestBase;
 import vertx.tests.core.timer.TestClient;
 
 /*

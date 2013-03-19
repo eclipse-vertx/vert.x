@@ -41,7 +41,7 @@ public class WebSocketMatcher implements Handler<ServerWebSocket> {
 
   @Override
   public void handle(ServerWebSocket ws) {
-    String path = ws.path();
+    String path = ws.path;
     for (PatternBinding binding: bindings) {
       Matcher m = binding.pattern.matcher(path);
       if (m.matches()) {

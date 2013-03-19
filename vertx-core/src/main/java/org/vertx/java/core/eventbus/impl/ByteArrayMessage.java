@@ -36,7 +36,6 @@ class ByteArrayMessage extends BaseMessage<byte[]> {
     super(readBuff);
   }
 
-  @Override
   protected void readBody(int pos, Buffer readBuff) {
     boolean isNull = readBuff.getByte(pos) == (byte)0;
     if (!isNull) {
@@ -47,7 +46,6 @@ class ByteArrayMessage extends BaseMessage<byte[]> {
     }
   }
 
-  @Override
   protected void writeBody(Buffer buff) {
     if (body == null) {
       buff.appendByte((byte)0);
@@ -58,13 +56,11 @@ class ByteArrayMessage extends BaseMessage<byte[]> {
     }
   }
 
-  @Override
   protected int getBodyLength() {
     return body == null ? 1 : 1 + 4 + body.length;
   }
 
-  @Override
-  protected Message<byte[]> copy() {
+  protected Message copy() {
     byte[] bod;
     if (body != null) {
       bod = new byte[body.length];
@@ -79,7 +75,6 @@ class ByteArrayMessage extends BaseMessage<byte[]> {
     return copied;
   }
 
-  @Override
   protected byte type() {
     return MessageFactory.TYPE_BYTEARRAY;
   }

@@ -38,7 +38,7 @@ import java.util.Queue;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class Session extends SockJSSocketBase implements Shareable {
+class Session extends SockJSSocket implements Shareable {
 
   private static final Logger log = LoggerFactory.getLogger(Session.class);
 
@@ -83,71 +83,77 @@ class Session extends SockJSSocketBase implements Shareable {
     });
   }
 
-  @Override
-  public synchronized SockJSSocket write(Buffer buffer) {
+  public synchronized void write(Buffer buffer) {
     String msgStr = buffer.toString();
     pendingWrites.add(msgStr);
     this.messagesSize += msgStr.length();
     if (listener != null) {
       writePendingMessages();
     }
-    return this;
   }
 
-  @Override
-  public synchronized Session dataHandler(Handler<Buffer> handler) {
+  public synchronized void dataHandler(Handler<Buffer> handler) {
     this.dataHandler = handler;
-    return this;
   }
 
-  @Override
-  public synchronized Session pause() {
+  public synchronized void pause() {
     paused = true;
-    return this;
   }
 
-  @Override
-  public synchronized Session resume() {
+  public synchronized void resume() {
     paused = false;
+
     if (dataHandler != null) {
       for (String msg: this.pendingReads) {
         dataHandler.handle(new Buffer(msg));
       }
     }
-    return this;
   }
 
-  @Override
-  public synchronized Session setWriteQueueMaxSize(int maxQueueSize) {
+  public synchronized void writeBuffer(Buffer data) {
+    write(data);
+  }
+
+  public synchronized void setWriteQueueMaxSize(int maxQueueSize) {
     if (maxQueueSize < 1) {
       throw new IllegalArgumentException("maxQueueSize must be >= 1");
     }
     this.maxQueueSize = maxQueueSize;
-    return this;
   }
 
-  @Override
   public synchronized boolean writeQueueFull() {
     return messagesSize >= maxQueueSize;
   }
 
-  @Override
-  public synchronized Session drainHandler(Handler<Void> handler) {
+  public synchronized void drainHandler(Handler<Void> handler) {
     this.drainHandler = handler;
-    return this;
   }
 
-  @Override
-  public synchronized Session exceptionHandler(Handler<Exception> handler) {
-    return this;
+  public synchronized void exceptionHandler(Handler<Exception> handler) {
   }
 
-  @Override
-  public synchronized Session endHandler(Handler<Void> endHandler) {
+  public synchronized void endHandler(Handler<Void> endHandler) {
     this.endHandler = endHandler;
-    return this;
   }
 
+  // Actually close the session - when the user calls close() the session actually continues to exist until timeout
+  // Yes, I know it's weird but that's the way SockJS likes it.
+  private void doClose() {
+    super.close(); // We must call this or handlers don't get unregistered and we get a leak
+    if (heartbeatID != -1) {
+      vertx.cancelTimer(heartbeatID);
+    }
+    if (timeoutTimerID != -1) {
+      vertx.cancelTimer(timeoutTimerID);
+    }
+    if (id != null) {
+      // Can be null if websocket session
+      sessions.remove(id);
+    }
+    if (endHandler != null) {
+      endHandler.handle(null);
+    }
+  }
 
   public synchronized void shutdown() {
     doClose();
@@ -155,7 +161,6 @@ class Session extends SockJSSocketBase implements Shareable {
 
   // When the user calls close() we don't actually close the session - unless it's a websocket one
   // Yes, SockJS is weird, but it's hard to work out expected server behaviour when there's no spec
-  @Override
   public synchronized void close() {
     if (endHandler != null) {
       endHandler.handle(null);
@@ -248,24 +253,6 @@ class Session extends SockJSSocketBase implements Shareable {
     }
   }
 
-  // Actually close the session - when the user calls close() the session actually continues to exist until timeout
-  // Yes, I know it's weird but that's the way SockJS likes it.
-  private void doClose() {
-    super.close(); // We must call this or handlers don't get unregistered and we get a leak
-    if (heartbeatID != -1) {
-      vertx.cancelTimer(heartbeatID);
-    }
-    if (timeoutTimerID != -1) {
-      vertx.cancelTimer(timeoutTimerID);
-    }
-    if (id != null) {
-      // Can be null if websocket session
-      sessions.remove(id);
-    }
-    if (endHandler != null) {
-      endHandler.handle(null);
-    }
-  }
 
   private String[] parseMessageString(String msgs) {
     try {

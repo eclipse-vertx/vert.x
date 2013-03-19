@@ -16,8 +16,8 @@
 
 package org.vertx.java.core.file.impl;
 
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.AsyncFile;
@@ -47,7 +47,6 @@ import java.util.HashSet;
 public class DefaultAsyncFile implements AsyncFile {
 
   private static final Logger log = LoggerFactory.getLogger(AsyncFile.class);
-  public static final int BUFFER_SIZE = 8192;
 
   private final VertxInternal vertx;
   private final AsynchronousFileChannel ch;
@@ -79,37 +78,30 @@ public class DefaultAsyncFile implements AsyncFile {
     this.context = context;
   }
 
-  @Override
   public void close() {
     closeInternal(null);
   }
 
-  @Override
   public void close(AsyncResultHandler<Void> handler) {
     closeInternal(handler);
   }
 
-  @Override
-  public AsyncFile write(Buffer buffer, int position, AsyncResultHandler<Void> handler) {
+  public void write(Buffer buffer, int position, AsyncResultHandler<Void> handler) {
     check();
     ByteBuffer bb = buffer.getByteBuf().nioBuffer();
     doWrite(bb, position, handler);
-    return this;
   }
 
-  @Override
-  public AsyncFile read(Buffer buffer, int offset, int position, int length, AsyncResultHandler<Buffer> handler) {
+  public void read(Buffer buffer, int offset, int position, int length, AsyncResultHandler<Buffer> handler) {
     check();
     ByteBuffer bb = ByteBuffer.allocate(length);
     doRead(buffer, offset, bb, position, handler);
-    return this;
   }
 
-  @Override
-  public WriteStream writeStream() {
+  public WriteStream getWriteStream() {
     check();
     if (writeStream == null) {
-      writeStream = new WriteStream<WriteStream>() {
+      writeStream = new WriteStream() {
         Handler<Exception> exceptionHandler;
         Handler<Void> drainHandler;
 
@@ -117,14 +109,14 @@ public class DefaultAsyncFile implements AsyncFile {
         int maxWrites = 128 * 1024;    // TODO - we should tune this for best performance
         int lwm = maxWrites / 2;
 
-        public WriteStream write(Buffer buffer) {
+        public void writeBuffer(Buffer buffer) {
           check();
           final int length = buffer.length();
           ByteBuffer bb = buffer.getByteBuf().nioBuffer();
 
           doWrite(bb, pos, new AsyncResultHandler<Void>() {
 
-            public void handle(FutureResult<Void> deferred) {
+            public void handle(AsyncResult<Void> deferred) {
               if (deferred.succeeded()) {
                 checkContext();
                 checkDrained();
@@ -132,12 +124,11 @@ public class DefaultAsyncFile implements AsyncFile {
                   closedDeferred.run();
                 }
               } else {
-                handleException(deferred.exception());
+                handleException(deferred.exception);
               }
             }
           });
           pos += length;
-          return this;
         }
 
         private void checkDrained() {
@@ -148,11 +139,10 @@ public class DefaultAsyncFile implements AsyncFile {
           }
         }
 
-        public WriteStream setWriteQueueMaxSize(int maxSize) {
+        public void setWriteQueueMaxSize(int maxSize) {
           check();
           this.maxWrites = maxSize;
           this.lwm = maxWrites / 2;
-          return this;
         }
 
         public boolean writeQueueFull() {
@@ -160,17 +150,15 @@ public class DefaultAsyncFile implements AsyncFile {
           return writesOutstanding >= maxWrites;
         }
 
-        public WriteStream drainHandler(Handler<Void> handler) {
+        public void drainHandler(Handler<Void> handler) {
           check();
           this.drainHandler = handler;
           checkDrained();
-          return this;
         }
 
-        public WriteStream exceptionHandler(Handler<Exception> handler) {
+        public void exceptionHandler(Handler<Exception> handler) {
           check();
           this.exceptionHandler = handler;
-          return this;
         }
 
         void handleException(Exception e) {
@@ -185,11 +173,10 @@ public class DefaultAsyncFile implements AsyncFile {
     return writeStream;
   }
 
-  @Override
-  public ReadStream readStream() {
+  public ReadStream getReadStream() {
     check();
     if (readStream == null) {
-      readStream = new ReadStream<ReadStream>() {
+      readStream = new ReadStream() {
 
         boolean paused;
         Handler<Buffer> dataHandler;
@@ -204,10 +191,10 @@ public class DefaultAsyncFile implements AsyncFile {
             Buffer buff = new Buffer(BUFFER_SIZE);
             read(buff, 0, pos, BUFFER_SIZE, new AsyncResultHandler<Buffer>() {
 
-              public void handle(FutureResult<Buffer> ar) {
+              public void handle(AsyncResult<Buffer> ar) {
                 if (ar.succeeded()) {
                   readInProgress = false;
-                  Buffer buffer = ar.result();
+                  Buffer buffer = ar.result;
                   if (buffer.length() == 0) {
                     // Empty buffer represents end of file
                     handleEnd();
@@ -219,41 +206,37 @@ public class DefaultAsyncFile implements AsyncFile {
                     }
                   }
                 } else {
-                  handleException(ar.exception());
+                  handleException(ar.exception);
                 }
               }
             });
           }
         }
 
-        public ReadStream dataHandler(Handler<Buffer> handler) {
+        public void dataHandler(Handler<Buffer> handler) {
           check();
           this.dataHandler = handler;
           if (dataHandler != null && !paused && !closed) {
             doRead();
           }
-          return this;
         }
 
-        public ReadStream exceptionHandler(Handler<Exception> handler) {
+        public void exceptionHandler(Handler<Exception> handler) {
           check();
           this.exceptionHandler = handler;
-          return this;
         }
 
-        public ReadStream endHandler(Handler<Void> handler) {
+        public void endHandler(Handler<Void> handler) {
           check();
           this.endHandler = handler;
-          return this;
         }
 
-        public ReadStream pause() {
+        public void pause() {
           check();
           paused = true;
-          return this;
         }
 
-        public ReadStream resume() {
+        public void resume() {
           check();
           if (paused && !closed) {
             paused = false;
@@ -261,7 +244,6 @@ public class DefaultAsyncFile implements AsyncFile {
               doRead();
             }
           }
-          return this;
         }
 
         void handleException(Exception e) {
@@ -291,16 +273,12 @@ public class DefaultAsyncFile implements AsyncFile {
     return readStream;
   }
 
-  @Override
-  public AsyncFile flush() {
+  public void flush() {
     doFlush(null);
-    return this;
   }
 
-  @Override
-  public AsyncFile flush(AsyncResultHandler<Void> handler) {
+  public void flush(AsyncResultHandler<Void> handler) {
     doFlush(handler);
-    return this;
   }
 
   private void doFlush(AsyncResultHandler<Void> handler) {
@@ -337,7 +315,7 @@ public class DefaultAsyncFile implements AsyncFile {
           context.execute(new Runnable() {
             public void run() {
               writesOutstanding -= buff.limit();
-              new FutureResult<Void>().setResult(null).setHandler(handler);
+              new AsyncResult<Void>().setResult(null).setHandler(handler);
             }
           });
         }
@@ -348,7 +326,7 @@ public class DefaultAsyncFile implements AsyncFile {
           final Exception e = (Exception) exc;
           context.execute(new Runnable() {
             public void run() {
-              new FutureResult<Void>().setFailure(e).setHandler(handler);
+              new AsyncResult<Void>().setFailure(e).setHandler(handler);
             }
           });
         } else {
@@ -364,7 +342,7 @@ public class DefaultAsyncFile implements AsyncFile {
 
       int pos = position;
 
-      final FutureResult<Buffer> result = new FutureResult<>();
+      final AsyncResult<Buffer> result = new AsyncResult<>();
 
       private void done() {
         context.execute(new Runnable() {
@@ -425,7 +403,7 @@ public class DefaultAsyncFile implements AsyncFile {
   }
 
   private void doClose(AsyncResultHandler<Void> handler) {
-    FutureResult<Void> res = new FutureResult<>();
+    AsyncResult<Void> res = new AsyncResult<>();
     try {
       ch.close();
       res.setResult(null);
