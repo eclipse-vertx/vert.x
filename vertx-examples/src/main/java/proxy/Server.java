@@ -39,12 +39,12 @@ public class Server extends Verticle {
         });
         req.endHandler(new SimpleHandler() {
           public void handle() {
-            req.response().setChunked(true);
+            req.response.setChunked(true);
             //Now we got everything, send back some data
             for (int i = 0; i < 10; i++) {
-              req.response().write("server-data-chunk-" + i);
+              req.response.write("server-data-chunk-" + i);
             }
-            req.response().end();
+            req.response.end();
           }
         });
       }

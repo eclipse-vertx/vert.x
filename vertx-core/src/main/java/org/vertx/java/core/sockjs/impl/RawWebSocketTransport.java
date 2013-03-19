@@ -101,16 +101,16 @@ class RawWebSocketTransport {
 
     rm.getWithRegEx(wsRE, new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest request) {
-        request.response().setStatusCode(400);
-        request.response().end("Can \"Upgrade\" only to \"WebSocket\".");
+        request.response.statusCode = 400;
+        request.response.end("Can \"Upgrade\" only to \"WebSocket\".");
       }
     });
 
     rm.allWithRegEx(wsRE, new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest request) {
-        request.response().headers().put("Allow", "GET");
-        request.response().setStatusCode(405);
-        request.response().end();
+        request.response.headers().put("Allow", "GET");
+        request.response.statusCode = 405;
+        request.response.end();
       }
     });
   }

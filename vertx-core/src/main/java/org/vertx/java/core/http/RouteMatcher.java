@@ -58,7 +58,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
 
   @Override
   public void handle(HttpServerRequest request) {
-    switch (request.method()) {
+    switch (request.method) {
       case "GET":
         route(request, getBindings);
         break;
@@ -342,7 +342,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
 
   private void route(HttpServerRequest request, List<PatternBinding> bindings) {
     for (PatternBinding binding: bindings) {
-      Matcher m = binding.pattern.matcher(request.path());
+      Matcher m = binding.pattern.matcher(request.path);
       if (m.matches()) {
         Map<String, String> params = new HashMap<>(m.groupCount());
         if (binding.paramNames != null) {
@@ -365,8 +365,8 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
       noMatchHandler.handle(request);
     } else {
       // Default 404
-      request.response().setStatusCode(404);
-      request.response().end();
+      request.response.statusCode = 404;
+      request.response.end();
     }
   }
 

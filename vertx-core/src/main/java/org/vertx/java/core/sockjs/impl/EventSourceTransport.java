@@ -43,7 +43,7 @@ class EventSourceTransport extends BaseTransport {
 
     rm.getWithRegEx(eventSourceRE, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        if (log.isTraceEnabled()) log.trace("EventSource transport, get: " + req.uri());
+        if (log.isTraceEnabled()) log.trace("EventSource transport, get: " + req.uri);
         String sessionID = req.params().get("param0");
         Session session = getSession(config.getLong("session_timeout"), config.getLong("heartbeat_period"), sessionID, sockHandler);
         session.register(new EventSourceListener(config.getInteger("max_bytes_streaming"), req, session));
@@ -65,17 +65,17 @@ class EventSourceTransport extends BaseTransport {
       this.maxBytesStreaming = maxBytesStreaming;
       this.req = req;
       this.session = session;
-      addCloseHandler(req.response(), session);
+      addCloseHandler(req.response, session);
     }
 
     public void sendFrame(String body) {
       if (log.isTraceEnabled()) log.trace("EventSource, sending frame");
       if (!headersWritten) {
-        req.response().headers().put("Content-Type", "text/event-stream; charset=UTF-8");
+        req.response.headers().put("Content-Type", "text/event-stream; charset=UTF-8");
         setNoCacheHeaders(req);
         setJSESSIONID(config, req);
-        req.response().setChunked(true);
-        req.response().write("\r\n");
+        req.response.setChunked(true);
+        req.response.write("\r\n");
         headersWritten = true;
       }
       StringBuilder sb = new StringBuilder();
@@ -83,7 +83,7 @@ class EventSourceTransport extends BaseTransport {
       sb.append(body);
       sb.append("\r\n\r\n");
       Buffer buff = new Buffer(sb.toString());
-      req.response().write(buff);
+      req.response.write(buff);
       bytesSent += buff.length();
       if (bytesSent >= maxBytesStreaming) {
         if (log.isTraceEnabled()) log.trace("More than maxBytes sent so closing connection");
@@ -96,8 +96,8 @@ class EventSourceTransport extends BaseTransport {
       if (!closed) {
         try {
           session.resetListener(false);
-          req.response().end();
-          req.response().close();
+          req.response.end();
+          req.response.close();
         } catch (IllegalStateException e) {
           // Underlying connection might alreadu be closed - that's fine
         }

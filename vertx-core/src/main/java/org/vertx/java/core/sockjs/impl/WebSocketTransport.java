@@ -56,18 +56,18 @@ class WebSocketTransport extends BaseTransport {
 
     rm.getWithRegEx(wsRE, new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest request) {
-        if (log.isTraceEnabled()) log.trace("WS, get: " + request.uri());
-        request.response().setStatusCode(400);
-        request.response().end("Can \"Upgrade\" only to \"WebSocket\".");
+        if (log.isTraceEnabled()) log.trace("WS, get: " + request.uri);
+        request.response.statusCode = 400;
+        request.response.end("Can \"Upgrade\" only to \"WebSocket\".");
       }
     });
 
     rm.allWithRegEx(wsRE, new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest request) {
-        if (log.isTraceEnabled()) log.trace("WS, all: " + request.uri());
-        request.response().headers().put("Allow", "GET");
-        request.response().setStatusCode(405);
-        request.response().end();
+        if (log.isTraceEnabled()) log.trace("WS, all: " + request.uri);
+        request.response.headers().put("Allow", "GET");
+        request.response.statusCode = 405;
+        request.response.end();
       }
     });
   }

@@ -37,18 +37,18 @@ public class ProxyServer extends Verticle {
         final HttpClientRequest cReq = client.request(req.method, req.uri, new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse cRes) {
             System.out.println("Proxying response: " + cRes.statusCode);
-            req.response().statusCode = cRes.statusCode;
-            req.response().headers().putAll(cRes.headers());
-            req.response().setChunked(true);
+            req.response.statusCode = cRes.statusCode;
+            req.response.headers().putAll(cRes.headers());
+            req.response.setChunked(true);
             cRes.dataHandler(new Handler<Buffer>() {
               public void handle(Buffer data) {
                 System.out.println("Proxying response body:" + data);
-                req.response().write(data);
+                req.response.write(data);
               }
             });
             cRes.endHandler(new SimpleHandler() {
               public void handle() {
-                req.response().end();
+                req.response.end();
               }
             });
           }

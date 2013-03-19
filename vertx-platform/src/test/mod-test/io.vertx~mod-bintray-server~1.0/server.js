@@ -2,7 +2,7 @@ load('vertx.js')
 
 var sent302 = false;
 vertx.createHttpServer().requestHandler(function(req) {
-  if (req.uri().indexOf("..") !== -1) {
+  if (req.uri.indexOf("..") !== -1) {
     req.response.statusCode = 403;
     req.response.end();
   } else {

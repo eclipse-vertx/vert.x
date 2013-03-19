@@ -69,15 +69,15 @@ class XhrTransport extends BaseTransport {
 
     rm.postWithRegEx(xhrSendRE, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        if (log.isTraceEnabled()) log.trace("XHR send, post, " + req.uri());
+        if (log.isTraceEnabled()) log.trace("XHR send, post, " + req.uri);
         String sessionID = req.params().get("param0");
         final Session session = sessions.get(sessionID);
         if (session != null) {
           handleSend(req, session);
         } else {
-          req.response().setStatusCode(404);
+          req.response.statusCode = 404;
           setJSESSIONID(config, req);
-          req.response().end();
+          req.response.end();
         }
       }
     });
@@ -87,7 +87,7 @@ class XhrTransport extends BaseTransport {
                                final boolean streaming, final JsonObject config) {
     rm.postWithRegEx(re, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        if (log.isTraceEnabled()) log.trace("XHR, post, " + req.uri());
+        if (log.isTraceEnabled()) log.trace("XHR, post, " + req.uri);
         setNoCacheHeaders(req);
         String sessionID = req.params().get("param0");
         Session session = getSession(config.getLong("session_timeout"), config.getLong("heartbeat_period"), sessionID, sockHandler);
@@ -102,19 +102,19 @@ class XhrTransport extends BaseTransport {
       public void handle(Buffer buff) {
         String msgs = buff.toString();
         if (msgs.equals("")) {
-          req.response().setStatusCode(500);
-          req.response().end("Payload expected.");
+          req.response.statusCode = 500;
+          req.response.end("Payload expected.");
           return;
         }
         if (!session.handleMessages(msgs)) {
-          sendInvalidJSON(req.response());
+          sendInvalidJSON(req.response);
         } else {
-          req.response().headers().put("Content-Type", "text/plain; charset=UTF-8");
+          req.response.headers().put("Content-Type", "text/plain; charset=UTF-8");
           setNoCacheHeaders(req);
           setJSESSIONID(config, req);
           setCORS(req);
-          req.response().setStatusCode(204);
-          req.response().end();
+          req.response.statusCode = 204;
+          req.response.end();
         }
         if (log.isTraceEnabled()) log.trace("XHR send processed ok");
       }
@@ -135,10 +135,10 @@ class XhrTransport extends BaseTransport {
     public void sendFrame(String body) {
       if (log.isTraceEnabled()) log.trace("XHR sending frame");
       if (!headersWritten) {
-        req.response().headers().put("Content-Type", "application/javascript; charset=UTF-8");
+        req.response.headers().put("Content-Type", "application/javascript; charset=UTF-8");
         setJSESSIONID(config, req);
         setCORS(req);
-        req.response().setChunked(true);
+        req.response.setChunked(true);
         headersWritten = true;
       }
     }
@@ -151,14 +151,14 @@ class XhrTransport extends BaseTransport {
 
     XhrPollingListener(HttpServerRequest req, final Session session) {
       super(req, session);
-      addCloseHandler(req.response(), session);
+      addCloseHandler(req.response, session);
     }
 
     boolean closed;
 
     public void sendFrame(String body) {
       super.sendFrame(body);
-      req.response().write(body + "\n");
+      req.response.write(body + "\n");
       close();
     }
 
@@ -167,8 +167,8 @@ class XhrTransport extends BaseTransport {
       if (!closed) {
         try {
           session.resetListener(true);
-          req.response().end();
-          req.response().close();
+          req.response.end();
+          req.response.close();
           closed = true;
         } catch (IllegalStateException e) {
           // Underlying connection might already be closed - that's fine
@@ -186,18 +186,18 @@ class XhrTransport extends BaseTransport {
     XhrStreamingListener(int maxBytesStreaming, HttpServerRequest req, final Session session) {
       super(req, session);
       this.maxBytesStreaming = maxBytesStreaming;
-      addCloseHandler(req.response(), session);
+      addCloseHandler(req.response, session);
     }
 
     public void sendFrame(String body) {
       boolean hr = headersWritten;
       super.sendFrame(body);
       if (!hr) {
-        req.response().write(H_BLOCK);
+        req.response.write(H_BLOCK);
       }
       String sbody = body + "\n";
       Buffer buff = new Buffer(sbody);
-      req.response().write(buff);
+      req.response.write(buff);
       bytesSent += buff.length();
       if (bytesSent >= maxBytesStreaming) {
         close();
@@ -209,8 +209,8 @@ class XhrTransport extends BaseTransport {
       if (!closed) {
         session.resetListener(false);
         try {
-          req.response().end();
-          req.response().close();
+          req.response.end();
+          req.response.close();
           closed = true;
         } catch (IllegalStateException e) {
           // Underlying connection might alreadu be closed - that's fine
