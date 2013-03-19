@@ -90,6 +90,7 @@ public class DefaultHttpServer implements HttpServer {
   private final EventLoopContext eventLoopContext;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
+  private Handler<Exception> exceptionHandler;
   private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
   private ChannelGroup serverChannelGroup;
   private boolean listening;
@@ -101,6 +102,7 @@ public class DefaultHttpServer implements HttpServer {
   private VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private HandlerManager<HttpServerRequest> reqHandlerManager = new HandlerManager<>(availableWorkers);
   private HandlerManager<ServerWebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
+  private HandlerManager<Exception> exceptionHandlerManager = new HandlerManager<>(availableWorkers);
 
   public DefaultHttpServer(VertxInternal vertx) {
     this.vertx = vertx;
@@ -146,6 +148,21 @@ public class DefaultHttpServer implements HttpServer {
 
   public Handler<ServerWebSocket> websocketHandler() {
     return wsHandler;
+  }
+
+  @Override
+  public HttpServer exceptionHandler(Handler<Exception> exceptionHandler) {
+    this.exceptionHandler = exceptionHandler;
+    return this;
+  }
+
+  @Override
+  public Handler<Exception> exceptionHandler() {
+    return exceptionHandler;
+  }
+
+  public void listen(int port) {
+    listen(port, "0.0.0.0", null);
   }
 
   public void listen(int port, Handler<HttpServer> listenHandler) {
@@ -223,17 +240,6 @@ public class DefaultHttpServer implements HttpServer {
         // Server already exists with that host/port - we will use that
         actualServer = shared;
       }
-      actualServer.bindFuture.addListener(new ChannelFutureListener() {
-        @Override
-        public void operationComplete(ChannelFuture future) throws Exception {
-          if (future.isSuccess()) {
-            listenHandler.handle(DefaultHttpServer.this);
-          } else {
-            // TODO: Mabye introduce an exceptionHandler like in the client ?
-            close();
-          }
-        }
-      });
       if (requestHandler != null) {
         // Share the event loop thread to also serve the HttpServer's network traffic.
         actualServer.reqHandlerManager.addHandler(requestHandler, eventLoopContext);
@@ -242,6 +248,26 @@ public class DefaultHttpServer implements HttpServer {
         // Share the event loop thread to also serve the HttpServer's network traffic.
         actualServer.wsHandlerManager.addHandler(wsHandler, eventLoopContext);
       }
+      if (exceptionHandler != null) {
+        // Share the event loop thread
+        actualServer.exceptionHandlerManager.addHandler(exceptionHandler, eventLoopContext);
+      }
+      actualServer.bindFuture.addListener(new ChannelFutureListener() {
+        @Override
+        public void operationComplete(ChannelFuture future) throws Exception {
+          if (future.isSuccess()) {
+            if (listenHandler != null) {
+              listenHandler.handle(DefaultHttpServer.this);
+            }
+          } else {
+            HandlerHolder<Exception> holder = actualServer.exceptionHandlerManager.chooseHandler(future.channel().eventLoop());
+            if (holder != null) {
+              holder.handler.handle((Exception) future.cause());
+            }
+            close();
+          }
+        }
+      });
     }
   }
 

@@ -41,6 +41,23 @@ public interface NetServer {
   NetServer connectHandler(Handler<NetSocket> connectHandler);
 
   /**
+   * Set the exception handler. Any exceptions that occur during bind or later on will be notified via the {@code handler}.
+   * If no handler is supplied any exceptions will be printed to {@link System#err}
+   */
+  NetServer exceptionHandler(Handler<Exception> handler);
+
+  /**
+   * @return The exception handler
+   */
+  Handler<Exception> exceptionHandler();
+
+  /**
+   * Tell the server to start listening on all available interfaces and port {@code port}. Be aware this is an
+   * async operation and the server may not bound on return of the method.
+   */
+  void listen(int port);
+
+  /**
    * Instruct the server to listen for incoming connections on the specified {@code port} and all available interfaces.
    */
   void listen(int port, Handler<NetServer> listenHandler);

@@ -59,6 +59,24 @@ public interface HttpServer {
    */
   Handler<ServerWebSocket> websocketHandler();
 
+
+  /**
+   * Set the exception handler. Any exceptions that occur during bind or later on will be notified via the {@code handler}.
+   * If no handler is supplied any exceptions will be printed to {@link System#err}
+   */
+  HttpServer exceptionHandler(Handler<Exception> handler);
+
+  /**
+   * @return The exception handler
+   */
+  Handler<Exception> exceptionHandler();
+
+  /**
+   * Tell the server to start listening on all available interfaces and port {@code port}. Be aware this is an
+   * async operation and the server may not bound on return of the method.
+   */
+  void listen(int port);
+
   /**
    * Tell the server to start listening on all available interfaces and port {@code port}
    *
@@ -81,7 +99,7 @@ public interface HttpServer {
    * is complete.
    */
   void close(final Handler<Void> doneHandler);
-  
+
   /**
    * If {@code ssl} is {@code true}, this signifies that any connections will be SSL connections.
    * @return A reference to this, so multiple invocations can be chained together.

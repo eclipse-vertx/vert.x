@@ -68,12 +68,16 @@ public class DefaultNetServer implements NetServer {
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<Channel, DefaultNetSocket>();
   private Handler<NetSocket> connectHandler;
+  private Handler<Exception> exceptionHandler;
+
   private ChannelGroup serverChannelGroup;
   private boolean listening;
   private ServerID id;
   private DefaultNetServer actualServer;
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
+  private final HandlerManager<Exception> exceptionHandlerManager = new HandlerManager<>(availableWorkers);
+
   private ChannelFuture bindFuture;
 
   public DefaultNetServer(VertxInternal vertx) {
@@ -101,6 +105,10 @@ public class DefaultNetServer implements NetServer {
   public NetServer connectHandler(Handler<NetSocket> connectHandler) {
     this.connectHandler = connectHandler;
     return this;
+  }
+
+  public void listen(int port) {
+    listen(port, "0.0.0.0", null);
   }
 
   public void listen(int port, Handler<NetServer> listenHandler) {
@@ -179,21 +187,45 @@ public class DefaultNetServer implements NetServer {
         checkConfigs(actualServer, this);
         actualServer = shared;
       }
+      if (connectHandler != null) {
+        // Share the event loop thread to also serve the NetServer's network traffic.
+        actualServer.handlerManager.addHandler(connectHandler, eventLoopContext);
+      }
+      if (exceptionHandler != null) {
+        // Share the event loop thread to also serve the NetServer's network traffic.
+        actualServer.exceptionHandlerManager.addHandler(exceptionHandler, eventLoopContext);
+      }
+
       // just add it to the future so it gets notified once the bind is complete
       actualServer.bindFuture.addListener(new ChannelFutureListener() {
         @Override
         public void operationComplete(ChannelFuture future) throws Exception {
           if (future.isSuccess()) {
-            listenHandler.handle(DefaultNetServer.this);
+            if (listenHandler != null) {
+              listenHandler.handle(DefaultNetServer.this);
+            }
           } else {
-            // TODO: Mabye introduce an exceptionHandler like in the client ?
+            HandlerHolder<Exception> holder = actualServer.exceptionHandlerManager.chooseHandler(future.channel().eventLoop());
+            if (holder != null) {
+              holder.handler.handle((Exception) future.cause());
+            }
             close();
           }
         }
       });
-      // Share the event loop thread to also serve the NetServer's network traffic.
-      actualServer.handlerManager.addHandler(connectHandler, eventLoopContext);
+
     }
+  }
+
+  @Override
+  public NetServer exceptionHandler(Handler<Exception> exceptionHandler) {
+    this.exceptionHandler = exceptionHandler;
+    return this;
+  }
+
+  @Override
+  public Handler<Exception> exceptionHandler() {
+    return exceptionHandler;
   }
 
   public void close() {
