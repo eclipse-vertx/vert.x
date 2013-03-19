@@ -120,26 +120,21 @@ public abstract class ConnectionBase {
   }
 
   protected void addFuture(final AsyncResultHandler<Void> doneHandler, final ChannelFuture future) {
-    future.addListener(new ChannelFutureListener() {
-      public void operationComplete(final ChannelFuture channelFuture) throws Exception {
-        if (doneHandler != null || exceptionHandler != null) {
-          context.execute(new Runnable() {
-            public void run() {
-              Throwable t = channelFuture.cause();
-              if (doneHandler != null) {
-                doneHandler.handle(new VoidResult(t));
+    if (future != null) {
+      future.addListener(new ChannelFutureListener() {
+        public void operationComplete(final ChannelFuture channelFuture) throws Exception {
+          if (doneHandler != null) {
+            context.execute(new Runnable() {
+              public void run() {
+                doneHandler.handle(new VoidResult(channelFuture.cause()));
               }
-              // TODO - do we really need to send the exception to the connection exception handler too?
-              if (t instanceof Exception) {
-                handleException((Exception)t);
-              } else {
-                vertx.reportException(t);
-              }
-            }
-          });
+            });
+          } else if (!channelFuture.isSuccess()) {
+            vertx.reportException(channelFuture.cause());
+          }
         }
-      }
-    });
+      });
+    }
   }
 
   protected void setContext() {
