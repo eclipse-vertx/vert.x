@@ -103,12 +103,11 @@ public class DefaultNetServer implements NetServer {
     return this;
   }
 
-  public NetServer listen(int port, Handler<Void> listenHandler) {
+  public void listen(int port, Handler<NetServer> listenHandler) {
     listen(port, "0.0.0.0", listenHandler);
-    return this;
   }
 
-  public NetServer listen(final int port, final String host, final Handler<Void> listenHandler) {
+  public void listen(final int port, final String host, final Handler<NetServer> listenHandler) {
     if (connectHandler == null) {
       throw new IllegalStateException("Set connect handler first");
     }
@@ -185,7 +184,7 @@ public class DefaultNetServer implements NetServer {
         @Override
         public void operationComplete(ChannelFuture future) throws Exception {
           if (future.isSuccess()) {
-            listenHandler.handle(null);
+            listenHandler.handle(DefaultNetServer.this);
           } else {
             // TODO: Mabye introduce an exceptionHandler like in the client ?
             close();
@@ -195,7 +194,6 @@ public class DefaultNetServer implements NetServer {
       // Share the event loop thread to also serve the NetServer's network traffic.
       actualServer.handlerManager.addHandler(connectHandler, eventLoopContext);
     }
-    return this;
   }
 
   public void close() {

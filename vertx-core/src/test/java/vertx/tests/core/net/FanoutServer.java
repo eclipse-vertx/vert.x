@@ -64,9 +64,9 @@ public class FanoutServer extends Verticle {
       }
     });
     final CountDownLatch latch = new CountDownLatch(1);
-    server.listen(1234, new Handler<Void>() {
+    server.listen(1234, new Handler<NetServer>() {
       @Override
-      public void handle(Void event) {
+      public void handle(NetServer event) {
         tu.appReady();
         startedResult.setResult();
       }

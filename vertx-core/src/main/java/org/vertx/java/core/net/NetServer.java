@@ -42,16 +42,14 @@ public interface NetServer {
 
   /**
    * Instruct the server to listen for incoming connections on the specified {@code port} and all available interfaces.
-   * @return a reference to this so multiple method calls can be chained together
    */
-  NetServer listen(int port, Handler<Void> listenHandler);
+  void listen(int port, Handler<NetServer> listenHandler);
 
   /**
    * Instruct the server to listen for incoming connections on the specified {@code port} and {@code host}. {@code host} can
    * be a host name or an IP address.
-   * @return a reference to this so multiple method calls can be chained together
    */
-  NetServer listen(int port, String host, Handler<Void> listenHandler);
+  void listen(int port, String host, Handler<NetServer> listenHandler);
 
   /**
    * Close the server. This will close any currently open connections.

@@ -378,9 +378,10 @@ public class DefaultEventBus implements EventBus {
         parser.setOutput(handler);
         socket.dataHandler(parser);
       }
-    }).listen(serverID.port, serverID.host, new Handler<Void>() {
+    });
+    server.listen(serverID.port, serverID.host, new Handler<NetServer>() {
       @Override
-      public void handle(Void event) {
+      public void handle(NetServer event) {
         latch.countDown();
       }
     });

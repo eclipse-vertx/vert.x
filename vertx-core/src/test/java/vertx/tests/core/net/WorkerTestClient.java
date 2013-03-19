@@ -46,9 +46,9 @@ public class WorkerTestClient extends TestClientBase {
         p.start();
       }
     });
-    server.listen(1234, new Handler<Void>() {
+    server.listen(1234, new Handler<NetServer>() {
       @Override
-      public void handle(Void event) {
+      public void handle(NetServer event) {
         final NetClient client = vertx.createNetClient();
         client.connect(1234, new Handler<NetSocket>() {
           public void handle(NetSocket socket) {

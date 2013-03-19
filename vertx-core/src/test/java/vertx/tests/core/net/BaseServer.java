@@ -47,9 +47,9 @@ public abstract class BaseServer extends Verticle {
     Integer port = vertx.sharedData().<String, Integer>getMap("params").get("listenport");
     int p = port == null ? 1234: port;
 
-    server.listen(p, new Handler<Void>() {
+    server.listen(p, new Handler<NetServer>() {
       @Override
-      public void handle(Void event) {
+      public void handle(NetServer event) {
         if (sendAppReady) {
           tu.appReady();
         }

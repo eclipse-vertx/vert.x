@@ -790,9 +790,9 @@ public class TestClient extends TestClientBase {
         InetSocketAddress addr = socket.getRemoteAddress();
         tu.azzert(addr.getHostName().startsWith("localhost"));
       }
-    }).listen(1234, new Handler<Void>() {
+    }).listen(1234, new Handler<NetServer>() {
       @Override
-      public void handle(Void event) {
+      public void handle(NetServer event) {
         vertx.createNetClient().connect(1234, new Handler<NetSocket>() {
           @Override
           public void handle(NetSocket socket) {

@@ -62,16 +62,14 @@ public interface HttpServer {
   /**
    * Tell the server to start listening on all available interfaces and port {@code port}
    *
-   * @return a reference to this, so methods can be chained.
    */
-  HttpServer listen(int port);
+  void listen(int port, Handler<HttpServer> listenHandler);
 
   /**
    * Tell the server to start listening on port {@code port} and hostname or ip address given by {@code host}.
    *
-   * @return a reference to this, so methods can be chained.
    */
-  HttpServer listen(int port, String host);
+  void listen(int port, String host, Handler<HttpServer> listenHandler);
   
   /**
    * Close the server. Any open HTTP connections will be closed.

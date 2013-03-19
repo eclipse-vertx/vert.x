@@ -16,6 +16,7 @@
 
 package vertx.tests.core.http;
 
+import org.junit.Assert;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
@@ -29,6 +30,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -66,7 +69,18 @@ public class HttpTestClient extends TestClientBase {
   private void startServer(Handler<HttpServerRequest> serverHandler) {
     server = vertx.createHttpServer();
     server.requestHandler(serverHandler);
-    server.listen(8080, "localhost");
+    final CountDownLatch latch = new CountDownLatch(1);
+    server.listen(8080, "localhost", new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        latch.countDown();
+      }
+    });
+    try {
+      tu.azzert(latch.await(5, TimeUnit.SECONDS));
+    } catch (InterruptedException e) {
+      Assert.fail();
+    }
   }
 
   public void testClientDefaults() {
