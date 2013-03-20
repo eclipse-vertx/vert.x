@@ -376,9 +376,9 @@ public class JavaNetTest extends TestBase {
     server.listen(1234);
 
     final NetClient client = vertx.createNetClient();
-    client.connect(1234, new Handler<NetSocket>() {
-      public void handle(NetSocket socket) {
-        socket.dataHandler(new Handler<Buffer>() {
+    client.connect(1234, new AsyncResultHandler<NetSocket>() {
+      public void handle(FutureResult<NetSocket> res) {
+        res.result().dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
             server.close(new AsyncResultHandler<Void>() {
               public void handle(FutureResult<Void> res) {
@@ -389,7 +389,7 @@ public class JavaNetTest extends TestBase {
 
           }
         });
-        socket.write("foo");
+        res.result().write("foo");
       }
     });
 

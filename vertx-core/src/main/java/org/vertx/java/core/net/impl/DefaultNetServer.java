@@ -476,18 +476,20 @@ public class DefaultNetServer implements NetServer {
     private void connected(final Channel ch, final HandlerHolder<NetSocket> handler) {
       if (handler.context.isOnCorrectWorker(ch.eventLoop())) {
         vertx.setContext(handler.context);
-        DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, handler.context);
-        socketMap.put(ch, sock);
-        handler.handler.handle(sock);
+        doConnected(ch, handler);
       } else {
         handler.context.execute(new Runnable() {
           public void run() {
-            DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, handler.context);
-            socketMap.put(ch, sock);
-            handler.handler.handle(sock);
+            doConnected(ch, handler);
           }
         });
       }
+    }
+
+    private void doConnected(Channel ch, HandlerHolder<NetSocket> handler) {
+      DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, handler.context);
+      socketMap.put(ch, sock);
+      handler.handler.handle(sock);
     }
   }
 }

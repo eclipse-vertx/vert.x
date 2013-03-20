@@ -751,14 +751,13 @@ public class DefaultEventBus implements EventBus {
     }
 
     void connect(NetClient client, final ServerID theServerID) {
-      client.connect(theServerID.port, theServerID.host, new Handler<NetSocket>() {
-        public void handle(final NetSocket socket) {
-          connected(theServerID, socket);
-        }
-      });
-      client.exceptionHandler(new Handler<Exception>() {
-        public void handle(Exception e) {
-          cleanupConnection(theServerID, ConnectionHolder.this, true);
+      client.connect(theServerID.port, theServerID.host, new AsyncResultHandler<NetSocket>() {
+        public void handle(FutureResult<NetSocket> res) {
+          if (res.succeeded()) {
+            connected(theServerID, res.result());
+          } else {
+            cleanupConnection(theServerID, ConnectionHolder.this, true);
+          }
         }
       });
     }

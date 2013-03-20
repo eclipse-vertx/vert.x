@@ -548,7 +548,7 @@ public class DefaultHttpServer implements HttpServer {
           }
         }
       } else if (msg instanceof WebSocketFrame) {
-          //Websocket frame
+        //Websocket frame
         WebSocketFrame wsFrame = (WebSocketFrame)msg;
         switch (wsFrame.getType()) {
           case BINARY:

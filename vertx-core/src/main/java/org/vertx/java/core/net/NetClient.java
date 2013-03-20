@@ -16,6 +16,7 @@
 
 package org.vertx.java.core.net;
 
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.ClientSSLSupport;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.TCPSupport;
@@ -42,7 +43,7 @@ public interface NetClient extends ClientSSLSupport<NetClient>, TCPSupport<NetCl
    * {@link NetSocket} instance is supplied via the {@code connectHandler} instance
    * @return a reference to this so multiple method calls can be chained together
    */
-  NetClient connect(int port, Handler<NetSocket> connectCallback);
+  NetClient connect(int port, AsyncResultHandler<NetSocket> connectCallback);
 
   /**
    * Attempt to open a connection to a server at the specific {@code port} and {@code host}.
@@ -50,7 +51,7 @@ public interface NetClient extends ClientSSLSupport<NetClient>, TCPSupport<NetCl
    * {@link NetSocket} instance is supplied via the {@code connectHandler} instance
    * @return a reference to this so multiple method calls can be chained together
    */
-  NetClient connect(int port, String host, final Handler<NetSocket> connectHandler);
+  NetClient connect(int port, String host, AsyncResultHandler<NetSocket> connectHandler);
 
   /**
    * Set the number of reconnection attempts. In the event a connection attempt fails, the client will attempt
@@ -72,12 +73,6 @@ public interface NetClient extends ClientSSLSupport<NetClient>, TCPSupport<NetCl
    * Get the reconnect interval, in milliseconds.
    */
   long getReconnectInterval();
-
-  /**
-   * Set the exception handler. Any exceptions that occur during connect or later on will be notified via the {@code handler}.
-   * If no handler is supplied any exceptions will be printed to {@link System#err}
-   */
-  void exceptionHandler(Handler<Exception> handler);
 
   /**
    * Set the connect timeout in milliseconds.

@@ -21,6 +21,8 @@ import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.*;
 import org.vertx.java.core.logging.Logger;
@@ -48,7 +50,6 @@ public class DefaultNetClient implements NetClient {
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private Bootstrap bootstrap;
   private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<>();
-  private Handler<Exception> exceptionHandler;
   private int reconnectAttempts;
   private long reconnectInterval = 1000;
 
@@ -74,13 +75,13 @@ public class DefaultNetClient implements NetClient {
   }
 
   @Override
-  public NetClient connect(int port, String host, final Handler<NetSocket> connectHandler) {
+  public NetClient connect(int port, String host, AsyncResultHandler<NetSocket> connectHandler) {
     connect(port, host, connectHandler, reconnectAttempts);
     return this;
   }
 
   @Override
-  public NetClient connect(int port, Handler<NetSocket> connectCallback) {
+  public NetClient connect(int port, AsyncResultHandler<NetSocket> connectCallback) {
     connect(port, "localhost", connectCallback);
     return this;
   }
@@ -118,11 +119,6 @@ public class DefaultNetClient implements NetClient {
   @Override
   public long getReconnectInterval() {
     return reconnectInterval;
-  }
-
-  @Override
-  public void exceptionHandler(Handler<Exception> handler) {
-    this.exceptionHandler = handler;
   }
 
   @Override
@@ -294,13 +290,12 @@ public class DefaultNetClient implements NetClient {
     return tcpHelper.isUsePooledBuffers();
   }
 
-  private void connect(final int port, final String host, final Handler<NetSocket> connectHandler,
+  private void connect(final int port, final String host, final AsyncResultHandler<NetSocket> connectHandler,
                        final int remainingAttempts) {
     if (bootstrap == null) {
       // Share the event loop thread to also serve the NetClient's network traffic.
       VertxEventLoopGroup pool = new VertxEventLoopGroup();
       pool.addWorker(eventLoopContext.getWorker());
-
 
       tcpHelper.checkSSL(vertx);
 
@@ -324,7 +319,6 @@ public class DefaultNetClient implements NetClient {
         }
       });
     }
-    // TODO: FIx me
     tcpHelper.applyConnectionOptions(bootstrap);
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {
@@ -345,7 +339,7 @@ public class DefaultNetClient implements NetClient {
                 if (channelFuture.isSuccess()) {
                   connected(ch, connectHandler);
                 } else {
-                  failed(ch, new SSLHandshakeException("Failed to create SSL connection"));
+                  failed(ch, channelFuture.cause(), connectHandler);
                 }
               }
             });
@@ -379,47 +373,48 @@ public class DefaultNetClient implements NetClient {
               });
             }
           } else {
-            failed(ch, channelFuture.cause());
+            failed(ch, channelFuture.cause(), connectHandler);
           }
         }
       }
     });
   }
 
-  private void connected(final Channel ch, final Handler<NetSocket> connectHandler) {
+  private void connected(final Channel ch, final AsyncResultHandler<NetSocket> connectHandler) {
     if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
       vertx.setContext(actualCtx);
-      DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, actualCtx);
-      socketMap.put(ch, sock);
-      connectHandler.handle(sock);
+      doConnected(ch, connectHandler);
     } else {
       actualCtx.execute(new Runnable() {
         public void run() {
-          DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, actualCtx);
-          socketMap.put(ch, sock);
-          connectHandler.handle(sock);
+          doConnected(ch, connectHandler);
         }
       });
     }
-
   }
 
-  private void failed(Channel ch, final Throwable t) {
+  private void doConnected(Channel ch, AsyncResultHandler<NetSocket> connectHandler) {
+    DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, actualCtx);
+    socketMap.put(ch, sock);
+    connectHandler.handle(new FutureResult<NetSocket>(sock));
+  }
+
+  private void failed(Channel ch, final Throwable t, final AsyncResultHandler<NetSocket> connectHandler) {
     ch.close();
-    if (t instanceof Exception && exceptionHandler != null) {
-      if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
-        vertx.setContext(actualCtx);
-        exceptionHandler.handle((Exception) t);
-      } else {
-        actualCtx.execute(new Runnable() {
-          public void run() {
-            exceptionHandler.handle((Exception) t);
-          }
-        });
-      }
+    if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
+      vertx.setContext(actualCtx);
+      doFailed(connectHandler, t);
     } else {
-      log.error("Unhandled exception", t);
+      actualCtx.execute(new Runnable() {
+        public void run() {
+          doFailed(connectHandler, t);
+        }
+      });
     }
+  }
+
+  private void doFailed(AsyncResultHandler<NetSocket> connectHandler, Throwable t) {
+    connectHandler.handle(new FutureResult<NetSocket>(t));
   }
 
   private class ClientHandler extends VertxNetHandler {
@@ -429,7 +424,6 @@ public class DefaultNetClient implements NetClient {
 
     @Override
     protected Context getContext(DefaultNetSocket connection) {
-      // TODO: Why ?
       return actualCtx;
     }
   }
