@@ -173,7 +173,8 @@ public class Starter {
       log.info("Starting clustering...");
       int clusterPort = args.getInt("-cluster-port");
       if (clusterPort == -1) {
-        clusterPort = 25500;
+        // Default to zero - this means choose an ephemeral port
+        clusterPort = 0;
       }
       String clusterHost = args.map.get("-cluster-host");
       if (clusterHost == null) {
@@ -393,7 +394,8 @@ public class Starter {
 "                               a cluster with any other vert.x instances on    \n" +
 "                               the network.                                    \n" +
 "        -cluster-port          port to use for cluster communication.          \n" +
-"                               Default is 25500.                               \n" +
+"                               Default is 0 which means chose a spare          \n" +
+"                               random port.                                    \n" +
 "        -cluster-host          host to bind to for cluster communication.      \n" +
 "                               If this is not specified vert.x will attempt    \n" +
 "                               to choose one from the available interfaces.  \n\n" +

@@ -64,6 +64,8 @@ public class DefaultNetServer implements NetServer {
   private DefaultNetServer actualServer;
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
+  private String host;
+  private int port;
 
   public DefaultNetServer(VertxInternal vertx) {
     this.vertx = vertx;
@@ -108,6 +110,7 @@ public class DefaultNetServer implements NetServer {
       throw new IllegalStateException("Listen already called");
     }
     listening = true;
+    this.host = host;
 
     synchronized (vertx.sharedNetServers()) {
       id = new ServerID(port, host);
@@ -156,6 +159,8 @@ public class DefaultNetServer implements NetServer {
           //TODO - currently bootstrap.bind is blocking - need to make it non blocking by not using bootstrap directly
           Channel serverChannel = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port)).syncUninterruptibly().channel();
           serverChannelGroup.add(serverChannel);
+          // If we specified 0 as port then we need to find out the actual port chosen
+          this.port = ((InetSocketAddress)serverChannel.localAddress()).getPort();
           log.trace("Net server listening on " + host + ":" + port);
         } catch (ChannelException | UnknownHostException e) {
           throw new IllegalArgumentException(e.getMessage());
@@ -205,6 +210,16 @@ public class DefaultNetServer implements NetServer {
         }
       }
     }
+  }
+
+  @Override
+  public String host() {
+    return host;
+  }
+
+  @Override
+  public int port() {
+    return port;
   }
 
   @Override

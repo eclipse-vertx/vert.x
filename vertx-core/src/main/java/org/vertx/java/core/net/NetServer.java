@@ -66,4 +66,15 @@ public interface NetServer extends ServerSSLSupport<NetServer>, ServerTCPSupport
    * when the close is complete.
    */
   void close(AsyncResultHandler<Void> doneHandler);
+
+  /**
+   * The actual port the server is listening on. This is useful if you bound the server specifying 0 as port number
+   * signifying an ephemeral port
+   */
+  int port();
+
+  /**
+   * The host
+   */
+  String host();
 }
