@@ -16,17 +16,24 @@
 
 package org.vertx.java.core.file;
 
+import org.vertx.java.core.VertxException;
+
 /**
  * Exception thrown by the FileSystem class
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class FileSystemException extends RuntimeException {
+public class FileSystemException extends VertxException {
 
-  /**
-   * Construct a {@code FileSystemException} with a message as specified by {@code msg}
-   */
-  public FileSystemException(String msg) {
-    super(msg);
+  public FileSystemException(String message) {
+    super(message);
+  }
+
+  public FileSystemException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  public FileSystemException(Throwable cause) {
+    super(cause);
   }
 }

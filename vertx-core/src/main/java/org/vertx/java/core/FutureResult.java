@@ -41,9 +41,9 @@ public class FutureResult<T> {
    */
   public FutureResult(Throwable t) {
     if (t == null) {
-      setFailure(t);
-    } else {
       setResult(null);
+    } else {
+      setFailure(t);
     }
   }
 

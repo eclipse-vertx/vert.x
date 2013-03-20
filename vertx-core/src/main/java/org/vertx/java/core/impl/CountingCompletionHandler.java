@@ -16,49 +16,64 @@
 
 package org.vertx.java.core.impl;
 
-import org.vertx.java.core.Handler;
+import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.FutureResult;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class CountingCompletionHandler {
+public class CountingCompletionHandler<T> {
 
   private final Context context;
-  private VertxInternal vertx;
+  private final VertxInternal vertx;
+  private int count;
+  private int required;
+  private AsyncResultHandler<T> doneHandler;
+  private boolean failed;
 
   public CountingCompletionHandler(VertxInternal vertx) {
-    this.vertx = vertx;
-    this.context = vertx.getOrAssignContext();
+    this(vertx, 0);
   }
 
-  int count;
-  int required;
-  Handler<Void> doneHandler;
+  public CountingCompletionHandler(VertxInternal vertx, int required) {
+    this.vertx = vertx;
+    this.context = vertx.getOrAssignContext();
+    this.required = required;
+  }
 
-  public synchronized void complete() {
-    count++;
-    checkDone();
+  public synchronized void complete(FutureResult<T> res) {
+    if (res.failed()) {
+      if (!failed) {
+        // Fail immediately - but only once
+        doneHandler.handle(res);
+        failed = true;
+      }
+    } else {
+      count++;
+      checkDone();
+    }
   }
 
   public synchronized void incRequired() {
     required++;
   }
 
-  public synchronized void setHandler(Handler<Void> doneHandler) {
+  public synchronized void setHandler(AsyncResultHandler<T> doneHandler) {
     this.doneHandler = doneHandler;
     checkDone();
   }
 
   void checkDone() {
     if (doneHandler != null && count == required) {
+      final FutureResult<T> res = new FutureResult<T>().setResult(null);
       if (vertx.getContext() == context) {
-        doneHandler.handle(null);
+        doneHandler.handle(res);
       } else {
         context.execute(new Runnable() {
-        public void run() {
-          doneHandler.handle(null);
-        }
-      });
+          public void run() {
+            doneHandler.handle(res);
+          }
+        });
       }
     }
   }

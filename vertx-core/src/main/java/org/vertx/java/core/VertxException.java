@@ -1,4 +1,6 @@
-package org.vertx.java.platform.impl;/*
+package org.vertx.java.core;
+
+/*
  * Copyright 2013 Red Hat, Inc.
  *
  * Red Hat licenses this file to you under the Apache License, version 2.0
@@ -14,24 +16,23 @@ package org.vertx.java.platform.impl;/*
  * under the License.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
+ *
+ * Vert.x only throws instances of VertxException which is a RuntimeException.
+ * Vert.x hates Java checked exceptions and doesn't want to pollute it's API with them.
+ * You can catch them if you like, but it's recommended to let them bubble up to the Vert.x platform
+ * which will, cause the verticle to be redeployed.
  */
+public class VertxException extends RuntimeException {
 
-import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.platform.PlatformManager;
+  public VertxException(String message) {
+    super(message);
+  }
 
-/**
- * Internal interface - not designed to be publicly used
- */
-public interface PlatformManagerInternal extends PlatformManager {
+  public VertxException(String message, Throwable cause) {
+    super(message, cause);
+  }
 
-  JsonObject config();
-
-  Logger logger();
-
-  void removeModule(String moduleKey);
-
-  void exit();
-
-  int checkNoModules();
+  public VertxException(Throwable cause) {
+    super(cause);
+  }
 }

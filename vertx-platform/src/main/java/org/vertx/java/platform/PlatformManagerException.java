@@ -1,4 +1,8 @@
-package org.vertx.java.platform.impl;/*
+package org.vertx.java.platform;
+
+import org.vertx.java.core.VertxException;
+
+/*
  * Copyright 2013 Red Hat, Inc.
  *
  * Red Hat licenses this file to you under the Apache License, version 2.0
@@ -15,23 +19,17 @@ package org.vertx.java.platform.impl;/*
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+public class PlatformManagerException extends VertxException {
 
-import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.platform.PlatformManager;
+  public PlatformManagerException(String message) {
+    super(message);
+  }
 
-/**
- * Internal interface - not designed to be publicly used
- */
-public interface PlatformManagerInternal extends PlatformManager {
+  public PlatformManagerException(String message, Throwable cause) {
+    super(message, cause);
+  }
 
-  JsonObject config();
-
-  Logger logger();
-
-  void removeModule(String moduleKey);
-
-  void exit();
-
-  int checkNoModules();
+  public PlatformManagerException(Throwable cause) {
+    super(cause);
+  }
 }

@@ -49,7 +49,7 @@ public class WindowsFileSystem extends DefaultFileSystem {
 		logInternal(dirPerms);
 		return new BlockingAction<Void>(vertx, handler) {
 			@Override
-			public Void action() throws Exception {
+			public Void action() {
 				return null;
 			}
 		};
@@ -64,7 +64,7 @@ public class WindowsFileSystem extends DefaultFileSystem {
 
 	@Override
 	protected AsyncFile doOpen(String path, String perms, boolean read, boolean write, boolean createNew, boolean flush,
-			Context context) throws Exception {
+			Context context) {
 		logInternal(perms);
 		return new DefaultAsyncFile(vertx, path, null, read, write, createNew, flush, context);
 	}

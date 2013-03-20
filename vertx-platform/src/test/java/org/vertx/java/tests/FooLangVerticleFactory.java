@@ -42,14 +42,14 @@ public class FooLangVerticleFactory implements VerticleFactory {
     return new Verticle() {
 
       @Override
-      public void start() throws Exception {
-        JsonObject config = container.getConfig();
+      public void start() {
+        JsonObject config = container.config();
         String foo = config.getString("foo", "bar");
         if (foo.equalsIgnoreCase("bar")) {
-          throw new Exception("foo must not be bar!");
+          throw new RuntimeException("foo must not be bar!");
         }
         if (!(main.endsWith("foo"))) {
-          throw new Exception("main must end with foo!");
+          throw new RuntimeException("main must end with foo!");
         }
       }};
   }

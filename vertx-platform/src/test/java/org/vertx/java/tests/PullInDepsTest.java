@@ -17,6 +17,8 @@ package org.vertx.java.tests;/*
  */
 
 import org.junit.Test;
+import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.FutureResult;
 import org.vertx.java.testframework.TestBase;
 
 import java.io.File;
@@ -36,16 +38,26 @@ public class PullInDepsTest extends TestBase {
 
   @Test
   public void testPullInDeps() throws Exception {
-    String deployID = startMod("io.vertx~mod-maven-server~1.0", null, 1, false);
-    assertTrue(platformManager.pullInDependencies("io.vertx~mod-pullin~1.0"));
-    stopApp(deployID, false);
-    assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods");
-    assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-a~2.0.0");
-    assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-b~1.0.1");
-    assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-c~0.1");
-    assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-d~1.2-beta");
-    // Nested
-    assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-d~1.2-beta/mods/io.vertx~mod-pullin-e~2.2");
+    final String deployID = startMod("io.vertx~mod-maven-server~1.0", null, 1, false);
+    platformManager.pullInDependencies("io.vertx~mod-pullin~1.0", new AsyncResultHandler<Void>() {
+      @Override
+      public void handle(FutureResult<Void> res) {
+        assertTrue(res.succeeded());
+        try {
+          stopApp(deployID, false);
+        } catch (Exception e) {
+          fail("caught exception");
+        }
+        assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods");
+        assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-a~2.0.0");
+        assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-b~1.0.1");
+        assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-c~0.1");
+        assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-d~1.2-beta");
+        // Nested
+        assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-d~1.2-beta/mods/io.vertx~mod-pullin-e~2.2");
+      }
+    });
+
 
   }
 

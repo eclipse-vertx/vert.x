@@ -63,7 +63,7 @@ public class TestClient extends TestClientBase {
           agg.complete();
         }
       }) {
-        public String action() throws Exception {
+        public String action() {
           return "foo";
         }
       }.run();
@@ -76,8 +76,8 @@ public class TestClient extends TestClientBase {
           agg.complete();
         }
       }) {
-        public String action() throws Exception {
-          throw new Exception("Wibble");
+        public String action() {
+          throw new RuntimeException("Wibble");
         }
       }.run();
     }

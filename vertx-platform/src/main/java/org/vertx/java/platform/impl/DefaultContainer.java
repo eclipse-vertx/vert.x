@@ -1,6 +1,6 @@
 package org.vertx.java.platform.impl;
 
-import org.vertx.java.core.Handler;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.platform.Container;
@@ -58,7 +58,8 @@ public class DefaultContainer implements Container {
   }
 
   @Override
-  public void deployWorkerVerticle(String main, JsonObject config, int instances, boolean multiThreaded, Handler<String> doneHandler) {
+  public void deployWorkerVerticle(String main, JsonObject config, int instances, boolean multiThreaded,
+                                   AsyncResultHandler<String> doneHandler) {
     mgr.deployWorkerVerticle(multiThreaded, main, config, null, instances, null, doneHandler);
   }
 
@@ -83,22 +84,22 @@ public class DefaultContainer implements Container {
   }
 
   @Override
-  public void deployModule(String moduleName, JsonObject config, int instances, Handler<String> doneHandler) {
+  public void deployModule(String moduleName, JsonObject config, int instances, AsyncResultHandler<String> doneHandler) {
     mgr.deployModule(moduleName, config, instances, doneHandler);
   }
 
   @Override
-  public void deployModule(String moduleName, Handler<String> doneHandler) {
+  public void deployModule(String moduleName, AsyncResultHandler<String> doneHandler) {
     mgr.deployModule(moduleName, null, 1, doneHandler);
   }
 
   @Override
-  public void deployModule(String moduleName, JsonObject config, Handler<String> doneHandler) {
+  public void deployModule(String moduleName, JsonObject config, AsyncResultHandler<String> doneHandler) {
     mgr.deployModule(moduleName, config, 1, doneHandler);
   }
 
   @Override
-  public void deployModule(String moduleName, int instances, Handler<String> doneHandler) {
+  public void deployModule(String moduleName, int instances, AsyncResultHandler<String> doneHandler) {
     mgr.deployModule(moduleName, null, instances, doneHandler);
   }
 
@@ -123,22 +124,22 @@ public class DefaultContainer implements Container {
   }
 
   @Override
-  public void deployVerticle(String main, JsonObject config, int instances, Handler<String> doneHandler) {
+  public void deployVerticle(String main, JsonObject config, int instances, AsyncResultHandler<String> doneHandler) {
     mgr.deployVerticle(main, config, null, instances, null, doneHandler);
   }
 
   @Override
-  public void deployVerticle(String main, Handler<String> doneHandler) {
+  public void deployVerticle(String main, AsyncResultHandler<String> doneHandler) {
     this.deployVerticle(main, null, 1, doneHandler);
   }
 
   @Override
-  public void deployVerticle(String main, JsonObject config, Handler<String> doneHandler) {
+  public void deployVerticle(String main, JsonObject config, AsyncResultHandler<String> doneHandler) {
     this.deployVerticle(main, config, 1, doneHandler);
   }
 
   @Override
-  public void deployVerticle(String main, int instances, Handler<String> doneHandler) {
+  public void deployVerticle(String main, int instances, AsyncResultHandler<String> doneHandler) {
     this.deployVerticle(main, null, instances, doneHandler);
   }
 
@@ -148,7 +149,7 @@ public class DefaultContainer implements Container {
   }
 
   @Override
-  public void undeployVerticle(String deploymentID, Handler<Void> doneHandler) {
+  public void undeployVerticle(String deploymentID, AsyncResultHandler<Void> doneHandler) {
     mgr.undeploy(deploymentID, doneHandler);
   }
 
@@ -158,18 +159,18 @@ public class DefaultContainer implements Container {
   }
 
   @Override
-  public void undeployModule(String deploymentID, Handler<Void> doneHandler) {
+  public void undeployModule(String deploymentID, AsyncResultHandler<Void> doneHandler) {
     mgr.undeploy(deploymentID, doneHandler);
   }
 
   @Override
-  public JsonObject getConfig() {
-    return mgr.getConfig();
+  public JsonObject config() {
+    return mgr.config();
   }
 
   @Override
-  public Logger getLogger() {
-    return mgr.getLogger();
+  public Logger logger() {
+    return mgr.logger();
   }
 
   @Override
@@ -178,7 +179,7 @@ public class DefaultContainer implements Container {
   }
 
   @Override
-  public Map<String, String> getEnv() {
+  public Map<String, String> env() {
     return System.getenv();
   }
 

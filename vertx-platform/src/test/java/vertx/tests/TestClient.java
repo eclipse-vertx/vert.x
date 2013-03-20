@@ -16,6 +16,8 @@
 
 package vertx.tests;
 
+import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
@@ -52,10 +54,11 @@ public class TestClient extends TestClientBase {
       }
     });
 
-    container.deployVerticle(ChildVerticle.class.getName(), null, 1, new Handler<String>() {
-      public void handle(String deployID) {
+    container.deployVerticle(ChildVerticle.class.getName(), null, 1, new AsyncResultHandler<String>() {
+      public void handle(FutureResult<String> res) {
+        tu.azzert(res.succeeded());
+        tu.azzert(res.result() != null);
         tu.azzert(Thread.currentThread() == t);
-        tu.azzert(deployID != null);
       }
     });
   }
@@ -63,8 +66,10 @@ public class TestClient extends TestClientBase {
   public void testUndeployVerticle() {
     final Thread t = Thread.currentThread();
     container.deployVerticle(ChildVerticle.class.getName(), null, 1,
-      new Handler<String>() {
-        public void handle(final String deploymentID) {
+      new AsyncResultHandler<String>() {
+        public void handle(final FutureResult<String> res) {
+          tu.azzert(res.succeeded());
+          tu.azzert(res.result() != null);
           tu.azzert(Thread.currentThread() == t);
           // Give it at least a second - especially for CI on Amazon
           vertx.setTimer(1000, new Handler<Long>() {
@@ -77,8 +82,8 @@ public class TestClient extends TestClientBase {
                   }
                 }
               });
-              container.undeployVerticle(deploymentID, new Handler<Void>() {
-                public void handle(Void v) {
+              container.undeployVerticle(res.result(), new AsyncResultHandler<Void>() {
+                public void handle(FutureResult<Void> res2) {
                   tu.azzert(Thread.currentThread() == t);
                 }
               });
@@ -100,10 +105,11 @@ public class TestClient extends TestClientBase {
       }
     });
 
-    container.deployModule("io.vertx~testmod-deploy1~1.0", null, 1, new Handler<String>() {
-      public void handle(String deployID) {
+    container.deployModule("io.vertx~testmod-deploy1~1.0", null, 1, new AsyncResultHandler<String>() {
+      public void handle(FutureResult<String> res) {
+        tu.azzert(res.succeeded());
+        tu.azzert(res.result() != null);
         tu.azzert(Thread.currentThread() == t);
-        tu.azzert(deployID != null);
       }
     });
   }
@@ -111,8 +117,10 @@ public class TestClient extends TestClientBase {
   public void testUndeployModule() {
     final Thread t = Thread.currentThread();
     container.deployModule("io.vertx~testmod-deploy1~1.0", null, 1,
-        new Handler<String>() {
-          public void handle(final String deploymentID) {
+        new AsyncResultHandler<String>() {
+          public void handle(final FutureResult<String> res) {
+            tu.azzert(res.succeeded());
+            tu.azzert(res.result() != null);
             tu.azzert(Thread.currentThread() == t);
             // Give it at least a second - especially for CI on Amazon
             vertx.setTimer(1000, new Handler<Long>() {
@@ -125,8 +133,10 @@ public class TestClient extends TestClientBase {
                     }
                   }
                 });
-                container.undeployModule(deploymentID, new Handler<Void>() {
-                  public void handle(Void v) {
+                container.undeployModule(res.result(), new AsyncResultHandler<Void>() {
+                  public void handle(FutureResult<Void> res) {
+                    tu.azzert(res.succeeded());
+                    tu.azzert(res.result() != null);
                     tu.azzert(Thread.currentThread() == t);
                   }
                 });
@@ -148,10 +158,12 @@ public class TestClient extends TestClientBase {
       }
     });
 
-    container.deployModule("io.vertx~testmod-deploy2~1.0", null, 1, new Handler<String>() {
-      public void handle(String deployID) {
+    container.deployModule("io.vertx~testmod-deploy2~1.0", null, 1, new AsyncResultHandler<String>() {
+      public void handle(FutureResult<String> res) {
+        tu.azzert(res.succeeded());
+        tu.azzert(res.result() != null);
         tu.azzert(Thread.currentThread() == t);
-        tu.azzert(deployID != null);
+
       }
     });
   }

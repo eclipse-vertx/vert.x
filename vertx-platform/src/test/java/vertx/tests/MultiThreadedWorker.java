@@ -32,7 +32,7 @@ public class MultiThreadedWorker extends Verticle {
   private TestUtils tu;
 
   @Override
-  public void start() throws Exception {
+  public void start() {
 
     tu = new TestUtils(vertx);
 

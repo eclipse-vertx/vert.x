@@ -65,6 +65,6 @@ public abstract class BlockingAction<T>  {
     context.executeOnOrderedWorkerExec(runner);
   }
 
-  public abstract T action() throws Exception;
+  public abstract T action();
 
 }

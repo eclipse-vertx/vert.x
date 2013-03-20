@@ -66,9 +66,8 @@ public abstract class Verticle {
 
   /**
    * Vert.x calls the start method when the verticle is deployed
-   * @throws Exception
    */
-  public void start() throws Exception {
+  public void start() {
   }
 
   /**
@@ -76,9 +75,8 @@ public abstract class Verticle {
    * This is useful if your verticle deploys other verticles or modules and you don't want this verticle to
    * be considered started until the other modules and verticles have been started.
    * @param startedResult When you are happy your verticle is started set the result
-   * @throws Exception
    */
-  public void start(VoidResult startedResult) throws Exception {
+  public void start(VoidResult startedResult) {
     start();
     startedResult.setResult();
   }
@@ -88,7 +86,7 @@ public abstract class Verticle {
    * Put any cleanup code for your verticle in here
    * @throws Exception
    */
-  public void stop() throws Exception {
+  public void stop() {
   }
 
 }

@@ -63,7 +63,7 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
 
   public void removeAllForServerID(final ServerID serverID, final AsyncResultHandler<Void> completionHandler) {
     new BlockingAction<Void>(vertx, completionHandler) {
-      public Void action() throws Exception {
+      public Void action() {
         for (Map.Entry<String, HazelcastServerID> entry: map.entrySet()) {
           HazelcastServerID hid = entry.getValue();
           if (hid.serverID.equals(serverID)) {
@@ -78,7 +78,7 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
   @Override
   public void put(final String subName, final ServerID serverID, final AsyncResultHandler<Void> completionHandler) {
     new BlockingAction<Void>(vertx, completionHandler) {
-      public Void action() throws Exception {
+      public Void action() {
         map.put(subName, new HazelcastServerID(serverID));
         return null;
       }
@@ -120,7 +120,7 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
           sresult.setHandler(completionHandler);
         }
       }) {
-        public Collection<HazelcastServerID> action() throws Exception {
+        public Collection<HazelcastServerID> action() {
           return map.get(subName);
         }
       }.run();
@@ -130,7 +130,7 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
   @Override
   public void remove(final String subName, final ServerID serverID, final AsyncResultHandler<Void> completionHandler) {
     new BlockingAction<Boolean>(vertx, completionHandler) {
-      public Boolean action() throws Exception {
+      public Boolean action() {
         return map.remove(subName, new HazelcastServerID(serverID));
       }
     }.run();

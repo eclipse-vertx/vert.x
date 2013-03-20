@@ -16,7 +16,8 @@ package vertx.tests;/*
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 
-import org.vertx.java.core.Handler;
+import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.testframework.TestClientBase;
 
@@ -32,11 +33,13 @@ public class MultiThreadedTestClient extends TestClientBase {
   }
 
   public void testMultiThreaded() {
-    container.deployWorkerVerticle(MultiThreadedWorker.class.getName(), null, 1, true, new Handler<String>() {
+    container.deployWorkerVerticle(MultiThreadedWorker.class.getName(), null, 1, true, new AsyncResultHandler<String>() {
       @Override
-      public void handle(String event) {
-        for (int i = 0; i < 1000; i++) {
-          eb.send("fooaddress", "blah");
+      public void handle(FutureResult<String> res) {
+        if (res.succeeded()) {
+          for (int i = 0; i < 1000; i++) {
+            eb.send("fooaddress", "blah");
+          }
         }
       }
     });

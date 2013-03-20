@@ -60,7 +60,7 @@ public class DefaultAsyncFile implements AsyncFile {
   private long writesOutstanding;
 
   DefaultAsyncFile(final VertxInternal vertx, final String path, String perms, final boolean read, final boolean write, final boolean createNew,
-            final boolean flush, final Context context) throws Exception {
+            final boolean flush, final Context context) {
     if (!read && !write) {
       throw new FileSystemException("Cannot open file for neither reading nor writing");
     }
@@ -71,11 +71,15 @@ public class DefaultAsyncFile implements AsyncFile {
     if (write) options.add(StandardOpenOption.WRITE);
     if (createNew) options.add(StandardOpenOption.CREATE);
     if (flush) options.add(StandardOpenOption.DSYNC);
-    if (perms != null) {
-      FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
-      ch = AsynchronousFileChannel.open(file, options, vertx.getBackgroundPool(), attrs);
-    } else {
-      ch = AsynchronousFileChannel.open(file, options, vertx.getBackgroundPool());
+    try {
+      if (perms != null) {
+        FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
+        ch = AsynchronousFileChannel.open(file, options, vertx.getBackgroundPool(), attrs);
+      } else {
+        ch = AsynchronousFileChannel.open(file, options, vertx.getBackgroundPool());
+      }
+    } catch (IOException e) {
+      throw new FileSystemException(e);
     }
     this.context = context;
   }
@@ -308,9 +312,13 @@ public class DefaultAsyncFile implements AsyncFile {
     checkClosed();
     checkContext();
     new BlockingAction<Void>(vertx, handler) {
-      public Void action() throws Exception {
-        ch.force(false);
-        return null;
+      public Void action() {
+        try {
+          ch.force(false);
+          return null;
+        } catch (IOException e) {
+          throw new FileSystemException(e);
+        }
       }
     }.run();
   }

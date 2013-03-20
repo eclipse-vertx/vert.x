@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class TestClient extends TestClientBase {
 
- // private static final Logger log = LoggerFactory.getLogger(TestClient.class);
+ // private static final Logger log = LoggerFactory.logger(TestClient.class);
 
   private NetClient client;
 

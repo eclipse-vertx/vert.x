@@ -18,7 +18,6 @@ package vertx.tests.core.eventbus;
 
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.FutureResult;
-import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.eventbus.impl.ClusterManager;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager;

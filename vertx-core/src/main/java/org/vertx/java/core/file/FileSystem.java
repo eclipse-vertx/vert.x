@@ -40,7 +40,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #copy(String, String, AsyncResultHandler)}
    */
-  FileSystem copySync(String from, String to) throws Exception;
+  FileSystem copySync(String from, String to) ;
 
   /**
    * Copy a file from the path {@code from} to path {@code to}, asynchronously.<p>
@@ -53,7 +53,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #copy(String, String, boolean, AsyncResultHandler)}
    */
-  FileSystem copySync(String from, String to, boolean recursive) throws Exception;
+  FileSystem copySync(String from, String to, boolean recursive) ;
 
   /**
    * Move a file from the path {@code from} to path {@code to}, asynchronously.<p>
@@ -64,7 +64,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #move(String, String, AsyncResultHandler)}
    */
-  FileSystem moveSync(String from, String to) throws Exception;
+  FileSystem moveSync(String from, String to) ;
 
   /**
    * Truncate the file represented by {@code path} to length {@code len} in bytes, asynchronously.<p>
@@ -75,7 +75,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #truncate(String, long, AsyncResultHandler)}
    */
-  FileSystem truncateSync(String path, long len) throws Exception;
+  FileSystem truncateSync(String path, long len) ;
 
   /**
    * Change the permissions on the file represented by {@code path} to {@code perms}, asynchronously.
@@ -87,7 +87,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #chmod(String, String, AsyncResultHandler)}
    */
-  FileSystem chmodSync(String path, String perms) throws Exception;
+  FileSystem chmodSync(String path, String perms) ;
 
   /**
    * Change the permissions on the file represented by {@code path} to {@code perms}, asynchronously.
@@ -101,7 +101,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #chmod(String, String, String, AsyncResultHandler)}
    */
-  FileSystem chmodSync(String path, String perms, String dirPerms) throws Exception;
+  FileSystem chmodSync(String path, String perms, String dirPerms) ;
 
   /**
    * Obtain properties for the file represented by {@code path}, asynchronously.
@@ -112,7 +112,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #props(String, AsyncResultHandler)}
    */
-  FileProps propsSync(String path) throws Exception;
+  FileProps propsSync(String path) ;
 
   /**
    * Obtain properties for the link represented by {@code path}, asynchronously.
@@ -123,7 +123,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #lprops(String, AsyncResultHandler)}
    */
-  FileProps lpropsSync(String path) throws Exception;
+  FileProps lpropsSync(String path) ;
 
   /**
    * Create a hard link on the file system from {@code link} to {@code existing}, asynchronously.
@@ -133,7 +133,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #link(String, String, AsyncResultHandler)}
    */
-  FileSystem linkSync(String link, String existing) throws Exception;
+  FileSystem linkSync(String link, String existing) ;
 
   /**
    * Create a symbolic link on the file system from {@code link} to {@code existing}, asynchronously.
@@ -143,7 +143,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #link(String, String, AsyncResultHandler)}
    */
-  FileSystem symlinkSync(String link, String existing) throws Exception;
+  FileSystem symlinkSync(String link, String existing) ;
 
   /**
    * Unlinks the link on the file system represented by the path {@code link}, asynchronously.
@@ -153,7 +153,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #unlink(String, AsyncResultHandler)}
    */
-  FileSystem unlinkSync(String link) throws Exception;
+  FileSystem unlinkSync(String link) ;
 
   /**
    * Returns the path representing the file that the symbolic link specified by {@code link} points to, asynchronously.
@@ -163,7 +163,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #readSymlink(String, AsyncResultHandler)}
    */
-  String readSymlinkSync(String link) throws Exception;
+  String readSymlinkSync(String link) ;
 
   /**
    * Deletes the file represented by the specified {@code path}, asynchronously.
@@ -173,7 +173,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #delete(String, AsyncResultHandler)}
    */
-  FileSystem deleteSync(String path) throws Exception;
+  FileSystem deleteSync(String path) ;
 
   /**
    * Deletes the file represented by the specified {@code path}, asynchronously.<p>
@@ -185,7 +185,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #delete(String, boolean, AsyncResultHandler)}
    */
-  FileSystem deleteSync(String path, boolean recursive) throws Exception;
+  FileSystem deleteSync(String path, boolean recursive) ;
 
   /**
    * Create the directory represented by {@code path}, asynchronously.<p>
@@ -196,7 +196,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #mkdir(String, AsyncResultHandler)}
    */
-  FileSystem mkdirSync(String path) throws Exception;
+  FileSystem mkdirSync(String path) ;
 
   /**
    * Create the directory represented by {@code path}, asynchronously.<p>
@@ -209,7 +209,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #mkdir(String, boolean, AsyncResultHandler)}
    */
-  FileSystem mkdirSync(String path, boolean createParents) throws Exception;
+  FileSystem mkdirSync(String path, boolean createParents) ;
 
   /**
    * Create the directory represented by {@code path}, asynchronously.<p>
@@ -223,7 +223,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #mkdir(String, String, AsyncResultHandler)}
    */
-  FileSystem mkdirSync(String path, String perms) throws Exception;
+  FileSystem mkdirSync(String path, String perms) ;
 
   /**
    * Create the directory represented by {@code path}, asynchronously.<p>
@@ -239,7 +239,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #mkdir(String, String, boolean, AsyncResultHandler)}
    */
-  FileSystem mkdirSync(String path, String perms, boolean createParents) throws Exception;
+  FileSystem mkdirSync(String path, String perms, boolean createParents) ;
 
   /**
    * Read the contents of the directory specified by {@code path}, asynchronously.<p>
@@ -250,7 +250,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #readDir(String, AsyncResultHandler)}
    */
-  String[] readDirSync(String path) throws Exception;
+  String[] readDirSync(String path) ;
 
   /**
    * Read the contents of the directory specified by {@code path}, asynchronously.<p>
@@ -263,7 +263,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #readDir(String, String, AsyncResultHandler)}
    */
-  String[] readDirSync(String path, String filter) throws Exception;
+  String[] readDirSync(String path, String filter) ;
 
   /**
    * Reads the entire file as represented by the path {@code path} as a {@link Buffer}, asynchronously.<p>
@@ -274,7 +274,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #readFile(String, AsyncResultHandler)}
    */
-  Buffer readFileSync(String path) throws Exception;
+  Buffer readFileSync(String path) ;
 
   /**
    * Creates the file, and writes the specified {@code Buffer data} to the file represented by the path {@code path},
@@ -285,7 +285,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #writeFile(String, Buffer, AsyncResultHandler)}
    */
-  FileSystem writeFileSync(String path, Buffer data) throws Exception;
+  FileSystem writeFileSync(String path, Buffer data) ;
 
   /**
    * Open the file represented by {@code path}, asynchronously.<p>
@@ -297,7 +297,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #open(String, AsyncResultHandler)}
    */
-  AsyncFile openSync(String path) throws Exception;
+  AsyncFile openSync(String path) ;
 
   /**
    * Open the file represented by {@code path}, asynchronously.<p>
@@ -310,7 +310,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #open(String, String, AsyncResultHandler)}
    */
-  AsyncFile openSync(String path, String perms) throws Exception;
+  AsyncFile openSync(String path, String perms) ;
 
   /**
    * Open the file represented by {@code path}, asynchronously.<p>
@@ -324,7 +324,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #open(String, String, boolean, AsyncResultHandler)}
    */
-  AsyncFile openSync(String path, String perms, boolean createNew) throws Exception;
+  AsyncFile openSync(String path, String perms, boolean createNew) ;
 
   /**
    * Open the file represented by {@code path}, asynchronously.<p>
@@ -340,7 +340,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #open(String, String, boolean, boolean, boolean, AsyncResultHandler)}
    */
-  AsyncFile openSync(String path, String perms, boolean read, boolean write, boolean createNew) throws Exception;
+  AsyncFile openSync(String path, String perms, boolean read, boolean write, boolean createNew) ;
 
   /**
    * Open the file represented by {@code path}, asynchronously.<p>
@@ -358,7 +358,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #open(String, String, boolean, boolean, boolean, boolean, AsyncResultHandler)}
    */
-  AsyncFile openSync(String path, String perms, boolean read, boolean write, boolean createNew, boolean flush) throws Exception;
+  AsyncFile openSync(String path, String perms, boolean read, boolean write, boolean createNew, boolean flush) ;
 
   /**
    * Creates an empty file with the specified {@code path}, asynchronously.
@@ -368,7 +368,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #createFile(String, AsyncResultHandler)}
    */
-  FileSystem createFileSync(String path) throws Exception;
+  FileSystem createFileSync(String path) ;
 
   /**
    * Creates an empty file with the specified {@code path} and permissions {@code perms}, asynchronously.
@@ -378,7 +378,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #createFile(String, String, AsyncResultHandler)}
    */
-  FileSystem createFileSync(String path, String perms) throws Exception;
+  FileSystem createFileSync(String path, String perms) ;
 
   /**
    * Determines whether the file as specified by the path {@code path} exists, asynchronously.
@@ -388,7 +388,7 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #exists(String, AsyncResultHandler)}
    */
-  boolean existsSync(String path) throws Exception;
+  boolean existsSync(String path) ;
 
   /**
    * Returns properties of the file-system being used by the specified {@code path}, asynchronously.
@@ -398,6 +398,6 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #fsProps(String, AsyncResultHandler)}
    */
-  FileSystemProps fsPropsSync(String path) throws Exception;
+  FileSystemProps fsPropsSync(String path) ;
 
 }

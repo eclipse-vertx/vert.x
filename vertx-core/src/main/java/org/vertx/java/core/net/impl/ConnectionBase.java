@@ -21,7 +21,6 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.VoidResult;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.FlowControlHandler;
