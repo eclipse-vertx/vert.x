@@ -73,44 +73,44 @@ public interface TCPSupport<T> {
   /**
    * @return true if Nagle's algorithm is disabled.
    */
-  Boolean isTCPNoDelay();
+  boolean isTCPNoDelay();
 
   /**
    * @return The TCP send buffer size
    */
-  Integer getSendBufferSize();
+  int getSendBufferSize();
 
   /**
    * @return The TCP receive buffer size
    */
-  Integer getReceiveBufferSize();
+  int getReceiveBufferSize();
 
   /**
    *
    * @return true if TCP keep alive is enabled
    */
-  Boolean isTCPKeepAlive();
+  boolean isTCPKeepAlive();
 
   /**
    *
    * @return The value of TCP reuse address
    */
-  Boolean isReuseAddress();
+  boolean isReuseAddress();
 
   /**
    *
    * @return the value of TCP so linger
    */
-  Integer getSoLinger();
+  int getSoLinger();
 
   /**
    *
    * @return the value of TCP traffic class
    */
-  Integer getTrafficClass();
+  int getTrafficClass();
 
   /**
    * @return {@code true} if pooled buffers are used
    */
-  Boolean isUsePooledBuffers();
+  boolean isUsePooledBuffers();
 }

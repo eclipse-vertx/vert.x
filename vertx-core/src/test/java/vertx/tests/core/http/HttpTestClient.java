@@ -78,13 +78,6 @@ public class HttpTestClient extends TestClientBase {
     tu.azzert(client.getKeyStorePath() == null);
     tu.azzert(client.getTrustStorePassword() == null);
     tu.azzert(client.getTrustStorePath() == null);
-    tu.azzert(client.isReuseAddress() == null);
-    tu.azzert(client.getSoLinger() == null);
-    tu.azzert(client.isTCPKeepAlive());
-    tu.azzert(client.isTCPNoDelay());
-    tu.azzert(client.getReceiveBufferSize() == null);
-    tu.azzert(client.getSendBufferSize() == null);
-    tu.azzert(client.getTrafficClass() == null);
     tu.testComplete();
   }
 
@@ -124,9 +117,7 @@ public class HttpTestClient extends TestClientBase {
     tu.azzert(!client.isReuseAddress());
 
     tu.azzert(client.setSoLinger(10) == client);
-    tu.azzert(client.getSoLinger() != null);
-    tu.azzert(client.setSoLinger(-1) == client);
-    tu.azzert(client.getSoLinger() == null);
+    tu.azzert(client.getSoLinger() == 10);
 
     tu.azzert(client.setTCPKeepAlive(true) == client);
     tu.azzert(client.isTCPKeepAlive());
@@ -190,12 +181,6 @@ public class HttpTestClient extends TestClientBase {
     tu.azzert(server.getTrustStorePassword() == null);
     tu.azzert(server.getTrustStorePath() == null);
     tu.azzert(server.isReuseAddress());
-    tu.azzert(server.getSoLinger() == null);
-    tu.azzert(server.isTCPKeepAlive());
-    tu.azzert(server.isTCPNoDelay());
-    tu.azzert(server.getReceiveBufferSize() == null);
-    tu.azzert(server.getSendBufferSize() == null);
-    tu.azzert(server.getTrafficClass() == null);
     server.close();
     tu.testComplete();
   }
@@ -233,9 +218,7 @@ public class HttpTestClient extends TestClientBase {
     tu.azzert(!server.isReuseAddress());
 
     tu.azzert(server.setSoLinger(10) == server);
-    tu.azzert(server.getSoLinger() != null);
-    tu.azzert(server.setSoLinger(-1) == server);
-    tu.azzert(server.getSoLinger() == null);
+    tu.azzert(server.getSoLinger() == 10);
 
     tu.azzert(server.setTCPKeepAlive(true) == server);
     tu.azzert(server.isTCPKeepAlive());

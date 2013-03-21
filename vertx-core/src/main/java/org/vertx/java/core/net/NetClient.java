@@ -78,13 +78,13 @@ public interface NetClient extends ClientSSLSupport<NetClient>, TCPSupport<NetCl
    * Set the connect timeout in milliseconds.
    * @return a reference to this so multiple method calls can be chained together
    */
-  NetClient setConnectTimeout(long timeout);
+  NetClient setConnectTimeout(int timeout);
 
   /**
    *
    * @return The connect timeout in milliseconds
    */
-  Long getConnectTimeout();
+  int getConnectTimeout();
 
   /**
    * Close the client. Any sockets which have not been closed manually will be closed here.

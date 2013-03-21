@@ -331,11 +331,7 @@ public class DefaultHttpServer implements HttpServer {
 
   @Override
   public HttpServer setSoLinger(int linger) {
-    if (linger < 0) {
-      tcpHelper.setSoLinger(null);
-    } else {
-      tcpHelper.setSoLinger(linger);
-    }
+    tcpHelper.setSoLinger(linger);
     return this;
   }
 
@@ -352,42 +348,42 @@ public class DefaultHttpServer implements HttpServer {
   }
 
   @Override
-  public Boolean isTCPNoDelay() {
+  public boolean isTCPNoDelay() {
     return tcpHelper.isTCPNoDelay();
   }
 
   @Override
-  public Integer getSendBufferSize() {
+  public int getSendBufferSize() {
     return tcpHelper.getSendBufferSize();
   }
 
   @Override
-  public Integer getReceiveBufferSize() {
+  public int getReceiveBufferSize() {
     return tcpHelper.getReceiveBufferSize();
   }
 
   @Override
-  public Boolean isTCPKeepAlive() {
+  public boolean isTCPKeepAlive() {
     return tcpHelper.isTCPKeepAlive();
   }
 
   @Override
-  public Boolean isReuseAddress() {
+  public boolean isReuseAddress() {
     return tcpHelper.isReuseAddress();
   }
 
   @Override
-  public Integer getSoLinger() {
+  public int getSoLinger() {
     return tcpHelper.getSoLinger();
   }
 
   @Override
-  public Integer getTrafficClass() {
+  public int getTrafficClass() {
     return tcpHelper.getTrafficClass();
   }
 
   @Override
-  public Integer getAcceptBacklog() {
+  public int getAcceptBacklog() {
     return tcpHelper.getAcceptBacklog();
   }
 
@@ -428,7 +424,7 @@ public class DefaultHttpServer implements HttpServer {
   }
 
   @Override
-  public Boolean isUsePooledBuffers() {
+  public boolean isUsePooledBuffers() {
     return tcpHelper.isUsePooledBuffers();
   }
 

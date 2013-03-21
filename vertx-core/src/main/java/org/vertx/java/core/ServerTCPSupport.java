@@ -28,5 +28,5 @@ public interface ServerTCPSupport<T> extends TCPSupport<T> {
    *
    * @return The accept backlog
    */
-  Integer getAcceptBacklog();
+  int getAcceptBacklog();
 }
