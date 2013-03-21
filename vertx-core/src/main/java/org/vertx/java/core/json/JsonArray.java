@@ -42,9 +42,8 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
     this.list = new ArrayList<>();
   }
 
-  @SuppressWarnings("unchecked")
   public JsonArray(String jsonString) {
-    list = (List<Object>) Json.decodeValue(jsonString, List.class);
+    list = Json.decodeValue(jsonString, List.class);
   }
 
   public JsonArray addString(String str) {
@@ -100,7 +99,7 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
     return list.size();
   }
 
-  public Object get(final int index) {
+  public <T> T get(final int index) {
     return convertObject(list.get(index));
   }
 
@@ -184,9 +183,8 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
   }
 
   @SuppressWarnings("unchecked")
-  private static Object convertObject(final Object obj) {
+  private static <T> T convertObject(final Object obj) {
     Object retVal = obj;
-
     if (obj != null) {
       if (obj instanceof List) {
         retVal = new JsonArray((List<Object>) obj);
@@ -194,7 +192,6 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
         retVal = new JsonObject((Map<String, Object>) obj);
       }
     }
-
-    return retVal;
+    return (T)retVal;
   }
 }

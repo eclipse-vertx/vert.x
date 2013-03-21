@@ -56,9 +56,8 @@ public class JsonObject extends JsonElement {
    * @param jsonString
    *          The string form of a JSON object
    */
-  @SuppressWarnings("unchecked")
   public JsonObject(String jsonString) {
-    map = (Map<String, Object>) Json.decodeValue(jsonString, Map.class);
+    map = Json.decodeValue(jsonString, Map.class);
   }
 
   public JsonObject putString(String fieldName, String value) {
@@ -199,7 +198,8 @@ public class JsonObject extends JsonElement {
     return map.keySet();
   }
 
-  public Object getValue(String fieldName) {
+  @SuppressWarnings("unchecked")
+  public <T> T getValue(String fieldName) {
     Object obj = map.get(fieldName);
     if (obj != null) {
       if (obj instanceof Map) {
@@ -208,19 +208,18 @@ public class JsonObject extends JsonElement {
         obj = new JsonArray((List)obj);
       }
     }
-    return obj;
+    return (T)obj;
   }
 
   @SuppressWarnings("unchecked")
-  public Object getField(String fieldName) {
+  public <T> T getField(String fieldName) {
     Object obj = map.get(fieldName);
     if (obj instanceof Map) {
-      return new JsonObject((Map<String, Object>) obj);
+      obj = new JsonObject((Map)obj);
     } else if (obj instanceof List) {
-      return new JsonArray((List<Object>) obj);
-    } else {
-      return obj;
+      obj = new JsonArray((List)obj);
     }
+    return (T)obj;
   }
 
   public Object removeField(String fieldName) {
