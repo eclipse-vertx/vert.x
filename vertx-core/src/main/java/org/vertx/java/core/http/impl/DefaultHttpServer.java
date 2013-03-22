@@ -257,7 +257,17 @@ public class DefaultHttpServer implements HttpServer {
         public void operationComplete(ChannelFuture future) throws Exception {
           if (future.isSuccess()) {
             if (listenHandler != null) {
-              listenHandler.handle(DefaultHttpServer.this);
+              if (eventLoopContext.isOnCorrectWorker(future.channel().eventLoop())) {
+                vertx.setContext(eventLoopContext);
+                listenHandler.handle(DefaultHttpServer.this);
+              } else {
+                eventLoopContext.execute(new Runnable() {
+                  @Override
+                  public void run() {
+                    listenHandler.handle(DefaultHttpServer.this);
+                  }
+                });
+              }
             }
           } else {
             HandlerHolder<Exception> holder = actualServer.exceptionHandlerManager.chooseHandler(future.channel().eventLoop());

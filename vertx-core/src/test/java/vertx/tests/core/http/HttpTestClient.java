@@ -66,21 +66,10 @@ public class HttpTestClient extends TestClientBase {
     }
   }
 
-  private void startServer(Handler<HttpServerRequest> serverHandler) {
+  private void startServer(Handler<HttpServerRequest> serverHandler, Handler<HttpServer> handler) {
     server = vertx.createHttpServer();
     server.requestHandler(serverHandler);
-    final CountDownLatch latch = new CountDownLatch(1);
-    server.listen(8080, "localhost", new Handler<HttpServer>() {
-      @Override
-      public void handle(HttpServer event) {
-        latch.countDown();
-      }
-    });
-    try {
-      tu.azzert(latch.await(5, TimeUnit.SECONDS));
-    } catch (InterruptedException e) {
-      Assert.fail();
-    }
+    server.listen(8080, "localhost", handler);
   }
 
   public void testClientDefaults() {
@@ -304,34 +293,40 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testClientChaining() {
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        HttpClientRequest req = client.put("someurl", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+
+          }
+        });
+        tu.azzert(req.setChunked(true) == req);
+        tu.azzert(req.sendHead() == req);
+        tu.azzert(req.write("foo", "UTF-8") == req);
+        tu.azzert(req.write("foo") == req);
+        tu.azzert(req.write("foo", "UTF-8", new SimpleHandler() {
+          public void handle() {
+          }
+        }) == req);
+        tu.azzert(req.write("foo", new SimpleHandler() {
+          public void handle() {
+          }
+        }) == req);
+        tu.azzert(req.write(new Buffer("foo")) == req);
+        tu.azzert(req.write(new Buffer("foo"), new SimpleHandler() {
+          public void handle() {
+          }
+        }) == req);
+        tu.testComplete();
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
 
       }
-    });
-    HttpClientRequest req = client.put("someurl", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
+    }, handler);
 
-      }
-    });
-    tu.azzert(req.setChunked(true) == req);
-    tu.azzert(req.sendHead() == req);
-    tu.azzert(req.write("foo", "UTF-8") == req);
-    tu.azzert(req.write("foo") == req);
-    tu.azzert(req.write("foo", "UTF-8", new SimpleHandler() {
-      public void handle() {
-      }
-    }) == req);
-    tu.azzert(req.write("foo", new SimpleHandler() {
-      public void handle() {
-      }
-    }) == req);
-    tu.azzert(req.write(new Buffer("foo")) == req);
-    tu.azzert(req.write(new Buffer("foo"), new SimpleHandler() {
-      public void handle() {
-      }
-    }) == req);
-    tu.testComplete();
   }
 
   public void testServerChainingSendFile() throws Exception {
@@ -349,6 +344,16 @@ public class HttpTestClient extends TestClientBase {
     } else {
       file = null;
     }
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        HttpClientRequest req = client.put("someurl", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+          }
+        });
+        req.end();
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         if (sendFile) {
@@ -374,12 +379,8 @@ public class HttpTestClient extends TestClientBase {
         }
         tu.testComplete();
       }
-    });
-    HttpClientRequest req = client.put("someurl", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-      }
-    });
-    req.end();
+    }, handler);
+
   }
 
   public void testSimpleGET() {
@@ -455,23 +456,46 @@ public class HttpTestClient extends TestClientBase {
   }
 
   private void testSimpleRequest(final String method, final boolean specificMethod) {
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        getRequest(specificMethod, method, "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+            tu.testComplete();
+          }
+        }).end();
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
         tu.azzert(req.method.equals(method));
         req.response.end();
       }
-    });
+    }, handler);
 
-    getRequest(specificMethod, method, "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.checkThread();
-        tu.testComplete();
-      }
-    }).end();
   }
 
   public void testHeadNoBody() {
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        getRequest(true, "HEAD", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+            tu.azzert(Integer.valueOf(resp.headers().get("Content-Length")) == 41);
+            resp.endHandler(new SimpleHandler() {
+              @Override
+              protected void handle() {
+                tu.testComplete();
+              }
+            });
+
+          }
+        }).end();
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
@@ -481,21 +505,8 @@ public class HttpTestClient extends TestClientBase {
         req.response.putHeader("Content-Length", 41);
         req.response.end();
       }
-    });
+    }, handler);
 
-    getRequest(true, "HEAD", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.checkThread();
-        tu.azzert(Integer.valueOf(resp.headers().get("Content-Length")) == 41);
-        resp.endHandler(new SimpleHandler() {
-          @Override
-          protected void handle() {
-            tu.testComplete();
-          }
-        });
-
-      }
-    }).end();
   }
 
   public void testAbsoluteURI() {
@@ -507,6 +518,17 @@ public class HttpTestClient extends TestClientBase {
   }
 
   private void testURIAndPath(final String uri, final String path) {
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        getRequest(true, "GET", uri, new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+            tu.testComplete();
+          }
+        }).end();
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
@@ -514,14 +536,8 @@ public class HttpTestClient extends TestClientBase {
         tu.azzert(path.equals(req.path));
         req.response.end();
       }
-    });
+    }, handler);
 
-    getRequest(true, "GET", uri, new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.checkThread();
-        tu.testComplete();
-      }
-    }).end();
   }
 
   public void testParamsAmpersand() {
@@ -535,6 +551,17 @@ public class HttpTestClient extends TestClientBase {
   private void testParams(char delim) {
     final Map<String, String> params = genMap(10);
     final String query = generateQueryString(params, delim);
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        getRequest(true, "GET", "some-uri/?" + query, new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+            tu.testComplete();
+          }
+        }).end();
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
@@ -545,17 +572,21 @@ public class HttpTestClient extends TestClientBase {
         }
         req.response.end();
       }
-    });
-
-    getRequest(true, "GET", "some-uri/?" + query, new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.checkThread();
-        tu.testComplete();
-      }
-    }).end();
+    }, handler);
   }
 
   public void testNoParams() {
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+            tu.testComplete();
+          }
+        }).end();
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
@@ -563,17 +594,21 @@ public class HttpTestClient extends TestClientBase {
         tu.azzert(req.params().isEmpty());
         req.response.end();
       }
-    });
-
-    getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.checkThread();
-        tu.testComplete();
-      }
-    }).end();
+    }, handler);
   }
 
   public void testDefaultRequestHeaders() {
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+            tu.testComplete();
+          }
+        }).end();
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
@@ -582,14 +617,8 @@ public class HttpTestClient extends TestClientBase {
         tu.azzert(req.headers().get("host").equals("localhost:8080"));
         req.response.end();
       }
-    });
+    }, handler);
 
-    getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.checkThread();
-        tu.testComplete();
-      }
-    }).end();
   }
 
   public void testRequestHeadersPutAll() {
@@ -600,8 +629,29 @@ public class HttpTestClient extends TestClientBase {
     testRequestHeaders(true);
   }
 
-  private void testRequestHeaders(boolean individually) {
+  private void testRequestHeaders(final boolean individually) {
     final Map<String, String> headers = genMap(10);
+
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+
+        HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+            tu.testComplete();
+          }
+        });
+        if (individually) {
+          for (Map.Entry<String, String> header : headers.entrySet()) {
+            req.headers().put(header.getKey(), header.getValue());
+          }
+        } else {
+          req.headers().putAll(headers);
+        }
+        req.end();
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
@@ -611,26 +661,36 @@ public class HttpTestClient extends TestClientBase {
         }
         req.response.end();
       }
-    });
-
-    HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.checkThread();
-        tu.testComplete();
-      }
-    });
-    if (individually) {
-      for (Map.Entry<String, String> header : headers.entrySet()) {
-        req.headers().put(header.getKey(), header.getValue());
-      }
-    } else {
-      req.headers().putAll(headers);
-    }
-    req.end();
+    }, handler);
   }
 
   public void testLowerCaseHeaders() {
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
 
+        HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.azzert(resp.headers().get("Quux").equals("quux"));
+            tu.azzert(resp.headers().get("quux").equals("quux"));
+            tu.azzert(resp.headers().get("qUUX").equals("quux"));
+            tu.azzert(resp.headers().containsKey("Quux"));
+            tu.azzert(resp.headers().containsKey("quux"));
+            tu.azzert(resp.headers().containsKey("qUUX"));
+            tu.checkThread();
+            tu.testComplete();
+          }
+        });
+        req.putHeader("Foo", "foo");
+        tu.azzert(req.headers().get("Foo").equals("foo"));
+        tu.azzert(req.headers().get("foo").equals("foo"));
+        tu.azzert(req.headers().get("fOO").equals("foo"));
+        tu.azzert(req.headers().containsKey("Foo"));
+        tu.azzert(req.headers().containsKey("foo"));
+        tu.azzert(req.headers().containsKey("fOO"));
+        req.end();
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
@@ -649,28 +709,7 @@ public class HttpTestClient extends TestClientBase {
         tu.azzert(req.response.headers().containsKey("qUUX"));
         req.response.end();
       }
-    });
-
-    HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.azzert(resp.headers().get("Quux").equals("quux"));
-        tu.azzert(resp.headers().get("quux").equals("quux"));
-        tu.azzert(resp.headers().get("qUUX").equals("quux"));
-        tu.azzert(resp.headers().containsKey("Quux"));
-        tu.azzert(resp.headers().containsKey("quux"));
-        tu.azzert(resp.headers().containsKey("qUUX"));
-        tu.checkThread();
-        tu.testComplete();
-      }
-    });
-    req.putHeader("Foo", "foo");
-    tu.azzert(req.headers().get("Foo").equals("foo"));
-    tu.azzert(req.headers().get("foo").equals("foo"));
-    tu.azzert(req.headers().get("fOO").equals("foo"));
-    tu.azzert(req.headers().containsKey("Foo"));
-    tu.azzert(req.headers().containsKey("foo"));
-    tu.azzert(req.headers().containsKey("fOO"));
-    req.end();
+    }, handler);
   }
 
   public void testRequestChaining() {
@@ -679,6 +718,31 @@ public class HttpTestClient extends TestClientBase {
 
   public void testRequestTimeoutExtendedWhenResponseChunksReceived() {
     final long timeout = 500;
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+
+        final long start = System.currentTimeMillis();
+        final HttpClientRequest req = getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.azzert(resp.statusCode == 200);
+            resp.endHandler(new Handler<Void>() {
+              public void handle(Void event) {
+                tu.testComplete();
+              }
+            });
+          }
+        });
+        req.exceptionHandler( new Handler<Exception>() {
+          @Override
+          public void handle(Exception event) {
+            tu.azzert(false, "Should not be called");
+          }
+        });
+        req.setTimeout(timeout);
+        req.end();
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       int numChunks = 10;
       int count = 0;
@@ -698,51 +762,37 @@ public class HttpTestClient extends TestClientBase {
           }
         });
       }
-    });
-
-    final long start = System.currentTimeMillis();
-    final HttpClientRequest req = getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.azzert(resp.statusCode == 200);
-        resp.endHandler(new Handler<Void>() {
-          public void handle(Void event) {
-            tu.testComplete();
-          }
-        });
-      }
-    });
-    req.exceptionHandler( new Handler<Exception>() {
-      @Override
-      public void handle(Exception event) {
-        tu.azzert(false, "Should not be called");
-      }
-    });
-    req.setTimeout(timeout);
-    req.end();
+    }, handler);
   }
 
   public void testRequestTimesoutWhenIndicatedPeriodExpiresWithoutAResponseFromRemoteServer() {
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+
+        final HttpClientRequest req = getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.azzert(false, "End should not be called because the request should timeout");
+          }
+        });
+        req.exceptionHandler( new Handler<Exception>() {
+          @Override
+          public void handle(Exception event) {
+            tu.azzert(event instanceof TimeoutException, "Expected to end with timeout exception but ended with other exception: " + event);
+            tu.checkThread();
+            tu.testComplete();
+          }
+        });
+        req.setTimeout(1000);
+        req.end();
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         // Don't answer the request, causing a timeout
       }
-    });
+    }, handler);
 
-    final HttpClientRequest req = getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.azzert(false, "End should not be called because the request should timeout");
-      }
-    });
-    req.exceptionHandler( new Handler<Exception>() {
-      @Override
-      public void handle(Exception event) {
-        tu.azzert(event instanceof TimeoutException, "Expected to end with timeout exception but ended with other exception: " + event);
-        tu.checkThread();
-        tu.testComplete();
-      }
-    });
-    req.setTimeout(1000);
-    req.end();
   }
 
   public void testRequestTimeoutCanceledWhenRequestHasAnOtherError() {
@@ -776,43 +826,74 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testRequestTimeoutCanceledWhenRequestEndsNormally() {
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
 
+
+        final AtomicReference<Exception> exception = new AtomicReference<>();
+
+        // There is no server running, should fail to connect
+        final HttpClientRequest req = getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            // Don't do anything
+          }
+        });
+        req.exceptionHandler( new Handler<Exception>() {
+          @Override
+          public void handle(Exception event) {
+            exception.set(event);
+          }
+        });
+        req.setTimeout(500);
+        req.end();
+
+        getVertx().setTimer(1000, new Handler<Long>() {
+          @Override
+          public void handle(Long event) {
+            tu.azzert(exception.get() == null, "Did not expect any exception");
+            tu.checkThread();
+            tu.testComplete();
+          }
+        });
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         req.response.statusCode = 200;
         req.response.end("OK");
       }
-    });
-
-
-    final AtomicReference<Exception> exception = new AtomicReference<>();
-
-    // There is no server running, should fail to connect
-    final HttpClientRequest req = getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        // Don't do anything
-      }
-    });
-    req.exceptionHandler( new Handler<Exception>() {
-      @Override
-      public void handle(Exception event) {
-        exception.set(event);
-      }
-    });
-    req.setTimeout(500);
-    req.end();
-
-    getVertx().setTimer(1000, new Handler<Long>() {
-      @Override
-      public void handle(Long event) {
-        tu.azzert(exception.get() == null, "Did not expect any exception");
-        tu.checkThread();
-        tu.testComplete();
-      }
-    });
+    }, handler);
   }
 
   public void testRequestNotReceivedIfTimedout() {
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+
+        final HttpClientRequest req = getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.azzert(false, "Response should not be handled");
+          }
+        });
+        req.exceptionHandler( new Handler<Exception>() {
+          @Override
+          public void handle(Exception event) {
+            tu.azzert(event instanceof TimeoutException, "Expected to end with timeout exception but ended with other exception: " + event);
+            //Delay a bit to let any response come back
+            vertx.setTimer(500, new Handler<Long>() {
+              public void handle(Long event) {
+                tu.checkThread();
+                tu.testComplete();
+              }
+            });
+          }
+        });
+        req.setTimeout(100);
+        req.end();
+      }
+    };
+
     startServer(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
         // Answer the request after a delay
@@ -823,175 +904,172 @@ public class HttpTestClient extends TestClientBase {
           }
         });
       }
-    });
+    }, handler);
 
-    final HttpClientRequest req = getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.azzert(false, "Response should not be handled");
-      }
-    });
-    req.exceptionHandler( new Handler<Exception>() {
-      @Override
-      public void handle(Exception event) {
-        tu.azzert(event instanceof TimeoutException, "Expected to end with timeout exception but ended with other exception: " + event);
-        //Delay a bit to let any response come back
-        vertx.setTimer(500, new Handler<Long>() {
-          public void handle(Long event) {
-            tu.checkThread();
-            tu.testComplete();
-          }
-        });
-      }
-    });
-    req.setTimeout(100);
-    req.end();
   }
 
   public void testUseRequestAfterComplete() {
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
 
+        HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+          }
+        });
+
+        req.end();
+
+        Handler<Void> handler = new SimpleHandler() {
+          public void handle() {
+
+          }
+        };
+        Buffer buff = new Buffer();
+
+        try {
+          req.end();
+          tu.azzert(false, "Should throw exception");
+        } catch (IllegalStateException e) {
+          //OK
+        }
+        try {
+          req.continueHandler(handler);
+          tu.azzert(false, "Should throw exception");
+        } catch (IllegalStateException e) {
+          //OK
+        }
+        try {
+          req.drainHandler(handler);
+          tu.azzert(false, "Should throw exception");
+        } catch (IllegalStateException e) {
+          //OK
+        }
+        try {
+          req.end("foo");
+          tu.azzert(false, "Should throw exception");
+        } catch (IllegalStateException e) {
+          //OK
+        }
+        try {
+          req.end(buff);
+          tu.azzert(false, "Should throw exception");
+        } catch (IllegalStateException e) {
+          //OK
+        }
+        try {
+          req.end("foo", "UTF-8");
+          tu.azzert(false, "Should throw exception");
+        } catch (IllegalStateException e) {
+          //OK
+        }
+        try {
+          req.exceptionHandler(new Handler<Exception>() {
+            public void handle(Exception e) {
+            }
+          });
+          tu.azzert(false, "Should throw exception");
+        } catch (IllegalStateException e) {
+          //OK
+        }
+        try {
+          req.sendHead();
+          tu.azzert(false, "Should throw exception");
+        } catch (IllegalStateException e) {
+          //OK
+        }
+        try {
+          req.setChunked(false);
+          tu.azzert(false, "Should throw exception");
+        } catch (IllegalStateException e) {
+          //OK
+        }
+        try {
+          req.setWriteQueueMaxSize(123);
+          tu.azzert(false, "Should throw exception");
+        } catch (IllegalStateException e) {
+          //OK
+        }
+        try {
+          req.write(buff);
+          tu.azzert(false, "Should throw exception");
+        } catch (IllegalStateException e) {
+          //OK
+        }
+        try {
+          req.write("foo");
+          tu.azzert(false, "Should throw exception");
+        } catch (IllegalStateException e) {
+          //OK
+        }
+        try {
+          req.write("foo", "UTF-8");
+          tu.azzert(false, "Should throw exception");
+        } catch (IllegalStateException e) {
+          //OK
+        }
+        try {
+          req.write(buff, handler);
+          tu.azzert(false, "Should throw exception");
+        } catch (IllegalStateException e) {
+          //OK
+        }
+
+        try {
+          req.write("foo", handler);
+          tu.azzert(false, "Should throw exception");
+        } catch (IllegalStateException e) {
+          //OK
+        }
+
+        try {
+          req.write("foo", "UTF-8", handler);
+          tu.azzert(false, "Should throw exception");
+        } catch (IllegalStateException e) {
+          //OK
+        }
+
+        try {
+          req.writeBuffer(buff);
+          tu.azzert(false, "Should throw exception");
+        } catch (IllegalStateException e) {
+          //OK
+        }
+
+        try {
+          req.writeQueueFull();
+          tu.azzert(false, "Should throw exception");
+        } catch (IllegalStateException e) {
+          //OK
+        }
+
+        tu.testComplete();
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
       }
-    });
-
-    HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.checkThread();
-      }
-    });
-
-    req.end();
-
-    Handler<Void> handler = new SimpleHandler() {
-      public void handle() {
-
-      }
-    };
-    Buffer buff = new Buffer();
-
-    try {
-      req.end();
-      tu.azzert(false, "Should throw exception");
-    } catch (IllegalStateException e) {
-      //OK
-    }
-    try {
-      req.continueHandler(handler);
-      tu.azzert(false, "Should throw exception");
-    } catch (IllegalStateException e) {
-      //OK
-    }
-    try {
-      req.drainHandler(handler);
-      tu.azzert(false, "Should throw exception");
-    } catch (IllegalStateException e) {
-      //OK
-    }
-    try {
-      req.end("foo");
-      tu.azzert(false, "Should throw exception");
-    } catch (IllegalStateException e) {
-      //OK
-    }
-    try {
-      req.end(buff);
-      tu.azzert(false, "Should throw exception");
-    } catch (IllegalStateException e) {
-      //OK
-    }
-    try {
-      req.end("foo", "UTF-8");
-      tu.azzert(false, "Should throw exception");
-    } catch (IllegalStateException e) {
-      //OK
-    }
-    try {
-      req.exceptionHandler(new Handler<Exception>() {
-        public void handle(Exception e) {
-        }
-      });
-      tu.azzert(false, "Should throw exception");
-    } catch (IllegalStateException e) {
-      //OK
-    }
-    try {
-      req.sendHead();
-      tu.azzert(false, "Should throw exception");
-    } catch (IllegalStateException e) {
-      //OK
-    }
-    try {
-      req.setChunked(false);
-      tu.azzert(false, "Should throw exception");
-    } catch (IllegalStateException e) {
-      //OK
-    }
-    try {
-      req.setWriteQueueMaxSize(123);
-      tu.azzert(false, "Should throw exception");
-    } catch (IllegalStateException e) {
-      //OK
-    }
-    try {
-      req.write(buff);
-      tu.azzert(false, "Should throw exception");
-    } catch (IllegalStateException e) {
-      //OK
-    }
-    try {
-      req.write("foo");
-      tu.azzert(false, "Should throw exception");
-    } catch (IllegalStateException e) {
-      //OK
-    }
-    try {
-      req.write("foo", "UTF-8");
-      tu.azzert(false, "Should throw exception");
-    } catch (IllegalStateException e) {
-      //OK
-    }
-    try {
-      req.write(buff, handler);
-      tu.azzert(false, "Should throw exception");
-    } catch (IllegalStateException e) {
-      //OK
-    }
-
-    try {
-      req.write("foo", handler);
-      tu.azzert(false, "Should throw exception");
-    } catch (IllegalStateException e) {
-      //OK
-    }
-
-    try {
-      req.write("foo", "UTF-8", handler);
-      tu.azzert(false, "Should throw exception");
-    } catch (IllegalStateException e) {
-      //OK
-    }
-
-    try {
-      req.writeBuffer(buff);
-      tu.azzert(false, "Should throw exception");
-    } catch (IllegalStateException e) {
-      //OK
-    }
-
-    try {
-      req.writeQueueFull();
-      tu.azzert(false, "Should throw exception");
-    } catch (IllegalStateException e) {
-      //OK
-    }
-
-    tu.testComplete();
+    }, handler);
   }
 
   public void testRequestBodyBufferAtEnd() {
-
     final Buffer body = TestUtils.generateRandomBuffer(1000);
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+
+        HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+            tu.testComplete();
+          }
+        });
+
+        req.end(body);
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
@@ -1002,16 +1080,7 @@ public class HttpTestClient extends TestClientBase {
           }
         });
       }
-    });
-
-    HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.checkThread();
-        tu.testComplete();
-      }
-    });
-
-    req.end(body);
+    }, handler);
   }
 
 
@@ -1027,7 +1096,7 @@ public class HttpTestClient extends TestClientBase {
     testRequestBodyStringAtEnd("UTF-16");
   }
 
-  private void testRequestBodyStringAtEnd(String encoding) {
+  private void testRequestBodyStringAtEnd(final String encoding) {
 
     final String body = TestUtils.randomUnicodeString(1000);
     final Buffer bodyBuff;
@@ -1038,6 +1107,23 @@ public class HttpTestClient extends TestClientBase {
       bodyBuff = new Buffer(body, encoding);
     }
 
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+            tu.testComplete();
+          }
+        });
+
+        if (encoding == null) {
+          req.end(body);
+        } else {
+          req.end(body, encoding);
+        }
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
@@ -1048,23 +1134,29 @@ public class HttpTestClient extends TestClientBase {
           }
         });
       }
-    });
+    }, handler);
+  }
 
-    HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
+  public void testRequestBodyWriteNonChunked() {
+    final HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         tu.checkThread();
         tu.testComplete();
       }
     });
 
-    if (encoding == null) {
-      req.end(body);
-    } else {
-      req.end(body, encoding);
-    }
-  }
-
-  public void testRequestBodyWriteNonChunked() {
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        try {
+          req.write("foo");
+          tu.azzert(false, "Should throw exception");
+        } catch (IllegalStateException e) {
+          //OK
+        }
+        tu.testComplete();
+      }
+    };
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
@@ -1074,22 +1166,8 @@ public class HttpTestClient extends TestClientBase {
           }
         });
       }
-    });
+    }, handler);
 
-    HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.checkThread();
-        tu.testComplete();
-      }
-    });
-
-    try {
-      req.write("foo");
-      tu.azzert(false, "Should throw exception");
-    } catch (IllegalStateException e) {
-      //OK
-    }
-    tu.testComplete();
   }
 
   public void testRequestBodyWriteBufferChunked() {
@@ -1108,9 +1186,38 @@ public class HttpTestClient extends TestClientBase {
     testRequestBodyWriteBuffer(false, true);
   }
 
-  private void testRequestBodyWriteBuffer(boolean chunked, boolean waitCompletion) {
-
+  private void testRequestBodyWriteBuffer(final boolean chunked, final boolean waitCompletion) {
     final Buffer body = new Buffer();
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+
+        HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+          }
+        });
+
+        final int numWrites = 10;
+        final int chunkSize = 100;
+
+        if (chunked) {
+          req.setChunked(true);
+        } else {
+          req.headers().put("Content-Length", numWrites * chunkSize);
+        }
+        if (waitCompletion) {
+          writeChunk(numWrites, chunkSize, req, body);
+        } else {
+          for (int i = 0; i < numWrites; i++) {
+            Buffer b = TestUtils.generateRandomBuffer(chunkSize);
+            body.appendBuffer(b);
+            req.write(b);
+          }
+          req.end();
+        }
+      }
+    };
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
@@ -1122,32 +1229,7 @@ public class HttpTestClient extends TestClientBase {
           }
         });
       }
-    });
-
-    HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.checkThread();
-      }
-    });
-
-    final int numWrites = 10;
-    final int chunkSize = 100;
-
-    if (chunked) {
-      req.setChunked(true);
-    } else {
-      req.headers().put("Content-Length", numWrites * chunkSize);
-    }
-    if (waitCompletion) {
-      writeChunk(numWrites, chunkSize, req, body);
-    } else {
-      for (int i = 0; i < numWrites; i++) {
-        Buffer b = TestUtils.generateRandomBuffer(chunkSize);
-        body.appendBuffer(b);
-        req.write(b);
-      }
-      req.end();
-    }
+    }, handler);
   }
 
   private void writeChunk(final int remaining, final int chunkSize, final HttpClientRequest req, final Buffer totBuffer) {
@@ -1212,9 +1294,9 @@ public class HttpTestClient extends TestClientBase {
     testRequestBodyWriteString(false, true, "UTF-16");
   }
 
-  private void testRequestBodyWriteString(boolean chunked, boolean waitCompletion, String encoding) {
+  private void testRequestBodyWriteString(final boolean chunked, final boolean waitCompletion, final String encoding) {
 
-    String body = TestUtils.randomUnicodeString(1000);
+    final String body = TestUtils.randomUnicodeString(1000);
     final Buffer bodyBuff;
 
     if (encoding == null) {
@@ -1223,6 +1305,42 @@ public class HttpTestClient extends TestClientBase {
       bodyBuff = new Buffer(body, encoding);
     }
 
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        final HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+            tu.testComplete();
+          }
+        });
+
+        if (chunked) {
+          req.setChunked(true);
+        } else {
+          req.headers().put("Content-Length", bodyBuff.length());
+        }
+        if (waitCompletion) {
+          Handler<Void> doneHandler = new SimpleHandler() {
+            public void handle() {
+              req.end();
+            }
+          };
+          if (encoding == null) {
+            req.write(body, doneHandler);
+          } else {
+            req.write(body, encoding, doneHandler);
+          }
+        } else {
+          if (encoding == null) {
+            req.write(body);
+          } else {
+            req.write(body, encoding);
+          }
+          req.end();
+        }
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
@@ -1233,43 +1351,26 @@ public class HttpTestClient extends TestClientBase {
           }
         });
       }
-    });
-
-    final HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.checkThread();
-        tu.testComplete();
-      }
-    });
-
-    if (chunked) {
-      req.setChunked(true);
-    } else {
-      req.headers().put("Content-Length", bodyBuff.length());
-    }
-    if (waitCompletion) {
-      Handler<Void> doneHandler = new SimpleHandler() {
-        public void handle() {
-          req.end();
-        }
-      };
-      if (encoding == null) {
-        req.write(body, doneHandler);
-      } else {
-        req.write(body, encoding, doneHandler);
-      }
-    } else {
-      if (encoding == null) {
-        req.write(body);
-      } else {
-        req.write(body, encoding);
-      }
-      req.end();
-    }
+    }, handler);
   }
 
   public void testRequestWriteBuffer() {
     final Buffer body = TestUtils.generateRandomBuffer(1000);
+
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+            tu.testComplete();
+          }
+        });
+        req.setChunked(true);
+        req.writeBuffer(body);
+        req.end();
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
@@ -1280,17 +1381,8 @@ public class HttpTestClient extends TestClientBase {
           }
         });
       }
-    });
+    }, handler);
 
-    HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.checkThread();
-        tu.testComplete();
-      }
-    });
-    req.setChunked(true);
-    req.writeBuffer(body);
-    req.end();
   }
 
   // Response
@@ -1309,6 +1401,28 @@ public class HttpTestClient extends TestClientBase {
   }
 
   private void testStatusCode(final int code, final String statusMessage) {
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+            if (code != -1) {
+              tu.azzert(resp.statusCode == code);
+            } else {
+              tu.azzert(resp.statusCode == 200);
+            }
+            if (statusMessage != null) {
+              tu.azzert(statusMessage.equals(resp.statusMessage));
+            }
+            tu.testComplete();
+          }
+        });
+
+        req.end();
+      }
+    };
+
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
@@ -1320,24 +1434,7 @@ public class HttpTestClient extends TestClientBase {
         }
         req.response.end();
       }
-    });
-
-    HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.checkThread();
-        if (code != -1) {
-          tu.azzert(resp.statusCode == code);
-        } else {
-          tu.azzert(resp.statusCode == 200);
-        }
-        if (statusMessage != null) {
-          tu.azzert(statusMessage.equals(resp.statusMessage));
-        }
-        tu.testComplete();
-      }
-    });
-
-    req.end();
+    }, handler);
   }
 
   public void testResponseHeadersPutAll() {
@@ -1350,6 +1447,24 @@ public class HttpTestClient extends TestClientBase {
 
   private void testResponseHeaders(final boolean individually) {
     final Map<String, String> headers = genMap(10);
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+            tu.azzert(resp.headers().size() == headers.size() + 1);
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+              tu.azzert(entry.getValue().equals(resp.headers().get(entry.getKey())));
+            }
+            tu.testComplete();
+          }
+        });
+
+        req.end();
+      }
+    };
+
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
@@ -1362,20 +1477,7 @@ public class HttpTestClient extends TestClientBase {
         }
         req.response.end();
       }
-    });
-
-    HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.checkThread();
-        tu.azzert(resp.headers().size() == headers.size() + 1);
-        for (Map.Entry<String, String> entry : headers.entrySet()) {
-          tu.azzert(entry.getValue().equals(resp.headers().get(entry.getKey())));
-        }
-        tu.testComplete();
-      }
-    });
-
-    req.end();
+    }, handler);
   }
 
   public void testResponseTrailersPutAll() {
@@ -1388,6 +1490,27 @@ public class HttpTestClient extends TestClientBase {
 
   private void testResponseTrailers(final boolean individually) {
     final Map<String, String> trailers = genMap(10);
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(final HttpClientResponse resp) {
+            tu.checkThread();
+            resp.endHandler(new SimpleHandler() {
+              public void handle() {
+                tu.azzert(resp.trailers().size() == trailers.size());
+                for (Map.Entry<String, String> entry : trailers.entrySet()) {
+                  tu.azzert(entry.getValue().equals(resp.trailers().get(entry.getKey())));
+                }
+                tu.testComplete();
+              }
+            });
+          }
+        });
+
+        req.end();
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
@@ -1401,47 +1524,35 @@ public class HttpTestClient extends TestClientBase {
         }
         req.response.end();
       }
-    });
+    }, handler);
 
-    HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(final HttpClientResponse resp) {
-        tu.checkThread();
-        resp.endHandler(new SimpleHandler() {
-          public void handle() {
-            tu.azzert(resp.trailers().size() == trailers.size());
-            for (Map.Entry<String, String> entry : trailers.entrySet()) {
-              tu.azzert(entry.getValue().equals(resp.trailers().get(entry.getKey())));
-            }
-            tu.testComplete();
-          }
-        });
-      }
-    });
-
-    req.end();
   }
 
   public void testResponseNoTrailers() {
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(final HttpClientResponse resp) {
+            tu.checkThread();
+            resp.endHandler(new SimpleHandler() {
+              public void handle() {
+                tu.azzert(resp.trailers().isEmpty());
+                tu.testComplete();
+              }
+            });
+          }
+        });
+        req.end();
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
         req.response.setChunked(true);
         req.response.end();
       }
-    });
-
-    HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(final HttpClientResponse resp) {
-        tu.checkThread();
-        resp.endHandler(new SimpleHandler() {
-          public void handle() {
-            tu.azzert(resp.trailers().isEmpty());
-            tu.testComplete();
-          }
-        });
-      }
-    });
-    req.end();
+    }, handler);
   }
 
   public void testResponseMultipleSetCookieInHeader() {
@@ -1458,6 +1569,27 @@ public class HttpTestClient extends TestClientBase {
 
   private void testResponseMultipleSetCookie(final boolean inHeader, final boolean inTrailer) {
     final List<String> cookies = new ArrayList<>();
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(final HttpClientResponse resp) {
+            tu.checkThread();
+            resp.endHandler(new SimpleHandler() {
+              public void handle() {
+                tu.azzert(resp.cookies().size() == cookies.size());
+                for (int i = 0; i < cookies.size(); ++i) {
+                  tu.azzert(cookies.get(i).equals(resp.cookies().get(i)));
+                }
+                tu.testComplete();
+              }
+            });
+          }
+        });
+
+        req.end();
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
@@ -1478,27 +1610,22 @@ public class HttpTestClient extends TestClientBase {
         }
         req.response.end();
       }
-    });
-
-    HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(final HttpClientResponse resp) {
-        tu.checkThread();
-        resp.endHandler(new SimpleHandler() {
-          public void handle() {
-            tu.azzert(resp.cookies().size() == cookies.size());
-            for (int i = 0; i < cookies.size(); ++i) {
-              tu.azzert(cookies.get(i).equals(resp.cookies().get(i)));
-            }
-            tu.testComplete();
-          }
-        });
-      }
-    });
-
-    req.end();
+    }, handler);
   }
 
   public void testUseResponseAfterComplete() {
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+          }
+        });
+
+        req.end();
+      }
+    };
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
@@ -1628,40 +1755,37 @@ public class HttpTestClient extends TestClientBase {
 
         tu.testComplete();
       }
-    });
-
-    HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.checkThread();
-      }
-    });
-
-    req.end();
+    }, handler);
   }
 
   public void testResponseBodyBufferAtEnd() {
-
     final Buffer body = TestUtils.generateRandomBuffer(1000);
+
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+            resp.bodyHandler(new Handler<Buffer>() {
+              public void handle(Buffer buff) {
+                tu.azzert(TestUtils.buffersEqual(body, buff));
+                tu.testComplete();
+              }
+            });
+          }
+        });
+
+        req.end();
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
         req.response.end(body);
       }
-    });
+    }, handler);
 
-    HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.checkThread();
-        resp.bodyHandler(new Handler<Buffer>() {
-          public void handle(Buffer buff) {
-            tu.azzert(TestUtils.buffersEqual(body, buff));
-            tu.testComplete();
-          }
-        });
-      }
-    });
-
-    req.end();
   }
 
   public void testResponseBodyStringDefaultEncodingAtEnd() {
@@ -1687,6 +1811,26 @@ public class HttpTestClient extends TestClientBase {
       bodyBuff = new Buffer(body, encoding);
     }
 
+
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+
+        HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+            resp.bodyHandler(new Handler<Buffer>() {
+              public void handle(Buffer buff) {
+                tu.azzert(TestUtils.buffersEqual(bodyBuff, buff));
+                tu.testComplete();
+              }
+            });
+          }
+        });
+
+        req.end();
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
@@ -1697,25 +1841,21 @@ public class HttpTestClient extends TestClientBase {
           req.response.end(body, encoding);
         }
       }
-    });
+    }, handler);
 
-    HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.checkThread();
-        resp.bodyHandler(new Handler<Buffer>() {
-          public void handle(Buffer buff) {
-            tu.azzert(TestUtils.buffersEqual(bodyBuff, buff));
-            tu.testComplete();
-          }
-        });
-      }
-    });
-
-    req.end();
   }
 
   public void testResponseBodyWriteStringNonChunked() {
-
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+          }
+        }).end();
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
@@ -1727,13 +1867,8 @@ public class HttpTestClient extends TestClientBase {
           tu.testComplete();
         }
       }
-    });
+    }, handler);
 
-    getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.checkThread();
-      }
-    }).end();
   }
 
   public void testResponseBodyWriteBufferChunked() {
@@ -1759,6 +1894,23 @@ public class HttpTestClient extends TestClientBase {
     final int numWrites = 10;
     final int chunkSize = 100;
 
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+            resp.bodyHandler(new Handler<Buffer>() {
+              public void handle(Buffer buff) {
+                tu.azzert(TestUtils.buffersEqual(body, buff));
+                tu.testComplete();
+              }
+            });
+          }
+        });
+        req.end();
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
@@ -1779,20 +1931,8 @@ public class HttpTestClient extends TestClientBase {
           req.response.end();
         }
       }
-    });
+    }, handler);
 
-    HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.checkThread();
-        resp.bodyHandler(new Handler<Buffer>() {
-          public void handle(Buffer buff) {
-            tu.azzert(TestUtils.buffersEqual(body, buff));
-            tu.testComplete();
-          }
-        });
-      }
-    });
-    req.end();
   }
 
   private void writeChunk(final int remaining, final int chunkSize, final HttpServerResponse resp, final Buffer totBuffer) {
@@ -1868,6 +2008,25 @@ public class HttpTestClient extends TestClientBase {
       bodyBuff = new Buffer(body, encoding);
     }
 
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+
+        final HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+            resp.bodyHandler(new Handler<Buffer>() {
+              public void handle(Buffer buff) {
+                tu.azzert(TestUtils.buffersEqual(bodyBuff, buff));
+                tu.testComplete();
+              }
+            });
+          }
+        });
+        req.end();
+      }
+    };
+
     startServer(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
         tu.checkThread();
@@ -1896,25 +2055,31 @@ public class HttpTestClient extends TestClientBase {
           req.response.end();
         }
       }
-    });
+    }, handler);
 
-    final HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.checkThread();
-        resp.bodyHandler(new Handler<Buffer>() {
-          public void handle(Buffer buff) {
-            tu.azzert(TestUtils.buffersEqual(bodyBuff, buff));
-            tu.testComplete();
-          }
-        });
-      }
-    });
-    req.end();
   }
 
   public void testResponseWriteBuffer() {
-
     final Buffer body = TestUtils.generateRandomBuffer(1000);
+
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+
+        HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+            resp.bodyHandler(new Handler<Buffer>() {
+              public void handle(Buffer buff) {
+                tu.azzert(TestUtils.buffersEqual(body, buff));
+                tu.testComplete();
+              }
+            });
+          }
+        });
+        req.end();
+      }
+    };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
@@ -1922,25 +2087,38 @@ public class HttpTestClient extends TestClientBase {
         req.response.writeBuffer(body);
         req.response.end();
       }
-    });
-
-    HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        tu.checkThread();
-        resp.bodyHandler(new Handler<Buffer>() {
-          public void handle(Buffer buff) {
-            tu.azzert(TestUtils.buffersEqual(body, buff));
-            tu.testComplete();
-          }
-        });
-      }
-    });
-    req.end();
+    }, handler);
   }
 
   public void testPipelining() {
-
     final int requests = 100;
+
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+
+        for (int count = 0; count < requests; count++) {
+          final int theCount = count;
+          HttpClientRequest req = client.request("POST", "some-uri", new Handler<HttpClientResponse>() {
+            public void handle(final HttpClientResponse response) {
+              tu.azzert(theCount == Integer.parseInt(response.headers().get("count")), theCount + ":" + response.headers().get("count"));
+              response.bodyHandler(new Handler<Buffer>() {
+                public void handle(Buffer buff) {
+                  tu.azzert(("This is content " + theCount).equals(buff.toString()));
+                  if (theCount == requests - 1) {
+                    tu.testComplete();
+                  }
+                }
+              });
+            }
+          });
+          req.setChunked(true);
+          req.headers().put("count", String.valueOf(count));
+          req.write("This is content " + count);
+          req.end();
+        }
+      }
+    };
 
     startServer(new Handler<HttpServerRequest>() {
       int count;
@@ -1965,81 +2143,74 @@ public class HttpTestClient extends TestClientBase {
           }
         });
       }
-    });
-
-    for (int count = 0; count < requests; count++) {
-      final int theCount = count;
-      HttpClientRequest req = client.request("POST", "some-uri", new Handler<HttpClientResponse>() {
-        public void handle(final HttpClientResponse response) {
-          tu.azzert(theCount == Integer.parseInt(response.headers().get("count")), theCount + ":" + response.headers().get("count"));
-          response.bodyHandler(new Handler<Buffer>() {
-            public void handle(Buffer buff) {
-              tu.azzert(("This is content " + theCount).equals(buff.toString()));
-              if (theCount == requests - 1) {
-                tu.testComplete();
-              }
-            }
-          });
-        }
-      });
-      req.setChunked(true);
-      req.headers().put("count", String.valueOf(count));
-      req.write("This is content " + count);
-      req.end();
-    }
+    }, handler);
   }
 
   public void testSendFile() throws Exception {
     final String content = TestUtils.randomUnicodeString(10000);
     final File file = setupFile("test-send-file.html", content);
 
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+
+        client.getNow("some-uri", new Handler<HttpClientResponse>() {
+          public void handle(final HttpClientResponse response) {
+            tu.azzert(response.statusCode == 200);
+            tu.azzert(file.length() == Long.valueOf(response.headers().get("content-length")));
+            tu.azzert("text/html".equals(response.headers().get("content-type")));
+            response.bodyHandler(new Handler<Buffer>() {
+              public void handle(Buffer buff) {
+                tu.azzert(content.equals(buff.toString()));
+                file.delete();
+                tu.testComplete();
+              }
+            });
+          }
+        });
+      }
+    };
+
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         req.response.sendFile(file.getAbsolutePath());
       }
-    });
+    }, handler);
 
-    client.getNow("some-uri", new Handler<HttpClientResponse>() {
-      public void handle(final HttpClientResponse response) {
-        tu.azzert(response.statusCode == 200);
-        tu.azzert(file.length() == Long.valueOf(response.headers().get("content-length")));
-        tu.azzert("text/html".equals(response.headers().get("content-type")));
-        response.bodyHandler(new Handler<Buffer>() {
-          public void handle(Buffer buff) {
-            tu.azzert(content.equals(buff.toString()));
-            file.delete();
-            tu.testComplete();
-          }
-        });
-      }
-    });
   }
 
   public void testSendFileOverrideHeaders() throws Exception {
     final String content = TestUtils.randomUnicodeString(10000);
     final File file = setupFile("test-send-file.html", content);
 
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+
+        client.getNow("some-uri", new Handler<HttpClientResponse>() {
+          public void handle(final HttpClientResponse response) {
+            tu.azzert(response.statusCode == 200);
+            tu.azzert(file.length() == Long.valueOf(response.headers().get("content-length")));
+            tu.azzert("wibble".equals(response.headers().get("content-type")));
+            response.bodyHandler(new Handler<Buffer>() {
+              public void handle(Buffer buff) {
+                tu.azzert(content.equals(buff.toString()));
+                file.delete();
+                tu.testComplete();
+              }
+            });
+          }
+        });
+      }
+    };
+
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         req.response.putHeader("Content-Type", "wibble");
         req.response.sendFile(file.getAbsolutePath());
       }
-    });
+    }, handler);
 
-    client.getNow("some-uri", new Handler<HttpClientResponse>() {
-      public void handle(final HttpClientResponse response) {
-        tu.azzert(response.statusCode == 200);
-        tu.azzert(file.length() == Long.valueOf(response.headers().get("content-length")));
-        tu.azzert("wibble".equals(response.headers().get("content-type")));
-        response.bodyHandler(new Handler<Buffer>() {
-          public void handle(Buffer buff) {
-            tu.azzert(content.equals(buff.toString()));
-            file.delete();
-            tu.testComplete();
-          }
-        });
-      }
-    });
   }
 
   private File setupFile(String fileName, String content) throws Exception {
@@ -2055,33 +2226,66 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testSetHandlersAfterListening() throws Exception {
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        try {
+          server.requestHandler(new Handler<HttpServerRequest>() {
+            public void handle(HttpServerRequest req) {
+            }
+          });
+          tu.azzert(false, "Should throw exception");
+        } catch (IllegalStateException e) {
+          //Ok
+        }
+        try {
+          server.websocketHandler(new Handler<ServerWebSocket>() {
+            public void handle(ServerWebSocket ws) {
+            }
+          });
+          tu.azzert(false, "Should throw exception");
+        } catch (IllegalStateException e) {
+          //Ok
+        }
+        tu.testComplete();
+      }
+    };
+
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
       }
-    });
-    try {
-      server.requestHandler(new Handler<HttpServerRequest>() {
-        public void handle(HttpServerRequest req) {
-        }
-      });
-      tu.azzert(false, "Should throw exception");
-    } catch (IllegalStateException e) {
-      //Ok
-    }
-    try {
-      server.websocketHandler(new Handler<ServerWebSocket>() {
-        public void handle(ServerWebSocket ws) {
-        }
-      });
-      tu.azzert(false, "Should throw exception");
-    } catch (IllegalStateException e) {
-      //Ok
-    }
-    tu.testComplete();
+    }, handler);
   }
 
   public void test100ContinueDefault() throws Exception {
     final Buffer toSend = TestUtils.generateRandomBuffer(1000);
+
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        final HttpClientRequest req = client.put("someurl", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            resp.endHandler(new SimpleHandler() {
+              public void handle() {
+                tu.checkThread();
+                tu.testComplete();
+              }
+            });
+          }
+        });
+        req.headers().put("Expect", "100-continue");
+        req.setChunked(true);
+        req.continueHandler(new SimpleHandler() {
+          public void handle() {
+            tu.checkThread();
+            req.write(toSend);
+            req.end();
+          }
+        });
+        req.sendHead();
+      }
+    };
+
     startServer(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
         req.bodyHandler(new Handler<Buffer>() {
@@ -2092,32 +2296,39 @@ public class HttpTestClient extends TestClientBase {
           }
         });
       }
-    });
-    final HttpClientRequest req = client.put("someurl", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        resp.endHandler(new SimpleHandler() {
-          public void handle() {
-            tu.checkThread();
-            tu.testComplete();
-          }
-        });
-      }
-    });
-    req.headers().put("Expect", "100-continue");
-    req.setChunked(true);
-    req.continueHandler(new SimpleHandler() {
-      public void handle() {
-        tu.checkThread();
-        req.write(toSend);
-        req.end();
-      }
-    });
-    req.sendHead();
+    }, handler);
   }
 
   public void test100ContinueHandled() throws Exception {
 
     final Buffer toSend = TestUtils.generateRandomBuffer(1000);
+
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        final HttpClientRequest req = client.put("someurl", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            resp.endHandler(new SimpleHandler() {
+              public void handle() {
+                tu.checkThread();
+                tu.testComplete();
+              }
+            });
+          }
+        });
+
+        req.headers().put("Expect", "100-continue");
+        req.setChunked(true);
+        req.continueHandler(new SimpleHandler() {
+          public void handle() {
+            tu.checkThread();
+            req.write(toSend);
+            req.end();
+          }
+        });
+        req.sendHead();
+      }
+    };
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
@@ -2130,29 +2341,7 @@ public class HttpTestClient extends TestClientBase {
           }
         });
       }
-    });
-
-    final HttpClientRequest req = client.put("someurl", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        resp.endHandler(new SimpleHandler() {
-          public void handle() {
-            tu.checkThread();
-            tu.testComplete();
-          }
-        });
-      }
-    });
-
-    req.headers().put("Expect", "100-continue");
-    req.setChunked(true);
-    req.continueHandler(new SimpleHandler() {
-      public void handle() {
-        tu.checkThread();
-        req.write(toSend);
-        req.end();
-      }
-    });
-    req.sendHead();
+    }, handler);
   }
 
   public void testClientDrainHandler() {
@@ -2466,35 +2655,49 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testRemoteAddress() {
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        client.getNow("/", new Handler<HttpClientResponse>() {
+          @Override
+          public void handle(HttpClientResponse resp) {
+            tu.testComplete();
+          }
+        });
+      }
+    };
+
     startServer(new Handler<HttpServerRequest>() {
       @Override
       public void handle(HttpServerRequest request) {
         tu.azzert(request.getRemoteAddress().getHostName().startsWith("localhost"));
         request.response.end();
       }
-    });
-    client.getNow("/", new Handler<HttpClientResponse>() {
-      @Override
-      public void handle(HttpClientResponse resp) {
-        tu.testComplete();
-      }
-    });
+    }, handler);
+
   }
 
   public void testGetAbsoluteURI() {
+    Handler<HttpServer> handler = new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        client.getNow("/foo", new Handler<HttpClientResponse>() {
+          @Override
+          public void handle(HttpClientResponse resp) {
+            tu.testComplete();
+          }
+        });
+      }
+    };
+
     startServer(new Handler<HttpServerRequest>() {
       @Override
       public void handle(HttpServerRequest request) {
         tu.azzert("http://localhost:8080/foo".equals(request.getAbsoluteURI().toString()));
         request.response.end();
       }
-    });
-    client.getNow("/foo", new Handler<HttpClientResponse>() {
-      @Override
-      public void handle(HttpClientResponse resp) {
-        tu.testComplete();
-      }
-    });
+    }, handler);
+
   }
 
   // -------------------------------------------------------------------------------------------
