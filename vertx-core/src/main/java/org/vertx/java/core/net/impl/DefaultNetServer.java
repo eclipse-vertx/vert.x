@@ -202,7 +202,17 @@ public class DefaultNetServer implements NetServer {
         public void operationComplete(ChannelFuture future) throws Exception {
           if (future.isSuccess()) {
             if (listenHandler != null) {
-              listenHandler.handle(DefaultNetServer.this);
+              if (eventLoopContext.isOnCorrectWorker(future.channel().eventLoop())) {
+                vertx.setContext(eventLoopContext);
+                listenHandler.handle(DefaultNetServer.this);
+              } else {
+                eventLoopContext.execute(new Runnable() {
+                  @Override
+                  public void run() {
+                    listenHandler.handle(DefaultNetServer.this);
+                  }
+                });
+              }
             }
           } else {
             HandlerHolder<Exception> holder = actualServer.exceptionHandlerManager.chooseHandler(future.channel().eventLoop());

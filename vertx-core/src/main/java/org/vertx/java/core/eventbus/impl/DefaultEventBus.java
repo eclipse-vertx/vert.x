@@ -41,7 +41,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -352,7 +351,6 @@ public class DefaultEventBus implements EventBus {
   }
 
   private NetServer setServer() {
-    final CountDownLatch latch = new CountDownLatch(1);
     NetServer server = vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
         final RecordParser parser = RecordParser.newFixed(4, null);
@@ -379,17 +377,7 @@ public class DefaultEventBus implements EventBus {
         socket.dataHandler(parser);
       }
     });
-    server.listen(serverID.port, serverID.host, new Handler<NetServer>() {
-      @Override
-      public void handle(NetServer event) {
-        latch.countDown();
-      }
-    });
-    try {
-      latch.await();
-    } catch (InterruptedException e) {
-      throw new IllegalStateException(e);
-    }
+    server.listen(serverID.port, serverID.host, null);
     return server;
   }
 
