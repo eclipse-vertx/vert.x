@@ -102,7 +102,6 @@ public class DefaultHttpServer implements HttpServer {
   private VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private HandlerManager<HttpServerRequest> reqHandlerManager = new HandlerManager<>(availableWorkers);
   private HandlerManager<ServerWebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
-  private HandlerManager<Exception> exceptionHandlerManager = new HandlerManager<>(availableWorkers);
 
   public DefaultHttpServer(VertxInternal vertx) {
     this.vertx = vertx;
@@ -248,10 +247,7 @@ public class DefaultHttpServer implements HttpServer {
         // Share the event loop thread to also serve the HttpServer's network traffic.
         actualServer.wsHandlerManager.addHandler(wsHandler, eventLoopContext);
       }
-      if (exceptionHandler != null) {
-        // Share the event loop thread
-        actualServer.exceptionHandlerManager.addHandler(exceptionHandler, eventLoopContext);
-      }
+
       actualServer.bindFuture.addListener(new ChannelFutureListener() {
         @Override
         public void operationComplete(ChannelFuture future) throws Exception {
@@ -270,9 +266,9 @@ public class DefaultHttpServer implements HttpServer {
               }
             }
           } else {
-            HandlerHolder<Exception> holder = actualServer.exceptionHandlerManager.chooseHandler(future.channel().eventLoop());
-            if (holder != null) {
-              holder.handler.handle((Exception) future.cause());
+            Handler<Exception> exceptionHandler = exceptionHandler();
+            if (exceptionHandler != null) {
+                exceptionHandler.handle((Exception) future.cause());
             }
             close();
           }

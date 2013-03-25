@@ -76,7 +76,6 @@ public class DefaultNetServer implements NetServer {
   private DefaultNetServer actualServer;
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
-  private final HandlerManager<Exception> exceptionHandlerManager = new HandlerManager<>(availableWorkers);
 
   private ChannelFuture bindFuture;
 
@@ -191,10 +190,6 @@ public class DefaultNetServer implements NetServer {
         // Share the event loop thread to also serve the NetServer's network traffic.
         actualServer.handlerManager.addHandler(connectHandler, eventLoopContext);
       }
-      if (exceptionHandler != null) {
-        // Share the event loop thread to also serve the NetServer's network traffic.
-        actualServer.exceptionHandlerManager.addHandler(exceptionHandler, eventLoopContext);
-      }
 
       // just add it to the future so it gets notified once the bind is complete
       actualServer.bindFuture.addListener(new ChannelFutureListener() {
@@ -215,10 +210,10 @@ public class DefaultNetServer implements NetServer {
               }
             }
           } else {
-            HandlerHolder<Exception> holder = actualServer.exceptionHandlerManager.chooseHandler(future.channel().eventLoop());
-            if (holder != null) {
-              holder.handler.handle((Exception) future.cause());
-            }
+              Handler<Exception> exceptionHandler = exceptionHandler();
+              if (exceptionHandler != null) {
+                  exceptionHandler.handle((Exception) future.cause());
+              }
             close();
           }
         }
