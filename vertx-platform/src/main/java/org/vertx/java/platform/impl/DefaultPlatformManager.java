@@ -26,6 +26,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.platform.Container;
 import org.vertx.java.platform.Verticle;
 import org.vertx.java.platform.VerticleFactory;
+import org.vertx.java.platform.impl.management.JMX;
 import org.vertx.java.platform.impl.resolver.*;
 
 import java.io.*;
@@ -111,6 +112,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     this.redeployer = new Redeployer(vertx, modRoot, this);
     loadLanguageMappings();
     loadRepos();
+    JMX.PLATFORM.registerPlatformManager(this);
   }
 
 
@@ -624,8 +626,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         callDoneHandler(doneHandler, null);
         return;
       }
-      boolean worker = fields.isWorker();
-      boolean multiThreaded = fields.isMultiThreaded();
+      final boolean worker = fields.isWorker();
+      final boolean multiThreaded = fields.isMultiThreaded();
       if (multiThreaded && !worker) {
           throw new IllegalArgumentException("Multi-threaded modules must be workers");
       }
@@ -1010,12 +1012,14 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   private void doDeploy(final String depName,
-                        boolean autoRedeploy,
-                        boolean worker, boolean multiThreaded,
-                        String theMain,
+                        final boolean autoRedeploy,
+                        final boolean worker,
+                        final boolean multiThreaded,
+                        final String theMain,
                         final ModuleIdentifier modID,
-                        final JsonObject config, final URL[] urls,
-                        int instances,
+                        final JsonObject config,
+                        final URL[] urls,
+                        final int instances,
                         final File modDir,
                         final ModuleReference mr,
                         final Handler<String> doneHandler) {
@@ -1122,6 +1126,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         if (count.incrementAndGet() == instCount) {
           String deploymentID = failed ? null : deploymentName;
           callDoneHandler(doneHandler, deploymentID);
+          JMX.PLATFORM.registerVerticle(deploymentID, theMain, modID, worker, multiThreaded, instances);
         }
       }
     }
@@ -1252,6 +1257,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     for (String childDeployment: deployment.childDeployments) {
       doUndeploy(childDeployment, count);
     }
+
+    JMX.PLATFORM.unregisterVerticle(name);
 
     if (!deployment.verticles.isEmpty()) {
       for (final VerticleHolder holder: deployment.verticles) {

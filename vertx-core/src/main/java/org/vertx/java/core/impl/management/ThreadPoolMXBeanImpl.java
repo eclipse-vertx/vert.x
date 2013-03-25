@@ -26,7 +26,7 @@ public class ThreadPoolMXBeanImpl implements ThreadPoolMXBean {
   private ThreadPoolExecutor executor;
 
   /**
-   * @param exec
+   * @param executor
    */
   public ThreadPoolMXBeanImpl(ThreadPoolExecutor executor) {
     this.executor = executor;
@@ -128,6 +128,5 @@ public class ThreadPoolMXBeanImpl implements ThreadPoolMXBean {
   public long getCompletedTaskCount() {
     return executor.getCompletedTaskCount();
   }
-
 
 }

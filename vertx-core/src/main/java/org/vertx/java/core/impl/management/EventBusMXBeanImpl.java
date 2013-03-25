@@ -15,6 +15,9 @@
  */
 package org.vertx.java.core.impl.management;
 
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * @author swilliams
  *
@@ -25,29 +28,59 @@ public class EventBusMXBeanImpl implements EventBusMXBean {
 
   private String host;
 
+  private String prefix;
+
+  private ConcurrentMap<?, ?> connections;
+
+  private ConcurrentMap<?, ?> handlerMap;
+
+  private AtomicLong sentMessages;
+
   /**
    * @param host
    * @param port
+   * @param prefix 
+   * @param sentMessages 
+   * @param handlerMap 
+   * @param connections 
    */
-  public EventBusMXBeanImpl(String host, int port) {
+  public EventBusMXBeanImpl(String host, int port, String prefix, AtomicLong sentMessages, ConcurrentMap<?, ?> connections, ConcurrentMap<?, ?> handlerMap) {
     this.host = host;
     this.port = port;
+    this.prefix = prefix;
+    this.sentMessages = sentMessages;
+    this.connections = connections;
+    this.handlerMap = handlerMap;
   }
 
-  /* (non-Javadoc)
-   * @see org.vertx.java.core.impl.management.EventBusMXBean#getPort()
-   */
   @Override
   public int getPort() {
     return port;
   }
 
-  /* (non-Javadoc)
-   * @see org.vertx.java.core.impl.management.EventBusMXBean#getHostname()
-   */
   @Override
-  public String getHostname() {
+  public String getHost() {
     return host;
+  }
+
+  @Override
+  public String getPrefix() {
+    return prefix;
+  }
+
+  @Override
+  public long getSentCount() {
+    return sentMessages.get();
+  }
+
+  @Override
+  public int getConnectionCount() {
+    return connections.size();
+  }
+
+  @Override
+  public int getHandlerCount() {
+    return handlerMap.size();
   }
 
 }

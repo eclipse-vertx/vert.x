@@ -30,6 +30,7 @@ import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.impl.DefaultHttpClient;
 import org.vertx.java.core.http.impl.DefaultHttpServer;
+import org.vertx.java.core.impl.management.JMX;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetClient;
@@ -332,8 +333,10 @@ public class DefaultVertx extends VertxInternal {
     }
 
     setContext(null);
+    // Close the JMX server
+    JMX.CORE.stop();
   }
-  
+
   private static class InternalTimerHandler implements Runnable {
     final Handler<Long> handler;
     final long timerID;

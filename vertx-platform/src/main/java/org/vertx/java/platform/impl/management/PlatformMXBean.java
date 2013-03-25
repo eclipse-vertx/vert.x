@@ -13,24 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.vertx.java.core.impl.management;
+package org.vertx.java.platform.impl.management;
+
+import java.util.Map;
 
 /**
  * @author swilliams
  *
  */
-public interface EventBusMXBean {
+public interface PlatformMXBean {
 
-  int getPort();
+  int getInstanceCount();
 
-  String getHost();
+  Map<String, Integer> getInstances();
 
-  String getPrefix();
+  void installModule(String moduleName);
 
-  long getSentCount();
+  void uninstallModule(String moduleName);
 
-  int getConnectionCount();
+  void deployModule(String moduleName, String json, int instances);
 
-  int getHandlerCount();
+  void deployModuleFromZip(String moduleName, String json, int instances);
+
+  void removeModule(String moduleKey);
+
+  void undeployModule(final String deploymentID);
 
 }

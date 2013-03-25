@@ -23,8 +23,10 @@ import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.impl.management.JMX;
 
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  *
@@ -49,8 +51,12 @@ public class DefaultWebSocket extends ServerWebSocket {
   boolean rejected;
   private boolean connected;
 
+  private AtomicLong sentFrames = new AtomicLong(0L);
+  private AtomicLong readFrames = new AtomicLong(0L);
+  private AtomicLong exceptions = new AtomicLong(0L);
+
   protected DefaultWebSocket(VertxInternal vertx, String path, AbstractConnection conn, Runnable connectRunnable) {
-    super(path, UUID.randomUUID().toString(), UUID.randomUUID().toString());
+    super(path, String.format("wsbin-%s", UUID.randomUUID().toString()), String.format("wstxt-%s", UUID.randomUUID().toString()));
     this.vertx = vertx;
     this.conn = conn;
     binaryHandler = new Handler<Message<Buffer>>() {
@@ -58,15 +64,17 @@ public class DefaultWebSocket extends ServerWebSocket {
         writeBinaryFrame(msg.body);
       }
     };
-
     vertx.eventBus().registerLocalHandler(binaryHandlerID, binaryHandler);
+
     textHandler = new Handler<Message<String>>() {
       public void handle(Message<String> msg) {
         writeTextFrame(msg.body);
       }
     };
     vertx.eventBus().registerLocalHandler(textHandlerID, textHandler);
+
     this.connectRunnable = connectRunnable;
+    JMX.CORE.registerWebSocket(path, binaryHandlerID, textHandlerID, readFrames, sentFrames, exceptions);
   }
 
   public void reject() {
@@ -151,6 +159,7 @@ public class DefaultWebSocket extends ServerWebSocket {
       }
     }
     conn.close();
+    JMX.CORE.unregisterWebSocket(path, binaryHandlerID, textHandlerID);
     cleanupHandlers();
   }
 
@@ -173,6 +182,7 @@ public class DefaultWebSocket extends ServerWebSocket {
     }
     checkClosed();
     conn.write(frame);
+    sentFrames.incrementAndGet();
   }
 
   private void connect() {
@@ -196,6 +206,7 @@ public class DefaultWebSocket extends ServerWebSocket {
   void handleFrame(WebSocketFrame frame) {
     if (dataHandler != null) {
       Buffer buff = new Buffer(frame.getBinaryData());
+      readFrames.incrementAndGet();
       dataHandler.handle(buff);
     }
   }
@@ -211,6 +222,7 @@ public class DefaultWebSocket extends ServerWebSocket {
   void handleException(Exception e) {
     if (exceptionHandler != null) {
       exceptionHandler.handle(e);
+      exceptions.incrementAndGet();
     }
   }
 

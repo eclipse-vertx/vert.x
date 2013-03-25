@@ -19,6 +19,7 @@ package org.vertx.java.core.sockjs.impl;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.impl.management.JMX;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -81,6 +82,7 @@ class Session extends SockJSSocket implements Shareable {
         }
       }
     });
+    JMX.CORE.registerSockJSSocket(id, pendingReads, pendingWrites);
   }
 
   public synchronized void write(Buffer buffer) {
@@ -153,6 +155,7 @@ class Session extends SockJSSocket implements Shareable {
     if (endHandler != null) {
       endHandler.handle(null);
     }
+    JMX.CORE.unregisterSockJSSocket(id);
   }
 
   public synchronized void shutdown() {

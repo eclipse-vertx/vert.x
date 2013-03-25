@@ -13,24 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.vertx.java.core.impl.management;
+package org.vertx.java.platform.impl.management;
 
 /**
  * @author swilliams
  *
  */
-public interface EventBusMXBean {
+public interface VerticleMXBean {
 
-  int getPort();
+  String getID();
 
-  String getHost();
+  boolean isWorker();
 
-  String getPrefix();
+  String getMain();
 
-  long getSentCount();
+  String getModID();
 
-  int getConnectionCount();
+  boolean isMultiThreaded();
 
-  int getHandlerCount();
+  int getInstances();
 
 }

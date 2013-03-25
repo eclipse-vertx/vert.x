@@ -15,22 +15,42 @@
  */
 package org.vertx.java.core.impl.management;
 
+import java.util.Queue;
+
 /**
  * @author swilliams
  *
  */
-public interface EventBusMXBean {
+public class SockJSSocketMXBeanImpl implements SockJSSocketMXBean {
 
-  int getPort();
+  private final String id;
+  private Queue<String> pendingReads;
+  private Queue<String> pendingWrites;
 
-  String getHost();
+  /**
+   * @param id
+   * @param pendingWrites 
+   * @param pendingReads 
+   */
+  public SockJSSocketMXBeanImpl(String id, Queue<String> pendingReads, Queue<String> pendingWrites) {
+    this.id = id;
+    this.pendingReads = pendingReads;
+    this.pendingWrites = pendingWrites;
+  }
 
-  String getPrefix();
+  @Override
+  public String getId() {
+    return id;
+  }
 
-  long getSentCount();
+  @Override
+  public int getPendingReads() {
+    return pendingReads.size();
+  }
 
-  int getConnectionCount();
-
-  int getHandlerCount();
+  @Override
+  public int getPendingWrites() {
+    return pendingWrites.size();
+  }
 
 }

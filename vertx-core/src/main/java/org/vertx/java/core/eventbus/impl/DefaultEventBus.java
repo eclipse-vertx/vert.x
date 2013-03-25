@@ -25,7 +25,7 @@ import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
-import org.vertx.java.core.impl.management.ManagementRegistry;
+import org.vertx.java.core.impl.management.JMX;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -42,6 +42,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  *
@@ -61,6 +62,7 @@ public class DefaultEventBus implements EventBus {
   private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, Handlers> handlerMap = new ConcurrentHashMap<>();
   private final AtomicInteger seq = new AtomicInteger(0);
+  private final AtomicLong sentMessages = new AtomicLong(0L);
   private final String prefix = UUID.randomUUID().toString();
   private final ClusterManager clusterMgr;
   
@@ -71,7 +73,7 @@ public class DefaultEventBus implements EventBus {
     this.server = null;
     this.subs = null;
     this.clusterMgr = null;
-    ManagementRegistry.registerEventBus(serverID);
+    JMX.CORE.registerEventBus(serverID, prefix, sentMessages, connections, handlerMap);
   }
 
   public DefaultEventBus(VertxInternal vertx, int port, String hostname, ClusterManager clusterManager) {
@@ -80,7 +82,7 @@ public class DefaultEventBus implements EventBus {
     this.clusterMgr = clusterManager;
     this.subs = clusterMgr.getSubsMap("subs");
     this.server = setServer();
-    ManagementRegistry.registerEventBus(serverID);
+    JMX.CORE.registerEventBus(serverID, prefix, sentMessages, connections, handlerMap);
   }
 
   public void publish(String address, Object message) {
@@ -94,7 +96,7 @@ public class DefaultEventBus implements EventBus {
   public void send(String address, Object message) {
     sendOrPub(createMessage(true, address, message), null);
   }
-  
+
   public <T> void send(String address, JsonObject message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new JsonObjectMessage(true, address, message), replyHandler);
   }
@@ -292,6 +294,9 @@ public class DefaultEventBus implements EventBus {
             return;
           }
         }
+        if (handlers.list.size() == 0) {
+          JMX.CORE.unregisterEventBusHandler(address);
+        }
       }
     }
   }
@@ -302,12 +307,13 @@ public class DefaultEventBus implements EventBus {
 
   @Override
   public void close(Handler<Void> doneHandler) {
-		if (clusterMgr != null) {
-			clusterMgr.close();
-		}
-		if (server != null) {
-			server.close(doneHandler);
-		}
+    if (clusterMgr != null) {
+      clusterMgr.close();
+    }
+    if (server != null) {
+      server.close(doneHandler);
+    }
+    JMX.CORE.unregisterEventBus(serverID);
   }
 
   void sendReply(final ServerID dest, final BaseMessage message, final Handler replyHandler) {
@@ -457,11 +463,15 @@ public class DefaultEventBus implements EventBus {
     }
     Context context = vertx.getOrAssignContext();
     Handlers handlers = handlerMap.get(address);
+    HandlerHolder holder = new HandlerHolder(handler, replyHandler, localOnly, context);
     if (handlers == null) {
       handlers = new Handlers();
       Handlers prevHandlers = handlerMap.putIfAbsent(address, handlers);
       if (prevHandlers != null) {
         handlers = prevHandlers;
+      }
+      else {
+        JMX.CORE.registerEventBusHandler(address, handlers.list, localOnly, holder.received);
       }
       if (completionHandler == null) {
         completionHandler = new AsyncResultHandler<Void>() {
@@ -472,7 +482,7 @@ public class DefaultEventBus implements EventBus {
           }
         };
       }
-      handlers.list.add(new HandlerHolder(handler, replyHandler, localOnly, context));
+      handlers.list.add(holder);
       if (subs != null && !replyHandler && !localOnly) {
         // Propagate the information
         subs.put(address, serverID, completionHandler);
@@ -480,7 +490,7 @@ public class DefaultEventBus implements EventBus {
         callCompletionHandler(completionHandler);
       }
     } else {
-      handlers.list.add(new HandlerHolder(handler, replyHandler, localOnly, context));
+      handlers.list.add(holder);
       if (completionHandler != null) {
         callCompletionHandler(completionHandler);
       }
@@ -559,6 +569,7 @@ public class DefaultEventBus implements EventBus {
       }
     }
     holder.writeMessage(message);
+    sentMessages.incrementAndGet();
   }
 
   private void schedulePing(final ConnectionHolder holder) {
@@ -623,22 +634,24 @@ public class DefaultEventBus implements EventBus {
 
     holder.context.execute(new Runnable() {
       public void run() {
-        // Need to check handler is still there - the handler might have been removed after the message were sent but
-        // before it was received
-        try {
-          if (!holder.removed) {
-            holder.handler.handle(copied);
-          }
-        } finally {
-          if (holder.replyHandler) {
-            unregisterHandler(msg.address, holder.handler);
-          }
-        }
+	      // Need to check handler is still there - the handler might have been removed after the message were sent but
+	      // before it was received
+	      try {
+	        if (!holder.removed) {
+	          holder.handler.handle(copied);
+	          holder.received.incrementAndGet();
+	        }
+	      } finally {
+	        if (holder.replyHandler) {
+	          unregisterHandler(msg.address, holder.handler);
+	        }
+	      }
       }
     });
   }
-	
+
   private static class HandlerHolder {
+    final AtomicLong received;
     final Context context;
     final Handler handler;
     final boolean replyHandler;
@@ -646,6 +659,7 @@ public class DefaultEventBus implements EventBus {
     boolean removed;
 
     HandlerHolder(Handler handler, boolean replyHandler, boolean localOnly, Context context) {
+      this.received = new AtomicLong(0L);
       this.context = context;
       this.handler = handler;
       this.replyHandler = replyHandler;

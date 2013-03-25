@@ -15,22 +15,41 @@
  */
 package org.vertx.java.core.impl.management;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * @author swilliams
  *
  */
-public interface EventBusMXBean {
+public class HttpServerMXBeanImpl implements HttpServerMXBean {
 
-  int getPort();
+  private String host;
+  private int port;
+  private AtomicLong received;
 
-  String getHost();
+  /**
+   * @param host
+   * @param port
+   * @param received 
+   */
+  public HttpServerMXBeanImpl(String host, int port, AtomicLong received) {
+    this.host = host;
+    this.port = port;
+    this.received = received;
+  }
 
-  String getPrefix();
+  @Override
+  public String getHost() {
+    return host;
+  }
 
-  long getSentCount();
+  @Override
+  public int getPort() {
+    return port;
+  }
 
-  int getConnectionCount();
-
-  int getHandlerCount();
+  public long getReceivedCount() {
+    return received.get();
+  }
 
 }

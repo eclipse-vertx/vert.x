@@ -59,7 +59,7 @@ public abstract class SockJSSocket implements ReadStream, WriteStream {
         writeBuffer(buff.body);
       }
     };
-    this.writeHandlerID = UUID.randomUUID().toString();
+    this.writeHandlerID = String.format("sockjs-%s", UUID.randomUUID().toString());
     vertx.eventBus().registerLocalHandler(writeHandlerID, writeHandler);
     cnt.incrementAndGet();
   }

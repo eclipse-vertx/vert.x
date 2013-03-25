@@ -19,18 +19,17 @@ package org.vertx.java.core.impl.management;
  * @author swilliams
  *
  */
-public interface EventBusMXBean {
+public interface ServerWebSocketMXBean {
 
-  int getPort();
+  String getPath();
 
-  String getHost();
+  String getBinaryHandlerID();
 
-  String getPrefix();
+  String getTextHandlerID();
 
-  long getSentCount();
+  long getFramesSent();
 
-  int getConnectionCount();
-
-  int getHandlerCount();
-
+  long getFramesRead();
+  
+  long getExceptionCount();
 }

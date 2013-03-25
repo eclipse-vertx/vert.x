@@ -19,18 +19,28 @@ package org.vertx.java.core.impl.management;
  * @author swilliams
  *
  */
-public interface EventBusMXBean {
+public class NetServerMXBeanImpl implements NetServerMXBean {
 
-  int getPort();
+  private String host;
+  private int port;
 
-  String getHost();
+  /**
+   * @param host
+   * @param port
+   */
+  public NetServerMXBeanImpl(String host, int port) {
+    this.host = host;
+    this.port = port;
+  }
 
-  String getPrefix();
+  @Override
+  public String getHost() {
+    return host;
+  }
 
-  long getSentCount();
-
-  int getConnectionCount();
-
-  int getHandlerCount();
+  @Override
+  public int getPort() {
+    return port;
+  }
 
 }

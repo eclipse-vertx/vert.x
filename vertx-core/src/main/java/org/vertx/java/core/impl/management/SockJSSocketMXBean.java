@@ -19,18 +19,12 @@ package org.vertx.java.core.impl.management;
  * @author swilliams
  *
  */
-public interface EventBusMXBean {
+public interface SockJSSocketMXBean {
 
-  int getPort();
+  String getId();
 
-  String getHost();
+  int getPendingReads();
 
-  String getPrefix();
-
-  long getSentCount();
-
-  int getConnectionCount();
-
-  int getHandlerCount();
+  int getPendingWrites();
 
 }

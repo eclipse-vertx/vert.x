@@ -23,6 +23,8 @@ import java.io.Serializable;
  */
 public class ServerID implements Serializable {
 
+  private static final long serialVersionUID = 1L;
+
   public int port;
   public String host;
 

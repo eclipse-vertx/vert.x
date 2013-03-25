@@ -18,4 +18,6 @@ Scratch.java
 ScratchTest.java
 test-results
 test-tmp
+vertx-platform/src/test/mod-test
+vertx-platform/reloader-test-mods
 *.class

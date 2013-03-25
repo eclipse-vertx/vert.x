@@ -15,22 +15,34 @@
  */
 package org.vertx.java.core.impl.management;
 
+import io.netty.channel.nio.NioEventLoopGroup;
+
 /**
  * @author swilliams
  *
  */
-public interface EventBusMXBean {
+public class EventLoopGroupMXBeanImpl implements EventLoopGroupMXBean {
 
-  int getPort();
+  private NioEventLoopGroup loop;
 
-  String getHost();
+  public EventLoopGroupMXBeanImpl(NioEventLoopGroup loop) {
+    this.loop = loop;
+  }
 
-  String getPrefix();
+  /* (non-Javadoc)
+   * @see org.vertx.java.core.impl.management.EventLoopGroupMXBean#isShutdown()
+   */
+  @Override
+  public boolean isShutdown() {
+    return loop.isShutdown();
+  }
 
-  long getSentCount();
-
-  int getConnectionCount();
-
-  int getHandlerCount();
+  /* (non-Javadoc)
+   * @see org.vertx.java.core.impl.management.EventLoopGroupMXBean#isTerminated()
+   */
+  @Override
+  public boolean isTerminated() {
+    return loop.isTerminated();
+  }
 
 }

@@ -15,22 +15,34 @@
  */
 package org.vertx.java.core.impl.management;
 
+import org.vertx.java.core.net.impl.DefaultNetSocket;
+
 /**
  * @author swilliams
  *
  */
-public interface EventBusMXBean {
+public class NetSocketMXBeanImpl implements NetSocketMXBean {
 
-  int getPort();
+  private DefaultNetSocket sock;
 
-  String getHost();
+  /**
+   * @param sock
+   */
+  public NetSocketMXBeanImpl(DefaultNetSocket sock) {
+    this.sock = sock;
+  }
 
-  String getPrefix();
+  @Override
+  public String getWriteHandlerId() {
+    return sock.writeHandlerID;
+  }
 
-  long getSentCount();
+  public long getReceivedBytes() {
+    return sock.getReceivedCount();
+  }
 
-  int getConnectionCount();
-
-  int getHandlerCount();
+  public long getSentBytes() {
+    return sock.getSentCount();
+  }
 
 }
