@@ -41,7 +41,7 @@ public abstract class AbstractConnection extends ConnectionBase {
     } else {
       // thread is not our current eventloop for the channel we need to run the add in the eventloop.
       // this is not needed for write as write will submit a task if needed by its own
-      channel.outboundMessageBuffer().add(new Runnable() {
+      channel.eventLoop().execute(new Runnable() {
         @Override
         public void run() {
           channel.outboundMessageBuffer().add(obj);
