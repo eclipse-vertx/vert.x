@@ -27,6 +27,10 @@ public class ProxyRepoDownloadTest extends TestBase {
     System.setProperty("http.proxyHost", "127.0.0.1");
     System.setProperty("http.proxyPort", "9193");
     super.setUp();
+
+    // TODO: Remove this once we have a way to wait for listen to complete
+    Thread.sleep(1000);
+
     startApp(RepoDownloadTestClient.class.getName());
   }
 
