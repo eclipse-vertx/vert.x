@@ -37,15 +37,7 @@ import java.util.concurrent.Executors;
 public class VertxExecutorFactory {
 
   public static final int WORKER_POOL_MAX_SIZE = 20;
-  public static final int ACCEPTOR_POOL_MAX_SIZE = 4;
-
-  // The core pool needs to be fixed with a backing queue
-  public static EventLoopGroup corePool(String poolName) {
-    int corePoolSize = Integer.getInteger("vertx.pool.core.size", Runtime.getRuntime().availableProcessors());
-    //ExecutorService exec = Executors.newFixedThreadPool(corePoolSize, new VertxThreadFactory(poolName));
-    //ManagementRegistry.registerThreadPool("Core", exec);
-    return new NioEventLoopGroup(corePoolSize, new VertxThreadFactory(poolName));
-  }
+  public static final int EVENTLOOP_POOL_MAX_SIZE = 4;
 
 
   // The worker pool needs to be fixed with a backing queue
@@ -58,17 +50,8 @@ public class VertxExecutorFactory {
 
   // The acceptor pools need to be fixed with a backing queue
 
-  public static EventLoopGroup serverAcceptorPool(String poolName) {
-    int acceptorPoolSize = Integer.getInteger("vertx.pool.acceptor.size", ACCEPTOR_POOL_MAX_SIZE);
-    ExecutorService exec = Executors.newFixedThreadPool(acceptorPoolSize, new VertxThreadFactory(poolName));
-    ManagementRegistry.registerThreadPool("ServerAcceptor", exec);
-    return new NioEventLoopGroup(acceptorPoolSize, new VertxThreadFactory(poolName));
-  }
-
-  public static EventLoopGroup clientAcceptorPool(VertxInternal vertx, String poolName) {
-    int acceptorPoolSize = Integer.getInteger("vertx.pool.acceptor.size", ACCEPTOR_POOL_MAX_SIZE);
-    //ExecutorService exec = Executors.newFixedThreadPool(acceptorPoolSize, new VertxThreadFactory(poolName));
-    //ManagementRegistry.registerThreadPool("ClientAcceptor", exec);
+  public static EventLoopGroup eventLoopGroup(String poolName) {
+    int acceptorPoolSize = Integer.getInteger("vertx.pool.eventloop.size", EVENTLOOP_POOL_MAX_SIZE);
     return new NioEventLoopGroup(acceptorPoolSize, new VertxThreadFactory(poolName));
   }
 }
