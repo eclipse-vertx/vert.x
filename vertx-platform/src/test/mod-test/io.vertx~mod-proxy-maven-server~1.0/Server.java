@@ -1,11 +1,15 @@
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VoidResult;
+import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.platform.Verticle;
 import org.vertx.java.testframework.TestUtils;
 
+import java.lang.Override;
+
 public class Server extends Verticle {
 
-  public void start() {
+  public void start(final VoidResult result) {
 
     final TestUtils tu = new TestUtils(vertx);
 
@@ -21,6 +25,11 @@ public class Server extends Verticle {
           req.response().sendFile("." + req.path());
         }
       }
-    }).listen(9193, "127.0.0.1", null);
+    }).listen(9193, "127.0.0.1", new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+        result.setResult();
+      }
+    });
   }
 }
