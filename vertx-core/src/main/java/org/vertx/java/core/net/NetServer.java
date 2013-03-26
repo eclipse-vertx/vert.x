@@ -66,6 +66,13 @@ public interface NetServer extends ServerSSLSupport<NetServer>, ServerTCPSupport
   void listen(int port, Handler<NetServer> listenHandler);
 
   /**
+   * Tell the server to start listening on port {@code port} and hostname or ip address given by {@code host}. Be aware this is an
+   * async operation and the server may not bound on return of the method.
+   *
+   */
+  void listen(int port, String host);
+
+  /**
    * Instruct the server to listen for incoming connections on the specified {@code port} and {@code host}. {@code host} can
    * be a host name or an IP address.
    */
