@@ -27,10 +27,10 @@ public class RepoDownloadTest extends TestBase {
   protected void setUp() throws Exception {
     super.setUp();
 
+    startApp(RepoDownloadTestClient.class.getName());
+
     // TODO: Remove this once we have a way to wait for listen to complete
     Thread.sleep(1000);
-
-    startApp(RepoDownloadTestClient.class.getName());
   }
 
   @Override
