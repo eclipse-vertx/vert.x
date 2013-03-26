@@ -1,4 +1,4 @@
-/*
+vertx-core/src/main/java/org/vertx/java/core/http/HttpServer.java/*
  * Copyright 2011-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -162,6 +162,10 @@ public class DefaultHttpServer implements HttpServer {
 
   public void listen(int port) {
     listen(port, "0.0.0.0", null);
+  }
+
+  public void listen(int port, String host) {
+    listen(port, host, null);
   }
 
   public void listen(int port, Handler<HttpServer> listenHandler) {

@@ -114,6 +114,10 @@ public class DefaultNetServer implements NetServer {
     listen(port, "0.0.0.0", listenHandler);
   }
 
+  public void listen(int port, String host) {
+    listen(port, host, null);
+  }
+
   public void listen(final int port, final String host, final Handler<NetServer> listenHandler) {
     if (connectHandler == null) {
       throw new IllegalStateException("Set connect handler first");
