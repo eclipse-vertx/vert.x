@@ -1,4 +1,4 @@
-vertx-core/src/main/java/org/vertx/java/core/http/HttpServer.java/*
+/**
  * Copyright 2011-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
