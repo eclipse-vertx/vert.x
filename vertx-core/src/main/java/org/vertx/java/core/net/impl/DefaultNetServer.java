@@ -123,7 +123,7 @@ public class DefaultNetServer implements NetServer {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
 
         ServerBootstrap bootstrap = new ServerBootstrap();
-        bootstrap.group(vertx.getServerAcceptorPool(), availableWorkers);
+        bootstrap.group(vertx.getEventLoopGroup(), availableWorkers);
         bootstrap.channel(NioServerSocketChannel.class);
         tcpHelper.checkSSL(vertx);
 

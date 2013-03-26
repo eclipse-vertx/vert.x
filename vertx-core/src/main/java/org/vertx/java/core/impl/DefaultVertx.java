@@ -63,9 +63,7 @@ public class DefaultVertx implements VertxInternal {
 
   private ExecutorService backgroundPool = VertxExecutorFactory.workerPool("vert.x-worker-thread-");
   private OrderedExecutorFactory orderedFact = new OrderedExecutorFactory(backgroundPool);
-  private EventLoopGroup corePool = VertxExecutorFactory.corePool("vert.x-core-thread-");
-  private EventLoopGroup serverBossPool = VertxExecutorFactory.serverAcceptorPool("vert.x-server-acceptor-thread-");
-  private EventLoopGroup clientBossPool = VertxExecutorFactory.clientAcceptorPool(this, "vert.x-client-acceptor-thread-");
+  private EventLoopGroup eventLoopGroup = VertxExecutorFactory.eventLoopGroup("vert.x-eventloop-thread-");
 
   private Map<ServerID, DefaultHttpServer> sharedHttpServers = new HashMap<>();
   private Map<ServerID, DefaultNetServer> sharedNetServers = new HashMap<>();
@@ -179,12 +177,8 @@ public class DefaultVertx implements VertxInternal {
     return backgroundPool;
   }
 
-  public EventLoopGroup getCorePool() {
-    return corePool;
-  }
-
-  public EventLoopGroup getServerAcceptorPool() {
-    return serverBossPool;
+  public EventLoopGroup getEventLoopGroup() {
+    return eventLoopGroup;
   }
 
   public Context getOrAssignContext() {
@@ -218,7 +212,7 @@ public class DefaultVertx implements VertxInternal {
   }
 
   public EventLoopContext createEventLoopContext() {
-    EventLoop worker = getCorePool().next();
+    EventLoop worker = getEventLoopGroup().next();
     return new EventLoopContext(this, orderedFact.getExecutor(), worker);
   }
 
@@ -248,7 +242,7 @@ public class DefaultVertx implements VertxInternal {
       toRun = wrapped;
     } else {
       // On worker context
-      el = getCorePool().next();
+      el = getEventLoopGroup().next();
       toRun = new Runnable() {
         public void run() {
         // Make sure the timer gets executed on the worker context
@@ -316,19 +310,9 @@ public class DefaultVertx implements VertxInternal {
       // ignore
     }
 
-    if (clientBossPool != null) {
-      clientBossPool.shutdown();
-      clientBossPool = null;
-    }
-
-    if (serverBossPool != null) {
-      serverBossPool.shutdown();
-      serverBossPool = null;
-    }
-
-    if (corePool != null) {
-      corePool.shutdown();
-      corePool = null;
+    if (eventLoopGroup != null) {
+      eventLoopGroup.shutdown();
+      eventLoopGroup = null;
     }
 
     setContext(null);
