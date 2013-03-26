@@ -35,6 +35,9 @@ public class JavaEchoTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
+
+    // hack until I find a good solution for starting the EventBus with the new async listen
+    Thread.sleep(1000);
     startApp(getPeerClassName());
     startApp(getClientClassName());
   }
