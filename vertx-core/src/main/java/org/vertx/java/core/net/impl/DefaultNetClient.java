@@ -27,7 +27,6 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.Context;
-import org.vertx.java.core.impl.EventLoopContext;
 import org.vertx.java.core.impl.ExceptionDispatchHandler;
 import org.vertx.java.core.impl.FlowControlHandler;
 import org.vertx.java.core.impl.VertxInternal;
@@ -53,7 +52,6 @@ public class DefaultNetClient implements NetClient {
 
   private final VertxInternal vertx;
   private final Context actualCtx;
-  private final EventLoopContext eventLoopContext;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private Bootstrap bootstrap;
   private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<>();
@@ -75,11 +73,6 @@ public class DefaultNetClient implements NetClient {
         close();
       }
     });
-    if (actualCtx instanceof EventLoopContext) {
-      eventLoopContext = (EventLoopContext)actualCtx;
-    } else {
-      eventLoopContext = vertx.createEventLoopContext();
-    }
   }
 
   public NetClient connect(int port, String host, final Handler<NetSocket> connectHandler) {
@@ -277,14 +270,10 @@ public class DefaultNetClient implements NetClient {
                        final int remainingAttempts) {
     if (bootstrap == null) {
       // Share the event loop thread to also serve the NetClient's network traffic.
-      VertxEventLoopGroup pool = new VertxEventLoopGroup();
-      pool.addWorker(eventLoopContext.getWorker());
-
-
       tcpHelper.checkSSL(vertx);
 
       bootstrap = new Bootstrap();
-      bootstrap.group(pool);
+      bootstrap.group(actualCtx.getEventLoop());
       bootstrap.channel(NioSocketChannel.class);
       bootstrap.handler(new ChannelInitializer<Channel>() {
         @Override
