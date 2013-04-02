@@ -53,12 +53,6 @@ public class DefaultNetClient implements NetClient {
 
   public DefaultNetClient(VertxInternal vertx) {
     this.vertx = vertx;
-    // This is kind of fiddly - this class might be used by a worker, in which case the context is not
-    // an event loop context - but we need an event loop context so that netty can deliver any messages for the connection
-    // Therefore, if the current context is not an event loop one, we need to create one and register that with the
-    // handler manager when registering handlers
-    // We then do a check when messages are delivered that we're on the right worker before delivering the message
-    // All of this will be massively simplified in Netty 4.0 when the event loop becomes a first class citizen
     actualCtx = vertx.getOrAssignContext();
     actualCtx.putCloseHook(this, new Runnable() {
       public void run() {
@@ -323,7 +317,7 @@ public class DefaultNetClient implements NetClient {
             pipeline.addLast("ssl", new SslHandler(engine));
           }
           pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());  // For large file / sendfile support
-          pipeline.addLast("handler", new ClientHandler());
+          pipeline.addLast("handler", new VertxNetHandler(vertx, socketMap));
         }
       });
       configurable = false;
@@ -430,7 +424,7 @@ public class DefaultNetClient implements NetClient {
     }
   }
 
-  private void doFailed(Handler<AsyncResult<NetSocket>> connectHandler, Throwable t) {
+  private static void doFailed(Handler<AsyncResult<NetSocket>> connectHandler, Throwable t) {
     connectHandler.handle(new DefaultFutureResult<NetSocket>(t));
   }
 
