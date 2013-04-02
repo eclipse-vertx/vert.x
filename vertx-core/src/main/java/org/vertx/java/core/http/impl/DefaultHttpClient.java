@@ -50,7 +50,6 @@ public class DefaultHttpClient implements HttpClient {
 
   private final VertxInternal vertx;
   private final Context actualCtx;
-  private final EventLoopContext eventLoopContext;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private Bootstrap bootstrap;
   private Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<Channel, ClientConnection>();
@@ -79,11 +78,6 @@ public class DefaultHttpClient implements HttpClient {
         close();
       }
     });
-    if (actualCtx instanceof EventLoopContext) {
-      eventLoopContext = (EventLoopContext)actualCtx;
-    } else {
-      eventLoopContext = vertx.createEventLoopContext();
-    }
   }
 
   @Override
@@ -443,7 +437,7 @@ public class DefaultHttpClient implements HttpClient {
     if (bootstrap == null) {
       // Share the event loop thread to also serve the HttpClient's network traffic.
       VertxEventLoopGroup pool = new VertxEventLoopGroup();
-      pool.addWorker(eventLoopContext.getWorker());
+      pool.addWorker(actualCtx.getEventLoop());
       bootstrap = new Bootstrap();
       bootstrap.group(pool);
       bootstrap.channel(NioSocketChannel.class);
@@ -588,6 +582,7 @@ public class DefaultHttpClient implements HttpClient {
     public void messageReceived(final ChannelHandlerContext chctx, final Object msg) throws Exception {
       final Channel ch = chctx.channel();
       // We need to do this since it's possible the server is being used from a worker context
+<<<<<<< HEAD
       if (eventLoopContext.isOnCorrectWorker(ch.eventLoop())) {
         try {
           vertx.setContext(actualCtx);
@@ -595,6 +590,11 @@ public class DefaultHttpClient implements HttpClient {
         } catch (Throwable t) {
           actualCtx.reportException(t);
         }
+=======
+      if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
+        vertx.setContext(actualCtx);
+        doMessageReceived(connectionMap.get(ch), chctx, msg);
+>>>>>>> ab78c21... Simplify the logic to start server / client by assign EventLoop with every context as it is not expensive at all
       } else {
         BufUtil.retain(msg);
         actualCtx.execute(new Runnable() {

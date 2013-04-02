@@ -75,7 +75,6 @@ public class DefaultHttpServer implements HttpServer {
   private final VertxInternal vertx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private final Context actualCtx;
-  private final EventLoopContext eventLoopContext;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
   private Handler<Exception> exceptionHandler;
@@ -105,11 +104,6 @@ public class DefaultHttpServer implements HttpServer {
         close();
       }
     });
-    if (actualCtx instanceof EventLoopContext) {
-      eventLoopContext = (EventLoopContext)actualCtx;
-    } else {
-      eventLoopContext = vertx.createEventLoopContext();
-    }
     tcpHelper.setReuseAddress(true);
   }
 
@@ -243,11 +237,11 @@ public class DefaultHttpServer implements HttpServer {
         public void operationComplete(ChannelFuture future) throws Exception {
           if (future.isSuccess()) {
             if (listenHandler != null) {
-              if (eventLoopContext.isOnCorrectWorker(future.channel().eventLoop())) {
-                vertx.setContext(eventLoopContext);
+              if (actualCtx.isOnCorrectWorker(future.channel().eventLoop())) {
+                vertx.setContext(actualCtx);
                 listenHandler.handle(DefaultHttpServer.this);
               } else {
-                eventLoopContext.execute(new Runnable() {
+                actualCtx.execute(new Runnable() {
                   @Override
                   public void run() {
                     listenHandler.handle(DefaultHttpServer.this);
@@ -270,11 +264,11 @@ public class DefaultHttpServer implements HttpServer {
   private void addHandlers(DefaultHttpServer server) {
     if (requestHandler != null) {
       // Share the event loop thread to also serve the HttpServer's network traffic.
-        server.reqHandlerManager.addHandler(requestHandler, eventLoopContext);
+        server.reqHandlerManager.addHandler(requestHandler, actualCtx);
     }
     if (wsHandler != null) {
       // Share the event loop thread to also serve the HttpServer's network traffic.
-        server.wsHandlerManager.addHandler(wsHandler, eventLoopContext);
+        server.wsHandlerManager.addHandler(wsHandler, actualCtx);
     }
   }
 
@@ -296,10 +290,10 @@ public class DefaultHttpServer implements HttpServer {
       if (actualServer != null) {
 
         if (requestHandler != null) {
-          actualServer.reqHandlerManager.removeHandler(requestHandler, eventLoopContext);
+          actualServer.reqHandlerManager.removeHandler(requestHandler, actualCtx);
         }
         if (wsHandler != null) {
-          actualServer.wsHandlerManager.removeHandler(wsHandler, eventLoopContext);
+          actualServer.wsHandlerManager.removeHandler(wsHandler, actualCtx);
         }
 
         if (actualServer.reqHandlerManager.hasHandlers() || actualServer.wsHandlerManager.hasHandlers()) {

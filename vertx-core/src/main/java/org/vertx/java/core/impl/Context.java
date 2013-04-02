@@ -38,11 +38,13 @@ public abstract class Context {
   private Map<Object, Runnable> closeHooks;
   private final ClassLoader tccl;
   private boolean closed;
+  private final EventLoop eventLoop;
   protected final Executor orderedBgExec;
 
   protected Context(VertxInternal vertx, Executor orderedBgExec) {
     this.vertx = vertx;
     this.orderedBgExec = orderedBgExec;
+    this.eventLoop = vertx.getEventLoopGroup().next();
     this.tccl = Thread.currentThread().getContextClassLoader();
   }
 
@@ -100,6 +102,10 @@ public abstract class Context {
   public abstract void execute(Runnable handler);
 
   public abstract boolean isOnCorrectWorker(EventLoop worker);
+
+  public EventLoop getEventLoop() {
+    return eventLoop;
+  }
 
   // This executes the task in the worker pool using the ordered executor of the context
   // It's used e.g. from BlockingActions
