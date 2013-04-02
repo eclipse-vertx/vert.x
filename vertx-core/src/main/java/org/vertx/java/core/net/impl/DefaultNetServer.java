@@ -127,7 +127,7 @@ public class DefaultNetServer implements NetServer {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
 
         ServerBootstrap bootstrap = new ServerBootstrap();
-        bootstrap.group(vertx.getEventLoopGroup(), availableWorkers);
+        bootstrap.group(availableWorkers);
         bootstrap.channel(NioServerSocketChannel.class);
         tcpHelper.checkSSL(vertx);
 
@@ -163,6 +163,11 @@ public class DefaultNetServer implements NetServer {
 
         tcpHelper.applyConnectionOptions(bootstrap);
 
+        if (connectHandler != null) {
+          // Share the event loop thread to also serve the NetServer's network traffic.
+          handlerManager.addHandler(connectHandler, eventLoopContext);
+        }
+
         try {
 
           bindFuture = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port)).addListener(new ChannelFutureListener() {
@@ -182,11 +187,13 @@ public class DefaultNetServer implements NetServer {
       } else {
         // Server already exists with that host/port - we will use that
         checkConfigs(actualServer, this);
+
         actualServer = shared;
-      }
-      if (connectHandler != null) {
-        // Share the event loop thread to also serve the NetServer's network traffic.
-        actualServer.handlerManager.addHandler(connectHandler, eventLoopContext);
+
+        if (connectHandler != null) {
+          // Share the event loop thread to also serve the NetServer's network traffic.
+          actualServer.handlerManager.addHandler(connectHandler, eventLoopContext);
+        }
       }
 
       // just add it to the future so it gets notified once the bind is complete

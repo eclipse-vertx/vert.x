@@ -87,7 +87,7 @@ public class DefaultHttpServer implements HttpServer {
   private ChannelFuture bindFuture;
   private ServerID id;
   private DefaultHttpServer actualServer;
-  private VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
+  private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private HandlerManager<HttpServerRequest> reqHandlerManager = new HandlerManager<>(availableWorkers);
   private HandlerManager<ServerWebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
 
@@ -181,7 +181,7 @@ public class DefaultHttpServer implements HttpServer {
       if (shared == null) {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
         ServerBootstrap bootstrap = new ServerBootstrap();
-        bootstrap.group(vertx.getEventLoopGroup(), availableWorkers);
+        bootstrap.group(availableWorkers);
         bootstrap.channel(NioServerSocketChannel.class);
         tcpHelper.applyConnectionOptions(bootstrap);
         tcpHelper.checkSSL(vertx);
@@ -220,6 +220,7 @@ public class DefaultHttpServer implements HttpServer {
             }
         });
 
+        addHandlers(this);
         try {
           bindFuture = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
           Channel serverChannel = bindFuture.channel();
@@ -232,14 +233,9 @@ public class DefaultHttpServer implements HttpServer {
       } else {
         // Server already exists with that host/port - we will use that
         actualServer = shared;
-      }
-      if (requestHandler != null) {
-        // Share the event loop thread to also serve the HttpServer's network traffic.
-        actualServer.reqHandlerManager.addHandler(requestHandler, eventLoopContext);
-      }
-      if (wsHandler != null) {
-        // Share the event loop thread to also serve the HttpServer's network traffic.
-        actualServer.wsHandlerManager.addHandler(wsHandler, eventLoopContext);
+
+        addHandlers(actualServer);
+
       }
 
       actualServer.bindFuture.addListener(new ChannelFutureListener() {
@@ -271,9 +267,20 @@ public class DefaultHttpServer implements HttpServer {
     }
   }
 
+  private void addHandlers(DefaultHttpServer server) {
+    if (requestHandler != null) {
+      // Share the event loop thread to also serve the HttpServer's network traffic.
+        server.reqHandlerManager.addHandler(requestHandler, eventLoopContext);
+    }
+    if (wsHandler != null) {
+      // Share the event loop thread to also serve the HttpServer's network traffic.
+        server.wsHandlerManager.addHandler(wsHandler, eventLoopContext);
+    }
+  }
+
   @Override
   public void close() {
-    close((Handler<AsyncResult<Void>>)null);
+    close(null);
   }
 
   @Override
