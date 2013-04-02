@@ -36,7 +36,6 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.Context;
-import org.vertx.java.core.impl.EventLoopContext;
 import org.vertx.java.core.impl.ExceptionDispatchHandler;
 import org.vertx.java.core.impl.FlowControlHandler;
 import org.vertx.java.core.impl.VertxInternal;
@@ -59,7 +58,6 @@ public class DefaultHttpClient implements HttpClient {
 
   private final VertxInternal vertx;
   private final Context actualCtx;
-  private final EventLoopContext eventLoopContext;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private Bootstrap bootstrap;
   private Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<Channel, ClientConnection>();
@@ -87,11 +85,6 @@ public class DefaultHttpClient implements HttpClient {
         close();
       }
     });
-    if (actualCtx instanceof EventLoopContext) {
-      eventLoopContext = (EventLoopContext)actualCtx;
-    } else {
-      eventLoopContext = vertx.createEventLoopContext();
-    }
   }
 
   public void exceptionHandler(Handler<Exception> handler) {
@@ -373,7 +366,7 @@ public class DefaultHttpClient implements HttpClient {
     if (bootstrap == null) {
       // Share the event loop thread to also serve the HttpClient's network traffic.
       VertxEventLoopGroup pool = new VertxEventLoopGroup();
-      pool.addWorker(eventLoopContext.getWorker());
+      pool.addWorker(actualCtx.getEventLoop());
       bootstrap = new Bootstrap();
       bootstrap.group(pool);
       bootstrap.channel(NioSocketChannel.class);
@@ -516,7 +509,7 @@ public class DefaultHttpClient implements HttpClient {
     public void messageReceived(final ChannelHandlerContext chctx, final Object msg) throws Exception {
       final Channel ch = chctx.channel();
       // We need to do this since it's possible the server is being used from a worker context
-      if (eventLoopContext.isOnCorrectWorker(ch.eventLoop())) {
+      if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
         vertx.setContext(actualCtx);
         doMessageReceived(connectionMap.get(ch), chctx, msg);
       } else {

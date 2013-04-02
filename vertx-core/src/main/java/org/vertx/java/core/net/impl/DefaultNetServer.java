@@ -35,7 +35,6 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.Context;
-import org.vertx.java.core.impl.EventLoopContext;
 import org.vertx.java.core.impl.ExceptionDispatchHandler;
 import org.vertx.java.core.impl.FlowControlHandler;
 import org.vertx.java.core.impl.VertxInternal;
@@ -64,7 +63,6 @@ public class DefaultNetServer implements NetServer {
 
   private final VertxInternal vertx;
   private final Context actualCtx;
-  private final EventLoopContext eventLoopContext;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<Channel, DefaultNetSocket>();
   private Handler<NetSocket> connectHandler;
@@ -93,11 +91,6 @@ public class DefaultNetServer implements NetServer {
         close();
       }
     });
-    if (actualCtx instanceof EventLoopContext) {
-      eventLoopContext = (EventLoopContext)actualCtx;
-    } else {
-      eventLoopContext = vertx.createEventLoopContext();
-    }
     tcpHelper.setReuseAddress(true);
   }
 
@@ -172,7 +165,7 @@ public class DefaultNetServer implements NetServer {
 
         if (connectHandler != null) {
           // Share the event loop thread to also serve the NetServer's network traffic.
-          handlerManager.addHandler(connectHandler, eventLoopContext);
+          handlerManager.addHandler(connectHandler, actualCtx);
         }
 
         try {
@@ -198,7 +191,7 @@ public class DefaultNetServer implements NetServer {
 
         if (connectHandler != null) {
           // Share the event loop thread to also serve the NetServer's network traffic.
-          actualServer.handlerManager.addHandler(connectHandler, eventLoopContext);
+          actualServer.handlerManager.addHandler(connectHandler, actualCtx);
         }
       }
 
@@ -208,11 +201,11 @@ public class DefaultNetServer implements NetServer {
         public void operationComplete(ChannelFuture future) throws Exception {
           if (future.isSuccess()) {
             if (listenHandler != null) {
-              if (eventLoopContext.isOnCorrectWorker(future.channel().eventLoop())) {
-                vertx.setContext(eventLoopContext);
+              if (actualCtx.isOnCorrectWorker(future.channel().eventLoop())) {
+                vertx.setContext(actualCtx);
                 listenHandler.handle(DefaultNetServer.this);
               } else {
-                eventLoopContext.execute(new Runnable() {
+                actualCtx.execute(new Runnable() {
                   @Override
                   public void run() {
                     listenHandler.handle(DefaultNetServer.this);
@@ -259,7 +252,7 @@ public class DefaultNetServer implements NetServer {
     synchronized (vertx.sharedNetServers()) {
 
       if (actualServer != null) {
-        actualServer.handlerManager.removeHandler(connectHandler, eventLoopContext);
+        actualServer.handlerManager.removeHandler(connectHandler, actualCtx);
 
         if (actualServer.handlerManager.hasHandlers()) {
           // The actual server still has handlers so we don't actually close it
