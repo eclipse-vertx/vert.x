@@ -17,7 +17,6 @@
 package org.vertx.java.core.http.impl;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.BufUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -60,7 +59,7 @@ public class DefaultHttpClient implements HttpClient {
   private final Context actualCtx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private Bootstrap bootstrap;
-  private Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<Channel, ClientConnection>();
+  private final Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<Channel, ClientConnection>();
   private Handler<Exception> exceptionHandler;
   private int port = 80;
   private String host = "localhost";
@@ -73,12 +72,6 @@ public class DefaultHttpClient implements HttpClient {
 
   public DefaultHttpClient(VertxInternal vertx) {
     this.vertx = vertx;
-    // This is kind of fiddly - this class might be used by a worker, in which case the context is not
-    // an event loop context - but we need an event loop context so that netty can deliver any messages for the connection
-    // Therefore, if the current context is not an event loop one, we need to create one and register that with the
-    // handler manager when registering handlers
-    // We then do a check when messages are delivered that we're on the right worker before delivering the message
-    // All of this will be massively simplified in Netty 4.0 when the event loop becomes a first class citizen
     actualCtx = vertx.getOrAssignContext();
     actualCtx.putCloseHook(this, new Runnable() {
       public void run() {
@@ -502,25 +495,6 @@ public class DefaultHttpClient implements HttpClient {
     @Override
     protected Context getContext(ClientConnection connection) {
       return actualCtx;
-    }
-
-    // TODO: Check why we it is different to DefaultNetClient
-    @Override
-    public void messageReceived(final ChannelHandlerContext chctx, final Object msg) throws Exception {
-      final Channel ch = chctx.channel();
-      // We need to do this since it's possible the server is being used from a worker context
-      if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
-        vertx.setContext(actualCtx);
-        doMessageReceived(connectionMap.get(ch), chctx, msg);
-      } else {
-        BufUtil.retain(msg);
-        actualCtx.execute(new Runnable() {
-          public void run() {
-            doMessageReceived(connectionMap.get(ch), chctx, msg);
-            BufUtil.release(msg);
-          }
-        });
-      }
     }
 
     @Override
