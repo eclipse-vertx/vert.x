@@ -1,6 +1,7 @@
 package org.vertx.java.core.http.impl.cgbystrom;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.MessageBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -51,9 +52,9 @@ public class FlashPolicyHandler extends ByteToMessageDecoder {
   }
 
   @Override
-  protected Object decode(ChannelHandlerContext ctx, ByteBuf buffer) throws Exception {
+  protected void decode(ChannelHandlerContext ctx, ByteBuf buffer, MessageBuf<Object> out) throws Exception {
     if (buffer.readableBytes() < 2) {
-      return null;
+      return;
     }
 
     final int magic1 = buffer.getUnsignedByte(buffer.readerIndex());
@@ -67,13 +68,12 @@ public class FlashPolicyHandler extends ByteToMessageDecoder {
       // Make sure we don't have any downstream handlers interfering with our injected write of policy request.
       removeAllPipelineHandlers(ctx.pipeline());
       ctx.write(policyResponse).addListener(ChannelFutureListener.CLOSE);
-      return null;
+      return;
     }
 
     // Remove ourselves and forward bytes to next handler, important since the byte length check at top can hinder frame decoding
     // down the pipeline
-    ctx.pipeline().removeAndForward(this);
-    return null;
+    ctx.pipeline().remove(this);
   }
 
   private static void removeAllPipelineHandlers(ChannelPipeline pipeline) {

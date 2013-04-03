@@ -17,10 +17,12 @@
 package org.vertx.java.core.http.impl;
 
 import io.netty.buffer.BufUtil;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.MessageBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.websocketx.WebSocket00FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
@@ -169,7 +171,7 @@ class ClientConnection extends AbstractConnection {
             if (response != null) {
               handled = true;
 
-              response.data().writeBytes(((HttpContent) msg).data());
+              response.content().writeBytes(((HttpContent) msg).content());
               if (msg instanceof LastHttpContent) {
                 response.trailingHeaders().add(((LastHttpContent) msg).trailingHeaders());
                 handshakeComplete(ctx, response);
@@ -178,6 +180,7 @@ class ClientConnection extends AbstractConnection {
             }
           }
         }
+
         if (!handled) {
           BufUtil.retain(msg);
           ctx.nextInboundMessageBuffer().add(msg);
@@ -190,17 +193,13 @@ class ClientConnection extends AbstractConnection {
       return Unpooled.messageBuffer();
     }
 
-    @Override
-    public void freeInboundBuffer(ChannelHandlerContext ctx) throws Exception {
-      ctx.inboundMessageBuffer().release();
-    }
-
     private void handshakeComplete(ChannelHandlerContext ctx, FullHttpResponse response) {
       handshaking = true;
       try {
         ctx.pipeline().addAfter(ctx.name(), "websocketConverter", WebSocketConvertHandler.INSTANCE);
-        handshaker.finishHandshake(channel, response);
         ws = new DefaultWebSocket(vertx, ClientConnection.this);
+        handshaker.finishHandshake(channel, response);
+
         if (context.isOnCorrectWorker(ctx.channel().eventLoop())) {
           try {
             vertx.setContext(context);
@@ -215,10 +214,11 @@ class ClientConnection extends AbstractConnection {
             }
           });
         }
+
       } catch (WebSocketHandshakeException e) {
         client.handleException(e);
       } finally {
-        ctx.pipeline().removeAndForward(this);
+        ctx.pipeline().remove(this);
         ctx.fireInboundBufferUpdated();
       }
     }

@@ -232,8 +232,8 @@ class ServerConnection extends AbstractConnection {
     }
     if (msg instanceof HttpContent) {
         HttpContent chunk = (HttpContent) msg;
-      if (chunk.data().isReadable()) {
-        Buffer buff = new Buffer(chunk.data());
+      if (chunk.content().isReadable()) {
+        Buffer buff = new Buffer(chunk.content());
         handleChunk(buff);
       }
 

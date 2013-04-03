@@ -26,6 +26,8 @@ import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
@@ -532,11 +534,11 @@ public class DefaultNetServer implements NetServer {
       if (tcpHelper.isSSL()) {
         SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
 
-        ChannelFuture fut = sslHandler.handshake();
-        fut.addListener(new ChannelFutureListener() {
-
-          public void operationComplete(ChannelFuture channelFuture) throws Exception {
-            if (channelFuture.isSuccess()) {
+        Future<Channel> fut = sslHandler.handshakeFuture();
+        fut.addListener(new GenericFutureListener<Future<Channel>>() {
+          @Override
+          public void operationComplete(Future<Channel> future) throws Exception {
+            if (future.isSuccess()) {
               connected(ch, handler);
             } else {
               log.error("Client from origin " + ch.remoteAddress() + " failed to connect over ssl");
