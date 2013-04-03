@@ -1,5 +1,6 @@
 package org.vertx.java.core.http.impl.ws;
 
+import io.netty.buffer.MessageBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
@@ -14,44 +15,56 @@ public class WebSocketConvertHandler extends MessageToMessageCodec<io.netty.hand
   public static final WebSocketConvertHandler INSTANCE = new WebSocketConvertHandler();
 
   @Override
-  protected Object encode(ChannelHandlerContext ctx, WebSocketFrame msg) throws Exception {
+  protected void encode(ChannelHandlerContext ctx, WebSocketFrame msg, MessageBuf<Object> out) throws Exception {
     switch (msg.getType()) {
       case BINARY:
-        return new BinaryWebSocketFrame(msg.getBinaryData());
+        out.add(new BinaryWebSocketFrame(msg.getBinaryData()));
+        return;
       case TEXT:
-        return new TextWebSocketFrame(msg.getBinaryData());
+        out.add(new TextWebSocketFrame(msg.getBinaryData()));
+        return;
       case CLOSE:
-        return new CloseWebSocketFrame(true, 0, msg.getBinaryData());
+        out.add(new CloseWebSocketFrame(true, 0, msg.getBinaryData()));
+        return;
       case CONTINUATION:
-        return new ContinuationWebSocketFrame(msg.getBinaryData());
+        out.add(new ContinuationWebSocketFrame(msg.getBinaryData()));
+        return;
       case PONG:
-        return new PongWebSocketFrame(msg.getBinaryData());
+        out.add(new PongWebSocketFrame(msg.getBinaryData()));
+        return;
       case PING:
-        return new PingWebSocketFrame(msg.getBinaryData());
+        out.add(new PingWebSocketFrame(msg.getBinaryData()));
+        return;
       default:
         throw new IllegalStateException("Unsupported websocket msg " + msg);
     }
   }
 
   @Override
-  protected Object decode(ChannelHandlerContext ctx, io.netty.handler.codec.http.websocketx.WebSocketFrame msg) throws Exception {
+  protected void decode(ChannelHandlerContext ctx, io.netty.handler.codec.http.websocketx.WebSocketFrame msg, MessageBuf<Object> out) throws Exception {
     if (msg instanceof BinaryWebSocketFrame) {
-      return new DefaultWebSocketFrame(WebSocketFrame.FrameType.BINARY, msg.data().copy());
+      out.add(new DefaultWebSocketFrame(WebSocketFrame.FrameType.BINARY, msg.content().copy()));
+      return;
     }
     if (msg instanceof CloseWebSocketFrame) {
-      return new DefaultWebSocketFrame(WebSocketFrame.FrameType.CLOSE, msg.data().copy());
+      out.add(new DefaultWebSocketFrame(WebSocketFrame.FrameType.CLOSE, msg.content().copy()));
+      return;
     }
     if (msg instanceof PingWebSocketFrame) {
-      return new DefaultWebSocketFrame(WebSocketFrame.FrameType.PING, msg.data().copy());
+      out.add(new DefaultWebSocketFrame(WebSocketFrame.FrameType.PING, msg.content().copy()));
+      return;
     }
     if (msg instanceof PongWebSocketFrame) {
-      return new DefaultWebSocketFrame(WebSocketFrame.FrameType.PONG, msg.data().copy());
+      out.add(new DefaultWebSocketFrame(WebSocketFrame.FrameType.PONG, msg.content().copy()));
+      return;
     }
     if (msg instanceof TextWebSocketFrame) {
-      return new DefaultWebSocketFrame(WebSocketFrame.FrameType.TEXT, msg.data().copy());
+      out.add(new DefaultWebSocketFrame(WebSocketFrame.FrameType.TEXT, msg.content().copy()));
+      return;
     }
     if (msg instanceof ContinuationWebSocketFrame) {
-      return new DefaultWebSocketFrame(WebSocketFrame.FrameType.CONTINUATION, msg.data().copy());
+      out.add(new DefaultWebSocketFrame(WebSocketFrame.FrameType.CONTINUATION, msg.content().copy()));
+      return;
     }
     throw new IllegalStateException("Unsupported websocket msg " + msg);
   }

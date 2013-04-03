@@ -49,11 +49,6 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxSt
   }
 
   @Override
-  public void freeInboundBuffer(ChannelHandlerContext channelHandlerContext) throws Exception {
-    channelHandlerContext.inboundMessageBuffer().release();
-  }
-
-  @Override
   public void inboundBufferUpdated(ChannelHandlerContext channelHandlerContext) throws Exception {
     ChannelHandlerUtil.handleInboundBufferUpdated(channelHandlerContext, this);
   }

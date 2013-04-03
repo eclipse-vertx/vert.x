@@ -108,14 +108,14 @@ public class FlowControlHandler extends ChannelOperationHandlerAdapter {
   }
 
   @Override
-  public void beforeAdd(final ChannelHandlerContext ctx) throws Exception {
+  public void handlerAdded(final ChannelHandlerContext ctx) throws Exception {
     this.ctx = ctx;
     Channel channel = ctx.channel();
     if (channel.metadata().bufferType() == BufType.BYTE) {
-      outboundBuf = channel.unsafe().directOutboundContext().outboundByteBuffer();
+      outboundBuf = channel.unsafe().headContext().outboundByteBuffer();
     } else {
       throw new IllegalStateException("Only supported for Channels which handle bytes");
     }
-    super.beforeAdd(ctx);
+    super.handlerAdded(ctx);
   }
 }
