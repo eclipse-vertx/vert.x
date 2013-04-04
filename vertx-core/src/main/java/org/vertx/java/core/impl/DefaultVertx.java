@@ -212,8 +212,7 @@ public class DefaultVertx extends VertxInternal {
   }
 
   public EventLoopContext createEventLoopContext() {
-    EventLoop worker = getEventLoopGroup().next();
-    return new EventLoopContext(this, orderedFact.getExecutor(), worker);
+    return new EventLoopContext(this, orderedFact.getExecutor());
   }
 
   private boolean cancelTimeout(long id) {
@@ -236,17 +235,15 @@ public class DefaultVertx extends VertxInternal {
     final Runnable wrapped = context.wrapTask(task);
 
     final Runnable toRun;
-    final EventLoop el;
+    final EventLoop el = context.getEventLoop();
     if (context instanceof EventLoopContext) {
-      el = ((EventLoopContext)context).getWorker();
       toRun = wrapped;
     } else {
       // On worker context
-      el = getEventLoopGroup().next();
       toRun = new Runnable() {
         public void run() {
-        // Make sure the timer gets executed on the worker context
-        context.execute(wrapped);
+          // Make sure the timer gets executed on the worker context
+          context.execute(wrapped);
         }
       };
     }
@@ -262,7 +259,6 @@ public class DefaultVertx extends VertxInternal {
   }
 
   private Context createWorkerContext(boolean multiThreaded) {
-    getBackgroundPool();
     if (multiThreaded) {
       return new MultiThreadedWorkerContext(this, orderedFact.getExecutor(), backgroundPool);
     } else {
