@@ -18,7 +18,7 @@ package org.vertx.java.core.net.impl;
 
 import io.netty.channel.EventLoop;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.impl.EventLoopContext;
+import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -36,7 +36,7 @@ public class HandlerManager<T> {
 	private static final Logger log = LoggerFactory.getLogger(HandlerManager.class);
 
   private final VertxEventLoopGroup availableWorkers;
-  private Map<EventLoop, Handlers<T>> handlerMap = new ConcurrentHashMap<>();
+  private final Map<EventLoop, Handlers<T>> handlerMap = new ConcurrentHashMap<>();
 
   public HandlerManager(VertxEventLoopGroup availableWorkers) {
     this.availableWorkers = availableWorkers;
@@ -54,8 +54,8 @@ public class HandlerManager<T> {
     return handlers.chooseHandler();
   }
 
-  public synchronized void addHandler(Handler<T> handler, EventLoopContext context) {
-    EventLoop worker = context.getWorker();
+  public synchronized void addHandler(Handler<T> handler, Context context) {
+    EventLoop worker = context.getEventLoop();
     availableWorkers.addWorker(worker);
     Handlers<T> handlers = handlerMap.get(worker);
     if (handlers == null) {
@@ -65,8 +65,8 @@ public class HandlerManager<T> {
     handlers.addHandler(new HandlerHolder<>(context, handler));
   }
 
-  public synchronized void removeHandler(Handler<T> handler, EventLoopContext context) {
-    EventLoop worker = context.getWorker();
+  public synchronized void removeHandler(Handler<T> handler, Context context) {
+    EventLoop worker = context.getEventLoop();
     Handlers<T> handlers = handlerMap.get(worker);
     if (!handlers.removeHandler(new HandlerHolder<>(context, handler))) {
       throw new IllegalStateException("Can't find handler");

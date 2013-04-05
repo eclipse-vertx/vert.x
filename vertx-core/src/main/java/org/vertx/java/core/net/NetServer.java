@@ -41,17 +41,39 @@ public interface NetServer {
   NetServer connectHandler(Handler<NetSocket> connectHandler);
 
   /**
-   * Instruct the server to listen for incoming connections on the specified {@code port} and all available interfaces.
-   * @return a reference to this so multiple method calls can be chained together
+   * Set the exception handler. Any exceptions that occur during bind or later on will be notified via the {@code handler}.
+   * If no handler is supplied any exceptions will be printed to {@link System#err}
    */
-  NetServer listen(int port);
+  NetServer exceptionHandler(Handler<Exception> handler);
+
+  /**
+   * @return The exception handler
+   */
+  Handler<Exception> exceptionHandler();
+
+  /**
+   * Tell the server to start listening on all available interfaces and port {@code port}. Be aware this is an
+   * async operation and the server may not bound on return of the method.
+   */
+  void listen(int port);
+
+  /**
+   * Instruct the server to listen for incoming connections on the specified {@code port} and all available interfaces.
+   */
+  void listen(int port, Handler<NetServer> listenHandler);
+
+  /**
+   * Tell the server to start listening on port {@code port} and hostname or ip address given by {@code host}. Be aware this is an
+   * async operation and the server may not bound on return of the method.
+   *
+   */
+  void listen(int port, String host);
 
   /**
    * Instruct the server to listen for incoming connections on the specified {@code port} and {@code host}. {@code host} can
    * be a host name or an IP address.
-   * @return a reference to this so multiple method calls can be chained together
    */
-  NetServer listen(int port, String host);
+  void listen(int port, String host, Handler<NetServer> listenHandler);
 
   /**
    * Close the server. This will close any currently open connections.

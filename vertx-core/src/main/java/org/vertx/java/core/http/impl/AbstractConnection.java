@@ -35,8 +35,19 @@ public abstract class AbstractConnection extends ConnectionBase {
     super(vertx, channel, context);
   }
 
-  void queueForWrite(Object obj) {
-    channel.outboundMessageBuffer().add(obj);
+  void queueForWrite(final Object obj) {
+    if (channel.eventLoop().inEventLoop()) {
+      channel.outboundMessageBuffer().add(obj);
+    } else {
+      // thread is not our current eventloop for the channel we need to run the add in the eventloop.
+      // this is not needed for write as write will submit a task if needed by its own
+      channel.eventLoop().execute(new Runnable() {
+        @Override
+        public void run() {
+          channel.outboundMessageBuffer().add(obj);
+        }
+      });
+    }
   }
 
 

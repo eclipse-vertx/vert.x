@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright 2011-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +19,8 @@ package org.vertx.java.core.http.impl;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelException;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -52,7 +54,6 @@ import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.impl.ws.WebSocketConvertHandler;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.Context;
-import org.vertx.java.core.impl.EventLoopContext;
 import org.vertx.java.core.impl.ExceptionDispatchHandler;
 import org.vertx.java.core.impl.FlowControlHandler;
 import org.vertx.java.core.impl.VertxInternal;
@@ -85,39 +86,29 @@ public class DefaultHttpServer implements HttpServer {
   private final VertxInternal vertx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private final Context actualCtx;
-  private final EventLoopContext eventLoopContext;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
+  private Handler<Exception> exceptionHandler;
   private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
   private ChannelGroup serverChannelGroup;
   private boolean listening;
   private String serverOrigin;
 
+  private ChannelFuture bindFuture;
   private ServerID id;
   private DefaultHttpServer actualServer;
-  private VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
+  private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private HandlerManager<HttpServerRequest> reqHandlerManager = new HandlerManager<>(availableWorkers);
   private HandlerManager<ServerWebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
 
   public DefaultHttpServer(VertxInternal vertx) {
     this.vertx = vertx;
-    // This is kind of fiddly - this class might be used by a worker, in which case the context is not
-    // an event loop context - but we need an event loop context so that netty can deliver any messages for the connection
-    // Therefore, if the current context is not an event loop one, we need to create one and register that with the
-    // handler manager when registering handlers
-    // We then do a check when messages are delivered that we're on the right worker before delivering the message
-    // All of this will be massively simplified in Netty 4.0 when the event loop becomes a first class citizen
     actualCtx = vertx.getOrAssignContext();
     actualCtx.putCloseHook(this, new Runnable() {
       public void run() {
         close();
       }
     });
-    if (actualCtx instanceof EventLoopContext) {
-      eventLoopContext = (EventLoopContext)actualCtx;
-    } else {
-      eventLoopContext = vertx.createEventLoopContext();
-    }
     tcpHelper.setReuseAddress(true);
   }
 
@@ -145,11 +136,30 @@ public class DefaultHttpServer implements HttpServer {
     return wsHandler;
   }
 
-  public HttpServer listen(int port) {
-    return listen(port, "0.0.0.0");
+  @Override
+  public HttpServer exceptionHandler(Handler<Exception> exceptionHandler) {
+    this.exceptionHandler = exceptionHandler;
+    return this;
   }
 
-  public HttpServer listen(int port, String host) {
+  @Override
+  public Handler<Exception> exceptionHandler() {
+    return exceptionHandler;
+  }
+
+  public void listen(int port) {
+    listen(port, "0.0.0.0", null);
+  }
+
+  public void listen(int port, String host) {
+    listen(port, host, null);
+  }
+
+  public void listen(int port, Handler<HttpServer> listenHandler) {
+    listen(port, "0.0.0.0", listenHandler);
+  }
+
+  public void listen(int port, String host, final Handler<HttpServer> listenHandler) {
 
     if (requestHandler == null && wsHandler == null) {
       throw new IllegalStateException("Set request or websocket handler first");
@@ -157,6 +167,7 @@ public class DefaultHttpServer implements HttpServer {
     if (listening) {
       throw new IllegalStateException("Listen already called");
     }
+    listening = true;
 
     synchronized (vertx.sharedHttpServers()) {
       id = new ServerID(port, host);
@@ -167,7 +178,7 @@ public class DefaultHttpServer implements HttpServer {
       if (shared == null) {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
         ServerBootstrap bootstrap = new ServerBootstrap();
-        bootstrap.group(vertx.getServerAcceptorPool(), availableWorkers);
+        bootstrap.group(availableWorkers);
         bootstrap.channel(NioServerSocketChannel.class);
         tcpHelper.applyConnectionOptions(bootstrap);
         tcpHelper.checkSSL(vertx);
@@ -206,8 +217,10 @@ public class DefaultHttpServer implements HttpServer {
             }
         });
 
+        addHandlers(this);
         try {
-          Channel serverChannel = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port)).syncUninterruptibly().channel();
+          bindFuture = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
+          Channel serverChannel = bindFuture.channel();
           serverChannelGroup.add(serverChannel);
         } catch (ChannelException | UnknownHostException e) {
           throw new IllegalArgumentException(e.getMessage());
@@ -217,18 +230,49 @@ public class DefaultHttpServer implements HttpServer {
       } else {
         // Server already exists with that host/port - we will use that
         actualServer = shared;
+
+        addHandlers(actualServer);
+
       }
-      if (requestHandler != null) {
-        // Share the event loop thread to also serve the HttpServer's network traffic.
-        actualServer.reqHandlerManager.addHandler(requestHandler, eventLoopContext);
-      }
-      if (wsHandler != null) {
-        // Share the event loop thread to also serve the HttpServer's network traffic.
-        actualServer.wsHandlerManager.addHandler(wsHandler, eventLoopContext);
-      }
+
+      actualServer.bindFuture.addListener(new ChannelFutureListener() {
+        @Override
+        public void operationComplete(ChannelFuture future) throws Exception {
+          if (future.isSuccess()) {
+            if (listenHandler != null) {
+              if (actualCtx.isOnCorrectWorker(future.channel().eventLoop())) {
+                vertx.setContext(actualCtx);
+                listenHandler.handle(DefaultHttpServer.this);
+              } else {
+                actualCtx.execute(new Runnable() {
+                  @Override
+                  public void run() {
+                    listenHandler.handle(DefaultHttpServer.this);
+                  }
+                });
+              }
+            }
+          } else {
+            Handler<Exception> exceptionHandler = exceptionHandler();
+            if (exceptionHandler != null) {
+                exceptionHandler.handle((Exception) future.cause());
+            }
+            close();
+          }
+        }
+      });
     }
-    listening = true;
-    return this;
+  }
+
+  private void addHandlers(DefaultHttpServer server) {
+    if (requestHandler != null) {
+      // Share the event loop thread to also serve the HttpServer's network traffic.
+        server.reqHandlerManager.addHandler(requestHandler, actualCtx);
+    }
+    if (wsHandler != null) {
+      // Share the event loop thread to also serve the HttpServer's network traffic.
+        server.wsHandlerManager.addHandler(wsHandler, actualCtx);
+    }
   }
 
   public void close() {
@@ -249,10 +293,10 @@ public class DefaultHttpServer implements HttpServer {
       if (actualServer != null) {
 
         if (requestHandler != null) {
-          actualServer.reqHandlerManager.removeHandler(requestHandler, eventLoopContext);
+          actualServer.reqHandlerManager.removeHandler(requestHandler, actualCtx);
         }
         if (wsHandler != null) {
-          actualServer.wsHandlerManager.removeHandler(wsHandler, eventLoopContext);
+          actualServer.wsHandlerManager.removeHandler(wsHandler, actualCtx);
         }
 
         if (actualServer.reqHandlerManager.hasHandlers() || actualServer.wsHandlerManager.hasHandlers()) {
