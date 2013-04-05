@@ -2394,7 +2394,9 @@ public class HttpTestClient extends TestClientBase {
 
   public void testSharedServersMultipleInstances1() {
     //Make sure connections aren't reused
-    client.setKeepAlive(false);
+    if (client.isKeepAlive()) {
+      client.setKeepAlive(false);
+    }
     // Make a bunch of requests
     final int numRequests = vertx.sharedData().<String, Integer>getMap("params").get("numRequests");
     final AtomicInteger counter = new AtomicInteger(0);

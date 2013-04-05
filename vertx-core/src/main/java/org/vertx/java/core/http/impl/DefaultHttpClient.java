@@ -63,6 +63,7 @@ public class DefaultHttpClient implements HttpClient {
     }
   };
   private boolean keepAlive = true;
+  private boolean configurable = true;
 
   public DefaultHttpClient(VertxInternal vertx) {
     this.vertx = vertx;
@@ -92,6 +93,7 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public DefaultHttpClient setMaxPoolSize(int maxConnections) {
+    checkConfigurable();
     pool.setMaxPoolSize(maxConnections);
     return this;
   }
@@ -103,6 +105,7 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public DefaultHttpClient setKeepAlive(boolean keepAlive) {
+    checkConfigurable();
     this.keepAlive = keepAlive;
     return this;
   }
@@ -114,6 +117,7 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public DefaultHttpClient setPort(int port) {
+    checkConfigurable();
     this.port = port;
     return this;
   }
@@ -125,6 +129,7 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public DefaultHttpClient setHost(String host) {
+    checkConfigurable();
     this.host = host;
     return this;
   }
@@ -141,6 +146,7 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public void connectWebsocket(final String uri, final WebSocketVersion wsVersion, final Handler<WebSocket> wsConnect) {
+    configurable = false;
     getConnection(new Handler<ClientConnection>() {
       public void handle(final ClientConnection conn) {
         if (!conn.isClosed()) {
@@ -213,6 +219,7 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public HttpClientRequest request(String method, String uri, Handler<HttpClientResponse> responseHandler) {
+    configurable = false;
     return new DefaultHttpClientRequest(this, method, uri, responseHandler, actualCtx);
   }
 
@@ -226,84 +233,98 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public DefaultHttpClient setSSL(boolean ssl) {
+    checkConfigurable();
     tcpHelper.setSSL(ssl);
     return this;
   }
 
   @Override
   public DefaultHttpClient setVerifyHost(boolean verifyHost) {
+    checkConfigurable();
     tcpHelper.setVerifyHost(verifyHost);
     return this;
   }
 
   @Override
   public DefaultHttpClient setKeyStorePath(String path) {
+    checkConfigurable();
     tcpHelper.setKeyStorePath(path);
     return this;
   }
 
   @Override
   public DefaultHttpClient setKeyStorePassword(String pwd) {
+    checkConfigurable();
     tcpHelper.setKeyStorePassword(pwd);
     return this;
   }
 
   @Override
   public DefaultHttpClient setTrustStorePath(String path) {
+    checkConfigurable();
     tcpHelper.setTrustStorePath(path);
     return this;
   }
 
   @Override
   public DefaultHttpClient setTrustStorePassword(String pwd) {
+    checkConfigurable();
     tcpHelper.setTrustStorePassword(pwd);
     return this;
   }
 
   @Override
   public DefaultHttpClient setTrustAll(boolean trustAll) {
+    checkConfigurable();
     tcpHelper.setTrustAll(trustAll);
     return this;
   }
 
   @Override
   public DefaultHttpClient setTCPNoDelay(boolean tcpNoDelay) {
+    checkConfigurable();
     tcpHelper.setTCPNoDelay(tcpNoDelay);
     return this;
   }
 
   @Override
   public DefaultHttpClient setSendBufferSize(int size) {
+    checkConfigurable();
     tcpHelper.setSendBufferSize(size);
     return this;
   }
 
   @Override
   public DefaultHttpClient setReceiveBufferSize(int size) {
+    checkConfigurable();
     tcpHelper.setReceiveBufferSize(size);
     return this;
   }
 
   @Override
   public DefaultHttpClient setTCPKeepAlive(boolean keepAlive) {
+    checkConfigurable();
     tcpHelper.setTCPKeepAlive(keepAlive);
     return this;
   }
 
   @Override
   public DefaultHttpClient setReuseAddress(boolean reuse) {
+    checkConfigurable();
     tcpHelper.setReuseAddress(reuse);
     return this;
   }
 
   @Override
   public DefaultHttpClient setSoLinger(int linger) {
+    checkConfigurable();
     tcpHelper.setSoLinger(linger);
     return this;
   }
 
   @Override
   public DefaultHttpClient setTrafficClass(int trafficClass) {
+    checkConfigurable();
     tcpHelper.setTrafficClass(trafficClass);
     return this;
   }
@@ -380,6 +401,7 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public HttpClient setUsePooledBuffers(boolean pooledBuffers) {
+    checkConfigurable();
     tcpHelper.setUsePooledBuffers(pooledBuffers);
     return this;
   }
@@ -477,6 +499,12 @@ public class DefaultHttpClient implements HttpClient {
         }
       }
     });
+  }
+
+  private void checkConfigurable() {
+    if (!configurable) {
+      throw new IllegalStateException("Can't set property after connect has been called");
+    }
   }
 
   private void connected(final Channel ch, final Handler<ClientConnection> connectHandler) {

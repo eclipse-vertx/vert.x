@@ -52,6 +52,7 @@ public class DefaultNetClient implements NetClient {
   private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<>();
   private int reconnectAttempts;
   private long reconnectInterval = 1000;
+  private boolean configurable = true;
 
   public DefaultNetClient(VertxInternal vertx) {
     this.vertx = vertx;
@@ -95,6 +96,7 @@ public class DefaultNetClient implements NetClient {
 
   @Override
   public NetClient setReconnectAttempts(int attempts) {
+    checkConfigurable();
     if (attempts < -1) {
       throw new IllegalArgumentException("reconnect attempts must be >= -1");
     }
@@ -109,6 +111,7 @@ public class DefaultNetClient implements NetClient {
 
   @Override
   public NetClient setReconnectInterval(long interval) {
+    checkConfigurable();
     if (interval < 1) {
       throw new IllegalArgumentException("reconnect interval nust be >= 1");
     }
@@ -163,48 +166,56 @@ public class DefaultNetClient implements NetClient {
 
   @Override
   public NetClient setTCPNoDelay(boolean tcpNoDelay) {
+    checkConfigurable();
     tcpHelper.setTCPNoDelay(tcpNoDelay);
     return this;
   }
 
   @Override
   public NetClient setSendBufferSize(int size) {
+    checkConfigurable();
     tcpHelper.setSendBufferSize(size);
     return this;
   }
 
   @Override
   public NetClient setReceiveBufferSize(int size) {
+    checkConfigurable();
     tcpHelper.setReceiveBufferSize(size);
     return this;
   }
 
   @Override
   public NetClient setTCPKeepAlive(boolean keepAlive) {
+    checkConfigurable();
     tcpHelper.setTCPKeepAlive(keepAlive);
     return this;
   }
 
   @Override
   public NetClient setReuseAddress(boolean reuse) {
+    checkConfigurable();
     tcpHelper.setReuseAddress(reuse);
     return this;
   }
 
   @Override
   public NetClient setSoLinger(int linger) {
+    checkConfigurable();
     tcpHelper.setSoLinger(linger);
     return this;
   }
 
   @Override
   public NetClient setTrafficClass(int trafficClass) {
+    checkConfigurable();
     tcpHelper.setTrafficClass(trafficClass);
     return this;
   }
 
   @Override
   public NetClient setConnectTimeout(int timeout) {
+    checkConfigurable();
     tcpHelper.setConnectTimeout(timeout);
     return this;
   }
@@ -241,42 +252,49 @@ public class DefaultNetClient implements NetClient {
 
   @Override
   public NetClient setSSL(boolean ssl) {
+    checkConfigurable();
     tcpHelper.setSSL(ssl);
     return this;
   }
 
   @Override
   public NetClient setKeyStorePath(String path) {
+    checkConfigurable();
     tcpHelper.setKeyStorePath(path);
     return this;
   }
 
   @Override
   public NetClient setKeyStorePassword(String pwd) {
+    checkConfigurable();
     tcpHelper.setKeyStorePassword(pwd);
     return this;
   }
 
   @Override
   public NetClient setTrustStorePath(String path) {
+    checkConfigurable();
     tcpHelper.setTrustStorePath(path);
     return this;
   }
 
   @Override
   public NetClient setTrustStorePassword(String pwd) {
+    checkConfigurable();
     tcpHelper.setTrustStorePassword(pwd);
     return this;
   }
 
   @Override
   public NetClient setTrustAll(boolean trustAll) {
+    checkConfigurable();
     tcpHelper.setTrustAll(trustAll);
     return this;
   }
 
   @Override
   public NetClient setUsePooledBuffers(boolean pooledBuffers) {
+    checkConfigurable();
     tcpHelper.setUsePooledBuffers(pooledBuffers);
     return this;
   }
@@ -284,6 +302,12 @@ public class DefaultNetClient implements NetClient {
   @Override
   public boolean isUsePooledBuffers() {
     return tcpHelper.isUsePooledBuffers();
+  }
+
+  private void checkConfigurable() {
+    if (!configurable) {
+      throw new IllegalStateException("Can't set property after connect has been called");
+    }
   }
 
   private void connect(final int port, final String host, final AsyncResultHandler<NetSocket> connectHandler,
@@ -314,6 +338,7 @@ public class DefaultNetClient implements NetClient {
           pipeline.addLast("handler", new ClientHandler());
         }
       });
+      configurable = false;
     }
     tcpHelper.applyConnectionOptions(bootstrap);
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));

@@ -265,84 +265,98 @@ public class DefaultHttpServer implements HttpServer {
 
   @Override
   public HttpServer setSSL(boolean ssl) {
+    checkListening();
     tcpHelper.setSSL(ssl);
     return this;
   }
 
   @Override
   public HttpServer setKeyStorePath(String path) {
+    checkListening();
     tcpHelper.setKeyStorePath(path);
     return this;
   }
 
   @Override
   public HttpServer setKeyStorePassword(String pwd) {
+    checkListening();
     tcpHelper.setKeyStorePassword(pwd);
     return this;
   }
 
   @Override
   public HttpServer setTrustStorePath(String path) {
+    checkListening();
     tcpHelper.setTrustStorePath(path);
     return this;
   }
 
   @Override
   public HttpServer setTrustStorePassword(String pwd) {
+    checkListening();
     tcpHelper.setTrustStorePassword(pwd);
     return this;
   }
 
   @Override
   public HttpServer setClientAuthRequired(boolean required) {
+    checkListening();
     tcpHelper.setClientAuthRequired(required);
     return this;
   }
 
   @Override
   public HttpServer setTCPNoDelay(boolean tcpNoDelay) {
+    checkListening();
     tcpHelper.setTCPNoDelay(tcpNoDelay);
     return this;
   }
 
   @Override
   public HttpServer setSendBufferSize(int size) {
+    checkListening();
     tcpHelper.setSendBufferSize(size);
     return this;
   }
 
   @Override
   public HttpServer setReceiveBufferSize(int size) {
+    checkListening();
     tcpHelper.setReceiveBufferSize(size);
     return this;
   }
 
   @Override
   public HttpServer setTCPKeepAlive(boolean keepAlive) {
+    checkListening();
     tcpHelper.setTCPKeepAlive(keepAlive);
     return this;
   }
 
   @Override
   public HttpServer setReuseAddress(boolean reuse) {
+    checkListening();
     tcpHelper.setReuseAddress(reuse);
     return this;
   }
 
   @Override
   public HttpServer setSoLinger(int linger) {
+    checkListening();
     tcpHelper.setSoLinger(linger);
     return this;
   }
 
   @Override
   public HttpServer setTrafficClass(int trafficClass) {
+    checkListening();
     tcpHelper.setTrafficClass(trafficClass);
     return this;
   }
 
   @Override
   public HttpServer setAcceptBacklog(int backlog) {
+    checkListening();
     tcpHelper.setAcceptBacklog(backlog);
     return this;
   }
@@ -354,6 +368,7 @@ public class DefaultHttpServer implements HttpServer {
 
   @Override
   public int getSendBufferSize() {
+
     return tcpHelper.getSendBufferSize();
   }
 
@@ -419,6 +434,7 @@ public class DefaultHttpServer implements HttpServer {
 
   @Override
   public HttpServer setUsePooledBuffers(boolean pooledBuffers) {
+    checkListening();
     tcpHelper.setUsePooledBuffers(pooledBuffers);
     return this;
   }
@@ -467,6 +483,12 @@ public class DefaultHttpServer implements HttpServer {
           done.handle(new VoidResult(e));
         }
       });
+    }
+  }
+
+  private void checkListening() {
+    if (listening) {
+      throw new IllegalStateException("Can't set property when server is listening");
     }
   }
 

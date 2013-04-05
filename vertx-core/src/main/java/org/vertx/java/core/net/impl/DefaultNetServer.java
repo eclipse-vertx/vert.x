@@ -264,48 +264,56 @@ public class DefaultNetServer implements NetServer {
 
   @Override
   public NetServer setTCPNoDelay(boolean tcpNoDelay) {
+    checkListening();
     tcpHelper.setTCPNoDelay(tcpNoDelay);
     return this;
   }
 
   @Override
   public NetServer setSendBufferSize(int size) {
+    checkListening();
     tcpHelper.setSendBufferSize(size);
     return this;
   }
 
   @Override
   public NetServer setReceiveBufferSize(int size) {
+    checkListening();
     tcpHelper.setReceiveBufferSize(size);
     return this;
   }
 
   @Override
   public NetServer setTCPKeepAlive(boolean keepAlive) {
+    checkListening();
     tcpHelper.setTCPKeepAlive(keepAlive);
     return this;
   }
 
   @Override
   public NetServer setReuseAddress(boolean reuse) {
+    checkListening();
     tcpHelper.setReuseAddress(reuse);
     return this;
   }
 
   @Override
   public NetServer setSoLinger(int linger) {
+    checkListening();
     tcpHelper.setSoLinger(linger);
     return this;
   }
 
   @Override
   public NetServer setTrafficClass(int trafficClass) {
+    checkListening();
     tcpHelper.setTrafficClass(trafficClass);
     return this;
   }
 
   @Override
   public NetServer setAcceptBacklog(int backlog) {
+    checkListening();
     tcpHelper.setAcceptBacklog(backlog);
     return this;
   }
@@ -342,42 +350,49 @@ public class DefaultNetServer implements NetServer {
 
   @Override
   public NetServer setSSL(boolean ssl) {
+    checkListening();
     tcpHelper.setSSL(ssl);
     return this;
   }
 
   @Override
   public NetServer setKeyStorePath(String path) {
+    checkListening();
     tcpHelper.setKeyStorePath(path);
     return this;
   }
 
   @Override
   public NetServer setKeyStorePassword(String pwd) {
+    checkListening();
     tcpHelper.setKeyStorePassword(pwd);
     return this;
   }
 
   @Override
   public NetServer setTrustStorePath(String path) {
+    checkListening();
     tcpHelper.setTrustStorePath(path);
     return this;
   }
 
   @Override
   public NetServer setTrustStorePassword(String pwd) {
+    checkListening();
     tcpHelper.setTrustStorePassword(pwd);
     return this;
   }
 
   @Override
   public NetServer setClientAuthRequired(boolean required) {
+    checkListening();
     tcpHelper.setClientAuthRequired(required);
     return this;
   }
 
   @Override
   public NetServer setUsePooledBuffers(boolean pooledBuffers) {
+    checkListening();
     tcpHelper.setUsePooledBuffers(pooledBuffers);
     return this;
   }
@@ -430,6 +445,12 @@ public class DefaultNetServer implements NetServer {
           done.handle(new VoidResult(e));
         }
       });
+    }
+  }
+
+  private void checkListening() {
+    if (listening) {
+      throw new IllegalStateException("Can't set property when server is listening");
     }
   }
 
