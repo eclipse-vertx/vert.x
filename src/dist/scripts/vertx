@@ -10,10 +10,12 @@
 
 # If you're deploying and undeploying a lot of verticles with dynamic languages it's recommended to enable GC'ing
 # of generated classes and prevent OOM due to a lot of gc
-# DEFAULT_JVM_OPTS="-XX:+CMSClassUnloadingEnabled -XX:-UseGCOverheadLimit"
-DEFAULT_JVM_OPTS=""
+# JVM_OPTS="-XX:+CMSClassUnloadingEnabled -XX:-UseGCOverheadLimit"
+JVM_OPTS=""
 
-JMX_OPTS="-Dcom.sun.management.jmxremote -Dvertx.management.jmx=true -Dhazelcast.jmx=true"
+JMX_OPTS=""
+# To enable JMX uncomment the following
+# JMX_OPTS="-Dcom.sun.management.jmxremote -Dvertx.management.jmx=true -Dhazelcast.jmx=true"
 
 APP_NAME="vertx"
 APP_BASE_NAME=`basename "$0"`
@@ -168,7 +170,7 @@ fi
 function splitJvmOpts() {
     JVM_OPTS=("$@")
 }
-eval splitJvmOpts $DEFAULT_JVM_OPTS $JAVA_OPTS $JMX_OPTS $VERTX_OPTS
+eval splitJvmOpts $JVM_OPTS $JAVA_OPTS $JMX_OPTS $VERTX_OPTS
 
 exec "$JAVACMD" \
     "${JVM_OPTS[@]}" \
