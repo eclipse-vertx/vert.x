@@ -24,6 +24,7 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.platform.Container;
+import org.vertx.java.platform.ExtendedVerticleFactory;
 import org.vertx.java.platform.Verticle;
 import org.vertx.java.platform.VerticleFactory;
 import org.vertx.java.platform.impl.resolver.*;
@@ -1149,7 +1150,12 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
             boolean error = true;
 
             try {
-              verticle = verticleFactory.createVerticle(main);
+
+              if (verticleFactory instanceof ExtendedVerticleFactory) {
+                verticle = ((ExtendedVerticleFactory)verticleFactory).createVerticle(new ImmutableDeploymentInfo(deployment, deployments));
+              } else {
+                verticle = verticleFactory.createVerticle(main);
+              }
               error = false;
             } catch (ClassNotFoundException e) {
               log.error("Cannot find verticle " + main + " in " + verticleFactory.getClass().getName(), e);
