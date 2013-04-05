@@ -35,7 +35,7 @@ import java.util.concurrent.ExecutorService;
  */
 public abstract class VertxInternal extends Vertx {
 
-  public abstract EventLoopGroup getServerAcceptorPool();
+  public abstract EventLoopGroup getEventLoopGroup();
 
   public abstract ExecutorService getBackgroundPool();
 
