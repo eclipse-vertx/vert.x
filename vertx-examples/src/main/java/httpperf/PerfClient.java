@@ -23,6 +23,8 @@ import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.platform.Verticle;
 
+import java.lang.System;
+
 public class PerfClient extends Verticle implements Handler<HttpClientResponse> {
 
   private HttpClient client;
@@ -42,7 +44,7 @@ public class PerfClient extends Verticle implements Handler<HttpClientResponse> 
   private EventBus eb;
 
   public void handle(HttpClientResponse response) {
-    if (response.statusCode != 200) {
+    if (response.statusCode() != 200) {
       throw new IllegalStateException("Invalid response");
     }
     response.endHandler(new SimpleHandler() {

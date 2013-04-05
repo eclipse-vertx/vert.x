@@ -73,10 +73,11 @@ public class DefaultEventBus implements EventBus {
 
   public DefaultEventBus(VertxInternal vertx, int port, String hostname, ClusterManager clusterManager) {
     this.vertx = vertx;
-    this.serverID = new ServerID(port, hostname);
     this.clusterMgr = clusterManager;
     this.subs = clusterMgr.getSubsMap("subs");
-    this.server = setServer();
+    this.server = setServer(hostname, port);
+    // If using a wilcard port (0) then we ask the server for the actual port:
+    this.serverID = new ServerID(server.port(), hostname);
     ManagementRegistry.registerEventBus(serverID);
   }
 
@@ -87,8 +88,8 @@ public class DefaultEventBus implements EventBus {
 
   public EventBus send(String address, Object message, final Handler<Message> replyHandler) {
     sendOrPub(createMessage(true, address, message), replyHandler);
-  return this;
-}
+    return this;
+  }
 
   public EventBus send(String address, Object message) {
     sendOrPub(createMessage(true, address, message), null);
@@ -394,7 +395,7 @@ public class DefaultEventBus implements EventBus {
     return bm;
   }
 
-  private NetServer setServer() {
+  private NetServer setServer(String host, int port) {
     return vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
         final RecordParser parser = RecordParser.newFixed(4, null);
@@ -420,7 +421,7 @@ public class DefaultEventBus implements EventBus {
         parser.setOutput(handler);
         socket.dataHandler(parser);
       }
-    }).listen(serverID.port, serverID.host);
+    }).listen(port, host);
   }
 
   private void sendToSubs(ServerIDs subs, BaseMessage message) {

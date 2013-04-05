@@ -16,8 +16,6 @@ package httpperf;
  * limitations under the License.
  */
 
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
@@ -29,17 +27,17 @@ public class PerfServer extends Verticle {
     vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
         // Just return OK
-        //req.response().end();
+        req.response().end();
 
         // If you want to serve a real file uncomment this and comment previous line
         //req.response().sendFile("httpperf/foo.html");
-        vertx.fileSystem().readFile("httpperf/foo.html", new AsyncResultHandler<Buffer>() {
-          public void handle(AsyncResult<Buffer> ar) {
-            req.response().putHeader("Content-Length", ar.result.length());
-            req.response().putHeader("Content-Type", "text/html");
-            req.response().end(ar.result);
-          }
-        });
+//        vertx.fileSystem().readFile("httpperf/foo.html", new AsyncResultHandler<Buffer>() {
+//          public void handle(AsyncResult<Buffer> ar) {
+//            req.response().putHeader("Content-Length", ar.result.length());
+//            req.response().putHeader("Content-Type", "text/html");
+//            req.response().end(ar.result);
+//          }
+//        });
       }
     }).listen(8080, "localhost");
   }
