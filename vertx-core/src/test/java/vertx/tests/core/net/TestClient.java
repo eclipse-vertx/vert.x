@@ -501,7 +501,6 @@ public class TestClient extends TestClientBase {
   }
 
   public void testServerDrainHandler() {
-    Context ctx = ((VertxInternal)vertx).getContext();
     client.connect(1234, new AsyncResultHandler<NetSocket>() {
       public void handle(final FutureResult<NetSocket> res) {
         tu.checkThread();

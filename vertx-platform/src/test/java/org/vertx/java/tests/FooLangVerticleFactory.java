@@ -32,12 +32,12 @@ public class FooLangVerticleFactory implements VerticleFactory {
   private ClassLoader cl;
 
   @Override
-  public void init(Vertx vertx, Container container, ClassLoader cl) {
+  public void init(ClassLoader cl) {
     this.cl = cl;
   }
 
   @Override
-  public Verticle createVerticle(final String main) throws Exception {
+  public Verticle createVerticle(final String main, Vertx vertx, Container container) throws Exception {
 
     return new Verticle() {
 

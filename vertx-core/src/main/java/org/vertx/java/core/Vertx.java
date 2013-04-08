@@ -120,4 +120,9 @@ public interface Vertx {
 	 * Stop the eventbus and any resource managed by the eventbus.
 	 */
 	void stop();
+
+  /*
+  Checks that you're currently executing on the same context as when this created
+   */
+  void checkContext();
 }

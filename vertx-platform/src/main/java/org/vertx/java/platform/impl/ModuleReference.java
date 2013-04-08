@@ -67,12 +67,12 @@ class ModuleReference {
   // We load the VerticleFactory class using the module classloader - this allows
   // us to put language implementations in modules
   // And we maintain a single VerticleFactory per classloader
-  public synchronized VerticleFactory getVerticleFactory(String factoryName, Vertx vertx, Container container)
+  public synchronized VerticleFactory getVerticleFactory(String factoryName)
       throws ClassNotFoundException, InstantiationException, IllegalAccessException {
     if (factory == null) {
       Class clazz = mcl.loadClass(factoryName);
       factory = (VerticleFactory)clazz.newInstance();
-      factory.init(vertx, container, mcl);
+      factory.init(mcl);
     }
     return factory;
   }

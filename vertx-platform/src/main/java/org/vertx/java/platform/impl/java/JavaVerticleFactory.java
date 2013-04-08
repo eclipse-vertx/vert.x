@@ -34,7 +34,7 @@ public class JavaVerticleFactory implements VerticleFactory {
   }
 
   @Override
-  public void init(Vertx vertx, Container container, ClassLoader cl) {
+  public void init(ClassLoader cl) {
     this.cl = cl;
   }
 
@@ -42,7 +42,7 @@ public class JavaVerticleFactory implements VerticleFactory {
     return main.endsWith(".java");
   }
 
-  public Verticle createVerticle(String main) throws Exception {
+  public Verticle createVerticle(String main, Vertx vertx, Container container) throws Exception {
     String className = main;
     Class<?> clazz;
     if (isJavaSource(main)) {
@@ -54,7 +54,10 @@ public class JavaVerticleFactory implements VerticleFactory {
     } else {
       clazz = cl.loadClass(className);
     }
-    return (Verticle)clazz.newInstance();
+    Verticle verticle = (Verticle)clazz.newInstance();
+    verticle.setVertx(vertx);
+    verticle.setContainer(container);
+    return verticle;
   }
     
   public void reportException(Logger logger, Throwable t) {

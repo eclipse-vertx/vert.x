@@ -55,6 +55,9 @@ public class DefaultVertx implements VertxInternal {
 
   public static final int DEFAULT_CLUSTER_PORT = 2550;
 
+  private final Thread th;
+  private final Context context;
+
   private final FileSystem fileSystem = getFileSystem();
   private final EventBus eventBus;
   private final SharedData sharedData = new SharedData();
@@ -72,10 +75,10 @@ public class DefaultVertx implements VertxInternal {
   private final ConcurrentMap<Long, InternalTimerHandler> timeouts = new ConcurrentHashMap<>();
   private final AtomicLong timeoutCounter = new AtomicLong(0);
 
-  private ClusterManager clusterManager;
-
   public DefaultVertx() {
     this.eventBus = new DefaultEventBus(this);
+    this.th = Thread.currentThread();
+    this.context = getContext();
   }
 
   public DefaultVertx(String hostname) {
@@ -83,9 +86,11 @@ public class DefaultVertx implements VertxInternal {
   }
 
   public DefaultVertx(int port, String hostname) {
-    this.clusterManager = new HazelcastClusterManager(this);
-    this.eventBus = new DefaultEventBus(this, port, hostname, clusterManager);
+    this.eventBus = new DefaultEventBus(this, port, hostname, new HazelcastClusterManager(this));
+    this.th = Thread.currentThread();
+    this.context = getContext();
   }
+
   /**
    * @return The FileSystem implementation for the OS
    */
@@ -329,7 +334,19 @@ public class DefaultVertx implements VertxInternal {
 
     setContext(null);
   }
-  
+
+  @Override
+  public void checkContext() {
+    if (!(context instanceof WorkerContext)) {
+      if (th != Thread.currentThread()) {
+        throw new IllegalStateException("Expected:" + th + " Actual:" + Thread.currentThread());
+      }
+    }
+    if (context != getContext()) {
+      throw new IllegalStateException("Wrong context: Expected: " + context + " Actual: " + getContext());
+    }
+  }
+
   private static class InternalTimerHandler implements Runnable {
     final Handler<Long> handler;
     final long timerID;
