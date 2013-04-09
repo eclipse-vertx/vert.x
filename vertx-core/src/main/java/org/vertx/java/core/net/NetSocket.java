@@ -63,7 +63,7 @@ public interface NetSocket extends ReadStream<NetSocket>, WriteStream<NetSocket>
    * Write a {@link String} to the connection, encoded using the encoding {@code enc}.
    * @return A reference to this, so multiple method calls can be chained.
    */
-   NetSocket write(String str, String enc);
+  NetSocket write(String str, String enc);
 
   /**
    * Write a {@link Buffer} to the connection. The {@code doneHandler} is called after the buffer is actually written to the wire.

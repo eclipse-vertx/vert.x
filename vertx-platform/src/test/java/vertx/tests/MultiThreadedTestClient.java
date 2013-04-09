@@ -36,6 +36,7 @@ public class MultiThreadedTestClient extends TestClientBase {
     container.deployWorkerVerticle(MultiThreadedWorker.class.getName(), null, 1, true, new AsyncResultHandler<String>() {
       @Override
       public void handle(FutureResult<String> res) {
+        tu.checkThread();
         if (res.succeeded()) {
           for (int i = 0; i < 1000; i++) {
             eb.send("fooaddress", "blah");

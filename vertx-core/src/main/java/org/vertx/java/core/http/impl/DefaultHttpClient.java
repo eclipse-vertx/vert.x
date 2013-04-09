@@ -471,9 +471,8 @@ public class DefaultHttpClient implements HttpClient {
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
-          final Channel ch = channelFuture.channel();
-          if (channelFuture.isSuccess()) {
-
+        final Channel ch = channelFuture.channel();
+        if (channelFuture.isSuccess()) {
           if (tcpHelper.isSSL()) {
             // TCP connected, so now we must do the SSL handshake
 
@@ -493,9 +492,8 @@ public class DefaultHttpClient implements HttpClient {
           } else {
             connected(ch, connectHandler);
           }
-
         } else {
-            failed(ch, connectErrorHandler, channelFuture.cause());
+          failed(ch, connectErrorHandler, channelFuture.cause());
         }
       }
     });
@@ -510,30 +508,26 @@ public class DefaultHttpClient implements HttpClient {
   private void connected(final Channel ch, final Handler<ClientConnection> connectHandler) {
     if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
       vertx.setContext(actualCtx);
-      final ClientConnection conn = new ClientConnection(vertx, DefaultHttpClient.this, ch,
-                host + ":" + port, keepAlive, actualCtx);
-      conn.closedHandler(new SimpleHandler() {
-        public void handle() {
-          pool.connectionClosed();
-        }
-      });
-      connectionMap.put(ch, conn);
-      connectHandler.handle(conn);
+      createConn(ch, connectHandler);
     } else {
         actualCtx.execute(new Runnable() {
           public void run() {
-            final ClientConnection conn = new ClientConnection(vertx, DefaultHttpClient.this, ch,
-                    host + ":" + port, keepAlive, actualCtx);
-            conn.closedHandler(new SimpleHandler() {
-                    public void handle() {
-                        pool.connectionClosed();
-                    }
-                });
-            connectionMap.put(ch, conn);
-            connectHandler.handle(conn);
+            createConn(ch, connectHandler);
           }
         });
     }
+  }
+
+  private void createConn(Channel ch, Handler<ClientConnection> connectHandler) {
+    final ClientConnection conn = new ClientConnection(vertx, DefaultHttpClient.this, ch,
+        host + ":" + port, keepAlive, actualCtx);
+    conn.closedHandler(new SimpleHandler() {
+      public void handle() {
+        pool.connectionClosed();
+      }
+    });
+    connectionMap.put(ch, conn);
+    connectHandler.handle(conn);
   }
 
   private void failed(final Channel ch, final Handler<Exception> connectionExceptionHandler,

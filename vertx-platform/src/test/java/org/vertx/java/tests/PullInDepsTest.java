@@ -22,6 +22,8 @@ import org.vertx.java.core.FutureResult;
 import org.vertx.java.testframework.TestBase;
 
 import java.io.File;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class PullInDepsTest extends TestBase {
 
@@ -39,6 +41,7 @@ public class PullInDepsTest extends TestBase {
   @Test
   public void testPullInDeps() throws Exception {
     final String deployID = startMod("io.vertx~mod-maven-server~1.0", null, 1, false);
+    final CountDownLatch latch = new CountDownLatch(1);
     platformManager.pullInDependencies("io.vertx~mod-pullin~1.0", new AsyncResultHandler<Void>() {
       @Override
       public void handle(FutureResult<Void> res) {
@@ -55,10 +58,15 @@ public class PullInDepsTest extends TestBase {
         assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-d~1.2-beta");
         // Nested
         assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-d~1.2-beta/mods/io.vertx~mod-pullin-e~2.2");
+        latch.countDown();
       }
     });
-
-
+    try {
+      if (!latch.await(20000, TimeUnit.SECONDS)) {
+        throw new IllegalStateException("Timed out");
+      }
+    } catch (InterruptedException e) {
+    }
   }
 
   private void assertFileExists(String fileName) {

@@ -8,4 +8,4 @@ vertx.createHttpServer().requestHandler(function(req) {
     var file = '.' + req.uri()
     req.response.sendFile(file)
   }
-}).listen(9192)
+}).listen(9192);

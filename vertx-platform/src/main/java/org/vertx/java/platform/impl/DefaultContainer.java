@@ -160,6 +160,7 @@ public class DefaultContainer implements Container {
 
   @Override
   public void undeployModule(String deploymentID, AsyncResultHandler<Void> doneHandler) {
+
     mgr.undeploy(deploymentID, doneHandler);
   }
 
