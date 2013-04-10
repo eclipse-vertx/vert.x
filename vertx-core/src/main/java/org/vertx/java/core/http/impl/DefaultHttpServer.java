@@ -180,7 +180,9 @@ public class DefaultHttpServer implements HttpServer {
 
             pipeline.addLast("decoder", new HttpRequestDecoder());
             pipeline.addLast("encoder", new HttpResponseEncoder());
-
+            if (tcpHelper.isAutomaticCompression()){
+              pipeline.addLast("deflater", new HttpContentCompressor());
+            }
             pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
             pipeline.addLast("handler", new ServerHandler());
             return pipeline;
@@ -323,6 +325,11 @@ public class DefaultHttpServer implements HttpServer {
     return this;
   }
 
+  public HttpServer setAutomaticCompression(final boolean automaticCompression) {
+    tcpHelper.setAutomaticCompression(automaticCompression);
+    return this;
+  }
+
   public Boolean isTCPNoDelay() {
     return tcpHelper.isTCPNoDelay();
   }
@@ -373,6 +380,10 @@ public class DefaultHttpServer implements HttpServer {
 
   public String getTrustStorePassword() {
     return tcpHelper.getTrustStorePassword();
+  }
+
+  public boolean isAutomaticCompression() {
+    return tcpHelper.isAutomaticCompression();
   }
 
   private void actualClose(final Context closeContext, final Handler<Void> done) {

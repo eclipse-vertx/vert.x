@@ -21,10 +21,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioSocketChannel;
-import org.jboss.netty.handler.codec.http.HttpChunk;
-import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
-import org.jboss.netty.handler.codec.http.HttpRequestEncoder;
-import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.jboss.netty.handler.codec.http.*;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
@@ -263,6 +260,15 @@ public class DefaultHttpClient implements HttpClient {
     return this;
   }
 
+  public HttpClient setAutomaticDecompression(final boolean automaticDecompression) {
+    tcpHelper.setAutomaticDecompression(automaticDecompression);
+    return this;
+  }
+
+  public boolean isAutomaticDecompression() {
+    return tcpHelper.isAutomaticDecompression();
+  }
+
   public Boolean isTCPNoDelay() {
     return tcpHelper.isTCPNoDelay();
   }
@@ -379,6 +385,9 @@ public class DefaultHttpClient implements HttpClient {
           }
           pipeline.addLast("encoder", new HttpRequestEncoder());
           pipeline.addLast("decoder", new SwitchingHttpResponseDecoder());
+          if (tcpHelper.isAutomaticDecompression()){
+            pipeline.addLast("inflater", new HttpContentDecompressor());
+          }
           pipeline.addLast("handler", new ClientHandler());
           return pipeline;
         }

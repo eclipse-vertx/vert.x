@@ -46,6 +46,8 @@ public class TCPSSLHelper {
 
   private boolean ssl;
   private boolean verifyHost = true;
+  private boolean automaticDecompression = true;
+  private boolean automaticCompression;
   private String keyStorePath;
   private String keyStorePassword;
   private String trustStorePath;
@@ -234,6 +236,22 @@ public class TCPSSLHelper {
 
   public SSLContext getSSLContext() {
     return sslContext;
+  }
+
+  public boolean isAutomaticCompression(){
+    return automaticCompression;
+  }
+
+  public boolean isAutomaticDecompression(){
+    return automaticDecompression;
+  }
+
+  public void setAutomaticCompression(final boolean automaticCompression){
+    this.automaticCompression = automaticCompression;
+  }
+
+  public void setAutomaticDecompression(final boolean automaticDecompression){
+    this.automaticDecompression = automaticDecompression;
   }
 
   public void setSSL(boolean ssl) {

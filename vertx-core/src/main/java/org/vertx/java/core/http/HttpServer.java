@@ -179,6 +179,13 @@ public interface HttpServer {
   HttpServer setAcceptBacklog(int backlog);
 
   /**
+   * If {@code automaticCompression} is set to {@code true} then the server will compress the outgoing
+   * payloads using GZIP.
+   * @return a reference to this so multiple method calls can be chained together
+   */
+  HttpServer setAutomaticCompression(boolean automaticCompression);
+
+  /**
    * @return true if Nagle's algorithm is disabled.
    */
   Boolean isTCPNoDelay();
@@ -252,4 +259,10 @@ public interface HttpServer {
    * @return The trust store password
    */
   String getTrustStorePassword();
+
+  /**
+   *
+   * @return true if this server will automatically compress the payloads.
+   */
+  boolean isAutomaticCompression();
 }

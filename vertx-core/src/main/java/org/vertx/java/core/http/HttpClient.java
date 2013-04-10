@@ -281,6 +281,13 @@ public interface HttpClient {
   HttpClient setBossThreads(int threads);
 
   /**
+   * If {@code automaticDecompression} is set to {@code true} then the client will try to decompress the
+   * incoming stream automatically.
+   * @return A reference to this, so multiple invocations can be chained together.
+   */
+  HttpClient setAutomaticDecompression(boolean automaticDecompression);
+
+  /**
    * @return true if Nagle's algorithm is disabled.
    */
   Boolean isTCPNoDelay();
@@ -373,4 +380,9 @@ public interface HttpClient {
    */
   String getTrustStorePassword();
 
+  /**
+   *
+   * @return true if this client will automatically decompress the response stream.
+   */
+  boolean isAutomaticDecompression();
 }
