@@ -72,7 +72,7 @@ class ModuleReference {
     if (factory == null) {
       Class clazz = mcl.loadClass(factoryName);
       factory = (VerticleFactory)clazz.newInstance();
-      factory.init(mcl, vertx, container);
+      factory.init(vertx, container, mcl);
     }
     return factory;
   }
