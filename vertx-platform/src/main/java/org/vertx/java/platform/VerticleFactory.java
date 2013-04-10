@@ -25,9 +25,9 @@ import org.vertx.java.core.logging.Logger;
  */
 public interface VerticleFactory {
 
-  void init(ClassLoader cl);
+  void init(ClassLoader cl, Vertx vertx, Container container);
 
-  Verticle createVerticle(String main, Vertx vertx, Container container) throws Exception;
+  Verticle createVerticle(String main) throws Exception;
 
   void reportException(Logger logger, Throwable t);
 

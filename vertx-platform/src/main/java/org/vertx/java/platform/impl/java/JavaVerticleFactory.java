@@ -28,21 +28,25 @@ import org.vertx.java.platform.VerticleFactory;
 public class JavaVerticleFactory implements VerticleFactory {
 
   private ClassLoader cl;
+  private Vertx vertx;
+  private Container container;
 
   public JavaVerticleFactory() {
 	  super();
   }
 
   @Override
-  public void init(ClassLoader cl) {
+  public void init(ClassLoader cl, Vertx vertx, Container container) {
     this.cl = cl;
+    this.vertx = vertx;
+    this.container = container;
   }
 
   private boolean isJavaSource(String main) {
     return main.endsWith(".java");
   }
 
-  public Verticle createVerticle(String main, Vertx vertx, Container container) throws Exception {
+  public Verticle createVerticle(String main) throws Exception {
     String className = main;
     Class<?> clazz;
     if (isJavaSource(main)) {

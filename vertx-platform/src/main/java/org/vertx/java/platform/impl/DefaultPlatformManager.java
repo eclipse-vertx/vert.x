@@ -1058,7 +1058,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
     try {
       // TODO not one verticle factory per module ref, but one per language per module ref
-      verticleFactory = mr.getVerticleFactory(langImplInfo.factoryName);
+      verticleFactory = mr.getVerticleFactory(langImplInfo.factoryName, vertx, new DefaultContainer(this));
     } catch (Exception e) {
       throw new PlatformManagerException("Failed to instantiate verticle factory", e);
     }
@@ -1090,8 +1090,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           public void run() {
             Verticle verticle;
             try {
-              verticle = verticleFactory.createVerticle(main, new VertxWrapper(vertx, vertx.getContext()),
-                                                        new DefaultContainer(DefaultPlatformManager.this));
+              verticle = verticleFactory.createVerticle(main);
             } catch (Throwable t) {
               handleDeployFailure(t, deploymentID, aggHandler);
               return;

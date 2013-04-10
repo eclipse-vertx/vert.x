@@ -335,18 +335,6 @@ public class DefaultVertx implements VertxInternal {
     setContext(null);
   }
 
-  @Override
-  public void checkContext() {
-    if (!(context instanceof WorkerContext)) {
-      if (th != Thread.currentThread()) {
-        throw new IllegalStateException("Expected:" + th + " Actual:" + Thread.currentThread());
-      }
-    }
-    if (context != getContext()) {
-      throw new IllegalStateException("Wrong context: Expected: " + context + " Actual: " + getContext());
-    }
-  }
-
   private static class InternalTimerHandler implements Runnable {
     final Handler<Long> handler;
     final long timerID;
