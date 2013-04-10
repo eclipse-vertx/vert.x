@@ -136,14 +136,17 @@ public abstract class DefaultContext implements Context {
   protected Runnable wrapTask(final Runnable task) {
     return new Runnable() {
       public void run() {
-        String threadName = Thread.currentThread().getName();
+        Thread currentThread = Thread.currentThread();
+        String threadName = currentThread.getName();
         try {
           vertx.setContext(DefaultContext.this);
           task.run();
         } catch (Throwable t) {
           reportException(t);
         } finally {
-          Thread.currentThread().setName(threadName);
+          if (!threadName.equals(currentThread.getName())) {
+            currentThread.setName(threadName);
+          }
         }
         if (closed) {
           // We allow tasks to be run after the context is closed but we make sure we unset the context afterwards
