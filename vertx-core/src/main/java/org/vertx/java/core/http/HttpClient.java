@@ -40,7 +40,7 @@ public interface HttpClient extends ClientSSLSupport<HttpClient>, TCPSupport<Htt
   /**
    * Set an exception handler
    */
-  void exceptionHandler(Handler<Exception> handler) ;
+  void exceptionHandler(Handler<Exception> handler);
 
   /**
    * Set the maximum pool size<p>
@@ -101,14 +101,14 @@ public interface HttpClient extends ClientSSLSupport<HttpClient>, TCPSupport<Htt
    * Attempt to connect an HTML5 websocket to the specified URI<p>
    * The connect is done asynchronously and {@code wsConnect} is called back with the websocket
    */
-  void connectWebsocket(final String uri, final Handler<WebSocket> wsConnect);
+  void connectWebsocket(String uri, Handler<WebSocket> wsConnect);
 
   /**
    * Attempt to connect an HTML5 websocket to the specified URI<p>
    * This version of the method allows you to specify the websockets version using the {@code wsVersion parameter}
    * The connect is done asynchronously and {@code wsConnect} is called back with the websocket
    */
-  void connectWebsocket(final String uri, final WebSocketVersion wsVersion, final Handler<WebSocket> wsConnect);
+  void connectWebsocket(String uri, WebSocketVersion wsVersion, Handler<WebSocket> wsConnect);
 
   /**
    * This is a quick version of the {@link #get(String, org.vertx.java.core.Handler)}

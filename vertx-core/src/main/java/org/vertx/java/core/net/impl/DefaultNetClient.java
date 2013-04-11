@@ -403,8 +403,12 @@ public class DefaultNetClient implements NetClient {
 
   private void connected(final Channel ch, final AsyncResultHandler<NetSocket> connectHandler) {
     if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
-      vertx.setContext(actualCtx);
-      doConnected(ch, connectHandler);
+      try {
+        vertx.setContext(actualCtx);
+        doConnected(ch, connectHandler);
+      } catch (Throwable t) {
+        actualCtx.reportException(t);
+      }
     } else {
       actualCtx.execute(new Runnable() {
         public void run() {
@@ -423,8 +427,12 @@ public class DefaultNetClient implements NetClient {
   private void failed(Channel ch, final Throwable t, final AsyncResultHandler<NetSocket> connectHandler) {
     ch.close();
     if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
-      vertx.setContext(actualCtx);
-      doFailed(connectHandler, t);
+      try {
+        vertx.setContext(actualCtx);
+        doFailed(connectHandler, t);
+      } catch (Throwable tt) {
+        actualCtx.reportException(tt);
+      }
     } else {
       actualCtx.execute(new Runnable() {
         public void run() {

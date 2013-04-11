@@ -31,15 +31,6 @@ artifacts {
 	platform jar
 }
 
-/*
-sourceSets {
-  test {
-    resources {
-      srcDirs "../src/dist/conf"
-    }
-  }
-}
-*/
 
 test {
   outputs.upToDateWhen { false }

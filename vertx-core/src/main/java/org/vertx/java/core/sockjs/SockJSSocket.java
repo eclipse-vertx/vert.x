@@ -40,5 +40,8 @@ public interface SockJSSocket extends ReadStream<SockJSSocket>, WriteStream<Sock
    */
   String writeHandlerID();
 
+  /**
+   * Close it
+   */
   void close();
 }

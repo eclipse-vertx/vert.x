@@ -508,7 +508,11 @@ public class DefaultHttpClient implements HttpClient {
   private void connected(final Channel ch, final Handler<ClientConnection> connectHandler) {
     if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
       vertx.setContext(actualCtx);
-      createConn(ch, connectHandler);
+      try {
+        createConn(ch, connectHandler);
+      } catch (Throwable t) {
+        actualCtx.reportException(t);
+      }
     } else {
         actualCtx.execute(new Runnable() {
           public void run() {
@@ -581,8 +585,12 @@ public class DefaultHttpClient implements HttpClient {
       final Channel ch = chctx.channel();
       // We need to do this since it's possible the server is being used from a worker context
       if (eventLoopContext.isOnCorrectWorker(ch.eventLoop())) {
-        vertx.setContext(actualCtx);
-        doMessageReceived(connectionMap.get(ch), chctx, msg);
+        try {
+          vertx.setContext(actualCtx);
+          doMessageReceived(connectionMap.get(ch), chctx, msg);
+        } catch (Throwable t) {
+          actualCtx.reportException(t);
+        }
       } else {
         BufUtil.retain(msg);
         actualCtx.execute(new Runnable() {

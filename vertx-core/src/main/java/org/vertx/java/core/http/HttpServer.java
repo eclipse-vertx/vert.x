@@ -85,5 +85,5 @@ public interface HttpServer extends ServerSSLSupport<HttpServer>, ServerTCPSuppo
    * Close the server. Any open HTTP connections will be closed. The {@code doneHandler} will be called when the close
    * is complete.
    */
-  void close(final AsyncResultHandler<Void> doneHandler);
+  void close(AsyncResultHandler<Void> doneHandler);
 }
