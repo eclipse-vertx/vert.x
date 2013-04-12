@@ -99,15 +99,19 @@ public class JavaHttpTest extends TestBase {
         req.response.end();
       }
     });
-    server.listen(8080);
+    server.listen(8080, new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
 
-    final HttpClient client = vertx.createHttpClient().setPort(8080);
-    client.getNow("some-uri", new Handler<HttpClientResponse>() {
-      public void handle(HttpClientResponse resp) {
-        server.close(new SimpleHandler() {
-          public void handle() {
-            client.close();
-            latch.countDown();
+        final HttpClient client = vertx.createHttpClient().setPort(8080);
+        client.getNow("some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            server.close(new SimpleHandler() {
+              public void handle() {
+                client.close();
+                latch.countDown();
+              }
+            });
           }
         });
       }

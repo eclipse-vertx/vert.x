@@ -33,12 +33,13 @@ import java.util.Map;
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 
-public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxStateHandler<C> implements ChannelHandlerUtil.SingleInboundMessageHandler<Object>, ChannelInboundMessageHandler<Object> {
+public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxStateHandler<C> implements
+                      ChannelHandlerUtil.SingleInboundMessageHandler<Object>, ChannelInboundMessageHandler<Object> {
 
-  private VertxInternal vertx;
+  private final VertxInternal vertx;
 
-  protected VertxHttpHandler(Map<Channel, C> connectionMap, VertxInternal vertx) {
-    super(connectionMap);
+  protected VertxHttpHandler(VertxInternal vertx, Map<Channel, C> connectionMap) {
+    super(vertx, connectionMap);
     this.vertx = vertx;
   }
 

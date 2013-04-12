@@ -351,7 +351,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   private NetServer setServer() {
-    return vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
+    NetServer server = vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
         final RecordParser parser = RecordParser.newFixed(4, null);
         Handler<Buffer> handler = new Handler<Buffer>() {
@@ -376,7 +376,9 @@ public class DefaultEventBus implements EventBus {
         parser.setOutput(handler);
         socket.dataHandler(parser);
       }
-    }).listen(serverID.port, serverID.host);
+    });
+    server.listen(serverID.port, serverID.host, null);
+    return server;
   }
 
   private void sendToSubs(ServerIDs subs, BaseMessage message) {

@@ -35,7 +35,6 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.Context;
-import org.vertx.java.core.impl.EventLoopContext;
 import org.vertx.java.core.impl.ExceptionDispatchHandler;
 import org.vertx.java.core.impl.FlowControlHandler;
 import org.vertx.java.core.impl.VertxInternal;
@@ -64,10 +63,11 @@ public class DefaultNetServer implements NetServer {
 
   private final VertxInternal vertx;
   private final Context actualCtx;
-  private final EventLoopContext eventLoopContext;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<Channel, DefaultNetSocket>();
   private Handler<NetSocket> connectHandler;
+  private Handler<Exception> exceptionHandler;
+
   private ChannelGroup serverChannelGroup;
   private boolean listening;
   private ServerID id;
@@ -75,25 +75,16 @@ public class DefaultNetServer implements NetServer {
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
 
+  private ChannelFuture bindFuture;
+
   public DefaultNetServer(VertxInternal vertx) {
     this.vertx = vertx;
-    // This is kind of fiddly - this class might be used by a worker, in which case the context is not
-    // an event loop context - but we need an event loop context so that netty can deliver any messages for the connection
-    // Therefore, if the current context is not an event loop one, we need to create one and register that with the
-    // handler manager when registering handlers
-    // We then do a check when messages are delivered that we're on the right worker before delivering the message
-    // All of this will be massively simplified in Netty 4.0 when the event loop becomes a first class citizen
     actualCtx = vertx.getOrAssignContext();
     actualCtx.putCloseHook(this, new Runnable() {
       public void run() {
         close();
       }
     });
-    if (actualCtx instanceof EventLoopContext) {
-      eventLoopContext = (EventLoopContext)actualCtx;
-    } else {
-      eventLoopContext = vertx.createEventLoopContext();
-    }
     tcpHelper.setReuseAddress(true);
   }
 
@@ -102,12 +93,19 @@ public class DefaultNetServer implements NetServer {
     return this;
   }
 
-  public NetServer listen(int port) {
-    listen(port, "0.0.0.0");
-    return this;
+  public void listen(int port) {
+    listen(port, "0.0.0.0", null);
   }
 
-  public NetServer listen(int port, String host) {
+  public void listen(int port, Handler<NetServer> listenHandler) {
+    listen(port, "0.0.0.0", listenHandler);
+  }
+
+  public void listen(int port, String host) {
+    listen(port, host, null);
+  }
+
+  public void listen(final int port, final String host, final Handler<NetServer> listenHandler) {
     if (connectHandler == null) {
       throw new IllegalStateException("Set connect handler first");
     }
@@ -123,7 +121,7 @@ public class DefaultNetServer implements NetServer {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
 
         ServerBootstrap bootstrap = new ServerBootstrap();
-        bootstrap.group(vertx.getServerAcceptorPool(), availableWorkers);
+        bootstrap.group(availableWorkers);
         bootstrap.channel(NioServerSocketChannel.class);
         tcpHelper.checkSSL(vertx);
 
@@ -159,11 +157,21 @@ public class DefaultNetServer implements NetServer {
 
         tcpHelper.applyConnectionOptions(bootstrap);
 
+        if (connectHandler != null) {
+          // Share the event loop thread to also serve the NetServer's network traffic.
+          handlerManager.addHandler(connectHandler, actualCtx);
+        }
+
         try {
-          //TODO - currently bootstrap.bind is blocking - need to make it non blocking by not using bootstrap directly
-          Channel serverChannel = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port)).syncUninterruptibly().channel();
-          serverChannelGroup.add(serverChannel);
-          log.trace("Net server listening on " + host + ":" + port);
+          bindFuture = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port)).addListener(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture future) throws Exception {
+              if (future.isSuccess()) {
+                log.trace("Net server listening on " + host + ":" + port);
+              }
+            }
+          });
+          serverChannelGroup.add(bindFuture.channel());
         } catch (ChannelException | UnknownHostException e) {
           throw new IllegalArgumentException(e.getMessage());
         }
@@ -172,12 +180,55 @@ public class DefaultNetServer implements NetServer {
       } else {
         // Server already exists with that host/port - we will use that
         checkConfigs(actualServer, this);
+
         actualServer = shared;
+
+        if (connectHandler != null) {
+          // Share the event loop thread to also serve the NetServer's network traffic.
+          actualServer.handlerManager.addHandler(connectHandler, actualCtx);
+        }
       }
-      // Share the event loop thread to also serve the NetServer's network traffic.
-      actualServer.handlerManager.addHandler(connectHandler, eventLoopContext);
+
+      // just add it to the future so it gets notified once the bind is complete
+      actualServer.bindFuture.addListener(new ChannelFutureListener() {
+        @Override
+        public void operationComplete(ChannelFuture future) throws Exception {
+          if (future.isSuccess()) {
+            if (listenHandler != null) {
+              if (actualCtx.isOnCorrectWorker(future.channel().eventLoop())) {
+                vertx.setContext(actualCtx);
+                listenHandler.handle(DefaultNetServer.this);
+              } else {
+                actualCtx.execute(new Runnable() {
+                  @Override
+                  public void run() {
+                    listenHandler.handle(DefaultNetServer.this);
+                  }
+                });
+              }
+            }
+          } else {
+              Handler<Exception> exceptionHandler = exceptionHandler();
+              if (exceptionHandler != null) {
+                  exceptionHandler.handle((Exception) future.cause());
+              }
+            close();
+          }
+        }
+      });
+
     }
+  }
+
+  @Override
+  public NetServer exceptionHandler(Handler<Exception> exceptionHandler) {
+    this.exceptionHandler = exceptionHandler;
     return this;
+  }
+
+  @Override
+  public Handler<Exception> exceptionHandler() {
+    return exceptionHandler;
   }
 
   public void close() {
@@ -195,7 +246,7 @@ public class DefaultNetServer implements NetServer {
     synchronized (vertx.sharedNetServers()) {
 
       if (actualServer != null) {
-        actualServer.handlerManager.removeHandler(connectHandler, eventLoopContext);
+        actualServer.handlerManager.removeHandler(connectHandler, actualCtx);
 
         if (actualServer.handlerManager.hasHandlers()) {
           // The actual server still has handlers so we don't actually close it
@@ -405,7 +456,7 @@ public class DefaultNetServer implements NetServer {
 
   private class ServerHandler extends VertxNetHandler {
     public ServerHandler() {
-      super(socketMap);
+      super(DefaultNetServer.this.vertx, socketMap);
     }
 
     @Override

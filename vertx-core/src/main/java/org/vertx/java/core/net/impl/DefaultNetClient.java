@@ -27,7 +27,6 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.Context;
-import org.vertx.java.core.impl.EventLoopContext;
 import org.vertx.java.core.impl.ExceptionDispatchHandler;
 import org.vertx.java.core.impl.FlowControlHandler;
 import org.vertx.java.core.impl.VertxInternal;
@@ -53,7 +52,6 @@ public class DefaultNetClient implements NetClient {
 
   private final VertxInternal vertx;
   private final Context actualCtx;
-  private final EventLoopContext eventLoopContext;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private Bootstrap bootstrap;
   private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<>();
@@ -63,23 +61,12 @@ public class DefaultNetClient implements NetClient {
 
   public DefaultNetClient(VertxInternal vertx) {
     this.vertx = vertx;
-    // This is kind of fiddly - this class might be used by a worker, in which case the context is not
-    // an event loop context - but we need an event loop context so that netty can deliver any messages for the connection
-    // Therefore, if the current context is not an event loop one, we need to create one and register that with the
-    // handler manager when registering handlers
-    // We then do a check when messages are delivered that we're on the right worker before delivering the message
-    // All of this will be massively simplified in Netty 4.0 when the event loop becomes a first class citizen
     actualCtx = vertx.getOrAssignContext();
     actualCtx.putCloseHook(this, new Runnable() {
       public void run() {
         close();
       }
     });
-    if (actualCtx instanceof EventLoopContext) {
-      eventLoopContext = (EventLoopContext)actualCtx;
-    } else {
-      eventLoopContext = vertx.createEventLoopContext();
-    }
   }
 
   public NetClient connect(int port, String host, final Handler<NetSocket> connectHandler) {
@@ -277,14 +264,10 @@ public class DefaultNetClient implements NetClient {
                        final int remainingAttempts) {
     if (bootstrap == null) {
       // Share the event loop thread to also serve the NetClient's network traffic.
-      VertxEventLoopGroup pool = new VertxEventLoopGroup();
-      pool.addWorker(eventLoopContext.getWorker());
-
-
       tcpHelper.checkSSL(vertx);
 
       bootstrap = new Bootstrap();
-      bootstrap.group(pool);
+      bootstrap.group(actualCtx.getEventLoop());
       bootstrap.channel(NioSocketChannel.class);
       bootstrap.handler(new ChannelInitializer<Channel>() {
         @Override
@@ -299,11 +282,10 @@ public class DefaultNetClient implements NetClient {
             pipeline.addLast("ssl", new SslHandler(engine));
           }
           pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());  // For large file / sendfile support
-          pipeline.addLast("handler", new ClientHandler());
+          pipeline.addLast("handler", new VertxNetHandler(vertx, socketMap));
         }
       });
     }
-    // TODO: FIx me
     tcpHelper.applyConnectionOptions(bootstrap);
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {
@@ -334,6 +316,7 @@ public class DefaultNetClient implements NetClient {
         } else {
           if (remainingAttempts > 0 || remainingAttempts == -1) {
             if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
+              vertx.setContext(actualCtx);
               log.debug("Failed to create connection. Will retry in " + reconnectInterval + " milliseconds");
               //Set a timer to retry connection
               vertx.setTimer(reconnectInterval, new Handler<Long>() {
@@ -366,6 +349,7 @@ public class DefaultNetClient implements NetClient {
 
   private void connected(final Channel ch, final Handler<NetSocket> connectHandler) {
     if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
+      vertx.setContext(actualCtx);
       DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, actualCtx);
       socketMap.put(ch, sock);
       connectHandler.handle(sock);
@@ -385,6 +369,7 @@ public class DefaultNetClient implements NetClient {
     ch.close();
     if (t instanceof Exception && exceptionHandler != null) {
       if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
+        vertx.setContext(actualCtx);
         exceptionHandler.handle((Exception) t);
       } else {
         actualCtx.execute(new Runnable() {
@@ -395,18 +380,6 @@ public class DefaultNetClient implements NetClient {
       }
     } else {
       log.error("Unhandled exception", t);
-    }
-  }
-
-  private class ClientHandler extends VertxNetHandler {
-    public ClientHandler() {
-      super(socketMap);
-    }
-
-    @Override
-    protected Context getContext(DefaultNetSocket connection) {
-      // TODO: Why ?
-      return actualCtx;
     }
   }
 }

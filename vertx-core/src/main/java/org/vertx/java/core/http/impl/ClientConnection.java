@@ -57,20 +57,18 @@ class ClientConnection extends AbstractConnection {
 
   private static final Logger log = LoggerFactory.getLogger(ClientConnection.class);
 
-  ClientConnection(VertxInternal vertx, DefaultHttpClient client, Channel channel, String hostHeader, boolean ssl,
+  ClientConnection(VertxInternal vertx, DefaultHttpClient client, Channel channel, String hostHeader,
                    boolean keepAlive,
                    Context context) {
     super(vertx, channel, context);
     this.client = client;
     this.hostHeader = hostHeader;
-    this.ssl = ssl;
     this.keepAlive = keepAlive;
   }
 
   final DefaultHttpClient client;
   final String hostHeader;
   boolean keepAlive;
-  private final boolean ssl;
   private boolean wsHandshakeConnection;
   private WebSocketClientHandshaker handshaker;
   private volatile DefaultHttpClientRequest currentRequest;
@@ -122,11 +120,13 @@ class ClientConnection extends AbstractConnection {
 
   private final class HandshakeInboundHandler extends ChannelStateHandlerAdapter implements ChannelInboundMessageHandler<Object> {
     private final Handler<WebSocket> wsConnect;
+    private final Context context;
     private FullHttpResponse response;
     private boolean handshaking;
 
     public HandshakeInboundHandler(final Handler<WebSocket> wsConnect) {
       this.wsConnect = wsConnect;
+      this.context = vertx.getContext();
     }
 
     @Override
@@ -189,12 +189,18 @@ class ClientConnection extends AbstractConnection {
       handshaking = true;
       try {
         ctx.pipeline().addAfter(ctx.name(), "websocketConverter", WebSocketConvertHandler.INSTANCE);
-
         handshaker.finishHandshake(channel, response);
-
         ws = new DefaultWebSocket(vertx, null, ClientConnection.this, null);
-        wsConnect.handle(ws);
-
+        if (context.isOnCorrectWorker(ctx.channel().eventLoop())) {
+          vertx.setContext(context);
+          wsConnect.handle(ws);
+        } else {
+          context.execute(new Runnable() {
+            public void run() {
+              wsConnect.handle(ws);
+            }
+          });
+        }
       } catch (WebSocketHandshakeException e) {
         client.handleException(e);
       } finally {
