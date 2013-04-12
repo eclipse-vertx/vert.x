@@ -46,23 +46,26 @@ public class WorkerTestClient extends TestClientBase {
         p.start();
       }
     });
-    server.listen(1234);
+    server.listen(1234, new Handler<NetServer>() {
+      @Override
+      public void handle(NetServer event) {
+        final NetClient client = vertx.createNetClient();
+        client.connect(1234, new Handler<NetSocket>() {
+          public void handle(NetSocket socket) {
+            socket.dataHandler(new Handler<Buffer>() {
+              public void handle(Buffer data) {
+                server.close(new SimpleHandler() {
+                  public void handle() {
+                    client.close();
+                    tu.testComplete();
+                  }
+                });
 
-    final NetClient client = vertx.createNetClient();
-    client.connect(1234, new Handler<NetSocket>() {
-      public void handle(NetSocket socket) {
-        socket.dataHandler(new Handler<Buffer>() {
-          public void handle(Buffer data) {
-            server.close(new SimpleHandler() {
-              public void handle() {
-                client.close();
-                tu.testComplete();
               }
             });
-
+            socket.write("foo");
           }
         });
-        socket.write("foo");
       }
     });
   }

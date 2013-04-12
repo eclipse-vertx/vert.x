@@ -25,22 +25,15 @@ import java.util.concurrent.Executor;
  */
 public class EventLoopContext extends Context {
 
-  private final EventLoop worker;
-
-  public EventLoopContext(VertxInternal vertx, Executor bgExec, EventLoop worker) {
+  public EventLoopContext(VertxInternal vertx, Executor bgExec) {
     super(vertx, bgExec);
-    this.worker = worker;
   }
 
   public void execute(Runnable task) {
-    worker.execute(wrapTask(task));
-  }
-
-  public EventLoop getWorker() {
-    return worker;
+    getEventLoop().execute(wrapTask(task));
   }
 
   public boolean isOnCorrectWorker(EventLoop worker) {
-    return this.worker == worker;
+    return getEventLoop() == worker;
   }
 }

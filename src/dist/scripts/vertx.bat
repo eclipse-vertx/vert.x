@@ -9,9 +9,11 @@
 if "%OS%"=="Windows_NT" setlocal
 
 @rem Add default JVM options here. You can also use JAVA_OPTS and VERTX_OPTS to pass JVM options to this script.
-set DEFAULT_JVM_OPTS=
+set JVM_OPTS=
 
-set JMX_OPTS=-Dcom.sun.management.jmxremote -Dvertx.management.jmx=true -Dhazelcast.jmx=true
+set JMX_OPTS=""
+@rem To enable JMX uncomment the following
+@rem set JMX_OPTS=-Dcom.sun.management.jmxremote -Dvertx.management.jmx=true -Dhazelcast.jmx=true
 
 set DIRNAME=%~dp0
 if "%DIRNAME%" == "" set DIRNAME=.
@@ -80,7 +82,7 @@ set CMD_LINE_ARGS=%$
 set CLASSPATH=%CLASSPATH%;%VERTX_HOME%\lib\*;%VERTX_HOME%\conf
 
 @rem Execute vertx
-"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JMX_OPTS% %JAVA_OPTS% %VERTX_OPTS% %VERTX_MODULE_OPTS% -Djava.util.logging.config.file="%VERTX_JUL_CONFIG%" -Dvertx.home=%VERTX_HOME% -classpath "%CLASSPATH%" org.vertx.java.platform.impl.cli.Starter %CMD_LINE_ARGS%
+"%JAVA_EXE%" %JVM_OPTS% %JMX_OPTS% %JAVA_OPTS% %VERTX_OPTS% %VERTX_MODULE_OPTS% -Djava.util.logging.config.file="%VERTX_JUL_CONFIG%" -Dvertx.home=%VERTX_HOME% -classpath "%CLASSPATH%" org.vertx.java.platform.impl.cli.Starter %CMD_LINE_ARGS%
 
 :end
 @rem End local scope for the variables with windows NT shell
