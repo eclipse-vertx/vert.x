@@ -17,7 +17,7 @@
 package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
@@ -97,7 +97,7 @@ class WebSocketTransport extends BaseTransport {
           }
         }
       });
-      ws.closedHandler(new SimpleHandler() {
+      ws.closeHandler(new VoidHandler() {
         public void handle() {
           closed = true;
           session.shutdown();

@@ -117,7 +117,7 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    * is complete.
    * @param handler
    */
-  void closeHandler(Handler<Void> handler);
+  HttpServerResponse closeHandler(Handler<Void> handler);
 
   /**
    * Write a {@link Buffer} to the response body.

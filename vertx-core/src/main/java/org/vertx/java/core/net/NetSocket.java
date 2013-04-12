@@ -104,7 +104,7 @@ public interface NetSocket extends ReadStream<NetSocket>, WriteStream<NetSocket>
   /**
    * Set a handler that will be called when the NetSocket is closed
    */
-  void closedHandler(Handler<Void> handler);
+  NetSocket closeHandler(Handler<Void> handler);
 
 }
 

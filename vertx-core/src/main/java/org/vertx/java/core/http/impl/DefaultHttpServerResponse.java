@@ -164,9 +164,10 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   }
 
   @Override
-  public void closeHandler(Handler<Void> handler) {
+  public HttpServerResponse closeHandler(Handler<Void> handler) {
     checkWritten();
     this.closeHandler = handler;
+    return this;
   }
 
   @Override

@@ -31,7 +31,7 @@ import org.vertx.java.core.streams.WriteStream;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface AsyncFile {
+public interface AsyncFile extends ReadStream<AsyncFile>, WriteStream<AsyncFile> {
 
   /**
    * Close the file. The actual close happens asynchronously.
@@ -62,16 +62,6 @@ public interface AsyncFile {
    * The handler will be called when the close is complete, or if an error occurs.
    */
   AsyncFile read(Buffer buffer, int offset, int position, int length, AsyncResultHandler<Buffer> handler);
-
-  /**
-   * Return a {@link WriteStream} instance operating on this {@code AsyncFile}.
-   */
-  WriteStream writeStream();
-
-  /**
-   * Return a {@code ReadStream} instance operating on this {@code AsyncFile}.
-   */
-  ReadStream readStream();
 
   /**
    * Flush any writes made to this file to underlying persistent storage.<p>

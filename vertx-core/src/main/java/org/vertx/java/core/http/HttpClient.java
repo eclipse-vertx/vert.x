@@ -101,14 +101,14 @@ public interface HttpClient extends ClientSSLSupport<HttpClient>, TCPSupport<Htt
    * Attempt to connect an HTML5 websocket to the specified URI<p>
    * The connect is done asynchronously and {@code wsConnect} is called back with the websocket
    */
-  void connectWebsocket(String uri, Handler<WebSocket> wsConnect);
+  HttpClient connectWebsocket(String uri, Handler<WebSocket> wsConnect);
 
   /**
    * Attempt to connect an HTML5 websocket to the specified URI<p>
    * This version of the method allows you to specify the websockets version using the {@code wsVersion parameter}
    * The connect is done asynchronously and {@code wsConnect} is called back with the websocket
    */
-  void connectWebsocket(String uri, WebSocketVersion wsVersion, Handler<WebSocket> wsConnect);
+  HttpClient connectWebsocket(String uri, WebSocketVersion wsVersion, Handler<WebSocket> wsConnect);
 
   /**
    * This is a quick version of the {@link #get(String, org.vertx.java.core.Handler)}
@@ -117,13 +117,13 @@ public interface HttpClient extends ClientSSLSupport<HttpClient>, TCPSupport<Htt
    * {@link HttpClientRequest#end()} on it. With this method the request is immediately sent.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
-  void getNow(String uri, Handler<HttpClientResponse> responseHandler);
+  HttpClient getNow(String uri, Handler<HttpClientResponse> responseHandler);
 
   /**
    * This method works in the same manner as {@link #getNow(String, org.vertx.java.core.Handler)},
    * except that it allows you specify a set of {@code headers} that will be sent with the request.
    */
-  void getNow(String uri, Map<String, ? extends Object> headers, Handler<HttpClientResponse> responseHandler);
+  HttpClient getNow(String uri, Map<String, ? extends Object> headers, Handler<HttpClientResponse> responseHandler);
 
   /**
    * This method returns an {@link HttpClientRequest} instance which represents an HTTP OPTIONS request with the specified {@code uri}.<p>

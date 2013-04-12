@@ -35,6 +35,7 @@ import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.net.NetSocket;
 
 import java.net.URI;
 import java.util.Queue;
@@ -204,14 +205,12 @@ class ClientConnection extends AbstractConnection {
     }
   }
 
+  public void closeHandler(Handler<Void> handler) {
+    this.closeHandler = handler;
+  }
+
   @Override
   public void close() {
-//    if (ws != null) {
-//      //Need to send 9 zeros to represent a close
-//      byte[] bytes = new byte[] {0, 0, 0, 0, 0, 0, 0, 0, 0};  // Just to be explicit
-//      ChannelFuture future = channel.write(ChannelBuffers.copiedBuffer(bytes));
-//      future.addListener(ChannelFutureListener.CLOSE);  // Close after it's written
-//    }
     if (wsHandshakeConnection) {
       // Do nothing - this will be ugraded
     } else if (!keepAlive) {

@@ -26,7 +26,7 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.ssl.SslHandler;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
@@ -140,12 +140,13 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   @Override
-  public void connectWebsocket(final String uri, final Handler<WebSocket> wsConnect) {
+  public HttpClient connectWebsocket(final String uri, final Handler<WebSocket> wsConnect) {
     connectWebsocket(uri, WebSocketVersion.RFC6455, wsConnect);
+    return this;
   }
 
   @Override
-  public void connectWebsocket(final String uri, final WebSocketVersion wsVersion, final Handler<WebSocket> wsConnect) {
+  public HttpClient connectWebsocket(final String uri, final WebSocketVersion wsVersion, final Handler<WebSocket> wsConnect) {
     configurable = false;
     getConnection(new Handler<ClientConnection>() {
       public void handle(final ClientConnection conn) {
@@ -156,20 +157,23 @@ public class DefaultHttpClient implements HttpClient {
         }
       }
     }, exceptionHandler, actualCtx);
+    return this;
   }
 
   @Override
-  public void getNow(String uri, Handler<HttpClientResponse> responseHandler) {
+  public HttpClient getNow(String uri, Handler<HttpClientResponse> responseHandler) {
     getNow(uri, null, responseHandler);
+    return this;
   }
 
   @Override
-  public void getNow(String uri, Map<String, ? extends Object> headers, Handler<HttpClientResponse> responseHandler) {
+  public HttpClient getNow(String uri, Map<String, ? extends Object> headers, Handler<HttpClientResponse> responseHandler) {
     HttpClientRequest req = get(uri, responseHandler);
     if (headers != null) {
       req.headers().putAll(headers);
     }
     req.end();
+    return this;
   }
 
   @Override
@@ -525,7 +529,7 @@ public class DefaultHttpClient implements HttpClient {
   private void createConn(Channel ch, Handler<ClientConnection> connectHandler) {
     final ClientConnection conn = new ClientConnection(vertx, DefaultHttpClient.this, ch,
         host + ":" + port, keepAlive, actualCtx);
-    conn.closedHandler(new SimpleHandler() {
+    conn.closeHandler(new VoidHandler() {
       public void handle() {
         pool.connectionClosed();
       }

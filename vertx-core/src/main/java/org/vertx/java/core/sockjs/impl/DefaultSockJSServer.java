@@ -17,7 +17,7 @@
 package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxFactory;
 import org.vertx.java.core.buffer.Buffer;
@@ -104,12 +104,13 @@ public class DefaultSockJSServer implements SockJSServer {
     return config;
   }
   
-  public void setHook(EventBusBridgeHook hook) {
+  public SockJSServer setHook(EventBusBridgeHook hook) {
 	  this.hook = hook;
+    return this;
   }
 
-  public void installApp(JsonObject config,
-                         final Handler<SockJSSocket> sockHandler) {
+  public SockJSServer installApp(JsonObject config,
+                                 final Handler<SockJSSocket> sockHandler) {
 
     config = setDefaults(config);
 
@@ -184,32 +185,36 @@ public class DefaultSockJSServer implements SockJSServer {
         req.response().end();
       }
     });
+    return this;
   }
 
-  public void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted) {
+  public SockJSServer bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted) {
 	  EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted);
     if (hook != null) {
       busBridge.setHook(hook);
     }
     installApp(sjsConfig, busBridge);
+    return this;
   }
 
-  public void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
+  public SockJSServer bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
                      long authTimeout) {
 	  EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted, authTimeout);
 	  if (hook != null) {
 		  busBridge.setHook(hook);
 	  }
     installApp(sjsConfig, busBridge);
+    return this;
   }
 
-  public void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
+  public SockJSServer bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
                      long authTimeout, String authAddress) {
 	  EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted, authTimeout, authAddress);
 	  if (hook != null) {
 		  busBridge.setHook(hook);
 	  }
     installApp(sjsConfig, busBridge);
+    return this;
   }
 
   private Handler<HttpServerRequest> createChunkingTestHandler() {
@@ -394,7 +399,7 @@ public class DefaultSockJSServer implements SockJSServer {
             sock.write(new Buffer("tick!"));
           }
         });
-        sock.endHandler(new SimpleHandler() {
+        sock.endHandler(new VoidHandler() {
           public void handle() {
             vertx.cancelTimer(timerID);
           }
@@ -436,7 +441,7 @@ public class DefaultSockJSServer implements SockJSServer {
             }
           }
         });
-        sock.endHandler(new SimpleHandler() {
+        sock.endHandler(new VoidHandler() {
           public void handle() {
             connections.remove(sock.writeHandlerID());
           }

@@ -23,7 +23,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.util.CharsetUtil;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.file.impl.PathAdjuster;
@@ -143,7 +143,7 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   @Override
   public NetSocket drainHandler(Handler<Void> drainHandler) {
     this.drainHandler = drainHandler;
-    vertx.runOnLoop(new SimpleHandler() {
+    vertx.runOnLoop(new VoidHandler() {
       public void handle() {
         callDrainHandler(); //If the channel is already drained, we want to call it immediately
       }
@@ -166,6 +166,12 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   @Override
   public NetSocket exceptionHandler(Handler<Exception> handler) {
     this.exceptionHandler = handler;
+    return this;
+  }
+
+  @Override
+  public NetSocket closeHandler(Handler<Void> handler) {
+    this.closeHandler = handler;
     return this;
   }
 

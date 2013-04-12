@@ -3,6 +3,7 @@ package org.vertx.java.core.http.impl;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.ServerWebSocket;
+import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.VertxInternal;
 
@@ -23,7 +24,7 @@ import org.vertx.java.core.impl.VertxInternal;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultServerWebSocket extends WebSocketBase implements ServerWebSocket {
+public class DefaultServerWebSocket extends WebSocketImplBase implements ServerWebSocket {
 
   private final String path;
   private final Runnable connectRunnable;
@@ -91,9 +92,9 @@ public class DefaultServerWebSocket extends WebSocketBase implements ServerWebSo
   }
 
   @Override
-  public ServerWebSocket closedHandler(Handler<Void> handler) {
+  public ServerWebSocket closeHandler(Handler<Void> handler) {
     checkClosed();
-    this.closedHandler = handler;
+    this.closeHandler = handler;
     return this;
   }
 
@@ -137,6 +138,17 @@ public class DefaultServerWebSocket extends WebSocketBase implements ServerWebSo
     return this;
   }
 
+  @Override
+  public ServerWebSocket writeBinaryFrame(Buffer data) {
+    super.writeBinaryFrameInternal(data);
+    return this;
+  }
+
+  @Override
+  public ServerWebSocket writeTextFrame(String str) {
+    super.writeTextFrameInternal(str);
+    return this;
+  }
 
   @Override
   protected void writeFrame(WebSocketFrame frame) {

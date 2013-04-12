@@ -55,17 +55,17 @@ public interface WebSocketBase<T> extends ReadStream<T>, WriteStream<T> {
   /**
    * Write {@code data} to the websocket as a binary frame
    */
-  void writeBinaryFrame(Buffer data);
+  T writeBinaryFrame(Buffer data);
 
   /**
    * Write {@code str} to the websocket as a text frame
    */
-  void writeTextFrame(String str);
+  T writeTextFrame(String str);
 
   /**
    * Set a closed handler on the connection
    */
-  T closedHandler(Handler<Void> handler);
+  T closeHandler(Handler<Void> handler);
 
   /**
    * Close the websocket

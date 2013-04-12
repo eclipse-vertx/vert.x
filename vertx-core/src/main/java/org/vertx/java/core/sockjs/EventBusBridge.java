@@ -179,7 +179,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
 
     final Map<String, Handler<Message>> handlers = new HashMap<>();
 
-    sock.endHandler(new SimpleHandler() {
+    sock.endHandler(new VoidHandler() {
       public void handle() {
         handleSocketClosed(sock, handlers);
       }

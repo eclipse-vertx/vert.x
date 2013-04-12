@@ -19,6 +19,7 @@ package org.vertx.java.core.http.impl;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
@@ -38,7 +39,7 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultHttpServerRequest extends BodyHandlerImpl<HttpServerRequest> implements HttpServerRequest {
+public class DefaultHttpServerRequest implements HttpServerRequest {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultHttpServerRequest.class);
 
@@ -198,6 +199,22 @@ public class DefaultHttpServerRequest extends BodyHandlerImpl<HttpServerRequest>
   @Override
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
     return conn.getPeerCertificateChain();
+  }
+
+  @Override
+  public HttpServerRequest bodyHandler(final Handler<Buffer> bodyHandler) {
+    final Buffer body = new Buffer();
+    dataHandler(new Handler<Buffer>() {
+      public void handle(Buffer buff) {
+        body.appendBuffer(buff);
+      }
+    });
+    endHandler(new VoidHandler() {
+      public void handle() {
+        bodyHandler.handle(body);
+      }
+    });
+    return this;
   }
 
   public HttpRequest nettyRequest() {

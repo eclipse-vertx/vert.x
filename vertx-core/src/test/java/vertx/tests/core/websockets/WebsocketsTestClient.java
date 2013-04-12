@@ -19,7 +19,7 @@ package vertx.tests.core.websockets;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
 import org.vertx.java.testframework.TestClientBase;
@@ -221,7 +221,7 @@ public class WebsocketsTestClient extends TestClientBase {
     for (int i = 0; i < numConnections; i++) {
       client.connectWebsocket("http://somehost", new Handler<WebSocket>() {
         public void handle(WebSocket ws) {
-          ws.closedHandler(new SimpleHandler() {
+          ws.closeHandler(new VoidHandler() {
             public void handle() {
               int count = counter.incrementAndGet();
               if (count == numConnections) {

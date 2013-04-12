@@ -17,7 +17,7 @@
 package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.impl.StringEscapeUtils;
@@ -83,7 +83,7 @@ class BaseTransport {
   protected static abstract class BaseListener implements TransportListener {
 
     protected void addCloseHandler(HttpServerResponse resp, final Session session) {
-      resp.closeHandler(new SimpleHandler() {
+      resp.closeHandler(new VoidHandler() {
         public void handle() {
           if (log.isTraceEnabled()) log.trace("Connection closed (from client?), closing session");
           // Connection has been closed fron the client or network error so

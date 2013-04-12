@@ -19,7 +19,7 @@ package vertx.tests.core.http;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
@@ -53,7 +53,7 @@ public class DrainingServer extends Verticle {
             req.response().write(buff);
             if (req.response().writeQueueFull()) {
               vertx.cancelTimer(id);
-              req.response().drainHandler(new SimpleHandler() {
+              req.response().drainHandler(new VoidHandler() {
                 public void handle() {
                   tu.checkThread();
                   tu.azzert(!req.response().writeQueueFull());

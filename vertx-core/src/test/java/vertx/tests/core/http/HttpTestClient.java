@@ -19,7 +19,7 @@ package vertx.tests.core.http;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.*;
@@ -458,7 +458,7 @@ public class HttpTestClient extends TestClientBase {
       public void handle(HttpClientResponse resp) {
         tu.checkThread();
         tu.azzert(Integer.valueOf(resp.headers().get("Content-Length")) == 41);
-        resp.endHandler(new SimpleHandler() {
+        resp.endHandler(new VoidHandler() {
           @Override
           protected void handle() {
             tu.testComplete();
@@ -838,7 +838,7 @@ public class HttpTestClient extends TestClientBase {
       public void handle(FutureResult<Void> result) {
       }
     };
-    Handler<Void> handler = new SimpleHandler() {
+    Handler<Void> handler = new VoidHandler() {
       protected void handle() {
       }
     };
@@ -1380,7 +1380,7 @@ public class HttpTestClient extends TestClientBase {
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(final HttpClientResponse resp) {
         tu.checkThread();
-        resp.endHandler(new SimpleHandler() {
+        resp.endHandler(new VoidHandler() {
           public void handle() {
             tu.azzert(resp.trailers().size() == trailers.size());
             for (Map.Entry<String, String> entry : trailers.entrySet()) {
@@ -1407,7 +1407,7 @@ public class HttpTestClient extends TestClientBase {
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(final HttpClientResponse resp) {
         tu.checkThread();
-        resp.endHandler(new SimpleHandler() {
+        resp.endHandler(new VoidHandler() {
           public void handle() {
             tu.azzert(resp.trailers().isEmpty());
             tu.testComplete();
@@ -1457,7 +1457,7 @@ public class HttpTestClient extends TestClientBase {
     HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(final HttpClientResponse resp) {
         tu.checkThread();
-        resp.endHandler(new SimpleHandler() {
+        resp.endHandler(new VoidHandler() {
           public void handle() {
             tu.azzert(resp.cookies().size() == cookies.size());
             for (int i = 0; i < cookies.size(); ++i) {
@@ -1478,7 +1478,7 @@ public class HttpTestClient extends TestClientBase {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
 
-        Handler<Void> handler = new SimpleHandler() {
+        Handler<Void> handler = new VoidHandler() {
           public void handle() {
           }
         };
@@ -2073,7 +2073,7 @@ public class HttpTestClient extends TestClientBase {
     });
     final HttpClientRequest req = client.put("someurl", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        resp.endHandler(new SimpleHandler() {
+        resp.endHandler(new VoidHandler() {
           public void handle() {
             tu.checkThread();
             tu.testComplete();
@@ -2083,7 +2083,7 @@ public class HttpTestClient extends TestClientBase {
     });
     req.headers().put("Expect", "100-continue");
     req.setChunked(true);
-    req.continueHandler(new SimpleHandler() {
+    req.continueHandler(new VoidHandler() {
       public void handle() {
         tu.checkThread();
         req.write(toSend);
@@ -2112,7 +2112,7 @@ public class HttpTestClient extends TestClientBase {
 
     final HttpClientRequest req = client.put("someurl", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        resp.endHandler(new SimpleHandler() {
+        resp.endHandler(new VoidHandler() {
           public void handle() {
             tu.checkThread();
             tu.testComplete();
@@ -2123,7 +2123,7 @@ public class HttpTestClient extends TestClientBase {
 
     req.headers().put("Expect", "100-continue");
     req.setChunked(true);
-    req.continueHandler(new SimpleHandler() {
+    req.continueHandler(new VoidHandler() {
       public void handle() {
         tu.checkThread();
         req.write(toSend);
@@ -2148,7 +2148,7 @@ public class HttpTestClient extends TestClientBase {
         req.write(buff);
         if (req.writeQueueFull()) {
           vertx.cancelTimer(id);
-          req.drainHandler(new SimpleHandler() {
+          req.drainHandler(new VoidHandler() {
             public void handle() {
               tu.checkThread();
               tu.azzert(!req.writeQueueFull());
@@ -2174,7 +2174,7 @@ public class HttpTestClient extends TestClientBase {
           }
         };
         vertx.eventBus().registerHandler("client_resume", resumeHandler);
-        resp.endHandler(new SimpleHandler() {
+        resp.endHandler(new VoidHandler() {
           public void handle() {
             tu.checkThread();
             vertx.eventBus().unregisterHandler("client_resume", resumeHandler);

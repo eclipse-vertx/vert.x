@@ -22,7 +22,7 @@ import org.vertx.java.core.impl.VertxInternal;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultWebSocket extends WebSocketBase implements WebSocket {
+public class DefaultWebSocket extends WebSocketImplBase implements WebSocket {
 
   public DefaultWebSocket(VertxInternal vertx, AbstractConnection conn) {
     super(vertx, conn);
@@ -50,9 +50,21 @@ public class DefaultWebSocket extends WebSocketBase implements WebSocket {
   }
 
   @Override
-  public WebSocket closedHandler(Handler<Void> handler) {
+  public WebSocket writeBinaryFrame(Buffer data) {
+    super.writeBinaryFrameInternal(data);
+    return this;
+  }
+
+  @Override
+  public WebSocket writeTextFrame(String str) {
+    super.writeTextFrameInternal(str);
+    return this;
+  }
+
+  @Override
+  public WebSocket closeHandler(Handler<Void> handler) {
     checkClosed();
-    this.closedHandler = handler;
+    this.closeHandler = handler;
     return this;
   }
 

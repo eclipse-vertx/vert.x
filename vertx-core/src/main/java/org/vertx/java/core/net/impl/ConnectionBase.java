@@ -55,7 +55,7 @@ public abstract class ConnectionBase {
   protected final Context context;
 
   protected Handler<Exception> exceptionHandler;
-  protected Handler<Void> closedHandler;
+  protected Handler<Void> closeHandler;
   private volatile boolean writable = true;
 
   /**
@@ -63,13 +63,6 @@ public abstract class ConnectionBase {
    */
   public void close() {
     channel.close();
-  }
-
-  /**
-   * Set a closed handler on the connection
-   */
-  public void closedHandler(Handler<Void> handler) {
-    this.closedHandler = handler;
   }
 
   public void doPause() {
@@ -108,10 +101,10 @@ public abstract class ConnectionBase {
   }
 
   protected void handleClosed() {
-    if (closedHandler != null) {
+    if (closeHandler != null) {
       setContext();
       try {
-        closedHandler.handle(null);
+        closeHandler.handle(null);
       } catch (Throwable t) {
         handleHandlerException(t);
       }

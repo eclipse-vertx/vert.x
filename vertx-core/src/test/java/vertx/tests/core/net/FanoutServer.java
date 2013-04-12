@@ -19,7 +19,7 @@ package vertx.tests.core.net;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
@@ -55,7 +55,7 @@ public class FanoutServer extends Verticle {
             }
           }
         });
-        socket.closedHandler(new SimpleHandler() {
+        socket.closeHandler(new VoidHandler() {
           public void handle() {
             tu.checkThread();
             connections.remove(socket.writeHandlerID());

@@ -19,11 +19,9 @@ package vertx.tests.core.net;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.impl.Context;
-import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
@@ -431,13 +429,13 @@ public class TestClient extends TestClientBase {
       public void handle(FutureResult<NetSocket> res) {
         tu.checkThread();
         final AtomicInteger counter = new AtomicInteger(0);
-        res.result().endHandler(new SimpleHandler() {
+        res.result().endHandler(new VoidHandler() {
           public void handle() {
             tu.checkThread();
             tu.azzert(counter.incrementAndGet() == 1);
           }
         });
-        res.result().closedHandler(new SimpleHandler() {
+        res.result().closeHandler(new VoidHandler() {
           public void handle() {
             tu.checkThread();
             tu.azzert(counter.incrementAndGet() == 2);
@@ -483,7 +481,7 @@ public class TestClient extends TestClientBase {
             sock.write(buff.copy());
             if (sock.writeQueueFull()) {
               vertx.cancelTimer(id);
-              sock.drainHandler(new SimpleHandler() {
+              sock.drainHandler(new VoidHandler() {
                 public void handle() {
                   tu.checkThread();
                   tu.azzert(!sock.writeQueueFull());
@@ -672,7 +670,7 @@ public class TestClient extends TestClientBase {
     for (int i = 0; i < numConnections; i++) {
       client.connect(1234, "localhost", new AsyncResultHandler<NetSocket>() {
         public void handle(FutureResult<NetSocket> res) {
-          res.result().closedHandler(new SimpleHandler() {
+          res.result().closeHandler(new VoidHandler() {
             public void handle() {
               int count = counter.incrementAndGet();
               if (count == numConnections) {
@@ -790,7 +788,7 @@ public class TestClient extends TestClientBase {
       }
     };
     vertx.eventBus().registerHandler("client_resume", resumeHandler);
-    sock.closedHandler(new SimpleHandler() {
+    sock.closeHandler(new VoidHandler() {
       public void handle() {
         tu.checkThread();
         vertx.eventBus().unregisterHandler("client_resume", resumeHandler);

@@ -19,7 +19,7 @@ package vertx.tests.core.http;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.HttpServer;
@@ -50,7 +50,7 @@ public class PausingServer extends Verticle {
           }
         };
         vertx.eventBus().registerHandler("server_resume", resumeHandler);
-        req.endHandler(new SimpleHandler() {
+        req.endHandler(new VoidHandler() {
           public void handle() {
             tu.checkThread();
             vertx.eventBus().unregisterHandler("server_resume", resumeHandler);

@@ -24,7 +24,7 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
@@ -258,7 +258,7 @@ class ServerConnection extends AbstractConnection {
     // Check if there are more pending messages in the queue that can be processed next time around
     if (!sentCheck && !pending.isEmpty() && !paused && (pendingResponse == null || pending.peek() instanceof HttpContent)) {
       sentCheck = true;
-      vertx.runOnLoop(new SimpleHandler() {
+      vertx.runOnLoop(new VoidHandler() {
         public void handle() {
           sentCheck = false;
           if (!paused) {

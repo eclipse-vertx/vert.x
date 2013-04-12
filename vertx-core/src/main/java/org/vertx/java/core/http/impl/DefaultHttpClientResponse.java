@@ -19,6 +19,7 @@ package org.vertx.java.core.http.impl;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.logging.Logger;
@@ -33,7 +34,7 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultHttpClientResponse extends BodyHandlerImpl<HttpClientResponse> implements HttpClientResponse  {
+public class DefaultHttpClientResponse implements HttpClientResponse  {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultHttpClientResponse.class);
 
@@ -130,6 +131,22 @@ public class DefaultHttpClientResponse extends BodyHandlerImpl<HttpClientRespons
   @Override
   public HttpClientResponse resume() {
     conn.doResume();
+    return this;
+  }
+
+  @Override
+  public HttpClientResponse bodyHandler(final Handler<Buffer> bodyHandler) {
+    final Buffer body = new Buffer();
+    dataHandler(new Handler<Buffer>() {
+      public void handle(Buffer buff) {
+        body.appendBuffer(buff);
+      }
+    });
+    endHandler(new VoidHandler() {
+      public void handle() {
+        bodyHandler.handle(body);
+      }
+    });
     return this;
   }
 

@@ -73,7 +73,7 @@ public interface FileSystem {
   FileSystem truncate(String path, long len, AsyncResultHandler<Void> handler);
 
   /**
-   * Synchronous version of {@link #truncate(String, long, AsyncResultHandler)}
+   * Synchronous version of {@link #truncate(String, long AsyncResultHandler)}
    */
   FileSystem truncateSync(String path, long len) ;
 

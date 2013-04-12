@@ -18,7 +18,7 @@ package org.vertx.java.platform.impl.cli;
 
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.FutureResult;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.VertxException;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
@@ -159,7 +159,7 @@ public class Starter {
   }
 
   private void registerExitHandler(PlatformManager mgr) {
-    mgr.registerExitHandler(new SimpleHandler() {
+    mgr.registerExitHandler(new VoidHandler() {
       public void handle() {
         unblock();
       }

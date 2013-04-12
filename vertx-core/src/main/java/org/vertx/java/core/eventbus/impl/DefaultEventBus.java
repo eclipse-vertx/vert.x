@@ -731,7 +731,7 @@ public class DefaultEventBus implements EventBus {
           cleanupConnection(theServerID, ConnectionHolder.this, true);
         }
       });
-      socket.closedHandler(new SimpleHandler() {
+      socket.closeHandler(new VoidHandler() {
         public void handle() {
           cleanupConnection(theServerID, ConnectionHolder.this, false);
         }
