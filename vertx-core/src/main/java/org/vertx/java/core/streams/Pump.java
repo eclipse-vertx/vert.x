@@ -59,23 +59,26 @@ public class Pump {
   /**
    * Set the write queue max size to {@code maxSize}
    */
-  public void setWriteQueueMaxSize(int maxSize) {
+  public Pump setWriteQueueMaxSize(int maxSize) {
     this.writeStream.setWriteQueueMaxSize(maxSize);
+    return this;
   }
 
   /**
    * Start the Pump. The Pump can be started and stopped multiple times.
    */
-  public void start() {
+  public Pump start() {
     readStream.dataHandler(dataHandler);
+    return this;
   }
 
   /**
    * Stop the Pump. The Pump can be started and stopped multiple times.
    */
-  public void stop() {
+  public Pump stop() {
     writeStream.drainHandler(null);
     readStream.dataHandler(null);
+    return this;
   }
 
   /**
