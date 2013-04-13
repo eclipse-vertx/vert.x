@@ -17,7 +17,7 @@
 package org.vertx.java.core.impl;
 
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.FutureResult;
+import org.vertx.java.core.AsyncResult;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -41,7 +41,7 @@ public class CountingCompletionHandler<T> {
     this.required = required;
   }
 
-  public synchronized void complete(FutureResult<T> res) {
+  public synchronized void complete(AsyncResult<T> res) {
     if (res.failed()) {
       if (!failed) {
         // Fail immediately - but only once
@@ -65,7 +65,7 @@ public class CountingCompletionHandler<T> {
 
   void checkDone() {
     if (doneHandler != null && count == required) {
-      final FutureResult<T> res = new FutureResult<T>().setResult(null);
+      final DefaultFutureResult<T> res = new DefaultFutureResult<T>().setResult(null);
       if (vertx.getContext() == context) {
         doneHandler.handle(res);
       } else {

@@ -30,8 +30,8 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.CharsetUtil;
 import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.VoidResult;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
@@ -480,7 +480,7 @@ public class DefaultHttpServer implements HttpServer {
     if (done != null) {
       closeContext.execute(new Runnable() {
         public void run() {
-          done.handle(new VoidResult(e));
+          done.handle(new DefaultFutureResult<Void>(e));
         }
       });
     }

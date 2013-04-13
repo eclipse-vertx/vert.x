@@ -16,8 +16,8 @@ package vertx.tests.core.http;/*
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientResponse;
@@ -46,7 +46,7 @@ public class WorkerHttpTestClient extends TestClientBase {
     client.getNow("some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         server.close(new AsyncResultHandler<Void>() {
-          public void handle(FutureResult<Void> res) {
+          public void handle(AsyncResult<Void> res) {
             client.close();
             tu.testComplete();
           }

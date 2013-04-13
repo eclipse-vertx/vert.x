@@ -18,15 +18,11 @@ package org.vertx.java.platform.impl;
 
 
 import org.vertx.java.core.*;
-import org.vertx.java.core.impl.Context;
-import org.vertx.java.core.impl.CountingCompletionHandler;
-import org.vertx.java.core.impl.DefaultVertx;
-import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.impl.*;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.platform.Container;
 import org.vertx.java.platform.PlatformManagerException;
 import org.vertx.java.platform.Verticle;
 import org.vertx.java.platform.VerticleFactory;
@@ -157,7 +153,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           throw new PlatformManagerException("There is no deployment with id " + deploymentID);
         }
         AsyncResultHandler<Void> wrappedHandler = wrapDoneHandler(new AsyncResultHandler<Void>() {
-          public void handle(FutureResult<Void> res) {
+          public void handle(AsyncResult<Void> res) {
             if (res.succeeded() && dep.modID != null && dep.autoRedeploy) {
               redeployer.moduleUndeployed(dep);
             }
@@ -181,7 +177,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         String name = deployments.keySet().iterator().next();
         count.incRequired();
         undeploy(name, new AsyncResultHandler<Void>() {
-          public void handle(FutureResult<Void> res) {
+          public void handle(AsyncResult<Void> res) {
             count.complete(res);
           }
         });
@@ -204,7 +200,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       public void run() {
         ModuleIdentifier modID = new ModuleIdentifier(moduleName);
         doInstallMod(modID);
-        doneHandler.handle(new FutureResult<>((Void)null));
+        doneHandler.handle(new DefaultFutureResult<>((Void)null));
       }
     }, wrapped);
   }
@@ -220,7 +216,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         } else {
           vertx.fileSystem().deleteSync(modDir.getAbsolutePath(), true);
         }
-        doneHandler.handle(new FutureResult<>((Void)null));
+        doneHandler.handle(new DefaultFutureResult<>((Void)null));
       }
     }, wrapped);
   }
@@ -231,7 +227,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       public void run() {
         ModuleIdentifier modID = new ModuleIdentifier(moduleName); // Validates it
         doPullInDependencies(modRoot, modID);
-        doneHandler.handle(new FutureResult<>((Void)null));
+        doneHandler.handle(new DefaultFutureResult<>((Void)null));
       }
     }, wrapped);
   }
@@ -242,7 +238,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         for (final Deployment deployment : deps) {
           if (deployments.containsKey(deployment.name)) {
             doUndeploy(deployment.name, new AsyncResultHandler<Void>() {
-              public void handle(FutureResult<Void> res) {
+              public void handle(AsyncResult<Void> res) {
                 if (res.succeeded()) {
                   doRedeploy(deployment);
                 } else {
@@ -309,7 +305,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           vertx.setContext(context);
           runnable.run();
         } catch (Exception e) {
-          doneHandler.handle(new FutureResult<T>(e));
+          doneHandler.handle(new DefaultFutureResult<T>(e));
         } catch (Throwable t) {
           log.error(t);
         } finally {
@@ -408,7 +404,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       // is specified
       return new AsyncResultHandler<T>() {
         @Override
-        public void handle(FutureResult<T> res) {
+        public void handle(AsyncResult<T> res) {
           if (res.failed()) {
             vertx.reportException(res.cause());
           }
@@ -418,7 +414,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       final Context context = vertx.getContext();
       return new AsyncResultHandler<T>() {
         @Override
-        public void handle(final FutureResult<T> res) {
+        public void handle(final AsyncResult<T> res) {
           if (context == null) {
             doneHandler.handle(res);
           } else {
@@ -667,7 +663,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       doDeploy(depName, autoRedeploy, worker, multiThreaded, main, modID, config,
           urls.toArray(new URL[urls.size()]), instances, modDirToUse, mr, new AsyncResultHandler<String>() {
         @Override
-        public void handle(FutureResult<String> res) {
+        public void handle(AsyncResult<String> res) {
           if (res.succeeded()) {
             String deploymentID = res.result();
             if (deploymentID != null && !redeploy && autoRedeploy) {
@@ -1066,11 +1062,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     final CountingCompletionHandler<Void> aggHandler = new CountingCompletionHandler<>(vertx, instances);
     aggHandler.setHandler(new AsyncResultHandler<Void>() {
       @Override
-      public void handle(FutureResult<Void> res) {
+      public void handle(AsyncResult<Void> res) {
         if (res.failed()) {
-          doneHandler.handle(new FutureResult<String>(res.cause()));
+          doneHandler.handle(new DefaultFutureResult<String>(res.cause()));
         } else {
-          doneHandler.handle(new FutureResult<>(deploymentID));
+          doneHandler.handle(new DefaultFutureResult<>(deploymentID));
         }
       }
     });
@@ -1100,11 +1096,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
               if (modDir != null) {
                 setPathAdjustment(modDir);
               }
-              VoidResult vr = new VoidResult();
+              DefaultFutureResult<Void> vr = new DefaultFutureResult<>();
               verticle.start(vr);
               vr.setHandler(new AsyncResultHandler<Void>() {
                 @Override
-                public void handle(FutureResult<Void> ar) {
+                public void handle(AsyncResult<Void> ar) {
                   if (ar.succeeded()) {
                     aggHandler.complete(ar);
                   } else {
@@ -1132,12 +1128,12 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private void handleDeployFailure(final Throwable t, String deploymentID, final CountingCompletionHandler<Void> handler) {
     // First we undeploy
     doUndeploy(deploymentID, new AsyncResultHandler<Void>() {
-      public void handle(FutureResult<Void> res) {
+      public void handle(AsyncResult<Void> res) {
         if (res.failed()) {
           vertx.reportException(res.cause());
         }
         // And pass the *deploy* (not undeploy) Throwable back to the original handler
-        handler.complete(new FutureResult<Void>(t));
+        handler.complete(new DefaultFutureResult<Void>(t));
       }
     });
   }
@@ -1197,9 +1193,9 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
               LoggerFactory.removeLogger(holder.loggerName);
               holder.context.runCloseHooks();
               holder.context.close();
-              count.complete(new FutureResult<>((Void)null));
+              count.complete(new DefaultFutureResult<>((Void)null));
             } catch (Throwable t) {
-              count.complete(new FutureResult<Void>(t));
+              count.complete(new DefaultFutureResult<Void>(t));
             }
           }
         });
@@ -1214,7 +1210,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
 
     count.setHandler(new AsyncResultHandler<Void>() {
-      public void handle(FutureResult<Void> res) {
+      public void handle(AsyncResult<Void> res) {
         deployment.moduleReference.decRef();
         parentCount.complete(res);
       }

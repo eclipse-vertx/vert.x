@@ -1,28 +1,26 @@
+package org.vertx.java.core.impl;
+
+import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.Future;
+
 /*
- * Copyright 2011-2012 the original author or authors.
+ * Copyright 2013 Red Hat, Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Red Hat licenses this file to you under the Apache License, version 2.0
+ * (the "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at:
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package org.vertx.java.core;
-
-/**
- * Represents a result that may not have occurred yet.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class FutureResult<T> {
-
+public class DefaultFutureResult<T> implements Future<T> {
   private boolean failed;
   private boolean succeeded;
   private AsyncResultHandler<T> handler;
@@ -32,14 +30,14 @@ public class FutureResult<T> {
   /**
    * Create a FutureResult that hasn't completed yet
    */
-  public FutureResult() {
+  public DefaultFutureResult() {
   }
 
   /**
    * Create a VoidResult that has already completed
    * @param t The Throwable or null if succeeded
    */
-  public FutureResult(Throwable t) {
+  public DefaultFutureResult(Throwable t) {
     if (t == null) {
       setResult(null);
     } else {
@@ -51,7 +49,7 @@ public class FutureResult<T> {
    * Create a FutureResult that has already succeeded
    * @param result The result
    */
-  public FutureResult(T result) {
+  public DefaultFutureResult(T result) {
     setResult(result);
   }
 
@@ -93,7 +91,7 @@ public class FutureResult<T> {
   /**
    * Set a handler for the result. It will get called when it's complete
    */
-  public FutureResult<T> setHandler(AsyncResultHandler<T> handler) {
+  public DefaultFutureResult<T> setHandler(AsyncResultHandler<T> handler) {
     this.handler = handler;
     checkCallHandler();
     return this;
@@ -102,7 +100,7 @@ public class FutureResult<T> {
   /**
    * Set the result. Any handler will be called, if there is one
    */
-  public FutureResult<T> setResult(T result) {
+  public DefaultFutureResult<T> setResult(T result) {
     this.result = result;
     succeeded = true;
     checkCallHandler();
@@ -112,7 +110,7 @@ public class FutureResult<T> {
   /**
    * Set the failure. Any handler will be called, if there is one
    */
-  public FutureResult<T> setFailure(Throwable throwable) {
+  public DefaultFutureResult<T> setFailure(Throwable throwable) {
     this.throwable = throwable;
     failed = true;
     checkCallHandler();

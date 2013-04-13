@@ -17,7 +17,7 @@
 package vertx.tests.core.eventbus;
 
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.FutureResult;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.eventbus.impl.ClusterManager;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager;
@@ -63,7 +63,7 @@ public abstract class EventBusAppBase extends TestClientBase {
   public void stop() {
     if (!isLocal()) {
       eb.close(new AsyncResultHandler<Void>() {
-        public void handle(FutureResult<Void> result) {
+        public void handle(AsyncResult<Void> result) {
           EventBusAppBase.super.stop();
         }
       });

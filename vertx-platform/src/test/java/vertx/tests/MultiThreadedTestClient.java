@@ -16,8 +16,8 @@ package vertx.tests;/*
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.testframework.TestClientBase;
 
@@ -35,7 +35,7 @@ public class MultiThreadedTestClient extends TestClientBase {
   public void testMultiThreaded() {
     container.deployWorkerVerticle(MultiThreadedWorker.class.getName(), null, 1, true, new AsyncResultHandler<String>() {
       @Override
-      public void handle(FutureResult<String> res) {
+      public void handle(AsyncResult<String> res) {
         tu.checkThread();
         if (res.succeeded()) {
           for (int i = 0; i < 1000; i++) {

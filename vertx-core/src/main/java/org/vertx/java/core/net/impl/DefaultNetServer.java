@@ -27,8 +27,8 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.VoidResult;
 import org.vertx.java.core.impl.*;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -442,7 +442,7 @@ public class DefaultNetServer implements NetServer {
     if (done != null) {
       closeContext.execute(new Runnable() {
         public void run() {
-          done.handle(new VoidResult(e));
+          done.handle(new DefaultFutureResult<Void>(e));
         }
       });
     }

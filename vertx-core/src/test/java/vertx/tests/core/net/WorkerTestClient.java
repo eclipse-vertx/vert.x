@@ -18,7 +18,7 @@ package vertx.tests.core.net;
  */
 
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.FutureResult;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetClient;
@@ -51,11 +51,11 @@ public class WorkerTestClient extends TestClientBase {
 
     final NetClient client = vertx.createNetClient();
     client.connect(1234, new AsyncResultHandler<NetSocket>() {
-      public void handle(FutureResult<NetSocket> res) {
+      public void handle(AsyncResult<NetSocket> res) {
         res.result().dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
             server.close(new AsyncResultHandler<Void>() {
-              public void handle(FutureResult<Void> res) {
+              public void handle(AsyncResult<Void> res) {
                 client.close();
                 tu.testComplete();
               }

@@ -16,8 +16,8 @@
 
 package vertx.tests.core.net;
 
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
@@ -54,7 +54,7 @@ public abstract class BaseServer extends Verticle {
 
   public void stop() {
     server.close(new AsyncResultHandler<Void>() {
-      public void handle(FutureResult<Void> result) {
+      public void handle(AsyncResult<Void> result) {
         tu.checkThread();
         tu.appStopped();
       }

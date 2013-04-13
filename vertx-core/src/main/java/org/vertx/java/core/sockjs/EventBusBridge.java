@@ -20,6 +20,7 @@ import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -253,7 +254,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
         final String sessionID = message.getString("sessionID");
         if (sessionID != null) {
           authorise(message, sessionID, new AsyncResultHandler<Boolean>() {
-            public void handle(FutureResult<Boolean> res) {
+            public void handle(AsyncResult<Boolean> res) {
               if (res.succeeded()) {
                 if (res.result()) {
                   cacheAuthorisation(sessionID, sock);
@@ -308,7 +309,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   private void authorise(final JsonObject message, final String sessionID,
                          final AsyncResultHandler<Boolean> handler) {
     // If session id is in local cache we'll consider them authorised
-    final FutureResult<Boolean> res = new FutureResult<>();
+    final DefaultFutureResult<Boolean> res = new DefaultFutureResult<>();
     if (authCache.containsKey(sessionID)) {
       res.setResult(true).setHandler(handler);
     } else {

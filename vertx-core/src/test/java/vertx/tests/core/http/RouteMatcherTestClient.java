@@ -16,8 +16,8 @@
 
 package vertx.tests.core.http;
 
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
@@ -378,7 +378,7 @@ public class RouteMatcherTestClient extends TestClientBase {
   private void closeClientAndServer(HttpClient client, HttpServer server) {
     client.close();
     server.close(new AsyncResultHandler<Void>() {
-      public void handle(FutureResult<Void> result) {
+      public void handle(AsyncResult<Void> result) {
         tu.testComplete();
       }
     });

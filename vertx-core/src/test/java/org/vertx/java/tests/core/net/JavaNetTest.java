@@ -377,11 +377,11 @@ public class JavaNetTest extends TestBase {
 
     final NetClient client = vertx.createNetClient();
     client.connect(1234, new AsyncResultHandler<NetSocket>() {
-      public void handle(FutureResult<NetSocket> res) {
+      public void handle(AsyncResult<NetSocket> res) {
         res.result().dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
             server.close(new AsyncResultHandler<Void>() {
-              public void handle(FutureResult<Void> res) {
+              public void handle(AsyncResult<Void> res) {
                 client.close();
                 latch.countDown();
               }

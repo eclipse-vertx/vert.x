@@ -21,6 +21,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.impl.management.ManagementRegistry;
 import org.vertx.java.core.json.JsonArray;
@@ -466,7 +467,7 @@ public class DefaultEventBus implements EventBus {
       } else {
         if (subs != null) {
           subs.get(message.address, new AsyncResultHandler<ServerIDs>() {
-            public void handle(FutureResult<ServerIDs> event) {
+            public void handle(AsyncResult<ServerIDs> event) {
               if (event.succeeded()) {
                 ServerIDs serverIDs = event.result();
                 if (!serverIDs.isEmpty()) {
@@ -510,7 +511,7 @@ public class DefaultEventBus implements EventBus {
       }
       if (completionHandler == null) {
         completionHandler = new AsyncResultHandler<Void>() {
-          public void handle(FutureResult<Void> event) {
+          public void handle(AsyncResult<Void> event) {
             if (event.failed()) {
               log.error("Failed to remove entry", event.cause());
             }
@@ -543,13 +544,13 @@ public class DefaultEventBus implements EventBus {
   }
 
   private void callCompletionHandler(AsyncResultHandler<Void> completionHandler) {
-    completionHandler.handle(new VoidResult().setResult());
+    completionHandler.handle(new DefaultFutureResult().setResult(null));
   }
 
   private void cleanSubsForServerID(ServerID theServerID) {
     if (subs != null) {
       subs.removeAllForServerID(theServerID, new AsyncResultHandler<Void>() {
-        public void handle(FutureResult<Void> event) {
+        public void handle(AsyncResult<Void> event) {
         }
       });
     }
@@ -753,7 +754,7 @@ public class DefaultEventBus implements EventBus {
 
     void connect(NetClient client, final ServerID theServerID) {
       client.connect(theServerID.port, theServerID.host, new AsyncResultHandler<NetSocket>() {
-        public void handle(FutureResult<NetSocket> res) {
+        public void handle(AsyncResult<NetSocket> res) {
           if (res.succeeded()) {
             connected(theServerID, res.result());
           } else {

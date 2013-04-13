@@ -17,7 +17,7 @@
 package vertx.tests.core.net;
 
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.FutureResult;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
@@ -286,7 +286,7 @@ public class TestClient extends TestClientBase {
 
   private AsyncResultHandler<NetSocket> getEchoHandler() {
     return new AsyncResultHandler<NetSocket>() {
-      public void handle(FutureResult<NetSocket> res) {
+      public void handle(AsyncResult<NetSocket> res) {
         tu.checkThread();
         tu.azzert(res.succeeded());
         final int numChunks = 100;
@@ -334,7 +334,7 @@ public class TestClient extends TestClientBase {
 
   void echoString(final String enc) {
     client.connect(1234, new AsyncResultHandler<NetSocket>() {
-      public void handle(FutureResult<NetSocket> res) {
+      public void handle(AsyncResult<NetSocket> res) {
 
         tu.checkThread();
 
@@ -378,7 +378,7 @@ public class TestClient extends TestClientBase {
     final AtomicInteger connCount = new AtomicInteger(0);
     for (int i = 0; i < numConnections; i++) {
       AsyncResultHandler<NetSocket> handler =  new AsyncResultHandler<NetSocket>() {
-        public void handle(FutureResult<NetSocket> res) {
+        public void handle(AsyncResult<NetSocket> res) {
           tu.checkThread();
           res.result().close();
           if (connCount.incrementAndGet() == numConnections) {
@@ -396,7 +396,7 @@ public class TestClient extends TestClientBase {
 
   public void testConnectInvalidPort() {
     client.connect(9998, new AsyncResultHandler<NetSocket>() {
-      public void handle(FutureResult<NetSocket> res) {
+      public void handle(AsyncResult<NetSocket> res) {
         tu.azzert(res.failed(), "Connect should not be called");
         tu.azzert(res.cause() != null);
         tu.checkThread();
@@ -407,7 +407,7 @@ public class TestClient extends TestClientBase {
 
   public void testConnectInvalidHost() {
     client.connect(1234, "somehost", new AsyncResultHandler<NetSocket>() {
-      public void handle(FutureResult<NetSocket> res) {
+      public void handle(AsyncResult<NetSocket> res) {
         tu.azzert(res.failed(), "Connect should not be called");
         tu.azzert(res.cause() != null);
         tu.checkThread();
@@ -426,7 +426,7 @@ public class TestClient extends TestClientBase {
 
   void clientCloseHandlers(final boolean closeFromClient) {
     client.connect(1234, new AsyncResultHandler<NetSocket>() {
-      public void handle(FutureResult<NetSocket> res) {
+      public void handle(AsyncResult<NetSocket> res) {
         tu.checkThread();
         final AtomicInteger counter = new AtomicInteger(0);
         res.result().endHandler(new VoidHandler() {
@@ -452,7 +452,7 @@ public class TestClient extends TestClientBase {
   // FIXME- wtf?
   public void testServerCloseHandlersCloseFromClient() {
     client.connect(1234, new AsyncResultHandler<NetSocket>() {
-      public void handle(FutureResult<NetSocket> res) {
+      public void handle(AsyncResult<NetSocket> res) {
         res.result().close();
       }
     });
@@ -461,7 +461,7 @@ public class TestClient extends TestClientBase {
   // FIXME- wtf?
   public void testServerCloseHandlersCloseFromServer() {
     client.connect(1234, new AsyncResultHandler<NetSocket>() {
-      public void handle(FutureResult<NetSocket> res) {
+      public void handle(AsyncResult<NetSocket> res) {
       }
     });
   }
@@ -470,7 +470,7 @@ public class TestClient extends TestClientBase {
   public void testClientDrainHandler() {
     client.connect(1234, new AsyncResultHandler<NetSocket>() {
 
-      public void handle(final FutureResult<NetSocket> res) {
+      public void handle(final AsyncResult<NetSocket> res) {
         tu.checkThread();
         final NetSocket sock = res.result();
         tu.azzert(!sock.writeQueueFull());
@@ -500,7 +500,7 @@ public class TestClient extends TestClientBase {
 
   public void testServerDrainHandler() {
     client.connect(1234, new AsyncResultHandler<NetSocket>() {
-      public void handle(final FutureResult<NetSocket> res) {
+      public void handle(final AsyncResult<NetSocket> res) {
         tu.checkThread();
         NetSocket sock = res.result();
         sock.pause();
@@ -519,7 +519,7 @@ public class TestClient extends TestClientBase {
     final Buffer sentBuff = new Buffer();
 
     client.connect(1234, new AsyncResultHandler<NetSocket>() {
-      public void handle(FutureResult<NetSocket> res) {
+      public void handle(AsyncResult<NetSocket> res) {
         NetSocket sock = res.result();
         sock.dataHandler(new Handler<Buffer>() {
           int received;
@@ -550,7 +550,7 @@ public class TestClient extends TestClientBase {
 
     //The server delays starting for a a few seconds, but it should still connect
     client.connect(1234, new AsyncResultHandler<NetSocket>() {
-      public void handle(FutureResult<NetSocket> res) {
+      public void handle(AsyncResult<NetSocket> res) {
         tu.checkThread();
         tu.testComplete();
       }
@@ -563,7 +563,7 @@ public class TestClient extends TestClientBase {
 
     //The server delays starting for a a few seconds, and it should run out of attempts before that
     client.connect(1234, new AsyncResultHandler<NetSocket>() {
-      public void handle(FutureResult<NetSocket> res) {
+      public void handle(AsyncResult<NetSocket> res) {
         tu.checkThread();
         tu.azzert(res.failed(), "Should not connect");
         tu.testComplete();
@@ -620,7 +620,7 @@ public class TestClient extends TestClientBase {
     final boolean shouldPass = params.shouldPass;
 
     client.connect(4043, new AsyncResultHandler<NetSocket>() {
-      public void handle(FutureResult<NetSocket> res) {
+      public void handle(AsyncResult<NetSocket> res) {
         tu.checkThread();
         if (res.succeeded()) {
           if (!shouldPass) {
@@ -669,7 +669,7 @@ public class TestClient extends TestClientBase {
     final AtomicInteger counter = new AtomicInteger(0);
     for (int i = 0; i < numConnections; i++) {
       client.connect(1234, "localhost", new AsyncResultHandler<NetSocket>() {
-        public void handle(FutureResult<NetSocket> res) {
+        public void handle(AsyncResult<NetSocket> res) {
           res.result().closeHandler(new VoidHandler() {
             public void handle() {
               int count = counter.incrementAndGet();
@@ -734,7 +734,7 @@ public class TestClient extends TestClientBase {
       public void action() {
         // They've all connected so send some data
         client.connect(1234, new AsyncResultHandler<NetSocket>() {
-          public void handle(FutureResult<NetSocket> res) {
+          public void handle(AsyncResult<NetSocket> res) {
             res.result().write("foo");
           }
         });
@@ -749,7 +749,7 @@ public class TestClient extends TestClientBase {
 
     for (int i = 0; i < numConnections; i++) {
       client.connect(1234, new AsyncResultHandler<NetSocket>() {
-        public void handle(FutureResult<NetSocket> res) {
+        public void handle(AsyncResult<NetSocket> res) {
           connected.inc();
           res.result().dataHandler(new Handler<Buffer>() {
             public void handle(Buffer data) {
@@ -771,7 +771,7 @@ public class TestClient extends TestClientBase {
     }).listen(1234);
     vertx.createNetClient().connect(1234, new AsyncResultHandler<NetSocket>() {
       @Override
-      public void handle(FutureResult<NetSocket> res) {
+      public void handle(AsyncResult<NetSocket> res) {
         InetSocketAddress addr = res.result().remoteAddress();
         tu.azzert(addr.getHostName().equals("localhost"));
         tu.azzert(addr.getPort() == 1234);
@@ -804,13 +804,13 @@ public class TestClient extends TestClientBase {
     final int c = count;
     if (count == 0) {
       sock.write(b, new AsyncResultHandler<Void>() {
-        public void handle(FutureResult<Void> res) {
+        public void handle(AsyncResult<Void> res) {
           tu.checkThread();
         }
       });
     } else {
       sock.write(b, new AsyncResultHandler<Void>() {
-        public void handle(FutureResult<Void> res) {
+        public void handle(AsyncResult<Void> res) {
           tu.checkThread();
           doWrite(sentBuff, sock, c, sendSize);
         }

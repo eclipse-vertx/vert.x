@@ -16,8 +16,8 @@
 
 package vertx.tests.core.eventbus;
 
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
@@ -52,7 +52,7 @@ public class LocalPeer extends EventBusAppBase {
             tu.checkThread();
             tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body()));
             eb.unregisterHandler("some-address", this, new AsyncResultHandler<Void>() {
-              public void handle(FutureResult<Void> event) {
+              public void handle(AsyncResult<Void> event) {
                 if (event.succeeded()) {
                   tu.testComplete();
                 } else {
@@ -62,7 +62,7 @@ public class LocalPeer extends EventBusAppBase {
             });
           }
         }, new AsyncResultHandler<Void>() {
-      public void handle(FutureResult<Void> event) {
+      public void handle(AsyncResult<Void> event) {
         if (event.succeeded()) {
           tu.testComplete();
         } else {
@@ -89,7 +89,7 @@ public class LocalPeer extends EventBusAppBase {
             tu.checkThread();
             tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body()));
             eb.unregisterHandler(address, this, new AsyncResultHandler<Void>() {
-              public void handle(FutureResult<Void> event) {
+              public void handle(AsyncResult<Void> event) {
                 if (event.succeeded()) {
                   tu.testComplete();
                 } else {
@@ -100,7 +100,7 @@ public class LocalPeer extends EventBusAppBase {
             eb.unregisterHandler(address, otherHandler);
           }
         }, new AsyncResultHandler<Void>() {
-      public void handle(FutureResult<Void> event) {
+      public void handle(AsyncResult<Void> event) {
         if (event.succeeded()) {
           tu.testComplete();
         } else {
@@ -121,7 +121,7 @@ public class LocalPeer extends EventBusAppBase {
             tu.azzert(!handled);
             tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body()));
             eb.unregisterHandler(address, this, new AsyncResultHandler<Void>() {
-              public void handle(FutureResult<Void> event) {
+              public void handle(AsyncResult<Void> event) {
                 if (event.succeeded()) {
                   tu.testComplete();
                 } else {
@@ -132,7 +132,7 @@ public class LocalPeer extends EventBusAppBase {
             handled = true;
           }
         }, new AsyncResultHandler<Void>() {
-      public void handle(FutureResult<Void> event) {
+      public void handle(AsyncResult<Void> event) {
         if (event.succeeded()) {
           tu.testComplete();
         } else {
@@ -157,7 +157,7 @@ public class LocalPeer extends EventBusAppBase {
               vertx.setTimer(200, new Handler<Long>() {
                 public void handle(Long id) {
                   eb.unregisterHandler("some-address", hndlr, new AsyncResultHandler<Void>() {
-                    public void handle(FutureResult<Void> event) {
+                    public void handle(AsyncResult<Void> event) {
                       if (event.succeeded()) {
                         tu.testComplete();
                       } else {
@@ -173,7 +173,7 @@ public class LocalPeer extends EventBusAppBase {
             }
           }
         }, new AsyncResultHandler<Void>() {
-      public void handle(FutureResult<Void> event) {
+      public void handle(AsyncResult<Void> event) {
         if (event.succeeded()) {
           tu.testComplete();
         } else {
@@ -201,7 +201,7 @@ public class LocalPeer extends EventBusAppBase {
             msg.reply(new Buffer("reply" + address));
           }
         }, new AsyncResultHandler<Void>() {
-      public void handle(FutureResult<Void> event) {
+      public void handle(AsyncResult<Void> event) {
         if (event.succeeded()) {
           tu.testComplete();
         } else {
@@ -228,7 +228,7 @@ public class LocalPeer extends EventBusAppBase {
             msg.reply("reply" + address);
           }
         }, new AsyncResultHandler<Void>() {
-          public void handle(FutureResult<Void> event) {
+          public void handle(AsyncResult<Void> event) {
             if (event.succeeded()) {
               tu.testComplete();
             } else {

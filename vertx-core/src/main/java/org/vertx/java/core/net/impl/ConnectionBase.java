@@ -20,8 +20,8 @@ import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
 import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.VoidResult;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.FlowControlHandler;
 import org.vertx.java.core.impl.VertxInternal;
@@ -118,7 +118,7 @@ public abstract class ConnectionBase {
           if (doneHandler != null) {
             context.execute(new Runnable() {
               public void run() {
-                doneHandler.handle(new VoidResult(channelFuture.cause()));
+                doneHandler.handle(new DefaultFutureResult<Void>(channelFuture.cause()));
               }
             });
           } else if (!channelFuture.isSuccess()) {

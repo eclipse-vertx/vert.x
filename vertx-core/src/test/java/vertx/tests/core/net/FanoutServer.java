@@ -16,8 +16,8 @@
 
 package vertx.tests.core.net;
 
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
@@ -69,7 +69,7 @@ public class FanoutServer extends Verticle {
 
   public void stop() {
     server.close(new AsyncResultHandler<Void>() {
-      public void handle(FutureResult<Void> res) {
+      public void handle(AsyncResult<Void> res) {
         tu.checkThread();
         tu.appStopped();
       }

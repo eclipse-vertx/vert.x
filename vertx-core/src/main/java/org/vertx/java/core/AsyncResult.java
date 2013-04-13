@@ -17,9 +17,30 @@
 package org.vertx.java.core;
 
 /**
- * Handler for {@link AsyncResult}
+ * Represents a result that may not have occurred yet.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface AsyncResultHandler<T> extends Handler<AsyncResult<T>> {
+public interface AsyncResult<T> {
+
+  /**
+   * The result of the operation. This will be null if the operation failed.
+   */
+  T result();
+
+  /**
+   * An exception describing failure. This will be null if the operation succeeded.
+   */
+  Throwable cause();
+
+  /**
+   * Did it succeeed?
+   */
+  boolean succeeded();
+
+  /**
+   * Did it fail?
+   */
+  boolean failed();
+
 }

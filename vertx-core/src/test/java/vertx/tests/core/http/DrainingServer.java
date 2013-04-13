@@ -17,7 +17,7 @@
 package vertx.tests.core.http;
 
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.FutureResult;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
@@ -74,7 +74,7 @@ public class DrainingServer extends Verticle {
 
   public void stop() {
     server.close(new AsyncResultHandler<Void>() {
-      public void handle(FutureResult<Void> result) {
+      public void handle(AsyncResult<Void> result) {
         tu.checkThread();
         tu.appStopped();
       }

@@ -16,6 +16,7 @@
 
 package org.vertx.java.platform;
 
+import org.vertx.java.core.Future;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VoidResult;
 
@@ -76,9 +77,9 @@ public abstract class Verticle {
    * be considered started until the other modules and verticles have been started.
    * @param startedResult When you are happy your verticle is started set the result
    */
-  public void start(VoidResult startedResult) {
+  public void start(Future<Void> startedResult) {
     start();
-    startedResult.setResult();
+    startedResult.setResult(null);
   }
 
   /**

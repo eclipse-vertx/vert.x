@@ -16,8 +16,8 @@
 
 package vertx.tests;
 
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
@@ -55,7 +55,7 @@ public class TestClient extends TestClientBase {
     });
 
     container.deployVerticle(ChildVerticle.class.getName(), null, 1, new AsyncResultHandler<String>() {
-      public void handle(FutureResult<String> res) {
+      public void handle(AsyncResult<String> res) {
         tu.azzert(res.succeeded());
         tu.azzert(res.result() != null);
         tu.azzert(Thread.currentThread() == t);
@@ -67,7 +67,7 @@ public class TestClient extends TestClientBase {
     final Thread t = Thread.currentThread();
     container.deployVerticle(ChildVerticle.class.getName(), null, 1,
       new AsyncResultHandler<String>() {
-        public void handle(final FutureResult<String> res) {
+        public void handle(final AsyncResult<String> res) {
           tu.azzert(res.succeeded());
           tu.azzert(res.result() != null);
           tu.azzert(Thread.currentThread() == t);
@@ -83,7 +83,7 @@ public class TestClient extends TestClientBase {
                 }
               });
               container.undeployVerticle(res.result(), new AsyncResultHandler<Void>() {
-                public void handle(FutureResult<Void> res2) {
+                public void handle(AsyncResult<Void> res2) {
                   tu.azzert(Thread.currentThread() == t);
                 }
               });
@@ -106,7 +106,7 @@ public class TestClient extends TestClientBase {
     });
 
     container.deployModule("io.vertx~testmod-deploy1~1.0", null, 1, new AsyncResultHandler<String>() {
-      public void handle(FutureResult<String> res) {
+      public void handle(AsyncResult<String> res) {
         tu.azzert(res.succeeded());
         tu.azzert(res.result() != null);
         tu.azzert(Thread.currentThread() == t);
@@ -118,7 +118,7 @@ public class TestClient extends TestClientBase {
     final Thread t = Thread.currentThread();
     container.deployModule("io.vertx~testmod-deploy1~1.0", null, 1,
         new AsyncResultHandler<String>() {
-          public void handle(final FutureResult<String> res) {
+          public void handle(final AsyncResult<String> res) {
             tu.azzert(res.succeeded());
             tu.azzert(res.result() != null);
             tu.azzert(Thread.currentThread() == t);
@@ -134,7 +134,7 @@ public class TestClient extends TestClientBase {
                   }
                 });
                 container.undeployModule(res.result(), new AsyncResultHandler<Void>() {
-                  public void handle(FutureResult<Void> res) {
+                  public void handle(AsyncResult<Void> res) {
                     tu.azzert(res.succeeded());
                     tu.azzert(res.result() != null);
                     tu.azzert(Thread.currentThread() == t);
@@ -159,7 +159,7 @@ public class TestClient extends TestClientBase {
     });
 
     container.deployModule("io.vertx~testmod-deploy2~1.0", null, 1, new AsyncResultHandler<String>() {
-      public void handle(FutureResult<String> res) {
+      public void handle(AsyncResult<String> res) {
         tu.azzert(res.succeeded());
         tu.azzert(res.result() != null);
         tu.azzert(Thread.currentThread() == t);

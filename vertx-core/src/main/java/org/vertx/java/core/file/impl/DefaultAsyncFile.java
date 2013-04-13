@@ -16,15 +16,13 @@
 
 package org.vertx.java.core.file.impl;
 
-import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.FutureResult;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.VoidResult;
+import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.file.FileSystemException;
 import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -127,7 +125,7 @@ public class DefaultAsyncFile implements AsyncFile {
 
     doWrite(bb, writePos, new AsyncResultHandler<Void>() {
 
-      public void handle(FutureResult<Void> deferred) {
+      public void handle(AsyncResult<Void> deferred) {
         if (deferred.succeeded()) {
           checkContext();
           checkDrained();
@@ -194,7 +192,7 @@ public class DefaultAsyncFile implements AsyncFile {
       Buffer buff = new Buffer(BUFFER_SIZE);
       read(buff, 0, readPos, BUFFER_SIZE, new AsyncResultHandler<Buffer>() {
 
-        public void handle(FutureResult<Buffer> ar) {
+        public void handle(AsyncResult<Buffer> ar) {
           if (ar.succeeded()) {
             readInProgress = false;
             Buffer buffer = ar.result();
@@ -316,7 +314,7 @@ public class DefaultAsyncFile implements AsyncFile {
           context.execute(new Runnable() {
             public void run() {
               writesOutstanding -= buff.limit();
-              handler.handle(new VoidResult().setResult());
+              handler.handle(new DefaultFutureResult<Void>().setResult(null));
             }
           });
         }
@@ -327,7 +325,7 @@ public class DefaultAsyncFile implements AsyncFile {
           final Exception e = (Exception) exc;
           context.execute(new Runnable() {
             public void run() {
-              handler.handle(new VoidResult().setResult());
+              handler.handle(new DefaultFutureResult<Void>().setResult(null));
             }
           });
         } else {
@@ -343,7 +341,7 @@ public class DefaultAsyncFile implements AsyncFile {
 
       int pos = position;
 
-      final FutureResult<Buffer> result = new FutureResult<>();
+      final DefaultFutureResult<Buffer> result = new DefaultFutureResult<>();
 
       private void done() {
         context.execute(new Runnable() {
@@ -404,7 +402,7 @@ public class DefaultAsyncFile implements AsyncFile {
   }
 
   private void doClose(AsyncResultHandler<Void> handler) {
-    FutureResult<Void> res = new FutureResult<>();
+    DefaultFutureResult<Void> res = new DefaultFutureResult<>();
     try {
       ch.close();
       res.setResult(null);

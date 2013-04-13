@@ -103,7 +103,7 @@ public class JavaHttpTest extends TestBase {
     client.getNow("some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         server.close(new AsyncResultHandler<Void>() {
-          public void handle(FutureResult<Void> res) {
+          public void handle(AsyncResult<Void> res) {
             client.close();
             latch.countDown();
           }

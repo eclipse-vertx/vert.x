@@ -17,7 +17,6 @@
 package org.vertx.java.core.impl;
 
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.FutureResult;
 
 /**
  * <p>Internal class used to run specific blocking actions on the worker pool.</p>
@@ -46,7 +45,7 @@ public abstract class BlockingAction<T>  {
 
     Runnable runner = new Runnable() {
       public void run() {
-        final FutureResult<T> res = new FutureResult<>();
+        final DefaultFutureResult<T> res = new DefaultFutureResult<>();
         try {
           res.setResult(action());
         } catch (Exception e) {

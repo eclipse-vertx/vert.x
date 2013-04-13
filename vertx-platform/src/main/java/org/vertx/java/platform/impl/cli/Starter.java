@@ -17,7 +17,7 @@
 package org.vertx.java.platform.impl.cli;
 
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.FutureResult;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.VertxException;
 import org.vertx.java.core.json.DecodeException;
@@ -109,7 +109,7 @@ public class Starter {
   private <T> AsyncResultHandler<T> createLoggingHandler(final String successMessage, final AsyncResultHandler<T> doneHandler) {
     return new AsyncResultHandler<T>() {
       @Override
-      public void handle(FutureResult<T> res) {
+      public void handle(AsyncResult<T> res) {
         if (res.failed()) {
           Throwable cause = res.cause();
           if (cause instanceof VertxException) {
@@ -231,7 +231,7 @@ public class Starter {
     }
 
     AsyncResultHandler<String> doneHandler = new AsyncResultHandler<String>() {
-      public void handle(FutureResult<String> res) {
+      public void handle(AsyncResult<String> res) {
         if (res.failed()) {
           // Failed to deploy
           unblock();
@@ -303,7 +303,7 @@ public class Starter {
       public void run() {
         final CountDownLatch latch = new CountDownLatch(1);
         mgr.undeployAll(new AsyncResultHandler<Void>() {
-          public void handle(FutureResult<Void> res) {
+          public void handle(AsyncResult<Void> res) {
             latch.countDown();
           }
         });

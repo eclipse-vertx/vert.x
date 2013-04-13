@@ -22,7 +22,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.FutureResult;
+import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.*;
 import org.vertx.java.core.logging.Logger;
@@ -31,7 +31,6 @@ import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLHandshakeException;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -421,7 +420,7 @@ public class DefaultNetClient implements NetClient {
   private void doConnected(Channel ch, AsyncResultHandler<NetSocket> connectHandler) {
     DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, actualCtx);
     socketMap.put(ch, sock);
-    connectHandler.handle(new FutureResult<NetSocket>(sock));
+    connectHandler.handle(new DefaultFutureResult<NetSocket>(sock));
   }
 
   private void failed(Channel ch, final Throwable t, final AsyncResultHandler<NetSocket> connectHandler) {
@@ -443,7 +442,7 @@ public class DefaultNetClient implements NetClient {
   }
 
   private void doFailed(AsyncResultHandler<NetSocket> connectHandler, Throwable t) {
-    connectHandler.handle(new FutureResult<NetSocket>(t));
+    connectHandler.handle(new DefaultFutureResult<NetSocket>(t));
   }
 
   private class ClientHandler extends VertxNetHandler {

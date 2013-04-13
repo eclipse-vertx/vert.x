@@ -16,8 +16,8 @@
 
 package vertx.tests.core.websockets;
 
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.FutureResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.ServerWebSocket;
@@ -56,7 +56,7 @@ public class InstanceCheckServer extends Verticle {
 
   public void stop() {
     server.close(new AsyncResultHandler<Void>() {
-      public void handle(FutureResult<Void> result) {
+      public void handle(AsyncResult<Void> result) {
         tu.checkThread();
         tu.appStopped();
       }

@@ -17,7 +17,7 @@
 package vertx.tests.core.eventbus;
 
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.FutureResult;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.Message;
 
@@ -152,7 +152,7 @@ public class LocalEchoPeer extends EventBusAppBase {
             msg.reply(msg.body());
           }
         }, new AsyncResultHandler<Void>() {
-      public void handle(FutureResult<Void> event) {
+      public void handle(AsyncResult<Void> event) {
         if (event.succeeded()) {
           tu.testComplete();
         } else {
