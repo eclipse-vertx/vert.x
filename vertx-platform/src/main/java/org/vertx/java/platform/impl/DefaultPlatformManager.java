@@ -981,8 +981,21 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
                         int instances,
                         final File modDir,
                         final ModuleReference mr,
-                        final AsyncResultHandler<String> doneHandler) {
+                        AsyncResultHandler<String> dHandler) {
     checkWorkerContext();
+
+    if (dHandler == null) {
+      // Add a simple one that just logs, so deploy failures aren't lost if the user doesn't specify a handler
+      dHandler = new AsyncResultHandler<String>() {
+        @Override
+        public void handle(AsyncResult<String> ar) {
+          if (ar.failed()) {
+            ar.cause().printStackTrace();
+          }
+        }
+      };
+    }
+    final AsyncResultHandler<String> doneHandler = dHandler;
 
     final String deploymentID = depID != null ? depID : genDepName();
 
