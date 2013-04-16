@@ -79,9 +79,9 @@ public class DefaultEventBus implements EventBus {
     this.vertx = vertx;
     this.clusterMgr = clusterManager;
     this.subs = clusterMgr.getSubsMap("subs");
+    this.serverID = new ServerID(port, hostname);
+
     this.server = setServer();
-    // If using a wilcard port (0) then we ask the server for the actual port:
-    this.serverID = new ServerID(server.port(), hostname);
     ManagementRegistry.registerEventBus(serverID);
   }
 
