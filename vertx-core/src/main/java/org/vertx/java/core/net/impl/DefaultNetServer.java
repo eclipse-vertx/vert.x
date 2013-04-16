@@ -157,8 +157,9 @@ public class DefaultNetServer implements NetServer {
         }
 
         try {
-
-          bindFuture = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port)).addListener(new ChannelFutureListener() {
+          InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(host), port);
+          this.port = addr.getPort();
+          bindFuture = bootstrap.bind(addr).addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
               if (future.isSuccess()) {
@@ -175,9 +176,8 @@ public class DefaultNetServer implements NetServer {
       } else {
         // Server already exists with that host/port - we will use that
         checkConfigs(actualServer, this);
-
         actualServer = shared;
-
+        this.port = shared.port();
         if (connectHandler != null) {
           // Share the event loop thread to also serve the NetServer's network traffic.
           actualServer.handlerManager.addHandler(connectHandler, actualCtx);

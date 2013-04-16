@@ -1,5 +1,5 @@
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.VoidResult;
+import org.vertx.java.core.Future;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.platform.Verticle;
@@ -9,7 +9,7 @@ import java.lang.Override;
 
 public class Server extends Verticle {
 
-  public void start(final VoidResult result) {
+  public void start(final Future<Void> result) {
 
     final TestUtils tu = new TestUtils(vertx);
 
@@ -28,7 +28,7 @@ public class Server extends Verticle {
     }).listen(9193, "127.0.0.1", new Handler<HttpServer>() {
       @Override
       public void handle(HttpServer event) {
-        result.setResult();
+        result.setResult(null);
       }
     });
   }
