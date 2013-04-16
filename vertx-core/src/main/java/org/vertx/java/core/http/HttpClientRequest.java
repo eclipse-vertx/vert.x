@@ -16,7 +16,7 @@
 
 package org.vertx.java.core.http;
 
-import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.WriteStream;
@@ -114,7 +114,7 @@ public interface HttpClientRequest extends WriteStream<HttpClientRequest> {
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  HttpClientRequest write(Buffer chunk, AsyncResultHandler<Void> doneHandler);
+  HttpClientRequest write(Buffer chunk, Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * Write a {@link String} to the request body, encoded in UTF-8.
@@ -122,7 +122,7 @@ public interface HttpClientRequest extends WriteStream<HttpClientRequest> {
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  HttpClientRequest write(String chunk, AsyncResultHandler<Void> doneHandler);
+  HttpClientRequest write(String chunk, Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * Write a {@link String} to the request body, encoded with encoding {@code enc}. The {@code doneHandler} is called
@@ -130,7 +130,7 @@ public interface HttpClientRequest extends WriteStream<HttpClientRequest> {
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  HttpClientRequest write(String chunk, String enc, AsyncResultHandler<Void> doneHandler);
+  HttpClientRequest write(String chunk, String enc, Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * If you send an HTTP request with the header {@code Expect} set to the value {@code 100-continue}

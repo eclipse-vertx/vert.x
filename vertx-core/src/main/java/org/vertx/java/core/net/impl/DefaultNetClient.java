@@ -21,8 +21,8 @@ import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.*;
 import org.vertx.java.core.logging.Logger;
@@ -75,13 +75,13 @@ public class DefaultNetClient implements NetClient {
   }
 
   @Override
-  public NetClient connect(int port, String host, AsyncResultHandler<NetSocket> connectHandler) {
+  public NetClient connect(int port, String host, final Handler<AsyncResult<NetSocket>> connectHandler) {
     connect(port, host, connectHandler, reconnectAttempts);
     return this;
   }
 
   @Override
-  public NetClient connect(int port, AsyncResultHandler<NetSocket> connectCallback) {
+  public NetClient connect(int port, final Handler<AsyncResult<NetSocket>> connectCallback) {
     connect(port, "localhost", connectCallback);
     return this;
   }
@@ -309,7 +309,7 @@ public class DefaultNetClient implements NetClient {
     }
   }
 
-  private void connect(final int port, final String host, final AsyncResultHandler<NetSocket> connectHandler,
+  private void connect(final int port, final String host, final Handler<AsyncResult<NetSocket>> connectHandler,
                        final int remainingAttempts) {
     if (bootstrap == null) {
       // Share the event loop thread to also serve the NetClient's network traffic.
@@ -400,7 +400,7 @@ public class DefaultNetClient implements NetClient {
     });
   }
 
-  private void connected(final Channel ch, final AsyncResultHandler<NetSocket> connectHandler) {
+  private void connected(final Channel ch, final Handler<AsyncResult<NetSocket>> connectHandler) {
     if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
       try {
         vertx.setContext(actualCtx);
@@ -417,13 +417,13 @@ public class DefaultNetClient implements NetClient {
     }
   }
 
-  private void doConnected(Channel ch, AsyncResultHandler<NetSocket> connectHandler) {
+  private void doConnected(Channel ch, final Handler<AsyncResult<NetSocket>> connectHandler) {
     DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, actualCtx);
     socketMap.put(ch, sock);
     connectHandler.handle(new DefaultFutureResult<NetSocket>(sock));
   }
 
-  private void failed(Channel ch, final Throwable t, final AsyncResultHandler<NetSocket> connectHandler) {
+  private void failed(Channel ch, final Throwable t, final Handler<AsyncResult<NetSocket>> connectHandler) {
     ch.close();
     if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
       try {
@@ -441,7 +441,7 @@ public class DefaultNetClient implements NetClient {
     }
   }
 
-  private void doFailed(AsyncResultHandler<NetSocket> connectHandler, Throwable t) {
+  private void doFailed(Handler<AsyncResult<NetSocket>> connectHandler, Throwable t) {
     connectHandler.handle(new DefaultFutureResult<NetSocket>(t));
   }
 

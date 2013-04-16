@@ -19,7 +19,6 @@ package vertx.tests;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Future;
-import org.vertx.java.core.VoidResult;
 import org.vertx.java.platform.Verticle;
 
 /**

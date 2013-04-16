@@ -23,8 +23,6 @@ import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.platform.Verticle;
 
-import java.lang.System;
-
 public class PerfClient extends Verticle implements Handler<HttpClientResponse> {
 
   private HttpClient client;

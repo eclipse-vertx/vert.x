@@ -16,10 +16,7 @@
 
 package org.vertx.java.platform.impl.cli;
 
-import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.VoidHandler;
-import org.vertx.java.core.VertxException;
+import org.vertx.java.core.*;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -106,7 +103,7 @@ public class Starter {
     return createLoggingHandler(successMessage, null);
   }
 
-  private <T> AsyncResultHandler<T> createLoggingHandler(final String successMessage, final AsyncResultHandler<T> doneHandler) {
+  private <T> AsyncResultHandler<T> createLoggingHandler(final String successMessage, final Handler<AsyncResult<T>> doneHandler) {
     return new AsyncResultHandler<T>() {
       @Override
       public void handle(AsyncResult<T> res) {
@@ -230,7 +227,7 @@ public class Starter {
       conf = null;
     }
 
-    AsyncResultHandler<String> doneHandler = new AsyncResultHandler<String>() {
+    Handler<AsyncResult<String>> doneHandler = new Handler<AsyncResult<String>>() {
       public void handle(AsyncResult<String> res) {
         if (res.failed()) {
           // Failed to deploy
@@ -302,7 +299,7 @@ public class Starter {
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
         final CountDownLatch latch = new CountDownLatch(1);
-        mgr.undeployAll(new AsyncResultHandler<Void>() {
+        mgr.undeployAll(new Handler<AsyncResult<Void>>() {
           public void handle(AsyncResult<Void> res) {
             latch.countDown();
           }

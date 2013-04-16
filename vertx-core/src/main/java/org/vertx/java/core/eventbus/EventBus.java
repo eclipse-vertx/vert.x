@@ -16,7 +16,7 @@
 
 package org.vertx.java.core.eventbus;
 
-import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.json.JsonArray;
@@ -63,7 +63,7 @@ public interface EventBus {
 	 * 
 	 * @param doneHandler
 	 */
-  void close(AsyncResultHandler<Void> doneHandler);
+  void close(Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * Send a message
@@ -381,7 +381,7 @@ public interface EventBus {
    * propagated to all nodes of the event bus, the handler will be called.
    */
   EventBus unregisterHandler(String address, Handler<? extends Message> handler,
-                            AsyncResultHandler<Void> resultHandler);
+                            Handler<AsyncResult<Void>> resultHandler);
 
   /**
    * Unregisters a handler given the address and the handler
@@ -398,7 +398,7 @@ public interface EventBus {
    * propagated to all nodes of the event bus, the handler will be called.
    */
   EventBus registerHandler(String address, Handler<? extends Message> handler,
-                           AsyncResultHandler<Void> resultHandler);
+                           Handler<AsyncResult<Void>> resultHandler);
 
   /**
    * Registers a handler against the specified address

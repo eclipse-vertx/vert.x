@@ -3,7 +3,6 @@ package org.vertx.java.core.net.impl;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
-import java.net.ServerSocket;
 import java.net.Socket;
 
 /*

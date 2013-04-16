@@ -16,10 +16,7 @@
 
 package org.vertx.java.core.net;
 
-import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.ClientSSLSupport;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.TCPSupport;
+import org.vertx.java.core.*;
 
 /**
  * A TCP/SSL client.<p>
@@ -43,7 +40,7 @@ public interface NetClient extends ClientSSLSupport<NetClient>, TCPSupport<NetCl
    * {@link NetSocket} instance is supplied via the {@code connectHandler} instance
    * @return a reference to this so multiple method calls can be chained together
    */
-  NetClient connect(int port, AsyncResultHandler<NetSocket> connectCallback);
+  NetClient connect(int port, Handler<AsyncResult<NetSocket>> connectCallback);
 
   /**
    * Attempt to open a connection to a server at the specific {@code port} and {@code host}.
@@ -51,7 +48,7 @@ public interface NetClient extends ClientSSLSupport<NetClient>, TCPSupport<NetCl
    * {@link NetSocket} instance is supplied via the {@code connectHandler} instance
    * @return a reference to this so multiple method calls can be chained together
    */
-  NetClient connect(int port, String host, AsyncResultHandler<NetSocket> connectHandler);
+  NetClient connect(int port, String host, Handler<AsyncResult<NetSocket>> connectHandler);
 
   /**
    * Set the number of reconnection attempts. In the event a connection attempt fails, the client will attempt

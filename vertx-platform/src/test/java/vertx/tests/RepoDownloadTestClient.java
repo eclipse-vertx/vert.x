@@ -18,8 +18,8 @@ package vertx.tests;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 
-import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.testframework.TestClientBase;
 
 public class RepoDownloadTestClient extends TestClientBase {

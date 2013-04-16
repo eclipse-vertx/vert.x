@@ -1,7 +1,8 @@
 package org.vertx.java.core.impl;
 
-import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Future;
+import org.vertx.java.core.Handler;
 
 /*
  * Copyright 2013 Red Hat, Inc.
@@ -23,7 +24,7 @@ import org.vertx.java.core.Future;
 public class DefaultFutureResult<T> implements Future<T> {
   private boolean failed;
   private boolean succeeded;
-  private AsyncResultHandler<T> handler;
+  private Handler<AsyncResult<T>> handler;
   private T result;
   private Throwable throwable;
 
@@ -91,7 +92,7 @@ public class DefaultFutureResult<T> implements Future<T> {
   /**
    * Set a handler for the result. It will get called when it's complete
    */
-  public DefaultFutureResult<T> setHandler(AsyncResultHandler<T> handler) {
+  public DefaultFutureResult<T> setHandler(Handler<AsyncResult<T>> handler) {
     this.handler = handler;
     checkCallHandler();
     return this;

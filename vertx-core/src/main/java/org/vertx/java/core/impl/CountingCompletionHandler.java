@@ -16,8 +16,8 @@
 
 package org.vertx.java.core.impl;
 
-import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Handler;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -28,7 +28,7 @@ public class CountingCompletionHandler<T> {
   private final VertxInternal vertx;
   private int count;
   private int required;
-  private AsyncResultHandler<T> doneHandler;
+  private Handler<AsyncResult<T>> doneHandler;
   private boolean failed;
 
   public CountingCompletionHandler(VertxInternal vertx) {
@@ -58,7 +58,7 @@ public class CountingCompletionHandler<T> {
     required++;
   }
 
-  public synchronized void setHandler(AsyncResultHandler<T> doneHandler) {
+  public synchronized void setHandler(Handler<AsyncResult<T>> doneHandler) {
     this.doneHandler = doneHandler;
     checkDone();
   }

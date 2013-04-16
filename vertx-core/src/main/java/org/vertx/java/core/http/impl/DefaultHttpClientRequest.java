@@ -19,7 +19,7 @@ package org.vertx.java.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.*;
-import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
@@ -144,19 +144,19 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   }
 
   @Override
-  public DefaultHttpClientRequest write(Buffer chunk, AsyncResultHandler<Void> doneHandler) {
+  public DefaultHttpClientRequest write(Buffer chunk, Handler<AsyncResult<Void>> doneHandler) {
     check();
     return write(chunk.getByteBuf(), doneHandler);
   }
 
   @Override
-  public DefaultHttpClientRequest write(String chunk, AsyncResultHandler<Void> doneHandler) {
+  public DefaultHttpClientRequest write(String chunk, Handler<AsyncResult<Void>> doneHandler) {
     checkComplete();
     return write(new Buffer(chunk).getByteBuf(), doneHandler);
   }
 
   @Override
-  public DefaultHttpClientRequest write(String chunk, String enc, AsyncResultHandler<Void> doneHandler) {
+  public DefaultHttpClientRequest write(String chunk, String enc, Handler<AsyncResult<Void>> doneHandler) {
     check();
     return write(new Buffer(chunk, enc).getByteBuf(), doneHandler);
   }
@@ -428,7 +428,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
   }
 
-  private DefaultHttpClientRequest write(ByteBuf buff, AsyncResultHandler<Void> doneHandler) {
+  private DefaultHttpClientRequest write(ByteBuf buff, Handler<AsyncResult<Void>> doneHandler) {
 
     written += buff.readableBytes();
 
@@ -454,7 +454,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     return this;
   }
 
-  private void sendChunk(ByteBuf buff, AsyncResultHandler<Void> doneHandler) {
+  private void sendChunk(ByteBuf buff, Handler<AsyncResult<Void>> doneHandler) {
     Object write = chunked ? new DefaultHttpContent(buff) : buff;
     ChannelFuture writeFuture = conn.write(write);
     conn.addFuture(doneHandler, writeFuture);
@@ -476,9 +476,9 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
   private static class PendingChunk {
     final ByteBuf chunk;
-    final AsyncResultHandler<Void> doneHandler;
+    final Handler<AsyncResult<Void>> doneHandler;
 
-    private PendingChunk(ByteBuf chunk, AsyncResultHandler<Void> doneHandler) {
+    private PendingChunk(ByteBuf chunk, Handler<AsyncResult<Void>> doneHandler) {
       this.chunk = chunk;
       this.doneHandler = doneHandler;
     }

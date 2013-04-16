@@ -20,7 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.codec.http.*;
-import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.impl.PathAdjuster;
@@ -186,17 +186,17 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   }
 
   @Override
-  public DefaultHttpServerResponse write(Buffer chunk, AsyncResultHandler<Void> doneHandler) {
+  public DefaultHttpServerResponse write(Buffer chunk, Handler<AsyncResult<Void>> doneHandler) {
     return write(chunk.getByteBuf(), doneHandler);
   }
 
   @Override
-  public DefaultHttpServerResponse write(String chunk, String enc, AsyncResultHandler<Void> doneHandler) {
+  public DefaultHttpServerResponse write(String chunk, String enc, Handler<AsyncResult<Void>> doneHandler) {
     return write(new Buffer(chunk, enc).getByteBuf(), doneHandler);
   }
 
   @Override
-  public DefaultHttpServerResponse write(String chunk, AsyncResultHandler<Void> doneHandler) {
+  public DefaultHttpServerResponse write(String chunk, Handler<AsyncResult<Void>> doneHandler) {
     return write(new Buffer(chunk).getByteBuf(), doneHandler);
   }
 
@@ -383,7 +383,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
     }
   }
 
-  private DefaultHttpServerResponse write(ByteBuf chunk, final AsyncResultHandler<Void> doneHandler) {
+  private DefaultHttpServerResponse write(ByteBuf chunk, final Handler<AsyncResult<Void>> doneHandler) {
     checkWritten();
     if (!headWritten) {
       prepareHeaders();

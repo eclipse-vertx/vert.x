@@ -26,8 +26,7 @@ import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
-import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.*;
 import org.vertx.java.core.logging.Logger;
@@ -184,7 +183,7 @@ public class DefaultNetServer implements NetServer {
   }
 
   @Override
-  public void close(final AsyncResultHandler<Void> done) {
+  public void close(final Handler<AsyncResult<Void>> done) {
     if (!listening) {
       if (done != null) {
         executeCloseDone(actualCtx, done, null);
@@ -402,7 +401,7 @@ public class DefaultNetServer implements NetServer {
     return tcpHelper.isUsePooledBuffers();
   }
 
-  private void actualClose(final Context closeContext, final AsyncResultHandler<Void> done) {
+  private void actualClose(final Context closeContext, final Handler<AsyncResult<Void>> done) {
     if (id != null) {
       vertx.sharedNetServers().remove(id);
     }
@@ -438,7 +437,7 @@ public class DefaultNetServer implements NetServer {
     //TODO check configs are the same
   }
 
-  private void executeCloseDone(final Context closeContext, final AsyncResultHandler<Void> done, final Exception e) {
+  private void executeCloseDone(final Context closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {
     if (done != null) {
       closeContext.execute(new Runnable() {
         public void run() {

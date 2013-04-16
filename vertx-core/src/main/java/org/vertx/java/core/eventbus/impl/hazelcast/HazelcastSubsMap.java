@@ -20,10 +20,11 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.impl.ServerIDs;
 import org.vertx.java.core.eventbus.impl.SubsMap;
 import org.vertx.java.core.impl.BlockingAction;
+import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -62,7 +63,7 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
     map.addEntryListener(this, true);
   }
 
-  public void removeAllForServerID(final ServerID serverID, final AsyncResultHandler<Void> completionHandler) {
+  public void removeAllForServerID(final ServerID serverID, final Handler<AsyncResult<Void>> completionHandler) {
     new BlockingAction<Void>(vertx, completionHandler) {
       public Void action() {
         for (Map.Entry<String, HazelcastServerID> entry: map.entrySet()) {
@@ -77,7 +78,7 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
   }
 
   @Override
-  public void put(final String subName, final ServerID serverID, final AsyncResultHandler<Void> completionHandler) {
+  public void put(final String subName, final ServerID serverID, final Handler<AsyncResult<Void>> completionHandler) {
     new BlockingAction<Void>(vertx, completionHandler) {
       public Void action() {
         map.put(subName, new HazelcastServerID(serverID));
@@ -87,7 +88,7 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
   }
 
   @Override
-  public void get(final String subName, final AsyncResultHandler<ServerIDs> completionHandler) {
+  public void get(final String subName, final Handler<AsyncResult<ServerIDs>> completionHandler) {
     ServerIDs entries = cache.get(subName);
     DefaultFutureResult<ServerIDs> result = new DefaultFutureResult<>();
     if (entries != null && entries.isInitialised()) {
@@ -129,10 +130,11 @@ public class HazelcastSubsMap implements SubsMap, EntryListener<String, Hazelcas
   }
 
   @Override
-  public void remove(final String subName, final ServerID serverID, final AsyncResultHandler<Void> completionHandler) {
-    new BlockingAction<Boolean>(vertx, completionHandler) {
-      public Boolean action() {
-        return map.remove(subName, new HazelcastServerID(serverID));
+  public void remove(final String subName, final ServerID serverID, final Handler<AsyncResult<Void>> completionHandler) {
+    new BlockingAction<Void>(vertx, completionHandler) {
+      public Void action() {
+        map.remove(subName, new HazelcastServerID(serverID));
+        return null;
       }
     }.run();
   }

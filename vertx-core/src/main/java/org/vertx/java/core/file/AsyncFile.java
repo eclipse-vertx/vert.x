@@ -16,7 +16,8 @@
 
 package org.vertx.java.core.file;
 
-import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
@@ -42,7 +43,7 @@ public interface AsyncFile extends ReadStream<AsyncFile>, WriteStream<AsyncFile>
    * Close the file. The actual close happens asynchronously.
    * The handler will be called when the close is complete, or an error occurs.
    */
-  void close(AsyncResultHandler<Void> handler);
+  void close(Handler<AsyncResult<Void>> handler);
 
   /**
    * Write a {@link Buffer} to the file at position {@code position} in the file, asynchronously.
@@ -52,7 +53,7 @@ public interface AsyncFile extends ReadStream<AsyncFile>, WriteStream<AsyncFile>
    * there are no guarantees as to order in which those writes actually occur.<p>
    * The handler will be called when the write is complete, or if an error occurs.
    */
-  AsyncFile write(Buffer buffer, int position, AsyncResultHandler<Void> handler);
+  AsyncFile write(Buffer buffer, int position, Handler<AsyncResult<Void>> handler);
 
   /**
    * Reads {@code length} bytes of data from the file at position {@code position} in the file, asynchronously.
@@ -61,7 +62,7 @@ public interface AsyncFile extends ReadStream<AsyncFile>, WriteStream<AsyncFile>
    * When multiple reads are invoked on the same file there are no guarantees as to order in which those reads actually occur.<p>
    * The handler will be called when the close is complete, or if an error occurs.
    */
-  AsyncFile read(Buffer buffer, int offset, int position, int length, AsyncResultHandler<Buffer> handler);
+  AsyncFile read(Buffer buffer, int offset, int position, int length, Handler<AsyncResult<Buffer>> handler);
 
   /**
    * Flush any writes made to this file to underlying persistent storage.<p>
@@ -74,6 +75,6 @@ public interface AsyncFile extends ReadStream<AsyncFile>, WriteStream<AsyncFile>
    * Same as {@link #flush} but the handler will be called when the flush is complete or if an error occurs
    * @param handler
    */
-  AsyncFile flush(AsyncResultHandler<Void> handler);
+  AsyncFile flush(Handler<AsyncResult<Void>> handler);
 
 }

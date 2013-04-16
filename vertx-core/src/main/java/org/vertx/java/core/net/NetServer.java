@@ -16,7 +16,7 @@
 
 package org.vertx.java.core.net;
 
-import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.ServerSSLSupport;
 import org.vertx.java.core.ServerTCPSupport;
@@ -65,7 +65,7 @@ public interface NetServer extends ServerSSLSupport<NetServer>, ServerTCPSupport
    * Close the server. This will close any currently open connections. The event handler {@code done} will be called
    * when the close is complete.
    */
-  void close(AsyncResultHandler<Void> doneHandler);
+  void close(Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * The actual port the server is listening on. This is useful if you bound the server specifying 0 as port number

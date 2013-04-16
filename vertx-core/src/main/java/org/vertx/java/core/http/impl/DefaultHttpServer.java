@@ -29,8 +29,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.CharsetUtil;
-import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
@@ -227,7 +226,7 @@ public class DefaultHttpServer implements HttpServer {
   }
 
   @Override
-  public void close(final AsyncResultHandler<Void> done) {
+  public void close(final Handler<AsyncResult<Void>> done) {
     if (!listening) {
       executeCloseDone(actualCtx, done, null);
       return;
@@ -444,7 +443,7 @@ public class DefaultHttpServer implements HttpServer {
     return tcpHelper.isUsePooledBuffers();
   }
 
-  private void actualClose(final Context closeContext, final AsyncResultHandler<Void> done) {
+  private void actualClose(final Context closeContext, final Handler<AsyncResult<Void>> done) {
     if (id != null) {
       vertx.sharedHttpServers().remove(id);
     }
@@ -476,7 +475,7 @@ public class DefaultHttpServer implements HttpServer {
     executeCloseDone(closeContext, done, fut.cause());
   }
 
-  private void executeCloseDone(final Context closeContext, final AsyncResultHandler<Void> done, final Exception e) {
+  private void executeCloseDone(final Context closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {
     if (done != null) {
       closeContext.execute(new Runnable() {
         public void run() {

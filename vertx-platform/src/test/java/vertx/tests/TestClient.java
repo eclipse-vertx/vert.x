@@ -82,7 +82,7 @@ public class TestClient extends TestClientBase {
                   }
                 }
               });
-              container.undeployVerticle(res.result(), new AsyncResultHandler<Void>() {
+              container.undeployVerticle(res.result(), new Handler<AsyncResult<Void>>() {
                 public void handle(AsyncResult<Void> res2) {
                   tu.azzert(Thread.currentThread() == t);
                 }
@@ -133,7 +133,7 @@ public class TestClient extends TestClientBase {
                     }
                   }
                 });
-                container.undeployModule(res.result(), new AsyncResultHandler<Void>() {
+                container.undeployModule(res.result(), new Handler<AsyncResult<Void>>() {
                   public void handle(AsyncResult<Void> res) {
                     tu.azzert(res.succeeded());
                     tu.azzert(res.result() != null);

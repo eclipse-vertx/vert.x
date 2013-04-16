@@ -18,7 +18,6 @@ package org.vertx.java.platform;
 
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VoidResult;
 
 /**
  * A verticle is the unit of deployment in vert.x<p>

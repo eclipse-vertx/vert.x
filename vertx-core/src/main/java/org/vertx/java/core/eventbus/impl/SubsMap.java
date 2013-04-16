@@ -16,7 +16,9 @@
 
 package org.vertx.java.core.eventbus.impl;
 
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.net.impl.ServerID;
 
 /**
@@ -25,11 +27,11 @@ import org.vertx.java.core.net.impl.ServerID;
  */
 public interface SubsMap {
 
-  void put(String subName, ServerID serverID, AsyncResultHandler<Void> completionHandler);
+  void put(String subName, ServerID serverID, Handler<AsyncResult<Void>> completionHandler);
 
-  void get(String subName, AsyncResultHandler<ServerIDs> completionHandler);
+  void get(String subName, Handler<AsyncResult<ServerIDs>> completionHandler);
 
-  void remove(String subName, ServerID serverID, AsyncResultHandler<Void> completionHandler);
+  void remove(String subName, ServerID serverID, Handler<AsyncResult<Void>> completionHandler);
 
-  void removeAllForServerID(ServerID serverID, AsyncResultHandler<Void> completionHandler);
+  void removeAllForServerID(ServerID serverID, Handler<AsyncResult<Void>> completionHandler);
 }

@@ -16,7 +16,10 @@
 
 package org.vertx.java.core.eventbus.impl;
 
-import org.vertx.java.core.*;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
@@ -293,7 +296,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public EventBus registerHandler(String address, Handler<? extends Message> handler,
-                              AsyncResultHandler<Void> completionHandler) {
+                              Handler<AsyncResult<Void>> completionHandler) {
     registerHandler(address, handler, completionHandler, false, false);
     return this;
   }
@@ -309,7 +312,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public EventBus unregisterHandler(String address, Handler<? extends Message> handler,
-                                AsyncResultHandler<Void> completionHandler) {
+                                Handler<AsyncResult<Void>> completionHandler) {
     Context context = vertx.getOrAssignContext();
     Handlers handlers = handlerMap.get(address);
     if (handlers != null) {
@@ -347,7 +350,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   @Override
-  public void close(AsyncResultHandler<Void> doneHandler) {
+  public void close(Handler<AsyncResult<Void>> doneHandler) {
 		if (clusterMgr != null) {
 			clusterMgr.close();
 		}
@@ -496,7 +499,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   private void registerHandler(String address, Handler<? extends Message> handler,
-                               AsyncResultHandler<Void> completionHandler,
+                               Handler<AsyncResult<Void>> completionHandler,
                                boolean replyHandler, boolean localOnly) {
     if (address == null) {
       throw new NullPointerException("address");
@@ -510,7 +513,7 @@ public class DefaultEventBus implements EventBus {
         handlers = prevHandlers;
       }
       if (completionHandler == null) {
-        completionHandler = new AsyncResultHandler<Void>() {
+        completionHandler = new Handler<AsyncResult<Void>>() {
           public void handle(AsyncResult<Void> event) {
             if (event.failed()) {
               log.error("Failed to remove entry", event.cause());
@@ -543,13 +546,13 @@ public class DefaultEventBus implements EventBus {
     return hcl;
   }
 
-  private void callCompletionHandler(AsyncResultHandler<Void> completionHandler) {
+  private void callCompletionHandler(Handler<AsyncResult<Void>> completionHandler) {
     completionHandler.handle(new DefaultFutureResult().setResult(null));
   }
 
   private void cleanSubsForServerID(ServerID theServerID) {
     if (subs != null) {
-      subs.removeAllForServerID(theServerID, new AsyncResultHandler<Void>() {
+      subs.removeAllForServerID(theServerID, new Handler<AsyncResult<Void>>() {
         public void handle(AsyncResult<Void> event) {
         }
       });
@@ -623,7 +626,7 @@ public class DefaultEventBus implements EventBus {
     });
   }
 
-  private void removeSub(String subName, ServerID theServerID, final AsyncResultHandler<Void> completionHandler) {
+  private void removeSub(String subName, ServerID theServerID, final Handler<AsyncResult<Void>> completionHandler) {
     subs.remove(subName, theServerID, completionHandler);
   }
 

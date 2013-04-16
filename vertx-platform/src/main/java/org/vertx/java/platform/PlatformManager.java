@@ -16,7 +16,7 @@ package org.vertx.java.platform;/*
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 
-import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.json.JsonObject;
@@ -51,7 +51,7 @@ public interface PlatformManager {
                       JsonObject config, URL[] classpath,
                       int instances,
                       String includes,
-                      AsyncResultHandler<String> doneHandler);
+                      Handler<AsyncResult<String>> doneHandler);
 
   /**
    * Deploy a worker verticle
@@ -67,7 +67,7 @@ public interface PlatformManager {
                             JsonObject config, URL[] classpath,
                             int instances,
                             String includes,
-                            AsyncResultHandler<String> doneHandler);
+                            Handler<AsyncResult<String>> doneHandler);
 
   /**
    * Deploy a module
@@ -77,7 +77,7 @@ public interface PlatformManager {
    * @param doneHandler Handler will be called with deploymentID when deployed, or null if it fails to deploy
    */
   void deployModule(String moduleName, JsonObject config,
-                    int instances, AsyncResultHandler<String> doneHandler);
+                    int instances, Handler<AsyncResult<String>> doneHandler);
 
   /**
    * Deploy a module from a zip file.
@@ -90,20 +90,20 @@ public interface PlatformManager {
    * @param doneHandler Handler will be called with deploymentID when deployed, or null if it fails to deploy
    */
   void deployModuleFromZip(String zipFileName, JsonObject config,
-                           int instances, AsyncResultHandler<String> doneHandler);
+                           int instances, Handler<AsyncResult<String>> doneHandler);
 
   /**
    * Undeploy a deployment
    * @param deploymentID The ID of the deployment to undeploy, as given in the doneHandler when deploying
    * @param doneHandler The done handler will be called when deployment is complete or fails
    */
-  void undeploy(String deploymentID, AsyncResultHandler<Void> doneHandler);
+  void undeploy(String deploymentID, Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * Undeploy all verticles and modules
    * @param doneHandler The done handler will be called when complete
    */
-  void undeployAll(AsyncResultHandler<Void> doneHandler) ;
+  void undeployAll(Handler<AsyncResult<Void>> doneHandler) ;
 
   /**
    * List all deployments, with deployment ID and number of instances
@@ -116,20 +116,20 @@ public interface PlatformManager {
    * Vert.x will search in the configured repos to locate the module
    * @param moduleName The name of the module
    */
-  void installModule(String moduleName, AsyncResultHandler<Void> doneHandler);
+  void installModule(String moduleName, Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * Uninstall a module from the filesystem
    * @param moduleName
    */
-  void uninstallModule(String moduleName, AsyncResultHandler<Void> doneHandler);
+  void uninstallModule(String moduleName, Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * Pull in all the dependencies (the 'includes' and the 'deploys' fields in mod.json) and copy them into an
    * internal mods directory in the module. This allows a self contained module to be created.
    * @param moduleName The name of the module
    */
-  void pullInDependencies(String moduleName, AsyncResultHandler<Void> doneHandler);
+  void pullInDependencies(String moduleName, Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * Register a handler that will be called when the platform exits because of a verticle calling container.exit()

@@ -22,7 +22,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
-import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
@@ -211,7 +211,7 @@ class ServerConnection extends AbstractConnection {
     }
   }
 
-  protected void addFuture(AsyncResultHandler<Void> doneHandler, ChannelFuture future) {
+  protected void addFuture(Handler<AsyncResult<Void>> doneHandler, ChannelFuture future) {
     super.addFuture(doneHandler, future);
   }
 

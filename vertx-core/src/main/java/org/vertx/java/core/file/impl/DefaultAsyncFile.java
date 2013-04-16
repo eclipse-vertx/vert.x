@@ -16,7 +16,9 @@
 
 package org.vertx.java.core.file.impl;
 
-import org.vertx.java.core.*;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.file.FileSystemException;
@@ -97,12 +99,12 @@ public class DefaultAsyncFile implements AsyncFile {
   }
 
   @Override
-  public void close(AsyncResultHandler<Void> handler) {
+  public void close(Handler<AsyncResult<Void>> handler) {
     closeInternal(handler);
   }
 
   @Override
-  public AsyncFile write(Buffer buffer, int position, AsyncResultHandler<Void> handler) {
+  public AsyncFile write(Buffer buffer, int position, Handler<AsyncResult<Void>> handler) {
     check();
     ByteBuffer bb = buffer.getByteBuf().nioBuffer();
     doWrite(bb, position, handler);
@@ -110,7 +112,7 @@ public class DefaultAsyncFile implements AsyncFile {
   }
 
   @Override
-  public AsyncFile read(Buffer buffer, int offset, int position, int length, AsyncResultHandler<Buffer> handler) {
+  public AsyncFile read(Buffer buffer, int offset, int position, int length, Handler<AsyncResult<Buffer>> handler) {
     check();
     ByteBuffer bb = ByteBuffer.allocate(length);
     doRead(buffer, offset, bb, position, handler);
@@ -123,7 +125,7 @@ public class DefaultAsyncFile implements AsyncFile {
     final int length = buffer.length();
     ByteBuffer bb = buffer.getByteBuf().nioBuffer();
 
-    doWrite(bb, writePos, new AsyncResultHandler<Void>() {
+    doWrite(bb, writePos, new Handler<AsyncResult<Void>>() {
 
       public void handle(AsyncResult<Void> deferred) {
         if (deferred.succeeded()) {
@@ -190,7 +192,7 @@ public class DefaultAsyncFile implements AsyncFile {
     if (!readInProgress) {
       readInProgress = true;
       Buffer buff = new Buffer(BUFFER_SIZE);
-      read(buff, 0, readPos, BUFFER_SIZE, new AsyncResultHandler<Buffer>() {
+      read(buff, 0, readPos, BUFFER_SIZE, new Handler<AsyncResult<Buffer>>() {
 
         public void handle(AsyncResult<Buffer> ar) {
           if (ar.succeeded()) {
@@ -271,12 +273,12 @@ public class DefaultAsyncFile implements AsyncFile {
   }
 
   @Override
-  public AsyncFile flush(AsyncResultHandler<Void> handler) {
+  public AsyncFile flush(Handler<AsyncResult<Void>> handler) {
     doFlush(handler);
     return this;
   }
 
-  private void doFlush(AsyncResultHandler<Void> handler) {
+  private void doFlush(Handler<AsyncResult<Void>> handler) {
     checkClosed();
     checkContext();
     new BlockingAction<Void>(vertx, handler) {
@@ -291,12 +293,12 @@ public class DefaultAsyncFile implements AsyncFile {
     }.run();
   }
 
-  private void doWrite(final ByteBuffer buff, final int position, final AsyncResultHandler<Void> handler) {
+  private void doWrite(final ByteBuffer buff, final int position, final Handler<AsyncResult<Void>> handler) {
     writesOutstanding += buff.limit();
     writeInternal(buff, position, handler);
   }
 
-  private void writeInternal(final ByteBuffer buff, final int position, final AsyncResultHandler<Void> handler) {
+  private void writeInternal(final ByteBuffer buff, final int position, final Handler<AsyncResult<Void>> handler) {
 
     ch.write(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
 
@@ -335,7 +337,7 @@ public class DefaultAsyncFile implements AsyncFile {
     });
   }
 
-  private void doRead(final Buffer writeBuff, final int offset, final ByteBuffer buff, final int position, final AsyncResultHandler<Buffer> handler) {
+  private void doRead(final Buffer writeBuff, final int offset, final ByteBuffer buff, final int position, final Handler<AsyncResult<Buffer>> handler) {
 
     ch.read(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
 
@@ -401,7 +403,7 @@ public class DefaultAsyncFile implements AsyncFile {
     }
   }
 
-  private void doClose(AsyncResultHandler<Void> handler) {
+  private void doClose(Handler<AsyncResult<Void>> handler) {
     DefaultFutureResult<Void> res = new DefaultFutureResult<>();
     try {
       ch.close();
@@ -414,7 +416,7 @@ public class DefaultAsyncFile implements AsyncFile {
     }
   }
 
-  private void closeInternal(final AsyncResultHandler<Void> handler) {
+  private void closeInternal(final Handler<AsyncResult<Void>> handler) {
     check();
 
     closed = true;

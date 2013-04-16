@@ -17,8 +17,8 @@ package vertx.tests.core.net;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 
-import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetClient;

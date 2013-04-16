@@ -19,10 +19,10 @@ package org.vertx.java.core.net.impl;
 import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
-import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.FlowControlHandler;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
@@ -111,7 +111,7 @@ public abstract class ConnectionBase {
     }
   }
 
-  protected void addFuture(final AsyncResultHandler<Void> doneHandler, final ChannelFuture future) {
+  protected void addFuture(final Handler<AsyncResult<Void>> doneHandler, final ChannelFuture future) {
     if (future != null) {
       future.addListener(new ChannelFutureListener() {
         public void operationComplete(final ChannelFuture channelFuture) throws Exception {

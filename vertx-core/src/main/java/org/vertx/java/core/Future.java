@@ -26,7 +26,7 @@ public interface Future<T> extends AsyncResult<T> {
   /**
    * Set a handler for the result. It will get called when it's complete
    */
-  Future<T> setHandler(AsyncResultHandler<T> handler);
+  Future<T> setHandler(Handler<AsyncResult<T>> handler);
 
   /**
    * Set the result. Any handler will be called, if there is one

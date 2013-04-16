@@ -17,7 +17,10 @@
 package org.vertx.java.platform.impl;
 
 
-import org.vertx.java.core.*;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.impl.*;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
@@ -118,7 +121,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
                              JsonObject config, URL[] classpath,
                              int instances,
                              String includes,
-                             AsyncResultHandler<String> doneHandler) {
+                             Handler<AsyncResult<String>> doneHandler) {
     deployVerticle(false, false, main, config, classpath, instances, includes, doneHandler);
   }
 
@@ -126,14 +129,14 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
                                    JsonObject config, URL[] classpath,
                                    int instances,
                                    String includes,
-                                   AsyncResultHandler<String> doneHandler) {
+                                   Handler<AsyncResult<String>> doneHandler) {
     deployVerticle(true, multiThreaded, main, config, classpath, instances, includes, doneHandler);
   }
 
   public void deployModule(final String moduleName, final JsonObject config,
-                           final int instances, final AsyncResultHandler<String> doneHandler) {
+                           final int instances, final Handler<AsyncResult<String>> doneHandler) {
     final File currentModDir = getDeploymentModDir();
-    final AsyncResultHandler<String> wrapped = wrapDoneHandler(doneHandler);
+    final Handler<AsyncResult<String>> wrapped = wrapDoneHandler(doneHandler);
     runInBackground(new Runnable() {
       public void run() {
         ModuleIdentifier modID = new ModuleIdentifier(moduleName);
@@ -142,7 +145,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }, wrapped);
   }
 
-  public synchronized void undeploy(final String deploymentID, final AsyncResultHandler<Void> doneHandler) {
+  public synchronized void undeploy(final String deploymentID, final Handler<AsyncResult<Void>> doneHandler) {
     runInBackground(new Runnable() {
       public void run() {
         if (deploymentID == null) {
@@ -152,7 +155,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         if (dep == null) {
           throw new PlatformManagerException("There is no deployment with id " + deploymentID);
         }
-        AsyncResultHandler<Void> wrappedHandler = wrapDoneHandler(new AsyncResultHandler<Void>() {
+        Handler<AsyncResult<Void>> wrappedHandler = wrapDoneHandler(new Handler<AsyncResult<Void>>() {
           public void handle(AsyncResult<Void> res) {
             if (res.succeeded() && dep.modID != null && dep.autoRedeploy) {
               redeployer.moduleUndeployed(dep);
@@ -167,7 +170,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }, wrapDoneHandler(doneHandler));
   }
 
-  public synchronized void undeployAll(final AsyncResultHandler<Void> doneHandler) {
+  public synchronized void undeployAll(final Handler<AsyncResult<Void>> doneHandler) {
     final CountingCompletionHandler<Void> count = new CountingCompletionHandler<>(vertx);
     if (!deployments.isEmpty()) {
       // We do it this way since undeploy is itself recursive - we don't want
@@ -176,7 +179,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       while (!deployments.isEmpty()) {
         String name = deployments.keySet().iterator().next();
         count.incRequired();
-        undeploy(name, new AsyncResultHandler<Void>() {
+        undeploy(name, new Handler<AsyncResult<Void>>() {
           public void handle(AsyncResult<Void> res) {
             count.complete(res);
           }
@@ -194,8 +197,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     return map;
   }
 
-  public void installModule(final String moduleName, final AsyncResultHandler<Void> doneHandler) {
-    final AsyncResultHandler<Void> wrapped = wrapDoneHandler(doneHandler);
+  public void installModule(final String moduleName, final Handler<AsyncResult<Void>> doneHandler) {
+    final Handler<AsyncResult<Void>> wrapped = wrapDoneHandler(doneHandler);
     runInBackground(new Runnable() {
       public void run() {
         ModuleIdentifier modID = new ModuleIdentifier(moduleName);
@@ -205,8 +208,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }, wrapped);
   }
 
-  public void uninstallModule(final String moduleName, final AsyncResultHandler<Void> doneHandler) {
-    final AsyncResultHandler<Void> wrapped = wrapDoneHandler(doneHandler);
+  public void uninstallModule(final String moduleName, final Handler<AsyncResult<Void>> doneHandler) {
+    final Handler<AsyncResult<Void>> wrapped = wrapDoneHandler(doneHandler);
     runInBackground(new Runnable() {
       public void run() {
         ModuleIdentifier modID = new ModuleIdentifier(moduleName); // Validates it
@@ -221,8 +224,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }, wrapped);
   }
 
-  public void pullInDependencies(final String moduleName, final AsyncResultHandler<Void> doneHandler) {
-    final AsyncResultHandler<Void> wrapped = wrapDoneHandler(doneHandler);
+  public void pullInDependencies(final String moduleName, final Handler<AsyncResult<Void>> doneHandler) {
+    final Handler<AsyncResult<Void>> wrapped = wrapDoneHandler(doneHandler);
     runInBackground(new Runnable() {
       public void run() {
         ModuleIdentifier modID = new ModuleIdentifier(moduleName); // Validates it
@@ -237,7 +240,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       public void run() {
         for (final Deployment deployment : deps) {
           if (deployments.containsKey(deployment.name)) {
-            doUndeploy(deployment.name, new AsyncResultHandler<Void>() {
+            doUndeploy(deployment.name, new Handler<AsyncResult<Void>>() {
               public void handle(AsyncResult<Void> res) {
                 if (res.succeeded()) {
                   doRedeploy(deployment);
@@ -261,8 +264,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   public void deployModuleFromZip(final String zipFileName, final JsonObject config,
-                                  final int instances, AsyncResultHandler<String> doneHandler) {
-    final AsyncResultHandler<String> wrapped = wrapDoneHandler(doneHandler);
+                                  final int instances, Handler<AsyncResult<String>> doneHandler) {
+    final Handler<AsyncResult<String>> wrapped = wrapDoneHandler(doneHandler);
     runInBackground(new Runnable() {
       public void run() {
         if (zipFileName == null) {
@@ -297,7 +300,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         null, null);
   }
 
-  private <T> void runInBackground(final Runnable runnable, final AsyncResultHandler<T> doneHandler) {
+  private <T> void runInBackground(final Runnable runnable, final Handler<AsyncResult<T>> doneHandler) {
     final Context context = vertx.getOrAssignContext();
     vertx.getBackgroundPool().execute(new Runnable() {
       public void run() {
@@ -319,7 +322,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
                               final JsonObject config, URL[] classpath,
                               final int instances,
                               final String includes,
-                              final AsyncResultHandler<String> doneHandler) {
+                              final Handler<AsyncResult<String>> doneHandler) {
     final File currentModDir = getDeploymentModDir();
     final URL[] cp;
     if (classpath == null) {
@@ -328,7 +331,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     } else {
       cp = classpath;
     }
-    final AsyncResultHandler<String> wrapped = wrapDoneHandler(doneHandler);
+    final Handler<AsyncResult<String>> wrapped = wrapDoneHandler(doneHandler);
     runInBackground(new Runnable() {
       public void run() {
         doDeployVerticle(worker, multiThreaded, main, config, cp, instances, currentModDir,
@@ -398,7 +401,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   // This makes sure the result is handled on the calling context
-  private <T> AsyncResultHandler<T> wrapDoneHandler(final AsyncResultHandler<T> doneHandler) {
+  private <T> Handler<AsyncResult<T>> wrapDoneHandler(final Handler<AsyncResult<T>> doneHandler) {
     if (doneHandler == null) {
       // Just create one which logs out any failure, otherwise we will have silent failures when no handler
       // is specified
@@ -454,7 +457,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private void doDeployVerticle(boolean worker, boolean multiThreaded, final String main,
                                 final JsonObject config, final URL[] urls,
                                 int instances, File currentModDir,
-                                String includes, AsyncResultHandler<String> doneHandler)
+                                String includes, Handler<AsyncResult<String>> doneHandler)
   {
     checkWorkerContext();
 
@@ -612,7 +615,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private void doDeployMod(final boolean redeploy, final String depName, final ModuleIdentifier modID,
                            final JsonObject config,
                            final int instances, final File currentModDir,
-                           final AsyncResultHandler<String> doneHandler) {
+                           final Handler<AsyncResult<String>> doneHandler) {
     checkWorkerContext();
     File modDir = locateModule(currentModDir, modID);
     if (modDir != null) {
@@ -661,7 +664,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       final boolean autoRedeploy = fields.isAutoRedeploy();
 
       doDeploy(depName, autoRedeploy, worker, multiThreaded, main, modID, config,
-          urls.toArray(new URL[urls.size()]), instances, modDirToUse, mr, new AsyncResultHandler<String>() {
+          urls.toArray(new URL[urls.size()]), instances, modDirToUse, mr, new Handler<AsyncResult<String>>() {
         @Override
         public void handle(AsyncResult<String> res) {
           if (res.succeeded()) {
@@ -981,12 +984,12 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
                         int instances,
                         final File modDir,
                         final ModuleReference mr,
-                        AsyncResultHandler<String> dHandler) {
+                        Handler<AsyncResult<String>> dHandler) {
     checkWorkerContext();
 
     if (dHandler == null) {
       // Add a simple one that just logs, so deploy failures aren't lost if the user doesn't specify a handler
-      dHandler = new AsyncResultHandler<String>() {
+      dHandler = new Handler<AsyncResult<String>>() {
         @Override
         public void handle(AsyncResult<String> ar) {
           if (ar.failed()) {
@@ -995,7 +998,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         }
       };
     }
-    final AsyncResultHandler<String> doneHandler = dHandler;
+    final Handler<AsyncResult<String>> doneHandler = dHandler;
 
     final String deploymentID = depID != null ? depID : genDepName();
 
@@ -1073,7 +1076,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
 
     final CountingCompletionHandler<Void> aggHandler = new CountingCompletionHandler<>(vertx, instances);
-    aggHandler.setHandler(new AsyncResultHandler<Void>() {
+    aggHandler.setHandler(new Handler<AsyncResult<Void>>() {
       @Override
       public void handle(AsyncResult<Void> res) {
         if (res.failed()) {
@@ -1111,7 +1114,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
               }
               DefaultFutureResult<Void> vr = new DefaultFutureResult<>();
               verticle.start(vr);
-              vr.setHandler(new AsyncResultHandler<Void>() {
+              vr.setHandler(new Handler<AsyncResult<Void>>() {
                 @Override
                 public void handle(AsyncResult<Void> ar) {
                   if (ar.succeeded()) {
@@ -1140,7 +1143,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   private void handleDeployFailure(final Throwable t, String deploymentID, final CountingCompletionHandler<Void> handler) {
     // First we undeploy
-    doUndeploy(deploymentID, new AsyncResultHandler<Void>() {
+    doUndeploy(deploymentID, new Handler<AsyncResult<Void>>() {
       public void handle(AsyncResult<Void> res) {
         if (res.failed()) {
           vertx.reportException(res.cause());
@@ -1174,7 +1177,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
   }
 
-  private void doUndeploy(String name, final AsyncResultHandler<Void> doneHandler) {
+  private void doUndeploy(String name, final Handler<AsyncResult<Void>> doneHandler) {
     CountingCompletionHandler<Void> count = new CountingCompletionHandler<>(vertx);
     doUndeploy(name, count);
     if (doneHandler != null) {
@@ -1222,7 +1225,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       }
     }
 
-    count.setHandler(new AsyncResultHandler<Void>() {
+    count.setHandler(new Handler<AsyncResult<Void>>() {
       public void handle(AsyncResult<Void> res) {
         deployment.moduleReference.decRef();
         parentCount.complete(res);

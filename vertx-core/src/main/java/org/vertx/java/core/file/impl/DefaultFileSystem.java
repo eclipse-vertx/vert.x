@@ -16,7 +16,9 @@
 
 package org.vertx.java.core.file.impl;
 
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.*;
 import org.vertx.java.core.file.FileSystem;
@@ -54,7 +56,7 @@ public class DefaultFileSystem implements FileSystem {
     this.vertx = vertx;
   }
 
-  public FileSystem copy(String from, String to, AsyncResultHandler<Void> handler) {
+  public FileSystem copy(String from, String to, Handler<AsyncResult<Void>> handler) {
     copyInternal(from, to, handler).run();
     return this;
   }
@@ -64,7 +66,7 @@ public class DefaultFileSystem implements FileSystem {
     return this;
   }
 
-  public FileSystem copy(String from, String to, boolean recursive, AsyncResultHandler<Void> handler) {
+  public FileSystem copy(String from, String to, boolean recursive, Handler<AsyncResult<Void>> handler) {
     copyInternal(from, to, recursive, handler).run();
     return this;
   }
@@ -74,7 +76,7 @@ public class DefaultFileSystem implements FileSystem {
     return this;
   }
 
-  public FileSystem move(String from, String to, AsyncResultHandler<Void> handler) {
+  public FileSystem move(String from, String to, Handler<AsyncResult<Void>> handler) {
     moveInternal(from, to, handler).run();
     return this;
   }
@@ -84,7 +86,7 @@ public class DefaultFileSystem implements FileSystem {
     return this;
   }
 
-  public FileSystem truncate(String path, long len, AsyncResultHandler<Void> handler) {
+  public FileSystem truncate(String path, long len, Handler<AsyncResult<Void>> handler) {
     truncateInternal(path, len, handler).run();
     return this;
   }
@@ -94,7 +96,7 @@ public class DefaultFileSystem implements FileSystem {
     return this;
   }
 
-  public FileSystem chmod(String path, String perms, AsyncResultHandler<Void> handler) {
+  public FileSystem chmod(String path, String perms, Handler<AsyncResult<Void>> handler) {
     chmodInternal(path, perms, handler).run();
     return this;
   }
@@ -104,7 +106,7 @@ public class DefaultFileSystem implements FileSystem {
     return this;
   }
 
-  public FileSystem chmod(String path, String perms, String dirPerms, AsyncResultHandler<Void> handler) {
+  public FileSystem chmod(String path, String perms, String dirPerms, Handler<AsyncResult<Void>> handler) {
     chmodInternal(path, perms, dirPerms, handler).run();
     return this;
   }
@@ -114,7 +116,7 @@ public class DefaultFileSystem implements FileSystem {
     return this;
   }
 
-  public FileSystem props(String path, AsyncResultHandler<FileProps> handler) {
+  public FileSystem props(String path, Handler<AsyncResult<FileProps>> handler) {
     propsInternal(path, handler).run();
     return this;
   }
@@ -123,7 +125,7 @@ public class DefaultFileSystem implements FileSystem {
     return propsInternal(path, null).action();
   }
 
-  public FileSystem lprops(String path, AsyncResultHandler<FileProps> handler) {
+  public FileSystem lprops(String path, Handler<AsyncResult<FileProps>> handler) {
     lpropsInternal(path, handler).run();
     return this;
   }
@@ -132,7 +134,7 @@ public class DefaultFileSystem implements FileSystem {
     return lpropsInternal(path, null).action();
   }
 
-  public FileSystem link(String link, String existing, AsyncResultHandler<Void> handler) {
+  public FileSystem link(String link, String existing, Handler<AsyncResult<Void>> handler) {
     linkInternal(link, existing, handler).run();
     return this;
   }
@@ -142,7 +144,7 @@ public class DefaultFileSystem implements FileSystem {
     return this;
   }
 
-  public FileSystem symlink(String link, String existing, AsyncResultHandler<Void> handler) {
+  public FileSystem symlink(String link, String existing, Handler<AsyncResult<Void>> handler) {
     symlinkInternal(link, existing, handler).run();
     return this;
   }
@@ -152,7 +154,7 @@ public class DefaultFileSystem implements FileSystem {
     return this;
   }
 
-  public FileSystem unlink(String link, AsyncResultHandler<Void> handler) {
+  public FileSystem unlink(String link, Handler<AsyncResult<Void>> handler) {
     unlinkInternal(link, handler).run();
     return this;
   }
@@ -162,7 +164,7 @@ public class DefaultFileSystem implements FileSystem {
     return this;
   }
 
-  public FileSystem readSymlink(String link, AsyncResultHandler<String> handler) {
+  public FileSystem readSymlink(String link, Handler<AsyncResult<String>> handler) {
     readSymlinkInternal(link, handler).run();
     return this;
   }
@@ -171,7 +173,7 @@ public class DefaultFileSystem implements FileSystem {
     return readSymlinkInternal(link, null).action();
   }
 
-  public FileSystem delete(String path, AsyncResultHandler<Void> handler) {
+  public FileSystem delete(String path, Handler<AsyncResult<Void>> handler) {
     deleteInternal(path, handler).run();
     return this;
   }
@@ -181,7 +183,7 @@ public class DefaultFileSystem implements FileSystem {
     return this;
   }
 
-  public FileSystem delete(String path, boolean recursive, AsyncResultHandler<Void> handler) {
+  public FileSystem delete(String path, boolean recursive, Handler<AsyncResult<Void>> handler) {
     deleteInternal(path, recursive, handler).run();
     return this;
   }
@@ -191,7 +193,7 @@ public class DefaultFileSystem implements FileSystem {
     return this;
   }
 
-  public FileSystem mkdir(String path, AsyncResultHandler<Void> handler) {
+  public FileSystem mkdir(String path, Handler<AsyncResult<Void>> handler) {
     mkdirInternal(path, handler).run();
     return this;
   }
@@ -201,7 +203,7 @@ public class DefaultFileSystem implements FileSystem {
     return this;
   }
 
-  public FileSystem mkdir(String path, boolean createParents, AsyncResultHandler<Void> handler) {
+  public FileSystem mkdir(String path, boolean createParents, Handler<AsyncResult<Void>> handler) {
     mkdirInternal(path, createParents, handler).run();
     return this;
   }
@@ -211,7 +213,7 @@ public class DefaultFileSystem implements FileSystem {
     return this;
   }
 
-  public FileSystem mkdir(String path, String perms, AsyncResultHandler<Void> handler) {
+  public FileSystem mkdir(String path, String perms, Handler<AsyncResult<Void>> handler) {
     mkdirInternal(path, perms, handler).run();
     return this;
   }
@@ -221,7 +223,7 @@ public class DefaultFileSystem implements FileSystem {
     return this;
   }
 
-  public FileSystem mkdir(String path, String perms, boolean createParents, AsyncResultHandler<Void> handler) {
+  public FileSystem mkdir(String path, String perms, boolean createParents, Handler<AsyncResult<Void>> handler) {
     mkdirInternal(path, perms, createParents, handler).run();
     return this;
   }
@@ -231,7 +233,7 @@ public class DefaultFileSystem implements FileSystem {
     return this;
   }
 
-  public FileSystem readDir(String path, AsyncResultHandler<String[]> handler) {
+  public FileSystem readDir(String path, Handler<AsyncResult<String[]>> handler) {
     readDirInternal(path, handler).run();
     return this;
   }
@@ -240,7 +242,7 @@ public class DefaultFileSystem implements FileSystem {
     return readDirInternal(path, null).action();
   }
 
-  public FileSystem readDir(String path, String filter, AsyncResultHandler<String[]> handler) {
+  public FileSystem readDir(String path, String filter, Handler<AsyncResult<String[]>> handler) {
     readDirInternal(path, filter, handler).run();
     return this;
   }
@@ -249,7 +251,7 @@ public class DefaultFileSystem implements FileSystem {
     return readDirInternal(path, filter, null).action();
   }
 
-  public FileSystem readFile(String path, AsyncResultHandler<Buffer> handler) {
+  public FileSystem readFile(String path, Handler<AsyncResult<Buffer>> handler) {
     readFileInternal(path, handler).run();
     return this;
   }
@@ -258,7 +260,7 @@ public class DefaultFileSystem implements FileSystem {
     return readFileInternal(path, null).action();
   }
 
-  public FileSystem writeFile(String path, Buffer data, AsyncResultHandler<Void> handler) {
+  public FileSystem writeFile(String path, Buffer data, Handler<AsyncResult<Void>> handler) {
     writeFileInternal(path, data, handler).run();
     return this;
   }
@@ -268,7 +270,7 @@ public class DefaultFileSystem implements FileSystem {
     return this;
   }
 
-  public FileSystem open(String path, AsyncResultHandler<AsyncFile> handler) {
+  public FileSystem open(String path, Handler<AsyncResult<AsyncFile>> handler) {
     openInternal(path, handler).run();
     return this;
   }
@@ -277,7 +279,7 @@ public class DefaultFileSystem implements FileSystem {
     return openInternal(path, null).action();
   }
 
-  public FileSystem open(String path, String perms, AsyncResultHandler<AsyncFile> handler) {
+  public FileSystem open(String path, String perms, Handler<AsyncResult<AsyncFile>> handler) {
     openInternal(path, perms, handler).run();
     return this;
   }
@@ -286,7 +288,7 @@ public class DefaultFileSystem implements FileSystem {
     return openInternal(path, perms, null).action();
   }
 
-  public FileSystem open(String path, String perms, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
+  public FileSystem open(String path, String perms, boolean createNew, Handler<AsyncResult<AsyncFile>> handler) {
     openInternal(path, perms, createNew, handler).run();
     return this;
   }
@@ -295,7 +297,7 @@ public class DefaultFileSystem implements FileSystem {
     return openInternal(path, perms, createNew, null).action();
   }
 
-  public FileSystem open(String path, String perms, boolean read, boolean write, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
+  public FileSystem open(String path, String perms, boolean read, boolean write, boolean createNew, Handler<AsyncResult<AsyncFile>> handler) {
     openInternal(path, perms, read, write, createNew, handler).run();
     return this;
   }
@@ -305,7 +307,7 @@ public class DefaultFileSystem implements FileSystem {
   }
 
   public FileSystem open(String path, String perms, boolean read, boolean write, boolean createNew,
-                         boolean flush, AsyncResultHandler<AsyncFile> handler) {
+                         boolean flush, Handler<AsyncResult<AsyncFile>> handler) {
     openInternal(path, perms, read, write, createNew, flush, handler).run();
     return this;
   }
@@ -314,7 +316,7 @@ public class DefaultFileSystem implements FileSystem {
     return openInternal(path, perms, read, write, createNew, flush, null).action();
   }
 
-  public FileSystem createFile(String path, AsyncResultHandler<Void> handler) {
+  public FileSystem createFile(String path, Handler<AsyncResult<Void>> handler) {
     createFileInternal(path, handler).run();
     return this;
   }
@@ -324,7 +326,7 @@ public class DefaultFileSystem implements FileSystem {
     return this;
   }
 
-  public FileSystem createFile(String path, String perms, AsyncResultHandler<Void> handler) {
+  public FileSystem createFile(String path, String perms, Handler<AsyncResult<Void>> handler) {
     createFileInternal(path, perms, handler).run();
     return this;
   }
@@ -334,7 +336,7 @@ public class DefaultFileSystem implements FileSystem {
     return this;
   }
 
-  public FileSystem exists(String path, AsyncResultHandler<Boolean> handler) {
+  public FileSystem exists(String path, Handler<AsyncResult<Boolean>> handler) {
     existsInternal(path, handler).run();
     return this;
   }
@@ -343,7 +345,7 @@ public class DefaultFileSystem implements FileSystem {
     return existsInternal(path, null).action();
   }
 
-  public FileSystem fsProps(String path, AsyncResultHandler<FileSystemProps> handler) {
+  public FileSystem fsProps(String path, Handler<AsyncResult<FileSystemProps>> handler) {
     fsPropsInternal(path, handler).run();
     return this;
   }
@@ -352,11 +354,11 @@ public class DefaultFileSystem implements FileSystem {
     return fsPropsInternal(path, null).action();
   }
 
-  private BlockingAction<Void> copyInternal(String from, String to, AsyncResultHandler<Void> handler) {
+  private BlockingAction<Void> copyInternal(String from, String to, Handler<AsyncResult<Void>> handler) {
     return copyInternal(from, to, false, handler);
   }
 
-  private BlockingAction<Void> copyInternal(String from, String to, final boolean recursive, AsyncResultHandler<Void> handler) {
+  private BlockingAction<Void> copyInternal(String from, String to, final boolean recursive, Handler<AsyncResult<Void>> handler) {
     final Path source = PathAdjuster.adjust(vertx, Paths.get(from));
     final Path target = PathAdjuster.adjust(vertx, Paths.get(to));
     return new BlockingAction<Void>(vertx, handler) {
@@ -396,7 +398,7 @@ public class DefaultFileSystem implements FileSystem {
     };
   }
 
-  private BlockingAction<Void> moveInternal(String from, String to, AsyncResultHandler<Void> handler) {
+  private BlockingAction<Void> moveInternal(String from, String to, Handler<AsyncResult<Void>> handler) {
     final Path source = PathAdjuster.adjust(vertx, Paths.get(from));
     final Path target = PathAdjuster.adjust(vertx, Paths.get(to));
     return new BlockingAction<Void>(vertx, handler) {
@@ -411,7 +413,7 @@ public class DefaultFileSystem implements FileSystem {
     };
   }
 
-  private BlockingAction<Void> truncateInternal(String p, final long len, AsyncResultHandler<Void> handler) {
+  private BlockingAction<Void> truncateInternal(String p, final long len, Handler<AsyncResult<Void>> handler) {
     final String path = PathAdjuster.adjust(vertx, p);
     return new BlockingAction<Void>(vertx, handler) {
       public Void action() {
@@ -437,11 +439,11 @@ public class DefaultFileSystem implements FileSystem {
     };
   }
 
-  private BlockingAction<Void> chmodInternal(String path, String perms, AsyncResultHandler<Void> handler) {
+  private BlockingAction<Void> chmodInternal(String path, String perms, Handler<AsyncResult<Void>> handler) {
     return chmodInternal(path, perms, null, handler);
   }
 
-  protected BlockingAction<Void> chmodInternal(String path, String perms, String dirPerms, AsyncResultHandler<Void> handler) {
+  protected BlockingAction<Void> chmodInternal(String path, String perms, String dirPerms, Handler<AsyncResult<Void>> handler) {
     final Path target = PathAdjuster.adjust(vertx, Paths.get(path));
     final Set<PosixFilePermission> permissions = PosixFilePermissions.fromString(perms);
     final Set<PosixFilePermission> dirPermissions = dirPerms == null ? null : PosixFilePermissions.fromString(dirPerms);
@@ -475,15 +477,15 @@ public class DefaultFileSystem implements FileSystem {
     };
   }
 
-  private BlockingAction<FileProps> propsInternal(String path, AsyncResultHandler<FileProps> handler) {
+  private BlockingAction<FileProps> propsInternal(String path, Handler<AsyncResult<FileProps>> handler) {
     return props(path, true, handler);
   }
 
-  private BlockingAction<FileProps> lpropsInternal(String path, AsyncResultHandler<FileProps> handler) {
+  private BlockingAction<FileProps> lpropsInternal(String path, Handler<AsyncResult<FileProps>> handler) {
     return props(path, false, handler);
   }
 
-  private BlockingAction<FileProps> props(String path, final boolean followLinks, AsyncResultHandler<FileProps> handler) {
+  private BlockingAction<FileProps> props(String path, final boolean followLinks, Handler<AsyncResult<FileProps>> handler) {
     final Path target = PathAdjuster.adjust(vertx, Paths.get(path));
     return new BlockingAction<FileProps>(vertx, handler) {
       public FileProps action() {
@@ -502,15 +504,15 @@ public class DefaultFileSystem implements FileSystem {
     };
   }
 
-  private BlockingAction<Void> linkInternal(String link, String existing, AsyncResultHandler<Void> handler) {
+  private BlockingAction<Void> linkInternal(String link, String existing, Handler<AsyncResult<Void>> handler) {
     return link(link, existing, false, handler);
   }
 
-  private BlockingAction<Void> symlinkInternal(String link, String existing, AsyncResultHandler<Void> handler) {
+  private BlockingAction<Void> symlinkInternal(String link, String existing, Handler<AsyncResult<Void>> handler) {
     return link(link, existing, true, handler);
   }
 
-  private BlockingAction<Void> link(String link, String existing, final boolean symbolic, AsyncResultHandler<Void> handler) {
+  private BlockingAction<Void> link(String link, String existing, final boolean symbolic, Handler<AsyncResult<Void>> handler) {
     final Path source = PathAdjuster.adjust(vertx, Paths.get(link));
     final Path target = PathAdjuster.adjust(vertx, Paths.get(existing));
     return new BlockingAction<Void>(vertx, handler) {
@@ -529,11 +531,11 @@ public class DefaultFileSystem implements FileSystem {
     };
   }
 
-  private BlockingAction<Void> unlinkInternal(String link, AsyncResultHandler<Void> handler) {
+  private BlockingAction<Void> unlinkInternal(String link, Handler<AsyncResult<Void>> handler) {
     return deleteInternal(link, handler);
   }
 
-  private BlockingAction<String> readSymlinkInternal(String link, AsyncResultHandler<String> handler) {
+  private BlockingAction<String> readSymlinkInternal(String link, Handler<AsyncResult<String>> handler) {
     final Path source = PathAdjuster.adjust(vertx, Paths.get(link));
     return new BlockingAction<String>(vertx, handler) {
       public String action() {
@@ -546,11 +548,11 @@ public class DefaultFileSystem implements FileSystem {
     };
   }
 
-  private BlockingAction<Void> deleteInternal(String path, AsyncResultHandler<Void> handler) {
+  private BlockingAction<Void> deleteInternal(String path, Handler<AsyncResult<Void>> handler) {
     return deleteInternal(path, false, handler);
   }
 
-  private BlockingAction<Void> deleteInternal(String path, final boolean recursive, AsyncResultHandler<Void> handler) {
+  private BlockingAction<Void> deleteInternal(String path, final boolean recursive, Handler<AsyncResult<Void>> handler) {
     final Path source = PathAdjuster.adjust(vertx, Paths.get(path));
     return new BlockingAction<Void>(vertx, handler) {
       public Void action() {
@@ -581,19 +583,19 @@ public class DefaultFileSystem implements FileSystem {
     };
   }
 
-  private BlockingAction<Void> mkdirInternal(String path, AsyncResultHandler<Void> handler) {
+  private BlockingAction<Void> mkdirInternal(String path, Handler<AsyncResult<Void>> handler) {
     return mkdirInternal(path, null, false, handler);
   }
 
-  private BlockingAction<Void> mkdirInternal(String path, boolean createParents, AsyncResultHandler<Void> handler) {
+  private BlockingAction<Void> mkdirInternal(String path, boolean createParents, Handler<AsyncResult<Void>> handler) {
     return mkdirInternal(path, null, createParents, handler);
   }
 
-  private BlockingAction<Void> mkdirInternal(String path, String perms, AsyncResultHandler<Void> handler) {
+  private BlockingAction<Void> mkdirInternal(String path, String perms, Handler<AsyncResult<Void>> handler) {
     return mkdirInternal(path, perms, false, handler);
   }
 
-  protected BlockingAction<Void> mkdirInternal(String path, final String perms, final boolean createParents, AsyncResultHandler<Void> handler) {
+  protected BlockingAction<Void> mkdirInternal(String path, final String perms, final boolean createParents, Handler<AsyncResult<Void>> handler) {
     final Path source = PathAdjuster.adjust(vertx, Paths.get(path));
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
     return new BlockingAction<Void>(vertx, handler) {
@@ -620,11 +622,11 @@ public class DefaultFileSystem implements FileSystem {
     };
   }
 
-  private BlockingAction<String[]> readDirInternal(String path, AsyncResultHandler<String[]> handler) {
+  private BlockingAction<String[]> readDirInternal(String path, Handler<AsyncResult<String[]>> handler) {
     return readDirInternal(path, null, handler);
   }
 
-  private BlockingAction<String[]> readDirInternal(String p, final String filter, AsyncResultHandler<String[]> handler) {
+  private BlockingAction<String[]> readDirInternal(String p, final String filter, Handler<AsyncResult<String[]>> handler) {
     final String path = PathAdjuster.adjust(vertx, p);
     return new BlockingAction<String[]>(vertx, handler) {
       public String[] action() {
@@ -666,7 +668,7 @@ public class DefaultFileSystem implements FileSystem {
     };
   }
 
-  private BlockingAction<Buffer> readFileInternal(String path, AsyncResultHandler<Buffer> handler) {
+  private BlockingAction<Buffer> readFileInternal(String path, Handler<AsyncResult<Buffer>> handler) {
     final Path target = PathAdjuster.adjust(vertx, Paths.get(path));
     return new BlockingAction<Buffer>(vertx, handler) {
       public Buffer action() {
@@ -681,7 +683,7 @@ public class DefaultFileSystem implements FileSystem {
     };
   }
 
-  private BlockingAction<Void> writeFileInternal(String path, final Buffer data, AsyncResultHandler<Void> handler) {
+  private BlockingAction<Void> writeFileInternal(String path, final Buffer data, Handler<AsyncResult<Void>> handler) {
     final Path target = PathAdjuster.adjust(vertx, Paths.get(path));
     return new BlockingAction<Void>(vertx, handler) {
       public Void action() {
@@ -695,24 +697,24 @@ public class DefaultFileSystem implements FileSystem {
     };
   }
 
-  private BlockingAction<AsyncFile> openInternal(String path, AsyncResultHandler<AsyncFile> handler) {
+  private BlockingAction<AsyncFile> openInternal(String path, Handler<AsyncResult<AsyncFile>> handler) {
     return openInternal(path, null, true, true, true, false, handler);
   }
 
-  private BlockingAction<AsyncFile> openInternal(String path, String perms, AsyncResultHandler<AsyncFile> handler) {
+  private BlockingAction<AsyncFile> openInternal(String path, String perms, Handler<AsyncResult<AsyncFile>> handler) {
     return openInternal(path, perms, true, true, true, false, handler);
   }
 
-  private BlockingAction<AsyncFile> openInternal(String path, String perms, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
+  private BlockingAction<AsyncFile> openInternal(String path, String perms, boolean createNew, Handler<AsyncResult<AsyncFile>> handler) {
     return openInternal(path, perms, true, true, createNew, false, handler);
   }
 
-  private BlockingAction<AsyncFile> openInternal(String path, String perms, boolean read, boolean write, boolean createNew, AsyncResultHandler<AsyncFile> handler) {
+  private BlockingAction<AsyncFile> openInternal(String path, String perms, boolean read, boolean write, boolean createNew, Handler<AsyncResult<AsyncFile>> handler) {
     return openInternal(path, perms, read, write, createNew, false, handler);
   }
 
   private BlockingAction<AsyncFile> openInternal(String p, final String perms, final boolean read, final boolean write, final boolean createNew,
-                                                 final boolean flush, AsyncResultHandler<AsyncFile> handler) {
+                                                 final boolean flush, Handler<AsyncResult<AsyncFile>> handler) {
     final String path = PathAdjuster.adjust(vertx, p);
     return new BlockingAction<AsyncFile>(vertx, handler) {
       public AsyncFile action() {
@@ -726,11 +728,11 @@ public class DefaultFileSystem implements FileSystem {
     return new DefaultAsyncFile(vertx, path, perms, read, write, createNew, flush, context);
   }
 
-  private BlockingAction<Void> createFileInternal(String path, AsyncResultHandler<Void> handler) {
+  private BlockingAction<Void> createFileInternal(String path, Handler<AsyncResult<Void>> handler) {
     return createFileInternal(path, null, handler);
   }
 
-  protected BlockingAction<Void> createFileInternal(String p, final String perms, AsyncResultHandler<Void> handler) {
+  protected BlockingAction<Void> createFileInternal(String p, final String perms, Handler<AsyncResult<Void>> handler) {
     final String path = PathAdjuster.adjust(vertx, p);
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
     return new BlockingAction<Void>(vertx, handler) {
@@ -750,7 +752,7 @@ public class DefaultFileSystem implements FileSystem {
     };
   }
 
-  private BlockingAction<Boolean> existsInternal(String path, AsyncResultHandler<Boolean> handler) {
+  private BlockingAction<Boolean> existsInternal(String path, Handler<AsyncResult<Boolean>> handler) {
     final File file = new File(PathAdjuster.adjust(vertx, path));
     return new BlockingAction<Boolean>(vertx, handler) {
       public Boolean action() {
@@ -759,7 +761,7 @@ public class DefaultFileSystem implements FileSystem {
     };
   }
 
-  private BlockingAction<FileSystemProps> fsPropsInternal(String path, AsyncResultHandler<FileSystemProps> handler) {
+  private BlockingAction<FileSystemProps> fsPropsInternal(String path, Handler<AsyncResult<FileSystemProps>> handler) {
     final Path target = PathAdjuster.adjust(vertx, Paths.get(path));
     return new BlockingAction<FileSystemProps>(vertx, handler) {
       public FileSystemProps action() {

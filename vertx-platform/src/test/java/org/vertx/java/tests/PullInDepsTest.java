@@ -18,7 +18,7 @@ package org.vertx.java.tests;/*
 
 import org.junit.Test;
 import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.Handler;
 import org.vertx.java.testframework.TestBase;
 
 import java.io.File;
@@ -42,7 +42,7 @@ public class PullInDepsTest extends TestBase {
   public void testPullInDeps() throws Exception {
     final String deployID = startMod("io.vertx~mod-maven-server~1.0", null, 1, false);
     final CountDownLatch latch = new CountDownLatch(1);
-    platformManager.pullInDependencies("io.vertx~mod-pullin~1.0", new AsyncResultHandler<Void>() {
+    platformManager.pullInDependencies("io.vertx~mod-pullin~1.0", new Handler<AsyncResult<Void>>() {
       @Override
       public void handle(AsyncResult<Void> res) {
         assertTrue(res.succeeded());
