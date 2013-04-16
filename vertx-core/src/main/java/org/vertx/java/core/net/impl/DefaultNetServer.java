@@ -86,19 +86,22 @@ public class DefaultNetServer implements NetServer {
     return this;
   }
 
-  public void listen(int port) {
+  public NetServer listen(int port) {
     listen(port, "0.0.0.0", null);
+    return this;
   }
 
-  public void listen(int port, Handler<NetServer> listenHandler) {
+  public NetServer listen(int port, Handler<NetServer> listenHandler) {
     listen(port, "0.0.0.0", listenHandler);
+    return this;
   }
 
-  public void listen(int port, String host) {
+  public NetServer listen(int port, String host) {
     listen(port, host, null);
+    return this;
   }
 
-  public void listen(final int port, final String host, final Handler<NetServer> listenHandler) {
+  public NetServer listen(final int port, final String host, final Handler<NetServer> listenHandler) {
     if (connectHandler == null) {
       throw new IllegalStateException("Set connect handler first");
     }
@@ -211,8 +214,8 @@ public class DefaultNetServer implements NetServer {
           }
         }
       });
-
     }
+    return this;
   }
 
   @Override

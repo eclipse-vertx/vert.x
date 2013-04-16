@@ -139,19 +139,22 @@ public class DefaultHttpServer implements HttpServer {
     return exceptionHandler;
   }
 
-  public void listen(int port) {
+  public HttpServer listen(int port) {
     listen(port, "0.0.0.0", null);
+    return this;
   }
 
-  public void listen(int port, String host) {
+  public HttpServer listen(int port, String host) {
     listen(port, host, null);
+    return this;
   }
 
-  public void listen(int port, Handler<HttpServer> listenHandler) {
+  public HttpServer listen(int port, Handler<HttpServer> listenHandler) {
     listen(port, "0.0.0.0", listenHandler);
+    return this;
   }
 
-  public void listen(int port, String host, final Handler<HttpServer> listenHandler) {
+  public HttpServer listen(int port, String host, final Handler<HttpServer> listenHandler) {
     if (requestHandler == null && wsHandler == null) {
       throw new IllegalStateException("Set request or websocket handler first");
     }
@@ -253,6 +256,7 @@ public class DefaultHttpServer implements HttpServer {
         }
       });
     }
+    return this;
   }
 
   private void addHandlers(DefaultHttpServer server) {

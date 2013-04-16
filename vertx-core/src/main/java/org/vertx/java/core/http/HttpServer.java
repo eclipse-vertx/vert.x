@@ -78,26 +78,26 @@ public interface HttpServer extends ServerSSLSupport<HttpServer>, ServerTCPSuppo
    * Tell the server to start listening on all available interfaces and port {@code port}. Be aware this is an
    * async operation and the server may not bound on return of the method.
    */
-  void listen(int port);
+  HttpServer listen(int port);
 
   /**
    * Tell the server to start listening on all available interfaces and port {@code port}
    *
    */
-  void listen(int port, Handler<HttpServer> listenHandler);
+  HttpServer listen(int port, Handler<HttpServer> listenHandler);
 
   /**
    * Tell the server to start listening on port {@code port} and hostname or ip address given by {@code host}. Be aware this is an
    * async operation and the server may not bound on return of the method.
    *
    */
-  void listen(int port, String host);
+  HttpServer listen(int port, String host);
 
   /**
    * Tell the server to start listening on port {@code port} and hostname or ip address given by {@code host}.
    *
    */
-  void listen(int port, String host, Handler<HttpServer> listenHandler);
+  HttpServer listen(int port, String host, Handler<HttpServer> listenHandler);
   
   /**
    * Close the server. Any open HTTP connections will be closed.
