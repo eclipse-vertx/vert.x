@@ -224,19 +224,22 @@ public class DefaultHttpServer implements HttpServer {
       } else {
         // Server already exists with that host/port - we will use that
         actualServer = shared;
-
         addHandlers(actualServer);
-
       }
 
       actualServer.bindFuture.addListener(new ChannelFutureListener() {
         @Override
-        public void operationComplete(ChannelFuture future) throws Exception {
+        // TODO simplify this, it's ugly!
+        public void operationComplete(final ChannelFuture future) throws Exception {
           if (future.isSuccess()) {
             if (listenHandler != null) {
               if (actualCtx.isOnCorrectWorker(future.channel().eventLoop())) {
-                vertx.setContext(actualCtx);
-                listenHandler.handle(DefaultHttpServer.this);
+                try {
+                  vertx.setContext(actualCtx);
+                  listenHandler.handle(DefaultHttpServer.this);
+                } catch (Throwable t) {
+                  actualCtx.reportException(t);
+                }
               } else {
                 actualCtx.execute(new Runnable() {
                   @Override
@@ -247,9 +250,25 @@ public class DefaultHttpServer implements HttpServer {
               }
             }
           } else {
-            Handler<Exception> exceptionHandler = exceptionHandler();
+            final Handler<Exception> exceptionHandler = exceptionHandler();
             if (exceptionHandler != null) {
-                exceptionHandler.handle((Exception) future.cause());
+              if (actualCtx.isOnCorrectWorker(future.channel().eventLoop())) {
+                try {
+                  vertx.setContext(actualCtx);
+                  exceptionHandler.handle((Exception) future.cause());
+                } catch (Throwable t) {
+                  actualCtx.reportException(t);
+                }
+              } else {
+                actualCtx.execute(new Runnable() {
+                  @Override
+                  public void run() {
+                    exceptionHandler.handle((Exception) future.cause());
+                  }
+                });
+              }
+            } else {
+              log.error("Failed to bind", future.cause());
             }
             close();
           }

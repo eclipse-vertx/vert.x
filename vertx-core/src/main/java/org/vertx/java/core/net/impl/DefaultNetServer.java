@@ -190,11 +190,15 @@ public class DefaultNetServer implements NetServer {
       // just add it to the future so it gets notified once the bind is complete
       actualServer.bindFuture.addListener(new ChannelFutureListener() {
         @Override
-        public void operationComplete(ChannelFuture future) throws Exception {
+        public void operationComplete(final ChannelFuture future) throws Exception {
           if (future.isSuccess()) {
             if (listenHandler != null) {
               if (actualCtx.isOnCorrectWorker(future.channel().eventLoop())) {
-                vertx.setContext(actualCtx);
+                try {
+                  vertx.setContext(actualCtx);
+                } catch (Throwable t) {
+                  actualCtx.reportException(t);
+                }
                 listenHandler.handle(DefaultNetServer.this);
               } else {
                 actualCtx.execute(new Runnable() {
@@ -206,10 +210,26 @@ public class DefaultNetServer implements NetServer {
               }
             }
           } else {
-              Handler<Exception> exceptionHandler = exceptionHandler();
-              if (exceptionHandler != null) {
+            final Handler<Exception> exceptionHandler = exceptionHandler();
+            if (exceptionHandler != null) {
+              if (actualCtx.isOnCorrectWorker(future.channel().eventLoop())) {
+                try {
+                  vertx.setContext(actualCtx);
                   exceptionHandler.handle((Exception) future.cause());
+                } catch (Throwable t) {
+                  actualCtx.reportException(t);
+                }
+              } else {
+                actualCtx.execute(new Runnable() {
+                  @Override
+                  public void run() {
+                    exceptionHandler.handle((Exception) future.cause());
+                  }
+                });
               }
+            } else {
+              log.error("Failed to bind", future.cause());
+            }
             close();
           }
         }
