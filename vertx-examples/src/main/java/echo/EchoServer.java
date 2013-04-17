@@ -28,6 +28,6 @@ public class EchoServer extends Verticle {
       public void handle(final NetSocket socket) {
         Pump.createPump(socket, socket).start();
       }
-    }).listen(1234);
+    }).listen(0);
   }
 }

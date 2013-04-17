@@ -16,23 +16,17 @@
 
 package org.vertx.java.core.net.impl;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.DefaultFileRegion;
-import io.netty.channel.FileRegion;
+import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.FlowControlHandler;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.streams.ReadStream;
-import org.vertx.java.core.streams.WriteStream;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
@@ -61,41 +55,8 @@ public abstract class ConnectionBase {
   protected final Context context;
 
   protected Handler<Exception> exceptionHandler;
-  protected Handler<Void> closedHandler;
+  protected Handler<Void> closeHandler;
   private volatile boolean writable = true;
-
-  protected void setWritable(boolean writable) {
-      this.writable = writable;
-  }
-
-
-  /**
-   * Pause the connection, see {@link ReadStream#pause}
-   */
-  public void pause() {
-    channel.config().setAutoRead(false);
-  }
-
-  /**
-   * Resume the connection, see {@link ReadStream#resume}
-   */
-  public void resume() {
-    channel.config().setAutoRead(true);
-  }
-
-  /**
-   * Set the max size for the write queue, see {@link WriteStream#setWriteQueueMaxSize}
-   */
-  public void setWriteQueueMaxSize(int size) {
-    channel.pipeline().get(FlowControlHandler.class).setLimit(size / 2 , size);
-  }
-
-  /**
-   * Is the write queue full?, see {@link WriteStream#writeQueueFull}
-   */
-  public boolean writeQueueFull() {
-    return !writable;
-  }
 
   /**
    * Close the connection
@@ -104,18 +65,24 @@ public abstract class ConnectionBase {
     channel.close();
   }
 
-  /**
-   * Set an exception handler on the connection
-   */
-  public void exceptionHandler(Handler<Exception> handler) {
-    this.exceptionHandler = handler;
+  public void doPause() {
+    channel.config().setAutoRead(false);
   }
 
-  /**
-   * Set a closed handler on the connection
-   */
-  public void closedHandler(Handler<Void> handler) {
-    this.closedHandler = handler;
+  public void doResume() {
+    channel.config().setAutoRead(true);
+  }
+
+  public void doSetWriteQueueMaxSize(int size) {
+    channel.pipeline().get(FlowControlHandler.class).setLimit(size / 2 , size);
+  }
+
+  public boolean doWriteQueueFull() {
+    return !writable;
+  }
+
+  protected void setWritable(boolean writable) {
+    this.writable = writable;
   }
 
   protected Context getContext() {
@@ -134,36 +101,32 @@ public abstract class ConnectionBase {
   }
 
   protected void handleClosed() {
-    if (closedHandler != null) {
+    if (closeHandler != null) {
       setContext();
       try {
-        closedHandler.handle(null);
+        closeHandler.handle(null);
       } catch (Throwable t) {
         handleHandlerException(t);
       }
     }
   }
 
-  protected void addFuture(final Handler<Void> doneHandler, final ChannelFuture future) {
-    future.addListener(new ChannelFutureListener() {
-      public void operationComplete(final ChannelFuture channelFuture) throws Exception {
-        setContext();
-        vertx.runOnLoop(new SimpleHandler() {
-          public void handle() {
-            if (channelFuture.isSuccess()) {
-              doneHandler.handle(null);
-            } else {
-              Throwable err = channelFuture.cause();
-              if (exceptionHandler != null && err instanceof Exception) {
-                exceptionHandler.handle((Exception) err);
-              } else {
-                log.error("Unhandled exception", err);
+  protected void addFuture(final Handler<AsyncResult<Void>> doneHandler, final ChannelFuture future) {
+    if (future != null) {
+      future.addListener(new ChannelFutureListener() {
+        public void operationComplete(final ChannelFuture channelFuture) throws Exception {
+          if (doneHandler != null) {
+            context.execute(new Runnable() {
+              public void run() {
+                doneHandler.handle(new DefaultFutureResult<Void>(channelFuture.cause()));
               }
-            }
+            });
+          } else if (!channelFuture.isSuccess()) {
+            vertx.reportException(channelFuture.cause());
           }
-        });
-      }
-    });
+        }
+      });
+    }
   }
 
   protected void setContext() {

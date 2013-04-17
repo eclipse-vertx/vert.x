@@ -16,9 +16,10 @@
 
 package vertx.tests.core.net;
 
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.VoidResult;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.platform.Verticle;
@@ -40,7 +41,7 @@ public abstract class BaseServer extends Verticle {
     this.sendAppReady = sendAppReady;
   }
 
-  public void start(final VoidResult startedResult) throws Exception {
+  public void start(final Future<Void> startedResult) {
     tu = new TestUtils(vertx);
     server = vertx.createNetServer();
     server.connectHandler(getConnectHandler());
@@ -53,17 +54,16 @@ public abstract class BaseServer extends Verticle {
         if (sendAppReady) {
           tu.appReady();
         }
-        startedResult.setResult();
+        startedResult.setResult(null);
       }
     });
   }
 
   public void stop() {
-    server.close(new SimpleHandler() {
-      public void handle() {
+    server.close(new AsyncResultHandler<Void>() {
+      public void handle(AsyncResult<Void> result) {
         tu.checkThread();
         tu.appStopped();
-
       }
     });
   }

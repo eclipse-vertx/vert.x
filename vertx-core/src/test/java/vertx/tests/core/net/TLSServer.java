@@ -16,9 +16,7 @@
 
 package vertx.tests.core.net;
 
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.VoidResult;
+import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
@@ -37,7 +35,7 @@ public class TLSServer extends Verticle {
 
   private NetServer server;
 
-  public void start(final VoidResult startedResult) {
+  public void start(final Future<Void> startedResult) {
     tu = new TestUtils(vertx);
     server = vertx.createNetServer();
 
@@ -62,14 +60,14 @@ public class TLSServer extends Verticle {
       @Override
       public void handle(NetServer event) {
         tu.appReady();
-        startedResult.setResult();
+        startedResult.setResult(null);
       }
     });
   }
 
   public void stop() {
-    server.close(new SimpleHandler() {
-      public void handle() {
+    server.close(new AsyncResultHandler<Void>() {
+      public void handle(AsyncResult<Void> res) {
         tu.checkThread();
         tu.appStopped();
       }

@@ -16,9 +16,7 @@
 
 package vertx.tests.core.http;
 
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.VoidResult;
+import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
@@ -34,7 +32,7 @@ public class TLSServer extends Verticle {
 
   private HttpServer server;
 
-  public void start(final VoidResult result) {
+  public void start(final Future<Void> result) {
     tu = new TestUtils(vertx);
     TLSTestParams params = TLSTestParams.deserialize(vertx.sharedData().<String, byte[]>getMap("TLSTest").get("params"));
 
@@ -62,7 +60,7 @@ public class TLSServer extends Verticle {
           public void handle(Buffer buffer) {
             tu.checkThread();
             tu.azzert("foo".equals(buffer.toString()));
-            req.response.end("bar");
+            req.response().end("bar");
           }
         });
       }
@@ -71,15 +69,15 @@ public class TLSServer extends Verticle {
       @Override
       public void handle(HttpServer event) {
         tu.appReady();
-        result.setResult();
+        result.setResult(null);
       }
     });
 
   }
 
   public void stop() {
-    server.close(new SimpleHandler() {
-      public void handle() {
+    server.close(new AsyncResultHandler<Void>() {
+      public void handle(AsyncResult<Void> res) {
         tu.checkThread();
         tu.appStopped();
       }

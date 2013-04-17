@@ -17,13 +17,16 @@
 package org.vertx.java.platform.impl;
 
 
-import org.vertx.java.core.*;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.impl.*;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.platform.Container;
+import org.vertx.java.platform.PlatformManagerException;
 import org.vertx.java.platform.Verticle;
 import org.vertx.java.platform.VerticleFactory;
 import org.vertx.java.platform.impl.resolver.*;
@@ -36,10 +39,6 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -122,10 +121,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
                              JsonObject config, URL[] classpath,
                              int instances,
                              String includes,
-                             Handler<String> doneHandler) {
-    if (main == null) {
-      throw new NullPointerException("main cannot be null");
-    }
+                             Handler<AsyncResult<String>> doneHandler) {
     deployVerticle(false, false, main, config, classpath, instances, includes, doneHandler);
   }
 
@@ -133,55 +129,49 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
                                    JsonObject config, URL[] classpath,
                                    int instances,
                                    String includes,
-                                   Handler<String> doneHandler) {
+                                   Handler<AsyncResult<String>> doneHandler) {
     deployVerticle(true, multiThreaded, main, config, classpath, instances, includes, doneHandler);
   }
 
   public void deployModule(final String moduleName, final JsonObject config,
-                           final int instances, final Handler<String> doneHandler) {
-     final ModuleIdentifier modID;
-    try {
-      modID = new ModuleIdentifier(moduleName);
-    } catch (RuntimeException e) {
-      log.error(e.getMessage());
-      callDoneHandler(doneHandler, null);
-      return;
-    }
+                           final int instances, final Handler<AsyncResult<String>> doneHandler) {
     final File currentModDir = getDeploymentModDir();
-    BlockingAction<Void> deployModuleAction = new BlockingAction<Void>(vertx, createHandler(doneHandler)) {
-
-      @Override
-      public Void action() throws Exception {
-        doDeployMod(false, null, modID, config, instances, currentModDir, wrapDoneHandler(doneHandler));
-        return null;
+    final Handler<AsyncResult<String>> wrapped = wrapDoneHandler(doneHandler);
+    runInBackground(new Runnable() {
+      public void run() {
+        ModuleIdentifier modID = new ModuleIdentifier(moduleName);
+        doDeployMod(false, null, modID, config, instances, currentModDir, wrapped);
       }
-    };
-    deployModuleAction.run();
+    }, wrapped);
   }
 
-  public synchronized void undeploy(String deploymentID, final Handler<Void> doneHandler) {
-    if (deploymentID == null) {
-      throw new NullPointerException("deploymentID is null");
-    }
-    final Deployment dep = deployments.get(deploymentID);
-    if (dep == null) {
-      throw new IllegalArgumentException("There is no deployment with id " + deploymentID);
-    }
-    Handler<Void> wrappedHandler = new SimpleHandler() {
-      public void handle() {
-        if (dep.modID != null && dep.autoRedeploy) {
-          redeployer.moduleUndeployed(dep);
+  public synchronized void undeploy(final String deploymentID, final Handler<AsyncResult<Void>> doneHandler) {
+    runInBackground(new Runnable() {
+      public void run() {
+        if (deploymentID == null) {
+          throw new NullPointerException("deploymentID cannot be null");
         }
-        if (doneHandler != null) {
-          doneHandler.handle(null);
+        final Deployment dep = deployments.get(deploymentID);
+        if (dep == null) {
+          throw new PlatformManagerException("There is no deployment with id " + deploymentID);
         }
+        Handler<AsyncResult<Void>> wrappedHandler = wrapDoneHandler(new Handler<AsyncResult<Void>>() {
+          public void handle(AsyncResult<Void> res) {
+            if (res.succeeded() && dep.modID != null && dep.autoRedeploy) {
+              redeployer.moduleUndeployed(dep);
+            }
+            if (doneHandler != null) {
+              doneHandler.handle(res);
+            }
+          }
+        });
+        doUndeploy(deploymentID, wrappedHandler);
       }
-    };
-    doUndeploy(deploymentID, wrappedHandler);
+    }, wrapDoneHandler(doneHandler));
   }
 
-  public synchronized void undeployAll(final Handler<Void> doneHandler) {
-    final CountingCompletionHandler count = new CountingCompletionHandler(vertx);
+  public synchronized void undeployAll(final Handler<AsyncResult<Void>> doneHandler) {
+    final CountingCompletionHandler<Void> count = new CountingCompletionHandler<>(vertx);
     if (!deployments.isEmpty()) {
       // We do it this way since undeploy is itself recursive - we don't want
       // to attempt to undeploy the same verticle twice if it's a child of
@@ -189,9 +179,9 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       while (!deployments.isEmpty()) {
         String name = deployments.keySet().iterator().next();
         count.incRequired();
-        undeploy(name, new SimpleHandler() {
-          public void handle() {
-            count.complete();
+        undeploy(name, new Handler<AsyncResult<Void>>() {
+          public void handle(AsyncResult<Void> res) {
+            count.complete(res);
           }
         });
       }
@@ -207,97 +197,86 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     return map;
   }
 
-  public void installModule(final String moduleName) {
-    final CountDownLatch latch = new CountDownLatch(1);
-    final AtomicReference<Exception> result = new AtomicReference<>();
-    final ModuleIdentifier modID = new ModuleIdentifier(moduleName);
-    AsyncResultHandler<Void> handler = new AsyncResultHandler<Void>() {
-      public void handle(AsyncResult<Void> res) {
-        result.set(res.exception);
-        latch.countDown();
-      }
-    };
-
-    BlockingAction<Void> installModuleAction = new BlockingAction<Void>(vertx, handler) {
-      @Override
-      public Void action() throws Exception {
+  public void installModule(final String moduleName, final Handler<AsyncResult<Void>> doneHandler) {
+    final Handler<AsyncResult<Void>> wrapped = wrapDoneHandler(doneHandler);
+    runInBackground(new Runnable() {
+      public void run() {
+        ModuleIdentifier modID = new ModuleIdentifier(moduleName);
         doInstallMod(modID);
-        return null;
+        doneHandler.handle(new DefaultFutureResult<>((Void)null));
       }
-    };
+    }, wrapped);
+  }
 
-    installModuleAction.run();
-
-    while (true) {
-      try {
-        if (!latch.await(300, TimeUnit.SECONDS)) {
-          throw new IllegalStateException("Timed out waiting to install module");
+  public void uninstallModule(final String moduleName, final Handler<AsyncResult<Void>> doneHandler) {
+    final Handler<AsyncResult<Void>> wrapped = wrapDoneHandler(doneHandler);
+    runInBackground(new Runnable() {
+      public void run() {
+        ModuleIdentifier modID = new ModuleIdentifier(moduleName); // Validates it
+        File modDir = new File(modRoot, modID.toString());
+        if (!modDir.exists()) {
+          throw new PlatformManagerException("Cannot find module to uninstall: " + moduleName);
+        } else {
+          vertx.fileSystem().deleteSync(modDir.getAbsolutePath(), true);
         }
-        break;
-      } catch (InterruptedException ignore) {
+        doneHandler.handle(new DefaultFutureResult<>((Void)null));
       }
-    }
-    Exception e = result.get();
-    if (e != null) {
-      log.error("Failed to install module", e);
-    }
+    }, wrapped);
   }
 
-  public synchronized void uninstallModule(String moduleName) {
-    log.info("Uninstalling module " + moduleName + " from directory " + modRoot);
-    File modDir = new File(modRoot, moduleName);
-    if (!modDir.exists()) {
-      log.error("Cannot find module to uninstall");
-    } else {
-      try {
-        vertx.fileSystem().deleteSync(modDir.getAbsolutePath(), true);
-        log.info("Module " + moduleName + " successfully uninstalled");
-      } catch (Exception e) {
-        log.error("Failed to delete directory: " + e.getMessage());
+  public void pullInDependencies(final String moduleName, final Handler<AsyncResult<Void>> doneHandler) {
+    final Handler<AsyncResult<Void>> wrapped = wrapDoneHandler(doneHandler);
+    runInBackground(new Runnable() {
+      public void run() {
+        ModuleIdentifier modID = new ModuleIdentifier(moduleName); // Validates it
+        doPullInDependencies(modRoot, modID);
+        doneHandler.handle(new DefaultFutureResult<>((Void)null));
       }
-    }
-  }
-
-  public boolean pullInDependencies(String moduleName) {
-    log.info("Attempting to pull in dependencies for module: " + moduleName);
-    ModuleIdentifier modID = new ModuleIdentifier(moduleName);
-    try {
-      return doPullInDependencies(modRoot, modID);
-    } catch (Exception e) {
-      log.error("Failed to pull in dependencies", e);
-      return false;
-    }
+    }, wrapped);
   }
 
   public void reloadModules(final Set<Deployment> deps) {
-    for (final Deployment deployment: deps) {
-      if (deployments.containsKey(deployment.name)) {
-        doUndeploy(deployment.name, new SimpleHandler() {
-          public void handle() {
-            redeploy(deployment);
+    runInBackground(new Runnable() {
+      public void run() {
+        for (final Deployment deployment : deps) {
+          if (deployments.containsKey(deployment.name)) {
+            doUndeploy(deployment.name, new Handler<AsyncResult<Void>>() {
+              public void handle(AsyncResult<Void> res) {
+                if (res.succeeded()) {
+                  doRedeploy(deployment);
+                } else {
+                  log.error("Failed to undeploy", res.cause());
+                }
+              }
+            });
+          } else {
+            // This will be the case if the previous deployment failed, e.g.
+            // a code error in a user verticle
+            doRedeploy(deployment);
           }
-        });
-      } else {
-        // This will be the case if the previous deployment failed, e.g.
-        // a code error in a user verticle
-        redeploy(deployment);
+        }
       }
-    }
+    }, null);
   }
 
-  public Vertx getVertx() {
+  public Vertx vertx() {
     return this.vertx;
   }
 
-  public void deployModuleFromZip(String zipFileName, JsonObject config,
-                                  int instances, Handler<String> doneHandler) {
-    final String modName = zipFileName.substring(0, zipFileName.length() - 4);
-    ModuleIdentifier modID = new ModuleIdentifier("__vertx_tmp#" + modName + "#__vertx_tmp");
-    if (unzipModule(modID, new ModuleZipInfo(false, zipFileName), false)) {
-      deployModule(modID.toString(), config, instances, doneHandler);
-    } else {
-      callDoneHandler(doneHandler, null);
-    }
+  public void deployModuleFromZip(final String zipFileName, final JsonObject config,
+                                  final int instances, Handler<AsyncResult<String>> doneHandler) {
+    final Handler<AsyncResult<String>> wrapped = wrapDoneHandler(doneHandler);
+    runInBackground(new Runnable() {
+      public void run() {
+        if (zipFileName == null) {
+          throw new NullPointerException("zipFileName cannot be null");
+        }
+        final String modName = zipFileName.substring(0, zipFileName.length() - 4);
+        ModuleIdentifier modID = new ModuleIdentifier("__vertx_tmp#" + modName + "#__vertx_tmp");
+        unzipModule(modID, new ModuleZipInfo(false, zipFileName), false);
+        doDeployMod(false, null, modID, config, instances, null, wrapped);
+      }
+    }, wrapped);
   }
 
   public void exit() {
@@ -306,21 +285,44 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
   }
 
-  public JsonObject getConfig() {
+  public JsonObject config() {
     VerticleHolder holder = getVerticleHolder();
     return holder == null ? null : holder.config;
   }
 
-  public Logger getLogger() {
+  public Logger logger() {
     VerticleHolder holder = getVerticleHolder();
     return holder == null ? null : holder.logger;
+  }
+
+  private void doRedeploy(Deployment deployment) {
+    doDeployMod(true, deployment.name, deployment.modID, deployment.config, deployment.instances,
+        null, null);
+  }
+
+  private <T> void runInBackground(final Runnable runnable, final Handler<AsyncResult<T>> doneHandler) {
+    final Context context = vertx.getOrAssignContext();
+    vertx.getBackgroundPool().execute(new Runnable() {
+      public void run() {
+        try {
+          vertx.setContext(context);
+          runnable.run();
+        } catch (Exception e) {
+          doneHandler.handle(new DefaultFutureResult<T>(e));
+        } catch (Throwable t) {
+          log.error(t);
+        } finally {
+          vertx.setContext(null);
+        }
+      }
+    });
   }
 
   private void deployVerticle(final boolean worker, final boolean multiThreaded, final String main,
                               final JsonObject config, URL[] classpath,
                               final int instances,
                               final String includes,
-                              final Handler<String> doneHandler) {
+                              final Handler<AsyncResult<String>> doneHandler) {
     final File currentModDir = getDeploymentModDir();
     final URL[] cp;
     if (classpath == null) {
@@ -329,15 +331,13 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     } else {
       cp = classpath;
     }
-    BlockingAction<Void> deployModuleAction = new BlockingAction<Void>(vertx, createHandler(doneHandler)) {
-      @Override
-      public Void action() throws Exception {
+    final Handler<AsyncResult<String>> wrapped = wrapDoneHandler(doneHandler);
+    runInBackground(new Runnable() {
+      public void run() {
         doDeployVerticle(worker, multiThreaded, main, config, cp, instances, currentModDir,
-            includes, wrapDoneHandler(doneHandler));
-        return null;
+            includes, wrapped);
       }
-    };
-    deployModuleAction.run();
+    }, wrapped);
   }
 
   private String getDeploymentName() {
@@ -355,7 +355,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     return holder == null ? null : holder.deployment.modDir;
   }
 
-  private boolean doPullInDependencies(File modRoot, ModuleIdentifier modID) {
+  private void doPullInDependencies(File modRoot, ModuleIdentifier modID) {
     File modDir = new File(modRoot, modID.toString());
     if (!modDir.exists()) {
       log.error("Cannot find module to uninstall");
@@ -377,7 +377,9 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     if (!mods.isEmpty()) {
       File internalModsDir = new File(modDir, "mods");
       if (!internalModsDir.exists()) {
-        internalModsDir.mkdir();
+        if (!internalModsDir.mkdir()) {
+          throw new PlatformManagerException("Failed to create directory " + internalModsDir);
+        }
       }
       for (String modName: mods) {
         File internalModDir = new File(internalModsDir, modName);
@@ -385,52 +387,49 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           ModuleIdentifier theModID = new ModuleIdentifier(modName);
           ModuleZipInfo zipInfo = getModule(theModID);
           if (zipInfo.filename != null) {
-            internalModDir.mkdir();
-            if (!unzipModuleData(internalModDir, zipInfo, true)) {
-              return false;
-            } else {
-              log.info("Module " + modName + " successfully installed in mods dir of " + modName);
-              // Now recurse so we bring in all of the deps
-              doPullInDependencies(internalModsDir, theModID);
+            if (!internalModDir.mkdir()) {
+              throw new PlatformManagerException("Failed to create directory " + internalModDir);
             }
+            unzipModuleData(internalModDir, zipInfo, true);
+            log.info("Module " + modName + " successfully installed in mods dir of " + modName);
+            // Now recurse so we bring in all of the deps
+            doPullInDependencies(internalModsDir, theModID);
           }
         }
       }
     }
-    return true;
   }
 
-  private AsyncResultHandler<Void> createHandler(final Handler<String> doneHandler) {
-    return new AsyncResultHandler<Void>() {
-      @Override
-      public void handle(AsyncResult<Void> ar) {
-        if (ar.failed()) {
-          log.error("Failed to deploy verticle", ar.exception);
-          callDoneHandler(doneHandler, null);
-        }
-      }
-    };
-  }
-
-  private Handler<String> wrapDoneHandler(final Handler<String> doneHandler) {
+  // This makes sure the result is handled on the calling context
+  private <T> Handler<AsyncResult<T>> wrapDoneHandler(final Handler<AsyncResult<T>> doneHandler) {
     if (doneHandler == null) {
-      return null;
-    }
-    final Context context = vertx.getContext();
-    return new Handler<String>() {
-      @Override
-      public void handle(final String deploymentID) {
-        if (context == null) {
-          doneHandler.handle(deploymentID);
-        } else {
-          context.execute(new Runnable() {
-            public void run() {
-              doneHandler.handle(deploymentID);
-            }
-          });
+      // Just create one which logs out any failure, otherwise we will have silent failures when no handler
+      // is specified
+      return new AsyncResultHandler<T>() {
+        @Override
+        public void handle(AsyncResult<T> res) {
+          if (res.failed()) {
+            vertx.reportException(res.cause());
+          }
         }
-      }
-    };
+      };
+    } else {
+      final Context context = vertx.getContext();
+      return new AsyncResultHandler<T>() {
+        @Override
+        public void handle(final AsyncResult<T> res) {
+          if (context == null) {
+            doneHandler.handle(res);
+          } else {
+            context.execute(new Runnable() {
+              public void run() {
+                doneHandler.handle(res);
+              }
+            });
+          }
+        }
+      };
+    }
   }
 
   // Recurse up through the parent deployments and return the the module name for the first one
@@ -458,9 +457,13 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private void doDeployVerticle(boolean worker, boolean multiThreaded, final String main,
                                 final JsonObject config, final URL[] urls,
                                 int instances, File currentModDir,
-                                String includes, Handler<String> doneHandler)
+                                String includes, Handler<AsyncResult<String>> doneHandler)
   {
     checkWorkerContext();
+
+    if (main == null) {
+      throw new NullPointerException("main cannot be null");
+    }
 
     // There is one module class loader per enclosing module + the name of the verticle.
     // If there is no enclosing module, there is one per top level verticle deployment
@@ -539,7 +542,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         loadLanguageMappings(props);
       }
     } catch (IOException e) {
-      log.error("Failed to load " + LANG_PROPS_FILE_NAME + " " + e.getMessage());
+      throw new PlatformManagerException(e);
     }
 
     // Then override any with system properties
@@ -579,7 +582,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           moduleName = propVal.substring(0, colonIndex);
           factoryName = propVal.substring(colonIndex + 1);
         } else {
-          throw new IllegalArgumentException("Language mapping: " + propVal + " does not specify an implementing module");
+          throw new PlatformManagerException("Language mapping: " + propVal + " does not specify an implementing module");
         }
         LanguageImplInfo langImpl = new LanguageImplInfo(moduleName, factoryName);
         languageImpls.put(propName, langImpl);
@@ -612,7 +615,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private void doDeployMod(final boolean redeploy, final String depName, final ModuleIdentifier modID,
                            final JsonObject config,
                            final int instances, final File currentModDir,
-                           final Handler<String> doneHandler) {
+                           final Handler<AsyncResult<String>> doneHandler) {
     checkWorkerContext();
     File modDir = locateModule(currentModDir, modID);
     if (modDir != null) {
@@ -620,14 +623,12 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       ModuleFields fields = new ModuleFields(conf);
       String main = fields.getMain();
       if (main == null) {
-        log.error("Runnable module " + modID + " mod.json must contain a \"main\" field");
-        callDoneHandler(doneHandler, null);
-        return;
+        throw new PlatformManagerException("Runnable module " + modID + " mod.json must contain a \"main\" field");
       }
       boolean worker = fields.isWorker();
       boolean multiThreaded = fields.isMultiThreaded();
       if (multiThreaded && !worker) {
-          throw new IllegalArgumentException("Multi-threaded modules must be workers");
+        throw new PlatformManagerException("Multi-threaded modules must be workers");
       }
       boolean preserveCwd = fields.isPreserveCurrentWorkingDirectory();
 
@@ -635,10 +636,6 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       File modDirToUse = preserveCwd ? currentModDir : modDir;
 
       List<URL> urls = getModuleClasspath(modDir);
-      if (urls == null) {
-        callDoneHandler(doneHandler, null);
-        return;
-      }
 
       ModuleReference mr = moduleRefs.get(modID.toString());
       if (mr == null) {
@@ -661,48 +658,49 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       // Now load any included moduleRefs
       String includes = fields.getIncludes();
       if (includes != null) {
-        if (!loadIncludedModules(modDir, mr, includes)) {
-          callDoneHandler(doneHandler, null);
-          return;
-        }
+        loadIncludedModules(modDir, mr, includes);
       }
 
       final boolean autoRedeploy = fields.isAutoRedeploy();
 
       doDeploy(depName, autoRedeploy, worker, multiThreaded, main, modID, config,
-          urls.toArray(new URL[urls.size()]), instances, modDirToUse, mr, new Handler<String>() {
+          urls.toArray(new URL[urls.size()]), instances, modDirToUse, mr, new Handler<AsyncResult<String>>() {
         @Override
-        public void handle(String deploymentID) {
-          if (deploymentID != null && !redeploy && autoRedeploy) {
-            redeployer.moduleDeployed(deployments.get(deploymentID));
+        public void handle(AsyncResult<String> res) {
+          if (res.succeeded()) {
+            String deploymentID = res.result();
+            if (deploymentID != null && !redeploy && autoRedeploy) {
+              redeployer.moduleDeployed(deployments.get(deploymentID));
+            }
           }
-          callDoneHandler(doneHandler, deploymentID);
+          if (doneHandler != null) {
+            doneHandler.handle(res);
+          } else {
+            log.error("Failed to deploy", res.cause());
+          }
         }
       });
     } else {
-      if (doInstallMod(modID)) {
-        doDeployMod(redeploy, depName, modID, config, instances, currentModDir, doneHandler);
-      } else {
-        callDoneHandler(doneHandler, null);
-      }
+      doInstallMod(modID);
+      doDeployMod(redeploy, depName, modID, config, instances, currentModDir, doneHandler);
     }
   }
 
   private JsonObject loadModuleConfig(ModuleIdentifier modID, File modDir) {
     // Checked the byte code produced, .close() is called correctly, so the warning can be suppressed
-    try (@SuppressWarnings("resource") Scanner scanner = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A")) {
+    try (Scanner scanner = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A")) {
       String conf = scanner.next();
       return new JsonObject(conf);
     } catch (FileNotFoundException e) {
-      throw new IllegalStateException("Module " + modID + " does not contain a mod.json file");
+      throw new PlatformManagerException("Module " + modID + " does not contain a mod.json file");
     } catch (NoSuchElementException e) {
-      throw new IllegalStateException("Module " + modID + " contains an empty mod.json file");
+      throw new PlatformManagerException("Module " + modID + " contains an empty mod.json file");
     } catch (DecodeException e) {
-      throw new IllegalStateException("Module " + modID + " mod.json contains invalid json");
+      throw new PlatformManagerException("Module " + modID + " mod.json contains invalid json");
     }
   }
 
-  private boolean loadIncludedModules(File currentModuleDir, ModuleReference mr, String includesString) {
+  private void loadIncludedModules(File currentModuleDir, ModuleReference mr, String includesString) {
     checkWorkerContext();
     for (String moduleName: parseIncludeString(includesString)) {
       ModuleIdentifier modID = new ModuleIdentifier(moduleName);
@@ -710,9 +708,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       if (includedMr == null) {
         File modDir = locateModule(currentModuleDir, modID);
         if (modDir == null) {
-          if (!doInstallMod(modID)) {
-            return false;
-          }
+          doInstallMod(modID);
         }
         modDir = locateModule(currentModuleDir, modID);
         List<URL> urls = getModuleClasspath(modDir);
@@ -735,7 +731,6 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       includedMr.incRef();
       mr.mcl.addParent(includedMr);
     }
-    return true;
   }
 
   private List<URL> getModuleClasspath(File modDir) {
@@ -754,8 +749,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       return urls;
     } catch (MalformedURLException e) {
       //Won't happen
-      log.error("malformed url", e);
-      return null;
+      throw new PlatformManagerException(e);
     }
   }
 
@@ -817,21 +811,16 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
   }
 
-  private boolean doInstallMod(final ModuleIdentifier modID) {
+  private void doInstallMod(final ModuleIdentifier modID) {
     checkWorkerContext();
     if (repos.isEmpty()) {
-      log.warn("No repositories configured!");
-      return false;
+      throw new PlatformManagerException("No repositories configured!");
     }
     if (locateModule(null, modID) != null) {
-      log.error("Module is already installed");
-      return false;
+      throw new PlatformManagerException("Module is already installed");
     }
     ModuleZipInfo info = getModule(modID);
-    if (info != null) {
-      return unzipModule(modID, info, true);
-    }
-    return false;
+    unzipModule(modID, info, true);
   }
 
   private ModuleZipInfo getModule(ModuleIdentifier modID) {
@@ -841,8 +830,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         return new ModuleZipInfo(resolver.isOldStyle(), fileName);
       }
     }
-    log.error("Module " + modID + " not found in any repositories");
-    return null;
+    throw new PlatformManagerException("Module " + modID + " not found in any repositories");
   }
 
   private String generateTmpFileName() {
@@ -852,41 +840,34 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private File unzipIntoTmpDir(ModuleZipInfo zipInfo, boolean deleteZip) {
     String tdir = generateTmpFileName();
     File tdest = new File(tdir);
-    tdest.mkdir();
-
-    if (!unzipModuleData(tdest, zipInfo, deleteZip)) {
-      return null;
-    } else {
-      return tdest;
+    if (!tdest.mkdir()) {
+      throw new PlatformManagerException("Failed to create directory " + tdest);
     }
+    unzipModuleData(tdest, zipInfo, deleteZip);
+    return tdest;
   }
 
-  private boolean checkModDirs() {
+  private void checkCreateModDirs() {
     if (!modRoot.exists()) {
       if (!modRoot.mkdir()) {
-        log.error("Failed to create mods dir " + modRoot);
-        return false;
+        throw new PlatformManagerException("Failed to create mods dir " + modRoot);
       }
     }
     if (!systemModRoot.exists()) {
       if (!systemModRoot.mkdir()) {
-        log.error("Failed to create sys mods dir " + modRoot);
-        return false;
+        throw new PlatformManagerException("Failed to create sys mods dir " + modRoot);
       }
     }
-    return true;
   }
 
 
-  private boolean unzipModule(final ModuleIdentifier modID, final ModuleZipInfo zipInfo, boolean deleteZip) {
+  private void unzipModule(final ModuleIdentifier modID, final ModuleZipInfo zipInfo, boolean deleteZip) {
     // We synchronize to prevent a race whereby it tries to unzip the same module at the
     // same time (e.g. deployModule for the same module name has been called in parallel)
     String modName = modID.toString();
     synchronized (modName.intern()) {
 
-      if (!checkModDirs()) {
-        return false;
-      }
+      checkCreateModDirs();
 
       File fdest = new File(modRoot, modName);
       File sdest = new File(systemModRoot, modName);
@@ -895,14 +876,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         // at around the same time
         // It's ok if this happens
         log.warn("Module " + modID + " is already installed");
-        return true;
+        return;
       }
 
       // Unzip into temp dir first
       File tdest = unzipIntoTmpDir(zipInfo, deleteZip);
-      if (tdest == null) {
-        return false;
-      }
 
       // Check if it's a system module
       JsonObject conf = loadModuleConfig(modID, tdest);
@@ -912,18 +890,13 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
       // Now copy it to the proper directory
       String moveFrom = tdest.getAbsolutePath();
-      boolean moved = safeMove(moveFrom, system ? sdest.getAbsolutePath() : fdest.getAbsolutePath());
-      if (moved) {
-        log.info("Module " + modID +" successfully installed");
-        return true;
-      } else {
-        return false;
-      }
+      safeMove(moveFrom, system ? sdest.getAbsolutePath() : fdest.getAbsolutePath());
+      log.info("Module " + modID +" successfully installed");
     }
   }
 
   // We actually do a copy and delete since move doesn't always work across volumes
-  private boolean safeMove(String source, String dest) {
+  private void safeMove(String source, String dest) {
     // Try and move first - it's more efficient
     try {
       vertx.fileSystem().moveSync(source, dest);
@@ -933,11 +906,9 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         vertx.fileSystem().copySync(source, dest, true);
         vertx.fileSystem().deleteSync(source, true);
       } catch (Exception e2) {
-        log.error("Failed to copy module", e2);
-        return false;
+        throw new PlatformManagerException("Failed to copy module", e2);
       }
     }
-    return true;
   }
 
   private String removeTopDir(String entry) {
@@ -948,14 +919,16 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     return entry;
   }
 
-  private boolean unzipModuleData(final File directory, final ModuleZipInfo zipinfo, boolean deleteZip) {
+  private void unzipModuleData(final File directory, final ModuleZipInfo zipinfo, boolean deleteZip) {
     try (InputStream is = new BufferedInputStream(new FileInputStream(zipinfo.filename)); ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is))) {
       ZipEntry entry;
       while ((entry = zis.getNextEntry()) != null) {
         String entryName = zipinfo.oldStyle ? removeTopDir(entry.getName()) : entry.getName();
         if (!entryName.isEmpty()) {
           if (entry.isDirectory()) {
-            new File(directory, entryName).mkdir();
+            if (!new File(directory, entryName).mkdir()) {
+              throw new PlatformManagerException("Failed to create directory");
+            }
           } else {
             int count;
             byte[] buff = new byte[BUFFER_SIZE];
@@ -976,15 +949,14 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         }
       }
     } catch (Exception e) {
-      log.error("Failed to unzip module", e);
-      return false;
+      throw new PlatformManagerException("Failed to unzip module", e);
     } finally {
-      directory.delete();
       if (deleteZip) {
-        new File(zipinfo.filename).delete();
+        if (!new File(zipinfo.filename).delete()) {
+          log.error("Failed to delete zip");
+        }
       }
     }
-    return true;
   }
 
   // We calculate a path adjustment that can be used by the fileSystem object
@@ -999,17 +971,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     vertx.getContext().setPathAdjustment(relative);
   }
 
-  private void callDoneHandler(Handler<String> doneHandler, String deploymentID) {
-    if (doneHandler != null) {
-      doneHandler.handle(deploymentID);
-    }
-  }
-
   private String genDepName() {
     return "deployment-" + UUID.randomUUID().toString();
   }
 
-  private void doDeploy(final String depName,
+  private void doDeploy(final String depID,
                         boolean autoRedeploy,
                         boolean worker, boolean multiThreaded,
                         String theMain,
@@ -1018,14 +984,25 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
                         int instances,
                         final File modDir,
                         final ModuleReference mr,
-                        final Handler<String> doneHandler) {
+                        Handler<AsyncResult<String>> dHandler) {
     checkWorkerContext();
 
-    final String deploymentName =
-        depName != null ? depName : genDepName();
+    if (dHandler == null) {
+      // Add a simple one that just logs, so deploy failures aren't lost if the user doesn't specify a handler
+      dHandler = new Handler<AsyncResult<String>>() {
+        @Override
+        public void handle(AsyncResult<String> ar) {
+          if (ar.failed()) {
+            log.error("Failed to deploy", ar.cause());
+          }
+        }
+      };
+    }
+    final Handler<AsyncResult<String>> doneHandler = dHandler;
 
-    log.debug("Deploying name : " + deploymentName + " main: " + theMain +
-              " instances: " + instances);
+    final String deploymentID = depID != null ? depID : genDepName();
+
+    log.debug("Deploying name : " + deploymentID + " main: " + theMain + " instances: " + instances);
 
     // How we determine which language implementation to use:
     // 1. Look for a prefix on the main, e.g. 'groovy:org.foo.myproject.MyGroovyMain' would force the groovy
@@ -1075,13 +1052,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
     // Include the language impl module as a parent of the classloader
     if (langImplInfo.moduleName != null) {
-      if (!loadIncludedModules(modDir, mr, langImplInfo.moduleName)) {
-        log.error("Failed to load module: " + langImplInfo.moduleName);
-        callDoneHandler(doneHandler, null);
-        return;
-      }
+      loadIncludedModules(modDir, mr, langImplInfo.moduleName);
     }
-
 
     String parentDeploymentName = getDeploymentName();
 
@@ -1089,110 +1061,71 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       Deployment parentDeployment = deployments.get(parentDeploymentName);
       if (parentDeployment == null) {
         // This means the parent has already been undeployed - we must not deploy the child
-        log.warn("Parent has been undeployed!");
-        callDoneHandler(doneHandler, null);
-        return;
+        throw new PlatformManagerException("Parent has already been undeployed!");
       }
-      parentDeployment.childDeployments.add(deploymentName);
+      parentDeployment.childDeployments.add(deploymentID);
     }
 
     final VerticleFactory verticleFactory;
 
-    final Container container = new DefaultContainer(this);
-
     try {
       // TODO not one verticle factory per module ref, but one per language per module ref
-      verticleFactory = mr.getVerticleFactory(langImplInfo.factoryName, vertx, container);
+      verticleFactory = mr.getVerticleFactory(langImplInfo.factoryName, vertx, new DefaultContainer(this));
     } catch (Exception e) {
-      log.error("Failed to instantiate verticle factory", e);
-      callDoneHandler(doneHandler, null);
-      return;
+      throw new PlatformManagerException("Failed to instantiate verticle factory", e);
     }
 
-    final int instCount = instances;
-
-    class AggHandler {
-      AtomicInteger count = new AtomicInteger(0);
-      boolean failed;
-
-      void done(boolean res) {
-        if (!res) {
-          failed = true;
-        }
-        if (count.incrementAndGet() == instCount) {
-          String deploymentID = failed ? null : deploymentName;
-          callDoneHandler(doneHandler, deploymentID);
+    final CountingCompletionHandler<Void> aggHandler = new CountingCompletionHandler<>(vertx, instances);
+    aggHandler.setHandler(new Handler<AsyncResult<Void>>() {
+      @Override
+      public void handle(AsyncResult<Void> res) {
+        if (res.failed()) {
+          doneHandler.handle(new DefaultFutureResult<String>(res.cause()));
+        } else {
+          doneHandler.handle(new DefaultFutureResult<>(deploymentID));
         }
       }
-    }
+    });
 
-    final AggHandler aggHandler = new AggHandler();
-
-    final Deployment deployment = new Deployment(deploymentName, main, modID, instances,
+    final Deployment deployment = new Deployment(deploymentID, main, modID, instances,
         config == null ? new JsonObject() : config.copy(), urls, modDir, parentDeploymentName,
         mr, autoRedeploy);
     mr.incRef();
-    deployments.put(deploymentName, deployment);
+    deployments.put(deploymentID, deployment);
 
     ClassLoader oldTCCL = Thread.currentThread().getContextClassLoader();
     Thread.currentThread().setContextClassLoader(mr.mcl);
     try {
-
       for (int i = 0; i < instances; i++) {
-
         // Launch the verticle instance
-
         Runnable runner = new Runnable() {
           public void run() {
-
-            Verticle verticle = null;
-            boolean error = true;
-
+            Verticle verticle;
             try {
               verticle = verticleFactory.createVerticle(main);
-              error = false;
-            } catch (ClassNotFoundException e) {
-              log.error("Cannot find verticle " + main + " in " + verticleFactory.getClass().getName(), e);
             } catch (Throwable t) {
-              log.error("Failed to create verticle " + main + " in " + verticleFactory.getClass().getName(), t);
-            }
-
-            if (error) {
-              doUndeploy(deploymentName, new SimpleHandler() {
-                public void handle() {
-                  aggHandler.done(false);
-                }
-              });
+              handleDeployFailure(t, deploymentID, aggHandler);
               return;
             }
-            verticle.setContainer(container);
-            verticle.setVertx(vertx);
-
             try {
               addVerticle(deployment, verticle, verticleFactory);
               if (modDir != null) {
                 setPathAdjustment(modDir);
               }
-              VoidResult vr = new VoidResult();
+              DefaultFutureResult<Void> vr = new DefaultFutureResult<>();
               verticle.start(vr);
-              vr.setHandler(new AsyncResultHandler<Void>() {
+              vr.setHandler(new Handler<AsyncResult<Void>>() {
                 @Override
                 public void handle(AsyncResult<Void> ar) {
                   if (ar.succeeded()) {
-                    aggHandler.done(true);
+                    aggHandler.complete(ar);
                   } else {
-                    log.error("Failed to deploy verticle " + main + " in " + verticleFactory.getClass().getName(), ar.exception);
-                    aggHandler.done(false);
+                    handleDeployFailure(ar.cause(), deploymentID, aggHandler);
                   }
                 }
               });
             } catch (Throwable t) {
-              vertx.reportException(t);
-              doUndeploy(deploymentName, new SimpleHandler() {
-                public void handle() {
-                  aggHandler.done(false);
-                }
-              });
+              handleDeployFailure(t, deploymentID, aggHandler);
             }
           }
         };
@@ -1207,6 +1140,20 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       Thread.currentThread().setContextClassLoader(oldTCCL);
     }
   }
+
+  private void handleDeployFailure(final Throwable t, String deploymentID, final CountingCompletionHandler<Void> handler) {
+    // First we undeploy
+    doUndeploy(deploymentID, new Handler<AsyncResult<Void>>() {
+      public void handle(AsyncResult<Void> res) {
+        if (res.failed()) {
+          vertx.reportException(res.cause());
+        }
+        // And pass the *deploy* (not undeploy) Throwable back to the original handler
+        handler.complete(new DefaultFutureResult<Void>(t));
+      }
+    });
+  }
+
 
   // Must be synchronized since called directly from different thread
   private void addVerticle(Deployment deployment, Verticle verticle,
@@ -1224,28 +1171,27 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private VerticleHolder getVerticleHolder() {
     Context context = vertx.getContext();
     if (context != null) {
-      VerticleHolder holder = (VerticleHolder)context.getDeploymentHandle();
-      return holder;
+      return (VerticleHolder)context.getDeploymentHandle();
     } else {
       return null;
     }
   }
 
-  private void doUndeploy(String name, final Handler<Void> doneHandler) {
-    CountingCompletionHandler count = new CountingCompletionHandler(vertx);
+  private void doUndeploy(String name, final Handler<AsyncResult<Void>> doneHandler) {
+    CountingCompletionHandler<Void> count = new CountingCompletionHandler<>(vertx);
     doUndeploy(name, count);
     if (doneHandler != null) {
       count.setHandler(doneHandler);
     }
   }
 
-  private void doUndeploy(String name, final CountingCompletionHandler parentCount) {
+  private void doUndeploy(String name, final CountingCompletionHandler<Void> parentCount) {
     if (name == null) {
       throw new NullPointerException("deployment id is null");
     }
 
     final Deployment deployment = deployments.remove(name);
-    final CountingCompletionHandler count = new CountingCompletionHandler(vertx);
+    final CountingCompletionHandler<Void> count = new CountingCompletionHandler<>(vertx);
     parentCount.incRequired();
 
     // Depth first - undeploy children first
@@ -1260,13 +1206,13 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           public void run() {
             try {
               holder.verticle.stop();
+              LoggerFactory.removeLogger(holder.loggerName);
+              holder.context.runCloseHooks();
+              holder.context.close();
+              count.complete(new DefaultFutureResult<>((Void)null));
             } catch (Throwable t) {
-              vertx.reportException(t);
+              count.complete(new DefaultFutureResult<Void>(t));
             }
-            LoggerFactory.removeLogger(holder.loggerName);
-            holder.context.runCloseHooks();
-            holder.context.close();
-            count.complete();
           }
         });
       }
@@ -1279,32 +1225,12 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       }
     }
 
-    count.setHandler(new SimpleHandler() {
-      protected void handle() {
+    count.setHandler(new Handler<AsyncResult<Void>>() {
+      public void handle(AsyncResult<Void> res) {
         deployment.moduleReference.decRef();
-        parentCount.complete();
+        parentCount.complete(res);
       }
     });
-  }
-
-  private void redeploy(final Deployment deployment) {
-    // Has to occur on a worker thread
-    AsyncResultHandler<String> handler = new AsyncResultHandler<String>() {
-      public void handle(AsyncResult<String> res) {
-        if (!res.succeeded()) {
-          log.error("Failed to redeploy", res.exception);
-        }
-      }
-    };
-    BlockingAction<Void> redeployAction = new BlockingAction<Void>(vertx, handler) {
-      @Override
-      public Void action() throws Exception {
-        doDeployMod(true, deployment.name, deployment.modID, deployment.config, deployment.instances,
-            null, null);
-        return null;
-      }
-    };
-    redeployAction.run();
   }
 
   public void stop() {

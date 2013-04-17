@@ -47,7 +47,6 @@ public class TLSTestParams implements Serializable {
       ObjectInputStream oos = new ObjectInputStream(bais);
       return (TLSTestParams)oos.readObject();
     } catch (Exception e) {
-      e.printStackTrace();
       throw new RuntimeException("Failed to deserialise:" + e.getMessage());
     }
   }
@@ -60,7 +59,6 @@ public class TLSTestParams implements Serializable {
       oos.flush();
       return baos.toByteArray();
     } catch (Exception e) {
-      e.printStackTrace();
       throw new RuntimeException("Failed to serialise:" + e.getMessage());
     }
   }

@@ -16,8 +16,9 @@
 
 package vertx.tests.core.http;
 
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
 import org.vertx.java.testframework.TestClientBase;
@@ -231,7 +232,7 @@ public class RouteMatcherTestClient extends TestClientBase {
         for (Map.Entry<String, String> entry : params.entrySet()) {
           assert (entry.getValue().equals(req.params().get(entry.getKey())));
         }
-        req.response.end();
+        req.response().end();
       }
     };
 
@@ -306,7 +307,7 @@ public class RouteMatcherTestClient extends TestClientBase {
     if (noMatchHandler) {
       matcher.noMatch(new Handler<HttpServerRequest>() {
         public void handle(HttpServerRequest req) {
-          req.response.end(noMatchResponseBody);
+          req.response().end(noMatchResponseBody);
         }
       });
     }
@@ -321,10 +322,10 @@ public class RouteMatcherTestClient extends TestClientBase {
         Handler<HttpClientResponse> respHandler = new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             if (shouldPass) {
-              tu.azzert(200 == resp.statusCode);
+              tu.azzert(200 == resp.statusCode());
               closeClientAndServer(client, server);
             } else if (noMatchHandler) {
-              tu.azzert(200 == resp.statusCode);
+              tu.azzert(200 == resp.statusCode());
               resp.bodyHandler(new Handler<Buffer>() {
                 public void handle(Buffer body) {
                   tu.azzert(noMatchResponseBody.equals(body.toString()));
@@ -332,7 +333,7 @@ public class RouteMatcherTestClient extends TestClientBase {
                 }
               });
             } else {
-              tu.azzert(404 == resp.statusCode);
+              tu.azzert(404 == resp.statusCode());
               closeClientAndServer(client, server);
             }
           }
@@ -379,8 +380,8 @@ public class RouteMatcherTestClient extends TestClientBase {
 
   private void closeClientAndServer(HttpClient client, HttpServer server) {
     client.close();
-    server.close(new SimpleHandler() {
-      public void handle() {
+    server.close(new AsyncResultHandler<Void>() {
+      public void handle(AsyncResult<Void> result) {
         tu.testComplete();
       }
     });

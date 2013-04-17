@@ -21,26 +21,20 @@ package org.vertx.java.core.file;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class FileSystemProps {
+public interface FileSystemProps {
 
   /**
    * The total space on the file system, in bytes
    */
-  public final long totalSpace;
+  long totalSpace();
 
   /**
    * The total un-allocated space on the file syste, in bytes
    */
-  public final long unallocatedSpace;
+  long unallocatedSpace();
 
   /**
    * The total usable space on the file system, in bytes
    */
-  public final long usableSpace;
-
-  public FileSystemProps(long totalSpace, long unallocatedSpace, long usableSpace) {
-    this.totalSpace = totalSpace;
-    this.unallocatedSpace = unallocatedSpace;
-    this.usableSpace = usableSpace;
-  }
+  long usableSpace();
 }

@@ -20,10 +20,12 @@ import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.net.NetSocket;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -146,12 +148,12 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     if (handlePreRegister(sock, address)) {
       Handler<Message> handler = new Handler<Message>() {
         public void handle(final Message msg) {
-          Match curMatch = checkMatches(false, address, msg.body);
+          Match curMatch = checkMatches(false, address, msg.body());
           if (curMatch.doesMatch) {
             if (curMatch.requiresAuth && sockAuths.get(sock) == null) {
               log.debug("Outbound message for address " + address + " rejected because auth is required and socket is not authed");
             } else {
-              checkAddAccceptedReplyAddress(msg.replyAddress);
+              checkAddAccceptedReplyAddress(msg.replyAddress());
               deliverMessage(sock, address, msg);
             }
           } else {
@@ -179,7 +181,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
 
     final Map<String, Handler<Message>> handlers = new HashMap<>();
 
-    sock.endHandler(new SimpleHandler() {
+    sock.endHandler(new VoidHandler() {
       public void handle() {
         handleSocketClosed(sock, handlers);
       }
@@ -233,11 +235,11 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   }
 
   private void deliverMessage(SockJSSocket sock, String address, Message message) {
-    JsonObject envelope = new JsonObject().putString("address", address).putValue("body", message.body);
-    if (message.replyAddress != null) {
-      envelope.putString("replyAddress", message.replyAddress);
+    JsonObject envelope = new JsonObject().putString("address", address).putValue("body", message.body());
+    if (message.replyAddress() != null) {
+      envelope.putString("replyAddress", message.replyAddress());
     }
-    sock.writeBuffer(new Buffer(envelope.encode()));
+    sock.write(new Buffer(envelope.encode()));
   }
 
   private void doSendOrPub(final boolean send, final SockJSSocket sock, final String address,
@@ -255,14 +257,14 @@ public class EventBusBridge implements Handler<SockJSSocket> {
           authorise(message, sessionID, new AsyncResultHandler<Boolean>() {
             public void handle(AsyncResult<Boolean> res) {
               if (res.succeeded()) {
-                if (res.result) {
+                if (res.result()) {
                   cacheAuthorisation(sessionID, sock);
                   checkAndSend(send, address, body, sock, replyAddress);
                 } else {
                   log.debug("Inbound message for address " + address + " rejected because sessionID is not authorised");
                 }
               } else {
-                log.error("Error in performing authorisation", res.exception);
+                log.error("Error in performing authorisation", res.cause());
               }
             }
           });
@@ -288,7 +290,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
           // Note we don't check outbound matches for replies
           // Replies are always let through if the original message
           // was approved
-          checkAddAccceptedReplyAddress(message.replyAddress);
+          checkAddAccceptedReplyAddress(message.replyAddress());
           deliverMessage(sock, replyAddress, message);
         }
       };
@@ -306,15 +308,15 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   }
 
   private void authorise(final JsonObject message, final String sessionID,
-                         final AsyncResultHandler<Boolean> handler) {
+                         final Handler<AsyncResult<Boolean>> handler) {
     // If session id is in local cache we'll consider them authorised
-    final AsyncResult<Boolean> res = new AsyncResult<>();
+    final DefaultFutureResult<Boolean> res = new DefaultFutureResult<>();
     if (authCache.containsKey(sessionID)) {
       res.setResult(true).setHandler(handler);
     } else {
       eb.send(authAddress, message, new Handler<Message<JsonObject>>() {
         public void handle(Message<JsonObject> reply) {
-          boolean authed = reply.body.getString("status").equals("ok");
+          boolean authed = reply.body().getString("status").equals("ok");
           res.setResult(authed).setHandler(handler);
         }
       });

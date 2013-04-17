@@ -16,7 +16,8 @@
 
 package vertx.tests.core.eventbus;
 
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.eventbus.impl.ClusterManager;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager;
@@ -50,8 +51,9 @@ public abstract class EventBusAppBase extends TestClientBase {
       int port = Counter.portCounter.getAndIncrement();
       // FIXME - this test is a hack - we shouldn't be creating multiple eventbuses with a single vert.x
       // using private API!!
-      ClusterManager clusterManager = new HazelcastClusterManager((VertxInternal)vertx);
-      eb = new DefaultEventBus((VertxInternal)vertx, port, "localhost", clusterManager);
+      VertxInternal vertxi = ((VertxInternal)vertx);
+      ClusterManager clusterManager = new HazelcastClusterManager(vertxi);
+      eb = new DefaultEventBus(vertxi, port, "localhost", clusterManager);
     }
 
     tu.appReady();
@@ -60,8 +62,8 @@ public abstract class EventBusAppBase extends TestClientBase {
   @Override
   public void stop() {
     if (!isLocal()) {
-      eb.close(new SimpleHandler() {
-        public void handle() {
+      eb.close(new AsyncResultHandler<Void>() {
+        public void handle(AsyncResult<Void> result) {
           EventBusAppBase.super.stop();
         }
       });

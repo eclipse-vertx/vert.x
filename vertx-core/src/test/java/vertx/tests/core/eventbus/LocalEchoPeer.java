@@ -149,7 +149,7 @@ public class LocalEchoPeer extends EventBusAppBase {
             tu.azzert(!handled);
             eb.unregisterHandler(LocalEchoClient.ECHO_ADDRESS, this);
             handled = true;
-            msg.reply(msg.body);
+            msg.reply(msg.body());
           }
         }, new AsyncResultHandler<Void>() {
       public void handle(AsyncResult<Void> event) {

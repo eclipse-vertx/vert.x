@@ -72,7 +72,7 @@ public abstract class Context {
     if (deploymentContext != null) {
       deploymentContext.reportException(t);
     } else {
-      log.error("context Unhandled exception", t);
+      log.error("Unhandled exception", t);
     }
   }
 

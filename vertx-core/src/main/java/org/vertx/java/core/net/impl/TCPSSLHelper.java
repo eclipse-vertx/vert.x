@@ -54,16 +54,18 @@ public class TCPSSLHelper {
   private boolean trustAll;
   private ClientAuth clientAuth = ClientAuth.NONE;
 
-  private Boolean tcpNoDelay = true;
-  private Integer tcpSendBufferSize;
-  private Integer tcpReceiveBufferSize;
-  private Boolean tcpKeepAlive = true;
-  private Boolean reuseAddress;
-  private Integer soLinger;
-  private Integer trafficClass;
-  private Integer acceptBackLog;
-  private Long connectTimeout;
-  private boolean usePooledBuffers;
+  private static SocketDefaults defaults = SocketDefaults.instance;
+
+  private boolean tcpNoDelay = true;
+  private int tcpSendBufferSize = defaults.getTcpSendBufferSize();
+  private int tcpReceiveBufferSize = defaults.getTcpReceiveBufferSize();
+  private boolean tcpKeepAlive = defaults.isTcpKeepAlive();
+  private boolean reuseAddress = defaults.isReuseAddress();
+  private int soLinger = defaults.getSoLinger();
+  private int trafficClass = defaults.getTrafficClass();
+  private int acceptBackLog = 1024;
+  private int connectTimeout = 60000;
+  private boolean usePooledBuffers = false;
 
   private SSLContext sslContext;
 
@@ -81,130 +83,91 @@ public class TCPSSLHelper {
   }
 
   public void applyConnectionOptions(ServerBootstrap bootstrap) {
-    if (tcpNoDelay != null) {
-      bootstrap.childOption(ChannelOption.TCP_NODELAY, tcpNoDelay);
-    }
-    if (tcpSendBufferSize != null) {
-      bootstrap.childOption(ChannelOption.SO_SNDBUF, tcpSendBufferSize);
-    }
-    if (tcpReceiveBufferSize != null) {
-      bootstrap.childOption(ChannelOption.SO_RCVBUF, tcpReceiveBufferSize);
-    }
-    if (soLinger != null) {
-        bootstrap.option(ChannelOption.SO_LINGER, soLinger);
-    }
-    if (tcpKeepAlive != null) {
-      bootstrap.childOption(ChannelOption.SO_KEEPALIVE, tcpKeepAlive);
-    }
-
-    if (trafficClass != null) {
-      bootstrap.childOption(ChannelOption.IP_TOS, trafficClass);
-    }
-    if (reuseAddress != null) {
-      bootstrap.option(ChannelOption.SO_REUSEADDR, reuseAddress);
-    }
-    if (acceptBackLog != null) {
-      bootstrap.option(ChannelOption.SO_BACKLOG, acceptBackLog);
-    }
+    bootstrap.childOption(ChannelOption.TCP_NODELAY, tcpNoDelay);
+    bootstrap.childOption(ChannelOption.SO_SNDBUF, tcpSendBufferSize);
+    bootstrap.childOption(ChannelOption.SO_RCVBUF, tcpReceiveBufferSize);
+    bootstrap.option(ChannelOption.SO_LINGER, soLinger);
+    bootstrap.childOption(ChannelOption.IP_TOS, trafficClass);
     if (usePooledBuffers) {
       bootstrap.childOption(ChannelOption.ALLOCATOR, new PooledByteBufAllocator());
     } else {
       bootstrap.childOption(ChannelOption.ALLOCATOR, UnpooledByteBufAllocator.DEFAULT);
     }
-
+    bootstrap.childOption(ChannelOption.SO_KEEPALIVE, tcpKeepAlive);
+    bootstrap.option(ChannelOption.SO_REUSEADDR, reuseAddress);
+    bootstrap.option(ChannelOption.SO_BACKLOG, acceptBackLog);
   }
 
   public void applyConnectionOptions(Bootstrap bootstrap) {
-    if (tcpNoDelay != null) {
-      bootstrap.option(ChannelOption.TCP_NODELAY, tcpNoDelay);
-    }
-    if (tcpSendBufferSize != null) {
-      bootstrap.option(ChannelOption.SO_SNDBUF, tcpSendBufferSize);
-    }
-    if (tcpReceiveBufferSize != null) {
-      bootstrap.option(ChannelOption.SO_RCVBUF, tcpReceiveBufferSize);
-
-      // We need to set a FixedReceiveBufferSizePredictor, since otherwise
-      // Netty will ignore our setting and use an adaptive buffer which can
-      // get very large
-      //options.put(prefix + "receiveBufferSizePredictor", new FixedReceiveBufferSizePredictor(1024));
-    }
-    if (soLinger != null) {
-        bootstrap.option(ChannelOption.SO_LINGER, soLinger);
-
-    }
-    if (trafficClass != null) {
-      bootstrap.option(ChannelOption.IP_TOS, trafficClass);
-    }
-    if (connectTimeout != null) {
-      bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout.intValue());
-    }
-    if (usePooledBuffers) {
-      bootstrap.option(ChannelOption.ALLOCATOR, new PooledByteBufAllocator());
-    } else {
-      bootstrap.option(ChannelOption.ALLOCATOR, UnpooledByteBufAllocator.DEFAULT);
-    }
+    bootstrap.option(ChannelOption.TCP_NODELAY, tcpNoDelay);
+    bootstrap.option(ChannelOption.SO_SNDBUF, tcpSendBufferSize);
+    bootstrap.option(ChannelOption.SO_RCVBUF, tcpReceiveBufferSize);
+    bootstrap.option(ChannelOption.SO_LINGER, soLinger);
+    bootstrap.option(ChannelOption.IP_TOS, trafficClass);
+    bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout);
+    bootstrap.option(ChannelOption.ALLOCATOR, new PooledByteBufAllocator());
+    bootstrap.option(ChannelOption.ALLOCATOR, UnpooledByteBufAllocator.DEFAULT);
   }
 
-  public Boolean isTCPNoDelay() {
+  public boolean isTCPNoDelay() {
     return tcpNoDelay;
   }
 
-  public Integer getSendBufferSize() {
+  public int getSendBufferSize() {
     return tcpSendBufferSize;
   }
 
-  public Integer getReceiveBufferSize() {
+  public int getReceiveBufferSize() {
     return tcpReceiveBufferSize;
   }
 
-  public Boolean isTCPKeepAlive() {
+  public boolean isTCPKeepAlive() {
     return tcpKeepAlive;
   }
 
-  public Boolean isReuseAddress() {
+  public boolean isReuseAddress() {
     return reuseAddress;
   }
 
-  public Integer getSoLinger() {
+  public int getSoLinger() {
     return soLinger;
   }
 
-  public Integer getTrafficClass() {
+  public int getTrafficClass() {
     return trafficClass;
   }
 
-  public void setTCPNoDelay(Boolean tcpNoDelay) {
+  public void setTCPNoDelay(boolean tcpNoDelay) {
     this.tcpNoDelay = tcpNoDelay;
   }
 
-  public void setSendBufferSize(Integer size) {
+  public void setSendBufferSize(int size) {
     if (size < 1) {
       throw new IllegalArgumentException("TCP send buffer size must be >= 1");
     }
     this.tcpSendBufferSize = size;
   }
 
-  public void setReceiveBufferSize(Integer size) {
+  public void setReceiveBufferSize(int size) {
     if (size < 1) {
       throw new IllegalArgumentException("TCP receive buffer size must be >= 1");
     }
     this.tcpReceiveBufferSize = size;
   }
 
-  public void setTCPKeepAlive(Boolean keepAlive) {
+  public void setTCPKeepAlive(boolean keepAlive) {
     this.tcpKeepAlive = keepAlive;
   }
 
-  public void setReuseAddress(Boolean reuse) {
+  public void setReuseAddress(boolean reuse) {
     this.reuseAddress = reuse;
   }
 
-  public void setSoLinger(Integer linger) {
+  public void setSoLinger(int linger) {
     this.soLinger = linger;
   }
 
-  public void setTrafficClass(Integer trafficClass) {
+  public void setTrafficClass(int trafficClass) {
     this.trafficClass = trafficClass;
   }
 
@@ -276,22 +239,22 @@ public class TCPSSLHelper {
     this.trustAll = trustAll;
   }
 
-  public Integer getAcceptBacklog() {
+  public int getAcceptBacklog() {
     return acceptBackLog;
   }
 
-  public Long getConnectTimeout() {
+  public int getConnectTimeout() {
     return connectTimeout;
   }
 
-  public void setConnectTimeout(Long connectTimeout) {
+  public void setConnectTimeout(int connectTimeout) {
     if (connectTimeout < 0) {
       throw new IllegalArgumentException("connectTimeout must be >= 0");
     }
     this.connectTimeout = connectTimeout;
   }
 
-  public void setAcceptBacklog(Integer acceptBackLog) {
+  public void setAcceptBacklog(int acceptBackLog) {
     if (acceptBackLog < 0) {
       throw new IllegalArgumentException("acceptBackLog must be >= 0");
     }
@@ -315,10 +278,10 @@ public class TCPSSLHelper {
   You can override this by specifying the javax.echo.ssl.keyStore system property
    */
   public SSLContext createContext(VertxInternal vertx, final String ksPath,
-                                         final String ksPassword,
-                                         final String tsPath,
-                                         final String tsPassword,
-                                         final boolean trustAll) {
+                                   final String ksPassword,
+                                   final String tsPath,
+                                   final String tsPassword,
+                                   final boolean trustAll) {
     try {
       SSLContext context = SSLContext.getInstance("TLS");
       KeyManager[] keyMgrs = ksPath == null ? null : getKeyMgrs(vertx, ksPath, ksPassword);

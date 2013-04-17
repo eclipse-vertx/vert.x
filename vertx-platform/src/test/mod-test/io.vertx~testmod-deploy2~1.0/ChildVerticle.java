@@ -6,11 +6,11 @@ import org.vertx.java.platform.Verticle;
 public class ChildVerticle extends Verticle {
 
   @Override
-  public void start() throws Exception {
+  public void start() {
     container.deployModule("io.vertx~testmod-deploy3~1.0");
   }
 
   @Override
-  public void stop() throws Exception {
+  public void stop() {
   }
 }

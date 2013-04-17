@@ -17,6 +17,7 @@
 package org.vertx.java.core.http.impl;
 
 import io.netty.bootstrap.ServerBootstrap;
+
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelException;
 import io.netty.channel.ChannelFuture;
@@ -29,22 +30,13 @@ import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.ChannelGroupFutureListener;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpServerCodec;
-import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.CharsetUtil;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
@@ -53,10 +45,7 @@ import org.vertx.java.core.http.impl.cgbystrom.FlashPolicyHandler;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.impl.ws.WebSocketConvertHandler;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
-import org.vertx.java.core.impl.Context;
-import org.vertx.java.core.impl.ExceptionDispatchHandler;
-import org.vertx.java.core.impl.FlowControlHandler;
-import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.impl.*;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.impl.*;
@@ -112,6 +101,7 @@ public class DefaultHttpServer implements HttpServer {
     tcpHelper.setReuseAddress(true);
   }
 
+  @Override
   public HttpServer requestHandler(Handler<HttpServerRequest> requestHandler) {
     if (listening) {
       throw new IllegalStateException("Please set handler before server is listening");
@@ -120,10 +110,12 @@ public class DefaultHttpServer implements HttpServer {
     return this;
   }
 
+  @Override
   public Handler<HttpServerRequest> requestHandler() {
     return requestHandler;
   }
 
+  @Override
   public HttpServer websocketHandler(Handler<ServerWebSocket> wsHandler) {
     if (listening) {
       throw new IllegalStateException("Please set handler before server is listening");
@@ -132,11 +124,11 @@ public class DefaultHttpServer implements HttpServer {
     return this;
   }
 
+  @Override
   public Handler<ServerWebSocket> websocketHandler() {
     return wsHandler;
   }
 
-  @Override
   public HttpServer exceptionHandler(Handler<Exception> exceptionHandler) {
     this.exceptionHandler = exceptionHandler;
     return this;
@@ -147,20 +139,22 @@ public class DefaultHttpServer implements HttpServer {
     return exceptionHandler;
   }
 
-  public void listen(int port) {
+  public HttpServer listen(int port) {
     listen(port, "0.0.0.0", null);
+    return this;
   }
 
-  public void listen(int port, String host) {
+  public HttpServer listen(int port, String host) {
     listen(port, host, null);
+    return this;
   }
 
-  public void listen(int port, Handler<HttpServer> listenHandler) {
+  public HttpServer listen(int port, Handler<HttpServer> listenHandler) {
     listen(port, "0.0.0.0", listenHandler);
+    return this;
   }
 
-  public void listen(int port, String host, final Handler<HttpServer> listenHandler) {
-
+  public HttpServer listen(int port, String host, final Handler<HttpServer> listenHandler) {
     if (requestHandler == null && wsHandler == null) {
       throw new IllegalStateException("Set request or websocket handler first");
     }
@@ -230,19 +224,22 @@ public class DefaultHttpServer implements HttpServer {
       } else {
         // Server already exists with that host/port - we will use that
         actualServer = shared;
-
         addHandlers(actualServer);
-
       }
 
       actualServer.bindFuture.addListener(new ChannelFutureListener() {
         @Override
-        public void operationComplete(ChannelFuture future) throws Exception {
+        // TODO simplify this, it's ugly!
+        public void operationComplete(final ChannelFuture future) throws Exception {
           if (future.isSuccess()) {
             if (listenHandler != null) {
               if (actualCtx.isOnCorrectWorker(future.channel().eventLoop())) {
-                vertx.setContext(actualCtx);
-                listenHandler.handle(DefaultHttpServer.this);
+                try {
+                  vertx.setContext(actualCtx);
+                  listenHandler.handle(DefaultHttpServer.this);
+                } catch (Throwable t) {
+                  actualCtx.reportException(t);
+                }
               } else {
                 actualCtx.execute(new Runnable() {
                   @Override
@@ -253,15 +250,32 @@ public class DefaultHttpServer implements HttpServer {
               }
             }
           } else {
-            Handler<Exception> exceptionHandler = exceptionHandler();
+            final Handler<Exception> exceptionHandler = exceptionHandler();
             if (exceptionHandler != null) {
-                exceptionHandler.handle((Exception) future.cause());
+              if (actualCtx.isOnCorrectWorker(future.channel().eventLoop())) {
+                try {
+                  vertx.setContext(actualCtx);
+                  exceptionHandler.handle((Exception) future.cause());
+                } catch (Throwable t) {
+                  actualCtx.reportException(t);
+                }
+              } else {
+                actualCtx.execute(new Runnable() {
+                  @Override
+                  public void run() {
+                    exceptionHandler.handle((Exception) future.cause());
+                  }
+                });
+              }
+            } else {
+              log.error("Failed to bind", future.cause());
             }
             close();
           }
         }
       });
     }
+    return this;
   }
 
   private void addHandlers(DefaultHttpServer server) {
@@ -275,15 +289,15 @@ public class DefaultHttpServer implements HttpServer {
     }
   }
 
+  @Override
   public void close() {
     close(null);
   }
 
-  public void close(final Handler<Void> done) {
+  @Override
+  public void close(final Handler<AsyncResult<Void>> done) {
     if (!listening) {
-      if (done != null) {
-        executeCloseDone(actualCtx, done);
-      }
+      executeCloseDone(actualCtx, done, null);
       return;
     }
     listening = false;
@@ -302,7 +316,7 @@ public class DefaultHttpServer implements HttpServer {
         if (actualServer.reqHandlerManager.hasHandlers() || actualServer.wsHandlerManager.hasHandlers()) {
           // The actual server still has handlers so we don't actually close it
           if (done != null) {
-            executeCloseDone(actualCtx, done);
+            executeCloseDone(actualCtx, done, null);
           }
         } else {
           // No Handlers left so close the actual server
@@ -317,141 +331,188 @@ public class DefaultHttpServer implements HttpServer {
 
   }
 
+  @Override
   public HttpServer setSSL(boolean ssl) {
+    checkListening();
     tcpHelper.setSSL(ssl);
     return this;
   }
 
+  @Override
   public HttpServer setKeyStorePath(String path) {
+    checkListening();
     tcpHelper.setKeyStorePath(path);
     return this;
   }
 
+  @Override
   public HttpServer setKeyStorePassword(String pwd) {
+    checkListening();
     tcpHelper.setKeyStorePassword(pwd);
     return this;
   }
 
+  @Override
   public HttpServer setTrustStorePath(String path) {
+    checkListening();
     tcpHelper.setTrustStorePath(path);
     return this;
   }
 
+  @Override
   public HttpServer setTrustStorePassword(String pwd) {
+    checkListening();
     tcpHelper.setTrustStorePassword(pwd);
     return this;
   }
 
+  @Override
   public HttpServer setClientAuthRequired(boolean required) {
+    checkListening();
     tcpHelper.setClientAuthRequired(required);
     return this;
   }
 
+  @Override
   public HttpServer setTCPNoDelay(boolean tcpNoDelay) {
+    checkListening();
     tcpHelper.setTCPNoDelay(tcpNoDelay);
     return this;
   }
 
+  @Override
   public HttpServer setSendBufferSize(int size) {
+    checkListening();
     tcpHelper.setSendBufferSize(size);
     return this;
   }
 
+  @Override
   public HttpServer setReceiveBufferSize(int size) {
+    checkListening();
     tcpHelper.setReceiveBufferSize(size);
     return this;
   }
+
+  @Override
   public HttpServer setTCPKeepAlive(boolean keepAlive) {
+    checkListening();
     tcpHelper.setTCPKeepAlive(keepAlive);
     return this;
   }
 
+  @Override
   public HttpServer setReuseAddress(boolean reuse) {
+    checkListening();
     tcpHelper.setReuseAddress(reuse);
     return this;
   }
 
+  @Override
   public HttpServer setSoLinger(int linger) {
-    if (linger < 0) {
-      tcpHelper.setSoLinger(null);
-    } else {
-      tcpHelper.setSoLinger(linger);
-    }
+    checkListening();
+    tcpHelper.setSoLinger(linger);
     return this;
   }
 
+  @Override
   public HttpServer setTrafficClass(int trafficClass) {
+    checkListening();
     tcpHelper.setTrafficClass(trafficClass);
     return this;
   }
 
+  @Override
   public HttpServer setAcceptBacklog(int backlog) {
+    checkListening();
     tcpHelper.setAcceptBacklog(backlog);
     return this;
   }
 
-  public Boolean isTCPNoDelay() {
+  @Override
+  public boolean isTCPNoDelay() {
     return tcpHelper.isTCPNoDelay();
   }
 
-  public Integer getSendBufferSize() {
+  @Override
+  public int getSendBufferSize() {
+
     return tcpHelper.getSendBufferSize();
   }
 
-  public Integer getReceiveBufferSize() {
+  @Override
+  public int getReceiveBufferSize() {
     return tcpHelper.getReceiveBufferSize();
   }
 
-  public Boolean isTCPKeepAlive() {
+  @Override
+  public boolean isTCPKeepAlive() {
     return tcpHelper.isTCPKeepAlive();
   }
 
-  public Boolean isReuseAddress() {
+  @Override
+  public boolean isReuseAddress() {
     return tcpHelper.isReuseAddress();
   }
 
-  public Integer getSoLinger() {
+  @Override
+  public int getSoLinger() {
     return tcpHelper.getSoLinger();
   }
 
-  public Integer getTrafficClass() {
+  @Override
+  public int getTrafficClass() {
     return tcpHelper.getTrafficClass();
   }
 
-  public Integer getAcceptBacklog() {
+  @Override
+  public int getAcceptBacklog() {
     return tcpHelper.getAcceptBacklog();
   }
 
+  @Override
   public boolean isSSL() {
     return tcpHelper.isSSL();
   }
 
+  @Override
   public String getKeyStorePath() {
     return tcpHelper.getKeyStorePath();
   }
 
+  @Override
   public String getKeyStorePassword() {
     return tcpHelper.getKeyStorePassword();
   }
 
+  @Override
   public String getTrustStorePath() {
     return tcpHelper.getTrustStorePath();
   }
 
+  @Override
   public String getTrustStorePassword() {
     return tcpHelper.getTrustStorePassword();
   }
 
+  @Override
+  public boolean isClientAuthRequired() {
+    return tcpHelper.getClientAuth() == TCPSSLHelper.ClientAuth.REQUIRED;
+  }
+
+  @Override
   public HttpServer setUsePooledBuffers(boolean pooledBuffers) {
+    checkListening();
     tcpHelper.setUsePooledBuffers(pooledBuffers);
     return this;
   }
 
+  @Override
   public boolean isUsePooledBuffers() {
     return tcpHelper.isUsePooledBuffers();
   }
 
-  private void actualClose(final Context closeContext, final Handler<Void> done) {
+  private void actualClose(final Context closeContext, final Handler<AsyncResult<Void>> done) {
     if (id != null) {
       vertx.sharedHttpServers().remove(id);
     }
@@ -480,16 +541,22 @@ public class DefaultHttpServer implements HttpServer {
     } catch (InterruptedException e) {
     }
 
-    executeCloseDone(closeContext, done);
+    executeCloseDone(closeContext, done, fut.cause());
   }
 
-  private void executeCloseDone(final Context closeContext, final Handler<Void> done) {
+  private void executeCloseDone(final Context closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {
     if (done != null) {
       closeContext.execute(new Runnable() {
         public void run() {
-          done.handle(null);
+          done.handle(new DefaultFutureResult<Void>(e));
         }
       });
+    }
+  }
+
+  private void checkListening() {
+    if (listening) {
+      throw new IllegalStateException("Can't set property when server is listening");
     }
   }
 
@@ -567,7 +634,7 @@ public class DefaultHttpServer implements HttpServer {
           }
         }
       } else if (msg instanceof WebSocketFrame) {
-          //Websocket frame
+        //Websocket frame
         WebSocketFrame wsFrame = (WebSocketFrame)msg;
         switch (wsFrame.getType()) {
           case BINARY:
@@ -648,9 +715,9 @@ public class DefaultHttpServer implements HttpServer {
           }
         };
 
-        final DefaultWebSocket ws = new DefaultWebSocket(vertx, theURI.getPath(), wsConn, connectRunnable);
+        final DefaultServerWebSocket ws = new DefaultServerWebSocket(vertx, theURI.getPath(), wsConn, connectRunnable);
         wsConn.handleWebsocketConnect(ws);
-        if (ws.rejected) {
+        if (ws.isRejected()) {
           if (firstHandler == null) {
             firstHandler = wsHandler;
           }

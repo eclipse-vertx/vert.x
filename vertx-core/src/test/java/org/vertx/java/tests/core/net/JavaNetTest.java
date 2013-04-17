@@ -17,9 +17,7 @@
 package org.vertx.java.tests.core.net;
 
 import org.junit.Test;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.Vertx;
+import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -366,7 +364,7 @@ public class JavaNetTest extends TestBase {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
-    Vertx vertx = Vertx.newVertx();
+    Vertx vertx = VertxFactory.newVertx();
 
     final NetServer server = vertx.createNetServer();
     server.connectHandler(new Handler<NetSocket>() {
@@ -387,12 +385,12 @@ public class JavaNetTest extends TestBase {
     assertTrue(listenLatch.await(5, TimeUnit.SECONDS));
 
     final NetClient client = vertx.createNetClient();
-    client.connect(1234, new Handler<NetSocket>() {
-      public void handle(NetSocket socket) {
-        socket.dataHandler(new Handler<Buffer>() {
+    client.connect(1234, new AsyncResultHandler<NetSocket>() {
+      public void handle(AsyncResult<NetSocket> res) {
+        res.result().dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
-            server.close(new SimpleHandler() {
-              public void handle() {
+            server.close(new AsyncResultHandler<Void>() {
+              public void handle(AsyncResult<Void> res) {
                 client.close();
                 latch.countDown();
               }
@@ -400,7 +398,7 @@ public class JavaNetTest extends TestBase {
 
           }
         });
-        socket.write("foo");
+        res.result().write("foo");
       }
     });
 

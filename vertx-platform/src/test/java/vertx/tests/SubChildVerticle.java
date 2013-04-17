@@ -24,12 +24,12 @@ import org.vertx.java.platform.Verticle;
 public class SubChildVerticle extends Verticle {
 
   @Override
-  public void start() throws Exception {
+  public void start() {
     vertx.eventBus().send("test-handler", "started");
   }
 
   @Override
-  public void stop() throws Exception {
+  public void stop() {
     vertx.eventBus().send("test-handler", "stopped");
   }
 }

@@ -39,7 +39,7 @@ public class FanoutServer extends Verticle {
             }
           }
         });
-        socket.closedHandler(new SimpleHandler() {
+        socket.closeHandler(new SimpleHandler() {
           public void handle() {
             connections.remove(socket.writeHandlerID);
           }

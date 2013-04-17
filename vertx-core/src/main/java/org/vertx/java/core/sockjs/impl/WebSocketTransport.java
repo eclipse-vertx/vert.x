@@ -17,11 +17,11 @@
 package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
-import org.vertx.java.core.http.WebSocket;
+import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.WebSocketMatcher;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonObject;
@@ -56,29 +56,29 @@ class WebSocketTransport extends BaseTransport {
 
     rm.getWithRegEx(wsRE, new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest request) {
-        if (log.isTraceEnabled()) log.trace("WS, get: " + request.uri);
-        request.response.statusCode = 400;
-        request.response.end("Can \"Upgrade\" only to \"WebSocket\".");
+        if (log.isTraceEnabled()) log.trace("WS, get: " + request.uri());
+        request.response().setStatusCode(400);
+        request.response().end("Can \"Upgrade\" only to \"WebSocket\".");
       }
     });
 
     rm.allWithRegEx(wsRE, new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest request) {
-        if (log.isTraceEnabled()) log.trace("WS, all: " + request.uri);
-        request.response.headers().put("Allow", "GET");
-        request.response.statusCode = 405;
-        request.response.end();
+        if (log.isTraceEnabled()) log.trace("WS, all: " + request.uri());
+        request.response().headers().put("Allow", "GET");
+        request.response().setStatusCode(405);
+        request.response().end();
       }
     });
   }
 
   private static class WebSocketListener implements TransportListener {
 
-    final WebSocket ws;
+    final ServerWebSocket ws;
     final Session session;
     boolean closed;
 
-    WebSocketListener(final WebSocket ws, final Session session) {
+    WebSocketListener(final ServerWebSocket ws, final Session session) {
       this.ws = ws;
       this.session = session;
       ws.dataHandler(new Handler<Buffer>() {
@@ -97,7 +97,7 @@ class WebSocketTransport extends BaseTransport {
           }
         }
       });
-      ws.closedHandler(new SimpleHandler() {
+      ws.closeHandler(new VoidHandler() {
         public void handle() {
           closed = true;
           session.shutdown();

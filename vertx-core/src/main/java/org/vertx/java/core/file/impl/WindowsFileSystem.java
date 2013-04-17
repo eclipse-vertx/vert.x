@@ -16,7 +16,8 @@
 
 package org.vertx.java.core.file.impl;
 
-import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.impl.BlockingAction;
 import org.vertx.java.core.impl.Context;
@@ -44,12 +45,12 @@ public class WindowsFileSystem extends DefaultFileSystem {
 
 	@Override
 	protected BlockingAction<Void> chmodInternal(String path, String perms, String dirPerms,
-			AsyncResultHandler<Void> handler) {
+			Handler<AsyncResult<Void>> handler) {
 		logInternal(perms);
 		logInternal(dirPerms);
 		return new BlockingAction<Void>(vertx, handler) {
 			@Override
-			public Void action() throws Exception {
+			public Void action() {
 				return null;
 			}
 		};
@@ -57,20 +58,20 @@ public class WindowsFileSystem extends DefaultFileSystem {
 
 	@Override
 	protected BlockingAction<Void> mkdirInternal(String path, final String perms, final boolean createParents,
-			AsyncResultHandler<Void> handler) {
+			Handler<AsyncResult<Void>> handler) {
 		logInternal(perms);
 		return super.mkdirInternal(path, null, createParents, handler);
 	}
 
 	@Override
 	protected AsyncFile doOpen(String path, String perms, boolean read, boolean write, boolean createNew, boolean flush,
-			Context context) throws Exception {
+			Context context) {
 		logInternal(perms);
 		return new DefaultAsyncFile(vertx, path, null, read, write, createNew, flush, context);
 	}
 
 	@Override
-	protected BlockingAction<Void> createFileInternal(String p, final String perms, AsyncResultHandler<Void> handler) {
+	protected BlockingAction<Void> createFileInternal(String p, final String perms, Handler<AsyncResult<Void>> handler) {
 		logInternal(perms);
 		return super.createFileInternal(p, null, handler);
 	}

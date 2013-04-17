@@ -16,9 +16,7 @@
 
 package vertx.tests.core.http;
 
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.VoidResult;
+import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
@@ -33,29 +31,29 @@ public class DrainingServer extends Verticle {
   protected TestUtils tu;
   private HttpServer server;
 
-  public void start(final VoidResult startedResult) {
+  public void start(final Future<Void> startedResult) {
     tu = new TestUtils(vertx);
     server = vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
         tu.checkThread();
 
-        req.response.setChunked(true);
+        req.response().setChunked(true);
 
-        tu.azzert(!req.response.writeQueueFull());
-        req.response.setWriteQueueMaxSize(1000);
+        tu.azzert(!req.response().writeQueueFull());
+        req.response().setWriteQueueMaxSize(1000);
 
         final Buffer buff = TestUtils.generateRandomBuffer(10000);
         //Send data until the buffer is full
         vertx.setPeriodic(1, new Handler<Long>() {
           public void handle(Long id) {
             tu.checkThread();
-            req.response.write(buff);
-            if (req.response.writeQueueFull()) {
+            req.response().write(buff);
+            if (req.response().writeQueueFull()) {
               vertx.cancelTimer(id);
-              req.response.drainHandler(new SimpleHandler() {
+              req.response().drainHandler(new VoidHandler() {
                 public void handle() {
                   tu.checkThread();
-                  tu.azzert(!req.response.writeQueueFull());
+                  tu.azzert(!req.response().writeQueueFull());
                   tu.testComplete();
                 }
               });
@@ -71,14 +69,14 @@ public class DrainingServer extends Verticle {
       @Override
       public void handle(HttpServer event) {
         tu.appReady();
-        startedResult.setResult();
+        startedResult.setResult(null);
       }
     });
   }
 
   public void stop() {
-    server.close(new SimpleHandler() {
-      public void handle() {
+    server.close(new AsyncResultHandler<Void>() {
+      public void handle(AsyncResult<Void> result) {
         tu.checkThread();
         tu.appStopped();
       }

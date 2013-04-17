@@ -1,8 +1,8 @@
 package org.vertx.java.platform.impl.resolver;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
@@ -125,7 +125,7 @@ public abstract class HttpResolution {
   protected void makeRequest(String host, int port, String uri) {
     sendRequest(host, port, uri, new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        Handler<HttpClientResponse> handler = handlers.get(resp.statusCode);
+        Handler<HttpClientResponse> handler = handlers.get(resp.statusCode());
         if (handler != null) {
           handler.handle(resp);
         } else {
@@ -180,7 +180,7 @@ public abstract class HttpResolution {
         }
       }
     });
-    resp.endHandler(new SimpleHandler() {
+    resp.endHandler(new VoidHandler() {
       @Override
       protected void handle() {
         if (!suppressDownloadCounter) {

@@ -91,7 +91,7 @@ public class JavaPumpTest extends TestCase {
     }
   }
 
-  private class FakeReadStream implements ReadStream {
+  private class FakeReadStream implements ReadStream<FakeReadStream> {
 
     private Handler<Buffer> dataHandler;
     private boolean paused;
@@ -104,28 +104,33 @@ public class JavaPumpTest extends TestCase {
       }
     }
 
-    public void dataHandler(Handler<Buffer> handler) {
+    public FakeReadStream dataHandler(Handler<Buffer> handler) {
       this.dataHandler = handler;
+      return this;
     }
 
-    public void pause() {
+    public FakeReadStream pause() {
       paused = true;
       pauseCount++;
+      return this;
     }
 
-    public void resume() {
+    public FakeReadStream resume() {
       paused = false;
       resumeCount++;
+      return this;
     }
 
-    public void exceptionHandler(Handler<Exception> handler) {
+    public FakeReadStream exceptionHandler(Handler<Exception> handler) {
+      return this;
     }
 
-    public void endHandler(Handler<Void> endHandler) {
+    public FakeReadStream endHandler(Handler<Void> endHandler) {
+      return this;
     }
   }
 
-  private class FakeWriteStream implements WriteStream {
+  private class FakeWriteStream implements WriteStream<FakeWriteStream> {
 
     int maxSize;
     Buffer received = new Buffer();
@@ -139,23 +144,27 @@ public class JavaPumpTest extends TestCase {
       }
     }
 
-    public void setWriteQueueMaxSize(int maxSize) {
+    public FakeWriteStream setWriteQueueMaxSize(int maxSize) {
       this.maxSize = maxSize;
+      return this;
     }
 
     public boolean writeQueueFull() {
       return received.length() >= maxSize;
     }
 
-    public void drainHandler(Handler<Void> handler) {
+    public FakeWriteStream drainHandler(Handler<Void> handler) {
       this.drainHandler = handler;
+      return this;
     }
 
-    public void writeBuffer(Buffer data) {
+    public FakeWriteStream write(Buffer data) {
       received.appendBuffer(data);
+      return this;
     }
 
-    public void exceptionHandler(Handler<Exception> handler) {
+    public FakeWriteStream exceptionHandler(Handler<Exception> handler) {
+      return this;
     }
   }
 }

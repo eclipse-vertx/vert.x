@@ -16,7 +16,8 @@
 
 package org.vertx.java.core.file;
 
-import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
@@ -31,9 +32,7 @@ import org.vertx.java.core.streams.WriteStream;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface AsyncFile {
-
-  public static final int BUFFER_SIZE = 8192;
+public interface AsyncFile extends ReadStream<AsyncFile>, WriteStream<AsyncFile> {
 
   /**
    * Close the file. The actual close happens asynchronously.
@@ -44,7 +43,7 @@ public interface AsyncFile {
    * Close the file. The actual close happens asynchronously.
    * The handler will be called when the close is complete, or an error occurs.
    */
-  void close(AsyncResultHandler<Void> handler);
+  void close(Handler<AsyncResult<Void>> handler);
 
   /**
    * Write a {@link Buffer} to the file at position {@code position} in the file, asynchronously.
@@ -54,7 +53,7 @@ public interface AsyncFile {
    * there are no guarantees as to order in which those writes actually occur.<p>
    * The handler will be called when the write is complete, or if an error occurs.
    */
-  void write(Buffer buffer, int position, AsyncResultHandler<Void> handler);
+  AsyncFile write(Buffer buffer, int position, Handler<AsyncResult<Void>> handler);
 
   /**
    * Reads {@code length} bytes of data from the file at position {@code position} in the file, asynchronously.
@@ -63,29 +62,19 @@ public interface AsyncFile {
    * When multiple reads are invoked on the same file there are no guarantees as to order in which those reads actually occur.<p>
    * The handler will be called when the close is complete, or if an error occurs.
    */
-  void read(Buffer buffer, int offset, int position, int length, AsyncResultHandler<Buffer> handler);
-
-  /**
-   * Return a {@link WriteStream} instance operating on this {@code AsyncFile}.
-   */
-  WriteStream getWriteStream();
-
-  /**
-   * Return a {@code ReadStream} instance operating on this {@code AsyncFile}.
-   */
-  ReadStream getReadStream();
+  AsyncFile read(Buffer buffer, int offset, int position, int length, Handler<AsyncResult<Buffer>> handler);
 
   /**
    * Flush any writes made to this file to underlying persistent storage.<p>
    * If the file was opened with {@code flush} set to {@code true} then calling this method will have no effect.<p>
    * The actual flush will happen asynchronously.
    */
-  void flush();
+  AsyncFile flush();
 
   /**
    * Same as {@link #flush} but the handler will be called when the flush is complete or if an error occurs
    * @param handler
    */
-  void flush(AsyncResultHandler<Void> handler);
+  AsyncFile flush(Handler<AsyncResult<Void>> handler);
 
 }

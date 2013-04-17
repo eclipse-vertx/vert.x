@@ -19,6 +19,7 @@ package org.vertx.java.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.*;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
@@ -94,6 +95,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
   }
 
+  @Override
   public DefaultHttpClientRequest setChunked(boolean chunked) {
     check();
     if (written > 0) {
@@ -103,6 +105,12 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     return this;
   }
 
+  @Override
+  public boolean isChunked() {
+    return chunked;
+  }
+
+  @Override
   public Map<String, Object> headers() {
     if (headers == null) {
       headers = new LowerCaseKeyMap();
@@ -110,74 +118,82 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     return headers;
   }
 
+  @Override
   public HttpClientRequest putHeader(String name, Object value) {
     check();
     headers().put(name, value);
     return this;
   }
 
-  public void writeBuffer(Buffer chunk) {
-    check();
-    write(chunk.getByteBuf(), null);
-  }
-
+  @Override
   public DefaultHttpClientRequest write(Buffer chunk) {
     check();
     return write(chunk.getByteBuf(), null);
   }
 
+  @Override
   public DefaultHttpClientRequest write(String chunk) {
     check();
     return write(new Buffer(chunk).getByteBuf(), null);
   }
 
+  @Override
   public DefaultHttpClientRequest write(String chunk, String enc) {
     check();
     return write(new Buffer(chunk, enc).getByteBuf(), null);
   }
 
-  public DefaultHttpClientRequest write(Buffer chunk, Handler<Void> doneHandler) {
+  @Override
+  public DefaultHttpClientRequest write(Buffer chunk, Handler<AsyncResult<Void>> doneHandler) {
     check();
     return write(chunk.getByteBuf(), doneHandler);
   }
 
-  public DefaultHttpClientRequest write(String chunk, Handler<Void> doneHandler) {
+  @Override
+  public DefaultHttpClientRequest write(String chunk, Handler<AsyncResult<Void>> doneHandler) {
     checkComplete();
     return write(new Buffer(chunk).getByteBuf(), doneHandler);
   }
 
-  public DefaultHttpClientRequest write(String chunk, String enc, Handler<Void> doneHandler) {
+  @Override
+  public DefaultHttpClientRequest write(String chunk, String enc, Handler<AsyncResult<Void>> doneHandler) {
     check();
     return write(new Buffer(chunk, enc).getByteBuf(), doneHandler);
   }
 
-  public void setWriteQueueMaxSize(int maxSize) {
+  @Override
+  public HttpClientRequest setWriteQueueMaxSize(int maxSize) {
     check();
     if (conn != null) {
-      conn.setWriteQueueMaxSize(maxSize);
+      conn.doSetWriteQueueMaxSize(maxSize);
     } else {
       pendingMaxSize = maxSize;
     }
+    return this;
   }
 
+  @Override
   public boolean writeQueueFull() {
     check();
     if (conn != null) {
-      return conn.writeQueueFull();
+      return conn.doWriteQueueFull();
     } else {
       return false;
     }
   }
 
-  public void drainHandler(Handler<Void> handler) {
+  @Override
+  public HttpClientRequest drainHandler(Handler<Void> handler) {
     check();
     this.drainHandler = handler;
     if (conn != null) {
       conn.handleInterestedOpsChanged(); //If the channel is already drained, we want to call it immediately
     }
+    return this;
   }
 
-  public void exceptionHandler(final Handler<Exception> handler) {
+  @Override
+  public HttpClientRequest exceptionHandler(final Handler<Exception> handler) {
     check();
     this.exceptionHandler = new Handler<Exception>() {
       @Override
@@ -186,13 +202,17 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
         handler.handle(event);
       }
     };
+    return this;
   }
 
-  public void continueHandler(Handler<Void> handler) {
+  @Override
+  public HttpClientRequest continueHandler(Handler<Void> handler) {
     check();
     this.continueHandler = handler;
+    return this;
   }
 
+  @Override
   public DefaultHttpClientRequest sendHead() {
     check();
     if (conn != null) {
@@ -207,14 +227,17 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     return this;
   }
 
+  @Override
   public void end(String chunk) {
     end(new Buffer(chunk));
   }
 
+  @Override
   public void end(String chunk, String enc) {
     end(new Buffer(chunk, enc));
   }
 
+  @Override
   public void end(Buffer chunk) {
     if (!chunked && !contentLengthSet()) {
       headers().put(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(chunk.length()));
@@ -223,6 +246,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     end();
   }
 
+  @Override
   public void end() {
     check();
     completed = true;
@@ -282,7 +306,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     if (!exceptionOccurred) {
       cancelOutstandingTimeoutTimer();
       try {
-        if (resp.statusCode == 100) {
+        if (resp.statusCode() == 100) {
           if (continueHandler != null) {
             continueHandler.handle(null);
           }
@@ -353,7 +377,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     // we need to write it now
 
     if (pendingMaxSize != -1) {
-      conn.setWriteQueueMaxSize(pendingMaxSize);
+      conn.doSetWriteQueueMaxSize(pendingMaxSize);
     }
     if (pendingChunks != null || writeHead || completed) {
       writeHead();
@@ -404,7 +428,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
   }
 
-  private DefaultHttpClientRequest write(ByteBuf buff, Handler<Void> doneHandler) {
+  private DefaultHttpClientRequest write(ByteBuf buff, Handler<AsyncResult<Void>> doneHandler) {
 
     written += buff.readableBytes();
 
@@ -415,7 +439,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
     if (conn == null) {
       if (pendingChunks == null) {
-        pendingChunks = new LinkedList<PendingChunk>();
+        pendingChunks = new LinkedList<>();
       }
       pendingChunks.add(new PendingChunk(buff, doneHandler));
       connect();
@@ -430,12 +454,10 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     return this;
   }
 
-  private void sendChunk(ByteBuf buff, Handler<Void> doneHandler) {
+  private void sendChunk(ByteBuf buff, Handler<AsyncResult<Void>> doneHandler) {
     Object write = chunked ? new DefaultHttpContent(buff) : buff;
     ChannelFuture writeFuture = conn.write(write);
-    if (doneHandler != null) {
-      conn.addFuture(doneHandler, writeFuture);
-    }
+    conn.addFuture(doneHandler, writeFuture);
   }
 
   private void writeEndChunk() {
@@ -454,9 +476,9 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
   private static class PendingChunk {
     final ByteBuf chunk;
-    final Handler<Void> doneHandler;
+    final Handler<AsyncResult<Void>> doneHandler;
 
-    private PendingChunk(ByteBuf chunk, Handler<Void> doneHandler) {
+    private PendingChunk(ByteBuf chunk, Handler<AsyncResult<Void>> doneHandler) {
       this.chunk = chunk;
       this.doneHandler = doneHandler;
     }

@@ -16,7 +16,9 @@
 
 package org.vertx.java.core.http;
 
+import org.vertx.java.core.ClientSSLSupport;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.TCPSupport;
 
 import java.util.Map;
 
@@ -33,12 +35,12 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface HttpClient {
+public interface HttpClient extends ClientSSLSupport<HttpClient>, TCPSupport<HttpClient> {
 
   /**
    * Set an exception handler
    */
-  void exceptionHandler(Handler<Exception> handler) ;
+  void exceptionHandler(Handler<Exception> handler);
 
   /**
    * Set the maximum pool size<p>
@@ -64,11 +66,23 @@ public interface HttpClient {
   HttpClient setKeepAlive(boolean keepAlive);
 
   /**
+   *
+   * @return Is the client keep alive?
+   */
+  boolean isKeepAlive();
+
+  /**
    * Set the port that the client will attempt to connect to the server on to {@code port}. The default value is
    * {@code 80}
    * @return A reference to this, so multiple invocations can be chained together.
    */
   HttpClient setPort(int port);
+
+  /**
+   *
+   * @return The port
+   */
+  int getPort();
 
   /**
    * Set the host that the client will attempt to connect to the server on to {@code host}. The default value is
@@ -78,17 +92,23 @@ public interface HttpClient {
   HttpClient setHost(String host);
 
   /**
+   *
+   * @return The host
+   */
+  String getHost();
+
+  /**
    * Attempt to connect an HTML5 websocket to the specified URI<p>
    * The connect is done asynchronously and {@code wsConnect} is called back with the websocket
    */
-  void connectWebsocket(final String uri, final Handler<WebSocket> wsConnect);
+  HttpClient connectWebsocket(String uri, Handler<WebSocket> wsConnect);
 
   /**
    * Attempt to connect an HTML5 websocket to the specified URI<p>
    * This version of the method allows you to specify the websockets version using the {@code wsVersion parameter}
    * The connect is done asynchronously and {@code wsConnect} is called back with the websocket
    */
-  void connectWebsocket(final String uri, final WebSocketVersion wsVersion, final Handler<WebSocket> wsConnect);
+  HttpClient connectWebsocket(String uri, WebSocketVersion wsVersion, Handler<WebSocket> wsConnect);
 
   /**
    * This is a quick version of the {@link #get(String, org.vertx.java.core.Handler)}
@@ -97,13 +117,13 @@ public interface HttpClient {
    * {@link HttpClientRequest#end()} on it. With this method the request is immediately sent.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
    */
-  void getNow(String uri, Handler<HttpClientResponse> responseHandler);
+  HttpClient getNow(String uri, Handler<HttpClientResponse> responseHandler);
 
   /**
    * This method works in the same manner as {@link #getNow(String, org.vertx.java.core.Handler)},
    * except that it allows you specify a set of {@code headers} that will be sent with the request.
    */
-  void getNow(String uri, Map<String, ? extends Object> headers, Handler<HttpClientResponse> responseHandler);
+  HttpClient getNow(String uri, Map<String, ? extends Object> headers, Handler<HttpClientResponse> responseHandler);
 
   /**
    * This method returns an {@link HttpClientRequest} instance which represents an HTTP OPTIONS request with the specified {@code uri}.<p>
@@ -172,12 +192,6 @@ public interface HttpClient {
   void close();
 
   /**
-   * If {@code ssl} is {@code true}, this signifies that any connections will be SSL connections.
-   * @return A reference to this, so multiple invocations can be chained together.
-   */
-  HttpClient setSSL(boolean ssl);
-
-  /**
    * If {@code verifyHost} is {@code true}, then the client will try to validate the remote server's certificate
    * hostname against the requested host. Should default to 'true'.
    * This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)} has been set to {@code true}.
@@ -186,191 +200,9 @@ public interface HttpClient {
   HttpClient setVerifyHost(boolean verifyHost);
 
   /**
-   * Set the path to the SSL key store. This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}
-   * has been set to {@code true}.<p>
-   * The SSL key store is a standard Java Key Store, and will contain the client certificate. Client certificates are
-   * only required if the server requests client authentication.<p>
-   * @return A reference to this, so multiple invocations can be chained together.
-   */
-  HttpClient setKeyStorePath(String path);
-
-  /**
-   * Set the password for the SSL key store. This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}
-   * has been set to {@code true}.<p>
-   * @return A reference to this, so multiple invocations can be chained together.
-   */
-  HttpClient setKeyStorePassword(String pwd);
-
-  /**
-   * Set the path to the SSL trust store. This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}
-   * has been set to {@code true}.<p>
-   * The trust store is a standard Java Key Store, and should contain the certificates of any servers that the client trusts.
-   * If you wish the client to trust all server certificates you can use the {@link #setTrustAll(boolean)} method.<p>
-   * @return A reference to this, so multiple invocations can be chained together.
-   */
-  HttpClient setTrustStorePath(String path);
-
-  /**
-   * Set the password for the SSL trust store. This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}
-   * has been set to {@code true}.<p>
-   * @return A reference to this, so multiple invocations can be chained together.
-   */
-  HttpClient setTrustStorePassword(String pwd);
-
-  /**
-   * If you want an SSL client to trust *all* server certificates rather than match them
-   * against those in its trust store, you can set this to true.<p>
-   * Use this with caution as you may be exposed to "main in the middle" attacks
-   * @param trustAll Set to true if you want to trust all server certificates
-   */
-  HttpClient setTrustAll(boolean trustAll);
-
-  /**
-   * If {@code tcpNoDelay} is set to {@code true} then <a href="http://en.wikipedia.org/wiki/Nagle's_algorithm">Nagle's algorithm</a>
-   * will turned <b>off</b> for the TCP connections created by this instance.
-   * @return a reference to this so multiple method calls can be chained together
-   */
-  HttpClient setTCPNoDelay(boolean tcpNoDelay);
-
-  /**
-   * Set the TCP send buffer size for connections created by this instance to {@code size} in bytes.
-   * @return a reference to this so multiple method calls can be chained together
-   */
-  HttpClient setSendBufferSize(int size);
-
-  /**
-   * Set the TCP receive buffer size for connections created by this instance to {@code size} in bytes.
-   * @return a reference to this so multiple method calls can be chained together
-   */
-  HttpClient setReceiveBufferSize(int size) ;
-
-  /**
-   * Set the TCP keepAlive setting for connections created by this instance to {@code keepAlive}.
-   * @return a reference to this so multiple method calls can be chained together
-   */
-  HttpClient setTCPKeepAlive(boolean keepAlive);
-
-  /**
-   * Set the TCP reuseAddress setting for connections created by this instance to {@code reuse}.
-   * @return a reference to this so multiple method calls can be chained together
-   */
-  HttpClient setReuseAddress(boolean reuse);
-
-  /**
-   * Set the TCP soLinger setting for connections created by this instance to {@code linger}.
-   * Using a negative value will disable soLinger.
-   * @return a reference to this so multiple method calls can be chained together
-   */
-  HttpClient setSoLinger(int linger);
-
-  /**
-   * Set the TCP trafficClass setting for connections created by this instance to {@code trafficClass}.
-   * @return a reference to this so multiple method calls can be chained together
-   */
-  HttpClient setTrafficClass(int trafficClass);
-
-  /**
-   * Set the connect timeout in milliseconds.
-   * @return a reference to this so multiple method calls can be chained together
-   */
-  HttpClient setConnectTimeout(long timeout);
-
-  /**
-   * Set if vertx should use pooled buffers for performance reasons. Doing so will give the best throughput but
-   * may need a bit higher memory footprint.
-   * @return a reference to this so multiple method calls can be chained together
-   */
-  HttpClient setUsePooledBuffers(boolean pooledBuffers);
-
-  /**
-   * @return true if Nagle's algorithm is disabled.
-   */
-  Boolean isTCPNoDelay();
-
-  /**
-   * @return The TCP send buffer size
-   */
-  Integer getSendBufferSize();
-
-  /**
-   * @return The TCP receive buffer size
-   */
-  Integer getReceiveBufferSize();
-
-  /**
-   *
-   * @return true if TCP keep alive is enabled
-   */
-  Boolean isTCPKeepAlive();
-
-  /**
-   *
-   * @return The value of TCP reuse address
-   */
-  Boolean isReuseAddress();
-
-  /**
-   *
-   * @return the value of TCP so linger
-   */
-  Integer getSoLinger();
-
-  /**
-   *
-   * @return the value of TCP traffic class
-   */
-  Integer getTrafficClass();
-
-/**
-   *
-   * @return The connect timeout in milliseconds
-   */
-  Long getConnectTimeout();
-
-  /**
-   *
-   * @return true if this client will make SSL connections
-   */
-  boolean isSSL();
-
-  /**
    *
    * @return true if this client will validate the remote server's certificate hostname against the requested host
    */
   boolean isVerifyHost();
 
-  /**
-   *
-   * @return true if this client will trust all server certificates.
-   */
-  boolean isTrustAll();
-
-  /**
-   *
-   * @return The path to the key store
-   */
-  String getKeyStorePath();
-
-  /**
-   *
-   * @return The keystore password
-   */
-  String getKeyStorePassword();
-
-  /**
-   *
-   * @return The trust store path
-   */
-  String getTrustStorePath();
-
-  /**
-   *
-   * @return The trust store password
-   */
-  String getTrustStorePassword();
-
-  /**
-   * @return {@code true} if pooled buffers are used
-   */
-  boolean isUsePooledBuffers();
 }

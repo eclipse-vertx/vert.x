@@ -16,8 +16,10 @@
 
 package vertx.tests.core.websockets;
 
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
 import org.vertx.java.testframework.TestClientBase;
@@ -44,8 +46,8 @@ public class WebsocketsTestClient extends TestClientBase {
   public void stop() {
     client.close();
     if (server != null) {
-      server.close(new SimpleHandler() {
-        public void handle() {
+      server.close(new AsyncResultHandler<Void>() {
+        public void handle(AsyncResult<Void> result) {
           tu.checkThread();
           WebsocketsTestClient.super.stop();
         }
@@ -110,13 +112,13 @@ public class WebsocketsTestClient extends TestClientBase {
     server = vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
         tu.checkThread();
-        tu.azzert(path.equals(ws.path));
+        tu.azzert(path.equals(ws.path()));
 
         ws.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
             tu.checkThread();
             //Echo it back
-            ws.writeBuffer(data);
+            ws.write(data);
           }
         });
       }
@@ -168,7 +170,7 @@ public class WebsocketsTestClient extends TestClientBase {
 
     server = vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
-        tu.azzert(path.equals(ws.path));
+        tu.azzert(path.equals(ws.path()));
         ws.writeBinaryFrame(buff);
       }
     });
@@ -202,7 +204,7 @@ public class WebsocketsTestClient extends TestClientBase {
       public void handle(final ServerWebSocket ws) {
 
         tu.checkThread();
-        tu.azzert(path.equals(ws.path));
+        tu.azzert(path.equals(ws.path()));
         ws.reject();
       }
 
@@ -231,7 +233,7 @@ public class WebsocketsTestClient extends TestClientBase {
     for (int i = 0; i < numConnections; i++) {
       client.connectWebsocket("http://somehost", new Handler<WebSocket>() {
         public void handle(WebSocket ws) {
-          ws.closedHandler(new SimpleHandler() {
+          ws.closeHandler(new VoidHandler() {
             public void handle() {
               int count = counter.incrementAndGet();
               if (count == numConnections) {

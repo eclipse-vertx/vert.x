@@ -16,8 +16,8 @@
 
 package org.vertx.java.platform;
 
+import org.vertx.java.core.Future;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VoidResult;
 
 /**
  * A verticle is the unit of deployment in vert.x<p>
@@ -66,9 +66,8 @@ public abstract class Verticle {
 
   /**
    * Vert.x calls the start method when the verticle is deployed
-   * @throws Exception
    */
-  public void start() throws Exception {
+  public void start() {
   }
 
   /**
@@ -76,11 +75,10 @@ public abstract class Verticle {
    * This is useful if your verticle deploys other verticles or modules and you don't want this verticle to
    * be considered started until the other modules and verticles have been started.
    * @param startedResult When you are happy your verticle is started set the result
-   * @throws Exception
    */
-  public void start(VoidResult startedResult) throws Exception {
+  public void start(Future<Void> startedResult) {
     start();
-    startedResult.setResult();
+    startedResult.setResult(null);
   }
 
   /**
@@ -88,7 +86,7 @@ public abstract class Verticle {
    * Put any cleanup code for your verticle in here
    * @throws Exception
    */
-  public void stop() throws Exception {
+  public void stop() {
   }
 
 }

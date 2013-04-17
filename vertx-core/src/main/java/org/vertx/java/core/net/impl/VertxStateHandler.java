@@ -49,8 +49,12 @@ public abstract class VertxStateHandler<C extends ConnectionBase> extends Channe
         conn.setWritable(evt.isWritable());
         Context context = getContext(conn);
         if (context.isOnCorrectWorker(ch.eventLoop())) {
-          vertx.setContext(context);
-          conn.handleInterestedOpsChanged();
+          try {
+            vertx.setContext(context);
+            conn.handleInterestedOpsChanged();
+          } catch (Throwable t) {
+            context.reportException(t);
+          }
         } else {
           context.execute(new Runnable() {
             public void run() {
@@ -69,9 +73,13 @@ public abstract class VertxStateHandler<C extends ConnectionBase> extends Channe
     if (sock != null && t instanceof Exception) {
       Context context = getContext(sock);
       if (context.isOnCorrectWorker(ch.eventLoop())) {
-        vertx.setContext(context);
-        sock.handleException((Exception) t);
-        ch.close();
+        try {
+          vertx.setContext(context);
+          sock.handleException((Exception) t);
+          ch.close();
+        } catch (Throwable tt) {
+          context.reportException(tt);
+        }
       } else {
         context.execute(new Runnable() {
           public void run() {
@@ -92,8 +100,12 @@ public abstract class VertxStateHandler<C extends ConnectionBase> extends Channe
     if (sock != null) {
       Context context = getContext(sock);
       if (context.isOnCorrectWorker(ch.eventLoop())) {
-        vertx.setContext(context);
-        sock.handleClosed();
+        try {
+          vertx.setContext(context);
+          sock.handleClosed();
+        } catch (Throwable t) {
+          context.reportException(t);
+        }
       } else {
         context.execute(new Runnable() {
           public void run() {

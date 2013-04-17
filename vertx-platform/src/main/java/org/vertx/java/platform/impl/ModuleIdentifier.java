@@ -31,7 +31,7 @@ public class ModuleIdentifier {
 
   public ModuleIdentifier(String stringForm) {
     if (stringForm == null) {
-      throw new NullPointerException("stringForm cannot be null");
+      throw new NullPointerException("Module identifier cannot be null");
     }
     this.stringForm = stringForm;
     String[] parts = stringForm.split(SPLIT_REGEX);

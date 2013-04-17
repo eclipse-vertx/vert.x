@@ -16,9 +16,7 @@
 
 package vertx.tests.core.http;
 
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.VoidResult;
+import org.vertx.java.core.*;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.platform.Verticle;
@@ -37,7 +35,7 @@ public class InstanceCheckServer extends Verticle {
 
   private final String id = UUID.randomUUID().toString();
 
-  public void start(final VoidResult result) {
+  public void start(final Future<Void> result) {
     tu = new TestUtils(vertx);
     server = vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
@@ -47,7 +45,7 @@ public class InstanceCheckServer extends Verticle {
         vertx.sharedData().getSet("instances").add(id);
         vertx.sharedData().getSet("requests").add(UUID.randomUUID().toString());
 
-        req.response.end();
+        req.response().end();
 
       }
     });
@@ -55,14 +53,14 @@ public class InstanceCheckServer extends Verticle {
       @Override
       public void handle(HttpServer event) {
         tu.appReady();
-        result.setResult();
+        result.setResult(null);
       }
     });
   }
 
   public void stop() {
-    server.close(new SimpleHandler() {
-      public void handle() {
+    server.close(new AsyncResultHandler<Void>() {
+      public void handle(AsyncResult<Void> res) {
         tu.checkThread();
         tu.appStopped();
       }
