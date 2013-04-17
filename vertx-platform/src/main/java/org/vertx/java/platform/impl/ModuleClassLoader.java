@@ -31,7 +31,11 @@ public class ModuleClassLoader extends URLClassLoader {
   // When running in an IDE we want to always try and load from the platform classloader first
   // This allows in-container tests running in the IDE to immediately see changes to any resources in the module
   // without having to rebuild the module into the mods directory every time
-  public static boolean reverseLoadOrder = true;
+  private static boolean loadWithPlatformCL;
+  static {
+    String val = System.getProperty("vertx.loadWithPlatformCL");
+    loadWithPlatformCL = val == null || Boolean.valueOf(val);
+  }
 
   // When loading resources or classes we need to catch any circular dependencies
   private static ThreadLocal<Set<ModuleClassLoader>> circDepTL = new ThreadLocal<>();
@@ -66,7 +70,7 @@ public class ModuleClassLoader extends URLClassLoader {
       throws ClassNotFoundException {
     Class<?> c = findLoadedClass(name);
     if (c == null) {
-      if (reverseLoadOrder) {
+      if (loadWithPlatformCL) {
         try {
           c = platformClassLoader.loadClass(name);
         } catch (ClassNotFoundException e) {
@@ -102,7 +106,7 @@ public class ModuleClassLoader extends URLClassLoader {
             checkClearTLs();
           }
           if (c == null) {
-            if (reverseLoadOrder) {
+            if (loadWithPlatformCL) {
               throw e;
             } else {
               // If we get here then the module classloaders couldn't load it so we try the platform class loader

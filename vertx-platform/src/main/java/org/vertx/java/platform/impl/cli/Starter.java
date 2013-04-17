@@ -53,7 +53,7 @@ public class Starter {
     // Show download stats - they don't display properly in Gradle so we only have them when running
     // on the command line
     HttpResolution.suppressDownloadCounter = false;
-    ModuleClassLoader.reverseLoadOrder = false;
+    System.setProperty("vertx.loadWithPlatformCL", "false");
     new Starter(args);
   }
 
