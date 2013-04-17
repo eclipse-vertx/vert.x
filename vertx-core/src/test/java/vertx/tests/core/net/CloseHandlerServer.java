@@ -17,7 +17,7 @@
 package vertx.tests.core.net;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.net.NetSocket;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,13 +39,13 @@ public class CloseHandlerServer extends BaseServer {
       final AtomicInteger counter = new AtomicInteger(0);
       public void handle(final NetSocket sock) {
         tu.checkThread();
-        sock.endHandler(new SimpleHandler() {
+        sock.endHandler(new VoidHandler() {
           public void handle() {
             tu.checkThread();
             tu.azzert(counter.incrementAndGet() == 1);
           }
         });
-        sock.closedHandler(new SimpleHandler() {
+        sock.closeHandler(new VoidHandler() {
           public void handle() {
             tu.checkThread();
             tu.azzert(counter.incrementAndGet() == 2);

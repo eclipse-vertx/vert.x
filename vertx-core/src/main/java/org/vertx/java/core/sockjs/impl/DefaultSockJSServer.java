@@ -17,8 +17,9 @@
 package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxFactory;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.WebSocketMatcher;
@@ -68,7 +69,7 @@ public class DefaultSockJSServer implements SockJSServer {
       @Override
       public void handle(HttpServerRequest req) {
         if (log.isTraceEnabled()) {
-          log.trace("Got request in sockjs server: " + req.uri);
+          log.trace("Got request in sockjs server: " + req.uri());
         }
         rm.handle(req);
       }
@@ -103,12 +104,13 @@ public class DefaultSockJSServer implements SockJSServer {
     return config;
   }
   
-  public void setHook(EventBusBridgeHook hook) {
+  public SockJSServer setHook(EventBusBridgeHook hook) {
 	  this.hook = hook;
+    return this;
   }
 
-  public void installApp(JsonObject config,
-                         final Handler<SockJSSocket> sockHandler) {
+  public SockJSServer installApp(JsonObject config,
+                                 final Handler<SockJSSocket> sockHandler) {
 
     config = setDefaults(config);
 
@@ -123,8 +125,8 @@ public class DefaultSockJSServer implements SockJSServer {
     rm.getWithRegEx(prefix + "\\/?", new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         if (log.isTraceEnabled()) log.trace("Returning welcome response");
-        req.response.headers().put("Content-Type", "text/plain; charset=UTF-8");
-        req.response.end("Welcome to SockJS!\n");
+        req.response().headers().put("Content-Type", "text/plain; charset=UTF-8");
+        req.response().end("Welcome to SockJS!\n");
       }
     });
 
@@ -178,37 +180,41 @@ public class DefaultSockJSServer implements SockJSServer {
 
     rm.getWithRegEx(prefix + "\\/.+", new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-        if (log.isTraceEnabled()) log.trace("Request: " + req.uri + " does not match, returning 404");
-        req.response.statusCode = 404;
-        req.response.end();
+        if (log.isTraceEnabled()) log.trace("Request: " + req.uri() + " does not match, returning 404");
+        req.response().setStatusCode(404);
+        req.response().end();
       }
     });
+    return this;
   }
 
-  public void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted) {
+  public SockJSServer bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted) {
 	  EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted);
     if (hook != null) {
       busBridge.setHook(hook);
     }
     installApp(sjsConfig, busBridge);
+    return this;
   }
 
-  public void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
+  public SockJSServer bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
                      long authTimeout) {
 	  EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted, authTimeout);
 	  if (hook != null) {
 		  busBridge.setHook(hook);
 	  }
     installApp(sjsConfig, busBridge);
+    return this;
   }
 
-  public void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
+  public SockJSServer bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
                      long authTimeout, String authAddress) {
 	  EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted, authTimeout, authAddress);
 	  if (hook != null) {
 		  busBridge.setHook(hook);
 	  }
     installApp(sjsConfig, busBridge);
+    return this;
   }
 
   private Handler<HttpServerRequest> createChunkingTestHandler() {
@@ -248,10 +254,10 @@ public class DefaultSockJSServer implements SockJSServer {
       }
 
       public void handle(HttpServerRequest req) {
-        req.response.headers().put("Content-Type", "application/javascript; charset=UTF-8");
+        req.response().headers().put("Content-Type", "application/javascript; charset=UTF-8");
 
         BaseTransport.setCORS(req);
-        req.response.setChunked(true);
+        req.response().setChunked(true);
 
         Buffer h = new Buffer(2);
         h.appendString("h\n");
@@ -272,7 +278,7 @@ public class DefaultSockJSServer implements SockJSServer {
         setTimeout(timeouts, 625, h);
         setTimeout(timeouts, 3125, h);
 
-        runTimeouts(timeouts, req.response);
+        runTimeouts(timeouts, req.response());
 
       }
     };
@@ -285,16 +291,16 @@ public class DefaultSockJSServer implements SockJSServer {
         try {
           if (log.isTraceEnabled()) log.trace("In Iframe handler");
           if (etag != null && etag.equals(req.headers().get("if-none-match"))) {
-            req.response.statusCode = 304;
-            req.response.end();
+            req.response().setStatusCode(304);
+            req.response().end();
           } else {
-            req.response.headers().put("Content-Type", "text/html; charset=UTF-8");
-            req.response.headers().put("Cache-Control", "public,max-age=31536000");
+            req.response().headers().put("Content-Type", "text/html; charset=UTF-8");
+            req.response().headers().put("Cache-Control", "public,max-age=31536000");
             long oneYear = 365 * 24 * 60 * 60 * 1000;
             String expires = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz").format(new Date(System.currentTimeMillis() + oneYear));
-            req.response.headers().put("Expires", expires);
-            req.response.headers().put("ETag", etag);
-            req.response.end(iframeHTML);
+            req.response().headers().put("Expires", expires);
+            req.response().headers().put("ETag", etag);
+            req.response().end(iframeHTML);
           }
         } catch (Exception e) {
           log.error("Failed to server iframe", e);
@@ -340,7 +346,7 @@ public class DefaultSockJSServer implements SockJSServer {
 
   // For debug only
   public static void main(String[] args) throws Exception {
-    Vertx vertx = Vertx.newVertx();
+    Vertx vertx = VertxFactory.newVertx();
     HttpServer httpServer = vertx.createHttpServer();
     DefaultSockJSServer sjsServer = (DefaultSockJSServer)vertx.createSockJSServer(httpServer);
     sjsServer.installTestApplications();
@@ -363,7 +369,7 @@ public class DefaultSockJSServer implements SockJSServer {
       public void handle(final SockJSSocket sock) {
         sock.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
-            sock.writeBuffer(buff);
+            sock.write(buff);
           }
         });
       }
@@ -384,7 +390,7 @@ public class DefaultSockJSServer implements SockJSServer {
           public void handle(final SockJSSocket sock) {
             sock.dataHandler(new Handler<Buffer>() {
               public void handle(Buffer buff) {
-                sock.writeBuffer(buff);
+                sock.write(buff);
               }
             });
           }
@@ -395,10 +401,10 @@ public class DefaultSockJSServer implements SockJSServer {
       public void handle(final SockJSSocket sock) {
         final long timerID = vertx.setPeriodic(1000, new Handler<Long>() {
           public void handle(Long id) {
-            sock.writeBuffer(new Buffer("tick!"));
+            sock.write(new Buffer("tick!"));
           }
         });
-        sock.endHandler(new SimpleHandler() {
+        sock.endHandler(new VoidHandler() {
           public void handle() {
             vertx.cancelTimer(timerID);
           }
@@ -422,7 +428,7 @@ public class DefaultSockJSServer implements SockJSServer {
             for (int i = 0; i < num; i++) {
               buff.appendByte((byte)'x');
             }
-            sock.writeBuffer(buff);
+            sock.write(buff);
           }
         });
       }
@@ -432,7 +438,7 @@ public class DefaultSockJSServer implements SockJSServer {
                new Handler<SockJSSocket>() {
       final Set<String> connections = vertx.sharedData().getSet("conns");
       public void handle(final SockJSSocket sock) {
-        connections.add(sock.writeHandlerID);
+        connections.add(sock.writeHandlerID());
         sock.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
             for (String actorID : connections) {
@@ -440,9 +446,9 @@ public class DefaultSockJSServer implements SockJSServer {
             }
           }
         });
-        sock.endHandler(new SimpleHandler() {
+        sock.endHandler(new VoidHandler() {
           public void handle() {
-            connections.remove(sock.writeHandlerID);
+            connections.remove(sock.writeHandlerID());
           }
         });
       }
@@ -453,7 +459,7 @@ public class DefaultSockJSServer implements SockJSServer {
         public void handle(final SockJSSocket sock) {
           sock.dataHandler(new Handler<Buffer>() {
             public void handle(Buffer buff) {
-              sock.writeBuffer(buff);
+              sock.write(buff);
             }
           });
         }

@@ -16,9 +16,10 @@
 
 package org.vertx.java.core.http.impl;
 
-import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.LastHttpContent;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.logging.Logger;
@@ -33,29 +34,45 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultHttpClientResponse extends HttpClientResponse {
+public class DefaultHttpClientResponse implements HttpClientResponse  {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultHttpClientResponse.class);
 
+  private final int statusCode;
+  private final String statusMessage;
   private final DefaultHttpClientRequest request;
   private final ClientConnection conn;
+
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Exception> exceptionHandler;
   private final HttpResponse response;
   private LastHttpContent trailer;
+
   // Cache these for performance
   private Map<String, String> headers;
   private Map<String, String> trailers;
   private List<String> cookies;
 
   DefaultHttpClientResponse(DefaultHttpClientRequest request, ClientConnection conn, HttpResponse response) {
-    super(response.getStatus().code(), response.getStatus().reasonPhrase());
+    statusCode = response.getStatus().code();
+    statusMessage = response.getStatus().reasonPhrase();
     this.request = request;
     this.conn = conn;
     this.response = response;
   }
 
+  @Override
+  public int statusCode() {
+    return statusCode;
+  }
+
+  @Override
+  public String statusMessage() {
+    return statusMessage;
+  }
+
+  @Override
   public Map<String, String> headers() {
     if (headers == null) {
       headers = HeaderUtils.simplifyHeaders(response.headers().entries());
@@ -63,6 +80,7 @@ public class DefaultHttpClientResponse extends HttpClientResponse {
     return headers;
   }
 
+  @Override
   public Map<String, String> trailers() {
     if (trailers == null) {
       if (trailer == null) {
@@ -74,6 +92,7 @@ public class DefaultHttpClientResponse extends HttpClientResponse {
     return trailers;
   }
 
+  @Override
   public List<String> cookies() {
     if (cookies == null) {
       cookies = new ArrayList<String>();
@@ -85,24 +104,50 @@ public class DefaultHttpClientResponse extends HttpClientResponse {
     return cookies;
   }
 
-  public void dataHandler(Handler<Buffer> dataHandler) {
+  @Override
+  public HttpClientResponse dataHandler(Handler<Buffer> dataHandler) {
     this.dataHandler = dataHandler;
+    return this;
   }
 
-  public void endHandler(Handler<Void> endHandler) {
+  @Override
+  public HttpClientResponse endHandler(Handler<Void> endHandler) {
     this.endHandler = endHandler;
+    return this;
   }
 
-  public void exceptionHandler(Handler<Exception> exceptionHandler) {
+  @Override
+  public HttpClientResponse exceptionHandler(Handler<Exception> exceptionHandler) {
     this.exceptionHandler = exceptionHandler;
+    return this;
   }
 
-  public void pause() {
-    conn.pause();
+  @Override
+  public HttpClientResponse pause() {
+    conn.doPause();
+    return this;
   }
 
-  public void resume() {
-    conn.resume();
+  @Override
+  public HttpClientResponse resume() {
+    conn.doResume();
+    return this;
+  }
+
+  @Override
+  public HttpClientResponse bodyHandler(final Handler<Buffer> bodyHandler) {
+    final Buffer body = new Buffer();
+    dataHandler(new Handler<Buffer>() {
+      public void handle(Buffer buff) {
+        body.appendBuffer(buff);
+      }
+    });
+    endHandler(new VoidHandler() {
+      public void handle() {
+        bodyHandler.handle(body);
+      }
+    });
+    return this;
   }
 
   void handleChunk(Buffer data) {

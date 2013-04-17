@@ -19,12 +19,13 @@ package vertx.tests.core.filesystem;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.file.FileProps;
 import org.vertx.java.core.file.FileSystemException;
 import org.vertx.java.core.file.FileSystemProps;
+import org.vertx.java.core.file.impl.DefaultAsyncFile;
 import org.vertx.java.core.impl.Windows;
 import org.vertx.java.core.streams.Pump;
 import org.vertx.java.core.streams.ReadStream;
@@ -83,7 +84,7 @@ public class TestClient extends TestClientBase {
     final String source = "foo.txt";
     final String target = "bar.txt";
     createFileWithJunk(source, 100);
-    testCopy(source, target, false, true, new SimpleHandler() {
+    testCopy(source, target, false, true, new VoidHandler() {
       public void handle() {
         tu.azzert(fileExists(source));
         tu.azzert(fileExists(target));
@@ -96,7 +97,7 @@ public class TestClient extends TestClientBase {
     final String target = "bar.txt";
     createFileWithJunk(source, 100);
     createFileWithJunk(target, 100);
-    testCopy(source, target, false, false, new SimpleHandler() {
+    testCopy(source, target, false, false, new VoidHandler() {
       public void handle() {
         tu.azzert(fileExists(source));
         tu.azzert(fileExists(target));
@@ -110,7 +111,7 @@ public class TestClient extends TestClientBase {
     final String target = dir + pathSep + "bar.txt";
     mkDir(dir);
     createFileWithJunk(source, 100);
-    testCopy(source, target, false, true, new SimpleHandler() {
+    testCopy(source, target, false, true, new VoidHandler() {
       public void handle() {
         tu.azzert(fileExists(source));
         tu.azzert(fileExists(target));
@@ -122,7 +123,7 @@ public class TestClient extends TestClientBase {
     final String source = "some-dir";
     final String target = "some-other-dir";
     mkDir(source);
-    testCopy(source, target, false, true, new SimpleHandler() {
+    testCopy(source, target, false, true, new VoidHandler() {
       public void handle() {
         tu.azzert(fileExists(source));
         tu.azzert(fileExists(target));
@@ -136,7 +137,7 @@ public class TestClient extends TestClientBase {
     final String file1 = pathSep + "somefile.bar";
     mkDir(source);
     createFileWithJunk(source + file1, 100);
-    testCopy(source, target, false, true, new SimpleHandler() {
+    testCopy(source, target, false, true, new VoidHandler() {
       public void handle() {
         tu.azzert(fileExists(source));
         tu.azzert(fileExists(target));
@@ -150,7 +151,7 @@ public class TestClient extends TestClientBase {
     final String target = "some-other-dir";
     mkDir(source);
     mkDir(target);
-    testCopy(source, target, false, false, new SimpleHandler() {
+    testCopy(source, target, false, false, new VoidHandler() {
       public void handle() {
         tu.azzert(fileExists(source));
         tu.azzert(fileExists(target));
@@ -170,7 +171,7 @@ public class TestClient extends TestClientBase {
     mkDir(dir + pathSep + dir2);
     createFileWithJunk(dir + pathSep + dir2 + file3, 100);
     final String target = "some-other-dir";
-    testCopy(dir, target, true, true, new SimpleHandler() {
+    testCopy(dir, target, true, true, new VoidHandler() {
       public void handle() {
         tu.azzert(fileExists(dir));
         tu.azzert(fileExists(target));
@@ -195,7 +196,7 @@ public class TestClient extends TestClientBase {
     final String source = "foo.txt";
     final String target = "bar.txt";
     createFileWithJunk(source, 100);
-    testMove(source, target, true, new SimpleHandler() {
+    testMove(source, target, true, new VoidHandler() {
       public void handle() {
         tu.azzert(!fileExists(source));
         tu.azzert(fileExists(target));
@@ -208,7 +209,7 @@ public class TestClient extends TestClientBase {
     final String target = "bar.txt";
     createFileWithJunk(source, 100);
     createFileWithJunk(target, 100);
-    testMove(source, target, false, new SimpleHandler() {
+    testMove(source, target, false, new VoidHandler() {
       public void handle() {
         tu.azzert(fileExists(source));
         tu.azzert(fileExists(target));
@@ -220,7 +221,7 @@ public class TestClient extends TestClientBase {
     final String source = "some-dir";
     final String target = "some-other-dir";
     mkDir(source);
-    testMove(source, target, true, new SimpleHandler() {
+    testMove(source, target, true, new VoidHandler() {
       public void handle() {
         tu.azzert(!fileExists(source));
         tu.azzert(fileExists(target));
@@ -233,7 +234,7 @@ public class TestClient extends TestClientBase {
     final String target = "some-other-dir";
     mkDir(source);
     mkDir(target);
-    testMove(source, target, false, new SimpleHandler() {
+    testMove(source, target, false, new VoidHandler() {
       public void handle() {
         tu.azzert(fileExists(source));
         tu.azzert(fileExists(target));
@@ -253,7 +254,7 @@ public class TestClient extends TestClientBase {
     mkDir(dir + pathSep + dir2);
     createFileWithJunk(dir + pathSep + dir2 + file3, 100);
     final String target = "some-other-dir";
-    testMove(dir, target, true, new SimpleHandler() {
+    testMove(dir, target, true, new VoidHandler() {
       public void handle() {
         tu.azzert(!fileExists(dir));
         tu.azzert(fileExists(target));
@@ -274,7 +275,7 @@ public class TestClient extends TestClientBase {
     final long truncatedLen = 534;
     createFileWithJunk(file1, initialLen);
     tu.azzert(fileLength(file1) == initialLen);
-    testTruncate(file1, truncatedLen, true, new SimpleHandler() {
+    testTruncate(file1, truncatedLen, true, new VoidHandler() {
       public void handle() {
         tu.azzert(fileLength(file1) == truncatedLen);
       }
@@ -320,7 +321,7 @@ public class TestClient extends TestClientBase {
     final String perms = (String)params.get("perms");
     final String file1 = "some-file.dat";
     createFileWithJunk(file1, 100);
-    testChmod(file1, perms, null, true, new SimpleHandler() {
+    testChmod(file1, perms, null, true, new VoidHandler() {
       public void handle() {
         azzertPerms(perms, file1);
         deleteFile(file1);
@@ -371,7 +372,7 @@ public class TestClient extends TestClientBase {
     createFileWithJunk(dir + file2, 100);
     mkDir(dir + pathSep + dir2);
     createFileWithJunk(dir + pathSep + dir2 + file3, 100);
-    testChmod(dir, perms, dirPerms, true, new SimpleHandler() {
+    testChmod(dir, perms, dirPerms, true, new VoidHandler() {
       public void handle() {
         azzertPerms(dirPerms, dir);
         azzertPerms(perms, dir + file1);
@@ -409,14 +410,14 @@ public class TestClient extends TestClientBase {
     testProps(fileName, false, true, new Handler<FileProps>() {
       public void handle(FileProps st) {
         tu.azzert(st != null);
-        tu.azzert(fileSize == st.size);
-        tu.azzert(st.creationTime.getTime() >= start);
-        tu.azzert(st.lastAccessTime.getTime() >= start);
-        tu.azzert(st.lastModifiedTime.getTime() >= start);
-        tu.azzert(!st.isDirectory);
-        tu.azzert(!st.isOther);
-        tu.azzert(st.isRegularFile);
-        tu.azzert(!st.isSymbolicLink);
+        tu.azzert(fileSize == st.size());
+        tu.azzert(st.creationTime().getTime() >= start);
+        tu.azzert(st.lastAccessTime().getTime() >= start);
+        tu.azzert(st.lastModifiedTime().getTime() >= start);
+        tu.azzert(!st.isDirectory());
+        tu.azzert(!st.isOther());
+        tu.azzert(st.isRegularFile());
+        tu.azzert(!st.isSymbolicLink());
       }
     });
   }
@@ -441,17 +442,17 @@ public class TestClient extends TestClientBase {
     testProps(linkName, false, true, new Handler<FileProps>() {
       public void handle(FileProps st) {
         tu.azzert(st != null);
-        tu.azzert(fileSize == st.size);
-        tu.azzert(st.creationTime.getTime() >= start);
-        tu.azzert(st.creationTime.getTime() <= end);
-        tu.azzert(st.lastAccessTime.getTime() >= start);
-        tu.azzert(st.lastAccessTime.getTime() <= end);
-        tu.azzert(st.lastModifiedTime.getTime() >= start);
-        tu.azzert(st.lastModifiedTime.getTime() <= end);
-        tu.azzert(!st.isDirectory);
-        tu.azzert(!st.isOther);
-        tu.azzert(st.isRegularFile);
-        tu.azzert(!st.isSymbolicLink);
+        tu.azzert(fileSize == st.size());
+        tu.azzert(st.creationTime().getTime() >= start);
+        tu.azzert(st.creationTime().getTime() <= end);
+        tu.azzert(st.lastAccessTime().getTime() >= start);
+        tu.azzert(st.lastAccessTime().getTime() <= end);
+        tu.azzert(st.lastModifiedTime().getTime() >= start);
+        tu.azzert(st.lastModifiedTime().getTime() <= end);
+        tu.azzert(!st.isDirectory());
+        tu.azzert(!st.isOther());
+        tu.azzert(st.isRegularFile());
+        tu.azzert(!st.isSymbolicLink());
       }
     });
   }
@@ -465,7 +466,7 @@ public class TestClient extends TestClientBase {
     testProps(linkName, true, true, new Handler<FileProps>() {
       public void handle(FileProps st) {
         tu.azzert(st != null);
-        tu.azzert(st.isSymbolicLink);
+        tu.azzert(st.isSymbolicLink());
       }
     });
   }
@@ -477,18 +478,18 @@ public class TestClient extends TestClientBase {
         tu.checkThread();
         if (ar.failed()) {
           if (shouldPass) {
-            tu.exception(ar.exception, "stat failed");
+            tu.exception(ar.cause(), "stat failed");
           } else {
-            tu.azzert(ar.exception instanceof FileSystemException);
+            tu.azzert(ar.cause() instanceof FileSystemException);
             if (afterOK != null) {
-              afterOK.handle(ar.result);
+              afterOK.handle(ar.result());
             }
             tu.testComplete();
           }
         } else {
           if (shouldPass) {
             if (afterOK != null) {
-              afterOK.handle(ar.result);
+              afterOK.handle(ar.result());
             }
             tu.testComplete();
           } else {
@@ -509,7 +510,7 @@ public class TestClient extends TestClientBase {
     final long fileSize = 1234;
     createFileWithJunk(fileName, fileSize);
     final String linkName = "some-link.txt";
-    testLink(linkName, fileName, false, true, new SimpleHandler() {
+    testLink(linkName, fileName, false, true, new VoidHandler() {
       public void handle() {
         tu.azzert(fileLength(linkName) == fileSize);
         tu.azzert(!Files.isSymbolicLink(Paths.get(TEST_DIR + pathSep + linkName)));
@@ -522,7 +523,7 @@ public class TestClient extends TestClientBase {
     final long fileSize = 1234;
     createFileWithJunk(fileName, fileSize);
     final String symlinkName = "some-sym-link.txt";
-    testLink(symlinkName, fileName, true, true, new SimpleHandler() {
+    testLink(symlinkName, fileName, true, true, new VoidHandler() {
       public void handle() {
        tu.azzert(fileLength(symlinkName) == fileSize);
        tu.azzert(Files.isSymbolicLink(Paths.get(TEST_DIR + pathSep + symlinkName)));
@@ -548,7 +549,7 @@ public class TestClient extends TestClientBase {
     final String linkName = "some-link.txt";
     Files.createLink(Paths.get(TEST_DIR + pathSep + linkName), Paths.get(TEST_DIR + pathSep + fileName));
     tu.azzert(fileSize == fileLength(linkName));
-    AsyncResultHandler<Void> handler = createHandler(true, new SimpleHandler() {
+    AsyncResultHandler<Void> handler = createHandler(true, new VoidHandler() {
       public void handle() {
         tu.azzert(!fileExists(linkName));
       }
@@ -566,9 +567,9 @@ public class TestClient extends TestClientBase {
       public void handle(AsyncResult<String> ar) {
         tu.checkThread();
         if (ar.failed()) {
-          tu.exception(ar.exception, "Read failed");
+          tu.exception(ar.cause(), "Read failed");
         } else {
-          tu.azzert(fileName.equals(ar.result));
+          tu.azzert(fileName.equals(ar.result()));
           tu.testComplete();
         }
       }
@@ -580,7 +581,7 @@ public class TestClient extends TestClientBase {
     final String fileName = "some-file.txt";
     createFileWithJunk(fileName, 100);
     tu.azzert(fileExists(fileName));
-    testDelete(fileName, false, true, new SimpleHandler() {
+    testDelete(fileName, false, true, new VoidHandler() {
       public void handle() {
         tu.azzert(!fileExists(fileName));
       }
@@ -591,7 +592,7 @@ public class TestClient extends TestClientBase {
     final String dirName = "some-dir";
     mkDir(dirName);
     tu.azzert(fileExists(dirName));
-    testDelete(dirName, false, true, new SimpleHandler() {
+    testDelete(dirName, false, true, new VoidHandler() {
       public void handle() {
         tu.azzert(!fileExists(dirName));
       }
@@ -623,7 +624,7 @@ public class TestClient extends TestClientBase {
     createFileWithJunk(dir + file2, 100);
     mkDir(dir + pathSep + dir2);
     createFileWithJunk(dir + pathSep + dir2 + file3, 100);
-    testDelete(dir, true, true, new SimpleHandler() {
+    testDelete(dir, true, true, new VoidHandler() {
       public void handle() {
         tu.azzert(!fileExists(dir));
       }
@@ -642,7 +643,7 @@ public class TestClient extends TestClientBase {
 
   public void testMkdirSimple() throws Exception {
     final String dirName = "some-dir";
-    testMkdir(dirName, null, false, true, new SimpleHandler() {
+    testMkdir(dirName, null, false, true, new VoidHandler() {
       public void handle() {
         tu.azzert(fileExists(dirName));
         tu.azzert(Files.isDirectory(Paths.get(TEST_DIR + pathSep + dirName)));
@@ -658,7 +659,7 @@ public class TestClient extends TestClientBase {
   public void testMkdirWithPerms() throws Exception {
     final String dirName = "some-dir";
     final String perms = "rwx--x--x";
-    testMkdir(dirName, perms, false, true, new SimpleHandler() {
+    testMkdir(dirName, perms, false, true, new VoidHandler() {
       public void handle() {
         tu.azzert(fileExists(dirName));
         tu.azzert(Files.isDirectory(Paths.get(TEST_DIR + pathSep + dirName)));
@@ -669,7 +670,7 @@ public class TestClient extends TestClientBase {
 
   public void testMkdirCreateParents() throws Exception {
     final String dirName = "top-dir" + pathSep + "/some-dir";
-    testMkdir(dirName, null, true, true, new SimpleHandler() {
+    testMkdir(dirName, null, true, true, new VoidHandler() {
       public void handle() {
         tu.azzert(fileExists(dirName));
         tu.azzert(Files.isDirectory(Paths.get(TEST_DIR + pathSep + dirName)));
@@ -680,7 +681,7 @@ public class TestClient extends TestClientBase {
   public void testMkdirCreateParentsWithPerms() throws Exception {
     final String dirName = "top-dir" + pathSep + "/some-dir";
     final String perms = "rwx--x--x";
-    testMkdir(dirName, perms, true, true, new SimpleHandler() {
+    testMkdir(dirName, perms, true, true, new VoidHandler() {
       public void handle() {
         tu.azzert(fileExists(dirName));
         tu.azzert(Files.isDirectory(Paths.get(TEST_DIR + pathSep + dirName)));
@@ -749,7 +750,7 @@ public class TestClient extends TestClientBase {
     testReadDir(dirName, "foo.+", true, new Handler<String[]>() {
       public void handle(String[] fileNames) {
         tu.azzert(fileNames.length == numFiles);
-        Set<String> fset = new HashSet<String>();
+        Set<String> fset = new HashSet<>();
         for (int i = 0; i < numFiles; i++) {
           fset.add(fileNames[i]);
         }
@@ -775,9 +776,9 @@ public class TestClient extends TestClientBase {
         tu.checkThread();
         if (ar.failed()) {
           if (shouldPass) {
-            tu.exception(ar.exception, "read failed");
+            tu.exception(ar.cause(), "read failed");
           } else {
-            tu.azzert(ar.exception instanceof FileSystemException);
+            tu.azzert(ar.cause() instanceof FileSystemException);
             if (afterOK != null) {
               afterOK.handle(null);
             }
@@ -786,7 +787,7 @@ public class TestClient extends TestClientBase {
         } else {
           if (shouldPass) {
             if (afterOK != null) {
-              afterOK.handle(ar.result);
+              afterOK.handle(ar.result());
             }
             tu.testComplete();
           } else {
@@ -810,9 +811,9 @@ public class TestClient extends TestClientBase {
       public void handle(AsyncResult<Buffer> ar) {
         tu.checkThread();
         if (ar.failed()) {
-          tu.exception(ar.exception, "failed to read");
+          tu.exception(ar.cause(), "failed to read");
         } else {
-          tu.azzert(TestUtils.buffersEqual(new Buffer(content), ar.result));
+          tu.azzert(TestUtils.buffersEqual(new Buffer(content), ar.result()));
           tu.testComplete();
         }
       }
@@ -828,7 +829,7 @@ public class TestClient extends TestClientBase {
       public void handle(AsyncResult<Void> ar) {
         tu.checkThread();
         if (ar.failed()) {
-          tu.exception(ar.exception, "failed to write");
+          tu.exception(ar.cause(), "failed to write");
         } else {
           tu.azzert(fileExists(fileName));
           tu.azzert(fileLength(fileName) == content.length);
@@ -863,40 +864,40 @@ public class TestClient extends TestClientBase {
           for (int i = 0; i < chunks; i++) {
             Buffer chunk = buff.getBuffer(i * chunkSize, (i + 1) * chunkSize);
             tu.azzert(chunk.length() == chunkSize);
-            arr.result.write(chunk, i * chunkSize, new AsyncResultHandler<Void>() {
+            arr.result().write(chunk, i * chunkSize, new AsyncResultHandler<Void>() {
               public void handle(AsyncResult<Void> ar) {
                 if (ar.succeeded()) {
                   if (++count == chunks) {
-										arr.result.close(new AsyncResultHandler<Void>() {
-											@Override
-											public void handle(AsyncResult<Void> ar) {
-												tu.checkThread();
-												if (ar.failed()) {
-													tu.exception(ar.exception, "failed to close");
-												} else {
-	                        tu.azzert(fileExists(fileName));
+                    arr.result().close(new AsyncResultHandler<Void>() {
+                      @Override
+                      public void handle(AsyncResult<Void> ar) {
+                        tu.checkThread();
+                        if (ar.failed()) {
+                          tu.exception(ar.cause(), "failed to close");
+                        } else {
+                          tu.azzert(fileExists(fileName));
                           byte[] readBytes;
                           try {
                             readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName));
                           } catch (IOException e) {
-                          	tu.exception(e, "Failed to read file");
-                          	return;
+                            tu.exception(e, "Failed to read file");
+                            return;
                           }
                           Buffer read = new Buffer(readBytes);
                           tu.azzert(TestUtils.buffersEqual(buff, read));
                           tu.testComplete();
-												}
-											}
-										});
+                        }
+                      }
+                    });
                   }
                 } else {
-                  tu.exception(ar.exception, "Failed to write");
+                  tu.exception(ar.cause(), "Failed to write");
                 }
               }
             });
           }
         } else {
-          tu.exception(arr.exception, "Failed to open");
+          tu.exception(arr.cause(), "Failed to open");
         }
       }
     });
@@ -916,32 +917,32 @@ public class TestClient extends TestClientBase {
         if (arr.succeeded()) {
           final Buffer buff = new Buffer(chunks * chunkSize);
           for (int i = 0; i < chunks; i++) {
-            arr.result.read(buff, i * chunkSize, i * chunkSize, chunkSize, new AsyncResultHandler<Buffer>() {
+            arr.result().read(buff, i * chunkSize, i * chunkSize, chunkSize, new AsyncResultHandler<Buffer>() {
               public void handle(final AsyncResult<Buffer> arb) {
                 if (arb.succeeded()) {
                   if (++reads == chunks) {
-										arr.result.close(new AsyncResultHandler<Void>() {
-											@Override
-											public void handle(AsyncResult<Void> ar) {
-												tu.checkThread();
-												if (ar.failed()) {
-													tu.exception(ar.exception, "failed to close");
-												} else {
-													tu.azzert(TestUtils.buffersEqual(expected, buff));
-													tu.azzert(buff == arb.result);
-													tu.testComplete();
-												}
-											}
-										});
+                    arr.result().close(new AsyncResultHandler<Void>() {
+                      @Override
+                      public void handle(AsyncResult<Void> ar) {
+                        tu.checkThread();
+                        if (ar.failed()) {
+                          tu.exception(ar.cause(), "failed to close");
+                        } else {
+                          tu.azzert(TestUtils.buffersEqual(expected, buff));
+                          tu.azzert(buff == arb.result());
+                          tu.testComplete();
+                        }
+                      }
+                    });
                   }
                 } else {
-                  tu.exception(arb.exception, "failed to read");
+                  tu.exception(arb.cause(), "failed to read");
                 }
               }
             });
           }
         } else {
-          tu.exception(arr.exception, "failed to open file");
+          tu.exception(arr.cause(), "failed to open file");
         }
       }
     });
@@ -957,7 +958,7 @@ public class TestClient extends TestClientBase {
       public void handle(AsyncResult<AsyncFile> ar) {
         tu.checkThread();
         if (ar.succeeded()) {
-          WriteStream ws = ar.result.getWriteStream();
+          WriteStream ws = ar.result();
 
           ws.exceptionHandler(new Handler<Exception>() {
             public void handle(Exception e) {
@@ -969,14 +970,14 @@ public class TestClient extends TestClientBase {
           for (int i = 0; i < chunks; i++) {
             Buffer chunk = buff.getBuffer(i * chunkSize, (i + 1) * chunkSize);
             tu.azzert(chunk.length() == chunkSize);
-            ws.writeBuffer(chunk);
+            ws.write(chunk);
           }
 
-          ar.result.close(new AsyncResultHandler<Void>() {
+          ar.result().close(new AsyncResultHandler<Void>() {
             public void handle(AsyncResult<Void> ar) {
               tu.checkThread();
               if (ar.failed()) {
-                tu.exception(ar.exception, "failed to close");
+                tu.exception(ar.cause(), "failed to close");
               } else {
                 tu.azzert(fileExists(fileName));
                 byte[] readBytes;
@@ -992,7 +993,7 @@ public class TestClient extends TestClientBase {
             }
           });
         } else {
-          tu.exception(ar.exception, "failed to open");
+          tu.exception(ar.cause(), "failed to open");
         }
       }
     });
@@ -1009,7 +1010,7 @@ public class TestClient extends TestClientBase {
       public void handle(final AsyncResult<AsyncFile> ar) {
         tu.checkThread();
         if (ar.succeeded()) {
-          ReadStream rs = ar.result.getReadStream();
+          ReadStream rs = ar.result();
           final Buffer buff = new Buffer();
 
           rs.dataHandler(new Handler<Buffer>() {
@@ -1026,14 +1027,14 @@ public class TestClient extends TestClientBase {
             }
           });
 
-          rs.endHandler(new SimpleHandler() {
+          rs.endHandler(new VoidHandler() {
             public void handle() {
-							ar.result.close(new AsyncResultHandler<Void>() {
+							ar.result().close(new AsyncResultHandler<Void>() {
 								@Override
 								public void handle(AsyncResult<Void> ar) {
 									tu.checkThread();
 									if (ar.failed()) {
-										tu.exception(ar.exception, "failed to close");
+										tu.exception(ar.cause(), "failed to close");
 									} else {
 										tu.checkThread();
 										tu.azzert(TestUtils.buffersEqual(buff, new Buffer(content)));
@@ -1044,7 +1045,7 @@ public class TestClient extends TestClientBase {
             }
           });
         } else {
-          tu.exception(ar.exception, "failed to open");
+          tu.exception(ar.cause(), "failed to open");
         }
       }
     });
@@ -1055,7 +1056,7 @@ public class TestClient extends TestClientBase {
     final String fileName2 = "some-other-file.dat";
 
     //Non integer multiple of buffer size
-    final int fileSize = (int) (AsyncFile.BUFFER_SIZE * 1000.3);
+    final int fileSize = (int) (DefaultAsyncFile.BUFFER_SIZE * 1000.3);
     final byte[] content = TestUtils.generateRandomByteArray(fileSize);
     createFile(fileName1, content);
 
@@ -1063,7 +1064,7 @@ public class TestClient extends TestClientBase {
       public void handle(final AsyncResult<AsyncFile> arr) {
         tu.checkThread();
         if (arr.succeeded()) {
-          final ReadStream rs = arr.result.getReadStream();
+          final ReadStream rs = arr.result();
 
           //Open file for writing
           vertx.fileSystem().open(TEST_DIR + pathSep + fileName2, null, true, true, true, new AsyncResultHandler<AsyncFile>() {
@@ -1072,50 +1073,50 @@ public class TestClient extends TestClientBase {
               tu.checkThread();
               if (ar.succeeded()) {
 
-                WriteStream ws = ar.result.getWriteStream();
+                WriteStream ws = ar.result();
                 Pump p = Pump.createPump(rs, ws);
                 p.start();
-                rs.endHandler(new SimpleHandler() {
+                rs.endHandler(new VoidHandler() {
                   public void handle() {
                     tu.checkThread();
-										arr.result.close(new AsyncResultHandler<Void>() {
-											@Override
-											public void handle(AsyncResult<Void> car) {
-												tu.checkThread();
-												if (car.failed()) {
-													tu.exception(car.exception, "failed to close");
-												} else {
-													ar.result.close(new AsyncResultHandler<Void>() {
-														public void handle(AsyncResult<Void> ar) {
-															tu.checkThread();
-															if (ar.failed()) {
-																tu.exception(ar.exception, "failed to close");
-															} else {
-																tu.azzert(fileExists(fileName2));
-																byte[] readBytes;
-																try {
-																	readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName2));
-																} catch (IOException e) {
-																	tu.exception(e, "failed to read");
-																	return;
-																}
-																tu.azzert(TestUtils.buffersEqual(new Buffer(content), new Buffer(readBytes)));
-																tu.testComplete();
-															}
-														}
-													});
+										arr.result().close(new AsyncResultHandler<Void>() {
+                      @Override
+                      public void handle(AsyncResult<Void> car) {
+                        tu.checkThread();
+                        if (car.failed()) {
+                          tu.exception(car.cause(), "failed to close");
+                        } else {
+                          ar.result().close(new AsyncResultHandler<Void>() {
+                            public void handle(AsyncResult<Void> ar) {
+                              tu.checkThread();
+                              if (ar.failed()) {
+                                tu.exception(ar.cause(), "failed to close");
+                              } else {
+                                tu.azzert(fileExists(fileName2));
+                                byte[] readBytes;
+                                try {
+                                  readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName2));
+                                } catch (IOException e) {
+                                  tu.exception(e, "failed to read");
+                                  return;
+                                }
+                                tu.azzert(TestUtils.buffersEqual(new Buffer(content), new Buffer(readBytes)));
+                                tu.testComplete();
+                              }
+                            }
+                          });
                         }
                       }
                     });
                   }
                 });
               } else {
-                tu.exception(ar.exception, "failed to open");
+                tu.exception(ar.cause(), "failed to open");
               }
             }
           });
         } else {
-          tu.exception(arr.exception, "failed to open");
+          tu.exception(arr.cause(), "failed to open");
         }
       }
     });
@@ -1141,9 +1142,9 @@ public class TestClient extends TestClientBase {
         tu.checkThread();
         if (ar.failed()) {
           if (shouldPass) {
-            tu.exception(ar.exception, "failed to create");
+            tu.exception(ar.cause(), "failed to create");
           } else {
-            tu.azzert(ar.exception instanceof FileSystemException);
+            tu.azzert(ar.cause() instanceof FileSystemException);
             tu.testComplete();
           }
         } else {
@@ -1186,13 +1187,13 @@ public class TestClient extends TestClientBase {
         tu.checkThread();
         if (ar.succeeded()) {
           if (exists) {
-            tu.azzert(ar.result);
+            tu.azzert(ar.result());
           } else {
-            tu.azzert(!ar.result);
+            tu.azzert(!ar.result());
           }
           tu.testComplete();
         } else {
-          tu.exception(ar.exception, "failed to check");
+          tu.exception(ar.cause(), "failed to check");
         }
       }
     };
@@ -1204,9 +1205,9 @@ public class TestClient extends TestClientBase {
     createFileWithJunk(fileName, 1234);
     testFSProps(fileName, new Handler<FileSystemProps>() {
       public void handle(FileSystemProps props) {
-        tu.azzert(props.totalSpace > 0);
-        tu.azzert(props.unallocatedSpace > 0);
-        tu.azzert(props.usableSpace > 0);
+        tu.azzert(props.totalSpace() > 0);
+        tu.azzert(props.unallocatedSpace() > 0);
+        tu.azzert(props.usableSpace() > 0);
       }
     });
   }
@@ -1217,9 +1218,9 @@ public class TestClient extends TestClientBase {
       public void handle(AsyncResult<FileSystemProps> ar) {
         tu.checkThread();
         if (ar.failed()) {
-          tu.exception(ar.exception, "props failed");
+          tu.exception(ar.cause(), "props failed");
         } else {
-          afterOK.handle(ar.result);
+          afterOK.handle(ar.result());
           tu.testComplete();
         }
       }
@@ -1233,9 +1234,9 @@ public class TestClient extends TestClientBase {
         tu.checkThread();
         if (event.failed()) {
           if (shouldPass) {
-            tu.exception(event.exception, "operation failed");
+            tu.exception(event.cause(), "operation failed");
           } else {
-            tu.azzert(event.exception instanceof FileSystemException);
+            tu.azzert(event.cause() instanceof FileSystemException);
             if (afterOK != null) {
               afterOK.handle(null);
             }

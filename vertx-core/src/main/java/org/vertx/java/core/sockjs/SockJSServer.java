@@ -59,7 +59,7 @@ public interface SockJSServer {
    * @param config The application configuration
    * @param sockHandler A handler that will be called when new SockJS sockets are created
    */
-  void installApp(JsonObject config, final Handler<SockJSSocket> sockHandler);
+  SockJSServer installApp(JsonObject config, final Handler<SockJSSocket> sockHandler);
 
   /**
    * Install an app which bridges the SockJS server to the event bus
@@ -68,7 +68,7 @@ public interface SockJSServer {
    * @param outboundPermitted A list of JSON objects which define permitted matches for outbound (server->client)
    * traffic
    */
-  void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted);
+  SockJSServer bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted);
 
   /**
    * Install an app which bridges the SockJS server to the event bus
@@ -78,7 +78,7 @@ public interface SockJSServer {
    * traffic
    * @param authTimeout Default time an authorisation will be cached for in the bridge (defaults to 5 minutes)
    */
-  void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
+  SockJSServer bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
               long authTimeout);
 
   /**
@@ -90,9 +90,9 @@ public interface SockJSServer {
    * @param authTimeout Default time an authorisation will be cached for in the bridge (defaults to 5 minutes)
    * @param authAddress Address of auth manager. Defaults to 'vertx.basicauthmanager.authorise'
    */
-  void bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
+  SockJSServer bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
               long authTimeout, String authAddress);
 
-  void setHook(EventBusBridgeHook hook);
+  SockJSServer setHook(EventBusBridgeHook hook);
 }
 

@@ -39,7 +39,6 @@ public class Pump {
 
   private final ReadStream readStream;
   private final WriteStream writeStream;
-
   private int pumped;
 
   /**
@@ -60,23 +59,26 @@ public class Pump {
   /**
    * Set the write queue max size to {@code maxSize}
    */
-  public void setWriteQueueMaxSize(int maxSize) {
+  public Pump setWriteQueueMaxSize(int maxSize) {
     this.writeStream.setWriteQueueMaxSize(maxSize);
+    return this;
   }
 
   /**
    * Start the Pump. The Pump can be started and stopped multiple times.
    */
-  public void start() {
+  public Pump start() {
     readStream.dataHandler(dataHandler);
+    return this;
   }
 
   /**
    * Stop the Pump. The Pump can be started and stopped multiple times.
    */
-  public void stop() {
+  public Pump stop() {
     writeStream.drainHandler(null);
     readStream.dataHandler(null);
+    return this;
   }
 
   /**
@@ -94,7 +96,7 @@ public class Pump {
 
   private final Handler<Buffer> dataHandler = new Handler<Buffer>() {
     public void handle(Buffer buffer) {
-      writeStream.writeBuffer(buffer);
+      writeStream.write(buffer);
       pumped += buffer.length();
       if (writeStream.writeQueueFull()) {
         readStream.pause();

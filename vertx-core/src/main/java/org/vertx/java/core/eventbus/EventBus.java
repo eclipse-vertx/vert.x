@@ -16,7 +16,7 @@
 
 package org.vertx.java.core.eventbus;
 
-import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.json.JsonArray;
@@ -63,14 +63,14 @@ public interface EventBus {
 	 * 
 	 * @param doneHandler
 	 */
-  void close(Handler<Void> doneHandler);
+  void close(Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * Send a message
    * @param address The address to send it to
    * @param message The message
    */
-  void send(String address, Object message);
+  EventBus send(String address, Object message);
 
   /**
    * Send a message
@@ -78,7 +78,7 @@ public interface EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  void send(String address, Object message, Handler<Message> replyHandler);
+  EventBus send(String address, Object message, Handler<Message> replyHandler);
 
   /**
    * Send a JSON object as a message
@@ -86,14 +86,14 @@ public interface EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  <T> void send(String address, JsonObject message, Handler<Message<T>> replyHandler);
+  <T> EventBus send(String address, JsonObject message, Handler<Message<T>> replyHandler);
 
   /**
    * Send a JSON object as a message
    * @param address The address to send it to
    * @param message The message
    */
-  void send(String address, JsonObject message);
+  EventBus send(String address, JsonObject message);
 
   /**
    * Send a JSON array as a message
@@ -101,14 +101,14 @@ public interface EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  <T> void send(String address, JsonArray message, Handler<Message<T>> replyHandler);
+  <T> EventBus send(String address, JsonArray message, Handler<Message<T>> replyHandler);
 
   /**
    * Send a JSON array as a message
    * @param address The address to send it to
    * @param message The message
    */
-  void send(String address, JsonArray message);
+  EventBus send(String address, JsonArray message);
 
   /**
    * Send a Buffer as a message
@@ -116,14 +116,14 @@ public interface EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  <T> void send(String address, Buffer message, Handler<Message<T>> replyHandler);
+  <T> EventBus send(String address, Buffer message, Handler<Message<T>> replyHandler);
 
   /**
    * Send a Buffer as a message
    * @param address The address to send it to
    * @param message The message
    */
-  void send(String address, Buffer message);
+  EventBus send(String address, Buffer message);
 
   /**
    * Send a byte[] as a message
@@ -131,14 +131,14 @@ public interface EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  <T> void send(String address, byte[] message, Handler<Message<T>> replyHandler);
+  <T> EventBus send(String address, byte[] message, Handler<Message<T>> replyHandler);
 
   /**
    * Send a byte[] as a message
    * @param address The address to send it to
    * @param message The message
    */
-  void send(String address, byte[] message);
+  EventBus send(String address, byte[] message);
 
   /**
    * Send a String as a message
@@ -146,14 +146,14 @@ public interface EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  <T> void send(String address, String message, Handler<Message<T>> replyHandler);
+  <T> EventBus send(String address, String message, Handler<Message<T>> replyHandler);
 
   /**
    * Send a String as a message
    * @param address The address to send it to
    * @param message The message
    */
-  void send(String address, String message);
+  EventBus send(String address, String message);
 
   /**
    * Send an Integer as a message
@@ -161,14 +161,14 @@ public interface EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  <T> void send(String address, Integer message, Handler<Message<T>> replyHandler);
+  <T> EventBus send(String address, Integer message, Handler<Message<T>> replyHandler);
 
   /**
    * Send an Integer as a message
    * @param address The address to send it to
    * @param message The message
    */
-  void send(String address, Integer message);
+  EventBus send(String address, Integer message);
 
   /**
    * Send a Long as a message
@@ -176,14 +176,14 @@ public interface EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  <T> void send(String address, Long message, Handler<Message<T>> replyHandler);
+  <T> EventBus send(String address, Long message, Handler<Message<T>> replyHandler);
 
   /**
    * Send a Long as a message
    * @param address The address to send it to
    * @param message The message
    */
-  void send(String address, Long message);
+  EventBus send(String address, Long message);
 
   /**
    * Send a Float as a message
@@ -191,14 +191,14 @@ public interface EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  <T> void send(String address, Float message, Handler<Message<T>> replyHandler);
+  <T> EventBus send(String address, Float message, Handler<Message<T>> replyHandler);
 
   /**
    * Send a Float as a message
    * @param address The address to send it to
    * @param message The message
    */
-  void send(String address, Float message);
+  EventBus send(String address, Float message);
 
   /**
    * Send a Double as a message
@@ -206,14 +206,14 @@ public interface EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  <T> void send(String address, Double message, Handler<Message<T>> replyHandler);
+  <T> EventBus send(String address, Double message, Handler<Message<T>> replyHandler);
 
   /**
    * Send a Double as a message
    * @param address The address to send it to
    * @param message The message
    */
-  void send(String address, Double message);
+  EventBus send(String address, Double message);
 
   /**
    * Send a Boolean as a message
@@ -221,14 +221,14 @@ public interface EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  <T> void send(String address, Boolean message, Handler<Message<T>> replyHandler) ;
+  <T> EventBus send(String address, Boolean message, Handler<Message<T>> replyHandler) ;
 
   /**
    * Send a Boolean as a message
    * @param address The address to send it to
    * @param message The message
    */
-  void send(String address, Boolean message);
+  EventBus send(String address, Boolean message);
 
   /**
    * Send a Short as a message
@@ -236,14 +236,14 @@ public interface EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  <T> void send(String address, Short message, Handler<Message<T>> replyHandler);
+  <T> EventBus send(String address, Short message, Handler<Message<T>> replyHandler);
 
   /**
    * Send a Short as a message
    * @param address The address to send it to
    * @param message The message
    */
-  void send(String address, Short message);
+  EventBus send(String address, Short message);
 
   /**
    * Send a Character as a message
@@ -251,14 +251,14 @@ public interface EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  <T> void send(String address, Character message, Handler<Message<T>> replyHandler);
+  <T> EventBus send(String address, Character message, Handler<Message<T>> replyHandler);
 
   /**
    * Send a Character as a message
    * @param address The address to send it to
    * @param message The message
    */
-  void send(String address, Character message);
+  EventBus send(String address, Character message);
 
   /**
    * Send a Byte as a message
@@ -266,112 +266,112 @@ public interface EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  <T> void send(String address, Byte message, Handler<Message<T>> replyHandler);
+  <T> EventBus send(String address, Byte message, Handler<Message<T>> replyHandler);
 
   /**
    * Send a Byte as a message
    * @param address The address to send it to
    * @param message The message
    */
-  void send(String address, Byte message);
+  EventBus send(String address, Byte message);
 
   /**
    * Publish a message
    * @param address The address to publish it to
    * @param message The message
    */
-  void publish(String address, Object message);
+  EventBus publish(String address, Object message);
 
   /**
    * Publish a JSON object as a message
    * @param address The address to publish it to
    * @param message The message
    */
-  void publish(String address, JsonObject message);
+  EventBus publish(String address, JsonObject message);
 
   /**
    * Publish a JSON array as a message
    * @param address The address to publish it to
    * @param message The message                S
    */
-  void publish(String address, JsonArray message);
+  EventBus publish(String address, JsonArray message);
 
   /**
    * Publish a Buffer as a message
    * @param address The address to publish it to
    * @param message The message
    */
-  void publish(String address, Buffer message);
+  EventBus publish(String address, Buffer message);
 
   /**
    * Publish a byte[] as a message
    * @param address The address to publish it to
    * @param message The message
    */
-  void publish(String address, byte[] message);
+  EventBus publish(String address, byte[] message);
 
   /**
    * Publish a String as a message
    * @param address The address to publish it to
    * @param message The message
    */
-  void publish(String address, String message);
+  EventBus publish(String address, String message);
 
   /**
    * Publish an Integer as a message
    * @param address The address to publish it to
    * @param message The message
    */
-  void publish(String address, Integer message);
+  EventBus publish(String address, Integer message);
 
   /**
    * Publish a Long as a message
    * @param address The address to publish it to
    * @param message The message
    */
-  void publish(String address, Long message);
+  EventBus publish(String address, Long message);
 
   /**
    * Publish a Float as a message
    * @param address The address to publish it to
    * @param message The message
    */
-  void publish(String address, Float message);
+  EventBus publish(String address, Float message);
 
   /**
    * Publish a Double as a message
    * @param address The address to publish it to
    * @param message The message
    */
-  void publish(String address, Double message);
+  EventBus publish(String address, Double message);
 
   /**
    * Publish a Boolean as a message
    * @param address The address to publish it to
    * @param message The message
    */
-  void publish(String address, Boolean message);
+  EventBus publish(String address, Boolean message);
 
   /**
    * Publish a Short as a message
    * @param address The address to publish it to
    * @param message The message
    */
-  void publish(String address, Short message);
+  EventBus publish(String address, Short message);
 
   /**
    * Publish a Character as a message
    * @param address The address to publish it to
    * @param message The message
    */
-  void publish(String address, Character message);
+  EventBus publish(String address, Character message);
 
   /**
    * Publish a Byte as a message
    * @param address The address to publish it to
    * @param message The message
    */
-  void publish(String address, Byte message);
+  EventBus publish(String address, Byte message);
 
   /**
    * Unregisters a handler given the address and the handler
@@ -380,15 +380,15 @@ public interface EventBus {
    * @param resultHandler Optional completion handler. If specified, when the unregister has been
    * propagated to all nodes of the event bus, the handler will be called.
    */
-  void unregisterHandler(String address, @SuppressWarnings("rawtypes") Handler<? extends Message> handler,
-                         AsyncResultHandler<Void> resultHandler);
+  EventBus unregisterHandler(String address, Handler<? extends Message> handler,
+                            Handler<AsyncResult<Void>> resultHandler);
 
   /**
    * Unregisters a handler given the address and the handler
    * @param address The address the handler was registered at
    * @param handler The handler
    */
-  void unregisterHandler(String address, @SuppressWarnings("rawtypes") Handler<? extends Message> handler);
+  EventBus unregisterHandler(String address, Handler<? extends Message> handler);
 
   /**
    * Registers a handler against the specified address
@@ -397,15 +397,15 @@ public interface EventBus {
    * @param resultHandler Optional completion handler. If specified, when the register has been
    * propagated to all nodes of the event bus, the handler will be called.
    */
-  void registerHandler(String address, @SuppressWarnings("rawtypes") Handler<? extends Message> handler,
-                       AsyncResultHandler<Void> resultHandler);
+  EventBus registerHandler(String address, Handler<? extends Message> handler,
+                           Handler<AsyncResult<Void>> resultHandler);
 
   /**
    * Registers a handler against the specified address
    * @param address The address to register it at
    * @param handler The handler
    */
-  void registerHandler(String address, @SuppressWarnings("rawtypes") Handler<? extends Message> handler);
+  EventBus registerHandler(String address, Handler<? extends Message> handler);
 
   /**
    * Registers a local handler against the specified address. The handler info won't
@@ -413,6 +413,6 @@ public interface EventBus {
    * @param address The address to register it at
    * @param handler The handler
    */
-  void registerLocalHandler(String address, @SuppressWarnings("rawtypes") Handler<? extends Message> handler);
+  EventBus registerLocalHandler(String address, Handler<? extends Message> handler);
 }
 

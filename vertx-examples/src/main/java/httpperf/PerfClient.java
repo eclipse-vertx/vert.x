@@ -42,7 +42,7 @@ public class PerfClient extends Verticle implements Handler<HttpClientResponse> 
   private EventBus eb;
 
   public void handle(HttpClientResponse response) {
-    if (response.statusCode != 200) {
+    if (response.statusCode() != 200) {
       throw new IllegalStateException("Invalid response");
     }
     response.endHandler(new SimpleHandler() {

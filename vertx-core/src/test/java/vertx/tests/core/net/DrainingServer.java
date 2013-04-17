@@ -17,7 +17,7 @@
 package vertx.tests.core.net;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.testframework.TestUtils;
@@ -47,7 +47,7 @@ public class DrainingServer extends BaseServer {
             sock.write(buff.copy());
             if (sock.writeQueueFull()) {
               vertx.cancelTimer(id);
-              sock.drainHandler(new SimpleHandler() {
+              sock.drainHandler(new VoidHandler() {
                 public void handle() {
                   tu.checkThread();
                   tu.azzert(!sock.writeQueueFull());

@@ -28,6 +28,8 @@ import org.vertx.java.platform.VerticleFactory;
 public class JavaVerticleFactory implements VerticleFactory {
 
   private ClassLoader cl;
+  private Vertx vertx;
+  private Container container;
 
   public JavaVerticleFactory() {
 	  super();
@@ -36,6 +38,8 @@ public class JavaVerticleFactory implements VerticleFactory {
   @Override
   public void init(Vertx vertx, Container container, ClassLoader cl) {
     this.cl = cl;
+    this.vertx = vertx;
+    this.container = container;
   }
 
   private boolean isJavaSource(String main) {
@@ -54,7 +58,10 @@ public class JavaVerticleFactory implements VerticleFactory {
     } else {
       clazz = cl.loadClass(className);
     }
-    return (Verticle)clazz.newInstance();
+    Verticle verticle = (Verticle)clazz.newInstance();
+    verticle.setVertx(vertx);
+    verticle.setContainer(container);
+    return verticle;
   }
     
   public void reportException(Logger logger, Throwable t) {

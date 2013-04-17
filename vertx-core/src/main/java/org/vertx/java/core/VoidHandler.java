@@ -14,32 +14,21 @@
  * limitations under the License.
  */
 
-package org.vertx.java.tests.core.blockingaction;
-
-import org.junit.Test;
-import org.vertx.java.testframework.TestBase;
-import vertx.tests.core.blockingaction.TestClient;
+package org.vertx.java.core;
 
 /**
+ * This class can be used for simple handlers which don't receive any value.
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JavaBlockingActionTest extends TestBase {
+public abstract class VoidHandler implements Handler<Void> {
 
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
+  public final void handle(Void event) {
+    handle();
   }
 
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
-  }
-
-  @Test
-  public void testBlockingAction() throws Exception {
-    startApp(TestClient.class.getName());
-    startTest(getMethodName());
-  }
-
-
+  /**
+   * Handle the event. It should be overridden by the user.
+   */
+  protected abstract void handle();
 }

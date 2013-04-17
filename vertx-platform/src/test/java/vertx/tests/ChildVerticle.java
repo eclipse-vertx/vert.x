@@ -24,11 +24,11 @@ import org.vertx.java.platform.Verticle;
 public class ChildVerticle extends Verticle {
 
   @Override
-  public void start() throws Exception {
+  public void start() {
     container.deployVerticle(SubChildVerticle.class.getName());
   }
 
   @Override
-  public void stop() throws Exception {
+  public void stop() {
   }
 }

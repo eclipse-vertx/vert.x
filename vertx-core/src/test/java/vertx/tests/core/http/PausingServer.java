@@ -16,9 +16,7 @@
 
 package vertx.tests.core.http;
 
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.VoidResult;
+import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.HttpServer;
@@ -35,12 +33,12 @@ public class PausingServer extends Verticle {
 
   private HttpServer server;
 
-  public void start(final VoidResult startResult) {
+  public void start(final Future<Void> startResult) {
     tu = new TestUtils(vertx);
     server = vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
         tu.checkThread();
-        req.response.setChunked(true);
+        req.response().setChunked(true);
         req.pause();
         final Handler<Message<Buffer>> resumeHandler = new Handler<Message<Buffer>>() {
           public void handle(Message message) {
@@ -49,7 +47,7 @@ public class PausingServer extends Verticle {
           }
         };
         vertx.eventBus().registerHandler("server_resume", resumeHandler);
-        req.endHandler(new SimpleHandler() {
+        req.endHandler(new VoidHandler() {
           public void handle() {
             tu.checkThread();
             vertx.eventBus().unregisterHandler("server_resume", resumeHandler);
@@ -58,7 +56,7 @@ public class PausingServer extends Verticle {
         req.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buffer) {
             tu.checkThread();
-            req.response.write(buffer);
+            req.response().write(buffer);
           }
         });
       }
@@ -67,14 +65,14 @@ public class PausingServer extends Verticle {
       @Override
       public void handle(HttpServer event) {
         tu.appReady();
-        startResult.setResult();
+        startResult.setResult(null);
       }
     });
   }
 
   public void stop() {
-    server.close(new SimpleHandler() {
-      public void handle() {
+    server.close(new AsyncResultHandler<Void>() {
+      public void handle(AsyncResult<Void> res) {
         tu.checkThread();
         tu.appStopped();
       }

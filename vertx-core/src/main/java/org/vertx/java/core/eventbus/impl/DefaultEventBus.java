@@ -19,11 +19,12 @@ package org.vertx.java.core.eventbus.impl;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.impl.management.ManagementRegistry;
 import org.vertx.java.core.json.JsonArray;
@@ -76,196 +77,242 @@ public class DefaultEventBus implements EventBus {
 
   public DefaultEventBus(VertxInternal vertx, int port, String hostname, ClusterManager clusterManager) {
     this.vertx = vertx;
-    this.serverID = new ServerID(port, hostname);
     this.clusterMgr = clusterManager;
     this.subs = clusterMgr.getSubsMap("subs");
-    this.server = setServer();
+    this.server = setServer(port, hostname);
+    // If using a wilcard port (0) then we ask the server for the actual port:
+    this.serverID = new ServerID(server.port(), hostname);
     ManagementRegistry.registerEventBus(serverID);
   }
 
-  public void publish(String address, Object message) {
+  public EventBus publish(String address, Object message) {
     sendOrPub(createMessage(false, address, message), null);
+    return this;
   }
 
-  public void send(String address, Object message, final Handler<Message> replyHandler) {
+  public EventBus send(String address, Object message, final Handler<Message> replyHandler) {
     sendOrPub(createMessage(true, address, message), replyHandler);
+    return this;
   }
 
-  public void send(String address, Object message) {
+  public EventBus send(String address, Object message) {
     sendOrPub(createMessage(true, address, message), null);
+    return this;
   }
   
-  public <T> void send(String address, JsonObject message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, JsonObject message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new JsonObjectMessage(true, address, message), replyHandler);
+    return this;
   }
 
-  public void send(String address, JsonObject message) {
+  public EventBus send(String address, JsonObject message) {
     sendOrPub(new JsonObjectMessage(true, address, message), null);
+    return this;
   }
 
-  public <T> void send(String address, JsonArray message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, JsonArray message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new JsonArrayMessage(true, address, message), replyHandler);
+    return this;
   }
 
-  public void send(String address, JsonArray message) {
+  public EventBus send(String address, JsonArray message) {
     sendOrPub(new JsonArrayMessage(true, address, message), null);
+    return this;
   }
 
-  public <T> void send(String address, Buffer message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, Buffer message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new BufferMessage(true, address, message), replyHandler);
+    return this;
   }
 
-  public void send(String address, Buffer message) {
+  public EventBus send(String address, Buffer message) {
     sendOrPub(new BufferMessage(true, address, message), null);
+    return this;
   }
 
-  public <T> void send(String address, byte[] message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, byte[] message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new ByteArrayMessage(true, address, message), replyHandler);
+    return this;
   }
 
-  public void send(String address, byte[] message) {
+  public EventBus send(String address, byte[] message) {
     sendOrPub(new ByteArrayMessage(true, address, message), null);
+    return this;
   }
 
-  public <T> void send(String address, String message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, String message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new StringMessage(true, address, message), replyHandler);
+    return this;
   }
 
-  public void send(String address, String message) {
+  public EventBus send(String address, String message) {
     sendOrPub(new StringMessage(true, address, message), null);
+    return this;
   }
 
-  public <T> void send(String address, Integer message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, Integer message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new IntMessage(true, address, message), replyHandler);
+    return this;
   }
 
-  public void send(String address, Integer message) {
+  public EventBus send(String address, Integer message) {
     sendOrPub(new IntMessage(true, address, message), null);
+    return this;
   }
 
-  public <T> void send(String address, Long message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, Long message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new LongMessage(true, address, message), replyHandler);
+    return this;
   }
 
-  public void send(String address, Long message) {
+  public EventBus send(String address, Long message) {
     sendOrPub(new LongMessage(true, address, message), null);
+    return this;
   }
 
-  public <T> void send(String address, Float message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, Float message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new FloatMessage(true, address, message), replyHandler);
+    return this;
   }
 
-  public void send(String address, Float message) {
+  public EventBus send(String address, Float message) {
     sendOrPub(new FloatMessage(true, address, message), null);
+    return this;
   }
 
-  public <T> void send(String address, Double message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, Double message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new DoubleMessage(true, address, message), replyHandler);
+    return this;
   }
 
-  public void send(String address, Double message) {
+  public EventBus send(String address, Double message) {
     sendOrPub(new DoubleMessage(true, address, message), null);
+    return this;
   }
 
-  public <T> void send(String address, Boolean message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, Boolean message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new BooleanMessage(true, address, message), replyHandler);
+    return this;
   }
 
-  public void send(String address, Boolean message) {
+  public EventBus send(String address, Boolean message) {
     sendOrPub(new BooleanMessage(true, address, message), null);
+    return this;
   }
 
-  public <T> void send(String address, Short message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, Short message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new ShortMessage(true, address, message), replyHandler);
+    return this;
   }
 
-  public void send(String address, Short message) {
+  public EventBus send(String address, Short message) {
     sendOrPub(new ShortMessage(true, address, message), null);
+    return this;
   }
 
-  public <T> void send(String address, Character message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, Character message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new CharacterMessage(true, address, message), replyHandler);
+    return this;
   }
 
-  public void send(String address, Character message) {
+  public EventBus send(String address, Character message) {
     sendOrPub(new CharacterMessage(true, address, message), null);
+    return this;
   }
 
-  public <T> void send(String address, Byte message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, Byte message, final Handler<Message<T>> replyHandler) {
     sendOrPub(new ByteMessage(true, address, message), replyHandler);
+    return this;
   }
 
-  public void send(String address, Byte message) {
+  public EventBus send(String address, Byte message) {
     sendOrPub(new ByteMessage(true, address, message), null);
+    return this;
   }
 
-  public void publish(String address, JsonObject message) {
+  public EventBus publish(String address, JsonObject message) {
     sendOrPub(new JsonObjectMessage(false, address, message), null);
+    return this;
   }
 
-  public void publish(String address, JsonArray message) {
+  public EventBus publish(String address, JsonArray message) {
     sendOrPub(new JsonArrayMessage(false, address, message), null);
+    return this;
   }
 
-  public void publish(String address, Buffer message) {
+  public EventBus publish(String address, Buffer message) {
     sendOrPub(new BufferMessage(false, address, message), null);
+    return this;
   }
 
-  public void publish(String address, byte[] message) {
+  public EventBus publish(String address, byte[] message) {
     sendOrPub(new ByteArrayMessage(false, address, message), null);
+    return this;
   }
 
-  public void publish(String address, String message) {
+  public EventBus publish(String address, String message) {
     sendOrPub(new StringMessage(false, address, message), null);
+    return this;
   }
 
-  public void publish(String address, Integer message) {
+  public EventBus publish(String address, Integer message) {
     sendOrPub(new IntMessage(false, address, message), null);
+    return this;
   }
 
-  public void publish(String address, Long message) {
+  public EventBus publish(String address, Long message) {
     sendOrPub(new LongMessage(false, address, message), null);
+    return this;
   }
 
-  public void publish(String address, Float message) {
+  public EventBus publish(String address, Float message) {
     sendOrPub(new FloatMessage(false, address, message), null);
+    return this;
   }
 
-  public void publish(String address, Double message) {
+  public EventBus publish(String address, Double message) {
     sendOrPub(new DoubleMessage(false, address, message), null);
+    return this;
   }
 
-  public void publish(String address, Boolean message) {
+  public EventBus publish(String address, Boolean message) {
     sendOrPub(new BooleanMessage(false, address, message), null);
+    return this;
   }
 
-  public void publish(String address, Short message) {
+  public EventBus publish(String address, Short message) {
     sendOrPub(new ShortMessage(false, address, message), null);
+    return this;
   }
 
-  public void publish(String address, Character message) {
+  public EventBus publish(String address, Character message) {
     sendOrPub(new CharacterMessage(false, address, message), null);
+    return this;
   }
 
-  public void publish(String address, Byte message) {
+  public EventBus publish(String address, Byte message) {
     sendOrPub(new ByteMessage(false, address, message), null);
+    return this;
   }
 
-  public void registerHandler(String address, Handler<? extends Message> handler,
-                              AsyncResultHandler<Void> completionHandler) {
+  public EventBus registerHandler(String address, Handler<? extends Message> handler,
+                              Handler<AsyncResult<Void>> completionHandler) {
     registerHandler(address, handler, completionHandler, false, false);
+    return this;
   }
 
-  public void registerHandler(String address, Handler<? extends Message> handler) {
+  public EventBus registerHandler(String address, Handler<? extends Message> handler) {
     registerHandler(address, handler, null);
+    return this;
   }
 
-  public void registerLocalHandler(String address, Handler<? extends Message> handler) {
+  public EventBus registerLocalHandler(String address, Handler<? extends Message> handler) {
     registerHandler(address, handler, null, false, true);
+    return this;
   }
 
-  public void unregisterHandler(String address, Handler<? extends Message> handler,
-                                AsyncResultHandler<Void> completionHandler) {
+  public EventBus unregisterHandler(String address, Handler<? extends Message> handler,
+                                Handler<AsyncResult<Void>> completionHandler) {
     Context context = vertx.getOrAssignContext();
     Handlers handlers = handlerMap.get(address);
     if (handlers != null) {
@@ -289,19 +336,21 @@ public class DefaultEventBus implements EventBus {
               callCompletionHandler(completionHandler);
             }
             getHandlerCloseHook(context).entries.remove(new HandlerEntry(address, handler));
-            return;
+            return this;
           }
         }
       }
     }
+    return this;
   }
 
-  public void unregisterHandler(String address, Handler<? extends Message> handler) {
+  public EventBus unregisterHandler(String address, Handler<? extends Message> handler) {
     unregisterHandler(address, handler, null);
+    return this;
   }
 
   @Override
-  public void close(Handler<Void> doneHandler) {
+  public void close(Handler<AsyncResult<Void>> doneHandler) {
 		if (clusterMgr != null) {
 			clusterMgr.close();
 		}
@@ -350,7 +399,7 @@ public class DefaultEventBus implements EventBus {
     return bm;
   }
 
-  private NetServer setServer() {
+  private NetServer setServer(int port, String hostName) {
     NetServer server = vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
         final RecordParser parser = RecordParser.newFixed(4, null);
@@ -376,8 +425,9 @@ public class DefaultEventBus implements EventBus {
         parser.setOutput(handler);
         socket.dataHandler(parser);
       }
+
     });
-    server.listen(serverID.port, serverID.host, null);
+    server.listen(port, hostName);
     return server;
   }
 
@@ -425,14 +475,14 @@ public class DefaultEventBus implements EventBus {
           subs.get(message.address, new AsyncResultHandler<ServerIDs>() {
             public void handle(AsyncResult<ServerIDs> event) {
               if (event.succeeded()) {
-                ServerIDs serverIDs = event.result;
+                ServerIDs serverIDs = event.result();
                 if (!serverIDs.isEmpty()) {
                   sendToSubs(serverIDs, message);
                 } else {
                   receiveMessage(message);
                 }
               } else {
-                log.error("Failed to send message", event.exception);
+                log.error("Failed to send message", event.cause());
               }
             }
           });
@@ -452,7 +502,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   private void registerHandler(String address, Handler<? extends Message> handler,
-                               AsyncResultHandler<Void> completionHandler,
+                               Handler<AsyncResult<Void>> completionHandler,
                                boolean replyHandler, boolean localOnly) {
     if (address == null) {
       throw new NullPointerException("address");
@@ -466,10 +516,10 @@ public class DefaultEventBus implements EventBus {
         handlers = prevHandlers;
       }
       if (completionHandler == null) {
-        completionHandler = new AsyncResultHandler<Void>() {
+        completionHandler = new Handler<AsyncResult<Void>>() {
           public void handle(AsyncResult<Void> event) {
             if (event.failed()) {
-              log.error("Failed to remove entry", event.exception);
+              log.error("Failed to remove entry", event.cause());
             }
           }
         };
@@ -499,13 +549,13 @@ public class DefaultEventBus implements EventBus {
     return hcl;
   }
 
-  private void callCompletionHandler(AsyncResultHandler<Void> completionHandler) {
-    AsyncResult<Void> f = new AsyncResult<Void>().setHandler(completionHandler).setResult(null);
+  private void callCompletionHandler(Handler<AsyncResult<Void>> completionHandler) {
+    completionHandler.handle(new DefaultFutureResult().setResult(null));
   }
 
   private void cleanSubsForServerID(ServerID theServerID) {
     if (subs != null) {
-      subs.removeAllForServerID(theServerID, new AsyncResultHandler<Void>() {
+      subs.removeAllForServerID(theServerID, new Handler<AsyncResult<Void>>() {
         public void handle(AsyncResult<Void> event) {
         }
       });
@@ -579,24 +629,8 @@ public class DefaultEventBus implements EventBus {
     });
   }
 
-  private void removeSub(String subName, ServerID theServerID, final AsyncResultHandler<Void> completionHandler) {
-    subs.remove(subName, theServerID, new AsyncResultHandler<Boolean>() {
-      public void handle(AsyncResult<Boolean> event) {
-        if (completionHandler != null) {
-          AsyncResult<Void> ar = new AsyncResult<>();
-          if (event.failed()) {
-            ar.setFailure(event.exception);
-          } else {
-            ar.setResult(null);
-          }
-          ar.setHandler(completionHandler);
-        } else {
-          if (event.failed()) {
-            log.error("Failed to remove subscription", event.exception);
-          }
-        }
-      }
-    });
+  private void removeSub(String subName, ServerID theServerID, final Handler<AsyncResult<Void>> completionHandler) {
+    subs.remove(subName, theServerID, completionHandler);
   }
 
   // Called when a message is incoming
@@ -704,7 +738,7 @@ public class DefaultEventBus implements EventBus {
           cleanupConnection(theServerID, ConnectionHolder.this, true);
         }
       });
-      socket.closedHandler(new SimpleHandler() {
+      socket.closeHandler(new VoidHandler() {
         public void handle() {
           cleanupConnection(theServerID, ConnectionHolder.this, false);
         }
@@ -725,14 +759,13 @@ public class DefaultEventBus implements EventBus {
     }
 
     void connect(NetClient client, final ServerID theServerID) {
-      client.connect(theServerID.port, theServerID.host, new Handler<NetSocket>() {
-        public void handle(final NetSocket socket) {
-          connected(theServerID, socket);
-        }
-      });
-      client.exceptionHandler(new Handler<Exception>() {
-        public void handle(Exception e) {
-          cleanupConnection(theServerID, ConnectionHolder.this, true);
+      client.connect(theServerID.port, theServerID.host, new AsyncResultHandler<NetSocket>() {
+        public void handle(AsyncResult<NetSocket> res) {
+          if (res.succeeded()) {
+            connected(theServerID, res.result());
+          } else {
+            cleanupConnection(theServerID, ConnectionHolder.this, true);
+          }
         }
       });
     }

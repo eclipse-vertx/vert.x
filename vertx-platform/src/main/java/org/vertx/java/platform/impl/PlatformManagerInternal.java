@@ -25,11 +25,13 @@ import org.vertx.java.platform.PlatformManager;
  */
 public interface PlatformManagerInternal extends PlatformManager {
 
-  JsonObject getConfig();
+  JsonObject config();
 
-  Logger getLogger();
+  Logger logger();
 
   void removeModule(String moduleKey);
 
   void exit();
+
+  int checkNoModules();
 }

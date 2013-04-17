@@ -56,13 +56,16 @@ public class VertxNetHandler extends VertxStateHandler<DefaultNetSocket> impleme
     final ByteBuf in = chctx.inboundByteBuffer();
     final DefaultNetSocket sock = connectionMap.get(chctx.channel());
     if (sock != null) {
-
       Channel ch = chctx.channel();
       Context context = getContext(sock);
       // We need to do this since it's possible the server is being used from a worker context
       if (context.isOnCorrectWorker(ch.eventLoop())) {
-        vertx.setContext(context);
-        sock.handleDataReceived(new Buffer(in.slice()));
+        try {
+          vertx.setContext(context);
+          sock.handleDataReceived(new Buffer(in.slice()));
+        } catch (Throwable t) {
+          context.reportException(t);
+        }
       } else {
         final ByteBuf buf = in.readBytes(in.readableBytes());
         context.execute(new Runnable() {

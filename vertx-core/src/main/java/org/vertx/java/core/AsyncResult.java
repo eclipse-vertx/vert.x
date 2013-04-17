@@ -17,67 +17,30 @@
 package org.vertx.java.core;
 
 /**
- * Represents a result that is returned asynchronously from an operation.<p>
+ * Represents a result that may not have occurred yet.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class AsyncResult<T> {
+public interface AsyncResult<T> {
 
   /**
    * The result of the operation. This will be null if the operation failed.
    */
-  public T result;
+  T result();
 
   /**
    * An exception describing failure. This will be null if the operation succeeded.
    */
-  public Exception exception;
-
-  private boolean failed;
-  private boolean succeeded;
-  private AsyncResultHandler<T> handler;
+  Throwable cause();
 
   /**
    * Did it succeeed?
    */
-  public boolean succeeded() {
-    return succeeded;
-  }
+  boolean succeeded();
 
   /**
    * Did it fail?
    */
-  public boolean failed() {
-    return failed;
-  }
+  boolean failed();
 
-  public boolean complete() {
-    return failed || succeeded;
-  }
-
-  public AsyncResult<T> setHandler(AsyncResultHandler<T> handler) {
-    this.handler = handler;
-    checkCallHandler();
-    return this;
-  }
-
-  public AsyncResult<T> setResult(T result) {
-    this.result = result;
-    succeeded = true;
-    checkCallHandler();
-    return this;
-  }
-
-  public AsyncResult<T> setFailure(Exception exception) {
-    this.exception = exception;
-    failed = true;
-    checkCallHandler();
-    return this;
-  }
-
-  private void checkCallHandler() {
-    if (handler != null && complete()) {
-      handler.handle(this);
-    }
-  }
 }

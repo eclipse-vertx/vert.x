@@ -21,22 +21,18 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.Context;
 import org.vertx.java.core.impl.VertxInternal;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.io.File;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -45,16 +41,13 @@ import java.util.Queue;
  */
 class ServerConnection extends AbstractConnection {
 
-  @SuppressWarnings("unused")
-	private static final Logger log = LoggerFactory.getLogger(ServerConnection.class);
-
   private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
 
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
   private DefaultHttpServerRequest currentRequest;
   private DefaultHttpServerResponse pendingResponse;
-  private DefaultWebSocket ws;
+  private DefaultServerWebSocket ws;
   private boolean channelPaused;
   private boolean paused;
   private boolean sentCheck;
@@ -66,14 +59,12 @@ class ServerConnection extends AbstractConnection {
     this.serverOrigin = serverOrigin;
   }
 
-  @Override
   public void pause() {
     if (!paused) {
       paused = true;
     }
   }
 
-  @Override
   public void resume() {
     if (paused) {
       paused = false;
@@ -92,7 +83,7 @@ class ServerConnection extends AbstractConnection {
       if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
         //We pause the channel too, to prevent the queue growing too large, but we don't do this
         //until the queue reaches a certain size, to avoid pausing it too often
-        super.pause();
+        super.doPause();
         channelPaused = true;
       }
     } else {
@@ -157,7 +148,7 @@ class ServerConnection extends AbstractConnection {
   @Override
   public void handleInterestedOpsChanged() {
     try {
-      if (!writeQueueFull()) {
+      if (!doWriteQueueFull()) {
         setContext();
         if (pendingResponse != null) {
           pendingResponse.handleDrained();
@@ -170,7 +161,7 @@ class ServerConnection extends AbstractConnection {
     }
   }
 
-  void handleWebsocketConnect(DefaultWebSocket ws) {
+  void handleWebsocketConnect(DefaultServerWebSocket ws) {
     try {
       if (wsHandler != null) {
         setContext();
@@ -220,7 +211,7 @@ class ServerConnection extends AbstractConnection {
     }
   }
 
-  protected void addFuture(Handler<Void> doneHandler, ChannelFuture future) {
+  protected void addFuture(Handler<AsyncResult<Void>> doneHandler, ChannelFuture future) {
     super.addFuture(doneHandler, future);
   }
 
@@ -234,24 +225,9 @@ class ServerConnection extends AbstractConnection {
 
   private void processMessage(Object msg) {
     if (msg instanceof HttpRequest) {
-
       HttpRequest request = (HttpRequest) msg;
-
-      String method = request.getMethod().toString();
-      URI theURI;
-      try {
-        theURI = new URI(request.getUri());
-      } catch (URISyntaxException e) {
-        throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
-      }
-      String uri = request.getUri();
-      String path = theURI.getPath();
-      String query = theURI.getQuery();
-      HttpVersion ver = request.getProtocolVersion();
-      boolean keepAlive = ver == HttpVersion.HTTP_1_1 ||
-          (ver == HttpVersion.HTTP_1_0 && "Keep-Alive".equalsIgnoreCase(request.headers().get("Connection")));
-      DefaultHttpServerResponse resp = new DefaultHttpServerResponse(vertx, this, request.getProtocolVersion(), keepAlive);
-      DefaultHttpServerRequest req = new DefaultHttpServerRequest(this, method, uri, path, query, resp, request);
+      DefaultHttpServerResponse resp = new DefaultHttpServerResponse(vertx, this, request);
+      DefaultHttpServerRequest req = new DefaultHttpServerRequest(this, request, resp);
       handleRequest(req, resp);
     }
     if (msg instanceof HttpContent) {
@@ -282,7 +258,7 @@ class ServerConnection extends AbstractConnection {
     // Check if there are more pending messages in the queue that can be processed next time around
     if (!sentCheck && !pending.isEmpty() && !paused && (pendingResponse == null || pending.peek() instanceof HttpContent)) {
       sentCheck = true;
-      vertx.runOnLoop(new SimpleHandler() {
+      vertx.runOnLoop(new VoidHandler() {
         public void handle() {
           sentCheck = false;
           if (!paused) {
@@ -294,7 +270,7 @@ class ServerConnection extends AbstractConnection {
             }
             if (channelPaused && pending.isEmpty()) {
               //Resume the actual channel
-              ServerConnection.super.resume();
+              ServerConnection.super.doResume();
               channelPaused = false;
             }
           }

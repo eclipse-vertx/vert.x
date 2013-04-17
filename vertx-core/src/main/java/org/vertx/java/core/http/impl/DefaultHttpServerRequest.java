@@ -19,6 +19,7 @@ package org.vertx.java.core.http.impl;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
@@ -27,7 +28,6 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -39,29 +39,86 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultHttpServerRequest extends HttpServerRequest {
+public class DefaultHttpServerRequest implements HttpServerRequest {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultHttpServerRequest.class);
+
+  private final ServerConnection conn;
+  private final HttpRequest request;
+  private final HttpServerResponse response;
+
+  private String method;
+  private String uri;
+  private String path;
+  private String query;
+  private URI juri;
 
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Exception> exceptionHandler;
-  private final ServerConnection conn;
-  private final HttpRequest request;
+
   //Cache this for performance
   private Map<String, String> params;
   private Map<String, String> headers;
   private URI absoluteURI;
 
-  DefaultHttpServerRequest(ServerConnection conn,
-                           String method, String uri, String path, String query,
-                           HttpServerResponse response,
-                           HttpRequest request) {
-    super(method, uri, path, query, response);
+  DefaultHttpServerRequest(final ServerConnection conn,
+                           final HttpRequest request,
+                           final HttpServerResponse response) {
     this.conn = conn;
     this.request = request;
+    this.response = response;
   }
 
+  @Override
+  public String method() {
+    if (method == null) {
+      method = request.getMethod().toString();
+    }
+    return method;
+  }
+
+  @Override
+  public String uri() {
+    if (uri == null) {
+      uri = request.getUri();
+    }
+    return uri;
+  }
+
+  URI juri() {
+    if (juri == null) {
+      try {
+        juri = new URI(uri());
+      } catch (URISyntaxException e) {
+        throw new IllegalArgumentException("Invalid uri " + uri()); //Should never happen
+      }
+    }
+    return juri;
+  }
+
+  @Override
+  public String path() {
+    if (path == null) {
+      path = juri().getPath();
+    }
+    return path;
+  }
+
+  @Override
+  public String query() {
+    if (query == null) {
+      query = juri().getQuery();
+    }
+    return query;
+  }
+
+  @Override
+  public HttpServerResponse response() {
+    return response;
+  }
+
+  @Override
   public Map<String, String> headers() {
     if (headers == null) {
       headers = HeaderUtils.simplifyHeaders(request.headers().entries());
@@ -69,14 +126,15 @@ public class DefaultHttpServerRequest extends HttpServerRequest {
     return headers;
   }
 
+  @Override
   public Map<String, String> params() {
     if (params == null) {
       QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri);
       Map<String, List<String>> prms = queryStringDecoder.parameters();
       if (prms.isEmpty()) {
-        params = new HashMap<String, String>();
+        params = new HashMap<>();
       } else {
-        params = new HashMap<String, String>(prms.size());
+        params = new HashMap<>(prms.size());
         for (Map.Entry<String, List<String>> entry: prms.entrySet()) {
           params.put(entry.getKey(), entry.getValue().get(0));
         }
@@ -85,39 +143,51 @@ public class DefaultHttpServerRequest extends HttpServerRequest {
     return params;
   }
 
-  public void dataHandler(Handler<Buffer> dataHandler) {
+  @Override
+  public HttpServerRequest dataHandler(Handler<Buffer> dataHandler) {
     this.dataHandler = dataHandler;
+    return this;
   }
 
-  public void exceptionHandler(Handler<Exception> handler) {
+  @Override
+  public HttpServerRequest exceptionHandler(Handler<Exception> handler) {
     this.exceptionHandler = handler;
+    return this;
   }
 
-  public void pause() {
+  @Override
+  public HttpServerRequest pause() {
     conn.pause();
+    return this;
   }
 
-  public void resume() {
+  @Override
+  public HttpServerRequest resume() {
     conn.resume();
+    return this;
   }
 
-  public void endHandler(Handler<Void> handler) {
+  @Override
+  public HttpServerRequest endHandler(Handler<Void> handler) {
     this.endHandler = handler;
+    return this;
   }
 
-  public InetSocketAddress getRemoteAddress() {
+  @Override
+  public InetSocketAddress remoteAddress() {
     return conn.remoteAddress();
   }
 
-  public URI getAbsoluteURI() {
+  @Override
+  public URI absoluteURI() {
     if (absoluteURI == null) {
       try {
-        if (uri.startsWith("http:") || uri.startsWith("https")) {
-          absoluteURI = new URI(uri);
-        } else if (uri.startsWith("/")) {
-          absoluteURI = new URI(conn.getServerOrigin() + uri);
+        URI uri = juri();
+        String scheme = uri.getScheme();
+        if (scheme != null && (scheme.startsWith("http:") || scheme.startsWith("https"))) {
+          absoluteURI = uri;
         } else {
-          absoluteURI = new URI(conn.getServerOrigin() + "/" + uri);
+          absoluteURI = new URI(conn.getServerOrigin() + uri);
         }
       } catch (URISyntaxException e) {
         log.error("Failed to create abs uri", e);
@@ -126,19 +196,37 @@ public class DefaultHttpServerRequest extends HttpServerRequest {
     return absoluteURI;
   }
 
+  @Override
+  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
+    return conn.getPeerCertificateChain();
+  }
+
+  @Override
+  public HttpServerRequest bodyHandler(final Handler<Buffer> bodyHandler) {
+    final Buffer body = new Buffer();
+    dataHandler(new Handler<Buffer>() {
+      public void handle(Buffer buff) {
+        body.appendBuffer(buff);
+      }
+    });
+    endHandler(new VoidHandler() {
+      public void handle() {
+        bodyHandler.handle(body);
+      }
+    });
+    return this;
+  }
+
+  public HttpRequest nettyRequest() {
+    return request;
+  }
+
   void handleData(Buffer data) {
     if (dataHandler != null) {
       dataHandler.handle(data);
     }
   }
 
-  public X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException {
-    return conn.getPeerCertificateChain();
-  }
-
-  public HttpRequest getNettyRequest() {
-    return request;
-  }
 
   void handleEnd() {
     if (endHandler != null) {

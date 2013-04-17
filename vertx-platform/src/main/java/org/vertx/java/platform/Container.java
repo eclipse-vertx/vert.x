@@ -16,6 +16,7 @@
 
 package org.vertx.java.platform;
 
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -78,7 +79,7 @@ public interface Container {
    * @param instances The number of instances to deploy (defaults to 1)
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
-  void deployWorkerVerticle(String main, JsonObject config, int instances, boolean multiThreaded, Handler<String> doneHandler);
+  void deployWorkerVerticle(String main, JsonObject config, int instances, boolean multiThreaded, Handler<AsyncResult<String>> doneHandler);
 
   /**
    * Deploy a module programmatically
@@ -115,14 +116,14 @@ public interface Container {
    * @param instances The number of instances to deploy (defaults to 1)
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
-  void deployModule(String moduleName, JsonObject config, int instances, Handler<String> doneHandler);
+  void deployModule(String moduleName, JsonObject config, int instances, Handler<AsyncResult<String>> doneHandler);
 
   /**
    * Deploy a module programmatically
    * @param moduleName The main of the module to deploy
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
-  void deployModule(String moduleName, Handler<String> doneHandler);
+  void deployModule(String moduleName, Handler<AsyncResult<String>> doneHandler);
 
   /**
    * Deploy a module programmatically
@@ -130,7 +131,7 @@ public interface Container {
    * @param config JSON config to provide to the module
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
-  void deployModule(String moduleName, JsonObject config, Handler<String> doneHandler);
+  void deployModule(String moduleName, JsonObject config, Handler<AsyncResult<String>> doneHandler);
 
   /**
    * Deploy a module programmatically
@@ -138,7 +139,7 @@ public interface Container {
    *                   * @param instances The number of instances to deploy (defaults to 1)
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
-  void deployModule(String moduleName, int instances, Handler<String> doneHandler);
+  void deployModule(String moduleName, int instances, Handler<AsyncResult<String>> doneHandler);
 
   /**
    * Deploy a worker verticle programmatically
@@ -175,14 +176,14 @@ public interface Container {
    * @param instances The number of instances to deploy (defaults to 1)
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
-  void deployVerticle(String main, JsonObject config, int instances, Handler<String> doneHandler);
+  void deployVerticle(String main, JsonObject config, int instances, Handler<AsyncResult<String>> doneHandler);
 
   /**
    * Deploy a verticle programmatically
    * @param main The main of the verticle
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
-  void deployVerticle(String main, Handler<String> doneHandler);
+  void deployVerticle(String main, Handler<AsyncResult<String>> doneHandler);
 
   /**
    * Deploy a verticle programmatically
@@ -190,14 +191,14 @@ public interface Container {
    * @param config JSON config to provide to the verticle
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
-  void deployVerticle(String main, JsonObject config, Handler<String> doneHandler);
+  void deployVerticle(String main, JsonObject config, Handler<AsyncResult<String>> doneHandler);
 
   /**
    * Deploy a verticle programmatically
    * @param main The main of the verticle
    * @param doneHandler The handler will be called passing in the unique deployment id when  deployment is complete
    */
-  void deployVerticle(String main, int instances, Handler<String> doneHandler);
+  void deployVerticle(String main, int instances, Handler<AsyncResult<String>> doneHandler);
 
   /**
    * Undeploy a verticle
@@ -210,7 +211,7 @@ public interface Container {
    * @param deploymentID The deployment ID
    * @param doneHandler The handler will be called when undeployment is complete
    */
-  void undeployVerticle(String deploymentID, Handler<Void> doneHandler);
+  void undeployVerticle(String deploymentID, Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * Undeploy a module
@@ -223,19 +224,19 @@ public interface Container {
    * @param deploymentID The deployment ID
    * @param doneHandler The handler will be called when undeployment is complete
    */
-  void undeployModule(String deploymentID, Handler<Void> doneHandler);
+  void undeployModule(String deploymentID, Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * Get the verticle configuration
    * @return a JSON object representing the configuration
    */
-  JsonObject getConfig();
+  JsonObject config();
 
   /**
    * Get the verticle logger
    * @return The logger
    */
-  Logger getLogger();
+  Logger logger();
 
   /**
    * Cause the container to exit
@@ -246,6 +247,6 @@ public interface Container {
    * Get an umodifiable map of system, environment variables.
    * @return The map
    */
-  Map<String, String> getEnv();
+  Map<String, String> env();
 
 }

@@ -83,8 +83,12 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxSt
       Context context = getContext(connection);
       // We need to do this since it's possible the server is being used from a worker context
       if (context.isOnCorrectWorker(ch.eventLoop())) {
-        vertx.setContext(context);
-        doMessageReceived(connection, chctx, msg);
+        try {
+          vertx.setContext(context);
+          doMessageReceived(connection, chctx, msg);
+        } catch (Throwable t) {
+          context.reportException(t);
+        }
       } else {
         BufUtil.retain(msg);
         context.execute(new Runnable() {

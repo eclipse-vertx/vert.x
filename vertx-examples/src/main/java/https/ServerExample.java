@@ -30,9 +30,9 @@ public class ServerExample extends Verticle {
         for (String key : req.headers().keySet()) {
           System.out.println(key + ":" + req.headers().get(key));
         }
-        req.response.headers().put("Content-Type", "text/html; charset=UTF-8");
-        req.response.setChunked(true);
-        req.response.write("<html><body><h1>Hello from vert.x!</h1></body></html>", "UTF-8").end();
+        req.response().headers().put("Content-Type", "text/html; charset=UTF-8");
+        req.response().setChunked(true);
+        req.response().write("<html><body><h1>Hello from vert.x!</h1></body></html>", "UTF-8").end();
       }
     }).setSSL(true).setKeyStorePath("server-keystore.jks").setKeyStorePassword("wibble").listen(4443);
   }

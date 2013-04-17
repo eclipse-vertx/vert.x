@@ -24,22 +24,13 @@ dependencies {
 	compile "com.hazelcast:hazelcast:$hazelcastVersion"
 	compile "io.netty:netty-all:$nettyVersion"
 
-    testCompile project(":vertx-platform")
+  testCompile project(":vertx-platform")
 }
 
 artifacts {
 	platform jar
 }
 
-/*
-sourceSets {
-  test {
-    resources {
-      srcDirs "../src/dist/conf"
-    }
-  }
-}
-*/
 
 test {
   outputs.upToDateWhen { false }

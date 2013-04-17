@@ -26,12 +26,11 @@ public class ThreadPoolMXBeanImpl implements ThreadPoolMXBean {
   private ThreadPoolExecutor executor;
 
   /**
-   * @param exec
+   * @param executor
    */
   public ThreadPoolMXBeanImpl(ThreadPoolExecutor executor) {
     this.executor = executor;
   }
-
 
   /* (non-Javadoc)
    * @see org.vertx.java.core.impl.management.ThreadPoolMXBean#isShutdown()

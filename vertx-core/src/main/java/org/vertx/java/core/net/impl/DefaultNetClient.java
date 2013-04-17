@@ -17,27 +17,19 @@
 package org.vertx.java.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
+import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.impl.Context;
-import org.vertx.java.core.impl.ExceptionDispatchHandler;
-import org.vertx.java.core.impl.FlowControlHandler;
-import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.impl.*;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLHandshakeException;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,16 +40,16 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DefaultNetClient implements NetClient {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultNetClient.class);
-    private static final ExceptionDispatchHandler EXCEPTION_DISPATCH_HANDLER = new ExceptionDispatchHandler();
+  private static final ExceptionDispatchHandler EXCEPTION_DISPATCH_HANDLER = new ExceptionDispatchHandler();
 
   private final VertxInternal vertx;
   private final Context actualCtx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private Bootstrap bootstrap;
   private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<>();
-  private Handler<Exception> exceptionHandler;
   private int reconnectAttempts;
   private long reconnectInterval = 1000;
+  private boolean configurable = true;
 
   public DefaultNetClient(VertxInternal vertx) {
     this.vertx = vertx;
@@ -69,23 +61,28 @@ public class DefaultNetClient implements NetClient {
     });
   }
 
-  public NetClient connect(int port, String host, final Handler<NetSocket> connectHandler) {
+  @Override
+  public NetClient connect(int port, String host, final Handler<AsyncResult<NetSocket>> connectHandler) {
     connect(port, host, connectHandler, reconnectAttempts);
     return this;
   }
 
-  public NetClient connect(int port, Handler<NetSocket> connectCallback) {
+  @Override
+  public NetClient connect(int port, final Handler<AsyncResult<NetSocket>> connectCallback) {
     connect(port, "localhost", connectCallback);
     return this;
   }
 
+  @Override
   public void close() {
     for (NetSocket sock : socketMap.values()) {
       sock.close();
     }
   }
 
+  @Override
   public NetClient setReconnectAttempts(int attempts) {
+    checkConfigurable();
     if (attempts < -1) {
       throw new IllegalArgumentException("reconnect attempts must be >= -1");
     }
@@ -93,11 +90,14 @@ public class DefaultNetClient implements NetClient {
     return this;
   }
 
+  @Override
   public int getReconnectAttempts() {
     return reconnectAttempts;
   }
 
+  @Override
   public NetClient setReconnectInterval(long interval) {
+    checkConfigurable();
     if (interval < 1) {
       throw new IllegalArgumentException("reconnect interval nust be >= 1");
     }
@@ -105,165 +105,200 @@ public class DefaultNetClient implements NetClient {
     return this;
   }
 
+  @Override
   public long getReconnectInterval() {
     return reconnectInterval;
   }
 
-  public void exceptionHandler(Handler<Exception> handler) {
-    this.exceptionHandler = handler;
-  }
-
-  public Boolean isTCPNoDelay() {
+  @Override
+  public boolean isTCPNoDelay() {
     return tcpHelper.isTCPNoDelay();
   }
 
-  public Integer getSendBufferSize() {
+  @Override
+  public int getSendBufferSize() {
     return tcpHelper.getSendBufferSize();
   }
 
-  public Integer getReceiveBufferSize() {
+  @Override
+  public int getReceiveBufferSize() {
     return tcpHelper.getReceiveBufferSize();
   }
 
-  public Boolean isTCPKeepAlive() {
+  @Override
+  public boolean isTCPKeepAlive() {
     return tcpHelper.isTCPKeepAlive();
   }
 
-  public Boolean isReuseAddress() {
+  @Override
+  public boolean isReuseAddress() {
     return tcpHelper.isReuseAddress();
   }
 
-  public Integer getSoLinger() {
+  @Override
+  public int getSoLinger() {
     return tcpHelper.getSoLinger();
   }
 
-  public Integer getTrafficClass() {
+  @Override
+  public int getTrafficClass() {
     return tcpHelper.getTrafficClass();
   }
 
-  public Long getConnectTimeout() {
+  @Override
+  public int getConnectTimeout() {
     return tcpHelper.getConnectTimeout();
   }
 
+  @Override
   public NetClient setTCPNoDelay(boolean tcpNoDelay) {
+    checkConfigurable();
     tcpHelper.setTCPNoDelay(tcpNoDelay);
     return this;
   }
 
+  @Override
   public NetClient setSendBufferSize(int size) {
+    checkConfigurable();
     tcpHelper.setSendBufferSize(size);
     return this;
   }
 
+  @Override
   public NetClient setReceiveBufferSize(int size) {
+    checkConfigurable();
     tcpHelper.setReceiveBufferSize(size);
     return this;
   }
 
+  @Override
   public NetClient setTCPKeepAlive(boolean keepAlive) {
+    checkConfigurable();
     tcpHelper.setTCPKeepAlive(keepAlive);
     return this;
   }
 
+  @Override
   public NetClient setReuseAddress(boolean reuse) {
+    checkConfigurable();
     tcpHelper.setReuseAddress(reuse);
     return this;
   }
 
+  @Override
   public NetClient setSoLinger(int linger) {
-    if (linger < 0) {
-      tcpHelper.setSoLinger(null);
-    } else {
-      tcpHelper.setSoLinger(linger);
-    }
+    checkConfigurable();
+    tcpHelper.setSoLinger(linger);
     return this;
   }
 
+  @Override
   public NetClient setTrafficClass(int trafficClass) {
+    checkConfigurable();
     tcpHelper.setTrafficClass(trafficClass);
     return this;
   }
 
-  public NetClient setConnectTimeout(long timeout) {
+  @Override
+  public NetClient setConnectTimeout(int timeout) {
+    checkConfigurable();
     tcpHelper.setConnectTimeout(timeout);
     return this;
   }
 
+  @Override
   public boolean isSSL() {
     return tcpHelper.isSSL();
   }
 
+  @Override
   public String getKeyStorePath() {
     return tcpHelper.getKeyStorePath();
   }
 
+  @Override
   public String getKeyStorePassword() {
     return tcpHelper.getKeyStorePassword();
   }
 
+  @Override
   public String getTrustStorePath() {
     return tcpHelper.getTrustStorePath();
   }
 
+  @Override
   public String getTrustStorePassword() {
     return tcpHelper.getTrustStorePassword();
   }
 
-  public TCPSSLHelper.ClientAuth getClientAuth() {
-    return tcpHelper.getClientAuth();
-  }
-
-  public SSLContext getSSLContext() {
-    return tcpHelper.getSSLContext();
-  }
-
+  @Override
   public boolean isTrustAll() {
     return tcpHelper.isTrustAll();
   }
 
+  @Override
   public NetClient setSSL(boolean ssl) {
+    checkConfigurable();
     tcpHelper.setSSL(ssl);
     return this;
   }
 
+  @Override
   public NetClient setKeyStorePath(String path) {
+    checkConfigurable();
     tcpHelper.setKeyStorePath(path);
     return this;
   }
 
+  @Override
   public NetClient setKeyStorePassword(String pwd) {
+    checkConfigurable();
     tcpHelper.setKeyStorePassword(pwd);
     return this;
   }
 
+  @Override
   public NetClient setTrustStorePath(String path) {
+    checkConfigurable();
     tcpHelper.setTrustStorePath(path);
     return this;
   }
 
+  @Override
   public NetClient setTrustStorePassword(String pwd) {
+    checkConfigurable();
     tcpHelper.setTrustStorePassword(pwd);
     return this;
   }
 
+  @Override
   public NetClient setTrustAll(boolean trustAll) {
+    checkConfigurable();
     tcpHelper.setTrustAll(trustAll);
     return this;
   }
 
+  @Override
   public NetClient setUsePooledBuffers(boolean pooledBuffers) {
+    checkConfigurable();
     tcpHelper.setUsePooledBuffers(pooledBuffers);
     return this;
   }
 
+  @Override
   public boolean isUsePooledBuffers() {
     return tcpHelper.isUsePooledBuffers();
   }
 
-  private void connect(final int port, final String host, final Handler<NetSocket> connectHandler,
+  private void checkConfigurable() {
+    if (!configurable) {
+      throw new IllegalStateException("Can't set property after connect has been called");
+    }
+  }
+
+  private void connect(final int port, final String host, final Handler<AsyncResult<NetSocket>> connectHandler,
                        final int remainingAttempts) {
     if (bootstrap == null) {
-      // Share the event loop thread to also serve the NetClient's network traffic.
       tcpHelper.checkSSL(vertx);
 
       bootstrap = new Bootstrap();
@@ -285,6 +320,7 @@ public class DefaultNetClient implements NetClient {
           pipeline.addLast("handler", new VertxNetHandler(vertx, socketMap));
         }
       });
+      configurable = false;
     }
     tcpHelper.applyConnectionOptions(bootstrap);
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
@@ -306,7 +342,7 @@ public class DefaultNetClient implements NetClient {
                 if (channelFuture.isSuccess()) {
                   connected(ch, connectHandler);
                 } else {
-                  failed(ch, new SSLHandshakeException("Failed to create SSL connection"));
+                  failed(ch, channelFuture.cause(), connectHandler);
                 }
               }
             });
@@ -340,46 +376,66 @@ public class DefaultNetClient implements NetClient {
               });
             }
           } else {
-            failed(ch, channelFuture.cause());
+            failed(ch, channelFuture.cause(), connectHandler);
           }
         }
       }
     });
   }
 
-  private void connected(final Channel ch, final Handler<NetSocket> connectHandler) {
+  private void connected(final Channel ch, final Handler<AsyncResult<NetSocket>> connectHandler) {
     if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
-      vertx.setContext(actualCtx);
-      DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, actualCtx);
-      socketMap.put(ch, sock);
-      connectHandler.handle(sock);
+      try {
+        vertx.setContext(actualCtx);
+        doConnected(ch, connectHandler);
+      } catch (Throwable t) {
+        actualCtx.reportException(t);
+      }
     } else {
       actualCtx.execute(new Runnable() {
         public void run() {
-          DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, actualCtx);
-          socketMap.put(ch, sock);
-          connectHandler.handle(sock);
+          doConnected(ch, connectHandler);
         }
       });
     }
-
   }
 
-  private void failed(Channel ch, final Throwable t) {
+  private void doConnected(Channel ch, final Handler<AsyncResult<NetSocket>> connectHandler) {
+    DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, actualCtx);
+    socketMap.put(ch, sock);
+    connectHandler.handle(new DefaultFutureResult<NetSocket>(sock));
+  }
+
+  private void failed(Channel ch, final Throwable t, final Handler<AsyncResult<NetSocket>> connectHandler) {
     ch.close();
-    if (t instanceof Exception && exceptionHandler != null) {
-      if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
+    if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
+      try {
         vertx.setContext(actualCtx);
-        exceptionHandler.handle((Exception) t);
-      } else {
-        actualCtx.execute(new Runnable() {
-          public void run() {
-            exceptionHandler.handle((Exception) t);
-          }
-        });
+        doFailed(connectHandler, t);
+      } catch (Throwable tt) {
+        actualCtx.reportException(tt);
       }
     } else {
-      log.error("Unhandled exception", t);
+      actualCtx.execute(new Runnable() {
+        public void run() {
+          doFailed(connectHandler, t);
+        }
+      });
+    }
+  }
+
+  private static void doFailed(Handler<AsyncResult<NetSocket>> connectHandler, Throwable t) {
+    connectHandler.handle(new DefaultFutureResult<NetSocket>(t));
+  }
+
+  private class ClientHandler extends VertxNetHandler {
+    public ClientHandler() {
+      super(DefaultNetClient.this.vertx, socketMap);
+    }
+
+    @Override
+    protected Context getContext(DefaultNetSocket connection) {
+      return actualCtx;
     }
   }
 }

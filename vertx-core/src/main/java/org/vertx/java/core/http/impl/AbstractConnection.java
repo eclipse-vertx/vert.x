@@ -50,7 +50,6 @@ public abstract class AbstractConnection extends ConnectionBase {
     }
   }
 
-
   ChannelFuture write(Object obj) {
     if (channel.isOpen()) {
       return channel.write(obj);

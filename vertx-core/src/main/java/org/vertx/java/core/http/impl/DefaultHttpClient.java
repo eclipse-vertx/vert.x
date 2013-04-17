@@ -17,12 +17,7 @@
 package org.vertx.java.core.http.impl;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
+import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContent;
@@ -30,14 +25,11 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.ssl.SslHandler;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
-import org.vertx.java.core.impl.Context;
-import org.vertx.java.core.impl.ExceptionDispatchHandler;
-import org.vertx.java.core.impl.FlowControlHandler;
-import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.impl.*;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.impl.TCPSSLHelper;
@@ -69,6 +61,7 @@ public class DefaultHttpClient implements HttpClient {
     }
   };
   private boolean keepAlive = true;
+  private boolean configurable = true;
 
   public DefaultHttpClient(VertxInternal vertx) {
     this.vertx = vertx;
@@ -80,39 +73,68 @@ public class DefaultHttpClient implements HttpClient {
     });
   }
 
+  @Override
   public void exceptionHandler(Handler<Exception> handler) {
     this.exceptionHandler = handler;
   }
 
+  @Override
   public DefaultHttpClient setMaxPoolSize(int maxConnections) {
+    checkConfigurable();
     pool.setMaxPoolSize(maxConnections);
     return this;
   }
 
+  @Override
   public int getMaxPoolSize() {
     return pool.getMaxPoolSize();
   }
 
+  @Override
   public DefaultHttpClient setKeepAlive(boolean keepAlive) {
+    checkConfigurable();
     this.keepAlive = keepAlive;
     return this;
   }
 
+  @Override
+  public boolean isKeepAlive() {
+    return keepAlive;
+  }
+
+  @Override
   public DefaultHttpClient setPort(int port) {
+    checkConfigurable();
     this.port = port;
     return this;
   }
 
+  @Override
+  public int getPort() {
+    return port;
+  }
+
+  @Override
   public DefaultHttpClient setHost(String host) {
+    checkConfigurable();
     this.host = host;
     return this;
   }
 
-  public void connectWebsocket(final String uri, final Handler<WebSocket> wsConnect) {
-    connectWebsocket(uri, WebSocketVersion.RFC6455, wsConnect);
+  @Override
+  public String getHost() {
+    return host;
   }
 
-  public void connectWebsocket(final String uri, final WebSocketVersion wsVersion, final Handler<WebSocket> wsConnect) {
+  @Override
+  public HttpClient connectWebsocket(final String uri, final Handler<WebSocket> wsConnect) {
+    connectWebsocket(uri, WebSocketVersion.RFC6455, wsConnect);
+    return this;
+  }
+
+  @Override
+  public HttpClient connectWebsocket(final String uri, final WebSocketVersion wsVersion, final Handler<WebSocket> wsConnect) {
+    configurable = false;
     getConnection(new Handler<ClientConnection>() {
       public void handle(final ClientConnection conn) {
         if (!conn.isClosed()) {
@@ -122,60 +144,77 @@ public class DefaultHttpClient implements HttpClient {
         }
       }
     }, exceptionHandler, actualCtx);
+    return this;
   }
 
-  public void getNow(String uri, Handler<HttpClientResponse> responseHandler) {
+  @Override
+  public HttpClient getNow(String uri, Handler<HttpClientResponse> responseHandler) {
     getNow(uri, null, responseHandler);
+    return this;
   }
 
-  public void getNow(String uri, Map<String, ? extends Object> headers, Handler<HttpClientResponse> responseHandler) {
+  @Override
+  public HttpClient getNow(String uri, Map<String, ? extends Object> headers, Handler<HttpClientResponse> responseHandler) {
     HttpClientRequest req = get(uri, responseHandler);
     if (headers != null) {
       req.headers().putAll(headers);
     }
     req.end();
+    return this;
   }
 
+  @Override
   public HttpClientRequest options(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("OPTIONS", uri, responseHandler);
   }
 
+  @Override
   public HttpClientRequest get(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("GET", uri, responseHandler);
   }
 
+  @Override
   public HttpClientRequest head(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("HEAD", uri, responseHandler);
   }
 
+  @Override
   public HttpClientRequest post(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("POST", uri, responseHandler);
   }
 
+  @Override
   public HttpClientRequest put(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("PUT", uri, responseHandler);
   }
 
+  @Override
   public HttpClientRequest delete(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("DELETE", uri, responseHandler);
   }
 
+  @Override
   public HttpClientRequest trace(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("TRACE", uri, responseHandler);
   }
 
+  @Override
   public HttpClientRequest connect(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("CONNECT", uri, responseHandler);
   }
 
+  @Override
   public HttpClientRequest patch(String uri, Handler<HttpClientResponse> responseHandler) {
     return request("PATCH", uri, responseHandler);
   }
 
+  @Override
   public HttpClientRequest request(String method, String uri, Handler<HttpClientResponse> responseHandler) {
+    configurable = false;
     return new DefaultHttpClientRequest(this, method, uri, responseHandler, actualCtx);
   }
 
+  @Override
   public void close() {
     pool.close();
     for (ClientConnection conn : connectionMap.values()) {
@@ -183,155 +222,187 @@ public class DefaultHttpClient implements HttpClient {
     }
   }
 
+  @Override
   public DefaultHttpClient setSSL(boolean ssl) {
+    checkConfigurable();
     tcpHelper.setSSL(ssl);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setVerifyHost(boolean verifyHost) {
+    checkConfigurable();
     tcpHelper.setVerifyHost(verifyHost);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setKeyStorePath(String path) {
+    checkConfigurable();
     tcpHelper.setKeyStorePath(path);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setKeyStorePassword(String pwd) {
+    checkConfigurable();
     tcpHelper.setKeyStorePassword(pwd);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setTrustStorePath(String path) {
+    checkConfigurable();
     tcpHelper.setTrustStorePath(path);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setTrustStorePassword(String pwd) {
+    checkConfigurable();
     tcpHelper.setTrustStorePassword(pwd);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setTrustAll(boolean trustAll) {
+    checkConfigurable();
     tcpHelper.setTrustAll(trustAll);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setTCPNoDelay(boolean tcpNoDelay) {
+    checkConfigurable();
     tcpHelper.setTCPNoDelay(tcpNoDelay);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setSendBufferSize(int size) {
+    checkConfigurable();
     tcpHelper.setSendBufferSize(size);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setReceiveBufferSize(int size) {
+    checkConfigurable();
     tcpHelper.setReceiveBufferSize(size);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setTCPKeepAlive(boolean keepAlive) {
+    checkConfigurable();
     tcpHelper.setTCPKeepAlive(keepAlive);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setReuseAddress(boolean reuse) {
+    checkConfigurable();
     tcpHelper.setReuseAddress(reuse);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setSoLinger(int linger) {
-    if (linger < 0) {
-      tcpHelper.setSoLinger(null);
-    } else {
-      tcpHelper.setSoLinger(linger);
-    }
+    checkConfigurable();
+    tcpHelper.setSoLinger(linger);
     return this;
   }
 
+  @Override
   public DefaultHttpClient setTrafficClass(int trafficClass) {
+    checkConfigurable();
     tcpHelper.setTrafficClass(trafficClass);
     return this;
   }
 
-  public DefaultHttpClient setConnectTimeout(long timeout) {
-    tcpHelper.setConnectTimeout(timeout);
-    return this;
-  }
-
-  public Boolean isTCPNoDelay() {
+  @Override
+  public boolean isTCPNoDelay() {
     return tcpHelper.isTCPNoDelay();
   }
 
-  public Integer getSendBufferSize() {
+  @Override
+  public int getSendBufferSize() {
     return tcpHelper.getSendBufferSize();
   }
 
-  public Integer getReceiveBufferSize() {
+  @Override
+  public int getReceiveBufferSize() {
     return tcpHelper.getReceiveBufferSize();
   }
 
-  public Boolean isTCPKeepAlive() {
+  @Override
+  public boolean isTCPKeepAlive() {
     return tcpHelper.isTCPKeepAlive();
   }
 
-  public Boolean isReuseAddress() {
+  @Override
+  public boolean isReuseAddress() {
     return tcpHelper.isReuseAddress();
   }
 
-  public Integer getSoLinger() {
+  @Override
+  public int getSoLinger() {
     return tcpHelper.getSoLinger();
   }
 
-  public Integer getTrafficClass() {
+  @Override
+  public int getTrafficClass() {
     return tcpHelper.getTrafficClass();
   }
 
-  public Long getConnectTimeout() {
-    return tcpHelper.getConnectTimeout();
-  }
-
+  @Override
   public boolean isSSL() {
     return tcpHelper.isSSL();
   }
 
+  @Override
   public boolean isVerifyHost() {
     return tcpHelper.isVerifyHost();
   }
 
+  @Override
   public boolean isTrustAll() {
     return tcpHelper.isTrustAll();
   }
 
+  @Override
   public String getKeyStorePath() {
     return tcpHelper.getKeyStorePath();
   }
 
+  @Override
   public String getKeyStorePassword() {
     return tcpHelper.getKeyStorePassword();
   }
 
+  @Override
   public String getTrustStorePath() {
     return tcpHelper.getTrustStorePath();
   }
 
+  @Override
   public String getTrustStorePassword() {
     return tcpHelper.getTrustStorePassword();
   }
 
+  @Override
   public HttpClient setUsePooledBuffers(boolean pooledBuffers) {
+    checkConfigurable();
     tcpHelper.setUsePooledBuffers(pooledBuffers);
     return this;
   }
 
+  @Override
   public boolean isUsePooledBuffers() {
     return tcpHelper.isUsePooledBuffers();
   }
 
-  public void getConnection(Handler<ClientConnection> handler, Handler<Exception> connectionExceptionHandler, Context context) {
+  void getConnection(Handler<ClientConnection> handler, Handler<Exception> connectionExceptionHandler, Context context) {
     pool.getConnection(handler, connectionExceptionHandler, context);
   }
 
@@ -391,9 +462,8 @@ public class DefaultHttpClient implements HttpClient {
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
-          final Channel ch = channelFuture.channel();
-          if (channelFuture.isSuccess()) {
-
+        final Channel ch = channelFuture.channel();
+        if (channelFuture.isSuccess()) {
           if (tcpHelper.isSSL()) {
             // TCP connected, so now we must do the SSL handshake
 
@@ -413,47 +483,50 @@ public class DefaultHttpClient implements HttpClient {
           } else {
             connected(ch, connectHandler);
           }
-
         } else {
-            failed(ch, connectErrorHandler, channelFuture.cause());
+          failed(ch, connectErrorHandler, channelFuture.cause());
         }
       }
     });
   }
 
+  private void checkConfigurable() {
+    if (!configurable) {
+      throw new IllegalStateException("Can't set property after connect has been called");
+    }
+  }
+
   private void connected(final Channel ch, final Handler<ClientConnection> connectHandler) {
     if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
       vertx.setContext(actualCtx);
-      final ClientConnection conn = new ClientConnection(vertx, DefaultHttpClient.this, ch,
-                host + ":" + port, keepAlive, actualCtx);
-      conn.closedHandler(new SimpleHandler() {
-        public void handle() {
-          pool.connectionClosed();
-        }
-      });
-      connectionMap.put(ch, conn);
-      connectHandler.handle(conn);
+      try {
+        createConn(ch, connectHandler);
+      } catch (Throwable t) {
+        actualCtx.reportException(t);
+      }
     } else {
         actualCtx.execute(new Runnable() {
           public void run() {
-            final ClientConnection conn = new ClientConnection(vertx, DefaultHttpClient.this, ch,
-                    host + ":" + port, keepAlive, actualCtx);
-            conn.closedHandler(new SimpleHandler() {
-                    public void handle() {
-                        pool.connectionClosed();
-                    }
-                });
-            connectionMap.put(ch, conn);
-            connectHandler.handle(conn);
+            createConn(ch, connectHandler);
           }
         });
     }
   }
 
+  private void createConn(Channel ch, Handler<ClientConnection> connectHandler) {
+    final ClientConnection conn = new ClientConnection(vertx, DefaultHttpClient.this, ch,
+        host + ":" + port, keepAlive, actualCtx);
+    conn.closeHandler(new VoidHandler() {
+      public void handle() {
+        pool.connectionClosed();
+      }
+    });
+    connectionMap.put(ch, conn);
+    connectHandler.handle(conn);
+  }
+
   private void failed(final Channel ch, final Handler<Exception> connectionExceptionHandler,
                       final Throwable t) {
-    //ch.close();
-
     // If no specific exception handler is provided, fall back to the HttpClient's exception handler.
     final Handler<Exception> exHandler = connectionExceptionHandler == null ? exceptionHandler : connectionExceptionHandler;
 

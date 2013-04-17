@@ -19,6 +19,7 @@ package org.vertx.java.tests.core.eventbus;
 import org.junit.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxFactory;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.logging.Logger;
@@ -130,12 +131,12 @@ public class JavaEventBusTest extends TestBase {
   }
 
   public void testNoContext() throws Exception {
-    Vertx vertx = Vertx.newVertx();
+    Vertx vertx = VertxFactory.newVertx();
     final EventBus eb = vertx.eventBus();
     final CountDownLatch latch = new CountDownLatch(1);
     eb.registerHandler("foo", new Handler<Message<String>>() {
       public void handle(Message<String> msg) {
-        assert("bar".equals(msg.body));
+        assert("bar".equals(msg.body()));
         eb.unregisterHandler("foo", this);
         latch.countDown();
       }

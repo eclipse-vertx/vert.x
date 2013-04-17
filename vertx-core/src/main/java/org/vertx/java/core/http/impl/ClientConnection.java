@@ -19,22 +19,12 @@ package org.vertx.java.core.http.impl;
 import io.netty.buffer.BufUtil;
 import io.netty.buffer.MessageBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundMessageHandler;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelStateHandlerAdapter;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.channel.*;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.WebSocket;
@@ -190,10 +180,14 @@ class ClientConnection extends AbstractConnection {
       try {
         ctx.pipeline().addAfter(ctx.name(), "websocketConverter", WebSocketConvertHandler.INSTANCE);
         handshaker.finishHandshake(channel, response);
-        ws = new DefaultWebSocket(vertx, null, ClientConnection.this, null);
+        ws = new DefaultWebSocket(vertx, ClientConnection.this);
         if (context.isOnCorrectWorker(ctx.channel().eventLoop())) {
-          vertx.setContext(context);
-          wsConnect.handle(ws);
+          try {
+            vertx.setContext(context);
+            wsConnect.handle(ws);
+          } catch (Throwable t) {
+            context.reportException(t);
+          }
         } else {
           context.execute(new Runnable() {
             public void run() {
@@ -210,14 +204,12 @@ class ClientConnection extends AbstractConnection {
     }
   }
 
+  public void closeHandler(Handler<Void> handler) {
+    this.closeHandler = handler;
+  }
+
   @Override
   public void close() {
-//    if (ws != null) {
-//      //Need to send 9 zeros to represent a close
-//      byte[] bytes = new byte[] {0, 0, 0, 0, 0, 0, 0, 0, 0};  // Just to be explicit
-//      ChannelFuture future = channel.write(ChannelBuffers.copiedBuffer(bytes));
-//      future.addListener(ChannelFutureListener.CLOSE);  // Close after it's written
-//    }
     if (wsHandshakeConnection) {
       // Do nothing - this will be ugraded
     } else if (!keepAlive) {
@@ -244,7 +236,7 @@ class ClientConnection extends AbstractConnection {
   @Override
   public void handleInterestedOpsChanged() {
     try {
-      if (!writeQueueFull()) {
+      if (!doWriteQueueFull()) {
         if (currentRequest != null) {
           setContext();
           currentRequest.handleDrained();
@@ -324,7 +316,7 @@ class ClientConnection extends AbstractConnection {
     }
   }
 
-  protected void addFuture(Handler<Void> doneHandler, ChannelFuture future) {
+  protected void addFuture(Handler<AsyncResult<Void>> doneHandler, ChannelFuture future) {
     super.addFuture(doneHandler, future);
   }
 

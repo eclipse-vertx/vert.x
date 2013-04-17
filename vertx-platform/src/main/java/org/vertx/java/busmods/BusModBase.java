@@ -40,8 +40,8 @@ public abstract class BusModBase extends Verticle {
    */
   public void start() {
     eb = vertx.eventBus();
-    config = container.getConfig();
-    logger = container.getLogger();
+    config = container.config();
+    logger = container.logger();
   }
 
   protected void sendOK(Message<JsonObject> message) {
@@ -75,7 +75,7 @@ public abstract class BusModBase extends Verticle {
   }
 
   protected String getMandatoryString(String field, Message<JsonObject> message) {
-    String val = message.body.getString(field);
+    String val = message.body().getString(field);
     if (val == null) {
       sendError(message, field + " must be specified");
     }
@@ -83,7 +83,7 @@ public abstract class BusModBase extends Verticle {
   }
 
   protected JsonObject getMandatoryObject(String field, Message<JsonObject> message) {
-    JsonObject val = message.body.getObject(field);
+    JsonObject val = message.body().getObject(field);
     if (val == null) {
       sendError(message, field + " must be specified");
     }

@@ -34,8 +34,8 @@ public class RateCounter extends Verticle implements Handler<Message<Integer>> {
     if (last == 0) {
       last = start = System.currentTimeMillis();
     }
-    count += msg.body;
-    totCount += msg.body;
+    count += msg.body();
+    totCount += msg.body();
   }
 
   public void start() {

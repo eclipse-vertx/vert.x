@@ -20,7 +20,6 @@ import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.impl.ClusterManager;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager;
 import org.vertx.java.core.file.FileSystem;
@@ -43,21 +42,20 @@ import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**                                                e
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultVertx extends VertxInternal {
+public class DefaultVertx implements VertxInternal {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultVertx.class);
 
   public static final int DEFAULT_CLUSTER_PORT = 2550;
+
+  private final Thread th;
+  private final Context context;
 
   private final FileSystem fileSystem = getFileSystem();
   private final EventBus eventBus;
@@ -74,10 +72,10 @@ public class DefaultVertx extends VertxInternal {
   private final ConcurrentMap<Long, InternalTimerHandler> timeouts = new ConcurrentHashMap<>();
   private final AtomicLong timeoutCounter = new AtomicLong(0);
 
-  private ClusterManager clusterManager;
-
   public DefaultVertx() {
     this.eventBus = new DefaultEventBus(this);
+    this.th = Thread.currentThread();
+    this.context = getContext();
   }
 
   public DefaultVertx(String hostname) {
@@ -85,9 +83,11 @@ public class DefaultVertx extends VertxInternal {
   }
 
   public DefaultVertx(int port, String hostname) {
-    this.clusterManager = new HazelcastClusterManager(this);
-    this.eventBus = new DefaultEventBus(this, port, hostname, clusterManager);
+    this.eventBus = new DefaultEventBus(this, port, hostname, new HazelcastClusterManager(this));
+    this.th = Thread.currentThread();
+    this.context = getContext();
   }
+
   /**
    * @return The FileSystem implementation for the OS
    */
@@ -195,7 +195,7 @@ public class DefaultVertx extends VertxInternal {
     if (ctx != null) {
       ctx.reportException(t);
     } else {
-      log.error(" default vertx Unhandled exception ", t);
+      log.error("default vertx Unhandled exception ", t);
     }
   }
 
@@ -313,7 +313,7 @@ public class DefaultVertx extends VertxInternal {
 
     setContext(null);
   }
-  
+
   private static class InternalTimerHandler implements Runnable {
     final Handler<Long> handler;
     final long timerID;

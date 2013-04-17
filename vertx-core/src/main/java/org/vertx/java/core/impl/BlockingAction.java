@@ -17,7 +17,7 @@
 package org.vertx.java.core.impl;
 
 import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.Handler;
 
 /**
  * <p>Internal class used to run specific blocking actions on the worker pool.</p>
@@ -31,9 +31,9 @@ public abstract class BlockingAction<T>  {
   protected Context context;
 
   private final VertxInternal vertx;
-  private final AsyncResultHandler handler;
+  private final Handler<AsyncResult<T>> handler;
 
-  public BlockingAction(VertxInternal vertx, AsyncResultHandler handler) {
+  public BlockingAction(VertxInternal vertx, Handler<AsyncResult<T>> handler) {
     this.vertx = vertx;
     this.handler = handler;
   }
@@ -46,10 +46,10 @@ public abstract class BlockingAction<T>  {
 
     Runnable runner = new Runnable() {
       public void run() {
-        final AsyncResult<T> res = new AsyncResult<>();
+        final DefaultFutureResult<T> res = new DefaultFutureResult<>();
         try {
           res.setResult(action());
-        } catch (final Exception e) {
+        } catch (Exception e) {
           res.setFailure(e);
         }
         if (handler != null) {
@@ -65,6 +65,6 @@ public abstract class BlockingAction<T>  {
     context.executeOnOrderedWorkerExec(runner);
   }
 
-  public abstract T action() throws Exception;
+  public abstract T action();
 
 }

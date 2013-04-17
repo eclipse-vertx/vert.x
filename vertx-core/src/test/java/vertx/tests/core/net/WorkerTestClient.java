@@ -17,8 +17,9 @@ package vertx.tests.core.net;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
@@ -50,17 +51,17 @@ public class WorkerTestClient extends TestClientBase {
       @Override
       public void handle(NetServer event) {
         final NetClient client = vertx.createNetClient();
-        client.connect(1234, new Handler<NetSocket>() {
-          public void handle(NetSocket socket) {
+        client.connect(1234, new AsyncResultHandler<NetSocket>() {
+          public void handle(AsyncResult<NetSocket> result) {
+            NetSocket socket = result.result();
             socket.dataHandler(new Handler<Buffer>() {
               public void handle(Buffer data) {
-                server.close(new SimpleHandler() {
-                  public void handle() {
+                server.close(new AsyncResultHandler<Void>() {
+                  public void handle(AsyncResult<Void> res) {
                     client.close();
                     tu.testComplete();
                   }
                 });
-
               }
             });
             socket.write("foo");

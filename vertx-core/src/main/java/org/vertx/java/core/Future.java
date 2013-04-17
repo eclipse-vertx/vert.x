@@ -17,8 +17,25 @@ package org.vertx.java.core;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class VoidResult extends AsyncResult<Void> {
-  public void setResult() {
-    super.setResult(null);
-  }
+public interface Future<T> extends AsyncResult<T> {
+  /**
+   * Has it completed?
+   */
+  boolean complete();
+
+  /**
+   * Set a handler for the result. It will get called when it's complete
+   */
+  Future<T> setHandler(Handler<AsyncResult<T>> handler);
+
+  /**
+   * Set the result. Any handler will be called, if there is one
+   */
+  Future<T> setResult(T result);
+
+  /**
+   * Set the failure. Any handler will be called, if there is one
+   */
+  Future<T> setFailure(Throwable throwable);
+
 }
