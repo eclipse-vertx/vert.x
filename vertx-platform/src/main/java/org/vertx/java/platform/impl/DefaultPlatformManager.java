@@ -1191,6 +1191,13 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
 
     final Deployment deployment = deployments.remove(name);
+    if (deployment == null) {
+      // OK - already undeployed
+      parentCount.incRequired();
+      parentCount.complete(new DefaultFutureResult<>((Void)null));
+      return;
+    }
+
     final CountingCompletionHandler<Void> count = new CountingCompletionHandler<>(vertx);
     parentCount.incRequired();
 
