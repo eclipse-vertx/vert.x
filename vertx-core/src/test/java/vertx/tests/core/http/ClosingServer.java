@@ -16,6 +16,8 @@
 
 package vertx.tests.core.http;
 
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.HttpServer;
@@ -45,9 +47,9 @@ public class ClosingServer extends Verticle {
         server.close();
       }
     });
-    server.listen(8080, new Handler<HttpServer>() {
+    server.listen(8080, new AsyncResultHandler<HttpServer>() {
         @Override
-        public void handle(HttpServer event) {
+        public void handle(AsyncResult<HttpServer> event) {
           tu.appReady();
           startedResult.setResult(null);
         }

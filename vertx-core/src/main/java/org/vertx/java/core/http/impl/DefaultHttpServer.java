@@ -38,6 +38,7 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.CharsetUtil;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
@@ -48,6 +49,7 @@ import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.*;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.impl.*;
 
 import javax.net.ssl.SSLEngine;
@@ -77,7 +79,6 @@ public class DefaultHttpServer implements HttpServer {
   private final Context actualCtx;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
-  private Handler<Exception> exceptionHandler;
   private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
   private ChannelGroup serverChannelGroup;
   private boolean listening;
@@ -129,16 +130,6 @@ public class DefaultHttpServer implements HttpServer {
     return wsHandler;
   }
 
-  public HttpServer exceptionHandler(Handler<Exception> exceptionHandler) {
-    this.exceptionHandler = exceptionHandler;
-    return this;
-  }
-
-  @Override
-  public Handler<Exception> exceptionHandler() {
-    return exceptionHandler;
-  }
-
   public HttpServer listen(int port) {
     listen(port, "0.0.0.0", null);
     return this;
@@ -149,12 +140,12 @@ public class DefaultHttpServer implements HttpServer {
     return this;
   }
 
-  public HttpServer listen(int port, Handler<HttpServer> listenHandler) {
+  public HttpServer listen(int port, Handler<AsyncResult<HttpServer>> listenHandler) {
     listen(port, "0.0.0.0", listenHandler);
     return this;
   }
 
-  public HttpServer listen(int port, String host, final Handler<HttpServer> listenHandler) {
+  public HttpServer listen(int port, String host, final Handler<AsyncResult<HttpServer>> listenHandler) {
     if (requestHandler == null && wsHandler == null) {
       throw new IllegalStateException("Set request or websocket handler first");
     }
@@ -216,8 +207,22 @@ public class DefaultHttpServer implements HttpServer {
           bindFuture = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
           Channel serverChannel = bindFuture.channel();
           serverChannelGroup.add(serverChannel);
-        } catch (ChannelException | UnknownHostException e) {
-          throw new IllegalArgumentException(e.getMessage());
+        } catch (final Throwable t) {
+          t.printStackTrace();
+          // Make sure we send the exception back through the handler (if any)
+          if (listenHandler != null) {
+            vertx.runOnLoop(new VoidHandler() {
+              @Override
+              protected void handle() {
+                listenHandler.handle(new DefaultFutureResult<HttpServer>(t));
+              }
+            });
+          } else {
+            // No handler - log so user can see failure
+            log.error("Failed to bind", t);
+          }
+          listening = false;
+          return this;
         }
         vertx.sharedHttpServers().put(id, this);
         actualServer = this;
@@ -226,51 +231,36 @@ public class DefaultHttpServer implements HttpServer {
         actualServer = shared;
         addHandlers(actualServer);
       }
-
       actualServer.bindFuture.addListener(new ChannelFutureListener() {
         @Override
-        // TODO simplify this, it's ugly!
         public void operationComplete(final ChannelFuture future) throws Exception {
-          if (future.isSuccess()) {
-            if (listenHandler != null) {
-              if (actualCtx.isOnCorrectWorker(future.channel().eventLoop())) {
-                try {
-                  vertx.setContext(actualCtx);
-                  listenHandler.handle(DefaultHttpServer.this);
-                } catch (Throwable t) {
-                  actualCtx.reportException(t);
-                }
-              } else {
-                actualCtx.execute(new Runnable() {
-                  @Override
-                  public void run() {
-                    listenHandler.handle(DefaultHttpServer.this);
-                  }
-                });
-              }
+          if (listenHandler != null) {
+            final AsyncResult<HttpServer> res;
+            if (future.isSuccess()) {
+              res = new DefaultFutureResult<HttpServer>(DefaultHttpServer.this);
+            } else {
+              res = new DefaultFutureResult<>(future.cause());
+              listening = false;
             }
-          } else {
-            final Handler<Exception> exceptionHandler = exceptionHandler();
-            if (exceptionHandler != null) {
-              if (actualCtx.isOnCorrectWorker(future.channel().eventLoop())) {
-                try {
-                  vertx.setContext(actualCtx);
-                  exceptionHandler.handle((Exception) future.cause());
-                } catch (Throwable t) {
-                  actualCtx.reportException(t);
-                }
-              } else {
-                actualCtx.execute(new Runnable() {
-                  @Override
-                  public void run() {
-                    exceptionHandler.handle((Exception) future.cause());
-                  }
-                });
+            if (actualCtx.isOnCorrectWorker(future.channel().eventLoop())) {
+              try {
+                vertx.setContext(actualCtx);
+                listenHandler.handle(res);
+              } catch (Throwable t) {
+                actualCtx.reportException(t);
               }
             } else {
-              log.error("Failed to bind", future.cause());
+              actualCtx.execute(new Runnable() {
+                @Override
+                public void run() {
+                  listenHandler.handle(res);
+                }
+              });
             }
-            close();
+          } else if (!future.isSuccess()) {
+            listening  = false;
+            // No handler - log so user can see failure
+            log.error("Failed to bind", future.cause());
           }
         }
       });
@@ -328,7 +318,6 @@ public class DefaultHttpServer implements HttpServer {
     }
     requestHandler = null;
     wsHandler = null;
-
   }
 
   @Override

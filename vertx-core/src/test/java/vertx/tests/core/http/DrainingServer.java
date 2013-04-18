@@ -65,9 +65,10 @@ public class DrainingServer extends Verticle {
         });
       }
     });
-    server.listen(8080, new Handler<HttpServer>() {
+    server.listen(8080, new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         tu.appReady();
         startedResult.setResult(null);
       }

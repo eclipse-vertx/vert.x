@@ -40,9 +40,10 @@ public class WorkerHttpTestClient extends TestClientBase {
         req.response().end();
       }
     });
-    server.listen(8080, new Handler<HttpServer>() {
+    server.listen(8080, new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         final HttpClient client = vertx.createHttpClient().setPort(8080);
         client.getNow("some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {

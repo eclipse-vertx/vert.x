@@ -97,10 +97,9 @@ public class JavaHttpTest extends TestBase {
         req.response().end();
       }
     });
-    server.listen(8080, new Handler<HttpServer>() {
+    server.listen(8080, new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
-
+      public void handle(AsyncResult<HttpServer> ar) {
         final HttpClient client = vertx.createHttpClient().setPort(8080);
         client.getNow("some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
@@ -653,6 +652,16 @@ public class JavaHttpTest extends TestBase {
 
   @Test
   public void testGetAbsoluteURI() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testListenInvalidPort() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testListenInvalidHost() throws Exception {
     startTest(getMethodName());
   }
 

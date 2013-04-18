@@ -49,11 +49,15 @@ public class InstanceCheckServer extends Verticle {
 
       }
     });
-    server.listen(8080, new Handler<HttpServer>() {
+    server.listen(8080, new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
-        tu.appReady();
-        result.setResult(null);
+      public void handle(AsyncResult<HttpServer> ar) {
+        if (ar.succeeded()) {
+          tu.appReady();
+          result.setResult(null);
+        } else {
+          ar.cause().printStackTrace();
+        }
       }
     });
   }

@@ -1,4 +1,6 @@
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
@@ -25,9 +27,9 @@ public class Server extends Verticle {
           req.response().sendFile("." + req.path());
         }
       }
-    }).listen(9193, "127.0.0.1", new Handler<HttpServer>() {
+    }).listen(9193, "127.0.0.1", new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
         result.setResult(null);
       }
     });

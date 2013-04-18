@@ -124,9 +124,10 @@ public class WebsocketsTestClient extends TestClientBase {
       }
 
     });
-    server.listen(8080, "localhost", new Handler<HttpServer>() {
+    server.listen(8080, "localhost", new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         final int bsize = 100;
         final int sends = 10;
 
@@ -174,9 +175,10 @@ public class WebsocketsTestClient extends TestClientBase {
         ws.writeBinaryFrame(buff);
       }
     });
-    server.listen(8080, "localhost", new Handler<HttpServer>() {
+    server.listen(8080, "localhost", new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         client.connectWebsocket(path, version, new Handler<WebSocket>() {
           public void handle(final WebSocket ws) {
             final Buffer received = new Buffer();
@@ -209,9 +211,10 @@ public class WebsocketsTestClient extends TestClientBase {
       }
 
     });
-    server.listen(8080, "localhost", new Handler<HttpServer>() {
+    server.listen(8080, "localhost", new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         client.exceptionHandler(new Handler<Exception>() {
           public void handle(Exception e) {
             tu.testComplete();
