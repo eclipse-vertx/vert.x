@@ -55,12 +55,15 @@ public class TLSServer extends Verticle {
     }
 
     server.connectHandler(getConnectHandler());
-    final CountDownLatch latch = new CountDownLatch(1);
-    server.listen(4043, new Handler<NetServer>() {
+    server.listen(4043, new AsyncResultHandler<NetServer>() {
       @Override
-      public void handle(NetServer event) {
-        tu.appReady();
-        startedResult.setResult(null);
+      public void handle(AsyncResult<NetServer> ar) {
+        if (ar.succeeded()) {
+          tu.appReady();
+          startedResult.setResult(null);
+        } else {
+          ar.cause().printStackTrace();
+        }
       }
     });
   }

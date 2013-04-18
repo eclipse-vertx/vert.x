@@ -28,6 +28,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.impl.*;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -56,7 +57,6 @@ public class DefaultNetServer implements NetServer {
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<Channel, DefaultNetSocket>();
   private Handler<NetSocket> connectHandler;
-  private Handler<Exception> exceptionHandler;
 
   private ChannelGroup serverChannelGroup;
   private boolean listening;
@@ -66,7 +66,6 @@ public class DefaultNetServer implements NetServer {
   private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
   private String host;
   private int port;
-
   private ChannelFuture bindFuture;
 
   public DefaultNetServer(VertxInternal vertx) {
@@ -91,7 +90,7 @@ public class DefaultNetServer implements NetServer {
     return this;
   }
 
-  public NetServer listen(int port, Handler<NetServer> listenHandler) {
+  public NetServer listen(int port, Handler<AsyncResult<NetServer>> listenHandler) {
     listen(port, "0.0.0.0", listenHandler);
     return this;
   }
@@ -101,7 +100,7 @@ public class DefaultNetServer implements NetServer {
     return this;
   }
 
-  public NetServer listen(final int port, final String host, final Handler<NetServer> listenHandler) {
+  public NetServer listen(final int port, final String host, final Handler<AsyncResult<NetServer>> listenHandler) {
     if (connectHandler == null) {
       throw new IllegalStateException("Set connect handler first");
     }
@@ -171,8 +170,19 @@ public class DefaultNetServer implements NetServer {
             }
           });
           serverChannelGroup.add(bindFuture.channel());
-        } catch (ChannelException | UnknownHostException e) {
-          throw new IllegalArgumentException(e.getMessage());
+        } catch (final Throwable t) {
+          // Make sure we send the exception back through the handler (if any)
+          if (listenHandler != null) {
+            vertx.runOnLoop(new VoidHandler() {
+              @Override
+              protected void handle() {
+                listenHandler.handle(new DefaultFutureResult<NetServer>(t));
+              }
+            });
+          } else {
+            // No handler - log so user can see failure
+            log.error("Failed to bind", t);
+          }
         }
         vertx.sharedNetServers().put(id, this);
         actualServer = this;
@@ -191,62 +201,36 @@ public class DefaultNetServer implements NetServer {
       actualServer.bindFuture.addListener(new ChannelFutureListener() {
         @Override
         public void operationComplete(final ChannelFuture future) throws Exception {
-          if (future.isSuccess()) {
-            if (listenHandler != null) {
-              if (actualCtx.isOnCorrectWorker(future.channel().eventLoop())) {
-                try {
-                  vertx.setContext(actualCtx);
-                } catch (Throwable t) {
-                  actualCtx.reportException(t);
-                }
-                listenHandler.handle(DefaultNetServer.this);
-              } else {
-                actualCtx.execute(new Runnable() {
-                  @Override
-                  public void run() {
-                    listenHandler.handle(DefaultNetServer.this);
-                  }
-                });
-              }
+          if (listenHandler != null) {
+            final AsyncResult<NetServer> res;
+            if (future.isSuccess()) {
+              res = new DefaultFutureResult<NetServer>(DefaultNetServer.this);
+            } else {
+              res = new DefaultFutureResult<>(future.cause());
             }
-          } else {
-            final Handler<Exception> exceptionHandler = exceptionHandler();
-            if (exceptionHandler != null) {
-              if (actualCtx.isOnCorrectWorker(future.channel().eventLoop())) {
-                try {
-                  vertx.setContext(actualCtx);
-                  exceptionHandler.handle((Exception) future.cause());
-                } catch (Throwable t) {
-                  actualCtx.reportException(t);
-                }
-              } else {
-                actualCtx.execute(new Runnable() {
-                  @Override
-                  public void run() {
-                    exceptionHandler.handle((Exception) future.cause());
-                  }
-                });
+            if (actualCtx.isOnCorrectWorker(future.channel().eventLoop())) {
+              try {
+                vertx.setContext(actualCtx);
+                listenHandler.handle(res);
+              } catch (Throwable t) {
+                actualCtx.reportException(t);
               }
             } else {
-              log.error("Failed to bind", future.cause());
+              actualCtx.execute(new Runnable() {
+                @Override
+                public void run() {
+                  listenHandler.handle(res);
+                }
+              });
             }
-            close();
+          } else if (!future.isSuccess()) {
+            // No handler - log so user can see failure
+            log.error("Failed to bind", future.cause());
           }
         }
       });
     }
     return this;
-  }
-
-  @Override
-  public NetServer exceptionHandler(Handler<Exception> exceptionHandler) {
-    this.exceptionHandler = exceptionHandler;
-    return this;
-  }
-
-  @Override
-  public Handler<Exception> exceptionHandler() {
-    return exceptionHandler;
   }
 
   public void close() {

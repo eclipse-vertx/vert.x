@@ -414,6 +414,37 @@ public class TestClient extends TestClientBase {
     });
   }
 
+
+  public void testListenInvalidPort() {
+    vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
+      public void handle(NetSocket sock) {
+      }
+    }).listen(80, new AsyncResultHandler<NetServer>() {
+      @Override
+      public void handle(AsyncResult<NetServer> ar) {
+        tu.azzert(ar.failed());
+        tu.azzert(ar.cause() != null);
+        ar.cause().printStackTrace();
+        tu.testComplete();
+      }
+    });
+  }
+
+  public void testListenInvalidHost() {
+    vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
+      public void handle(NetSocket sock) {
+      }
+    }).listen(1234, "uhqiuwhdqiwuhd", new AsyncResultHandler<NetServer>() {
+      @Override
+      public void handle(AsyncResult<NetServer> ar) {
+        tu.azzert(ar.failed());
+        tu.azzert(ar.cause() != null);
+        ar.cause().printStackTrace();
+        tu.testComplete();
+      }
+    });
+  }
+
   public void testClientCloseHandlersCloseFromClient() {
     clientCloseHandlers(true);
   }
@@ -766,19 +797,23 @@ public class TestClient extends TestClientBase {
         InetSocketAddress addr = socket.remoteAddress();
         tu.azzert(addr.getHostName().startsWith("localhost"));
       }
-    }).listen(1234,  new Handler<NetServer>() {
+    }).listen(1234,  new AsyncResultHandler<NetServer>() {
       @Override
-      public void handle(NetServer event) {
-        vertx.createNetClient().connect(1234, new AsyncResultHandler<NetSocket>() {
-          @Override
-          public void handle(AsyncResult<NetSocket> result) {
-            NetSocket socket = result.result();
-            InetSocketAddress addr = socket.remoteAddress();
-            tu.azzert(addr.getHostName().equals("localhost"));
-            tu.azzert(addr.getPort() == 1234);
-            tu.testComplete();
-          }
-        });
+      public void handle(AsyncResult<NetServer> ar) {
+        if (ar.succeeded()) {
+          vertx.createNetClient().connect(1234, new AsyncResultHandler<NetSocket>() {
+            @Override
+            public void handle(AsyncResult<NetSocket> result) {
+              NetSocket socket = result.result();
+              InetSocketAddress addr = socket.remoteAddress();
+              tu.azzert(addr.getHostName().equals("localhost"));
+              tu.azzert(addr.getPort() == 1234);
+              tu.testComplete();
+            }
+          });
+        } else {
+          ar.cause().printStackTrace();
+        }
       }
    });
   }

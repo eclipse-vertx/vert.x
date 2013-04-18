@@ -117,6 +117,16 @@ public class JavaNetTest extends TestBase {
   }
 
   @Test
+  public void testListenInvalidPort() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testListenInvalidHost() {
+    startTest(getMethodName());
+  }
+
+  @Test
   public void testWriteWithCompletion() throws Exception {
     startApp(EchoServer.class.getName());
     startTest(getMethodName());
@@ -375,10 +385,14 @@ public class JavaNetTest extends TestBase {
     });
 
     final CountDownLatch listenLatch = new CountDownLatch(1);
-    server.listen(1234, new Handler<NetServer>() {
+    server.listen(1234, new AsyncResultHandler<NetServer>() {
         @Override
-        public void handle(NetServer event) {
-          listenLatch.countDown();
+        public void handle(AsyncResult<NetServer> ar) {
+          if (ar.succeeded()) {
+            listenLatch.countDown();
+          } else {
+            ar.cause().printStackTrace();
+          }
         }
     });
 
