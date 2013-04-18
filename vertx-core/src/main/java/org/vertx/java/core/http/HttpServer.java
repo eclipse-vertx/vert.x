@@ -64,17 +64,6 @@ public interface HttpServer extends ServerSSLSupport<HttpServer>, ServerTCPSuppo
 
 
   /**
-   * Set the exception handler. Any exceptions that occur during bind or later on will be notified via the {@code handler}.
-   * If no handler is supplied any exceptions will be printed to {@link System#err}
-   */
-  HttpServer exceptionHandler(Handler<Exception> handler);
-
-  /**
-   * @return The exception handler
-   */
-  Handler<Exception> exceptionHandler();
-
-  /**
    * Tell the server to start listening on all available interfaces and port {@code port}. Be aware this is an
    * async operation and the server may not bound on return of the method.
    */
@@ -84,7 +73,7 @@ public interface HttpServer extends ServerSSLSupport<HttpServer>, ServerTCPSuppo
    * Tell the server to start listening on all available interfaces and port {@code port}
    *
    */
-  HttpServer listen(int port, Handler<HttpServer> listenHandler);
+  HttpServer listen(int port, Handler<AsyncResult<HttpServer>> listenHandler);
 
   /**
    * Tell the server to start listening on port {@code port} and hostname or ip address given by {@code host}. Be aware this is an
@@ -97,7 +86,7 @@ public interface HttpServer extends ServerSSLSupport<HttpServer>, ServerTCPSuppo
    * Tell the server to start listening on port {@code port} and hostname or ip address given by {@code host}.
    *
    */
-  HttpServer listen(int port, String host, Handler<HttpServer> listenHandler);
+  HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler);
   
   /**
    * Close the server. Any open HTTP connections will be closed.

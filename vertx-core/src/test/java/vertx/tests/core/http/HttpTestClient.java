@@ -65,10 +65,44 @@ public class HttpTestClient extends TestClientBase {
     }
   }
 
-  private void startServer(Handler<HttpServerRequest> serverHandler, Handler<HttpServer> handler) {
+  private void startServer(Handler<HttpServerRequest> serverHandler, AsyncResultHandler<HttpServer> handler) {
     server = vertx.createHttpServer();
     server.requestHandler(serverHandler);
     server.listen(8080, "localhost", handler);
+  }
+
+  public void testListenInvalidPort() {
+    server = vertx.createHttpServer();
+    server.requestHandler(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+
+      }
+    });
+    server.listen(1128371831, new AsyncResultHandler<HttpServer>() {
+      @Override
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.failed());
+        tu.azzert(ar.cause() != null);
+        tu.testComplete();
+      }
+    });
+  }
+
+  public void testListenInvalidHost() {
+    server = vertx.createHttpServer();
+    server.requestHandler(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+
+      }
+    });
+    server.listen(80, "iqwjdoqiwjdoiqwdiojwd", new AsyncResultHandler<HttpServer>() {
+      @Override
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.failed());
+        tu.azzert(ar.cause() != null);
+        tu.testComplete();
+      }
+    });
   }
 
   public void testClientDefaults() {
@@ -275,9 +309,10 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testClientChaining() {
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         HttpClientRequest req = client.put("someurl", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
 
@@ -328,9 +363,10 @@ public class HttpTestClient extends TestClientBase {
     } else {
       file = null;
     }
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         HttpClientRequest req = client.put("someurl", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
           }
@@ -440,9 +476,10 @@ public class HttpTestClient extends TestClientBase {
   }
 
   private void testSimpleRequest(final String method, final boolean specificMethod) {
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         getRequest(specificMethod, method, "some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
@@ -462,9 +499,10 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testHeadNoBody() {
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         getRequest(true, "HEAD", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
@@ -502,9 +540,10 @@ public class HttpTestClient extends TestClientBase {
   }
 
   private void testURIAndPath(final String uri, final String path) {
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         getRequest(true, "GET", uri, new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
@@ -535,9 +574,10 @@ public class HttpTestClient extends TestClientBase {
   private void testParams(char delim) {
     final Map<String, String> params = genMap(10);
     final String query = generateQueryString(params, delim);
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         getRequest(true, "GET", "some-uri/?" + query, new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
@@ -560,9 +600,10 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testNoParams() {
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
@@ -582,9 +623,10 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testDefaultRequestHeaders() {
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
@@ -616,10 +658,10 @@ public class HttpTestClient extends TestClientBase {
   private void testRequestHeaders(final boolean individually) {
     final Map<String, String> headers = genMap(10);
 
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
-
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
@@ -649,9 +691,10 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testLowerCaseHeaders() {
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
 
         HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
@@ -702,11 +745,10 @@ public class HttpTestClient extends TestClientBase {
 
   public void testRequestTimeoutExtendedWhenResponseChunksReceived() {
     final long timeout = 500;
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
-
-        final long start = System.currentTimeMillis();
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         final HttpClientRequest req = getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.azzert(resp.statusCode() == 200);
@@ -750,10 +792,10 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testRequestTimesoutWhenIndicatedPeriodExpiresWithoutAResponseFromRemoteServer() {
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
-
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         final HttpClientRequest req = getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.azzert(false, "End should not be called because the request should timeout");
@@ -810,10 +852,10 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testRequestTimeoutCanceledWhenRequestEndsNormally() {
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
-
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
 
         final AtomicReference<Exception> exception = new AtomicReference<>();
 
@@ -851,10 +893,10 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testRequestNotReceivedIfTimedout() {
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
-
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         final HttpClientRequest req = getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.azzert(false, "Response should not be handled");
@@ -893,9 +935,10 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testUseRequestAfterComplete() {
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
 
         HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
@@ -1051,9 +1094,10 @@ public class HttpTestClient extends TestClientBase {
 
   public void testRequestBodyBufferAtEnd() {
     final Buffer body = TestUtils.generateRandomBuffer(1000);
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
 
         HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
@@ -1102,9 +1146,10 @@ public class HttpTestClient extends TestClientBase {
       bodyBuff = new Buffer(body, encoding);
     }
 
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
@@ -1140,9 +1185,10 @@ public class HttpTestClient extends TestClientBase {
       }
     });
 
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         try {
           req.write("foo");
           tu.azzert(false, "Should throw exception");
@@ -1183,10 +1229,10 @@ public class HttpTestClient extends TestClientBase {
 
   private void testRequestBodyWriteBuffer(final boolean chunked, final boolean waitCompletion) {
     final Buffer body = new Buffer();
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
-
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
@@ -1300,9 +1346,10 @@ public class HttpTestClient extends TestClientBase {
       bodyBuff = new Buffer(body, encoding);
     }
 
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         final HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
@@ -1353,9 +1400,10 @@ public class HttpTestClient extends TestClientBase {
   public void testRequestWriteBuffer() {
     final Buffer body = TestUtils.generateRandomBuffer(1000);
 
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
@@ -1396,9 +1444,10 @@ public class HttpTestClient extends TestClientBase {
   }
 
   private void testStatusCode(final int code, final String statusMessage) {
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
@@ -1442,9 +1491,10 @@ public class HttpTestClient extends TestClientBase {
 
   private void testResponseHeaders(final boolean individually) {
     final Map<String, String> headers = genMap(10);
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
@@ -1485,9 +1535,10 @@ public class HttpTestClient extends TestClientBase {
 
   private void testResponseTrailers(final boolean individually) {
     final Map<String, String> trailers = genMap(10);
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(final HttpClientResponse resp) {
             tu.checkThread();
@@ -1525,9 +1576,10 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testResponseNoTrailers() {
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(final HttpClientResponse resp) {
             tu.checkThread();
@@ -1565,9 +1617,10 @@ public class HttpTestClient extends TestClientBase {
 
   private void testResponseMultipleSetCookie(final boolean inHeader, final boolean inTrailer) {
     final List<String> cookies = new ArrayList<>();
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(final HttpClientResponse resp) {
             tu.checkThread();
@@ -1610,9 +1663,10 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testUseResponseAfterComplete() {
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
@@ -1761,9 +1815,10 @@ public class HttpTestClient extends TestClientBase {
   public void testResponseBodyBufferAtEnd() {
     final Buffer body = TestUtils.generateRandomBuffer(1000);
 
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
@@ -1811,11 +1866,10 @@ public class HttpTestClient extends TestClientBase {
       bodyBuff = new Buffer(body, encoding);
     }
 
-
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
-
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
@@ -1846,9 +1900,10 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testResponseBodyWriteStringNonChunked() {
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
@@ -1894,9 +1949,10 @@ public class HttpTestClient extends TestClientBase {
     final int numWrites = 10;
     final int chunkSize = 100;
 
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
@@ -2008,10 +2064,10 @@ public class HttpTestClient extends TestClientBase {
       bodyBuff = new Buffer(body, encoding);
     }
 
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
-
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         final HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
@@ -2062,10 +2118,10 @@ public class HttpTestClient extends TestClientBase {
   public void testResponseWriteBuffer() {
     final Buffer body = TestUtils.generateRandomBuffer(1000);
 
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
-
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
@@ -2093,10 +2149,10 @@ public class HttpTestClient extends TestClientBase {
   public void testPipelining() {
     final int requests = 100;
 
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
-
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         for (int count = 0; count < requests; count++) {
           final int theCount = count;
           HttpClientRequest req = client.request("POST", "some-uri", new Handler<HttpClientResponse>() {
@@ -2150,10 +2206,10 @@ public class HttpTestClient extends TestClientBase {
     final String content = TestUtils.randomUnicodeString(10000);
     final File file = setupFile("test-send-file.html", content);
 
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
-
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         client.getNow("some-uri", new Handler<HttpClientResponse>() {
           public void handle(final HttpClientResponse response) {
             tu.azzert(response.statusCode() == 200);
@@ -2182,10 +2238,10 @@ public class HttpTestClient extends TestClientBase {
     final String content = TestUtils.randomUnicodeString(10000);
     final File file = setupFile("test-send-file.html", content);
 
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
-
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         client.getNow("some-uri", new Handler<HttpClientResponse>() {
           public void handle(final HttpClientResponse response) {
             tu.azzert(response.statusCode() == 200);
@@ -2224,9 +2280,10 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testSetHandlersAfterListening() throws Exception {
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         try {
           server.requestHandler(new Handler<HttpServerRequest>() {
             public void handle(HttpServerRequest req) {
@@ -2258,9 +2315,10 @@ public class HttpTestClient extends TestClientBase {
   public void test100ContinueDefault() throws Exception {
     final Buffer toSend = TestUtils.generateRandomBuffer(1000);
 
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         final HttpClientRequest req = client.put("someurl", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             resp.endHandler(new VoidHandler() {
@@ -2301,9 +2359,10 @@ public class HttpTestClient extends TestClientBase {
 
     final Buffer toSend = TestUtils.generateRandomBuffer(1000);
 
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         final HttpClientRequest req = client.put("someurl", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             resp.endHandler(new VoidHandler() {
@@ -2655,9 +2714,10 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testRemoteAddress() {
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         client.getNow("/", new Handler<HttpClientResponse>() {
           @Override
           public void handle(HttpClientResponse resp) {
@@ -2678,9 +2738,10 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testGetAbsoluteURI() {
-    Handler<HttpServer> handler = new Handler<HttpServer>() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         client.getNow("/foo", new Handler<HttpClientResponse>() {
           @Override
           public void handle(HttpClientResponse resp) {

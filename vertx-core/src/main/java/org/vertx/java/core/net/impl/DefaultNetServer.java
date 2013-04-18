@@ -183,6 +183,8 @@ public class DefaultNetServer implements NetServer {
             // No handler - log so user can see failure
             log.error("Failed to bind", t);
           }
+          listening = false;
+          return this;
         }
         vertx.sharedNetServers().put(id, this);
         actualServer = this;
@@ -206,6 +208,7 @@ public class DefaultNetServer implements NetServer {
             if (future.isSuccess()) {
               res = new DefaultFutureResult<NetServer>(DefaultNetServer.this);
             } else {
+              listening = false;
               res = new DefaultFutureResult<>(future.cause());
             }
             if (actualCtx.isOnCorrectWorker(future.channel().eventLoop())) {
@@ -226,6 +229,7 @@ public class DefaultNetServer implements NetServer {
           } else if (!future.isSuccess()) {
             // No handler - log so user can see failure
             log.error("Failed to bind", future.cause());
+            listening = false;
           }
         }
       });

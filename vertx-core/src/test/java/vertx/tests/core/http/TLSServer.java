@@ -65,9 +65,10 @@ public class TLSServer extends Verticle {
         });
       }
     });
-    server.listen(4043, new Handler<HttpServer>() {
+    server.listen(4043, new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         tu.appReady();
         result.setResult(null);
       }

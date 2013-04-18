@@ -43,9 +43,10 @@ public class CountServer extends Verticle {
         req.response().end();
       }
     });
-    server.listen(8080, new Handler<HttpServer>() {
+    server.listen(8080, new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         tu.appReady();
         startedResult.setResult(null);
       }

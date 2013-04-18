@@ -314,9 +314,10 @@ public class RouteMatcherTestClient extends TestClientBase {
 
     final HttpServer server = vertx.createHttpServer();
     server.requestHandler(matcher);
-    server.listen(8080, "localhost", new Handler<HttpServer>() {
+    server.listen(8080, "localhost", new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
         final HttpClient client = vertx.createHttpClient().setPort(8080).setHost("localhost");
 
         Handler<HttpClientResponse> respHandler = new Handler<HttpClientResponse>() {

@@ -16,10 +16,7 @@
 
 package org.vertx.java.core.sockjs.impl;
 
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxFactory;
-import org.vertx.java.core.VoidHandler;
+import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.WebSocketMatcher;
@@ -350,12 +347,7 @@ public class DefaultSockJSServer implements SockJSServer {
     HttpServer httpServer = vertx.createHttpServer();
     DefaultSockJSServer sjsServer = (DefaultSockJSServer)vertx.createSockJSServer(httpServer);
     sjsServer.installTestApplications();
-    httpServer.listen(8081, new Handler<HttpServer>() {
-        @Override
-        public void handle(HttpServer event) {
-            // NOOP
-        }
-    });
+    httpServer.listen(8081);
     Thread.sleep(Long.MAX_VALUE);
   }
 
