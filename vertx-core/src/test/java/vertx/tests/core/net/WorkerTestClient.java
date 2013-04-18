@@ -47,26 +47,30 @@ public class WorkerTestClient extends TestClientBase {
         p.start();
       }
     });
-    server.listen(1234, new Handler<NetServer>() {
+    server.listen(1234, new AsyncResultHandler<NetServer>() {
       @Override
-      public void handle(NetServer event) {
-        final NetClient client = vertx.createNetClient();
-        client.connect(1234, new AsyncResultHandler<NetSocket>() {
-          public void handle(AsyncResult<NetSocket> result) {
-            NetSocket socket = result.result();
-            socket.dataHandler(new Handler<Buffer>() {
-              public void handle(Buffer data) {
-                server.close(new AsyncResultHandler<Void>() {
-                  public void handle(AsyncResult<Void> res) {
-                    client.close();
-                    tu.testComplete();
-                  }
-                });
-              }
-            });
-            socket.write("foo");
-          }
-        });
+      public void handle(AsyncResult<NetServer> ar) {
+        if (ar.succeeded()) {
+          final NetClient client = vertx.createNetClient();
+          client.connect(1234, new AsyncResultHandler<NetSocket>() {
+            public void handle(AsyncResult<NetSocket> result) {
+              NetSocket socket = result.result();
+              socket.dataHandler(new Handler<Buffer>() {
+                public void handle(Buffer data) {
+                  server.close(new AsyncResultHandler<Void>() {
+                    public void handle(AsyncResult<Void> res) {
+                      client.close();
+                      tu.testComplete();
+                    }
+                  });
+                }
+              });
+              socket.write("foo");
+            }
+          });
+        } else {
+          ar.cause().printStackTrace();
+        }
       }
     });
   }

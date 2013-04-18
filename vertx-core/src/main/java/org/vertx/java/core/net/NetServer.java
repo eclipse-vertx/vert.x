@@ -44,17 +44,6 @@ public interface NetServer extends ServerSSLSupport<NetServer>, ServerTCPSupport
   NetServer connectHandler(Handler<NetSocket> connectHandler);
 
   /**
-   * Set the exception handler. Any exceptions that occur during bind or later on will be notified via the {@code handler}.
-   * If no handler is supplied any exceptions will be printed to {@link System#err}
-   */
-  NetServer exceptionHandler(Handler<Exception> handler);
-
-  /**
-   * @return The exception handler
-   */
-  Handler<Exception> exceptionHandler();
-
-  /**
    * Tell the server to start listening on all available interfaces and port {@code port}. Be aware this is an
    * async operation and the server may not bound on return of the method.
    */
@@ -63,7 +52,7 @@ public interface NetServer extends ServerSSLSupport<NetServer>, ServerTCPSupport
   /**
    * Instruct the server to listen for incoming connections on the specified {@code port} and all available interfaces.
    */
-  NetServer listen(int port, Handler<NetServer> listenHandler);
+  NetServer listen(int port, Handler<AsyncResult<NetServer>> listenHandler);
 
   /**
    * Tell the server to start listening on port {@code port} and hostname or ip address given by {@code host}. Be aware this is an
@@ -76,7 +65,7 @@ public interface NetServer extends ServerSSLSupport<NetServer>, ServerTCPSupport
    * Instruct the server to listen for incoming connections on the specified {@code port} and {@code host}. {@code host} can
    * be a host name or an IP address.
    */
-  NetServer listen(int port, String host, Handler<NetServer> listenHandler);
+  NetServer listen(int port, String host, Handler<AsyncResult<NetServer>> listenHandler);
 
   /**
    * Close the server. This will close any currently open connections.

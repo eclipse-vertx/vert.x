@@ -48,13 +48,17 @@ public abstract class BaseServer extends Verticle {
     Integer port = vertx.sharedData().<String, Integer>getMap("params").get("listenport");
     int p = port == null ? 1234: port;
 
-    server.listen(p, new Handler<NetServer>() {
+    server.listen(p, new AsyncResultHandler<NetServer>() {
       @Override
-      public void handle(NetServer event) {
-        if (sendAppReady) {
-          tu.appReady();
+      public void handle(AsyncResult<NetServer> ar) {
+        if (ar.succeeded()) {
+          if (sendAppReady) {
+            tu.appReady();
+          }
+          startedResult.setResult(null);
+        } else {
+          ar.cause().printStackTrace();
         }
-        startedResult.setResult(null);
       }
     });
   }
