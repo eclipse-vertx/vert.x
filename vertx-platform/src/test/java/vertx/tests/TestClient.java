@@ -136,7 +136,6 @@ public class TestClient extends TestClientBase {
                 container.undeployModule(res.result(), new Handler<AsyncResult<Void>>() {
                   public void handle(AsyncResult<Void> res) {
                     tu.azzert(res.succeeded());
-                    tu.azzert(res.result() != null);
                     tu.azzert(Thread.currentThread() == t);
                   }
                 });
