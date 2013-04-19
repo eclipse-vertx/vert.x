@@ -55,7 +55,7 @@ public class SharedSet<E> implements Set<E> {
   }
 
   public boolean add(E e) {
-    return map.put(e, O) != null;
+    return map.put(e, O) == null;
   }
 
   public boolean remove(Object o) {
