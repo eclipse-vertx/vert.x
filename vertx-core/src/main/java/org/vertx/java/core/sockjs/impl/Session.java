@@ -204,6 +204,7 @@ class Session extends SockJSSocketBase implements Shareable {
     String json = JsonCodec.encode(pendingWrites.toArray());
     listener.sendFrame("a" + json);
     pendingWrites.clear();
+    messagesSize = 0;
     if (drainHandler != null && messagesSize <= maxQueueSize / 2) {
       Handler<Void> dh = drainHandler;
       drainHandler = null;
