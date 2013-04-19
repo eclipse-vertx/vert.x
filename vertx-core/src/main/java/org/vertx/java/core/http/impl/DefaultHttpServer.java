@@ -219,7 +219,7 @@ public class DefaultHttpServer implements HttpServer {
             });
           } else {
             // No handler - log so user can see failure
-            log.error("Failed to bind", t);
+            actualCtx.reportException(t);
           }
           listening = false;
           return this;
@@ -260,7 +260,7 @@ public class DefaultHttpServer implements HttpServer {
           } else if (!future.isSuccess()) {
             listening  = false;
             // No handler - log so user can see failure
-            log.error("Failed to bind", future.cause());
+            actualCtx.reportException(future.cause());
           }
         }
       });

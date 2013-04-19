@@ -297,7 +297,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     if (exceptionHandler != null) {
       exceptionHandler.handle(e);
     } else {
-      log.error("Unhandled exception", e);
+      context.reportException(e);
     }
   }
 
@@ -317,7 +317,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
         if (t instanceof Exception) {
           handleException((Exception) t);
         } else {
-          log.error("Unhandled exception", t);
+          context.reportException(t);
         }
       }
     }

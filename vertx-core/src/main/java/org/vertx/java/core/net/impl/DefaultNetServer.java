@@ -181,7 +181,7 @@ public class DefaultNetServer implements NetServer {
             });
           } else {
             // No handler - log so user can see failure
-            log.error("Failed to bind", t);
+            actualCtx.reportException(t);
           }
           listening = false;
           return this;
@@ -228,7 +228,7 @@ public class DefaultNetServer implements NetServer {
             }
           } else if (!future.isSuccess()) {
             // No handler - log so user can see failure
-            log.error("Failed to bind", future.cause());
+            actualCtx.reportException(future.cause());
             listening = false;
           }
         }
