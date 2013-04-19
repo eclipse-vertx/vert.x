@@ -23,5 +23,5 @@ public interface ExceptionSupport<T> {
   /**
    * Set an exception handler.
    */
-  T exceptionHandler(Handler<Exception> handler);
+  T exceptionHandler(Handler<Throwable> handler);
 }

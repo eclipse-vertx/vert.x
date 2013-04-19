@@ -51,7 +51,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   private boolean headWritten;
   private boolean written;
   private Handler<Void> drainHandler;
-  private Handler<Exception> exceptionHandler;
+  private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
   private boolean chunked;
   private boolean closed;
@@ -157,7 +157,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponse exceptionHandler(Handler<Exception> handler) {
+  public HttpServerResponse exceptionHandler(Handler<Throwable> handler) {
     checkWritten();
     this.exceptionHandler = handler;
     return this;

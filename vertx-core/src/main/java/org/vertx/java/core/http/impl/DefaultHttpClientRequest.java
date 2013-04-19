@@ -51,7 +51,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   private boolean chunked;
   private ClientConnection conn;
   private Handler<Void> drainHandler;
-  private Handler<Exception> exceptionHandler;
+  private Handler<Throwable> exceptionHandler;
   private boolean headWritten;
   private boolean completed;
   private LinkedList<PendingChunk> pendingChunks;
@@ -193,11 +193,11 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   }
 
   @Override
-  public HttpClientRequest exceptionHandler(final Handler<Exception> handler) {
+  public HttpClientRequest exceptionHandler(final Handler<Throwable> handler) {
     check();
-    this.exceptionHandler = new Handler<Exception>() {
+    this.exceptionHandler = new Handler<Throwable>() {
       @Override
-      public void handle(Exception event) {
+      public void handle(Throwable event) {
         cancelOutstandingTimeoutTimer();
         handler.handle(event);
       }
@@ -291,13 +291,13 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
   }
 
-  void handleException(Exception e) {
+  void handleException(Throwable t) {
     cancelOutstandingTimeoutTimer();
     exceptionOccurred = true;
     if (exceptionHandler != null) {
-      exceptionHandler.handle(e);
+      exceptionHandler.handle(t);
     } else {
-      context.reportException(e);
+      context.reportException(t);
     }
   }
 
@@ -314,11 +314,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
           respHandler.handle(resp);
         }
       } catch (Throwable t) {
-        if (t instanceof Exception) {
-          handleException((Exception) t);
-        } else {
-          context.reportException(t);
-        }
+        handleException(t);
       }
     }
   }

@@ -138,7 +138,7 @@ class Session extends SockJSSocketBase implements Shareable {
   }
 
   @Override
-  public synchronized Session exceptionHandler(Handler<Exception> handler) {
+  public synchronized Session exceptionHandler(Handler<Throwable> handler) {
     return this;
   }
 

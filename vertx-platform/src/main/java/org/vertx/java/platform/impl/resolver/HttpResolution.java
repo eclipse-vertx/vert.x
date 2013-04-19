@@ -96,8 +96,8 @@ public abstract class HttpResolution {
       client.setHost(host);
       client.setPort(port);
     }
-    client.exceptionHandler(new Handler<Exception>() {
-      public void handle(Exception e) {
+    client.exceptionHandler(new Handler<Throwable>() {
+      public void handle(Throwable t) {
         end(false);
       }
     });

@@ -84,7 +84,7 @@ public class DefaultServerWebSocket extends WebSocketImplBase implements ServerW
   }
 
   @Override
-  public ServerWebSocket exceptionHandler(Handler<Exception> handler) {
+  public ServerWebSocket exceptionHandler(Handler<Throwable> handler) {
     checkClosed();
     this.exceptionHandler = handler;
     return this;

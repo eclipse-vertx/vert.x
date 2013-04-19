@@ -38,7 +38,7 @@ public class WebSocketImplBase {
 
   protected Handler<Buffer> dataHandler;
   protected Handler<Void> drainHandler;
-  protected Handler<Exception> exceptionHandler;
+  protected Handler<Throwable> exceptionHandler;
   protected Handler<Void> closeHandler;
   protected Handler<Void> endHandler;
   protected Handler<Message<Buffer>> binaryHandler;

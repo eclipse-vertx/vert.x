@@ -164,7 +164,7 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   }
 
   @Override
-  public NetSocket exceptionHandler(Handler<Exception> handler) {
+  public NetSocket exceptionHandler(Handler<Throwable> handler) {
     this.exceptionHandler = handler;
     return this;
   }

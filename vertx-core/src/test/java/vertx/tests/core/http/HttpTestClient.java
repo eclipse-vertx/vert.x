@@ -759,9 +759,9 @@ public class HttpTestClient extends TestClientBase {
             });
           }
         });
-        req.exceptionHandler( new Handler<Exception>() {
+        req.exceptionHandler(new Handler<Throwable>() {
           @Override
-          public void handle(Exception event) {
+          public void handle(Throwable t) {
             tu.azzert(false, "Should not be called");
           }
         });
@@ -801,10 +801,10 @@ public class HttpTestClient extends TestClientBase {
             tu.azzert(false, "End should not be called because the request should timeout");
           }
         });
-        req.exceptionHandler( new Handler<Exception>() {
+        req.exceptionHandler( new Handler<Throwable>() {
           @Override
-          public void handle(Exception event) {
-            tu.azzert(event instanceof TimeoutException, "Expected to end with timeout exception but ended with other exception: " + event);
+          public void handle(Throwable t) {
+            tu.azzert(t instanceof TimeoutException, "Expected to end with timeout exception but ended with other exception: " + t);
             tu.checkThread();
             tu.testComplete();
           }
@@ -823,16 +823,16 @@ public class HttpTestClient extends TestClientBase {
 
   public void testRequestTimeoutCanceledWhenRequestHasAnOtherError() {
 
-    final AtomicReference<Exception> exception = new AtomicReference<>();
+    final AtomicReference<Throwable> exception = new AtomicReference<>();
     // There is no server running, should fail to connect
     final HttpClientRequest req = getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         tu.azzert(false, "End should not be called because the request should fail to connect");
       }
     });
-    req.exceptionHandler( new Handler<Exception>() {
+    req.exceptionHandler( new Handler<Throwable>() {
       @Override
-      public void handle(Exception event) {
+      public void handle(Throwable event) {
         exception.set(event);
       }
     });
@@ -857,7 +857,7 @@ public class HttpTestClient extends TestClientBase {
       public void handle(AsyncResult<HttpServer> ar) {
         tu.azzert(ar.succeeded());
 
-        final AtomicReference<Exception> exception = new AtomicReference<>();
+        final AtomicReference<Throwable> exception = new AtomicReference<>();
 
         // There is no server running, should fail to connect
         final HttpClientRequest req = getRequest(true, "GET", "timeoutTest", new Handler<HttpClientResponse>() {
@@ -865,9 +865,9 @@ public class HttpTestClient extends TestClientBase {
             // Don't do anything
           }
         });
-        req.exceptionHandler( new Handler<Exception>() {
+        req.exceptionHandler( new Handler<Throwable>() {
           @Override
-          public void handle(Exception event) {
+          public void handle(Throwable event) {
             exception.set(event);
           }
         });
@@ -902,9 +902,9 @@ public class HttpTestClient extends TestClientBase {
             tu.azzert(false, "Response should not be handled");
           }
         });
-        req.exceptionHandler( new Handler<Exception>() {
+        req.exceptionHandler( new Handler<Throwable>() {
           @Override
-          public void handle(Exception event) {
+          public void handle(Throwable event) {
             tu.azzert(event instanceof TimeoutException, "Expected to end with timeout exception but ended with other exception: " + event);
             //Delay a bit to let any response come back
             vertx.setTimer(500, new Handler<Long>() {
@@ -1003,8 +1003,8 @@ public class HttpTestClient extends TestClientBase {
           //OK
         }
         try {
-          req.exceptionHandler(new Handler<Exception>() {
-            public void handle(Exception e) {
+          req.exceptionHandler(new Handler<Throwable>() {
+            public void handle(Throwable t) {
             }
           });
           tu.azzert(false, "Should throw exception");
@@ -1727,8 +1727,8 @@ public class HttpTestClient extends TestClientBase {
           //OK
         }
         try {
-          resp.exceptionHandler(new Handler<Exception>() {
-            public void handle(Exception e) {
+          resp.exceptionHandler(new Handler<Throwable>() {
+            public void handle(Throwable t) {
             }
           });
           tu.azzert(false, "Should throw exception");
@@ -2503,8 +2503,8 @@ public class HttpTestClient extends TestClientBase {
     };
 
     client.setPort(9998); // this simulates a connection error immediately
-    client.exceptionHandler(new Handler<Exception>() {
-      public void handle(Exception event) {
+    client.exceptionHandler(new Handler<Throwable>() {
+      public void handle(Throwable event) {
         tu.azzert(clientExceptions.incrementAndGet() == 1, "More than more call to client exception handler was not expected");
         checkEndHandler.handle("Client");
       }
@@ -2523,8 +2523,8 @@ public class HttpTestClient extends TestClientBase {
         tu.azzert(false, "Should never get a response on a bad port, if you see this message than you are running an http server on port 9998");
       }
     });
-    req2.exceptionHandler(new Handler<Exception>() {
-      public void handle(Exception event) {
+    req2.exceptionHandler(new Handler<Throwable>() {
+      public void handle(Throwable event) {
         tu.azzert(req2Exceptions.incrementAndGet() == 1, "More than more call to req2 exception handler was not expected");
         checkEndHandler.handle("Request2");
       }
@@ -2535,8 +2535,8 @@ public class HttpTestClient extends TestClientBase {
         tu.azzert(false, "Should never get a response on a bad port, if you see this message than you are running an http server on port 9998");
       }
     });
-    req3.exceptionHandler(new Handler<Exception>() {
-      public void handle(Exception event) {
+    req3.exceptionHandler(new Handler<Throwable>() {
+      public void handle(Throwable event) {
         tu.azzert(req3Exceptions.incrementAndGet() == 1, "More than more call to req2 exception handler was not expected");
         checkEndHandler.handle("Request3");
       }
@@ -2596,8 +2596,8 @@ public class HttpTestClient extends TestClientBase {
 
     final boolean shouldPass = params.shouldPass;
 
-    client.exceptionHandler(new Handler<Exception>() {
-      public void handle(Exception e) {
+    client.exceptionHandler(new Handler<Throwable>() {
+      public void handle(Throwable t) {
         if (shouldPass) {
           tu.azzert(false, "Should not throw exception");
         } else {
@@ -2624,8 +2624,8 @@ public class HttpTestClient extends TestClientBase {
     // that is not in the context of a request will the client handler get called. I can't figure out why an empty
     // handler was specified here originally, but if we want the client handler (specified above) to fire, we should
     // not set an empty handler here. The alternative would be to move the logic
-//    req.exceptionHandler(new Handler<Exception>() {
-//      public void handle(Exception e) {
+//    req.exceptionHandler(new Handler<Throwable>() {
+//      public void handle(Throwable t) {
 //      }
 //    });
     req.end("foo");
@@ -2651,9 +2651,9 @@ public class HttpTestClient extends TestClientBase {
     });
   }
 
-  Handler<Exception> createNoConnectHandler() {
-    return new Handler<Exception>() {
-      public void handle(Exception e) {
+  Handler<Throwable> createNoConnectHandler() {
+    return new Handler<Throwable>() {
+      public void handle(Throwable t) {
         tu.checkThread();
         tu.testComplete();
       }

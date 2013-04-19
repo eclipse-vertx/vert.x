@@ -960,10 +960,10 @@ public class TestClient extends TestClientBase {
         if (ar.succeeded()) {
           WriteStream ws = ar.result();
 
-          ws.exceptionHandler(new Handler<Exception>() {
-            public void handle(Exception e) {
+          ws.exceptionHandler(new Handler<Throwable>() {
+            public void handle(Throwable t) {
               tu.checkThread();
-              tu.exception(e, "caught exception on stream");
+              tu.exception(t, "caught exception on stream");
             }
           });
 
@@ -1020,10 +1020,10 @@ public class TestClient extends TestClientBase {
             }
           });
 
-          rs.exceptionHandler(new Handler<Exception>() {
-            public void handle(Exception e) {
+          rs.exceptionHandler(new Handler<Throwable>() {
+            public void handle(Throwable t) {
               tu.checkThread();
-              tu.exception(e, "caught exception");
+              tu.exception(t, "caught exception");
             }
           });
 

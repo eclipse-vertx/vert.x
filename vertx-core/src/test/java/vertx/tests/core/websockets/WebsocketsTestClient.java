@@ -215,8 +215,8 @@ public class WebsocketsTestClient extends TestClientBase {
       @Override
       public void handle(AsyncResult<HttpServer> ar) {
         tu.azzert(ar.succeeded());
-        client.exceptionHandler(new Handler<Exception>() {
-          public void handle(Exception e) {
+        client.exceptionHandler(new Handler<Throwable>() {
+          public void handle(Throwable t) {
             tu.testComplete();
           }
         });

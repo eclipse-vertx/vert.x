@@ -52,11 +52,11 @@ public class DefaultHttpClient implements HttpClient {
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private Bootstrap bootstrap;
   private final Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<Channel, ClientConnection>();
-  private Handler<Exception> exceptionHandler;
+  private Handler<Throwable> exceptionHandler;
   private int port = 80;
   private String host = "localhost";
   private final HttpConnectionPool pool = new HttpConnectionPool()  {
-    protected void connect(Handler<ClientConnection> connectHandler, Handler<Exception> connectErrorHandler, Context context) {
+    protected void connect(Handler<ClientConnection> connectHandler, Handler<Throwable> connectErrorHandler, Context context) {
       internalConnect(connectHandler, connectErrorHandler);
     }
   };
@@ -73,8 +73,8 @@ public class DefaultHttpClient implements HttpClient {
     });
   }
 
-  @Override
-  public void exceptionHandler(Handler<Exception> handler) {
+ // @Override
+  public void exceptionHandler(Handler<Throwable> handler) {
     this.exceptionHandler = handler;
   }
 
@@ -402,7 +402,7 @@ public class DefaultHttpClient implements HttpClient {
     return tcpHelper.isUsePooledBuffers();
   }
 
-  void getConnection(Handler<ClientConnection> handler, Handler<Exception> connectionExceptionHandler, Context context) {
+  void getConnection(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, Context context) {
     pool.getConnection(handler, connectionExceptionHandler, context);
   }
 
@@ -425,7 +425,7 @@ public class DefaultHttpClient implements HttpClient {
     return vertx;
   }
 
-  void internalConnect(final Handler<ClientConnection> connectHandler, final Handler<Exception> connectErrorHandler) {
+  void internalConnect(final Handler<ClientConnection> connectHandler, final Handler<Throwable> connectErrorHandler) {
 
     if (bootstrap == null) {
       // Share the event loop thread to also serve the HttpClient's network traffic.
@@ -525,18 +525,18 @@ public class DefaultHttpClient implements HttpClient {
     connectHandler.handle(conn);
   }
 
-  private void failed(final Channel ch, final Handler<Exception> connectionExceptionHandler,
+  private void failed(final Channel ch, final Handler<Throwable> connectionExceptionHandler,
                       final Throwable t) {
     // If no specific exception handler is provided, fall back to the HttpClient's exception handler.
-    final Handler<Exception> exHandler = connectionExceptionHandler == null ? exceptionHandler : connectionExceptionHandler;
+    final Handler<Throwable> exHandler = connectionExceptionHandler == null ? exceptionHandler : connectionExceptionHandler;
 
     boolean onEventLoop = actualCtx.isOnCorrectWorker(ch.eventLoop());
     if (onEventLoop) {
       vertx.setContext(actualCtx);
       pool.connectionClosed();
       ch.close();
-      if (t instanceof Exception && exHandler != null) {
-        exHandler.handle((Exception) t);
+      if (exHandler != null) {
+        exHandler.handle(t);
       } else {
         actualCtx.reportException(t);
       }
@@ -548,10 +548,10 @@ public class DefaultHttpClient implements HttpClient {
         }
       });
 
-      if (t instanceof Exception && exHandler != null) {
+      if (exHandler != null) {
         actualCtx.execute(new Runnable() {
           public void run() {
-            exHandler.handle((Exception) t);
+            exHandler.handle(t);
           }
         });
       } else {

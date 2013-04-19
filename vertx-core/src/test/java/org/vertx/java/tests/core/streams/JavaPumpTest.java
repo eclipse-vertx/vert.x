@@ -121,7 +121,7 @@ public class JavaPumpTest extends TestCase {
       return this;
     }
 
-    public FakeReadStream exceptionHandler(Handler<Exception> handler) {
+    public FakeReadStream exceptionHandler(Handler<Throwable> handler) {
       return this;
     }
 
@@ -163,7 +163,7 @@ public class JavaPumpTest extends TestCase {
       return this;
     }
 
-    public FakeWriteStream exceptionHandler(Handler<Exception> handler) {
+    public FakeWriteStream exceptionHandler(Handler<Throwable> handler) {
       return this;
     }
   }
