@@ -43,7 +43,7 @@ public class DefaultWebSocket extends WebSocketImplBase implements WebSocket {
   }
 
   @Override
-  public WebSocket exceptionHandler(Handler<Exception> handler) {
+  public WebSocket exceptionHandler(Handler<Throwable> handler) {
     checkClosed();
     this.exceptionHandler = handler;
     return this;

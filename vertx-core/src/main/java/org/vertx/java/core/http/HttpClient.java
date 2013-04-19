@@ -40,7 +40,7 @@ public interface HttpClient extends ClientSSLSupport<HttpClient>, TCPSupport<Htt
   /**
    * Set an exception handler
    */
-  void exceptionHandler(Handler<Exception> handler);
+  void exceptionHandler(Handler<Throwable> handler);
 
   /**
    * Set the maximum pool size<p>

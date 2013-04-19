@@ -45,7 +45,7 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
 
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
-  private Handler<Exception> exceptionHandler;
+  private Handler<Throwable> exceptionHandler;
   private final HttpResponse response;
   private LastHttpContent trailer;
 
@@ -117,7 +117,7 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
   }
 
   @Override
-  public HttpClientResponse exceptionHandler(Handler<Exception> exceptionHandler) {
+  public HttpClientResponse exceptionHandler(Handler<Throwable> exceptionHandler) {
     this.exceptionHandler = exceptionHandler;
     return this;
   }

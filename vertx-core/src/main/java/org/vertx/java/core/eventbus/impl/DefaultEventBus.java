@@ -733,8 +733,8 @@ public class DefaultEventBus implements EventBus {
       this.socket = socket;
       this.theServerID = theServerID;
       connected = true;
-      socket.exceptionHandler(new Handler<Exception>() {
-        public void handle(Exception e) {
+      socket.exceptionHandler(new Handler<Throwable>() {
+        public void handle(Throwable t) {
           cleanupConnection(theServerID, ConnectionHolder.this, true);
         }
       });

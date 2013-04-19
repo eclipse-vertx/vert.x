@@ -55,7 +55,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
 
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
-  private Handler<Exception> exceptionHandler;
+  private Handler<Throwable> exceptionHandler;
 
   //Cache this for performance
   private Map<String, String> params;
@@ -150,7 +150,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   }
 
   @Override
-  public HttpServerRequest exceptionHandler(Handler<Exception> handler) {
+  public HttpServerRequest exceptionHandler(Handler<Throwable> handler) {
     this.exceptionHandler = handler;
     return this;
   }

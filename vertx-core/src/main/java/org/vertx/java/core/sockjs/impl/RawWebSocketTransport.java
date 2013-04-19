@@ -77,7 +77,7 @@ class RawWebSocketTransport {
       return this;
     }
 
-    public SockJSSocket exceptionHandler(Handler<Exception> handler) {
+    public SockJSSocket exceptionHandler(Handler<Throwable> handler) {
       ws.exceptionHandler(handler);
       return this;
     }

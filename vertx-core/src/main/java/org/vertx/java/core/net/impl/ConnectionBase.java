@@ -54,7 +54,7 @@ public abstract class ConnectionBase {
   protected final Channel channel;
   protected final Context context;
 
-  protected Handler<Exception> exceptionHandler;
+  protected Handler<Throwable> exceptionHandler;
   protected Handler<Void> closeHandler;
   private volatile boolean writable = true;
 
@@ -89,13 +89,13 @@ public abstract class ConnectionBase {
     return context;
   }
 
-  protected void handleException(Exception e) {
+  protected void handleException(Throwable t) {
     if (exceptionHandler != null) {
       setContext();
       try {
-        exceptionHandler.handle(e);
-      } catch (Throwable t) {
-        handleHandlerException(t);
+        exceptionHandler.handle(t);
+      } catch (Throwable t2) {
+        handleHandlerException(t2);
       }
     }
   }

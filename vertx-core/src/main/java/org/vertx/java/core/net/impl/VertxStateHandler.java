@@ -70,12 +70,12 @@ public abstract class VertxStateHandler<C extends ConnectionBase> extends Channe
   public void exceptionCaught(ChannelHandlerContext chctx, final Throwable t) throws Exception {
     final Channel ch = chctx.channel();
     final C sock = connectionMap.remove(ch);
-    if (sock != null && t instanceof Exception) {
+    if (sock != null) {
       Context context = getContext(sock);
       if (context.isOnCorrectWorker(ch.eventLoop())) {
         try {
           vertx.setContext(context);
-          sock.handleException((Exception) t);
+          sock.handleException(t);
           ch.close();
         } catch (Throwable tt) {
           context.reportException(tt);
@@ -83,8 +83,8 @@ public abstract class VertxStateHandler<C extends ConnectionBase> extends Channe
       } else {
         context.execute(new Runnable() {
           public void run() {
-            sock.handleException((Exception) t);
-            ch.close();
+          sock.handleException(t);
+          ch.close();
           }
         });
       }

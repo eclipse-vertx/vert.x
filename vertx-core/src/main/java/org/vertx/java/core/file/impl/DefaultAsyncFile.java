@@ -55,7 +55,7 @@ public class DefaultAsyncFile implements AsyncFile {
   private Runnable closedDeferred;
   private long writesOutstanding;
 
-  private Handler<Exception> exceptionHandler;
+  private Handler<Throwable> exceptionHandler;
   private Handler<Void> drainHandler;
 
   private int writePos;
@@ -174,7 +174,7 @@ public class DefaultAsyncFile implements AsyncFile {
   }
 
   @Override
-  public AsyncFile exceptionHandler(Handler<Exception> handler) {
+  public AsyncFile exceptionHandler(Handler<Throwable> handler) {
     check();
     this.exceptionHandler = handler;
     return this;
@@ -182,9 +182,9 @@ public class DefaultAsyncFile implements AsyncFile {
 
   private void handleException(Throwable t) {
     if (exceptionHandler != null && t instanceof Exception) {
-      exceptionHandler.handle((Exception)t);
+      exceptionHandler.handle(t);
     } else {
-      log.error("Unhandled exception", t);
+      context.reportException(t);
     }
   }
 
@@ -322,17 +322,12 @@ public class DefaultAsyncFile implements AsyncFile {
         }
       }
 
-      public void failed(Throwable exc, Object attachment) {
-        if (exc instanceof Exception) {
-          final Exception e = (Exception) exc;
-          context.execute(new Runnable() {
-            public void run() {
-              handler.handle(new DefaultFutureResult<Void>().setResult(null));
-            }
-          });
-        } else {
-          log.error("Error occurred", exc);
-        }
+      public void failed(final Throwable t, Object attachment) {
+        context.execute(new Runnable() {
+          public void run() {
+            handler.handle(new DefaultFutureResult<Void>(t));
+          }
+        });
       }
     });
   }
@@ -370,17 +365,12 @@ public class DefaultAsyncFile implements AsyncFile {
         }
       }
 
-      public void failed(Throwable exc, Object attachment) {
-        if (exc instanceof Exception) {
-          final Exception e = (Exception) exc;
-          context.execute(new Runnable() {
-            public void run() {
-              result.setFailure(e).setHandler(handler);
-            }
-          });
-        } else {
-          vertx.reportException(exc);
-        }
+      public void failed(final Throwable t, Object attachment) {
+        context.execute(new Runnable() {
+          public void run() {
+            result.setFailure(t).setHandler(handler);
+          }
+        });
       }
     });
   }
