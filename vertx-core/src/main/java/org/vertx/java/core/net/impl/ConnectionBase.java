@@ -118,7 +118,11 @@ public abstract class ConnectionBase {
           if (doneHandler != null) {
             context.execute(new Runnable() {
               public void run() {
-                doneHandler.handle(new DefaultFutureResult<Void>(channelFuture.cause()));
+                if (channelFuture.isSuccess()) {
+                  doneHandler.handle(new DefaultFutureResult<>((Void)null));
+                } else {
+                  doneHandler.handle(new DefaultFutureResult<Void>(channelFuture.cause()));
+                }
               }
             });
           } else if (!channelFuture.isSuccess()) {

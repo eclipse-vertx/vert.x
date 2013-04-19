@@ -414,7 +414,7 @@ public class DefaultHttpClient implements HttpClient {
     if (exceptionHandler != null) {
       exceptionHandler.handle(e);
     } else {
-      log.error("Unhandled exception", e);
+      vertx.reportException(e);
     }
   }
 
@@ -538,7 +538,7 @@ public class DefaultHttpClient implements HttpClient {
       if (t instanceof Exception && exHandler != null) {
         exHandler.handle((Exception) t);
       } else {
-        log.error("Unhandled exception", t);
+        actualCtx.reportException(t);
       }
     } else {
       actualCtx.execute(new Runnable() {
@@ -550,12 +550,12 @@ public class DefaultHttpClient implements HttpClient {
 
       if (t instanceof Exception && exHandler != null) {
         actualCtx.execute(new Runnable() {
-                public void run() {
-                    exHandler.handle((Exception) t);
-                }
-            });
+          public void run() {
+            exHandler.handle((Exception) t);
+          }
+        });
       } else {
-        log.error("Unhandled exception", t);
+        actualCtx.reportException(t);
       }
     }
   }
