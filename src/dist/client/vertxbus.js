@@ -145,7 +145,7 @@ var vertx = vertx || {};
         // Might be a reply message
         var handler = replyHandlers[address];
         if (handler) {
-          delete replyHandlers[replyAddress];
+          delete replyHandlers[address];
           handler(body, replyHandler);
         }
       }
