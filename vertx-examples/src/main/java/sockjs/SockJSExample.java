@@ -23,7 +23,7 @@ import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.SockJSSocket;
-import org.vertx.java.platform.Verticle;
+import org.vertx.java.deploy.Verticle;
 
 public class SockJSExample extends Verticle {
 

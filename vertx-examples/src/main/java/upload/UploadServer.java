@@ -23,7 +23,7 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.streams.Pump;
-import org.vertx.java.platform.Verticle;
+import org.vertx.java.deploy.Verticle;
 
 import java.util.UUID;
 

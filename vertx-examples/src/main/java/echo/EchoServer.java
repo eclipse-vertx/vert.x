@@ -19,7 +19,7 @@ package echo;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.streams.Pump;
-import org.vertx.java.platform.Verticle;
+import org.vertx.java.deploy.Verticle;
 
 public class EchoServer extends Verticle {
 
