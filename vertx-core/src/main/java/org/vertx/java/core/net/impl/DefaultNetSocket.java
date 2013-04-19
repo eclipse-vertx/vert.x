@@ -84,28 +84,6 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   }
 
   @Override
-  public NetSocket write(Buffer data, Handler<AsyncResult<Void>> doneHandler) {
-    addFuture(doneHandler, doWrite(data.getByteBuf()));
-    return this;
-  }
-
-  @Override
-  public NetSocket write(String str, Handler<AsyncResult<Void>> doneHandler) {
-    addFuture(doneHandler, doWrite(Unpooled.copiedBuffer(str, CharsetUtil.UTF_8)));
-    return this;
-  }
-
-  @Override
-  public NetSocket write(String str, String enc, Handler<AsyncResult<Void>> doneHandler) {
-    if (enc == null) {
-      write(str, enc);
-    } else {
-      addFuture(doneHandler, doWrite(Unpooled.copiedBuffer(str, Charset.forName(enc))));
-    }
-    return this;
-  }
-
-  @Override
   public NetSocket dataHandler(Handler<Buffer> dataHandler) {
     this.dataHandler = dataHandler;
     return this;

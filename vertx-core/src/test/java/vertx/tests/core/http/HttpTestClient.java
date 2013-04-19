@@ -322,22 +322,7 @@ public class HttpTestClient extends TestClientBase {
         tu.azzert(req.sendHead() == req);
         tu.azzert(req.write("foo", "UTF-8") == req);
         tu.azzert(req.write("foo") == req);
-        tu.azzert(req.write("foo", "UTF-8", new AsyncResultHandler<Void>() {
-          @Override
-          public void handle(AsyncResult<Void> event) {
-          }
-        }) == req);
-        tu.azzert(req.write("foo", new AsyncResultHandler<Void>() {
-          @Override
-          public void handle(AsyncResult<Void> event) {
-          }
-        }) == req);
         tu.azzert(req.write(new Buffer("foo")) == req);
-        tu.azzert(req.write(new Buffer("foo"),new AsyncResultHandler<Void>() {
-          @Override
-          public void handle(AsyncResult<Void> event) {
-          }
-        }) == req);
         tu.testComplete();
       }
     };
@@ -383,19 +368,6 @@ public class HttpTestClient extends TestClientBase {
           tu.azzert(req.response().setChunked(true) == req.response());
           tu.azzert(req.response().write("foo", "UTF-8") == req.response());
           tu.azzert(req.response().write("foo") == req.response());
-          tu.azzert(req.response().write("foo", "UTF-8", new AsyncResultHandler<Void>() {
-            public void handle(AsyncResult<Void> result) {
-            }
-          }) == req.response());
-          tu.azzert(req.response().write("foo", new AsyncResultHandler<Void>() {
-            public void handle(AsyncResult<Void> result) {
-            }
-          }) == req.response());
-          tu.azzert(req.response().write(new Buffer("foo")) == req.response());
-          tu.azzert(req.response().write(new Buffer("foo"), new AsyncResultHandler<Void>() {
-            public void handle(AsyncResult<Void> result) {
-            }
-          }) == req.response());
         }
         tu.testComplete();
       }
@@ -948,12 +920,6 @@ public class HttpTestClient extends TestClientBase {
 
         req.end();
 
-        AsyncResultHandler<Void> handler = new AsyncResultHandler<Void>() {
-          @Override
-          public void handle(AsyncResult<Void> event) {
-
-          }
-        };
         Buffer buff = new Buffer();
 
         try {
@@ -1048,33 +1014,11 @@ public class HttpTestClient extends TestClientBase {
           //OK
         }
         try {
-          req.write(buff, handler);
-          tu.azzert(false, "Should throw exception");
-        } catch (IllegalStateException e) {
-          //OK
-        }
-
-        try {
-          req.write("foo", handler);
-          tu.azzert(false, "Should throw exception");
-        } catch (IllegalStateException e) {
-          //OK
-        }
-
-        try {
-          req.write("foo", "UTF-8", handler);
-          tu.azzert(false, "Should throw exception");
-        } catch (IllegalStateException e) {
-          //OK
-        }
-
-        try {
           req.write(buff);
           tu.azzert(false, "Should throw exception");
         } catch (IllegalStateException e) {
           //OK
         }
-
         try {
           req.writeQueueFull();
           tu.azzert(false, "Should throw exception");
@@ -1212,22 +1156,14 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testRequestBodyWriteBufferChunked() {
-    testRequestBodyWriteBuffer(true, false);
+    testRequestBodyWriteBuffer(true);
   }
 
   public void testRequestBodyWriteBufferNonChunked() {
-    testRequestBodyWriteBuffer(false, false);
+    testRequestBodyWriteBuffer(false);
   }
 
-  public void testRequestBodyWriteBufferChunkedCompletion() {
-    testRequestBodyWriteBuffer(true, true);
-  }
-
-  public void testRequestBodyWriteBufferNonChunkedCompletion() {
-    testRequestBodyWriteBuffer(false, true);
-  }
-
-  private void testRequestBodyWriteBuffer(final boolean chunked, final boolean waitCompletion) {
+  private void testRequestBodyWriteBuffer(final boolean chunked) {
     final Buffer body = new Buffer();
     AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
@@ -1247,17 +1183,13 @@ public class HttpTestClient extends TestClientBase {
         } else {
           req.headers().put("Content-Length", numWrites * chunkSize);
         }
-        if (waitCompletion) {
-          writeChunk(numWrites, chunkSize, req, body);
-        } else {
-          for (int i = 0; i < numWrites; i++) {
-            Buffer b = TestUtils.generateRandomBuffer(chunkSize);
-            body.appendBuffer(b);
-            req.write(b);
-          }
-          req.end();
+        for (int i = 0; i < numWrites; i++) {
+          Buffer b = TestUtils.generateRandomBuffer(chunkSize);
+          body.appendBuffer(b);
+          req.write(b);
         }
-      }
+        req.end();
+      };
     };
 
     startServer(new Handler<HttpServerRequest>() {
@@ -1273,69 +1205,31 @@ public class HttpTestClient extends TestClientBase {
     }, handler);
   }
 
-  private void writeChunk(final int remaining, final int chunkSize, final HttpClientRequest req, final Buffer totBuffer) {
-    if (remaining > 0) {
-      Buffer b = TestUtils.generateRandomBuffer(chunkSize);
-      totBuffer.appendBuffer(b);
-      req.write(b, new AsyncResultHandler<Void>() {
-        public void handle(AsyncResult<Void> res) {
-          writeChunk(remaining - 1, chunkSize, req, totBuffer);
-        }
-      });
-    } else {
-      req.end();
-    }
-  }
-
   public void testRequestBodyWriteStringChunkedDefaultEncoding() {
-    testRequestBodyWriteString(true, false, null);
+    testRequestBodyWriteString(true, null);
   }
 
   public void testRequestBodyWriteStringChunkedUTF8() {
-    testRequestBodyWriteString(true, false, "UTF-8");
+    testRequestBodyWriteString(true, "UTF-8");
   }
 
   public void testRequestBodyWriteStringChunkedUTF16() {
-    testRequestBodyWriteString(true, false, "UTF-16");
+    testRequestBodyWriteString(true, "UTF-16");
   }
 
   public void testRequestBodyWriteStringNonChunkedDefaultEncoding() {
-    testRequestBodyWriteString(false, false, null);
+    testRequestBodyWriteString(false, null);
   }
 
   public void testRequestBodyWriteStringNonChunkedUTF8() {
-    testRequestBodyWriteString(false, false, "UTF-8");
+    testRequestBodyWriteString(false, "UTF-8");
   }
 
   public void testRequestBodyWriteStringNonChunkedUTF16() {
-    testRequestBodyWriteString(false, false, "UTF-16");
+    testRequestBodyWriteString(false, "UTF-16");
   }
 
-  public void testRequestBodyWriteStringChunkedDefaultEncodingCompletion() {
-    testRequestBodyWriteString(true, true, null);
-  }
-
-  public void testRequestBodyWriteStringChunkedUTF8Completion() {
-    testRequestBodyWriteString(true, true, "UTF-8");
-  }
-
-  public void testRequestBodyWriteStringChunkedUTF16Completion() {
-    testRequestBodyWriteString(true, true, "UTF-16");
-  }
-
-  public void testRequestBodyWriteStringNonChunkedDefaultEncodingCompletion() {
-    testRequestBodyWriteString(false, true, null);
-  }
-
-  public void testRequestBodyWriteStringNonChunkedUTF8Completion() {
-    testRequestBodyWriteString(false, true, "UTF-8");
-  }
-
-  public void testRequestBodyWriteStringNonChunkedUTF16Completion() {
-    testRequestBodyWriteString(false, true, "UTF-16");
-  }
-
-  private void testRequestBodyWriteString(final boolean chunked, final boolean waitCompletion, final String encoding) {
+  private void testRequestBodyWriteString(final boolean chunked, final String encoding) {
 
     final String body = TestUtils.randomUnicodeString(1000);
     final Buffer bodyBuff;
@@ -1362,25 +1256,14 @@ public class HttpTestClient extends TestClientBase {
         } else {
           req.headers().put("Content-Length", bodyBuff.length());
         }
-        if (waitCompletion) {
-          AsyncResultHandler<Void> doneHandler = new AsyncResultHandler<Void>() {
-            public void handle(AsyncResult<Void> result) {
-              req.end();
-            }
-          };
-          if (encoding == null) {
-            req.write(body, doneHandler);
-          } else {
-            req.write(body, encoding, doneHandler);
-          }
+
+        if (encoding == null) {
+          req.write(body);
         } else {
-          if (encoding == null) {
-            req.write(body);
-          } else {
-            req.write(body, encoding);
-          }
-          req.end();
+          req.write(body, encoding);
         }
+        req.end();
+
       }
     };
     startServer(new Handler<HttpServerRequest>() {
@@ -1765,26 +1648,6 @@ public class HttpTestClient extends TestClientBase {
         } catch (IllegalStateException e) {
           //OK
         }
-        try {
-          resp.write(buff, writeHandler);
-          tu.azzert(false, "Should throw exception");
-        } catch (IllegalStateException e) {
-          //OK
-        }
-
-        try {
-          resp.write("foo", writeHandler);
-          tu.azzert(false, "Should throw exception");
-        } catch (IllegalStateException e) {
-          //OK
-        }
-
-        try {
-          resp.write("foo", "UTF-8", writeHandler);
-          tu.azzert(false, "Should throw exception");
-        } catch (IllegalStateException e) {
-          //OK
-        }
 
         try {
           resp.write(buff);
@@ -1927,22 +1790,14 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testResponseBodyWriteBufferChunked() {
-    testResponseBodyWriteBuffer(true, false);
+    testResponseBodyWriteBuffer(true);
   }
 
   public void testResponseBodyWriteBufferNonChunked() {
-    testResponseBodyWriteBuffer(false, false);
+    testResponseBodyWriteBuffer(false);
   }
 
-  public void testResponseBodyWriteBufferChunkedCompletion() {
-    testResponseBodyWriteBuffer(true, true);
-  }
-
-  public void testResponseBodyWriteBufferNonChunkedCompletion() {
-    testResponseBodyWriteBuffer(false, true);
-  }
-
-  private void testResponseBodyWriteBuffer(final boolean chunked, final boolean waitCompletion) {
+  private void testResponseBodyWriteBuffer(final boolean chunked) {
 
     final Buffer body = new Buffer();
 
@@ -1976,84 +1831,44 @@ public class HttpTestClient extends TestClientBase {
         } else {
           req.response().headers().put("Content-Length", numWrites * chunkSize);
         }
-        if (waitCompletion) {
-          writeChunk(numWrites, chunkSize, req.response(), body);
-        } else {
-          for (int i = 0; i < numWrites; i++) {
-            Buffer b = TestUtils.generateRandomBuffer(chunkSize);
-            body.appendBuffer(b);
-            req.response().write(b);
-          }
-          req.response().end();
+
+        for (int i = 0; i < numWrites; i++) {
+          Buffer b = TestUtils.generateRandomBuffer(chunkSize);
+          body.appendBuffer(b);
+          req.response().write(b);
         }
+        req.response().end();
+
       }
     }, handler);
 
   }
 
-  private void writeChunk(final int remaining, final int chunkSize, final HttpServerResponse resp, final Buffer totBuffer) {
-    if (remaining > 0) {
-      Buffer b = TestUtils.generateRandomBuffer(chunkSize);
-      totBuffer.appendBuffer(b);
-      resp.write(b, new AsyncResultHandler<Void>() {
-        public void handle(AsyncResult<Void> res) {
-          writeChunk(remaining - 1, chunkSize, resp, totBuffer);
-        }
-      });
-    } else {
-      resp.end();
-    }
-  }
-
   public void testResponseBodyWriteStringChunkedDefaultEncoding() {
-    testResponseBodyWriteString(true, false, null);
+    testResponseBodyWriteString(true, null);
   }
 
   public void testResponseBodyWriteStringChunkedUTF8() {
-    testResponseBodyWriteString(true, false, "UTF-8");
+    testResponseBodyWriteString(true, "UTF-8");
   }
 
   public void testResponseBodyWriteStringChunkedUTF16() {
-    testResponseBodyWriteString(true, false, "UTF-16");
+    testResponseBodyWriteString(true, "UTF-16");
   }
 
   public void testResponseBodyWriteStringNonChunkedDefaultEncoding() {
-    testResponseBodyWriteString(false, false, null);
+    testResponseBodyWriteString(false, null);
   }
 
   public void testResponseBodyWriteStringNonChunkedUTF8() {
-    testResponseBodyWriteString(false, false, "UTF-8");
+    testResponseBodyWriteString(false, "UTF-8");
   }
 
   public void testResponseBodyWriteStringNonChunkedUTF16() {
-    testResponseBodyWriteString(false, false, "UTF-16");
+    testResponseBodyWriteString(false, "UTF-16");
   }
 
-  public void testResponseBodyWriteStringChunkedDefaultEncodingCompletion() {
-    testResponseBodyWriteString(true, true, null);
-  }
-
-  public void testResponseBodyWriteStringChunkedUTF8Completion() {
-    testResponseBodyWriteString(true, true, "UTF-8");
-  }
-
-  public void testResponseBodyWriteStringChunkedUTF16Completion() {
-    testResponseBodyWriteString(true, true, "UTF-16");
-  }
-
-  public void testResponseBodyWriteStringNonChunkedDefaultEncodingCompletion() {
-    testResponseBodyWriteString(false, true, null);
-  }
-
-  public void testResponseBodyWriteStringNonChunkedUTF8Completion() {
-    testResponseBodyWriteString(false, true, "UTF-8");
-  }
-
-  public void testResponseBodyWriteStringNonChunkedUTF16Completion() {
-    testResponseBodyWriteString(false, true, "UTF-16");
-  }
-
-  private void testResponseBodyWriteString(final boolean chunked, final boolean waitCompletion, final String encoding) {
+  private void testResponseBodyWriteString(final boolean chunked, final String encoding) {
 
     final String body = TestUtils.randomUnicodeString(1000);
     final Buffer bodyBuff;
@@ -2091,26 +1906,14 @@ public class HttpTestClient extends TestClientBase {
         } else {
           req.response().headers().put("Content-Length", bodyBuff.length());
         }
-        if (waitCompletion) {
-          AsyncResultHandler<Void> doneHandler = new AsyncResultHandler<Void>() {
-            public void handle(AsyncResult<Void> res) {
-              req.response().end();
-            }
-          };
-          if (encoding == null) {
-            req.response().write(body, doneHandler);
-          } else {
-            req.response().write(body, encoding, doneHandler);
-          }
+        if (encoding == null) {
+          req.response().write(body);
         } else {
-          if (encoding == null) {
-            req.response().write(body);
-          } else {
-            req.response().write(body, encoding);
-          }
-          req.response().end();
+          req.response().write(body, encoding);
         }
+        req.response().end();
       }
+
     }, handler);
 
   }

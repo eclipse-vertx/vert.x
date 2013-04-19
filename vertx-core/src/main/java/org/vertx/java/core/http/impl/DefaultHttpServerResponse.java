@@ -186,21 +186,6 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   }
 
   @Override
-  public DefaultHttpServerResponse write(Buffer chunk, Handler<AsyncResult<Void>> doneHandler) {
-    return write(chunk.getByteBuf(), doneHandler);
-  }
-
-  @Override
-  public DefaultHttpServerResponse write(String chunk, String enc, Handler<AsyncResult<Void>> doneHandler) {
-    return write(new Buffer(chunk, enc).getByteBuf(), doneHandler);
-  }
-
-  @Override
-  public DefaultHttpServerResponse write(String chunk, Handler<AsyncResult<Void>> doneHandler) {
-    return write(new Buffer(chunk).getByteBuf(), doneHandler);
-  }
-
-  @Override
   public void end(String chunk) {
     end(new Buffer(chunk));
   }

@@ -184,7 +184,8 @@ public class DefaultAsyncFile implements AsyncFile {
     if (exceptionHandler != null && t instanceof Exception) {
       exceptionHandler.handle(t);
     } else {
-      context.reportException(t);
+      log.error("Unhandled exception", t);
+
     }
   }
 
@@ -322,12 +323,17 @@ public class DefaultAsyncFile implements AsyncFile {
         }
       }
 
-      public void failed(final Throwable t, Object attachment) {
-        context.execute(new Runnable() {
-          public void run() {
-            handler.handle(new DefaultFutureResult<Void>(t));
-          }
-        });
+      public void failed(Throwable exc, Object attachment) {
+        if (exc instanceof Exception) {
+          final Exception e = (Exception) exc;
+          context.execute(new Runnable() {
+            public void run() {
+              handler.handle(new DefaultFutureResult<Void>().setResult(null));
+            }
+          });
+        } else {
+          log.error("Error occurred", exc);
+        }
       }
     });
   }

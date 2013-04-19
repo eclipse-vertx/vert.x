@@ -275,14 +275,6 @@ public class JavaHttpTest extends TestBase {
     startTest(getMethodName());
   }
 
-  public void testRequestBodyWriteBufferChunkedCompletion() {
-    startTest(getMethodName());
-  }
-
-  public void testRequestBodyWriteBufferNonChunkedCompletion() {
-    startTest(getMethodName());
-  }
-
   public void testRequestBodyWriteStringChunkedDefaultEncoding() {
     startTest(getMethodName());
   }
@@ -304,30 +296,6 @@ public class JavaHttpTest extends TestBase {
   }
 
   public void testRequestBodyWriteStringNonChunkedUTF16() {
-    startTest(getMethodName());
-  }
-
-  public void testRequestBodyWriteStringChunkedDefaultEncodingCompletion() {
-    startTest(getMethodName());
-  }
-
-  public void testRequestBodyWriteStringChunkedUTF8Completion() {
-    startTest(getMethodName());
-  }
-
-  public void testRequestBodyWriteStringChunkedUTF16Completion() {
-    startTest(getMethodName());
-  }
-
-  public void testRequestBodyWriteStringNonChunkedDefaultEncodingCompletion() {
-    startTest(getMethodName());
-  }
-
-  public void testRequestBodyWriteStringNonChunkedUTF8Completion() {
-    startTest(getMethodName());
-  }
-
-  public void testRequestBodyWriteStringNonChunkedUTF16Completion() {
     startTest(getMethodName());
   }
 
@@ -391,14 +359,6 @@ public class JavaHttpTest extends TestBase {
     startTest(getMethodName());
   }
 
-  public void testResponseBodyWriteBufferChunkedCompletion() {
-    startTest(getMethodName());
-  }
-
-  public void testResponseBodyWriteBufferNonChunkedCompletion() {
-    startTest(getMethodName());
-  }
-
   public void testResponseBodyWriteStringChunkedDefaultEncoding() {
     startTest(getMethodName());
   }
@@ -420,30 +380,6 @@ public class JavaHttpTest extends TestBase {
   }
 
   public void testResponseBodyWriteStringNonChunkedUTF16() {
-    startTest(getMethodName());
-  }
-
-  public void testResponseBodyWriteStringChunkedDefaultEncodingCompletion() {
-    startTest(getMethodName());
-  }
-
-  public void testResponseBodyWriteStringChunkedUTF8Completion() {
-    startTest(getMethodName());
-  }
-
-  public void testResponseBodyWriteStringChunkedUTF16Completion() {
-    startTest(getMethodName());
-  }
-
-  public void testResponseBodyWriteStringNonChunkedDefaultEncodingCompletion() {
-    startTest(getMethodName());
-  }
-
-  public void testResponseBodyWriteStringNonChunkedUTF8Completion() {
-    startTest(getMethodName());
-  }
-
-  public void testResponseBodyWriteStringNonChunkedUTF16Completion() {
     startTest(getMethodName());
   }
 

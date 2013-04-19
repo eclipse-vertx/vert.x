@@ -17,9 +17,7 @@
 package org.vertx.java.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.*;
-import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
@@ -54,7 +52,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   private Handler<Throwable> exceptionHandler;
   private boolean headWritten;
   private boolean completed;
-  private LinkedList<PendingChunk> pendingChunks;
+  private LinkedList<ByteBuf> pendingChunks;
   private int pendingMaxSize = -1;
   private boolean connecting;
   private boolean writeHead;
@@ -128,37 +126,19 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   @Override
   public DefaultHttpClientRequest write(Buffer chunk) {
     check();
-    return write(chunk.getByteBuf(), null);
+    return write(chunk.getByteBuf());
   }
 
   @Override
   public DefaultHttpClientRequest write(String chunk) {
     check();
-    return write(new Buffer(chunk).getByteBuf(), null);
+    return write(new Buffer(chunk).getByteBuf());
   }
 
   @Override
   public DefaultHttpClientRequest write(String chunk, String enc) {
     check();
-    return write(new Buffer(chunk, enc).getByteBuf(), null);
-  }
-
-  @Override
-  public DefaultHttpClientRequest write(Buffer chunk, Handler<AsyncResult<Void>> doneHandler) {
-    check();
-    return write(chunk.getByteBuf(), doneHandler);
-  }
-
-  @Override
-  public DefaultHttpClientRequest write(String chunk, Handler<AsyncResult<Void>> doneHandler) {
-    checkComplete();
-    return write(new Buffer(chunk).getByteBuf(), doneHandler);
-  }
-
-  @Override
-  public DefaultHttpClientRequest write(String chunk, String enc, Handler<AsyncResult<Void>> doneHandler) {
-    check();
-    return write(new Buffer(chunk, enc).getByteBuf(), doneHandler);
+    return write(new Buffer(chunk, enc).getByteBuf());
   }
 
   @Override
@@ -381,8 +361,8 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
 
     if (pendingChunks != null) {
-      for (PendingChunk chunk : pendingChunks) {
-        sendChunk(chunk.chunk, chunk.doneHandler);
+      for (ByteBuf chunk : pendingChunks) {
+        sendChunk(chunk);
       }
     }
     if (completed) {
@@ -424,7 +404,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
   }
 
-  private DefaultHttpClientRequest write(ByteBuf buff, Handler<AsyncResult<Void>> doneHandler) {
+  private DefaultHttpClientRequest write(ByteBuf buff) {
 
     written += buff.readableBytes();
 
@@ -437,7 +417,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
       if (pendingChunks == null) {
         pendingChunks = new LinkedList<>();
       }
-      pendingChunks.add(new PendingChunk(buff, doneHandler));
+      pendingChunks.add(buff);
       connect();
     } else {
       if (!headWritten) {
@@ -445,15 +425,14 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
         conn.queueForWrite(request);
         headWritten = true;
       }
-      sendChunk(buff, doneHandler);
+      sendChunk(buff);
     }
     return this;
   }
 
-  private void sendChunk(ByteBuf buff, Handler<AsyncResult<Void>> doneHandler) {
+  private void sendChunk(ByteBuf buff) {
     Object write = chunked ? new DefaultHttpContent(buff) : buff;
-    ChannelFuture writeFuture = conn.write(write);
-    conn.addFuture(doneHandler, writeFuture);
+    conn.write(write);
   }
 
   private void writeEndChunk() {
@@ -467,16 +446,6 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   private void checkComplete() {
     if (completed) {
       throw new IllegalStateException("Request already complete");
-    }
-  }
-
-  private static class PendingChunk {
-    final ByteBuf chunk;
-    final Handler<AsyncResult<Void>> doneHandler;
-
-    private PendingChunk(ByteBuf chunk, Handler<AsyncResult<Void>> doneHandler) {
-      this.chunk = chunk;
-      this.doneHandler = doneHandler;
     }
   }
 
