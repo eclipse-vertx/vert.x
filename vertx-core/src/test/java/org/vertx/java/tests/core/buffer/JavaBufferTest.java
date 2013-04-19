@@ -27,6 +27,7 @@ import org.vertx.java.testframework.TestUtils;
  */
 public class JavaBufferTest extends TestCase {
 
+  //https://github.com/vert-x/vert.x/issues/561
   @Test
   public void testSetGetInt() throws Exception {
     Buffer buffer = new Buffer(1);
