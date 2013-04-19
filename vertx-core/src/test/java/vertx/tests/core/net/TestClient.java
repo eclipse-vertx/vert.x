@@ -542,29 +542,6 @@ public class TestClient extends TestClientBase {
     });
   }
 
-  public void testWriteWithCompletion() {
-    final int numSends = 10;
-    final int sendSize = 100;
-    final Buffer sentBuff = new Buffer();
-
-    client.connect(1234, new AsyncResultHandler<NetSocket>() {
-      public void handle(AsyncResult<NetSocket> res) {
-        NetSocket sock = res.result();
-        sock.dataHandler(new Handler<Buffer>() {
-          int received;
-          public void handle(Buffer data) {
-            received += data.length();
-            if (received == numSends * sendSize) {
-              tu.testComplete();
-            }
-          }
-        });
-        tu.checkThread();
-        doWrite(sentBuff, sock, numSends, sendSize);
-      }
-    });
-  }
-
   public void testReconnectAttemptsInfinite() {
     reconnectAttempts(-1);
   }
@@ -834,25 +811,4 @@ public class TestClient extends TestClientBase {
     });
   }
 
-  // Recursive - we don't write the next packet until we get the completion back from the previous write
-  void doWrite(final Buffer sentBuff, final NetSocket sock, int count, final int sendSize) {
-    Buffer b = TestUtils.generateRandomBuffer(sendSize);
-    sentBuff.appendBuffer(b);
-    count--;
-    final int c = count;
-    if (count == 0) {
-      sock.write(b, new AsyncResultHandler<Void>() {
-        public void handle(AsyncResult<Void> res) {
-          tu.checkThread();
-        }
-      });
-    } else {
-      sock.write(b, new AsyncResultHandler<Void>() {
-        public void handle(AsyncResult<Void> res) {
-          tu.checkThread();
-          doWrite(sentBuff, sock, c, sendSize);
-        }
-      });
-    }
-  }
 }

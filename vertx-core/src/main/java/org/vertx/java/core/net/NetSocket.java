@@ -66,26 +66,6 @@ public interface NetSocket extends ReadStream<NetSocket>, WriteStream<NetSocket>
   NetSocket write(String str, String enc);
 
   /**
-   * Write a {@link Buffer} to the connection. The {@code doneHandler} is called after the buffer is actually written to the wire.
-   * @return A reference to this, so multiple method calls can be chained.
-   */
-  NetSocket write(Buffer data, Handler<AsyncResult<Void>> doneHandler);
-
-  /**
-   * Write a {@link String} to the connection, encoded in UTF-8. The {@code doneHandler} is called after the buffer is
-   * actually written to the wire.
-   * @return A reference to this, so multiple method calls can be chained.
-   */
-  NetSocket write(String str, Handler<AsyncResult<Void>> doneHandler);
-
-  /**
-   * Write a {@link String} to the connection, encoded with encoding {@code enc}. The {@code doneHandler} is called after
-   * the buffer is actually written to the wire.
-   * @return A reference to this, so multiple method calls can be chained.
-   */
-  NetSocket write(String str, String enc, Handler<AsyncResult<Void>> doneHandler);
-
-  /**
    * Tell the kernel to stream a file as specified by {@code filename} directly from disk to the outgoing connection,
    * bypassing userspace altogether (where supported by the underlying operating system. This is a very efficient way to stream files.
    */

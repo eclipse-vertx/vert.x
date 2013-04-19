@@ -51,7 +51,7 @@ public class DefaultHttpClient implements HttpClient {
   private final Context actualCtx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private Bootstrap bootstrap;
-  private final Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<Channel, ClientConnection>();
+  private final Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<>();
   private Handler<Throwable> exceptionHandler;
   private int port = 80;
   private String host = "localhost";

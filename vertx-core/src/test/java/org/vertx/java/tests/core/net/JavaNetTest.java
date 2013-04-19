@@ -127,12 +127,6 @@ public class JavaNetTest extends TestBase {
   }
 
   @Test
-  public void testWriteWithCompletion() throws Exception {
-    startApp(EchoServer.class.getName());
-    startTest(getMethodName());
-  }
-
-  @Test
   public void testClientCloseHandlersCloseFromClient() throws Exception {
     startApp(EchoServer.class.getName());
     startTest(getMethodName());

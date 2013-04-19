@@ -308,16 +308,11 @@ class ClientConnection extends AbstractConnection {
 
   protected void handleException(Exception e) {
     super.handleException(e);
-
     if (currentRequest != null) {
       currentRequest.handleException(e);
     } else if (currentResponse != null) {
       currentResponse.handleException(e);
     }
-  }
-
-  protected void addFuture(Handler<AsyncResult<Void>> doneHandler, ChannelFuture future) {
-    super.addFuture(doneHandler, future);
   }
 
   ChannelFuture write(Object obj) {
