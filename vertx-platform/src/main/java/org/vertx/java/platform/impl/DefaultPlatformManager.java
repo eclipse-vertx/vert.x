@@ -777,7 +777,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       if (is != null) {
         BufferedReader rdr = new BufferedReader(new InputStreamReader(is));
         String line;
-        outer: while ((line = rdr.readLine()) != null) {
+        while ((line = rdr.readLine()) != null) {
           line = line.trim();
           if (line.isEmpty() || line.startsWith("#")) {
             // blank line or comment
@@ -793,7 +793,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           switch (type) {
             case "mavenLocal":
               if (disableMavenLocal) {
-                break outer;
+                continue;
               }
               resolver = new MavenLocalRepoResolver(repoID);
               break;
