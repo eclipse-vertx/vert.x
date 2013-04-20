@@ -56,7 +56,7 @@ subprojects {
   group = rootProject.group
   
   repositories {
-    if (System.getenv("JENKINS_HOME") == null) {
+    if (System.getenv("VERTX_DISABLE_MAVENLOCAL") == null) {
       mavenLocal()
     }
     maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
