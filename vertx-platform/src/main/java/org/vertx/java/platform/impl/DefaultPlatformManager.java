@@ -78,6 +78,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private List<RepoResolver> repos = new ArrayList<>();
   private Handler<Void> exitHandler;
   private final ClassLoader platformClassLoader;
+  private boolean disableMavenLocal;
 
   DefaultPlatformManager() {
     this(new DefaultVertx());
@@ -108,6 +109,9 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       systemModRoot = new File(vertxHome, SYS_MODS_DIR);
     }
     this.redeployer = new Redeployer(vertx, modRoot, this);
+    // If running on CI we don't want to use maven local to get any modules - this is because they can
+    // get stale easily - we must always get them from external repos
+    this.disableMavenLocal = System.getenv("VERTX_DISABLE_MAVENLOCAL") != null;
     loadLanguageMappings();
     loadRepos();
   }
@@ -773,7 +777,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       if (is != null) {
         BufferedReader rdr = new BufferedReader(new InputStreamReader(is));
         String line;
-        while ((line = rdr.readLine()) != null) {
+        outer: while ((line = rdr.readLine()) != null) {
           line = line.trim();
           if (line.isEmpty() || line.startsWith("#")) {
             // blank line or comment
@@ -788,8 +792,10 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           RepoResolver resolver;
           switch (type) {
             case "mavenLocal":
+              if (disableMavenLocal) {
+                break outer;
+              }
               resolver = new MavenLocalRepoResolver(repoID);
-              type = "maven";
               break;
             case "maven":
               resolver = new MavenRepoResolver(vertx, repoID);
