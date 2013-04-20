@@ -21,7 +21,7 @@ buildscript {
     flatDir {
       dir 'extralibs'
     }
-    if (System.getenv("JENKINS_HOME") == null) {
+    if (System.getenv("VERTX_DISABLE_MAVENLOCAL") == null) {
       // We don't want to use mavenLocal when running on CI - mavenLocal is only useful in Gradle for
       // publishing artifacts locally for development purposes - maven local is also not threadsafe when there
       // are concurrent builds
