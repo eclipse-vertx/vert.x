@@ -17,10 +17,9 @@
 package org.vertx.java.core.http;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.WriteStream;
-
-import java.util.Map;
 
 /**
  * Represents a server-side HTTP response.<p>
@@ -86,22 +85,29 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
   /**
    * @return The HTTP headers
    */
-  Map<String, Object> headers();
+  MultiMap headers();
 
   /**
    * Put an HTTP header - fluent API
    * @param name The header name
-   * @param value The header value. As well as the usual types, value also accepts Iterable<?> objects
-   *              you can use this to when you have multiple headers with the same name that you wish to set
-   *              e.g. multiple Set-Cookie headers
+   * @param value The header value.
    * @return A reference to this, so multiple method calls can be chained.
    */
-  HttpServerResponse putHeader(String name, Object value);
+  HttpServerResponse putHeader(String name, String value);
+
+  /**
+   * Put an HTTP header - fluent API
+   * @param name    The header name
+   * @param values  The header values.
+   * @return A reference to this, so multiple method calls can be chained.
+   */
+  HttpServerResponse putHeader(String name, Iterable<String> values);
+
 
   /**
    * @return The HTTP trailers
    */
-  Map<String, Object> trailers();
+  MultiMap trailers();
 
   /**
    * Put an HTTP trailer - fluent API
@@ -109,7 +115,15 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    * @param value The trailer value
    * @return A reference to this, so multiple method calls can be chained.
    */
-  HttpServerResponse putTrailer(String name, Object value);
+  HttpServerResponse putTrailer(String name, String value);
+
+  /**
+   * Put an HTTP trailer - fluent API
+   * @param name    The trailer name
+   * @param values  The trailer values
+   * @return A reference to this, so multiple method calls can be chained.
+   */
+  HttpServerResponse putTrailer(String name, Iterable<String> values);
 
   /**
    * Set a close handler for the response. This will be called if the underlying connection closes before the response

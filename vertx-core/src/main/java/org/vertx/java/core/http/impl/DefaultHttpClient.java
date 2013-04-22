@@ -25,6 +25,7 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.ssl.SslHandler;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
@@ -143,7 +144,7 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   @Override
-  public HttpClient connectWebsocket(final String uri, final WebSocketVersion wsVersion, final Map<String, String> headers, final Handler<WebSocket> wsConnect) {
+  public HttpClient connectWebsocket(final String uri, final WebSocketVersion wsVersion, final MultiMap headers, final Handler<WebSocket> wsConnect) {
     configurable = false;
     getConnection(new Handler<ClientConnection>() {
       public void handle(final ClientConnection conn) {
@@ -164,10 +165,10 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   @Override
-  public HttpClient getNow(String uri, Map<String, ? extends Object> headers, Handler<HttpClientResponse> responseHandler) {
+  public HttpClient getNow(String uri, MultiMap headers, Handler<HttpClientResponse> responseHandler) {
     HttpClientRequest req = get(uri, responseHandler);
     if (headers != null) {
-      req.headers().putAll(headers);
+      req.headers().set(headers);
     }
     req.end();
     return this;

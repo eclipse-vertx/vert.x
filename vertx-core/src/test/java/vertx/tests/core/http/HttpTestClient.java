@@ -16,13 +16,12 @@
 
 package vertx.tests.core.http;
 
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.VoidHandler;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
+import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.*;
+import org.vertx.java.core.http.impl.HttpHeadersAdapter;
 import org.vertx.java.testframework.TestClientBase;
 import org.vertx.java.testframework.TestUtils;
 
@@ -496,7 +495,7 @@ public class HttpTestClient extends TestClientBase {
         tu.azzert(req.method().equals("HEAD"));
         // Head never contains a body but it can contain a Content-Length header
         // Since headers from HEAD must correspond EXACTLY with corresponding headers for GET
-        req.response().putHeader("Content-Length", 41);
+        req.response().headers().set("Content-Length", String.valueOf(41));
         req.response().end();
       }
     }, handler);
@@ -563,7 +562,7 @@ public class HttpTestClient extends TestClientBase {
         tu.checkThread();
         tu.azzert(query.equals(req.query()));
         tu.azzert(req.params().size() == params.size());
-        for (Map.Entry<String, String> entry : req.params().entrySet()) {
+        for (Map.Entry<String, String> entry : req.params()) {
           tu.azzert(entry.getValue().equals(params.get(entry.getKey())));
         }
         req.response().end();
@@ -628,7 +627,7 @@ public class HttpTestClient extends TestClientBase {
   }
 
   private void testRequestHeaders(final boolean individually) {
-    final Map<String, String> headers = genMap(10);
+    final MultiMap headers = getHeaders(10);
 
     AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
@@ -641,11 +640,11 @@ public class HttpTestClient extends TestClientBase {
           }
         });
         if (individually) {
-          for (Map.Entry<String, String> header : headers.entrySet()) {
-            req.headers().put(header.getKey(), header.getValue());
+          for (Map.Entry<String, String> header : headers) {
+            req.headers().add(header.getKey(), header.getValue());
           }
         } else {
-          req.headers().putAll(headers);
+          req.headers().set(headers);
         }
         req.end();
       }
@@ -654,7 +653,7 @@ public class HttpTestClient extends TestClientBase {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
         tu.azzert(req.headers().size() == 1 + headers.size());
-        for (Map.Entry<String, String> entry : headers.entrySet()) {
+        for (Map.Entry<String, String> entry : headers) {
           tu.azzert(entry.getValue().equals(req.headers().get(entry.getKey())));
         }
         req.response().end();
@@ -673,9 +672,9 @@ public class HttpTestClient extends TestClientBase {
             tu.azzert(resp.headers().get("Quux").equals("quux"));
             tu.azzert(resp.headers().get("quux").equals("quux"));
             tu.azzert(resp.headers().get("qUUX").equals("quux"));
-            tu.azzert(resp.headers().containsKey("Quux"));
-            tu.azzert(resp.headers().containsKey("quux"));
-            tu.azzert(resp.headers().containsKey("qUUX"));
+            tu.azzert(resp.headers().contains("Quux"));
+            tu.azzert(resp.headers().contains("quux"));
+            tu.azzert(resp.headers().contains("qUUX"));
             tu.checkThread();
             tu.testComplete();
           }
@@ -684,9 +683,9 @@ public class HttpTestClient extends TestClientBase {
         tu.azzert(req.headers().get("Foo").equals("foo"));
         tu.azzert(req.headers().get("foo").equals("foo"));
         tu.azzert(req.headers().get("fOO").equals("foo"));
-        tu.azzert(req.headers().containsKey("Foo"));
-        tu.azzert(req.headers().containsKey("foo"));
-        tu.azzert(req.headers().containsKey("fOO"));
+        tu.azzert(req.headers().contains("Foo"));
+        tu.azzert(req.headers().contains("foo"));
+        tu.azzert(req.headers().contains("fOO"));
         req.end();
       }
     };
@@ -696,16 +695,16 @@ public class HttpTestClient extends TestClientBase {
         tu.azzert(req.headers().get("Foo").equals("foo"));
         tu.azzert(req.headers().get("foo").equals("foo"));
         tu.azzert(req.headers().get("fOO").equals("foo"));
-        tu.azzert(req.headers().containsKey("Foo"));
-        tu.azzert(req.headers().containsKey("foo"));
-        tu.azzert(req.headers().containsKey("fOO"));
+        tu.azzert(req.headers().contains("Foo"));
+        tu.azzert(req.headers().contains("foo"));
+        tu.azzert(req.headers().contains("fOO"));
         req.response().putHeader("Quux", "quux");
         tu.azzert(req.response().headers().get("Quux").equals("quux"));
         tu.azzert(req.response().headers().get("quux").equals("quux"));
         tu.azzert(req.response().headers().get("qUUX").equals("quux"));
-        tu.azzert(req.response().headers().containsKey("Quux"));
-        tu.azzert(req.response().headers().containsKey("quux"));
-        tu.azzert(req.response().headers().containsKey("qUUX"));
+        tu.azzert(req.response().headers().contains("Quux"));
+        tu.azzert(req.response().headers().contains("quux"));
+        tu.azzert(req.response().headers().contains("qUUX"));
         req.response().end();
       }
     }, handler);
@@ -1181,7 +1180,7 @@ public class HttpTestClient extends TestClientBase {
         if (chunked) {
           req.setChunked(true);
         } else {
-          req.headers().put("Content-Length", numWrites * chunkSize);
+          req.headers().set("Content-Length", String.valueOf(numWrites * chunkSize));
         }
         for (int i = 0; i < numWrites; i++) {
           Buffer b = TestUtils.generateRandomBuffer(chunkSize);
@@ -1254,7 +1253,7 @@ public class HttpTestClient extends TestClientBase {
         if (chunked) {
           req.setChunked(true);
         } else {
-          req.headers().put("Content-Length", bodyBuff.length());
+          req.headers().set("Content-Length", String.valueOf(bodyBuff.length()));
         }
 
         if (encoding == null) {
@@ -1373,7 +1372,7 @@ public class HttpTestClient extends TestClientBase {
   }
 
   private void testResponseHeaders(final boolean individually) {
-    final Map<String, String> headers = genMap(10);
+    final MultiMap headers = getHeaders(10);
     AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
       public void handle(AsyncResult<HttpServer> ar) {
@@ -1382,7 +1381,7 @@ public class HttpTestClient extends TestClientBase {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
             tu.azzert(resp.headers().size() == headers.size() + 1);
-            for (Map.Entry<String, String> entry : headers.entrySet()) {
+            for (Map.Entry<String, String> entry : headers) {
               tu.azzert(entry.getValue().equals(resp.headers().get(entry.getKey())));
             }
             tu.testComplete();
@@ -1397,11 +1396,11 @@ public class HttpTestClient extends TestClientBase {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
         if (individually) {
-          for (Map.Entry<String, String> header : headers.entrySet()) {
-            req.response().headers().put(header.getKey(), header.getValue());
+          for (Map.Entry<String, String> header : headers) {
+            req.response().headers().add(header.getKey(), header.getValue());
           }
         } else {
-          req.response().headers().putAll(headers);
+          req.response().headers().set(headers);
         }
         req.response().end();
       }
@@ -1417,7 +1416,7 @@ public class HttpTestClient extends TestClientBase {
   }
 
   private void testResponseTrailers(final boolean individually) {
-    final Map<String, String> trailers = genMap(10);
+    final MultiMap trailers = getHeaders(10);
     AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
       public void handle(AsyncResult<HttpServer> ar) {
@@ -1428,7 +1427,7 @@ public class HttpTestClient extends TestClientBase {
             resp.endHandler(new VoidHandler() {
               public void handle() {
                 tu.azzert(resp.trailers().size() == trailers.size());
-                for (Map.Entry<String, String> entry : trailers.entrySet()) {
+                for (Map.Entry<String, String> entry : trailers) {
                   tu.azzert(entry.getValue().equals(resp.trailers().get(entry.getKey())));
                 }
                 tu.testComplete();
@@ -1445,11 +1444,11 @@ public class HttpTestClient extends TestClientBase {
         tu.checkThread();
         req.response().setChunked(true);
         if (individually) {
-          for (Map.Entry<String, String> header : trailers.entrySet()) {
-            req.response().trailers().put(header.getKey(), header.getValue());
+          for (Map.Entry<String, String> header : trailers) {
+            req.response().trailers().add(header.getKey(), header.getValue());
           }
         } else {
-          req.response().trailers().putAll(trailers);
+          req.response().trailers().set(trailers);
         }
         req.response().end();
       }
@@ -1530,7 +1529,7 @@ public class HttpTestClient extends TestClientBase {
           headers.add("h1=h1v1");
           headers.add("h2=h2v2; Expires=Wed, 09-Jun-2021 10:18:14 GMT");
           cookies.addAll(headers);
-          req.response().headers().put("Set-Cookie", headers);
+          req.response().headers().set("Set-Cookie", headers);
         }
         if (inTrailer) {
           req.response().setChunked(true);
@@ -1538,7 +1537,7 @@ public class HttpTestClient extends TestClientBase {
           trailers.add("t1=t1v1");
           trailers.add("t2=t2v2; Expires=Wed, 09-Jun-2021 10:18:14 GMT");
           cookies.addAll(trailers);
-          req.response().trailers().put("Set-Cookie", trailers);
+          req.response().trailers().set("Set-Cookie", trailers);
         }
         req.response().end();
       }
@@ -1829,7 +1828,7 @@ public class HttpTestClient extends TestClientBase {
         if (chunked) {
           req.response().setChunked(true);
         } else {
-          req.response().headers().put("Content-Length", numWrites * chunkSize);
+          req.response().headers().set("Content-Length", String.valueOf(numWrites * chunkSize));
         }
 
         for (int i = 0; i < numWrites; i++) {
@@ -1904,7 +1903,7 @@ public class HttpTestClient extends TestClientBase {
         if (chunked) {
           req.response().setChunked(true);
         } else {
-          req.response().headers().put("Content-Length", bodyBuff.length());
+          req.response().headers().set("Content-Length", String.valueOf(bodyBuff.length()));
         }
         if (encoding == null) {
           req.response().write(body);
@@ -1972,7 +1971,7 @@ public class HttpTestClient extends TestClientBase {
             }
           });
           req.setChunked(true);
-          req.headers().put("count", String.valueOf(count));
+          req.headers().set("count", String.valueOf(count));
           req.write("This is content " + count);
           req.end();
         }
@@ -1994,7 +1993,7 @@ public class HttpTestClient extends TestClientBase {
             //wrong order if we didn't implement pipelining correctly
             vertx.setTimer(1 + (long) (10 * Math.random()), new Handler<Long>() {
               public void handle(Long timerID) {
-                req.response().headers().put("count", String.valueOf(theCount));
+                req.response().headers().set("count", String.valueOf(theCount));
                 req.response().write(buff);
                 req.response().end();
               }
@@ -2132,7 +2131,7 @@ public class HttpTestClient extends TestClientBase {
             });
           }
         });
-        req.headers().put("Expect", "100-continue");
+        req.headers().set("Expect", "100-continue");
         req.setChunked(true);
         req.continueHandler(new VoidHandler() {
           public void handle() {
@@ -2177,7 +2176,7 @@ public class HttpTestClient extends TestClientBase {
           }
         });
 
-        req.headers().put("Expect", "100-continue");
+        req.headers().set("Expect", "100-continue");
         req.setChunked(true);
         req.continueHandler(new VoidHandler() {
           public void handle() {
@@ -2192,7 +2191,7 @@ public class HttpTestClient extends TestClientBase {
 
     startServer(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        req.response().headers().put("HTTP/1.1", "100 Continue");
+        req.response().headers().set("HTTP/1.1", "100 Continue");
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
             tu.checkThread();
@@ -2285,7 +2284,7 @@ public class HttpTestClient extends TestClientBase {
           }
         }
       });
-      req.headers().put("count", i);
+      req.headers().set("count", String.valueOf(i));
       req.end();
     }
   }
@@ -2608,7 +2607,16 @@ public class HttpTestClient extends TestClientBase {
     return req;
   }
 
-  private Map<String, String> genMap(int num) {
+  private static MultiMap getHeaders(int num) {
+    Map<String, String> map = genMap(num);
+    MultiMap headers = new HttpHeadersAdapter(new DefaultHttpHeaders());
+    for (Map.Entry<String, String> entry: map.entrySet()) {
+      headers.add(entry.getKey(), entry.getValue());
+    }
+    return headers;
+  }
+
+  private static Map<String, String> genMap(int num) {
     Map<String, String> map = new HashMap<String, String>();
     for (int i = 0; i < num; i++) {
       String key;
