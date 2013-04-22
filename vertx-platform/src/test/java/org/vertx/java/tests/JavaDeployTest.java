@@ -39,6 +39,11 @@ public class JavaDeployTest extends TestBase {
   }
 
   @Test
+  public void testDeployWithConfig() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
   public void testDeployVerticle() throws Exception {
     startTest(getMethodName());
   }
