@@ -19,8 +19,8 @@ apply from: "$rootDir/gradle/maven.gradle"
 dependencies {
 	compile "log4j:log4j:$log4jVersion"
 	compile "org.slf4j:slf4j-api:$slf4jVersion"
-	compile "org.codehaus.jackson:jackson-core-asl:$jacksonVersion"
-	compile "org.codehaus.jackson:jackson-mapper-asl:$jacksonVersion"
+	compile "com.fasterxml.jackson.core:jackson-core:$jacksonCoreVersion"
+	compile "com.fasterxml.jackson.core:jackson-databind:$jacksonDatabindVersion"
 	compile "com.hazelcast:hazelcast:$hazelcastVersion"
 	compile "io.netty:netty-all:$nettyVersion"
 
