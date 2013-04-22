@@ -18,9 +18,11 @@ package org.vertx.java.core.http.impl;
 
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.QueryStringDecoder;
+import org.vertx.java.core.CaseInsensitiveMultiMap;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.logging.Logger;
@@ -31,7 +33,6 @@ import javax.security.cert.X509Certificate;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -58,8 +59,8 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   private Handler<Throwable> exceptionHandler;
 
   //Cache this for performance
-  private Map<String, String> params;
-  private Map<String, String> headers;
+  private MultiMap params;
+  private MultiMap headers;
   private URI absoluteURI;
 
   DefaultHttpServerRequest(final ServerConnection conn,
@@ -119,24 +120,23 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   }
 
   @Override
-  public Map<String, String> headers() {
+  public MultiMap headers() {
     if (headers == null) {
-      headers = HeaderUtils.simplifyHeaders(request.headers().entries());
+      headers = new HttpHeadersAdapter(request.headers());
     }
     return headers;
   }
 
   @Override
-  public Map<String, String> params() {
+  public MultiMap params() {
     if (params == null) {
       QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri);
       Map<String, List<String>> prms = queryStringDecoder.parameters();
-      if (prms.isEmpty()) {
-        params = new HashMap<>();
-      } else {
-        params = new HashMap<>(prms.size());
+      params = new CaseInsensitiveMultiMap();
+
+      if (!prms.isEmpty()) {
         for (Map.Entry<String, List<String>> entry: prms.entrySet()) {
-          params.put(entry.getKey(), entry.getValue().get(0));
+          params.add(entry.getKey(), entry.getValue());
         }
       }
     }

@@ -17,10 +17,9 @@
 package org.vertx.java.core.http;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.WriteStream;
-
-import java.util.Map;
 
 /**
  * Represents a client-side HTTP request.<p>
@@ -76,7 +75,7 @@ public interface HttpClientRequest extends WriteStream<HttpClientRequest> {
   /**
    * @return The HTTP headers
    */
-  Map<String, Object> headers();
+  MultiMap headers();
 
   /**
    * Put an HTTP header - fluent API
@@ -84,7 +83,15 @@ public interface HttpClientRequest extends WriteStream<HttpClientRequest> {
    * @param value The header value
    * @return A reference to this, so multiple method calls can be chained.
    */
-  HttpClientRequest putHeader(String name, Object value);
+  HttpClientRequest putHeader(String name, String value);
+
+  /**
+   * Put an HTTP header - fluent API
+   * @param name The header name
+   * @param values The header values
+   * @return A reference to this, so multiple method calls can be chained.
+   */
+  HttpClientRequest putHeader(String name, Iterable<String> values);
 
   /**
    * Write a {@link Buffer} to the request body.

@@ -17,11 +17,11 @@
 package org.vertx.java.core.http;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.ReadStream;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Represents a client-side HTTP response.<p>
@@ -50,12 +50,12 @@ public interface HttpClientResponse extends ReadStream<HttpClientResponse> {
   /**
    * @return The HTTP headers
    */
-  Map<String, String> headers();
+  MultiMap headers();
 
   /**
    * @return The HTTP trailers
    */
-  Map<String, String> trailers();
+  MultiMap trailers();
 
   /**
    * @return The Set-Cookie headers (including trailers)

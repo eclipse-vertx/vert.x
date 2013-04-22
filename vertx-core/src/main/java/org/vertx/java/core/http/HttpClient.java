@@ -18,9 +18,8 @@ package org.vertx.java.core.http;
 
 import org.vertx.java.core.ClientSSLSupport;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.TCPSupport;
-
-import java.util.Map;
 
 /**
  * An HTTP client that maintains a pool of connections to a specific host, at a specific port. The client supports
@@ -118,7 +117,7 @@ public interface HttpClient extends ClientSSLSupport<HttpClient>, TCPSupport<Htt
    * You can also specify a set of headers to append to the upgrade request
    * The connect is done asynchronously and {@code wsConnect} is called back with the websocket
    */
-  HttpClient connectWebsocket(String uri, WebSocketVersion wsVersion, Map<String, String> headers, Handler<WebSocket> wsConnect);
+  HttpClient connectWebsocket(String uri, WebSocketVersion wsVersion, MultiMap headers, Handler<WebSocket> wsConnect);
 
   /**
    * This is a quick version of the {@link #get(String, org.vertx.java.core.Handler)}
@@ -133,7 +132,7 @@ public interface HttpClient extends ClientSSLSupport<HttpClient>, TCPSupport<Htt
    * This method works in the same manner as {@link #getNow(String, org.vertx.java.core.Handler)},
    * except that it allows you specify a set of {@code headers} that will be sent with the request.
    */
-  HttpClient getNow(String uri, Map<String, ? extends Object> headers, Handler<HttpClientResponse> responseHandler);
+  HttpClient getNow(String uri, MultiMap headers, Handler<HttpClientResponse> responseHandler);
 
   /**
    * This method returns an {@link HttpClientRequest} instance which represents an HTTP OPTIONS request with the specified {@code uri}.<p>
