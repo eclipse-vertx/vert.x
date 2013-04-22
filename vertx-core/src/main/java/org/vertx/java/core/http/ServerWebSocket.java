@@ -16,6 +16,8 @@
 
 package org.vertx.java.core.http;
 
+import java.util.Map;
+
 /**
  * Represents a server side WebSocket that is passed into a the websocketHandler of an {@link HttpServer}<p>
  * Instances of this class are not thread-safe<p>
@@ -28,6 +30,11 @@ public interface ServerWebSocket extends WebSocketBase<ServerWebSocket> {
    * The path the websocket is attempting to connect at
    */
   String path();
+
+   /**
+    * headers passed as part of this request
+    */
+  Map<String,String> headers();
 
   /**
    * Reject the WebSocket<p>
