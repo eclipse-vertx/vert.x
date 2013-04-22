@@ -92,9 +92,9 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     this(new DefaultVertx(port, hostname));
   }
 
-  private DefaultPlatformManager(VertxInternal vertx) {
+  private DefaultPlatformManager(DefaultVertx vertx) {
     this.platformClassLoader = Thread.currentThread().getContextClassLoader();
-    this.vertx = vertx;
+    this.vertx = new WrappedVertx(vertx);
     String modDir = System.getProperty(MODS_DIR_PROP_NAME);
     if (modDir != null && !modDir.trim().equals("")) {
       modRoot = new File(modDir);
@@ -305,7 +305,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   private <T> void runInBackground(final Runnable runnable, final Handler<AsyncResult<T>> doneHandler) {
-    final Context context = vertx.getOrAssignContext();
+    final DefaultContext context = vertx.getOrAssignContext();
     vertx.getBackgroundPool().execute(new Runnable() {
       public void run() {
         try {
@@ -418,7 +418,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         }
       };
     } else {
-      final Context context = vertx.getContext();
+      final DefaultContext context = vertx.getContext();
       return new AsyncResultHandler<T>() {
         @Override
         public void handle(final AsyncResult<T> res) {
@@ -1166,7 +1166,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
                            VerticleFactory factory) {
     String loggerName = "org.vertx.deployments." + deployment.name + "-" + deployment.verticles.size();
     Logger logger = LoggerFactory.getLogger(loggerName);
-    Context context = vertx.getContext();
+    DefaultContext context = vertx.getContext();
     VerticleHolder holder = new VerticleHolder(deployment, context, verticle,
                                                loggerName, logger, deployment.config,
                                                factory);
@@ -1175,7 +1175,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   private VerticleHolder getVerticleHolder() {
-    Context context = vertx.getContext();
+    DefaultContext context = vertx.getContext();
     if (context != null) {
       return (VerticleHolder)context.getDeploymentHandle();
     } else {

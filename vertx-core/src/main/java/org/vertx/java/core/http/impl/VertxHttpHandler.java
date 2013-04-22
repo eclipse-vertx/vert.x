@@ -22,7 +22,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelHandlerUtil;
 import io.netty.channel.ChannelInboundMessageHandler;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.impl.ConnectionBase;
 import org.vertx.java.core.net.impl.VertxStateHandler;
@@ -80,7 +80,7 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxSt
 
     final C connection = connectionMap.get(ch);
     if (connection != null) {
-      Context context = getContext(connection);
+      DefaultContext context = getContext(connection);
       // We need to do this since it's possible the server is being used from a worker context
       if (context.isOnCorrectWorker(ch.eventLoop())) {
         try {

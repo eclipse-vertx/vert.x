@@ -21,7 +21,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.FlowControlHandler;
 import org.vertx.java.core.impl.VertxInternal;
@@ -44,7 +44,7 @@ public abstract class ConnectionBase {
 
   private static final Logger log = LoggerFactory.getLogger(ConnectionBase.class);
 
-  protected ConnectionBase(VertxInternal vertx, Channel channel, Context context) {
+  protected ConnectionBase(VertxInternal vertx, Channel channel, DefaultContext context) {
     this.vertx = vertx;
     this.channel = channel;
     this.context = context;
@@ -52,7 +52,7 @@ public abstract class ConnectionBase {
 
   protected final VertxInternal vertx;
   protected final Channel channel;
-  protected final Context context;
+  protected final DefaultContext context;
 
   protected Handler<Throwable> exceptionHandler;
   protected Handler<Void> closeHandler;
@@ -85,7 +85,7 @@ public abstract class ConnectionBase {
     this.writable = writable;
   }
 
-  protected Context getContext() {
+  protected DefaultContext getContext() {
     return context;
   }
 

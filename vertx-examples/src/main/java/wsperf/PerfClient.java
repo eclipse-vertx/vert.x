@@ -92,7 +92,7 @@ public class PerfClient extends Verticle {
       }
     });
     if (count + 1 < CONNS) {
-      vertx.runOnLoop(new SimpleHandler() {
+      vertx.runOnContext(new SimpleHandler() {
         public void handle() {
           connect(count + 1);
         }
@@ -104,7 +104,7 @@ public class PerfClient extends Verticle {
     WebSocket ws = websockets.poll();
     writeWebSocket(ws);
     if (!websockets.isEmpty()) {
-      vertx.runOnLoop(new SimpleHandler() {
+      vertx.runOnContext(new SimpleHandler() {
         public void handle() {
           startWebSocket();
         }
@@ -128,7 +128,7 @@ public class PerfClient extends Verticle {
     if (!ws.writeQueueFull()) {
       //ws.writeTextFrame(message);
       ws.writeBinaryFrame(new Buffer(message));
-      vertx.runOnLoop(new SimpleHandler() {
+      vertx.runOnContext(new SimpleHandler() {
         public void handle() {
           writeWebSocket(ws);
         }

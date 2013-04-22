@@ -17,7 +17,7 @@
 package org.vertx.java.core.http.impl;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -57,7 +57,7 @@ public abstract class HttpConnectionPool {
     log.trace("available: " + available.size() + " connection count: " + connectionCount + " waiters: " + waiters.size());
   }
 
-  public void getConnection(Handler<ClientConnection> handler,Handler<Throwable> connectExceptionHandler, Context context) {
+  public void getConnection(Handler<ClientConnection> handler,Handler<Throwable> connectExceptionHandler, DefaultContext context) {
     boolean connect = false;
     ClientConnection conn;
     outer: synchronized (this) {
@@ -140,7 +140,7 @@ public abstract class HttpConnectionPool {
   /**
    * Implement this method in a sub-class to implement the actual connection creation for the specific type of connection
    */
-  protected abstract void connect(final Handler<ClientConnection> connectHandler, final Handler<Throwable> connectErrorHandler, final Context context);
+  protected abstract void connect(final Handler<ClientConnection> connectHandler, final Handler<Throwable> connectErrorHandler, final DefaultContext context);
 
   private ClientConnection selectConnection(Queue<ClientConnection> available, int connectionCount, int maxPoolSize) {
     ClientConnection conn = null;
@@ -176,9 +176,9 @@ public abstract class HttpConnectionPool {
   private class Waiter {
     final Handler<ClientConnection> handler;
     final Handler<Throwable> connectionExceptionHandler;
-    final Context context;
+    final DefaultContext context;
 
-    private Waiter(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, Context context) {
+    private Waiter(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, DefaultContext context) {
       this.handler = handler;
       this.connectionExceptionHandler = connectionExceptionHandler;
       this.context = context;

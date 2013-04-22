@@ -39,11 +39,11 @@ public interface VertxInternal extends Vertx {
 
   ExecutorService getBackgroundPool();
 
-  Context startOnEventLoop(Runnable runnable);
+  DefaultContext startOnEventLoop(Runnable runnable);
 
-  Context startInBackground(Runnable runnable, boolean multiThreaded);
+  DefaultContext startInBackground(Runnable runnable, boolean multiThreaded);
 
-  Context getOrAssignContext();
+  DefaultContext getOrAssignContext();
 
   void reportException(Throwable t);
 
@@ -55,12 +55,12 @@ public interface VertxInternal extends Vertx {
 	 * Get the current context
 	 * @return the context
 	 */
-	Context getContext();
+	DefaultContext getContext();
 
 	/**
 	 * Set the current context
 	 */
-  void setContext(Context context);
+  void setContext(DefaultContext context);
 
   /**
    * @return event loop context

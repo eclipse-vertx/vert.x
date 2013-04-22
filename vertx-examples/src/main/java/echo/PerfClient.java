@@ -62,7 +62,7 @@ public class PerfClient extends Verticle {
       }
     };
     if (!socket.writeQueueFull()) {
-      vertx.runOnLoop(handler);
+      vertx.runOnContext(handler);
     } else {
       socket.drainHandler(handler);
     }

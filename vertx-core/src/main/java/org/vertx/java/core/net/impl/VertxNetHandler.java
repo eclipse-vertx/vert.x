@@ -21,7 +21,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundByteHandler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
 
 import java.util.Map;
@@ -57,7 +57,7 @@ public class VertxNetHandler extends VertxStateHandler<DefaultNetSocket> impleme
     final DefaultNetSocket sock = connectionMap.get(chctx.channel());
     if (sock != null) {
       Channel ch = chctx.channel();
-      Context context = getContext(sock);
+      DefaultContext context = getContext(sock);
       // We need to do this since it's possible the server is being used from a worker context
       if (context.isOnCorrectWorker(ch.eventLoop())) {
         try {

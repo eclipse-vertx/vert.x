@@ -18,6 +18,7 @@ package org.vertx.java.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
@@ -54,9 +55,6 @@ public class DefaultVertx implements VertxInternal {
 
   public static final int DEFAULT_CLUSTER_PORT = 2550;
 
-  private final Thread th;
-  private final Context context;
-
   private final FileSystem fileSystem = getFileSystem();
   private final EventBus eventBus;
   private final SharedData sharedData = new SharedData();
@@ -67,15 +65,13 @@ public class DefaultVertx implements VertxInternal {
 
   private Map<ServerID, DefaultHttpServer> sharedHttpServers = new HashMap<>();
   private Map<ServerID, DefaultNetServer> sharedNetServers = new HashMap<>();
-  private final ThreadLocal<Context> contextTL = new ThreadLocal<>();
+  private final ThreadLocal<DefaultContext> contextTL = new ThreadLocal<>();
 
   private final ConcurrentMap<Long, InternalTimerHandler> timeouts = new ConcurrentHashMap<>();
   private final AtomicLong timeoutCounter = new AtomicLong(0);
 
   public DefaultVertx() {
     this.eventBus = new DefaultEventBus(this);
-    this.th = Thread.currentThread();
-    this.context = getContext();
   }
 
   public DefaultVertx(String hostname) {
@@ -84,8 +80,6 @@ public class DefaultVertx implements VertxInternal {
 
   public DefaultVertx(int port, String hostname) {
     this.eventBus = new DefaultEventBus(this, port, hostname, new HazelcastClusterManager(this));
-    this.th = Thread.currentThread();
-    this.context = getContext();
   }
 
   /**
@@ -127,20 +121,20 @@ public class DefaultVertx implements VertxInternal {
     return eventBus;
   }
 
-  public Context startOnEventLoop(final Runnable runnable) {
-    Context context  = createEventLoopContext();
+  public DefaultContext startOnEventLoop(final Runnable runnable) {
+    DefaultContext context  = createEventLoopContext();
     context.execute(runnable);
     return context;
   }
 
-  public Context startInBackground(final Runnable runnable, final boolean multiThreaded) {
-    Context context  = createWorkerContext(multiThreaded);
+  public DefaultContext startInBackground(final Runnable runnable, final boolean multiThreaded) {
+    DefaultContext context  = createWorkerContext(multiThreaded);
     context.execute(runnable);
     return context;
   }
 
   public boolean isEventLoop() {
-    Context context = getContext();
+    DefaultContext context = getContext();
     if (context != null) {
       return context instanceof EventLoopContext;
     }
@@ -148,7 +142,7 @@ public class DefaultVertx implements VertxInternal {
   }
 
   public boolean isWorker() {
-    Context context = getContext();
+    DefaultContext context = getContext();
     if (context != null) {
       return context instanceof WorkerContext;
     }
@@ -163,13 +157,13 @@ public class DefaultVertx implements VertxInternal {
     return scheduleTimeout(getOrAssignContext(), handler, delay, false);
   }
 
-  public void runOnLoop(final Handler<Void> handler) {
-    Context context = getOrAssignContext();
-    context.execute(new Runnable() {
-      public void run() {
-        handler.handle(null);
-      }
-    });
+  public void runOnContext(final Handler<Void> task) {
+    DefaultContext context = getOrAssignContext();
+    context.runOnContext(task);
+  }
+
+  public Context currentContext() {
+    return getContext();
   }
 
   // The background pool is used for making blocking calls to legacy synchronous APIs
@@ -181,8 +175,8 @@ public class DefaultVertx implements VertxInternal {
     return eventLoopGroup;
   }
 
-  public Context getOrAssignContext() {
-    Context ctx = getContext();
+  public DefaultContext getOrAssignContext() {
+    DefaultContext ctx = getContext();
     if (ctx == null) {
       // Assign a context
       ctx = createEventLoopContext();
@@ -191,7 +185,7 @@ public class DefaultVertx implements VertxInternal {
   }
 
   public void reportException(Throwable t) {
-    Context ctx = getContext();
+    DefaultContext ctx = getContext();
     if (ctx != null) {
       ctx.reportException(t);
     } else {
@@ -224,7 +218,7 @@ public class DefaultVertx implements VertxInternal {
     }
   }
 
-  private long scheduleTimeout(final Context context, final Handler<Long> handler, long delay, boolean periodic) {
+  private long scheduleTimeout(final DefaultContext context, final Handler<Long> handler, long delay, boolean periodic) {
 
     if (delay < 1) {
       throw new IllegalArgumentException("Cannot schedule a timer with delay < 1 ms");
@@ -258,7 +252,7 @@ public class DefaultVertx implements VertxInternal {
     return timerId;
   }
 
-  private Context createWorkerContext(boolean multiThreaded) {
+  private DefaultContext createWorkerContext(boolean multiThreaded) {
     if (multiThreaded) {
       return new MultiThreadedWorkerContext(this, orderedFact.getExecutor(), backgroundPool);
     } else {
@@ -266,14 +260,14 @@ public class DefaultVertx implements VertxInternal {
     }
   }
 
-  public void setContext(Context context) {
+  public void setContext(DefaultContext context) {
     contextTL.set(context);
     if (context != null) {
       context.setTCCL();
     }
   }
 
-  public Context getContext() {
+  public DefaultContext getContext() {
     return contextTL.get();
   }
 

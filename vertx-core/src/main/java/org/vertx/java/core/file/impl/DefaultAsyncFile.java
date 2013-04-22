@@ -17,13 +17,12 @@
 package org.vertx.java.core.file.impl;
 
 import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.file.FileSystemException;
 import org.vertx.java.core.impl.BlockingAction;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
@@ -50,7 +49,7 @@ public class DefaultAsyncFile implements AsyncFile {
 
   private final VertxInternal vertx;
   private final AsynchronousFileChannel ch;
-  private final Context context;
+  private final DefaultContext context;
   private boolean closed;
   private Runnable closedDeferred;
   private long writesOutstanding;
@@ -69,7 +68,7 @@ public class DefaultAsyncFile implements AsyncFile {
   private boolean readInProgress;
 
   DefaultAsyncFile(final VertxInternal vertx, final String path, String perms, final boolean read, final boolean write, final boolean createNew,
-            final boolean flush, final Context context) {
+            final boolean flush, final DefaultContext context) {
     if (!read && !write) {
       throw new FileSystemException("Cannot open file for neither reading nor writing");
     }

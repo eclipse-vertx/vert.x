@@ -29,7 +29,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
 
 import java.io.File;
@@ -54,7 +54,7 @@ class ServerConnection extends AbstractConnection {
   private final Queue<Object> pending = new LinkedList<>();
   private final String serverOrigin;
 
-  ServerConnection(VertxInternal vertx, Channel channel, Context context, String serverOrigin) {
+  ServerConnection(VertxInternal vertx, Channel channel, DefaultContext context, String serverOrigin) {
     super(vertx, channel, context);
     this.serverOrigin = serverOrigin;
   }
@@ -194,7 +194,7 @@ class ServerConnection extends AbstractConnection {
     }
   }
 
-  protected Context getContext() {
+  protected DefaultContext getContext() {
     return super.getContext();
   }
 
@@ -258,7 +258,7 @@ class ServerConnection extends AbstractConnection {
     // Check if there are more pending messages in the queue that can be processed next time around
     if (!sentCheck && !pending.isEmpty() && !paused && (pendingResponse == null || pending.peek() instanceof HttpContent)) {
       sentCheck = true;
-      vertx.runOnLoop(new VoidHandler() {
+      vertx.runOnContext(new VoidHandler() {
         public void handle() {
           sentCheck = false;
           if (!paused) {

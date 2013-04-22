@@ -38,7 +38,6 @@ import org.vertx.java.core.net.NetSocket;
 import javax.net.ssl.SSLEngine;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -53,7 +52,7 @@ public class DefaultNetServer implements NetServer {
   private static final ExceptionDispatchHandler EXCEPTION_DISPATCH_HANDLER = new ExceptionDispatchHandler();
 
   private final VertxInternal vertx;
-  private final Context actualCtx;
+  private final DefaultContext actualCtx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<Channel, DefaultNetSocket>();
   private Handler<NetSocket> connectHandler;
@@ -173,7 +172,7 @@ public class DefaultNetServer implements NetServer {
         } catch (final Throwable t) {
           // Make sure we send the exception back through the handler (if any)
           if (listenHandler != null) {
-            vertx.runOnLoop(new VoidHandler() {
+            vertx.runOnContext(new VoidHandler() {
               @Override
               protected void handle() {
                 listenHandler.handle(new DefaultFutureResult<NetServer>(t));
@@ -460,7 +459,7 @@ public class DefaultNetServer implements NetServer {
     return tcpHelper.isUsePooledBuffers();
   }
 
-  private void actualClose(final Context closeContext, final Handler<AsyncResult<Void>> done) {
+  private void actualClose(final DefaultContext closeContext, final Handler<AsyncResult<Void>> done) {
     if (id != null) {
       vertx.sharedNetServers().remove(id);
     }
@@ -496,7 +495,7 @@ public class DefaultNetServer implements NetServer {
     //TODO check configs are the same
   }
 
-  private void executeCloseDone(final Context closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {
+  private void executeCloseDone(final DefaultContext closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {
     if (done != null) {
       closeContext.execute(new Runnable() {
         public void run() {

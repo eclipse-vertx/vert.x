@@ -18,7 +18,7 @@ package org.vertx.java.core.http.impl;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -31,7 +31,7 @@ public abstract class AbstractConnection extends ConnectionBase {
 
   private static final Logger log = LoggerFactory.getLogger(AbstractConnection.class);
 
-  protected AbstractConnection(VertxInternal vertx, Channel channel, Context context) {
+  protected AbstractConnection(VertxInternal vertx, Channel channel, DefaultContext context) {
     super(vertx, channel, context);
   }
 

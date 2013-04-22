@@ -49,7 +49,7 @@ function connect(num) {
 
     num++;
     if (num < numConns) {
-      vertx.runOnLoop(function() { connect(num) });
+      vertx.runOnContext(function() { connect(num) });
     }
   });
 

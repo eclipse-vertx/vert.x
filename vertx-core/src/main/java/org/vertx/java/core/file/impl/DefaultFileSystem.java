@@ -17,14 +17,13 @@
 package org.vertx.java.core.file.impl;
 
 import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.*;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.file.FileSystemException;
 import org.vertx.java.core.impl.BlockingAction;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -724,7 +723,7 @@ public class DefaultFileSystem implements FileSystem {
   }
 
   protected AsyncFile doOpen(String path, String perms, boolean read, boolean write, boolean createNew,
-                             boolean flush, Context context) {
+                             boolean flush, DefaultContext context) {
     return new DefaultAsyncFile(vertx, path, perms, read, write, createNew, flush, context);
   }
 

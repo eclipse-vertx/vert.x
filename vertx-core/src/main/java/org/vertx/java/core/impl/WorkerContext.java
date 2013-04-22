@@ -23,7 +23,7 @@ import java.util.concurrent.Executor;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class WorkerContext extends Context {
+public class WorkerContext extends DefaultContext {
 
   public WorkerContext(VertxInternal vertx, Executor orderedBgExec) {
     super(vertx, orderedBgExec);
