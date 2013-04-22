@@ -74,8 +74,9 @@ public class DefaultHttpClient implements HttpClient {
   }
 
  // @Override
-  public void exceptionHandler(Handler<Throwable> handler) {
+  public DefaultHttpClient exceptionHandler(Handler<Throwable> handler) {
     this.exceptionHandler = handler;
+    return this;
   }
 
   @Override
