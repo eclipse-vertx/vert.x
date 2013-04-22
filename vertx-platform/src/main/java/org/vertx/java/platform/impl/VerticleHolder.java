@@ -16,7 +16,7 @@
 
 package org.vertx.java.platform.impl;
 
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.DeploymentHandle;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -28,7 +28,7 @@ import org.vertx.java.platform.VerticleFactory;
  */
 class VerticleHolder implements DeploymentHandle {
   final Deployment deployment;
-  final Context context;
+  final DefaultContext context;
   final Verticle verticle;
   final String loggerName;
   final Logger logger;
@@ -37,7 +37,7 @@ class VerticleHolder implements DeploymentHandle {
   final JsonObject config;
   final VerticleFactory factory;
 
-  VerticleHolder(Deployment deployment, Context context, Verticle verticle, String loggerName,
+  VerticleHolder(Deployment deployment, DefaultContext context, Verticle verticle, String loggerName,
                  Logger logger, JsonObject config,
                  VerticleFactory factory) {
     this.deployment = deployment;

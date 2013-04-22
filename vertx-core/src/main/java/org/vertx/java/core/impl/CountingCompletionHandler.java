@@ -24,7 +24,7 @@ import org.vertx.java.core.Handler;
  */
 public class CountingCompletionHandler<T> {
 
-  private final Context context;
+  private final DefaultContext context;
   private final VertxInternal vertx;
   private int count;
   private int required;

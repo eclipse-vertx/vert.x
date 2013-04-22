@@ -24,14 +24,13 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
-import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.core.http.WebSocketVersion;
 import org.vertx.java.core.http.impl.ws.WebSocketConvertHandler;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -49,7 +48,7 @@ class ClientConnection extends AbstractConnection {
 
   ClientConnection(VertxInternal vertx, DefaultHttpClient client, Channel channel, String hostHeader,
                    boolean keepAlive,
-                   Context context) {
+                   DefaultContext context) {
     super(vertx, channel, context);
     this.client = client;
     this.hostHeader = hostHeader;
@@ -110,7 +109,7 @@ class ClientConnection extends AbstractConnection {
 
   private final class HandshakeInboundHandler extends ChannelStateHandlerAdapter implements ChannelInboundMessageHandler<Object> {
     private final Handler<WebSocket> wsConnect;
-    private final Context context;
+    private final DefaultContext context;
     private FullHttpResponse response;
     private boolean handshaking;
 
@@ -302,7 +301,7 @@ class ClientConnection extends AbstractConnection {
     }
   }
 
-  protected Context getContext() {
+  protected DefaultContext getContext() {
     return super.getContext();
   }
 

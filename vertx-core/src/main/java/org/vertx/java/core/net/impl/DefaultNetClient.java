@@ -43,7 +43,7 @@ public class DefaultNetClient implements NetClient {
   private static final ExceptionDispatchHandler EXCEPTION_DISPATCH_HANDLER = new ExceptionDispatchHandler();
 
   private final VertxInternal vertx;
-  private final Context actualCtx;
+  private final DefaultContext actualCtx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private Bootstrap bootstrap;
   private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<>();
@@ -434,7 +434,7 @@ public class DefaultNetClient implements NetClient {
     }
 
     @Override
-    protected Context getContext(DefaultNetSocket connection) {
+    protected DefaultContext getContext(DefaultNetSocket connection) {
       return actualCtx;
     }
   }

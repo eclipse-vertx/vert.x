@@ -99,10 +99,15 @@ public interface Vertx {
   boolean cancelTimer(long id);
 
   /**
-   * Put the handler on the event queue for the current loop so it will be run asynchronously ASAP after this event has
+   * @return The current context
+   */
+  Context currentContext();
+
+  /**
+   * Put the handler on the event queue for the current loop (or worker context) so it will be run asynchronously ASAP after this event has
    * been processed
    */
-  void runOnLoop(Handler<Void> action);
+  void runOnContext(Handler<Void> action);
 
   /**
    * Is the current thread an event loop thread?

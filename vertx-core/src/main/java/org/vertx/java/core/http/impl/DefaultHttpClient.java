@@ -48,7 +48,7 @@ public class DefaultHttpClient implements HttpClient {
   private static final ExceptionDispatchHandler EXCEPTION_DISPATCH_HANDLER = new ExceptionDispatchHandler();
 
   private final VertxInternal vertx;
-  private final Context actualCtx;
+  private final DefaultContext actualCtx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private Bootstrap bootstrap;
   private final Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<>();
@@ -56,7 +56,7 @@ public class DefaultHttpClient implements HttpClient {
   private int port = 80;
   private String host = "localhost";
   private final HttpConnectionPool pool = new HttpConnectionPool()  {
-    protected void connect(Handler<ClientConnection> connectHandler, Handler<Throwable> connectErrorHandler, Context context) {
+    protected void connect(Handler<ClientConnection> connectHandler, Handler<Throwable> connectErrorHandler, DefaultContext context) {
       internalConnect(connectHandler, connectErrorHandler);
     }
   };
@@ -402,7 +402,7 @@ public class DefaultHttpClient implements HttpClient {
     return tcpHelper.isUsePooledBuffers();
   }
 
-  void getConnection(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, Context context) {
+  void getConnection(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, DefaultContext context) {
     pool.getConnection(handler, connectionExceptionHandler, context);
   }
 
@@ -566,7 +566,7 @@ public class DefaultHttpClient implements HttpClient {
     }
 
     @Override
-    protected Context getContext(ClientConnection connection) {
+    protected DefaultContext getContext(ClientConnection connection) {
       return actualCtx;
     }
 

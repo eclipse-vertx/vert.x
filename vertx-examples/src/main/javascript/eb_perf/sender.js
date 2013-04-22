@@ -31,7 +31,7 @@ function sendMessage() {
       return;
     }
   }
-  vertx.runOnLoop(sendMessage);
+  vertx.runOnContext(sendMessage);
 }
 
 function vertxStop() {

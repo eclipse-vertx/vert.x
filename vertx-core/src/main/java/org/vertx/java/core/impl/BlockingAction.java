@@ -28,7 +28,7 @@ import org.vertx.java.core.Handler;
  */
 public abstract class BlockingAction<T>  {
 
-  protected Context context;
+  protected DefaultContext context;
 
   private final VertxInternal vertx;
   private final Handler<AsyncResult<T>> handler;

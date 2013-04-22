@@ -18,7 +18,7 @@ package org.vertx.java.core.net.impl;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelStateHandlerAdapter;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.FlowControlStateEvent;
 import org.vertx.java.core.impl.VertxInternal;
 
@@ -35,7 +35,7 @@ public abstract class VertxStateHandler<C extends ConnectionBase> extends Channe
     this.connectionMap = connectionMap;
   }
 
-  protected Context getContext(C connection) {
+  protected DefaultContext getContext(C connection) {
     return connection.getContext();
   }
 
@@ -47,7 +47,7 @@ public abstract class VertxStateHandler<C extends ConnectionBase> extends Channe
       final C conn = connectionMap.get(ch);
       if (conn != null) {
         conn.setWritable(evt.isWritable());
-        Context context = getContext(conn);
+        DefaultContext context = getContext(conn);
         if (context.isOnCorrectWorker(ch.eventLoop())) {
           try {
             vertx.setContext(context);
@@ -71,7 +71,7 @@ public abstract class VertxStateHandler<C extends ConnectionBase> extends Channe
     final Channel ch = chctx.channel();
     final C sock = connectionMap.remove(ch);
     if (sock != null) {
-      Context context = getContext(sock);
+      DefaultContext context = getContext(sock);
       if (context.isOnCorrectWorker(ch.eventLoop())) {
         try {
           vertx.setContext(context);
@@ -98,7 +98,7 @@ public abstract class VertxStateHandler<C extends ConnectionBase> extends Channe
     final Channel ch = chctx.channel();
     final C sock = connectionMap.remove(ch);
     if (sock != null) {
-      Context context = getContext(sock);
+      DefaultContext context = getContext(sock);
       if (context.isOnCorrectWorker(ch.eventLoop())) {
         try {
           vertx.setContext(context);

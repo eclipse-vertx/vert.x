@@ -17,6 +17,8 @@
 package org.vertx.java.core.impl;
 
 import io.netty.channel.EventLoop;
+import org.vertx.java.core.Context;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -28,9 +30,9 @@ import java.util.concurrent.Executor;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class Context {
+public abstract class DefaultContext implements Context {
 
-  private static final Logger log = LoggerFactory.getLogger(Context.class);
+  private static final Logger log = LoggerFactory.getLogger(DefaultContext.class);
 
   private final VertxInternal vertx;
   private DeploymentHandle deploymentContext;
@@ -41,7 +43,7 @@ public abstract class Context {
   private final EventLoop eventLoop;
   protected final Executor orderedBgExec;
 
-  protected Context(VertxInternal vertx, Executor orderedBgExec) {
+  protected DefaultContext(VertxInternal vertx, Executor orderedBgExec) {
     this.vertx = vertx;
     this.orderedBgExec = orderedBgExec;
     this.eventLoop = vertx.getEventLoopGroup().next();
@@ -103,6 +105,14 @@ public abstract class Context {
 
   public abstract boolean isOnCorrectWorker(EventLoop worker);
 
+  public void runOnContext(final Handler<Void> task) {
+    execute(new Runnable() {
+      public void run() {
+        task.handle(null);
+      }
+    });
+  }
+
   public EventLoop getEventLoop() {
     return eventLoop;
   }
@@ -128,7 +138,7 @@ public abstract class Context {
       public void run() {
         String threadName = Thread.currentThread().getName();
         try {
-          vertx.setContext(Context.this);
+          vertx.setContext(DefaultContext.this);
           task.run();
         } catch (Throwable t) {
           reportException(t);

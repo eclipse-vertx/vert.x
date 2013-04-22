@@ -21,13 +21,12 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.util.CharsetUtil;
-import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.file.impl.PathAdjuster;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.NetSocket;
 
@@ -45,7 +44,7 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   private Handler<Void> drainHandler;
   private Handler<Message<Buffer>> writeHandler;
 
-  public DefaultNetSocket(VertxInternal vertx, Channel channel, Context context) {
+  public DefaultNetSocket(VertxInternal vertx, Channel channel, DefaultContext context) {
     super(vertx, channel, context);
     this.writeHandlerID = UUID.randomUUID().toString();
     writeHandler = new Handler<Message<Buffer>>() {
@@ -121,7 +120,7 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   @Override
   public NetSocket drainHandler(Handler<Void> drainHandler) {
     this.drainHandler = drainHandler;
-    vertx.runOnLoop(new VoidHandler() {
+    vertx.runOnContext(new VoidHandler() {
       public void handle() {
         callDrainHandler(); //If the channel is already drained, we want to call it immediately
       }
@@ -153,7 +152,7 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
     return this;
   }
 
-  protected Context getContext() {
+  protected DefaultContext getContext() {
     return super.getContext();
   }
 

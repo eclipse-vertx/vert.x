@@ -19,7 +19,6 @@ package org.vertx.java.core.http.impl;
 import io.netty.bootstrap.ServerBootstrap;
 
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelException;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -49,7 +48,6 @@ import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.*;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.impl.*;
 
 import javax.net.ssl.SSLEngine;
@@ -76,7 +74,7 @@ public class DefaultHttpServer implements HttpServer {
 
   private final VertxInternal vertx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
-  private final Context actualCtx;
+  private final DefaultContext actualCtx;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
   private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
@@ -211,7 +209,7 @@ public class DefaultHttpServer implements HttpServer {
           t.printStackTrace();
           // Make sure we send the exception back through the handler (if any)
           if (listenHandler != null) {
-            vertx.runOnLoop(new VoidHandler() {
+            vertx.runOnContext(new VoidHandler() {
               @Override
               protected void handle() {
                 listenHandler.handle(new DefaultFutureResult<HttpServer>(t));
@@ -501,7 +499,7 @@ public class DefaultHttpServer implements HttpServer {
     return tcpHelper.isUsePooledBuffers();
   }
 
-  private void actualClose(final Context closeContext, final Handler<AsyncResult<Void>> done) {
+  private void actualClose(final DefaultContext closeContext, final Handler<AsyncResult<Void>> done) {
     if (id != null) {
       vertx.sharedHttpServers().remove(id);
     }
@@ -533,7 +531,7 @@ public class DefaultHttpServer implements HttpServer {
     executeCloseDone(closeContext, done, fut.cause());
   }
 
-  private void executeCloseDone(final Context closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {
+  private void executeCloseDone(final DefaultContext closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {
     if (done != null) {
       closeContext.execute(new Runnable() {
         public void run() {

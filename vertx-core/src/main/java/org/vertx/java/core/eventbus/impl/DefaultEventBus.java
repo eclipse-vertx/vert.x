@@ -23,7 +23,7 @@ import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.impl.management.ManagementRegistry;
@@ -313,7 +313,7 @@ public class DefaultEventBus implements EventBus {
 
   public EventBus unregisterHandler(String address, Handler<? extends Message> handler,
                                 Handler<AsyncResult<Void>> completionHandler) {
-    Context context = vertx.getOrAssignContext();
+    DefaultContext context = vertx.getOrAssignContext();
     Handlers handlers = handlerMap.get(address);
     if (handlers != null) {
       synchronized (handlers) {
@@ -457,7 +457,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   private void sendOrPub(ServerID replyDest, final BaseMessage message, final Handler replyHandler) {
-    Context context = vertx.getOrAssignContext();
+    DefaultContext context = vertx.getOrAssignContext();
     try {
       message.sender = serverID;
       if (replyHandler != null) {
@@ -507,7 +507,7 @@ public class DefaultEventBus implements EventBus {
     if (address == null) {
       throw new NullPointerException("address");
     }
-    Context context = vertx.getOrAssignContext();
+    DefaultContext context = vertx.getOrAssignContext();
     Handlers handlers = handlerMap.get(address);
     if (handlers == null) {
       handlers = new Handlers();
@@ -540,7 +540,7 @@ public class DefaultEventBus implements EventBus {
     getHandlerCloseHook(context).entries.add(new HandlerEntry(address, handler));
   }
 
-  private HandlerCloseHook getHandlerCloseHook(Context context) {
+  private HandlerCloseHook getHandlerCloseHook(DefaultContext context) {
     HandlerCloseHook hcl = (HandlerCloseHook)context.getCloseHook(this);
     if (hcl == null) {
       hcl = new HandlerCloseHook();
@@ -675,13 +675,13 @@ public class DefaultEventBus implements EventBus {
   }
 	
   private static class HandlerHolder {
-    final Context context;
+    final DefaultContext context;
     final Handler handler;
     final boolean replyHandler;
     final boolean localOnly;
     boolean removed;
 
-    HandlerHolder(Handler handler, boolean replyHandler, boolean localOnly, Context context) {
+    HandlerHolder(Handler handler, boolean replyHandler, boolean localOnly, DefaultContext context) {
       this.context = context;
       this.handler = handler;
       this.replyHandler = replyHandler;

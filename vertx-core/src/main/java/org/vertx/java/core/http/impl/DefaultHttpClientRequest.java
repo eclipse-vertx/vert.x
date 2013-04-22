@@ -23,7 +23,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
-import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.LowerCaseKeyMap;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -44,7 +44,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   private final HttpRequest request;
   private final Handler<HttpClientResponse> respHandler;
   private Handler<Void> continueHandler;
-  private final Context context;
+  private final DefaultContext context;
   private final boolean raw;
   private boolean chunked;
   private ClientConnection conn;
@@ -64,7 +64,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
   DefaultHttpClientRequest(final DefaultHttpClient client, final String method, final String uri,
                            final Handler<HttpClientResponse> respHandler,
-                           final Context context) {
+                           final DefaultContext context) {
     this(client, method, uri, respHandler, context, false);
   }
 
@@ -74,7 +74,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   */
   DefaultHttpClientRequest(final DefaultHttpClient client, final String method, final String uri,
                            final Handler<HttpClientResponse> respHandler,
-                           final Context context,
+                           final DefaultContext context,
                            final ClientConnection conn) {
     this(client, method, uri, respHandler, context, true);
     this.conn = conn;
@@ -83,7 +83,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
   private DefaultHttpClientRequest(final DefaultHttpClient client, final String method, final String uri,
                                    final Handler<HttpClientResponse> respHandler,
-                                   final Context context, final boolean raw) {
+                                   final DefaultContext context, final boolean raw) {
     this.client = client;
     this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method), uri);
     this.chunked = false;

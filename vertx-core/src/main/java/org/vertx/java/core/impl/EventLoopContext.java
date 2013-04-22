@@ -23,7 +23,7 @@ import java.util.concurrent.Executor;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class EventLoopContext extends Context {
+public class EventLoopContext extends DefaultContext {
 
   public EventLoopContext(VertxInternal vertx, Executor bgExec) {
     super(vertx, bgExec);
