@@ -109,7 +109,7 @@ class XhrTransport extends BaseTransport {
         if (!session.handleMessages(msgs)) {
           sendInvalidJSON(req.response());
         } else {
-          req.response().headers().put("Content-Type", "text/plain; charset=UTF-8");
+          req.response().headers().set("Content-Type", "text/plain; charset=UTF-8");
           setNoCacheHeaders(req);
           setJSESSIONID(config, req);
           setCORS(req);
@@ -135,7 +135,7 @@ class XhrTransport extends BaseTransport {
     public void sendFrame(String body) {
       if (log.isTraceEnabled()) log.trace("XHR sending frame");
       if (!headersWritten) {
-        req.response().headers().put("Content-Type", "application/javascript; charset=UTF-8");
+        req.response().headers().set("Content-Type", "application/javascript; charset=UTF-8");
         setJSESSIONID(config, req);
         setCORS(req);
         req.response().setChunked(true);

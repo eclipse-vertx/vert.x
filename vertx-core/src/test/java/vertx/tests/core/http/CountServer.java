@@ -41,7 +41,7 @@ public class CountServer extends Verticle {
       public void handle(final HttpServerRequest req) {
         tu.checkThread();
         String cnt = req.headers().get("count");
-        req.response().headers().put("count", cnt);
+        req.response().headers().set("count", cnt);
         req.response().end();
       }
     });

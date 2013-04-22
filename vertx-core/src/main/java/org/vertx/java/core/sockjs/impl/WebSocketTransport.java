@@ -65,7 +65,7 @@ class WebSocketTransport extends BaseTransport {
     rm.allWithRegEx(wsRE, new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest request) {
         if (log.isTraceEnabled()) log.trace("WS, all: " + request.uri());
-        request.response().headers().put("Allow", "GET");
+        request.response().headers().set("Allow", "GET");
         request.response().setStatusCode(405);
         request.response().end();
       }

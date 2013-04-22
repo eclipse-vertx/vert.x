@@ -16,7 +16,7 @@
 
 package org.vertx.java.core.http;
 
-import java.util.Map;
+import org.vertx.java.core.MultiMap;
 
 /**
  * Represents a server side WebSocket that is passed into a the websocketHandler of an {@link HttpServer}<p>
@@ -34,7 +34,7 @@ public interface ServerWebSocket extends WebSocketBase<ServerWebSocket> {
   /**
    * A map of all headers in the request to upgrade to websocket
    */
-  Map<String, String> headers();
+  MultiMap headers();
 
   /**
    * Reject the WebSocket<p>

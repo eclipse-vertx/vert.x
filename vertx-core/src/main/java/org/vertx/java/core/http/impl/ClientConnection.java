@@ -25,6 +25,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.core.http.WebSocketVersion;
@@ -77,7 +78,7 @@ class ClientConnection extends AbstractConnection {
 
   void toWebSocket(String uri,
                    final WebSocketVersion wsVersion,
-                   final Map<String, String> headers,
+                   final MultiMap headers,
                    final Handler<WebSocket> wsConnect) {
     if (ws != null) {
       throw new IllegalStateException("Already websocket");
@@ -102,7 +103,7 @@ class ClientConnection extends AbstractConnection {
       HttpHeaders nettyHeaders;
       if (headers != null) {
         nettyHeaders = new DefaultHttpHeaders();
-        for (Map.Entry<String, String> entry: headers.entrySet()) {
+        for (Map.Entry<String, String> entry: headers) {
           nettyHeaders.add(entry.getKey(), entry.getValue());
         }
       } else {

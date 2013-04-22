@@ -16,16 +16,12 @@
 
 package vertx.tests.core.websockets;
 
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.VoidHandler;
+import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
 import org.vertx.java.testframework.TestClientBase;
 import org.vertx.java.testframework.TestUtils;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -285,10 +281,10 @@ public class WebsocketsTestClient extends TestClientBase {
   }
 
   public void testHeaders() {
-    final Map<String, String> extraHeaders = new HashMap<>();
-    extraHeaders.put("armadillos", "yes");
-    extraHeaders.put("shoes", "yellow");
-    extraHeaders.put("hair", "purple");
+    final MultiMap extraHeaders = new CaseInsensitiveMultiMap();
+    extraHeaders.set("armadillos", "yes");
+    extraHeaders.set("shoes", "yellow");
+    extraHeaders.set("hair", "purple");
     server = vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
         tu.checkThread();
@@ -298,7 +294,7 @@ public class WebsocketsTestClient extends TestClientBase {
         tu.azzert(ws.headers().get("upgrade").equals("websocket"));
         tu.azzert(ws.headers().get("connection").equals("Upgrade"));
         tu.azzert(ws.headers().get("host").equals("localhost"));
-        for (Map.Entry<String, String> entry: extraHeaders.entrySet()) {
+        for (Map.Entry<String, String> entry: extraHeaders) {
           tu.azzert(ws.headers().get(entry.getKey()).equals(entry.getValue()));
         }
         tu.testComplete();

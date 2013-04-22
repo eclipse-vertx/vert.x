@@ -23,13 +23,12 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
+import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.impl.DefaultContext;
-import org.vertx.java.core.impl.LowerCaseKeyMap;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -58,7 +57,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   private boolean writeHead;
   private long written;
   private long currentTimeoutTimerId = -1;
-  private Map<String, Object> headers;
+  private MultiMap headers;
   private boolean exceptionOccurred;
   private long lastDataReceived;
 
@@ -109,17 +108,24 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   }
 
   @Override
-  public Map<String, Object> headers() {
+  public MultiMap headers() {
     if (headers == null) {
-      headers = new LowerCaseKeyMap();
+      headers = new HttpHeadersAdapter(request.headers());
     }
     return headers;
   }
 
   @Override
-  public HttpClientRequest putHeader(String name, Object value) {
+  public HttpClientRequest putHeader(String name, String value) {
     check();
-    headers().put(name, value);
+    headers().set(name, value);
+    return this;
+  }
+
+  @Override
+  public HttpClientRequest putHeader(String name, Iterable<String> values) {
+    check();
+    headers().set(name, values);
     return this;
   }
 
@@ -220,7 +226,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   @Override
   public void end(Buffer chunk) {
     if (!chunked && !contentLengthSet()) {
-      headers().put(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(chunk.length()));
+      headers().set(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(chunk.length()));
     }
     write(chunk);
     end();
@@ -373,7 +379,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
   private boolean contentLengthSet() {
     if (headers != null) {
-      return headers.containsKey(HttpHeaders.Names.CONTENT_LENGTH);
+      return headers.contains(HttpHeaders.Names.CONTENT_LENGTH);
     } else {
       return false;
     }
@@ -390,16 +396,6 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
       request.headers().set(HttpHeaders.Names.HOST, conn.hostHeader);
       if (chunked) {
         HttpHeaders.setTransferEncodingChunked(request);
-      }
-    }
-    writeHeaders();
-  }
-
-  private void writeHeaders() {
-    if (headers != null) {
-      for (Map.Entry<String, Object> header: headers.entrySet()) {
-        String key = header.getKey();
-        request.headers().set(key, header.getValue());
       }
     }
   }
