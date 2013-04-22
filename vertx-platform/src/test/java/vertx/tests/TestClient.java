@@ -21,6 +21,7 @@ import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.testframework.TestClientBase;
 
 /**
@@ -42,11 +43,24 @@ public class TestClient extends TestClientBase {
     super.stop();
   }
 
+  public void testDeployWithConfig() {
+    JsonObject conf = new JsonObject().putString("animals", "armadillos");
+    container.deployVerticle(ConfigVerticle.class.getName(), conf, new AsyncResultHandler<String>() {
+      public void handle(AsyncResult<String> res) {
+        if (res.failed()) {
+          res.cause().printStackTrace();
+        }
+        tu.azzert(res.succeeded());
+        tu.azzert(res.result() != null);
+        tu.checkThread();
+      }
+    });
+  }
+
   public void testDeployVerticle() {
-    final Thread t = Thread.currentThread();
     eb.registerHandler("test-handler", new Handler<Message<String>>() {
       public void handle(Message<String> message) {
-        tu.azzert(Thread.currentThread() == t);
+        tu.checkThread();
         if ("started".equals(message.body())) {
           eb.unregisterHandler("test-handler", this);
           tu.testComplete();
@@ -58,19 +72,18 @@ public class TestClient extends TestClientBase {
       public void handle(AsyncResult<String> res) {
         tu.azzert(res.succeeded());
         tu.azzert(res.result() != null);
-        tu.azzert(Thread.currentThread() == t);
+        tu.checkThread();
       }
     });
   }
 
   public void testUndeployVerticle() {
-    final Thread t = Thread.currentThread();
     container.deployVerticle(ChildVerticle.class.getName(), null, 1,
       new AsyncResultHandler<String>() {
         public void handle(final AsyncResult<String> res) {
           tu.azzert(res.succeeded());
           tu.azzert(res.result() != null);
-          tu.azzert(Thread.currentThread() == t);
+          tu.checkThread();
           // Give it at least a second - especially for CI on Amazon
           vertx.setTimer(1000, new Handler<Long>() {
             public void handle(Long tid) {
@@ -84,7 +97,7 @@ public class TestClient extends TestClientBase {
               });
               container.undeployVerticle(res.result(), new Handler<AsyncResult<Void>>() {
                 public void handle(AsyncResult<Void> res2) {
-                  tu.azzert(Thread.currentThread() == t);
+                  tu.checkThread();
                 }
               });
             }
@@ -94,10 +107,9 @@ public class TestClient extends TestClientBase {
   }
 
   public void testDeployModule() {
-    final Thread t = Thread.currentThread();
     eb.registerHandler("test-handler", new Handler<Message<String>>() {
       public void handle(Message<String> message) {
-        tu.azzert(Thread.currentThread() == t);
+        tu.checkThread();
         if ("started".equals(message.body())) {
           eb.unregisterHandler("test-handler", this);
           tu.testComplete();
@@ -109,7 +121,7 @@ public class TestClient extends TestClientBase {
       public void handle(AsyncResult<String> res) {
         tu.azzert(res.succeeded());
         tu.azzert(res.result() != null);
-        tu.azzert(Thread.currentThread() == t);
+        tu.checkThread();
       }
     });
   }
@@ -146,10 +158,9 @@ public class TestClient extends TestClientBase {
   }
 
   public void testDeployNestedModule() {
-    final Thread t = Thread.currentThread();
     eb.registerHandler("test-handler", new Handler<Message<String>>() {
       public void handle(Message<String> message) {
-        tu.azzert(Thread.currentThread() == t);
+        tu.checkThread();
         if ("started".equals(message.body())) {
           eb.unregisterHandler("test-handler", this);
           tu.testComplete();
@@ -161,8 +172,7 @@ public class TestClient extends TestClientBase {
       public void handle(AsyncResult<String> res) {
         tu.azzert(res.succeeded());
         tu.azzert(res.result() != null);
-        tu.azzert(Thread.currentThread() == t);
-
+        tu.checkThread();
       }
     });
   }
