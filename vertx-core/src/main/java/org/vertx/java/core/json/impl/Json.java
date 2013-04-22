@@ -16,8 +16,10 @@
 
 package org.vertx.java.core.json.impl;
 
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
+
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.EncodeException;
 import org.vertx.java.core.logging.Logger;
@@ -61,7 +63,7 @@ public class Json {
   }
 
   static {
- 	 	prettyMapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
+ 	 	prettyMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
   }
 
 }
