@@ -16,14 +16,14 @@
 
 package org.vertx.java.core.sockjs.impl;
 
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.impl.JsonWriteContext;
-import org.codehaus.jackson.map.JsonSerializer;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializerProvider;
-import org.codehaus.jackson.map.ser.CustomSerializerFactory;
-import org.codehaus.jackson.util.CharTypes;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.io.CharTypes;
+import com.fasterxml.jackson.core.json.JsonWriteContext;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.EncodeException;
 
@@ -53,8 +53,9 @@ public class JsonCodec {
     // So... when encoding strings we make sure all unicode chars are escaped
 
     // This code adapted from http://wiki.fasterxml.com/JacksonSampleQuoteChars
-    CustomSerializerFactory serializerFactory = new CustomSerializerFactory();
-    serializerFactory.addSpecificMapping(String.class, new JsonSerializer<String>() {
+    SimpleModule simpleModule = new SimpleModule();
+
+    simpleModule.addSerializer(String.class, new JsonSerializer<String>() {
       final char[] HEX_CHARS = "0123456789abcdef".toCharArray();
       final int[] ESCAPE_CODES = CharTypes.get7BitOutputEscapes();
 
@@ -99,7 +100,7 @@ public class JsonCodec {
         gen.writeRaw('"');
       }
     });
-    mapper.setSerializerFactory(serializerFactory);
+    mapper.registerModule(simpleModule);
   }
 
   public static String encode(Object obj) throws EncodeException {
