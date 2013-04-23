@@ -144,6 +144,11 @@ public class JavaWebsocketTest extends TestBase {
         numInstances / 2);
   }
 
+  @Test
+  public void testHeaders() throws Exception {
+    startTest(getMethodName());
+  }
+
   void sharedServers(String testName, boolean multipleInstances, int numInstances, int initialServers, int initialToStop) throws Exception {
 
     //We initially start then stop them to make sure the shared server cleanup code works ok

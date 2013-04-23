@@ -25,6 +25,8 @@ import org.vertx.java.core.http.*;
 import org.vertx.java.testframework.TestClientBase;
 import org.vertx.java.testframework.TestUtils;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -112,6 +114,7 @@ public class WebsocketsTestClient extends TestClientBase {
     server = vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
         tu.checkThread();
+        System.out.println("path is " + ws.path());
         tu.azzert(path.equals(ws.path()));
 
         ws.dataHandler(new Handler<Buffer>() {
@@ -279,6 +282,39 @@ public class WebsocketsTestClient extends TestClientBase {
 
   public void testSharedServersMultipleInstances3StartAllStopSome() {
     testSharedServersMultipleInstances1();
+  }
+
+  public void testHeaders() {
+    final Map<String, String> extraHeaders = new HashMap<>();
+    extraHeaders.put("armadillos", "yes");
+    extraHeaders.put("shoes", "yellow");
+    extraHeaders.put("hair", "purple");
+    server = vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
+      public void handle(final ServerWebSocket ws) {
+        tu.checkThread();
+//        for (Map.Entry<String, String> entry: ws.headers().entrySet()) {
+//          System.out.println("header, key:" + entry.getKey() + ":" + entry.getValue());
+//        }
+        tu.azzert(ws.headers().get("upgrade").equals("websocket"));
+        tu.azzert(ws.headers().get("connection").equals("Upgrade"));
+        tu.azzert(ws.headers().get("host").equals("localhost"));
+        for (Map.Entry<String, String> entry: extraHeaders.entrySet()) {
+          tu.azzert(ws.headers().get(entry.getKey()).equals(entry.getValue()));
+        }
+        tu.testComplete();
+      }
+    });
+    server.listen(8080, "localhost", new AsyncResultHandler<HttpServer>() {
+      @Override
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
+        client.connectWebsocket("/foo", WebSocketVersion.RFC6455, extraHeaders, new Handler<WebSocket>() {
+          public void handle(final WebSocket ws) {
+            tu.checkThread();
+          }
+        });
+      }
+    });
   }
 
 }
