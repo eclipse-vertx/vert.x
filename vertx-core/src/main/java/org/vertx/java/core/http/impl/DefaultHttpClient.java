@@ -135,13 +135,19 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public HttpClient connectWebsocket(final String uri, final WebSocketVersion wsVersion, final Handler<WebSocket> wsConnect) {
+    connectWebsocket(uri, wsVersion, null, wsConnect);
+    return this;
+  }
+
+  @Override
+  public HttpClient connectWebsocket(final String uri, final WebSocketVersion wsVersion, final Map<String, String> headers, final Handler<WebSocket> wsConnect) {
     configurable = false;
     getConnection(new Handler<ClientConnection>() {
       public void handle(final ClientConnection conn) {
         if (!conn.isClosed()) {
-          conn.toWebSocket(uri, wsConnect, wsVersion);
+          conn.toWebSocket(uri, wsVersion, headers, wsConnect);
         } else {
-          connectWebsocket(uri, wsVersion, wsConnect);
+          connectWebsocket(uri, wsVersion, headers, wsConnect);
         }
       }
     }, exceptionHandler, actualCtx);
@@ -516,7 +522,7 @@ public class DefaultHttpClient implements HttpClient {
 
   private void createConn(Channel ch, Handler<ClientConnection> connectHandler) {
     final ClientConnection conn = new ClientConnection(vertx, DefaultHttpClient.this, ch,
-        host + ":" + port, keepAlive, actualCtx);
+        tcpHelper.isSSL(), host, port, keepAlive, actualCtx);
     conn.closeHandler(new VoidHandler() {
       public void handle() {
         pool.connectionClosed();

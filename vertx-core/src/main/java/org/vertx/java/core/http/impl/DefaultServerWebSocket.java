@@ -6,6 +6,8 @@ import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.VertxInternal;
 
+import java.util.Map;
+
 /*
  * Copyright 2013 Red Hat, Inc.
  *
@@ -29,16 +31,23 @@ public class DefaultServerWebSocket extends WebSocketImplBase implements ServerW
   private final Runnable connectRunnable;
   private boolean connected;
   private boolean rejected;
+  private final Map<String, String> headers;
 
-  public DefaultServerWebSocket(VertxInternal vertx, String path, AbstractConnection conn, Runnable connectRunnable) {
+  public DefaultServerWebSocket(VertxInternal vertx, String path, Map<String, String> headers, AbstractConnection conn, Runnable connectRunnable) {
     super(vertx, conn);
     this.path = path;
+    this.headers = headers;
     this.connectRunnable = connectRunnable;
   }
 
   @Override
   public String path() {
     return path;
+  }
+
+  @Override
+  public Map<String, String> headers() {
+    return headers;
   }
 
   @Override

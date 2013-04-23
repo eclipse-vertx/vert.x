@@ -36,6 +36,7 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.net.URI;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -46,17 +47,11 @@ class ClientConnection extends AbstractConnection {
 
   private static final Logger log = LoggerFactory.getLogger(ClientConnection.class);
 
-  ClientConnection(VertxInternal vertx, DefaultHttpClient client, Channel channel, String hostHeader,
-                   boolean keepAlive,
-                   DefaultContext context) {
-    super(vertx, channel, context);
-    this.client = client;
-    this.hostHeader = hostHeader;
-    this.keepAlive = keepAlive;
-  }
-
   final DefaultHttpClient client;
   final String hostHeader;
+  private final boolean ssl;
+  private final String host;
+  private final int port;
   boolean keepAlive;
   private boolean wsHandshakeConnection;
   private WebSocketClientHandshaker handshaker;
@@ -66,18 +61,34 @@ class ClientConnection extends AbstractConnection {
   private volatile DefaultHttpClientResponse currentResponse;
   private DefaultWebSocket ws;
 
+  ClientConnection(VertxInternal vertx, DefaultHttpClient client, Channel channel, boolean ssl, String host,
+                   int port,
+                   boolean keepAlive,
+                   DefaultContext context) {
+    super(vertx, channel, context);
+    this.client = client;
+    this.ssl = ssl;
+    this.host = host;
+    this.port = port;
+    this.hostHeader = host + ":" + port;
+    this.keepAlive = keepAlive;
+  }
+
+
   void toWebSocket(String uri,
-                   final Handler<WebSocket> wsConnect,
-                   final WebSocketVersion wsVersion) {
+                   final WebSocketVersion wsVersion,
+                   final Map<String, String> headers,
+                   final Handler<WebSocket> wsConnect) {
     if (ws != null) {
       throw new IllegalStateException("Already websocket");
     }
 
     try {
-      if (uri.startsWith("/")){
-          uri = "http://localhost" + uri;
-      }
       URI wsuri = new URI(uri);
+      if (!wsuri.isAbsolute()) {
+        // Netty requires an absolute url
+        wsuri = new URI((ssl ? "https:" : "http:") + "//" + host + ":" + port + uri);
+      }
       io.netty.handler.codec.http.websocketx.WebSocketVersion version;
       if (wsVersion == WebSocketVersion.HYBI_00) {
         version = io.netty.handler.codec.http.websocketx.WebSocketVersion.V00;
@@ -88,7 +99,16 @@ class ClientConnection extends AbstractConnection {
       } else {
         throw new IllegalArgumentException("Invalid version");
       }
-      handshaker = WebSocketClientHandshakerFactory.newHandshaker(wsuri, version, null, false, HttpHeaders.EMPTY_HEADERS);
+      HttpHeaders nettyHeaders;
+      if (headers != null) {
+        nettyHeaders = new DefaultHttpHeaders();
+        for (Map.Entry<String, String> entry: headers.entrySet()) {
+          nettyHeaders.add(entry.getKey(), entry.getValue());
+        }
+      } else {
+        nettyHeaders = null;
+      }
+      handshaker = WebSocketClientHandshakerFactory.newHandshaker(wsuri, version, null, false, nettyHeaders);
       final ChannelPipeline p = channel.pipeline();
       p.addBefore("handler", "handshakeCompleter", new HandshakeInboundHandler(wsConnect));
 

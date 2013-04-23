@@ -113,6 +113,14 @@ public interface HttpClient extends ClientSSLSupport<HttpClient>, TCPSupport<Htt
   HttpClient connectWebsocket(String uri, WebSocketVersion wsVersion, Handler<WebSocket> wsConnect);
 
   /**
+   * Attempt to connect an HTML5 websocket to the specified URI<p>
+   * This version of the method allows you to specify the websockets version using the {@code wsVersion parameter}
+   * You can also specify a set of headers to append to the upgrade request
+   * The connect is done asynchronously and {@code wsConnect} is called back with the websocket
+   */
+  HttpClient connectWebsocket(String uri, WebSocketVersion wsVersion, Map<String, String> headers, Handler<WebSocket> wsConnect);
+
+  /**
    * This is a quick version of the {@link #get(String, org.vertx.java.core.Handler)}
    * method where you do not want to do anything with the request before sending.<p>
    * Normally with any of the HTTP methods you create the request then when you are ready to send it you call
