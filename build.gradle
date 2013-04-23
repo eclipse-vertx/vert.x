@@ -121,40 +121,6 @@ task assemble(type: Copy, dependsOn: [subprojects.assemble]) {
     filter(org.apache.tools.ant.filters.ReplaceTokens, tokens:[version: rootProject.version])
     exclude "**/META_INF/**"
   }
-  into('examples') {
-    from file("vertx-examples/src/main")
-    exclude "**/vertx-dev*"
-  }
-  into('examples/java/eventbusbridge') {
-    from file("src/dist/client/vertxbus.js")
-  }
-  into('examples/groovy/eventbusbridge') {
-    from file("src/dist/client/vertxbus.js")
-  }
-  into('examples/javascript/eventbusbridge') {
-    from file("src/dist/client/vertxbus.js")
-  }
-  into('examples/python/eventbusbridge') {
-    from file("src/dist/client/vertxbus.js")
-  }
-  into('examples/ruby/eventbusbridge') {
-    from file("src/dist/client/vertxbus.js")
-  }
-  into('examples/groovy/webapp/web/js') {
-    from file("src/dist/client/vertxbus.js")
-  }
-  into('examples/javascript/webapp/web/js') {
-    from file("src/dist/client/vertxbus.js")
-  }
-  into('examples/javascript/angularjs/web/js') {
-    from file("src/dist/client/vertxbus.js")
-  }
-  into('examples/python/webapp/web/js') {
-    from file("src/dist/client/vertxbus.js")
-  }
-  into('examples/ruby/webapp/web/js') {
-    from file("src/dist/client/vertxbus.js")
-  }
   into('lib') {
     from subprojects.configurations.compile    
     from subprojects.jar
