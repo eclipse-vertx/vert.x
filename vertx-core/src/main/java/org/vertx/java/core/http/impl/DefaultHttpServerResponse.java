@@ -267,8 +267,12 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
         }
       }
       conn.write(response);
-      channelFuture = conn.sendFile(file);
+      conn.sendFile(file);
+
+      // write an empty last content to let the http encoder know the response is complete
+      channelFuture = conn.write(LastHttpContent.EMPTY_LAST_CONTENT);
       headWritten = written = true;
+
       if (!keepAlive) {
         closeConnAfterWrite();
       }
