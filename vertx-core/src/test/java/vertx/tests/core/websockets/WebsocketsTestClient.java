@@ -113,6 +113,8 @@ public class WebsocketsTestClient extends TestClientBase {
       public void handle(final ServerWebSocket ws) {
         tu.checkThread();
         tu.azzert(path.equals(ws.path()));
+        tu.azzert(null != ws.headers());
+        tu.azzert(ws.headers().get("test-header").equals("test-header-value"));
 
         ws.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
@@ -207,6 +209,8 @@ public class WebsocketsTestClient extends TestClientBase {
 
         tu.checkThread();
         tu.azzert(path.equals(ws.path()));
+        tu.azzert(null != ws.headers());
+        tu.azzert(ws.headers().get("test-header").equals("test-header-value"));
         ws.reject();
       }
 

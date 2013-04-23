@@ -32,12 +32,13 @@ import org.vertx.java.core.http.WebSocketVersion;
 import org.vertx.java.core.http.impl.ws.WebSocketConvertHandler;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.Context;
+import org.vertx.java.core.impl.LowerCaseKeyMap;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.net.URI;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -89,7 +90,9 @@ class ClientConnection extends AbstractConnection {
       } else {
         throw new IllegalArgumentException("Invalid version");
       }
-      handshaker = WebSocketClientHandshakerFactory.newHandshaker(wsuri, version, null, false, HttpHeaders.EMPTY_HEADERS);
+        HttpHeaders testHeaders = new DefaultHttpHeaders();
+        testHeaders.add("test-header", "test-header-value");
+        handshaker = WebSocketClientHandshakerFactory.newHandshaker(wsuri, version, null, false, testHeaders);
       final ChannelPipeline p = channel.pipeline();
       p.addBefore("handler", "handshakeCompleter", new HandshakeInboundHandler(wsConnect));
 
@@ -108,7 +111,9 @@ class ClientConnection extends AbstractConnection {
     }
   }
 
-  private final class HandshakeInboundHandler extends ChannelStateHandlerAdapter implements ChannelInboundMessageHandler<Object> {
+
+
+    private final class HandshakeInboundHandler extends ChannelStateHandlerAdapter implements ChannelInboundMessageHandler<Object> {
     private final Handler<WebSocket> wsConnect;
     private final Context context;
     private FullHttpResponse response;
