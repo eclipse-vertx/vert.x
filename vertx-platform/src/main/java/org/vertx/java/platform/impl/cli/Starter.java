@@ -24,7 +24,6 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.platform.PlatformLocator;
 import org.vertx.java.platform.PlatformManager;
 import org.vertx.java.platform.impl.Args;
-import org.vertx.java.platform.impl.ModuleClassLoader;
 import org.vertx.java.platform.impl.resolver.HttpResolution;
 
 import java.io.File;

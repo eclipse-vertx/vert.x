@@ -16,7 +16,6 @@
 
 package org.vertx.java.core.http;
 
-import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.WriteStream;

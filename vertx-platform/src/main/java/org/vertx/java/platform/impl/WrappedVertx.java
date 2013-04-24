@@ -9,7 +9,6 @@ import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.impl.DefaultHttpServer;
 import org.vertx.java.core.impl.DefaultContext;
-import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.impl.EventLoopContext;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.NetClient;
