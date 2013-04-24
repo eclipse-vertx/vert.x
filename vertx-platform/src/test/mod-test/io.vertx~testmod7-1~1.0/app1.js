@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-load('test_utils.js')
-load('vertx.js')
-
-var tu = new TestUtils();
+var tu = require('test_utils')
+var vertx = require('vertx')
 
 function testMultipleIncludesJar() {
   tu.azzert("armadillos" ===  org.wibble.Foo.eek());

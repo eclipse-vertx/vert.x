@@ -1,4 +1,4 @@
-load('vertx.js')
+var vertx = require('vertx')
 
 vertx.createHttpServer().requestHandler(function(req) {
   if (req.uri().indexOf("..") !== -1) {

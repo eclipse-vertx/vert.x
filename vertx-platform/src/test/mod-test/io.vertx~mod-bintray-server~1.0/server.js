@@ -1,4 +1,4 @@
-load('vertx.js')
+var vertx = require('vertx')
 
 var sent302 = false;
 vertx.createHttpServer().requestHandler(function(req) {
