@@ -16,7 +16,10 @@
 
 package org.vertx.java.core.sockjs.impl;
 
-import org.vertx.java.core.*;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxFactory;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.WebSocketMatcher;

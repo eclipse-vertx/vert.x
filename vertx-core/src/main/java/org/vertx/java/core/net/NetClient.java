@@ -16,7 +16,10 @@
 
 package org.vertx.java.core.net;
 
-import org.vertx.java.core.*;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.ClientSSLSupport;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.TCPSupport;
 
 /**
  * A TCP/SSL client.<p>

@@ -24,7 +24,6 @@ import org.vertx.java.platform.Verticle;
 import org.vertx.java.testframework.TestUtils;
 
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
