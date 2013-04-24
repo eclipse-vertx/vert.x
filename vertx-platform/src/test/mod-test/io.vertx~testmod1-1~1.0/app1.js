@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-load('test_utils.js')
-load('vertx.js')
+var tu = require('test_utils')
+var vertx = require('vertx')
 load('app2.js');
-
-var tu = new TestUtils();
 
 function testSimpleInclude() {
   tu.azzert("aardvarks" === wibble());

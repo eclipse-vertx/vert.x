@@ -1,3 +1,5 @@
+mavenLocal:~/.m2/repository
+
 # Repo for tests
 maven:http://localhost:9192/maven2
 bintray:http://localhost:9192/content

@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-load('test_utils.js')
-load('vertx.js')
+var tu = require('test_utils')
+var vertx = require('vertx')
 load('app2.js');
 load('app3.js');
-
-var tu = new TestUtils();
 
 function testMultipleIncludes() {
   tu.azzert("aardvarks" === wibble());

@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-load("vertx.js");
-
 function blaarg() {
   return "elephants";
 }
