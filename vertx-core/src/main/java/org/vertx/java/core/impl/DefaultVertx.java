@@ -212,7 +212,7 @@ public class DefaultVertx implements VertxInternal {
   private boolean cancelTimeout(long id) {
     InternalTimerHandler handler = timeouts.remove(id);
     if (handler != null) {
-      return handler.future.cancel(false);
+      return handler.cancel();
     } else {
       return false;
     }
@@ -312,6 +312,11 @@ public class DefaultVertx implements VertxInternal {
     final Handler<Long> handler;
     final long timerID;
     volatile Future<?> future;
+    boolean cancelled;
+    boolean cancel() {
+      cancelled = true;
+      return future.cancel(false);
+    }
 
     InternalTimerHandler(long timerID, Handler<Long> runnable) {
       this.timerID = timerID;
@@ -319,7 +324,9 @@ public class DefaultVertx implements VertxInternal {
     }
 
     public void run() {
-      handler.handle(timerID);
+      if (!cancelled) {
+        handler.handle(timerID);
+      }
     }
   }
 }
