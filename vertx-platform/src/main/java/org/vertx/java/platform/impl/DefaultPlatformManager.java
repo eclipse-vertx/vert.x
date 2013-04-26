@@ -311,10 +311,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         try {
           vertx.setContext(context);
           runnable.run();
-        } catch (Exception e) {
-          doneHandler.handle(new DefaultFutureResult<T>(e));
         } catch (Throwable t) {
-          log.error(t);
+          doneHandler.handle(new DefaultFutureResult<T>(t));
         } finally {
           vertx.setContext(null);
         }
@@ -1077,8 +1075,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     try {
       // TODO not one verticle factory per module ref, but one per language per module ref
       verticleFactory = mr.getVerticleFactory(langImplInfo.factoryName, vertx, new DefaultContainer(this));
-    } catch (Exception e) {
-      throw new PlatformManagerException("Failed to instantiate verticle factory", e);
+    } catch (Throwable t) {
+      throw new PlatformManagerException("Failed to instantiate verticle factory", t);
     }
 
     final CountingCompletionHandler<Void> aggHandler = new CountingCompletionHandler<>(vertx, instances);
