@@ -176,6 +176,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   public synchronized void undeployAll(final Handler<AsyncResult<Void>> doneHandler) {
     final CountingCompletionHandler<Void> count = new CountingCompletionHandler<>(vertx);
+    count.setHandler(doneHandler);
     if (!deployments.isEmpty()) {
       // We do it this way since undeploy is itself recursive - we don't want
       // to attempt to undeploy the same verticle twice if it's a child of
@@ -190,7 +191,6 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         });
       }
     }
-    count.setHandler(doneHandler);
   }
 
   public Map<String, Integer> listInstances() {
