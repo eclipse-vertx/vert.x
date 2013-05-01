@@ -1112,7 +1112,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
               return;
             }
             try {
-              addVerticle(deployment, verticle, verticleFactory);
+              addVerticle(deployment, verticle, verticleFactory, modID, main);
               if (modDir != null) {
                 setPathAdjustment(modDir);
               }
@@ -1161,8 +1161,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   // Must be synchronized since called directly from different thread
   private void addVerticle(Deployment deployment, Verticle verticle,
-                           VerticleFactory factory) {
-    String loggerName = "org.vertx.deployments." + deployment.name + "-" + deployment.verticles.size();
+                           VerticleFactory factory, ModuleIdentifier modID, String main) {
+    String loggerName = modID + "-" + main + "-" + System.identityHashCode(verticle);
     Logger logger = LoggerFactory.getLogger(loggerName);
     DefaultContext context = vertx.getContext();
     VerticleHolder holder = new VerticleHolder(deployment, context, verticle,
