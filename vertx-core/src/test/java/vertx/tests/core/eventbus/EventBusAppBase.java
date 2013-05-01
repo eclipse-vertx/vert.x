@@ -18,6 +18,7 @@ package vertx.tests.core.eventbus;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.Future;
 import org.vertx.java.core.eventbus.impl.ClusterManager;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager;
@@ -40,23 +41,31 @@ public abstract class EventBusAppBase extends TestClientBase {
   protected DefaultEventBus eb;
 
   @Override
-  public void start() {
+  public void start(final Future<Void> startedResult) {
     super.start();
-
     data = vertx.sharedData().getMap("data");
-
     if (isLocal()) {
       eb = (DefaultEventBus)vertx.eventBus();
+      tu.appReady();
+      startedResult.setResult(null);
     } else {
       int port = Counter.portCounter.getAndIncrement();
       // FIXME - this test is a hack - we shouldn't be creating multiple eventbuses with a single vert.x
       // using private API!!
       VertxInternal vertxi = ((VertxInternal)vertx);
       ClusterManager clusterManager = new HazelcastClusterManager(vertxi);
-      eb = new DefaultEventBus(vertxi, port, "localhost", clusterManager);
+      eb = new DefaultEventBus(vertxi, port, "localhost", clusterManager, new AsyncResultHandler<Void>() {
+        @Override
+        public void handle(AsyncResult<Void> asyncResult) {
+          if (asyncResult.succeeded()) {
+            tu.appReady();
+            startedResult.setResult(null);
+          } else {
+            startedResult.setFailure(asyncResult.cause());
+          }
+        }
+      });
     }
-
-    tu.appReady();
   }
 
   @Override
