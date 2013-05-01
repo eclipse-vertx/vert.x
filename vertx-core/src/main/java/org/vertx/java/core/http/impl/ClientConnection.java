@@ -282,7 +282,7 @@ class ClientConnection extends AbstractConnection {
       throw new IllegalStateException("No response handler");
     }
     setContext();
-    DefaultHttpClientResponse nResp = new DefaultHttpClientResponse(req, this, resp);
+    DefaultHttpClientResponse nResp = new DefaultHttpClientResponse(vertx, req, this, resp);
     currentResponse = nResp;
     req.handleResponse(nResp);
   }
