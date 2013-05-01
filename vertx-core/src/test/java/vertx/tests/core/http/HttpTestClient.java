@@ -104,6 +104,67 @@ public class HttpTestClient extends TestClientBase {
     });
   }
 
+  public void testPauseClientResponse() {
+
+    final HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
+      boolean paused;
+      Buffer totBuff = new Buffer();
+      public void handle(final HttpClientResponse resp) {
+        tu.checkThread();
+        resp.pause();
+        paused = true;
+        resp.dataHandler(new Handler<Buffer>() {
+          @Override
+          public void handle(Buffer chunk) {
+            if (paused) {
+              tu.azzert(false, "Shouldn't receive chunks when paused");
+            } else {
+              totBuff.appendBuffer(chunk);
+            }
+          }
+        });
+        resp.endHandler(new VoidHandler() {
+          @Override
+          protected void handle() {
+            if (paused) {
+              tu.azzert(false, "Shouldn't receive chunks when paused");
+            } else {
+              tu.azzert(totBuff.length() == 1000);
+              tu.testComplete();
+            }
+          }
+        });
+        vertx.setTimer(500, new Handler<Long>() {
+          @Override
+          public void handle(Long event) {
+            paused = false;
+            resp.resume();
+          }
+        });
+      }
+    });
+
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
+      @Override
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
+        req.end();
+      }
+    };
+
+    startServer(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+        tu.checkThread();
+        req.response().setChunked(true);
+        // Send back a big response in several chunks
+        for (int i = 0; i < 10; i++) {
+          req.response().write(TestUtils.generateRandomBuffer(100));
+        }
+        req.response().end();
+      }
+    }, handler);
+  }
+
   public void testClientDefaults() {
     tu.azzert(!client.isSSL());
     tu.azzert(client.isVerifyHost());
@@ -1124,7 +1185,6 @@ public class HttpTestClient extends TestClientBase {
     final HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         tu.checkThread();
-        tu.testComplete();
       }
     });
 
@@ -1153,6 +1213,8 @@ public class HttpTestClient extends TestClientBase {
     }, handler);
 
   }
+
+
 
   public void testRequestBodyWriteBufferChunked() {
     testRequestBodyWriteBuffer(true);
