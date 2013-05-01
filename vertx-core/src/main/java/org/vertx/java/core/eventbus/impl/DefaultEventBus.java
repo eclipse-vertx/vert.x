@@ -76,10 +76,15 @@ public class DefaultEventBus implements EventBus {
   }
 
   public DefaultEventBus(VertxInternal vertx, int port, String hostname, ClusterManager clusterManager) {
+    this(vertx, port, hostname, clusterManager, null);
+  }
+
+  public DefaultEventBus(VertxInternal vertx, int port, String hostname, ClusterManager clusterManager,
+                         AsyncResultHandler<Void> listenHandler) {
     this.vertx = vertx;
     this.clusterMgr = clusterManager;
     this.subs = clusterMgr.getSubsMap("subs");
-    this.server = setServer(port, hostname);
+    this.server = setServer(port, hostname, listenHandler);
     // If using a wilcard port (0) then we ask the server for the actual port:
     this.serverID = new ServerID(server.port(), hostname);
     ManagementRegistry.registerEventBus(serverID);
@@ -399,7 +404,7 @@ public class DefaultEventBus implements EventBus {
     return bm;
   }
 
-  private NetServer setServer(int port, String hostName) {
+  private NetServer setServer(int port, String hostName, final AsyncResultHandler<Void> listenHandler) {
     NetServer server = vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
         final RecordParser parser = RecordParser.newFixed(4, null);
@@ -427,7 +432,18 @@ public class DefaultEventBus implements EventBus {
       }
 
     });
-    server.listen(port, hostName);
+    server.listen(port, hostName, new AsyncResultHandler<NetServer>() {
+      @Override
+      public void handle(AsyncResult<NetServer> asyncResult) {
+        if (listenHandler != null) {
+          if (asyncResult.succeeded()) {
+            listenHandler.handle(new DefaultFutureResult<>((Void)null));
+          } else {
+            listenHandler.handle(new DefaultFutureResult<Void>(asyncResult.cause()));
+          }
+        }
+      }
+    });
     return server;
   }
 
