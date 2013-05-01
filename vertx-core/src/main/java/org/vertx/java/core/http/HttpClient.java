@@ -214,4 +214,16 @@ public interface HttpClient extends ClientSSLSupport<HttpClient>, TCPSupport<Htt
    */
   boolean isVerifyHost();
 
+  /**
+   * Set the connect timeout in milliseconds.
+   * @return a reference to this so multiple method calls can be chained together
+   */
+  HttpClient setConnectTimeout(int timeout);
+
+  /**
+   *
+   * @return The connect timeout in milliseconds
+   */
+  int getConnectTimeout();
+
 }

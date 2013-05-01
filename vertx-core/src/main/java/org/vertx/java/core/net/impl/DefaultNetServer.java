@@ -159,12 +159,13 @@ public class DefaultNetServer implements NetServer {
 
         try {
           InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(host), port);
-          this.port = addr.getPort();
           bindFuture = bootstrap.bind(addr).addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
               if (future.isSuccess()) {
-                log.trace("Net server listening on " + host + ":" + port);
+                log.trace("Net server listening on " + host + ":" + bindFuture.channel().localAddress());
+                // Update port to actual port - wildcard port 0 might have been used
+                DefaultNetServer.this.port = ((InetSocketAddress)bindFuture.channel().localAddress()).getPort();
               }
             }
           });
