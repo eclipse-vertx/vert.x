@@ -56,7 +56,7 @@ public class DefaultEventBus implements EventBus {
   private static final long PING_INTERVAL = 20000;
   private static final long PING_REPLY_INTERVAL = 20000;
   private final VertxInternal vertx;
-  private final ServerID serverID;
+  private ServerID serverID;
   private NetServer server;
   private SubsMap subs;
   private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
@@ -64,7 +64,7 @@ public class DefaultEventBus implements EventBus {
   private final AtomicInteger seq = new AtomicInteger(0);
   private final String prefix = UUID.randomUUID().toString();
   private final ClusterManager clusterMgr;
-  
+
   public DefaultEventBus(VertxInternal vertx) {
     // Just some dummy server ID
     this.vertx = vertx;
@@ -85,8 +85,6 @@ public class DefaultEventBus implements EventBus {
     this.clusterMgr = clusterManager;
     this.subs = clusterMgr.getSubsMap("subs");
     this.server = setServer(port, hostname, listenHandler);
-    // If using a wilcard port (0) then we ask the server for the actual port:
-    this.serverID = new ServerID(server.port(), hostname);
     ManagementRegistry.registerEventBus(serverID);
   }
 
@@ -318,6 +316,7 @@ public class DefaultEventBus implements EventBus {
 
   public EventBus unregisterHandler(String address, Handler<? extends Message> handler,
                                 Handler<AsyncResult<Void>> completionHandler) {
+    checkStarted();
     DefaultContext context = vertx.getOrAssignContext();
     Handlers handlers = handlerMap.get(address);
     if (handlers != null) {
@@ -404,8 +403,8 @@ public class DefaultEventBus implements EventBus {
     return bm;
   }
 
-  private NetServer setServer(int port, String hostName, final AsyncResultHandler<Void> listenHandler) {
-    NetServer server = vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
+  private NetServer setServer(int port, final String hostName, final AsyncResultHandler<Void> listenHandler) {
+    final NetServer server = vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
         final RecordParser parser = RecordParser.newFixed(4, null);
         Handler<Buffer> handler = new Handler<Buffer>() {
@@ -435,6 +434,10 @@ public class DefaultEventBus implements EventBus {
     server.listen(port, hostName, new AsyncResultHandler<NetServer>() {
       @Override
       public void handle(AsyncResult<NetServer> asyncResult) {
+        if (asyncResult.succeeded()) {
+          // If using a wilcard port (0) then we ask the server for the actual port:
+          DefaultEventBus.this.serverID = new ServerID(server.port(), hostName);
+        }
         if (listenHandler != null) {
           if (asyncResult.succeeded()) {
             listenHandler.handle(new DefaultFutureResult<>((Void)null));
@@ -473,6 +476,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   private void sendOrPub(ServerID replyDest, final BaseMessage message, final Handler replyHandler) {
+    checkStarted();
     DefaultContext context = vertx.getOrAssignContext();
     try {
       message.sender = serverID;
@@ -520,6 +524,7 @@ public class DefaultEventBus implements EventBus {
   private void registerHandler(String address, Handler<? extends Message> handler,
                                Handler<AsyncResult<Void>> completionHandler,
                                boolean replyHandler, boolean localOnly) {
+    checkStarted();
     if (address == null) {
       throw new NullPointerException("address");
     }
@@ -689,7 +694,13 @@ public class DefaultEventBus implements EventBus {
       }
     });
   }
-	
+
+  private void checkStarted() {
+    if (serverID == null) {
+      throw new IllegalStateException("Event Bus is not started");
+    }
+  }
+
   private static class HandlerHolder {
     final DefaultContext context;
     final Handler handler;

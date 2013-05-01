@@ -36,6 +36,7 @@ import org.vertx.java.core.impl.FlowControlHandler;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.impl.TCPSSLHelper;
 import org.vertx.java.core.net.impl.VertxEventLoopGroup;
 
@@ -332,6 +333,13 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   @Override
+  public DefaultHttpClient setConnectTimeout(int timeout) {
+    checkConfigurable();
+    tcpHelper.setConnectTimeout(timeout);
+    return this;
+  }
+
+  @Override
   public boolean isTCPNoDelay() {
     return tcpHelper.isTCPNoDelay();
   }
@@ -364,6 +372,11 @@ public class DefaultHttpClient implements HttpClient {
   @Override
   public int getTrafficClass() {
     return tcpHelper.getTrafficClass();
+  }
+
+  @Override
+  public int getConnectTimeout() {
+    return tcpHelper.getConnectTimeout();
   }
 
   @Override
@@ -614,11 +627,11 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   @Override
-    protected void finalize() throws Throwable {
-      // Make sure this gets cleaned up if there are no more references to it
-      // so as not to leave connections and resources dangling until the system is shutdown
-      // which could make the JVM run out of file handles.
-      close();
-      super.finalize();
-    }
+  protected void finalize() throws Throwable {
+    // Make sure this gets cleaned up if there are no more references to it
+    // so as not to leave connections and resources dangling until the system is shutdown
+    // which could make the JVM run out of file handles.
+    close();
+    super.finalize();
+  }
 }

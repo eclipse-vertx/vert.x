@@ -243,7 +243,6 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
     } else {
       channelFuture = conn.write(trailing);
     }
-
     if (!keepAlive) {
       closeConnAfterWrite();
     }
