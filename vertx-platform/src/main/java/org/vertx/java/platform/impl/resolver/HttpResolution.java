@@ -184,7 +184,7 @@ public abstract class HttpResolution {
       @Override
       protected void handle() {
         if (!suppressDownloadCounter) {
-          System.out.println("");
+          System.out.println("\rDownloading 100%");
         }
         try {
           os.flush();
