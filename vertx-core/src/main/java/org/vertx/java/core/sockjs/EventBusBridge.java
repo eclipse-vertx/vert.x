@@ -60,7 +60,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     List<JsonObject> l = new ArrayList<>();
     for (Object elem: permitted) {
       if (!(elem instanceof JsonObject)) {
-        throw new IllegalArgumentException("Permitted must only contain JsonObject");
+        throw new IllegalArgumentException("Permitted must only contain JsonObject: " + elem);
       }
       l.add((JsonObject) elem);
     }
