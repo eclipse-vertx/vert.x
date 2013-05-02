@@ -108,9 +108,10 @@ public class Starter {
       public void handle(AsyncResult<T> res) {
         if (res.failed()) {
           Throwable cause = res.cause();
+          cause.printStackTrace();
           if (cause instanceof VertxException) {
             VertxException ve = (VertxException)cause;
-            log.error(ve.getMessage());
+            log.error(ve.getMessage(), ve);
             if (ve.getCause() != null) {
               log.error(ve.getMessage(), ve);
             }
