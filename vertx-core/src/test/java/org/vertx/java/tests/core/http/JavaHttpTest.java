@@ -45,6 +45,11 @@ public class JavaHttpTest extends TestBase {
   }
 
   @Test
+  public void testHttpVersion() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
   public void testClientDefaults() throws Exception {
     startTest(getMethodName());
   }
