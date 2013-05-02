@@ -142,7 +142,7 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    *
    * @return {@code this}
    */
-   MultiMap clear();
+  MultiMap clear();
 
   /**
    * Return the number of names.
