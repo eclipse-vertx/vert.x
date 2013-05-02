@@ -424,6 +424,11 @@ public class JavaNetTest extends TestBase {
     startTest(getMethodName());
   }
 
+  @Test
+  public void testListenOnWildcardPort() throws Exception {
+    startTest(getMethodName(), false);
+  }
+
 
 }
 

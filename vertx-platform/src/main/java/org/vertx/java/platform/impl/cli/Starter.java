@@ -118,7 +118,7 @@ public class Starter {
             log.error(cause);
           }
         } else {
-          log.info(successMessage);
+          log.trace(successMessage);
         }
         if (doneHandler != null) {
           doneHandler.handle(res);

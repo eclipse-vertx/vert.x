@@ -119,7 +119,7 @@ class BaseTransport {
       if (cookies == null) {
         cookies = "JSESSIONID=dummy; path=/";
       }
-      req.response().headers().put("Set-Cookie", cookies);
+      req.response().headers().set("Set-Cookie", cookies);
     }
   }
 
@@ -128,11 +128,11 @@ class BaseTransport {
     if (origin == null || "null".equals(origin)) {
       origin = "*";
     }
-    req.response().headers().put("Access-Control-Allow-Origin", origin);
-    req.response().headers().put("Access-Control-Allow-Credentials", "true");
+    req.response().headers().set("Access-Control-Allow-Origin", origin);
+    req.response().headers().set("Access-Control-Allow-Credentials", "true");
     String hdr = req.headers().get("Access-Control-Request-Headers");
     if (hdr != null) {
-      req.response().headers().put("Access-Control-Allow-Headers", hdr);
+      req.response().headers().set("Access-Control-Allow-Headers", hdr);
     }
   }
 
@@ -141,7 +141,7 @@ class BaseTransport {
       boolean websocket = !config.getArray("disabled_transports").contains(Transport.WEBSOCKET.toString());
       public void handle(HttpServerRequest req) {
         if (log.isTraceEnabled()) log.trace("In Info handler");
-        req.response().headers().put("Content-Type", "application/json; charset=UTF-8");
+        req.response().headers().set("Content-Type", "application/json; charset=UTF-8");
         setNoCacheHeaders(req);
         JsonObject json = new JsonObject();
         json.putBoolean("websocket", websocket);
@@ -157,20 +157,20 @@ class BaseTransport {
   }
 
   static void setNoCacheHeaders(HttpServerRequest req) {
-    req.response().headers().put("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+    req.response().headers().set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
   }
 
   static Handler<HttpServerRequest> createCORSOptionsHandler(final JsonObject config, final String methods) {
     return new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         if (log.isTraceEnabled()) log.trace("In CORS options handler");
-        req.response().headers().put("Cache-Control", "public,max-age=31536000");
+        req.response().headers().set("Cache-Control", "public,max-age=31536000");
         long oneYearSeconds = 365 * 24 * 60 * 60;
         long oneYearms = oneYearSeconds * 1000;
         String expires = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz").format(new Date(System.currentTimeMillis() + oneYearms));
-        req.response().headers().put("Expires", expires);
-        req.response().headers().put("Access-Control-Allow-Methods", methods);
-        req.response().headers().put("Access-Control-Max-Age", String.valueOf(oneYearSeconds));
+        req.response().headers().set("Expires", expires);
+        req.response().headers().set("Access-Control-Allow-Methods", methods);
+        req.response().headers().set("Access-Control-Max-Age", String.valueOf(oneYearSeconds));
         setCORS(req);
         setJSESSIONID(config, req);
         req.response().setStatusCode(204);

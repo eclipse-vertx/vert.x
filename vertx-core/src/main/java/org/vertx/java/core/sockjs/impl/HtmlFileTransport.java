@@ -109,7 +109,7 @@ class HtmlFileTransport extends BaseTransport {
       if (log.isTraceEnabled()) log.trace("HtmlFile, sending frame");
       if (!headersWritten) {
         String htmlFile = HTML_FILE_TEMPLATE.replace("{{ callback }}", callback);
-        req.response().headers().put("Content-Type", "text/html; charset=UTF-8");
+        req.response().headers().set("Content-Type", "text/html; charset=UTF-8");
         setNoCacheHeaders(req);
         req.response().setChunked(true);
         setJSESSIONID(config, req);
