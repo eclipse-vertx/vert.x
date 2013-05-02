@@ -556,7 +556,7 @@ public class DefaultHttpServer implements HttpServer {
         resp.headers().set("allow", "GET");
       }
       if (err != null) {
-        resp.data().writeBytes(err.getBytes(CharsetUtil.UTF_8));
+        resp.content().writeBytes(err.getBytes(CharsetUtil.UTF_8));
         resp.headers().set("Content-Length", err.length());
       } else {
         resp.headers().set(HttpHeaders.Names.CONTENT_LENGTH, "0");
@@ -633,7 +633,7 @@ public class DefaultHttpServer implements HttpServer {
         }
       } else if (msg instanceof HttpContent) {
         if (wsRequest != null) {
-          wsRequest.data().writeBytes(((HttpContent) msg).data());
+          wsRequest.content().writeBytes(((HttpContent) msg).content());
           if (msg instanceof LastHttpContent) {
             FullHttpRequest req = wsRequest;
             wsRequest = null;
@@ -699,8 +699,7 @@ public class DefaultHttpServer implements HttpServer {
           }
         };
 
-        Map<String, String> headers = HeaderUtils.simplifyHeaders(request.headers().entries());
-        final DefaultServerWebSocket ws = new DefaultServerWebSocket(vertx, theURI.getPath(), headers, wsConn, connectRunnable);
+        final DefaultServerWebSocket ws = new DefaultServerWebSocket(vertx, theURI.getPath(), new HttpHeadersAdapter(request.headers()), wsConn, connectRunnable);
         wsConn.handleWebsocketConnect(ws);
         if (ws.isRejected()) {
           if (firstHandler == null) {

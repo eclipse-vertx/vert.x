@@ -24,7 +24,10 @@ import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
@@ -35,6 +38,7 @@ import org.vertx.java.core.impl.FlowControlHandler;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.impl.TCPSSLHelper;
 import org.vertx.java.core.net.impl.VertxEventLoopGroup;
 
@@ -143,7 +147,7 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   @Override
-  public HttpClient connectWebsocket(final String uri, final WebSocketVersion wsVersion, final Map<String, String> headers, final Handler<WebSocket> wsConnect) {
+  public HttpClient connectWebsocket(final String uri, final WebSocketVersion wsVersion, final MultiMap headers, final Handler<WebSocket> wsConnect) {
     configurable = false;
     getConnection(new Handler<ClientConnection>() {
       public void handle(final ClientConnection conn) {
@@ -164,10 +168,10 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   @Override
-  public HttpClient getNow(String uri, Map<String, ? extends Object> headers, Handler<HttpClientResponse> responseHandler) {
+  public HttpClient getNow(String uri, MultiMap headers, Handler<HttpClientResponse> responseHandler) {
     HttpClientRequest req = get(uri, responseHandler);
     if (headers != null) {
-      req.headers().putAll(headers);
+      req.headers().set(headers);
     }
     req.end();
     return this;
@@ -331,6 +335,13 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   @Override
+  public DefaultHttpClient setConnectTimeout(int timeout) {
+    checkConfigurable();
+    tcpHelper.setConnectTimeout(timeout);
+    return this;
+  }
+
+  @Override
   public boolean isTCPNoDelay() {
     return tcpHelper.isTCPNoDelay();
   }
@@ -363,6 +374,11 @@ public class DefaultHttpClient implements HttpClient {
   @Override
   public int getTrafficClass() {
     return tcpHelper.getTrafficClass();
+  }
+
+  @Override
+  public int getConnectTimeout() {
+    return tcpHelper.getConnectTimeout();
   }
 
   @Override
@@ -479,11 +495,11 @@ public class DefaultHttpClient implements HttpClient {
 
             SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
 
-            ChannelFuture fut = sslHandler.handshake();
-            fut.addListener(new ChannelFutureListener() {
-
-              public void operationComplete(ChannelFuture channelFuture) throws Exception {
-                if (channelFuture.isSuccess()) {
+            Future<Channel> fut = sslHandler.handshakeFuture();
+            fut.addListener(new GenericFutureListener<Future<Channel>>() {
+              @Override
+              public void operationComplete(Future<Channel> future) throws Exception {
+                if (future.isSuccess()) {
                   connected(ch, connectHandler);
                 } else {
                   failed(ch, connectErrorHandler, new SSLHandshakeException("Failed to create SSL connection"));
@@ -593,8 +609,8 @@ public class DefaultHttpClient implements HttpClient {
       }
       if (msg instanceof HttpContent) {
         HttpContent chunk = (HttpContent) msg;
-        if (chunk.data().isReadable()) {
-          Buffer buff = new Buffer(chunk.data().slice());
+        if (chunk.content().isReadable()) {
+          Buffer buff = new Buffer(chunk.content().slice());
           conn.handleResponseChunk(buff);
         }
         if (chunk instanceof LastHttpContent) {
@@ -613,11 +629,11 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   @Override
-    protected void finalize() throws Throwable {
-      // Make sure this gets cleaned up if there are no more references to it
-      // so as not to leave connections and resources dangling until the system is shutdown
-      // which could make the JVM run out of file handles.
-      close();
-      super.finalize();
-    }
+  protected void finalize() throws Throwable {
+    // Make sure this gets cleaned up if there are no more references to it
+    // so as not to leave connections and resources dangling until the system is shutdown
+    // which could make the JVM run out of file handles.
+    close();
+    super.finalize();
+  }
 }

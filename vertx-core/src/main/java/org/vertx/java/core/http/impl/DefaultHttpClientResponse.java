@@ -16,19 +16,22 @@
 
 package org.vertx.java.core.http.impl;
 
+import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClientResponse;
+import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.Queue;
 
 /**
  *
@@ -41,6 +44,7 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
   private final int statusCode;
   private final String statusMessage;
   private final DefaultHttpClientRequest request;
+  private final Vertx vertx;
   private final ClientConnection conn;
 
   private Handler<Buffer> dataHandler;
@@ -48,15 +52,21 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
   private Handler<Throwable> exceptionHandler;
   private final HttpResponse response;
   private LastHttpContent trailer;
+  private boolean paused;
+  private Queue<Buffer> pausedChunks;
+  private boolean hasPausedEnd;
+  private LastHttpContent pausedTrailer;
+
 
   // Cache these for performance
-  private Map<String, String> headers;
-  private Map<String, String> trailers;
+  private MultiMap headers;
+  private MultiMap trailers;
   private List<String> cookies;
 
-  DefaultHttpClientResponse(DefaultHttpClientRequest request, ClientConnection conn, HttpResponse response) {
-    statusCode = response.getStatus().code();
-    statusMessage = response.getStatus().reasonPhrase();
+  DefaultHttpClientResponse(Vertx vertx, DefaultHttpClientRequest request, ClientConnection conn, HttpResponse response) {
+    this.vertx = vertx;
+    this.statusCode = response.getStatus().code();
+    this.statusMessage = response.getStatus().reasonPhrase();
     this.request = request;
     this.conn = conn;
     this.response = response;
@@ -73,21 +83,17 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
   }
 
   @Override
-  public Map<String, String> headers() {
+  public MultiMap headers() {
     if (headers == null) {
-      headers = HeaderUtils.simplifyHeaders(response.headers().entries());
+      headers = new HttpHeadersAdapter(response.headers());
     }
     return headers;
   }
 
   @Override
-  public Map<String, String> trailers() {
+  public MultiMap trailers() {
     if (trailers == null) {
-      if (trailer == null) {
-        trailers = new HashMap<String, String>();
-      } else {
-        trailers = HeaderUtils.simplifyHeaders(trailer.trailingHeaders().entries());
-      }
+      trailers = new HttpHeadersAdapter(new DefaultHttpHeaders());
     }
     return trailers;
   }
@@ -95,7 +101,7 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
   @Override
   public List<String> cookies() {
     if (cookies == null) {
-      cookies = new ArrayList<String>();
+      cookies = new ArrayList<>();
       cookies.addAll(response.headers().getAll("Set-Cookie"));
       if (trailer != null) {
         cookies.addAll(trailer.trailingHeaders().getAll("Set-Cookie"));
@@ -124,12 +130,15 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
 
   @Override
   public HttpClientResponse pause() {
+    paused = true;
     conn.doPause();
     return this;
   }
 
   @Override
   public HttpClientResponse resume() {
+    paused = false;
+    doResume();
     conn.doResume();
     return this;
   }
@@ -150,17 +159,56 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
     return this;
   }
 
+  private void doResume() {
+    if (pausedChunks != null) {
+      Buffer chunk;
+      while ((chunk = pausedChunks.poll()) != null) {
+        final Buffer theChunk = chunk;
+        vertx.runOnContext(new VoidHandler() {
+          @Override
+          protected void handle() {
+            handleChunk(theChunk);
+          }
+        });
+      }
+    }
+    if (hasPausedEnd) {
+      final LastHttpContent theTrailer = pausedTrailer;
+      vertx.runOnContext(new VoidHandler() {
+        @Override
+        protected void handle() {
+          handleEnd(theTrailer);
+        }
+      });
+      hasPausedEnd = false;
+      pausedTrailer = null;
+    }
+  }
+
   void handleChunk(Buffer data) {
-    request.dataReceived();
-    if (dataHandler != null) {
-      dataHandler.handle(data);
+    if (paused) {
+      if (pausedChunks == null) {
+        pausedChunks = new LinkedList<>();
+      }
+      pausedChunks.add(data);
+    } else {
+      request.dataReceived();
+      if (dataHandler != null) {
+        dataHandler.handle(data);
+      }
     }
   }
 
   void handleEnd(LastHttpContent trailer) {
-    this.trailer = trailer;
-    if (endHandler != null) {
-      endHandler.handle(null);
+    if (paused) {
+      hasPausedEnd = true;
+      pausedTrailer = trailer;
+    } else {
+      this.trailer = trailer;
+      trailers = new HttpHeadersAdapter(trailer.trailingHeaders());
+      if (endHandler != null) {
+        endHandler.handle(null);
+      }
     }
   }
 

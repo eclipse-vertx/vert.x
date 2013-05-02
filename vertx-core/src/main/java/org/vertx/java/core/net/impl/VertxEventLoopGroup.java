@@ -16,11 +16,18 @@
 
 package org.vertx.java.core.net.impl;
 
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelPromise;
+import io.netty.channel.EventLoop;
+import io.netty.channel.EventLoopGroup;
+import io.netty.util.concurrent.AbstractEventExecutorGroup;
+import io.netty.util.concurrent.EventExecutor;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -28,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public final class VertxEventLoopGroup implements EventLoopGroup {
+public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implements EventLoopGroup {
 
   private static final Logger log = LoggerFactory.getLogger(VertxEventLoopGroup.class);
 
@@ -36,6 +43,7 @@ public final class VertxEventLoopGroup implements EventLoopGroup {
 
   private final List<EventLoopHolder> workers = new ArrayList<>();
   private final CountDownLatch latch = new CountDownLatch(1);
+  private volatile boolean gracefulShutdown;
 
   @Override
   public synchronized EventLoop next() {
@@ -47,6 +55,11 @@ public final class VertxEventLoopGroup implements EventLoopGroup {
       checkPos();
       return worker;
     }
+  }
+
+  @Override
+  public Iterator<EventExecutor> iterator() {
+    return new EventLoopIterator(workers.iterator());
   }
 
   @Override
@@ -89,6 +102,19 @@ public final class VertxEventLoopGroup implements EventLoopGroup {
       holder.worker.shutdown();
     }
     latch.countDown();
+  }
+
+  @Override
+  public boolean isShuttingDown() {
+    return gracefulShutdown;
+  }
+
+  @Override
+  public void shutdownGracefully(long quietPeriod, long timeout, TimeUnit unit) {
+    for (EventLoopHolder holder : workers) {
+      holder.worker.shutdownGracefully();
+    }
+    gracefulShutdown = true;
   }
 
   private EventLoopHolder findHolder(EventLoop worker) {
@@ -148,6 +174,29 @@ public final class VertxEventLoopGroup implements EventLoopGroup {
     @Override
     public int hashCode() {
       return worker != null ? worker.hashCode() : 0;
+    }
+  }
+
+  private static final class EventLoopIterator implements Iterator<EventExecutor> {
+    private final Iterator<EventLoopHolder> holderIt;
+
+    public EventLoopIterator(Iterator<EventLoopHolder> holderIt) {
+      this.holderIt = holderIt;
+    }
+
+    @Override
+    public boolean hasNext() {
+      return holderIt.hasNext();
+    }
+
+    @Override
+    public EventExecutor next() {
+      return holderIt.next().worker;
+    }
+
+    @Override
+    public void remove() {
+      throw new UnsupportedOperationException("read-only");
     }
   }
 }

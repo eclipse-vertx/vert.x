@@ -47,11 +47,6 @@ public class VertxNetHandler extends VertxStateHandler<DefaultNetSocket> impleme
   }
 
   @Override
-  public void freeInboundBuffer(ChannelHandlerContext channelHandlerContext) throws Exception {
-    channelHandlerContext.inboundByteBuffer().release();
-  }
-
-  @Override
   public void inboundBufferUpdated(ChannelHandlerContext chctx) {
     final ByteBuf in = chctx.inboundByteBuffer();
     final DefaultNetSocket sock = connectionMap.get(chctx.channel());

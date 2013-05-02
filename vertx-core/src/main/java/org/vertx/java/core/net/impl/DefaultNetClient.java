@@ -21,6 +21,8 @@ import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.*;
@@ -335,14 +337,14 @@ public class DefaultNetClient implements NetClient {
 
             SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
 
-            ChannelFuture fut = sslHandler.handshake();
-            fut.addListener(new ChannelFutureListener() {
-
-              public void operationComplete(ChannelFuture channelFuture) throws Exception {
-                if (channelFuture.isSuccess()) {
+            Future<Channel> fut = sslHandler.handshakeFuture();
+            fut.addListener(new GenericFutureListener<Future<Channel>>() {
+              @Override
+              public void operationComplete(Future<Channel> future) throws Exception {
+                if (future.isSuccess()) {
                   connected(ch, connectHandler);
                 } else {
-                  failed(ch, channelFuture.cause(), connectHandler);
+                  failed(ch, future.cause(), connectHandler);
                 }
               }
             });

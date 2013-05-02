@@ -25,6 +25,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.core.http.WebSocketVersion;
@@ -77,7 +78,7 @@ class ClientConnection extends AbstractConnection {
 
   void toWebSocket(String uri,
                    final WebSocketVersion wsVersion,
-                   final Map<String, String> headers,
+                   final MultiMap headers,
                    final Handler<WebSocket> wsConnect) {
     if (ws != null) {
       throw new IllegalStateException("Already websocket");
@@ -102,7 +103,7 @@ class ClientConnection extends AbstractConnection {
       HttpHeaders nettyHeaders;
       if (headers != null) {
         nettyHeaders = new DefaultHttpHeaders();
-        for (Map.Entry<String, String> entry: headers.entrySet()) {
+        for (Map.Entry<String, String> entry: headers) {
           nettyHeaders.add(entry.getKey(), entry.getValue());
         }
       } else {
@@ -168,7 +169,7 @@ class ClientConnection extends AbstractConnection {
             if (response != null) {
               handled = true;
 
-              response.data().writeBytes(((HttpContent) msg).data());
+              response.content().writeBytes(((HttpContent) msg).content());
               if (msg instanceof LastHttpContent) {
                 response.trailingHeaders().add(((LastHttpContent) msg).trailingHeaders());
                 handshakeComplete(ctx, response);
@@ -177,6 +178,7 @@ class ClientConnection extends AbstractConnection {
             }
           }
         }
+
         if (!handled) {
           BufUtil.retain(msg);
           ctx.nextInboundMessageBuffer().add(msg);
@@ -189,17 +191,13 @@ class ClientConnection extends AbstractConnection {
       return Unpooled.messageBuffer();
     }
 
-    @Override
-    public void freeInboundBuffer(ChannelHandlerContext ctx) throws Exception {
-      ctx.inboundMessageBuffer().release();
-    }
-
     private void handshakeComplete(ChannelHandlerContext ctx, FullHttpResponse response) {
       handshaking = true;
       try {
         ctx.pipeline().addAfter(ctx.name(), "websocketConverter", WebSocketConvertHandler.INSTANCE);
-        handshaker.finishHandshake(channel, response);
         ws = new DefaultWebSocket(vertx, ClientConnection.this);
+        handshaker.finishHandshake(channel, response);
+
         if (context.isOnCorrectWorker(ctx.channel().eventLoop())) {
           try {
             vertx.setContext(context);
@@ -214,10 +212,11 @@ class ClientConnection extends AbstractConnection {
             }
           });
         }
+
       } catch (WebSocketHandshakeException e) {
         client.handleException(e);
       } finally {
-        ctx.pipeline().removeAndForward(this);
+        ctx.pipeline().remove(this);
         ctx.fireInboundBufferUpdated();
       }
     }
@@ -281,7 +280,7 @@ class ClientConnection extends AbstractConnection {
       throw new IllegalStateException("No response handler");
     }
     setContext();
-    DefaultHttpClientResponse nResp = new DefaultHttpClientResponse(req, this, resp);
+    DefaultHttpClientResponse nResp = new DefaultHttpClientResponse(vertx, req, this, resp);
     currentResponse = nResp;
     req.handleResponse(nResp);
   }
@@ -335,9 +334,6 @@ class ClientConnection extends AbstractConnection {
   }
 
   ChannelFuture write(Object obj) {
-    if (!channel.isOpen()) {
-      throw new IllegalStateException("Connection is closed");
-    }
     return channel.write(obj);
   }
 

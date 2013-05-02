@@ -117,7 +117,7 @@ class JsonPTransport extends BaseTransport {
           sendInvalidJSON(req.response());
         } else {
           setJSESSIONID(config, req);
-          req.response().headers().put("Content-Type", "text/plain; charset=UTF-8");
+          req.response().headers().set("Content-Type", "text/plain; charset=UTF-8");
           setNoCacheHeaders(req);
           req.response().end("ok");
           if (log.isTraceEnabled()) log.trace("send handled ok");
@@ -148,7 +148,7 @@ class JsonPTransport extends BaseTransport {
 
       if (!headersWritten) {
         req.response().setChunked(true);
-        req.response().headers().put("Content-Type", "application/javascript; charset=UTF-8");
+        req.response().headers().set("Content-Type", "application/javascript; charset=UTF-8");
         setNoCacheHeaders(req);
         setJSESSIONID(config, req);
         headersWritten = true;
