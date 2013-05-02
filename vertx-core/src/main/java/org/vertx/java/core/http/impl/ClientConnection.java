@@ -17,12 +17,10 @@
 package org.vertx.java.core.http.impl;
 
 import io.netty.buffer.BufUtil;
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.MessageBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.codec.http.websocketx.WebSocket00FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
@@ -336,9 +334,6 @@ class ClientConnection extends AbstractConnection {
   }
 
   ChannelFuture write(Object obj) {
-    if (!channel.isOpen()) {
-      throw new IllegalStateException("Connection is closed");
-    }
     return channel.write(obj);
   }
 
