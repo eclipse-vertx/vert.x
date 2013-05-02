@@ -45,7 +45,7 @@ public class CountingCompletionHandler<T> {
     if (res.failed()) {
       if (!failed) {
         // Fail immediately - but only once
-        if(doneHandler != null) {
+        if (doneHandler != null) {
           doneHandler.handle(res);
         }
         failed = true;

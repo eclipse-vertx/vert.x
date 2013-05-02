@@ -175,21 +175,22 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   public synchronized void undeployAll(final Handler<AsyncResult<Void>> doneHandler) {
-    final CountingCompletionHandler<Void> count = new CountingCompletionHandler<>(vertx);
-    count.setHandler(doneHandler);
-    if (!deployments.isEmpty()) {
-      // We do it this way since undeploy is itself recursive - we don't want
-      // to attempt to undeploy the same verticle twice if it's a child of
-      // another
-      while (!deployments.isEmpty()) {
-        String name = deployments.keySet().iterator().next();
-        count.incRequired();
-        undeploy(name, new Handler<AsyncResult<Void>>() {
-          public void handle(AsyncResult<Void> res) {
-            count.complete(res);
-          }
-        });
+    List<String> parents = new ArrayList<>();
+    for (Map.Entry<String, Deployment> entry: deployments.entrySet()) {
+      if (entry.getValue().parentDeploymentName == null) {
+        parents.add(entry.getKey());
       }
+    }
+    
+    final CountingCompletionHandler<Void> count = new CountingCompletionHandler<>(vertx, parents.size());
+    count.setHandler(doneHandler);
+    
+    for (String name: parents) {
+      undeploy(name, new Handler<AsyncResult<Void>>() {
+        public void handle(AsyncResult<Void> res) {
+          count.complete(res);
+        }
+      });
     }
   }
 
