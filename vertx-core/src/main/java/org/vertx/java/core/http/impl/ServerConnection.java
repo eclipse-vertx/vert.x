@@ -254,6 +254,7 @@ class ServerConnection extends AbstractConnection {
     checkNextTick();
   }
 
+  // TODO I think this can be simplified / optimised
   private void checkNextTick() {
     // Check if there are more pending messages in the queue that can be processed next time around
     if (!sentCheck && !pending.isEmpty() && !paused && (pendingResponse == null || pending.peek() instanceof HttpContent)) {

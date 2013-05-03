@@ -2626,6 +2626,29 @@ public class HttpTestClient extends TestClientBase {
 
   }
 
+  public void testHttpVersion() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
+      @Override
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
+        client.getNow("/foo", new Handler<HttpClientResponse>() {
+          @Override
+          public void handle(HttpClientResponse resp) {
+            tu.testComplete();
+          }
+        });
+      }
+    };
+
+    startServer(new Handler<HttpServerRequest>() {
+      @Override
+      public void handle(HttpServerRequest request) {
+        tu.azzert(request.version() == HttpVersion.HTTP_1_1);
+        request.response().end();
+      }
+    }, handler);
+  }
+
   // -------------------------------------------------------------------------------------------
 
   private String generateQueryString(Map<String, String> params, char delim) {
