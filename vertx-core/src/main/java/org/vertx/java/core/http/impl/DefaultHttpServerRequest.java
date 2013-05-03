@@ -25,6 +25,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
+import org.vertx.java.core.http.HttpVersion;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -48,6 +49,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   private final HttpRequest request;
   private final HttpServerResponse response;
 
+  private HttpVersion version;
   private String method;
   private String uri;
   private String path;
@@ -69,6 +71,21 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
     this.conn = conn;
     this.request = request;
     this.response = response;
+  }
+
+  @Override
+  public HttpVersion version() {
+    if (version == null) {
+      io.netty.handler.codec.http.HttpVersion nettyVersion = request.getProtocolVersion();
+      if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_0) {
+        version = HttpVersion.HTTP_1_0;
+      } else if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_1) {
+        version = HttpVersion.HTTP_1_1;
+      } else {
+        throw new IllegalStateException("Unsupported HTTP version: " + nettyVersion);
+      }
+    }
+    return version;
   }
 
   @Override

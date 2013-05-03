@@ -42,6 +42,11 @@ import java.net.URI;
 public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
 
   /**
+   * The HTTP version of the request
+   */
+  HttpVersion version();
+
+  /**
    * The HTTP method for the request. One of GET, PUT, POST, DELETE, TRACE, CONNECT, OPTIONS or HEAD
    */
   String method();
