@@ -41,7 +41,7 @@ import java.util.*;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultSockJSServer implements SockJSServer {
+public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequest> {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultSockJSServer.class);
 
@@ -65,16 +65,28 @@ public class DefaultSockJSServer implements SockJSServer {
         }
       }
     });
-    httpServer.requestHandler(new Handler<HttpServerRequest>() {
+    httpServer.requestHandler(this);
+    httpServer.websocketHandler(wsMatcher);
+    // Sanity check - a common mistake users make is to set the http request handler AFTER they have created this
+    // which overrwites this one.
+    vertx.setPeriodic(5000, new Handler<Long>() {
       @Override
-      public void handle(HttpServerRequest req) {
-        if (log.isTraceEnabled()) {
-          log.trace("Got request in sockjs server: " + req.uri());
+      public void handle(Long timerID) {
+        if (httpServer.requestHandler() != DefaultSockJSServer.this) {
+          log.warn("You have overwritten the Http server request handler AFTER the SockJSServer has been created " +
+                   "which will stop the SockJSServer from functioning. Make sure you set http request handler BEFORE " +
+                   "you create the SockJSServer");
         }
-        rm.handle(req);
       }
     });
-    httpServer.websocketHandler(wsMatcher);
+  }
+
+  @Override
+  public void handle(HttpServerRequest req) {
+    if (log.isTraceEnabled()) {
+      log.trace("Got request in sockjs server: " + req.uri());
+    }
+    rm.handle(req);
   }
 
   private JsonObject setDefaults(JsonObject config) {
