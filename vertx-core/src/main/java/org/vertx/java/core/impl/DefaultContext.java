@@ -23,8 +23,7 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Executor;
 
 /**
@@ -37,7 +36,7 @@ public abstract class DefaultContext implements Context {
   private final VertxInternal vertx;
   private DeploymentHandle deploymentContext;
   private Path pathAdjustment;
-  private Map<Object, Runnable> closeHooks;
+  private Set<Closeable> closeHooks;
   private final ClassLoader tccl;
   private boolean closed;
   private final EventLoop eventLoop;
@@ -78,22 +77,25 @@ public abstract class DefaultContext implements Context {
     }
   }
 
-  public Runnable getCloseHook(Object key) {
-    return closeHooks == null ? null : closeHooks.get(key);
+  public void addCloseHook(Closeable hook) {
+    if (closeHooks == null) {
+      closeHooks = new HashSet<>();
+    }
+    closeHooks.add(hook);
   }
 
-  public void putCloseHook(Object key, Runnable hook) {
-    if (closeHooks == null) {
-      closeHooks = new HashMap<>();
+  public void removeCloseHook(Closeable hook) {
+    if (closeHooks != null) {
+      closeHooks.remove(hook);
     }
-    closeHooks.put(key, hook);
   }
 
   public void runCloseHooks() {
     if (closeHooks != null) {
-      for (Runnable hook: closeHooks.values()) {
+      // Copy to avoid ConcurrentModificationException
+      for (Closeable hook: new HashSet<>(closeHooks)) {
         try {
-          hook.run();
+          hook.close();
         } catch (Throwable t) {
           reportException(t);
         }

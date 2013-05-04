@@ -39,7 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultNetClient implements NetClient {
+public class DefaultNetClient implements NetClient, Closeable {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultNetClient.class);
   private static final ExceptionDispatchHandler EXCEPTION_DISPATCH_HANDLER = new ExceptionDispatchHandler();
@@ -56,11 +56,7 @@ public class DefaultNetClient implements NetClient {
   public DefaultNetClient(VertxInternal vertx) {
     this.vertx = vertx;
     actualCtx = vertx.getOrAssignContext();
-    actualCtx.putCloseHook(this, new Runnable() {
-      public void run() {
-        close();
-      }
-    });
+    actualCtx.addCloseHook(this);
   }
 
   @Override
@@ -80,6 +76,7 @@ public class DefaultNetClient implements NetClient {
     for (NetSocket sock : socketMap.values()) {
       sock.close();
     }
+    actualCtx.removeCloseHook(this);
   }
 
   @Override
