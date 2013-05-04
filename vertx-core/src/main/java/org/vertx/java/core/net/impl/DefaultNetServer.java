@@ -48,7 +48,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultNetServer implements NetServer {
+public class DefaultNetServer implements NetServer, Closeable {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultNetServer.class);
   private static final ExceptionDispatchHandler EXCEPTION_DISPATCH_HANDLER = new ExceptionDispatchHandler();
@@ -72,11 +72,7 @@ public class DefaultNetServer implements NetServer {
   public DefaultNetServer(VertxInternal vertx) {
     this.vertx = vertx;
     actualCtx = vertx.getOrAssignContext();
-    actualCtx.putCloseHook(this, new Runnable() {
-      public void run() {
-        close();
-      }
-    });
+    actualCtx.addCloseHook(this);
     tcpHelper.setReuseAddress(true);
   }
 
@@ -270,6 +266,7 @@ public class DefaultNetServer implements NetServer {
         }
       }
     }
+    actualCtx.removeCloseHook(this);
   }
 
   @Override

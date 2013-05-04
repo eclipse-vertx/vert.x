@@ -166,6 +166,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
             }
             if (doneHandler != null) {
               doneHandler.handle(res);
+            } else if (res.failed()) {
+              log.error("Failed to undeploy", res.cause());;
             }
           }
         });
@@ -188,7 +190,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     for (String name: parents) {
       undeploy(name, new Handler<AsyncResult<Void>>() {
         public void handle(AsyncResult<Void> res) {
-          count.complete(res);
+          if (res.failed()) {
+            count.failed(res.cause());
+          } else {
+            count.complete();
+          }
         }
       });
     }
@@ -1123,7 +1129,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
                 @Override
                 public void handle(AsyncResult<Void> ar) {
                   if (ar.succeeded()) {
-                    aggHandler.complete(ar);
+                    aggHandler.complete();
                   } else {
                     handleDeployFailure(ar.cause(), deploymentID, aggHandler);
                   }
@@ -1154,7 +1160,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           vertx.reportException(res.cause());
         }
         // And pass the *deploy* (not undeploy) Throwable back to the original handler
-        handler.complete(new DefaultFutureResult<Void>(t));
+        handler.failed(t);
       }
     });
   }
@@ -1187,6 +1193,15 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     doUndeploy(name, count);
     if (doneHandler != null) {
       count.setHandler(doneHandler);
+    } else {
+      count.setHandler(new Handler<AsyncResult<Void>>() {
+        @Override
+        public void handle(AsyncResult<Void> asyncResult) {
+          if (asyncResult.failed()) {
+            log.error("Failed to undeploy", asyncResult.cause());
+          }
+        }
+      });
     }
   }
 
@@ -1199,7 +1214,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     if (deployment == null) {
       // OK - already undeployed
       parentCount.incRequired();
-      parentCount.complete(new DefaultFutureResult<>((Void)null));
+      parentCount.complete();
       return;
     }
 
@@ -1221,9 +1236,9 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
               LoggerFactory.removeLogger(holder.loggerName);
               holder.context.runCloseHooks();
               holder.context.close();
-              count.complete(new DefaultFutureResult<>((Void)null));
+              count.complete();
             } catch (Throwable t) {
-              count.complete(new DefaultFutureResult<Void>(t));
+              count.failed(t);
             }
           }
         });
@@ -1240,7 +1255,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     count.setHandler(new Handler<AsyncResult<Void>>() {
       public void handle(AsyncResult<Void> res) {
         deployment.moduleReference.decRef();
-        parentCount.complete(res);
+        if (res.failed()) {
+          parentCount.failed(res.cause());
+        } else {
+          parentCount.complete();
+        }
       }
     });
   }

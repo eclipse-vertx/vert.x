@@ -32,10 +32,7 @@ import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
-import org.vertx.java.core.impl.DefaultContext;
-import org.vertx.java.core.impl.ExceptionDispatchHandler;
-import org.vertx.java.core.impl.FlowControlHandler;
-import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.impl.*;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetClient;
@@ -49,7 +46,7 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DefaultHttpClient implements HttpClient {
+public class DefaultHttpClient implements HttpClient, Closeable {
 
   private static final Logger log = LoggerFactory.getLogger(HttpClientRequest.class);
   private static final ExceptionDispatchHandler EXCEPTION_DISPATCH_HANDLER = new ExceptionDispatchHandler();
@@ -73,14 +70,10 @@ public class DefaultHttpClient implements HttpClient {
   public DefaultHttpClient(VertxInternal vertx) {
     this.vertx = vertx;
     actualCtx = vertx.getOrAssignContext();
-    actualCtx.putCloseHook(this, new Runnable() {
-      public void run() {
-        close();
-      }
-    });
+    actualCtx.addCloseHook(this);
   }
 
- // @Override
+  // @Override
   public DefaultHttpClient exceptionHandler(Handler<Throwable> handler) {
     this.exceptionHandler = handler;
     return this;
@@ -234,6 +227,7 @@ public class DefaultHttpClient implements HttpClient {
     for (ClientConnection conn : connectionMap.values()) {
       conn.internalClose();
     }
+    actualCtx.removeCloseHook(this);
   }
 
   @Override

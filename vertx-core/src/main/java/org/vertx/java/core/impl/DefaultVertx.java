@@ -202,30 +202,26 @@ public class DefaultVertx implements VertxInternal {
   }
 
   public boolean cancelTimer(long id) {
-    return cancelTimeout(id);
-  }
-
-  public EventLoopContext createEventLoopContext() {
-    return new EventLoopContext(this, orderedFact.getExecutor());
-  }
-
-  private boolean cancelTimeout(long id) {
+    DefaultContext context = getOrAssignContext();
     InternalTimerHandler handler = timeouts.remove(id);
     if (handler != null) {
+      context.removeCloseHook(handler);
       return handler.cancel();
     } else {
       return false;
     }
   }
 
-  private long scheduleTimeout(final DefaultContext context, final Handler<Long> handler, long delay, boolean periodic) {
+  public EventLoopContext createEventLoopContext() {
+    return new EventLoopContext(this, orderedFact.getExecutor());
+  }
 
+  private long scheduleTimeout(final DefaultContext context, final Handler<Long> handler, long delay, boolean periodic) {
     if (delay < 1) {
       throw new IllegalArgumentException("Cannot schedule a timer with delay < 1 ms");
     }
-
     long timerId = timeoutCounter.getAndIncrement();
-    final InternalTimerHandler task = new InternalTimerHandler(timerId, handler);
+    final InternalTimerHandler task = new InternalTimerHandler(timerId, handler, periodic);
     final Runnable wrapped = context.wrapTask(task);
 
     final Runnable toRun;
@@ -249,6 +245,7 @@ public class DefaultVertx implements VertxInternal {
     }
     task.future = future;
     timeouts.put(timerId, task);
+    context.addCloseHook(task);
     return timerId;
   }
 
@@ -308,8 +305,9 @@ public class DefaultVertx implements VertxInternal {
     setContext(null);
   }
 
-  private static class InternalTimerHandler implements Runnable {
+  private class InternalTimerHandler implements Runnable, Closeable {
     final Handler<Long> handler;
+    final boolean periodic;
     final long timerID;
     volatile Future<?> future;
     boolean cancelled;
@@ -318,15 +316,35 @@ public class DefaultVertx implements VertxInternal {
       return future.cancel(false);
     }
 
-    InternalTimerHandler(long timerID, Handler<Long> runnable) {
+    InternalTimerHandler(long timerID, Handler<Long> runnable, boolean periodic) {
       this.timerID = timerID;
       this.handler = runnable;
+      this.periodic = periodic;
     }
 
     public void run() {
       if (!cancelled) {
-        handler.handle(timerID);
+        try {
+          handler.handle(timerID);
+        } finally {
+          if (!periodic) {
+            // Clean up after it's fired
+            cleanupNonPeriodic();
+          }
+        }
       }
+    }
+
+    private void cleanupNonPeriodic() {
+      DefaultVertx.this.timeouts.remove(timerID);
+      DefaultContext context = getContext();
+      context.removeCloseHook(this);
+    }
+
+    // Called via Context close hook when Verticle is undeployed
+    public void close() {
+      DefaultVertx.this.timeouts.remove(timerID);
+      cancel();
     }
   }
 }

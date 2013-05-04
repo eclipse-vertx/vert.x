@@ -23,6 +23,7 @@ import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.impl.Closeable;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.VertxInternal;
@@ -315,7 +316,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public EventBus unregisterHandler(String address, Handler<? extends Message> handler,
-                                Handler<AsyncResult<Void>> completionHandler) {
+                                    Handler<AsyncResult<Void>> completionHandler) {
     checkStarted();
     DefaultContext context = vertx.getOrAssignContext();
     Handlers handlers = handlerMap.get(address);
@@ -339,7 +340,7 @@ public class DefaultEventBus implements EventBus {
             } else if (completionHandler != null) {
               callCompletionHandler(completionHandler);
             }
-            getHandlerCloseHook(context).entries.remove(new HandlerEntry(address, handler));
+            context.removeCloseHook(new HandlerEntry(address, handler));
             return this;
           }
         }
@@ -528,7 +529,11 @@ public class DefaultEventBus implements EventBus {
     if (address == null) {
       throw new NullPointerException("address");
     }
-    DefaultContext context = vertx.getOrAssignContext();
+    DefaultContext context = vertx.getContext();
+    boolean hasContext = context != null;
+    if (!hasContext) {
+      context = vertx.createEventLoopContext();
+    }
     Handlers handlers = handlerMap.get(address);
     if (handlers == null) {
       handlers = new Handlers();
@@ -558,20 +563,14 @@ public class DefaultEventBus implements EventBus {
         callCompletionHandler(completionHandler);
       }
     }
-    getHandlerCloseHook(context).entries.add(new HandlerEntry(address, handler));
-  }
-
-  private HandlerCloseHook getHandlerCloseHook(DefaultContext context) {
-    HandlerCloseHook hcl = (HandlerCloseHook)context.getCloseHook(this);
-    if (hcl == null) {
-      hcl = new HandlerCloseHook();
-      context.putCloseHook(this, hcl);
+    if (hasContext) {
+      HandlerEntry entry = new HandlerEntry(address, handler);
+      context.addCloseHook(entry);
     }
-    return hcl;
   }
 
   private void callCompletionHandler(Handler<AsyncResult<Void>> completionHandler) {
-    completionHandler.handle(new DefaultFutureResult().setResult(null));
+    completionHandler.handle(new DefaultFutureResult<>((Void)null));
   }
 
   private void cleanSubsForServerID(ServerID theServerID) {
@@ -822,7 +821,7 @@ public class DefaultEventBus implements EventBus {
     }
   }
 
-  private class HandlerEntry {
+  private class HandlerEntry implements Closeable {
     final String address;
     final Handler<? extends Message> handler;
 
@@ -847,16 +846,10 @@ public class DefaultEventBus implements EventBus {
       result = 31 * result + (handler != null ? handler.hashCode() : 0);
       return result;
     }
-  }
 
-  private class HandlerCloseHook implements Runnable {
-
-    final Set<HandlerEntry> entries = new HashSet<>();
-
-    public void run() {
-      for (HandlerEntry entry: new HashSet<>(entries)) {
-        unregisterHandler(entry.address, entry.handler);
-      }
+    // Called by context on undeploy
+    public void close() {
+      unregisterHandler(this.address, this.handler);
     }
   }
 }

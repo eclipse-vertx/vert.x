@@ -64,7 +64,7 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultHttpServer implements HttpServer {
+public class DefaultHttpServer implements HttpServer, Closeable {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultHttpServer.class);
     private static final ExceptionDispatchHandler EXCEPTION_DISPATCH_HANDLER = new ExceptionDispatchHandler();
@@ -89,11 +89,7 @@ public class DefaultHttpServer implements HttpServer {
   public DefaultHttpServer(VertxInternal vertx) {
     this.vertx = vertx;
     actualCtx = vertx.getOrAssignContext();
-    actualCtx.putCloseHook(this, new Runnable() {
-      public void run() {
-        close();
-      }
-    });
+    actualCtx.addCloseHook(this);
     tcpHelper.setReuseAddress(true);
   }
 
@@ -313,6 +309,7 @@ public class DefaultHttpServer implements HttpServer {
     }
     requestHandler = null;
     wsHandler = null;
+    actualCtx.removeCloseHook(this);
   }
 
   @Override

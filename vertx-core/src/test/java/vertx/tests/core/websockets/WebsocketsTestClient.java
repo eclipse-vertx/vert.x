@@ -110,7 +110,6 @@ public class WebsocketsTestClient extends TestClientBase {
     server = vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
         tu.checkThread();
-        System.out.println("path is " + ws.path());
         tu.azzert(path.equals(ws.path()));
 
         ws.dataHandler(new Handler<Buffer>() {

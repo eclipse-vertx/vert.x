@@ -29,6 +29,7 @@ public class CountingCompletionHandler<T> {
   private int count;
   private int required;
   private Handler<AsyncResult<T>> doneHandler;
+  private Throwable cause;
   private boolean failed;
 
   public CountingCompletionHandler(VertxInternal vertx) {
@@ -41,18 +42,20 @@ public class CountingCompletionHandler<T> {
     this.required = required;
   }
 
-  public synchronized void complete(AsyncResult<T> res) {
-    if (res.failed()) {
-      if (!failed) {
-        // Fail immediately - but only once
-        if (doneHandler != null) {
-          doneHandler.handle(res);
-        }
-        failed = true;
+  public synchronized void complete() {
+    count++;
+    checkDone();
+  }
+
+  public synchronized void failed(Throwable t) {
+    if (!failed) {
+      // Fail immediately - but only once
+      if (doneHandler != null) {
+        callHandler(new DefaultFutureResult<T>(t));
+      } else {
+        cause = t;
       }
-    } else {
-      count++;
-      checkDone();
+      failed = true;
     }
   }
 
@@ -65,17 +68,28 @@ public class CountingCompletionHandler<T> {
     checkDone();
   }
 
+  private void callHandler(final AsyncResult<T> result) {
+    if (vertx.getContext() == context) {
+      doneHandler.handle(result);
+    } else {
+      context.execute(new Runnable() {
+        public void run() {
+          doneHandler.handle(result);
+        }
+      });
+    }
+  }
+
+
   void checkDone() {
-    if (doneHandler != null && count == required) {
-      final DefaultFutureResult<T> res = new DefaultFutureResult<T>().setResult(null);
-      if (vertx.getContext() == context) {
-        doneHandler.handle(res);
+    if (doneHandler != null) {
+      if (cause != null) {
+        callHandler(new DefaultFutureResult<T>(cause));
       } else {
-        context.execute(new Runnable() {
-          public void run() {
-            doneHandler.handle(res);
-          }
-        });
+        if (count == required) {
+          final DefaultFutureResult<T> res = new DefaultFutureResult<T>((T)null);
+          callHandler(res);
+        }
       }
     }
   }
