@@ -56,7 +56,8 @@ final class UnreleasableByteBuf implements ByteBuf {
 
   @Override
   public ByteBuf capacity(int newCapacity) {
-    return buf.capacity(newCapacity);
+    buf.capacity(newCapacity);
+    return this;
   }
 
   @Override
@@ -76,7 +77,7 @@ final class UnreleasableByteBuf implements ByteBuf {
 
   @Override
   public ByteBuf order(ByteOrder endianness) {
-    return buf.order(endianness);
+    return new UnreleasableByteBuf(buf.order(endianness));
   }
 
   @Override
@@ -96,7 +97,8 @@ final class UnreleasableByteBuf implements ByteBuf {
 
   @Override
   public ByteBuf readerIndex(int readerIndex) {
-    return buf.readerIndex(readerIndex);
+    buf.readerIndex(readerIndex);
+    return this;
   }
 
   @Override
@@ -106,12 +108,14 @@ final class UnreleasableByteBuf implements ByteBuf {
 
   @Override
   public ByteBuf writerIndex(int writerIndex) {
-    return buf.writerIndex(writerIndex);
+    buf.writerIndex(writerIndex);
+    return this;
   }
 
   @Override
   public ByteBuf setIndex(int readerIndex, int writerIndex) {
-    return buf.setIndex(readerIndex, writerIndex);
+    buf.setIndex(readerIndex, writerIndex);
+    return this;
   }
 
   @Override
@@ -153,48 +157,57 @@ final class UnreleasableByteBuf implements ByteBuf {
 
   @Override
   public ByteBuf clear() {
-    return buf.clear();
+    buf.clear();
+    return this;
   }
 
   @Override
   public ByteBuf markReaderIndex() {
-    return buf.markReaderIndex();
+    buf.markReaderIndex();
+    return this;
   }
 
   @Override
   public ByteBuf resetReaderIndex() {
-    return buf.resetReaderIndex();
+    buf.resetReaderIndex();
+    return this;
   }
 
   @Override
   public ByteBuf markWriterIndex() {
-    return buf.markWriterIndex();
+    buf.markWriterIndex();
+    return this;
   }
 
   @Override
   public ByteBuf resetWriterIndex() {
-    return buf.resetWriterIndex();
+    buf.resetWriterIndex();
+    return this;
   }
 
   @Override
   public ByteBuf discardReadBytes() {
-    return buf.discardReadBytes();
+    buf.discardReadBytes();
+    return this;
   }
 
   @Override
   public ByteBuf discardSomeReadBytes() {
-    return buf.discardSomeReadBytes();
+    buf.discardSomeReadBytes();
+    return this;
   }
 
   @Override
   public ByteBuf ensureWritable(int minWritableBytes) {
-    return buf.ensureWritable(minWritableBytes);
+    buf.ensureWritable(minWritableBytes);
+    return this;
   }
 
   @Override
   @Deprecated
   public ByteBuf ensureWritableBytes(int minWritableBytes) {
-    return buf.ensureWritableBytes(minWritableBytes);
+    buf.ensureWritableBytes(minWritableBytes);
+    return this;
   }
 
   @Override
@@ -269,37 +282,44 @@ final class UnreleasableByteBuf implements ByteBuf {
 
   @Override
   public ByteBuf getBytes(int index, ByteBuf dst) {
-    return buf.getBytes(index, dst);
+    buf.getBytes(index, dst);
+    return this;
   }
 
   @Override
   public ByteBuf getBytes(int index, ByteBuf dst, int length) {
-    return buf.getBytes(index, dst, length);
+    buf.getBytes(index, dst, length);
+    return this;
   }
 
   @Override
   public ByteBuf getBytes(int index, ByteBuf dst, int dstIndex, int length) {
-    return buf.getBytes(index, dst, dstIndex, length);
+    buf.getBytes(index, dst, dstIndex, length);
+    return this;
   }
 
   @Override
   public ByteBuf getBytes(int index, byte[] dst) {
-    return buf.getBytes(index, dst);
+    buf.getBytes(index, dst);
+    return this;
   }
 
   @Override
   public ByteBuf getBytes(int index, byte[] dst, int dstIndex, int length) {
-    return buf.getBytes(index, dst, dstIndex, length);
+    buf.getBytes(index, dst, dstIndex, length);
+    return this;
   }
 
   @Override
   public ByteBuf getBytes(int index, ByteBuffer dst) {
-    return buf.getBytes(index, dst);
+    buf.getBytes(index, dst);
+    return this;
   }
 
   @Override
   public ByteBuf getBytes(int index, OutputStream out, int length) throws IOException {
-    return buf.getBytes(index, out, length);
+    buf.getBytes(index, out, length);
+    return this;
   }
 
   @Override
@@ -309,77 +329,92 @@ final class UnreleasableByteBuf implements ByteBuf {
 
   @Override
   public ByteBuf setBoolean(int index, boolean value) {
-    return buf.setBoolean(index, value);
+    buf.setBoolean(index, value);
+    return this;
   }
 
   @Override
   public ByteBuf setByte(int index, int value) {
-    return buf.setByte(index, value);
+    buf.setByte(index, value);
+    return this;
   }
 
   @Override
   public ByteBuf setShort(int index, int value) {
-    return buf.setShort(index, value);
+    buf.setShort(index, value);
+    return this;
   }
 
   @Override
   public ByteBuf setMedium(int index, int value) {
-    return buf.setMedium(index, value);
+    buf.setMedium(index, value);
+    return this;
   }
 
   @Override
   public ByteBuf setInt(int index, int value) {
-    return buf.setInt(index, value);
+    buf.setInt(index, value);
+    return this;
   }
 
   @Override
   public ByteBuf setLong(int index, long value) {
-    return buf.setLong(index, value);
+    buf.setLong(index, value);
+    return this;
   }
 
   @Override
   public ByteBuf setChar(int index, int value) {
-    return buf.setChar(index, value);
+    buf.setChar(index, value);
+    return this;
   }
 
   @Override
   public ByteBuf setFloat(int index, float value) {
-    return buf.setFloat(index, value);
+    buf.setFloat(index, value);
+    return this;
   }
 
   @Override
   public ByteBuf setDouble(int index, double value) {
-    return buf.setDouble(index, value);
+    buf.setDouble(index, value);
+    return this;
   }
 
   @Override
   public ByteBuf setBytes(int index, ByteBuf src) {
-    return buf.setBytes(index, src);
+    buf.setBytes(index, src);
+    return this;
   }
 
   @Override
   public ByteBuf setBytes(int index, ByteBuf src, int length) {
-    return buf.setBytes(index, src, length);
+    buf.setBytes(index, src, length);
+    return this;
   }
 
   @Override
   public ByteBuf setBytes(int index, ByteBuf src, int srcIndex, int length) {
-    return buf.setBytes(index, src, srcIndex, length);
+    buf.setBytes(index, src, srcIndex, length);
+    return this;
   }
 
   @Override
   public ByteBuf setBytes(int index, byte[] src) {
-    return buf.setBytes(index, src);
+    buf.setBytes(index, src);
+    return this;
   }
 
   @Override
   public ByteBuf setBytes(int index, byte[] src, int srcIndex, int length) {
-    return buf.setBytes(index, src, srcIndex, length);
+    buf.setBytes(index, src, srcIndex, length);
+    return this;
   }
 
   @Override
   public ByteBuf setBytes(int index, ByteBuffer src) {
-    return buf.setBytes(index, src);
+    buf.setBytes(index, src);
+    return this;
   }
 
   @Override
@@ -394,7 +429,8 @@ final class UnreleasableByteBuf implements ByteBuf {
 
   @Override
   public ByteBuf setZero(int index, int length) {
-    return buf.setZero(index, length);
+    buf.setZero(index, length);
+    return this;
   }
 
   @Override
@@ -464,47 +500,54 @@ final class UnreleasableByteBuf implements ByteBuf {
 
   @Override
   public ByteBuf readBytes(int length) {
-    return buf.readBytes(length);
+    return new UnreleasableByteBuf(buf.readBytes(length));
   }
 
   @Override
   public ByteBuf readSlice(int length) {
-    return buf.readSlice(length);
+    return new UnreleasableByteBuf(buf.readSlice(length));
   }
 
   @Override
   public ByteBuf readBytes(ByteBuf dst) {
-    return buf.readBytes(dst);
+    buf.readBytes(dst);
+    return this;
   }
 
   @Override
   public ByteBuf readBytes(ByteBuf dst, int length) {
-    return buf.readBytes(dst, length);
+    buf.readBytes(dst, length);
+    return this;
   }
 
   @Override
   public ByteBuf readBytes(ByteBuf dst, int dstIndex, int length) {
-    return buf.readBytes(dst, dstIndex, length);
+    buf.readBytes(dst, dstIndex, length);
+    return this;
   }
 
   @Override
   public ByteBuf readBytes(byte[] dst) {
-    return buf.readBytes(dst);
+     buf.readBytes(dst);
+    return this;
   }
 
   @Override
   public ByteBuf readBytes(byte[] dst, int dstIndex, int length) {
-    return buf.readBytes(dst, dstIndex, length);
+    buf.readBytes(dst, dstIndex, length);
+    return this;
   }
 
   @Override
   public ByteBuf readBytes(ByteBuffer dst) {
-    return buf.readBytes(dst);
+    buf.readBytes(dst);
+    return this;
   }
 
   @Override
   public ByteBuf readBytes(OutputStream out, int length) throws IOException {
-    return buf.readBytes(out, length);
+    buf.readBytes(out, length);
+    return this;
   }
 
   @Override
@@ -514,82 +557,98 @@ final class UnreleasableByteBuf implements ByteBuf {
 
   @Override
   public ByteBuf skipBytes(int length) {
-    return buf.skipBytes(length);
+    buf.skipBytes(length);
+    return this;
   }
 
   @Override
   public ByteBuf writeBoolean(boolean value) {
-    return buf.writeBoolean(value);
+    buf.writeBoolean(value);
+    return this;
   }
 
   @Override
   public ByteBuf writeByte(int value) {
-    return buf.writeByte(value);
+    buf.writeByte(value);
+    return this;
   }
 
   @Override
   public ByteBuf writeShort(int value) {
-    return buf.writeShort(value);
+    buf.writeShort(value);
+    return this;
   }
 
   @Override
   public ByteBuf writeMedium(int value) {
-    return buf.writeMedium(value);
+    buf.writeMedium(value);
+    return this;
   }
 
   @Override
   public ByteBuf writeInt(int value) {
-    return buf.writeInt(value);
+    buf.writeInt(value);
+    return this;
   }
 
   @Override
   public ByteBuf writeLong(long value) {
-    return buf.writeLong(value);
+    buf.writeLong(value);
+    return this;
   }
 
   @Override
   public ByteBuf writeChar(int value) {
-    return buf.writeChar(value);
+    buf.writeChar(value);
+    return this;
   }
 
   @Override
   public ByteBuf writeFloat(float value) {
-    return buf.writeFloat(value);
+    buf.writeFloat(value);
+    return this;
   }
 
   @Override
   public ByteBuf writeDouble(double value) {
-    return buf.writeDouble(value);
+    buf.writeDouble(value);
+    return this;
   }
 
   @Override
   public ByteBuf writeBytes(ByteBuf src) {
-    return buf.writeBytes(src);
+    buf.writeBytes(src);
+    return this;
   }
 
   @Override
   public ByteBuf writeBytes(ByteBuf src, int length) {
-    return buf.writeBytes(src, length);
+    buf.writeBytes(src, length);
+    return this;
   }
 
   @Override
   public ByteBuf writeBytes(ByteBuf src, int srcIndex, int length) {
-    return buf.writeBytes(src, srcIndex, length);
+    buf.writeBytes(src, srcIndex, length);
+    return this;
   }
 
   @Override
   public ByteBuf writeBytes(byte[] src) {
-    return buf.writeBytes(src);
+    buf.writeBytes(src);
+    return this;
   }
 
   @Override
   public ByteBuf writeBytes(byte[] src, int srcIndex, int length) {
-    return buf.writeBytes(src, srcIndex, length);
+    buf.writeBytes(src, srcIndex, length);
+    return this;
   }
 
   @Override
   public ByteBuf writeBytes(ByteBuffer src) {
-    return buf.writeBytes(src);
+    buf.writeBytes(src);
+    return this;
   }
 
   @Override
@@ -604,7 +663,8 @@ final class UnreleasableByteBuf implements ByteBuf {
 
   @Override
   public ByteBuf writeZero(int length) {
-    return buf.writeZero(length);
+    buf.writeZero(length);
+    return this;
   }
 
   @Override
@@ -649,27 +709,27 @@ final class UnreleasableByteBuf implements ByteBuf {
 
   @Override
   public ByteBuf copy() {
-    return buf.copy();
+    return new UnreleasableByteBuf(buf.copy());
   }
 
   @Override
   public ByteBuf copy(int index, int length) {
-    return buf.copy(index, length);
+    return new UnreleasableByteBuf(buf.copy(index, length));
   }
 
   @Override
   public ByteBuf slice() {
-    return buf.slice();
+    return new UnreleasableByteBuf(buf.slice());
   }
 
   @Override
   public ByteBuf slice(int index, int length) {
-    return buf.slice(index, length);
+    return new UnreleasableByteBuf(buf.slice(index, length));
   }
 
   @Override
   public ByteBuf duplicate() {
-    return buf.duplicate();
+    return new UnreleasableByteBuf(buf.duplicate());
   }
 
   @Override
@@ -724,12 +784,14 @@ final class UnreleasableByteBuf implements ByteBuf {
 
   @Override
   public ByteBuf suspendIntermediaryDeallocations() {
-    return buf.suspendIntermediaryDeallocations();
+    buf.suspendIntermediaryDeallocations();
+    return this;
   }
 
   @Override
   public ByteBuf resumeIntermediaryDeallocations() {
-    return buf.resumeIntermediaryDeallocations();
+    buf.resumeIntermediaryDeallocations();
+    return this;
   }
 
   @Override
@@ -754,12 +816,12 @@ final class UnreleasableByteBuf implements ByteBuf {
 
   @Override
   public ByteBuf retain(int increment) {
-    return buf.retain(increment);
+    return this;
   }
 
   @Override
   public ByteBuf retain() {
-    return buf.retain();
+    return this;
   }
 
   @Override
