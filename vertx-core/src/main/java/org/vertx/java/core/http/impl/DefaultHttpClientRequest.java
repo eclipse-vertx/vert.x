@@ -427,8 +427,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   }
 
   private void sendChunk(ByteBuf buff) {
-    Object write = chunked ? new DefaultHttpContent(buff) : buff;
-    conn.write(write);
+    conn.write(new DefaultHttpContent(buff));
   }
 
   private void writeEndChunk() {
