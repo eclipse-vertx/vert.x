@@ -90,6 +90,21 @@ public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
    * Return the remote (client side) address of the request
    */
   InetSocketAddress remoteAddress();
+  
+  /**
+   * Return the HTTP protocol version (Major.Minor, e.g. 1.0 or 1.1)
+   */
+  String protocolVersion();
+
+  /**
+   * Return the HTTP major part of the protocol version
+   */
+  int protocolMajorVersion();
+
+  /**
+   * Return the HTTP minor part of the protocol version
+   */
+  int protocolMinorVersion();
 
   /**
    * @return an array of the peer certificates.  Returns null if connection is

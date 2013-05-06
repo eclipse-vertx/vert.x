@@ -69,6 +69,31 @@ public class HttpTestClient extends TestClientBase {
     server.requestHandler(serverHandler);
     server.listen(8080, "localhost", handler);
   }
+  
+  public void testHttpVersion() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
+      @Override
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
+        getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+            tu.testComplete();
+          }
+        }).end();
+      }
+    };
+    startServer(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+        tu.checkThread();
+        tu.azzert(req.protocolMajorVersion() == 1);
+        tu.azzert(req.protocolMinorVersion() == 1);
+        tu.azzert(req.protocolVersion().equals("HTTP/1.1"), "Expected HTTP/1.1, got " + req.protocolVersion());
+        req.response().end();
+      }
+    }, handler);
+  }
+  
 
   public void testListenInvalidPort() {
     server = vertx.createHttpServer();

@@ -256,4 +256,19 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
       exceptionHandler.handle(e);
     }
   }
+
+@Override
+public String protocolVersion() {
+    return nettyRequest().getProtocolVersion().text();
+}
+
+@Override
+public int protocolMajorVersion() {
+    return nettyRequest().getProtocolVersion().majorVersion();
+}
+
+@Override
+public int protocolMinorVersion() {
+    return nettyRequest().getProtocolVersion().minorVersion();
+}
 }
