@@ -376,8 +376,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
       headWritten = true;
     }
 
-    Object msg = chunked ? new DefaultHttpContent(chunk) : chunk;
-    channelFuture = conn.write(msg);
+    channelFuture = conn.write(new DefaultHttpContent(chunk));
     conn.addFuture(doneHandler, channelFuture);
     return this;
   }
