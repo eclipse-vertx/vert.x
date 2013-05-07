@@ -76,6 +76,11 @@ public interface NetSocket extends ReadStream<NetSocket>, WriteStream<NetSocket>
   InetSocketAddress remoteAddress();
 
   /**
+   * Return the local address for this socket
+   */
+  InetSocketAddress localAddress();
+
+  /**
    * Close the NetSocket
    */
   void close();
