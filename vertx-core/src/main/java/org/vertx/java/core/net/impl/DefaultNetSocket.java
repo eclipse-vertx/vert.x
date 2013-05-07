@@ -146,6 +146,10 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
     return super.remoteAddress();
   }
 
+  public InetSocketAddress localAddress() {
+    return super.localAddress();
+  }
+
   @Override
   public NetSocket exceptionHandler(Handler<Throwable> handler) {
     this.exceptionHandler = handler;

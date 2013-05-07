@@ -188,5 +188,10 @@ public abstract class ConnectionBase {
   public InetSocketAddress remoteAddress() {
     return (InetSocketAddress)channel.remoteAddress();
   }
+
+  public InetSocketAddress localAddress() {
+    return (InetSocketAddress) channel.localAddress();
+  }
+
   protected abstract void handleInterestedOpsChanged();
 }
