@@ -132,7 +132,13 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   @Override
   public DefaultHttpClientRequest write(Buffer chunk) {
     check();
-    return write(chunk.getByteBuf());
+    ByteBuf buf = chunk.getByteBuf();
+    if (chunk.isWrapper()) {
+      // call retain to make sure it is not released before the write completes
+      // the write will call buf.release() by it own
+      buf.retain();
+    }
+    return write(buf);
   }
 
   @Override
