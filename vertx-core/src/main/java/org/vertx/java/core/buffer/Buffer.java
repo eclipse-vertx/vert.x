@@ -43,7 +43,6 @@ import java.nio.charset.Charset;
 public class Buffer {
 
   private final ByteBuf buffer;
-
   /**
    * Create an empty buffer
    */
@@ -59,21 +58,21 @@ public class Buffer {
    * automatic re-allocations as data is written to it.
    */
   public Buffer(int initialSizeHint) {
-    buffer = Unpooled.buffer(initialSizeHint);
+    buffer = new UnreleasableByteBuf(Unpooled.buffer(initialSizeHint, Integer.MAX_VALUE));
   }
 
   /**
    * Create a new Buffer that contains the contents of a {@code byte[]}
    */
   public Buffer(byte[] bytes) {
-    this(Unpooled.wrappedBuffer(bytes));
+    buffer = new UnreleasableByteBuf(Unpooled.buffer(bytes.length, Integer.MAX_VALUE)).writeBytes(bytes);
   }
 
   /**
    * Create a new Buffer that contains the contents of a {@code String str} encoded according to the encoding {@code enc}
    */
   public Buffer(String str, String enc) {
-    this(Unpooled.copiedBuffer(str, Charset.forName(enc)));
+    this(str.getBytes(Charset.forName(enc)));
   }
 
   /**
@@ -88,13 +87,7 @@ public class Buffer {
    * This method is meant for internal use only.
    */
   public Buffer(ByteBuf buffer) {
-    // TODO: Think about if we can improve this
-    if (buffer.maxCapacity() != Integer.MAX_VALUE) {
-      // the buffer is on its maxCapacity, we will need to copy it to have some room in there as
-      // buffers in vert.x are not limited at all time
-      buffer = Unpooled.buffer(buffer.writerIndex()).writeBytes(buffer);
-    }
-    this.buffer = new UnreleasableByteBuf(buffer);
+    this.buffer = buffer;
   }
 
   /**
@@ -469,4 +462,7 @@ public class Buffer {
     return buffer.equals(buffer1.buffer);
   }
 
+  public boolean isWrapper() {
+    return !(buffer instanceof UnreleasableByteBuf);
+  }
 }
