@@ -16,6 +16,7 @@
 
 package org.vertx.java.core.http.impl;
 
+import io.netty.buffer.ByteBuf;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
@@ -84,7 +85,13 @@ public class WebSocketImplBase {
   }
 
   protected void writeBinaryFrameInternal(Buffer data) {
-    WebSocketFrame frame = new DefaultWebSocketFrame(WebSocketFrame.FrameType.BINARY, data.getByteBuf());
+    ByteBuf buf = data.getByteBuf();
+    if (data.isWrapper()) {
+      // call retain to make sure it is not released before the write completes
+      // the write will call buf.release() by it own
+      buf.retain();
+    }
+    WebSocketFrame frame = new DefaultWebSocketFrame(WebSocketFrame.FrameType.BINARY, buf);
     writeFrame(frame);
   }
 
