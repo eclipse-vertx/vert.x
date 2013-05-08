@@ -68,7 +68,6 @@ public abstract class VertxStateHandler<C extends ConnectionBase> extends Channe
 
   @Override
   public void exceptionCaught(ChannelHandlerContext chctx, final Throwable t) throws Exception {
-    t.printStackTrace();
     final Channel ch = chctx.channel();
     final C sock = connectionMap.remove(ch);
     if (sock != null) {
@@ -77,20 +76,27 @@ public abstract class VertxStateHandler<C extends ConnectionBase> extends Channe
         try {
           vertx.setContext(context);
           sock.handleException(t);
-          ch.close();
         } catch (Throwable tt) {
           context.reportException(tt);
+        }
+        try {
+          ch.close();
+        } catch (Throwable ignore) {
         }
       } else {
         context.execute(new Runnable() {
           public void run() {
           sock.handleException(t);
-          ch.close();
+          try {
+            ch.close();
+          } catch (Throwable ignore) {
+          }
           }
         });
       }
     } else {
       // Ignore - any exceptions before a channel exists will be passed manually via the failed(...) method
+      // Any exceptions after a channel is closed can be ignored
     }
   }
 
