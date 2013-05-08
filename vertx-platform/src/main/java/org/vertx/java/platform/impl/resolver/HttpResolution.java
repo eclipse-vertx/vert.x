@@ -187,7 +187,7 @@ public abstract class HttpResolution {
           System.out.println("\rDownloading 100%");
         }
         try {
-          os.flush();
+          os.close();
           end(true);
         } catch (IOException e) {
           log.error("Failed to flush file", e);
