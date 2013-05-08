@@ -19,6 +19,7 @@
 package org.vertx.java.core.http.impl.ws;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ReferenceCounted;
 import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
 
@@ -29,9 +30,9 @@ import io.netty.util.CharsetUtil;
  * @author <a href="http://gleamynode.net/">Trustin Lee</a>
  * @version $Rev: 2080 $, $Date: 2010-01-26 18:04:19 +0900 (Tue, 26 Jan 2010) $
  */
-public class DefaultWebSocketFrame implements WebSocketFrame {
+public class DefaultWebSocketFrame implements WebSocketFrame, ReferenceCounted {
 
-  private FrameType type;
+  private final FrameType type;
   private ByteBuf binaryData;
 
   /**
@@ -87,10 +88,16 @@ public class DefaultWebSocketFrame implements WebSocketFrame {
   }
 
   public void setBinaryData(ByteBuf binaryData) {
+    if (this.binaryData != null) {
+      this.binaryData.release();
+    }
     this.binaryData = binaryData;
   }
 
   public void setTextData(String textData) {
+    if (this.binaryData != null) {
+      this.binaryData.release();
+    }
     this.binaryData = Unpooled.copiedBuffer(textData, CharsetUtil.UTF_8);
   }
 
@@ -98,5 +105,30 @@ public class DefaultWebSocketFrame implements WebSocketFrame {
   public String toString() {
     return getClass().getSimpleName() +
         "(type: " + getType() + ", " + "data: " + getBinaryData() + ')';
+  }
+
+  @Override
+  public int refCnt() {
+    return binaryData.refCnt();
+  }
+
+  @Override
+  public ReferenceCounted retain() {
+    return binaryData.retain();
+  }
+
+  @Override
+  public ReferenceCounted retain(int increment) {
+    return binaryData.retain(increment);
+  }
+
+  @Override
+  public boolean release() {
+    return binaryData.release();
+  }
+
+  @Override
+  public boolean release(int decrement) {
+    return binaryData.release(decrement);
   }
 }

@@ -62,7 +62,13 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
 
   @Override
   public NetSocket write(Buffer data) {
-    doWrite(data.getByteBuf());
+    ByteBuf buf = data.getByteBuf();
+    if (data.isWrapper()) {
+      // call retain to make sure it is not released before the write completes
+      // the write will call buf.release() by it own
+      buf.retain();
+    }
+    doWrite(buf);
     return this;
   }
 
@@ -138,6 +144,10 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   @Override
   public InetSocketAddress remoteAddress() {
     return super.remoteAddress();
+  }
+
+  public InetSocketAddress localAddress() {
+    return super.localAddress();
   }
 
   @Override
