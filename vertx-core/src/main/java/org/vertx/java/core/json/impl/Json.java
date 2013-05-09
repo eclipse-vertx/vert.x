@@ -18,6 +18,7 @@ package org.vertx.java.core.json.impl;
 
 
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.vertx.java.core.json.DecodeException;
@@ -34,6 +35,11 @@ public class Json {
 
   private final static ObjectMapper mapper = new ObjectMapper();
   private final static ObjectMapper prettyMapper = new ObjectMapper();
+
+  static {
+    // Non-standard JSON but we allow C style comments in our JSON
+    mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+  }
 
   public static String encode(Object obj) throws EncodeException {
     try {
