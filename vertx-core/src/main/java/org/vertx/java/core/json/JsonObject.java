@@ -189,6 +189,16 @@ public class JsonObject extends JsonElement {
     return n == null ? def : n;
   }
 
+  public Long getLong(String fieldName, long def) {
+    Number num = (Number) map.get(fieldName);
+    return num == null ? def : num.longValue();
+  }
+
+  public Integer getInteger(String fieldName, int def) {
+    Number num = (Number) map.get(fieldName);
+    return num == null ? def : num.intValue();
+  }
+
   public byte[] getBinary(String fieldName, byte[] def) {
     byte[] b = getBinary(fieldName);
     return b == null ? def : b;
