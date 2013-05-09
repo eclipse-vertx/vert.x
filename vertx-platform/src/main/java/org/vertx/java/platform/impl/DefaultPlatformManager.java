@@ -335,8 +335,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     final File currentModDir = getDeploymentModDir();
     final URL[] cp;
     if (classpath == null) {
-      // Use the current moduleRefs/verticle's classpath
+      // Use the current module's/verticle's classpath
       cp = getDeploymentURLs();
+      if (cp == null) {
+        throw new IllegalStateException("Cannot find parent classpath. Perhaps you are deploying the verticle from a non Vert.x thread?");
+      }
     } else {
       cp = classpath;
     }
@@ -472,6 +475,9 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
     if (main == null) {
       throw new NullPointerException("main cannot be null");
+    }
+    if (urls == null) {
+      throw new IllegalStateException("deployment classpath for deploy is null");
     }
 
     // There is one module class loader per enclosing module + the name of the verticle.
