@@ -28,6 +28,8 @@ import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.http.HttpVersion;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.net.impl.DefaultNetSocket;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
@@ -64,6 +66,9 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   private MultiMap params;
   private MultiMap headers;
   private URI absoluteURI;
+
+  private NetSocket netSocket;
+
 
   DefaultHttpServerRequest(final ServerConnection conn,
                            final HttpRequest request,
@@ -232,6 +237,14 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
       }
     });
     return this;
+  }
+
+  @Override
+  public NetSocket netSocket() {
+    if (netSocket == null) {
+      netSocket = conn.createNetSocket();
+    }
+    return netSocket;
   }
 
   public HttpRequest nettyRequest() {

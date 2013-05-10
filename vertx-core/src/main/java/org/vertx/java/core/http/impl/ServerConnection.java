@@ -31,6 +31,8 @@ import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.net.impl.DefaultNetSocket;
 
 import java.io.File;
 import java.util.LinkedList;
@@ -111,6 +113,10 @@ class ServerConnection extends AbstractConnection {
 
   String getServerOrigin() {
     return serverOrigin;
+  }
+
+  NetSocket createNetSocket() {
+    return new DefaultNetSocket(vertx, channel, context);
   }
 
   private void handleRequest(DefaultHttpServerRequest req, DefaultHttpServerResponse resp) {

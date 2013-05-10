@@ -19,6 +19,7 @@ package org.vertx.java.core.http;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.streams.ReadStream;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -112,4 +113,11 @@ public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
    * @param bodyHandler This handler will be called after all the body has been received
    */
   HttpServerRequest bodyHandler(Handler<Buffer> bodyHandler);
+
+  /**
+   * Get a net socket for the underlying connection of this request. USE THIS WITH CAUTION!
+   * Writing to the socket directly if you don't know what you're doing can easily breal the HTTP protocol
+   * @return the net socket
+   */
+  NetSocket netSocket();
 }
