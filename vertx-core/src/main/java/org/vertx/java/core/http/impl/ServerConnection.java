@@ -17,9 +17,7 @@
 package org.vertx.java.core.http.impl;
 
 import io.netty.buffer.BufUtil;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandler;
+import io.netty.channel.*;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
@@ -31,11 +29,12 @@ import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.DefaultContext;
-import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.DefaultNetSocket;
+import org.vertx.java.core.net.impl.VertxNetHandler;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
@@ -57,10 +56,13 @@ class ServerConnection extends AbstractConnection {
   private boolean sentCheck;
   private final Queue<Object> pending = new LinkedList<>();
   private final String serverOrigin;
+  private final DefaultHttpServer server;
+  private ChannelFuture lastWriteFuture;
 
-  ServerConnection(VertxInternal vertx, Channel channel, DefaultContext context, String serverOrigin) {
-    super(vertx, channel, context);
+  ServerConnection(DefaultHttpServer server, Channel channel, DefaultContext context, String serverOrigin) {
+    super(server.vertx, channel, context);
     this.serverOrigin = serverOrigin;
+    this.server = server;
   }
 
   public void pause() {
@@ -117,18 +119,48 @@ class ServerConnection extends AbstractConnection {
     return serverOrigin;
   }
 
+  @Override
+  ChannelFuture write(Object obj) {
+    ChannelFuture future = lastWriteFuture = super.write(obj);
+    return future;
+  }
+
   NetSocket createNetSocket() {
+    DefaultNetSocket socket = new DefaultNetSocket(vertx, channel, context);
+    Map<Channel, DefaultNetSocket> connectionMap = new HashMap<Channel, DefaultNetSocket>(1);
+    connectionMap.put(channel, socket);
 
-    for (Map.Entry<String, ChannelHandler> entry: channel.pipeline()) {
-      System.out.println("Handler:" + entry.getKey());
-    }
-    //channel.pipeline().remove("flashpolicy");
-    channel.pipeline().remove("codec");
-    channel.pipeline().remove("exceptionDispatcher");
-    channel.pipeline().remove("flowControl");
+    // remove old http handlers and replace the old handler with one that handle plain sockets
+    channel.pipeline().remove("httpDecoder");
     channel.pipeline().remove("chunkedWriter");
+    channel.pipeline().replace("handler", "handler", new VertxNetHandler(server.vertx, connectionMap) {
+      @Override
+      public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
+        // remove from the real mapping
+        server.connectionMap.remove(channel);
+        super.exceptionCaught(chctx, t);
+      }
 
-    return new DefaultNetSocket(vertx, channel, context);
+      @Override
+      public void channelInactive(ChannelHandlerContext chctx) throws Exception {
+        // remove from the real mapping
+        server.connectionMap.remove(channel);
+        super.channelInactive(chctx);
+      }
+    });
+
+    // check if the encoder can be removed yet or not.
+    if (lastWriteFuture == null) {
+      channel.pipeline().remove("httpEncoder");
+    } else {
+      lastWriteFuture.addListener(new ChannelFutureListener() {
+        @Override
+        public void operationComplete(ChannelFuture future) throws Exception {
+          channel.pipeline().remove("httpEncoder");
+        }
+      });
+    }
+    return socket;
   }
 
   private void handleRequest(DefaultHttpServerRequest req, DefaultHttpServerResponse resp) {

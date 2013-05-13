@@ -67,14 +67,14 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 public class DefaultHttpServer implements HttpServer, Closeable {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultHttpServer.class);
-    private static final ExceptionDispatchHandler EXCEPTION_DISPATCH_HANDLER = new ExceptionDispatchHandler();
+  private static final ExceptionDispatchHandler EXCEPTION_DISPATCH_HANDLER = new ExceptionDispatchHandler();
 
-  private final VertxInternal vertx;
+  final VertxInternal vertx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private final DefaultContext actualCtx;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
-  private Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
+  final Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
   private ChannelGroup serverChannelGroup;
   private boolean listening;
   private String serverOrigin;
@@ -186,7 +186,8 @@ public class DefaultHttpServer implements HttpServer, Closeable {
               }
 
               pipeline.addLast("flashpolicy", new FlashPolicyHandler());
-              pipeline.addLast("codec", new HttpServerCodec());
+              pipeline.addLast("httpDecoder", new HttpRequestDecoder());
+              pipeline.addLast("httpEncoder", new HttpResponseEncoder());
               pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
               pipeline.addLast("handler", new ServerHandler());
             }
@@ -602,7 +603,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
           if (conn == null) {
             HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
             if (reqHandler != null) {
-              conn = new ServerConnection(vertx, ch, reqHandler.context, serverOrigin);
+              conn = new ServerConnection(DefaultHttpServer.this, ch, reqHandler.context, serverOrigin);
               conn.requestHandler(reqHandler.handler);
               connectionMap.put(ch, conn);
               conn.handleMessage(msg);
@@ -679,7 +680,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
           throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
         }
 
-        final ServerConnection wsConn = new ServerConnection(vertx, ch, wsHandler.context, serverOrigin);
+        final ServerConnection wsConn = new ServerConnection(DefaultHttpServer.this, ch, wsHandler.context, serverOrigin);
         wsConn.wsHandler(wsHandler.handler);
 
         Runnable connectRunnable = new Runnable() {
