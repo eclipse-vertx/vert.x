@@ -19,11 +19,14 @@ package vertx.tests.core.websockets;
 import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
+import org.vertx.java.core.json.impl.Base64;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.streams.Pump;
 import org.vertx.java.testframework.TestClientBase;
 import org.vertx.java.testframework.TestUtils;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -105,8 +108,23 @@ public class WebsocketsTestClient extends TestClientBase {
   // TODO pause/resume/drain tests
   // TODO websockets over HTTPS tests
 
+  private String sha1(String s) {
+    try {
+      MessageDigest md = MessageDigest.getInstance("SHA1");
+      //Hash the data
+      byte[] bytes = md.digest(s.getBytes("UTF-8"));
+      String encoded = Base64.encodeBytes(bytes);
+      return encoded;
+    } catch (Exception e) {
+      throw new InternalError("Failed to compute sha-1");
+    }
+  }
+
+  // Let's manually handle the websocket handshake and write a frame to the client
   public void testHandleWSManually() throws Exception {
     final String path = "/some/path";
+
+    final String message = "here is some text data";
 
     server = vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
@@ -114,13 +132,20 @@ public class WebsocketsTestClient extends TestClientBase {
         tu.azzert(path.equals(req.path()));
         tu.azzert("Upgrade".equals(req.headers().get("Connection")));
         NetSocket sock = req.netSocket();
+        String secHeader = req.headers().get("Sec-WebSocket-Key");
+        String tmp = secHeader + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+        String encoded = sha1(tmp);
         sock.write("HTTP/1.1 101 Web Socket Protocol Handshake\r\n" +
                    "Upgrade: WebSocket\r\n" +
                    "Connection: Upgrade\r\n" +
+                   "Sec-WebSocket-Accept: " + encoded + "\r\n" +
                    "\r\n");
-        System.out.println("Wrote it");
-        Pump pump = Pump.createPump(req.netSocket(), req.netSocket());
-        pump.start();
+        // Let's write a Text frame raw
+        Buffer buff = new Buffer();
+        buff.appendByte((byte)129); // Text frame
+        buff.appendByte((byte)message.length());
+        buff.appendString(message);
+        sock.write(buff);
       }
 
     });
@@ -130,8 +155,13 @@ public class WebsocketsTestClient extends TestClientBase {
         tu.azzert(ar.succeeded());
         client.connectWebsocket(path, new Handler<WebSocket>() {
           public void handle(final WebSocket ws) {
-            System.out.println("Connected");
-            tu.testComplete();
+            ws.dataHandler(new Handler<Buffer>() {
+              @Override
+              public void handle(Buffer buff) {
+                tu.azzert(message.equals(buff.toString("UTF-8")));
+                tu.testComplete();
+              }
+            });
           }
         });
         client.exceptionHandler(new Handler<Throwable>() {
