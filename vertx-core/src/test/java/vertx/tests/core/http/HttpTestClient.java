@@ -2649,6 +2649,184 @@ public class HttpTestClient extends TestClientBase {
     }, handler);
   }
 
+  public void testFormUploadFile() throws Exception {
+    final AtomicInteger attributeCount = new AtomicInteger();
+    final String content = "Vert.x rocks!";
+    vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
+      @Override
+      public void handle(final HttpServerRequest req) {
+        if (req.uri().startsWith("/form")) {
+          req.response().setChunked(true);
+          req.uploadHandler(new Handler<HttpServerFileUpload>() {
+            @Override
+            public void handle(final HttpServerFileUpload event) {
+              event.dataHandler(new Handler<Buffer>() {
+                @Override
+                public void handle(Buffer buffer) {
+                  tu.azzert(content.equals(buffer.toString("UTF-8")));
+                }
+              });
+            }
+          });
+          req.endHandler(new VoidHandler() {
+            protected void handle() {
+              Map<String, String> attrs = req.formAttributes();
+              attributeCount.set(attrs.size());
+              tu.azzert(attrs.remove("name").equals("file"));
+              tu.azzert(attrs.remove("filename").equals("tmp-0.txt"));
+              tu.azzert(attrs.remove("Content-Type").equals("image/gif"));
+              req.response().end();
+            }
+          });
+        }
+      }
+    }).listen(8080, "0.0.0.0", new AsyncResultHandler<HttpServer>() {
+      @Override
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
+        HttpClientRequest req = vertx.createHttpClient().setPort(8080).post("/form", new Handler<HttpClientResponse>() {
+          @Override
+          public void handle(HttpClientResponse resp) {
+            // assert the response
+            tu.azzert(200 == resp.statusCode());
+            resp.bodyHandler(new Handler<Buffer>() {
+              public void handle(Buffer body) {
+                tu.azzert(0 == body.length());
+              }
+            });
+            tu.azzert(3 == attributeCount.get());
+            tu.testComplete();
+          }
+        });
+
+        final String boundary = "dLV9Wyq26L_-JQxk6ferf-RT153LhOO";
+        Buffer buffer = new Buffer();
+        final String body =
+                "--" + boundary + "\r\n" +
+                        "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
+                        "Content-Type: image/gif\r\n" +
+                        "\r\n" +
+                        content + "\r\n" +
+                        "--" + boundary + "--\r\n";
+
+        buffer.appendString(body);
+        req.headers().set("content-length", String.valueOf(buffer.length()));
+        req.headers().set("content-type", "multipart/form-data; boundary=" + boundary);
+        req.write(buffer).end();
+      }
+    });
+  }
+
+  public void testFormUploadAttributes() throws Exception {
+    final AtomicInteger attributeCount = new AtomicInteger();
+    vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
+      public void handle(final HttpServerRequest req) {
+        if (req.uri().startsWith("/form")) {
+          req.response().setChunked(true);
+          req.uploadHandler(new Handler<HttpServerFileUpload>() {
+            @Override
+            public void handle(final HttpServerFileUpload event) {
+              event.dataHandler(new Handler<Buffer>() {
+                @Override
+                public void handle(Buffer buffer) {
+                  tu.azzert(false);
+                }
+              });
+            }
+          });
+          req.endHandler(new VoidHandler() {
+            protected void handle() {
+              Map<String, String> attrs = req.formAttributes();
+              attributeCount.set(attrs.size());
+              tu.azzert(attrs.remove("framework").equals("vertx"));
+              tu.azzert(attrs.remove("runson").equals("jvm"));
+              req.response().end();
+            }
+          });
+        }
+      }
+    }).listen(8080, "0.0.0.0", new AsyncResultHandler<HttpServer>() {
+      @Override
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
+        HttpClientRequest req = vertx.createHttpClient().setPort(8080).post("/form", new Handler<HttpClientResponse>() {
+          @Override
+          public void handle(HttpClientResponse resp) {
+            // assert the response
+            tu.azzert(200 == resp.statusCode());
+            resp.bodyHandler(new Handler<Buffer>() {
+              public void handle(Buffer body) {
+                tu.azzert(0 == body.length());
+              }
+            });
+            tu.azzert(2 == attributeCount.get());
+            tu.testComplete();
+          }
+        });
+        Buffer buffer = new Buffer();
+        buffer.appendString("framework=vertx&runson=jvm");
+        req.headers().set("content-length", String.valueOf(buffer.length()));
+        req.headers().set("content-type", "application/x-www-form-urlencoded");
+        req.write(buffer).end();
+      }
+    });
+  }
+
+  public void testFormUploadAttributes2() throws Exception {
+    final AtomicInteger attributeCount = new AtomicInteger();
+    vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
+      public void handle(final HttpServerRequest req) {
+        if (req.uri().startsWith("/form")) {
+          req.response().setChunked(true);
+          req.uploadHandler(new Handler<HttpServerFileUpload>() {
+            @Override
+            public void handle(final HttpServerFileUpload event) {
+              event.dataHandler(new Handler<Buffer>() {
+                @Override
+                public void handle(Buffer buffer) {
+                  tu.azzert(false);
+                }
+              });
+            }
+          });
+          req.endHandler(new VoidHandler() {
+            protected void handle() {
+              Map<String, String> attrs = req.formAttributes();
+              attributeCount.set(attrs.size());
+              tu.azzert(attrs.remove("origin").equals("junit-testUserAlias"));
+              tu.azzert(attrs.remove("login").equals("admin%40foo.bar"));
+              tu.azzert(attrs.remove("password").equals("admin"));
+              req.response().end();
+            }
+          });
+        }
+      }
+    }).listen(8080, "0.0.0.0", new AsyncResultHandler<HttpServer>() {
+      @Override
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
+        HttpClientRequest req = vertx.createHttpClient().setPort(8080).post("/form", new Handler<HttpClientResponse>() {
+          @Override
+          public void handle(HttpClientResponse resp) {
+            // assert the response
+            tu.azzert(200 == resp.statusCode());
+            resp.bodyHandler(new Handler<Buffer>() {
+              public void handle(Buffer body) {
+                tu.azzert(0 == body.length());
+              }
+            });
+            tu.azzert(3 == attributeCount.get());
+            tu.testComplete();
+          }
+        });
+        Buffer buffer = new Buffer();
+        buffer.appendString("origin=junit-testUserAlias&login=admin%40foo.bar&password=admin");
+        req.headers().set("content-length", String.valueOf(buffer.length()));
+        req.headers().set("content-type", "application/x-www-form-urlencoded");
+        req.write(buffer).end();
+      }
+    });
+  }
   // -------------------------------------------------------------------------------------------
 
   private String generateQueryString(Map<String, String> params, char delim) {

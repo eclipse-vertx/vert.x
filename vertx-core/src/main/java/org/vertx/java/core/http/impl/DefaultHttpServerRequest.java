@@ -16,26 +16,29 @@
 
 package org.vertx.java.core.http.impl;
 
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.QueryStringDecoder;
-import org.vertx.java.core.CaseInsensitiveMultiMap;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.VoidHandler;
+import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.multipart.*;
+import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.MultiMap;
+import org.vertx.java.core.http.HttpServerFileUpload;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.http.HttpVersion;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetSocket;
-import org.vertx.java.core.net.impl.DefaultNetSocket;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -59,7 +62,6 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   private URI juri;
 
   private Handler<Buffer> dataHandler;
-  private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
 
   //Cache this for performance
@@ -68,7 +70,11 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   private URI absoluteURI;
 
   private NetSocket netSocket;
-
+  private Handler<io.netty.handler.codec.http.multipart.Attribute> attrHandler;
+  private Handler<HttpServerFileUpload> uploadHandler;
+  private Handler<Void> endHandler;
+  private Map<String, String> attributes = new HashMap<String, String>(0);
+  private final HttpPostRequestDecoder decoder;
 
   DefaultHttpServerRequest(final ServerConnection conn,
                            final HttpRequest request,
@@ -76,7 +82,21 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
     this.conn = conn;
     this.request = request;
     this.response = response;
+
+    String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
+    if (contentType != null) {
+      if (contentType.toLowerCase().startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA)
+                  || contentType.toLowerCase().startsWith(HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED)) {
+        decoder = new HttpPostRequestDecoder(new DataFactory(), request);
+      } else {
+        decoder = null;
+      }
+    } else {
+      decoder = null;
+    }
+
   }
+
 
   @Override
   public HttpVersion version() {
@@ -247,11 +267,14 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
     return netSocket;
   }
 
-  public HttpRequest nettyRequest() {
-    return request;
-  }
-
   void handleData(Buffer data) {
+    if (decoder != null) {
+      try {
+        decoder.offer(new DefaultHttpContent(data.getByteBuf().duplicate()));
+      } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
+        handleException(e);
+      }
+    }
     if (dataHandler != null) {
       dataHandler.handle(data);
     }
@@ -259,6 +282,13 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
 
 
   void handleEnd() {
+    if (decoder != null) {
+      try {
+        decoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
+      } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
+        handleException(e);
+      }
+    }
     if (endHandler != null) {
       endHandler.handle(null);
     }
@@ -267,6 +297,305 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   void handleException(Exception e) {
     if (exceptionHandler != null) {
       exceptionHandler.handle(e);
+    }
+  }
+
+  @Override
+  public HttpServerRequest uploadHandler(Handler<HttpServerFileUpload> handler) {
+    this.uploadHandler = handler;
+    return this;
+  }
+
+  @Override
+  public Map<String, String> formAttributes() {
+    return attributes;
+  }
+
+  private final static class NettyFileUpload implements FileUpload {
+
+    private final DefaultHttpServerFileUpload upload;
+
+
+    private String name;
+    private String filename;
+    private String contentType;
+    private String contentTransferEncoding;
+    private Charset charset;
+    private boolean completed;
+
+    private NettyFileUpload(DefaultHttpServerFileUpload upload, String name, String filename, String contentType, String contentTransferEncoding, Charset charset) {
+      this.upload = upload;
+      this.name = name;
+      this.filename = filename;
+      this.contentType = contentType;
+      this.contentTransferEncoding = contentTransferEncoding;
+      this.charset = charset;
+    }
+
+    @Override
+    public void setContent(ByteBuf channelBuffer) throws IOException {
+      completed = true;
+      upload.receiveData(new Buffer(channelBuffer));
+      upload.complete();
+    }
+
+    @Override
+    public void addContent(ByteBuf channelBuffer, boolean last) throws IOException {
+      upload.receiveData(new Buffer(channelBuffer));
+      if (last) {
+        completed = true;
+        upload.complete();
+      }
+    }
+
+    @Override
+    public void setContent(File file) throws IOException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setContent(InputStream inputStream) throws IOException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isCompleted() {
+      return completed;
+    }
+
+    @Override
+    public long length() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void delete() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public byte[] get() throws IOException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ByteBuf getChunk(int i) throws IOException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String getString() throws IOException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String getString(Charset charset) throws IOException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setCharset(Charset charset) {
+      this.charset = charset;
+    }
+
+    @Override
+    public Charset getCharset() {
+      return charset;
+    }
+
+    @Override
+    public boolean renameTo(File file) throws IOException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isInMemory() {
+      return false;
+    }
+
+    @Override
+    public File getFile() throws IOException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String getName() {
+      return name;
+    }
+
+    @Override
+    public HttpDataType getHttpDataType() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int compareTo(InterfaceHttpData o) {
+      return 0;
+    }
+
+    @Override
+    public String getFilename() {
+      return filename;
+    }
+
+    @Override
+    public void setFilename(String filename) {
+      this.filename = filename;
+    }
+
+    @Override
+    public void setContentType(String contentType) {
+      this.contentType = contentType;
+    }
+
+    @Override
+    public String getContentType() {
+      return contentType;
+    }
+
+    @Override
+    public void setContentTransferEncoding(String contentTransferEncoding) {
+      this.contentTransferEncoding = contentTransferEncoding;
+    }
+
+    @Override
+    public String getContentTransferEncoding() {
+      return contentTransferEncoding;
+    }
+
+    @Override
+    public ByteBuf getByteBuf() throws IOException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public FileUpload copy() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public FileUpload retain() {
+      return this;
+    }
+
+    @Override
+    public FileUpload retain(int increment) {
+      return this;
+    }
+
+    @Override
+    public ByteBuf content() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int refCnt() {
+      return 1;
+    }
+
+    @Override
+    public boolean release() {
+      return false;
+    }
+
+    @Override
+    public boolean release(int decrement) {
+      return false;
+    }
+  }
+
+
+  private class InternalMemoryAttribute extends MemoryAttribute {
+
+    private boolean notified;
+    private InternalMemoryAttribute(String name) {
+      super(name);
+    }
+
+    private InternalMemoryAttribute(String name, String value) throws IOException {
+      super(name, value);
+    }
+
+    @Override
+    public void setValue(String value) throws IOException {
+      super.setValue(value);
+      attributeCreated();
+    }
+
+    private void attributeCreated() {
+      if (!notified && isCompleted()) {
+        notified = true;
+        attributes.put(getName(), getValue());
+      }
+    }
+
+    @Override
+    public void setContent(ByteBuf buffer) throws IOException {
+      super.setContent(buffer);
+      attributeCreated();
+    }
+
+    @Override
+    public void setContent(InputStream inputStream) throws IOException {
+      super.setContent(inputStream);
+      attributeCreated();
+    }
+
+    @Override
+    public void setContent(File file) throws IOException {
+      super.setContent(file);
+      attributeCreated();
+    }
+
+    @Override
+    public void addContent(ByteBuf buffer, boolean last) throws IOException {
+      super.addContent(buffer, last);
+      attributeCreated();
+    }
+  }
+
+
+  private class DataFactory implements HttpDataFactory {
+
+    @Override
+    public io.netty.handler.codec.http.multipart.Attribute createAttribute(HttpRequest httpRequest, String name) {
+      return new InternalMemoryAttribute(name);
+    }
+
+    @Override
+    public io.netty.handler.codec.http.multipart.Attribute createAttribute(HttpRequest httpRequest,
+                                                                           String name, String value) {
+      try {
+        return new InternalMemoryAttribute(name, value);
+      } catch (IOException e) {
+        // Will never happen for in memory
+        return null;
+      }
+    }
+
+    @Override
+    public FileUpload createFileUpload(HttpRequest httpRequest, String name, String filename, String contentType, String contentTransferEncoding, Charset charset, long size) {
+      if (uploadHandler != null) {
+        DefaultHttpServerFileUpload upload = new DefaultHttpServerFileUpload(conn.vertx(), DefaultHttpServerRequest.this, name, filename, contentType, contentTransferEncoding, charset,
+                                                        size);
+        NettyFileUpload nettyUpload = new NettyFileUpload(upload, name, filename, contentType,
+                                                                 contentTransferEncoding, charset);
+        uploadHandler.handle(upload);
+        return nettyUpload;
+      }
+      return null;
+    }
+
+    @Override
+    public void removeHttpDataFromClean(HttpRequest httpRequest, InterfaceHttpData interfaceHttpData) {
+    }
+
+    @Override
+    public void cleanRequestHttpDatas(HttpRequest httpRequest) {
+    }
+
+    @Override
+    public void cleanAllHttpDatas() {
     }
   }
 }
