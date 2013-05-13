@@ -186,7 +186,6 @@ public class DefaultHttpServer implements HttpServer, Closeable {
               }
 
               pipeline.addLast("flashpolicy", new FlashPolicyHandler());
-
               pipeline.addLast("codec", new HttpServerCodec());
               pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
               pipeline.addLast("handler", new ServerHandler());
@@ -261,12 +260,10 @@ public class DefaultHttpServer implements HttpServer, Closeable {
 
   private void addHandlers(DefaultHttpServer server) {
     if (requestHandler != null) {
-      // Share the event loop thread to also serve the HttpServer's network traffic.
-        server.reqHandlerManager.addHandler(requestHandler, actualCtx);
+      server.reqHandlerManager.addHandler(requestHandler, actualCtx);
     }
     if (wsHandler != null) {
-      // Share the event loop thread to also serve the HttpServer's network traffic.
-        server.wsHandlerManager.addHandler(wsHandler, actualCtx);
+      server.wsHandlerManager.addHandler(wsHandler, actualCtx);
     }
   }
 
@@ -577,7 +574,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
           ch.write(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
         }
 
-        if (WEBSOCKET.equalsIgnoreCase(request.headers().get(HttpHeaders.Names.UPGRADE))) {
+        if (wsHandlerManager.hasHandlers() && WEBSOCKET.equalsIgnoreCase(request.headers().get(HttpHeaders.Names.UPGRADE))) {
           // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
           // it doesn't send a normal 'Connection: Upgrade' header. Instead it
           // sends: 'Connection: keep-alive, Upgrade'. Brilliant.

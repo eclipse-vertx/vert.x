@@ -19,6 +19,7 @@ package org.vertx.java.core.http.impl;
 import io.netty.buffer.BufUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandler;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
@@ -36,6 +37,7 @@ import org.vertx.java.core.net.impl.DefaultNetSocket;
 
 import java.io.File;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 
 /**
@@ -116,6 +118,16 @@ class ServerConnection extends AbstractConnection {
   }
 
   NetSocket createNetSocket() {
+
+    for (Map.Entry<String, ChannelHandler> entry: channel.pipeline()) {
+      System.out.println("Handler:" + entry.getKey());
+    }
+    //channel.pipeline().remove("flashpolicy");
+    channel.pipeline().remove("codec");
+    channel.pipeline().remove("exceptionDispatcher");
+    channel.pipeline().remove("flowControl");
+    channel.pipeline().remove("chunkedWriter");
+
     return new DefaultNetSocket(vertx, channel, context);
   }
 

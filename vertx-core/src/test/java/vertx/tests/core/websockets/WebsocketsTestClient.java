@@ -19,6 +19,8 @@ package vertx.tests.core.websockets;
 import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
+import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.streams.Pump;
 import org.vertx.java.testframework.TestClientBase;
 import org.vertx.java.testframework.TestUtils;
 
@@ -102,6 +104,45 @@ public class WebsocketsTestClient extends TestClientBase {
   // TODO close and exception tests
   // TODO pause/resume/drain tests
   // TODO websockets over HTTPS tests
+
+  public void testHandleWSManually() throws Exception {
+    final String path = "/some/path";
+
+    server = vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
+      public void handle(final HttpServerRequest req) {
+        tu.checkThread();
+        tu.azzert(path.equals(req.path()));
+        tu.azzert("Upgrade".equals(req.headers().get("Connection")));
+        NetSocket sock = req.netSocket();
+        sock.write("HTTP/1.1 101 Web Socket Protocol Handshake\r\n" +
+                   "Upgrade: WebSocket\r\n" +
+                   "Connection: Upgrade\r\n" +
+                   "\r\n");
+        System.out.println("Wrote it");
+        Pump pump = Pump.createPump(req.netSocket(), req.netSocket());
+        pump.start();
+      }
+
+    });
+    server.listen(8080, "localhost", new AsyncResultHandler<HttpServer>() {
+      @Override
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
+        client.connectWebsocket(path, new Handler<WebSocket>() {
+          public void handle(final WebSocket ws) {
+            System.out.println("Connected");
+            tu.testComplete();
+          }
+        });
+        client.exceptionHandler(new Handler<Throwable>() {
+          @Override
+          public void handle(Throwable t) {
+            t.printStackTrace();
+          }
+        });
+      }
+    });
+  }
 
   private void testWS(final boolean binary, final WebSocketVersion version) throws Exception {
 
@@ -232,6 +273,12 @@ public class WebsocketsTestClient extends TestClientBase {
     final int numConnections = vertx.sharedData().<String, Integer>getMap("params").get("numConnections");
     final AtomicInteger counter = new AtomicInteger(0);
     for (int i = 0; i < numConnections; i++) {
+      client.exceptionHandler(new Handler<Throwable>() {
+        @Override
+        public void handle(Throwable t) {
+          t.printStackTrace();
+        }
+      });
       client.connectWebsocket("http://somehost", new Handler<WebSocket>() {
         public void handle(WebSocket ws) {
           ws.closeHandler(new VoidHandler() {

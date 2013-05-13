@@ -65,7 +65,7 @@ public class JavaVerticleFactory implements VerticleFactory {
   }
     
   public void reportException(Logger logger, Throwable t) {
-    logger.error("Exception in Java verticle script", t);
+    logger.error("Exception in Java verticle", t);
   }
 
   public void close() {

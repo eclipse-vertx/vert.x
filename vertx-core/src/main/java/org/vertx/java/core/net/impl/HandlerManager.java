@@ -43,7 +43,7 @@ public class HandlerManager<T> {
   }
 
   public synchronized boolean hasHandlers() {
-    return availableWorkers.workerCount() > 0;
+    return !handlerMap.isEmpty();
   }
 
   public synchronized HandlerHolder<T> chooseHandler(EventLoop worker) {

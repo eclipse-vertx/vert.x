@@ -595,6 +595,7 @@ public class DefaultHttpClient implements HttpClient, Closeable {
       if (conn == null) {
         return;
       }
+      System.out.println("Message received:" + msg);
       boolean valid = false;
       if (msg instanceof HttpResponse) {
         HttpResponse response = (HttpResponse) msg;
