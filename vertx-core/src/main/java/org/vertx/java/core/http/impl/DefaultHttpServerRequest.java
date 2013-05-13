@@ -575,15 +575,15 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
 
     @Override
     public FileUpload createFileUpload(HttpRequest httpRequest, String name, String filename, String contentType, String contentTransferEncoding, Charset charset, long size) {
-      if (uploadHandler != null) {
-        DefaultHttpServerFileUpload upload = new DefaultHttpServerFileUpload(conn.vertx(), DefaultHttpServerRequest.this, name, filename, contentType, contentTransferEncoding, charset,
+      DefaultHttpServerFileUpload upload = new DefaultHttpServerFileUpload(conn.vertx(), DefaultHttpServerRequest.this, name, filename, contentType, contentTransferEncoding, charset,
                                                         size);
-        NettyFileUpload nettyUpload = new NettyFileUpload(upload, name, filename, contentType,
+      NettyFileUpload nettyUpload = new NettyFileUpload(upload, name, filename, contentType,
                                                                  contentTransferEncoding, charset);
+      if (uploadHandler != null) {
         uploadHandler.handle(upload);
-        return nettyUpload;
       }
-      return null;
+      return nettyUpload;
+
     }
 
     @Override
