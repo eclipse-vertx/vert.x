@@ -18,6 +18,7 @@ package org.vertx.java.core.http.impl;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
@@ -56,5 +57,9 @@ public abstract class AbstractConnection extends ConnectionBase {
     } else {
       return null;
     }
+  }
+
+  Vertx vertx() {
+    return vertx;
   }
 }

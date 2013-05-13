@@ -26,6 +26,7 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.util.Map;
 
 /**
  * Represents a server-side HTTP request.<p>
@@ -120,4 +121,17 @@ public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
    * @return the net socket
    */
   NetSocket netSocket();
+
+  /**
+   * Set the upload handler. The handler will get notified once a new file upload was received and so allow to
+   * get notified by the upload in progress.
+   */
+  HttpServerRequest uploadHandler(Handler<HttpServerFileUpload> uploadHandler);
+
+  /**
+   * Returns a map of all form attributes which was found in the request. Be aware that this message should only get
+   * called after the endHandler was notified as the map will be filled on-the-fly.
+   */
+  Map<String, String> formAttributes();
+
 }
