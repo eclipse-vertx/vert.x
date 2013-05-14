@@ -473,22 +473,13 @@ public class DefaultNetServer implements NetServer, Closeable {
 
     vertx.setContext(closeContext);
 
-    final CountDownLatch latch = new CountDownLatch(1);
-
     ChannelGroupFuture fut = serverChannelGroup.close();
     fut.addListener(new ChannelGroupFutureListener() {
-      public void operationComplete(ChannelGroupFuture channelGroupFuture) throws Exception {
-        latch.countDown();
+      public void operationComplete(ChannelGroupFuture fut) throws Exception {
+        executeCloseDone(closeContext, done, fut.cause());
       }
     });
 
-    // Always sync
-    try {
-      latch.await(10, TimeUnit.SECONDS);
-    } catch (InterruptedException e) {
-    }
-
-    executeCloseDone(closeContext, done, fut.cause());
   }
 
   private void checkConfigs(DefaultNetServer currentServer, DefaultNetServer newServer) {
