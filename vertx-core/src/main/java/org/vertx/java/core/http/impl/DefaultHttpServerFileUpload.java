@@ -35,6 +35,7 @@ class DefaultHttpServerFileUpload implements HttpServerFileUpload {
 
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
+  private AsyncFile file;
   private Handler<Throwable> exceptionHandler;
 
   private final HttpServerRequest req;
@@ -141,18 +142,14 @@ class DefaultHttpServerFileUpload implements HttpServerFileUpload {
     vertx.fileSystem().open(filename, new AsyncResultHandler<AsyncFile>() {
       public void handle(final AsyncResult<AsyncFile> ar) {
         if (ar.succeeded()) {
+          file =  ar.result();
+
           Pump p = Pump.createPump(DefaultHttpServerFileUpload.this, ar.result());
           p.start();
-          endHandler(new Handler<Void>() {
-            public void handle(Void event) {
-              ar.result().close();
-            }
-          });
+
           resume();
         } else {
-          if (exceptionHandler != null) {
-            exceptionHandler.handle(ar.cause());
-          }
+          notifyExceptionHandler(ar.cause());
         }
       }
     });
@@ -175,8 +172,33 @@ class DefaultHttpServerFileUpload implements HttpServerFileUpload {
   void complete() {
     if (paused) {
       complete = true;
-    } else if (endHandler != null) {
+    } else {
+      if (file == null) {
+        notifyEndHandler();
+      } else {
+        file.close(new AsyncResultHandler<Void>() {
+          @Override
+          public void handle(AsyncResult<Void> event) {
+            if (event.failed()) {
+              notifyExceptionHandler(event.cause());
+            }
+            notifyEndHandler();
+          }
+        });
+      }
+
+    }
+  }
+
+  private void notifyEndHandler() {
+    if (endHandler != null) {
       endHandler.handle(null);
+    }
+  }
+
+  private void notifyExceptionHandler(Throwable cause) {
+    if (exceptionHandler != null) {
+      exceptionHandler.handle(cause);
     }
   }
 }
