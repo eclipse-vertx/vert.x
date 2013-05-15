@@ -33,7 +33,7 @@ public abstract class DefaultContext implements Context {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultContext.class);
 
-  private final VertxInternal vertx;
+  protected final VertxInternal vertx;
   private DeploymentHandle deploymentContext;
   private Path pathAdjustment;
   private Set<Closeable> closeHooks;
@@ -107,6 +107,14 @@ public abstract class DefaultContext implements Context {
 
   public abstract boolean isOnCorrectWorker(EventLoop worker);
 
+  public void execute(EventLoop worker, Runnable handler) {
+    if (isOnCorrectWorker(worker)) {
+      wrapTask(handler).run();
+    } else {
+      execute(handler);
+    }
+  }
+
   public void runOnContext(final Handler<Void> task) {
     execute(new Runnable() {
       public void run() {
@@ -142,10 +150,12 @@ public abstract class DefaultContext implements Context {
         String threadName = currentThread.getName();
         try {
           vertx.setContext(DefaultContext.this);
+          startExecute();
           task.run();
         } catch (Throwable t) {
           reportException(t);
         } finally {
+          endExecute();
           if (!threadName.equals(currentThread.getName())) {
             currentThread.setName(threadName);
           }
@@ -158,4 +168,11 @@ public abstract class DefaultContext implements Context {
       }
     };
   }
+
+  public void startExecute() {
+  }
+
+  public void endExecute() {
+  }
+
 }

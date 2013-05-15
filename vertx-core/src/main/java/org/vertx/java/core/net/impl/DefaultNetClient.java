@@ -350,30 +350,18 @@ public class DefaultNetClient implements NetClient, Closeable {
           }
         } else {
           if (remainingAttempts > 0 || remainingAttempts == -1) {
-            if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
-              vertx.setContext(actualCtx);
-              log.debug("Failed to create connection. Will retry in " + reconnectInterval + " milliseconds");
-              //Set a timer to retry connection
-              vertx.setTimer(reconnectInterval, new Handler<Long>() {
-                public void handle(Long timerID) {
-                  connect(port, host, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts
-                                - 1);
-                }
-              });
-            } else {
-              actualCtx.execute(new Runnable() {
-                public void run() {
-                  log.debug("Failed to create connection. Will retry in " + reconnectInterval + " milliseconds");
-                  //Set a timer to retry connection
-                  vertx.setTimer(reconnectInterval, new Handler<Long>() {
-                    public void handle(Long timerID) {
-                      connect(port, host, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts
-                          - 1);
-                    }
-                  });
-                }
-              });
-            }
+            actualCtx.execute(ch.eventLoop(), new Runnable() {
+              public void run() {
+                log.debug("Failed to create connection. Will retry in " + reconnectInterval + " milliseconds");
+                //Set a timer to retry connection
+                vertx.setTimer(reconnectInterval, new Handler<Long>() {
+                  public void handle(Long timerID) {
+                    connect(port, host, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts
+                        - 1);
+                  }
+                });
+              }
+            });
           } else {
             failed(ch, channelFuture.cause(), connectHandler);
           }
@@ -383,20 +371,11 @@ public class DefaultNetClient implements NetClient, Closeable {
   }
 
   private void connected(final Channel ch, final Handler<AsyncResult<NetSocket>> connectHandler) {
-    if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
-      try {
-        vertx.setContext(actualCtx);
+    actualCtx.execute(ch.eventLoop(), new Runnable() {
+      public void run() {
         doConnected(ch, connectHandler);
-      } catch (Throwable t) {
-        actualCtx.reportException(t);
       }
-    } else {
-      actualCtx.execute(new Runnable() {
-        public void run() {
-          doConnected(ch, connectHandler);
-        }
-      });
-    }
+    });
   }
 
   private void doConnected(Channel ch, final Handler<AsyncResult<NetSocket>> connectHandler) {
@@ -407,20 +386,11 @@ public class DefaultNetClient implements NetClient, Closeable {
 
   private void failed(Channel ch, final Throwable t, final Handler<AsyncResult<NetSocket>> connectHandler) {
     ch.close();
-    if (actualCtx.isOnCorrectWorker(ch.eventLoop())) {
-      try {
-        vertx.setContext(actualCtx);
+    actualCtx.execute(ch.eventLoop(), new Runnable() {
+      public void run() {
         doFailed(connectHandler, t);
-      } catch (Throwable tt) {
-        actualCtx.reportException(tt);
       }
-    } else {
-      actualCtx.execute(new Runnable() {
-        public void run() {
-          doFailed(connectHandler, t);
-        }
-      });
-    }
+    });
   }
 
   private static void doFailed(Handler<AsyncResult<NetSocket>> connectHandler, Throwable t) {

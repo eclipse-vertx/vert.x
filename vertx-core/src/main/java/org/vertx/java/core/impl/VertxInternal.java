@@ -66,4 +66,10 @@ public interface VertxInternal extends Vertx {
    * @return event loop context
    */
   EventLoopContext createEventLoopContext();
+
+  int getTimingSequence();
+
+  void registerEventLoopStart(DefaultContext context);
+
+  void registerEventLoopEnd(DefaultContext context);
 }

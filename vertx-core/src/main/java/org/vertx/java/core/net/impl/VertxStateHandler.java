@@ -51,9 +51,12 @@ public abstract class VertxStateHandler<C extends ConnectionBase> extends Channe
         if (context.isOnCorrectWorker(ch.eventLoop())) {
           try {
             vertx.setContext(context);
+            context.startExecute();
             conn.handleInterestedOpsChanged();
           } catch (Throwable t) {
             context.reportException(t);
+          } finally {
+            context.endExecute();
           }
         } else {
           context.execute(new Runnable() {
@@ -72,28 +75,15 @@ public abstract class VertxStateHandler<C extends ConnectionBase> extends Channe
     final C sock = connectionMap.remove(ch);
     if (sock != null) {
       DefaultContext context = getContext(sock);
-      if (context.isOnCorrectWorker(ch.eventLoop())) {
-        try {
-          vertx.setContext(context);
-          sock.handleException(t);
-        } catch (Throwable tt) {
-          context.reportException(tt);
-        }
-        try {
-          ch.close();
-        } catch (Throwable ignore) {
-        }
-      } else {
-        context.execute(new Runnable() {
-          public void run() {
-          sock.handleException(t);
+      context.execute(ch.eventLoop(), new Runnable() {
+        public void run() {
           try {
             ch.close();
           } catch (Throwable ignore) {
           }
-          }
-        });
-      }
+          sock.handleException(t);
+        }
+      });
     } else {
       // Ignore - any exceptions before a channel exists will be passed manually via the failed(...) method
       // Any exceptions after a channel is closed can be ignored
@@ -106,20 +96,11 @@ public abstract class VertxStateHandler<C extends ConnectionBase> extends Channe
     final C sock = connectionMap.remove(ch);
     if (sock != null) {
       DefaultContext context = getContext(sock);
-      if (context.isOnCorrectWorker(ch.eventLoop())) {
-        try {
-          vertx.setContext(context);
+      context.execute(ch.eventLoop(), new Runnable() {
+        public void run() {
           sock.handleClosed();
-        } catch (Throwable t) {
-          context.reportException(t);
         }
-      } else {
-        context.execute(new Runnable() {
-          public void run() {
-            sock.handleClosed();
-          }
-        });
-      }
+      });
     }
   }
 }

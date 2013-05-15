@@ -131,6 +131,21 @@ public class WrappedVertx implements VertxInternal {
   }
 
   @Override
+  public int getTimingSequence() {
+    return vertx.getTimingSequence();
+  }
+
+  @Override
+  public void registerEventLoopStart(DefaultContext context) {
+    vertx.registerEventLoopStart(context);
+  }
+
+  @Override
+  public void registerEventLoopEnd(DefaultContext context) {
+    vertx.registerEventLoopEnd(context);
+  }
+
+  @Override
   public NetServer createNetServer() {
     return vertx.createNetServer();
   }

@@ -80,9 +80,12 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxSt
       if (context.isOnCorrectWorker(ch.eventLoop())) {
         try {
           vertx.setContext(context);
+          context.startExecute();
           doMessageReceived(connection, chctx, msg);
         } catch (Throwable t) {
           context.reportException(t);
+        } finally {
+          context.endExecute();
         }
       } else {
         BufUtil.retain(msg);

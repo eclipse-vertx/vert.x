@@ -57,9 +57,12 @@ public class VertxNetHandler extends VertxStateHandler<DefaultNetSocket> impleme
       if (context.isOnCorrectWorker(ch.eventLoop())) {
         try {
           vertx.setContext(context);
+          context.startExecute();
           sock.handleDataReceived(new Buffer(in.slice()));
         } catch (Throwable t) {
           context.reportException(t);
+        } finally {
+          context.endExecute();
         }
       } else {
         final ByteBuf buf = in.readBytes(in.readableBytes());

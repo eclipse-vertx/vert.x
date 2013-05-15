@@ -55,6 +55,8 @@ public class DefaultVertx implements VertxInternal {
 
   public static final int DEFAULT_CLUSTER_PORT = 2550;
 
+  private static final long EVENT_LOOP_TIMINGS_PERIOD = 10000;
+
   private final FileSystem fileSystem = getFileSystem();
   private final EventBus eventBus;
   private final SharedData sharedData = new SharedData();
@@ -70,8 +72,13 @@ public class DefaultVertx implements VertxInternal {
   private final ConcurrentMap<Long, InternalTimerHandler> timeouts = new ConcurrentHashMap<>();
   private final AtomicLong timeoutCounter = new AtomicLong(0);
 
+  private long maxEventLoopTime = Long.valueOf(System.getProperty("vertx.maxEventLoopTime", "5"));
+  private volatile int timingSequence;
+  private Map<DefaultContext, Long> eventLoopStarts = new ConcurrentHashMap<>();
+
   public DefaultVertx() {
     this.eventBus = new DefaultEventBus(this);
+    initEventLoopTimings();
   }
 
   public DefaultVertx(String hostname) {
@@ -80,6 +87,7 @@ public class DefaultVertx implements VertxInternal {
 
   public DefaultVertx(int port, String hostname) {
     this.eventBus = new DefaultEventBus(this, port, hostname, new HazelcastClusterManager(this));
+    initEventLoopTimings();
   }
 
   /**
@@ -214,6 +222,44 @@ public class DefaultVertx implements VertxInternal {
 
   public EventLoopContext createEventLoopContext() {
     return new EventLoopContext(this, orderedFact.getExecutor());
+  }
+
+  @Override
+  public int getTimingSequence() {
+    return timingSequence;
+  }
+
+  @Override
+  public void registerEventLoopStart(final DefaultContext context) {
+    eventLoopStarts.put(context, System.currentTimeMillis());
+    setTimer(maxEventLoopTime, new Handler<Long>() {
+      @Override
+      public void handle(Long event) {
+        registerEventLoopEnd(context);
+      }
+    });
+  }
+
+  @Override
+  public void registerEventLoopEnd(DefaultContext context) {
+    Long start = eventLoopStarts.remove(context);
+    if (start != null && (System.currentTimeMillis() - start > maxEventLoopTime)) {
+      warnEventLoopTime(context);
+    }
+  }
+
+  private void warnEventLoopTime(DefaultContext context) {
+    context.reportException(new IllegalStateException("Event loop is taking too long to run. Do not block the event loop!"));
+  }
+
+  private void initEventLoopTimings() {
+    setPeriodic(EVENT_LOOP_TIMINGS_PERIOD, new Handler<Long>() {
+      @Override
+      public void handle(Long event) {
+        // Increment this every 5 seconds - this will trigger each event loop to make one timing
+        timingSequence++;
+      }
+    });
   }
 
   private long scheduleTimeout(final DefaultContext context, final Handler<Long> handler, long delay, boolean periodic) {

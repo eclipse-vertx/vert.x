@@ -209,21 +209,12 @@ public class DefaultNetServer implements NetServer, Closeable {
               listening = false;
               res = new DefaultFutureResult<>(future.cause());
             }
-            if (actualCtx.isOnCorrectWorker(future.channel().eventLoop())) {
-              try {
-                vertx.setContext(actualCtx);
+            actualCtx.execute(future.channel().eventLoop(), new Runnable() {
+              @Override
+              public void run() {
                 listenHandler.handle(res);
-              } catch (Throwable t) {
-                actualCtx.reportException(t);
               }
-            } else {
-              actualCtx.execute(new Runnable() {
-                @Override
-                public void run() {
-                  listenHandler.handle(res);
-                }
-              });
-            }
+            });
           } else if (!future.isSuccess()) {
             // No handler - log so user can see failure
             actualCtx.reportException(future.cause());
@@ -539,20 +530,11 @@ public class DefaultNetServer implements NetServer, Closeable {
     }
 
     private void connected(final Channel ch, final HandlerHolder<NetSocket> handler) {
-      if (handler.context.isOnCorrectWorker(ch.eventLoop())) {
-        try {
-          vertx.setContext(handler.context);
+      handler.context.execute(ch.eventLoop(), new Runnable() {
+        public void run() {
           doConnected(ch, handler);
-        } catch (Throwable t) {
-          handler.context.reportException(t);
         }
-      } else {
-        handler.context.execute(new Runnable() {
-          public void run() {
-            doConnected(ch, handler);
-          }
-        });
-      }
+      });
     }
 
     private void doConnected(Channel ch, HandlerHolder<NetSocket> handler) {

@@ -197,22 +197,11 @@ class ClientConnection extends AbstractConnection {
         ctx.pipeline().addAfter(ctx.name(), "websocketConverter", WebSocketConvertHandler.INSTANCE);
         ws = new DefaultWebSocket(vertx, ClientConnection.this);
         handshaker.finishHandshake(channel, response);
-
-        if (context.isOnCorrectWorker(ctx.channel().eventLoop())) {
-          try {
-            vertx.setContext(context);
+        context.execute(ctx.channel().eventLoop(), new Runnable() {
+          public void run() {
             wsConnect.handle(ws);
-          } catch (Throwable t) {
-            context.reportException(t);
           }
-        } else {
-          context.execute(new Runnable() {
-            public void run() {
-              wsConnect.handle(ws);
-            }
-          });
-        }
-
+        });
       } catch (WebSocketHandshakeException e) {
         client.handleException(e);
       } finally {

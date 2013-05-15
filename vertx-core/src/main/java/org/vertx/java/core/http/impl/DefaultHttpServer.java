@@ -233,21 +233,12 @@ public class DefaultHttpServer implements HttpServer, Closeable {
               res = new DefaultFutureResult<>(future.cause());
               listening = false;
             }
-            if (actualCtx.isOnCorrectWorker(future.channel().eventLoop())) {
-              try {
-                vertx.setContext(actualCtx);
+            actualCtx.execute(future.channel().eventLoop(), new Runnable() {
+              @Override
+              public void run() {
                 listenHandler.handle(res);
-              } catch (Throwable t) {
-                actualCtx.reportException(t);
               }
-            } else {
-              actualCtx.execute(new Runnable() {
-                @Override
-                public void run() {
-                  listenHandler.handle(res);
-                }
-              });
-            }
+            });
           } else if (!future.isSuccess()) {
             listening  = false;
             // No handler - log so user can see failure
