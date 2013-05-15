@@ -169,6 +169,7 @@ public abstract class DefaultContext implements Context {
     };
   }
 
+  // Place holders for when we do event loop timings
   public void startExecute() {
   }
 

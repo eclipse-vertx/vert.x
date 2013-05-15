@@ -29,9 +29,6 @@ public class EventLoopContext extends DefaultContext {
 
   private static final Logger log = LoggerFactory.getLogger(EventLoopContext.class);
 
-  private int currTimingSequence;
-  private boolean timing;
-
   public EventLoopContext(VertxInternal vertx, Executor bgExec) {
     super(vertx, bgExec);
   }
@@ -44,19 +41,4 @@ public class EventLoopContext extends DefaultContext {
     return getEventLoop() == worker;
   }
 
-  public void startExecute() {
-    int timingSequence = vertx.getTimingSequence();
-    if (timingSequence > currTimingSequence) {
-      // Let's time the event loop
-      currTimingSequence = timingSequence;
-      timing = true;
-      vertx.registerEventLoopStart(this);
-    }
-  }
-
-  public void endExecute() {
-    if (timing) {
-      vertx.registerEventLoopEnd(this);
-    }
-  }
 }
