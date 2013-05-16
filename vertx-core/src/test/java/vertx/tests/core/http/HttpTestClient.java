@@ -2670,11 +2670,11 @@ public class HttpTestClient extends TestClientBase {
           });
           req.endHandler(new VoidHandler() {
             protected void handle() {
-              Map<String, String> attrs = req.formAttributes();
+              MultiMap attrs = req.formAttributes();
               attributeCount.set(attrs.size());
-              tu.azzert(attrs.remove("name").equals("file"));
-              tu.azzert(attrs.remove("filename").equals("tmp-0.txt"));
-              tu.azzert(attrs.remove("Content-Type").equals("image/gif"));
+              tu.azzert(attrs.get("name").equals("file"));
+              tu.azzert(attrs.get("filename").equals("tmp-0.txt"));
+              tu.azzert(attrs.get("Content-Type").equals("image/gif"));
               req.response().end();
             }
           });
@@ -2736,10 +2736,10 @@ public class HttpTestClient extends TestClientBase {
           });
           req.endHandler(new VoidHandler() {
             protected void handle() {
-              Map<String, String> attrs = req.formAttributes();
+              MultiMap attrs = req.formAttributes();
               attributeCount.set(attrs.size());
-              tu.azzert(attrs.remove("framework").equals("vertx"));
-              tu.azzert(attrs.remove("runson").equals("jvm"));
+              tu.azzert(attrs.get("framework").equals("vertx"));
+              tu.azzert(attrs.get("runson").equals("jvm"));
               req.response().end();
             }
           });
@@ -2791,11 +2791,11 @@ public class HttpTestClient extends TestClientBase {
           });
           req.endHandler(new VoidHandler() {
             protected void handle() {
-              Map<String, String> attrs = req.formAttributes();
+              MultiMap attrs = req.formAttributes();
               attributeCount.set(attrs.size());
-              tu.azzert(attrs.remove("origin").equals("junit-testUserAlias"));
-              tu.azzert(attrs.remove("login").equals("admin%40foo.bar"));
-              tu.azzert(attrs.remove("password").equals("admin"));
+              tu.azzert(attrs.get("origin").equals("junit-testUserAlias"));
+              tu.azzert(attrs.get("login").equals("admin%40foo.bar"));
+              tu.azzert(attrs.get("password").equals("admin"));
               req.response().end();
             }
           });

@@ -38,7 +38,6 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -73,7 +72,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   private Handler<io.netty.handler.codec.http.multipart.Attribute> attrHandler;
   private Handler<HttpServerFileUpload> uploadHandler;
   private Handler<Void> endHandler;
-  private Map<String, String> attributes = new HashMap<String, String>(0);
+  private MultiMap attributes = new CaseInsensitiveMultiMap();
   private final HttpPostRequestDecoder decoder;
 
   DefaultHttpServerRequest(final ServerConnection conn,
@@ -307,7 +306,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   }
 
   @Override
-  public Map<String, String> formAttributes() {
+  public MultiMap formAttributes() {
     return attributes;
   }
 
@@ -525,7 +524,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
     private void attributeCreated() {
       if (!notified && isCompleted()) {
         notified = true;
-        attributes.put(getName(), getValue());
+        attributes.add(getName(), getValue());
       }
     }
 
