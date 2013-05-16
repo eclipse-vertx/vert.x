@@ -81,7 +81,18 @@ public class MavenLocalRepoResolver implements RepoResolver {
     } else if (rExists) {
       return getModuleForMetaData(filename, moduleIdentifier, remoteMetaDataFile, uriRoot);
     } else {
-      return false;
+      File nonSnapshotFile = new File(repoID + "/" + uriRoot + moduleIdentifier.getName() + "-" + moduleIdentifier.getVersion() + ".zip");
+      if (nonSnapshotFile.exists()) {
+        try {
+          Files.copy(nonSnapshotFile.toPath(), Paths.get(filename));
+          return true;
+        } catch (IOException e) {
+          log.error("Failed to copy file", e);
+          return false;
+        }
+      } else {
+        return false;
+      }
     }
   }
 

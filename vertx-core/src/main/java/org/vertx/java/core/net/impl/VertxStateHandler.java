@@ -78,7 +78,9 @@ public abstract class VertxStateHandler<C extends ConnectionBase> extends Channe
       context.execute(ch.eventLoop(), new Runnable() {
         public void run() {
           try {
-            ch.close();
+            if (ch.isOpen()) {
+              ch.close();
+            }
           } catch (Throwable ignore) {
           }
           sock.handleException(t);
