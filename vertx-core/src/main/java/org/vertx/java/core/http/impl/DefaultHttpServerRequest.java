@@ -172,10 +172,9 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   @Override
   public MultiMap params() {
     if (params == null) {
-      QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri);
+      QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri());
       Map<String, List<String>> prms = queryStringDecoder.parameters();
       params = new CaseInsensitiveMultiMap();
-
       if (!prms.isEmpty()) {
         for (Map.Entry<String, List<String>> entry: prms.entrySet()) {
           params.add(entry.getKey(), entry.getValue());
