@@ -58,7 +58,7 @@ public interface AsyncFile extends ReadStream<AsyncFile>, WriteStream<AsyncFile>
   /**
    * Reads {@code length} bytes of data from the file at position {@code position} in the file, asynchronously.
    * The read data will be written into the specified {@code Buffer buffer} at position {@code offset}.<p>
-   * The index {@code position + length} must lie within the confines of the file.<p>
+   * If data is read past the end of the file then zero bytes will be read.<p>
    * When multiple reads are invoked on the same file there are no guarantees as to order in which those reads actually occur.<p>
    * The handler will be called when the close is complete, or if an error occurs.
    */
