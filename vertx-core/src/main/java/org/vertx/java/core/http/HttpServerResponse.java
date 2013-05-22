@@ -185,6 +185,11 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
   HttpServerResponse sendFile(String filename);
 
   /**
+   * Same as {@link #sendFile(String)} but also takes the path to a resource to serve if the resource is not found
+   */
+  HttpServerResponse sendFile(String filename, String notFoundFile);
+
+  /**
    * Close the underlying TCP connection
    */
   void close();

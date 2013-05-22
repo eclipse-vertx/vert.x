@@ -258,16 +258,26 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
 
   @Override
   public DefaultHttpServerResponse sendFile(String filename) {
+    return sendFile(filename, null);
+  }
+
+  @Override
+  public DefaultHttpServerResponse sendFile(String filename, String notFoundResource) {
     if (headWritten) {
       throw new IllegalStateException("Head already written");
     }
     checkWritten();
     File file = new File(PathAdjuster.adjust(vertx, filename));
     if (!file.exists()) {
-      sendNotFound();
+      if (notFoundResource != null) {
+        statusCode = HttpResponseStatus.NOT_FOUND.code();
+        sendFile(notFoundResource, null);
+      } else {
+        sendNotFound();
+      }
     } else {
       if (!contentLengthSet()) {
-        response.headers().set(Names.CONTENT_LENGTH, String.valueOf(file.length()));
+        putHeader(Names.CONTENT_LENGTH, String.valueOf(file.length()));
       }
       if (!contentTypeSet()) {
         int li = filename.lastIndexOf('.');
@@ -275,10 +285,11 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
           String ext = filename.substring(li + 1, filename.length());
           String contentType = MimeMapping.getMimeTypeForExtension(ext);
           if (contentType != null) {
-            response.headers().set(Names.CONTENT_TYPE, contentType);
+            putHeader(Names.CONTENT_TYPE, contentType);
           }
         }
       }
+      prepareHeaders();
       conn.write(response);
       conn.sendFile(file);
 
@@ -320,6 +331,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
 
   private void sendNotFound() {
     statusCode = HttpResponseStatus.NOT_FOUND.code();
+    putHeader("content-type", "text/html");
     end("<html><body>Resource not found</body><html>");
   }
 
