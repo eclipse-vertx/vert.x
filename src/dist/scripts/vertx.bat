@@ -11,7 +11,7 @@ if "%OS%"=="Windows_NT" setlocal
 @rem Add default JVM options here. You can also use JAVA_OPTS and VERTX_OPTS to pass JVM options to this script.
 set JVM_OPTS=
 
-set JMX_OPTS=""
+set JMX_OPTS=
 @rem To enable JMX uncomment the following
 @rem set JMX_OPTS=-Dcom.sun.management.jmxremote -Dvertx.management.jmx=true -Dhazelcast.jmx=true
 
@@ -54,7 +54,7 @@ goto fail
 if not "%VERTX_MODS%" == "" set VERTX_MODULE_OPTS="-Dvertx.mods=%VERTX_MODS%"
 
 @rem Configure JUL using custom properties file
-if "%VERTX_JUL_CONFIG%" == "" set VERTX_JUL_CONFIG=%APP_HOME%\conf\logging.properties
+if "%VERTX_JUL_CONFIG%" == "" set VERTX_JUL_CONFIG=%VERTX_HOME%\conf\logging.properties
 
 @rem Get command-line arguments, handling Windowz variants
 
