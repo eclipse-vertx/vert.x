@@ -35,8 +35,12 @@ import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.net.impl.DefaultNetSocket;
+import org.vertx.java.core.net.impl.VertxNetHandler;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -346,5 +350,30 @@ class ClientConnection extends AbstractConnection {
     } else {
       //The connection gets closed after the response is received
     }
+  }
+
+  NetSocket createNetSocket() {
+    DefaultNetSocket socket = new DefaultNetSocket(vertx, channel, context);
+    Map<Channel, DefaultNetSocket> connectionMap = new HashMap<Channel, DefaultNetSocket>(1);
+    connectionMap.put(channel, socket);
+
+    // remove old http handlers and replace the old handler with one that handle plain sockets
+    channel.pipeline().remove("codec");
+    channel.pipeline().replace("handler", "handler", new VertxNetHandler(client.vertx, connectionMap) {
+      @Override
+      public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
+        // remove from the real mapping
+        client.connectionMap.remove(channel);
+        super.exceptionCaught(chctx, t);
+      }
+
+      @Override
+      public void channelInactive(ChannelHandlerContext chctx) throws Exception {
+        // remove from the real mapping
+        client.connectionMap.remove(channel);
+        super.channelInactive(chctx);
+      }
+    });
+    return socket;
   }
 }

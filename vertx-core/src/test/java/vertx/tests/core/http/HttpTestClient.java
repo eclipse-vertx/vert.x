@@ -22,6 +22,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.HttpHeadersAdapter;
+import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.testframework.TestClientBase;
 import org.vertx.java.testframework.TestUtils;
 
@@ -2829,6 +2830,44 @@ public class HttpTestClient extends TestClientBase {
   }
 
 
+  public void testAccessNetSocket() throws Exception {
+
+    final Buffer toSend = TestUtils.generateRandomBuffer(1000);
+
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
+      @Override
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
+        final HttpClientRequest req = client.get("someurl", new Handler<HttpClientResponse>() {
+          public void handle(final HttpClientResponse resp) {
+            NetSocket socket = resp.netSocket();
+            socket.closeHandler(new VoidHandler() {
+              @Override
+              protected void handle() {
+                tu.checkThread();
+                tu.testComplete();
+              }
+            });
+          }
+        });
+        req.headers().set("content-length", String.valueOf(toSend.length()));
+        req.write(toSend);
+      }
+    };
+
+    startServer(new Handler<HttpServerRequest>() {
+      public void handle(final HttpServerRequest req) {
+        req.response().headers().set("HTTP/1.1", "101 Upgrade");
+        req.bodyHandler(new Handler<Buffer>() {
+          public void handle(Buffer data) {
+            tu.checkThread();
+            tu.azzert(TestUtils.buffersEqual(toSend, data));
+            req.response().end();
+          }
+        });
+      }
+    }, handler);
+  }
 
   // -------------------------------------------------------------------------------------------
 

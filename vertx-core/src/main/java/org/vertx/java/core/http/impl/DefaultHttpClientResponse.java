@@ -27,6 +27,7 @@ import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.net.NetSocket;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -56,7 +57,7 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
   private Queue<Buffer> pausedChunks;
   private boolean hasPausedEnd;
   private LastHttpContent pausedTrailer;
-
+  private NetSocket netSocket;
 
   // Cache these for performance
   private MultiMap headers;
@@ -224,4 +225,11 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
     }
   }
 
+  @Override
+  public NetSocket netSocket() {
+    if (netSocket == null) {
+      netSocket = conn.createNetSocket();
+    }
+    return netSocket;
+  }
 }

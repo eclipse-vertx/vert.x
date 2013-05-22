@@ -51,11 +51,12 @@ public class DefaultHttpClient implements HttpClient, Closeable {
   private static final Logger log = LoggerFactory.getLogger(HttpClientRequest.class);
   private static final ExceptionDispatchHandler EXCEPTION_DISPATCH_HANDLER = new ExceptionDispatchHandler();
 
-  private final VertxInternal vertx;
+  final VertxInternal vertx;
+  final Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<>();
+
   private final DefaultContext actualCtx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private Bootstrap bootstrap;
-  private final Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<>();
   private Handler<Throwable> exceptionHandler;
   private int port = 80;
   private String host = "localhost";

@@ -116,7 +116,7 @@ public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
 
   /**
    * Get a net socket for the underlying connection of this request. USE THIS WITH CAUTION!
-   * Writing to the socket directly if you don't know what you're doing can easily breal the HTTP protocol
+   * Writing to the socket directly if you don't know what you're doing can easily break the HTTP protocol
    * @return the net socket
    */
   NetSocket netSocket();
