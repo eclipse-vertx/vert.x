@@ -26,6 +26,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.VoidHandler;
@@ -46,7 +47,7 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DefaultHttpClient implements HttpClient, Closeable {
+public class DefaultHttpClient implements HttpClient {
 
   private static final Logger log = LoggerFactory.getLogger(HttpClientRequest.class);
   private static final ExceptionDispatchHandler EXCEPTION_DISPATCH_HANDLER = new ExceptionDispatchHandler();
@@ -67,11 +68,18 @@ public class DefaultHttpClient implements HttpClient, Closeable {
   };
   private boolean keepAlive = true;
   private boolean configurable = true;
+  private final Closeable closeHook = new Closeable() {
+    @Override
+    public void close(Handler<AsyncResult<Void>> doneHandler) {
+      DefaultHttpClient.this.close();
+      doneHandler.handle(new DefaultFutureResult<>((Void)null));
+    }
+  };
 
   public DefaultHttpClient(VertxInternal vertx) {
     this.vertx = vertx;
     actualCtx = vertx.getOrAssignContext();
-    actualCtx.addCloseHook(this);
+    actualCtx.addCloseHook(closeHook);
   }
 
   // @Override
@@ -228,7 +236,7 @@ public class DefaultHttpClient implements HttpClient, Closeable {
     for (ClientConnection conn : connectionMap.values()) {
       conn.internalClose();
     }
-    actualCtx.removeCloseHook(this);
+    actualCtx.removeCloseHook(closeHook);
   }
 
   @Override

@@ -17,6 +17,8 @@
 package org.vertx.java.core.impl;
 
 import io.netty.channel.EventLoop;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.logging.Logger;
@@ -90,16 +92,29 @@ public abstract class DefaultContext implements Context {
     }
   }
 
-  public void runCloseHooks() {
+  public void runCloseHooks(Handler<AsyncResult<Void>> doneHandler) {
     if (closeHooks != null) {
+      final CountingCompletionHandler<Void> aggHandler = new CountingCompletionHandler<>(vertx, closeHooks.size());
+      aggHandler.setHandler(doneHandler);
       // Copy to avoid ConcurrentModificationException
       for (Closeable hook: new HashSet<>(closeHooks)) {
         try {
-          hook.close();
+          hook.close(new AsyncResultHandler<Void>() {
+            @Override
+            public void handle(AsyncResult<Void> asyncResult) {
+              if (asyncResult.failed()) {
+                aggHandler.failed(asyncResult.cause());
+              } else {
+                aggHandler.complete();
+              }
+            }
+          });
         } catch (Throwable t) {
           reportException(t);
         }
       }
+    } else {
+      doneHandler.handle(new DefaultFutureResult<>((Void)null));
     }
   }
 

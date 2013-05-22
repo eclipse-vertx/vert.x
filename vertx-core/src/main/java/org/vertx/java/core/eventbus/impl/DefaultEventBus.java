@@ -848,8 +848,9 @@ public class DefaultEventBus implements EventBus {
     }
 
     // Called by context on undeploy
-    public void close() {
+    public void close(Handler<AsyncResult<Void>> doneHandler) {
       unregisterHandler(this.address, this.handler);
+      doneHandler.handle(new DefaultFutureResult<>((Void)null));
     }
   }
 }

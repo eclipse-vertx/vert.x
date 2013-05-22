@@ -18,6 +18,7 @@ package org.vertx.java.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
@@ -342,9 +343,11 @@ public class DefaultVertx implements VertxInternal {
     }
 
     // Called via Context close hook when Verticle is undeployed
-    public void close() {
+    public void close(Handler<AsyncResult<Void>> doneHandler) {
       DefaultVertx.this.timeouts.remove(timerID);
       cancel();
+      doneHandler.handle(new DefaultFutureResult<>((Void)null));
     }
+
   }
 }

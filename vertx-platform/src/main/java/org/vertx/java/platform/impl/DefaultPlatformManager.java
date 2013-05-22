@@ -1237,15 +1237,19 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         count.incRequired();
         holder.context.execute(new Runnable() {
           public void run() {
-            try {
-              holder.verticle.stop();
-              LoggerFactory.removeLogger(holder.loggerName);
-              holder.context.runCloseHooks();
-              holder.context.close();
-              count.complete();
-            } catch (Throwable t) {
-              count.failed(t);
-            }
+            holder.verticle.stop();
+            LoggerFactory.removeLogger(holder.loggerName);
+            holder.context.runCloseHooks(new AsyncResultHandler<Void>() {
+              @Override
+              public void handle(AsyncResult<Void> asyncResult) {
+                holder.context.close();
+                if (asyncResult.failed()) {
+                  count.failed(asyncResult.cause());
+                } else {
+                  count.complete();
+                }
+              }
+            });
           }
         });
       }

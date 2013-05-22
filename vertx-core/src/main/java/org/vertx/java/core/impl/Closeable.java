@@ -1,5 +1,8 @@
 package org.vertx.java.core.impl;
 
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Handler;
+
 /*
  * Copyright 2013 Red Hat, Inc.
  *
@@ -18,5 +21,5 @@ package org.vertx.java.core.impl;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface Closeable {
-  void close();
+  void close(Handler<AsyncResult<Void>> doneHandler);
 }
