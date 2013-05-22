@@ -2840,14 +2840,16 @@ public class HttpTestClient extends TestClientBase {
         tu.azzert(ar.succeeded());
         final HttpClientRequest req = client.get("someurl", new Handler<HttpClientResponse>() {
           public void handle(final HttpClientResponse resp) {
-            NetSocket socket = resp.netSocket();
-            socket.closeHandler(new VoidHandler() {
+            resp.endHandler(new Handler<Void>() {
               @Override
-              protected void handle() {
+              public void handle(Void event) {
                 tu.checkThread();
+
+                NetSocket socket = resp.netSocket();
+                tu.azzert(socket != null);
                 tu.testComplete();
               }
-            });
+            }) ;
           }
         });
         req.headers().set("content-length", String.valueOf(toSend.length()));
