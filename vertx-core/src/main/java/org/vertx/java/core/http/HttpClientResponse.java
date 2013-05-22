@@ -19,6 +19,7 @@ package org.vertx.java.core.http;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.streams.ReadStream;
 
 import java.util.List;
@@ -70,4 +71,12 @@ public interface HttpClientResponse extends ReadStream<HttpClientResponse> {
    * @param bodyHandler This handler will be called after all the body has been received
    */
   HttpClientResponse bodyHandler(Handler<Buffer> bodyHandler);
+
+  /**
+   * Get a net socket for the underlying connection of this request. USE THIS WITH CAUTION!
+   * Writing to the socket directly if you don't know what you're doing can easily break the HTTP protocol
+   * @return the net socket
+   */
+  NetSocket netSocket();
+
 }
