@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.util.CharsetUtil;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
@@ -162,6 +163,21 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
     return this;
   }
 
+  @Override
+  public void close() {
+    if (writeFuture != null) {
+      // Close after all data is written
+      writeFuture.addListener(new ChannelFutureListener() {
+        @Override
+        public void operationComplete(ChannelFuture channelFuture) throws Exception {
+          channel.close();
+        }
+      });
+    } else {
+      channel.close();
+    }
+  }
+
   protected DefaultContext getContext() {
     return super.getContext();
   }
@@ -197,13 +213,10 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
     }
   }
 
-  //Close without checking thread - used when server is closed
-  void internalClose() {
-    channel.close();
-  }
+  private ChannelFuture writeFuture;
 
-  private ChannelFuture doWrite(ByteBuf buff) {
-    return channel.write(buff);
+  private void doWrite(ByteBuf buff) {
+    writeFuture = channel.write(buff);
   }
 
   private void callDrainHandler() {
