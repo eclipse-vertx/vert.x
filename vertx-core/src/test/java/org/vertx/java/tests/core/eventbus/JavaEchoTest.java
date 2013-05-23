@@ -58,10 +58,6 @@ public class JavaEchoTest extends TestBase {
     startTest(testName);
   }
 
-//  public void testFoo() throws Exception {
-//    super.runTestInLoop("testEchoString", 100000);
-//  }
-
   @Test
   public void testEchoString() {
     runPeerTest(getMethodName());

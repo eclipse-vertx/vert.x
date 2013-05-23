@@ -16,6 +16,7 @@
 
 package vertx.tests.core.eventbus;
 
+import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
@@ -32,8 +33,8 @@ import java.util.concurrent.atomic.AtomicReference;
 public class LocalClient extends EventBusAppBase {
 
   @Override
-  public void start() {
-    super.start();
+  public void start(final Future<Void> startedResult) {
+    super.start(startedResult);
   }
 
   @Override

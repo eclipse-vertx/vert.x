@@ -110,7 +110,7 @@ public class DefaultNetServer implements NetServer, Closeable {
     synchronized (vertx.sharedNetServers()) {
       id = new ServerID(port, host);
       DefaultNetServer shared = vertx.sharedNetServers().get(id);
-      if (shared == null) {
+      if (shared == null || port == 0) { // Wildcard port will imply a new actual server each time
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
 
         ServerBootstrap bootstrap = new ServerBootstrap();
@@ -164,6 +164,10 @@ public class DefaultNetServer implements NetServer, Closeable {
                 log.trace("Net server listening on " + host + ":" + bindFuture.channel().localAddress());
                 // Update port to actual port - wildcard port 0 might have been used
                 DefaultNetServer.this.port = ((InetSocketAddress)bindFuture.channel().localAddress()).getPort();
+                id = new ServerID(DefaultNetServer.this.port, id.host);
+                vertx.sharedNetServers().put(id, DefaultNetServer.this);
+              } else {
+                vertx.sharedNetServers().remove(id);
               }
             }
           });
@@ -184,7 +188,9 @@ public class DefaultNetServer implements NetServer, Closeable {
           listening = false;
           return this;
         }
-        vertx.sharedNetServers().put(id, this);
+        if (port != 0) {
+          vertx.sharedNetServers().put(id, this);
+        }
         actualServer = this;
       } else {
         // Server already exists with that host/port - we will use that

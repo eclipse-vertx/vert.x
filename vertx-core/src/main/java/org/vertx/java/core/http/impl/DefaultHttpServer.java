@@ -198,6 +198,14 @@ public class DefaultHttpServer implements HttpServer, Closeable {
           bindFuture = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
           Channel serverChannel = bindFuture.channel();
           serverChannelGroup.add(serverChannel);
+          bindFuture.addListener(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture channelFuture) throws Exception {
+              if (!channelFuture.isSuccess()) {
+                vertx.sharedHttpServers().remove(id);
+              }
+            }
+          });
         } catch (final Throwable t) {
           t.printStackTrace();
           // Make sure we send the exception back through the handler (if any)

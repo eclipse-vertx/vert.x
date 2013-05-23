@@ -36,6 +36,10 @@ public class ServerIDs implements Iterable<ServerID> {
     ids = new ConcurrentHashSet<>(initialSize);
   }
 
+  public int size() {
+    return ids.size();
+  }
+
   public boolean isInitialised() {
     return initialised;
   }

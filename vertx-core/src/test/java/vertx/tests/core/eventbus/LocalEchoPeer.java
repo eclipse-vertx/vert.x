@@ -18,17 +18,24 @@ package vertx.tests.core.eventbus;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
+
+import java.util.UUID;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class LocalEchoPeer extends EventBusAppBase {
 
+  private static final Logger log = LoggerFactory.getLogger(LocalEchoPeer.class);
+
   @Override
-  public void start() {
-    super.start();
+  public void start(final Future<Void> startedResult) {
+    super.start(startedResult);
   }
 
   @Override
@@ -141,25 +148,32 @@ public class LocalEchoPeer extends EventBusAppBase {
   }
 
   private void echoInitialise() {
-    eb.registerHandler(LocalEchoClient.ECHO_ADDRESS, new Handler<Message>() {
+    // We generate an address
+    final String echoAddress = UUID.randomUUID().toString();
+    vertx.sharedData().getMap("echoaddress").put("echoaddress", echoAddress);
+    eb.registerHandler(echoAddress, new Handler<Message>() {
           boolean handled = false;
-
-          public void handle(Message msg) {
+          public void handle(final Message msg) {
             tu.checkThread();
             tu.azzert(!handled);
-            eb.unregisterHandler(LocalEchoClient.ECHO_ADDRESS, this);
+            eb.unregisterHandler(echoAddress, this, new AsyncResultHandler<Void>() {
+              @Override
+              public void handle(AsyncResult<Void> event) {
+                msg.reply(msg.body());
+              }
+            });
             handled = true;
-            msg.reply(msg.body());
           }
         }, new AsyncResultHandler<Void>() {
-      public void handle(AsyncResult<Void> event) {
-        if (event.succeeded()) {
-          tu.testComplete();
-        } else {
-          tu.azzert(false, "Failed to register");
+          public void handle(AsyncResult<Void> event) {
+            if (event.succeeded()) {
+              tu.testComplete();
+            } else {
+              event.cause().printStackTrace();
+              tu.azzert(false, "Failed to register");
+            }
+          }
         }
-      }
-    }
     );
   }
 

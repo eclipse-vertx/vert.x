@@ -2135,13 +2135,11 @@ public class HttpTestClient extends TestClientBase {
         tu.azzert(ar.succeeded());
         client.getNow("some-uri", new Handler<HttpClientResponse>() {
           public void handle(final HttpClientResponse response) {
-            System.out.println("status code is " + response.statusCode());
-            //tu.azzert(response.statusCode() == 404);
-            //tu.azzert("text/html".equals(response.headers().get("content-type")));
+            tu.azzert(response.statusCode() == 404);
+            tu.azzert("text/html".equals(response.headers().get("content-type")));
             response.bodyHandler(new Handler<Buffer>() {
               public void handle(Buffer buff) {
-                //tu.azzert(content.equals(buff.toString()));
-                System.out.println("body is " + buff.toString());
+                tu.azzert(content.equals(buff.toString()));
                 tu.testComplete();
               }
             });

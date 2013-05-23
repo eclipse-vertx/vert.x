@@ -26,7 +26,6 @@ import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.testframework.TestClientBase;
-import org.vertx.java.tests.core.eventbus.Counter;
 
 import java.util.Map;
 
@@ -49,12 +48,11 @@ public abstract class EventBusAppBase extends TestClientBase {
       tu.appReady();
       startedResult.setResult(null);
     } else {
-      int port = Counter.portCounter.getAndIncrement();
       // FIXME - this test is a hack - we shouldn't be creating multiple eventbuses with a single vert.x
       // using private API!!
       VertxInternal vertxi = ((VertxInternal)vertx);
       ClusterManager clusterManager = new HazelcastClusterManager(vertxi);
-      eb = new DefaultEventBus(vertxi, port, "localhost", clusterManager, new AsyncResultHandler<Void>() {
+      eb = new DefaultEventBus(vertxi, 0, "localhost", clusterManager, new AsyncResultHandler<Void>() {
         @Override
         public void handle(AsyncResult<Void> asyncResult) {
           if (asyncResult.succeeded()) {

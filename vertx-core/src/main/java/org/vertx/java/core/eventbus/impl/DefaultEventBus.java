@@ -445,6 +445,8 @@ public class DefaultEventBus implements EventBus {
           } else {
             listenHandler.handle(new DefaultFutureResult<Void>(asyncResult.cause()));
           }
+        } else if (asyncResult.failed()) {
+          log.error("Failed to listen", asyncResult.cause());
         }
       }
     });
