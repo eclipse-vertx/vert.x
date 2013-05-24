@@ -128,19 +128,30 @@ public class Starter {
     };
   }
 
+  private Handler<AsyncResult<Void>> unblockHandler() {
+    return new Handler<AsyncResult<Void>>() {
+      public void handle(AsyncResult<Void> res) {
+        unblock();
+      }
+    };
+  }
+
   private void pullDependencies(String modName) {
     log.info("Attempting to pull in dependencies for module " + modName);
-    createPM().pullInDependencies(modName, this.<Void>createLoggingHandler("Successfully pulled in dependencies"));
+    createPM().pullInDependencies(modName, this.<Void>createLoggingHandler("Successfully pulled in dependencies", unblockHandler()));
+    block();
   }
 
   private void installModule(String modName) {
     log.info("Attempting to install module " + modName);
-    createPM().installModule(modName, this.<Void>createLoggingHandler("Successfully installed module"));
+    createPM().installModule(modName, this.<Void>createLoggingHandler("Successfully installed module", unblockHandler()));
+    block();
   }
 
   private void uninstallModule(String modName) {
     log.info("Attempting to uninstall module " + modName);
-    createPM().uninstallModule(modName, this.<Void>createLoggingHandler("Successfully uninstalled module"));
+    createPM().uninstallModule(modName, this.<Void>createLoggingHandler("Successfully uninstalled module", unblockHandler()));
+    block();
   }
 
   private PlatformManager createPM() {

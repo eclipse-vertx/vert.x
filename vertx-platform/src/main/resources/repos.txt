@@ -8,7 +8,4 @@ maven:http://repo2.maven.org/maven2
 maven:http://oss.sonatype.org/content/repositories/snapshots
 
 # Bintray
-bintray:http://dl.bintray.com/content
-
-# Old Vert.x 1.x module repository
-old:http://vert-x.github.com/vertx-mods/mods
+bintray:http://dl.bintray.com

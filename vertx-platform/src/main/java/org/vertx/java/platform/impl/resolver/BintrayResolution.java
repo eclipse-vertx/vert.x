@@ -27,13 +27,9 @@ import java.net.URISyntaxException;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  *
- * Bintray module names must be in the form:
+ * Given a module this resolver will look for the module at:
  *
- * user:repo:module_name:version
- *
- * Given a module name in that form, this resolver will look for the module at:
- *
- * content_root/<user>/<repo>/<module-name>/<module-name>-<version>.zip
+ * content_root/<owner>/vertx-mods/<module-name>/<module-name>-<version>.zip
  *
  * That's the recommended path for users to put modules in bintray, Vert.x can still find modules in bintray in
  * other paths if you use the GenericHttpRepoResolver
