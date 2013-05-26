@@ -301,6 +301,9 @@ public class JavaFileSystemTest extends TestBase {
   public void testWriteStream() throws Exception {
     startTest(getMethodName());
   }
+  public void testWriteStreamWithCompositeBuffer() throws Exception {
+    startTest(getMethodName());
+  }
 
   public void testReadStream() throws Exception {
     startTest(getMethodName());

@@ -16,6 +16,7 @@
 
 package org.vertx.java.core.file.impl;
 
+import io.netty.buffer.ByteBuf;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
@@ -37,7 +38,9 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -103,13 +106,37 @@ public class DefaultAsyncFile implements AsyncFile {
   }
 
   @Override
-  public AsyncFile write(Buffer buffer, int position, Handler<AsyncResult<Void>> handler) {
+  public AsyncFile write(Buffer buffer, int position, final Handler<AsyncResult<Void>> handler) {
     check();
-    ByteBuffer bb = buffer.getByteBuf().nioBuffer();
-    doWrite(bb, position, handler);
+    ByteBuf buf = buffer.getByteBuf();
+    if (buf.nioBufferCount() > 1) {
+      final Iterator<ByteBuffer> buffers = Arrays.asList(buf.nioBuffers()).iterator();
+      doWrite(buffers, position, handler);
+    } else {
+      ByteBuffer bb = buf.nioBuffer();
+      doWrite(bb, position, bb.limit(),  handler);
+    }
     return this;
   }
 
+  private void doWrite(final Iterator<ByteBuffer> buffers, final int position, final Handler<AsyncResult<Void>> handler) {
+    final ByteBuffer b = buffers.next();
+    final int limit = b.limit();
+    doWrite(b, position, limit, new Handler<AsyncResult<Void>>() {
+      @Override
+      public void handle(AsyncResult<Void> event) {
+        if (event.failed()) {
+          handler.handle(event);
+        } else {
+          if (buffers.hasNext()) {
+            doWrite(buffers, position + limit, handler);
+          } else {
+            handler.handle(event);
+          }
+        }
+      }
+    });
+  }
   @Override
   public AsyncFile read(Buffer buffer, int offset, int position, int length, Handler<AsyncResult<Buffer>> handler) {
     check();
@@ -122,9 +149,8 @@ public class DefaultAsyncFile implements AsyncFile {
   public AsyncFile write(Buffer buffer) {
     check();
     final int length = buffer.length();
-    ByteBuffer bb = buffer.getByteBuf().nioBuffer();
-
-    doWrite(bb, writePos, new Handler<AsyncResult<Void>>() {
+    ByteBuf buf = buffer.getByteBuf();
+    Handler<AsyncResult<Void>> handler = new Handler<AsyncResult<Void>>() {
 
       public void handle(AsyncResult<Void> deferred) {
         if (deferred.succeeded()) {
@@ -137,7 +163,15 @@ public class DefaultAsyncFile implements AsyncFile {
           handleException(deferred.cause());
         }
       }
-    });
+    };
+
+    if (buf.nioBufferCount() > 1) {
+      final Iterator<ByteBuffer> buffers = Arrays.asList(buf.nioBuffers()).iterator();
+      doWrite(buffers, writePos, handler);
+    } else {
+      ByteBuffer bb = buf.nioBuffer();
+      doWrite(bb, writePos, bb.limit(), handler);
+    }
     writePos += length;
     return this;
   }
@@ -293,8 +327,8 @@ public class DefaultAsyncFile implements AsyncFile {
     }.run();
   }
 
-  private void doWrite(final ByteBuffer buff, final int position, final Handler<AsyncResult<Void>> handler) {
-    writesOutstanding += buff.limit();
+  private void doWrite(final ByteBuffer buff, final int position, final int toWrite, final Handler<AsyncResult<Void>> handler) {
+    writesOutstanding += toWrite;
     writeInternal(buff, position, handler);
   }
 

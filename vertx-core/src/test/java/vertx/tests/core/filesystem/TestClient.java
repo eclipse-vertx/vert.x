@@ -16,6 +16,7 @@
 
 package vertx.tests.core.filesystem;
 
+import io.netty.buffer.Unpooled;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
@@ -972,6 +973,55 @@ public class TestClient extends TestClientBase {
             tu.azzert(chunk.length() == chunkSize);
             ws.write(chunk);
           }
+
+          ar.result().close(new AsyncResultHandler<Void>() {
+            public void handle(AsyncResult<Void> ar) {
+              tu.checkThread();
+              if (ar.failed()) {
+                tu.exception(ar.cause(), "failed to close");
+              } else {
+                tu.azzert(fileExists(fileName));
+                byte[] readBytes;
+                try {
+                  readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName));
+                } catch (IOException e) {
+                  tu.exception(e, "failed to read");
+                  return;
+                }
+                tu.azzert(TestUtils.buffersEqual(buff, new Buffer(readBytes)));
+                tu.testComplete();
+              }
+            }
+          });
+        } else {
+          tu.exception(ar.cause(), "failed to open");
+        }
+      }
+    });
+  }
+
+  public void testWriteStreamWithCompositeBuffer() throws Exception {
+    final String fileName = "some-file.dat";
+    final int chunkSize = 1000;
+    final int chunks = 10;
+    byte[] content1 = TestUtils.generateRandomByteArray(chunkSize * (chunks / 2 ));
+    byte[] content2 = TestUtils.generateRandomByteArray(chunkSize * (chunks / 2 ));
+    final Buffer buff = new Buffer(Unpooled.wrappedBuffer(content1, content2));
+    vertx.fileSystem().open(TEST_DIR + pathSep + fileName, new AsyncResultHandler<AsyncFile>() {
+      public void handle(AsyncResult<AsyncFile> ar) {
+        tu.checkThread();
+        if (ar.succeeded()) {
+          WriteStream ws = ar.result();
+
+          ws.exceptionHandler(new Handler<Throwable>() {
+            public void handle(Throwable t) {
+              tu.checkThread();
+              tu.exception(t, "caught exception on stream");
+            }
+          });
+
+          ws.write(buff);
+
 
           ar.result().close(new AsyncResultHandler<Void>() {
             public void handle(AsyncResult<Void> ar) {
