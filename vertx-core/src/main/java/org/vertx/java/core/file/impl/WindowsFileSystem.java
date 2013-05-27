@@ -31,48 +31,48 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
  */
 public class WindowsFileSystem extends DefaultFileSystem {
 
-	private static final Logger log = LoggerFactory.getLogger(WindowsFileSystem.class);
+  private static final Logger log = LoggerFactory.getLogger(WindowsFileSystem.class);
 
-	public WindowsFileSystem(final VertxInternal vertx) {
-		super(vertx);
-	}
+  public WindowsFileSystem(final VertxInternal vertx) {
+    super(vertx);
+  }
 
-	private void logInternal(final String perms) {
-		if ((perms != null) && log.isDebugEnabled()) {
-			log.debug("You are running on Windows and POSIX style file permissions are not supported");
-		}
-	}
+  private static void logInternal(final String perms) {
+    if (perms != null && log.isDebugEnabled()) {
+      log.debug("You are running on Windows and POSIX style file permissions are not supported");
+    }
+  }
 
-	@Override
-	protected BlockingAction<Void> chmodInternal(String path, String perms, String dirPerms,
-			Handler<AsyncResult<Void>> handler) {
-		logInternal(perms);
-		logInternal(dirPerms);
-		return new BlockingAction<Void>(vertx, handler) {
-			@Override
-			public Void action() {
-				return null;
-			}
-		};
-	}
+  @Override
+  protected BlockingAction<Void> chmodInternal(String path, String perms, String dirPerms,
+                                               Handler<AsyncResult<Void>> handler) {
+    logInternal(perms);
+    logInternal(dirPerms);
+    return new BlockingAction<Void>(vertx, handler) {
+      @Override
+      public Void action() {
+        return null;
+      }
+    };
+  }
 
-	@Override
-	protected BlockingAction<Void> mkdirInternal(String path, final String perms, final boolean createParents,
-			Handler<AsyncResult<Void>> handler) {
-		logInternal(perms);
-		return super.mkdirInternal(path, null, createParents, handler);
-	}
+  @Override
+  protected BlockingAction<Void> mkdirInternal(String path, final String perms, final boolean createParents,
+                                               Handler<AsyncResult<Void>> handler) {
+    logInternal(perms);
+    return super.mkdirInternal(path, null, createParents, handler);
+  }
 
-	@Override
-	protected AsyncFile doOpen(String path, String perms, boolean read, boolean write, boolean createNew, boolean flush,
-			DefaultContext context) {
-		logInternal(perms);
-		return new DefaultAsyncFile(vertx, path, null, read, write, createNew, flush, context);
-	}
+  @Override
+  protected AsyncFile doOpen(String path, String perms, boolean read, boolean write, boolean createNew, boolean flush,
+                             DefaultContext context) {
+    logInternal(perms);
+    return new DefaultAsyncFile(vertx, path, null, read, write, createNew, flush, context);
+  }
 
-	@Override
-	protected BlockingAction<Void> createFileInternal(String p, final String perms, Handler<AsyncResult<Void>> handler) {
-		logInternal(perms);
-		return super.createFileInternal(p, null, handler);
-	}
+  @Override
+  protected BlockingAction<Void> createFileInternal(String p, final String perms, Handler<AsyncResult<Void>> handler) {
+    logInternal(perms);
+    return super.createFileInternal(p, null, handler);
+  }
 }
