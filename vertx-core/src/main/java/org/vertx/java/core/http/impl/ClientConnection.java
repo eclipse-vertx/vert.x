@@ -33,8 +33,6 @@ import org.vertx.java.core.http.impl.ws.WebSocketConvertHandler;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.DefaultNetSocket;
 import org.vertx.java.core.net.impl.VertxNetHandler;
@@ -50,8 +48,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 class ClientConnection extends AbstractConnection {
 
-  private static final Logger log = LoggerFactory.getLogger(ClientConnection.class);
-
   final DefaultHttpClient client;
   final String hostHeader;
   private final boolean ssl;
@@ -62,7 +58,7 @@ class ClientConnection extends AbstractConnection {
   private WebSocketClientHandshaker handshaker;
   private volatile DefaultHttpClientRequest currentRequest;
   // Requests can be pipelined so we need a queue to keep track of requests
-  private final Queue<DefaultHttpClientRequest> requests = new ConcurrentLinkedQueue();
+  private final Queue<DefaultHttpClientRequest> requests = new ConcurrentLinkedQueue<>();
   private volatile DefaultHttpClientResponse currentResponse;
   private DefaultWebSocket ws;
 
@@ -75,7 +71,7 @@ class ClientConnection extends AbstractConnection {
     this.ssl = ssl;
     this.host = host;
     this.port = port;
-    this.hostHeader = host + ":" + port;
+    this.hostHeader = host + ':' + port;
     this.keepAlive = keepAlive;
   }
 

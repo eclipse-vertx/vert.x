@@ -20,13 +20,10 @@ import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.*;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.impl.DefaultContext;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.concurrent.TimeoutException;
@@ -36,8 +33,6 @@ import java.util.concurrent.TimeoutException;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class DefaultHttpClientRequest implements HttpClientRequest {
-
-  private static final Logger log = LoggerFactory.getLogger(HttpClient.class);
 
   private final DefaultHttpClient client;
   private final HttpRequest request;

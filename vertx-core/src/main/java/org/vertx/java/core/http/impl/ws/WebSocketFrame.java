@@ -32,7 +32,7 @@ public interface WebSocketFrame {
   /**
    * List of all frame types.
    */
-  public enum FrameType {
+  enum FrameType {
     CONTINUATION,
     TEXT,
     BINARY,
@@ -76,6 +76,11 @@ public interface WebSocketFrame {
    */
   void setBinaryData(ByteBuf binaryData);
 
+  /**
+   * Set the type of the content of this frame and populate it with the given content
+   *
+   * @param textData the content of the frame. Must be valid UTF-8
+   */
   void setTextData(String textData);
 
   /**

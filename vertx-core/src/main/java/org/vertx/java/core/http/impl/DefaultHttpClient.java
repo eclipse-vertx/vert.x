@@ -34,9 +34,6 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.*;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.impl.TCPSSLHelper;
 import org.vertx.java.core.net.impl.VertxEventLoopGroup;
 
@@ -49,7 +46,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultHttpClient implements HttpClient {
 
-  private static final Logger log = LoggerFactory.getLogger(HttpClientRequest.class);
   private static final ExceptionDispatchHandler EXCEPTION_DISPATCH_HANDLER = new ExceptionDispatchHandler();
 
   final VertxInternal vertx;

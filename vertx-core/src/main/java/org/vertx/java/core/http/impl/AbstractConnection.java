@@ -21,16 +21,12 @@ import io.netty.channel.ChannelFuture;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.impl.ConnectionBase;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class AbstractConnection extends ConnectionBase {
-
-  private static final Logger log = LoggerFactory.getLogger(AbstractConnection.class);
 
   protected AbstractConnection(VertxInternal vertx, Channel channel, DefaultContext context) {
     super(vertx, channel, context);

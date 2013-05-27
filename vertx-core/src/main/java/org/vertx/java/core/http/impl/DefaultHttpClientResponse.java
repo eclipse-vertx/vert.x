@@ -25,8 +25,6 @@ import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.MultiMap;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetSocket;
 
 import java.util.ArrayList;
@@ -39,8 +37,6 @@ import java.util.Queue;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class DefaultHttpClientResponse implements HttpClientResponse  {
-
-  private static final Logger log = LoggerFactory.getLogger(DefaultHttpClientResponse.class);
 
   private final int statusCode;
   private final String statusMessage;
