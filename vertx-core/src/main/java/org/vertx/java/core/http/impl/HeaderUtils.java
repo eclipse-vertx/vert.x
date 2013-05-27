@@ -24,6 +24,7 @@ import java.util.Map;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@Deprecated
 public class HeaderUtils {
   public static Map<String, String> simplifyHeaders(List<Map.Entry<String, String>> hdrs) {
     // According to http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2 we can legally convert any list of
