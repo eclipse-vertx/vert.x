@@ -8,6 +8,7 @@ import java.util.Set;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@Deprecated
 public class LowerCaseKeyMap<T> implements Map<String, T> {
 
   private final Map<String, T> delegate = new HashMap<>();
