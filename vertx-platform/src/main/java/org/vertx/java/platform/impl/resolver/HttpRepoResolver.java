@@ -17,15 +17,11 @@ package org.vertx.java.platform.impl.resolver;/*
  */
 
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.platform.impl.ModuleIdentifier;
 
 import java.net.URI;
 
 public abstract class HttpRepoResolver implements RepoResolver {
-
-  private static final Logger log = LoggerFactory.getLogger(HttpRepoResolver.class);
 
   protected final Vertx vertx;
   protected final String repoHost;

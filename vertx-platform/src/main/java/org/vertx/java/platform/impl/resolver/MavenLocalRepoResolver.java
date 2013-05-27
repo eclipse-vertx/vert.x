@@ -38,7 +38,7 @@ public class MavenLocalRepoResolver implements RepoResolver {
     this.repoID = expandHome(repoID);
   }
 
-  private String expandHome(String repo) {
+  private static String expandHome(String repo) {
     return repo.replace("~", homeDir);
   }
 
@@ -71,9 +71,9 @@ public class MavenLocalRepoResolver implements RepoResolver {
   public boolean getModule(String filename, ModuleIdentifier moduleIdentifier) {
     String uriRoot = MavenResolution.getMavenURI(moduleIdentifier);
     File localMetaDataFile =
-        new File(repoID + "/" + uriRoot + "maven-metadata-local.xml");
+        new File(repoID + '/' + uriRoot + "maven-metadata-local.xml");
     File remoteMetaDataFile =
-        new File(repoID + "/" + uriRoot + "maven-metadata-remote.xml");
+        new File(repoID + '/' + uriRoot + "maven-metadata-remote.xml");
     boolean lExists = localMetaDataFile.exists();
     boolean rExists = remoteMetaDataFile.exists();
     if ((lExists && !rExists) || (lExists && rExists && localMetaDataFile.lastModified() >= remoteMetaDataFile.lastModified())) {
@@ -81,7 +81,7 @@ public class MavenLocalRepoResolver implements RepoResolver {
     } else if (rExists) {
       return getModuleForMetaData(filename, moduleIdentifier, remoteMetaDataFile, uriRoot);
     } else {
-      File nonSnapshotFile = new File(repoID + "/" + uriRoot + moduleIdentifier.getName() + "-" + moduleIdentifier.getVersion() + ".zip");
+      File nonSnapshotFile = new File(repoID + '/' + uriRoot + moduleIdentifier.getName() + '-' + moduleIdentifier.getVersion() + ".zip");
       if (nonSnapshotFile.exists()) {
         try {
           Files.copy(nonSnapshotFile.toPath(), Paths.get(filename));

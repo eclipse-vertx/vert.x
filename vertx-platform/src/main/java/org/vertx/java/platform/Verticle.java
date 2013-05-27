@@ -84,7 +84,6 @@ public abstract class Verticle {
   /**
    * Vert.x calls the stop method when the verticle is undeployed.
    * Put any cleanup code for your verticle in here
-   * @throws Exception
    */
   public void stop() {
   }

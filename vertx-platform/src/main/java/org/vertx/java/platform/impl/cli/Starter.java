@@ -98,11 +98,7 @@ public class Starter {
     }
   }
 
-  private <T> AsyncResultHandler<T> createLoggingHandler(final String successMessage) {
-    return createLoggingHandler(successMessage, null);
-  }
-
-  private <T> AsyncResultHandler<T> createLoggingHandler(final String successMessage, final Handler<AsyncResult<T>> doneHandler) {
+  private static <T> AsyncResultHandler<T> createLoggingHandler(final String successMessage, final Handler<AsyncResult<T>> doneHandler) {
     return new AsyncResultHandler<T>() {
       @Override
       public void handle(AsyncResult<T> res) {
@@ -138,19 +134,19 @@ public class Starter {
 
   private void pullDependencies(String modName) {
     log.info("Attempting to pull in dependencies for module " + modName);
-    createPM().pullInDependencies(modName, this.<Void>createLoggingHandler("Successfully pulled in dependencies", unblockHandler()));
+    createPM().pullInDependencies(modName, createLoggingHandler("Successfully pulled in dependencies", unblockHandler()));
     block();
   }
 
   private void installModule(String modName) {
     log.info("Attempting to install module " + modName);
-    createPM().installModule(modName, this.<Void>createLoggingHandler("Successfully installed module", unblockHandler()));
+    createPM().installModule(modName, createLoggingHandler("Successfully installed module", unblockHandler()));
     block();
   }
 
   private void uninstallModule(String modName) {
     log.info("Attempting to uninstall module " + modName);
-    createPM().uninstallModule(modName, this.<Void>createLoggingHandler("Successfully uninstalled module", unblockHandler()));
+    createPM().uninstallModule(modName, createLoggingHandler("Successfully uninstalled module", unblockHandler()));
     block();
   }
 
@@ -306,7 +302,7 @@ public class Starter {
   }
 
 
-  private void addShutdownHook(final PlatformManager mgr) {
+  private static void addShutdownHook(final PlatformManager mgr) {
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
         final CountDownLatch latch = new CountDownLatch(1);
@@ -332,7 +328,7 @@ public class Starter {
   /*
   Get default interface to use since the user hasn't specified one
    */
-  private String getDefaultAddress() {
+  private static String getDefaultAddress() {
     Enumeration<NetworkInterface> nets;
     try {
       nets = NetworkInterface.getNetworkInterfaces();
@@ -363,18 +359,18 @@ public class Starter {
       // Class not from JAR
       return "<unknown> (not a jar)";
     }
-    String manifestPath = classPath.substring(0, classPath.lastIndexOf("!") + 1) + "/META-INF/MANIFEST.MF";
+    String manifestPath = classPath.substring(0, classPath.lastIndexOf('!') + 1) + "/META-INF/MANIFEST.MF";
     Manifest manifest;
     try (InputStream is = new URL(manifestPath).openStream()) {
       manifest = new Manifest(is);
     } catch (IOException ex) {
-      return "<unknown> (" + ex.getMessage() + ")";
+      return "<unknown> (" + ex.getMessage() + ')';
     }
     Attributes attr = manifest.getMainAttributes();
     return attr.getValue("Vertx-Version");
   }
 
-  private void displaySyntax() {
+  private static void displaySyntax() {
 
     String usage =
 

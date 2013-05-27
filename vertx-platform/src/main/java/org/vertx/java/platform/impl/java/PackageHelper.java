@@ -65,7 +65,7 @@ public class PackageHelper {
     return result;
   }
 
-  private List<JavaFileObject> browseDir(String packageName, File directory) {
+  private static List<JavaFileObject> browseDir(String packageName, File directory) {
     List<JavaFileObject> result = new ArrayList<JavaFileObject>();
     for (File childFile : directory.listFiles()) {
       if (childFile.isFile() && childFile.getName().endsWith(CLASS_FILE)) {
@@ -76,7 +76,7 @@ public class PackageHelper {
     return result;
   }
 
-  private List<JavaFileObject> browseJar(URL packageFolderURL) {
+  private static List<JavaFileObject> browseJar(URL packageFolderURL) {
     List<JavaFileObject> result = new ArrayList<JavaFileObject>();
     try {
       String jarUri = packageFolderURL.toExternalForm().split("!")[0];

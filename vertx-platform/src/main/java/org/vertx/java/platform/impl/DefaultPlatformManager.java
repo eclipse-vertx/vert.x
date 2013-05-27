@@ -72,13 +72,13 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private final File systemModRoot;
   private final ConcurrentMap<String, ModuleReference> moduleRefs = new ConcurrentHashMap<>();
   private final Redeployer redeployer;
-  private Map<String, LanguageImplInfo> languageImpls = new ConcurrentHashMap<>();
-  private Map<String, String> extensionMappings = new ConcurrentHashMap<>();
+  private final Map<String, LanguageImplInfo> languageImpls = new ConcurrentHashMap<>();
+  private final Map<String, String> extensionMappings = new ConcurrentHashMap<>();
   private String defaultLanguageImplName;
-  private List<RepoResolver> repos = new ArrayList<>();
+  private final List<RepoResolver> repos = new ArrayList<>();
   private Handler<Void> exitHandler;
   private final ClassLoader platformClassLoader;
-  private boolean disableMavenLocal;
+  private final boolean disableMavenLocal;
 
   DefaultPlatformManager() {
     this(new DefaultVertx());
@@ -511,7 +511,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
 
-  private void checkWorkerContext() {
+  private static void checkWorkerContext() {
     Thread t = Thread.currentThread();
     if (!t.getName().startsWith("vert.x-worker-thread")) {
       throw new IllegalStateException("Not a worker thread");
@@ -768,7 +768,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
   }
 
-  private String[] parseIncludeString(String sincludes) {
+  private static String[] parseIncludeString(String sincludes) {
     sincludes = sincludes.trim();
     if ("".equals(sincludes)) {
       log.error("Empty include string");
@@ -850,7 +850,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     throw new PlatformManagerException("Module " + modID + " not found in any repositories");
   }
 
-  private String generateTmpFileName() {
+  private static String generateTmpFileName() {
     return TEMP_DIR + FILE_SEP + "vertx-" + UUID.randomUUID().toString();
   }
 
@@ -988,7 +988,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     vertx.getContext().setPathAdjustment(relative);
   }
 
-  private String genDepName() {
+  private static String genDepName() {
     return "deployment-" + UUID.randomUUID().toString();
   }
 

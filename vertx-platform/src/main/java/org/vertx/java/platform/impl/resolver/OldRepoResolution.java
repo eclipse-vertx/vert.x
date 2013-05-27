@@ -48,7 +48,7 @@ public class OldRepoResolution extends HttpResolution {
         downloadToFile(filename, resp);
       }
     });
-    String uri = contentRoot + "/" + modID.getOwner() + "." + modID.getName() + "-v" + modID.getVersion() + "/mod.zip";
+    String uri = contentRoot + '/' + modID.getOwner() + '.' + modID.getName() + "-v" + modID.getVersion() + "/mod.zip";
     makeRequest(repoHost, repoPort, uri);
   }
 }

@@ -55,7 +55,7 @@ public class ModuleIdentifier {
     checkIllegalChars(version);
   }
 
-  private void checkIllegalChars(String str) {
+  private static void checkIllegalChars(String str) {
     if (!str.matches(LEGAL)) {
       throw new IllegalArgumentException("Module identifier: " + str + " contains illegal characters");
     }

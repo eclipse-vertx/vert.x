@@ -1,8 +1,6 @@
 package org.vertx.java.platform.impl;
 
 import org.vertx.java.core.impl.ConcurrentHashSet;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,8 +23,6 @@ import java.util.*;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class ModuleClassLoader extends URLClassLoader {
-
-  private static final Logger log = LoggerFactory.getLogger(ModuleClassLoader.class);
 
   // When running in an IDE we want to always try and load from the platform classloader first
   // This allows in-container tests running in the IDE to immediately see changes to any resources in the module

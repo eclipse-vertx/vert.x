@@ -64,7 +64,7 @@ public class MavenResolution extends HttpResolution {
         }
       });
       // First we make a request to maven-metadata.xml
-      makeRequest(repoHost, repoPort, contentRoot + "/" + uriRoot + "maven-metadata.xml");
+      makeRequest(repoHost, repoPort, contentRoot + '/' + uriRoot + "maven-metadata.xml");
     } else {
       addHandler(200, new Handler<HttpClientResponse>() {
         @Override
@@ -84,12 +84,12 @@ public class MavenResolution extends HttpResolution {
       if (pos2 != -1) {
         String timestamp = data.substring(pos2 + 11, pos2 + 26);
         int pos3 = data.indexOf("<buildNumber>", pos);
-        int pos4 = data.indexOf("<", pos3 + 12);
+        int pos4 = data.indexOf('<', pos3 + 12);
         String buildNumber = data.substring(pos3 + 13, pos4);
         // Timestamped SNAPSHOT
-        actualURI = contentRoot + "/" + uriRoot + identifier.getName() + "-" +
-            identifier.getVersion().substring(0, identifier.getVersion().length() - 9) + "-" +
-            timestamp + "-" + buildNumber + ".zip";
+        actualURI = contentRoot + '/' + uriRoot + identifier.getName() + '-' +
+            identifier.getVersion().substring(0, identifier.getVersion().length() - 9) + '-' +
+            timestamp + '-' + buildNumber + ".zip";
       }
     }
     if (actualURI == null) {
@@ -110,7 +110,7 @@ public class MavenResolution extends HttpResolution {
   }
 
   private static String getNonVersionedResourceName(String contentRoot, ModuleIdentifier identifier, String uriRoot) {
-    return contentRoot + "/" + uriRoot + identifier.getName() + "-" + identifier.getVersion() + ".zip";
+    return contentRoot + '/' + uriRoot + identifier.getName() + '-' + identifier.getVersion() + ".zip";
   }
 
 }

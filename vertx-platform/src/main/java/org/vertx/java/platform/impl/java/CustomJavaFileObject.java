@@ -27,8 +27,8 @@ import java.net.URI;
  */
 public class CustomJavaFileObject implements JavaFileObject {
   private final String binaryName;
-  private Kind kind;
-  private URI uri;
+  private final Kind kind;
+  private final URI uri;
 
   protected CustomJavaFileObject(URI uri, Kind kind, String binaryName) {
     this.uri = uri;
@@ -88,7 +88,7 @@ public class CustomJavaFileObject implements JavaFileObject {
 
   public boolean isNameCompatible(String simpleName, Kind kind) {
     String name = simpleName + kind.extension;
-    return (name.equals(toUri().getPath()) || toUri().getPath().endsWith("/" + name)) && kind.equals(getKind());
+    return (name.equals(toUri().getPath()) || toUri().getPath().endsWith('/' + name)) && kind.equals(getKind());
   }
 
   public Modifier getAccessLevel() {
@@ -97,6 +97,6 @@ public class CustomJavaFileObject implements JavaFileObject {
 
   @Override
   public String toString() {
-    return getClass().getName() + "[" + toUri() + "]";
+    return getClass().getName() + '[' + toUri() + ']';
   }
 }

@@ -52,7 +52,7 @@ public class JavaSourceContext {
     String fileName = file.getName();
     String className = fileName.substring(0, fileName.length() - Kind.SOURCE.extension.length());
     if (packageName != null) {
-      className = packageName + "." + className;
+      className = packageName + '.' + className;
     }
     this.className = className;
   }
@@ -71,16 +71,16 @@ public class JavaSourceContext {
    * Then, if the line starts with keyword "package", parse the package definition from it.
    *
    */
-  private String parsePackage(File file) {
+  private static String parsePackage(File file) {
     try {
       String source = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
       source = source.replaceAll(REMOVE_COMMENTS_REGEXP, " ");
       for (String line : source.split("\\r?\\n")) {
         line = line.trim();
-        if (line.length() > 0) {
+        if (!line.isEmpty()) {
           int idx = line.indexOf("package ");
           if (idx != -1) {
-            return line.substring(line.indexOf(" ", idx), line.indexOf(";", idx)).trim();
+            return line.substring(line.indexOf(' ', idx), line.indexOf(';', idx)).trim();
           }
           return null; // Package definition must be on the first non-comment line
         }

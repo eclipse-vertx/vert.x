@@ -31,10 +31,6 @@ public class JavaVerticleFactory implements VerticleFactory {
   private Vertx vertx;
   private Container container;
 
-  public JavaVerticleFactory() {
-	  super();
-  }
-
   @Override
   public void init(Vertx vertx, Container container, ClassLoader cl) {
     this.cl = cl;
@@ -42,7 +38,7 @@ public class JavaVerticleFactory implements VerticleFactory {
     this.container = container;
   }
 
-  private boolean isJavaSource(String main) {
+  private static boolean isJavaSource(String main) {
     return main.endsWith(".java");
   }
 
