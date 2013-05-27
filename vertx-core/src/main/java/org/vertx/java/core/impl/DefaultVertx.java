@@ -61,7 +61,7 @@ public class DefaultVertx implements VertxInternal {
   private final SharedData sharedData = new SharedData();
 
   private ExecutorService backgroundPool = VertxExecutorFactory.workerPool("vert.x-worker-thread-");
-  private OrderedExecutorFactory orderedFact = new OrderedExecutorFactory(backgroundPool);
+  private final OrderedExecutorFactory orderedFact = new OrderedExecutorFactory(backgroundPool);
   private EventLoopGroup eventLoopGroup = VertxExecutorFactory.eventLoopGroup("vert.x-eventloop-thread-");
 
   private Map<ServerID, DefaultHttpServer> sharedHttpServers = new HashMap<>();

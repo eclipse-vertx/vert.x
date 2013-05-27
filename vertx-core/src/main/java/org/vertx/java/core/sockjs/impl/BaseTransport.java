@@ -46,7 +46,7 @@ class BaseTransport {
 
   protected static final String COMMON_PATH_ELEMENT_RE = "\\/[^\\/\\.]+\\/([^\\/\\.]+)\\/";
 
-  private static final long RAND_OFFSET = 2l << 30;
+  private static final long RAND_OFFSET = 2L << 30;
 
   public BaseTransport(VertxInternal vertx, Map<String, Session> sessions, JsonObject config) {
     this.vertx = vertx;

@@ -52,11 +52,11 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   private final String authAddress;
   private final Vertx vertx;
   private final EventBus eb;
-  private Set<String> acceptedReplyAddresses = new HashSet<>();
-  private Map<String, Pattern> compiledREs = new HashMap<>();
+  private final Set<String> acceptedReplyAddresses = new HashSet<>();
+  private final Map<String, Pattern> compiledREs = new HashMap<>();
   private EventBusBridgeHook hook;
 
-  private List<JsonObject> convertArray(JsonArray permitted) {
+  private static List<JsonObject> convertArray(JsonArray permitted) {
     List<JsonObject> l = new ArrayList<>();
     for (Object elem: permitted) {
       if (!(elem instanceof JsonObject)) {
@@ -209,7 +209,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     }
   }
 
-  private String getMandatoryString(JsonObject json, String field) {
+  private static String getMandatoryString(JsonObject json, String field) {
     String value = json.getString(field);
     if (value == null) {
       throw new IllegalStateException(field + " must be specified for message");
@@ -217,7 +217,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     return value;
   }
 
-  private JsonObject getMandatoryObject(JsonObject json, String field) {
+  private static JsonObject getMandatoryObject(JsonObject json, String field) {
     JsonObject value = json.getObject(field);
     if (value == null) {
       throw new IllegalStateException(field + " must be specified for message");
@@ -225,7 +225,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     return value;
   }
 
-  private Object getMandatoryValue(JsonObject json, String field) {
+  private static Object getMandatoryValue(JsonObject json, String field) {
     Object value = json.getValue(field);
     if (value == null) {
       throw new IllegalStateException(field + " must be specified for message");
@@ -233,7 +233,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     return value;
   }
 
-  private void deliverMessage(SockJSSocket sock, String address, Message message) {
+  private static void deliverMessage(SockJSSocket sock, String address, Message message) {
     JsonObject envelope = new JsonObject().putString("address", address).putValue("body", message.body());
     if (message.replyAddress() != null) {
       envelope.putString("replyAddress", message.replyAddress());
@@ -411,7 +411,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     }
   }
   
-  private class Match {
+  private static class Match {
     public final boolean doesMatch;
     public final boolean requiresAuth;
 

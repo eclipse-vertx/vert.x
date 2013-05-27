@@ -89,7 +89,7 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
     rm.handle(req);
   }
 
-  private JsonObject setDefaults(JsonObject config) {
+  private static JsonObject setDefaults(JsonObject config) {
     config = config.copy();
     //Set the defaults
     if (config.getNumber("session_timeout") == null) {
@@ -321,7 +321,7 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
     };
   }
 
-  private String getMD5String(final String str) {
+  private static String getMD5String(final String str) {
     try {
         MessageDigest md = MessageDigest.getInstance("MD5");
         byte[] bytes = md.digest(str.getBytes("UTF-8"));

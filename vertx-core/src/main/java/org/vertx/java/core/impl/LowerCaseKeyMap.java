@@ -10,7 +10,7 @@ import java.util.Set;
  */
 public class LowerCaseKeyMap<T> implements Map<String, T> {
 
-  private Map<String, T> delegate = new HashMap<>();
+  private final Map<String, T> delegate = new HashMap<>();
 
   @Override
   public int size() {

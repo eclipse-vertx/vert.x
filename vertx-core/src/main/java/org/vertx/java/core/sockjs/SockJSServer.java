@@ -59,7 +59,7 @@ public interface SockJSServer {
    * @param config The application configuration
    * @param sockHandler A handler that will be called when new SockJS sockets are created
    */
-  SockJSServer installApp(JsonObject config, final Handler<SockJSSocket> sockHandler);
+  SockJSServer installApp(JsonObject config, Handler<SockJSSocket> sockHandler);
 
   /**
    * Install an app which bridges the SockJS server to the event bus
