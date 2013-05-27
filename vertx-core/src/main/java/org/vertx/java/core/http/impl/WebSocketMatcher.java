@@ -17,10 +17,7 @@
 package org.vertx.java.core.http.impl;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.http.ServerWebSocket;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -31,9 +28,7 @@ import java.util.regex.Pattern;
  */
 public class WebSocketMatcher implements Handler<ServerWebSocket> {
 
-  private static final Logger log = LoggerFactory.getLogger(RouteMatcher.class);
-
-  private List<PatternBinding> bindings = new ArrayList<>();
+  private final List<PatternBinding> bindings = new ArrayList<>();
 
   private Map<String, String> params;
   private Handler<Match> handler;
@@ -99,7 +94,6 @@ public class WebSocketMatcher implements Handler<ServerWebSocket> {
    * Specify a handler that will be called when no other handlers match.
    * If this handler is not specified default behaviour is to reject the websocket
    * (i.e. return 404 to the websocket client in the handshake)
-   * @param handler
    */
   public void noMatch(Handler<Match> handler) {
     noMatchHandler = handler;

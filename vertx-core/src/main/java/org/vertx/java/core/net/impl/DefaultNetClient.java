@@ -403,16 +403,5 @@ public class DefaultNetClient implements NetClient {
   private static void doFailed(Handler<AsyncResult<NetSocket>> connectHandler, Throwable t) {
     connectHandler.handle(new DefaultFutureResult<NetSocket>(t));
   }
-
-  private class ClientHandler extends VertxNetHandler {
-    public ClientHandler() {
-      super(DefaultNetClient.this.vertx, socketMap);
-    }
-
-    @Override
-    protected DefaultContext getContext(DefaultNetSocket connection) {
-      return actualCtx;
-    }
-  }
 }
 

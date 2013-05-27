@@ -43,7 +43,7 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
-  private Handler<Message<Buffer>> writeHandler;
+  private final Handler<Message<Buffer>> writeHandler;
 
   public DefaultNetSocket(VertxInternal vertx, Channel channel, DefaultContext context) {
     super(vertx, channel, context);

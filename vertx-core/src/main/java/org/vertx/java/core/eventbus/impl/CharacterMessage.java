@@ -18,15 +18,11 @@ package org.vertx.java.core.eventbus.impl;
 
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class CharacterMessage extends BaseMessage<Character> {
-
-  private static final Logger log = LoggerFactory.getLogger(CharacterMessage.class);
 
   CharacterMessage(boolean send, String address, Character body) {
     super(send, address, body);

@@ -65,7 +65,7 @@ public class TCPSSLHelper {
   private int trafficClass = defaults.getTrafficClass();
   private int acceptBackLog = 1024;
   private int connectTimeout = 60000;
-  private boolean usePooledBuffers = false;
+  private boolean usePooledBuffers;
 
   private SSLContext sslContext;
 
@@ -301,7 +301,7 @@ public class TCPSSLHelper {
   }
 
   // Create a TrustManager which trusts everything
-  private TrustManager createTrustAllTrustManager() {
+  private static TrustManager createTrustAllTrustManager() {
     return new X509TrustManager() {
       @Override
       public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
@@ -318,7 +318,7 @@ public class TCPSSLHelper {
     };
   }
 
-  private TrustManager[] getTrustMgrs(VertxInternal vertx, final String tsPath,
+  private static TrustManager[] getTrustMgrs(VertxInternal vertx, final String tsPath,
                                              final String tsPassword) throws Exception {
     TrustManagerFactory fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
     KeyStore ts = loadStore(vertx, tsPath, tsPassword);
@@ -326,14 +326,14 @@ public class TCPSSLHelper {
     return fact.getTrustManagers();
   }
 
-  private KeyManager[] getKeyMgrs(VertxInternal vertx, final String ksPath, final String ksPassword) throws Exception {
+  private static KeyManager[] getKeyMgrs(VertxInternal vertx, final String ksPath, final String ksPassword) throws Exception {
     KeyManagerFactory fact = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
     KeyStore ks = loadStore(vertx, ksPath, ksPassword);
     fact.init(ks, ksPassword != null ? ksPassword.toCharArray(): null);
     return fact.getKeyManagers();
   }
 
-  private KeyStore loadStore(VertxInternal vertx, String path, final String ksPassword) throws Exception {
+  private static KeyStore loadStore(VertxInternal vertx, String path, final String ksPassword) throws Exception {
     final String ksPath = PathAdjuster.adjust(vertx, path);
     KeyStore ks = KeyStore.getInstance("JKS");
     InputStream in = null;

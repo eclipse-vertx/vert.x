@@ -173,7 +173,7 @@ public abstract class HttpConnectionPool {
   }
 
 
-  private class Waiter {
+  private static class Waiter {
     final Handler<ClientConnection> handler;
     final Handler<Throwable> connectionExceptionHandler;
     final DefaultContext context;

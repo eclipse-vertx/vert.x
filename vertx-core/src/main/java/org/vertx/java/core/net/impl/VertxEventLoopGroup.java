@@ -37,8 +37,6 @@ import java.util.concurrent.TimeUnit;
  */
 public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implements EventLoopGroup {
 
-  private static final Logger log = LoggerFactory.getLogger(VertxEventLoopGroup.class);
-
   private int pos;
 
   private final List<EventLoopHolder> workers = new ArrayList<>();

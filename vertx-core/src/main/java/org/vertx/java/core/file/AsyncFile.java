@@ -73,7 +73,6 @@ public interface AsyncFile extends ReadStream<AsyncFile>, WriteStream<AsyncFile>
 
   /**
    * Same as {@link #flush} but the handler will be called when the flush is complete or if an error occurs
-   * @param handler
    */
   AsyncFile flush(Handler<AsyncResult<Void>> handler);
 

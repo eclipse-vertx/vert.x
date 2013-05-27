@@ -18,15 +18,11 @@ package org.vertx.java.core.eventbus.impl;
 
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class ByteArrayMessage extends BaseMessage<byte[]> {
-
-  private static final Logger log = LoggerFactory.getLogger(ByteArrayMessage.class);
 
   ByteArrayMessage(boolean send, String address, byte[] body) {
     super(send, address, body);
