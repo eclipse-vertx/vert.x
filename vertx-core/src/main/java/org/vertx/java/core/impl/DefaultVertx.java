@@ -47,7 +47,7 @@ import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**                                                e
+/**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class DefaultVertx implements VertxInternal {
@@ -299,7 +299,7 @@ public class DefaultVertx implements VertxInternal {
     }
 
     if (eventLoopGroup != null) {
-      eventLoopGroup.shutdown();
+      eventLoopGroup.shutdownGracefully();
       eventLoopGroup = null;
     }
 
