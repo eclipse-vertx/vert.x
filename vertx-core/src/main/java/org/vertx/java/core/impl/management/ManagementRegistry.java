@@ -35,9 +35,6 @@ public class ManagementRegistry {
 
   private static final MBeanServer platformMBeanServer = ManagementFactory.getPlatformMBeanServer();
 
-  /**
-   * @param serverID
-   */
   public static void registerEventBus(ServerID serverID) {
     if (!MANAGEMENT_ENABLED) return;
 

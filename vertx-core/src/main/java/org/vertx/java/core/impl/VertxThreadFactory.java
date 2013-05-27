@@ -24,8 +24,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class VertxThreadFactory implements ThreadFactory {
 
-  private String prefix;
-  private AtomicInteger threadCount = new AtomicInteger(0);
+  private final String prefix;
+  private final AtomicInteger threadCount = new AtomicInteger(0);
 
   VertxThreadFactory(String prefix) {
     this.prefix = prefix;

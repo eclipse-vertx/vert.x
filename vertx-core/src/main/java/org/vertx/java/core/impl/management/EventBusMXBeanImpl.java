@@ -21,14 +21,10 @@ package org.vertx.java.core.impl.management;
  */
 public class EventBusMXBeanImpl implements EventBusMXBean {
 
-  private int port;
+  private final int port;
 
-  private String host;
+  private final String host;
 
-  /**
-   * @param host
-   * @param port
-   */
   public EventBusMXBeanImpl(String host, int port) {
     this.host = host;
     this.port = port;

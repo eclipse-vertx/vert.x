@@ -27,7 +27,7 @@ public class Windows {
 
 	static {
 		String os = System.getProperty("os.name").toLowerCase();
-		isWindows = (os.contains("win"));
+		isWindows = os.contains("win");
 	}
 
 	/**

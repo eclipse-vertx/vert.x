@@ -23,17 +23,10 @@ public class VertxManagementException extends RuntimeException {
 
   private static final long serialVersionUID = 1L;
 
-  /**
-   * @param message
-   * @param cause
-   */
   public VertxManagementException(String message, Throwable cause) {
     super(message, cause);
   }
 
-  /**
-   * @param cause
-   */
   public VertxManagementException(Throwable cause) {
     super(cause);
   }
