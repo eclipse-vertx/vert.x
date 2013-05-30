@@ -234,6 +234,32 @@ public class Starter {
       conf = null;
     }
 
+    // Convert classpath to URL[]
+
+    String cp = args.map.get("-cp");
+    boolean hasClasspath = cp != null;
+    if (cp == null) {
+      cp = ".";
+    }
+
+    String[] parts;
+
+    if (cp.contains(CP_SEPARATOR)) {
+      parts = cp.split(CP_SEPARATOR);
+    } else {
+      parts = new String[] { cp };
+    }
+    int index = 0;
+    final URL[] classpath = new URL[parts.length];
+    for (String part: parts) {
+      try {
+        URL url = new File(part).toURI().toURL();
+        classpath[index++] = url;
+      } catch (MalformedURLException e) {
+        throw new IllegalArgumentException("Invalid path " + part + " in cp " + cp) ;
+      }
+    }
+
     Handler<AsyncResult<String>> doneHandler = new Handler<AsyncResult<String>>() {
       public void handle(AsyncResult<String> res) {
         if (res.failed()) {
@@ -245,40 +271,22 @@ public class Starter {
     if (zip) {
       mgr.deployModuleFromZip(main, conf, instances, createLoggingHandler("Successfully deployed module from zip", doneHandler));
     } else if (module) {
-      mgr.deployModule(main, conf, instances, createLoggingHandler("Successfully deployed module", doneHandler));
+      System.out.println("Has classpath: " + hasClasspath);
+      if (hasClasspath) {
+        mgr.deployModuleFromClasspath(main, conf, instances, classpath, createLoggingHandler("Successfully deployed module", doneHandler));
+      } else {
+        mgr.deployModule(main, conf, instances, createLoggingHandler("Successfully deployed module", doneHandler));
+      }
     } else {
       boolean worker = args.map.get("-worker") != null;
 
-      String cp = args.map.get("-cp");
-      if (cp == null) {
-        cp = ".";
-      }
 
-      // Convert to URL[]
-
-      String[] parts;
-
-      if (cp.contains(CP_SEPARATOR)) {
-        parts = cp.split(CP_SEPARATOR);
-      } else {
-        parts = new String[] { cp };
-      }
-      int index = 0;
-      final URL[] urls = new URL[parts.length];
-      for (String part: parts) {
-        try {
-          URL url = new File(part).toURI().toURL();
-          urls[index++] = url;
-        } catch (MalformedURLException e) {
-          throw new IllegalArgumentException("Invalid path " + part + " in cp " + cp) ;
-        }
-      }
       String includes = args.map.get("-includes");
       if (worker) {
-        mgr.deployWorkerVerticle(false, main, conf, urls, instances, includes,
+        mgr.deployWorkerVerticle(false, main, conf, classpath, instances, includes,
                                  createLoggingHandler("Successfully deployed worker verticle", doneHandler));
       } else {
-        mgr.deployVerticle(main, conf, urls, instances, includes, createLoggingHandler("Successfully deployed verticle", doneHandler));
+        mgr.deployVerticle(main, conf, classpath, instances, includes, createLoggingHandler("Successfully deployed verticle", doneHandler));
       }
     }
 
@@ -423,7 +431,10 @@ public class Starter {
 "                               Default is 25500.                               \n" +
 "        -cluster-host          host to bind to for cluster communication.      \n" +
 "                               If this is not specified vert.x will attempt    \n" +
-"                               to choose one from the available interfaces.  \n\n" +
+"                               to choose one from the available interfaces.    \n" +
+"        -cp <path>             if specified Vert.x will attempt to find the    \n" +
+"                               module on the classpath represented by this     \n" +
+"                               path and not in the modules directory         \n\n" +
 
 "    vertx runzip <zipfilename> [-options]                                      \n" +
 "        installs then deploys a module which is contained in the zip specified \n" +

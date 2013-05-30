@@ -24,15 +24,6 @@ import java.util.*;
  */
 public class ModuleClassLoader extends URLClassLoader {
 
-  // When running in an IDE we want to always try and load from the platform classloader first
-  // This allows in-container tests running in the IDE to immediately see changes to any resources in the module
-  // without having to rebuild the module into the mods directory every time
-  private static boolean loadWithPlatformCL;
-  static {
-    String val = System.getProperty("vertx.loadWithPlatformCL");
-    loadWithPlatformCL = val == null || Boolean.valueOf(val);
-  }
-
   // When loading resources or classes we need to catch any circular dependencies
   private static ThreadLocal<Set<ModuleClassLoader>> circDepTL = new ThreadLocal<>();
   // And we need to keep track of the recurse depth so we know when we can remove the thread local
@@ -66,49 +57,36 @@ public class ModuleClassLoader extends URLClassLoader {
       throws ClassNotFoundException {
     Class<?> c = findLoadedClass(name);
     if (c == null) {
-      if (loadWithPlatformCL) {
-        try {
-          c = platformClassLoader.loadClass(name);
-        } catch (ClassNotFoundException e) {
+      try {
+        // First try and load the class with the module classloader
+        c = findClass(name);
+        if (resolve) {
+          resolveClass(c);
         }
-      }
-      if (c == null) {
+      } catch (ClassNotFoundException e) {
+        // Not found - maybe the parent class loaders can load it?
         try {
-          // First try and load the class with the module classloader
-          c = findClass(name);
-          if (resolve) {
-            resolveClass(c);
-          }
-        } catch (ClassNotFoundException e) {
-          // Not found - maybe the parent class loaders can load it?
-          try {
-            // Detect circular hierarchy
-            incRecurseDepth();
-            Set<ModuleClassLoader> walked = getWalked();
-            walked.add(this);
-            for (ModuleReference parent: parents) {
-              checkAlreadyWalked(walked, parent);
-              try {
-                // Try with the parent
-                c = parent.mcl.loadClass(name);
-                break;
-              } catch (ClassNotFoundException e1) {
-                // Try the next one
-              }
-            }
-            walked.remove(this);
-          } finally {
-            // Make sure we clear the thread locals afterwards
-            checkClearTLs();
-          }
-          if (c == null) {
-            if (loadWithPlatformCL) {
-              throw e;
-            } else {
-              // If we get here then the module classloaders couldn't load it so we try the platform class loader
-              c = platformClassLoader.loadClass(name);
+          // Detect circular hierarchy
+          incRecurseDepth();
+          Set<ModuleClassLoader> walked = getWalked();
+          walked.add(this);
+          for (ModuleReference parent: parents) {
+            checkAlreadyWalked(walked, parent);
+            try {
+              // Try with the parent
+              c = parent.mcl.loadClass(name);
+              break;
+            } catch (ClassNotFoundException e1) {
+              // Try the next one
             }
           }
+          walked.remove(this);
+        } finally {
+          // Make sure we clear the thread locals afterwards
+          checkClearTLs();
+        }
+        if (c == null) {
+          c = platformClassLoader.loadClass(name);
         }
       }
     }

@@ -85,4 +85,25 @@ public class ModuleIdentifier {
     return new ModuleIdentifier("__vertx" + SEPARATOR + depName + SEPARATOR + "__vertx");
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    ModuleIdentifier that = (ModuleIdentifier) o;
+
+    if (!name.equals(that.name)) return false;
+    if (!owner.equals(that.owner)) return false;
+    if (!version.equals(that.version)) return false;
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = owner.hashCode();
+    result = 31 * result + name.hashCode();
+    result = 31 * result + version.hashCode();
+    return result;
+  }
 }

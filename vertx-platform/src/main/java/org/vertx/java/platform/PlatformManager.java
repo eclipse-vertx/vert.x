@@ -22,6 +22,7 @@ import org.vertx.java.core.Vertx;
 import org.vertx.java.core.json.JsonObject;
 
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -91,6 +92,19 @@ public interface PlatformManager {
    */
   void deployModuleFromZip(String zipFileName, JsonObject config,
                            int instances, Handler<AsyncResult<String>> doneHandler);
+
+  /**
+   * Deploy a module from the classpath.
+   * The classpath must contain a single mod.json and the resources for that module only.
+   * @param moduleName The name of the module to deploy
+   * @param config Any JSON config to pass to the verticle, or null if none
+   * @param instances The number of instances to deploy
+   * @param classpath Array of URLS corresponding to the classpath for the module
+   * @param doneHandler Handler will be called with deploymentID when deployed, or null if it fails to deploy
+   */
+  void deployModuleFromClasspath(String moduleName, JsonObject config,
+                                 int instances, URL[] classpath,
+                                 Handler<AsyncResult<String>> doneHandler);
 
   /**
    * Undeploy a deployment

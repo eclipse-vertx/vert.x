@@ -32,7 +32,7 @@ public class Deployment {
   public final ModuleIdentifier modID;
   public final int instances;
   public final JsonObject config;
-  public final URL[] urls;
+  public final URL[] classpath;
   public final File modDir;
   public final List<VerticleHolder> verticles = new CopyOnWriteArrayList<>();
   public final List<String> childDeployments = new CopyOnWriteArrayList<>();
@@ -41,15 +41,15 @@ public class Deployment {
   public final boolean autoRedeploy;
 
   public Deployment(String name, String main, ModuleIdentifier modID, int instances, JsonObject config,
-                   URL[] urls, File modDir, String parentDeploymentName,
-                   ModuleReference moduleReference,
-                   boolean autoRedeploy) {
+                    URL[] classpath, File modDir, String parentDeploymentName,
+                    ModuleReference moduleReference,
+                    boolean autoRedeploy) {
     this.name = name;
     this.main = main;
     this.modID = modID;
     this.instances = instances;
     this.config = config;
-    this.urls = urls;
+    this.classpath = classpath;
     this.modDir = modDir;
     this.parentDeploymentName = parentDeploymentName;
     this.moduleReference = moduleReference;
