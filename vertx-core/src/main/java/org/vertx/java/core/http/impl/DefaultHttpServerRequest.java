@@ -69,7 +69,6 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   private URI absoluteURI;
 
   private NetSocket netSocket;
-  private Handler<io.netty.handler.codec.http.multipart.Attribute> attrHandler;
   private Handler<HttpServerFileUpload> uploadHandler;
   private Handler<Void> endHandler;
   private MultiMap attributes = new CaseInsensitiveMultiMap();
@@ -84,8 +83,10 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
 
     String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
     if (contentType != null) {
-      if (contentType.toLowerCase().startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA)
-                  || contentType.toLowerCase().startsWith(HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED)) {
+      HttpMethod method = request.getMethod();
+      if ((contentType.toLowerCase().startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA)
+                  || contentType.toLowerCase().startsWith(HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED)) &&
+                  (method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.PATCH))) {
         decoder = new HttpPostRequestDecoder(new DataFactory(), request);
       } else {
         decoder = null;
