@@ -73,6 +73,7 @@ subprojects {
   
   javadoc {
     destinationDir = file("build/docs/java/api")
+    options.encoding = 'UTF-8'
   }
 
   task collectDeps(type: Copy) {
