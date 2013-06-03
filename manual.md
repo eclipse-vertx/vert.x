@@ -169,6 +169,8 @@ At minimum `vertx run` takes a single parameter - the name of the main to run.
 
 If you're running a verticle written in JavaScript, Ruby, Groovy or Python then it's just the name of the script, e.g. `server.js`, `server.rb`, or `server.groovy`. (It doesn't have to be called `server`, you can name it anything as long as it has the right extension). If the verticle is written in Java the name can either be the fully qualified class name of the Main class, *or* you can specify the Java Source file directly and Vert.x will compile it for you.
 
+    vertx run groovy:com.mycompany.MyGroovyMainClass
+
 The `vertx run` command can take a few optional parameters, they are:
 
 * `-conf <config_file>` Provide some configuration to the verticle. `config_file` is the name of a text file containing a JSON object that represents the configuration for the verticle. This is optional.
@@ -200,7 +202,7 @@ Run 10 instances of a pre-compiled Java verticle specifying classpath
 
     vertx run com.acme.MyVerticle -cp "classes:lib/myjar.jar" -instances 10
     
-Run 10 instances of a Java verticle by source file
+Run 10 instances of a Java verticle by *source file*
 
     vertx run MyVerticle.java -instances 10    
     
@@ -212,7 +214,7 @@ Run two JavaScript verticles on the same machine and let them cluster together w
     
     vertx run handler.js -cluster
     vertx run sender.js -cluster
-    
+
 Run a Ruby verticle passing it some config
 
     vertx run my_vert.rb -conf my_vert.conf
@@ -225,6 +227,12 @@ Where `my_vert.conf` might contain something like:
     }    
     
 The config will be available inside the verticle via the core API.    
+
+### Forcing language implementation to use
+
+Vert.x works out what language implementation module to use based on the file prefix using the mapping in the file `langs.properties` in the Vert.x distribution. If there is some ambiguity, e.g. you want to specify a class as a main, but it's a Groovy class, not a Java class, then you can prefix the main with the language implementation name, e.g. to run a compiled class as a Groovy verticle:
+
+    vertx run groovy:com.mycompany.MyGroovyMainVerticle
 
        
 ## Running modules from the command line
