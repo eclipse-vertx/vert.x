@@ -255,6 +255,26 @@ Run a module called `com.acme~other-mod~1.0.beta1` specifying number of instance
 
     vertx runmod com.acme~other-mod~1.0.beta1 -instances 10 -conf other-mod.conf
 
+## Running modules directory from .zip files
+
+The command `vert.x runzip` can also be used to run a module directly from a module zip file, i.e. the module doesn't have to be pre-installed either locally or in a module repository somewhere. To do this just type
+
+    vertx runzip <zip_file_name>
+
+For example
+
+   vertx runzip my-mod~2.0.1.zip
+
+
+## Displaying version of Vert.x
+
+To display the installed version of Vert.x type
+
+    vertx version
+
+## Installing and uninstalling modules
+
+Please see the [modules manual]() for a detailed description of this.
         
 # Logging
 
