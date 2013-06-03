@@ -354,9 +354,9 @@ logger.info("I am logging something");
 <h1 id="deploying-and-undeploying-verticles-programmatically">Deploying and Undeploying Verticles Programmatically</h1><br/>
 <p>You can deploy and undeploy verticles programmatically from inside another verticle. Any verticles deployed programmatically inherit the path of the parent verticle. </p>
 <h2 id="deploying-a-simple-verticle">Deploying a simple verticle</h2><br/>
-<p>To deploy a verticle programmatically call the function <code>deployVerticle</code> on the <code>container</code> variable. The return value of <code>deployVerticle</code> is the unique id of the deployment, which can be used later to undeploy the verticle.</p>
+<p>To deploy a verticle programmatically call the function <code>deployVerticle</code> on the <code>container</code> variable. </p>
 <p>To deploy a single instance of a verticle :</p>
-<pre class="prettyprint">String id = container.deployVerticle(main);
+<pre class="prettyprint">container.deployVerticle(main);
 </pre>
 <p>Where <code>main</code> is the name of the "main" of the Verticle (i.e. the name of the script if it's a Ruby or JavaScript verticle or the fully qualified class name if it's a Java verticle). See the chapter on "running vert.x" in the main manual for a description of what a main is.</p>
 <h2 id="deploying-a-module-programmatically">Deploying a module programmatically</h2><br/>
@@ -401,7 +401,7 @@ container.deployWorkerVerticle("verticle5.js", verticle5Config, 10);
     },
     "verticle2_conf": {
         "age": 1234,
-        "shoe_size": 12
+        "shoe_size": 12,
         "pi": 3.14159
     }, 
     "verticle3_conf": {
@@ -440,8 +440,12 @@ container.deployWorkerVerticle("verticle5.js", verticle5Config, 10);
 <h2 id="deploying-worker-verticles">Deploying Worker Verticles</h2><br/>
 <p>The <code>deployVerticle</code> method deploys standard (non worker) verticles. If you want to deploy worker verticles use the <code>deployWorkerVerticle</code> method. This method takes the same parameters as <code>deployVerticle</code> with the same meanings.</p>
 <h2 id="undeploying-a-verticle">Undeploying a Verticle</h2><br/>
-<p>Any verticles that you deploy programmatically from within a verticle, and all of their children are automatically undeployed when the parent verticle is undeployed, so in most cases you will not need to undeploy a verticle manually, however if you do want to do this, it can be done by calling the function <code>undeployVerticle</code> passing in the deployment id that was returned from the call to <code>deployVerticle</code></p>
-<pre class="prettyprint">String deploymentID = container.deployVerticle(main);
+<p>Any verticles that you deploy programmatically from within a verticle, and all of their children are automatically undeployed when the parent verticle is undeployed, so in most cases you will not need to undeploy a verticle manually, however if you do want to do this, it can be done by calling the function <code>undeployVerticle</code> passing in the deployment id. The deployment id is passed as a parameter to the handler called after completing the deployment.</p>
+<pre class="prettyprint">container.deployVerticle(main, new Handler&lt;String&gt;() {
+    public void handle(String deploymentID) {
+       this.deploymentID = deploymentID;
+    }
+});
 
 container.undeployVerticle(deploymentID);
 </pre>
@@ -595,23 +599,23 @@ eb.send("test.address", obj);
 <p>Currently data can only be shared between verticles in the <em>same vert.x instance</em>. In later versions of vert.x we aim to extend this to allow data to be shared by all vert.x instances in the cluster.</p>
 <h2 id="shared-maps">Shared Maps</h2><br/>
 <p>To use a shared map to share data between verticles first we get a reference to the map, and then use it like any other instance of <code>java.util.concurrent.ConcurrentMap</code></p>
-<pre class="prettyprint">ConcurrentMap&lt;String, Integer&gt; map = vertx.sharedData().getMap('demo.mymap');
+<pre class="prettyprint">ConcurrentMap&lt;String, Integer&gt; map = vertx.sharedData().getMap("demo.mymap");
 
 map.put("some-key", 123);
 </pre>
 <p>And then, in a different verticle you can access it:</p>
-<pre class="prettyprint">ConcurrentMap&lt;String, Integer&gt; map = vertx.sharedData().getMap('demo.mymap');
+<pre class="prettyprint">ConcurrentMap&lt;String, Integer&gt; map = vertx.sharedData().getMap("demo.mymap");
 
 // etc
 </pre>
 <h2 id="shared-sets">Shared Sets</h2><br/>
 <p>To use a shared set to share data between verticles first we get a reference to the set.</p>
-<pre class="prettyprint">Set&lt;String&gt; set = vertx.sharedData().getSet('demo.myset');
+<pre class="prettyprint">Set&lt;String&gt; set = vertx.sharedData().getSet("demo.myset");
 
 set.add("some-value");
 </pre>
 <p>And then, in a different verticle:</p>
-<pre class="prettyprint">Set&lt;String&gt; set = vertx.sharedData().getSet('demo.myset');
+<pre class="prettyprint">Set&lt;String&gt; set = vertx.sharedData().getSet("demo.myset");
 
 // etc
 </pre>
@@ -675,8 +679,8 @@ for (int i = 0; i &lt; buff.length(); i += 4) {
 <p>A usage example would be using a Java verticle to send or receive JSON messages from the event bus.</p>
 <pre class="prettyprint">EventBus eb = vertx.eventBus();
 
-JsonObject obj = new JsonObject().setString("foo", "wibble")
-                                 .setNumber("age", 1000);
+JsonObject obj = new JsonObject().putString("foo", "wibble")
+                                 .putNumber("age", 1000);
 
 eb.send("some-address", obj);
 
@@ -762,7 +766,7 @@ server.connectHandler(new Handler&lt;NetSocket&gt;() {
     public void handle(NetSocket sock) {
         log.info("A client has connected!");
     }
-})
+});
 
 server.listen(1234, "localhost");
 </pre>
@@ -1125,7 +1129,7 @@ server.connectHandler(new Handler&lt;NetSocket&gt;() {
 <p>Which does exactly the same thing as the more verbose example.</p>
 <p>Let's look at the methods on <code>ReadStream</code> and <code>WriteStream</code> in more detail:</p>
 <h2 id="readstream">ReadStream</h2><br/>
-<p><code>ReadStream</code> is implemented by <code>AsyncFile</code>, <code>HttpClientResponse</code>, <code>HttpServerRequest</code>, <code>WebSocket</code>, <code>NetSocket</code> and <code>SockJSSocket</code>.</p>
+<p><code>ReadStream</code> is implemented by <code>HttpClientResponse</code>, <code>HttpServerRequest</code>, <code>WebSocket</code>, <code>NetSocket</code> and <code>SockJSSocket</code>.</p>
 <p>Functions:</p>
 <ul>
 <li><code>dataHandler(handler)</code>: set a handler which will receive data from the <code>ReadStream</code>. As data arrives the handler will be passed a Buffer.</li>
@@ -1134,8 +1138,15 @@ server.connectHandler(new Handler&lt;NetSocket&gt;() {
 <li><code>exceptionHandler(handler)</code>: Will be called if an exception occurs on the <code>ReadStream</code>.</li>
 <li><code>endHandler(handler)</code>: Will be called when end of stream is reached. This might be when EOF is reached if the <code>ReadStream</code> represents a file, or when end of request is reached if it's an HTTP request, or when the connection is closed if it's a TCP socket.</li>
 </ul>
+<p>To access the <code>ReadStream</code> of a local file, you use the <code>getReadStream()</code> method declared in the <code>AsyncFile</code> interface.</p>
+<pre class="prettyprint">vertx.fileSystem().open("/tmp/dataStore", "r--------", new AsyncResultHandler&lt;AsyncFile&gt;() {
+    public void handle(AsyncResult&lt;AsyncFile&gt; result) {
+        ReadStream readStream = result.result.getReadStream();
+    }
+});
+</pre>
 <h2 id="writestream">WriteStream</h2><br/>
-<p><code>WriteStream</code> is implemented by <code>AsyncFile</code>, <code>HttpClientRequest</code>, <code>HttpServerResponse</code>, <code>WebSocket</code>, <code>NetSocket</code> and <code>SockJSSocket</code></p>
+<p><code>WriteStream</code> is implemented by , <code>HttpClientRequest</code>, <code>HttpServerResponse</code>, <code>WebSocket</code>, <code>NetSocket</code>, and <code>SockJSSocket</code>.</p>
 <p>Functions:</p>
 <ul>
 <li><code>writeBuffer(buffer)</code>: write a Buffer to the <code>WriteStream</code>. This method will never block. Writes are queued internally and asynchronously written to the underlying resource.</li>
@@ -1144,6 +1155,13 @@ server.connectHandler(new Handler&lt;NetSocket&gt;() {
 <li><code>exceptionHandler(handler)</code>: Will be called if an exception occurs on the <code>WriteStream</code>.</li>
 <li><code>drainHandler(handler)</code>: The handler will be called if the <code>WriteStream</code> is considered no longer full.</li>
 </ul>
+<p>To access the <code>WriteStream</code> of a local file, you use the <code>getWriteStream()</code> method declared in the <code>AsyncFile</code> interface.</p>
+<pre class="prettyprint">vertx.fileSystem().open("/tmp/dataSink", "w--------", new AsyncResultHandler&lt;AsyncFile&gt;() {
+    public void handle(AsyncResult&lt;AsyncFile&gt; result) {
+        WriteStream readStream = result.result.getWriteStream();
+    }
+});
+</pre>
 <h2 id="pump">Pump</h2><br/>
 <p>Instances of <code>Pump</code> have the following methods:</p>
 <ul>
