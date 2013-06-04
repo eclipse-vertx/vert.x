@@ -466,7 +466,6 @@ public class DefaultHttpClient implements HttpClient {
         protected void initChannel(Channel ch) throws Exception {
           ChannelPipeline pipeline = ch.pipeline();
           pipeline.addLast("exceptionDispatcher", EXCEPTION_DISPATCH_HANDLER);
-          pipeline.addLast("flowControl", new FlowControlHandler());
 
           if (tcpHelper.isSSL()) {
             SSLEngine engine = tcpHelper.getSSLContext().createSSLEngine(host, port);
@@ -574,7 +573,7 @@ public class DefaultHttpClient implements HttpClient {
 
     @Override
     protected void doMessageReceived(ClientConnection conn, ChannelHandlerContext ctx, Object msg) {
-      if (conn == null) {
+      if (conn == null || conn.isClosed()) {
         return;
       }
       boolean valid = false;

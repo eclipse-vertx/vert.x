@@ -17,9 +17,8 @@ package org.vertx.java.core.net.impl;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelStateHandlerAdapter;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.vertx.java.core.impl.DefaultContext;
-import org.vertx.java.core.impl.FlowControlStateEvent;
 import org.vertx.java.core.impl.VertxInternal;
 
 import java.util.Map;
@@ -27,10 +26,10 @@ import java.util.Map;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public abstract class VertxStateHandler<C extends ConnectionBase> extends ChannelStateHandlerAdapter {
+public abstract class VertxInboundHandler<C extends ConnectionBase> extends ChannelInboundHandlerAdapter {
   protected final VertxInternal vertx;
   protected final Map<Channel, C> connectionMap;
-  protected VertxStateHandler(VertxInternal vertx, Map<Channel, C> connectionMap) {
+  protected VertxInboundHandler(VertxInternal vertx, Map<Channel, C> connectionMap) {
     this.vertx = vertx;
     this.connectionMap = connectionMap;
   }
@@ -40,37 +39,35 @@ public abstract class VertxStateHandler<C extends ConnectionBase> extends Channe
   }
 
   @Override
-  public void userEventTriggered(ChannelHandlerContext ctx, Object obj) throws Exception {
-    if (obj instanceof FlowControlStateEvent) {
-      FlowControlStateEvent evt = (FlowControlStateEvent) obj;
-      final Channel ch = ctx.channel();
-      final C conn = connectionMap.get(ch);
-      if (conn != null) {
-        conn.setWritable(evt.isWritable());
-        DefaultContext context = getContext(conn);
-        if (context.isOnCorrectWorker(ch.eventLoop())) {
-          try {
-            vertx.setContext(context);
-            context.startExecute();
-            conn.handleInterestedOpsChanged();
-          } catch (Throwable t) {
-            context.reportException(t);
-          } finally {
-            context.endExecute();
-          }
-        } else {
-          context.execute(new Runnable() {
-            public void run() {
-              conn.handleInterestedOpsChanged();
-            }
-          });
+  public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
+    final Channel ch = ctx.channel();
+    final C conn = connectionMap.get(ch);
+    if (conn != null) {
+      conn.setWritable(ctx.channel().isWritable());
+      DefaultContext context = getContext(conn);
+      if (context.isOnCorrectWorker(ch.eventLoop())) {
+        try {
+          vertx.setContext(context);
+          context.startExecute();
+          conn.handleInterestedOpsChanged();
+        } catch (Throwable t) {
+          context.reportException(t);
+        } finally {
+          context.endExecute();
         }
+      } else {
+        context.execute(new Runnable() {
+          public void run() {
+            conn.handleInterestedOpsChanged();
+          }
+        });
       }
     }
   }
 
   @Override
   public void exceptionCaught(ChannelHandlerContext chctx, final Throwable t) throws Exception {
+    t.printStackTrace();
     final Channel ch = chctx.channel();
     final C sock = connectionMap.remove(ch);
     if (sock != null) {

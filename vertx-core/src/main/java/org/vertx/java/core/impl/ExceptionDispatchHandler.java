@@ -23,11 +23,7 @@ import java.net.SocketAddress;
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 @ChannelHandler.Sharable
-public class ExceptionDispatchHandler extends ChannelHandlerAdapter implements ChannelOperationHandler {
-  @Override
-  public void sendFile(ChannelHandlerContext ctx, FileRegion region, ChannelPromise promise) throws Exception {
-    ctx.sendFile(region, promise.addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE));
-  }
+public class ExceptionDispatchHandler extends ChannelOutboundHandlerAdapter {
 
   @Override
   public void bind(ChannelHandlerContext ctx, SocketAddress localAddress, ChannelPromise promise) throws Exception {
@@ -55,12 +51,7 @@ public class ExceptionDispatchHandler extends ChannelHandlerAdapter implements C
   }
 
   @Override
-  public void flush(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-    ctx.flush(promise.addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE));
-  }
-
-  @Override
-  public void read(ChannelHandlerContext ctx) {
-    ctx.read();
+  public void write(ChannelHandlerContext ctx, MessageList<Object> msgs, ChannelPromise promise) throws Exception {
+    ctx.write(msgs, promise.addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE));
   }
 }
