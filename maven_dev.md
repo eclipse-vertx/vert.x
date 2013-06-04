@@ -44,6 +44,15 @@ It's a functioning Maven project which creates a working Vert.x module. So you c
 
 This builds, tests and installs the module in your local Maven repository, where it can be picked up by other Vert.x modules or projects.
 
+# Outputs
+
+The outputs of the project are:
+
+* The Vert.x module zip file.
+* A jar that corresponds to the module. This is useful when you have another project which depends on the classes from your module, as it allows you to add it as a dependency to your other project.
+
+The outputs are created in the `target` directory as normal.
+
 # Other useful Maven targets
 
 To run the module using Maven, using the dependencies declared in the project (This does not need Vert.x to be installed on your system already)

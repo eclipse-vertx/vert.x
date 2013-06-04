@@ -29,6 +29,15 @@ Let's run the tests to make sure everything is working
 
 You should use the Gradle Wrapper (`./gradlew`) to run all Gradle tasks. Take a look at `build.gradle` for a list of the available tasks.
 
+# Outputs
+
+The outputs of the project are:
+
+* The Vert.x module zip file.
+* If `produceJar = true` in `gradle.properties` A jar that corresponds to the module will also be produced. This is useful when you have another project which depends on the classes from your module, as it allows you to add it as a dependency to your other project.
+
+The outputs are created in the `build` directory as normal.
+
 # Other useful Gradle tasks
 
 Open `build.gradle` and take a look at the comments there for a list of useful tasks supported by the build script.

@@ -12,12 +12,7 @@ The example project builds a single Vert.x module. If you have multiple Vert.x m
 
 It's highly recommended you read the Vert.x main manual and the Vert.x module manual so you understand the basics of Vert.x and modules before starting out.
 
-The outputs of the project are:
-
-* The Vert.x module
-* A jar that corresponds to the module. This is useful when you have another project which depends on the classes from your module, as it allows you to add it as a dependency to your other project.
-
-The outputs are created in the `target` (for Maven) or `build` (for Gradle) directories as normal after being packaged.
+The example project has a standard "Maven-style" directory layout which will probably already be familiar to you.
 
 ## The module
 
