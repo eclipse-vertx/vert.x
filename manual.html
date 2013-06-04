@@ -98,8 +98,14 @@
 </ul>
 </li>
 <li><a href="#using-vertx-from-the-command-line">Using Vert.x from the command line</a><ul>
-<li><a href="#running-verticles-directly">Running Verticles directly</a></li>
+<li><a href="#running-verticles-directly">Running Verticles directly</a><ul>
+<li><a href="#forcing-language-implementation-to-use">Forcing language implementation to use</a></li>
+</ul>
+</li>
 <li><a href="#running-modules-from-the-command-line">Running modules from the command line</a></li>
+<li><a href="#running-modules-directory-from-zip-files">Running modules directory from .zip files</a></li>
+<li><a href="#displaying-version-of-vertx">Displaying version of Vert.x</a></li>
+<li><a href="#installing-and-uninstalling-modules">Installing and uninstalling modules</a></li>
 </ul>
 </li>
 <li><a href="#logging">Logging</a></li>
@@ -228,21 +234,23 @@
 <p>Running raw verticles is useful for quickly prototyping code or for trivial applications, but for anything non trivial it's highly recommended to package your application as a <a href="">module</a> instead. Packaging as module makes the module easier to run, encapsulate and reuse.</p>
 <p>At minimum <code>vertx run</code> takes a single parameter - the name of the main to run.</p>
 <p>If you're running a verticle written in JavaScript, Ruby, Groovy or Python then it's just the name of the script, e.g. <code>server.js</code>, <code>server.rb</code>, or <code>server.groovy</code>. (It doesn't have to be called <code>server</code>, you can name it anything as long as it has the right extension). If the verticle is written in Java the name can either be the fully qualified class name of the Main class, <em>or</em> you can specify the Java Source file directly and Vert.x will compile it for you.</p>
+<pre class="prettyprint">vertx run groovy:com.mycompany.MyGroovyMainClass
+</pre>
 <p>The <code>vertx run</code> command can take a few optional parameters, they are:</p>
 <ul>
 <li>
-<p><code>-conf &lt;config_file&gt;</code> Provide some configuration to the verticle. <code>config_file</code> is the name of a text file containing a JSON object that represents the configuration for the verticle. This is optional.</p>
+<p><code>-conf &amp;lt;config_file&amp;gt;</code> Provide some configuration to the verticle. <code>config_file</code> is the name of a text file containing a JSON object that represents the configuration for the verticle. This is optional.</p>
 </li>
 <li>
-<p><code>-cp &lt;path&gt;</code> The path on which to search for the main and any other resources used by the verticle. This defaults to <code>.</code> (current directory). If your verticle references other scripts, classes or other resources (e.g. jar files) then make sure these are on this path. The path can contain multiple path entries separated by <code>:</code> (colon). Each path entry can be an absolute or relative path to a directory containing scripts, or absolute or relative filenames for jar or zip files.
+<p><code>-cp &amp;lt;path&amp;gt;</code> The path on which to search for the main and any other resources used by the verticle. This defaults to <code>.</code> (current directory). If your verticle references other scripts, classes or other resources (e.g. jar files) then make sure these are on this path. The path can contain multiple path entries separated by <code>:</code> (colon). Each path entry can be an absolute or relative path to a directory containing scripts, or absolute or relative filenames for jar or zip files.
     An example path might be <code>-cp classes:lib/otherscripts:jars/myjar.jar:jars/otherjar.jar</code>
     Always use the path to reference any resources that your verticle requires. Please, <strong>do not</strong> put them on the system classpath as this can cause isolation issues between deployed verticles.</p>
 </li>
 <li>
-<p><code>-instances &lt;instances&gt;</code> The number of instances of the verticle to instantiate in the Vert.x server. Each verticle instance is strictly single threaded so to scale your application across available cores you might want to deploy more than one instance. If omitted a single instance will be deployed. We'll talk more about scaling later on in this user manual.</p>
+<p><code>-instances &amp;lt;instances&amp;gt;</code> The number of instances of the verticle to instantiate in the Vert.x server. Each verticle instance is strictly single threaded so to scale your application across available cores you might want to deploy more than one instance. If omitted a single instance will be deployed. We'll talk more about scaling later on in this user manual.</p>
 </li>
 <li>
-<p><code>-includes &lt;mod_list&gt;</code> A comma separated list of module names to include in the classpath of this verticle.
+<p><code>-includes &amp;lt;mod_list&amp;gt;</code> A comma separated list of module names to include in the classpath of this verticle.
 For more information on what including a module means please see the modules manual.</p>
 </li>
 <li>
@@ -265,7 +273,7 @@ For more information on what including a module means please see the modules man
 <p>Run 10 instances of a pre-compiled Java verticle specifying classpath</p>
 <pre class="prettyprint">vertx run com.acme.MyVerticle -cp "classes:lib/myjar.jar" -instances 10
 </pre>
-<p>Run 10 instances of a Java verticle by source file</p>
+<p>Run 10 instances of a Java verticle by <em>source file</em></p>
 <pre class="prettyprint">vertx run MyVerticle.java -instances 10
 </pre>
 <p>Run 20 instances of a ruby worker verticle    </p>
@@ -285,21 +293,28 @@ vertx run sender.js -cluster
 }
 </pre>
 <p>The config will be available inside the verticle via the core API.    </p>
+<h3 id="forcing-language-implementation-to-use">Forcing language implementation to use</h3><br/>
+<p>Vert.x works out what language implementation module to use based on the file prefix using the mapping in the file <code>langs.properties</code> in the Vert.x distribution. If there is some ambiguity, e.g. you want to specify a class as a main, but it's a Groovy class, not a Java class, then you can prefix the main with the language implementation name, e.g. to run a compiled class as a Groovy verticle:</p>
+<pre class="prettyprint">vertx run groovy:com.mycompany.MyGroovyMainVerticle
+</pre>
 <h2 id="running-modules-from-the-command-line">Running modules from the command line</h2><br/>
 <p>It's highly recommended that you package any non trivial Vert.x functionality into a module. For detailed information on how to package your code as a module please see the <a href="">modules manual</a>.</p>
-<p>Instead of <code>vertx run</code> you use <code>vertx runmod &lt;module name&gt;</code> to directly run a module. This takes some of the same options as <code>vertx run</code>. They are:</p>
+<p>Instead of <code>vertx run</code> you use <code>vertx runmod &amp;lt;module name&amp;gt;</code> to directly run a module. This takes some of the same options as <code>vertx run</code>. They are:</p>
 <ul>
 <li>
-<p><code>-conf &lt;config_file&gt;</code></p>
+<p><code>-conf &amp;lt;config_file&amp;gt;</code></p>
 </li>
 <li>
-<p><code>-instances &lt;instances&gt;</code></p>
+<p><code>-instances &amp;lt;instances&amp;gt;</code></p>
 </li>
 <li>
 <p><code>-cluster</code></p>
 </li>
 <li>
 <p><code>-cluster-host</code></p>
+</li>
+<li>
+<p><code>-cp</code> If this option is specified for a <em>module</em> then it overrides the standard module classpath and Vert.x will search for the <code>mod.json</code> and other module resources using the specified classpath instead. This can be really useful when, for example, developing a module in an IDE - you can run the module in a different classpath and specify the classpath to point to where the idea stores the project resources. Couple this with auto-redeploy of modules and you can have your module immediately reloaded and reflecting the changes in your IDE as you make them.</p>
 </li>
 </ul>
 <p>They have the exact same meanings as the corresponding options in <code>vertx run</code>.</p>
@@ -312,6 +327,18 @@ vertx runmod com.acme~my-mod~2.1
 <p>Run a module called <code>com.acme~other-mod~1.0.beta1</code> specifying number of instances and some config</p>
 <pre class="prettyprint">vertx runmod com.acme~other-mod~1.0.beta1 -instances 10 -conf other-mod.conf
 </pre>
+<h2 id="running-modules-directory-from-zip-files">Running modules directory from .zip files</h2><br/>
+<p>The command <code>vert.x runzip</code> can also be used to run a module directly from a module zip file, i.e. the module doesn't have to be pre-installed either locally or in a module repository somewhere. To do this just type</p>
+<pre class="prettyprint">vertx runzip &amp;lt;zip_file_name&amp;gt;
+</pre>
+<p>For example</p>
+<p>vertx runzip my-mod~2.0.1.zip</p>
+<h2 id="displaying-version-of-vertx">Displaying version of Vert.x</h2><br/>
+<p>To display the installed version of Vert.x type</p>
+<pre class="prettyprint">vertx version
+</pre>
+<h2 id="installing-and-uninstalling-modules">Installing and uninstalling modules</h2><br/>
+<p>Please see the <a href="">modules manual</a> for a detailed description of this.</p>
 <h1 id="logging">Logging</h1><br/>
 <p>Each verticle instance gets its own logger which can be retrieved from inside the verticle. For information on how to get the logger please see the core guide for the language you are using.</p>
 <p>The log files by default go in a file called <code>vertx.log</code> in the system temp directory. On my Linux box this is <code>\tmp</code>.</p>
