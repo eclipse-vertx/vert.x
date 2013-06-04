@@ -55,14 +55,24 @@ public class ModuleClassLoader extends URLClassLoader {
   @Override
   protected synchronized Class<?> loadClass(String name, boolean resolve)
       throws ClassNotFoundException {
+    Class<?> c = doLoadClass(name);
+    if (c == null) {
+      // If we can't load class from this classloader or any of our parents (recursively) then we try the
+      // platform classloader
+      c = platformClassLoader.loadClass(name);
+    }
+    if (resolve) {
+      resolveClass(c);
+    }
+    return c;
+  }
+
+  protected synchronized Class<?> doLoadClass(String name) {
     Class<?> c = findLoadedClass(name);
     if (c == null) {
       try {
         // First try and load the class with the module classloader
         c = findClass(name);
-        if (resolve) {
-          resolveClass(c);
-        }
       } catch (ClassNotFoundException e) {
         // Not found - maybe the parent class loaders can load it?
         try {
@@ -72,21 +82,15 @@ public class ModuleClassLoader extends URLClassLoader {
           walked.add(this);
           for (ModuleReference parent: parents) {
             checkAlreadyWalked(walked, parent);
-            try {
-              // Try with the parent
-              c = parent.mcl.loadClass(name);
+            c = parent.mcl.doLoadClass(name);
+            if (c != null) {
               break;
-            } catch (ClassNotFoundException e1) {
-              // Try the next one
             }
           }
           walked.remove(this);
         } finally {
           // Make sure we clear the thread locals afterwards
           checkClearTLs();
-        }
-        if (c == null) {
-          c = platformClassLoader.loadClass(name);
         }
       }
     }
