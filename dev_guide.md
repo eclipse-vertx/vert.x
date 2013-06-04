@@ -1,0 +1,72 @@
+<!--
+This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 Unported License.
+To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/ or send
+a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
+-->
+
+[TOC]
+
+# Developing with Vert.x
+
+# Best practices
+
+## Create your application using modules
+
+Although Vert.x allows you to run simple Verticles directly from the command line this is only really intended for quick prototyping or trivial applications. 
+
+For any real application it's highly recommended that you create it as a (set of) Vert.x modules.
+
+Creating your app as module(s) gives you the following benefits:
+
+* Your classpath is encapsulated so modules are easier to run. You don't need to craft any long command lines.
+* Your dependencies are encapsulated in a single artifact (the module zip file)
+* Your module can be pushed to any Maven repository or Bintray.
+* Your module can be catalogued in the Vert.x module registry so others can discover and use it
+* Vert.x can automatically download and install modules from any repository given just the module identifier.
+
+If your application is relatively small it might make sense to create it as a single module. If your application is large split it up into a set of modules.
+
+## Use the Gradle template project or Maven archetype
+
+If you want to get started quickly it's recommended you use the [Gradle template project]() or the [Maven archetype]() (depending whether you prefer Gradle or Maven) to get your project up and running.
+
+Vert.x is agnostic about what build tool you use, but doing it this way means there is much less project setup to do before you can get going developing, building and testing your module(s).
+
+## Create one project per module of your application
+
+Have each project output one and only one artifact (the module zip file). You can then use
+
+    mvn install
+
+Or
+
+    ./gradlew install
+
+To push a module to your local Maven repository when you make a changem, and it will be automatically picked up by your other modules. Vert.x module system understands how to pull modules from local (as well as remote) Maven repositories.
+
+## Auto redeploy and seeing changes immediately
+
+When developing a Vert.x module, especially if it has a web interface, it's useful to have your module running and have it automatically pick up any changes in classes or other resources in the module without you having to rebuild.
+
+Vert.x now supports this! (Vert.x 2.0 latest master).
+
+To get this just open your Vert.x project in your IDE as normal. Then, in another window run your module using  a command line like:
+
+    vertx runmod com.yourcompany~your-module~1.0 -cp <classpath>
+
+Where `<classpath>` is a classpath where it will look for the resources of your project.
+
+In the case of a standard Maven project running in IntelliJ IDEA you want to add the `src/main/resources` and `src/test/resources` directories and the `out/production/<intellij_mod_name>` and the `out/test/<intellij_mod_name>` to the classpath.
+
+An example would be:
+
+    vertx runmod com.yourcompany~your-module~1.0 -cp src/main/resources/:src/test/resources/:out/production/mod-web-server/:out/test/mod-web-server/
+
+This should also work with Eclipse by subsituting the out directory for wherever Eclipse copies compiled files to (`bin` directory?)
+
+Then just edit your files in your IDEA and when they're saved/compiled the module should be automatically restarted with your changes.
+
+
+
+    
+ 

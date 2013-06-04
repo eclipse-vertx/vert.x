@@ -463,6 +463,8 @@ It's also *highly recommended* that the following fields are added too:
 * `keywords` - useful when searching
 * `homepage` - url to the project homepage.
 
+> Piece of Trivia: The Vert.x module registry is itself a Vert.x module, and you can find it.. it in the Vert.x module registry! 
+
 
 # Module configuration
 
