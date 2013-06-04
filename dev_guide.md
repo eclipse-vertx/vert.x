@@ -8,8 +8,6 @@ a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, Calif
 
 # Developing with Vert.x
 
-# Best practices
-
 ## Create your application using modules
 
 Although Vert.x allows you to run simple Verticles directly from the command line this is only really intended for quick prototyping or trivial applications. 
@@ -21,7 +19,7 @@ Creating your app as module(s) gives you the following benefits:
 * Your classpath is encapsulated so modules are easier to run. You don't need to craft any long command lines.
 * Your dependencies are encapsulated in a single artifact (the module zip file)
 * Your module can be pushed to any Maven repository or Bintray.
-* Your module can be catalogued in the Vert.x module registry so others can discover and use it
+* Your module can be catalogued in the Vert.x [module registry]() so others can discover and use it
 * Vert.x can automatically download and install modules from any repository given just the module identifier.
 
 If your application is relatively small it might make sense to create it as a single module. If your application is large split it up into a set of modules.
@@ -44,7 +42,7 @@ Or
 
 To push a module to your local Maven repository when you make a changem, and it will be automatically picked up by your other modules. Vert.x module system understands how to pull modules from local (as well as remote) Maven repositories.
 
-## Auto redeploy and seeing changes immediately
+## Auto redeploy and see your changes immediately
 
 When developing a Vert.x module, especially if it has a web interface, it's useful to have your module running and have it automatically pick up any changes in classes or other resources in the module without you having to rebuild.
 
