@@ -295,10 +295,16 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         if (zipFileName == null) {
           throw new NullPointerException("zipFileName cannot be null");
         }
-        final String modName = zipFileName.substring(0, zipFileName.length() - 4);
-        ModuleIdentifier modID = new ModuleIdentifier("__vertx_tmp#" + modName + "#__vertx_tmp");
-        unzipModule(modID, new ModuleZipInfo(false, zipFileName), false);
-        deployModuleFromFileSystem(false, null, modID, config, instances, null, wrapped);
+        // We unzip the module into a temp directory
+        ModuleZipInfo info = new ModuleZipInfo(false, zipFileName);
+        ModuleIdentifier modID = new ModuleIdentifier("__vertx~" + UUID.randomUUID().toString() + "~__vertx");
+        File tempDir = new File(TEMP_DIR + FILE_SEP + "vertx-zip-mods" + FILE_SEP + modID);
+        tempDir.mkdirs();
+        unzipModuleData(tempDir, info, false);
+        // And run it from there
+        List<URL> classpath = getModuleClasspath(tempDir);
+        deployModuleFromClasspath(modID.toString(), config, instances, classpath.toArray(new URL[classpath.size()]),
+            wrapped);
       }
     }, wrapped);
   }
