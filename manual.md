@@ -36,9 +36,15 @@ Some of the key highlights include:
 
 In this section we'll give an overview of the main concepts in Vert.x. Many of these concepts will be discussed in more depth later on in this manual.
 
+<a id="verticle"> </a>
+
 ### Verticle
 
-The execution unit in Vert.x is called a *verticle* (think of a particle, for Vert.x). Verticles can be written in JavaScript, Ruby, Java, Groovy or Python (we're looking to support Clojure, Scala and other languages before long).
+The packages of code that Vert.x executes are called *verticles* (think of a particle, for Vert.x).
+
+Verticles can be written in JavaScript, Ruby, Java, Groovy or Python (we're looking to support Clojure, Scala and other languages before long).
+
+Many verticles can be executing concurrently in the same Vert.x instance.
 
 An application might be composed of multiple verticles deployed on different nodes of your network communicating by exchanging messages over the Vert.x event bus.
 
@@ -46,11 +52,11 @@ For trivial applications verticles can run directly from the command line, but m
 
 ### Module
 
-Vert.x applications are usually composed of one or more modules. Modules can contain multiple verticles, potentially written in different languages. Modules allow functionality to encapsulated and reused. Modules can be placed into any Maven or [Bintray]() repository, and registered in the Vert.x [module registry]().
+Vert.x applications are usually composed of one or more modules. Modules can contain multiple verticles, potentially written in different languages. Modules allow functionality to encapsulated and reused. Modules can be placed into any Maven or [Bintray](http://bintray.com) repository, and registered in the Vert.x [module registry](https://vertxmodulereg-vertxmodulereg.rhcloud.com/).
 
 With the Vert.x module system we wish to encourage an eco-system of Vert.x modules managed by the Vert.x community.
 
-For more information on modules, please consult the [Modules manual]().
+For more information on modules, please consult the [Modules manual](mods_manual.html).
 
 ### Vert.x Instances
 
@@ -64,7 +70,7 @@ We want you to be able to develop your verticles in a choice of programming lang
 
 ### Concurrency
 
-A Vert.x instance guarantees that a particular verticle instance is never executed by more than one thread concurrently. This gives you a huge advantage as a developer, since you can program all your code as single threaded. If you're used to multi-threaded programming in Java, Scala, or even Ruby, this may come as a huge relief since you don't have to synchronize access to your state. This means a whole class of race conditions disappear, and OS thread deadlocks are a thing of the past. 
+A Vert.x instance guarantees that a particular verticle instance is never executed by more than one thread concurrently. This gives you a huge advantage as a developer, since you can program all your code as single threaded. If you're used to traditional this may come as a huge relief since you don't have to synchronize access to your state. This means a whole class of race conditions disappear, and OS thread deadlocks are a thing of the past. 
 
 ### Asynchronous Programming Model
 
@@ -76,7 +82,7 @@ We use an asynchronous API so that we can scale to handle many verticles using a
 
 With a traditional synchronous API, threads block on API operations, and while they are blocked they cannot do any other work. A good example is a blocking read from a socket. While code is waiting for data to arrive on a socket it cannot do anything else. This means that if we want to support 1 million concurrent connections (not a crazy idea for the next generation of mobile applications) then we would need 1 million threads. This approach clearly doesn't scale.
 
-Asynchronous APIs are sometimes criticised as being hard to develop with, especially when you have to co-ordinate results from more than one event handler. The recommended approach to deal with this in Vert.x is to use a module such as [mod-rx-vertx]() which allows you to compose asynchronous event streams in powerful ways. *mod-rx-vertx* uses the great [RxJava]() library which is based on .net ["Reactive extensions"]().
+Asynchronous APIs are sometimes criticised as being hard to develop with, especially when you have to co-ordinate results from more than one event handler. The recommended approach to deal with this in Vert.x is to use a module such as [mod-rx-vertx](https://github.com/vert-x/mod-rxvertx) which allows you to compose asynchronous event streams in powerful ways. `mod-rx-vertx` uses the great [RxJava](https://github.com/Netflix/RxJava) library which is inspired from the .net ["Reactive extensions"](http://msdn.microsoft.com/en-us/data/gg577609.aspx).
 
 ### Event Loops
 
@@ -153,6 +159,8 @@ This API allows:
 * Accessing configuration
 * SockJS
 
+<a id="running-vertx"> </a>
+
 # Using Vert.x from the command line
 
 The `vertx` command is used to interact with Vert.x from the command line. It's main use is to run Vert.x modules and verticles.
@@ -163,7 +171,7 @@ If you just type `vertx` at a command line you can see the different options the
 
 You can run raw Vert.x verticles directly from the command line using 'vertx run'.
 
-Running raw verticles is useful for quickly prototyping code or for trivial applications, but for anything non trivial it's highly recommended to package your application as a [module]() instead. Packaging as module makes the module easier to run, encapsulate and reuse.
+Running raw verticles is useful for quickly prototyping code or for trivial applications, but for anything non trivial it's highly recommended to package your application as a [module](mods_manual.html) instead. Packaging as module makes the module easier to run, encapsulate and reuse.
 
 At minimum `vertx run` takes a single parameter - the name of the main to run.
 
@@ -237,7 +245,7 @@ Vert.x works out what language implementation module to use based on the file pr
        
 ## Running modules from the command line
 
-It's highly recommended that you package any non trivial Vert.x functionality into a module. For detailed information on how to package your code as a module please see the [modules manual]().
+It's highly recommended that you package any non trivial Vert.x functionality into a module. For detailed information on how to package your code as a module please see the [modules manual](mods_manual.html).
 
 Instead of `vertx run` you use `vertx runmod &lt;module name&gt;` to directly run a module. This takes some of the same options as `vertx run`. They are:
 
@@ -286,6 +294,8 @@ To display the installed version of Vert.x type
 
 Please see the [modules manual]() for a detailed description of this.
         
+<a id="logging"> </a>
+
 # Logging
 
 Each verticle instance gets its own logger which can be retrieved from inside the verticle. For information on how to get the logger please see the core guide for the language you are using.

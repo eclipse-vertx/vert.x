@@ -12,9 +12,7 @@ In this HOWTO we'll show you how to develop a Vert.x project using Gradle.
 
 # Fork and clone the template project
 
-We provide a template Gradle project which you can clone to get you started.
-
-The template project is here: https://github.com/vert-x/vertx-gradle-template
+We provide a template [Gradle project](https://github.com/vert-x/vertx-gradle-template) which you can clone to get you started.
 
 Fork it in github, then clone it locally
 
@@ -70,6 +68,6 @@ Once you've changed your dependencies just run `./gradlew idea` or `./gradlew ec
 
 # Next steps
 
-Now you've got the project all set-up and running, it's time to [explore the project](https://github.com/vert-x/vert.x/wiki/Vert.x-2.0---Exploring-the-Example-Project) itself.
+Now you've got the project all set-up and running, it's time to [explore the project](example_project.html) itself.
 
 

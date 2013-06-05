@@ -1,0 +1,147 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <link href="bootstrap/bootstrap.css" type="text/css" rel="stylesheet"/>
+
+  <link href="google-code-prettify/prettify.css" type="text/css" rel="stylesheet"/>
+  <script type="text/javascript" src="google-code-prettify/prettify.js"></script>
+  <link href="css/vertx.css" type="text/css" rel="stylesheet"/>
+  <link href="css/sunburst.css" type="text/css" rel="stylesheet"/>
+  <title>Developing Vert.x Modules with Maven</title>
+  <script>
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-30144458-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+</head>
+
+<body onload="prettyPrint()">
+
+<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+
+      <a class="btn btn-navbar" data-toggle="collapse"
+         data-target=".nav-collapse">
+        <span class="i-bar"></span>
+        <span class="i-bar"></span>
+        <span class="i-bar"></span>
+      </a>
+
+      <a class="brand" href="/">vert.x</a>
+
+      <div class="nav-collapse">
+        <ul class="nav">
+          <li><a href="/">Home</a></li>
+          <li><a href="downloads.html">Download</a></li>
+          <li><a href="install.html">Install</a></li>
+          <li><a href="tutorials.html">Tutorials</a></li>
+          <li><a href="examples.html">Examples</a></li>
+          <li class="active"><a href="docs.html">Documentation</a></li>
+          <li><a href="https://github.com/vert-x/vert.x">Source</a></li>
+          <li><a href="http://groups.google.com/group/vertx">Google Group</a></li>
+          <li><a href="community.html">Community</a></li>
+          <li><a href="http://vertxproject.wordpress.com/">Blog</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="row">
+    <div class="span12">
+      <div class="well">
+        <h1 style="font-size: 35px;">Developing Vert.x Modules with Maven</h1>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="span12">
+      <div class="well">
+<div>
+
+
+<div class="toc">
+<ul>
+<li><a href="#developing-vertx-modules-with-maven">Developing Vert.x modules with Maven</a></li>
+<li><a href="#generate-the-project">Generate the project</a></li>
+<li><a href="#outputs">Outputs</a></li>
+<li><a href="#other-useful-maven-targets">Other useful Maven targets</a></li>
+<li><a href="#setup-your-ide">Setup your IDE</a></li>
+<li><a href="#changing-the-dependencies-of-your-project">Changing the dependencies of your project</a></li>
+<li><a href="#next-steps">Next steps</a></li>
+</ul>
+</div>
+<h1 id="developing-vertx-modules-with-maven">Developing Vert.x modules with Maven</h1><br/>
+<p>In this HOWTO we'll show you how to develop a Vert.x project using Maven.</p>
+<h1 id="generate-the-project">Generate the project</h1><br/>
+<p>Vert.x provides a Maven Archetype that can generate an example Vert.x Maven project for you. You can then edit and adapt that project to develop your Vert.x module.</p>
+<p>To generate a project type the following at the command line, in your project's root directory:</p>
+<pre class="prettyprint">mvn archetype:generate -Dfilter=io.vertx:
+</pre>
+<p>If the archetype you want is not yet in Maven Central, but in <code>oss.sonatype</code> (for example), you use the following command line:</p>
+<pre class="prettyprint">mvn archetype:generate -Dfilter=io.vertx: -DarchetypeCatalog=http://oss.sonatype.org/content/repositories/snapshots/archetype-catalog.xml
+</pre>
+<p>This will search for any artifacts with group id <code>io.vertx</code> and interactively prompt you as to which one you want.</p>
+<p>You'll also be prompted for:</p>
+<ul>
+<li><code>groupId</code>. This is the <code>groupId</code> for the module that we're going to generate, e.g. <code>com.mycompany</code>.</li>
+<li><code>artifactId</code>. This the <code>artifactId</code> for the module that we're going to generate, e.g. <code>my-vertx-module</code>.</li>
+<li><code>version</code>. This is the <code>version</code> for the module that we're going to generate, e.g. <code>2.0</code>, or <code>0.1-SNAPSHOT</code>.</li>
+</ul>
+<p>If you prefer you can specify these parameters on the command line, for example:</p>
+<pre class="prettyprint">mvn archetype:generate -Dfilter=io.vertx: -DgroupId=com.mycompany -DartifactId=my-vertx-module -Dversion=0.1-SNAPSHOT
+</pre>
+<p>A directory with a name corresponding to <code>artifactId</code> will be created for you, with the example project in it. Let's go into it:</p>
+<pre class="prettyprint">cd my-vertx-module
+</pre>
+<p>It's a functioning Maven project which creates a working Vert.x module. So you can do all the normal Maven stuff, for example, try:</p>
+<pre class="prettyprint">mvn install
+</pre>
+<p>This builds, tests and installs the module in your local Maven repository, where it can be picked up by other Vert.x modules or projects.</p>
+<h1 id="outputs">Outputs</h1><br/>
+<p>The outputs of the project are:</p>
+<ul>
+<li>The Vert.x module zip file.</li>
+<li>A jar that corresponds to the module. This is useful when you have another project which depends on the classes from your module, as it allows you to add it as a dependency to your other project.</li>
+</ul>
+<p>The outputs are created in the <code>target</code> directory as normal.</p>
+<h1 id="other-useful-maven-targets">Other useful Maven targets</h1><br/>
+<p>To run the module using Maven, using the dependencies declared in the project (This does not need Vert.x to be installed on your system already)</p>
+<p>mvn vertx:runmod</p>
+<p>To run the integration tests</p>
+<p>mvn integration-test</p>
+<h1 id="setup-your-ide">Setup your IDE</h1><br/>
+<p>You can use the <code>idea</code> and <code>eclipse</code> goals to create IDE projects from your Maven project, for example</p>
+<pre class="prettyprint">mvn idea:idea
+</pre>
+<p>Or</p>
+<pre class="prettyprint">mvn eclipse:eclipse
+</pre>
+<p>Once the IDE files have been created you can open the project in your IDE.</p>
+<blockquote>
+<p>"You may have to tell your IDE to use Java source compatibility level of Java 7, as Maven seems to default to Java 5 (!)"</p>
+</blockquote>
+<h1 id="changing-the-dependencies-of-your-project">Changing the dependencies of your project</h1><br/>
+<p>If your project needs a third party jar to build and you want to include it in the <code>lib</code> directory of your module you can add the dependency in the <code>dependencies</code> section of <code>pom.xml</code> with a scope of <code>compile</code>.</p>
+<p>If you don't want it to be included in the <code>lib</code> directory you should add it as <code>provided</code>.</p>
+<p>Once you've changed your dependencies just run <code>mvn idea:idea</code> or <code>mvn eclipse:eclipse</code> again to update your IDE project files with the new dependencies.</p>
+<h1 id="next-steps">Next steps</h1><br/>
+<p>Now you've got the project all set-up and running, it's time to <a href="example_project.html">explore the project</a> itself.</p></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -88,7 +88,7 @@ Once you've changed your dependencies just run `mvn idea:idea` or `mvn eclipse:e
 
 # Next steps
 
-Now you've got the project all set-up and running, it's time to [explore the project](https://github.com/vert-x/vert.x/wiki/Vert.x-2.0---Exploring-the-Example-Project) itself.
+Now you've got the project all set-up and running, it's time to [explore the project](example_project.html) itself.
 
 
 

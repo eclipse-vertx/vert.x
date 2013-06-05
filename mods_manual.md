@@ -8,7 +8,15 @@ a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, Calif
 
 # What is a Vert.x module ?
 
-Vert.x allows you to package up your applications or other re-usable functionality into modules which can then be deployed or used by other Vert.x code. Packaging your code as modules makes it easier to run, encapsulates it's dependencies and classpath and allows it to be easily reused by placing it in a Maven or Bintray repository. Vert.x modules can also be registered in the Vert.x [module registry]() so they can be discovered by and published to the Vert.x community.
+Vert.x allows you to package up your applications or other re-usable functionality into modules which can then be deployed or used by other Vert.x code. 
+
+Creating your app as module(s) gives you the following benefits:
+
+* Your classpath is encapsulated so modules are easier to run. You don't need to craft any long command lines.
+* Your dependencies are encapsulated in a single artifact (the module zip file)
+* Your module can be pushed to any Maven repository or Bintray.
+* Your module can be catalogued in the Vert.x [module registry](https://vertxmodulereg-vertxmodulereg.rhcloud.com/) so others can discover and use it
+* Vert.x can automatically download and install modules from any repository given just the module identifier.
 
 For these reasons it is highly recommend that you always assemble your applications as modules and you don't use raw Verticles for anything other than trivial prototyping and examples.
 
@@ -18,7 +26,7 @@ Modules can be either *runnable* or *non runnable*.
 
 A *runnable* module has a *main* and can be deployed at the command line using `vertx runmod` or programmatically using `container.deployModule(...)`.
 
-A *non runnable* module does not have a *main* and cannot be deployed, but is instead used to [include]() resources from one module into another.
+A *non runnable* module does not have a *main* and cannot be deployed, but is instead used to [include](#includes) resources from one module into another.
 
 # Module Identifier
 
@@ -50,7 +58,7 @@ Let's go through the fields in turn:
 
 ### main
 
-If the module is runnable then a `main` must be specified. The main represents the class or script that will be run to start the module. The main can be the FQCN of a compiled Java or Groovy class or it can be the name of a JavaScript, Groovy, Ruby or Python script. The script/class must be in the module.
+If the module is runnable then a `main` must be specified. The main represents the verticle that will be run to start the module. The main can be the FQCN of a compiled Java or Groovy verticle or it can be the name of a JavaScript, Groovy, Ruby or Python script verticle. The script/class must be in the module.
 
 Here are some example:
 
@@ -78,11 +86,12 @@ If the module is a worker this should be set to `true`. Worker modules run using
 
 If the module is a worker then setting this to `true` makes the worker multi-threaded, i.e. the code in the module can be executed concurrently by different worker threads. This can be useful when writing modules that wrap things like JDBC connection pools. Use this with caution - this a power user feature not intended to be used in normal Vert.x development.
 
+<a id="includes"> </a>
 ### includes
 
-A module can include zero or more other modules. Including a module means the included modules classloader is added as the parent of the including module class loader. This means classes and resources from other modules can be accessed as if they were available in the including module. In some ways it's similar to importing packages in Java.
+A module can include zero or more other modules. Including a module means the included modules classloaders are added as parents of the including module class loader. This means classes and resources from other modules can be accessed as if they were available in the including module. In some ways it's similar to importing packages in Java.
 
-The includes is a comma separated string of modules to include.
+The `includes` is a comma separated string of modules to include.
 
     "includes": "io.vertx~some-module~1.1,org.aardvarks~foo-mod~3.21-beta1"
 
@@ -113,7 +122,7 @@ This preserves the current working directory of the caller.
 
 ### auto-redeploy
 
-Modules can be configured to auto-redeploy if Vert.x detects that any of the module resources have changed. This can be really useful during deployment. For more information see the section on [auto redeploy]().
+Modules can be configured to auto-redeploy if Vert.x detects that any of the module resources have changed. This can be really useful during deployment. For more information see the documentation on [auto redeploy](dev_guide.html#auto-redeploy).
 
 To enable auto-redeploy set `auto-redeploy` to `true`. Default is `false`.
 
@@ -254,7 +263,7 @@ If classes or resources cannot be found by any of the module class loaders in th
 
 A raw verticle that is run directly on the command line will not have any parent module class loaders. A verticle that is deployed from inside a module will have the module class loader set as a parent of the class loader used to deploy the verticle.
 
-If a module [includes]() any other modules than each of the modules that it includes will be set as a parent class loader of the module class loader. Doing this allows us to load the classes for any included module only once.
+If a module [includes](#includes) any other modules than each of the modules that it includes will be set as a parent class loader of the module class loader. Doing this allows us to load the classes for any included module only once.
 
 # Non runnable modules - Including the resources of modules
 
@@ -308,7 +317,7 @@ E.g. (JavaScript)
 
 # How Vert.x locates modules
 
-When you attempt to [deploy]() or [include]() a module, Vert.x will first look to see if the module is already installed.
+When you attempt to deploy or [include](#includes) a module, Vert.x will first look to see if the module is already installed.
 
 Vert.x looks in the following places:
 
@@ -338,7 +347,7 @@ Vert.x queries the repositories in the order they appear in the file, and will s
 
 ## Mapping a Module Identifier to Maven co-ordinates
 
-When looking for a module in a Maven repository, Vert.x maps the [module identifier]() to Maven co-ordinates as follows:
+When looking for a module in a Maven repository, Vert.x maps the module identifier to Maven co-ordinates as follows:
 
     GroupID = Owner
     ArtifactID = Name
@@ -354,7 +363,7 @@ The artifact type is always assumed to be a `zip`.
 
 ## Mapping a Module Identifier to Bintray co-ordinates
 
-When looking in a Bintray repository, Vert.x maps the [module identifier]() to Bintray co-ordinates as follows:
+When looking in a Bintray repository, Vert.x maps the module identifier to Bintray co-ordinates as follows:
 
     Bintray user name = Owner
     Repository = vertx-mods
@@ -424,7 +433,7 @@ If you want to make your modules public (and this is highly recommended) you can
 
 ## Publishing to Maven repositories
 
-Many JVM developers will already be familiar with working with Nexus repositories and Maven Central and Vert.x modules can be effortlessly published there when using the [Gradle template project]() or a project created by the Vert.x [Maven Archetype]().
+Many JVM developers will already be familiar with working with Nexus repositories and Maven Central and Vert.x modules can be effortlessly published there when using the [Gradle template project](gradle_dev.html) or a project created by the Vert.x [Maven Archetype](maven_dev.html).
 
 For Maven projects this is accomplished by executing `mvn deploy` as is normal for any Maven project.
 
@@ -436,13 +445,13 @@ If you're going to use Sonatype Nexus you will need to obtain an account with th
 
 ## Publishing to Bintray
 
-[Bintray]() is a new binary repository site which arguably is easier to get started with if you're not already used to dealing with publishing artifacts to Maven repositories. You simply need to register for an account on their website then you can immediately start uploading binaries either through their web UI or using command line tools.
+[Bintray](http://bintray.com) is a new binary repository site which arguably is easier to get started with if you're not already used to dealing with publishing artifacts to Maven repositories. You simply need to register for an account on their website then you can immediately start uploading binaries either through their web UI or using command line tools.
 
 # Telling the world about your module - Introducing the Vert.x Module Registry
 
 So you've pushed your module to Maven Central, Bintray or perhaps some other public Maven repository. That's sufficient for any Vert.x user to use it, but how are you going to tell the Vert.x community about it?
 
-Enter the [module registry](). The Vert.x module registry is a web application that keeps a directory of publicly available Vert.x modules. It allows you to list and search for modules that have been published by other Vert.x users and that might be of interest to you in your applications.
+Enter the [module registry](https://vertxmodulereg-vertxmodulereg.rhcloud.com/). The Vert.x module registry is a web application that keeps a directory of publicly available Vert.x modules. It allows you to list and search for modules that have been published by other Vert.x users and that might be of interest to you in your applications.
 
 We want to encourage an ecosystem of modules for Vert.x, and the module registry is a key part of that.
 

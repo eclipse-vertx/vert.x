@@ -2,6 +2,10 @@
 
 ./gen_section.sh manual.md manual_templ.html manual.html
 ./gen_section.sh mods_manual.md mods_manual_templ.html mods_manual.html
+./gen_section.sh dev_guide.md dev_guide_templ.html dev_guide.html
+./gen_section.sh gradle_dev.md gradle_dev_templ.html gradle_dev.html
+./gen_section.sh maven_dev.md maven_dev_templ.html maven_dev.html
+./gen_section.sh example_project.md example_project_templ.html example_project.html
 ./gen_section.sh core_manual_js.md core_manual_js_templ.html core_manual_js.html
 ./gen_section.sh core_manual_ruby.md core_manual_ruby_templ.html core_manual_ruby.html
 ./gen_section.sh core_manual_python.md core_manual_python_templ.html core_manual_python.html
