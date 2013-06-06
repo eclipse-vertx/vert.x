@@ -56,7 +56,7 @@ Every Java verticle must extend the class `org.vertx.java.deploy.Verticle`. You 
 
 In the rest of this manual we'll assume the code snippets are running inside a verticle.
 
-### Asynchronous start
+## Asynchronous start
 
 In some cases your Verticle has to do some other stuff asynchronous in its `start()` method, e.g. start other verticles, and the verticle shouldn't be considered started until those other actions are complete.
 
@@ -173,7 +173,7 @@ Would deploy an instance of the `io.vertx~mod-mailer~2.0.0-beta1` module with th
     
 ## Passing configuration to a verticle programmatically   
   
-JSON configuration can be passed to a verticle that is deployed programmatically. Inside the deployed verticle the configuration is accessed with the `getConfig` method. For example:
+JSON configuration can be passed to a verticle that is deployed programmatically. Inside the deployed verticle the configuration is accessed with the `config()` method. For example:
 
     JsonObject config = new JsonObject();
     config.putString("foo", "wibble");
@@ -821,7 +821,7 @@ When a connection is made, the connect handler is called passing in an instance 
 
 #### Reading Data from the Socket
 
-To read data from the socket you need to set the `dataHandler` on the socket. This handler will be called with an instance of `org.vertx.java.core.buffer.Bufer` every time data is received on the socket. You could try the following code and telnet to it to send some data:
+To read data from the socket you need to set the `dataHandler` on the socket. This handler will be called with an instance of `org.vertx.java.core.buffer.Buffer` every time data is received on the socket. You could try the following code and telnet to it to send some data:
 
     NetServer server = vertx.createNetServer();
 
@@ -934,7 +934,7 @@ For example to write some data to the NetSocket from a completely different vert
 
 NetSocket also implements `org.vertx.java.core.streams.ReadStream` and `org.vertx.java.core.streams.WriteStream`. This allows flow control to occur on the connection and the connection data to be pumped to and from other object such as HTTP requests and responses, WebSockets and asynchronous files.
 
-This will be discussed in depth in the chapter on streams and pumps.
+This will be discussed in depth in the chapter on [streams and pumps](#flow-control).
 
 
 ## Scaling TCP Servers
@@ -1245,7 +1245,7 @@ Instances of `Pump` have the following methods:
 * `start()`: Start the pump.
 * `stop()`: Stops the pump. When the pump starts it is in stopped mode.
 * `setWriteQueueMaxSize()`: This has the same meaning as `setWriteQueueMaxSize` on the `WriteStream`.
-* `getBytesPumped()`: Returns total number of bytes pumped.
+* `bytesPumped()`: Returns total number of bytes pumped.
 
 A pump can be started and stopped multiple times.
 
@@ -1332,7 +1332,7 @@ When a request arrives, the request handler is called passing in an instance of 
 
 The handler is called when the headers of the request have been fully read. If the request contains a body, that body may arrive at the server some time after the request handler has been called.
 
-It contains functions to get the URI, path, request headers and request parameters. It also contains a `response` property which is a reference to an object that represents the server side HTTP response for the object.
+It contains functions to get the URI, path, request headers and request parameters. It also contains a `response()` method which returns a reference to an object that represents the server side HTTP response for the object.
 
 #### Request Method
 
@@ -1511,7 +1511,7 @@ You can also stream it directly to disk using the convenience method `streamToFi
 
 #### Handling Multipart Form Attributes
 
-If the request corresponds to an HTML form that was submitted you can use the method `formAttributes` to retrieve a Multi Map of the form attributes. This should only called after *all* of the request has been read - this is because form attributes are encoded in the request *body* not in the request headers.
+If the request corresponds to an HTML form that was submitted you can use the method `formAttributes` to retrieve a Multi Map of the form attributes. This should only be called after *all* of the request has been read - this is because form attributes are encoded in the request *body* not in the request headers.
 
     request.endHandler(new VoidHandler() {
         public void handle() {
@@ -1626,7 +1626,7 @@ Like headers, individual HTTP response trailers can also be written using the `p
 
 If you were writing a web server, one way to serve a file from disk would be to open it as an `AsyncFile` and pump it to the HTTP response. Or you could load it it one go using the file system API and write that to the HTTP response.
 
-Alternatively, Vert.x provides a method which allows you to send serve a file from disk to an HTTP response in one operation. Where supported by the underlying operating system this may result in the OS directly transferring bytes from the file to the socket without being copied through userspace at all.
+Alternatively, Vert.x provides a method which allows you to serve a file from disk to an HTTP response in one operation. Where supported by the underlying operating system this may result in the OS directly transferring bytes from the file to the socket without being copied through userspace at all.
 
 Using `sendFile` is usually more efficient for large files, but may be slower for small files than using `readFile` to manually read the file as a buffer and write it directly to the response.
 
@@ -2214,7 +2214,7 @@ To use WebSockets from a compliant browser, you use the standard WebSocket API. 
 
     <script>
     
-        var socket = new WebSocket("ws://localhost:8080/services/echo");
+        var socket = new WebSocket("ws://foo.com/services/echo");
 
         socket.onmessage = function(event) {
             alert("Received data from websocket: " + event.data);
@@ -2286,7 +2286,7 @@ The configuration is an instance of `org.vertx.java.core.json.JsonObject`, which
 * `session_timeout`: The server sends a `close` event when a client receiving connection have not been seen for a while. This delay is configured by this setting. By default the `close` event will be emitted when a receiving connection wasn't seen for 5 seconds.
 * `heartbeat_period`: In order to keep proxies and load balancers from closing long running http requests we need to pretend that the connecion is active and send a heartbeat packet once in a while. This setting controlls how often this is done. By default a heartbeat packet is sent every 25 seconds.
 * `max_bytes_streaming`: Most streaming transports save responses on the client side and don't free memory used by delivered messages. Such transports need to be garbage-collected once in a while. `max_bytes_streaming` sets a minimum number of bytes that can be send over a single http streaming request before it will be closed. After that client needs to open new request. Setting this value to one effectively disables streaming and will make streaming transports to behave like polling transports. The default value is 128K.    
-* `library_url`: Transports which don't support cross-domain communication natively ('eventsource' to name one) use an iframe trick. A simple page is served from the SockJS server (using its foreign domain) and is placed in an invisible iframe. Code run from this iframe doesn't need to worry about cross-domain issues, as it's being run from domain local to the SockJS server. This iframe also does need to load SockJS javascript client library, and this option lets you specify its url (if you're unsure, point it to the latest minified SockJS client release, this is the default). The default value is `http://cdn.sockjs.org/sockjs-0.1.min.js`
+* `library_url`: Transports which don't support cross-domain communication natively ('eventsource' to name one) use an iframe trick. A simple page is served from the SockJS server (using its foreign domain) and is placed in an invisible iframe. Code run from this iframe doesn't need to worry about cross-domain issues, as it's being run from domain local to the SockJS server. This iframe also does need to load SockJS javascript client library, and this option lets you specify its url (if you're unsure, point it to the latest minified SockJS client release, this is the default). The default value is `http://cdn.sockjs.org/sockjs-0.3.4.min.js`
 
 ## Reading and writing data from a SockJS server
 
