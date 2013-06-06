@@ -24,6 +24,49 @@ Creating your app as module(s) gives you the following benefits:
 
 If your application is relatively small it might make sense to create it as a single module. If your application is large split it up into a set of modules.
 
+## Using a Verticle to co-ordinate loading of an application
+
+If you have an application that contains multiple verticles it might make sense to use a scripting language such as JavaScript (you could also use Ruby, Groovy or Python) to "glue" together your other verticles that might be written in other languages (e.g. Java or Scala (going ahead)).
+
+If your verticles all need to be started at application start-up, then you can use another verticle that maintains the application configuration and starts all the other verticles. You can think of this as your application starter verticle.
+
+For example, you could create a verticle `app.js` as follows:
+
+    // Application config
+    
+    var appConfig = {
+        verticle1Config: {
+            // Config for verticle1
+        },
+        verticle2Config: {
+            // Config for verticle2
+        }, 
+        verticle3Config: {
+            // Config for verticle3
+        },
+        verticle4Config: {
+            // Config for verticle4
+        },
+        verticle5Config: {
+            // Config for verticle5
+        }  
+    }  
+    
+    // Start the verticles that make up the app  
+    
+    vertx.deployVerticle("verticle1.js", appConfig.verticle1Config);
+    vertx.deployVerticle("verticle2.js", appConfig.verticle2Config, 5);
+    vertx.deployVerticle("verticle3.js", appConfig.verticle3Config);
+    vertx.deployWorkerVerticle("verticle4.js", appConfig.verticle4Config);
+    vertx.deployWorkerVerticle("verticle5.js", appConfig.verticle5Config, 10);
+        
+        
+Then just set `app.js` as the main of your application module. You can store the static config for your application in `app.js` itself (code is config when it comes to scripting languages!), or you could pass it through when starting the module:
+
+    vertx runmod com.mycompany~my-mod~1.0 -conf app_conf.json
+
+If your application is large and actually composed of multiple modules rather than verticles you can use the same technique too.
+
 ## Use the Gradle template project or Maven archetype
 
 If you want to get started quickly it's recommended you use the [Gradle template project](gradle_dev.html) or the [Maven archetype](maven_dev.html) (depending whether you prefer Gradle or Maven) to get your project up and running.

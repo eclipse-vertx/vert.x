@@ -12,7 +12,7 @@ As was described in the [main manual](manual.html#verticle), a verticle is the e
 
 To recap, Vert.x is a container which executed packages of code called Verticles, and it ensures that the code in the verticle is never executed concurrently by more than one thread. You can write your verticles in any of the languages that Vert.x supports, and Vert.x supports running many verticle instances concurrently in the same Vert.x instance.
 
-All the code you write in a Vert.x application runs inside a Verticle.
+All the code you write in a Vert.x application runs inside a Verticle instance.
 
 For simple prototyping and trivial tasks you can write raw verticles and run them directly on the command line, but in most cases you will always wrap your verticles inside Vert.x [modules](mods_manual.html).
 
@@ -54,6 +54,8 @@ Congratulations! You've written your first verticle.
 
 Every Java verticle must extend the class `org.vertx.java.deploy.Verticle`. You must override the `start` method - this is called by Vert.x when the verticle is started.
 
+In the rest of this manual we'll assume the code snippets are running inside a verticle.
+
 ### Asynchronous start
 
 In some cases your Verticle has to do some other stuff asynchronous in its `start()` method, e.g. start other verticles, and the verticle shouldn't be considered started until those other actions are complete.
@@ -90,15 +92,15 @@ Each verticle instance has a member variable called `vertx`. This provides acces
         
 ## Getting Configuration in a Verticle
 
-You can pass configuration to a verticle from the command line using the `-conf` option, for example:
-
-    vertx run some_verticle.rb -conf myconf.json
-
-The argument to `-conf` is the name of a text file containing a valid JSON object.
-
-You can also specify this when running a module, for example
+You can pass configuration to a module or verticle from the command line using the `-conf` option, for example:
 
     vertx runmod com.mycompany~my-mod~1.0 -conf myconf.json
+
+or for a raw verticle
+
+    vertx run foo.js -conf myconf.json
+
+The argument to `-conf` is the name of a text file containing a valid JSON object.
 
 That configuration is available inside your verticle by calling the `config()` method on the `container` member variable of the verticle:
 
@@ -225,14 +227,14 @@ Then create a file 'config.json" with the actual JSON config in it
             "tel_no": "123123123"
         }       
     }        
-        
-Then you can start your entire application by simply running:
 
-    vertx run app.js -conf config.json
-       
-See the chapter on [running Vert.x](manual.html#running-vertx) in the main manual for more information on this.    
+Then set the `AppStarter` as the main of your module and then you can start your entire application by simply running:
+
+    vertx runmod com.mycompany~my-mod~1.0 -conf config.json      
+
+If your application is large and actually composed of multiple modules rather than verticles you can use the same technique.
     
-Alternatively, even if you choose to write your main verticles in Java, you could maintain a single JavaScript verticle as an app starter - JavaScript has much better JSON support than Java, so you can maintain the whole JSON config nicely in the verticle itself. Take a look at the JavaScript core guide to see how to do that.
+More commonly you'd probably chose to write your starter verticle in a scripting language such as JavaScript, Groovy, Ruby or Python - these languages have much better JSON support than Java, so you can maintain the whole JSON config nicely in the starter verticle itself.
                         
 ## Specifying number of instances
 
@@ -277,6 +279,14 @@ Any verticles or modules that you deploy programmatically from within a verticle
     container.undeployVerticle(deploymentID);    
 
 You can also provide a handler to the undeploy method if you want to be informed when undeployment is complete.
+
+# Scaling your application
+
+A verticle instance is almost always single threaded (the only exception is multi-threaded worker verticles which are an advanced feature not intended for normal development), this means a single instance can at most utilise one core of your server.
+
+In order to scale across cores you need to deploy more verticle instances. The exact numbers depend on your application - how many verticles there are and of what type.
+
+You can deploy more verticle instances programmatically or on the command line when deploying your module using the `-instances` command line option.
 
             
 # The Event Bus
@@ -935,11 +945,15 @@ If you create a simple TCP server and deploy a single instance of it then all th
 
 This means that if you are running on a server with a lot of cores, and you only have this one instance deployed then you will have at most one core utilised on your server! 
 
-To remedy this you can simply deploy more instances of the verticle in the server, e.g.
+To remedy this you can simply deploy more instances of the module in the server, e.g.
 
-    vertx run foo.MyServer -instances 20
+    vertx runmod com.mycompany~my-mod~1.0 -instances 20
+
+Or for a raw verticle
+
+    vertx run foo.MyApp -instances 20
     
-The above would run 20 instances of foo.MyServer to a locally running Vert.x instance.
+The above would run 20 instances of the module/verticle in the same Vert.x instance.
 
 Once you do this you will find the echo server works functionally identically to before, but, *as if by magic*, all your cores on your server can be utilised and more work can be handled.
 
@@ -1997,6 +2011,10 @@ Configuring an HTTP client for HTTPS is done in exactly the same way as configur
 ## Scaling HTTP servers
 
 Scaling an HTTP or HTTPS server over multiple cores is as simple as deploying more instances of the verticle. For example:
+
+    vertx runmod com.mycompany~my-mod~1.0 -instance 20
+
+Or, for a raw verticle:
 
     vertx run foo.MyServer -instances 20
     
