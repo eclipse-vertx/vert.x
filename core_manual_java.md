@@ -268,7 +268,7 @@ The actual verticle deployment is asynchronous and might not complete until some
     
 The handler will get passed an instance of `AsyncResult` when it completes. You can use the methods `succeeded` and `failed` on `AsyncResult` to see if the operation completed ok.
 
-The method `result()` provides the result of the async operation (if any) which in this case is the deployment ID - you will need this if you need to subsequently undeploy the verticle / modile.
+The method `result()` provides the result of the async operation (if any) which in this case is the deployment ID - you will need this if you need to subsequently undeploy the verticle / module.
 
 The method `cause()` provides the `Throwable` if the action failed.
     
@@ -920,7 +920,7 @@ You can set an exception handler on the socket that will be called if an excepti
 
 ### Event Bus Write Handler
 
-Every NetSocket automatically registers a handler on an event bus, and when any buffers are received in this handler, it writes them to itself. This enables you to write data to a NetSocket which is potentially in a completely different verticle or even in a different Vert.x instance by sending the buffer to the address of that handler.
+Every NetSocket automatically registers a handler on the event bus, and when any buffers are received in this handler, it writes them to itself. This enables you to write data to a NetSocket which is potentially in a completely different verticle or even in a different Vert.x instance by sending the buffer to the address of that handler.
 
 The address of the handler is given by the `writeHandlerID()` method.
 
@@ -1645,6 +1645,10 @@ To do this use the `sendFile` function on the HTTP response. Here's a simple HTT
           req.response().sendFile("web/" + file);              
         }
     }).listen(8080, "localhost");
+
+There's also a version of `sendFile` which takes the name of a file to serve if the specified file cannot be found:
+
+    req.response().sendFile("web/" + file, "handler_404.html");    
 
 *Note: If you use `sendFile` while using HTTPS it will copy through userspace, since if the kernel is copying data directly from disk to socket it doesn't give us an opportunity to apply any encryption.*
 

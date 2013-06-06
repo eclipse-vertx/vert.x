@@ -914,7 +914,7 @@ You can set an exception handler on the socket that will be called if an excepti
 
 ### Event Bus Write Handler
 
-Every NetSocket automatically registers a handler on an event bus, and when any buffers are received in this handler, it writes them to itself. This enables you to write data to a NetSocket which is potentially in a completely different verticle or even in a different Vert.x instance by sending the buffer to the address of that handler.
+Every NetSocket automatically registers a handler on the event bus, and when any buffers are received in this handler, it writes them to itself. This enables you to write data to a NetSocket which is potentially in a completely different verticle or even in a different Vert.x instance by sending the buffer to the address of that handler.
 
 The address of the handler is given by the `writeHandlerID()` function.
 
@@ -1598,6 +1598,10 @@ To do this use the `sendFile` function on the HTTP response. Here's a simple HTT
       }
       req.response.sendFile('web/' + file);   
     }).listen(8080, 'localhost');
+
+There's also a version of `sendFile` which takes the name of a file to serve if the specified file cannot be found:
+
+    req.response.sendFile("web/" + file, "handler_404.html");  
 
 *Note: If you use `sendFile` while using HTTPS it will copy through userspace, since if the kernel is copying data directly from disk to socket it doesn't give us an opportunity to apply any encryption.*
 

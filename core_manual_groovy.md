@@ -3,11 +3,20 @@ This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 Unpo
 To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/ or send
 a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
 -->
+
 [TOC]
 
 # Writing Verticles
 
-We previously discussed how a verticle is the unit of deployment in vert.x. Let's look in more detail about how to write a verticle.
+As was described in the [main manual](manual.html#verticle), a verticle is the execution unit of Vert.x.
+
+To recap, Vert.x is a container which executed packages of code called Verticles, and it ensures that the code in the verticle is never executed concurrently by more than one thread. You can write your verticles in any of the languages that Vert.x supports, and Vert.x supports running many verticle instances concurrently in the same Vert.x instance.
+
+All the code you write in a Vert.x application runs inside a Verticle instance.
+
+For simple prototyping and trivial tasks you can write raw verticles and run them directly on the command line, but in most cases you will always wrap your verticles inside Vert.x [modules](mods_manual.html).
+
+For now, let's try writing a simple raw verticle.
 
 As an example we'll write a simple TCP echo server. The server just accepts connections and any data received by it is echoed back on the connection.
 
@@ -18,31 +27,107 @@ Copy the following into a text editor and save it as `Server.groovy`
     vertx.createNetServer().connectHandler { socket ->
       createPump(socket, socket).start()
     }.listen(1234)
-
+    
 Now run it:
 
     vertx run Server.groovy
-
+    
 The server will now be running. Connect to it using telnet:
 
     telnet localhost 1234
-
-And notice how data you send (and hit enter) is echoed back to you.
+    
+And notice how data you send (and hit enter) is echoed back to you. 
 
 Congratulations! You've written your first verticle.
 
+A Groovy script verticle is simply a Groovy script that is executed when the verticle is deployed.
+
+In the rest of this manual we'll assume the code snippets are running inside a verticle.
+
+## Compiled Groovy verticles
+
+You can also write Vert.x verticles as compiled Groovy classes. Here's an example of the source for a compiled Groovy verticle:
+
+    package examples
+
+    import org.vertx.groovy.platform.Verticle
+    import static org.vertx.groovy.core.streams.Pump.createPump
+    import org.vertx.groovy.core.Vertx
+         
+    class EchoServer extends Verticle {
+        override def start() {
+            vertx.createNetServer().connectHandler { socket ->
+                createPump(socket, socket).start()
+            }.listen(1234)
+        }
+
+	override def stop() {        
+        }
+    }
+
+Once you've compiled it, you run it by specifing the classname prefixed with `groovy:`. We need the prefix to tell Vert.x to treat it as a Groovy class, not a Java class.
+
+    vertx run groovy:examples.EchoServer 
+
+
+## Asynchronous start
+
+In some cases your Verticle has to do some other stuff asynchronous in its `start()` method, e.g. start other verticles, and the verticle shouldn't be considered started until those other actions are complete.
+
+If this is the case for your compiled Groovy verticle you can override the asynchronous version of the `start()` method:
+
+    override def start(Future<Void> startedResult) {    
+      // For example - deploy some other verticle
+      container.deployVerticle("foo.js") { deployResult ->
+        if (deployResult.succeeded) {
+          startedResult.setResult(null)
+        } else {
+          startedResult.setFailure(deployResult.cause)
+        }
+      }      
+    }
+    
+        
 ## Verticle clean-up
 
-Servers, clients and event bus handlers will be automatically closed when the verticle is stopped. However, if you have any other clean-up logic that you want to execute when the verticle is stopped,
-you can implement a `vertxStop` top level method which will be called when the verticle is undeployed.
+Servers, clients, event bus handlers and timers will be automatically closed / cancelled when the verticle is stopped. However, if you have any other clean-up logic that you want to execute when the verticle is stopped, you can override the `stop` method in your compiled Groovy verticle or implement a top level `vertxStop` method in your Groovy script verticle which will be called when the verticle is undeployed. 
 
+    import static org.vertx.groovy.core.streams.Pump.createPump
+
+    vertx.createNetServer().connectHandler { socket ->
+      createPump(socket, socket).start()
+    }.listen(1234)
+
+    def vertxStop() {
+       println 'Verticle has been undeployed'
+    }
+
+## The `container` object
+
+Each verticle instance has a property called `container`. This represents the Verticle's view of the container in which it is running.
+
+The container object contains methods for deploying and undeploying verticle and modules, and also allows config, environment variables and a logger to be accessed.
+
+## The `vertx` object
+
+Each verticle instance has a property called `vertx`. This provides access to the Vert.x core API. You'll use the Core API to do most things in Vert.x including TCP, HTTP, file system access, event bus, timers etc.
+        
 ## Getting Configuration in a Verticle
 
-If JSON configuration has been passed when deploying a verticle from either the command line using `vertx run` or `vertx deploy` and specifying a configuration file, or when deploying programmatically, that configuration is available in the `config` property of the `container` variable which is injected into the top level script. The config is a map which represents the JSON config.
+You can pass configuration to a module or verticle from the command line using the `-conf` option, for example:
+
+    vertx runmod com.mycompany~my-mod~1.0 -conf myconf.json
+
+or for a raw verticle
+
+    vertx run foo.js -conf myconf.json
+
+The argument to `-conf` is the name of a text file containing a valid JSON object.
+
+That configuration is available as a Map inside your verticle via the `config` property on the container:
 
     def config = container.config
-
-
+    
 You can use this config to configure the verticle. Allowing verticles to be configured in a consistent way like this allows configuration to be easily passed to them irrespective of the language.
 
 ## Logging from a Verticle
@@ -53,7 +138,7 @@ Each verticle is given its own logger. To get a reference to it use the `logger`
 
     logger.info "I am logging something"
 
-The logger is an instance of the class `org.vertx.core.logging.Logger` and has the following methods;
+The logger is an instance of the class `org.vertx.core.logging.Logger` and has the following methods
 
 * trace
 * debug
@@ -70,34 +155,42 @@ For more information on configuring logging, please see the main manual.
 
 ## Accessing environment variables from a Verticle
 
-You can access the map of environment variables from a Verticle with the `getEnv()` method on the `container` object.
+You can access the map of environment variables from a Verticle with the `env` property on the `container` object.
 
+## Causing the container to exit
+
+You can call the `exit()` method of the container to cause the Vert.x instance to make a clean shutdown.
+   
 # Deploying and Undeploying Verticles Programmatically
 
-You can deploy and undeploy verticles programmatically from inside another verticle. Any verticles deployed programmatically inherit the path of the parent verticle.
+You can deploy and undeploy verticles programmatically from inside another verticle. Any verticles deployed this way will be able to see resources (classes, scripts, other files) of the main verticle.
 
 ## Deploying a simple verticle
 
-To deploy a verticle programmatically call the method `deployVerticle` on the `container` variable. The return value of `deployVerticle` is the unique id of the deployment, which can be used later to undeploy the verticle.
+To deploy a verticle programmatically call the function `deployVerticle` on the `container` object. 
 
-To deploy a single instance of a verticle:
+To deploy a single instance of a verticle :
 
-    def id = container.deployVerticle(main)
+    container.deployVerticle(main)    
+    
+Where `main` is the name of the Verticle (i.e. the name of the script or FQCN of the class).
 
-Where `main` is a String that represents the name of the "main" of the Verticle (i.e. the name of the script if it's a Ruby, Groovy or JavaScript verticle (e.g. my_script.rb or MyScript.js or MyScript.groovy) or the fully qualified class name if it's a Java verticle). See the chapter on "running vert.x" in the main manual for a description of what a main is.
+See the chapter on ["running Vert.x"](manual.html#running-vertx) in the main manual for a description of what a main is.
 
+## Deploying Worker Verticles
+
+The `deployVerticle` method deploys standard (non worker) verticles. If you want to deploy worker verticles use the `deployWorkerVerticle` method. This method takes the same parameters as `deployVerticle` with the same meanings.
+    
 ## Deploying a module programmatically
 
 You should use `deployModule` to deploy a module, for example:
 
-    container.deployModule("vertx.mailer-v1.0", config)
+    container.deployModule("io.vertx~mod-mailer~2.0.0-beta1", config)
+
+Would deploy an instance of the `io.vertx~mod-mailer~2.0.0-beta1` module with the specified configuration. Please see the [modules manual]() for more information about modules.
     
-Would deploy an instance of the `vertx.mailer` module with the specified configuration. Please see the modules manual
- for more information about modules.
-
-
-## Passing configuration to a verticle programmatically
-
+## Passing configuration to a verticle programmatically   
+  
 JSON configuration can be passed to a verticle that is deployed programmatically. For example:
 
     def config = [ foo: "wibble", bar: false]
@@ -105,90 +198,111 @@ JSON configuration can be passed to a verticle that is deployed programmatically
     container.deployVerticle("foo.ChildVerticle", config)
 
 Then, in `ChildVerticle` you can access the config via the `config` property as previously explained.
-
+    
 ## Using a Verticle to co-ordinate loading of an application
 
-If you have an application that is composed of multiple verticles that all need to be started at application start-up, then you can use another verticle that maintains the application configuration and starts all the other verticles. You can think of this as your application starter verticle.
+If you have an appplication that is composed of multiple verticles that all need to be started at application start-up, then you can use another verticle that maintains the application configuration and starts all the other verticles. You can think of this as your application starter verticle.
 
-For example, you could create a verticle `app.groovy` as follows:
-
-    // Application config
-
-    def appConfig = [
-        verticle1Config: [
-            // Config for verticle1
-        ],
-        verticle2Config: [
-            // Config for verticle2
-        ],
-        verticle3Config: [
-            // Config for verticle3
-        ],
-        verticle4Config: [
-            // Config for verticle4
-        ],
-        verticle5Config: [
-            // Config for verticle5
-        ]
-    ]
-
+For example, you could create a verticle `AppStarter.groovy` as follows:
+        
     // Start the verticles that make up the app
 
-    container.deployVerticle("verticle1.js", appConfig["verticle1Config"])
-    container.deployVerticle("verticle2.rb", appConfig["verticle2Config"])
-    container.deployVerticle("foo.Verticle3", appConfig["verticle3Config"])
-    container.deployWorkerVerticle("foo.Verticle4", appConfig["verticle4Config"])
-    container.deployWorkerVerticle("verticle5.js", appConfig["verticle5Config"], 10)
+    container.deployVerticle("verticle1.js", appConfig["verticle1_conf"])
+    container.deployVerticle("verticle2.rb", appConfig["verticle2_conf"])
+    container.deployVerticle("foo.Verticle3", appConfig["verticle3_conf"])
+    container.deployWorkerVerticle("foo.Verticle4", appConfig["verticle4_conf"])
+    container.deployWorkerVerticle("verticle5.js", appConfig["verticle5_conf"], 10)
+        
+Then create a file 'config.json" with the actual JSON config in it
+    
+    {
+        "verticle1_conf": {
+            "foo": "wibble"
+        },
+        "verticle2_conf": {
+            "age": 1234,
+            "shoe_size": 12,
+            "pi": 3.14159
+        }, 
+        "verticle3_conf": {
+            "strange": true
+        },
+        "verticle4_conf": {
+            "name": "george"
+        },
+        "verticle5_conf": {
+            "tel_no": "123123123"
+        }       
+    }        
 
-Then you can start your entire application by simply running:
+Then set the `AppStarter.groovy` as the main of your module and then you can start your entire application by simply running:
 
-    vertx run app.groovy
+    vertx runmod com.mycompany~my-mod~1.0 -conf config.json      
 
-or
-
-    vertx deploy app.groovy
-
-See the chapter on running vert.x in the main manual for more information on this.
-
+If your application is large and actually composed of multiple modules rather than verticles you can use the same technique.
+                           
 ## Specifying number of instances
 
-By default, when you deploy a verticle only one instance of the verticle is deployed. If you want more than one instance to be deployed, e.g. so you can scale over your cores better, you can specify the number of instances as follows:
+By default, when you deploy a verticle only one instance of the verticle is deployed. Verticles instances are strictly single threaded so this means you will use at most one core on your server.
 
-    container.deployVerticle("foo.ChildVerticle", 10)
+Vert.x scales by deploying many verticle instances concurrently.
 
-The above example would deploy 10 instances.
+If you want more than one instance of a particular verticle or module to be deployed, you can specify the number of instances as follows:
+
+    container.deployVerticle("Foo.groovy", 10)  
+
+Or
+
+    container.deployModule("io.vertx~some-mod~1.0", 10)   
+  
+The above examples would deploy 10 instances.
 
 ## Getting Notified when Deployment is complete
 
-The actual verticle deployment is asynchronous and might not complete until some time after the call to `deployVerticle` has returned. If you want to be notified when the verticle has completed being deployed,
-you can pass a Closure as the final argument to `deployVerticle`:
+The actual verticle deployment is asynchronous and might not complete until some time after the call to `deployVerticle` or `deployModule` has returned. If you want to be notified when the verticle has completed being deployed, you can pass a closure to `deployVerticle` or `deployModule`:
 
-    container.deployVerticle("foo.ChildVerticle", 10) {
-        println "The verticle has been deployed"
+    container.deployVerticle("Foo.groovy") { asyncResult ->       
+        if (asyncResult.succeeded) {
+    	    println "The verticle has been deployed, deployment ID is ${asyncResult.result}"
+        } else {
+            asyncResult.cause.printStackTrace()
+        }        
     }
+    
+The handler will get passed an instance of `AsyncResult` when it completes. You can use the properties `succeeded` and `failed` on `AsyncResult` to see if the operation completed ok.
 
-## Deploying Worker Verticles
+The property `result` provides the result of the async operation (if any) which in this case is the deployment ID - you will need this if you need to subsequently undeploy the verticle / module.
 
-The `deployVerticle` method deploys standard (non worker) verticles. If you want to deploy worker verticles use the `deployWorkerVerticle` method. This method takes the same parameters as `deployVerticle` with the same meanings.
+The property `cause` provides the `Throwable` if the action failed.
+    
+## Undeploying a Verticle or Module
 
-## Undeploying a Verticle
+Any verticles or modules that you deploy programmatically from within a verticle, and all of their children are automatically undeployed when the parent verticle is undeployed, so in many cases you will not need to undeploy a verticle manually, however if you do need to do this, it can be done by calling the method `undeployVerticle` or `undeployModule` passing in the deployment id. 
 
-Any verticles that you deploy programmatically from within a verticle, and all of their children are automatically undeployed when the parent verticle is undeployed, so in most cases you will not need to undeploy a verticle manually, however if you do want to do this, it can be done by calling the method `undeployVerticle` passing in the deployment id that was returned from the call to `deployVerticle`
+    container.undeployVerticle(deploymentID)    
 
-    def deploymentID = container.deployVerticle(main)
+You can also provide a handler to the undeploy method if you want to be informed when undeployment is complete.
 
-    container.undeployVerticle(deploymentID)
+# Scaling your application
 
+A verticle instance is almost always single threaded (the only exception is multi-threaded worker verticles which are an advanced feature not intended for normal development), this means a single instance can at most utilise one core of your server.
 
+In order to scale across cores you need to deploy more verticle instances. The exact numbers depend on your application - how many verticles there are and of what type.
+
+You can deploy more verticle instances programmatically or on the command line when deploying your module using the `-instances` command line option.
+
+            
 # The Event Bus
 
-The event bus is the nervous system of vert.x.
+The event bus is the nervous system of Vert.x.
 
-It allows verticles to communicate with each other irrespective of what language they are written in, and whether they're in the same vert.x instance, or in a different vert.x instance. It even allows client side JavaScript running in a browser to communicate on the same event bus. (More on that later).
+It allows verticles to communicate with each other irrespective of what language they are written in, and whether they're in the same Vert.x instance, or in a different Vert.x instance.
 
-It creates a distributed polyglot overlay network spanning multiple server nodes and multiple browsers.
+It even allows client side JavaScript running in a browser to communicate on the same event bus. (More on that later).
 
-The event bus API is incredibly simple. It basically involves registering handlers, unregistering handlers and sending, or publishing, messages.
+The event bus forms a distributed polyglot overlay network spanning multiple server nodes and multiple browsers.
+
+The event bus API is incredibly simple. It basically involves registering handlers, unregistering handlers and sending and publishing messages.
 
 First some theory:
 
@@ -198,7 +312,7 @@ First some theory:
 
 Messages are sent on the event bus to an *address*.
 
-Vert.x doesn't bother with any fancy addressing schemes. In vert.x an address is simply a string, any string is valid. However it is wise to use some kind of scheme, e.g. using periods to demarcate a namespace.
+Vert.x doesn't bother with any fancy addressing schemes. In Vert.x an address is simply a string, any string is valid. However it is wise to use some kind of scheme, e.g. using periods to demarcate a namespace.
 
 Some examples of valid addresses are `europe.news.feed1`, `acme.games.pacman`, `sausages`, and `X`.
 
@@ -212,11 +326,11 @@ Many different handlers from the same or different verticles can be registered a
 
 The event bus supports *publishing* messages. Messages are published to an address. Publishing means delivering the message to all handlers that are registered at that address. This is the familiar *publish/subscribe* messaging pattern.
 
-### Point to point messaging
+### Point to point and Request-Response messaging
 
-The event bus supports *point to point* messaging. Messages are sent to an address. This means a message is delivered to *at most* one of the handlers registered at that address. If there is more than one handler regsitered at the address, one will be chosen using a non-strict round-robin algorithm.
+The event bus supports *point to point* messaging. Messages are sent to an address. Vert.x will then route it to just one of the handlers registered at that address. If there is more than one handler registered at the address, one will be chosen using a non-strict round-robin algorithm.
 
-With point to point messaging, an optional reply handler can be specified when sending the message. When a message is received by a recipient, and has been *processed*, the recipient can optionally decide to reply to the message. If they do so that reply handler will be called.
+With point to point messaging, an optional reply handler can be specified when sending the message. When a message is received by a recipient, and has been handled, the recipient can optionally decide to reply to the message. If they do so that reply handler will be called.
 
 When the reply is received back at the sender, it too can be replied to. This can be repeated ad-infinitum, and allows a dialog to be set-up between two different verticles. This is a common messaging pattern called the *Request-Response* pattern.
 
@@ -228,27 +342,25 @@ If you want to persist your messages you can use a persistent work queue module 
 
 ### Types of messages
 
-Messages that you send on the event bus can be as simple as a string, a number or a boolean. You can also send vert.x buffers or JSON messages.
+Messages that you send on the event bus can be as simple as a string, a number or a boolean. You can also send Vert.x buffers or JSON messages.
 
-It's highly recommended you use JSON messages to communicate between verticles. JSON is easy to create and parse in all the languages that vert.x supports.
+It's highly recommended you use JSON messages to communicate between verticles. JSON is easy to create and parse in all the languages that Vert.x supports.
 
 ## Event Bus API
 
 Let's jump into the API.
 
-To get a reference to the event bus use the `eventBus` property on the `vertx` instance that is injected into the
-verticle script (or that you created if running embedded).
-
 ### Registering and Unregistering Handlers
 
-To set a message handler on the address `test.address`, you specify the handler as a Closure to the `registerHandler`
- method.
+To set a message handler on the address `test.address`, you do something like the following:
 
     def eb = vertx.eventBus
 
     eb.registerHandler("test.address") { message -> println "I received a message ${message.body}" }
+    
+It's as simple as that. The handler will then receive any messages sent to that address.
 
-The return value of `registerHandler` is a unique id for the handler that you can later use when unregistering, if you like.
+The return value of `registerHandler` is the Event Bus itself, i.e. we provide a *fluent* API so you can chain multiple calls together.   
 
 When you register a handler on an address and you're in a cluster it can take some time for the knowledge of that new handler to be propagated across the entire cluster. If you want to be notified when that has completed you can optionally specify another handler to the `registerHandler` method as the third argument. This handler will then be called once the information has reached all nodes of the cluster. E.g. :
 
@@ -258,17 +370,15 @@ When you register a handler on an address and you're in a cluster it can take so
 
 To unregister a handler it's just as straightforward. You simply call `unregisterHandler` passing in the address and the handler:
 
-    eb.unregisterHandler("test.address", myHandler)
-
+    eb.unregisterHandler("test.address", myHandler)   
+    
 A single handler can be registered multiple times on the same, or different, addresses so in order to identify it uniquely you have to specify both the address and the handler.
 
-Alternatively, you can unregister a handler using a unique id that was returned from the call to `registerHandler`.
-
-As with registering, when you unregister a handler and you're in a cluster it can also take some time for the knowledge of that unregistration to be propagated across the entire to cluster. If you want to be notified when that has completed you can optionally specify another handler to the registerHandler as the third argument. E.g. :
+As with registering, when you unregister a handler and you're in a cluster it can also take some time for the knowledge of that unregistration to be propagated across the entire to cluster. If you want to be notified when that has completed you can optionally specify another function to the registerHandler as the third argument. E.g. :
 
     eb.unregisterHandler("test.address", myHandler) { println "The handler has been unregistered across the cluster" }
-
-If you want your handler to live for the full lifetime of your verticle there is no need to unregister it explicitly - vert.x will automatically unregister any handlers when the verticle is stopped.
+    
+If you want your handler to live for the full lifetime of your verticle there is no need to unregister it explicitly - Vert.x will automatically unregister any handlers when the verticle is stopped.
 
 ### Publishing messages
 
@@ -276,19 +386,19 @@ Publishing a message is also trivially easy. Just publish it specifying the addr
 
     eb.publish("test.address", "hello world")
 
-That message will then be delivered to any handlers registered against the address "test.address".
+That message will then be delivered to all handlers registered against the address "test.address".
 
 ### Sending messages
 
-Sending a message will result in at most one handler registered at the address receiving the message. This is the point to point messaging pattern.
+Sending a message will result in only one handler registered at the address receiving the message. This is the point to point messaging pattern. The handler is chosen in a non strict round-robin fashion.
 
-    eb.send("test.address", "hello world")
+    eb.publish("test.address", "hello world")
 
 ### Replying to messages
 
 Sometimes after you send a message you want to receive a reply from the recipient. This is known as the *request-response pattern*.
 
-To do this you send a message, and specify a reply handler as the third argument. When the receiver receives the message they can reply to it by calling the `reply` method on the message. When this method is invoked it causes a reply to be sent back to the sender where the reply handler is invoked. An example will make this clear:
+To do this you send a message, and specify a reply handler as the third argument. When the receiver receives the message they can reply to it by calling the `reply` method on the message.. When this method is invoked it causes a reply to be sent back to the sender where the reply handler is invoked. An example will make this clear:
 
 The receiver:
 
@@ -348,16 +458,16 @@ Null messages can also be sent:
 
     eb.send("test.address", null)
 
-It's a good convention to have your verticles communicating using JSON.
+It's a good convention to have your verticles communicating using JSON -this is because JSON is easy to generate and parse for all the languages that Vert.x supports.
 
 ## Distributed event bus
 
-To make each vert.x instance on your network participate on the same event bus, start each vert.x instance with the `-cluster` command line switch.
+To make each Vert.x instance on your network participate on the same event bus, start each Vert.x instance with the `-cluster` command line switch.
 
-See the chapter in the main manual on *running vert.x* for more information on this.
+See the chapter in the main manual on [*running Vert.x*]() for more information on this. 
 
-Once you've done that, any vert.x instances started in cluster mode will merge to form a distributed event bus.
-
+Once you've done that, any Vert.x instances started in cluster mode will merge to form a distributed event bus.   
+      
 # Shared Data
 
 Sometimes it makes sense to allow different verticles instances to share data in a safe way. Vert.x allows simple `java.util.concurrent.ConcurrentMap` and `java.util.Set` data structures to be shared between verticles.
@@ -395,6 +505,12 @@ And then, in a different verticle:
 
     // etc
 
+# Buffers
+
+Most data in vert.x is shuffled around using instances of `org.vertx.groovy.core.buffer.Buffer`.
+
+A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands automatically as necessary to accomodate any bytes written to it. You can perhaps think of a buffer as smart byte array.
+        
 # Buffers
 
 Most data in vert.x is shuffled around using instances of `org.vertx.groovy.core.buffer.Buffer`.
@@ -488,40 +604,36 @@ You can also use the subscript operator to get a byte
 * `copy()`: Copy the entire buffer
 
 
-See the JavaDoc for more detailed method level documentation.
+See the GroovyDoc for more detailed method level documentation.   
 
 # Delayed and Periodic Tasks
 
-It's very common in vert.x to want to perform an action after a delay, or periodically.
+It's very common in Vert.x to want to perform an action after a delay, or periodically.
 
 In standard verticles you can't just make the thread sleep to introduce a delay, as that will block the event loop thread.
 
-Instead you use vert.x timers. Timers can be *one-shot* or *periodic*. We'll discuss both
+Instead you use Vert.x timers. Timers can be *one-shot* or *periodic*. We'll discuss both
 
 ## One-shot Timers
 
-A one shot timer calls an event handler after a certain delay, expressed in milliseconds.
+A one shot timer calls an event handler after a certain delay, expressed in milliseconds. 
 
-To set a timer to fire once you use the `setTimer` method passing in the delay and a handler:
+To set a timer to fire once you use the `setTimer` method passing in the delay and a handler
 
-    vertx.setTimer(1000) { timerID -> println "And one second later this is displayed" }
+    def timerID = vertx.setTimer(1000) { timerID -> println "And one second later this is displayed" }
 
     println "First this is printed"
 
-The handler is passed the unique id for the timer which can be used to cancel the timer.
-
+The return value is a unique timer id which can later be used to cancel the timer. The handler is also passed the timer id.
+     
 ## Periodic Timers
 
 You can also set a timer to fire periodically by using the `setPeriodic` method. There will be an initial delay equal to the period. The return value of `setPeriodic` is a unique timer id (long). This can be later used if the timer needs to be cancelled. The argument passed into the timer event handler is also the unique timer id:
 
-    long timerID = vertx.setPeriodic(1000, new Handler<Long>() {
-        public void handle(Long timerID) {
-            log.info('And every second this is printed')
-        }
-    })
+    def timerID = vertx.setPeriodic(1000) { timerID -> println "Every second this is displayed" } 
 
-    log.info('First this is printed')
-
+    println 'First this is printed'
+    
 ## Cancelling timers
 
 To cancel a periodic timer, call the `cancelTimer` method specifying the timer id. For example:
@@ -537,15 +649,14 @@ Or you can cancel it from inside the event handler. The following example cancel
     def count = 0
     long timerID = vertx.setPeriodic(1000) { timerID ->
         println "In event handler $count"
-        count++
-        if (count == 10) {
+        if (++count == 10) {
             vertx.cancelTimer(timerID)
         }
     }
-
+        
 # Writing TCP Servers and Clients
 
-Creating TCP servers and clients is incredibly easy with vert.x.
+Creating TCP servers and clients is very easy with Vert.x.
 
 ## Net Server
 
@@ -554,59 +665,68 @@ Creating TCP servers and clients is incredibly easy with vert.x.
 To create a TCP server you call the `createNetServer` method on your `vertx` instance.
 
     def server = vertx.createNetServer()
-
-### Start the Server Listening
-
-To tell that server to listen for connections we do:
+    
+### Start the Server Listening    
+    
+To tell that server to listen for connections we do:    
 
     def server = vertx.createNetServer()
 
     server.listen(1234, "myhost")
+    
+The first parameter to `listen` is the port. A wildcard port of `0` can be specified which means a random available port will be chosen to actually listen at. Once the server has completed listening you can then call the `port` property of the server to find out the real port it is using.
 
-The first parameter to `listen` is the port. The second parameter is the hostname or ip address. If it is omitted it will default to `0.0.0.0` which means it will listen at all available interfaces.
+The second parameter is the hostname or ip address. If it is omitted it will default to `0.0.0.0` which means it will listen at all available interfaces.
+
+The actual bind is asynchronous so the server might not actually be listening until some time *after* the call to listen has returned. If you want to be notified when the server is actually listening you can provide a closure to the `listen` call. For example:
+
+    server.listen(1234, "myhost") { asyncResult ->
+        println "Listen succeeded? ${asyncResult.succeeded}"
+    }  
 
 ### Getting Notified of Incoming Connections
-
+    
 Just having a TCP server listening creates a working server that you can connect to (try it with telnet!), however it's not very useful since it doesn't do anything with the connections.
 
-To be notified when a connection occurs we need to call the `connectHandler` method of the server, passing in a handler. The handler will be called when a connection is made:
+To be notified when a connection occurs we need to call the `connectHandler` method of the server, passing in a handler. The handler will then be called when a connection is made:
 
     def server = vertx.createNetServer()
 
     server.connectHandler { sock -> println "A client has connected!" }
 
     server.listen(1234, "localhost")
-
-That's a bit more interesting. Now it displays 'A client has connected!' every time a client connects.
+    
+That's a bit more interesting. Now it displays 'A client has connected!' every time a client connects.   
 
 The return value of the `connectHandler` method is the server itself, so multiple invocations can be chained together. That means we can rewrite the above as:
 
     def server = vertx.createNetServer()
 
     server.connectHandler { sock -> println "A client has connected!" }.listen(1234, "localhost")
-
-or
+    
+or just
 
     vertx.createNetServer().connectHandler { sock -> println "A client has connected!" }.listen(1234, "localhost")
-
-
-This is a common pattern throughout the vert.x API.
-
+        
+This is a common pattern throughout the Vert.x API.  
+ 
 
 ### Closing a Net Server
 
-To close a net server just call the `close` method.
+To close a net server just call the `close` function.
 
     server.close()
 
-The close is actually asynchronous and might not complete until some time after the `close` method has returned. If you want to be notified when the actual close has completed then you can pass in a handler to the `close` method.
+The close is actually asynchronous and might not complete until some time after the `close` method has returned. If you want to be notified when the actual close has completed then you can specify a closure to the `close` method.
 
-This handler will then be called when the close has fully completed.
-
-    server.close { println "The server is now fully closed." }
-
-If you want your net server to last the entire lifetime of your verticle, you don't need to call `close` explicitly, the Vert.x container will automatically close any servers that you created when the verticle is stopped.
-
+This closure will then be called when the close has fully completed.
+ 
+    server.close { asyncResult ->
+       println "close succeeded? ${asyncResult.succeeded}"
+    }  
+    
+If you want your net server to last the entire lifetime of your verticle, you don't need to call `close` explicitly, the Vert.x container will automatically close any servers that you created when the verticle is undeployed.    
+    
 ### NetServer Properties
 
 NetServer has a set of properties you can set which affect its behaviour. Firstly there are bunch of properties used to tweak the TCP parameters, in most cases you won't need to set these:
@@ -650,8 +770,7 @@ instance of `org.vertx.groovy.core.buffer.Buffer` every time data is received on
 
 #### Writing Data to a Socket
 
-To write data to a socket, you invoke the `write` method or leftShift operator This method can be invoked in a few
-ways:
+To write data to a socket, you invoke the `write` method or leftShift operator This method can be invoked in a few ways:
 
 With a single buffer:
 
@@ -676,11 +795,7 @@ A string and an encoding. In this case the string will encoded using the specifi
 
 The `write` method or leftShift is asynchronous and always returns immediately after the write has been queued.
 
-The actual write might occur some time later. If you want to be informed when the actual write has happened you can pass in a handler as a final argument.
-
-This handler will then be invoked when the write has completed:
-
-    sock.write('hello') { println "It has actually been written" }
+The actual write might occur some time later. 
 
 Let's put it all together.
 
@@ -691,6 +806,10 @@ Here's an example of a simple TCP echo server which simply writes back (echoes) 
     server.connectHandler { sock ->
         sock.dataHandler { buffer -> sock << buffer }
     }.listen(1234, "localhost")
+
+### Socket Remote Address
+
+You can find out the remote address of the socket (i.e. the address of the other side of the TCP IP connection) with the property `remoteAddress`.
 
 ### Closing a socket
 
@@ -712,7 +831,7 @@ The closed handler will be called irrespective of whether the close was initiate
 
 ### Exception handler
 
-You can set an exception handler on the socket that will be called if an exception occurs:
+You can set an exception handler on the socket that will be called if an exception occurs asynchronously on the connection:
 
     def server = vertx.createNetServer()
 
@@ -720,12 +839,24 @@ You can set an exception handler on the socket that will be called if an excepti
         sock.exceptionHandler { e -> println "Oops! $e" }
     }.listen(1234, "localhost")
 
+### Event Bus Write Handler
 
+Every NetSocket automatically registers a handler on the event bus, and when any buffers are received in this handler, it writes them to itself. This enables you to write data to a NetSocket which is potentially in a completely different verticle or even in a different Vert.x instance by sending the buffer to the address of that handler.
+
+The address of the handler is given by the `writeHandlerID` property.
+
+For example to write some data to the NetSocket from a completely different verticle you could do:
+
+    def writeHandlerID = ... // E.g. retrieve the ID from shared data
+
+    vertx.eventBus.send(writeHandlerID, buffer)
+    
 ### Read and Write Streams
 
 NetSocket also implements `org.vertx.groovy.core.streams.ReadStream` and `org.vertx.groovy.core.streams.WriteStream`. This allows flow control to occur on the connection and the connection data to be pumped to and from other object such as HTTP requests and responses, WebSockets and asynchronous files.
 
-This will be discussed in depth in the chapter on Streams and Pumps.
+This will be discussed in depth in the chapter on [streams and pumps](#flow-control).
+
 
 ## Scaling TCP Servers
 
@@ -733,13 +864,17 @@ A verticle instance is strictly single threaded.
 
 If you create a simple TCP server and deploy a single instance of it then all the handlers for that server are always executed on the same event loop (thread).
 
-This means that if you are running on a server with a lot of cores, and you only have this one instance deployed then you will have at most one core utilised on your server! That's not very good, right?
+This means that if you are running on a server with a lot of cores, and you only have this one instance deployed then you will have at most one core utilised on your server! 
 
-To remedy this you can simply deploy more instances of the verticle in the server, e.g.
+To remedy this you can simply deploy more instances of the module in the server, e.g.
 
-    vertx run MyScript.groovy -instances 20
+    vertx runmod com.mycompany~my-mod~1.0 -instances 20
 
-The above would start 20 instances of MyScript.groovy to a locally running vert.x instance.
+Or for a raw verticle
+
+    vertx run Foo.groovy-instances 20
+    
+The above would run 20 instances of the module/verticle in the same Vert.x instance.
 
 Once you do this you will find the echo server works functionally identically to before, but, *as if by magic*, all your cores on your server can be utilised and more work can be handled.
 
@@ -751,8 +886,8 @@ When you deploy another server on the same host and port as an existing server i
 
 Instead it internally maintains just a single server, and, as incoming connections arrive it distributes them in a round-robin fashion to any of the connect handlers set by the verticles.
 
-Consequently vert.x TCP servers can scale over available cores while each vert.x verticle instance remains strictly single threaded, and you don't have to do any special tricks like writing load-balancers in order to scale your server on your multi-core machine.
-
+Consequently Vert.x TCP servers can scale over available cores while each Vert.x verticle instance remains strictly single threaded, and you don't have to do any special tricks like writing load-balancers in order to scale your server on your multi-core machine.
+    
 ## NetClient
 
 A NetClient is used to make TCP connections to servers.
@@ -769,24 +904,19 @@ To actually connect to a server you invoke the `connect` method:
 
     def client = vertx.createNetClient()
 
-    client.connect(1234, "localhost") { socket -> println "We have connected!" }
+    client.connect(1234, "localhost") { asyncResult ->
+        if (asyncResult.succeeded) {
+            println "We have connected!"
+        } else {
+            asyncResult.cause.printStackTrace
+        }
+    }
 
-The connect method takes the port number as the first parameter, followed by the hostname or ip address of the server. The third parameter is a connect handler. This handler will be called when the connection actually occurs.
+The connect method takes the port number as the first parameter, followed by the hostname or ip address of the server. The third parameter is a closure. This closure will be called when the connection actually occurs.
 
-The argument passed into the connect handler is an instance of `org.vertx.groovy.core.net.NetSocket`, exactly the same as what is passed into the server side connect handler. Once given the `NetSocket` you can read and write data from the socket in exactly the same way as you do on the server side.
+The argument passed into the connect handler is an `AsyncResult<NetSocket>`, and the `NetSocket` can be retrieved from the `result()` method. You can read and write data from the socket in exactly the same way as you do on the server side.
 
 You can also close it, set the closed handler, set the exception handler and use it as a `ReadStream` or `WriteStream` exactly the same as the server side `NetSocket`.
-
-### Catching exceptions on the Net Client
-
-You can set an exception handler on the `NetClient`. This will catch any exceptions that occur during connection.
-
-    def client = vertx.createNetClient()
-
-    client.exceptionHandler { ex -> println "Failed to connect $ex" }
-
-    client.connect(4242, "host-that-doesnt-exist") { socket -> puts "This won't get called" }
-
 
 ### Configuring Reconnection
 
@@ -814,7 +944,7 @@ Just like `NetServer`, `NetClient` also has a set of TCP properties you can set 
 
 ## SSL Servers
 
-Net servers can also be configured to work with [Transport Layer Security](http://en.wikipedia.org/wiki/Transport_Layer_Security) (previously known as SSL).
+NNet servers can also be configured to work with [Transport Layer Security](http://en.wikipedia.org/wiki/Transport_Layer_Security) (previously known as SSL).
 
 When a `NetServer` is working as an SSL Server the API of the `NetServer` and `NetSocket` is identical compared to when it working with standard sockets. Getting the server to use SSL is just a matter of configuring the `NetServer` before `listen` is called.
 
@@ -853,9 +983,10 @@ Making sure that `server-truststore.jks` contains the certificates of any client
 
 If `clientAuthRequired` is set to `true` and the client cannot provide a certificate, or it provides a certificate that the server does not trust then the connection attempt will not succeed.
 
+
 ## SSL Clients
 
-NetClients can also be easily configured to use SSL. They have the exact same API when using SSL as when using standard sockets.
+NNetClients can also be easily configured to use SSL. They have the exact same API when using SSL as when using standard sockets.
 
 To enable SSL on a `NetClient` the property `SSL` should be set to `true`.
 
@@ -885,13 +1016,13 @@ To configure a client to only trust those certificates it has in its trust store
                                        clientAuthRequired: true,
                                        keyStorePath: "/path/to/keystore/holding/client/cert/client-keystore.jks",
                                        keyStorePassword: "password")
-
-
+                     
+<a id="flow-control"> </a> 
 # Flow Control - Streams and Pumps
 
-There are several objects in vert.x that allow data to be read from and written to in the form of Buffers.
+There are several objects in Vert.x that allow data to be read from and written to in the form of Buffers.
 
-All operations in the vert.x API are non blocking; calls to write data return immediately and writes are internally queued.
+In Vert.x, calls to write data return immediately and writes are internally queued.
 
 It's not hard to see that if you write to an object faster than it can actually write the data to its underlying resource then the write queue could grow without bound - eventually resulting in exhausting available memory.
 
@@ -914,7 +1045,7 @@ A naive way to do this would be to directly take the data that's been read and i
         }
     }.listen(1234, "localhost")
 
-There's a problem with the above example: If data is read from the socket faster than it can be written back to the socket, it will build up in the write queue of the AsyncFile, eventually running out of RAM. This might happen, for example if the client at the other end of the socket wasn't reading very fast, effectively putting back-pressure on the connection.
+There's a problem with the above example: If data is read from the socket faster than it can be written back to the socket, it will build up in the write queue of the `NetSocket`, eventually running out of RAM. This might happen, for example if the client at the other end of the socket wasn't reading very fast, effectively putting back-pressure on the connection.
 
 Since `NetSocket` implements `WriteStream`, we can check if the `WriteStream` is full before writing to it:
 
@@ -1006,6 +1137,8 @@ Instances of `Pump` have the following methods:
 
 A pump can be started and stopped multiple times.
 
+When a pump is first created it is *not* started. You need to call the `start()` method to start it.
+
 # Writing HTTP Servers and Clients
 
 ## Writing HTTP servers
@@ -1017,20 +1150,25 @@ Vert.x allows you to easily write full featured, highly performant and scalable 
 To create an HTTP server you call the `createHttpServer` method on your `vertx` instance.
 
     def server = vertx.createHttpServer()
-
-### Start the Server Listening
-
+    
+### Start the Server Listening    
+    
 To tell that server to listen for incoming requests you use the `listen` method:
 
     def server = vertx.createHttpServer()
 
     server.listen(8080, "myhost")
+    
+The first parameter to `listen` is the port. 
 
-The first parameter to `listen` is the port. The second parameter is the hostname or ip address. If the hostname is omitted it will default to `0.0.0.0` which means it will listen at all available interfaces.
+The second parameter is the hostname or ip address. If it is omitted it will default to `0.0.0.0` which means it will listen at all available interfaces.
 
+The actual bind is asynchronous so the server might not actually be listening until some time *after* the call to listen has returned. If you want to be notified when the server is actually listening you can provide a closure to the `listen` call. For example:
+
+    server.listen(8080, "myhost") { asyncResult -> println "Listen succeeded ? ${asyncResult.succeeded}" }
 
 ### Getting Notified of Incoming Requests
-
+    
 To be notified when a request arrives you need to set a request handler. This is done by calling the `requestHandler` method of the server, passing in the handler:
 
     def server = vertx.createHttpServer()
@@ -1039,8 +1177,7 @@ To be notified when a request arrives you need to set a request handler. This is
 
     server.listen(8080, "localhost")
 
-Every time a request arrives on the server the handler is called passing in an instance of `org.vertx.groovy.core.http
-.HttpServerRequest`.
+Every time a request arrives on the server the handler is called passing in an instance of `org.vertx.groovy.core.http.HttpServerRequest`.
 
 You can try it by running the verticle and pointing your browser at `http://localhost:8080`.
 
@@ -1055,8 +1192,8 @@ or
     vertx.createHttpServer().requestHandler{ request ->
         println "A request has arrived on the server!"
     }.listen(8080, "localhost")
-
-
+    
+       
 ### Handling HTTP Requests
 
 So far we have seen how to create an `HttpServer` and be notified of requests. Lets take a look at how to handle the requests and do something useful with them.
@@ -1098,12 +1235,12 @@ The request object has a property `query` which contains the query of the reques
     /a/b/c/page.html?param1=abc&param2=xyz
 
 Then `request.query` would contain the string `param1=abc&param2=xyz`
-
+        
 #### Request Headers
 
-A map of the request headers are available using the `headers` property on the request object.
+The request headers are available using the `headers()` method on the request object.
 
-Note that the header keys are always lower-cased before being put in the `headers` property.
+The returned object is an instance of `org.vertx.groovy.core.MultiMap`. A MultiMap allows multiple values for the same key, unlike a normal Map.
 
 Here's an example that echoes the headers to the output of the response. Run it and point your browser at `http://localhost:8080` to see the headers.
 
@@ -1112,29 +1249,37 @@ Here's an example that echoes the headers to the output of the response. Run it 
     server.requestHandler { request ->
 
         def sb = new StringBuffer()
-        for (e in request.headers) {
+        for (e in request.headers.entries) {
             sb << e.key << ": " << e.value << '\n'
         }
         request.response.putHeader("Content-Type", "text/plain")
-        request.response.end(sb.toString())
-        }
+        request.response.end(sb.toString())        
     }.listen(8080, "localhost")
 
 
 #### Request params
 
-Similarly to the headers, the map of request parameters are available using the `params` property on the request
-object.
+Similarly to the headers, the request parameters are available using the `params` property on the request object.   
+
+The returned object is an instance of `org.vertx.groovy.core.MultiMap`.   
 
 Request parameters are sent on the request URI, after the path. For example if the URI was:
 
     /page.html?param1=abc&param2=xyz
-
-Then the params map would contain the following entries:
+    
+Then the params multimap would contain the following entries:
 
     param1: 'abc'
     param2: 'xyz
 
+#### Remote Address
+
+Use the property `remoteAddress` to find out the address of the other side of the HTTP connection.
+
+#### Absolute URI
+
+Use the property `absoluteURI` to return the absolute URI corresponding to the request.
+    
 #### Reading Data from the Request Body
 
 Sometimes an HTTP request contains a request body that we want to read. As previously mentioned the request handler is called when only the headers of the request have arrived so the `HttpServerRequest` object does not contain the body. This is because the body may be very large and we don't want to create problems with exceeding available memory.
@@ -1144,7 +1289,7 @@ To receive the body, you set the `dataHandler` on the request object. This will 
     def server = vertx.createHttpServer()
 
     server.requestHandler{ request ->
-        request.dataHandler { buffer -> println "I received ${buffer.length(}) bytes" }
+        request.dataHandler { buffer -> println "I received ${buffer.length()}) bytes" }
     }.listen(8080, "localhost")
 
 The `dataHandler` may be called more than once depending on the size of the body.
@@ -1163,7 +1308,7 @@ In many cases, you know the body is not large and you just want to receive it in
 
         request.dataHandler { buffer -> body << buffer }
 
-        request.endHandler { println "I received ${body.length(}) bytes" }
+        request.endHandler { println "I received ${body.length()}) bytes" }
 
     }.listen(8080, "localhost")
 
@@ -1184,15 +1329,40 @@ Here's an example using `bodyHandler`:
 
     server.requestHandler{ request ->
 
-        request.bodyHandler { body -> println "The total body received was ${body.length(}) bytes" }
+        request.bodyHandler { body -> println "The total body received was ${body.length()}) bytes" }
 
     }.listen(8080, "localhost")
 
-Simples, innit?
 
-### HTTP Server Responses
+#### Handling Multipart Form Uploads
 
-As previously mentioned, the HTTP request object contains a property `response`. This is the HTTP response for the request. You use it to write the response back to the client.
+Vert.x understands file uploads submitted from HTML forms in browsers. In order to handle file uploads you should set the `uploadHandler` on the request. The handler will be called once for each upload in the form.
+
+    request.uploadHandler { upload -> 
+        // Do something with it
+    }
+
+The `HttpServerFileUpload` class implements `ReadStream` so you read the data and stream it to any object that implements `WriteStream` using a Pump, as previously discussed.
+
+You can also stream it directly to disk using the convenience method `streamToFileSystem()`.
+
+    request.uploadHandler { upload -> 
+        upload.streamToFileSystem "uploads/${upload.filename()}"
+    }
+
+#### Handling Multipart Form Attributes
+
+If the request corresponds to an HTML form that was submitted you can use the property `formAttributes` to retrieve a Multi Map of the form attributes. This should only be called after *all* of the request has been read - this is because form attributes are encoded in the request *body* not in the request headers.
+
+    request.endHandler {
+        // The request has been all ready so now we can look at the form attributes
+        def attrs = request.formAttributes
+        // Do something with them
+    }     
+    
+### HTTP Server Responses 
+
+As previously mentioned, the HTTP request object contains a property `response`. This returns the HTTP response for the request. You use it to write the response back to the client.
 
 ### Setting Status Code and Message
 
@@ -1210,8 +1380,17 @@ You can also use the `statusMessage` property to set the status message. If you 
         }
     }.listen(8080, "localhost")
 
-The default value for `statusCode` is `200`.
+Or if you prefer
 
+    def server = vertx.createHttpServer()
+
+    server.requestHandler{ request ->
+        request.response.setStatusCode(739).setStatusMessage("Too many gerbils").end()
+    }.listen(8080, "localhost")
+
+
+The default value for `statusCode` is `200`.
+  
 #### Writing HTTP responses
 
 To write data to an HTTP response, you invoke the `write` method or use the leftShift (<<) operator (They do the same thing). This method can be invoked multiple times before the response is ended. It can be invoked in a few ways:
@@ -1239,16 +1418,12 @@ A string and an encoding. In this case the string will encoded using the specifi
 
 The `write` method is asynchronous and always returns immediately after the write has been queued.
 
-The actual write might complete some time later. If you want to be informed when the actual write has completed you can pass in a handler as a final argument. This handler will then be invoked when the write has completed:
-
-    request.response.write("hello") { println "It has actually been written" }
-
 If you are just writing a single string or Buffer to the HTTP response you can write it and end the response in a single call to the `end` method.
 
 The first call to `write` results in the response header being being written to the response.
 
 Consequently, if you are not using HTTP chunking then you must set the `Content-Length` header before writing to the response, since it will be too late otherwise. If you are using HTTP chunking you do not have to worry.
-
+   
 #### Ending HTTP responses
 
 Once you have finished with the HTTP response you must call the `end()` method on it.
@@ -1271,17 +1446,17 @@ You can close the underlying TCP connection of the request by calling the `close
 
 #### Response headers
 
-HTTP response headers can be added to the response by adding them to the `headers` property:
+HTTP response headers can be added to the response by adding them to the `headers` multimap
 
-    request.response.headers["Cheese"] = "Stilton"
-    request.response.headers["Hat colour"] = "Mauve"
+    request.response.headers.set("Cheese", "Stilton")
+    request.response.headers.set("Hat colour", "Mauve")
 
 Individual HTTP response headers can also be written using the `putHeader` method. This allows a fluent API since calls to `putHeader` can be chained:
 
-    request.response.putHeader("Dream", "Elephants").putHeader("Invisible-Friend", "Bertie")
-
+    request.response.putHeader("Some-Header", "elephants").putHeader("Pants", "Absent")
+    
 Response headers must all be added before any parts of the response body are written.
-
+    
 #### Chunked HTTP Responses and Trailers
 
 Vert.x supports [HTTP Chunked Transfer Encoding](http://en.wikipedia.org/wiki/Chunked_transfer_encoding). This allows the HTTP response body to be written in chunks, and is normally used when a large response body is being streamed to a client, whose size is not known in advance.
@@ -1290,19 +1465,19 @@ You put the HTTP response into chunked mode as follows:
 
     req.response.chunked = true
 
-Default is non-chunked. When in chunked mode, each call to `response.write(...)` will result in a new HTTP chunk being written out.
+Default is non-chunked. When in chunked mode, each call to `response.write(...)` will result in a new HTTP chunk being written out.  
 
-When in chunked mode you can also write HTTP response trailers to the response. These are actually written in the final chunk of the response.
+When in chunked mode you can also write HTTP response trailers to the response. These are actually written in the final chunk of the response.  
 
-To add trailers to the response, add them to the `trailers` property:
+To add trailers to the response, add them to the `trailers` multimap
 
-    request.response.trailers["Rick Astley"] = "Never Gonna Give You Up"
-    request.response.trailers["You"] = "RickRolled"
+    request.response.trailers.set("Philosophy", "Solipsism")
+    request.response.trailers.set("Favourite-Shakin-Stevens-Song", "Behind the Green Door")
 
-Like headers, individual HTTP response trailers can also be written using the `putTrailer` method. This allows a fluent API since calls to `putTrailer` can be chained:
+Like headers, individual HTTP response trailers can also be written using the `putTrailer()` method. This allows a fluent API since calls to `putTrailer` can be chained:
 
     request.response.putTrailer("Cat-Food", "Whiskas").putTrailer("Eye-Wear", "Monocle")
-
+    
 
 ### Serving files directly from disk
 
@@ -1318,6 +1493,10 @@ To do this use the `sendFile` method on the HTTP response. Here's a simple HTTP 
       def file = req.uri == "/" ? "index.html" : req.uri
       req.response.sendFile "web/$file"
     }.listen(8080, "localhost")
+
+There's also a version of `sendFile` which takes the name of a file to serve if the specified file cannot be found:
+
+    req.response.sendFile("web/$file", "handler_404.html") 
 
 *Note: If you use `sendFile` while using HTTPS it will copy through userspace, since if the kernel is copying data directly from disk to socket it doesn't give us an opportunity to apply any encryption.*
 
@@ -1337,7 +1516,7 @@ Here's an example which echoes HttpRequest headers and body back in the HttpResp
         req.endHandler { req.response.end() }
     }.listen(8080, "localhost")
 
-
+    
 ## Writing HTTP Clients
 
 ### Creating an HTTP Client
@@ -1424,6 +1603,10 @@ There is also a method called `getNow` which does the same as `get`, but automat
 
 With `getNow` there is no return value.
 
+#### Handling exceptions
+
+You can set an exception handler on the `HttpClient` class and it will receive all exceptions for the client unless a specific exception handler has been set on a specific `HttpClientRequest` object.
+
 #### Writing to the request body
 
 Writing to the client request body has a very similar API to writing to the server response body.
@@ -1453,9 +1636,6 @@ A string and an encoding. In this case the string will encoded using the specifi
 
 The `write` method is asynchronous and always returns immediately after the write has been queued. The actual write might complete some time later.
 
-If you want to be informed when the actual write has completed you can pass in a closure as a final argument. This closure will be executed when the write has completed:
-
-    request.response.write("hello") { println "It's actually been written" }
 
 If you are just writing a single string or Buffer to the HTTP request you can write it and end the request in a single call to the `end` method.
 
@@ -1486,7 +1666,7 @@ To write headers to the request, add them to `headers` property:
         println "Got a response: ${resp.statusCode}"
     }
 
-    request.headers["Some-Header"] = "Some-Value"
+    request.headers.set("Some-Header", "Some-Value")
     request.end()
 
 You can also add them using the `putHeader` method. This enables a more fluent API since calls can be chained, for example:
@@ -1499,6 +1679,10 @@ These can all be chained together as per the common vert.x API pattern:
         println "Got a response: ${resp.statusCode}"
     }.putHeader("Some-Header", "Some-Value").end()
 
+#### Request timeouts
+
+You can set a timeout for specific Http Request using the `setTimeout()` method. If the request does not return any data within the timeout period an exception will be passed to the exception handler (if provided) and the request will be closed.
+
 #### HTTP chunked requests
 
 Vert.x supports [HTTP Chunked Transfer Encoding](http://en.wikipedia.org/wiki/Chunked_transfer_encoding) for requests. This allows the HTTP request body to be written in chunks, and is normally used when a large request body is being streamed to the server, whose size is not known in advance.
@@ -1507,7 +1691,7 @@ You put the HTTP request into chunked mode as follows:
 
     request.chunked = true
 
-Default is non-chunked. When in chunked mode, each call to `request.write(...)` will result in a new HTTP chunk being written out.
+Default is non-chunked. When in chunked mode, each call to `request.write(...)` will result in a new HTTP chunk being written out. 
 
 ### HTTP Client Responses
 
@@ -1578,10 +1762,10 @@ Here's an example using `bodyHandler`:
         }
     }
 
-## Pumping Requests and Responses
+#### Reading cookies
 
-The HTTP client and server requests and responses all implement either `ReadStream` or `WriteStream`. This means you can pump between them and any other read and write streams.
-
+You can read the list of cookies from the response using the property `cookies`.
+   
 ### 100-Continue Handling
 
 According to the [HTTP 1.1 specification](http://www.w3.org/Protocols/rfc2616/rfc2616-sec8.html) a client can set a header `Expect: 100-Continue` and send the request header before sending the rest of the request body.
@@ -1612,9 +1796,14 @@ An example will illustrate this:
 
     request.sendHead()
 
+## Pumping Requests and Responses
+
+The HTTP client and server requests and responses all implement either `ReadStream` or `WriteStream`. This means you can pump between them and any other read and write streams.
+    
+
 ## HTTPS Servers
 
-HTTPS servers are very easy to write using vert.x.
+HTTPS servers are very easy to write using Vert.x.
 
 An HTTPS server has an identical API to a standard HTTP server. Getting the server to use HTTPS is just a matter of configuring the HTTP Server before `listen` is called.
 
@@ -1622,16 +1811,20 @@ Configuration of an HTTPS server is done in exactly the same way as configuring 
 
 ## HTTPS Clients
 
-HTTPS clients can also be very easily written with vert.x
+HTTPS clients can also be very easily written with Vert.x
 
-Configuring an HTTP client for HTTPS is done in exactly the same way as configuring a `NetClient` for SSL. Please see SSL client chapter for detailed instructions.
+Configuring an HTTP client for HTTPS is done in exactly the same way as configuring a `NetClient` for SSL. Please see SSL client chapter for detailed instructions. 
 
 ## Scaling HTTP servers
 
 Scaling an HTTP or HTTPS server over multiple cores is as simple as deploying more instances of the verticle. For example:
 
-    vertx deploy foo.MyServer -instances 20
+    vertx runmod com.mycompany~my-mod~1.0 -instance 20
 
+Or, for a raw verticle:
+
+    vertx run foo.MyServer -instances 20
+    
 The scaling works in the same way as scaling a `NetServer`. Please see the chapter on scaling Net Servers for a detailed explanation of how this works.
 
 # Routing HTTP requests with Pattern Matching
@@ -1640,7 +1833,7 @@ Vert.x lets you route HTTP requests to different handlers based on pattern match
 
 This is particularly useful when developing REST-style web applications.
 
-To do this you simply create an instance of `org.vertx.java.core.http.RouteMatcher` and use it as handler in an HTTP server. See the chapter on HTTP servers for more information on setting HTTP handlers. Here's an example:
+To do this you simply create an instance of `org.vertx.groovy.core.http.RouteMatcher` and use it as handler in an HTTP server. See the chapter on HTTP servers for more information on setting HTTP handlers. Here's an example:
 
     def server = vertx.createHttpServer()
 
@@ -1685,12 +1878,12 @@ If you want to extract parameters from the path, you can do this too, by using t
     def routeMatcher = new RouteMatcher()
 
     routeMatcher.put("/:blogname/:post") { req ->
-        String blogName = req.params["blogname"]
-        String post = req.params["post"]
+        String blogName = req.params.get("blogname")
+        String post = req.params.get("post")
         req.response.end "blogname is ${blogName}, post is $post"
     }
 
-    server.requestHandler(routeMatcher).listen(8080, "localhost")
+    server.requestHandler(routeMatcher.asClosure()).listen(8080, "localhost")
 
 Any params extracted by pattern matching are added to the map of request parameters.
 
@@ -1715,12 +1908,12 @@ For example:
     def routeMatcher = new RouteMatcher()
 
     routeMatcher.allWithRegEx("\\/([^\\/]+)\\/([^\\/]+)") { req ->
-        def first = req.params["param0"]
-        def second = req.params["param1"]
+        def first = req.params.get("param0")
+        def second = req.params.get("param1")
         req.response.end "first is $first and second is $second"
     }
 
-    server.requestHandler(routeMatcher).listen(8080, "localhost")
+    server.requestHandler(routeMatcher.asClosure()).listen(8080, "localhost")
 
 Run the above and point your browser at `http://localhost:8080/animals/cats`.
 
@@ -1732,9 +1925,10 @@ You can use the `noMatch` method to specify a handler that will be called if not
         req.response.end "Nothing matched"
     }
 
+    
 # WebSockets
 
-[WebSockets](http://en.wikipedia.org/wiki/WebSocket) are a feature of HTML 5 that allows a full duplex socket-like connection between HTTP servers and HTTP clients (typically browsers).
+[WebSockets](http://en.wikipedia.org/wiki/WebSocket) are a web technology that allows a full duplex socket-like connection between HTTP servers and HTTP clients (typically browsers).
 
 ## WebSockets on the server
 
@@ -1746,14 +1940,14 @@ To use WebSockets on the server you create an HTTP server as normal, but instead
         println "A websocket has connected!"
     }.listen(8080, "localhost")
 
-
-### Reading from and Writing to WebSockets
-
-The `websocket` instance passed into the handler implements both `ReadStream` and `WriteStream`, so you can read and write data to it in the normal ways - i.e by setting a `dataHandler` and calling the `writeBuffer` method.
+    
+### Reading from and Writing to WebSockets    
+    
+The `websocket` instance passed into the handler implements both `ReadStream` and `WriteStream`, so you can read and write data to it in the normal ways - i.e by setting a `dataHandler` and calling the `write` method.
 
 You can also use the leftShift (<<) operator to write data to the `websocket`.
 
-See the chapter on `NetSocket` and streams and pumps for more information.
+See the chapter on [streams and pumps](#flow-control) for more information.
 
 For example, to echo all data received on a WebSocket:
 
@@ -1763,11 +1957,11 @@ For example, to echo all data received on a WebSocket:
         Pump.createPump(ws, ws).start()
     }.listen(8080, "localhost")
 
-The `websocket` instance also has method `writeBinaryFrame` for writing binary data. This has the same effect as calling `writeBuffer`.
+The `websocket` instance also has method `writeBinaryFrame` for writing binary data. This has the same effect as calling `write`.
 
 Another method `writeTextFrame` also exists for writing text data. This is equivalent to calling
 
-    websocket.writeBuffer(new Buffer("some-string"))
+    websocket.write(new Buffer("some-string"))
 
 ### Rejecting WebSockets
 
@@ -1785,57 +1979,58 @@ To check the path, you can query the `path` property of the `websocket`. You can
         }        
     }.listen(8080, "localhost")
 
+### Headers on the websocket
 
+You can use the `headers` property to retrieve the headers passed in the Http Request from the client that caused the upgrade to websockets.    
+    
 ## WebSockets on the HTTP client
 
 To use WebSockets from the HTTP client, you create the HTTP client as normal, then call the `connectWebsocket` method, passing in the URI that you wish to connect to at the server, and a handler.
 
 The handler will then get called if the WebSocket successfully connects. If the WebSocket does not connect - perhaps the server rejects it - then any exception handler on the HTTP client will be called.
 
-Here's an example of WebSocket connection;
+Here's an example of WebSocket connection
 
-    def client = vertx.createHttpClient()
+    def client = vertx.createHttpClient(host: "foo.xcom")
 
-    client.connectWebsocket("http://localhost:8080/some-uri") { ws ->
+    client.connectWebsocket("/some-uri") { ws ->
         // Connected!
     }
 
-Again, the client side WebSocket implements `ReadStream` and `WriteStream`, so you can read and write to it in the same way as any other stream object.
+Note that the host (and port) is set on the `HttpClient` instance, and the uri passed in the connect is typically a *relative* URI.
+    
+Again, the client side WebSocket implements `ReadStream` and `WriteStream`, so you can read and write to it in the same way as any other stream object. 
 
 ## WebSockets in the browser
 
-To use WebSockets from a compliant browser, you use the standard WebSocket API. Here's some example client side JavaScript which uses a WebSocket.
+To use WebSockets from a compliant browser, you use the standard WebSocket API. Here's some example client side JavaScript which uses a WebSocket. 
 
     <script>
-
-        var socket = new WebSocket("ws://localhost:8080/services/echo");
+    
+        var socket = new WebSocket("ws://foo.com/services/echo");
 
         socket.onmessage = function(event) {
             alert("Received data from websocket: " + event.data);
         }
-
+        
         socket.onopen = function(event) {
             alert("Web Socket opened");
             socket.send("Hello World");
         };
-
+        
         socket.onclose = function(event) {
             alert("Web Socket closed");
         };
-
+    
     </script>
-
-For more information see the [WebSocket API documentation](http://dev.w3.org/html5/websockets/)
-
-## Routing WebSockets with Pattern Matching
-
-**TODO**
+    
+For more information see the [WebSocket API documentation](http://dev.w3.org/html5/websockets/) 
 
 # SockJS
 
 WebSockets are a new technology, and many users are still using browsers that do not support them, or which support older, pre-final, versions.
 
-Moreover, WebSockets do not work well with many corporate proxies. This means that's it's not possible to guarantee a WebSocket connection is going to succeed for every user.
+Moreover, WebSockets do not work well with many corporate proxies. This means that's it's not possible to guarantee a WebSockets connection is going to succeed for every user.
 
 Enter SockJS.
 
@@ -1849,17 +2044,17 @@ Please see the [SockJS website](https://github.com/sockjs/sockjs-client) for mor
 
 Vert.x provides a complete server side SockJS implementation.
 
-This enables vert.x to be used for modern, so-called *real-time* (this is the *modern* meaning of *real-time*, not to be confused by the more formal pre-existing definitions of soft and hard real-time systems) web applications that push data to and from rich client-side JavaScript applications, without having to worry about the details of the transport.
+This enables Vert.x to be used for modern, so-called *real-time* (this is the *modern* meaning of *real-time*, not to be confused by the more formal pre-existing definitions of soft and hard real-time systems) web applications that push data to and from rich client-side JavaScript applications, without having to worry about the details of the transport.
 
 To create a SockJS server you simply create a HTTP server as normal and then call the `createSockJSServer` method of your `vertx` instance passing in the Http server:
 
     def httpServer = vertx.createHttpServer()
 
     def sockJSServer = vertx.createSockJSServer(httpServer)
-
+    
 Each SockJS server can host multiple *applications*.
 
-Each application is defined by some configuration, and provides a handler which gets called when incoming SockJS connections arrive at the server.
+Each application is defined by some configuration, and provides a handler which gets called when incoming SockJS connections arrive at the server.      
 
 For example, to create a SockJS echo application:
 
@@ -1874,49 +2069,49 @@ For example, to create a SockJS echo application:
     }
 
     httpServer.listen(8080)
-
-The configuration is an instance of map, and can contain the following settings:
+    
+The configuration is an instance of `org.vertx.java.core.json.JsonObject`, which takes the following fields:
 
 * `prefix`: A url prefix for the application. All http requests whose paths begins with selected prefix will be handled by the application. This property is mandatory.
 * `insert_JSESSIONID`: Some hosting providers enable sticky sessions only to requests that have JSESSIONID cookie set. This setting controls if the server should set this cookie to a dummy value. By default setting JSESSIONID cookie is enabled. More sophisticated beaviour can be achieved by supplying a function.
 * `session_timeout`: The server sends a `close` event when a client receiving connection have not been seen for a while. This delay is configured by this setting. By default the `close` event will be emitted when a receiving connection wasn't seen for 5 seconds.
-* `heartbeat_period`: In order to keep proxies and load balancers from closing long running http requests we need to pretend that the connection is active and send a heartbeat packet once in a while. This setting controls how often this is done. By default a heartbeat packet is sent every 25 seconds.
-* `max_bytes_streaming`: Most streaming transports save responses on the client side and don't free memory used by delivered messages. Such transports need to be garbage-collected once in a while. `max_bytes_streaming` sets a minimum number of bytes that can be send over a single http streaming request before it will be closed. After that client needs to open new request. Setting this value to one effectively disables streaming and will make streaming transports to behave like polling transports. The default value is 128K.
-* `library_url`: Transports which don't support cross-domain communication natively ('eventsource' to name one) use an iframe trick. A simple page is served from the SockJS server (using its foreign domain) and is placed in an invisible iframe. Code run from this iframe doesn't need to worry about cross-domain issues, as it's being run from domain local to the SockJS server. This iframe also does need to load SockJS javascript client library, and this option lets you specify its url (if you're unsure, point it to the latest minified SockJS client release, this is the default). The default value is `http://cdn.sockjs.org/sockjs-0.1.min.js`
+* `heartbeat_period`: In order to keep proxies and load balancers from closing long running http requests we need to pretend that the connecion is active and send a heartbeat packet once in a while. This setting controlls how often this is done. By default a heartbeat packet is sent every 25 seconds.
+* `max_bytes_streaming`: Most streaming transports save responses on the client side and don't free memory used by delivered messages. Such transports need to be garbage-collected once in a while. `max_bytes_streaming` sets a minimum number of bytes that can be send over a single http streaming request before it will be closed. After that client needs to open new request. Setting this value to one effectively disables streaming and will make streaming transports to behave like polling transports. The default value is 128K.    
+* `library_url`: Transports which don't support cross-domain communication natively ('eventsource' to name one) use an iframe trick. A simple page is served from the SockJS server (using its foreign domain) and is placed in an invisible iframe. Code run from this iframe doesn't need to worry about cross-domain issues, as it's being run from domain local to the SockJS server. This iframe also does need to load SockJS javascript client library, and this option lets you specify its url (if you're unsure, point it to the latest minified SockJS client release, this is the default). The default value is `http://cdn.sockjs.org/sockjs-0.3.4.min.js`
 
 ## Reading and writing data from a SockJS server
 
-The object passed into the SockJS handler implements `ReadStream` and `WriteStream` much like `NetSocket` or `WebSocket`. You can therefore use the standard API for reading and writing to the SockJS socket or using it in pumps.
+The `SockJSSocket` object passed into the SockJS handler implements `ReadStream` and `WriteStream` much like `NetSocket` or `WebSocket`. You can therefore use the standard API for reading and writing to the SockJS socket or using it in pumps.
 
-See the chapter on Streams and Pumps for more information.
-
+See the chapter on [Streams and Pumps](#flow-control) for more information.
+    
 ## SockJS client
 
 For full information on using the SockJS client library please see the SockJS website. A simple example:
 
     <script>
        var sock = new SockJS('http://mydomain.com/my_prefix');
-
+       
        sock.onopen = function() {
            console.log('open');
        };
-
+       
        sock.onmessage = function(e) {
            console.log('message', e.data);
        };
-
+       
        sock.onclose = function() {
            console.log('close');
        };
-    </script>
-
-As you can see the API is very similar to the WebSockets API.
-
+    </script>   
+    
+As you can see the API is very similar to the WebSockets API.    
+            
 # SockJS - EventBus Bridge
 
 ## Setting up the Bridge
 
-By connecting up SockJS and the vert.x event bus we create a distributed event bus which not only spans multiple vert.x instances on the server side, but can also include client side JavaScript running in browsers.
+By connecting up SockJS and the Vert.x event bus we create a distributed event bus which not only spans multiple Vert.x instances on the server side, but can also include client side JavaScript running in browsers.
 
 We can therefore create a huge distributed bus encompassing many browsers and servers. The browsers don't have to be connected to the same server as long as the servers are connected.
 
@@ -1924,7 +2119,7 @@ On the server side we have already discussed the event bus API.
 
 We also provide a client side JavaScript library called `vertxbus.js` which provides the same event bus API, but on the client side.
 
-This library internally uses SockJS to send and receive data to a SockJS vert.x server called the SockJS bridge. It's the bridge's responsibility to bridge data between SockJS sockets and the event bus on the server side.
+This library internally uses SockJS to send and receive data to a SockJS Vert.x server called the SockJS bridge. It's the bridge's responsibility to bridge data between SockJS sockets and the event bus on the server side.
 
 Creating a Sock JS bridge is simple. You just call the `bridge` method on the SockJS server.
 
@@ -1939,16 +2134,16 @@ The following example bridges the event bus to client side JavaScript:
     vertx.createSockJSServer(server).bridge(config, [], [])
 
     server.listen(8080)
-
-The SockJS bridge currently only works with JSON event bus messages.
+    
+The SockJS bridge currently only works with JSON event bus messages.    
 
 ## Using the Event Bus from client side JavaScript
 
 Once you've set up a bridge, you can use the event bus from the client side as follows:
 
-In your web page, you need to load the script `vertxbus.js`, then you can access the vert.x event bus API. Here's a rough idea of how to use it. For a full working examples, please consult the bundled examples.
+In your web page, you need to load the script `vertxbus.js`, then you can access the Vert.x event bus API. Here's a rough idea of how to use it. For a full working examples, please consult the vert.x examples.
 
-    <script src="http://cdn.sockjs.org/sockjs-0.2.1.min.js"></script>
+    <script src="http://cdn.sockjs.org/sockjs-0.3.4.min.js"></script>
     <script src='vertxbus.js'></script>
 
     <script>
@@ -1969,17 +2164,17 @@ In your web page, you need to load the script `vertxbus.js`, then you can access
        
     </script>
 
-You can find `vertxbus.js` in the `client` directory of the vert.x distribution.
+You can find `vertxbus.js` in the `client` directory of the Vert.x distribution.
 
 The first thing the example does is to create a instance of the event bus
 
-    var eb = new vertx.EventBus('http://localhost:8080/eventbus');
-
+    var eb = new vertx.EventBus('http://localhost:8080/eventbus'); 
+    
 The parameter to the constructor is the URI where to connect to the event bus. Since we create our bridge with the prefix `eventbus` we will connect there.
 
 You can't actually do anything with the bridge until it is opened. When it is open the `onopen` handler will be called.
 
-The client side event bus API for registering and unregistering handlers and for sending messages is exactly the same as the server side one. Please consult the chapter on the event bus for full information.
+The client side event bus API for registering and unregistering handlers and for sending messages is the same as the server side one. Please consult the chapter on the event bus for full information.    
 
 **There is one more thing to do before getting this working, please read the following section....**
 
@@ -1995,9 +2190,9 @@ To deal with this, a SockJS bridge will, by default refuse to let through any me
 
 In other words the bridge acts like a kind of firewall which has a default *deny-all* policy.
 
-Configuring the bridge to tell it what messages it should pass through is easy. You pass in two lists of JSON objects (represented as maps) that represent *matches*, as the final argument in the call to `bridge`.
+Configuring the bridge to tell it what messages it should pass through is easy. You pass in two Json arrays that represent *matches*, as arguments to `bridge`.
 
-The first list is the *inbound* list and represents the messages that you want to allow through from the client to the server. The second list is the *outbound* list and represents the messages that you want to allow through from the server to the client.
+The first array is the *inbound* list and represents the messages that you want to allow through from the client to the server. The second array is the *outbound* list and represents the messages that you want to allow through from the server to the client.
 
 Each match can have up to three fields:
 
@@ -2029,8 +2224,8 @@ Here is an example:
     // have an action field with value 'find' and a collection field with value
     // 'albums'
     inboundPermitted << ["address": "demo.persistor",
-                  "match": [ "action": "find",
-                             "collection": "albums"]]
+                         "match": [ "action": "find",
+                                    "collection": "albums"]]
 
     // Allow through any message with a field `wibble` with value `foo`.
     inboundPermitted << ["match", ["wibble": "foo"]]
@@ -2047,16 +2242,16 @@ Here is an example:
     vertx.createSockJSBridge(server).bridge(config, inboundPermitted, outboundPermitted)
 
     server.listen(8080)
-
-
-To let all messages through you can specify a list with a single empty map which will match all messages.
+   
+    
+To let all messages through you can specify two JSON array with a single empty JSON object which will match all messages.
 
     ...
 
     vertx.createSockJSBridge(server).bridge(config, [[:]], [[:]])
 
     ...
-
+     
 **Be very careful!**
 
 ## Messages that require authorisation
@@ -2067,28 +2262,28 @@ To enable this you need to make sure an instance of the `vertx.auth-mgr` module 
 
 To tell the bridge that certain messages require authorisation before being passed, you add the field `requires_auth` with the value of `true` in the match. The default value is `false`. For example, the following match:
 
-    permitted << ["address": "demo.persistor",
-                  "match": [ "action": "save",
-                             "collection": "orders"],
-                  "requires_auth": true]
+    {
+      address : 'demo.persistor',
+      match : {
+        action : 'find',
+        collection : 'albums'
+      },
+      requires_auth: true
+    }
     
 This tells the bridge that any messages to save orders in the `orders` collection, will only be passed if the user is successful authenticated (i.e. logged in ok) first.    
-    
-When a message is sent from the client that requires authorisation, the client must pass a field `sessionID` with the message that contains the unique session ID that they obtained when they logged in with the `auth-mgr`.
-
-When the bridge receives such a message, it will send a message to the `auth-mgr` to see if the session is authorised for that message. If the session is authorised the bridge will cache the authorisation for a certain amount of time (five minutes by default)
-
+       
 # File System
 
-Vert.x lets you manipulate files on the file system. File system operations are asynchronous and take a handler method as the last argument. This method will be called when the operation is complete, or an error has occurred.
+Vert.x lets you manipulate files on the file system. File system operations are asynchronous and take a handler function as the last argument. This function will be called when the operation is complete, or an error has occurred.
 
-The argument passed into the handler is an instance of `org.vertx.java.core.AsyncResult`. Instances of this class have two fields: `exception` - If the operation has failed this will be set; `result` - If the operation has succeeded this will contain the result.
+The argument passed into the handler is an instance of `org.vertx.groovy.core.AsyncResult`.
 
 ## Synchronous forms
 
 For convenience, we also provide synchronous forms of most operations. It's highly recommended the asynchronous forms are always used for real applications.
 
-The synchronous form does not take a handler as an argument and returns its results directly. The name of the synchronous method is the same as the name as the asynchronous form with `Sync` appended.
+The synchronous form does not take a handler as an argument and returns its results directly. The name of the synchronous function is the same as the name as the asynchronous form with `Sync` appended.
 
 ## copy
 
@@ -2103,10 +2298,10 @@ Non recursive file copy. `source` is the source file name. `destination` is the 
 Here's an example:
 
     vertx.fileSystem.copy("foo.dat", "bar.dat") { ar ->
-        if (ar.succeeded() {
+        if (ar.succeeded) {
             log.info("Copy was successful")
         } else {
-            log.error("Failed to copy", ar.exception)
+            log.error("Failed to copy", ar.cause)
         }
     }
 
@@ -2168,11 +2363,11 @@ Retrieve properties of a file.
 Here's an example:
 
     vertx.fileSystem("foo.dat", "bar.dat") { ar ->
-        if (ar.succeeeded()) {        
+        if (ar.succeeeded) {        
             println "Props are: Last accessed: ${ar.result.lastAccessTime}"
             // etc
         } else {
-            log.error("Failed to get props", ar.exception)
+            log.error("Failed to get props", ar.cause)
         }
     }
 
@@ -2215,10 +2410,10 @@ Reads a symbolic link - i.e returns the path representing the file that the symb
 `link` is the name of the link to read. An usage example would be:
 
     vertx.fileSystem.readSymLink("somelink") { ar ->
-        if (ar.succeeded()) {
+        if (ar.succeeded) {
             println "Link points at ${ar.result}"
         } else {
-            log.error("Failed to read", ar.exception)
+            log.error("Failed to read", ar.cause)
         }
     }
 
@@ -2251,10 +2446,10 @@ Makes a new empty directory with name `dirname`, and default permissions `
 If `createParents` is `true`, this creates a new directory and creates any of its parents too. Here's an example
 
     vertx.fileSystem.mkdir("a/b/c", true) { ar->
-        if (ar.succeeded()) {
+        if (ar.succeeded) {
             println "Directory created ok"
         } else {
-            log.error("Failed to mkdir", ar.exception)
+            log.error("Failed to mkdir", ar.cause)
         }
     }
 
@@ -2277,13 +2472,13 @@ Lists the contents of a directory
 List only the contents of a directory which match the filter. Here's an example which only lists files with an extension `txt` in a directory.
 
     vertx.fileSystem.readDir("mydirectory", ".*\\.txt") { ar ->
-        if (ar.succeeded()) {
+        if (ar.succeeded) {
             println "Directory contains these .txt files"
             for (file in ar.result) {
                 println file
             }
         } else {
-            log.error("Failed to read", ar.exception)
+            log.error("Failed to read", ar.cause)
         }
     }
 
@@ -2300,10 +2495,10 @@ The body of the file will be returned as an instance of `org.vertx.java.core.buf
 Here is an example:
 
     vertx.fileSystem.readFile("myfile.dat") { ar ->
-        if (ar.succeeded()) {
+        if (ar.succeeded) {
             println "File contains: ${ar.result.length} bytes"
         } else {
-            log.error("Failed to read", ar.exception)
+            log.error("Failed to read", ar.cause)
         }
     }
 
@@ -2328,10 +2523,10 @@ Checks if a file exists.
 The result is returned in the handler.
 
     vertx.fileSystem.exists("some-file.txt") { ar ->
-        if (ar.succeeded()) {
+        if (ar.succeeded) {
             println "File exists? ${ar.result}"
         } else {
-            log.error("Failed to check existence", ar.exception)
+            log.error("Failed to check existence", ar.cause)
         }
     }
 
@@ -2350,11 +2545,11 @@ The result is returned in the handler. The result object is an instance of `org.
 Here is an example:
 
     vertx.fileSystem.fsProps("mydir") { ar ->
-        if (ar.succeded() {
+        if (ar.succeeded) {
             println "total space: ${ar.result.totalSpace}"
             // etc
         } else {
-            log.error("Failed to check existence", ar.exception)
+            log.error("Failed to check existence", ar.cause)
         }
     }
 
@@ -2385,14 +2580,14 @@ Opens a file. `file` is the file name. If `read` is `true` it is opened for read
 Opens a file. `file` is the file name. If `read` is `true` it is opened for reading. If `write` is `true` it is opened for writing. It `createNew` is `true` it creates it if it does not already exist. If `flush` is `true` all writes are immediately flushed through the OS cache (default value of `flush` is false).
 
 
-When the file is opened, an instance of `org.vertx.java.core.file.AsyncFile` is passed into the result handler:
+When the file is opened, an instance of `org.vertx.groovy.core.file.AsyncFile` is passed into the result handler:
 
     vertx.fileSystem.open("some-file.dat") { ar ->
-        if (ar.succeeded()) {
+        if (ar.succeeded) {
             println "File opened ok!"
             // etc
         } else {
-            log.error("Failed to open file", ar.exception)
+            log.error("Failed to open file", ar.cause)
         }
     }
 
@@ -2400,7 +2595,7 @@ When the file is opened, an instance of `org.vertx.java.core.file.AsyncFile` is 
 
 Instances of `org.vertx.groovy.core.file.AsyncFile` are returned from calls to `open` and you use them to read from and write to files asynchronously. They allow asynchronous random file access.
 
-`AsyncFile` can provide instances of `ReadStream` and `WriteStream` via the `getReadStream` and `getWriteStream` methods, so you can pump files to and from other stream objects such as net sockets, HTTP requests and responses, and WebSockets.
+`AsyncFile` implements `ReadStream` and `WriteStream` so you can pump files to and from other stream objects such as net sockets, HTTP requests and responses, and WebSockets.
 
 They also allow you to read and write directly to them.
 
@@ -2419,22 +2614,22 @@ The parameters to the method are:
 Here is an example of random access writes:
 
     vertx.fileSystem.open("some-file.dat") { ar ->
-        if (ar.succeeded()) {
+        if (ar.succeeded) {
             def asyncFile = ar.result
             // File open, write a buffer 5 times into a file
             def buff = new Buffer("foo")
             5.times {
                 asyncFile.write(buff, buff.length * it) { ar2 ->
-                    if (ar2.succeded()) {
+                    if (ar2.succeeded) {
                         println "Written ok!"
                         // etc
                     } else {
-                        log.error("Failed to write", ar2.exception)
+                        log.error("Failed to write", ar2.cause)
                     }
                 }
             }
         } else {
-            log.error("Failed to open file", ar.exception)
+            log.error("Failed to open file", ar.cause)
         }
     }
 
@@ -2456,21 +2651,21 @@ The parameters to the method are:
 Here's an example of random access reads:
 
     vertx.fileSystem.open("some-file.dat") { ar ->
-        if (ar.succeeded()) {
+        if (ar.succeeded) {
             def asyncFile = ar.result
             def buff = new Buffer(1000)
             10.times {
                 asyncFile.read(buff, it * 100, it * 100, 100) { ar2 ->
-                    if (ar2.succeeded()) {
+                    if (ar2.succeeded) {
                         println "Read ok!"
                         // etc
                     } else {
-                        log.error("Failed to write", ar2.exception)
+                        log.error("Failed to write", ar2.cause)
                     }
                 }
             }
         } else {
-            log.error("Failed to open file", ar.exception)
+            log.error("Failed to open file", ar.cause)
         }
     }
 
@@ -2483,7 +2678,7 @@ This method can also be called with an handler which will be called when the flu
 
 ### Using AsyncFile as `ReadStream` and `WriteStream`
 
-Use the methods `getReadStream` and `getWriteStream` to get read and write streams. You can then use them with a pump to pump data to and from other read and write streams.
+`AsyncFile` implements `ReadStream` and `WriteStream`. You can then use them with a pump to pump data to and from other read and write streams.
 
 Here's an example of pumping data from a file on a client to a HTTP request:
 
@@ -2495,15 +2690,14 @@ Here's an example of pumping data from a file on a client to a HTTP request:
                 println "Received response: ${resp.statusCode}"
             }
             def asyncFile = ar.result
-            def rs = asyncFile.getReadStream()
             request.chunked = true
-            Pump.createPump(rs, request).start()
+            Pump.createPump(asyncFile, request).start()
             rs.endHandler{
                 // File sent, end HTTP requuest
                 request.end()
             }
         } else {
-            log.error("Failed to open file", ar.exception)
+            log.error("Failed to open file", ar.cause)
         }
     }
 
@@ -2512,9 +2706,8 @@ Here's an example of pumping data from a file on a client to a HTTP request:
 To close an AsyncFile call the `close` method. Closing is asynchronous and if you want to be notified when the close has been completed you can specify a handler method as an argument.
 
 
+    
 
-
-
-
+   
 
 
