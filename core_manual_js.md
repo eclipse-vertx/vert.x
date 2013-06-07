@@ -66,7 +66,7 @@ However, if you have any other clean-up logic that you want to execute when the 
 
 Vert.x implements the APIs in JavaScript as [CommonJS modules](http://wiki.commonjs.org/wiki/Modules/1.1)
 
-CommonJS modules are executed in their own scope and cleanly exports an object for you to use.
+CommonJS modules are executed in their own scope and cleanly export an object for you to use.
 
 You get a reference to the object exported by using the `require()` method. This method takes the name of the module as a parameter, and returns the API object.
 
@@ -101,6 +101,14 @@ If you want to log stuff to the console, you need to require the console object:
     var console = require('vertx/console');
 
     console.log("hello world!);
+
+## Loading other scripts in the current scope
+
+   To load and execute another JavaScript file in the current scope, you can use the `load` function:
+
+   load("somescript.js");
+
+   foo(); // Call a function defined in the script
 
         
 ## Getting Configuration in a Verticle
@@ -216,7 +224,9 @@ If you have an application that is composed of multiple verticles that all need 
 
 For example, you could create a verticle `app.js` as follows:
     
-    // Start the verticles that make up the app  
+    // Start the verticles that make up the app 
+
+    var appConfig = vertx.config(); 
     
     vertx.deployVerticle("verticle1.js", appConfig.verticle1Config);
     vertx.deployVerticle("verticle2.js", appConfig.verticle2Config, 5);
@@ -553,7 +563,7 @@ The return value of the `appendXXX` methods is the buffer itself, so these can b
     
     buff.appendInt(123).appendString("hello").appendChar('\n');
     
-    socket.writeBuffer(buff);
+    socket.write(buff);
     
 If you want to append a number as an integer to a buffer you must specify how you want to encode it in the buffer
 
@@ -1214,7 +1224,7 @@ Functions:
 Functions:
 
 * `write(buffer)`: write a Buffer to the `WriteStream`. This method will never block. Writes are queued internally and asynchronously written to the underlying resource.
-* `writeQueueMaxSize(size)`: set the number of bytes at which the write queue is considered *full*, and the function `writeQueueFull()` returns `true`. Note that, even if the write queue is considered full, if `writeBuffer` is called the data will still be accepted and queued.
+* `writeQueueMaxSize(size)`: set the number of bytes at which the write queue is considered *full*, and the function `writeQueueFull()` returns `true`. Note that, even if the write queue is considered full, if `write` is called the data will still be accepted and queued.
 * `writeQueueFull()`: returns `true` if the write queue is considered full.
 * `exceptionHandler(handler)`: The handler will be called if an exception occurs on the `WriteStream`.
 * `drainHandler(handler)`: The handler will be called if the `WriteStream` is considered no longer full.
@@ -2265,8 +2275,6 @@ The following example bridges the event bus to client side JavaScript:
 
     server.listen(8080);
     
-The SockJS bridge currently only works with JSON event bus messages.    
-
 ## Using the Event Bus from client side JavaScript
 
 Once you've set up a bridge, you can use the event bus from the client side as follows:

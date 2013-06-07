@@ -1120,8 +1120,8 @@ methods:
 
 methods:
 
-* `writeBuffer(buffer)`: write a Buffer to the `WriteStream`. This method will never block. Writes are queued internally and asynchronously written to the underlying resource.
-* `setWriteQueueMaxSize(size)`: set the number of bytes at which the write queue is considered *full*, and the method `writeQueueFull()` returns `true`. Note that, even if the write queue is considered full, if `writeBuffer` is called the data will still be accepted and queued.
+* `write(buffer)`: write a Buffer to the `WriteStream`. This method will never block. Writes are queued internally and asynchronously written to the underlying resource.
+* `setWriteQueueMaxSize(size)`: set the number of bytes at which the write queue is considered *full*, and the method `writeQueueFull()` returns `true`. Note that, even if the write queue is considered full, if `write` is called the data will still be accepted and queued.
 * `isWriteQueueFull()`: returns `true` if the write queue is considered full.
 * `exceptionHandler(handler)`: Will be called if an exception occurs on the `WriteStream`.
 * `drainHandler(handler)`: The handler will be called if the `WriteStream` is considered no longer full.
@@ -1511,7 +1511,7 @@ Here's an example which echoes HttpRequest headers and body back in the HttpResp
     def server = vertx.createHttpServer()
 
     server.requestHandler{ req ->
-        req.response.headers << req.headers
+        req.response.headers.set(req.headers)
         Pump.createPump(req, req.response).start()
         req.endHandler { req.response.end() }
     }.listen(8080, "localhost")
@@ -2135,8 +2135,6 @@ The following example bridges the event bus to client side JavaScript:
 
     server.listen(8080)
     
-The SockJS bridge currently only works with JSON event bus messages.    
-
 ## Using the Event Bus from client side JavaScript
 
 Once you've set up a bridge, you can use the event bus from the client side as follows:
