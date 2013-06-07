@@ -844,6 +844,19 @@ You can set an exception handler on the socket that will be called if an excepti
         sock.exception_handler { |ex| puts 'Oops. Something went wrong #{ex}' }
     end
 
+### Event Bus Write Handler
+
+Every NetSocket automatically registers a handler on the event bus, and when any buffers are received in this handler, it writes them to itself. This enables you to write data to a NetSocket which is potentially in a completely different verticle or even in a different Vert.x instance by sending the buffer to the address of that handler.
+
+The address of the handler is given by the `write_handler_id` property.
+
+For example to write some data to the NetSocket from a completely different verticle you could do:
+
+    # E.g. retrieve the ID from shared data
+    write_handler_id = ... 
+
+    Vertx::EventBus.send(write_handler_id, buffer)
+
 
 ### Read and Write Streams
 
