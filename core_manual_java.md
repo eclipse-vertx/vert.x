@@ -735,8 +735,6 @@ The actual bind is asynchronous so the server might not actually be listening un
 
 ### Getting Notified of Incoming Connections
     
-Just having a TCP server listening creates a working server that you can connect to (try it with telnet!), however it's not very useful since it doesn't do anything with the connections.
-
 To be notified when a connection occurs we need to call the `connectHandler` method of the server, passing in a handler. The handler will then be called when a connection is made:
 
     NetServer server = vertx.createNetServer();

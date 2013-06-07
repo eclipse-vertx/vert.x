@@ -759,8 +759,6 @@ If the listen failed, the `err` parameter will contain a Java exception object.
 
 ### Getting Notified of Incoming Connections
     
-Just having a TCP server listening creates a working server that you can connect to (try it with telnet!), however it's not very useful since it doesn't do anything with the connections.
-
 To be notified when a connection occurs we need to call the `connectHandler` method of the server, passing in a function. The function will then be called when a connection is made:
 
     var server = vertx.createNetServer();

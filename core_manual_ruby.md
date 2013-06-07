@@ -71,7 +71,7 @@ The argument to `-conf` is the name of a text file containing a valid JSON objec
 
 The configuration is available in the verticle using the `Vertx.config` method. For example:
 
-    config = Vertx.config;
+    config = Vertx.config
 
     # Do something with config
     
@@ -134,7 +134,7 @@ The `Vertx.deploy_verticle` method deploys standard (non worker) verticles. If y
 
 You should use `deployModule` to deploy a module, for example:
 
-    Vertx.deploy_module("io.vertx~mod-mailer~2.0.0-beta1", config);
+    Vertx.deploy_module("io.vertx~mod-mailer~2.0.0-beta1", config)
 
 Would deploy an instance of the `io.vertx~mod-mailer~2.0.0-beta1` module with the specified configuration. Please see the [modules manual]() for more information about modules.
 
@@ -198,11 +198,11 @@ Vert.x scales by deploying many verticle instances concurrently.
 
 If you want more than one instance of a particular verticle or module to be deployed, you can specify the number of instances as follows:
 
-    container.deployVerticle("foo.ChildVerticle", 10);  
+    container.deployVerticle("foo.ChildVerticle", 10) 
 
 Or
 
-    container.deployModule("io.vertx~some-mod~1.0", 10);   
+    container.deployModule("io.vertx~some-mod~1.0", 10)   
   
 The above examples would deploy 10 instances.
 
@@ -315,7 +315,7 @@ When you register a handler on an address and you're in a cluster it can take so
 
 To unregister a handler it's just as straightforward. You simply call `unregister_handler` passing in the id of the handler:
 
-    Vertx::EventBus.unregister_handler('test.address', id);
+    Vertx::EventBus.unregister_handler('test.address', id)
 
 As with registering, when you unregister a handler and you're in a cluster it can also take some time for the knowledge of that unregistration to be propagated across the entire to cluster. If you want to be notified when that has completed you can optionally specify another block to the `register_handler` method:
 
@@ -692,8 +692,6 @@ The actual bind is asynchronous so the server might not actually be listening un
     end
 
 ### Getting Notified of Incoming Connections
-
-Just having a TCP server listening creates a working server that you can connect to (try it with telnet!), however it's not very useful since it doesn't do anything with the connections.
 
 To be notified when a connection occurs we need to call the `connect_handler` function of the server, specifying a block which represents the handler. The handler will be called when a connection is made:
 
@@ -2196,7 +2194,7 @@ You will also need to secure the bridge (see below).
 
 The following example creates and starts a SockJS bridge which will bridge any events sent to the path `eventbus` on to the server side event bus.
 
-    server = Vertx::HttpServer.new;
+    server = Vertx::HttpServer.new
     
     sockJSServer = Vertx::SockJSServer.new(server)
 
@@ -2235,7 +2233,7 @@ You can find `vertxbus.js` in the `client` directory of the vert.x distribution.
 
 The first thing the example does is to create a instance of the event bus
 
-    var eb = new vertx.EventBus('http://localhost:8080/eventbus');
+    var eb = new vertx.EventBus('http://localhost:8080/eventbus')
 
 The parameter to the constructor is the URI where to connect to the event bus. Since we create our bridge with the prefix `eventbus` we will connect there.
 

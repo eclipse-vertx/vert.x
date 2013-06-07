@@ -320,7 +320,7 @@ The return value of `register_handler` is a unique handler id which can used lat
     
 To unregister a handler it's just as straightforward. You simply call `unregister_handler` passing in the id of the handler:
 
-    EventBus.unregister_handler('test.address', id);
+    EventBus.unregister_handler('test.address', id)
 
 If you want your handler to live for the full lifetime of your verticle there is no need to unregister it explicitly - vert.x will automatically unregister any handlers when the verticle is stopped.  
 
@@ -445,7 +445,7 @@ To use a shared set to share data between verticles first get a reference to the
     
     set = SharedData.get_set('demo.myset')
 
-    set.add('some-value');
+    set.add('some-value')
 
 And then, in a different verticle:
 
@@ -1595,7 +1595,7 @@ Here's an example which echoes HttpRequest headers and body back in the HttpResp
     @server.request_handler
     def request_handler(request):
 
-        req.response.set(req.headers)
+        req.response.set_all(req.headers)
 
         Pump(req, req.response).start()
       
@@ -2312,7 +2312,7 @@ You can find `vertxbus.js` in the `client` directory of the vert.x distribution.
 
 The first thing the example does is to create a instance of the event bus
 
-    var eb = new vertx.EventBus('http://localhost:8080/eventbus');
+    var eb = new vertx.EventBus('http://localhost:8080/eventbus')
 
 The parameter to the constructor is the URI where to connect to the event bus. Since we create our bridge with the prefix `eventbus` we will connect there.
 
