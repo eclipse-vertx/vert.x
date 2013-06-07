@@ -114,7 +114,6 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    */
   MultiMap set(String name, Iterable<String> values);
 
-
   /**
    * Cleans this instance.
    *

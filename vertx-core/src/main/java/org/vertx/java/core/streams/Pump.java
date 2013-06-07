@@ -84,7 +84,7 @@ public class Pump {
   /**
    * Return the total number of bytes pumped by this pump.
    */
-  public int getBytesPumped() {
+  public int bytesPumped() {
     return pumped;
   }
 
