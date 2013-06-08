@@ -15,3 +15,18 @@
 
 
 
+./gen_section.sh vertx20_docs/manual.md vertx20_docs/manual_templ.html vertx20_docs/manual.html
+./gen_section.sh vertx20_docs/mods_manual.md vertx20_docs/mods_manual_templ.html vmods_manual.html
+./gen_section.sh vertx20_docs/core_manual_js.md vertx20_docs/core_manual_js_templ.html vertx20_docs/core_manual_js.html
+./gen_section.sh vertx20_docs/core_manual_ruby.md vertx20_docs/core_manual_ruby_templ.html vertx20_docs/core_manual_ruby.html
+./gen_section.sh vertx20_docs/core_manual_python.md vertx20_docs/core_manual_python_templ.html vertx20_docs/core_manual_python.html
+./gen_section.sh vertx20_docs/core_manual_java.md vertx20_docs/core_manual_java_templ.html vertx20_docs/core_manual_java.html
+./gen_section.sh vertx20_docs/core_manual_groovy.md vertx20_docs/core_manual_groovy_templ.html vertx20_docs/core_manual_groovy.html
+./gen_section.sh vertx20_docs/install.md vertx20_docs/install_manual_templ.html vertx20_docs/install.html
+./gen_section.sh vertx20_docs/js_web_tutorial.md vertx20_docs/js_web_tutorial_templ.html vertx20_docs/js_web_tutorial.html
+./gen_section.sh vertx20_docs/ruby_web_tutorial.md vertx20_docs/ruby_web_tutorial_templ.html vertx20_docs/ruby_web_tutorial.html
+./gen_section.sh vertx20_docs/python_web_tutorial.md vertx20_docs/python_web_tutorial_templ.html vertx20_docs/python_web_tutorial.html
+./gen_section.sh vertx20_docs/groovy_web_tutorial.md vertx20_docs/groovy_web_tutorial_templ.html vertx20_docs/groovy_web_tutorial.html
+
+
+
