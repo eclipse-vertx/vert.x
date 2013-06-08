@@ -1593,16 +1593,16 @@ Here's an example which echoes HttpRequest headers and body back in the HttpResp
     server = vertx.create_http_server()
 
     @server.request_handler
-    def request_handler(request):
+    def request_handler(req):
 
-        req.response.set_all(req.headers)
+        req.response.headers.set_all(req.headers)
 
         Pump(req, req.response).start()
-      
+
         @req.end_handler
         def end_handler(): req.response.end()
 
-    server.listen(8080, 'localhost')
+server.listen(8080, 'localhost')
 
 ## Writing HTTP Clients
 
