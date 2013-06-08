@@ -64,6 +64,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private static final String VERTX_HOME_SYS_PROP = "vertx.home";
   private static final String TEMP_DIR = System.getProperty("java.io.tmpdir");
   private static final String FILE_SEP = System.getProperty("file.separator");
+  private static final String MODULE_NAME_SYS_PROP = System.getProperty("vertx.modulename");
 
   private final VertxInternal vertx;
   // deployment name --> deployment
@@ -741,7 +742,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         throw new PlatformManagerException("Module " + modID + " mod.json contains invalid json");
       }
     } catch (IOException e) {
-      throw new PlatformManagerException("Failed to find mod.json: " + e.getMessage());
+      return null;
     }
   }
 
@@ -752,6 +753,9 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
                                   final Handler<AsyncResult<String>> doneHandler) {
     checkWorkerContext();
     JsonObject modJSON = loadModJSONFromClasspath(modID, new URLClassLoader(classpath, platformClassLoader));
+    if (modJSON == null) {
+      throw new PlatformManagerException("Failed to find mod.json on classpath");
+    }
     deployModuleFromModJson(redeploy, modJSON, depName, modID, config, instances, null, null, Arrays.asList(classpath), doneHandler);
   }
 
@@ -762,16 +766,22 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
                                           Handler<AsyncResult<String>> doneHandler) {
     checkWorkerContext();
     File modDir = locateModule(currentModDir, modID);
-
     if (modDir != null) {
       // The module exists on the file system
       JsonObject modJSON = loadModuleConfig(modID, modDir);
       List<URL> urls = getModuleClasspath(modDir);
       deployModuleFromModJson(redeploy, modJSON, depName, modID, config, instances, modDir, currentModDir, urls, doneHandler);
     } else {
-      // Can't find the mod dir, look for mod.json on the platform classloader - this is useful for example when we
-      // are running tests in an IDE and want to do this without having to build the module into the mods dir first
-      JsonObject modJSON = loadModJSONFromClasspath(modID, platformClassLoader);
+      JsonObject modJSON;
+      if (modID.toString().equals(MODULE_NAME_SYS_PROP)) {
+        // This vertx.modulename sys prop will be set if running a test using the testtools custom JUnit class runner
+        // In this case, if we're trying to deploy the module that's being tested then we can look for it on the
+        // platform classloader - this is useful for example when we
+        // are running tests in an IDE and want to do this without having to build the module into the mods dir first
+        modJSON = loadModJSONFromClasspath(modID, platformClassLoader);
+      } else {
+        modJSON = null;
+      }
       if (modJSON != null) {
         deployModuleFromModJson(redeploy, modJSON, depName, modID, config, instances, modDir, currentModDir, new ArrayList<URL>(), doneHandler);
       } else {
