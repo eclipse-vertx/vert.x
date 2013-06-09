@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 /**
  * This class allows you to do route requests based on the HTTP verb and the request URI, in a manner similar
  * to <a href="http://www.sinatrarb.com/">Sinatra</a> or <a href="http://expressjs.com/">Express</a>.<p>
- * RouteMatcher also lets you extract paramaters from the request URI either a simple pattern or using
+ * RouteMatcher also lets you extract parameters from the request URI either a simple pattern or using
  * regular expressions for more complex matches. Any parameters extracted will be added to the requests parameters
  * which will be available to you in your request handler.<p>
  * It's particularly useful when writing REST-ful web applications.<p>

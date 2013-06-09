@@ -26,7 +26,7 @@ import org.vertx.java.core.json.JsonObject;
  *
  * <p>SockJS enables browsers to communicate with the server using a simple WebSocket-like api for sending
  * and receiving messages. Under the bonnet SockJS chooses to use one of several protocols depending on browser
- * capabilities and what apppears to be working across the network.<p>
+ * capabilities and what appears to be working across the network.<p>
  *
  * Available protocols include:<p>
  *

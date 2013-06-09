@@ -68,7 +68,7 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
     httpServer.requestHandler(this);
     httpServer.websocketHandler(wsMatcher);
     // Sanity check - a common mistake users make is to set the http request handler AFTER they have created this
-    // which overrwites this one.
+    // which overwrites this one.
     vertx.setPeriodic(5000, new Handler<Long>() {
       @Override
       public void handle(Long timerID) {

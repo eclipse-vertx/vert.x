@@ -60,7 +60,7 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
   boolean contains(String name);
 
   /**
-   * Return true if emptry
+   * Return true if empty
    */
   boolean isEmpty();
 

@@ -29,7 +29,7 @@ public interface FileSystemProps {
   long totalSpace();
 
   /**
-   * The total un-allocated space on the file syste, in bytes
+   * The total un-allocated space on the file system, in bytes
    */
   long unallocatedSpace();
 

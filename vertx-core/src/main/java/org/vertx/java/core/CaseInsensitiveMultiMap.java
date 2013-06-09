@@ -241,7 +241,7 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
       throw new NullPointerException("name");
     }
 
-    LinkedList<String> values = new LinkedList<String>();
+    LinkedList<String> values = new LinkedList<>();
 
     int h = hash(name);
     int i = index(h);
@@ -258,7 +258,7 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
   @Override
   public List<Map.Entry<String, String>> entries() {
     List<Map.Entry<String, String>> all =
-            new LinkedList<Map.Entry<String, String>>();
+            new LinkedList<>();
 
     MapEntry e = head.after;
     while (e != head) {
@@ -286,7 +286,7 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
   @Override
   public Set<String> names() {
 
-    Set<String> names = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+    Set<String> names = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
     MapEntry e = head.after;
     while (e != head) {

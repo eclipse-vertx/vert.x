@@ -47,7 +47,7 @@ public interface NetClient extends ClientSSLSupport<NetClient>, TCPSupport<NetCl
 
   /**
    * Attempt to open a connection to a server at the specific {@code port} and {@code host}.
-   * {@code host} can be a valid host name or IP addresss. The connect is done asynchronously and on success, a
+   * {@code host} can be a valid host name or IP address. The connect is done asynchronously and on success, a
    * {@link NetSocket} instance is supplied via the {@code connectHandler} instance
    * @return a reference to this so multiple method calls can be chained together
    */

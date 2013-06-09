@@ -50,7 +50,7 @@ public class RecordParser implements Handler<Buffer> {
   private Buffer buff;
   private int pos;            // Current position in buffer
   private int start;          // Position of beginning of current record
-  private int delimPos;       // Position of current match in delimeter array
+  private int delimPos;       // Position of current match in delimiter array
   private boolean reset;      // Allows user to toggle mode / change delim when records are emitted
 
   private boolean delimited;
@@ -116,7 +116,7 @@ public class RecordParser implements Handler<Buffer> {
 
   /**
    * Flip the parser into delimited mode, and where the delimiter can be represented
-   * by the String {@code delim} endcoded in latin-1 . Don't use this if your String contains other than latin-1 characters.<p>
+   * by the String {@code delim} encoded in latin-1 . Don't use this if your String contains other than latin-1 characters.<p>
    * This method can be called multiple times with different values of delim while data is being parsed.
    */
   public void delimitedMode(String delim) {
