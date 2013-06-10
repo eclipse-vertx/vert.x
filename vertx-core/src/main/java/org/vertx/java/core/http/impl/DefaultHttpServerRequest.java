@@ -129,17 +129,6 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
     return uri;
   }
 
-  URI juri() {
-    if (juri == null) {
-      try {
-        juri = new URI(uri());
-      } catch (URISyntaxException e) {
-        throw new IllegalArgumentException("Invalid uri " + uri()); //Should never happen
-      }
-    }
-    return juri;
-  }
-
   @Override
   public String path() {
     if (path == null) {
@@ -266,6 +255,17 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
     return netSocket;
   }
 
+  @Override
+  public HttpServerRequest uploadHandler(Handler<HttpServerFileUpload> handler) {
+    this.uploadHandler = handler;
+    return this;
+  }
+
+  @Override
+  public MultiMap formAttributes() {
+    return attributes;
+  }
+
   void handleData(Buffer data) {
     if (decoder != null) {
       try {
@@ -299,15 +299,15 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
     }
   }
 
-  @Override
-  public HttpServerRequest uploadHandler(Handler<HttpServerFileUpload> handler) {
-    this.uploadHandler = handler;
-    return this;
-  }
-
-  @Override
-  public MultiMap formAttributes() {
-    return attributes;
+  private URI juri() {
+    if (juri == null) {
+      try {
+        juri = new URI(uri());
+      } catch (URISyntaxException e) {
+        throw new IllegalArgumentException("Invalid uri " + uri());
+      }
+    }
+    return juri;
   }
 
   private final static class NettyFileUpload implements FileUpload {
