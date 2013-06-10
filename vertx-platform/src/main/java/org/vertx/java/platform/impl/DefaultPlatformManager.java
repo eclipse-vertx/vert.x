@@ -1373,6 +1373,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   public void stop() {
     redeployer.close();
+    vertx.stop();
   }
 
   // For debug only
