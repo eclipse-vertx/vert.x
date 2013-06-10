@@ -228,10 +228,13 @@ public class Redeployer {
   private void runInBackground(final Runnable runnable) {
     vertx.getBackgroundPool().execute(new Runnable() {
       public void run() {
+        vertx.setContext(null);
         try {
           runnable.run();
         } catch (Throwable t) {
           log.error("Failed to run task", t);
+        } finally {
+          vertx.setContext(null);
         }
       }
     });

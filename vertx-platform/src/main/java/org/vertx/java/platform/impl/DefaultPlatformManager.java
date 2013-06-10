@@ -335,7 +335,6 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         } else {
           deployModuleFromCP(true, deployment.name, deployment.modID, deployment.config, deployment.instances, deployment.classpath, null);
         }
-        log.info("Redeployed module " + deployment.modID);
       }
     }, null);
   }
@@ -706,12 +705,14 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
 
     final boolean autoRedeploy = fields.isAutoRedeploy();
+    if (autoRedeploy && enclosingModID != null) {
+      throw new PlatformManagerException("You can only use auto-redeploy on top level modules");
+    }
 
     doDeploy(depName, autoRedeploy, worker, multiThreaded, main, modID, config,
         moduleClasspath.toArray(new URL[moduleClasspath.size()]), instances, modDirToUse, mr, new Handler<AsyncResult<String>>() {
       @Override
       public void handle(AsyncResult<String> res) {
-        log.info("deploy succeeded? " + res.succeeded());
         if (res.succeeded()) {
           String deploymentID = res.result();
           if (deploymentID != null && !redeploy && autoRedeploy) {
@@ -721,7 +722,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         if (doneHandler != null) {
           doneHandler.handle(res);
         } else if (res.failed()) {
-          log.error("Failed to deploy2", res.cause());
+          log.error("Failed to deploy", res.cause());
         }
       }
     });
