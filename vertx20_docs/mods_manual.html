@@ -205,6 +205,7 @@ vertx.createHttpServer().requestHandler(function(req) {
 <p>To enable auto-redeploy set <code>auto-redeploy</code> to <code>true</code>. Default is <code>false</code>.</p>
 <pre class="prettyprint">"auto-redeploy": true
 </pre>
+<p>You can only use <code>auto-redeploy</code> on top level modules, not on modules that are deployed from other modules.</p>
 <h3 id="resident">resident</h3><br/>
 <p>Usually Vert.x will load a module into memory the first time it is referenced and unload it from memory once it is no longer referenced by any modules. This means that if modules are deployed and undeployed rapidly the referenced modules can end up being loaded and unloaded many times.</p>
 <p>For most modules this is not an issue, but for some modules, in particular language implementation modules, the libraries (e.g. language engines) used in those modules may generate a lot of classes which live in the Java permanent generation (permgen), and loading and unloading the module frequently can result in the permgen filling up resulting in out of memory exceptions.</p>
