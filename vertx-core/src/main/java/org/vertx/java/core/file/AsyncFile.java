@@ -24,8 +24,8 @@ import org.vertx.java.core.streams.WriteStream;
 
 /**
  * Represents a file on the file-system which can be read from, or written to asynchronously.<p>
- * Methods also exist to get a {@link org.vertx.java.core.streams.ReadStream} or a
- * {@link org.vertx.java.core.streams.WriteStream} on the file. This allows the data to be pumped to and from
+ * This class also implements {@link org.vertx.java.core.streams.ReadStream} and
+ * {@link org.vertx.java.core.streams.WriteStream}. This allows the data to be pumped to and from
  * other streams, e.g. an {@link org.vertx.java.core.http.HttpClientRequest} instance,
  * using the {@link org.vertx.java.core.streams.Pump} class<p>
  * Instances of AsyncFile are not thread-safe<p>

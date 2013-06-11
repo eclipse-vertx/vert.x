@@ -26,15 +26,15 @@ import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
 
 /**
- * The control centre of vert.x<p>
+ * The control centre of the Vert.x Core API.<p>
  * You should normally only use a single instance of this class throughout your application. If you are running in the
- * vert.x container an instance will be provided to you.<p>
- * If you are using vert.x embedded, you can create an instance using one of the static {@code VertxFactory.newVertx} methods.<p>
+ * Vert.x container an instance will be provided to you.<p>
+ * If you are using Vert.x embedded, you can create an instance using one of the static {@code VertxFactory.newVertx}
+ * methods.<p>
  * This class acts as a factory for TCP/SSL and HTTP/HTTPS servers and clients, SockJS servers, and provides an
  * instance of the event bus, file system and shared data classes, as well as methods for setting and cancelling
- * timers.
- *
- * Instances of this class are thread-safe
+ * timers.<p>
+ * Instances of this class are thread-safe.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

@@ -20,8 +20,7 @@ import java.util.Date;
 
 /**
  * Represents properties of a file on the file system<p>
- *
- * Instances of FileProps are thread-safe
+ * Instances of FileProps are thread-safe<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

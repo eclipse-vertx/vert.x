@@ -24,12 +24,12 @@ import org.vertx.java.core.logging.Logger;
 import java.util.Map;
 
 /**
- * This class represents the verticle's view of the container.<p>
+ * This class represents a Verticle's view of the container in which it is running.<p>
  * An instance of this class will be created by the system and made available to
- * a running Verticle.
+ * a running Verticle.<p>
  * It contains methods to programmatically deploy other verticles, undeploy
  * verticles, deploy modules, get the configuration for a verticle and get the logger for a
- * verticle.<p>
+ * verticle, amongst other things.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

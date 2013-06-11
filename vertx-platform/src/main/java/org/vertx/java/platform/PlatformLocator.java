@@ -1,4 +1,3 @@
-package org.vertx.java.platform;
 /*
  * Copyright 2013 Red Hat, Inc.
  *
@@ -14,13 +13,17 @@ package org.vertx.java.platform;
  * License for the specific language governing permissions and limitations
  * under the License.
  *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
+
+package org.vertx.java.platform;
 
 import java.util.ServiceLoader;
 
 /**
- * Use this class to get an instance of a PlatformManagerFactory so you can create PlatformManager instances
+ * Use this class to get an instance of a PlatformManagerFactory so you can create PlatformManager instances when
+ * embedding the Vert.x platform.<p>
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class PlatformLocator {
 

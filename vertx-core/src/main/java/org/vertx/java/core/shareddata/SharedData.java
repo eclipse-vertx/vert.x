@@ -45,8 +45,9 @@ import java.util.concurrent.ConcurrentMap;
  *   {@link org.vertx.java.core.buffer.Buffer} - this will be automatically copied, and the copy will be stored in the
  *   structure.
  * </pre>
+ * <p>
  *
- * Instances of this class are thread-safe
+ * Instances of this class are thread-safe.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

@@ -32,7 +32,7 @@ import java.util.List;
  * method was called on an instance of {@link HttpClient}.<p>
  * It implements {@link org.vertx.java.core.streams.ReadStream} so it can be used with
  * {@link org.vertx.java.core.streams.Pump} to pump data with flow control.<p>
- * Instances of this class are not thread-safe<p>
+ * Instances of this class are not thread-safe.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

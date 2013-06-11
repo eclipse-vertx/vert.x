@@ -17,9 +17,8 @@
 package org.vertx.java.core.file;
 
 /**
- * Represents properties of the file system<p>
- *
- * Instances of FileSystemProps are thread-safe
+ * Represents properties of the file system.<p>
+ * Instances of FileSystemProps are thread-safe.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

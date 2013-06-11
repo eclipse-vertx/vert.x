@@ -23,13 +23,12 @@ import org.vertx.java.core.ServerTCPSupport;
 
 /**
  * Represents a TCP or SSL server<p>
- * This class is a thread safe and can safely be used by different threads.<p>
  * If an instance is instantiated from an event loop then the handlers
  * of the instance will always be called on that same event loop.
- * If an instance is instantiated from some other arbitrary Java thread then
+ * If an instance is instantiated from some other arbitrary Java thread (i.e. when running embedded) then
  * and event loop will be assigned to the instance and used when any of its handlers
  * are called.<p>
- * Instances of this class are thread-safe
+ * Instances of this class are thread-safe.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

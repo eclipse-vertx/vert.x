@@ -20,7 +20,9 @@ import org.vertx.java.core.Future;
 import org.vertx.java.core.Vertx;
 
 /**
- * A verticle is the unit of deployment in vert.x<p>
+ * A verticle is the unit of execution in the Vert.x platform<p>
+ * Vert.x code is packaged into Verticle's and then deployed and executed by the Vert.x platform.<p>
+ * Verticles can be written in different languages.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

@@ -24,7 +24,8 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.platform.Verticle;
 
 /**
- * Base helper class for Java busmods
+ * Base helper class for Java modules which use the event bus.<p>
+ * You don't have to use this class but it contains some useful functionality.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

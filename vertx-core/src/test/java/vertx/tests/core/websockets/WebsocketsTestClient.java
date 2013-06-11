@@ -19,6 +19,7 @@ package vertx.tests.core.websockets;
 import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
+import org.vertx.java.core.impl.CaseInsensitiveMultiMap;
 import org.vertx.java.core.json.impl.Base64;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.testframework.TestClientBase;

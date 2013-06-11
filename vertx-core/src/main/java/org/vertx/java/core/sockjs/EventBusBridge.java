@@ -32,9 +32,8 @@ import java.util.regex.Pattern;
 
 /**
  *
- * Bridges the event bus to the client side
- *
- * Instances of this class are not thread-safe
+ * Bridges the event bus to the client side.<p>
+ * Instances of this class are not thread-safe.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

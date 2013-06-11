@@ -28,7 +28,7 @@ import org.vertx.java.core.ServerTCPSupport;
  * If an instance is instantiated from some other arbitrary Java thread then
  * an event loop will be assigned to the instance and used when any of its handlers
  * are called.<p>
- * Instances of HttpServer are thread-safe
+ * Instances of HttpServer are thread-safe.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

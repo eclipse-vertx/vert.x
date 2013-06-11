@@ -26,16 +26,16 @@ import java.net.URL;
 import java.util.Map;
 
 /**
- * Public interface for PlatformManager
  *
+ * Represents the Vert.x platform.<p>
  * It's the role of a PlatformManager to deploy and undeploy modules and verticles. It's also used to install
- * modules, and for various other tasks.
- *
- * The Platform Manager basically represents the Vert.x container in which verticles and modules run.
- *
+ * modules, and for various other tasks.<p>
+ * The Platform Manager basically represents the Vert.x container in which verticles and modules run.<p>
  * The Platform Manager is used by the Vert.x CLI to run/install/etc modules and verticles but you could also
  * use it if you want to embed the entire Vert.x container in an application, or write some other tool (e.g.
- * a build tool, or a test tool) which needs to do stuff with the container
+ * a build tool, or a test tool) which needs to do stuff with the container.<p>
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface PlatformManager {
 

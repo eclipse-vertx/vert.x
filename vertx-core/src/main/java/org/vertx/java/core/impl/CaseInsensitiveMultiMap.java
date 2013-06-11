@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core;
+package org.vertx.java.core.impl;
 
+
+import org.vertx.java.core.MultiMap;
 
 import java.util.*;
 

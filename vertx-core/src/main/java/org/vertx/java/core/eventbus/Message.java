@@ -24,7 +24,7 @@ import org.vertx.java.core.json.JsonObject;
 /**
  * Represents a message on the event bus.<p>
  *
- * Instances of this class are not thread-safe
+ * Instances of this class are not thread-safe<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
