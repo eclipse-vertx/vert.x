@@ -42,8 +42,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -71,7 +69,7 @@ public class DefaultNetServer implements NetServer, Closeable {
 
   public DefaultNetServer(VertxInternal vertx) {
     this.vertx = vertx;
-    actualCtx = vertx.getOrAssignContext();
+    actualCtx = vertx.getOrCreateContext();
     actualCtx.addCloseHook(this);
     tcpHelper.setReuseAddress(true);
   }

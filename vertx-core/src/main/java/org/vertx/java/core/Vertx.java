@@ -34,6 +34,8 @@ import org.vertx.java.core.sockjs.SockJSServer;
  * instance of the event bus, file system and shared data classes, as well as methods for setting and cancelling
  * timers.
  *
+ * Instances of this class are thread-safe
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface Vertx {

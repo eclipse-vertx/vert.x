@@ -38,7 +38,7 @@ public class CountingCompletionHandler<T> {
 
   public CountingCompletionHandler(VertxInternal vertx, int required) {
     this.vertx = vertx;
-    this.context = vertx.getOrAssignContext();
+    this.context = vertx.getOrCreateContext();
     this.required = required;
   }
 

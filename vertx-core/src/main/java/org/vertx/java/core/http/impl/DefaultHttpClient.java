@@ -74,7 +74,7 @@ public class DefaultHttpClient implements HttpClient {
 
   public DefaultHttpClient(VertxInternal vertx) {
     this.vertx = vertx;
-    actualCtx = vertx.getOrAssignContext();
+    actualCtx = vertx.getOrCreateContext();
     actualCtx.addCloseHook(closeHook);
   }
 

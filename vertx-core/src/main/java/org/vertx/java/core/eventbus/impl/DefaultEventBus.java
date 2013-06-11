@@ -318,7 +318,6 @@ public class DefaultEventBus implements EventBus {
   public EventBus unregisterHandler(String address, Handler<? extends Message> handler,
                                     Handler<AsyncResult<Void>> completionHandler) {
     checkStarted();
-    DefaultContext context = vertx.getOrAssignContext();
     Handlers handlers = handlerMap.get(address);
     if (handlers != null) {
       synchronized (handlers) {
@@ -340,7 +339,7 @@ public class DefaultEventBus implements EventBus {
             } else if (completionHandler != null) {
               callCompletionHandler(completionHandler);
             }
-            context.removeCloseHook(new HandlerEntry(address, handler));
+            holder.context.removeCloseHook(new HandlerEntry(address, handler));
             return this;
           }
         }
@@ -480,7 +479,7 @@ public class DefaultEventBus implements EventBus {
 
   private void sendOrPub(ServerID replyDest, final BaseMessage message, final Handler replyHandler) {
     checkStarted();
-    DefaultContext context = vertx.getOrAssignContext();
+    DefaultContext context = vertx.getOrCreateContext();
     try {
       message.sender = serverID;
       if (replyHandler != null) {

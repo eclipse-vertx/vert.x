@@ -54,6 +54,8 @@ import org.vertx.java.core.json.JsonObject;
  *
  * Different event bus instances can be clustered together over a network, to give a single logical event bus.<p>
  *
+ * Instances of EventBus are thread-safe
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface EventBus {

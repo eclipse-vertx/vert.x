@@ -340,7 +340,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   private <T> void runInBackground(final Runnable runnable, final Handler<AsyncResult<T>> doneHandler) {
-    final DefaultContext context = vertx.getOrAssignContext();
+    final DefaultContext context = vertx.getOrCreateContext();
     vertx.getBackgroundPool().execute(new Runnable() {
       public void run() {
         try {

@@ -28,6 +28,7 @@ import org.vertx.java.core.buffer.Buffer;
  * The synchronous versions return the results, or throw exceptions directly.<p>
  * It is highly recommended the asynchronous versions are used unless you are sure the operation
  * will not block for a significant period of time<p>
+ * Instances of FileSystem are thread-safe
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface FileSystem {

@@ -88,7 +88,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
 
   public DefaultHttpServer(VertxInternal vertx) {
     this.vertx = vertx;
-    actualCtx = vertx.getOrAssignContext();
+    actualCtx = vertx.getOrCreateContext();
     actualCtx.addCloseHook(this);
     tcpHelper.setReuseAddress(true);
   }

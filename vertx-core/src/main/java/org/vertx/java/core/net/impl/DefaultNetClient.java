@@ -62,7 +62,7 @@ public class DefaultNetClient implements NetClient {
 
   public DefaultNetClient(VertxInternal vertx) {
     this.vertx = vertx;
-    actualCtx = vertx.getOrAssignContext();
+    actualCtx = vertx.getOrCreateContext();
     actualCtx.addCloseHook(closeHook);
   }
 

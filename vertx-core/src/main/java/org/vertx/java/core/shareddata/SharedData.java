@@ -46,6 +46,8 @@ import java.util.concurrent.ConcurrentMap;
  *   structure.
  * </pre>
  *
+ * Instances of this class are thread-safe
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class SharedData {

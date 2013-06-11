@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.vertx.java.core.buffer;
+package org.vertx.java.core.buffer.impl;
 
 import io.netty.buffer.BufType;
 import io.netty.buffer.ByteBuf;
@@ -32,10 +32,10 @@ import java.nio.charset.Charset;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-final class UnreleasableByteBuf implements ByteBuf {
+public final class UnreleasableByteBuf implements ByteBuf {
   private final ByteBuf buf;
 
-  UnreleasableByteBuf(ByteBuf buf) {
+  public UnreleasableByteBuf(ByteBuf buf) {
     this.buf = buf;
   }
 

@@ -96,8 +96,8 @@ public class WrappedVertx implements VertxInternal {
   }
 
   @Override
-  public DefaultContext getOrAssignContext() {
-    return vertx.getOrAssignContext();
+  public DefaultContext getOrCreateContext() {
+    return vertx.getOrCreateContext();
   }
 
   @Override

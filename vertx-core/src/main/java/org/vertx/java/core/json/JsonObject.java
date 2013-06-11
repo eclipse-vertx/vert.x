@@ -27,6 +27,8 @@ import java.util.Set;
 /**
  * 
  * Represents a JSON object
+ *
+ * Instances of this class are not thread-safe
  * 
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

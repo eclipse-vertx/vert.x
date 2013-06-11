@@ -43,7 +43,7 @@ public interface VertxInternal extends Vertx {
 
   DefaultContext startInBackground(Runnable runnable, boolean multiThreaded);
 
-  DefaultContext getOrAssignContext();
+  DefaultContext getOrCreateContext();
 
   void reportException(Throwable t);
 

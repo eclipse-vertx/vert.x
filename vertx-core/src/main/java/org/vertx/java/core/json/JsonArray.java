@@ -24,6 +24,8 @@ import java.util.*;
 /**
  * Represents a JSON array
  *
+ * Instances of this class are not thread-safe
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class JsonArray extends JsonElement implements Iterable<Object> {

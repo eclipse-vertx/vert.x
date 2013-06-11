@@ -34,6 +34,8 @@ import java.util.regex.Pattern;
  *
  * Bridges the event bus to the client side
  *
+ * Instances of this class are not thread-safe
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class EventBusBridge implements Handler<SockJSSocket> {

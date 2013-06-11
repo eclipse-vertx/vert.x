@@ -43,6 +43,8 @@ import org.vertx.java.core.buffer.Buffer;
  * Instances of this class can't currently be used for protocols where the text is encoded with something other than
  * a 1-1 byte-char mapping. TODO extend this class to cope with arbitrary character encodings<p>
  *
+ * Instances of this class are not thread-safe
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class RecordParser implements Handler<Buffer> {

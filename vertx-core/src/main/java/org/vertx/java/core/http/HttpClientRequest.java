@@ -54,6 +54,7 @@ import org.vertx.java.core.streams.WriteStream;
  *     .end();
  *
  * </pre>
+ * Instances of HttpClientRequest are not thread-safe
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

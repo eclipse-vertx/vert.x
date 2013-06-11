@@ -29,7 +29,7 @@ import org.vertx.java.core.ServerTCPSupport;
  * If an instance is instantiated from some other arbitrary Java thread then
  * and event loop will be assigned to the instance and used when any of its handlers
  * are called.<p>
- * Instances cannot be used from worker verticles
+ * Instances of this class are thread-safe
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
