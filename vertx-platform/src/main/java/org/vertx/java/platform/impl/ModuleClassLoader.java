@@ -56,7 +56,17 @@ public class ModuleClassLoader extends URLClassLoader {
   protected synchronized Class<?> loadClass(String name, boolean resolve)
       throws ClassNotFoundException {
 
-    // We first try with the platform classloader
+    // We always try with the platform classloader first
+    // This is important when running tests in an IDE where we load the module classes from the platform classpath
+    // not the module classpath
+    // If those classes are loaded from the platform cp and they reference other classes which are normally in the
+    // module, but also exist on the platform cp, then they will get loaded from the platform cp too.
+    // You can then get in a situation where two versions of the classes are present - one loaded from the pcl
+    // and the other from the mcl
+    // An example would be the class org.vertx.groovy.platform.Verticle which is in the groovy lang module but also
+    // present on the pcl during IDE work.
+
+
     Class<?> c;
     try {
       c = platformClassLoader.loadClass(name);
