@@ -31,6 +31,7 @@
 ./gen_section.sh vertx20_docs/gradle_dev.md vertx20_docs/gradle_dev_templ.html vertx20_docs/gradle_dev.html
 ./gen_section.sh vertx20_docs/maven_dev.md vertx20_docs/maven_dev_templ.html vertx20_docs/maven_dev.html
 ./gen_section.sh vertx20_docs/example_project.md vertx20_docs/example_project_templ.html vertx20_docs/example_project.html
+./gen_section.sh vertx20_docs/embedding_manual.md vertx20_docs/embedding_manual_templ.html vertx20_docs/embedding_manual.html
 
 
 
