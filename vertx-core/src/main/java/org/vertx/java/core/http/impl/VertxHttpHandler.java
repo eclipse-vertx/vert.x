@@ -15,17 +15,14 @@
  */
 package org.vertx.java.core.http.impl;
 
-import io.netty.buffer.BufUtil;
-import io.netty.buffer.MessageBuf;
-import io.netty.buffer.Unpooled;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelHandlerUtil;
-import io.netty.channel.ChannelInboundMessageHandler;
+import io.netty.channel.MessageList;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.impl.ConnectionBase;
-import org.vertx.java.core.net.impl.VertxStateHandler;
+import org.vertx.java.core.net.impl.VertxInboundHandler;
 
 import java.util.Map;
 
@@ -33,8 +30,7 @@ import java.util.Map;
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 
-public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxStateHandler<C> implements
-                      ChannelHandlerUtil.SingleInboundMessageHandler<Object>, ChannelInboundMessageHandler<Object> {
+public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxInboundHandler<C> {
 
   private final VertxInternal vertx;
 
@@ -44,66 +40,50 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxSt
   }
 
   @Override
-  public MessageBuf<Object> newInboundBuffer(ChannelHandlerContext channelHandlerContext) throws Exception {
-    return Unpooled.messageBuffer();
-  }
-
-  @Override
-  public void inboundBufferUpdated(ChannelHandlerContext channelHandlerContext) throws Exception {
-    ChannelHandlerUtil.handleInboundBufferUpdated(channelHandlerContext, this);
-  }
-
-  @Override
-  public boolean acceptInboundMessage(Object o) throws Exception {
-    return true;
-  }
-
-  @Override
-  public boolean beginMessageReceived(ChannelHandlerContext channelHandlerContext) throws Exception {
-    return true;
-  }
-
-  @Override
-  public void endMessageReceived(ChannelHandlerContext channelHandlerContext) throws Exception {
-    // NOOP
-  }
-
-
-  @Override
-  public void messageReceived(final ChannelHandlerContext chctx, final Object msg) throws Exception {
+  public void messageReceived(final ChannelHandlerContext chctx, final MessageList<Object> msgs) throws Exception {
     final Channel ch = chctx.channel();
+    for (int i = 0; i < msgs.size(); i++) {
+      final Object msg = msgs.get(i);
 
-    final C connection = connectionMap.get(ch);
-    if (connection != null) {
-      DefaultContext context = getContext(connection);
-      // We need to do this since it's possible the server is being used from a worker context
-      if (context.isOnCorrectWorker(ch.eventLoop())) {
-        try {
-          vertx.setContext(context);
-          context.startExecute();
-          doMessageReceived(connection, chctx, msg);
-        } catch (Throwable t) {
-          context.reportException(t);
-        } finally {
-          context.endExecute();
+      final C connection = connectionMap.get(ch);
+      if (connection != null) {
+        final DefaultContext context = getContext(connection);
+        // We need to do this since it's possible the server is being used from a worker context
+        if (context.isOnCorrectWorker(ch.eventLoop())) {
+          try {
+            vertx.setContext(context);
+            context.startExecute();
+            doMessageReceived(connection, chctx, msg);
+          } catch (Throwable t) {
+            context.reportException(t);
+          } finally {
+            ByteBufUtil.release(msg);
+            context.endExecute();
+          }
+        } else {
+          context.execute(new Runnable() {
+            public void run() {
+              try {
+                doMessageReceived(connection, chctx, msg);
+              } catch (Throwable t) {
+                context.reportException(t);
+              } finally {
+                ByteBufUtil.release(msg);
+              }
+            }
+          });
         }
       } else {
-        BufUtil.retain(msg);
-        context.execute(new Runnable() {
-          public void run() {
-            try {
-              doMessageReceived(connection, chctx, msg);
-            } catch (Exception e) {
-              ch.pipeline().fireExceptionCaught(e);
-            } finally {
-              BufUtil.release(msg);
-            }
-         }
-        });
+        try {
+          doMessageReceived(connection, chctx, msg);
+        }  catch (Throwable t) {
+           chctx.pipeline().fireExceptionCaught(t);
+        } finally {
+          ByteBufUtil.release(msg);
+        }
       }
-    } else {
-      doMessageReceived(connection, chctx, msg);
     }
+    msgs.recycle();
   }
 
   protected abstract void doMessageReceived(C connection, ChannelHandlerContext ctx, Object msg) throws Exception;

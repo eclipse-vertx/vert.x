@@ -16,7 +16,7 @@
 
 package org.vertx.java.core.http.impl;
 
-import io.netty.buffer.BufUtil;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -87,7 +87,7 @@ class ServerConnection extends AbstractConnection {
       pending.add(msg);
 
       // retain the msg as we will process it later
-      BufUtil.retain(msg);
+      ByteBufUtil.retain(msg);
 
       if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
         //We pause the channel too, to prevent the queue growing too large, but we don't do this
@@ -321,7 +321,7 @@ class ServerConnection extends AbstractConnection {
             if (msg != null) {
               processMessage(msg);
               // release the resource now as we processed it
-              BufUtil.release(msg);
+              ByteBufUtil.release(msg);
             }
             if (channelPaused && pending.isEmpty()) {
               //Resume the actual channel

@@ -15,7 +15,6 @@
  */
 package org.vertx.java.core.buffer.impl;
 
-import io.netty.buffer.BufType;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufIndexFinder;
@@ -783,18 +782,6 @@ public final class UnreleasableByteBuf implements ByteBuf {
   }
 
   @Override
-  public ByteBuf suspendIntermediaryDeallocations() {
-    buf.suspendIntermediaryDeallocations();
-    return this;
-  }
-
-  @Override
-  public ByteBuf resumeIntermediaryDeallocations() {
-    buf.resumeIntermediaryDeallocations();
-    return this;
-  }
-
-  @Override
   public int hashCode() {
     return buf.hashCode();
   }
@@ -822,11 +809,6 @@ public final class UnreleasableByteBuf implements ByteBuf {
   @Override
   public ByteBuf retain() {
     return this;
-  }
-
-  @Override
-  public BufType type() {
-    return buf.type();
   }
 
   @Override

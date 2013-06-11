@@ -1,11 +1,11 @@
 package org.vertx.java.core.http.impl.cgbystrom;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.MessageBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.MessageList;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.util.CharsetUtil;
 
@@ -52,7 +52,7 @@ public class FlashPolicyHandler extends ByteToMessageDecoder {
   }
 
   @Override
-  protected void decode(ChannelHandlerContext ctx, ByteBuf buffer, MessageBuf<Object> out) throws Exception {
+  protected void decode(ChannelHandlerContext ctx, ByteBuf buffer, MessageList<Object> out) throws Exception {
     if (buffer.readableBytes() < 2) {
       return;
     }

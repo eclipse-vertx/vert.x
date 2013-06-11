@@ -18,6 +18,7 @@ package org.vertx.java.core.http.impl;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.MessageList;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
@@ -28,28 +29,29 @@ import org.vertx.java.core.net.impl.ConnectionBase;
  */
 public abstract class AbstractConnection extends ConnectionBase {
 
+  private MessageList<Object> messages;
+
   protected AbstractConnection(VertxInternal vertx, Channel channel, DefaultContext context) {
     super(vertx, channel, context);
   }
 
   void queueForWrite(final Object obj) {
-    if (channel.eventLoop().inEventLoop()) {
-      channel.outboundMessageBuffer().add(obj);
-    } else {
-      // thread is not our current eventloop for the channel we need to run the add in the eventloop.
-      // this is not needed for write as write will submit a task if needed by its own
-      channel.eventLoop().execute(new Runnable() {
-        @Override
-        public void run() {
-          channel.outboundMessageBuffer().add(obj);
-        }
-      });
+    if (messages == null) {
+      messages = MessageList.newInstance();
     }
+    messages.add(obj);
   }
 
   ChannelFuture write(Object obj) {
     if (channel.isOpen()) {
-      return channel.write(obj);
+      if (messages != null) {
+        messages.add(obj);
+        MessageList<Object> messages = this.messages;
+        this.messages = null;
+        return channel.write(messages);
+      } else {
+        return channel.write(obj);
+      }
     } else {
       return null;
     }
@@ -57,5 +59,13 @@ public abstract class AbstractConnection extends ConnectionBase {
 
   Vertx vertx() {
     return vertx;
+  }
+
+  @Override
+  protected void handleClosed() {
+    super.handleClosed();
+    if (messages != null) {
+      messages.releaseAllAndRecycle();
+    }
   }
 }

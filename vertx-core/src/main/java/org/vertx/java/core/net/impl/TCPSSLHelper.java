@@ -21,6 +21,7 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.FixedRecvByteBufAllocator;
 import org.vertx.java.core.file.impl.PathAdjuster;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
@@ -86,6 +87,7 @@ public class TCPSSLHelper {
     bootstrap.childOption(ChannelOption.TCP_NODELAY, tcpNoDelay);
     bootstrap.childOption(ChannelOption.SO_SNDBUF, tcpSendBufferSize);
     bootstrap.childOption(ChannelOption.SO_RCVBUF, tcpReceiveBufferSize);
+    bootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(tcpReceiveBufferSize));
     bootstrap.option(ChannelOption.SO_LINGER, soLinger);
     bootstrap.childOption(ChannelOption.IP_TOS, trafficClass);
     if (usePooledBuffers) {
@@ -102,6 +104,7 @@ public class TCPSSLHelper {
     bootstrap.option(ChannelOption.TCP_NODELAY, tcpNoDelay);
     bootstrap.option(ChannelOption.SO_SNDBUF, tcpSendBufferSize);
     bootstrap.option(ChannelOption.SO_RCVBUF, tcpReceiveBufferSize);
+    bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(tcpReceiveBufferSize));
     bootstrap.option(ChannelOption.SO_LINGER, soLinger);
     bootstrap.option(ChannelOption.IP_TOS, trafficClass);
     bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout);

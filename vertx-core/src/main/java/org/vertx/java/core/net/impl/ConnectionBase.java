@@ -23,7 +23,6 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.DefaultFutureResult;
-import org.vertx.java.core.impl.FlowControlHandler;
 import org.vertx.java.core.impl.VertxInternal;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -70,7 +69,8 @@ public abstract class ConnectionBase {
   }
 
   public void doSetWriteQueueMaxSize(int size) {
-    channel.pipeline().get(FlowControlHandler.class).setLimit(size / 2 , size);
+    channel.config().setWriteBufferLowWaterMark(size / 2);
+    channel.config().setWriteBufferHighWaterMark(size);
   }
 
   public boolean doWriteQueueFull() {
