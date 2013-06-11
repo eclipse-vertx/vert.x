@@ -55,11 +55,17 @@ public class ModuleClassLoader extends URLClassLoader {
   @Override
   protected synchronized Class<?> loadClass(String name, boolean resolve)
       throws ClassNotFoundException {
-    Class<?> c = doLoadClass(name);
-    if (c == null) {
-      // If we can't load class from this classloader or any of our parents (recursively) then we try the
-      // platform classloader
+
+    // We first try with the platform classloader
+    Class<?> c;
+    try {
       c = platformClassLoader.loadClass(name);
+    } catch (ClassNotFoundException e) {
+      // And then we try this class loader
+      c = doLoadClass(name);
+      if (c == null) {
+        throw new ClassNotFoundException(name);
+      }
     }
     if (resolve) {
       resolveClass(c);
