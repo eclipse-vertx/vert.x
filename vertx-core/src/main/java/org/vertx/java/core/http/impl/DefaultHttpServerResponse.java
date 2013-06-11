@@ -19,13 +19,12 @@ package org.vertx.java.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
-
 import io.netty.handler.codec.http.*;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.impl.PathAdjuster;
-import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.impl.VertxInternal;
 

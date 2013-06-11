@@ -23,7 +23,6 @@ import org.vertx.java.core.Vertx;
 import org.vertx.java.core.json.JsonObject;
 
 import java.net.URL;
-import java.util.List;
 import java.util.Map;
 
 /**
