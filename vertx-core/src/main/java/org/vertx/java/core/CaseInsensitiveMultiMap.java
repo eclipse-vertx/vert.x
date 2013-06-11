@@ -120,6 +120,22 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
     return this;
   }
 
+  @Override
+  public MultiMap add(MultiMap headers) {
+    for (Map.Entry<String, String> entry: headers.entries()) {
+      add(entry.getKey(), entry.getValue());
+    }
+    return this;
+  }
+
+  @Override
+  public MultiMap add(Map<String, String> map) {
+    for (Map.Entry<String, String> entry: map.entrySet()) {
+      add(entry.getKey(), entry.getValue());
+    }
+    return this;
+  }
+
   private void add0(int h, int i, final String name, final String value) {
     // Update the hash table.
     MapEntry e = entries[i];

@@ -248,16 +248,17 @@ class ServerConnection extends AbstractConnection {
     return super.getContext();
   }
 
-  protected void handleException(Exception e) {
-    super.handleException(e);
+  @Override
+  protected void handleException(Throwable t) {
+    super.handleException(t);
     if (currentRequest != null) {
-      currentRequest.handleException(e);
+      currentRequest.handleException(t);
     }
     if (pendingResponse != null) {
-      pendingResponse.handleException(e);
+      pendingResponse.handleException(t);
     }
     if (ws != null) {
-      ws.handleException(e);
+      ws.handleException(t);
     }
   }
 

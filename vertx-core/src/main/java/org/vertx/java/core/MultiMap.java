@@ -95,6 +95,20 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
   MultiMap add(String name, Iterable<String> values);
 
   /**
+   * Adds all the entries from another MultiMap to this one
+   *
+   * @return {@code this}
+   */
+  MultiMap add(MultiMap headers);
+
+  /**
+   * Adds all the entries from a Map to this
+   *
+   * @return {@code this}
+   */
+  MultiMap add(Map<String, String> headers);
+
+  /**
    * Sets a value under the specified name.
    *
    * If there is an existing header with the same name, it is removed.

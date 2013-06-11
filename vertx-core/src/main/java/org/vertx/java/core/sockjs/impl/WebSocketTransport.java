@@ -103,6 +103,13 @@ class WebSocketTransport extends BaseTransport {
           session.shutdown();
         }
       });
+      ws.exceptionHandler(new Handler<Throwable>() {
+        public void handle(Throwable t) {
+            closed = true;
+            session.shutdown();
+            session.handleException(t);
+          }
+      });
     }
 
     public void sendFrame(final String body) {

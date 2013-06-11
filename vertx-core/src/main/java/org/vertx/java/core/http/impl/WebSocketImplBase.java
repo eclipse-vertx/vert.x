@@ -135,9 +135,9 @@ public class WebSocketImplBase {
     }
   }
 
-  void handleException(Exception e) {
+  void handleException(Throwable t) {
     if (exceptionHandler != null) {
-      exceptionHandler.handle(e);
+      exceptionHandler.handle(t);
     }
   }
 
