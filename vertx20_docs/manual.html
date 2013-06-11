@@ -109,6 +109,11 @@
 </ul>
 </li>
 <li><a href="#logging">Logging</a></li>
+<li><a href="#configuring-thread-pool-sizes">Configuring thread pool sizes</a><ul>
+<li><a href="#the-event-loop-pool">The event loop pool</a></li>
+<li><a href="#the-background-pool">The background pool</a></li>
+</ul>
+</li>
 <li><a href="#configuring-clustering">Configuring clustering</a></li>
 <li><a href="#performance-tuning">Performance Tuning</a><ul>
 <li><a href="#improving-connection-time">Improving connection time</a></li>
@@ -355,6 +360,14 @@ vertx runmod com.acme~my-mod~2.1
 <pre class="prettyprint">-Dorg.vertx.logger-delegate-factory-class-name=org.vertx.java.core.logging.impl.SLF4JLogDelegateFactory
 </pre>
 <p>If you don't want to use the Vert.x provided logging facilities that's fine. You can just use your preferred logging framework as normal and include the logging jar and config in your module.  </p>
+<h1 id="configuring-thread-pool-sizes">Configuring thread pool sizes</h1><br/>
+<p>Vert.x maintains two thread pools: The event loop pool and the background (worker) thread pool</p>
+<h2 id="the-event-loop-pool">The event loop pool</h2><br/>
+<p>The event loop pool is used to provide event loops for standard verticles. The default size is determined by the number of cores you have on your machine as returned by <code>Runtime.getRuntime().availableProcessors()</code>.</p>
+<p>For a standard setup there should little reason to change this as it should be optimal, however if you do wish to change it you can set the system property <code>vertx.pool.eventloop.size</code>.</p>
+<h2 id="the-background-pool">The background pool</h2><br/>
+<p>This pool is used to provide threads for worker verticles and other internal blocking tasks. Since worker threads often block it would usually be larger than the event loop pool. The default maximum size is <code>20</code>.</p>
+<p>To change the maximum size, you can set the system property <code>vertx.pool.worker.size</code></p>
 <h1 id="configuring-clustering">Configuring clustering</h1><br/>
 <p>To configure clustering use the file <code>conf/cluster.xml</code> in the distribution.</p>
 <p>If you want to receive more info on cluster setup etc, then edit <code>conf/logging.properties</code> to read <code>com.hazelcast.level=INFO</code></p>

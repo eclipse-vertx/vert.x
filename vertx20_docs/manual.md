@@ -313,6 +313,22 @@ or
     -Dorg.vertx.logger-delegate-factory-class-name=org.vertx.java.core.logging.impl.SLF4JLogDelegateFactory  
 
 If you don't want to use the Vert.x provided logging facilities that's fine. You can just use your preferred logging framework as normal and include the logging jar and config in your module.  
+
+# Configuring thread pool sizes
+
+Vert.x maintains two thread pools: The event loop pool and the background (worker) thread pool
+
+## The event loop pool
+
+The event loop pool is used to provide event loops for standard verticles. The default size is determined by the number of cores you have on your machine as returned by `Runtime.getRuntime().availableProcessors()`.
+
+For a standard setup there should little reason to change this as it should be optimal, however if you do wish to change it you can set the system property `vertx.pool.eventloop.size`.
+
+## The background pool
+
+This pool is used to provide threads for worker verticles and other internal blocking tasks. Since worker threads often block it would usually be larger than the event loop pool. The default maximum size is `20`.
+
+To change the maximum size, you can set the system property `vertx.pool.worker.size`
     
 # Configuring clustering
 
