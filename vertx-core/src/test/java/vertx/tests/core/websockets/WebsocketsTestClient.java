@@ -177,11 +177,13 @@ public class WebsocketsTestClient extends TestClientBase {
   private void testWS(final boolean binary, final WebSocketVersion version) throws Exception {
 
     final String path = "/some/path";
+    final String query = "foo=bar&wibble=eek";
 
     server = vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
         tu.checkThread();
         tu.azzert(path.equals(ws.path()));
+        tu.azzert(query.equals(ws.query()));
 
         ws.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
@@ -200,7 +202,7 @@ public class WebsocketsTestClient extends TestClientBase {
         final int bsize = 100;
         final int sends = 10;
 
-        client.connectWebsocket(path, version, new Handler<WebSocket>() {
+        client.connectWebsocket(path + "?" + query, version, new Handler<WebSocket>() {
           public void handle(final WebSocket ws) {
             tu.checkThread();
             final Buffer received = new Buffer();

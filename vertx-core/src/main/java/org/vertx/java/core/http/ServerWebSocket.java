@@ -32,6 +32,11 @@ public interface ServerWebSocket extends WebSocketBase<ServerWebSocket> {
   String path();
 
   /**
+   * The query string passed on the websocket uri
+   */
+  String query();
+
+  /**
    * A map of all headers in the request to upgrade to websocket
    */
   MultiMap headers();

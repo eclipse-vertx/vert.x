@@ -693,7 +693,8 @@ public class DefaultHttpServer implements HttpServer, Closeable {
           }
         };
 
-        final DefaultServerWebSocket ws = new DefaultServerWebSocket(vertx, theURI.getPath(), new HttpHeadersAdapter(request.headers()), wsConn, connectRunnable);
+        final DefaultServerWebSocket ws = new DefaultServerWebSocket(vertx, theURI.getPath(),
+            theURI.getQuery(), new HttpHeadersAdapter(request.headers()), wsConn, connectRunnable);
         wsConn.handleWebsocketConnect(ws);
         if (ws.isRejected()) {
           if (firstHandler == null) {
