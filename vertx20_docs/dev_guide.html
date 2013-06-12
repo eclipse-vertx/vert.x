@@ -144,11 +144,15 @@ vertx.deployWorkerVerticle("verticle5.js", appConfig.verticle5Config, 10);
 <p><a id="auto-redeploy"> </a></p>
 <h2 id="auto-redeploy-and-see-your-changes-immediately">Auto redeploy and see your changes immediately</h2><br/>
 <p>When developing a Vert.x module, especially if it has a web interface, it's useful to have your module running and have it automatically pick up any changes in classes or other resources in the module without you having to rebuild.</p>
-<p>Vert.x now supports this! (Vert.x 2.0 latest master).</p>
-<p>To get this just open your Vert.x project in your IDE as normal. Then, in another window run your module using  a command line like:</p>
+<p>To get this to work your module must be marked as:</p>
+<pre class="prettyprint">"auto-redeploy": true
+</pre>
+<p>In your <code>mod.json</code>. See the <a href="mods_manual.html#auto-redeploy">modules manual</a> for more information on this.</p>
+<p>Then just open your Vert.x project in your IDE as normal. Then, in another window run your module using  a command line like:</p>
 <pre class="prettyprint">vertx runmod com.yourcompany~your-module~1.0 -cp &lt;classpath&gt;
 </pre>
-<p>Where <code>&lt;classpath&gt;</code> is a classpath where it will look for the resources of your project.</p>
+<p>When you specify a classpath to the <code>vertx runmod</code> command it tells Vert.x not to look in the local <code>mods</code> directory for your module but instead to look on the supplied classpath for the <code>mod.json</code> and the other module resources.</p>
+<p>So, in the case of running a module from stuff in your IDE we just need to craft a classpath which includes the directories where your IDE puts it's compiled stuff, and also where you store your <code>mod.json</code> and other resources.</p>
 <p>In the case of a standard Maven project running in IntelliJ IDEA you want to add the <code>src/main/resources</code> and <code>src/test/resources</code> directories and the <code>out/production/&lt;intellij_mod_name&gt;</code> and the <code>out/test/&lt;intellij_mod_name&gt;</code> to the classpath.</p>
 <p>An example would be:</p>
 <pre class="prettyprint">vertx runmod com.yourcompany~your-module~1.0 -cp src/main/resources/:src/test/resources/:out/production/mod-web-server/:out/test/mod-web-server/

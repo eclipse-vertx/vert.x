@@ -88,13 +88,19 @@ To push a module to your local Maven repository when you make a changem, and it 
 
 When developing a Vert.x module, especially if it has a web interface, it's useful to have your module running and have it automatically pick up any changes in classes or other resources in the module without you having to rebuild.
 
-Vert.x now supports this! (Vert.x 2.0 latest master).
+To get this to work your module must be marked as:
 
-To get this just open your Vert.x project in your IDE as normal. Then, in another window run your module using  a command line like:
+    "auto-redeploy": true
+
+In your `mod.json`. See the [modules manual](mods_manual.html#auto-redeploy) for more information on this.
+
+Then just open your Vert.x project in your IDE as normal. Then, in another window run your module using  a command line like:
 
     vertx runmod com.yourcompany~your-module~1.0 -cp <classpath>
 
-Where `<classpath>` is a classpath where it will look for the resources of your project.
+When you specify a classpath to the `vertx runmod` command it tells Vert.x not to look in the local `mods` directory for your module but instead to look on the supplied classpath for the `mod.json` and the other module resources.
+
+So, in the case of running a module from stuff in your IDE we just need to craft a classpath which includes the directories where your IDE puts it's compiled stuff, and also where you store your `mod.json` and other resources.
 
 In the case of a standard Maven project running in IntelliJ IDEA you want to add the `src/main/resources` and `src/test/resources` directories and the `out/production/<intellij_mod_name>` and the `out/test/<intellij_mod_name>` to the classpath.
 

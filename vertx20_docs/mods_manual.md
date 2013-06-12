@@ -120,6 +120,7 @@ In some cases you *don't want* the module to see its module directory as its cwd
 
 This preserves the current working directory of the caller.
 
+<a id="auto-redeploy"> </a>
 ### auto-redeploy
 
 Modules can be configured to auto-redeploy if Vert.x detects that any of the module resources have changed. This can be really useful during deployment. For more information see the documentation on [auto redeploy](dev_guide.html#auto-redeploy).
