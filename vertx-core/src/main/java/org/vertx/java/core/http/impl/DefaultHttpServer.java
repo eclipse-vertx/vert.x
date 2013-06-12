@@ -29,6 +29,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.CharsetUtil;
+import io.netty.util.concurrent.GlobalEventExecutor;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
@@ -152,7 +153,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
 
       DefaultHttpServer shared = vertx.sharedHttpServers().get(id);
       if (shared == null) {
-        serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
+        serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(availableWorkers);
         bootstrap.channel(NioServerSocketChannel.class);
