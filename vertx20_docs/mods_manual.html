@@ -387,15 +387,17 @@ File name = foo-mod-2.2.zip
 <pre class="prettyprint">vertx pulldeps &lt;module_name&gt;
 </pre>
 <p>Before calling <code>vertx pulldeps</code> your module might have the structure on disk:</p>
-<p>./mods/io.vertx~mod-mongo-persistor~2.0.0-beta1/mod.json 
-./mods/io.vertx~mod-mongo-persistor~2.0.0-beta1/app.js</p>
+<pre class="prettyprint">./mods/io.vertx~mod-mongo-persistor~2.0.0-beta1/mod.json 
+./mods/io.vertx~mod-mongo-persistor~2.0.0-beta1/app.js
+</pre>
 <p>After calling <code>vertx pulldeps</code> it would have the following structure</p>
-<p>./mods/io.vertx~mod-mongo-persistor~2.0.0-beta1/mod.json 
+<pre class="prettyprint">./mods/io.vertx~mod-mongo-persistor~2.0.0-beta1/mod.json 
 ./mods/io.vertx~mod-mongo-persistor~2.0.0-beta1/app.js
 ./mods/io.vertx~mod-mongo-persistor~2.0.0-beta1/mods/io.vertx~mod-mongo-persistor~2.0.0-beta1/mod.json
 ./mods/io.vertx~mod-mongo-persistor~2.0.0-beta1/mods/io.vertx~mod-mongo-persistor~2.0.0-beta1/[...rest of the stuff in that module]
 ./mods/io.vertx~mod-mongo-persistor~2.0.0-beta1/mods/org.foo~mod-nuclear~2.2/mod.json
-./mods/io.vertx~mod-mongo-persistor~2.0.0-beta1/mods/org.foo~mod-nuclear~2.2/[...rest of the stuff in that module]</p>
+./mods/io.vertx~mod-mongo-persistor~2.0.0-beta1/mods/org.foo~mod-nuclear~2.2/[...rest of the stuff in that module]
+</pre>
 <p>The module directory <code>./mods/io.vertx~mod-mongo-persistor~2.0.0-beta1</code> can then be zipped and deployed a self contained module and it won't have to download any dependencies at runtime since they will all be found *inside * the module already.</p>
 <p>If you're using the standard Gradle template project or used the Vert.x Maven Archetype to create your project then this all happens automatically for you if you enable it in the <code>pom.xml</code> or <code>gradle.properties</code> file.</p>
 <h2 id="installing-modules-manually-from-the-repository">Installing modules manually from the repository</h2><br/>
