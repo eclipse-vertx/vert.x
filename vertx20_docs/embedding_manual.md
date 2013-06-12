@@ -34,11 +34,7 @@ The methods available on `PlatformManager` roughly map to the actions performed 
 
 ### Jars
 
-To embed the Vert.x platform you will need the following jars on the classpath:
-
-    vertx-core-<version>.jar
-
-    vertx-platform-<version>.jar
+To embed the Vert.x platform you will need all the jars from the Vert.x install lib directory on your classpath. You won't need the hazelcast jar if you aren't using clustering.
 
 ### System Properties
 
@@ -103,7 +99,7 @@ Note that all Vert.x threads are daemon threads and they will *not* prevent the 
 
 ### Jars
 
-To embed the Vert.x core you will just need `vertx-core-<version>.jar` on your classpath.
+To embed the Vert.x platform you will need all the jars from the Vert.x install lib directory apart from `vertx-platform-*.jar` on your classpath. You won't need the hazelcast jar if you aren't using clustering.
 
 
 ### Core thread safety

@@ -113,11 +113,7 @@
 </pre>
 <p>The methods available on <code>PlatformManager</code> roughly map to the actions performed by the <code>vertx</code> command at the command line.</p>
 <h3 id="jars">Jars</h3><br/>
-<p>To embed the Vert.x platform you will need the following jars on the classpath:</p>
-<pre class="prettyprint">vertx-core-&lt;version&gt;.jar
-
-vertx-platform-&lt;version&gt;.jar
-</pre>
+<p>To embed the Vert.x platform you will need all the jars from the Vert.x install lib directory on your classpath. You won't need the hazelcast jar if you aren't using clustering.</p>
 <h3 id="system-properties">System Properties</h3><br/>
 <p>When using the platform manager the following system properties can be set:</p>
 <ul>
@@ -165,7 +161,7 @@ vertx-platform-&lt;version&gt;.jar
 <p>You first get a reference to the <code>Vertx</code> object using the <code>VertxFactory</code> class, then you use the core classes as you wish.</p>
 <p>Note that all Vert.x threads are daemon threads and they will <em>not</em> prevent the JVM for exiting. Therefore you must ensure that the <code>main()</code> method does not run to completion, e.g. in this example we have used <code>System.in.read()</code> to block the main thread waiting for IO from the console.</p>
 <h3 id="jars_1">Jars</h3><br/>
-<p>To embed the Vert.x core you will just need <code>vertx-core-&lt;version&gt;.jar</code> on your classpath.</p>
+<p>To embed the Vert.x platform you will need all the jars from the Vert.x install lib directory apart from <code>vertx-platform-*.jar</code> on your classpath. You won't need the hazelcast jar if you aren't using clustering.</p>
 <h3 id="core-thread-safety">Core thread safety</h3><br/>
 <p>Many of the Vert.x core classes are <em>not</em> thread-safe. When running Vert.x in the Vert.x platform you don't have to worry about that as Vert.x guarantees that your verticle code is never executed by more than one thread concurrently.</p>
 <p>When running core embedded you have to be more careful as there is no container to make such guarantees. Therefore it's up to you the developer that you don't allow concurrent access to non thread-safe classes.</p>
