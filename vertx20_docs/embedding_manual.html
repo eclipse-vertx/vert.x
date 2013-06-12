@@ -73,8 +73,19 @@
 <div class="toc">
 <ul>
 <li><a href="#embedding-vertx">Embedding Vert.x</a><ul>
-<li><a href="#embedding-the-vertx-platform">Embedding the Vert.x platform</a></li>
+<li><a href="#embedding-the-vertx-platform">Embedding the Vert.x platform</a><ul>
+<li><a href="#jars">Jars</a></li>
+<li><a href="#system-properties">System Properties</a></li>
+<li><a href="#config-files">Config files</a><ul>
+<li><a href="#langsproperties">langs.properties</a></li>
+<li><a href="#clusterxml">cluster.xml</a></li>
+<li><a href="#repostxt">repos.txt</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li><a href="#embedding-vertx-core">Embedding Vert.x core</a><ul>
+<li><a href="#jars_1">Jars</a></li>
 <li><a href="#core-thread-safety">Core thread safety</a><ul>
 <li><a href="#event-loops-and-scaling-vertx-embedded">Event loops and scaling Vert.x embedded</a></li>
 </ul>
@@ -101,11 +112,26 @@
 <pre class="prettyprint">pm.deployVerticle("app.js", 10);
 </pre>
 <p>The methods available on <code>PlatformManager</code> roughly map to the actions performed by the <code>vertx</code> command at the command line.</p>
+<h3 id="jars">Jars</h3><br/>
+<p>To embed the Vert.x platform you will need the following jars on the classpath:</p>
+<pre class="prettyprint">vertx-core-&lt;version&gt;.jar
+
+vertx-platform-&lt;version&gt;.jar
+</pre>
+<h3 id="system-properties">System Properties</h3><br/>
 <p>When using the platform manager the following system properties can be set:</p>
 <ul>
 <li><code>vertx.home</code> - When installing system modules, vert.x will install them in a directory <code>sys-mods</code> in this directory.</li>
 <li><code>vertx.mods</code> - When looking for or installing non system modules Vert.x will look in the directory <code>mods</code> in the current working directory. If <code>vertx.mods</code> is set this will tell Vert.x to instead look in the provided directory.</li>
 </ul>
+<h3 id="config-files">Config files</h3><br/>
+<p>The Vert.x platform will look for various config files on the classpath. The vert.x platform .jar contains the default files inside it, but if you want to override any settings you can provide your own versions - just make sure you put them on the classpath ahead of the vert.x platform jar.</p>
+<h4 id="langsproperties"><code>langs.properties</code></h4><br/>
+<p>This config file tells Vert.x which modules contain the language implementations for particular languages. It's described in the <a href="language_support.html">Support a New Language Guide</a></p>
+<h4 id="clusterxml"><code>cluster.xml</code></h4><br/>
+<p>This configures Hazelcast clustering. It's described in the <a href="manual.html">main manual</a>.</p>
+<h4 id="repostxt"><code>repos.txt</code></h4><br/>
+<p>This configures which repositories the Vert.x module system will look in for modules. It's described in the <a href="mods_manual.html">modules manual</a>.</p>
 <h2 id="embedding-vertx-core">Embedding Vert.x core</h2><br/>
 <p><strong><em> Please note this feature is intended for power users only. </em></strong></p>
 <p>It's also possible to embed the Vert.x core classes directly and bypass the Vert.x platform altogether.</p>
@@ -138,6 +164,8 @@
 </pre>
 <p>You first get a reference to the <code>Vertx</code> object using the <code>VertxFactory</code> class, then you use the core classes as you wish.</p>
 <p>Note that all Vert.x threads are daemon threads and they will <em>not</em> prevent the JVM for exiting. Therefore you must ensure that the <code>main()</code> method does not run to completion, e.g. in this example we have used <code>System.in.read()</code> to block the main thread waiting for IO from the console.</p>
+<h3 id="jars_1">Jars</h3><br/>
+<p>To embed the Vert.x core you will just need <code>vertx-core-&lt;version&gt;.jar</code> on your classpath.</p>
 <h3 id="core-thread-safety">Core thread safety</h3><br/>
 <p>Many of the Vert.x core classes are <em>not</em> thread-safe. When running Vert.x in the Vert.x platform you don't have to worry about that as Vert.x guarantees that your verticle code is never executed by more than one thread concurrently.</p>
 <p>When running core embedded you have to be more careful as there is no container to make such guarantees. Therefore it's up to you the developer that you don't allow concurrent access to non thread-safe classes.</p>

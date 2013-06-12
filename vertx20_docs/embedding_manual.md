@@ -32,11 +32,36 @@ Deploy 10 instances of a raw JS verticle
 
 The methods available on `PlatformManager` roughly map to the actions performed by the `vertx` command at the command line.
 
+### Jars
+
+To embed the Vert.x platform you will need the following jars on the classpath:
+
+    vertx-core-<version>.jar
+
+    vertx-platform-<version>.jar
+
+### System Properties
+
 When using the platform manager the following system properties can be set:
 
 * `vertx.home` - When installing system modules, vert.x will install them in a directory `sys-mods` in this directory.
 * `vertx.mods` - When looking for or installing non system modules Vert.x will look in the directory `mods` in the current working directory. If `vertx.mods` is set this will tell Vert.x to instead look in the provided directory.
 
+### Config files
+
+The Vert.x platform will look for various config files on the classpath. The vert.x platform .jar contains the default files inside it, but if you want to override any settings you can provide your own versions - just make sure you put them on the classpath ahead of the vert.x platform jar.
+
+#### `langs.properties`
+
+This config file tells Vert.x which modules contain the language implementations for particular languages. It's described in the [Support a New Language Guide](language_support.html)
+
+#### `cluster.xml`
+
+This configures Hazelcast clustering. It's described in the [main manual](manual.html).
+
+#### `repos.txt`	
+
+This configures which repositories the Vert.x module system will look in for modules. It's described in the [modules manual](mods_manual.html).
 
 ## Embedding Vert.x core
 
@@ -75,6 +100,11 @@ If you are happy with the above limitations then Vert.x can be used directly in 
 You first get a reference to the `Vertx` object using the `VertxFactory` class, then you use the core classes as you wish.
 
 Note that all Vert.x threads are daemon threads and they will *not* prevent the JVM for exiting. Therefore you must ensure that the `main()` method does not run to completion, e.g. in this example we have used `System.in.read()` to block the main thread waiting for IO from the console.
+
+### Jars
+
+To embed the Vert.x core you will just need `vertx-core-<version>.jar` on your classpath.
+
 
 ### Core thread safety
 
