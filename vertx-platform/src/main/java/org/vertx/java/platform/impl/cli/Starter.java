@@ -104,12 +104,11 @@ public class Starter {
       public void handle(AsyncResult<T> res) {
         if (res.failed()) {
           Throwable cause = res.cause();
-          cause.printStackTrace();
           if (cause instanceof VertxException) {
             VertxException ve = (VertxException)cause;
-            log.error(ve.getMessage(), ve);
+            log.error(ve.getMessage());
             if (ve.getCause() != null) {
-              log.error(ve.getMessage(), ve);
+              log.error(ve.getCause());
             }
           } else {
             log.error(cause);
@@ -271,7 +270,6 @@ public class Starter {
     if (zip) {
       mgr.deployModuleFromZip(main, conf, instances, createLoggingHandler("Successfully deployed module from zip", doneHandler));
     } else if (module) {
-      System.out.println("Has classpath: " + hasClasspath);
       if (hasClasspath) {
         mgr.deployModuleFromClasspath(main, conf, instances, classpath, createLoggingHandler("Successfully deployed module", doneHandler));
       } else {
