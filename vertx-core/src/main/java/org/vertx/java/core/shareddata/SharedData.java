@@ -62,7 +62,7 @@ public class SharedData {
    * Return a {@code Map} with the specific {@code name}. All invocations of this method with the same value of {@code name}
    * are guaranteed to return the same {@code Map} instance. <p>
    */
-  public <K, V> ConcurrentMap<K, V> getMap(String name) {
+  public <K, V> ConcurrentSharedMap<K, V> getMap(String name) {
     SharedMap<K, V> map = (SharedMap<K, V>) maps.get(name);
     if (map == null) {
       map = new SharedMap<>();
