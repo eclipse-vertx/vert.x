@@ -33,6 +33,14 @@ OR
 
     gradlew.bat test
 
+## To run a specific test in Core
+
+    ./gradlew vertx-core:test -Dtest.single=<test_name/pattern>
+
+## To run a specific test in Platform
+
+    ./gradlew vertx-platform:test -Dtest.single=<test_name/pattern>
+
 ## Maven Central
 
 The JAR components of vert.x can be prepared for Maven repositories and installed locally or uploaded to Maven Central.

@@ -19,6 +19,7 @@ package org.vertx.java.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.multipart.*;
+import org.vertx.java.core.VertxException;
 import org.vertx.java.core.impl.CaseInsensitiveMultiMap;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
@@ -37,9 +38,11 @@ import javax.security.cert.X509Certificate;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
@@ -74,7 +77,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   private NetSocket netSocket;
   private Handler<HttpServerFileUpload> uploadHandler;
   private Handler<Void> endHandler;
-  private MultiMap attributes = new CaseInsensitiveMultiMap();
+  private MultiMap attributes;
   private final HttpPostRequestDecoder decoder;
 
   DefaultHttpServerRequest(final ServerConnection conn,
@@ -266,7 +269,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
 
   @Override
   public MultiMap formAttributes() {
-    return attributes;
+    return attributes();
   }
 
   void handleData(Buffer data) {
@@ -311,6 +314,14 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
       }
     }
     return juri;
+  }
+
+  private MultiMap attributes() {
+    // Create it lazily
+    if (attributes == null) {
+      attributes = new CaseInsensitiveMultiMap();
+    }
+    return attributes;
   }
 
   private final static class NettyFileUpload implements FileUpload {
@@ -524,12 +535,6 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
       attributeCreated();
     }
 
-    private void attributeCreated() {
-      if (!notified && isCompleted()) {
-        notified = true;
-        attributes.add(getName(), getValue());
-      }
-    }
 
     @Override
     public void setContent(ByteBuf buffer) throws IOException {
@@ -554,6 +559,23 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
       super.addContent(buffer, last);
       attributeCreated();
     }
+
+    private void attributeCreated() {
+      if (!notified && isCompleted()) {
+        notified = true;
+        attributes().add(urlDecode(getName()), urlDecode(getValue()));
+      }
+    }
+
+    private String urlDecode(String str) {
+      try {
+        return URLDecoder.decode(str, "UTF-8");
+      } catch (UnsupportedEncodingException e) {
+        // Highly unlikely to happen
+        throw new VertxException("UTF-8 not supported!");
+      }
+    }
+
   }
 
 
