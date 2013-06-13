@@ -827,6 +827,11 @@ public final class UnreleasableByteBuf implements ByteBuf {
   }
 
   @Override
+  public ByteBuffer internalNioBuffer(int index, int length) {
+    return buf.internalNioBuffer(index, length);
+  }
+
+  @Override
   public boolean release() {
     return false;
   }

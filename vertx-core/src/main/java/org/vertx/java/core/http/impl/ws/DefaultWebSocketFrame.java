@@ -19,9 +19,9 @@
 package org.vertx.java.core.http.impl.ws;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ReferenceCounted;
 import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
+import io.netty.util.ReferenceCounted;
 
 /**
  * The default {@link WebSocketFrame} implementation.
