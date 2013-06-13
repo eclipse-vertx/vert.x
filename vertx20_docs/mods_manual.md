@@ -28,6 +28,7 @@ A *runnable* module has a *main* and can be deployed at the command line using `
 
 A *non runnable* module does not have a *main* and cannot be deployed, but is instead used to [include](#includes) resources from one module into another.
 
+<a id="mod-id"> </a>
 # Module Identifier
 
 Each module has a unique identifier. The identifier is a string that is composed of three parts:
@@ -384,6 +385,7 @@ This gives a download url for the module:
 
     http://dl.bintray.com/purplefox/vertx-mods/foo-mod/foo-mod-2.2.zip
 
+<a id="nested-mods"> </a>
 # Nested modules - Packaging all module dependencies in the module
 
 The usual behaviour of Vert.x is to download and install module dependencies the first time they are referenced at runtime, if they're not already installed. For some production deployments this is not necessarily desirable - there may be a requirement that modules deployed on a production server must contain everything necessary to run then without calling out to download more stuff at runtime.

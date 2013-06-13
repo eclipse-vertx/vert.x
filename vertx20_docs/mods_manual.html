@@ -137,6 +137,7 @@
 <p>Modules can be either <em>runnable</em> or <em>non runnable</em>.</p>
 <p>A <em>runnable</em> module has a <em>main</em> and can be deployed at the command line using <code>vertx runmod</code> or programmatically using <code>container.deployModule(...)</code>.</p>
 <p>A <em>non runnable</em> module does not have a <em>main</em> and cannot be deployed, but is instead used to <a href="#includes">include</a> resources from one module into another.</p>
+<p><a id="mod-id"> </a></p>
 <h1 id="module-identifier">Module Identifier</h1><br/>
 <p>Each module has a unique identifier. The identifier is a string that is composed of three parts:</p>
 <ul>
@@ -379,6 +380,7 @@ File name = foo-mod-2.2.zip
 <p>This gives a download url for the module:</p>
 <pre class="prettyprint">http://dl.bintray.com/purplefox/vertx-mods/foo-mod/foo-mod-2.2.zip
 </pre>
+<p><a id="nested-mods"> </a></p>
 <h1 id="nested-modules-packaging-all-module-dependencies-in-the-module">Nested modules - Packaging all module dependencies in the module</h1><br/>
 <p>The usual behaviour of Vert.x is to download and install module dependencies the first time they are referenced at runtime, if they're not already installed. For some production deployments this is not necessarily desirable - there may be a requirement that modules deployed on a production server must contain everything necessary to run then without calling out to download more stuff at runtime.</p>
 <p>For these situations Vert.x supports packaging a module, along with all the other modules that it references inside the same module to give a single self contained deployment unit.</p>

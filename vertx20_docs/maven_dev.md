@@ -53,6 +53,17 @@ The outputs of the project are:
 
 The outputs are created in the `target` directory as normal.
 
+# Configuring the project
+
+You configure several things as properties in `pom.xml` including
+
+* `module.name` determines the name of the module as described in the [modules manual](mods_manual.html#mod-id)
+
+* `vertx.pullindeps` determines whether all module dependencies should be packaged into the module as [nested modules](mods_manual.html#nested-mods). 
+
+It also contains various properties used to configure versions of various dependencies.
+
+
 # Other useful Maven targets
 
 To run the module using Maven, using the dependencies declared in the project (This does not need Vert.x to be installed on your system already)

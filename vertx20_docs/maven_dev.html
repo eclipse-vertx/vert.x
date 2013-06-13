@@ -75,6 +75,7 @@
 <li><a href="#developing-vertx-modules-with-maven">Developing Vert.x modules with Maven</a></li>
 <li><a href="#generate-the-project">Generate the project</a></li>
 <li><a href="#outputs">Outputs</a></li>
+<li><a href="#configuring-the-project">Configuring the project</a></li>
 <li><a href="#other-useful-maven-targets">Other useful Maven targets</a></li>
 <li><a href="#setup-your-ide">Setup your IDE</a></li>
 <li><a href="#changing-the-dependencies-of-your-project">Changing the dependencies of your project</a></li>
@@ -115,6 +116,17 @@
 <li>A jar that corresponds to the module. This is useful when you have another project which depends on the classes from your module, as it allows you to add it as a dependency to your other project.</li>
 </ul>
 <p>The outputs are created in the <code>target</code> directory as normal.</p>
+<h1 id="configuring-the-project">Configuring the project</h1><br/>
+<p>You configure several things as properties in <code>pom.xml</code> including</p>
+<ul>
+<li>
+<p><code>module.name</code> determines the name of the module as described in the <a href="mods_manual.html#mod-id">modules manual</a></p>
+</li>
+<li>
+<p><code>vertx.pullindeps</code> determines whether all module dependencies should be packaged into the module as <a href="mods_manual.html#nested-mods">nested modules</a>. </p>
+</li>
+</ul>
+<p>It also contains various properties used to configure versions of various dependencies.</p>
 <h1 id="other-useful-maven-targets">Other useful Maven targets</h1><br/>
 <p>To run the module using Maven, using the dependencies declared in the project (This does not need Vert.x to be installed on your system already)</p>
 <p>mvn vertx:runmod</p>

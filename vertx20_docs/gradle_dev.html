@@ -75,6 +75,7 @@
 <li><a href="#developing-vertx-modules-with-gradle">Developing Vert.x modules with Gradle</a></li>
 <li><a href="#fork-and-clone-the-template-project">Fork and clone the template project</a></li>
 <li><a href="#outputs">Outputs</a></li>
+<li><a href="#configuring-the-project">Configuring the project</a></li>
 <li><a href="#other-useful-gradle-tasks">Other useful Gradle tasks</a></li>
 <li><a href="#setup-your-ide">Setup your IDE</a></li>
 <li><a href="#changing-the-dependencies-of-your-project">Changing the dependencies of your project</a></li>
@@ -101,6 +102,20 @@
 <li>If <code>produceJar = true</code> in <code>gradle.properties</code> A jar that corresponds to the module will also be produced. This is useful when you have another project which depends on the classes from your module, as it allows you to add it as a dependency to your other project.</li>
 </ul>
 <p>The outputs are created in the <code>build</code> directory as normal.</p>
+<h1 id="configuring-the-project">Configuring the project</h1><br/>
+<p>You configure many things in <code>gradle.properties</code>:</p>
+<ul>
+<li>
+<p><code>modowner</code>, <code>modname</code> and <code>version</code> determine the name of the module as described in the <a href="mods_manual.html#mod-id">modules manual</a></p>
+</li>
+<li>
+<p><code>pullInDeps</code> determines whether all module dependencies should be packaged into the module as <a href="mods_manual.html#nested-mods">nested modules</a>. </p>
+</li>
+<li>
+<p><code>produceJar</code> determines whether the build should produce a jar as well as a module zip - this is useful when your modules are non runnable so you can add them as normal Maven dependencies to your build and have access to their resources at build-time.</p>
+</li>
+</ul>
+<p>It also contains various properties used to configure versions of various dependencies.</p>
 <h1 id="other-useful-gradle-tasks">Other useful Gradle tasks</h1><br/>
 <p>Open <code>build.gradle</code> and take a look at the comments there for a list of useful tasks supported by the build script.</p>
 <h1 id="setup-your-ide">Setup your IDE</h1><br/>

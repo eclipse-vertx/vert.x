@@ -36,6 +36,19 @@ The outputs of the project are:
 
 The outputs are created in the `build` directory as normal.
 
+# Configuring the project
+
+You configure many things in `gradle.properties`:
+
+* `modowner`, `modname` and `version` determine the name of the module as described in the [modules manual](mods_manual.html#mod-id)
+
+* `pullInDeps` determines whether all module dependencies should be packaged into the module as [nested modules](mods_manual.html#nested-mods). 
+
+* `produceJar` determines whether the build should produce a jar as well as a module zip - this is useful when your modules are non runnable so you can add them as normal Maven dependencies to your build and have access to their resources at build-time.
+
+It also contains various properties used to configure versions of various dependencies.
+
+
 # Other useful Gradle tasks
 
 Open `build.gradle` and take a look at the comments there for a list of useful tasks supported by the build script.
