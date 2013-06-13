@@ -529,7 +529,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
     ModuleReference mr = moduleRefs.get(moduleKey);
     if (mr == null) {
-      mr = new ModuleReference(this, moduleKey, new ModuleClassLoader(platformClassLoader, urls), false);
+      mr = new ModuleReference(this, moduleKey, new ModuleClassLoader(platformClassLoader, urls, false), false);
       ModuleReference prev = moduleRefs.putIfAbsent(moduleKey, mr);
       if (prev != null) {
         mr = prev;
@@ -684,7 +684,9 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     if (mr == null) {
       boolean res = fields.isResident();
       mr = new ModuleReference(this, modID.toString(),
-          new ModuleClassLoader(platformClassLoader, moduleClasspath.toArray(new URL[moduleClasspath.size()])), res);
+          new ModuleClassLoader(platformClassLoader, moduleClasspath.toArray(new URL[moduleClasspath.size()]),
+              fields.isLoadResourcesWithTCCL()),
+          res);
       ModuleReference prev = moduleRefs.putIfAbsent(modID.toString(), mr);
       if (prev != null) {
         mr = prev;
@@ -824,7 +826,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
         boolean res = fields.isResident();
         includedMr = new ModuleReference(this, moduleName,
-                                         new ModuleClassLoader(platformClassLoader, urls.toArray(new URL[urls.size()])),
+                                         new ModuleClassLoader(platformClassLoader,
+                                             urls.toArray(new URL[urls.size()]), fields.isLoadResourcesWithTCCL()),
                                          res);
         ModuleReference prev = moduleRefs.putIfAbsent(moduleName, includedMr);
         if (prev != null) {

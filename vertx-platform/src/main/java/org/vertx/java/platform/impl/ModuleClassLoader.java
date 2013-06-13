@@ -31,10 +31,12 @@ public class ModuleClassLoader extends URLClassLoader {
 
   private final Set<ModuleReference> parents = new ConcurrentHashSet<>();
   private final ClassLoader platformClassLoader;
+  private boolean loadResourcesFromTCCL = false;
 
-  public ModuleClassLoader(ClassLoader platformClassLoader, URL[] classpath) {
+  public ModuleClassLoader(ClassLoader platformClassLoader, URL[] classpath, boolean loadResourcesFromTCCL) {
     super(classpath);
     this.platformClassLoader = platformClassLoader;
+    this.loadResourcesFromTCCL = loadResourcesFromTCCL;
   }
 
   public void addParent(ModuleReference parent) {
@@ -145,6 +147,10 @@ public class ModuleClassLoader extends URLClassLoader {
 
   @Override
   public URL getResource(String name) {
+    return doGetResource(name, true);
+  }
+
+  private URL doGetResource(String name, boolean considerTCCL) {
     incRecurseDepth();
     try {
       // First try with this class loader
@@ -153,16 +159,36 @@ public class ModuleClassLoader extends URLClassLoader {
         // Detect circular hierarchy
         Set<ModuleClassLoader> walked = getWalked();
         walked.add(this);
+
         //Now try with the parents
         for (ModuleReference parent: parents) {
           checkAlreadyWalked(walked, parent);
-          url = parent.mcl.getResource(name);
+          url = parent.mcl.doGetResource(name, considerTCCL);
           if (url != null) {
             return url;
           }
         }
+
         walked.remove(this);
-        // If got here then none of the parents know about it, so try the platform class loader
+
+        // There's now a workaround due to dodgy classloading in Jython
+        // https://github.com/vert-x/mod-lang-jython/issues/7
+        // It seems that Jython doesn't always ask the correct classloader to load resources from modules
+        // to workaround this we can, if the resource is not found, and the TCCL is different from this classloader
+        // to ask the TCCL to load the class - the TCCL should always be set to the moduleclassloader of the actual
+        // module doing the import
+        if (considerTCCL && loadResourcesFromTCCL) {
+          ModuleClassLoader tccl = (ModuleClassLoader)Thread.currentThread().getContextClassLoader();
+          if (tccl != this) {
+            // Call with considerTCCL = false to prevent infinite recursion
+            url = tccl.doGetResource(name, false);
+            if (url != null) {
+              return url;
+            }
+          }
+        }
+
+        // Finally try the platform class loader
         url = platformClassLoader.getResource(name);
       }
       return url;
