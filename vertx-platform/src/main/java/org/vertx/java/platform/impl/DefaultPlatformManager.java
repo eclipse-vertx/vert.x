@@ -261,9 +261,18 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   public void reloadModules(final Set<Deployment> deps) {
+
+    // If the module that has changed has been deployed by another module then we redeploy the parent module not
+    // the module itself
+    // So we must now resolve the set of parent deployments
+    final Set<Deployment> parents = new HashSet<>();
+    for (Deployment dep: deps) {
+      parents.add(getTopMostDeployment(dep));
+    }
+
     runInBackground(new Runnable() {
       public void run() {
-        for (final Deployment deployment : deps) {
+        for (final Deployment deployment : parents) {
           if (deployments.containsKey(deployment.name)) {
             doUndeploy(deployment.name, new Handler<AsyncResult<Void>>() {
               public void handle(AsyncResult<Void> res) {
@@ -275,7 +284,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
               }
             });
           } else {
-            // This will be the case if the previous deployment failed, e.g.
+            // This might be the case if the previous deployment failed, e.g.
             // a code error in a user verticle
             doRedeploy(deployment);
           }
@@ -498,6 +507,17 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     return null; // We are at the top level already
   }
 
+  private Deployment getTopMostDeployment(Deployment dep) {
+    while (true) {
+      String parentDep = dep.parentDeploymentName;
+      if (parentDep != null) {
+        dep = deployments.get(parentDep);
+      } else {
+        return dep;
+      }
+    }
+  }
+
   private void doDeployVerticle(boolean worker, boolean multiThreaded, final String main,
                                 final JsonObject config, final URL[] urls,
                                 int instances, File currentModDir,
@@ -707,9 +727,6 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
 
     final boolean autoRedeploy = fields.isAutoRedeploy();
-    if (autoRedeploy && enclosingModID != null) {
-      throw new PlatformManagerException("You can only use auto-redeploy on top level modules");
-    }
 
     doDeploy(depName, autoRedeploy, worker, multiThreaded, main, modID, config,
         moduleClasspath.toArray(new URL[moduleClasspath.size()]), instances, modDirToUse, mr, new Handler<AsyncResult<String>>() {
