@@ -759,7 +759,13 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     if (modJSON == null) {
       throw new PlatformManagerException("Failed to find mod.json on classpath");
     }
-    deployModuleFromModJson(redeploy, modJSON, depName, modID, config, instances, null, null, Arrays.asList(classpath), doneHandler);
+    File modDir = locateModule(null, modID);
+    List<URL> cpList = new ArrayList<>(Arrays.asList(classpath));
+    if (modDir != null) {
+      // Add the module directory too if found
+      cpList.addAll(getModuleClasspath(modDir));
+    }
+    deployModuleFromModJson(redeploy, modJSON, depName, modID, config, instances, null, null, cpList, doneHandler);
   }
 
 
