@@ -364,7 +364,7 @@ public class JavaNetTest extends TestBase {
   }
 
   @Test
-  public void testNoContext() throws Exception {
+  public void testEmbedded() throws Exception {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
@@ -427,6 +427,11 @@ public class JavaNetTest extends TestBase {
   @Test
   public void testListenOnWildcardPort() throws Exception {
     startTest(getMethodName(), false);
+  }
+
+  @Test
+  public void testWriteSameBufferMoreThanOnce() throws Exception {
+    startTest(getMethodName());
   }
 
 

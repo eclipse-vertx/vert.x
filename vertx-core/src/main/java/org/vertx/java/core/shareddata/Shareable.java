@@ -17,14 +17,11 @@
 package org.vertx.java.core.shareddata;
 
 /**
- * Marker interface.
- *
+ * Marker interface.<p>
  * If a class implements this it means it can be put into shared data maps
- * and sets.
- *
- * All classes that implement this MUST be threadsafe.
- *
- * Use this class with caution.
+ * and sets.<p>
+ * All classes that implement this MUST be threadsafe.<p>
+ * Use this interface with caution.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

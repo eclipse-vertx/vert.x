@@ -26,10 +26,8 @@ import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.testframework.TestClientBase;
 import org.vertx.java.testframework.TestUtils;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
+import java.io.*;
+import java.net.URLEncoder;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -2795,7 +2793,8 @@ public class HttpTestClient extends TestClientBase {
             protected void handle() {
               MultiMap attrs = req.formAttributes();
               attributeCount.set(attrs.size());
-              tu.azzert(attrs.get("framework").equals("vertx"));
+              System.out.println("attr is " + attrs.get("framework"));
+              tu.azzert(attrs.get("framework").equals("vert x"));
               tu.azzert(attrs.get("runson").equals("jvm"));
               req.response().end();
             }
@@ -2820,11 +2819,16 @@ public class HttpTestClient extends TestClientBase {
             tu.testComplete();
           }
         });
-        Buffer buffer = new Buffer();
-        buffer.appendString("framework=vertx&runson=jvm");
-        req.headers().set("content-length", String.valueOf(buffer.length()));
-        req.headers().set("content-type", "application/x-www-form-urlencoded");
-        req.write(buffer).end();
+        try {
+          Buffer buffer = new Buffer();
+          // Make sure we have one param that needs url encoding
+          buffer.appendString("framework=" + URLEncoder.encode("vert x", "UTF-8") + "&runson=jvm", "UTF-8");
+          req.headers().set("content-length", String.valueOf(buffer.length()));
+          req.headers().set("content-type", "application/x-www-form-urlencoded");
+          req.write(buffer).end();
+        } catch (UnsupportedEncodingException e) {
+          tu.azzert(false, e.getMessage());
+        }
       }
     });
   }
@@ -2851,8 +2855,8 @@ public class HttpTestClient extends TestClientBase {
               MultiMap attrs = req.formAttributes();
               attributeCount.set(attrs.size());
               tu.azzert(attrs.get("origin").equals("junit-testUserAlias"));
-              tu.azzert(attrs.get("login").equals("admin%40foo.bar"));
-              tu.azzert(attrs.get("password").equals("admin"));
+              tu.azzert(attrs.get("login").equals("admin@foo.bar"));
+              tu.azzert(attrs.get("pass word").equals("admin"));
               req.response().end();
             }
           });
@@ -2877,7 +2881,7 @@ public class HttpTestClient extends TestClientBase {
           }
         });
         Buffer buffer = new Buffer();
-        buffer.appendString("origin=junit-testUserAlias&login=admin%40foo.bar&password=admin");
+        buffer.appendString("origin=junit-testUserAlias&login=admin%40foo.bar&pass+word=admin");
         req.headers().set("content-length", String.valueOf(buffer.length()));
         req.headers().set("content-type", "application/x-www-form-urlencoded");
         req.write(buffer).end();

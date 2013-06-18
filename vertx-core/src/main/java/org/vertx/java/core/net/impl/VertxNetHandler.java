@@ -19,7 +19,7 @@ package org.vertx.java.core.net.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundByteHandler;
+import io.netty.channel.MessageList;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
@@ -29,49 +29,59 @@ import java.util.Map;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public class VertxNetHandler extends VertxStateHandler<DefaultNetSocket> implements ChannelInboundByteHandler {
+public class VertxNetHandler extends VertxInboundHandler<DefaultNetSocket> {
 
   public VertxNetHandler(VertxInternal vertx, Map<Channel, DefaultNetSocket> connectionMap) {
     super(vertx, connectionMap);
   }
 
-  @Override
-  public ByteBuf newInboundBuffer(ChannelHandlerContext channelHandlerContext) throws Exception {
-    return channelHandlerContext.alloc().ioBuffer();
-  }
 
   @Override
-  public void discardInboundReadBytes(ChannelHandlerContext ctx) throws Exception {
-    // just call clear as we always consume the whole buffer
-    ctx.inboundByteBuffer().clear();
-  }
-
-  @Override
-  public void inboundBufferUpdated(ChannelHandlerContext chctx) {
-    final ByteBuf in = chctx.inboundByteBuffer();
+  public void messageReceived(ChannelHandlerContext chctx, final MessageList<Object> msgs) {
     final DefaultNetSocket sock = connectionMap.get(chctx.channel());
     if (sock != null) {
       Channel ch = chctx.channel();
-      DefaultContext context = getContext(sock);
+      final DefaultContext context = getContext(sock);
+      final MessageList<ByteBuf> cast = msgs.cast();
       // We need to do this since it's possible the server is being used from a worker context
       if (context.isOnCorrectWorker(ch.eventLoop())) {
         try {
           vertx.setContext(context);
           context.startExecute();
-          sock.handleDataReceived(new Buffer(in.slice()));
+
+          for (int i = 0; i < cast.size(); i++) {
+            try {
+              sock.handleDataReceived(new Buffer(cast.get(i)));
+            } catch (Throwable t) {
+              context.reportException(t);
+            }
+          }
         } catch (Throwable t) {
           context.reportException(t);
         } finally {
+          msgs.releaseAllAndRecycle();
           context.endExecute();
         }
       } else {
-        final ByteBuf buf = in.readBytes(in.readableBytes());
         context.execute(new Runnable() {
           public void run() {
-            sock.handleDataReceived(new Buffer(buf));
+            try {
+              for (int i = 0; i < cast.size(); i++) {
+                try {
+                  sock.handleDataReceived(new Buffer(cast.get(i)));
+                } catch (Throwable t) {
+                  context.reportException(t);
+                }
+              }
+            } finally {
+              msgs.releaseAllAndRecycle();
+            }
           }
         });
       }
+    } else {
+      // just discard
+      msgs.releaseAllAndRecycle();
     }
   }
 }

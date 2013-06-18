@@ -88,6 +88,10 @@ public class ModuleFields {
     return conf.getString("authors");
   }
 
+  public boolean isLoadResourcesWithTCCL() {
+    return getBooleanField("load-resources-with-tccl");
+  }
+
   private boolean getBooleanField(String name) {
     Boolean res = conf.getBoolean(name);
     if (res == null) {
@@ -95,8 +99,5 @@ public class ModuleFields {
     }
     return res;
   }
-
-
-
 
 }

@@ -21,6 +21,11 @@ import org.vertx.java.core.Vertx;
 import org.vertx.java.core.logging.Logger;
 
 /**
+ * Used by the platform manager to create Verticle instances.<p>
+ *
+ * Each language module implementation will provide an instance of this class and the platform will use it
+ * to instantiate Verticle instances for that language.<p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface VerticleFactory {

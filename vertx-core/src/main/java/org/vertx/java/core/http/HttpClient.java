@@ -27,10 +27,10 @@ import org.vertx.java.core.TCPSupport;
  * As well as HTTP requests, the client can act as a factory for {@code WebSocket websockets}.<p>
  * If an instance is instantiated from an event loop then the handlers
  * of the instance will always be called on that same event loop.
- * If an instance is instantiated from some other arbitrary Java thread then
+ * If an instance is instantiated from some other arbitrary Java thread (i.e. when running embedded) then
  * and event loop will be assigned to the instance and used when any of its handlers
  * are called.<p>
- * Instances cannot be used from worker verticles
+ * Instances of HttpClient are thread-safe.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

@@ -351,7 +351,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
             params.put("param" + i, m.group(i + 1));
           }
         }
-        request.params().set(params);
+        request.params().add(params);
         binding.handler.handle(request);
         return;
       }

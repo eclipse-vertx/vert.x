@@ -18,6 +18,9 @@ package org.vertx.java.core;
 import java.util.ServiceLoader;
 
 /**
+ * Factory for creating Vertx instances.<p>
+ * Use this to create Vertx instances when embedding Vert.x core directly.<p>
+ *
  * @author pidster
  *
  */

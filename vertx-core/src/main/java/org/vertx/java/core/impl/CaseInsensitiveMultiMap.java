@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core;
+package org.vertx.java.core.impl;
 
+
+import org.vertx.java.core.MultiMap;
 
 import java.util.*;
 
@@ -116,6 +118,22 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
     int i = index(h);
     for (String vstr: values) {
       add0(h, i, name, vstr);
+    }
+    return this;
+  }
+
+  @Override
+  public MultiMap add(MultiMap headers) {
+    for (Map.Entry<String, String> entry: headers.entries()) {
+      add(entry.getKey(), entry.getValue());
+    }
+    return this;
+  }
+
+  @Override
+  public MultiMap add(Map<String, String> map) {
+    for (Map.Entry<String, String> entry: map.entrySet()) {
+      add(entry.getKey(), entry.getValue());
     }
     return this;
   }

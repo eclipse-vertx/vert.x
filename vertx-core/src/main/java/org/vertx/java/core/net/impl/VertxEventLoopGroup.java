@@ -16,21 +16,16 @@
 
 package org.vertx.java.core.net.impl;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.EventLoop;
-import io.netty.channel.EventLoopGroup;
-import io.netty.util.concurrent.AbstractEventExecutorGroup;
-import io.netty.util.concurrent.EventExecutor;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
+import io.netty.channel.*;
+import io.netty.util.concurrent.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -41,7 +36,8 @@ public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implem
 
   private final List<EventLoopHolder> workers = new ArrayList<>();
   private final CountDownLatch latch = new CountDownLatch(1);
-  private volatile boolean gracefulShutdown;
+  private final AtomicBoolean gracefulShutdown = new AtomicBoolean();
+  private final Promise<?> terminationFuture = new DefaultPromise<Void>(GlobalEventExecutor.INSTANCE);
 
   @Override
   public synchronized EventLoop next() {
@@ -104,15 +100,30 @@ public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implem
 
   @Override
   public boolean isShuttingDown() {
-    return gracefulShutdown;
+    return gracefulShutdown.get();
   }
 
   @Override
-  public void shutdownGracefully(long quietPeriod, long timeout, TimeUnit unit) {
-    for (EventLoopHolder holder : workers) {
-      holder.worker.shutdownGracefully();
+  public Future<?> shutdownGracefully(long quietPeriod, long timeout, TimeUnit unit) {
+    if (gracefulShutdown.compareAndSet(false, true)) {
+      final AtomicInteger counter = new AtomicInteger(workers.size());
+      for (EventLoopHolder holder : workers) {
+        holder.worker.shutdownGracefully().addListener(new GenericFutureListener() {
+          @Override
+          public void operationComplete(Future future) throws Exception {
+            if (counter.decrementAndGet() == 0) {
+              terminationFuture.setSuccess(null);
+            }
+          }
+        });
+      }
     }
-    gracefulShutdown = true;
+    return terminationFuture;
+  }
+
+  @Override
+  public Future<?> terminationFuture() {
+    return terminationFuture;
   }
 
   private EventLoopHolder findHolder(EventLoop worker) {

@@ -151,15 +151,15 @@ public class DefaultVertx implements VertxInternal {
   }
 
   public long setPeriodic(long delay, final Handler<Long> handler) {
-    return scheduleTimeout(getOrAssignContext(), handler, delay, true);
+    return scheduleTimeout(getOrCreateContext(), handler, delay, true);
   }
 
   public long setTimer(long delay, final Handler<Long> handler) {
-    return scheduleTimeout(getOrAssignContext(), handler, delay, false);
+    return scheduleTimeout(getOrCreateContext(), handler, delay, false);
   }
 
   public void runOnContext(final Handler<Void> task) {
-    DefaultContext context = getOrAssignContext();
+    DefaultContext context = getOrCreateContext();
     context.runOnContext(task);
   }
 
@@ -176,10 +176,10 @@ public class DefaultVertx implements VertxInternal {
     return eventLoopGroup;
   }
 
-  public DefaultContext getOrAssignContext() {
+  public DefaultContext getOrCreateContext() {
     DefaultContext ctx = getContext();
     if (ctx == null) {
-      // Assign a context
+      // Create a context
       ctx = createEventLoopContext();
     }
     return ctx;
@@ -203,10 +203,9 @@ public class DefaultVertx implements VertxInternal {
   }
 
   public boolean cancelTimer(long id) {
-    DefaultContext context = getOrAssignContext();
     InternalTimerHandler handler = timeouts.remove(id);
     if (handler != null) {
-      context.removeCloseHook(handler);
+      handler.context.removeCloseHook(handler);
       return handler.cancel();
     } else {
       return false;
@@ -222,7 +221,7 @@ public class DefaultVertx implements VertxInternal {
       throw new IllegalArgumentException("Cannot schedule a timer with delay < 1 ms");
     }
     long timerId = timeoutCounter.getAndIncrement();
-    final InternalTimerHandler task = new InternalTimerHandler(timerId, handler, periodic);
+    final InternalTimerHandler task = new InternalTimerHandler(timerId, handler, periodic, context);
     final Runnable wrapped = context.wrapTask(task);
 
     final Runnable toRun;
@@ -310,14 +309,17 @@ public class DefaultVertx implements VertxInternal {
     final Handler<Long> handler;
     final boolean periodic;
     final long timerID;
+    final DefaultContext context;
     volatile Future<?> future;
     boolean cancelled;
+
     boolean cancel() {
       cancelled = true;
       return future.cancel(false);
     }
 
-    InternalTimerHandler(long timerID, Handler<Long> runnable, boolean periodic) {
+    InternalTimerHandler(long timerID, Handler<Long> runnable, boolean periodic, DefaultContext context) {
+      this.context = context;
       this.timerID = timerID;
       this.handler = runnable;
       this.periodic = periodic;

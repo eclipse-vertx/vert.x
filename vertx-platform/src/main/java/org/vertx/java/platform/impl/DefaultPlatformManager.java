@@ -261,9 +261,18 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   public void reloadModules(final Set<Deployment> deps) {
+
+    // If the module that has changed has been deployed by another module then we redeploy the parent module not
+    // the module itself
+    // So we must now resolve the set of parent deployments
+    final Set<Deployment> parents = new HashSet<>();
+    for (Deployment dep: deps) {
+      parents.add(getTopMostDeployment(dep));
+    }
+
     runInBackground(new Runnable() {
       public void run() {
-        for (final Deployment deployment : deps) {
+        for (final Deployment deployment : parents) {
           if (deployments.containsKey(deployment.name)) {
             doUndeploy(deployment.name, new Handler<AsyncResult<Void>>() {
               public void handle(AsyncResult<Void> res) {
@@ -275,7 +284,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
               }
             });
           } else {
-            // This will be the case if the previous deployment failed, e.g.
+            // This might be the case if the previous deployment failed, e.g.
             // a code error in a user verticle
             doRedeploy(deployment);
           }
@@ -340,7 +349,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   private <T> void runInBackground(final Runnable runnable, final Handler<AsyncResult<T>> doneHandler) {
-    final DefaultContext context = vertx.getOrAssignContext();
+    final DefaultContext context = vertx.getOrCreateContext();
     vertx.getBackgroundPool().execute(new Runnable() {
       public void run() {
         try {
@@ -498,6 +507,17 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     return null; // We are at the top level already
   }
 
+  private Deployment getTopMostDeployment(Deployment dep) {
+    while (true) {
+      String parentDep = dep.parentDeploymentName;
+      if (parentDep != null) {
+        dep = deployments.get(parentDep);
+      } else {
+        return dep;
+      }
+    }
+  }
+
   private void doDeployVerticle(boolean worker, boolean multiThreaded, final String main,
                                 final JsonObject config, final URL[] urls,
                                 int instances, File currentModDir,
@@ -529,7 +549,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
     ModuleReference mr = moduleRefs.get(moduleKey);
     if (mr == null) {
-      mr = new ModuleReference(this, moduleKey, new ModuleClassLoader(platformClassLoader, urls), false);
+      mr = new ModuleReference(this, moduleKey, new ModuleClassLoader(platformClassLoader, urls, false), false);
       ModuleReference prev = moduleRefs.putIfAbsent(moduleKey, mr);
       if (prev != null) {
         mr = prev;
@@ -684,7 +704,9 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     if (mr == null) {
       boolean res = fields.isResident();
       mr = new ModuleReference(this, modID.toString(),
-          new ModuleClassLoader(platformClassLoader, moduleClasspath.toArray(new URL[moduleClasspath.size()])), res);
+          new ModuleClassLoader(platformClassLoader, moduleClasspath.toArray(new URL[moduleClasspath.size()]),
+              fields.isLoadResourcesWithTCCL()),
+          res);
       ModuleReference prev = moduleRefs.putIfAbsent(modID.toString(), mr);
       if (prev != null) {
         mr = prev;
@@ -705,9 +727,6 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
 
     final boolean autoRedeploy = fields.isAutoRedeploy();
-    if (autoRedeploy && enclosingModID != null) {
-      throw new PlatformManagerException("You can only use auto-redeploy on top level modules");
-    }
 
     doDeploy(depName, autoRedeploy, worker, multiThreaded, main, modID, config,
         moduleClasspath.toArray(new URL[moduleClasspath.size()]), instances, modDirToUse, mr, new Handler<AsyncResult<String>>() {
@@ -757,7 +776,13 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     if (modJSON == null) {
       throw new PlatformManagerException("Failed to find mod.json on classpath");
     }
-    deployModuleFromModJson(redeploy, modJSON, depName, modID, config, instances, null, null, Arrays.asList(classpath), doneHandler);
+    File modDir = locateModule(null, modID);
+    List<URL> cpList = new ArrayList<>(Arrays.asList(classpath));
+    if (modDir != null) {
+      // Add the module directory too if found
+      cpList.addAll(getModuleClasspath(modDir));
+    }
+    deployModuleFromModJson(redeploy, modJSON, depName, modID, config, instances, null, null, cpList, doneHandler);
   }
 
 
@@ -824,7 +849,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
         boolean res = fields.isResident();
         includedMr = new ModuleReference(this, moduleName,
-                                         new ModuleClassLoader(platformClassLoader, urls.toArray(new URL[urls.size()])),
+                                         new ModuleClassLoader(platformClassLoader,
+                                             urls.toArray(new URL[urls.size()]), fields.isLoadResourcesWithTCCL()),
                                          res);
         ModuleReference prev = moduleRefs.putIfAbsent(moduleName, includedMr);
         if (prev != null) {

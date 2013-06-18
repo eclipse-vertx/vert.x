@@ -45,6 +45,9 @@ import java.util.concurrent.ConcurrentMap;
  *   {@link org.vertx.java.core.buffer.Buffer} - this will be automatically copied, and the copy will be stored in the
  *   structure.
  * </pre>
+ * <p>
+ *
+ * Instances of this class are thread-safe.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -59,7 +62,7 @@ public class SharedData {
    * Return a {@code Map} with the specific {@code name}. All invocations of this method with the same value of {@code name}
    * are guaranteed to return the same {@code Map} instance. <p>
    */
-  public <K, V> ConcurrentMap<K, V> getMap(String name) {
+  public <K, V> ConcurrentSharedMap<K, V> getMap(String name) {
     SharedMap<K, V> map = (SharedMap<K, V>) maps.get(name);
     if (map == null) {
       map = new SharedMap<>();

@@ -21,7 +21,7 @@ import org.vertx.java.core.buffer.Buffer;
 
 /**
  * Pumps data from a {@link ReadStream} to a {@link WriteStream} and performs flow control where necessary to
- * prevent the write stream from getting overloaded.<p>
+ * prevent the write stream buffer from getting overfull.<p>
  * Instances of this class read bytes from a {@link ReadStream} and write them to a {@link WriteStream}. If data
  * can be read faster than it can be written this could result in the write queue of the {@link WriteStream} growing
  * without bound, eventually causing it to exhaust all available RAM.<p>
@@ -32,6 +32,8 @@ import org.vertx.java.core.buffer.Buffer;
  * This class can be used to pump from any {@link ReadStream} to any {@link WriteStream},
  * e.g. from an {@link org.vertx.java.core.http.HttpServerRequest} to an {@link org.vertx.java.core.file.AsyncFile},
  * or from {@link org.vertx.java.core.net.NetSocket} to a {@link org.vertx.java.core.http.WebSocket}.<p>
+ *
+ * Instances of this class are not thread-safe.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

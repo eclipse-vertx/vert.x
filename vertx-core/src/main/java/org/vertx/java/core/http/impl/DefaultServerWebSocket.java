@@ -1,8 +1,8 @@
 package org.vertx.java.core.http.impl;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.MultiMap;
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.VertxInternal;
@@ -27,14 +27,17 @@ import org.vertx.java.core.impl.VertxInternal;
 public class DefaultServerWebSocket extends WebSocketImplBase implements ServerWebSocket {
 
   private final String path;
+  private final String query;
   private final Runnable connectRunnable;
   private boolean connected;
   private boolean rejected;
   private final MultiMap headers;
 
-  public DefaultServerWebSocket(VertxInternal vertx, String path, MultiMap headers, AbstractConnection conn, Runnable connectRunnable) {
+  public DefaultServerWebSocket(VertxInternal vertx, String path, String query, MultiMap headers,
+                                AbstractConnection conn, Runnable connectRunnable) {
     super(vertx, conn);
     this.path = path;
+    this.query = query;
     this.headers = headers;
     this.connectRunnable = connectRunnable;
   }
@@ -42,6 +45,11 @@ public class DefaultServerWebSocket extends WebSocketImplBase implements ServerW
   @Override
   public String path() {
     return path;
+  }
+
+  @Override
+  public String query() {
+    return query;
   }
 
   @Override

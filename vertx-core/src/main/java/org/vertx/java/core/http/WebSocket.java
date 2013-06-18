@@ -15,6 +15,9 @@ package org.vertx.java.core.http;
  * License for the specific language governing permissions and limitations
  * under the License.
  *
+ * Represents a client side WebSocket.<p>
+ * Instances of this class are not thread-safe<p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface WebSocket extends WebSocketBase<WebSocket> {

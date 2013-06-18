@@ -21,10 +21,8 @@ import org.vertx.java.core.buffer.Buffer;
 
 /**
  * Represents a stream of data that can be read from.<p>
- *
  * Any class that implements this interface can be used by a {@link Pump} to pump data from it
  * to a {@link WriteStream}.<p>
- *
  * This interface exposes a fluent api and the type T represents the type of the object that implements
  * the interface to allow method chaining
  *

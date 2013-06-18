@@ -38,7 +38,9 @@ import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.parsetools.RecordParser;
 
-import java.util.*;
+import java.util.List;
+import java.util.Queue;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -318,7 +320,6 @@ public class DefaultEventBus implements EventBus {
   public EventBus unregisterHandler(String address, Handler<? extends Message> handler,
                                     Handler<AsyncResult<Void>> completionHandler) {
     checkStarted();
-    DefaultContext context = vertx.getOrAssignContext();
     Handlers handlers = handlerMap.get(address);
     if (handlers != null) {
       synchronized (handlers) {
@@ -340,7 +341,7 @@ public class DefaultEventBus implements EventBus {
             } else if (completionHandler != null) {
               callCompletionHandler(completionHandler);
             }
-            context.removeCloseHook(new HandlerEntry(address, handler));
+            holder.context.removeCloseHook(new HandlerEntry(address, handler));
             return this;
           }
         }
@@ -418,7 +419,7 @@ public class DefaultEventBus implements EventBus {
               BaseMessage received = MessageFactory.read(buff);
               if (received.type() == MessageFactory.TYPE_PING) {
                 // Send back a pong - a byte will do
-                socket.write(PONG);
+                socket.write(new Buffer(new byte[] { (byte)1 }));
               } else {
                 receiveMessage(received);
               }
@@ -480,7 +481,7 @@ public class DefaultEventBus implements EventBus {
 
   private void sendOrPub(ServerID replyDest, final BaseMessage message, final Handler replyHandler) {
     checkStarted();
-    DefaultContext context = vertx.getOrAssignContext();
+    DefaultContext context = vertx.getOrCreateContext();
     try {
       message.sender = serverID;
       if (replyHandler != null) {

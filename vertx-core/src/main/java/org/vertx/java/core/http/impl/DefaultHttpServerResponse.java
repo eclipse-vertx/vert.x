@@ -19,13 +19,12 @@ package org.vertx.java.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
-
 import io.netty.handler.codec.http.*;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.impl.PathAdjuster;
-import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.impl.VertxInternal;
 
@@ -201,7 +200,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
 
   @Override
   public DefaultHttpServerResponse write(String chunk, String enc) {
-    return write(new Buffer(chunk, enc).getByteBuf(), null);
+    return write(new Buffer(chunk, enc).getByteBuf(),  null);
   }
 
   @Override
@@ -224,8 +223,13 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
     if (!chunked && !contentLengthSet()) {
       headers().set(Names.CONTENT_LENGTH, String.valueOf(chunk.length()));
     }
-    write(chunk);
-    end();
+    ByteBuf buf = chunk.getByteBuf();
+    if (chunk.isWrapper()) {
+      // call retain to make sure it is not released before the write completes
+      // the write will call buf.release() by it own
+      buf.retain();
+    }
+    end0(buf);
   }
 
   @Override
@@ -242,12 +246,43 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
 
   @Override
   public void end() {
+    end0(null);
+  }
+
+  private void end0(ByteBuf data) {
     checkWritten();
-    writeHead();
-    if (trailing == null) {
-      channelFuture = conn.write(DefaultLastHttpContent.EMPTY_LAST_CONTENT);
+
+    if (!headWritten) {
+      // if the head was not written yet we can write out everything in on go
+      // which is more cheap.
+      prepareHeaders();
+      FullHttpResponse resp;
+      if (data == null) {
+        resp = new DefaultFullHttpResponse(response.getProtocolVersion(), response.getStatus());
+      } else {
+        resp = new DefaultFullHttpResponse(response.getProtocolVersion(), response.getStatus(), data);
+      }
+      resp.headers().set(response.headers());
+      if (trailing != null) {
+        resp.trailingHeaders().set(trailing.trailingHeaders());
+      }
+      channelFuture = conn.write(resp);
+      headWritten = true;
+    }
+
+    if (data == null) {
+      if (trailing == null) {
+        channelFuture = conn.write(DefaultLastHttpContent.EMPTY_LAST_CONTENT);
+      } else {
+        channelFuture = conn.write(trailing);
+      }
     } else {
-      channelFuture = conn.write(trailing);
+      LastHttpContent content = new DefaultLastHttpContent(data);
+      if (trailing != null) {
+        content.trailingHeaders().set(trailing.trailingHeaders());
+      }
+      channelFuture = conn.write(content);
+
     }
     if (!keepAlive) {
       closeConnAfterWrite();
@@ -255,7 +290,6 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
     written = true;
     conn.responseComplete();
   }
-
   @Override
   public DefaultHttpServerResponse sendFile(String filename) {
     return sendFile(filename, null);
@@ -341,9 +375,9 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
     }
   }
 
-  void handleException(Exception e) {
+  void handleException(Throwable t) {
     if (exceptionHandler != null) {
-      exceptionHandler.handle(e);
+      exceptionHandler.handle(t);
     }
   }
 
@@ -356,14 +390,6 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   private void checkWritten() {
     if (written) {
       throw new IllegalStateException("Response has already been written");
-    }
-  }
-
-  private void writeHead() {
-    if (!headWritten) {
-      prepareHeaders();
-      channelFuture = conn.write(response);
-      headWritten = true;
     }
   }
 
@@ -393,8 +419,8 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
       conn.queueForWrite(response);
       headWritten = true;
     }
-
-    channelFuture = conn.write(new DefaultHttpContent(chunk));
+    HttpContent content = new DefaultHttpContent(chunk);
+    channelFuture = conn.write(content);
     conn.addFuture(doneHandler, channelFuture);
     return this;
   }

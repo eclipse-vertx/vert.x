@@ -22,7 +22,8 @@ import org.vertx.java.core.json.impl.Json;
 import java.util.*;
 
 /**
- * Represents a JSON array
+ * Represents a JSON array.<p>
+ * Instances of this class are not thread-safe.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

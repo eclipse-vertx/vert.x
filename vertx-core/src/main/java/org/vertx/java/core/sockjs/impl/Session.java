@@ -59,6 +59,7 @@ class Session extends SockJSSocketBase implements Shareable {
   private int messagesSize;
   private Handler<Void> drainHandler;
   private Handler<Void> endHandler;
+  private Handler<Throwable> exceptionHandler;
   private boolean handleCalled;
 
   Session(VertxInternal vertx, Map<String, Session> sessions, long heartbeatPeriod, Handler<SockJSSocket> sockHandler) {
@@ -139,6 +140,7 @@ class Session extends SockJSSocketBase implements Shareable {
 
   @Override
   public synchronized Session exceptionHandler(Handler<Throwable> handler) {
+    this.exceptionHandler = handler;
     return this;
   }
 
@@ -306,6 +308,14 @@ class Session extends SockJSSocketBase implements Shareable {
         }
       }
       return true;
+    }
+  }
+
+  void handleException(Throwable t) {
+    if (exceptionHandler != null) {
+      exceptionHandler.handle(t);
+    } else {
+      log.error("Unhandled exception", t);
     }
   }
 

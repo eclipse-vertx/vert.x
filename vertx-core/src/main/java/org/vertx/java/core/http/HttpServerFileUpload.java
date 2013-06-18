@@ -20,7 +20,7 @@ import org.vertx.java.core.streams.ReadStream;
 import java.nio.charset.Charset;
 
 /**
- * An Upload which was found in the HttpServerMultipartRequest while handling it.
+ * Represents an upload from an HTML form.<p>
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */

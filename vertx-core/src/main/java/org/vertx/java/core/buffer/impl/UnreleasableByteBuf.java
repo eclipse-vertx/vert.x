@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.vertx.java.core.buffer;
+package org.vertx.java.core.buffer.impl;
 
-import io.netty.buffer.BufType;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufIndexFinder;
@@ -32,10 +31,10 @@ import java.nio.charset.Charset;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-final class UnreleasableByteBuf implements ByteBuf {
+public final class UnreleasableByteBuf implements ByteBuf {
   private final ByteBuf buf;
 
-  UnreleasableByteBuf(ByteBuf buf) {
+  public UnreleasableByteBuf(ByteBuf buf) {
     this.buf = buf;
   }
 
@@ -783,18 +782,6 @@ final class UnreleasableByteBuf implements ByteBuf {
   }
 
   @Override
-  public ByteBuf suspendIntermediaryDeallocations() {
-    buf.suspendIntermediaryDeallocations();
-    return this;
-  }
-
-  @Override
-  public ByteBuf resumeIntermediaryDeallocations() {
-    buf.resumeIntermediaryDeallocations();
-    return this;
-  }
-
-  @Override
   public int hashCode() {
     return buf.hashCode();
   }
@@ -825,11 +812,6 @@ final class UnreleasableByteBuf implements ByteBuf {
   }
 
   @Override
-  public BufType type() {
-    return buf.type();
-  }
-
-  @Override
   public boolean isReadable(int size) {
     return buf.isReadable(size);
   }
@@ -842,6 +824,11 @@ final class UnreleasableByteBuf implements ByteBuf {
   @Override
   public int refCnt() {
     return buf.refCnt();
+  }
+
+  @Override
+  public ByteBuffer internalNioBuffer(int index, int length) {
+    return buf.internalNioBuffer(index, length);
   }
 
   @Override

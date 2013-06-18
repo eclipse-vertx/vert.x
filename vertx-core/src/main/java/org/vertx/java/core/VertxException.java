@@ -1,5 +1,3 @@
-package org.vertx.java.core;
-
 /*
  * Copyright 2013 Red Hat, Inc.
  *
@@ -14,13 +12,17 @@ package org.vertx.java.core;
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
  * License for the specific language governing permissions and limitations
  * under the License.
+ */
+package org.vertx.java.core;
+
+
+/**
+ *
+ * Vert.x only throws instances of VertxException which is a RuntimeException.<p>
+ * Vert.x hates Java checked exceptions and doesn't want to pollute it's API with them.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  *
- * Vert.x only throws instances of VertxException which is a RuntimeException.
- * Vert.x hates Java checked exceptions and doesn't want to pollute it's API with them.
- * You can catch them if you like, but it's recommended to let them bubble up to the Vert.x platform
- * which will, cause the verticle to be redeployed.
  */
 public class VertxException extends RuntimeException {
 

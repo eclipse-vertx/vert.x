@@ -1,7 +1,3 @@
-package org.vertx.java.platform;
-
-import org.vertx.java.core.VertxException;
-
 /*
  * Copyright 2013 Red Hat, Inc.
  *
@@ -17,6 +13,12 @@ import org.vertx.java.core.VertxException;
  * License for the specific language governing permissions and limitations
  * under the License.
  *
+ */
+package org.vertx.java.platform;
+
+import org.vertx.java.core.VertxException;
+
+/**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class PlatformManagerException extends VertxException {

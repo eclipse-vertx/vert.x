@@ -29,6 +29,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.CharsetUtil;
+import io.netty.util.concurrent.GlobalEventExecutor;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
@@ -88,7 +89,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
 
   public DefaultHttpServer(VertxInternal vertx) {
     this.vertx = vertx;
-    actualCtx = vertx.getOrAssignContext();
+    actualCtx = vertx.getOrCreateContext();
     actualCtx.addCloseHook(this);
     tcpHelper.setReuseAddress(true);
   }
@@ -152,7 +153,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
 
       DefaultHttpServer shared = vertx.sharedHttpServers().get(id);
       if (shared == null) {
-        serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
+        serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(availableWorkers);
         bootstrap.channel(NioServerSocketChannel.class);
@@ -164,7 +165,6 @@ public class DefaultHttpServer implements HttpServer, Closeable {
             protected void initChannel(Channel ch) throws Exception {
               ChannelPipeline pipeline = ch.pipeline();
               pipeline.addLast("exceptionDispatcher", EXCEPTION_DISPATCH_HANDLER);
-              pipeline.addLast("flowControl", new FlowControlHandler());
               if (tcpHelper.isSSL()) {
                 SSLEngine engine = tcpHelper.getSSLContext().createSSLEngine();
                 engine.setUseClientMode(false);
@@ -693,7 +693,8 @@ public class DefaultHttpServer implements HttpServer, Closeable {
           }
         };
 
-        final DefaultServerWebSocket ws = new DefaultServerWebSocket(vertx, theURI.getPath(), new HttpHeadersAdapter(request.headers()), wsConn, connectRunnable);
+        final DefaultServerWebSocket ws = new DefaultServerWebSocket(vertx, theURI.getPath(),
+            theURI.getQuery(), new HttpHeadersAdapter(request.headers()), wsConn, connectRunnable);
         wsConn.handleWebsocketConnect(ws);
         if (ws.isRejected()) {
           if (firstHandler == null) {

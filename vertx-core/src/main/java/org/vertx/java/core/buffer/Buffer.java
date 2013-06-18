@@ -19,6 +19,7 @@ package org.vertx.java.core.buffer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
+import org.vertx.java.core.buffer.impl.UnreleasableByteBuf;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -37,6 +38,7 @@ import java.nio.charset.Charset;
  * Data can be read from a buffer by invoking methods which take the form {@code getXXX}. These methods take a parameter
  * representing the position in the Buffer from where to read data.<p>
  * Once a buffer has been written to a socket or other write stream, the same buffer instance can't be written again to another WriteStream.<p>
+ * Instances of this class are not thread-safe.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

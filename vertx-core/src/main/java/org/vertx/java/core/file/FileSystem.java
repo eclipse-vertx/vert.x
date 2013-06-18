@@ -23,11 +23,11 @@ import org.vertx.java.core.buffer.Buffer;
 /**
  * Contains a broad set of operations for manipulating files.<p>
  * An asynchronous and a synchronous version of each operation is provided.<p>
- * The asynchronous versions take an {@code AsynchronousResultHandler} which is
- * called when the operation completes or an error occurs.<p>
+ * The asynchronous versions take a handler which is called when the operation completes or an error occurs.<p>
  * The synchronous versions return the results, or throw exceptions directly.<p>
  * It is highly recommended the asynchronous versions are used unless you are sure the operation
- * will not block for a significant period of time<p>
+ * will not block for a significant period of time.<p>
+ * Instances of FileSystem are thread-safe.<p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface FileSystem {

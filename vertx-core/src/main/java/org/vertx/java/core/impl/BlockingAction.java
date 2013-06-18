@@ -42,7 +42,7 @@ public abstract class BlockingAction<T>  {
    * Run the blocking action using a thread from the worker pool.
    */
   public void run() {
-    context = vertx.getOrAssignContext();
+    context = vertx.getOrCreateContext();
 
     Runnable runner = new Runnable() {
       public void run() {

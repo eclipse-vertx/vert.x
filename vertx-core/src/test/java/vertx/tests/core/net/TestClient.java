@@ -25,6 +25,7 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.streams.Pump;
 import org.vertx.java.testframework.TestClientBase;
 import org.vertx.java.testframework.TestUtils;
 import vertx.tests.core.http.TLSTestParams;
@@ -782,6 +783,45 @@ public class TestClient extends TestClientBase {
     }
   }
 
+  public void testWriteSameBufferMoreThanOnce() throws Exception {
+    vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
+      @Override
+      public void handle(NetSocket socket) {
+        final Buffer received = new Buffer();
+        socket.dataHandler(new Handler<Buffer>() {
+          @Override
+          public void handle(Buffer buff) {
+            received.appendBuffer(buff);
+            System.out.println("Received is now " + buff.toString());
+            if (received.toString().equals("foofoo")) {
+              tu.testComplete();
+            }
+          }
+        });
+      }
+    }).listen(1234,  new AsyncResultHandler<NetServer>() {
+      @Override
+      public void handle(AsyncResult<NetServer> ar) {
+        if (ar.succeeded()) {
+          vertx.createNetClient().connect(1234, new AsyncResultHandler<NetSocket>() {
+            @Override
+            public void handle(AsyncResult<NetSocket> result) {
+              NetSocket socket = result.result();
+// To demonstrate the issue here try sending the same buffer more than once
+//              Buffer buff = new Buffer("foo");
+//              socket.write(buff);
+//              socket.write(buff);
+              socket.write(new Buffer("foo"));
+              socket.write(new Buffer("foo"));
+            }
+          });
+        } else {
+          ar.cause().printStackTrace();
+        }
+      }
+   });
+  }
+
   public void testRemoteAddress() throws Exception {
     vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
       @Override
@@ -807,7 +847,7 @@ public class TestClient extends TestClientBase {
           ar.cause().printStackTrace();
         }
       }
-   });
+    });
   }
 
   void setHandlers(final NetSocket sock) {

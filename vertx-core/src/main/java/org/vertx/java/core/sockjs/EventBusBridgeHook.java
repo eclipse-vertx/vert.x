@@ -2,6 +2,9 @@ package org.vertx.java.core.sockjs;
 
 import org.vertx.java.core.json.JsonObject;
 
+/**
+ * A hook that you can use to receive various events on the EventBusBridge.<p>
+ */
 public interface EventBusBridgeHook {
 
   /**

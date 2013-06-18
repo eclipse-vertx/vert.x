@@ -19,14 +19,13 @@ package vertx.tests.core.websockets;
 import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
+import org.vertx.java.core.impl.CaseInsensitiveMultiMap;
 import org.vertx.java.core.json.impl.Base64;
 import org.vertx.java.core.net.NetSocket;
-import org.vertx.java.core.streams.Pump;
 import org.vertx.java.testframework.TestClientBase;
 import org.vertx.java.testframework.TestUtils;
 
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -177,11 +176,13 @@ public class WebsocketsTestClient extends TestClientBase {
   private void testWS(final boolean binary, final WebSocketVersion version) throws Exception {
 
     final String path = "/some/path";
+    final String query = "foo=bar&wibble=eek";
 
     server = vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
         tu.checkThread();
         tu.azzert(path.equals(ws.path()));
+        tu.azzert(query.equals(ws.query()));
 
         ws.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
@@ -200,7 +201,7 @@ public class WebsocketsTestClient extends TestClientBase {
         final int bsize = 100;
         final int sends = 10;
 
-        client.connectWebsocket(path, version, new Handler<WebSocket>() {
+        client.connectWebsocket(path + "?" + query, version, new Handler<WebSocket>() {
           public void handle(final WebSocket ws) {
             tu.checkThread();
             final Buffer received = new Buffer();

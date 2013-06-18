@@ -50,6 +50,8 @@ import org.vertx.java.core.json.JsonObject;
  * You can register multiple applications with the same SockJSServer, each using different path prefixes, each
  * application will have its own handler, and configuration.<p>
  *
+ * Instances of this class are not thread-safe.<p>
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface SockJSServer {

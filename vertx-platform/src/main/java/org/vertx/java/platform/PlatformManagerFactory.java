@@ -1,4 +1,4 @@
-package org.vertx.java.platform;/*
+/*
  * Copyright 2013 Red Hat, Inc.
  *
  * Red Hat licenses this file to you under the Apache License, version 2.0
@@ -13,9 +13,16 @@ package org.vertx.java.platform;/*
  * License for the specific language governing permissions and limitations
  * under the License.
  *
- * @author <a href="http://tfox.org">Tim Fox</a>
  */
+package org.vertx.java.platform;
 
+/**
+ *
+ * Factory for creating PlatformManager instances. Use this when embedding the Vert.x platform.<p>
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ *
+ */
 public interface PlatformManagerFactory {
 
   /**

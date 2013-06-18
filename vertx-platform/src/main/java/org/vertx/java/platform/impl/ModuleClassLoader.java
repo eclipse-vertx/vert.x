@@ -31,10 +31,12 @@ public class ModuleClassLoader extends URLClassLoader {
 
   private final Set<ModuleReference> parents = new ConcurrentHashSet<>();
   private final ClassLoader platformClassLoader;
+  private boolean loadResourcesFromTCCL = false;
 
-  public ModuleClassLoader(ClassLoader platformClassLoader, URL[] classpath) {
+  public ModuleClassLoader(ClassLoader platformClassLoader, URL[] classpath, boolean loadResourcesFromTCCL) {
     super(classpath);
     this.platformClassLoader = platformClassLoader;
+    this.loadResourcesFromTCCL = loadResourcesFromTCCL;
   }
 
   public void addParent(ModuleReference parent) {
@@ -55,11 +57,27 @@ public class ModuleClassLoader extends URLClassLoader {
   @Override
   protected synchronized Class<?> loadClass(String name, boolean resolve)
       throws ClassNotFoundException {
-    Class<?> c = doLoadClass(name);
-    if (c == null) {
-      // If we can't load class from this classloader or any of our parents (recursively) then we try the
-      // platform classloader
+
+    // We always try with the platform classloader first
+    // This is important when running tests in an IDE where we load the module classes from the platform classpath
+    // not the module classpath
+    // If those classes are loaded from the platform cp and they reference other classes which are normally in the
+    // module, but also exist on the platform cp, then they will get loaded from the platform cp too.
+    // You can then get in a situation where two versions of the classes are present - one loaded from the pcl
+    // and the other from the mcl
+    // An example would be the class org.vertx.groovy.platform.Verticle which is in the groovy lang module but also
+    // present on the pcl during IDE work.
+
+
+    Class<?> c;
+    try {
       c = platformClassLoader.loadClass(name);
+    } catch (ClassNotFoundException e) {
+      // And then we try this class loader
+      c = doLoadClass(name);
+      if (c == null) {
+        throw new ClassNotFoundException(name);
+      }
     }
     if (resolve) {
       resolveClass(c);
@@ -129,6 +147,10 @@ public class ModuleClassLoader extends URLClassLoader {
 
   @Override
   public URL getResource(String name) {
+    return doGetResource(name, true);
+  }
+
+  private URL doGetResource(String name, boolean considerTCCL) {
     incRecurseDepth();
     try {
       // First try with this class loader
@@ -137,16 +159,36 @@ public class ModuleClassLoader extends URLClassLoader {
         // Detect circular hierarchy
         Set<ModuleClassLoader> walked = getWalked();
         walked.add(this);
+
         //Now try with the parents
         for (ModuleReference parent: parents) {
           checkAlreadyWalked(walked, parent);
-          url = parent.mcl.getResource(name);
+          url = parent.mcl.doGetResource(name, considerTCCL);
           if (url != null) {
             return url;
           }
         }
+
         walked.remove(this);
-        // If got here then none of the parents know about it, so try the platform class loader
+
+        // There's now a workaround due to dodgy classloading in Jython
+        // https://github.com/vert-x/mod-lang-jython/issues/7
+        // It seems that Jython doesn't always ask the correct classloader to load resources from modules
+        // to workaround this we can, if the resource is not found, and the TCCL is different from this classloader
+        // to ask the TCCL to load the class - the TCCL should always be set to the moduleclassloader of the actual
+        // module doing the import
+        if (considerTCCL && loadResourcesFromTCCL) {
+          ModuleClassLoader tccl = (ModuleClassLoader)Thread.currentThread().getContextClassLoader();
+          if (tccl != this) {
+            // Call with considerTCCL = false to prevent infinite recursion
+            url = tccl.doGetResource(name, false);
+            if (url != null) {
+              return url;
+            }
+          }
+        }
+
+        // Finally try the platform class loader
         url = platformClassLoader.getResource(name);
       }
       return url;

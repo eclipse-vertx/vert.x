@@ -41,7 +41,9 @@ import org.vertx.java.core.buffer.Buffer;
  * all be fixed size (of potentially different sizes), followed by some delimited records, followed by more fixed
  * size records.<p>
  * Instances of this class can't currently be used for protocols where the text is encoded with something other than
- * a 1-1 byte-char mapping. TODO extend this class to cope with arbitrary character encodings<p>
+ * a 1-1 byte-char mapping.<p>
+ *
+ * Instances of this class are not thread-safe.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

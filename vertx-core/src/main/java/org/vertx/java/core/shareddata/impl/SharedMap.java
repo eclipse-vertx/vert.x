@@ -18,6 +18,7 @@ package org.vertx.java.core.shareddata.impl;
 
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.shareddata.ConcurrentSharedMap;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,7 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class SharedMap<K, V> implements ConcurrentMap<K, V> {
+public class SharedMap<K, V> implements ConcurrentSharedMap<K, V> {
 
   private static final Logger log = LoggerFactory.getLogger(SharedMap.class);
 

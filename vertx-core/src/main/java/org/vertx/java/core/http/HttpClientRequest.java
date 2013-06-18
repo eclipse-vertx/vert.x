@@ -36,7 +36,6 @@ import org.vertx.java.core.streams.WriteStream;
  * This class supports both chunked and non-chunked HTTP.<p>
  * It implements {@link WriteStream} so it can be used with
  * {@link org.vertx.java.core.streams.Pump} to pump data with flow control.<p>
- * Instances of this class are not thread-safe<p>
  * An example of using this class is as follows:
  * <p>
  * <pre>
@@ -54,6 +53,7 @@ import org.vertx.java.core.streams.WriteStream;
  *     .end();
  *
  * </pre>
+ * Instances of HttpClientRequest are not thread-safe
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

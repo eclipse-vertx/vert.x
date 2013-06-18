@@ -104,12 +104,11 @@ public class Starter {
       public void handle(AsyncResult<T> res) {
         if (res.failed()) {
           Throwable cause = res.cause();
-          cause.printStackTrace();
           if (cause instanceof VertxException) {
             VertxException ve = (VertxException)cause;
-            log.error(ve.getMessage(), ve);
+            log.error(ve.getMessage());
             if (ve.getCause() != null) {
-              log.error(ve.getMessage(), ve);
+              log.error(ve.getCause());
             }
           } else {
             log.error(cause);
@@ -271,7 +270,6 @@ public class Starter {
     if (zip) {
       mgr.deployModuleFromZip(main, conf, instances, createLoggingHandler("Successfully deployed module from zip", doneHandler));
     } else if (module) {
-      System.out.println("Has classpath: " + hasClasspath);
       if (hasClasspath) {
         mgr.deployModuleFromClasspath(main, conf, instances, classpath, createLoggingHandler("Successfully deployed module", doneHandler));
       } else {
@@ -396,7 +394,6 @@ public class Starter {
 "                               Defaults to '.' (current directory).            \n" +
 "        -instances <instances> specifies how many instances of the verticle    \n" +
 "                               will be deployed. Defaults to 1                 \n" +
-"                               Default is vert-x.github.com/vertx-mods         \n" +
 "        -worker                if specified then the verticle is a worker      \n" +
 "                               verticle.                                       \n" +
 "        -includes <mod_list>   optional comma separated list of modules        \n" +
@@ -423,12 +420,12 @@ public class Starter {
 "                               which represents the configuration.             \n" +
 "        -instances <instances> specifies how many instances of the verticle    \n" +
 "                               will be deployed. Defaults to 1                 \n" +
-"                               Default is vert-x.github.com/vertx-mods         \n" +
 "        -cluster               if specified then the vert.x instance will form \n" +
 "                               a cluster with any other vert.x instances on    \n" +
 "                               the network.                                    \n" +
 "        -cluster-port          port to use for cluster communication.          \n" +
-"                               Default is 25500.                               \n" +
+"                               Default is 0 which means chose a spare          \n" +
+"                               random port.                                    \n" +
 "        -cluster-host          host to bind to for cluster communication.      \n" +
 "                               If this is not specified vert.x will attempt    \n" +
 "                               to choose one from the available interfaces.    \n" +

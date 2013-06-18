@@ -28,6 +28,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+import io.netty.util.concurrent.GlobalEventExecutor;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
@@ -69,7 +70,7 @@ public class DefaultNetServer implements NetServer, Closeable {
 
   public DefaultNetServer(VertxInternal vertx) {
     this.vertx = vertx;
-    actualCtx = vertx.getOrAssignContext();
+    actualCtx = vertx.getOrCreateContext();
     actualCtx.addCloseHook(this);
     tcpHelper.setReuseAddress(true);
   }
@@ -109,7 +110,7 @@ public class DefaultNetServer implements NetServer, Closeable {
       id = new ServerID(port, host);
       DefaultNetServer shared = vertx.sharedNetServers().get(id);
       if (shared == null || port == 0) { // Wildcard port will imply a new actual server each time
-        serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels");
+        serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
 
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(availableWorkers);
@@ -121,7 +122,6 @@ public class DefaultNetServer implements NetServer, Closeable {
           protected void initChannel(Channel ch) throws Exception {
             ChannelPipeline pipeline = ch.pipeline();
             pipeline.addLast("exceptionDispatcher", EXCEPTION_DISPATCH_HANDLER);
-            pipeline.addLast("flowControl", new FlowControlHandler());
             if (tcpHelper.isSSL()) {
               SSLEngine engine = tcpHelper.getSSLContext().createSSLEngine();
               engine.setUseClientMode(false);

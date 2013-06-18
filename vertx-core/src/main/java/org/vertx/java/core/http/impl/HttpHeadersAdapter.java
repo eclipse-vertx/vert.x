@@ -77,6 +77,22 @@ public class HttpHeadersAdapter implements MultiMap {
   }
 
   @Override
+  public MultiMap add(MultiMap headers) {
+    for (Map.Entry<String, String> entry: headers.entries()) {
+      add(entry.getKey(), entry.getValue());
+    }
+    return this;
+  }
+
+  @Override
+  public MultiMap add(Map<String, String> map) {
+    for (Map.Entry<String, String> entry: map.entrySet()) {
+      add(entry.getKey(), entry.getValue());
+    }
+    return this;
+  }
+
+  @Override
   public MultiMap set(String name, String value) {
     headers.set(name, value);
     return this;

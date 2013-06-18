@@ -16,7 +16,6 @@
 
 package org.vertx.java.tests.core.eventbus;
 
-import org.junit.Test;
 import vertx.tests.core.eventbus.ClusteredEchoClient;
 import vertx.tests.core.eventbus.ClusteredEchoPeer;
 
