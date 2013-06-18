@@ -429,6 +429,11 @@ public class JavaNetTest extends TestBase {
     startTest(getMethodName(), false);
   }
 
+  @Test
+  public void testWriteSameBufferMoreThanOnce() throws Exception {
+    startTest(getMethodName());
+  }
+
 
 }
 

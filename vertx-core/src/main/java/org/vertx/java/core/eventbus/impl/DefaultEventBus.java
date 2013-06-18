@@ -419,7 +419,7 @@ public class DefaultEventBus implements EventBus {
               BaseMessage received = MessageFactory.read(buff);
               if (received.type() == MessageFactory.TYPE_PING) {
                 // Send back a pong - a byte will do
-                socket.write(PONG);
+                socket.write(new Buffer(new byte[] { (byte)1 }));
               } else {
                 receiveMessage(received);
               }
