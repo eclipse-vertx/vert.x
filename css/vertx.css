@@ -1,21 +1,21 @@
 body {
   padding-top: 60px;
   padding-bottom: 40px;
-  background-color: #000000;
+  background-color: #FFFFFF;
 }
 
 .title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 200;
-  color: #666600;
+  color: #33A098;
 }
 
 .highlight_title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 200;
-  color: #666600;
+  color: #33A098;
 }
 
 .feat_hilights {
-  color: #666600;
+  color: #33A098;
 }

@@ -8,25 +8,27 @@ a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, Calif
 
 # Writing Verticles
 
-We previously discussed how a verticle is the unit of deployment in vert.x. Let's look in more detail about how to write a verticle.
+As was described in the [main manual](manual.html#verticle), a verticle is the execution unit of Vert.x.
+
+To recap, Vert.x is a container which executed packages of code called Verticles, and it ensures that the code in the verticle is never executed concurrently by more than one thread. You can write your verticles in any of the languages that Vert.x supports, and Vert.x supports running many verticle instances concurrently in the same Vert.x instance.
+
+All the code you write in a Vert.x application runs inside a Verticle instance.
+
+For simple prototyping and trivial tasks you can write raw verticles and run them directly on the command line, but in most cases you will always wrap your verticles inside Vert.x [modules](mods_manual.html).
+
+For now, let's try writing a simple raw verticle.
 
 As an example we'll write a simple TCP echo server. The server just accepts connections and any data received by it is echoed back on the connection.
 
 Copy the following into a text editor and save it as `server.js`
 
-    load('vertx.js')
+    var vertx = require('vertx')
 
-    var server = vertx.createNetServer();
-
-    server.connectHandler(function(sock) {
-      new vertx.Pump(sock, sock).start();
-    }).listen(1234, 'localhost');
-
-    function vertxStop() {
-      server.close();
-    }
+    vertx.createNetServer().connectHandler(function(sock) {
+        new vertx.Pump(sock, sock).start();
+    }).listen(1234);
     
-Now, go to the directory where you saved the file and type
+Now run it:
 
     vertx run server.js
     
@@ -34,39 +36,114 @@ The server will now be running. Connect to it using telnet:
 
     telnet localhost 1234
     
-And notice how data you send (and hit enter) is echoed back to you.           
-
+And notice how data you send (and hit enter) is echoed back to you. 
+       
 Congratulations! You've written your first verticle.
-        
-## Loading other scripts.
 
-To load other scripts from within your verticle you use the `load` function. The argument to `load` is the name of the script you want to load. You can use `load` to load any other scripts in your verticle, or to load system scripts such as `vertx.js` which are always available to verticles.
+A JavaScript verticle is simply a JavaScript script that is executed when the verticle is deployed
 
-If you want to access the vert.x core API from within your verticle (which you almost certainly want to do), you need to call `load('vertx.js')` at the top of your script. Normally this will be the first thing at the top of your verticle main. `vert.js` is just the name of the script that contains the core API.
+In the rest of this manual we'll assume the code snippets are running inside a verticle.
+
 
 ## Verticle clean-up
 
-Servers, clients and event bus handlers will be automatically closed when the verticles is stopped, however if you need to provide any custom clean-up code when the verticle is stopped you can provide a `vertxStop` top-level function. Vert.x will then call this when the verticle is stopped. 
+Servers, clients, event bus handlers and timers will be automatically closed / cancelled when the verticle is undeployed.
+
+However, if you have any other clean-up logic that you want to execute when the verticle is stopped, you can implement a function called `vertxStop` at the top level of your verticle script which will be called when the verticle is undeployed. For example:
+
+    var vertx = require('vertx');
+    var console = require('vertx/console');
+
+    vertx.createNetServer().connectHandler(function(sock) {
+        new vertx.Pump(sock, sock).start();
+    }).listen(1234);
+
+    function vertxStop() {
+       console.log('Verticle has been undeployed');
+    }
+
+## The Vert.x APIs
+
+Vert.x implements the APIs in JavaScript as [CommonJS modules](http://wiki.commonjs.org/wiki/Modules/1.1)
+
+CommonJS modules are executed in their own scope and cleanly export an object for you to use.
+
+You get a reference to the object exported by using the `require()` method. This method takes the name of the module as a parameter, and returns the API object.
+
+Most of the Vert.x API modules are namespaced under the 'vertx' namespace - this is to avoid clashes with other CommonJS modules with the same name, e.g. Node.js modules.
+
+### The Core API
+
+The core API is used to do most things in Vert.x including TCP, HTTP, file system access, event bus, timers etc.
+
+You get a reference to the entire Core API object by calling:
+
+    var vertx = require('vertx');
+
+If you only want a part of the core API, e.g. the event bus you can just require that part, for example:
+
+    var eventBus = require('vertx/event_bus');
+
+### The Container API
+
+This represents the Verticle's view of the container in which it is running.
+
+The container object contains methods for deploying and undeploying verticle and modules, and also allows config, environment variables and a logger to be accessed.
+
+To get a reference to the container object you call:
+
+    var container = require('vertx/container');
+
+## The console
+
+If you want to log stuff to the console, you need to require the console object:
+
+    var console = require('vertx/console');
+
+    console.log("hello world!);
+
+## Loading other scripts in the current scope
+
+   To load and execute another JavaScript file in the current scope, you can use the `load` function:
+
+   load("somescript.js");
+
+   foo(); // Call a function defined in the script
+
         
 ## Getting Configuration in a Verticle
 
-If JSON configuration has been passed when deploying a verticle from either the command line using `vertx run` or `vertx deploy` and specifying a configuration file, or when deploying programmatically, that configuration is available to the verticle in the `vertx.config` variable. For example:
+You can pass configuration to a module or verticle from the command line using the `-conf` option, for example:
 
-    var config = vertx.config;
+    vertx runmod com.mycompany~my-mod~1.0 -conf myconf.json
+
+or for a raw verticle
+
+    vertx run foo.js -conf myconf.json
+
+The argument to `-conf` is the name of a text file containing a valid JSON object.
+
+That configuration is available inside your verticle in the `config` property of the `container` object
+
+    var container = require('vertx/container');
+    var console = require('vertx/console');
+
+    var config = container.config;
     
-    stdout.println("Config is " + JSON.stringify(config));
+    console.log('config is ' + JSON.stringify(config));
     
-The config returned is a JSON object. You can use this object to configure the verticle. Allowing verticles to be configured in a consistent way like this allows configuration to be easily passed to them irrespective of the language.
+Allowing verticles to be configured in a consistent way using JSON allows configuration to be easily passed to them irrespective of the language that deploys the verticle.
 
 ## Logging from a Verticle
 
-Each verticle is given its own logger. :
+Each verticle is given its own logger. Yuu get a reference to it from the 'logger' property of the 'container' object:
 
-    var logger = vertx.logger;
+    var container = require('vertx/container');
+    var logger = container.logger;
     
     logger.info("I am logging something");
     
-The logger has the functions:
+The logger has the following methods:
 
 * trace
 * debug
@@ -79,57 +156,92 @@ Which have the normal meanings you would expect.
 
 The log files by default go in a file called `vertx.log` in the system temp directory. On my Linux box this is `\tmp`.
 
-For more information on configuring logging, please see the main manual.
+For more information on configuring logging, please see the [main manual](manual.html#logging).
 
 ## Accessing environment variables from a Verticle
 
-You can access environment variables from a Verticle with the variable `vertx.env`.
+You can access a hash of environment variables from a Verticle with the `env` property on the `container` object.
 
-## stdout and stderr in a Verticle
+    var container = require('vertx/container');
+    var sockColour = container.env['GERBIL_SOCKS'];
 
-The variables `stdout` and `stderr` are injected into all verticles. Unsurprisingly, you use these to print to stdout and stderr.
+## Causing the container to exit
 
-    stdout.println("Hello from the verticle");
+You can call the `exit()` function of the container to cause the Vert.x instance to make a clean shutdown.
+
+    var container = require('vertx/container');
+    container.exit(); // Bye bye!
    
 # Deploying and Undeploying Verticles Programmatically
 
-You can deploy and undeploy verticles programmatically from inside another verticle. Any verticles deployed programmatically inherit the path of the parent verticle. 
+You can deploy and undeploy verticles programmatically from inside another verticle. Any verticles deployed this way will be able to see resources (classes, scripts, other files) of the main verticle.
 
 ## Deploying a simple verticle
 
-To deploy a verticle programmatically call the function `vertx.deployVerticle`. The return value of `vertx.deployVerticle` is the unique id of the deployment, which can be used later to undeploy the verticle.
+To deploy a verticle programmatically call the function `deployVerticle` on the `container` variable. 
 
 To deploy a single instance of a verticle :
 
-    vertx.deployVerticle('my_verticle.js');  
+    container.deployVerticle(main);    
+    
+Where `main` is the name of the Verticle (i.e. the name of the script or FQCN of the class).
+
+See the chapter on ["running Vert.x"](manual.html#running-vertx) in the main manual for a description of what a main is.
+
+## Deploying Worker Verticles
+
+The `deployVerticle` method deploys standard (non worker) verticles. If you want to deploy worker verticles use the `deployWorkerVerticle` method. This method takes the same parameters as `deployVerticle` with the same meanings.
     
 ## Deploying a module programmatically
 
 You should use `deployModule` to deploy a module, for example:
 
-    container.deployModule("vertx.mailer-v1.0", config);
+    container.deployModule("io.vertx~mod-mailer~2.0.0-beta1", config);
 
-Would deploy an instance of the `vertx.mailer` module with the specified configuration. Please see the modules manual
- for more information about modules.
+Would deploy an instance of the `io.vertx~mod-mailer~2.0.0-beta1` module with the specified configuration. Please see the [modules manual]() for more information about modules.
     
 ## Passing configuration to a verticle programmatically   
   
-JSON configuration can be passed to a verticle that is deployed programmatically. Inside the deployed verticle the configuration is accessed with the `vertx.getConfig` function. For example:
+JSON configuration can be passed to a verticle that is deployed programmatically. Inside the deployed verticle the configuration is accessed with the `config` property. For example:
 
-    var config = { name: 'foo', age: 234 };
-    vertx.deployVerticle('my_verticle.js', config); 
+    var config = {
+        foo: "wibble",
+        bar: false
+    }
+
+    container.deployVerticle("foo.ChildVerticle", config);  // Deploy a Java verticle  
+
+    container.deployVerticle("foo.js", config);  // Deploy a JavaScript verticle
+
+    // etc
+
             
-Then, in `my_verticle.js` you can access the config via `vertx.getConfig` as previously explained.
+Then, in `ChildVerticle` you can access the config via `config()` as previously explained.
     
 ## Using a Verticle to co-ordinate loading of an application
 
 If you have an application that is composed of multiple verticles that all need to be started at application start-up, then you can use another verticle that maintains the application configuration and starts all the other verticles. You can think of this as your application starter verticle.
 
 For example, you could create a verticle `app.js` as follows:
+    
+    // Start the verticles that make up the app 
+
+    var appConfig = vertx.config(); 
+    
+    vertx.deployVerticle("verticle1.js", appConfig.verticle1Config);
+    vertx.deployVerticle("verticle2.js", appConfig.verticle2Config, 5);
+    vertx.deployVerticle("verticle3.js", appConfig.verticle3Config);
+    vertx.deployWorkerVerticle("verticle4.js", appConfig.verticle4Config);
+    vertx.deployWorkerVerticle("verticle5.js", appConfig.verticle5Config, 10);
+
+Then set the `app.js` verticle as the main of your module and then you can start your entire application by simply running:
+
+    vertx runmod com.mycompany~my-mod~1.0 -conf conf.json
+
+Where conf.json is a config file like:
 
     // Application config
-    
-    var appConfig = {
+    {
         verticle1Config: {
             // Config for verticle1
         },
@@ -146,62 +258,67 @@ For example, you could create a verticle `app.js` as follows:
             // Config for verticle5
         }  
     }  
-    
-    // Start the verticles that make up the app  
-    
-    vertx.deployVerticle("verticle1.js", appConfig.verticle1Config);
-    vertx.deployVerticle("verticle2.js", appConfig.verticle2Config, 5);
-    vertx.deployVerticle("verticle3.js", appConfig.verticle3Config);
-    vertx.deployWorkerVerticle("verticle4.js", appConfig.verticle4Config);
-    vertx.deployWorkerVerticle("verticle5.js", appConfig.verticle5Config, 10);
-        
-        
-Then you can start your entire application by simply running:
 
-    vertx run app.js
+If your application is large and actually composed of multiple modules rather than verticles you can use the same technique.
     
-or
-    
-    vertx deploy app.js
-                        
 ## Specifying number of instances
 
-By default, when you deploy a verticle only one instance of the verticle is deployed. If you want more than one instance to be deployed, e.g. so you can scale over your cores better, you can specify the number of instances as follows:
+By default, when you deploy a verticle only one instance of the verticle is deployed. Verticles instances are strictly single threaded so this means you will use at most one core on your server.
 
-    vertx.deployVerticle('my_verticle.js', null, 10);   
+Vert.x scales by deploying many verticle instances concurrently.
+
+If you want more than one instance of a particular verticle or module to be deployed, you can specify the number of instances as follows:
+
+    container.deployVerticle("foo.js", 10);  
+
+Or
+
+    container.deployModule("io.vertx~some-mod~1.0", 10);   
   
-The above example would deploy 10 instances.
+The above examples would deploy 10 instances.
 
 ## Getting Notified when Deployment is complete
 
-The actual verticle deployment is asynchronous and might not complete until some time after the call to `deployVerticle` has returned. If you want to be notified when the verticle has completed being deployed, you can pass a handler as the final argument to `deployVerticle`:
+The actual verticle deployment is asynchronous and might not complete until some time after the call to `deployVerticle` or `deployModule` has returned. If you want to be notified when the verticle has completed being deployed, you can pass a function handler as the final argument to `deployVerticle` or `deployModule`.
 
-    vertx.deployVerticle('my_verticle.js', null, 10, function() {
-        log.info("It's been deployed!");
-    });  
-    
-## Deploying Worker Verticles
+The first argument to the handler is a Java exception object, if an problem occurred, otherwise it's `null`. The second argument is the deployment ID - you will need this if you later wish to undeploy the verticle / module
 
-The `vertx.deployVerticle` method deploys standard (non worker) verticles. If you want to deploy worker verticles use the `vertx.deployWorkerVerticle` function. This function takes the same parameters as `vertx.deployVerticle` with the same meanings.
+    container.deployVerticle("foo.js", function(err, deployID) {
+      if (!err) {
+        console.log("The verticle has been deployed, deployment ID is " + deployID);
+      } else {
+        console.log("Deployment failed! " + err.getMessage());
+      }
+    });
 
-## Undeploying a Verticle
+## Undeploying a Verticle or Module
 
-Any verticles that you deploy programmatically from within a verticle, and all of their children are automatically undeployed when the parent verticle is undeployed, so in most cases you will not need to undeploy a verticle manually, however if you do want to do this, it can be done by calling the function `vertx.undeployVerticle` passing in the deployment id that was returned from the call to `vertx.deployVerticle`
+Any verticles or modules that you deploy programmatically from within a verticle, and all of their children are automatically undeployed when the parent verticle is undeployed, so in many cases you will not need to undeploy a verticle manually, however if you do need to do this, it can be done by calling the function `undeployVerticle` or `undeployModule` passing in the deployment id. 
 
-    var deploymentID = vertx.deployVerticle('my_verticle.js');    
-    
-    vertx.undeployVerticle(deploymentID);    
+    container.undeployVerticle(deploymentID);    
+
+You can also provide a handler to the undeploy method if you want to be informed when undeployment is complete.
+
+# Scaling your application
+
+A verticle instance is almost always single threaded (the only exception is multi-threaded worker verticles which are an advanced feature not intended for normal development), this means a single instance can at most utilise one core of your server.
+
+In order to scale across cores you need to deploy more verticle instances. The exact numbers depend on your application - how many verticles there are and of what type.
+
+You can deploy more verticle instances programmatically or on the command line when deploying your module using the `-instances` command line option.
 
             
 # The Event Bus
 
-The event bus is the nervous system of vert.x.
+The event bus is the nervous system of Vert.x.
 
-It allows verticles to communicate with each other irrespective of what language they are written in, and whether they're in the same vert.x instance, or in a different vert.x instance. It even allows client side JavaScript running in a browser to communicate on the same event bus. (More on that later).
+It allows verticles to communicate with each other irrespective of what language they are written in, and whether they're in the same Vert.x instance, or in a different Vert.x instance.
 
-It creates a distributed polyglot overlay network spanning multiple server nodes and multiple browsers.
+It even allows client side JavaScript running in a browser to communicate on the same event bus. (More on that later).
 
-The event bus API is incredibly simple. It basically involves registering handlers, unregistering handlers and sending messages.
+The event bus forms a large distributed bus spanning multiple server nodes and multiple browsers.
+
+The event bus API is incredibly simple. It basically involves registering handlers, unregistering handlers and sending and publishing messages.
 
 First some theory:
 
@@ -211,7 +328,7 @@ First some theory:
 
 Messages are sent on the event bus to an *address*.
 
-Vert.x doesn't bother with any fancy addressing schemes. In vert.x an address is simply a string, any string is valid. However it is wise to use some kind of scheme, e.g. using periods to demarcate a namespace.
+Vert.x doesn't bother with any fancy addressing schemes. In Vert.x an address is simply a string, any string is valid. However it is wise to use some kind of scheme, e.g. using periods to demarcate a namespace.
 
 Some examples of valid addresses are `europe.news.feed1`, `acme.games.pacman`, `sausages`, and `X`.
 
@@ -225,11 +342,11 @@ Many different handlers from the same or different verticles can be registered a
 
 The event bus supports *publishing* messages. Messages are published to an address. Publishing means delivering the message to all handlers that are registered at that address. This is the familiar *publish/subscribe* messaging pattern.
 
-### Point to point messaging
+### Point to point and Request-Response messaging
 
-The event bus supports *point to point* messaging. Messages are sent to an address. This means a message is delivered to *at most* one of the handlers registered at that address. If there is more than one handler regsitered at the address, one will be chosen using a non-strict round-robin algorithm.
+The event bus supports *point to point* messaging. Messages are sent to an address. Vert.x will then route it to just one of the handlers registered at that address. If there is more than one handler registered at the address, one will be chosen using a non-strict round-robin algorithm.
 
-With point to point messaging, an optional reply handler can be specified when sending the message. When a message is received by a recipient, and has been *processed*, the recipient can optionally decide to reply to the message. If they do so that reply handler will be called.
+With point to point messaging, an optional reply handler can be specified when sending the message. When a message is received by a recipient, and has been handled, the recipient can optionally decide to reply to the message. If they do so that reply handler will be called.
 
 When the reply is received back at the sender, it too can be replied to. This can be repeated ad-infinitum, and allows a dialog to be set-up between two different verticles. This is a common messaging pattern called the *Request-Response* pattern.
 
@@ -241,15 +358,13 @@ If you want to persist your messages you can use a persistent work queue module 
 
 ### Types of messages
 
-Messages that you send on the event bus can be as simple as a string, a number or a boolean. You can also send vert.x buffers or JSON messages.
+Messages that you send on the event bus can be as simple as a string, a number or a boolean. You can also send Vert.x buffers or JSON messages.
 
-It's highly recommended you use JSON messages to communicate between verticles. JSON is easy to create and parse in all the languages that vert.x supports.
+It's highly recommended you use JSON messages to communicate between verticles. JSON is easy to create and parse in all the languages that Vert.x supports.
 
 ## Event Bus API
 
-Let's jump into the API
-
-The eventbus is accessible as the `eventBus` property on the `vertx` instance.
+Let's jump into the API.
 
 ### Registering and Unregistering Handlers
 
@@ -258,7 +373,7 @@ To set a message handler on the address `test.address`, you do the following:
     var eb = vertx.eventBus;
     
     var myHandler = function(message)) {
-      log.info('I received a message ' + message);
+      console.log('I received a message ' + message);
     }
     
     eb.registerHandler('test.address', myHandler);
@@ -268,7 +383,7 @@ It's as simple as that. The handler will then receive any messages sent to that 
 When you register a handler on an address and you're in a cluster it can take some time for the knowledge of that new handler to be propagated across the entire cluster. If you want to be notified when that has completed you can optionally specify another function to the `registerHandler` function as the third argument. This function will then be called once the information has reached all nodes of the cluster. E.g. :
 
     eb.registerHandler('test.address', myHandler, function() {
-        log.info('Yippee! The handler info has been propagated across the cluster');
+        console.log('Yippee! The handler info has been propagated across the cluster');
     });
 
 To unregister a handler it's just as straightforward. You simply call `unregisterHandler` passing in the address and the handler:
@@ -280,22 +395,22 @@ A single handler can be registered multiple times on the same, or different, add
 As with registering, when you unregister a handler and you're in a cluster it can also take some time for the knowledge of that unregistration to be propagated across the entire to cluster. If you want to be notified when that has completed you can optionally specify another function to the registerHandler as the third argument. E.g. :
 
     eb.unregisterHandler('test.address', myHandler, function() {
-        log.info('Yippee! The handler unregister has been propagated across the cluster');
+        console.log('Yippee! The handler unregister has been propagated across the cluster');
     });
     
 If you want your handler to live for the full lifetime of your verticle there is no need to unregister it explicitly - vert.x will automatically unregister any handlers when the verticle is stopped.    
 
 ### Publishing messages
-
+    
 Publishing a message is also trivially easy. Just publish it specifying the address, for example:
 
     eb.publish('test.address', 'hello world');
 
-That message will then be delivered to any handlers registered against the address "test.address".
+That message will then be delivered to all handlers registered against the address "test.address".
 
 ### Sending messages
 
-Sending a message will result in at most one handler registered at the address receiving the message. This is the point to point messaging pattern.
+Sending a message will result in at most one handler registered at the address receiving the message. This is the point to point messaging pattern. The handler is chosen in a non strict round-robin fashion.
 
     eb.send('test.address", 'hello world');
 
@@ -308,7 +423,7 @@ To do this you send a message, and specify a reply handler as the third argument
 The receiver:
 
     var myHandler = function(message, replier) {
-      log.info('I received a message ' + message);
+      console.log('I received a message ' + message);
       
       // Do some stuff
       
@@ -322,7 +437,7 @@ The receiver:
 The sender:
 
     eb.send('test.address', 'This is a message', function(reply) {
-        log.info('I received a reply ' + reply);
+        console.log('I received a reply ' + reply);
     });
     
 It is legal also to send an empty reply or null reply.
@@ -330,7 +445,6 @@ It is legal also to send an empty reply or null reply.
 The replies themselves can also be replied to so you can create a dialog between two different verticles consisting of multiple rounds.
 
 ### Message types
-
 The message you send can be any of the following types:
 
 * number
@@ -365,15 +479,15 @@ Null messages can also be sent:
 
     eb.send('test.address', null);
 
-It's a good convention to have your verticles communicating using JSON.
+It's a good convention to have your verticles communicating using JSON -this is because JSON is easy to generate and parse for all the languages that Vert.x supports.
 
 ## Distributed event bus
 
-To make each vert.x instance on your network participate on the same event bus, start each vert.x instance with the `-cluster` command line switch.
+To make each Vert.x instance on your network participate on the same event bus, start each Vert.x instance with the `-cluster` command line switch.
 
-See the chapter in the main manual on *running vert.x* for more information on this. 
+See the chapter in the main manual on [*running Vert.x*]() for more information on this. 
 
-Once you've done that, any vert.x instances started in cluster mode will merge to form a distributed event bus.   
+Once you've done that, any Vert.x instances started in cluster mode will merge to form a distributed event bus.   
       
 # Shared Data
 
@@ -395,7 +509,7 @@ And then, in a different verticle:
 
     var map = vertx.getMap('demo.mymap');
     
-    log.info('value of some-key is ' + map.get('some-key');
+    console.log('value of some-key is ' + map.get('some-key');
     
 **TODO** More on map API
     
@@ -412,11 +526,7 @@ And then, in a different verticle:
     var set = vertx.getSet('demo.myset');
     
     // Do something with the set    
-        
-**TODO** - More on set API
-
-API - atomic updates etc    
-
+                
 # Buffers
 
 Most data in vert.x is shuffled around using buffers.
@@ -453,7 +563,7 @@ The return value of the `appendXXX` methods is the buffer itself, so these can b
     
     buff.appendInt(123).appendString("hello").appendChar('\n');
     
-    socket.writeBuffer(buff);
+    socket.write(buff);
     
 If you want to append a number as an integer to a buffer you must specify how you want to encode it in the buffer
 
@@ -558,73 +668,70 @@ Or as buffers
 * `length()`. To obtain the length of the buffer. The length of a buffer is the index of the byte in the buffer with the largest index + 1.
 * `copy()`. Copy the entire buffer
 
-See the JavaDoc for more detailed method level documentation.    
-
-
 # Delayed and Periodic Tasks
 
-It's very common in vert.x to want to perform an action after a delay, or periodically.
+It's very common in Vert.x to want to perform an action after a delay, or periodically.
 
 In standard verticles you can't just make the thread sleep to introduce a delay, as that will block the event loop thread.
 
-Instead you use vert.x timers. Timers can be *one-shot* or *periodic*. We'll discuss both
+Instead you use Vert.x timers. Timers can be *one-shot* or *periodic*. We'll discuss both
 
 ## One-shot Timers
 
 A one shot timer calls an event handler after a certain delay, expressed in milliseconds. 
 
-To set a timer to fire once you use the `vertx.setTimer` function passing in the delay and the handler
+To set a timer to fire once you use the `setTimer` method passing in the delay and a handler function
 
-    vertx.setTimer(1000, function() {
-        log.info('And one second later this is printed'); 
+    var timerID = vertx.setTimer(1000, function(timerID) {
+        console.log("And one second later this is printed"); 
     });
-    
-    log.info('First this is printed');
+        
+    console.log("First this is printed");
+
+The return value is a unique timer id which can later be used to cancel the timer. The handler is also passed the timer id.
      
 ## Periodic Timers
 
-You can also set a timer to fire periodically by using the `setPeriodic` function. There will be an initial delay equal to the period. The return value of `setPeriodic` is a unique timer id (number). This can be later used if the timer needs to be cancelled. The argument passed into the timer event handler is also the unique timer id:
+You can also set a timer to fire periodically by using the `setPeriodic` method. There will be an initial delay equal to the period. The return value of `setPeriodic` is a unique timer id (long). This can be later used if the timer needs to be cancelled. The argument passed into the timer event handler is also the unique timer id:
 
-    var id = vertx.setPeriodic(1000, function(id) {
-        log.info('And every second this is printed'); 
+    var timerID = vertx.setPeriodic(1000, function(timerID) {
+        console.log("And every second this is printed"); 
     });
-    
-    log.info('First this is printed');
+
+    console.log("First this is printed");
     
 ## Cancelling timers
 
-To cancel a periodic timer, call the `cancelTimer` function specifying the timer id. For example:
+To cancel a periodic timer, call the `cancelTimer` method specifying the timer id. For example:
 
-    var id = vertx.setPeriodic(1000, function(id) { 
-        log.info('This is not gonna be printed');
+    var timerID = vertx.setPeriodic(1000, function(timerID) {
     });
     
     // And immediately cancel it
     
-    vertx.cancelTimer(id);
+    vertx.cancelTimer(timerID);
     
 Or you can cancel it from inside the event handler. The following example cancels the timer after it has fired 10 times.
 
     var count = 0;
     
     vertx.setPeriodic(1000, function(id) {
-        log.info('In event handler ' + count); 
+        console.log('In event handler ' + count); 
         count++;
         if (count === 10) {
             vertx.cancelTimer(id);
         }
-    });         
-      
-    
+    }); 
+        
 # Writing TCP Servers and Clients
 
-Creating TCP servers and clients is incredibly easy with vert.x.
+Creating TCP servers and clients is very easy with Vert.x.
 
 ## Net Server
 
 ### Creating a Net Server
 
-To create a TCP server you invoke the `createNetServer` function on the `vertx` instance
+To create a TCP server you call the `createNetServer` method on your `vertx` instance.
 
     var server = vertx.createNetServer();
     
@@ -634,24 +741,33 @@ To tell that server to listen for connections we do:
 
     var server = vertx.createNetServer();
 
-    server.listen(1234, 'myhost');
+    server.listen(1234, "myhost");
     
-The first parameter to `listen` is the port. The second parameter is the hostname or ip address. If it is omitted it will default to `0.0.0.0` which means it will listen at all available interfaces.
+The first parameter to `listen` is the port. A wildcard port of `0` can be specified which means a random available port will be chosen to actually listen at. Once the server has completed listening you can then call the `port()` function of the server to find out the real port it is using.
 
+The second parameter is the hostname or ip address. If it is omitted it will default to `0.0.0.0` which means it will listen at all available interfaces.
+
+The actual bind is asynchronous so the server might not actually be listening until some time *after* the call to listen has returned. If you want to be notified when the server is actually listening you can provide a function to the `listen` call. For example:
+
+    server.listen(1234, "myhost", function(err) {
+        if (!err) {
+            console.log("Listen succeeded!");
+        }
+    });
+
+If the listen failed, the `err` parameter will contain a Java exception object.
 
 ### Getting Notified of Incoming Connections
     
-Just having a TCP server listening creates a working server that you can connect to (try it with telnet!), however it's not very useful since it doesn't do anything with the connections.
-
-To be notified when a connection occurs we need to call the `connectHandler` function of the server, passing in a handler. The handler will be called when a connection is made:
+To be notified when a connection occurs we need to call the `connectHandler` method of the server, passing in a function. The function will then be called when a connection is made:
 
     var server = vertx.createNetServer();
 
     server.connectHandler(function(sock) {
-        log.info('A client has connected!');
-    })  
+        console.log("A client has connected!");
+    });
 
-    server.listen(1234, 'localhost');
+    server.listen(1234, "localhost");
     
 That's a bit more interesting. Now it displays 'A client has connected!' every time a client connects.   
 
@@ -660,17 +776,17 @@ The return value of the `connectHandler` method is the server itself, so multipl
     var server = vertx.createNetServer();
 
     server.connectHandler(function(sock) {
-        log.info('A client has connected!');
-    }).listen(1234, 'localhost');
+        console.log("A client has connected!");
+    }).listen(1234, "localhost");
     
 or 
 
     vertx.createNetServer().connectHandler(function(sock) {
-        log.info('A client has connected!');
-    }).listen(1234, 'localhost');
+        console.log("A client has connected!");
+    }).listen(1234, "localhost");
     
     
-This is a common pattern throughout the vert.x API.  
+This is a common pattern throughout the Vert.x API.  
  
 
 ### Closing a Net Server
@@ -679,33 +795,37 @@ To close a net server just call the `close` function.
 
     server.close();
 
-The close is actually asynchronous and might not complete until some time after the `close` function has returned. If you want to be notified when the actual close has completed then you can pass in a handler to the `close` function.
+The close is actually asynchronous and might not complete until some time after the `close` method has returned. If you want to be notified when the actual close has completed then you can pass in a handler to the `close` method.
 
 This handler will then be called when the close has fully completed.
  
-    server.close(function() {
-      log.info('The server is now fully closed.');
-    });
+    server.close(function(err) {
+        if (!err) {
+            console.log("Close succeeded!");
+        }
+    });  
+
+If the listen failed, the `err` parameter will contain a Java exception object.
     
-If you want your net server to last the entire lifetime of your verticle, you don't need to call `close` explicitly, the Vert.x container will automatically close any servers that you created when the verticle is stopped.    
+If you want your net server to last the entire lifetime of your verticle, you don't need to call `close` explicitly, the Vert.x container will automatically close any servers that you created when the verticle is undeployed.    
     
 ### NetServer Properties
 
 NetServer has a set of properties you can set which affect its behaviour. Firstly there are bunch of properties used to tweak the TCP parameters, in most cases you won't need to set these:
 
-* `setTCPNoDelay(tcpNoDelay)` If `tcpNoDelay` is true then [Nagle's Algorithm](http://en.wikipedia.org/wiki/Nagle's_algorithm) is disabled. If false then it is enabled.
+* `tcpNoDelay(tcpNoDelay)` If true then [Nagle's Algorithm](http://en.wikipedia.org/wiki/Nagle's_algorithm) is disabled. If false then it is enabled.
 
-* `setSendBufferSize(size)` Sets the TCP send buffer size in bytes.
+* `sendBufferSize(size)` Sets the TCP send buffer size in bytes.
 
-* `setReceiveBufferSize(size)` Sets the TCP receive buffer size in bytes.
+* `receiveBufferSize(size)` Sets the TCP receive buffer size in bytes.
 
-* `setTCPKeepAlive(keepAlive)` if `keepAlive` is true then [TCP keep alive](http://en.wikipedia.org/wiki/Keepalive#TCP_keepalive) is enabled, if false it is disabled. 
+* `tcpKeepAlive(keepAlive)` if `keepAlive` is true then [TCP keep alive](http://en.wikipedia.org/wiki/Keepalive#TCP_keepalive) is enabled, if false it is disabled. 
 
-* `setReuseAddress(reuse)` if `reuse` is true then addresses in TIME_WAIT state can be reused after they have been closed.
+* `reuseAddress(reuse)` if `reuse` is true then addresses in TIME_WAIT state can be reused after they have been closed.
 
-* `setSoLinger(linger)`
+* `soLinger(linger)`
 
-* `setTrafficClass(trafficClass)`
+* `trafficClass(trafficClass)`
 
 NetServer has a further set of properties which are used to configure SSL. We'll discuss those later on.
 
@@ -726,11 +846,11 @@ To read data from the socket you need to set the `dataHandler` on the socket. Th
     server.connectHandler(function(sock) {
     
         sock.dataHandler(function(buffer) {
-            log.info('I received ' + buffer.length() + ' bytes of data');
+            console.log('I received ' + buffer.length() + ' bytes of data');
         });
       
     }).listen(1234, 'localhost');
-    
+
 #### Writing Data to a Socket
 
 To write data to a socket, you invoke the `write` function. This function can be invoked in a few ways:
@@ -750,14 +870,6 @@ A string and an encoding. In this case the string will encoded using the specifi
     
 The `write` function is asynchronous and always returns immediately after the write has been queued.
 
-The actual write might occur some time later. If you want to be informed when the actual write has happened you can pass in a function as a final argument.
-
-This function will then be invoked when the write has completed:
-
-    sock.write('hello', function() {
-        log.info('It has actually been written');
-    });
-
 Let's put it all together.
 
 Here's an example of a simple TCP echo server which simply writes back (echoes) everything that it receives on the socket:
@@ -771,7 +883,11 @@ Here's an example of a simple TCP echo server which simply writes back (echoes) 
         });
       
     }).listen(1234, 'localhost');
-    
+
+### Socket Remote Address
+
+You can find out the remote address of the socket (i.e. the address of the other side of the TCP IP connection) by calling `remoteAddress()`.
+
 ### Closing a socket
 
 You can close a socket by invoking the `close` method. This will close the underlying TCP connection.
@@ -780,13 +896,12 @@ You can close a socket by invoking the `close` method. This will close the under
 
 If you want to be notified when a socket is closed, you can set the `closedHandler':
 
-
     var server = vertx.createNetServer();
 
     server.connectHandler(function(sock) {
         
         sock.closedHandler(function() {        
-            log.info('The socket is now closed');            
+            console.log('The socket is now closed');            
         });
     });
 
@@ -800,17 +915,29 @@ You can set an exception handler on the socket that will be called if an excepti
 
     server.connectHandler(function(sock) {
         
-        sock.exceptionHandler(function() {        
-            log.error('Oops. Something went wrong');            
+        sock.exceptionHandler(function(ex) {        
+            console.error('Oops. Something went wrong ' + ex.getMessage());            
         });
     });
 
+### Event Bus Write Handler
+
+Every NetSocket automatically registers a handler on the event bus, and when any buffers are received in this handler, it writes them to itself. This enables you to write data to a NetSocket which is potentially in a completely different verticle or even in a different Vert.x instance by sending the buffer to the address of that handler.
+
+The address of the handler is given by the `writeHandlerID()` function.
+
+For example to write some data to the NetSocket from a completely different verticle you could do:
+
+    var writeHandlerID = ... // E.g. retrieve the ID from shared data
+
+    vertx.eventBus.send(writeHandlerID, buffer);
     
 ### Read and Write Streams
 
 NetSocket also can at as a `ReadStream` and a `WriteStream`. This allows flow control to occur on the connection and the connection data to be pumped to and from other object such as HTTP requests and responses, WebSockets and asynchronous files.
 
-This will be discussed in depth in the chapter on streams and pumps.
+This will be discussed in depth in the chapter on [streams and pumps](#flow-control).
+
 
 ## Scaling TCP Servers
 
@@ -818,13 +945,17 @@ A verticle instance is strictly single threaded.
 
 If you create a simple TCP server and deploy a single instance of it then all the handlers for that server are always executed on the same event loop (thread).
 
-This means that if you are running on a server with a lot of cores, and you only have this one instance deployed then you will have at most one core utilised on your server! That's not very good, right?
+This means that if you are running on a server with a lot of cores, and you only have this one instance deployed then you will have at most one core utilised on your server! 
 
-To remedy this you can simply deploy more instances of the verticle in the server, e.g.
+To remedy this you can simply deploy more instances of the module in the server, e.g.
 
-    vertx run echo_server.js -instances 20
+    vertx runmod com.mycompany~my-mod~1.0 -instances 20
+
+Or for a raw verticle
+
+    vertx run foo.MyApp -instances 20
     
-The above would run 20 instances of echo_server.js to a locally running vert.x instance.
+The above would run 20 instances of the module/verticle in the same Vert.x instance.
 
 Once you do this you will find the echo server works functionally identically to before, but, *as if by magic*, all your cores on your server can be utilised and more work can be handled.
 
@@ -836,7 +967,7 @@ When you deploy another server on the same host and port as an existing server i
 
 Instead it internally maintains just a single server, and, as incoming connections arrive it distributes them in a round-robin fashion to any of the connect handlers set by the verticles.
 
-Consequently vert.x TCP servers can scale over available cores while each vert.x verticle instance remains strictly single threaded, and you don't have to do any special tricks like writing load-balancers in order to scale your server on your multi-core machine.
+Consequently Vert.x TCP servers can scale over available cores while each Vert.x verticle instance remains strictly single threaded, and you don't have to do any special tricks like writing load-balancers in order to scale your server on your multi-core machine.
     
 ## NetClient
 
@@ -844,7 +975,7 @@ A NetClient is used to make TCP connections to servers.
 
 ### Creating a Net Client
 
-To create a TCP client you invoke the `createNetClient` function on the `vertx` instance.
+To create a TCP client you call the `createNetClient` method on your `vertx` instance.
 
     var client = vertx.createNetClient();
 
@@ -854,47 +985,33 @@ To actually connect to a server you invoke the `connect` method:
 
     var client = vertx.createNetClient();
     
-    client.connect(1234, 'localhost', function(sock) {
-        log.info('We have connected');
+    client.connect(1234, 'localhost', function(err, sock) {
+        if (!err) {
+            console.log('We have connected');
+        }
     });
     
-The `connect` method takes the port number as the first parameter, followed by the hostname or ip address of the server. The third parameter is a connect handler. This handler will be called when the connection actually occurs.
+The connect method takes the port number as the first parameter, followed by the hostname or ip address of the server. The third parameter is a connect handler. This handler will be called when the connection actually occurs.
 
-The argument passed into the connect handler is an instance of `NetSocket`, exactly the same as what is passed into the server side connect handler. Once given the `NetSocket` you can read and write data from the socket in exactly the same way as you do on the server side.
+The first argument passed into the connect handler is a Java exception which will be null if no error occurred, the second parameter is the `NetSocket` which will be null if an error occurred.
+
+You can read and write data from the socket in exactly the same way as you do on the server side.
 
 You can also close it, set the closed handler, set the exception handler and use it as a `ReadStream` or `WriteStream` exactly the same as the server side `NetSocket`.
 
-### Catching exceptions on the Net Client
-
-You can set an exception handler on the `NetClient`. This will catch any exceptions that occur during connection.
-
-    var client = vertx.createNetClient();
-    
-    client.exceptionHandler(function(ex) {
-      log.info('Cannot connect since the host does not exist!');
-    });
-    
-    client.connect(4242, 'host-that-doesnt-exist', function(sock) {
-      log.info('this won't get called');
-    });
-
-
 ### Configuring Reconnection
 
-A NetClient can be configured to automatically retry connecting or reconnecting to the server in the event that it cannot connect or has lost its connection. This is done by invoking the functions `setReconnectAttempts` and `setReconnectInterval`:
+A NetClient can be configured to automatically retry connecting or reconnecting to the server in the event that it cannot connect or has lost its connection. This is done by invoking the functions `setReconnectAttempts()` and `setReconnectInterval()`:
 
     var client = vertx.createNetClient();
     
-    client.setReconnectAttempts(1000);
+    client.reconnectAttempts(1000);
     
-    client.setReconnectInterval(500);
+    client.reconnectInterval(500);
     
-`ReconnectAttempts` determines how many times the client will try to connect to the server before giving up. A value of `-1` represents an infinite number of times. The default value is `0`. I.e. no reconnection is attempted.
+`reconnectAttempts` determines how many times the client will try to connect to the server before giving up. A value of `-1` represents an infinite number of times. The default value is `0`. I.e. no reconnection is attempted.
 
-`ReconnectInterval` detemines how long, in milliseconds, the client will wait between reconnect attempts. The default value is `1000`.
-
-If an exception handler is set on the client, and reconnect attempts is not equal to `0`. Then the exception handler will not be called until the client gives up reconnecting.
-
+`reconnectInterval` detemines how long, in milliseconds, the client will wait between reconnect attempts. The default value is `1000`.
 
 ### NetClient Properties
 
@@ -908,7 +1025,7 @@ Net servers can also be configured to work with [Transport Layer Security](http:
 
 When a `NetServer` is working as an SSL Server the API of the `NetServer` and `NetSocket` is identical compared to when it working with standard sockets. Getting the server to use SSL is just a matter of configuring the `NetServer` before `listen` is called.
 
-To enabled SSL the function `setSSL(true)` must be called on the Net Server.
+To enabled SSL the function `ssl(true)` must be called on the Net Server.
 
 The server must also be configured with a *key store* and an optional *trust store*.
 
@@ -918,28 +1035,28 @@ The keytool command allows you to create keystores, and import and export certif
 
 The key store should contain the server certificate. This is mandatory - the client will not be able to connect to the server over SSL if the server does not have a certificate.
 
-The key store is configured on the server using the `setKeyStorePath` and `setKeyStorePassword` functions.
+The key store is configured on the server using the `keyStorePath()` and `keyStorePassword()` methods.
 
 The trust store is optional and contains the certificates of any clients it should trust. This is only used if client authentication is required. 
 
 To configure a server to use server certificates only:
 
     var server = vertx.createNetServer().
-                   .setSSL(true)
-                   .setKeyStorePath('/path/to/your/keystore/server-keystore.jks')
-                   .setKeyStorePassword('password');
+                   .ssl(true)
+                   .keyStorePath('/path/to/your/keystore/server-keystore.jks')
+                   .keyStorePassword('password');
     
 Making sure that `server-keystore.jks` contains the server certificate.
 
 To configure a server to also require client certificates:
 
     var server = vertx.createNetServer()
-                   .setSSL(true)
-                   .setKeyStorePath('/path/to/your/keystore/server-keystore.jks')
-                   .setKeyStorePassword('password')
-                   .setTrustStorePath('/path/to/your/truststore/server-truststore.jks')
-                   .setTrustStorePassword('password')
-                   .setClientAuthRequired(true);
+                   .ssl(true)
+                   .keyStorePath('/path/to/your/keystore/server-keystore.jks')
+                   .keyStorePassword('password')
+                   .trustStorePath('/path/to/your/truststore/server-truststore.jks')
+                   .trustStorePassword('password')
+                   .clientAuthRequired(true);
     
 Making sure that `server-truststore.jks` contains the certificates of any clients who the server trusts.
 
@@ -949,46 +1066,45 @@ If `clientAuthRequired` is set to `true` and the client cannot provide a certifi
 
 Net Clients can also be easily configured to use SSL. They have the exact same API when using SSL as when using standard sockets.
 
-To enable SSL on a `NetClient` the function `setSSL(true)` is called.
+To enable SSL on a `NetClient` the function `ssl(true)` is called.
 
-If the `setTrustAll(true)` is invoked on the client, then the client will trust all server certificates. The connection will still be encrypted but this mode is vulnerable to 'man in the middle' attacks. I.e. you can't be sure who you are connecting to. Use this with caution. Default value is `false`.
+If the `trustAll(true)` is invoked on the client, then the client will trust all server certificates. The connection will still be encrypted but this mode is vulnerable to 'man in the middle' attacks. I.e. you can't be sure who you are connecting to. Use this with caution. Default value is `false`.
 
-If `setTrustAll(true)` has not been invoked then a client trust store must be configured and should contain the certificates of the servers that the client trusts.
+If `trustAll` is false then a client trust store must be configured and should contain the certificates of the servers that the client trusts.
 
-The client trust store is just a standard Java key store, the same as the key stores on the server side. The client trust store location is set by using the function `setTrustStorePath` on the `NetClient`. If a server presents a certificate during connection which is not in the client trust store, the connection attempt will not succeed.
+The client trust store is just a standard Java key store, the same as the key stores on the server side. The client trust store location is set by using the function `trustStorePath()` on the `NetClient`. If a server presents a certificate during connection which is not in the client trust store, the connection attempt will not succeed.
 
-If the server requires client authentication then the client must present its own certificate to the server when connecting. This certificate should reside in the client key store. Again it#s just a regular Java key store. The client keystore location is set by using the function `setKeyStorePath` on the `NetClient`. 
+If the server requires client authentication then the client must present its own certificate to the server when connecting. This certificate should reside in the client key store. Again it's just a regular Java key store. The client keystore location is set by using the function `keyStorePath()` on the `NetClient`. 
 
 To configure a client to trust all server certificates (dangerous):
 
     var client = vertx.createNetClient()
-                   .setSSL(true)
-                   .setTrustAll(true);
+                   .ssl(true)
+                   .trustAll(true);
     
 To configure a client to only trust those certificates it has in its trust store:
 
     var client = vertx.createNetClient()
-                   .setSSL(true)
-                   .setTrustStorePath('/path/to/your/client/truststore/client-truststore.jks')
-                   .setTrustStorePassword('password');
+                   .ssl(true)
+                   .trustStorePath('/path/to/your/client/truststore/client-truststore.jks')
+                   .trustStorePassword('password');
                    
 To configure a client to only trust those certificates it has in its trust store, and also to supply a client certificate:
 
     var client = vertx.createNetClient()
-                   .setSSL(true)
-                   .setTrustStorePath('/path/to/your/client/truststore/client-truststore.jks')
-                   .setTrustStorePassword('password')
-                   .setClientAuthRequired(true)
-                   .setKeyStorePath('/path/to/keystore/holding/client/cert/client-keystore.jks')
-                   .setKeyStorePassword('password');
+                   .ssl(true)
+                   .trustStorePath('/path/to/your/client/truststore/client-truststore.jks')
+                   .trustStorePassword('password')
+                   .clientAuthRequired(true)
+                   .keyStorePath('/path/to/keystore/holding/client/cert/client-keystore.jks')
+                   .keyStorePassword('password');
                      
- 
-
+<a id="flow-control"> </a> 
 # Flow Control - Streams and Pumps
 
 There are several objects in vert.x that allow data to be read from and written to in the form of Buffers.
 
-All operations in the vert.x API are non blocking; calls to write data return immediately and writes are internally queued.
+In Vert.x, calls to write data return immediately and writes are internally queued.
 
 It's not hard to see that if you write to an object faster than it can actually write the data to its underlying resource then the write queue could grow without bound - eventually resulting in exhausting available memory.
 
@@ -1015,7 +1131,7 @@ A naive way to do this would be to directly take the data that's been read and i
                 
     }).listen(1234, 'localhost');
     
-There's a problem with the above example: If data is read from the socket faster than it can be written back to the socket, it will build up in the write queue of the AsyncFile, eventually running out of RAM. This might happen, for example if the client at the other end of the socket wasn't reading very fast, effectively putting back-pressure on the connection.
+There's a problem with the above example: If data is read from the socket faster than it can be written back to the socket, it will build up in the write queue of the `NetSocket`, eventually running out of RAM. This might happen, for example if the client at the other end of the socket wasn't reading very fast, effectively putting back-pressure on the connection.
 
 Since `NetSocket` implements `WriteStream`, we can check if the `WriteStream` is full before writing to it:
 
@@ -1096,8 +1212,8 @@ Functions:
 * `dataHandler(handler)`: set a handler which will receive data from the `ReadStream`. As data arrives the handler will be passed a Buffer.
 * `pause()`: pause the handler. When paused no data will be received in the `dataHandler`.
 * `resume()`: resume the handler. The handler will be called if any data arrives.
-* `exceptionHandler(handler)`: Will be called if an exception occurs on the `ReadStream`.
-* `endHandler(handler)`: Will be called when end of stream is reached. This might be when EOF is reached if the `ReadStream` represents a file, or when end of request is reached if it's an HTTP request, or when the connection is closed if it's a TCP socket.
+* `exceptionHandler(handler)`: The handler will be called if an exception occurs on the `ReadStream`.
+* `endHandler(handler)`: The handeler will be called when end of stream is reached. This might be when EOF is reached if the `ReadStream` represents a file, or when end of request is reached if it's an HTTP request, or when the connection is closed if it's a TCP socket.
 
 ## WriteStream
 
@@ -1105,10 +1221,10 @@ Functions:
 
 Functions:
 
-* `writeBuffer(buffer)`: write a Buffer to the `WriteStream`. This method will never block. Writes are queued internally and asynchronously written to the underlying resource.
-* `setWriteQueueMaxSize(size)`: set the number of bytes at which the write queue is considered *full*, and the function `writeQueueFull()` returns `true`. Note that, even if the write queue is considered full, if `writeBuffer` is called the data will still be accepted and queued.
+* `write(buffer)`: write a Buffer to the `WriteStream`. This method will never block. Writes are queued internally and asynchronously written to the underlying resource.
+* `writeQueueMaxSize(size)`: set the number of bytes at which the write queue is considered *full*, and the function `writeQueueFull()` returns `true`. Note that, even if the write queue is considered full, if `write` is called the data will still be accepted and queued.
 * `writeQueueFull()`: returns `true` if the write queue is considered full.
-* `exceptionHandler(handler)`: Will be called if an exception occurs on the `WriteStream`.
+* `exceptionHandler(handler)`: The handler will be called if an exception occurs on the `WriteStream`.
 * `drainHandler(handler)`: The handler will be called if the `WriteStream` is considered no longer full.
 
 ## Pump
@@ -1117,10 +1233,12 @@ Instances of `Pump` have the following methods:
 
 * `start()`: Start the pump.
 * `stop()`: Stops the pump. When the pump starts it is in stopped mode.
-* `setWriteQueueMaxSize()`: This has the same meaning as `setWriteQueueMaxSize` on the `WriteStream`.
-* `getBytesPumped()`: Returns total number of bytes pumped.
+* `writeQueueMaxSize(size)`: This has the same meaning as `writeQueueMaxSize` on the `WriteStream`.
+* `bytesPumped()`: Returns total number of bytes pumped.
 
 A pump can be started and stopped multiple times.
+
+When a pump is first created it is *not* started. You need to call the `start()` method to start it.
 
 # Writing HTTP Servers and Clients
 
@@ -1130,29 +1248,41 @@ Vert.x allows you to easily write full featured, highly performant and scalable 
 
 ### Creating an HTTP Server
 
-To create an HTTP server you invoke the `createHttpServer` function on the `vertx` instance.
+To create an HTTP server you call the `createHttpServer()` function on your `vertx` instance.
 
     var server = vertx.createHttpServer();
     
 ### Start the Server Listening    
     
-To tell that server to listen for incoming requests you use the `listen` method:
+To tell that server to listen for incoming requests you use the `listen` function:
 
     var server = vertx.createHttpServer();
 
-    server.listen(8080, 'myhost');
+    server.listen(8080, "myhost");
     
-The first parameter to `listen` is the port. The second parameter is the hostname or ip address. If the hostname is omitted it will default to `0.0.0.0` which means it will listen at all available interfaces.
+The first parameter to `listen` is the port. 
+
+The second parameter is the hostname or ip address. If it is omitted it will default to `0.0.0.0` which means it will listen at all available interfaces.
+
+The actual bind is asynchronous so the server might not actually be listening until some time *after* the call to listen has returned. If you want to be notified when the server is actually listening you can provide a handler to the `listen` call. For example:
+
+    server.listen(8080, "myhost", function(err) {
+        if (!err) {
+            console.log("Listen succeeded!");
+        }
+    });
+
+If the listen failed a Java exception will be passed into the handler.
 
 
 ### Getting Notified of Incoming Requests
     
-To be notified when a request arrives you need to set a request handler. This is done by calling the `requestHandler` function of the server, passing in the handler:
+To be notified when a request arrives you need to set a request handler. This is done by calling the `requestHandler()` function of the server, passing in the handler:
 
     var server = vertx.createHttpServer();
 
     server.requestHandler(function(request) {
-      log.info('An HTTP request has been received');
+      console.log('An HTTP request has been received');
     })  
 
     server.listen(8080, 'localhost');
@@ -1164,19 +1294,19 @@ Similarly to `NetServer`, the return value of the `requestHandler` method is the
     var server = vertx.createHttpServer();
 
     server.requestHandler(function(request) {
-      log.info('An HTTP request has been received');
+      console.log('An HTTP request has been received');
     }).listen(8080, 'localhost');
     
 Or:
 
     vertx.createHttpServer().requestHandler(function(request) {
-      log.info('An HTTP request has been received');
+      console.log('An HTTP request has been received');
     }).listen(8080, 'localhost');
     
        
 ### Handling HTTP Requests
 
-So far we have seen how to create an 'HttpServer' and be notified of requests. Lets take a look at how to handle the requests and do something useful with them.
+So far we have seen how to create an `HttpServer` and be notified of requests. Lets take a look at how to handle the requests and do something useful with them.
 
 When a request arrives, the request handler is called passing in an instance of `HttpServerRequest`. This object represents the server side HTTP request.
 
@@ -1186,41 +1316,45 @@ It contains functions to get the URI, path, request headers and request paramete
 
 #### Request Method
 
-The request object has a property `method` which is a string representing what HTTP method was requested. Possible values for `method` are: `GET`, `PUT`, `POST`, `DELETE`, `HEAD`, `OPTIONS`, `CONNECT`, `TRACE`, `PATCH`.
+The request object has a method `method()` which returns a string representing what HTTP method was requested. Possible return values for `method()` are: `GET`, `PUT`, `POST`, `DELETE`, `HEAD`, `OPTIONS`, `CONNECT`, `TRACE`, `PATCH`.
+
+#### Request Version
+
+The request object has a method `version()` which returns a string representing the HTTP version.
 
 #### Request URI
 
-The request object has a property `uri` which contains the full URI (Uniform Resource Locator) of the request. For example, if the request URI was:
+The request object has a method `uri()` which returns the full URI (Uniform Resource Locator) of the request. For example, if the request URI was:
 
     /a/b/c/page.html?param1=abc&param2=xyz    
     
-Then `request.uri` would contain the string `/a/b/c/page.html?param1=abc&param2=xyz`.
+Then `request.uri()` would return the string `/a/b/c/page.html?param1=abc&param2=xyz`.
 
-Request URIs can be relative or absolute (with a domain) depending on what the client sent. In many cases they will be relative.
+Request URIs can be relative or absolute (with a domain) depending on what the client sent. In most cases they will be relative.
 
 The request uri contains the value as defined in [Section 5.1.2 of the HTTP specification - Request-URI](http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html)
 
 #### Request Path
 
-The request object has a property `path` which contains the path of the request. For example, if the request URI was:
+The request object has a method `path()` which returns the path of the request. For example, if the request URI was:
 
-    /a/b/c/page.html?param1=abc&param2=xyz    
+    a/b/c/page.html?param1=abc&param2=xyz    
     
-Then `request.path` would contain the string `/a/b/c/page.html`
+Then `request.path()` would return the string `/a/b/c/page.html`
    
 #### Request Query
 
-The request object has a property `query` which contains the query of the request. For example, if the request URI was:
+The request object has a method `query()` which contains the query of the request. For example, if the request URI was:
 
-    /a/b/c/page.html?param1=abc&param2=xyz    
+    a/b/c/page.html?param1=abc&param2=xyz    
     
-Then `request.query` would contain the string `param1=abc&param2=xyz`    
+Then `request.query()` would return the string `param1=abc&param2=xyz`    
         
 #### Request Headers
 
-The request headers are available as the `headers()` function of the request object. The return value is just a JavaScript object (associative array).
+The request headers are available using the `headers()` method on the request object.
 
-Note that the header keys are always lower-cased before being they are returned to you.
+The returned object represents a multi-map of the headers. A MultiMap allows multiple values for the same key, unlike a normal Map.
 
 Here's an example that echoes the headers to the output of the response. Run it and point your browser at `http://localhost:8080` to see the headers.
 
@@ -1229,25 +1363,37 @@ Here's an example that echoes the headers to the output of the response. Run it 
     server.requestHandler(function(request) {
     
       var str = '';
-      for (var k in request.headers()) {
-        str = str.concat(k, ': ', headers[k], '\n');
-      }
+      request.headers().forEach(function(key, value) {
+        str = str.concat(key, ': ', value, '\n');
+      });
       
       request.response.end(str);
       
     }).listen(8080, 'localhost');
-    
+
+
 #### Request params
 
-Similarly to the headers, the request parameters are available as the `params()` function on the request object. Again, this is just a JavaScript object (associative array).
+Similarly to the headers, the request parameters are available using the `params()` method on the request object.   
+
+The returned object is also a MultiMap.  
 
 Request parameters are sent on the request URI, after the path. For example if the URI was:
 
     /page.html?param1=abc&param2=xyz
     
-Then the params hash would be the following JS object:
+Then the params multi-map would contain the following entries:
 
-    { param1: 'abc', param2: 'xyz' }
+    param1: 'abc'
+    param2: 'xyz
+
+#### Remote Address
+
+Use the function `remoteAddress()` to find out the address of the other side of the HTTP connection.
+
+#### Absolute URI
+
+Use the function `absoluteURI()` to return the absolute URI corresponding to the request.
     
 #### Reading Data from the Request Body
 
@@ -1260,7 +1406,7 @@ To receive the body, you set the `dataHandler` on the request object. This will 
     server.requestHandler(function(request) {
     
       request.dataHandler(function(buffer) {
-        log.info('I received ' + buffer.length() + ' bytes');
+        console.log('I received ' + buffer.length() + ' bytes');
       });
       
     }).listen(8080, 'localhost'); 
@@ -1287,7 +1433,7 @@ In many cases, you know the body is not large and you just want to receive it in
       
       request.endHandler(function() {
         // The entire body has now been received
-        log.info('The total body received was ' + body.length() + ' bytes');
+        console.log('The total body received was ' + body.length() + ' bytes');
       });
       
     }).listen(8080, 'localhost');   
@@ -1309,36 +1455,56 @@ Here's an example using `bodyHandler`:
     server.requestHandler(function(request) {
     
       request.bodyHandler(function(body) {
-        log.info('The total body received was ' + body.length() + ' bytes');
+        console.log('The total body received was ' + body.length() + ' bytes');
       });
       
     }).listen(8080, 'localhost');  
     
-Simples, innit?    
+
+#### Handling Multipart Form Uploads
+
+Vert.x understands file uploads submitted from HTML forms in browsers. In order to handle file uploads you should set the `uploadHandler` on the request. The handler will be called once for each upload in the form.
+
+    request.uploadHandler(function(upload) {
+    });
+
+The `HttpServerFileUpload` class implements `ReadStream` so you read the data and stream it to any object that implements `WriteStream` using a Pump, as previously discussed.
+
+You can also stream it directly to disk using the convenience method `streamToFileSystem()`.
+
+    request.uploadHandler(function(upload) {
+        upload.streamToFileSystem("uploads/" + upload.filename());
+    });
+
+#### Handling Multipart Form Attributes
+
+If the request corresponds to an HTML form that was submitted you can use the function `formAttributes` to retrieve a Multi Map of the form attributes. This should only be called after *all* of the request has been read - this is because form attributes are encoded in the request *body* not in the request headers.
+
+    request.endHandler(function() {
+        // The request has been all ready so now we can look at the form attributes
+        var attrs = request.formAttributes();
+        // Do something with them
+    });
+    
     
 ### HTTP Server Responses 
 
-As previously mentioned, the HTTP request object contains a property `response`. This is the HTTP response for the request. You use it to write the response back to the client.
+As previously mentioned, the HTTP request object contains a property `response`. This returns the HTTP response for the request. You use it to write the response back to the client.
 
 ### Setting Status Code and Message
 
-To set the HTTP status code for the response use the `statusCode` property, e.g.
+To set the HTTP status code for the response use the `statusCode()` function, e.g.
 
     var server = vertx.createHttpServer();
 
-    server.requestHandler(function(request) {
+    server.requestHandler(function(req) {
+        request.response.statusCode(777).statusMessage("Too many gerbils").end();       
+    }).listen(8080, "localhost");
     
-        request.response.statusCode = 404;
-        
-        request.response.end();
-      
-    }).listen(8080, 'localhost');  
-    
-You can also use the `statusMessage` property to set the status message. If you do not set the status message a default message will be used.    
+You can also use the `statusMessage()` function to set the status message. If you do not set the status message a default message will be used.    
   
 The default value for `statusCode` is `200`.    
   
-
 #### Writing HTTP responses
 
 To write data to an HTTP response, you invoke the `write` function. This function can be invoked multiple times before the response is ended. It can be invoked in a few ways:
@@ -1350,21 +1516,15 @@ With a single buffer:
     
 A string. In this case the string will encoded using UTF-8 and the result written to the wire.
 
-    request.response.write('hello');    
+    request.response.write("hello");    
     
 A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.     
 
-    request.response.write('hello', 'UTF-16');
+    request.response.write("hello", "UTF-16");
     
 The `write` function is asynchronous and always returns immediately after the write has been queued.
 
-The actual write might complete some time later. If you want to be informed when the actual write has completed you can pass in a function as a final argument. This function will then be invoked when the write has completed:
-
-    request.response.write('hello', function() {
-        log.info('It has actually been written');
-    });  
-    
-If you are just writing a single string or Buffer to the HTTP response you can write it and end the response in a single call to the `end` function.   
+If you are just writing a single string or Buffer to the HTTP response you can write it and end the response in a single call to the `end` method.
 
 The first call to `write` results in the response header being being written to the response.
 
@@ -1386,58 +1546,52 @@ The function can also be called with a string or Buffer in the same way `write` 
 
 #### Closing the underlying connection
 
-You can close the underlying TCP connection of the request by calling the `close` function.
+You can close the underlying TCP connection of the request by calling the `close` method.
 
     request.response.close();
 
 #### Response headers
 
-You can write headers to the response by simply adding them to the headers hash on the response object:
+HTTP response headers can be added to the response by adding them to the multimap returned from the `headers()` method:
 
-    request.response.headers()['Some-Header'] = 'foo';
+    request.response.headers().set("Cheese", "Stilton");
+    request.response.headers().set("Hat colour", "Mauve");
 
-Individual HTTP response headers can also be written using the `putHeader` function. This allows a more fluent API since they can be chained. For example:
+Individual HTTP response headers can also be written using the `putHeader` method. This allows a fluent API since calls to `putHeader` can be chained:
 
-    request.response.putHeader('Some-Header', 'foo').putHeader('Other-Header', 'bar');
-    
-You can also put multiple headers in one go:
-
-    request.response.putAllHeaders({'Some-Header': 'foo', 'Other-Header': 'bar'});    
+    request.response.putHeader("Some-Header", "elephants").putHeader("Pants", "Absent");
     
 Response headers must all be added before any parts of the response body are written.
-
+    
 #### Chunked HTTP Responses and Trailers
 
 Vert.x supports [HTTP Chunked Transfer Encoding](http://en.wikipedia.org/wiki/Chunked_transfer_encoding). This allows the HTTP response body to be written in chunks, and is normally used when a large response body is being streamed to a client, whose size is not known in advance.
 
 You put the HTTP response into chunked mode as follows:
 
-    req.response.setChunked(true);
+    req.response.chunked(true);
     
 Default is non-chunked. When in chunked mode, each call to `response.write(...)` will result in a new HTTP chunk being written out.  
 
-When in chunked mode you can also write HTTP response trailers to the response. These are actually written in the final chunk of the response.
+When in chunked mode you can also write HTTP response trailers to the response. These are actually written in the final chunk of the response.  
 
-As with headers, you can write trailers to the response by simply adding them to the trailers hash on the response object:
+To add trailers to the response, add them to the multimap returned from the `trailers()` method:
 
-    request.response.trailers()['Some-Trailer'] = 'quux';
+    request.response.trailers().set("Philosophy", "Solipsism");
+    request.response.trailers().set("Favourite-Shakin-Stevens-Song", "Behind the Green Door");
 
-Individual HTTP response headers can also be written using the `putTrailer` function. This allows a more fluent API since they can be chained. For example:
+Like headers, individual HTTP response trailers can also be written using the `putTrailer()` method. This allows a fluent API since calls to `putTrailer` can be chained:
 
-    request.response.putTrailer('Some-Trailer', 'foo').putTrailer('Other-Trailer', 'bar');
-    
-You can also put multiple trailers in one go:
-
-    request.response.putAllTrailers({'Some-Trailer': 'foo', 'Other-Trailer': 'bar'});    
+    request.response.putTrailer("Cat-Food", "Whiskas").putTrailer("Eye-Wear", "Monocle");
     
 
 ### Serving files directly from disk
 
 If you were writing a web server, one way to serve a file from disk would be to open it as an `AsyncFile` and pump it to the HTTP response. Or you could load it it one go using the file system API and write that to the HTTP response.
 
-Alternatively, vert.x provides a method which allows you to send serve a file from disk to HTTP response in one operation. Where supported by the underlying operating system this may result in the OS directly transferring bytes from the file to the socket without being copied through userspace at all.
+Alternatively, Vert.x provides a method which allows you to serve a file from disk to an HTTP response in one operation. Where supported by the underlying operating system this may result in the OS directly transferring bytes from the file to the socket without being copied through userspace at all.
 
-Using `sendFile` is usually more efficient for large files, but may be slower than using `readFile` to manually read the file as a buffer and write it directly to the response.
+Using `sendFile` is usually more efficient for large files, but may be slower for small files than using `readFile` to manually read the file as a buffer and write it directly to the response.
 
 To do this use the `sendFile` function on the HTTP response. Here's a simple HTTP web server that serves static files from the local `web` directory:
 
@@ -1445,17 +1599,21 @@ To do this use the `sendFile` function on the HTTP response. Here's a simple HTT
 
     server.requestHandler(function(req) {
       var file = '';
-      if (req.path == '/') {
+      if (req.path() == '/') {
         file = 'index.html';
-      } else if (req.path.indexOf('..') == -1) {
-        file = req.path;
+      } else if (req.path().indexOf('..') == -1) {
+        file = req.path();
       }
       req.response.sendFile('web/' + file);   
     }).listen(8080, 'localhost');
-    
+
+There's also a version of `sendFile` which takes the name of a file to serve if the specified file cannot be found:
+
+    req.response.sendFile("web/" + file, "handler_404.html");  
+
 *Note: If you use `sendFile` while using HTTPS it will copy through userspace, since if the kernel is copying data directly from disk to socket it doesn't give us an opportunity to apply any encryption.*
 
-**If you're going to write web servers using vert.x be careful that users cannot exploit the path to access files outside the directory from which you want to serve them.**
+**If you're going to write web servers using Vert.x be careful that users cannot exploit the path to access files outside the directory from which you want to serve them.**
 
 ### Pumping Responses
 
@@ -1469,36 +1627,36 @@ Here's an example which echoes HttpRequest headers and body back in the HttpResp
       
       req.response.putAllHeaders(req.headers());
       
-      var p = new Pump(req, req.response);
-      p.start();
+      new Pump(req, req.response).start();
       
       req.endHandler(function() { req.response.end(); });
       
     }).listen(8080, 'localhost');
+
     
 ## Writing HTTP Clients
 
 ### Creating an HTTP Client
 
-To create an HTTP client you invoke the `createHttpClient` function on the `vertx` instance.
+To create an HTTP client you call the `createHttpClient` method on your `vertx` instance:
 
     var client = vertx.createHttpClient();
     
-You set the port and hostname (or ip address) that the client will connect to using the `setHost` and `setPort` functions:
+You set the port and hostname (or ip address) that the client will connect to using the `port()` and `host()` functions:
 
     var client = vertx.createHttpClient();
-    client.setPort(8181)
-    client.setHost('foo.com');
+    client.port(8181);
+    client.host("foo.com");
     
 This, of course, can be chained:
 
     var client = vertx.createHttpClient()
-                   .setPort(8181)
-                   .setHost('foo.com');
+        .port(8181)
+        .host("foo.com");
                    
 A single `HTTPClient` always connects to the same host and port. If you want to connect to different servers, create more instances.
 
-The default port is `80` and the default host is `localhost`. So if you don't explicitly set these values that's what the client will attempt to connect to.  
+The default port is `80` and the default host is `localhost`. So if you don't explicitly set these values that's what the client will attempt to connect to.         
 
 ### Pooling and Keep Alive
 
@@ -1507,26 +1665,26 @@ By default the `HTTPClient` pools HTTP connections. As you make requests a conne
 If you do not want connections to be pooled you can call `setKeepAlive` with `false`:
 
     var client = vertx.createHttpClient()
-                   .setPort(8181)
-                   .setHost('foo.com').
-                   .setKeepAlive(false);
+                   .port(8181)
+                   .host("foo.com").
+                   .keepAlive(false);
 
 In this case a new connection will be created for each HTTP request and closed once the response has ended.
 
 You can set the maximum number of connections that the client will pool as follows:
 
     var client = vertx.createHttpClient()
-                   .setPort(8181)
-                   .setHost('foo.com').
-                   .setMaxPoolSize(10);
+                   .port(8181)
+                   .host("foo.com").
+                   .maxPoolSize(10);
                    
 The default value is `1`.         
 
 ### Closing the client
 
-Vert.x will automatically close any clients when the verticle is stopped, but if you want to close it explicitly you can:
+Any HTTP clients created in a verticle are automatically closed for you when the verticle is stopped, however if you want to close it explicitly you can:
 
-    client.close            
+    client.close();             
                          
 ### Making Requests
 
@@ -1534,10 +1692,10 @@ To make a request using the client you invoke one the methods named after the HT
 
 For example, to make a `POST` request:
 
-    var client = vertx.createHttpClient();
+    var client = vertx.createHttpClient().host("foo.com");
     
-    var request = client.post('http://localhost:8080/some-path/', function(resp) {
-        log.info('Got a response, status code: ' + resp.statusCode);
+    var request = client.post("/some-path/", function(resp) {
+        console.log("Got a response: " + resp.statusCode());
     });
     
     request.end();
@@ -1548,33 +1706,36 @@ Legal request methods are: `get`, `put`, `post`, `delete`, `head`, `options`, `c
 
 The general modus operandi is you invoke the appropriate method passing in the request URI as the first parameter, the second parameter is an event handler which will get called when the corresponding response arrives. The response handler is passed the client response object as an argument.
 
-The value specified in the request URI corresponds to the Request-URI as specified in [Section 5.1.2 of the HTTP specification](http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html). In most cases it will be a relative URI.
+The value specified in the request URI corresponds to the Request-URI as specified in [Section 5.1.2 of the HTTP specification](http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html). *In most cases it will be a relative URI*.
 
-*Please note that the domain/port that the client connects to is determined by `setPort` and `setHost`, and is not parsed from the uri.*
+*Please note that the domain/port that the client connects to is determined by `port()` and `host()`, and is not parsed from the uri.*
 
-The return value from the appropriate request method is an `HTTPClientRequest` object. You can use this to add headers to the request, and to write to the request body. The request object implements `WriteStream`.
+The return value from the appropriate request method is the client request object. You can use this to add headers to the request, and to write to the request body. The request object implements `WriteStream`.
 
-Once you have finished with the request you must call the `end` function.
+Once you have finished with the request you must call the `end()` function.
 
-If you don't know the name of the request method in advance there is a general `request` method which takes the HTTP method as a parameter:
+If you don't know the name of the request method in advance there is a general `request` function which takes the HTTP method as a parameter:
 
-    var client = vertx.createHttpClient().setHost('foo.com');
+    var client = vertx.createHttpClient().host("foo.com");
     
-    var request = client.request('POST', '/some-path', function(resp) {
-        log.info('Got a response, status code: ' + resp.statusCode);
+    var request = client.request("POST", "/some-path/", function(resp) {
+        console.log("Got a response: " + resp.statusCode());
     });
     
     request.end();
     
-There is also a method called `getNow` which does the same as `get`, but automatically ends the request. This is useful for simple GETs which don't have a request body:
+There is also a function called `getNow` which does the same as `get`, but automatically ends the request. This is useful for simple GETs which don't have a request body:
 
-    var client = vertx.createHttpClient().setHost('foo.com');
+    var client = vertx.createHttpClient().host("foo.com");
     
-    client.getNow('/some-path', function(resp) {
-        log.info('Got a response, status code: ' + resp.statusCode);
+    client.getNow("/some-path/", function(resp) {
+        console.log("Got a response: " + resp.statusCode());
     });
+    
 
-With `getNow` there is no return value.
+#### Handling exceptions
+
+You can set an exception handler on the `HttpClient` and it will receive all exceptions for the client unless a specific exception handler has been set on a specific request object.
 
 #### Writing to the request body
 
@@ -1589,25 +1750,17 @@ With a single buffer:
     
 A string. In this case the string will encoded using UTF-8 and the result written to the wire.
 
-    request.write('hello');    
+    request.write("hello");    
     
 A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.     
 
-    request.write('hello', 'UTF-16');
+    request.write("hello", "UTF-16");
     
 The `write` function is asynchronous and always returns immediately after the write has been queued. The actual write might complete some time later.
-
-If you want to be informed when the actual write has completed you can pass in a function as a final argument. This function will be invoked when the write has completed:
-
-    request.response.write('hello', function() {
-        log.info('It has actually been written');
-    });  
     
 If you are just writing a single string or Buffer to the HTTP request you can write it and end the request in a single call to the `end` function.   
 
-The first call to `write` results in the request header being being written to the request.
-
-Consequently, if you are not using HTTP chunking then you must set the `Content-Length` header before writing to the request, since it will be too late otherwise. If you are using HTTP chunking you do not have to worry. 
+The first call to `write` will result in the request headers being written to the request. Consequently, if you are not using HTTP chunking then you must set the `Content-Length` header before writing to the request, since it will be too late otherwise. If you are using HTTP chunking you do not have to worry. 
 
 
 #### Ending HTTP requests
@@ -1624,35 +1777,30 @@ The function can also be called with a string or Buffer in the same way `write` 
 
 #### Writing Request Headers
 
-To write headers to the request you can just add them to the headers hash:
+To write headers to the request, add them to the multi-map returned from the `headers()` method:
 
-    var client = vertx.createHttpClient().setHost('foo.com');
+    var client = vertx.createHttpClient().host("foo.com");
     
-    var request = client.post('/some-path', function(resp) {
-        log.info('Got a response, status code: ' + resp.statusCode);
+    var request = client.request("POST", "/some-path/", function(resp) {
+        console.log("Got a response: " + resp.statusCode());
     });
     
-    request.headers()['Some-Header'] = 'Some-Value';
+    request.headers().set("Some-Header", "Some-Value");
     request.end();
     
-Or you can use the `putHeader` method if you prefer a more fluent API:        
+You can also adds them using the `putHeader` method. This enables a more fluent API since calls can be chained, for example:
 
-    client.post('/some-uri', function(resp) {
-        log.info('Got a response, status code: ' + resp.statusCode);
-    }).putHeader('Some-Header', 'Some-Value')
-      .putHeader('Some-Other-Header', 'Some-Other-Value')
-      .end();
+    request.putHeader("Some-Header", "Some-Value").putHeader("Some-Other", "Blah");
+    
+These can all be chained together as per the common Vert.x API pattern:
 
-If you want to put more than one header at the same time, you can instead use the `putAllHeaders` function.
-  
-    client.post('/some-uri', function(resp) {
-        log.info('Got a response, status code: ' + resp.statusCode);
-    }).putAllHeaders({'Some-Header': 'Some-Value',
-                   'Some-Other-Header': 'Some-Other-Value',
-                   'Yet-Another-Header': 'Yet-Another-Value'})
-      .end(); 
-       
-      
+    vertx.createHttpClient().host("foo.com").request("POST", "/some-path/", function(resp) {
+        console.log("Got a response: " + resp.statusCode());
+    }).putHeader("Some-Header", "Some-Value").putHeader("Some-Other", "Blah").end();
+
+#### Request timeouts
+
+You can set a timeout for specific Http Request using the `timeout()` function. If the request does not return any data within the timeout period an exception will be passed to the exception handler (if provided) and the request will be closed.
 
 #### HTTP chunked requests
 
@@ -1660,7 +1808,7 @@ Vert.x supports [HTTP Chunked Transfer Encoding](http://en.wikipedia.org/wiki/Ch
 
 You put the HTTP request into chunked mode as follows:
 
-    request.setChunked(true);
+    request.chunked(true);
     
 Default is non-chunked. When in chunked mode, each call to `request.write(...)` will result in a new HTTP chunk being written out.  
 
@@ -1670,13 +1818,13 @@ Client responses are received as an argument to the response handler that is pas
 
 The response object implements `ReadStream`, so it can be pumped to a `WriteStream` like any other `ReadStream`.
 
-To query the status code of the response use the `statusCode` property. The `statusMessage` property contains the status message. For example:
+To query the status code of the response use the `statusCode()` function. The `statusMessage()` function contains the status message. For example:
 
-    var client = vertx.createHttpClient().setHost('foo.com');
+    var client = vertx.createHttpClient().host("foo.com");
     
-    client.getNow('/some-path', function(resp) {
-      log.info('server returned status code: ' + resp.statusCode);   
-      log.info('server returned status message: ' + resp.statusMessage);   
+    client.getNow("/some-path/", function(resp) {
+        console.log('server returned status code: ' + resp.statusCode());   
+        console.log('server returned status message: ' + resp.statusMessage());   
     });
 
 #### Reading Data from the Response Body
@@ -1688,11 +1836,11 @@ Sometimes an HTTP response contains a request body that we want to read. Like an
 To receive the response body, you set a `dataHandler` on the response object which gets called as parts of the HTTP response arrive. Here's an example:
 
 
-    var client = vertx.createHttpClient().setHost('foo.com');
+    var client = vertx.createHttpClient().host('foo.com');
     
     client.getNow('/some-path', function(resp) {
       resp.dataHandler(function(buffer) {
-        log.info('I received ' + buffer.length() + ' bytes');
+        console.log('I received ' + buffer.length() + ' bytes');
       });    
     });
 
@@ -1702,7 +1850,7 @@ The `dataHandler` can be called multiple times for a single HTTP response.
 
 As with a server request, if you wanted to read the entire response body before doing something with it you could do something like the following:
 
-    var client = vertx.createHttpClient().setHost('foo.com');
+    var client = vertx.createHttpClient().host('foo.com');
     
     client.getNow('/some-path', function(resp) {
       
@@ -1716,7 +1864,7 @@ As with a server request, if you wanted to read the entire response body before 
       
       resp.endHandler(function() {
         // The entire response body has been received
-        log.info('The total body received was ' + body.length() + ' bytes');
+        console.log('The total body received was ' + body.length() + ' bytes');
       });
       
     });
@@ -1733,20 +1881,21 @@ The body handler is called only once when the *entire* response body has been re
 
 Here's an example using `bodyHandler`:
 
-    var client = vertx.createHttpClient().setHost('foo.com');
+    var client = vertx.createHttpClient().host('foo.com');
     
     client.getNow('/some-uri', function(resp) {
       
       resp.bodyHandler(function(body) {
-        log.info('The total body received was ' + body.length() + ' bytes');
+        console.log('The total body received was ' + body.length() + ' bytes');
       });
       
     }); 
-    
-## Pumping Requests and Responses
 
-The HTTP client and server requests and responses all implement either `ReadStream` or `WriteStream`. This means you can pump between them and any other read and write streams.
-    
+#### Reading cookies
+
+You can read the list of cookies from the response using the method `cookies()`.
+
+   
 ### 100-Continue Handling
 
 According to the [HTTP 1.1 specification](http://www.w3.org/Protocols/rfc2616/rfc2616-sec8.html) a client can set a header `Expect: 100-Continue` and send the request header before sending the rest of the request body.
@@ -1761,11 +1910,11 @@ This is used in conjunction with the `sendHead` function to send the head of the
 
 An example will illustrate this:
 
-    var client = vertx.createHttpClient().setHost('foo.com');
+    var client = vertx.createHttpClient().host('foo.com');
     
     var request = client.put('/some-path', function(resp) {
       
-      log.info('Got a response ' + resp.statusCode);
+      console.log('Got a response ' + resp.statusCode);
       
     });     
     
@@ -1779,9 +1928,14 @@ An example will illustrate this:
     
     request.sendHead();
 
+## Pumping Requests and Responses
+
+The HTTP client and server requests and responses all implement either `ReadStream` or `WriteStream`. This means you can pump between them and any other read and write streams.
+    
+
 ## HTTPS Servers
 
-HTTPS servers are very easy to write using vert.x.
+HTTPS servers are very easy to write using Vert.x.
 
 An HTTPS server has an identical API to a standard HTTP server. Getting the server to use HTTPS is just a matter of configuring the HTTP Server before `listen` is called.
 
@@ -1789,7 +1943,7 @@ Configuration of an HTTPS server is done in exactly the same way as configuring 
 
 ## HTTPS Clients
 
-HTTPS clients can also be very easily written with vert.x
+HTTPS clients can also be very easily written with Vert.x
 
 Configuring an HTTP client for HTTPS is done in exactly the same way as configuring a `NetClient` for SSL. Please see SSL client chapter for detailed instructions. 
 
@@ -1797,7 +1951,11 @@ Configuring an HTTP client for HTTPS is done in exactly the same way as configur
 
 Scaling an HTTP or HTTPS server over multiple cores is as simple as deploying more instances of the verticle. For example:
 
-    vertx deploy http_server.js -instances 20
+    vertx runmod com.mycompany~my-mod~1.0 -instance 20
+
+Or, for a raw verticle:
+
+    vertx run foo.MyServer -instances 20
     
 The scaling works in the same way as scaling a `NetServer`. Please see the chapter on scaling Net Servers for a detailed explanation of how this works.
 
@@ -1824,11 +1982,11 @@ You can then add different matches to the route matcher. For example, to send al
     var routeMatcher = new vertx.RouteMatcher();
     
     routeMatcher.get('/animals/dogs', function(req) {
-        req.response.end('You requested dogs');
+        req.response().end('You requested dogs');
     });
     
     routeMatcher.get('/animals/cats', function(req) {
-        req.response.end('You requested cats');    
+        req.response().end('You requested cats');    
     });
         
     server.requestHandler(routeMatcher).listen(8080, 'localhost');
@@ -1852,9 +2010,9 @@ If you want to extract parameters from the path, you can do this too, by using t
     var routeMatcher = new vertx.RouteMatcher();
     
     routeMatcher.put('/:blogname/:post', function(req) {        
-        var blogName = req.params().blogname;
-        var post = req.params().post;
-        req.response.end('blogname is ' + blogName + ', post is ' + post);
+        var blogName = req.params().get('blogname');
+        var post = req.params().get('post');
+        req.response().end('blogname is ' + blogName + ', post is ' + post);
     });
     
     server.requestHandler(routeMatcher).listen(8080, 'localhost');
@@ -1863,7 +2021,7 @@ Any params extracted by pattern matching are added to the map of request paramet
 
 In the above example, a PUT request to `/myblog/post1` would result in the variable `blogName` getting the value `myblog` and the variable `post` getting the value `post1`.
 
-Valid parameter names must start with a letter of the alphabet and be followed by any letters of the alphabet or digits.
+Valid parameter names must start with a letter of the alphabet and be followed by any letters of the alphabet or digits or the underscore character.
 
 ## Extracting params using Regular Expressions
 
@@ -1871,9 +2029,9 @@ Regular Expressions can be used to extract more complex matches. In this case ca
 
 Since the capture groups are not named they are added to the request with names `param0`, `param1`, `param2`, etc. 
 
-Corresponding methods exist for each HTTP method - `getWithRegEx`, `postWithRegEx`, `putWithRegEx`, `deleteWithRegEx`, `headWithRegEx`, `optionsWithRegEx`, `traceWithRegEx`, `connectWithRegEx` and `patchWithRegEx`.
+Corresponding functions exist for each HTTP method - `getWithRegEx`, `postWithRegEx`, `putWithRegEx`, `deleteWithRegEx`, `headWithRegEx`, `optionsWithRegEx`, `traceWithRegEx`, `connectWithRegEx` and `patchWithRegEx`.
 
-There's also an `allWithRegEx` method which applies the match to any HTTP request method.
+There's also an `allWithRegEx` function which applies the match to any HTTP request method.
 
 For example:
 
@@ -1882,8 +2040,8 @@ For example:
     var routeMatcher = new vertx.RouteMatcher();
 
     routeMatcher.allWithRegEx('\/([^\/]+)\/([^\/]+)', function(req) {        
-        var first = req.params().param0
-        var second = req.params().param1;
+        var first = req.params().get('param0');
+        var second = req.params().get('param1');
         req.response.end("first is " + first + " and second is " + second);
     });
 
@@ -1892,16 +2050,18 @@ For example:
 Run the above and point your browser at `http://localhost:8080/animals/cats`.
 
 It will display 'first is animals and second is cats'.         
-    
+
 ## Handling requests where nothing matches
 
-You can use the `noMatch` function to specify a handler that will be called if nothing matches. If you don't specify a no match handler and nothing matches, a 404 will be returned.
+You can use the `noMatch` method to specify a handler that will be called if nothing matches. If you don't specify a no match handler and nothing matches, a 404 will be returned.
 
-    routeMatcher.noMatch(function(req) { req.response.end("Nothing matched"); });
-
+    routeMatcher.noMatch(function(req) {
+        req.response().end('Nothing matched');
+    });
+    
 # WebSockets
 
-[WebSockets](http://en.wikipedia.org/wiki/WebSocket) are a feature of HTML 5 that allows a full duplex socket-like connection between HTTP servers and HTTP clients (typically browsers).
+[WebSockets](http://en.wikipedia.org/wiki/WebSocket) are a web technology that allows a full duplex socket-like connection between HTTP servers and HTTP clients (typically browsers).
 
 ## WebSockets on the server
 
@@ -1914,12 +2074,13 @@ To use WebSockets on the server you create an HTTP server as normal, but instead
       // A WebSocket has connected!
       
     }).listen(8080, 'localhost');
+
     
 ### Reading from and Writing to WebSockets    
     
-The `websocket` instance passed into the handler implements both `ReadStream` and `WriteStream`, so you can read and write data to it in the normal ways. I.e by setting a `dataHandler` and calling the `writeBuffer` method.
+The `websocket` instance passed into the handler implements both `ReadStream` and `WriteStream`, so you can read and write data to it in the normal ways. I.e by setting a `dataHandler` and calling the `write` method.
 
-See the chapter on `NetSocket` and streams and pumps for more information.
+See the chapter on [streams and pumps](#flow-control) for more information.
 
 For example, to echo all data received on a WebSocket:
 
@@ -1927,50 +2088,52 @@ For example, to echo all data received on a WebSocket:
 
     server.websocketHandler(function(websocket) {
       
-      var p = new Pump(websocket, websocket);
-      p.start();
-      
+      new Pump(websocket, websocket).start();
+
     }).listen(8080, 'localhost');
     
-The `websocket` instance also has method `writeBinaryFrame` for writing binary data. This has the same effect as calling `writeBuffer`.
+The `websocket` instance also has method `writeBinaryFrame` for writing binary data. This has the same effect as calling `write`.
 
 Another method `writeTextFrame` also exists for writing text data. This is equivalent to calling 
 
-    websocket.writeBuffer(new vertx.Buffer('some-string'));    
+    websocket.write(new vertx.Buffer('some-string'));    
 
 ### Rejecting WebSockets
 
 Sometimes you may only want to accept WebSockets which connect at a specific path.
 
-To check the path, you can query the `path` property of the `websocket`. You can then call the `reject` function to reject the websocket.
+To check the path, you can query the `path()` function of the websocket. You can then call the `reject` function to reject the websocket.
 
     var server = vertx.createHttpServer();
 
     server.websocketHandler(function(websocket) {
       
-      if (websocket.path === '/services/echo') {
-        var p = new vertx.Pump(websocket, websocket);
-        p.start();  
+      if (websocket.path() === '/services/echo') {
+        new vertx.Pump(websocket, websocket).start();
       } else {
         websocket.reject();
       }        
-    }).listen(8080, 'localhost');    
+    }).listen(8080, 'localhost'); 
+
+### Headers on the websocket
+
+You can use the `headers()` method to retrieve the headers passed in the Http Request from the client that caused the upgrade to websockets.    
     
 ## WebSockets on the HTTP client
 
 To use WebSockets from the HTTP client, you create the HTTP client as normal, then call the `connectWebsocket` function, passing in the URI that you wish to connect to at the server, and a handler.
 
-The handler will then get called if the WebSocket successfully connects. If the WebSocket does not connect - perhaps the server rejects it, then any exception handler on the HTTP client will be called.
+The handler will then get called if the WebSocket successfully connects. If the WebSocket does not connect - perhaps the server rejects it - then any exception handler on the HTTP client will be called.
 
-Here's an example of WebSocket connection;
-
-    var client = vertx.createHttpClient();
+    var client = vertx.createHttpClient().host("foo.com");
     
-    client.connectWebsocket('http://localhost:8080/some-uri', function(websocket) {
+    client.connectWebsocket('/some-uri', function(websocket) {
       
       // WebSocket has connected!
       
     }); 
+
+Note that the host (and port) is set on the `HttpClient` instance, and the uri passed in the connect is typically a *relative* URI.
     
 Again, the client side WebSocket implements `ReadStream` and `WriteStream`, so you can read and write to it in the same way as any other stream object. 
 
@@ -1980,7 +2143,7 @@ To use WebSockets from a compliant browser, you use the standard WebSocket API. 
 
     <script>
     
-        var socket = new WebSocket("ws://localhost:8080/services/echo");
+        var socket = new WebSocket("ws://foo.com/services/echo");
 
         socket.onmessage = function(event) {
             alert("Received data from websocket: " + event.data);
@@ -1999,15 +2162,11 @@ To use WebSockets from a compliant browser, you use the standard WebSocket API. 
     
 For more information see the [WebSocket API documentation](http://dev.w3.org/html5/websockets/) 
 
-## Routing WebSockets with Pattern Matching
-
-**TODO**   
-    
 # SockJS
 
 WebSockets are a new technology, and many users are still using browsers that do not support them, or which support older, pre-final, versions.
 
-Moreover, WebSockets do not work well with many corporate proxies. This means that's it's not possible to guarantee a WebSocket connection is going to succeed for every user.
+Moreover, WebSockets do not work well with many corporate proxies. This means that's it's not possible to guarantee a WebSockets connection is going to succeed for every user.
 
 Enter SockJS.
 
@@ -2021,9 +2180,9 @@ Please see the [SockJS website](https://github.com/sockjs/sockjs-client) for mor
 
 Vert.x provides a complete server side SockJS implementation.
 
-This enables vert.x to be used for modern, so-called *real-time* (this is the *modern* meaning of *real-time*, not to be confused by the more formal pre-existing definitions of soft and hard real-time systems) web applications that push data to and from rich client-side JavaScript applications, without having to worry about the details of the transport.
+This enables Vert.x to be used for modern, so-called *real-time* (this is the *modern* meaning of *real-time*, not to be confused by the more formal pre-existing definitions of soft and hard real-time systems) web applications that push data to and from rich client-side JavaScript applications, without having to worry about the details of the transport.
 
-To create a SockJS server you simply create a HTTP server as normal and then invoke the `createSockJSServer` function on the `vertx` instance, specifying the HTTP server:
+To create a SockJS server you simply create a HTTP server as normal and then call the `createSockJSServer` method of your `vertx` instance passing in the Http server:
 
     var httpServer = vertx.createHttpServer();
     
@@ -2031,7 +2190,7 @@ To create a SockJS server you simply create a HTTP server as normal and then inv
     
 Each SockJS server can host multiple *applications*.
 
-Each application is defined by some configuration, and provides a handler which gets called when incoming SockJS connections arrive at the server.     
+Each application is defined by some configuration, and provides a handler which gets called when incoming SockJS connections arrive at the server.      
 
 For example, to create a SockJS echo application:
 
@@ -2043,42 +2202,26 @@ For example, to create a SockJS echo application:
     
     sockJSServer.installApp(config, function(sock) {
     
-        var p = new vertx.Pump(sock, sock);
+        new vertx.Pump(sock, sock).start();
         
-        p.start();
     });
     
     httpServer.listen(8080);
     
-The configuration is a JSON object that takes the following fields:
+The configuration is an instance of `org.vertx.java.core.json.JsonObject`, which takes the following fields:
 
 * `prefix`: A url prefix for the application. All http requests whose paths begins with selected prefix will be handled by the application. This property is mandatory.
 * `insert_JSESSIONID`: Some hosting providers enable sticky sessions only to requests that have JSESSIONID cookie set. This setting controls if the server should set this cookie to a dummy value. By default setting JSESSIONID cookie is enabled. More sophisticated beaviour can be achieved by supplying a function.
 * `session_timeout`: The server sends a `close` event when a client receiving connection have not been seen for a while. This delay is configured by this setting. By default the `close` event will be emitted when a receiving connection wasn't seen for 5 seconds.
-* `heartbeat_period`: In order to keep proxies and load balancers from closing long running http requests we need to pretend that the connecion is active and send a heartbeat packet once in a while. This setting controlls how often this is done. By default a heartbeat packet is sent every 25 seconds.
+* `heartbeat_period`: In order to keep proxies and load balancers from closing long running http requests we need to pretend that the connecion is active and send a heartbeat packet once in a while. This setting controlls how often this is done. By default a heartbeat packet is sent every 5 seconds.
 * `max_bytes_streaming`: Most streaming transports save responses on the client side and don't free memory used by delivered messages. Such transports need to be garbage-collected once in a while. `max_bytes_streaming` sets a minimum number of bytes that can be send over a single http streaming request before it will be closed. After that client needs to open new request. Setting this value to one effectively disables streaming and will make streaming transports to behave like polling transports. The default value is 128K.    
-* `library_url`: Transports which don't support cross-domain communication natively ('eventsource' to name one) use an iframe trick. A simple page is served from the SockJS server (using its foreign domain) and is placed in an invisible iframe. Code run from this iframe doesn't need to worry about cross-domain issues, as it's being run from domain local to the SockJS server. This iframe also does need to load SockJS javascript client library, and this option lets you specify its url (if you're unsure, point it to the latest minified SockJS client release, this is the default). The default value is `http://cdn.sockjs.org/sockjs-0.1.min.js`
+* `library_url`: Transports which don't support cross-domain communication natively ('eventsource' to name one) use an iframe trick. A simple page is served from the SockJS server (using its foreign domain) and is placed in an invisible iframe. Code run from this iframe doesn't need to worry about cross-domain issues, as it's being run from domain local to the SockJS server. This iframe also does need to load SockJS javascript client library, and this option lets you specify its url (if you're unsure, point it to the latest minified SockJS client release, this is the default). The default value is `http://cdn.sockjs.org/sockjs-0.3.4.min.js`
 
 ## Reading and writing data from a SockJS server
 
-The object passed into the SockJS handler implements `ReadStream` and `WriteStream` much like `NetSocket` or `WebSocket`. You can therefore use the standard API for reading and writing to the SockJS socket or using it in pumps.
+The `SockJSSocket` object passed into the SockJS handler implements `ReadStream` and `WriteStream` much like `NetSocket` or `WebSocket`. You can therefore use the standard API for reading and writing to the SockJS socket or using it in pumps.
 
-See the chapter on Streams and Pumps for more information.
-
-    var httpServer = vertx.createHttpServer();
-    
-    var sockJSServer = vertx.createSockJSServer(httpServer);
-    
-    var config = { prefix: '/echo' };
-    
-    sockJSServer.installApp(config, function(sock) {
-    
-        sock.dataHandler(function(buff) {
-            sock.writeBuffer(buff);
-        });
-    });
-    
-    httpServer.listen(8080);
+See the chapter on [Streams and Pumps](#flow-control) for more information.
     
 ## SockJS client
 
@@ -2106,7 +2249,7 @@ As you can see the API is very similar to the WebSockets API.
 
 ## Setting up the Bridge
 
-By connecting up SockJS and the vert.x event bus we create a distributed event bus which not only spans multiple vert.x instances on the server side, but can also include client side JavaScript running in browsers.
+By connecting up SockJS and the Vert.x event bus we create a distributed event bus which not only spans multiple Vert.x instances on the server side, but can also include client side JavaScript running in browsers.
 
 We can therefore create a huge distributed bus encompassing many browsers and servers. The browsers don't have to be connected to the same server as long as the servers are connected.
 
@@ -2114,13 +2257,13 @@ On the server side we have already discussed the event bus API.
 
 We also provide a client side JavaScript library called `vertxbus.js` which provides the same event bus API, but on the client side.
 
-This library internally uses SockJS to send and receive data to a SockJS vert.x server called the SockJS bridge. It's the bridge's responsibility to bridge data between SockJS sockets and the event bus on the server side.
+This library internally uses SockJS to send and receive data to a SockJS Vert.x server called the SockJS bridge. It's the bridge's responsibility to bridge data between SockJS sockets and the event bus on the server side.
 
-Creating a Sock JS bridge is simple. You just call the `bridge` function on the SockJS server.
+Creating a Sock JS bridge is simple. You just call the `bridge` method on the SockJS server.
 
 You will also need to secure the bridge (see below).
 
-The following example creates and starts a SockJS bridge which will bridge any events sent to the path `eventbus` on to the server side event bus.
+The following example bridges the event bus to client side JavaScript:
 
     var httpServer = vertx.createHttpServer();
     
@@ -2130,15 +2273,13 @@ The following example creates and starts a SockJS bridge which will bridge any e
 
     server.listen(8080);
     
-The SockJS bridge currently only works with JSON event bus messages.    
-
 ## Using the Event Bus from client side JavaScript
 
 Once you've set up a bridge, you can use the event bus from the client side as follows:
 
-In your web page, you need to load the script `vertxbus.js`, then you can access the vert.x event bus API. Here's a rough idea of how to use it. For a full working examples, please consult the bundled examples.
+In your web page, you need to load the script `vertxbus.js`, then you can access the Vert.x event bus API. Here's a rough idea of how to use it. For a full working examples, please consult the vert.x examples.
 
-    <script src="http://cdn.sockjs.org/sockjs-0.2.1.min.js"></script>
+    <script src="http://cdn.sockjs.org/sockjs-0.3.4.min.js"></script>
     <script src='vertxbus.js'></script>
 
     <script>
@@ -2159,7 +2300,7 @@ In your web page, you need to load the script `vertxbus.js`, then you can access
        
     </script>
 
-You can find `vertxbus.js` in the `client` directory of the vert.x distribution.
+You can find `vertxbus.js` in the `client` directory of the Vert.x distribution.
 
 The first thing the example does is to create a instance of the event bus
 
@@ -2169,7 +2310,7 @@ The parameter to the constructor is the URI where to connect to the event bus. S
 
 You can't actually do anything with the bridge until it is opened. When it is open the `onopen` handler will be called.
 
-The client side event bus API for registering and unregistering handlers and for sending messages is exactly the same as the server side one. Please consult the chapter on the event bus for full information.    
+The client side event bus API for registering and unregistering handlers and for sending messages is the same as the server side one. Please consult the chapter on the event bus for full information.    
 
 **There is one more thing to do before getting this working, please read the following section....**
 
@@ -2185,7 +2326,7 @@ To deal with this, a SockJS bridge will, by default refuse to let through any me
 
 In other words the bridge acts like a kind of firewall which has a default *deny-all* policy.
 
-Configuring the bridge to tell it what messages it should pass through is easy. You pass in two arrays of JSON objects that represent *matches*, as the final argument in the call to `bridge`.
+Configuring the bridge to tell it what messages it should pass through is easy. You pass in two Json arrays that represent *matches*, as arguments to `bridge`.
 
 The first array is the *inbound* list and represents the messages that you want to allow through from the client to the server. The second array is the *outbound* list and represents the messages that you want to allow through from the server to the client.
 
@@ -2246,14 +2387,15 @@ Here is an example:
 
 
     server.listen(8080);
+   
     
-To let all messages through you can specify two arrays with a single empty JSON object which will match all messages.
+To let all messages through you can specify two JSON array with a single empty JSON object which will match all messages.
 
     ...
 
     sockJSServer.bridge({prefix : '/eventbus'}, [{}], [{}]);
     
-    ...    
+    ... 
      
 **Be very careful!**
 
@@ -2275,11 +2417,7 @@ To tell the bridge that certain messages require authorisation before being pass
     }
     
 This tells the bridge that any messages to save orders in the `orders` collection, will only be passed if the user is successful authenticated (i.e. logged in ok) first.    
-    
-When a message is sent from the client that requires authorisation, the client must pass a field `sessionID` with the message that contains the unique session ID that they obtained when they logged in with the `auth-mgr`.
-
-When the bridge receives such a message, it will send a message to the `auth-mgr` to see if the session is authorised for that message. If the session is authorised the bridge will cache the authorisation for a certain amount of time (five minutes by default)
-
+       
 # File System
 
 Vert.x lets you manipulate files on the file system. File system operations are asynchronous and take a handler function as the last argument. This function will be called when the operation is complete, or an error has occurred.
@@ -2305,7 +2443,7 @@ Here's an example:
 
     vertx.fileSystem.copy('foo.dat', 'bar.dat', function(err) {
         if (!err) {
-            log.info('Copy was successful');
+            console.log('Copy was successful');
         }
     });
 
@@ -2369,10 +2507,10 @@ Here's an example:
 
     vertx.fileSystem.props('some-file.txt', function(err, props) {
         if (err) {
-            log.info('Failed to retrieve file props: ' + err);
+            console.log('Failed to retrieve file props: ' + err);
         } else {
-            log.info('File props are:');
-            log.info('Last accessed: ' + props.lastAccessTime);
+            console.log('File props are:');
+            console.log('Last accessed: ' + props.lastAccessTime);
             // etc 
         }
     }); 
@@ -2417,7 +2555,7 @@ Reads a symbolic link. I.e returns the path representing the file that the symbo
 
     vertx.fileSystem.readSymLink('somelink', function(err, res) {
         if (!err) {
-            log.info('Link points at ' + res);
+            console.log('Link points at ' + res);
         }
     });
   
@@ -2451,7 +2589,7 @@ If `createParents` is `true`, this creates a new directory and creates any of it
     
     vertx.fileSystem.mkdir('a/b/c', true, function(err, res) {
        if (!err) {
-         log.info('Directory created ok');
+         console.log('Directory created ok');
        }
     });
   
@@ -2475,9 +2613,9 @@ List only the contents of a directory which match the filter. Here's an example 
 
     vertx.fileSystem.readDir('mydirectory', '.*\.txt', function(err, res) {
       if (!err) {
-        log.info('Directory contains these .txt files');
+        console.log('Directory contains these .txt files');
         for (var i = 0; i < res.length; i++) {
-          log.info(res[i]);  
+          console.log(res[i]);  
         }
       }
     });
@@ -2496,7 +2634,7 @@ Here is an example:
 
     vertx.fileSystem.readFile('myfile.dat', function(err, res) {
         if (!err) {
-            log.info('File contains: ' + res.length() + ' bytes');
+            console.log('File contains: ' + res.length() + ' bytes');
         }
     });
 
@@ -2522,7 +2660,7 @@ The result is returned in the handler.
 
     vertx.fileSystem.exists('some-file.txt', function(err, res) {
         if (!err) {
-            log.info('File ' + (res ? 'exists' : 'does not exist'));
+            console.log('File ' + (res ? 'exists' : 'does not exist'));
         }
     });
 
@@ -2542,7 +2680,7 @@ Here is an example:
 
     vertx.fileSystem.fsProps('mydir', function(err, res) {
         if (!err) {
-            log.info('total space: ' + res.totalSpace);
+            console.log('total space: ' + res.totalSpace);
             // etc
         }
     });
@@ -2581,9 +2719,9 @@ When the file is opened, an instance of `AsyncFile` is passed into the result ha
     vertx.fileSystem.open('some-file.dat', vertx.FileSystem.OPEN_READ | vertx.FileSystem.OPEN_WRITE,
         function(err, asyncFile) {
             if (err) {
-                log.info('Failed to open file ' + err);
+                console.log('Failed to open file ' + err);
             } else {
-                log.info('File opened ok');
+                console.log('File opened ok');
                 asyncFile.close(); // Close it    
             }
         });    
@@ -2603,7 +2741,7 @@ This is the same as `open(file, openFlags, flush, handler)` but you can also spe
 
 Instances of `AsyncFile` are returned from calls to `open` and you use them to read from and write to files asynchronously. They allow asynchronous random file access.
 
-AsyncFile can provide instances of `ReadStream` and `WriteStream` via the `getReadStream` and `getWriteStream` functions, so you can pump files to and from other stream objects such as net sockets, HTTP requests and responses, and WebSockets.
+AsyncFile implements `ReadStream` and `WriteStream`, so you can pump files to and from other stream objects such as net sockets, HTTP requests and responses, and WebSockets.
 
 They also allow you to read and write directly to them.
 
@@ -2622,16 +2760,16 @@ Here is an example of random access writes:
 
     vertx.fileSystem.open('some-file.dat', function(err, asyncFile) {
             if (err) {
-                log.info('Failed to open file ' + err);
+                console.log('Failed to open file ' + err);
             } else {
                 // File open, write a buffer 5 times into a file              
                 var buff = new vertx.Buffer('foo');
                 for (var i = 0; i < 5; i++) {
                     asyncFile.write(buff, buff.length() * i, function(err) {
                         if (err) {
-                            log.info('Failed to write ' + err);
+                            console.log('Failed to write ' + err);
                         } else {
-                            log.info('Written ok');
+                            console.log('Written ok');
                         }
                     });    
                 }
@@ -2655,20 +2793,22 @@ Here's an example of random access reads:
 
     vertx.fileSystem.open('some-file.dat', function(err, asyncFile) {
         if (err) {
-            log.info('Failed to open file ' + err);
+            console.log('Failed to open file ' + err);
         } else {                   
             var buff = new vertx.Buffer(1000);
             for (var i = 0; i < 10; i++) {
                 asyncFile.read(buff, i * 100, i * 100, 100, function(err) {
                     if (err) {
-                        log.info('Failed to read ' + err);
+                        console.log('Failed to read ' + err);
                     } else {
-                        log.info('Read ok');
+                        console.log('Read ok');
                     }
                 });    
             }
         }
-    });   
+    });  
+
+If you attempt to read past the end of file, the read will not fail but it will simply read zero bytes. 
     
 ### Flushing data to underlying storage.
 
@@ -2676,23 +2816,21 @@ If the AsyncFile was not opened with `flush = true`, then you can manually flush
 
 ### Using AsyncFile as `ReadStream` and `WriteStream`
 
-Use the functions `getReadStream` and `getWriteStream` to get read and write streams. You can then use them with a pump to pump data to and from other read and write streams.
+You can then use `AsyncFile` with a pump to pump data to and from other read and write streams.
 
 Here's an example of pumping data from a file on a client to a HTTP request:
 
-    var client = new vertx.HttpClient().setHost('foo.com');
+    var client = new vertx.HttpClient().host('foo.com');
     
     vertx.fileSystem.open('some-file.dat', function(err, asyncFile) {
         if (err) {
-            log.info('Failed to open file ' + err);
+            console.log('Failed to open file ' + err);
         } else {                   
             var request = client.put('/uploads', function(resp) {
-                log.info('resp status code ' + resp.statusCode);
-            });
-            var rs = asyncFile.getReadStream();
-            var pump = new vertx.Pump(rs, request);
-            pump.start();
-            rs.endHandler(function() {
+                console.log('resp status code ' + resp.statusCode());
+            });            
+            new vertx.Pump(asyncFile, request).start();            
+            asyncFile.endHandler(function() {
                 // File sent, end HTTP requuest
                 request.end();
             });
@@ -2704,7 +2842,9 @@ Here's an example of pumping data from a file on a client to a HTTP request:
 
 To close an AsyncFile call the `close` function. Closing is asynchronous and if you want to be notified when the close has been completed you can specify a handler function as an argument to `close`.
 
-    
+
+** load() method!!! **
+
 
     
 

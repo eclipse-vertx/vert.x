@@ -2,7 +2,9 @@
     "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-  <link href="bootstrap/bootstrap.css" type="text/css" rel="stylesheet"/>
+  <link href='http://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet/less" href="bootstrap/less/bootstrap.less">
+  <script src="bootstrap/less/less-1.3.3.min.js"></script>
 
   <link href="google-code-prettify/prettify.css" type="text/css" rel="stylesheet"/>
   <script type="text/javascript" src="google-code-prettify/prettify.js"></script>
@@ -77,30 +79,38 @@
 <li><a href="#verticle-clean-up">Verticle clean-up</a></li>
 <li><a href="#getting-configuration-in-a-verticle">Getting Configuration in a Verticle</a></li>
 <li><a href="#logging-from-a-verticle">Logging from a Verticle</a></li>
+<li><a href="#accessing-environment-variables-from-a-verticle">Accessing environment variables from a Verticle</a></li>
+<li><a href="#causing-the-container-to-exit">Causing the container to exit</a></li>
 </ul>
 </li>
 <li><a href="#deploying-and-undeploying-verticles-programmatically">Deploying and Undeploying Verticles Programmatically</a><ul>
 <li><a href="#deploying-a-simple-verticle">Deploying a simple verticle</a></li>
+<li><a href="#deploying-worker-verticles">Deploying Worker Verticles</a></li>
 <li><a href="#deploying-a-module-programmatically">Deploying a module programmatically</a></li>
 <li><a href="#passing-configuration-to-a-verticle-programmatically">Passing configuration to a verticle programmatically</a></li>
 <li><a href="#using-a-verticle-to-co-ordinate-loading-of-an-application">Using a Verticle to co-ordinate loading of an application</a></li>
 <li><a href="#specifying-number-of-instances">Specifying number of instances</a></li>
 <li><a href="#getting-notified-when-deployment-is-complete">Getting Notified when Deployment is complete</a></li>
-<li><a href="#deploying-worker-verticles">Deploying Worker Verticles</a></li>
-<li><a href="#undeploying-a-verticle">Undeploying a Verticle</a></li>
+<li><a href="#undeploying-a-verticle-or-module">Undeploying a Verticle or Module</a></li>
 </ul>
 </li>
+<li><a href="#scaling-your-application">Scaling your application</a></li>
 <li><a href="#the-event-bus">The Event Bus</a><ul>
 <li><a href="#the-theory">The Theory</a><ul>
 <li><a href="#addressing">Addressing</a></li>
 <li><a href="#handlers">Handlers</a></li>
-<li><a href="#sending-messages">Sending messages</a></li>
+<li><a href="#publish-subscribe-messaging">Publish / subscribe messaging</a></li>
+<li><a href="#point-to-point-and-request-response-messaging">Point to point and Request-Response messaging</a></li>
+<li><a href="#transient">Transient</a></li>
+<li><a href="#types-of-messages">Types of messages</a></li>
 </ul>
 </li>
 <li><a href="#event-bus-api">Event Bus API</a><ul>
 <li><a href="#registering-and-unregistering-handlers">Registering and Unregistering Handlers</a></li>
-<li><a href="#sending-messages_1">Sending messages</a></li>
+<li><a href="#publishing-messages">Publishing messages</a></li>
+<li><a href="#sending-messages">Sending messages</a></li>
 <li><a href="#replying-to-messages">Replying to messages</a></li>
+<li><a href="#message-types">Message Types</a></li>
 </ul>
 </li>
 <li><a href="#distributed-event-bus">Distributed event bus</a></li>
@@ -140,9 +150,12 @@
 <li><a href="#writing-data-to-a-socket">Writing Data to a Socket</a></li>
 </ul>
 </li>
+<li><a href="#socket-remote-address">Socket Remote Address</a></li>
+<li><a href="#socket-local-address">Socket Local Address</a></li>
 <li><a href="#closing-a-socket">Closing a socket</a></li>
 <li><a href="#closed-handler">Closed Handler</a></li>
 <li><a href="#exception-handler">Exception handler</a></li>
+<li><a href="#event-bus-write-handler">Event Bus Write Handler</a></li>
 <li><a href="#read-and-write-streams">Read and Write Streams</a></li>
 </ul>
 </li>
@@ -150,7 +163,6 @@
 <li><a href="#netclient">NetClient</a><ul>
 <li><a href="#creating-a-net-client">Creating a Net Client</a></li>
 <li><a href="#making-a-connection">Making a Connection</a></li>
-<li><a href="#catching-exceptions-on-the-net-client">Catching exceptions on the Net Client</a></li>
 <li><a href="#configuring-reconnection">Configuring Reconnection</a></li>
 <li><a href="#netclient-properties">NetClient Properties</a></li>
 </ul>
@@ -172,12 +184,17 @@
 <li><a href="#getting-notified-of-incoming-requests">Getting Notified of Incoming Requests</a></li>
 <li><a href="#handling-http-requests">Handling HTTP Requests</a><ul>
 <li><a href="#request-method">Request Method</a></li>
+<li><a href="#request-version">Request Version</a></li>
 <li><a href="#request-uri">Request URI</a></li>
 <li><a href="#request-path">Request Path</a></li>
 <li><a href="#request-query">Request Query</a></li>
 <li><a href="#request-headers">Request Headers</a></li>
 <li><a href="#request-params">Request params</a></li>
+<li><a href="#remote-address">Remote Address</a></li>
+<li><a href="#absolute-uri">Absolute URI</a></li>
 <li><a href="#reading-data-from-the-request-body">Reading Data from the Request Body</a></li>
+<li><a href="#handling-multipart-form-uploads">Handling Multipart Form Uploads</a></li>
+<li><a href="#handling-multipart-form-attributes">Handling Multipart Form Attributes</a></li>
 </ul>
 </li>
 <li><a href="#http-server-responses">HTTP Server Responses</a></li>
@@ -198,6 +215,7 @@
 <li><a href="#pooling-and-keep-alive">Pooling and Keep Alive</a></li>
 <li><a href="#closing-the-client">Closing the client</a></li>
 <li><a href="#making-requests">Making Requests</a><ul>
+<li><a href="#handling-exceptions">Handling exceptions</a></li>
 <li><a href="#writing-to-the-request-body">Writing to the request body</a></li>
 <li><a href="#ending-http-requests">Ending HTTP requests</a></li>
 <li><a href="#writing-request-headers">Writing Request Headers</a></li>
@@ -206,14 +224,13 @@
 </li>
 <li><a href="#http-client-responses">HTTP Client Responses</a><ul>
 <li><a href="#reading-data-from-the-response-body">Reading Data from the Response Body</a></li>
+<li><a href="#reading-cookies">Reading cookies</a></li>
 </ul>
 </li>
-</ul>
-</li>
-<li><a href="#pumping-requests-and-responses">Pumping Requests and Responses</a><ul>
 <li><a href="#100-continue-handling">100-Continue Handling</a></li>
 </ul>
 </li>
+<li><a href="#pumping-requests-and-responses">Pumping Requests and Responses</a></li>
 <li><a href="#https-servers">HTTPS Servers</a></li>
 <li><a href="#https-clients">HTTPS Clients</a></li>
 <li><a href="#scaling-http-servers">Scaling HTTP servers</a></li>
@@ -230,11 +247,11 @@
 <li><a href="#websockets-on-the-server">WebSockets on the server</a><ul>
 <li><a href="#reading-from-and-writing-to-websockets">Reading from and Writing to WebSockets</a></li>
 <li><a href="#rejecting-websockets">Rejecting WebSockets</a></li>
+<li><a href="#headers-on-the-websocket">Headers on the websocket</a></li>
 </ul>
 </li>
 <li><a href="#websockets-on-the-http-client">WebSockets on the HTTP client</a></li>
 <li><a href="#websockets-in-the-browser">WebSockets in the browser</a></li>
-<li><a href="#routing-websockets-with-pattern-matching">Routing WebSockets with Pattern Matching</a></li>
 </ul>
 </li>
 <li><a href="#sockjs">SockJS</a><ul>
@@ -266,7 +283,7 @@
 <li><a href="#mkdir">mkdir</a></li>
 <li><a href="#read_dir">read_dir</a></li>
 <li><a href="#read_file_as_buffer">read_file_as_buffer</a></li>
-<li><a href="#write_buffer_to_file">write_buffer_to_file</a></li>
+<li><a href="#write_to_file">write_to_file</a></li>
 <li><a href="#create_file">create_file</a></li>
 <li><a href="#exists">exists?</a></li>
 <li><a href="#fs_props">fs_props</a></li>
@@ -284,7 +301,11 @@
 </ul>
 </div>
 <h1 id="writing-verticles">Writing Verticles</h1><br/>
-<p>We previously discussed how a verticle is the unit of deployment in vert.x. Let's look in more detail about how to write a verticle.</p>
+<p>As was described in the <a href="manual.html#verticle">main manual</a>, a verticle is the execution unit of Vert.x.</p>
+<p>To recap, Vert.x is a container which executed packages of code called Verticles, and it ensures that the code in the verticle is never executed concurrently by more than one thread. You can write your verticles in any of the languages that Vert.x supports, and Vert.x supports running many verticle instances concurrently in the same Vert.x instance.</p>
+<p>All the code you write in a Vert.x application runs inside a Verticle instance.</p>
+<p>For simple prototyping and trivial tasks you can write raw verticles and run them directly on the command line, but in most cases you will always wrap your verticles inside Vert.x <a href="mods_manual.html">modules</a>.</p>
+<p>For now, let's try writing a simple raw verticle.</p>
 <p>As an example we'll write a simple TCP echo server. The server just accepts connections and any data received by it is echoed back on the connection.</p>
 <p>Copy the following into a text editor and save it as <code>server.py</code></p>
 <pre class="prettyprint">import vertx
@@ -293,11 +314,8 @@ from core.streams import Pump
 server = vertx.create_net_server()
 @server.connect_handler
 def connect_handler(socket):
-    Pump(socket, server).start()
+    Pump(socket, socket).start()
 server.listen(1234, 'localhost')
-
-def vertx_stop():
-    server.close()
 </pre>
 <p>Now, go to the directory where you saved the file and type</p>
 <pre class="prettyprint">vertx run server.py
@@ -309,11 +327,22 @@ def vertx_stop():
 <p>Congratulations! You've written your first verticle.</p>
 <h2 id="accessing-the-vertx-api">Accessing the Vert.x API</h2><br/>
 <p>If you want to access the vert.x core API from within your verticle (which you almost certainly want to do), you need to import it with <code>import vertx</code> at the top of your script. Normally this will be the first thing at the top of your verticle main.</p>
-<p>This will import the package <code>vertx</code>. The <code>vertx</code> package contains some of the methods that make up the vert.x core API. Other methods are available in the <code>core</code> packages.</p>
+<p>This will import the module <code>vertx</code>. The <code>vertx</code> module is what you use to access the Vert.x API.</p>
 <h2 id="verticle-clean-up">Verticle clean-up</h2><br/>
-<p>Servers, clients and event bus handlers will be automatically closed when the verticles is stopped, however if you need to provide any custom clean-up code when the verticle is stopped you can provide a <code>vertx_stop</code> top-level method. Vert.x will then call this when the verticle is stopped. </p>
+<p>Servers, clients and event bus handlers will be automatically closed when the verticles is stopped, however if you need to provide any custom clean-up code when the verticle is stopped you can provide a <code>vertx_stop</code> top-level function. Vert.x will then call this when the verticle is stopped. </p>
+<pre class="prettyprint">def vertx_stop():
+    print 'doing some cleanup'
+    # Do cleanup in here
+</pre>
 <h2 id="getting-configuration-in-a-verticle">Getting Configuration in a Verticle</h2><br/>
-<p>If JSON configuration has been passed when deploying a verticle from either the command line using <code>vertx run</code> and specifying a configuration file with <code>-conf &lt;config_file&gt;</code>, or when deploying programmatically, that configuration is available to the verticle using the <code>vertx.config</code> method. For example:</p>
+<p>You can pass configuration to a module or verticle from the command line using the <code>-conf</code> option, for example:</p>
+<pre class="prettyprint">vertx runmod com.mycompany~my-mod~1.0 -conf myconf.json
+</pre>
+<p>or for a raw verticle</p>
+<pre class="prettyprint">vertx run foo.js -conf myconf.json
+</pre>
+<p>The argument to <code>-conf</code> is the name of a text file containing a valid JSON object.</p>
+<p>That configuration is available to the verticle using the <code>vertx.config()</code> method. For example:</p>
 <pre class="prettyprint">import vertx
 
 config = vertx.config()
@@ -324,10 +353,10 @@ print "number of wibbles is %s" % str(config.wibble_number)
 </pre>
 <p>The config returned is a Python dict. You can use this object to configure the verticle. Allowing verticles to be configured in a consistent way like this allows configuration to be easily passed to them irrespective of the language.</p>
 <h2 id="logging-from-a-verticle">Logging from a Verticle</h2><br/>
-<p>Each verticle is given its own logger. To get a reference to it invoke the <code>vertx.get_logger</code> method:</p>
+<p>Each verticle is given its own logger. To get a reference to it invoke the <code>vertx.logger()</code> method:</p>
 <pre class="prettyprint">import vertx
 
-var logger = vertx.get_logger()
+var logger = vertx.logger()
 
 logger.info("I am logging something")
 </pre>
@@ -342,20 +371,27 @@ logger.info("I am logging something")
 </ul>
 <p>Which have the normal meanings you would expect.</p>
 <p>The log files by default go in a file called <code>vertx.log</code> in the system temp directory. On my Linux box this is <code>\tmp</code>.</p>
-<p>For more information on configuring logging, please see the main manual.</p>
+<p>For more information on configuring logging, please see the <a href="manual.html#logging">main manual</a>.</p>
+<h2 id="accessing-environment-variables-from-a-verticle">Accessing environment variables from a Verticle</h2><br/>
+<p>You can access the map of environment variables from a Verticle with the <code>vertx.env()</code> function.</p>
+<h2 id="causing-the-container-to-exit">Causing the container to exit</h2><br/>
+<p>You can call the <code>vertx.exit()</code> function to cause the Vert.x instance to make a clean shutdown.</p>
 <h1 id="deploying-and-undeploying-verticles-programmatically">Deploying and Undeploying Verticles Programmatically</h1><br/>
 <p>You can deploy and undeploy verticles programmatically from inside another verticle. Any verticles deployed programmatically inherit the path of the parent verticle.</p>
 <h2 id="deploying-a-simple-verticle">Deploying a simple verticle</h2><br/>
-<p>To deploy a verticle programmatically call the function <code>vertx.deploy_verticle</code>. The return value of <code>vertx.deploy_verticle</code> is the unique id of the deployment, which can be used later to undeploy the verticle.</p>
+<p>You can deploy and undeploy verticles programmatically from inside another verticle. Any verticles deployed this way will be able to see resources (classes, scripts, other files) of the main verticle.</p>
 <p>To deploy a single instance of a verticle :</p>
-<pre class="prettyprint">vertx.deploy_verticle('my_verticle.py')
+<pre class="prettyprint">vertx.deploy_verticle(main)
 </pre>
+<p>Where <code>main</code> is the name of the Verticle (i.e. the name of the script or FQCN of the class).</p>
+<p>See the chapter on <a href="manual.html#running-vertx">"running Vert.x"</a> in the main manual for a description of what a main is.</p>
+<h2 id="deploying-worker-verticles">Deploying Worker Verticles</h2><br/>
+<p>The <code>deploy_verticle</code> function deploys standard (non worker) verticles. If you want to deploy worker verticles use the <code>deploy_worker_verticle</code> function. This method takes the same parameters as <code>deploy_verticle</code> with the same meanings.</p>
 <h2 id="deploying-a-module-programmatically">Deploying a module programmatically</h2><br/>
 <p>You should use <code>deploy_module</code> to deploy a module, for example:</p>
-<pre class="prettyprint">vertx.deploy_module('vertx.mailer-v1.0', config)
+<pre class="prettyprint">vertx.deploy_module('io.vertx~mod-mailer~2.0.0-beta1', config)
 </pre>
-<p>Would deploy an instance of the <code>vertx.mailer</code> module with the specified configuration. Please see the modules manual
- for more information about modules.</p>
+<p>Would deploy an instance of the <code>io.vertx~mod-mailer~2.0.0-beta1</code> module with the specified configuration. Please see the <a href="">modules manual</a> for more information about modules.    </p>
 <h2 id="passing-configuration-to-a-verticle-programmatically">Passing configuration to a verticle programmatically</h2><br/>
 <p>JSON configuration can be passed to a verticle that is deployed programmatically. Inside the deployed verticle the configuration is accessed with the <code>vertx.config</code> function. For example:</p>
 <pre class="prettyprint">config = { 'name': 'foo', 'age': 234 }
@@ -363,62 +399,75 @@ vertx.deploy_verticle('my_verticle.py', config)
 </pre>
 <p>Then, in <code>my_verticle.py</code> you can access the config via <code>vertx.config</code> method as previously explained.</p>
 <h2 id="using-a-verticle-to-co-ordinate-loading-of-an-application">Using a Verticle to co-ordinate loading of an application</h2><br/>
-<p>If you have an application that is composed of multiple verticles that all need to be started at application start-up, then you can use another verticle that maintains the application configuration and starts all the other verticles. You can think of this as your application starter verticle.</p>
+<p>If you have an appplication that is composed of multiple verticles that all need to be started at application start-up, then you can use another verticle that maintains the application configuration and starts all the other verticles. You can think of this as your application starter verticle.</p>
 <p>For example, you could create a verticle <code>app.py</code> as follows:</p>
 <pre class="prettyprint">import vertx
 
-# Application config
-appConfig = {
-    'verticle1_config' : {
-        # Config for verticle1
-    },
-    'verticle2_config' : {
-        # Config for verticle2
-    },
-    'verticle3_config' : {
-        # Config for verticle3
-    },
-    'verticle4_config' : {
-        # Config for verticle4
-    },
-    'verticle5_config' : {
-        # Config for verticle5
-    }
-}
+app_config = vertx.config()
 
 # Start the verticles that make up the app
 
-vertx.deploy_verticle("verticle1.py", appConfig["verticle1_config"])
-vertx.deploy_verticle("verticle2.py", appConfig["verticle2_config"], 5)
-vertx.deploy_verticle("verticle3.py", appConfig["verticle3_config"])
-vertx.deploy_worker_verticle("verticle4.py", appConfig["verticle4_config"])
-vertx.deploy_worker_verticle("verticle5.py", appConfig["verticle5_config"], 10)
+vertx.deploy_verticle("verticle1.py", app_config["verticle1_conf"])
+vertx.deploy_verticle("verticle2.py", app_config["verticle2_conf"], 5)
+vertx.deploy_verticle("verticle3.py", app_config["verticle3_conf"])
+vertx.deploy_worker_verticle("verticle4.py", app_config["verticle4_conf"])
+vertx.deploy_worker_verticle("verticle5.py", app_config["verticle5_conf"], 10)
 </pre>
-<p>Then you can start your entire application by simply running:</p>
-<pre class="prettyprint">vertx run app.py
+<p>Then create a file 'config.json" with the actual JSON config in it</p>
+<pre class="prettyprint">{
+    "verticle1_conf": {
+        "foo": "wibble"
+    },
+    "verticle2_conf": {
+        "age": 1234,
+        "shoe_size": 12,
+        "pi": 3.14159
+    }, 
+    "verticle3_conf": {
+        "strange": true
+    },
+    "verticle4_conf": {
+        "name": "george"
+    },
+    "verticle5_conf": {
+        "tel_no": "123123123"
+    }       
+}
 </pre>
+<p>Then set the <code>AppStarter</code> as the main of your module and then you can start your entire application by simply running:</p>
+<pre class="prettyprint">vertx runmod com.mycompany~my-mod~1.0 -conf config.json
+</pre>
+<p>If your application is large and actually composed of multiple modules rather than verticles you can use the same technique.</p>
 <h2 id="specifying-number-of-instances">Specifying number of instances</h2><br/>
-<p>By default, when you deploy a verticle only one instance of the verticle is deployed. If you want more than one instance to be deployed, e.g. so you can scale over your cores better, you can specify the number of instances in the third parameter to <code>deploy_verticle</code>:</p>
-<pre class="prettyprint">vertx.deploy_verticle('my_verticle.py', None, 10)
+<p>By default, when you deploy a verticle only one instance of the verticle is deployed. Verticles instances are strictly single threaded so this means you will use at most one core on your server.</p>
+<p>Vert.x scales by deploying many verticle instances concurrently.</p>
+<p>If you want more than one instance of a particular verticle or module to be deployed, you can specify the number of instances as follows:</p>
+<pre class="prettyprint">vertx.deploy_verticle('foo.py', 10)
 </pre>
-<p>or</p>
-<pre class="prettyprint">vertx.deploy_verticle('my_verticle.py', instances=10)
+<p>Or</p>
+<pre class="prettyprint">vertx.deploy_module('io.vertx~some-mod~1.0', 10)
 </pre>
-<p>The above examples would both deploy 10 instances.</p>
+<p>The above examples would deploy 10 instances.</p>
 <h2 id="getting-notified-when-deployment-is-complete">Getting Notified when Deployment is complete</h2><br/>
-<p>The actual verticle deployment is asynchronous and might not complete until some time after the call to <code>deploy_verticle</code> has returned. If you want to be notified when the verticle has completed being deployed, you can pass an handler function to <code>deploy_verticle</code>, which will be called when it's complete:</p>
-<pre class="prettyprint">def deploy_handler(dip):
-    print "It's been deployed!"
-vertx.deploy_verticle('my_verticle.py', None, 10, deploy_handler)
+<p>The actual verticle deployment is asynchronous and might not complete until some time after the call to <code>deploy_verticle</code> or <code>deploy_module</code> has returned. If you want to be notified when the verticle / module has completed being deployed, you can pass an handler function to <code>deploy_verticle</code>, which will be called when it's complete:</p>
+<pre class="prettyprint">def deploy_handler(err, deployment_id):
+    if err is not None:
+        err.printStackTrace()
+    else:
+        print "It's been deployed! %s" %dep_id
+
+vertx.deploy_verticle('my_verticle.py', handler=deploy_handler)
 </pre>
-<h2 id="deploying-worker-verticles">Deploying Worker Verticles</h2><br/>
-<p>The <code>vertx.deploy_verticle</code> method deploys standard (non worker) verticles. If you want to deploy worker verticles use the <code>vertx.deploy_worker_verticle</code> function. This function takes the same parameters as <code>vertx.deploy_verticle</code> with the same meanings.</p>
-<h2 id="undeploying-a-verticle">Undeploying a Verticle</h2><br/>
-<p>Any verticles that you deploy programmatically from within a verticle and all of their children are automatically undeployed when the parent verticle is undeployed, so in most cases you will not need to undeploy a verticle manually, however if you do want to do this, it can be done by calling the function <code>vertx.undeploy_verticle</code> passing in the deployment id that was sent to the deployment handler function you passed to <code>vertx.deploy_verticle</code></p>
-<pre class="prettyprint">def deploy_handler(dip):
-    vertx.undeploy_verticle(dip)
-vertx.deploy_verticle('my_verticle.py', deploy_handler)
+<p>The first argument to the handler is a Java exception if the deployment failed or <code>None</code> if the deployment succeeded. The second argument is the deployment id if the deployment succeeded.</p>
+<h2 id="undeploying-a-verticle-or-module">Undeploying a Verticle or Module</h2><br/>
+<p>Any verticles that you deploy programmatically from within a verticle and all of their children are automatically undeployed when the parent verticle is undeployed, so in many cases you will not need to undeploy a verticle manually, however if you do want to do this, it can be done by calling the function <code>vertx.undeploy_verticle</code> or <code>vertx.undeploy_module</code> passing in the deployment id.</p>
+<pre class="prettyprint">vertx.undeploy_verticle(deployment_id)
 </pre>
+<p>You can also provide a handler to the undeploy method if you want to be informed when undeployment is complete.</p>
+<h1 id="scaling-your-application">Scaling your application</h1><br/>
+<p>A verticle instance is almost always single threaded (the only exception is multi-threaded worker verticles which are an advanced feature not intended for normal development), this means a single instance can at most utilise one core of your server.</p>
+<p>In order to scale across cores you need to deploy more verticle instances. The exact numbers depend on your application - how many verticles there are and of what type.</p>
+<p>You can deploy more verticle instances programmatically or on the command line when deploying your module using the <code>-instances</code> command line option.</p>
 <h1 id="the-event-bus">The Event Bus</h1><br/>
 <p>The event bus is the nervous system of vert.x.</p>
 <p>It allows verticles to communicate with each other irrespective of what language they are written in, and whether they're in the same vert.x instance, or in a different vert.x instance. It even allows client side JavaScript running in a browser to communicate on the same event bus. (More on that later).</p>
@@ -428,63 +477,75 @@ vertx.deploy_verticle('my_verticle.py', deploy_handler)
 <h2 id="the-theory">The Theory</h2><br/>
 <h3 id="addressing">Addressing</h3><br/>
 <p>Messages are sent on the event bus to an <em>address</em>.</p>
-<p>Vert.x doesn't bother with any fancy addressing schemes. In vert.x an address is simply a string, any string is valid. However it is wise to use some kind of scheme, e.g. using periods to demarcate a namespace.</p>
+<p>Vert.x doesn't bother with any fancy addressing schemes. In Vert.x an address is simply a string, any string is valid. However it is wise to use some kind of scheme, e.g. using periods to demarcate a namespace.</p>
 <p>Some examples of valid addresses are <code>europe.news.feed1</code>, <code>acme.games.pacman</code>, <code>sausages</code>, and <code>X</code>.</p>
 <h3 id="handlers">Handlers</h3><br/>
 <p>A handler is a thing that receives messages from the bus. You register a handler at an address.</p>
-<p>The handler will receive any messages that are sent to the address. Many different handlers from the same or different verticles can be registered at the same address. A single handler can be registered by the verticle at many different addresses.</p>
-<p>Since many handlers can subscribe to the address, this is an implementation of the messaging pattern called <em>Publish-Subscribe Messaging</em>.</p>
-<p>When a message is received in a handler, and has been <em>processed</em>, the receiver can optionally decide to reply to the message. If they do so, and the message was sent specifying a reply handler, that reply handler will be called.</p>
-<p>When the reply is received back at the sender, it too can be replied to. This can be repeated ad-infinitum, and allows a dialog to be set-up between two different verticles.</p>
-<p>This is a common messaging pattern called the <em>Request-Response</em> pattern.</p>
-<h3 id="sending-messages">Sending messages</h3><br/>
-<p>You send a message by specifying the address and telling the event bus to send it there. The event bus will then deliver the message to any handlers registered at that address.</p>
-<p>If multiple vert.x instances are clustered together, the message will be delivered to any matching handlers irrespective of what vert.x instance they reside on.</p>
-<p>As previously mentioned, when sending a message you can specify an optional reply handler which will be invoked once the message has reached a handler and the recipient has replied to it.</p>
+<p>Many different handlers from the same or different verticles can be registered at the same address. A single handler can be registered by the verticle at many different addresses.</p>
+<h3 id="publish-subscribe-messaging">Publish / subscribe messaging</h3><br/>
+<p>The event bus supports <em>publishing</em> messages. Messages are published to an address. Publishing means delivering the message to all handlers that are registered at that address. This is the familiar <em>publish/subscribe</em> messaging pattern.</p>
+<h3 id="point-to-point-and-request-response-messaging">Point to point and Request-Response messaging</h3><br/>
+<p>The event bus supports <em>point to point</em> messaging. Messages are sent to an address. Vert.x will then route it to just one of the handlers registered at that address. If there is more than one handler registered at the address, one will be chosen using a non-strict round-robin algorithm.</p>
+<p>With point to point messaging, an optional reply handler can be specified when sending the message. When a message is received by a recipient, and has been handled, the recipient can optionally decide to reply to the message. If they do so that reply handler will be called.</p>
+<p>When the reply is received back at the sender, it too can be replied to. This can be repeated ad-infinitum, and allows a dialog to be set-up between two different verticles. This is a common messaging pattern called the <em>Request-Response</em> pattern.</p>
+<h3 id="transient">Transient</h3><br/>
 <p><em>All messages in the event bus are transient, and in case of failure of all or parts of the event bus, there is a possibility messages will be lost. If your application cares about lost messages, you should code your handlers to be idempotent, and your senders to retry after recovery.</em></p>
 <p>If you want to persist your messages you can use a persistent work queue module for that.</p>
-<p>Messages that you send on the event bus can be as simple as a string, a number or a boolean. You can also send vert.x buffers or JSON messages.</p>
-<p>It's highly recommended you use JSON messages to communicate between verticles. JSON is easy to create and parse in all the languages that vert.x supports.</p>
+<h3 id="types-of-messages">Types of messages</h3><br/>
+<p>Messages that you send on the event bus can be as simple as a string, a number or a boolean. You can also send Vert.x buffers or JSON messages.</p>
+<p>It's highly recommended you use JSON messages to communicate between verticles. JSON is easy to create and parse in all the languages that Vert.x supports.</p>
 <h2 id="event-bus-api">Event Bus API</h2><br/>
 <p>Let's jump into the API</p>
 <h3 id="registering-and-unregistering-handlers">Registering and Unregistering Handlers</h3><br/>
 <p>To set a message handler on the address <code>test.address</code>, you call the method <code>register_handler</code> on the <code>EventBus</code> class</p>
 <pre class="prettyprint">from core.event_bus import EventBus
 
-def handler(message):
-    print "Got message body %s"% message.body
-id = EventBus.register_handler('test.address', handler)
+def msg_handler(message):
+print "Got message body %s"% message.body
+id = EventBus.register_handler('test.address', handler=msg_handler)
 </pre>
 <p>It's as simple as that. The handler will then receive any messages sent to that address. The object passed into the handler is an instance of class <code>core.Message</code>. The body of the message is available via the <code>body</code> attribute. </p>
 <p>The return value of <code>register_handler</code> is a unique handler id which can used later to unregister the handler.</p>
-<p>When you register a handler on an address and you're in a cluster it can take some time for the knowledge of that new handler to be propagated across the entire cluster. If you want to be notified when that has completed you can optionally specify a block to the <code>register_handler</code> method as the third argument. This block will then be called once the information has reached all nodes of the cluster. E.g. :</p>
-<pre class="prettyprint">from core.event_bus import EventBus
-
-def myHandler(message):
-    print 'Yippee! The handler info has been propagated across the cluster'
-EventBus.register_handler('test.address', myHandler)
-</pre>
 <p>To unregister a handler it's just as straightforward. You simply call <code>unregister_handler</code> passing in the id of the handler:</p>
-<pre class="prettyprint">EventBus.unregister_handler('test.address', id);
+<pre class="prettyprint">EventBus.unregister_handler('test.address', id)
 </pre>
-<p>As with registering, when you unregister a handler and you're in a cluster it can also take some time for the knowledge of that unregistration to be propagated across the entire to cluster.
-If you want your handler to live for the full lifetime of your verticle there is no need to unregister it explicitly - vert.x will automatically unregister any handlers when the verticle is stopped.  </p>
-<h3 id="sending-messages_1">Sending messages</h3><br/>
-<p>Sending a message is also trivially easy. Just send it specifying the address you want to send it to, for example:</p>
+<p>If you want your handler to live for the full lifetime of your verticle there is no need to unregister it explicitly - vert.x will automatically unregister any handlers when the verticle is stopped.  </p>
+<h3 id="publishing-messages">Publishing messages</h3><br/>
+<p>Publishing a message is also trivially easy. Just publish it specifying the address, for example:</p>
+<pre class="prettyprint">EventBus.publish('test.address', 'hello world')
+</pre>
+<p>That message will then be delivered to all handlers registered against the address "test.address".</p>
+<h3 id="sending-messages">Sending messages</h3><br/>
+<p>Sending a message will result in only one handler registered at the address receiving the message. This is the point to point messaging pattern. The handler is chosen in a non strict round-robin fashion.</p>
 <pre class="prettyprint">from core.event_bus import EventBus
 
 EventBus.send('test.address', 'hello world')
 </pre>
-<p>That message will then be delivered to any handlers registered against the address <code>test.address</code>. If you are running vert.x in cluster mode then it will also be delivered to any handlers on that address irrespective of what vert.x instance they are in.</p>
-<p>The message you send can be any of the following types:</p>
-<ul>
-<li>number</li>
-<li>String</li>
-<li>boolean</li>
-<li>JSON object</li>
-<li>Vert.x Buffer</li>
-</ul>
-<p>Vert.x buffers and JSON objects are copied before delivery if they are delivered in the same JVM, so different verticles can't access the exact same object instance.</p>
+<h3 id="replying-to-messages">Replying to messages</h3><br/>
+<p>Sometimes after you send a message you want to receive a reply from the recipient. This is known as the <em>request-response pattern</em>.</p>
+<p>To do this you send a message, and specify a function as a reply handler. When the receiver receives the message there is a method <code>reply</code> on the <code>Message</code> instance that is passed into the handler.</p>
+<p>When this function is invoked it causes a reply to be sent back to the sender where the reply handler is invoked. An example will make this clear:</p>
+<p>The receiver:</p>
+<pre class="prettyprint">def msg_handler(message):
+    print "I received a message %s"% message.body
+
+# Do some stuff...
+# Now reply to it
+message.reply('This is a reply')
+
+EventBus.register_handler('test.address', handler = msg_handler)
+</pre>
+<p>The sender:</p>
+<pre class="prettyprint">def reply_handler(message):
+print "I received a reply %s"%message.body
+
+EventBus.send('test.address', 'This is a message', reply_handler)
+</pre>
+<p>It is legal also to send an empty reply or a <code>None</code> reply.</p>
+<p>The replies themselves can also be replied to so you can create a dialog between two different verticles consisting of multiple rounds.</p>
+<h3 id="message-types">Message Types</h3><br/>
+<p>The message you send can be strings, numbers, boolean, Vert.x buffers or JSON objects (as Dicts)</p>
+<p>Objects are compied as required so different verticles can't access the exact same object instance.</p>
 <p>Here are some more examples:</p>
 <p>Send some numbers:</p>
 <pre class="prettyprint">EventBus.send('test.address', 1234)
@@ -501,31 +562,10 @@ EventBus.send('test.address', 3.14159)
 }
 EventBus.send('test.address', myObj)
 </pre>
-<p>None messages can also be sent:</p>
+<p><code>None</code> messages can also be sent:</p>
 <pre class="prettyprint">EventBus.send('test.address', None)
 </pre>
-<p>It's a good convention to have your verticles communicating using JSON.</p>
-<h3 id="replying-to-messages">Replying to messages</h3><br/>
-<p>Sometimes after you send a message you want to receive a reply from the recipient. This is known as the <em>request-response pattern</em>.</p>
-<p>To do this you send a message, and specify a block as a reply handler. When the receiver receives the message there is a method <code>reply</code> on the <code>Message</code> instance that is passed into the handler.</p>
-<p>When this function is invoked it causes a reply to be sent back to the sender where the reply handler is invoked. An example will make this clear:</p>
-<p>The receiver:</p>
-<pre class="prettyprint">def handler(message):
-    print "I received a message %s"% message.body
-
-    # Do some stuff...
-    # Now reply to it
-    message.reply('This is a reply')
-
-EventBus.registerHandler('test.address', handler)
-</pre>
-<p>The sender:</p>
-<pre class="prettyprint">def reply_handler(message):
-     print "I received a reply %s"%message.body     
-EventBus.send('test.address', 'This is a message', reply_handler)
-</pre>
-<p>It is legal also to send an empty reply or None reply.</p>
-<p>The replies themselves can also be replied to so you can create a dialog between two different verticles consisting of multiple rounds.</p>
+<p>It's a good convention to have your verticles communicating using JSON - this is because JSON is easy to generate and parse for all the languages that Vert.x supports.</p>
 <h2 id="distributed-event-bus">Distributed event bus</h2><br/>
 <p>To make each vert.x instance on your network participate on the same event bus, start each vert.x instance with the <code>-cluster</code> command line switch.</p>
 <p>See the chapter in the main manual on running vert.x for more information on this.</p>
@@ -547,22 +587,19 @@ hash['some-key'] = 'some-value'
 
 print "value of some-key is %s"% hash['some-key']
 </pre>
-<p><strong>TODO</strong> More on map API</p>
 <h2 id="shared-sets">Shared Sets</h2><br/>
 <p>To use a shared set to share data between verticles first get a reference to the set.</p>
 <pre class="prettyprint">from core.shared_data import SharedData
 
 set = SharedData.get_set('demo.myset')
 
-set.add('some-value');
+set.add('some-value')
 </pre>
 <p>And then, in a different verticle:</p>
 <pre class="prettyprint">set = SharedData.get_set('demo.myset')
 
 # Do something with the set
 </pre>
-<p><strong>TODO</strong> - More on set API</p>
-<p>API - atomic updates etc</p>
 <h1 id="buffers">Buffers</h1><br/>
 <p>Most data in vert.x is shuffled around using instances of <code>core.buffer.Buffer</code>.</p>
 <p>A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands automatically as necessary to accomodate any bytes written to it.</p>
@@ -572,10 +609,10 @@ set.add('some-value');
 buff = Buffer.create()
 </pre>
 <p>Create a buffer from a String. The String will be encoded in the buffer using UTF-8.</p>
-<pre class="prettyprint">buff = Buffer.create_from_str("some-string")
+<pre class="prettyprint">buff = Buffer.create_from_str('some-string')
 </pre>
 <p>Create a buffer from a String: The String will be encoded using the specified encoding, e.g:</p>
-<pre class="prettyprint">buff = Buffer.create_from_str("some-string", "UTF-16")
+<pre class="prettyprint">buff = Buffer.create_from_str('some-string', 'UTF-16')
 </pre>
 <p>Create a buffer with an initial size hint. If you know your buffer will have a certain amount of data written to it you can create the buffer and specify this size. This makes the buffer initially allocate that much memory and is more efficient than the buffer automatically resizing multiple times as data is written to it.</p>
 <p>Note that buffers created this way <em>are empty</em>. It does not create a buffer filled with zeros up to the specified size.</p>
@@ -584,7 +621,7 @@ buff = Buffer.create()
 <h2 id="writing-to-a-buffer">Writing to a Buffer</h2><br/>
 <p>There are two ways to write to a buffer: appending, and random access. In either case buffers will always expand automatically to encompass the bytes. It's not possible to write outside the bounds of the buffer.</p>
 <h3 id="appending-to-a-buffer">Appending to a Buffer</h3><br/>
-<p>To append to a buffer, you use the <code>append_XXX</code> methods. Append methods exist for appending other buffers, String, Float and FixNum.</p>
+<p>To append to a buffer, you use the <code>append_XXX</code> methods. Append methods exist for appending different types.</p>
 <p>When appending a FixNum you have to specify how many bytes you want to append this as in the buffer. Valid values are 1, 2, 4, 8. All FixNums are appended as signed integer values.</p>
 <p>When appending a Float you have to specify how many bytes you want to append this as in the buffer. Valid values are 4, 8, representing a single precision 32-bit IEEE 754 and a double precision 64-bit IEEE 754 floating point number respectively.</p>
 <p>The return value of the <code>append_XXX</code> methods is the buffer itself, so these can be chained:</p>
@@ -596,7 +633,7 @@ buff.append_fixnum(100, 1) # Append a single byte in the buffer
 buff.append_fixnum(231243, 8) # Append number as 8 bytes in the buffer
 buff.append_str('foo').append_float(23.4232, 4) # Appends can be chained
 
-socket.write_buffer(buff)
+socket.write(buff)
 </pre>
 <p>Appending FixNums:</p>
 <pre class="prettyprint">buff.append_fixnum(100, 1)   # Append number as single signed byte
@@ -685,23 +722,24 @@ str = buff.get_string(100, 110, 'UTF-16') # Get 10 bytes from pos 100 interprete
 <li><code>length</code>: To obtain the length of the buffer. The length of a buffer is the index of the byte in the buffer with the largest index + 1.</li>
 <li><code>copy</code>: Copy the entire buffer</li>
 </ul>
-<p>See the Yardoc for more detailed method level documentation.    </p>
+<p>See the Pydoc for more detailed method level documentation.    </p>
 <h1 id="delayed-and-periodic-tasks">Delayed and Periodic Tasks</h1><br/>
 <p>It's very common in vert.x to want to perform an action after a delay, or periodically.</p>
 <p>In standard verticles you can't just make the thread sleep to introduce a delay, as that will block the event loop thread.</p>
 <p>Instead you use vert.x timers. Timers can be <em>one-shot</em> or <em>periodic</em>. We'll discuss both</p>
 <h2 id="one-shot-timers">One-shot Timers</h2><br/>
 <p>A one shot timer calls an event handler after a certain delay, expressed in milliseconds.</p>
-<p>To set a timer to fire once you use the <code>vertx.set_timer</code> function passing in the delay and specifying a handler block which will be called when after the delay:</p>
+<p>To set a timer to fire once you use the <code>vertx.set_timer</code> function passing in the delay and specifying a handler function which will be called when after the delay:</p>
 <pre class="prettyprint">import vertx
 
 def handler(tid):
-    print 'And one second later this is printed'
+print 'And one second later this is printed'
 
 tid = vertx.set_timer(1000, handler)
 
 print 'First this is printed'
 </pre>
+<p>The timer id is returned from the call to <code>set_timer</code> and can be used to subsequently cancel the timer.</p>
 <h2 id="periodic-timers">Periodic Timers</h2><br/>
 <p>You can also set a timer to fire periodically by using the <code>set_periodic</code> function. There will be an initial delay equal to the period. The return value of <code>set_periodic</code> is a unique timer id (number). This can be later used if the timer needs to be cancelled. The argument passed into the timer event handler is also the unique timer id:</p>
 <pre class="prettyprint">import vertx
@@ -739,8 +777,9 @@ def handler(tid):
     Counter.count += 1
     if Counter.count == 10:
         vertx.cancel_timer(tid)
+
+vertx.set_periodic(500, handler)
 </pre>
-<p>vertx.set_periodic(500, handler)</p>
 <h1 id="writing-tcp-servers-and-clients">Writing TCP Servers and Clients</h1><br/>
 <p>Creating TCP servers and clients is incredibly easy with vert.x.</p>
 <h2 id="net-server">Net Server</h2><br/>
@@ -756,40 +795,42 @@ server = vertx.create_net_server()
 
 server.listen(1234, 'myhost')
 </pre>
-<p>The first parameter to <code>listen</code> is the port. The second parameter is the hostname or ip address. If it is ommitted it will default to <code>0.0.0.0</code> which means it will listen at all available interfaces.</p>
+<p>The first parameter to <code>listen</code> is the port. A wildcard port of <code>0</code> can be specified which means a random available port will be chosen to actually listen at. Once the server has completed listening you can then call the <code>port()</code> function of the server to find out the real port it is using.</p>
+<p>The second parameter is the hostname or ip address. If it is omitted it will default to <code>0.0.0.0</code> which means it will listen at all available interfaces.</p>
+<p>The actual bind is asynchronous so the server might not actually be listening until some time <em>after</em> the call to listen has returned. If you want to be notified when the server is actually listening you can provide a function handler to the <code>listen</code> call. For example:</p>
+<pre class="prettyprint">def listen_handler(err, server):
+    if err is None:
+        print 'Server is listening OK!'
+    else:
+       err.printStackTrace()
+
+server.listen(1234, 'myhost', listen_handler)
+</pre>
 <h3 id="getting-notified-of-incoming-connections">Getting Notified of Incoming Connections</h3><br/>
-<p>Just having a TCP server listening creates a working server that you can connect to (try it with telnet!), however it's not very useful since it doesn't do anything with the connections.</p>
 <p>To be notified when a connection occurs we need to call the <code>connect_handler</code> function of the server, specifying a block which represents the handler. The handler will be called when a connection is made:</p>
 <pre class="prettyprint">import vertx
 
 server = vertx.create_net_server()
 
 @server.connect_handler
-def connect_handler():
+def connect_handler(sock):
     print 'A client has connected!'
 
 server.listen(1234, 'localhost')
 </pre>
 <p>That's a bit more interesting. Now it displays 'A client has connected!' every time a client connects.</p>
-<p>The return value of the <code>connect_handler</code> method is the server itself, so multiple invocations can be chained together. That means we can rewrite the above as:</p>
-<pre class="prettyprint">import vertx
-
-server = vertx.create_net_server()
-
-@server.connect_handler
-def connect_handler()
-    print 'A client has connected!'
-server.listen(1234, 'localhost')
-</pre>
-<p>This is a common pattern throughout the vert.x API.</p>
 <h3 id="closing-a-net-server">Closing a Net Server</h3><br/>
 <p>To close a net server just call the <code>close</code> method.</p>
 <pre class="prettyprint">server.close()
 </pre>
-<p>The close is actually asynchronous and might not complete until some time after the <code>close</code> method has returned. If you want to be notified when the actual close has completed then you can specify a block to the <code>close</code> function.</p>
-<p>This block will then be called when the close has fully completed.</p>
-<pre class="prettyprint">def close_handler():
-    print 'The server is now fully closed.'
+<p>The close is actually asynchronous and might not complete until some time after the <code>close</code> method has returned. If you want to be notified when the actual close has completed then you can specify a function handler to the <code>close</code> function.</p>
+<p>This function will then be called when the close has fully completed.</p>
+<pre class="prettyprint">def close_handler(err):
+
+if err is None:
+        print 'Server is closed!'
+    else:
+       err.printStackTrace()
 
 server.close(close_handler)
 </pre>
@@ -831,17 +872,19 @@ server = vertx.create_net_server()
 
 @server.connect_handler
 def connect_handler(sock):
-    def data_handler(buffer):
-        print "I received %s bytes of data"% buffer.length
+def data_handler(buffer):
+    print "I received %s bytes of data"% buffer.length
     sock.data_handler(data_handler)
+
 server.listen(1234, 'localhost')
 </pre>
 <h4 id="writing-data-to-a-socket">Writing Data to a Socket</h4><br/>
 <p>To write data to a socket, you invoke one of the write methods. </p>
-<p>With a single buffer:
-    from core.buffer import Buffer</p>
-<pre class="prettyprint">myBuffer = Buffer.create(...)
-sock.write_buffer(myBuffer)
+<p>With a single buffer:</p>
+<pre class="prettyprint">from core.buffer import Buffer
+
+myBuffer = Buffer.create(...)
+sock.write(myBuffer)
 </pre>
 <p>A string. In this case the string will encoded using UTF-8 and the result written to the wire.</p>
 <pre class="prettyprint">sock.write_str('hello')
@@ -850,12 +893,7 @@ sock.write_buffer(myBuffer)
 <pre class="prettyprint">sock.write_str('hello', 'UTF-16')
 </pre>
 <p>The write methods are asynchronous and always returns immediately after the write has been queued.</p>
-<p>The actual write might occur some time later. If you want to be informed when the actual write has happened you can specify a block to the method:</p>
-<p>This block will then be invoked when the write has completed:</p>
-<pre class="prettyprint">def done_handler():
-    print 'It has actually been written'
-sock.write_str('hello', done_handler)
-</pre>
+<p>The actual write might occur some time later. </p>
 <p>Let's put it all together.</p>
 <p>Here's an example of a simple TCP echo server which simply writes back (echoes) everything that it receives on the socket:</p>
 <pre class="prettyprint">import vertx
@@ -870,6 +908,10 @@ def connect_handler(sock):
 
 server.listen(1234, 'localhost')
 </pre>
+<h3 id="socket-remote-address">Socket Remote Address</h3><br/>
+<p>You can find out the remote address of the socket (i.e. the address of the other side of the TCP IP connection) by calling <code>remote_address()</code>.</p>
+<h3 id="socket-local-address">Socket Local Address</h3><br/>
+<p>You can find out the local address of the socket (i.e. the address of this side of the TCP IP connection) by calling <code>local_address()</code>.</p>
 <h3 id="closing-a-socket">Closing a socket</h3><br/>
 <p>You can close a socket by invoking the <code>close</code> method. This will close the underlying TCP connection.</p>
 <h3 id="closed-handler">Closed Handler</h3><br/>
@@ -880,8 +922,8 @@ server = vertx.create_net_server()
 
 @server.connect_handler
 def connect_handler(sock):
-    def closed_handler():
-        print 'The socket is now closed'
+def closed_handler():
+    print 'The socket is now closed'
     sock.closed_handler(closed_handler)
 </pre>
 <p>The closed handler will be called irrespective of whether the close was initiated by the client or server.</p>
@@ -892,27 +934,39 @@ server = vertx.create_net_server()
 
 @server.connect_handler
 def connect_handler(sock):
-    @sock.exception_handler
+@sock.exception_handler
     def exception_handler(e):
         print 'Oops. Something went wrong'
 </pre>
+<h3 id="event-bus-write-handler">Event Bus Write Handler</h3><br/>
+<p>Every NetSocket automatically registers a handler on the event bus, and when any buffers are received in this handler, it writes them to itself. This enables you to write data to a NetSocket which is potentially in a completely different verticle or even in a different Vert.x instance by sending the buffer to the address of that handler.</p>
+<p>The address of the handler is given by the <code>write_handler_id</code> property.</p>
+<p>For example to write some data to the NetSocket from a completely different verticle you could do:</p>
+<pre class="prettyprint"># E.g. retrieve the ID from shared data
+write_handler_id = ...
+
+EventBus.send(write_handler_id, buffer)
+</pre>
 <h3 id="read-and-write-streams">Read and Write Streams</h3><br/>
-<p>NetSocket also can at as a <code>ReadStream</code> and a <code>WriteStream</code>. This allows flow control to occur on the connection and the connection data to be pumped to and from other object such as HTTP requests and responses, WebSockets and asynchronous files.</p>
+<p>NetSocket also implements <code>ReadStream</code> and a <code>WriteStream</code>. This allows flow control to occur on the connection and the connection data to be pumped to and from other object such as HTTP requests and responses, WebSockets and asynchronous files.</p>
 <p>This will be discussed in depth in the chapter on streams and pumps.</p>
 <h2 id="scaling-tcp-servers">Scaling TCP Servers</h2><br/>
 <p>A verticle instance is strictly single threaded.</p>
 <p>If you create a simple TCP server and deploy a single instance of it then all the handlers for that server are always executed on the same event loop (thread).</p>
-<p>This means that if you are running on a server with a lot of cores, and you only have this one instance deployed then you will have at most one core utilised on your server! That's not very good, right?</p>
-<p>To remedy this you can simply deploy more instances of the verticle in the server, e.g.</p>
-<pre class="prettyprint">vertx run echo_server.py -instances 20
+<p>This means that if you are running on a server with a lot of cores, and you only have this one instance deployed then you will have at most one core utilised on your server! </p>
+<p>To remedy this you can simply deploy more instances of the module in the server, e.g.</p>
+<pre class="prettyprint">vertx runmod com.mycompany~my-mod~1.0 -instances 20
 </pre>
-<p>The above would run 20 instances of echo_server.rb to a locally running vert.x instance.</p>
+<p>Or for a raw verticle</p>
+<pre class="prettyprint">vertx run myapp.py -instances 20
+</pre>
+<p>The above would run 20 instances of the module/verticle in the same Vert.x instance.</p>
 <p>Once you do this you will find the echo server works functionally identically to before, but, <em>as if by magic</em>, all your cores on your server can be utilised and more work can be handled.</p>
 <p>At this point you might be asking yourself <em>'Hold on, how can you have more than one server listening on the same host and port? Surely you will get port conflicts as soon as you try and deploy more than one instance?'</em></p>
 <p><em>Vert.x does a little magic here</em>.</p>
 <p>When you deploy another server on the same host and port as an existing server it doesn't actually try and create a new server listening on the same host/port.</p>
 <p>Instead it internally maintains just a single server, and, as incoming connections arrive it distributes them in a round-robin fashion to any of the connect handlers set by the verticles.</p>
-<p>Consequently vert.x TCP servers can scale over available cores while each vert.x verticle instance remains strictly single threaded, and you don't have to do any special tricks like writing load-balancers in order to scale your server on your multi-core machine.</p>
+<p>Consequently Vert.x TCP servers can scale over available cores while each Vert.x verticle instance remains strictly single threaded, and you don't have to do any special tricks like writing load-balancers in order to scale your server on your multi-core machine.</p>
 <h2 id="netclient">NetClient</h2><br/>
 <p>A NetClient is used to make TCP connections to servers.</p>
 <h3 id="creating-a-net-client">Creating a Net Client</h3><br/>
@@ -927,31 +981,18 @@ client = vertx.create_net_client()
 
 client = vertx.create_net_client()
 
-def connect_handler(sock):
+def connect_handler(err, sock):
+    if err is None:
     print 'We have connected'
 
 client.connect(1234, 'localhost', connect_handler)
 </pre>
 <p>The connect method takes the port number as the first parameter, followed by the hostname or ip address of the server. It takes a block as the connect handler. This handler will be called when the connection actually occurs.</p>
-<p>The argument passed into the connect handler is an instance of <code>NetSocket</code>, exactly the same as what is passed into the server side connect handler. Once given the <code>NetSocket</code> you can read and write data from the socket in exactly the same way as you do on the server side.</p>
+<p>The first argument passed into the connect handler is an exception - this will be <code>None</code> if the connect succeeded. The second argument is the socket itself - this will be <code>None</code> if the connect failed.</p>
+<p>The socket object is an instance of <code>NetSocket</code>, exactly the same as what is passed into the server side connect handler. Once given the <code>NetSocket</code> you can read and write data from the socket in exactly the same way as you do on the server side.</p>
 <p>You can also close it, set the closed handler, set the exception handler and use it as a <code>ReadStream</code> or <code>WriteStream</code> exactly the same as the server side <code>NetSocket</code>.</p>
-<h3 id="catching-exceptions-on-the-net-client">Catching exceptions on the Net Client</h3><br/>
-<p>You can set an exception handler on the <code>NetClient</code>. This will catch any exceptions that occur during connection.</p>
-<pre class="prettyprint">import vertx
-
-client = vertx.create_net_client()
-
-@client.exception_handler
-def exception_handler(ex):
-    print 'Cannot connect since the host does not exist!'
-
-def connect_handler(sock):
-    print "this won't get called"
-
-client.connect(4242, 'host-that-doesnt-exist', connect_handler)
-</pre>
 <h3 id="configuring-reconnection">Configuring Reconnection</h3><br/>
-<p>A NetClient can be configured to automatically retry connecting or reconnecting to the server in the event that it cannot connect or has lost its connection. This is done by invoking setting the attributes <code>reconnect_attempts</code> and <code>reconnect_interval</code>:</p>
+<p>A NetClient can be configured to automatically retry connecting or reconnecting to the server in the event that it cannot connect or has lost its connection. This is done by invoking setting the properties <code>reconnect_attempts</code> and <code>reconnect_interval</code>:</p>
 <pre class="prettyprint">import vertx
 
 client = vertx.create_net_client()
@@ -962,7 +1003,6 @@ client.reconnect_interval = 500
 </pre>
 <p><code>reconnect_attempts</code> determines how many times the client will try to connect to the server before giving up. A value of <code>-1</code> represents an infinite number of times. The default value is <code>0</code>. I.e. no reconnection is attempted.</p>
 <p><code>reconnect_interval</code> determines how long, in milliseconds, the client will wait between reconnect attempts. The default value is <code>1000</code>.</p>
-<p>If an exception handler is set on the client, and reconnect attempts is not equal to <code>0</code>. Then the exception handler will not be called until the client gives up reconnecting.</p>
 <h3 id="netclient-properties">NetClient Properties</h3><br/>
 <p>Just like <code>NetServer</code>, <code>NetClient</code> also has a set of TCP properties you can set which affect its behaviour. They have the same meaning as those on <code>NetServer</code>.</p>
 <p><code>NetClient</code> also has a further set of properties which are used to configure SSL. We'll discuss those later on.</p>
@@ -1026,9 +1066,10 @@ client.trust_store_password = 'password'
 client.key_store_path = '/path/to/keystore/holding/client/cert/client-keystore.jks'
 client.key_store_password = 'password'
 </pre>
+<p><a id="flow-control"> </a> </p>
 <h1 id="flow-control-streams-and-pumps">Flow Control - Streams and Pumps</h1><br/>
 <p>There are several objects in vert.x that allow data to be read from and written to in the form of Buffers.</p>
-<p>All operations in the vert.x API are non blocking; calls to write data return immediately and writes are internally queued.</p>
+<p>In Vert.x, calls to write data return immediately and writes are internally queued.</p>
 <p>It's not hard to see that if you write to an object faster than it can actually write the data to its underlying resource then the write queue could grow without bound - eventually resulting in exhausting available memory.</p>
 <p>To solve this problem a simple flow control capability is provided by some objects in the vert.x API.</p>
 <p>Any flow control aware object that can be written to is said to implement <code>ReadStream</code>, and any flow control object that can be read from is said to implement <code>WriteStream</code>.</p>
@@ -1040,39 +1081,39 @@ server = vertx.create_net_server()
 
 @server.connect_handler
 def connect_handler(sock):
-    @sock.data_handler
+@sock.data_handler
     def data_handler(buffer):
         # Write the data straight back
         sock.write(buffer)
 
 server.listen(1234, 'localhost')
 </pre>
-<p>There's a problem with the above example: If data is read from the socket faster than it can be written back to the socket, it will build up in the write queue of the AsyncFile, eventually running out of RAM. This might happen, for example if the client at the other end of the socket wasn't reading very fast, effectively putting back-pressure on the connection.</p>
+<p>There's a problem with the above example: If data is read from the socket faster than it can be written back to the socket, it will build up in the write queue of the NetSocket, eventually running out of RAM. This might happen, for example if the client at the other end of the socket wasn't reading very fast, effectively putting back-pressure on the connection.</p>
 <p>Since <code>NetSocket</code> implements <code>WriteStream</code>, we can check if the <code>WriteStream</code> is full before writing to it:</p>
 <pre class="prettyprint">import vertx
 server = vertx.create_net_server()
 
 @server.connect_handler
 def connect_handler(sock):
-    @sock.data_handler
+@sock.data_handler
     def data_handler(buffer):
-        if not sock.write_queue_full:
+    if not sock.write_queue_full:
             sock.write(buffer)
 
 server.listen(1234, 'localhost')
 </pre>
-<p>This example won't run out of RAM but we'll end up losing data if the write queue gets full. What we really want to do is pause the <code>NetSocket</code> when the <code>AsyncFile</code> write queue is full. Let's do that:</p>
+<p>This example won't run out of RAM but we'll end up losing data if the write queue gets full. What we really want to do is pause the <code>NetSocket</code> when the write queue is full. Let's do that:</p>
 <pre class="prettyprint">import vertx
 server = vertx.create_net_server()
 
 @server.connect_handler
 def connect_handler(sock):
-    @sock.data_handler
+@sock.data_handler
     def data_handler(buffer):
         if sock.write_queue_full:
             sock.pause()
         else:
-          sock.write(buffer)
+            sock.write(buffer)
 
 server.listen(1234, 'localhost')
 </pre>
@@ -1082,7 +1123,7 @@ server = vertx.create_net_server()
 
 @server.connect_handler
 def connect_handler(sock):
-    @sock.data_handler
+@sock.data_handler
     def data_handler(buffer):
         if sock.write_queue_full:
             sock.pause()
@@ -1103,8 +1144,7 @@ server = vertx.create_net_server()
 @server.connect_handler
 def connect_handler(sock):
 
-    pump = Pump(sock, sock)
-    pump.start()
+    Pump(sock, sock).start()
 
 server.listen(1234, 'localhost')
 </pre>
@@ -1124,8 +1164,8 @@ server.listen(1234, 'localhost')
 <p><code>WriteStream</code> is implemented by <code>AsyncFile</code>, <code>HttpClientRequest</code>, <code>HttpServerResponse</code>, <code>WebSocket</code>, <code>NetSocket</code> and <code>SockJSSocket</code></p>
 <p>Functions:</p>
 <ul>
-<li><code>write_buffer</code>: write a Buffer to the <code>WriteStream</code>. This method will never block. Writes are queued internally and asynchronously written to the underlying resource.</li>
-<li><code>write_queue_max_size=</code>: set the number of bytes at which the write queue is considered <em>full</em>, and the function <code>write_queue_full</code> returns <code>True</code>. Note that, even if the write queue is considered full, if <code>writeBuffer</code> is called the data will still be accepted and queued.</li>
+<li><code>write</code>: write a Buffer to the <code>WriteStream</code>. This method will never block. Writes are queued internally and asynchronously written to the underlying resource.</li>
+<li><code>write_queue_max_size=</code>: set the number of bytes at which the write queue is considered <em>full</em>, and the function <code>write_queue_full</code> returns <code>True</code>. Note that, even if the write queue is considered full, if <code>write</code> is called the data will still be accepted and queued.</li>
 <li><code>write_queue_full</code>: returns <code>True</code> if the write queue is considered full.</li>
 <li><code>exception_handler</code>: Will be called if an exception occurs on the <code>WriteStream</code>.</li>
 <li><code>drain_handler</code>: The handler will be called if the <code>WriteStream</code> is considered no longer full.</li>
@@ -1139,25 +1179,33 @@ server.listen(1234, 'localhost')
 <li><code>bytes_pumped</code>. Returns total number of bytes pumped.</li>
 </ul>
 <p>A pump can be started and stopped multiple times.</p>
+<p>When a pump is first created it is <em>not</em> started. You need to call the <code>start()</code> method to start it.</p>
 <h1 id="writing-http-servers-and-clients">Writing HTTP Servers and Clients</h1><br/>
 <h2 id="writing-http-servers">Writing HTTP servers</h2><br/>
 <p>Vert.x allows you to easily write full featured, highly performant and scalable HTTP servers.</p>
 <h3 id="creating-an-http-server">Creating an HTTP Server</h3><br/>
 <p>To create an HTTP server you simply create an instance of <code>core.http.HttpServer</code>.</p>
-<pre class="prettyprint">server = vertx.create_net_server()
+<pre class="prettyprint">server = vertx.create_http_server()
 </pre>
 <h3 id="start-the-server-listening_1">Start the Server Listening</h3><br/>
 <p>To tell that server to listen for incoming requests you use the <code>listen</code> method:</p>
-<pre class="prettyprint">server = vertx.create_net_server()
+<pre class="prettyprint">server = vertx.create_http_server()
 
 server.listen(8080, 'myhost')
 </pre>
 <p>The first parameter to <code>listen</code> is the port. The second parameter is the hostname or ip address. If the hostname is omitted it will default to <code>0.0.0.0</code> which means it will listen at all available interfaces.</p>
+<p>The actual bind is asynchronous so the server might not actually be listening until some time <em>after</em> the call to listen has returned. If you want to be notified when the server is actually listening you can provide a handler to the <code>listen</code> call. For example:</p>
+<pre class="prettyprint">def listen_handler(err, server):
+    if err is None:
+        print "Now listening!"
+
+server.listen(8080, 'myhost', listen_handler)
+</pre>
 <h3 id="getting-notified-of-incoming-requests">Getting Notified of Incoming Requests</h3><br/>
 <p>To be notified when a request arrives you need to set a request handler. This is done by calling the <code>request_handler</code> method of the server, passing in the handler:</p>
 <pre class="prettyprint">import vertx
 
-server = vertx.create_net_server()
+server = vertx.create_http_server()
 @server.request_handler
 def request_handler(request):
     print 'An HTTP request has been received'
@@ -1165,15 +1213,6 @@ def request_handler(request):
 server.listen(8080, 'localhost')
 </pre>
 <p>This displays 'An HTTP request has been received!' every time an HTTP request arrives on the server. You can try it by running the verticle and pointing your browser at <code>http://localhost:8080</code>.</p>
-<p>Similarly to <code>NetServer</code>, the return value of the <code>request_handler</code> function is the server itself, so multiple invocations can be chained together. That means we can rewrite the above with:</p>
-<pre class="prettyprint">import vertx
-
-server = vertx.create_net_server()
-@server.request_handler
-def request_handler(request):
-    print 'An HTTP request has been received'
-server.listen(8080, 'localhost')
-</pre>
 <h3 id="handling-http-requests">Handling HTTP Requests</h3><br/>
 <p>So far we have seen how to create an <code>HttpServer</code> and be notified of requests. Lets take a look at how to handle the requests and do something useful with them.</p>
 <p>When a request arrives, the request handler is called passing in an instance of <code>HttpServerRequest</code>. This object represents the server side HTTP request.</p>
@@ -1181,12 +1220,14 @@ server.listen(8080, 'localhost')
 <p>It contains functions to get the URI, path, request headers and request parameters. It also contains a <code>response</code> property which is a reference to an object that represents the server side HTTP response for the object.</p>
 <h4 id="request-method">Request Method</h4><br/>
 <p>The request object has a property <code>method</code> which is a string representing what HTTP method was requested. Possible values for <code>method</code> are: <code>GET</code>, <code>PUT</code>, <code>POST</code>, <code>DELETE</code>, <code>HEAD</code>, <code>OPTIONS</code>, <code>CONNECT</code>, <code>TRACE</code>, <code>PATCH</code>.</p>
+<h4 id="request-version">Request Version</h4><br/>
+<p>The request object has a function <code>version</code> which returns a string representing the HTTP version.</p>
 <h4 id="request-uri">Request URI</h4><br/>
 <p>The request object has a property <code>uri</code> which contains the full URI (Uniform Resource Locator) of the request. For example, if the request URI was:</p>
 <pre class="prettyprint">/a/b/c/page.html?param1=abc&amp;param2=xyz
 </pre>
 <p>Then <code>request.uri</code> would contain the string <code>/a/b/c/page.html?param1=abc&amp;param2=xyz</code>.</p>
-<p>Request URIs can be relative or absolute (with a domain) depending on what the client sent. In many cases they will be relative.</p>
+<p>Request URIs can be relative or absolute (with a domain) depending on what the client sent. In most cases they will be relative.</p>
 <p>The request uri contains the value as defined in <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html">Section 5.1.2 of the HTTP specification - Request-URI</a></p>
 <h4 id="request-path">Request Path</h4><br/>
 <p>The request object has a property <code>path</code> which contains the path of the request. For example, if the request URI was:</p>
@@ -1199,44 +1240,48 @@ server.listen(8080, 'localhost')
 </pre>
 <p>Then <code>request.query</code> would contain the string <code>param1=abc&amp;param2=xyz</code></p>
 <h4 id="request-headers">Request Headers</h4><br/>
-<p>The request headers are available using the <code>headers</code> method on the request object. The return value of the method is a Ruby Hash.</p>
-<p>Note that the header keys are always lower-cased before being returned to you.</p>
+<p>The request headers are available using the <code>headers</code> function on the request object. The return value of the method is a MultiMap. A MultiMap differs from a normal Hash in that it allows multiple values with the same key.</p>
 <p>Here's an example that echoes the headers to the output of the response. Run it and point your browser at <code>http://localhost:8080</code> to see the headers.</p>
 <pre class="prettyprint">@server.request_handler
 def request_handler(request):
 
-  request.response.put_header('Content-Type', 'text/plain')
+    request.response.put_header('Content-Type', 'text/plain')
 
-  str = "Headers are\n"
-  @request.headers.each
-  def each(key, value):
-      str += "#{key}: #{value}\n"
+    str = "Headers are\n"
+    @request.headers.each
+    def each(key, value):
+    str += "#{key}: #{value}\n"
 
-  request.response.end(str)
+    request.response.end(str)
 
 server.listen(8080, 'localhost')
 </pre>
 <h4 id="request-params">Request params</h4><br/>
-<p>Similarly to the headers, the request parameters are available using the <code>params</code> method on the request object. The return value of the function is just a Hash too.</p>
+<p>Similarly to the headers, the request parameters are available using the <code>params</code> function on the request object. This also a MultiMap</p>
 <p>Request parameters are sent on the request URI, after the path. For example if the URI was:</p>
 <pre class="prettyprint">/page.html?param1=abc&amp;param2=xyz
 </pre>
-<p>Then the params hash would be the following JS object:</p>
-<pre class="prettyprint">{ param1: 'abc', param2: 'xyz' }
+<p>Then the params multimap would contain the following entries:</p>
+<pre class="prettyprint">param1: 'abc'
+param2: 'xyz
 </pre>
+<h4 id="remote-address">Remote Address</h4><br/>
+<p>Use the function <code>remote_address</code> to find out the address of the other side of the HTTP connection.</p>
+<h4 id="absolute-uri">Absolute URI</h4><br/>
+<p>Use the function <code>absolute_uri</code> to return the absolute URI corresponding to the request.</p>
 <h4 id="reading-data-from-the-request-body">Reading Data from the Request Body</h4><br/>
 <p>Sometimes an HTTP request contains a request body that we want to read. As previously mentioned the request handler is called when only the headers of the request have arrived so the <code>HttpServerRequest</code> object does not contain the body. This is because the body may be very large and we don't want to create problems with exceeding available memory.</p>
 <p>To receive the body, you set the <code>data_handler</code> on the request object. This will then get called every time a chunk of the request body arrives. Here's an example:</p>
 <pre class="prettyprint">@server.request_handler
 def request_handler(request):
-    @request.data_handler
+@request.data_handler
     def data_handler(buffer):
         print "I received %d bytes"% buffer.length
 server.listen(8080, 'localhost')
 </pre>
 <p>The <code>data_handler</code> may be called more than once depending on the size of the body.</p>
 <p>You'll notice this is very similar to how data from <code>NetSocket</code> is read.</p>
-<p>The request object implements the <code>ReadStream</code> interface so you can pump the request body to a <code>WriteStream</code>. See the chapter on streams and pumps for a detailed explanation.</p>
+<p>The request object implements the <code>ReadStream</code> interface so you can pump the request body to a <code>WriteStream</code>.</p>
 <p>In many cases, you know the body is not large and you just want to receive it in one go. To do this you could do something like the following:</p>
 <pre class="prettyprint">import vertx
 from core.buffer import Buffer
@@ -1246,18 +1291,18 @@ server = vertx.create_http_server()
 @server.request_handler
 def request_handler(request):
 
-  # Create a buffer to hold the body
-  body = Buffer.create(0)
+    # Create a buffer to hold the body
+    body = Buffer.create(0)
 
-  @request.data_handler
-  def data_handler(buffer)
-      # Append the chunk to the buffer
-      body.append_buffer(buffer)
+    @request.data_handler
+    def data_handler(buffer)
+        # Append the chunk to the buffer
+        body.append_buffer(buffer)
 
-  @request.end_handler
-  def end_handler():
-      # The entire body has now been received
-      print "The total body received was %d bytes"%body.length
+    @request.end_handler
+    def end_handler():
+        # The entire body has now been received
+        print "The total body received was %d bytes"%body.length
 
 server.listen(8080, 'localhost')
 </pre>
@@ -1273,13 +1318,34 @@ server = vertx.create_http_server()
 
 @server.request_handler
 def request_handler(request):
-    @request.body_handler 
+@request.body_handler 
     def body_handler(body):
         print "The total body received was %d bytes"% body.length
 
 server.listen(8080, 'localhost')
 </pre>
-<p>Simples, innit?</p>
+<h4 id="handling-multipart-form-uploads">Handling Multipart Form Uploads</h4><br/>
+<p>Vert.x understands file uploads submitted from HTML forms in browsers. In order to handle file uploads you should set the <code>upload_handler</code> on the request. The handler will be called once for each upload in the form.</p>
+<pre class="prettyprint">def upload_handler(upload):
+    print "Got upload %s" % upload.filename()
+
+request.upload_handler(upload_handler)
+</pre>
+<p>The <code>HttpServerFileUpload</code> class implements <code>ReadStream</code> so you read the data and stream it to any object that implements <code>WriteStream</code> using a Pump, as previously discussed.</p>
+<p>You can also stream it directly to disk using the convenience method <code>streamToFileSystem()</code>.</p>
+<pre class="prettyprint">def upload_handler(upload):
+    upload.stream_to_file_system "upload/%s" %upload.filename
+
+request.upload_handler(upload_handler)
+</pre>
+<h4 id="handling-multipart-form-attributes">Handling Multipart Form Attributes</h4><br/>
+<p>If the request corresponds to an HTML form that was submitted you can use the method <code>form_attributes</code> to retrieve a Multi Map of the form attributes. This should only be called after <em>all</em> of the request has been read - this is because form attributes are encoded in the request <em>body</em> not in the request headers.</p>
+<pre class="prettyprint">@request.end_handler
+def end_handler():
+    # The request has been all ready so now we can look at the form attributes
+    attrs = request.form_attributes()
+    # Do something with them
+</pre>
 <h3 id="http-server-responses">HTTP Server Responses</h3><br/>
 <p>As previously mentioned, the HTTP request object contains a property <code>response</code>. This is the HTTP response for the request. You use it to write the response back to the client.</p>
 <h3 id="setting-status-code-and-message">Setting Status Code and Message</h3><br/>
@@ -1299,10 +1365,10 @@ server.listen(8080, 'localhost')
 </pre>
 <p>The default value for <code>status_code</code> is <code>200</code>.    </p>
 <h4 id="writing-http-responses">Writing HTTP responses</h4><br/>
-<p>To write data to an HTTP response, you invoke the <code>write_buffer</code> or <code>write_str</code> methods. These methods can be invoked multiple times before the response is ended.</p>
+<p>To write data to an HTTP response, you invoke the <code>write</code> or <code>write_str</code> methods. These methods can be invoked multiple times before the response is ended.</p>
 <p>With a single buffer:</p>
 <pre class="prettyprint">myBuffer = ...
-request.response.write_buffer(myBuffer)
+request.response.write(myBuffer)
 </pre>
 <p>A string. In this case the string will encoded using UTF-8 and the result written to the wire.</p>
 <pre class="prettyprint">request.response.write_str('hello')
@@ -1310,11 +1376,7 @@ request.response.write_buffer(myBuffer)
 <p>A string and an encoding. In this case the string will encoded using the specified encoding and the result written to the wire.</p>
 <pre class="prettyprint">request.response.write_str('hello', 'UTF-16')
 </pre>
-<p>The write methods are asynchronous and always returns immediately after the write has been queued.</p>
-<p>The actual write might complete some time later. If you want to be informed when the actual write has completed you can specify a block when calling the method. The block will then be invoked when the write has completed:</p>
-<pre class="prettyprint">def done(): print 'It has actually been written' 
-request.response.write_str('hello', done)
-</pre>
+<p>The write methods are asynchronous and always returns immediately after the write has been queued. The actual write might complete some time later. </p>
 <p>If you are just writing a single string or Buffer to the HTTP response you can write it and end the response in a single call to the <code>end</code> function.</p>
 <p>The first call to write results in the response header being being written to the response.</p>
 <p>Consequently, if you are not using HTTP chunking then you must set the <code>Content-Length</code> header before writing to the response, since it will be too late otherwise. If you are using HTTP chunking you do not have to worry.</p>
@@ -1345,7 +1407,7 @@ request.response.write_str('hello', done)
 <p>You put the HTTP response into chunked mode by setting the <code>chunked</code> property.</p>
 <pre class="prettyprint">req.response.chunked = True
 </pre>
-<p>Default is non-chunked. When in chunked mode, each call to <code>response.write_buffer</code> or <code>response.write_str</code> will result in a new HTTP chunk being written out.</p>
+<p>Default is non-chunked. When in chunked mode, each call to <code>response.write</code> or <code>response.write_str</code> will result in a new HTTP chunk being written out.</p>
 <p>When in chunked mode you can also write HTTP response trailers to the response. These are actually written in the final chunk of the response.</p>
 <p>Like headers, HTTP response trailers can be added to the response by adding them to the Hash returned from the <code>trailers</code> method:</p>
 <pre class="prettyprint">request.response.trailers['Some-header'] = 'foo'
@@ -1365,13 +1427,16 @@ server = vertx.create_http_server()
 
 @server.request_handler
 def request_handler(request):
-    file = ''
+file = ''
     if req.path == '/':
         file = 'index.html'
     elif '..' not in req.path:
         file = req.path
-  req.response.send_file('web/' + file)
+    req.response.send_file(file)
 server.listen(8080, 'localhost')
+</pre>
+<p>There's also a version of <code>send_file</code> which takes the name of a file to serve if the specified file cannot be found:</p>
+<pre class="prettyprint">req.response.send_file(file, 'handler_404.html')
 </pre>
 <p><em>Note: If you use <code>send_file</code> while using HTTPS it will copy through userspace, since if the kernel is copying data directly from disk to socket it doesn't give us an opportunity to apply any encryption.</em></p>
 <p><strong>If you're going to write web servers using vert.x be careful that users cannot exploit the path to access files outside the directory from which you want to serve them.</strong></p>
@@ -1384,18 +1449,16 @@ from core.streams import Pump
 server = vertx.create_http_server()
 
 @server.request_handler
-def request_handler(request):
+def request_handler(req):
 
-  req.response.put_headers(req.headers)
+    req.response.headers.set_all(req.headers)
 
-  p = Pump(req, req.response)
-  p.start()
+    Pump(req, req.response).start()
 
-  @req.end_handler
-  def end_handler(): req.response.end()
-
-server.listen(8080, 'localhost')
+    @req.end_handler
+    def end_handler(): req.response.end()
 </pre>
+<p>server.listen(8080, 'localhost')</p>
 <h2 id="writing-http-clients">Writing HTTP Clients</h2><br/>
 <h3 id="creating-an-http-client">Creating an HTTP Client</h3><br/>
 <p>To create an HTTP client you simply create an instance of <code>core.http.HttpClient</code>:</p>
@@ -1441,7 +1504,7 @@ request.end()
 <p>Legal request methods are: <code>get</code>, <code>put</code>, <code>post</code>, <code>delete</code>, <code>head</code>, <code>options</code>, <code>connect</code>, <code>trace</code> and <code>patch</code>.</p>
 <p>The general modus operandi is you invoke the appropriate method passing in the request URI as the first parameter, the second parameter is an event handler which will get called when the corresponding response arrives. The response handler is passed the client response object as an argument.</p>
 <p>The value specified in the request URI corresponds to the Request-URI as specified in <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html">Section 5.1.2 of the HTTP specification</a>. In most cases it will be a relative URI.</p>
-<p><em>Please note that the domain/port that the client connects to is determined by <code>setPort</code> and <code>setHost</code>, and is not parsed from the uri.</em></p>
+<p><em>Please note that the domain/port that the client connects to is determined by <code>port</code> and <code>host</code>, and is not parsed from the uri.</em></p>
 <p>The return value from the appropriate request method is an <code>HttpClientRequest</code> object. You can use this to add headers to the request, and to write to the request body. The request object implements <code>WriteStream</code>.</p>
 <p>Once you have finished with the request you must call the <code>end</code> method.</p>
 <p>If you don't know the name of the request method in advance there is a general <code>request</code> method which takes the HTTP method as a parameter:</p>
@@ -1463,13 +1526,14 @@ client.host = 'foo.com'
 def response_handler(resp): print "got response %s"% resp.status_code
 client.get_now('/some-path/', response_handler)
 </pre>
-<p>With <code>get_now</code> there is no return value.</p>
+<h4 id="handling-exceptions">Handling exceptions</h4><br/>
+<p>You can set an exception handler on the <code>HttpClient</code> class and it will receive all exceptions for the client unless a specific exception handler has been set on a specific <code>HttpClientRequest</code> object.</p>
 <h4 id="writing-to-the-request-body">Writing to the request body</h4><br/>
 <p>Writing to the client request body has a very similar API to writing to the server response body.</p>
-<p>To write data to an <code>HttpClientRequest</code> object, you invoke the <code>write_buffer</code> or <code>write_str</code> methods. These methods can be called multiple times before the request has ended.</p>
+<p>To write data to an <code>HttpClientRequest</code> object, you invoke the <code>write</code> or <code>write_str</code> methods. These methods can be called multiple times before the request has ended.</p>
 <p>With a single buffer:</p>
 <pre class="prettyprint">myBuffer = ...
-request.write_buffer(myBuffer)
+request.write(myBuffer)
 </pre>
 <p>A string. In this case the string will encoded using UTF-8 and the result written to the wire.</p>
 <pre class="prettyprint">request.write_str('hello')
@@ -1478,10 +1542,6 @@ request.write_buffer(myBuffer)
 <pre class="prettyprint">request.write_str('hello', 'UTF-16')
 </pre>
 <p>The write functions are asynchronous and always return immediately after the write has been queued. The actual write might complete some time later.</p>
-<p>If you want to be informed when the actual write has completed you specify a block to the method. This block will be invoked when the write has completed:</p>
-<pre class="prettyprint">def handler(): print 'It has actually been written' 
-request.response.write('hello', handler)
-</pre>
 <p>If you are just writing a single string or Buffer to the HTTP request you can write it and end the request in a single call to the <code>end</code> method.</p>
 <p>The first call to <code>write</code> results in the request header being being written to the request.</p>
 <p>Consequently, if you are not using HTTP chunking then you must set the <code>Content-Length</code> header before writing to the request, since it will be too late otherwise. If you are using HTTP chunking you do not have to worry.</p>
@@ -1493,7 +1553,7 @@ request.response.write('hello', handler)
 </pre>
 <p>The method can also be called with a string or Buffer in the same way write is called. In this case it's just the same as calling write with a string or Buffer followed by calling <code>end</code> with no arguments.</p>
 <h4 id="writing-request-headers">Writing Request Headers</h4><br/>
-<p>To write headers to the request, add them to the Hash returned from the <code>headers</code> method:</p>
+<p>To write headers to the request, add them to the <code>headers</code> MultiMap</p>
 <pre class="prettyprint">client = vertx.create_http_client()
 client.host = 'foo.com'
 
@@ -1511,7 +1571,7 @@ client.host = 'foo.com'
 def response_handler(resp): print "got response %s"% resp.status_code
 
 request = client.post('/some-path', response_handler). 
-    put_header('Some-Header', 'Some-Value').
+put_header('Some-Header', 'Some-Value').
     put_header('Some-Other-Header', 'Some-Other-Value').
     end()
 </pre>
@@ -1520,7 +1580,7 @@ request = client.post('/some-path', response_handler).
 <p>You put the HTTP request into chunked mode by setting the attribute <code>chunked</code>.</p>
 <pre class="prettyprint">request.chunked = True
 </pre>
-<p>Default is non-chunked. When in chunked mode, each call to <code>request.write_str</code> or <code>request.write_buffer</code> will result in a new HTTP chunk being written out.</p>
+<p>Default is non-chunked. When in chunked mode, each call to <code>request.write_str</code> or <code>request.write</code> will result in a new HTTP chunk being written out.</p>
 <h3 id="http-client-responses">HTTP Client Responses</h3><br/>
 <p>Client responses are received as an argument to the response handler block that is specified when making a request.</p>
 <p>The response object implements <code>ReadStream</code>, so it can be pumped to a <code>WriteStream</code> like any other <code>ReadStream</code>.</p>
@@ -1529,26 +1589,26 @@ request = client.post('/some-path', response_handler).
 client.host = 'foo.com'
 
 def response_handler(resp): 
-    print "server returned status code:  %s"% resp.status_code
-    print "server returned status message: %s"% resp.status_message
+print "server returned status code:  %s"% resp.status_code
+print "server returned status message: %s"% resp.status_message
 
 client.get_now('/some-path', response_handler)
 </pre>
 <h4 id="reading-data-from-the-response-body">Reading Data from the Response Body</h4><br/>
 <p>The API for reading a http client response body is very similar to the API for reading a http server request body.</p>
 <p>Sometimes an HTTP response contains a request body that we want to read. Like an HTTP request, the client response handler is called when all the response headers have arrived, not when the entire response body has arrived.</p>
-<p>To receive the response body, you set a <code>dataHandler</code> on the response object which gets called as parts of the HTTP response arrive. Here's an example:</p>
+<p>To receive the response body, you set a <code>data_handler</code> on the response object which gets called as parts of the HTTP response arrive. Here's an example:</p>
 <pre class="prettyprint">client = vertx.create_http_client()
 client.host = 'foo.com'
 
 def response_handler(resp): 
     @resp.data_handler
-    def data_handler(buffer):
-        print "I received %s bytes"% buffer.length
+def data_handler(buffer):
+    print "I received %s bytes"% buffer.length
 
 client.get_now('/some-path', response_handler)
 </pre>
-<p>The response object implements the <code>ReadStream</code> interface so you can pump the response body to a <code>WriteStream</code>. See the chapter on streams and pump for a detailed explanation.</p>
+<p>The response object implements the <code>ReadStream</code> interface so you can pump the response body to a <code>WriteStream</code>.</p>
 <p>The <code>data_handler</code> can be called multiple times for a single HTTP response.</p>
 <p>As with a server request, if you wanted to read the entire response body before doing something with it you could do something like the following:</p>
 <pre class="prettyprint">client = vertx.create_http_client()
@@ -1556,16 +1616,17 @@ client.host = 'foo.com'
 
 def response_handler(resp):
 
-    # Create a buffer to hold the entire response body
-    body = Buffer.create(0)
+# Create a buffer to hold the entire response body
+body = Buffer.create(0)
 
-    @resp.data_handler
-    def data_handler(buffer):
-        # Add chunk to the buffer
-        body.append_buffer(buffer)
-    @resp.end_handler
-    def end_handler():
-        # The entire response body has been received
+@resp.data_handler
+def data_handler(buffer):
+    # Add chunk to the buffer
+    body.append_buffer(buffer)
+
+@resp.end_handler
+def end_handler():
+    # The entire response body has been received
         print "The total body received was %s bytes"% body.length
 
 client.get_now('/some-path', response_handler)
@@ -1580,13 +1641,13 @@ client.get_now('/some-path', response_handler)
 client.host = 'foo.com'
 
 def response_handler(resp): 
-    @resp.body_handler
-    def body_handler(body):
-        print "The total body received was %s bytes"% body.length
+@resp.body_handler
+def body_handler(body):
+    print "The total body received was %s bytes"% body.length
 client.get_now('/some-path', response_handler)
 </pre>
-<h2 id="pumping-requests-and-responses">Pumping Requests and Responses</h2><br/>
-<p>The HTTP client and server requests and responses all implement either <code>ReadStream</code> or <code>WriteStream</code>. This means you can pump between them and any other read and write streams.</p>
+<h4 id="reading-cookies">Reading cookies</h4><br/>
+<p>You can read the list of cookies from the response using the function <code>cookies()</code>.</p>
 <h3 id="100-continue-handling">100-Continue Handling</h3><br/>
 <p>According to the <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec8.html">HTTP 1.1 specification</a> a client can set a header <code>Expect: 100-Continue</code> and send the request header before sending the rest of the request body.</p>
 <p>The server can then respond with an interim response status <code>Status: 100 (Continue)</code> to signify the client is ok to send the rest of the body.</p>
@@ -1598,7 +1659,7 @@ client.get_now('/some-path', response_handler)
 client.host = 'foo.com'
 
 def response_handler(resp): 
-    print "Got a response: %s"% resp.status_code
+print "Got a response: %s"% resp.status_code
 request = client.put('/some-path', response_handler)
 
 request.put_header('Expect', '100-Continue')
@@ -1612,6 +1673,8 @@ def continue_handler():
 
 request.send_head()
 </pre>
+<h2 id="pumping-requests-and-responses">Pumping Requests and Responses</h2><br/>
+<p>The HTTP client and server requests and responses all implement either <code>ReadStream</code> or <code>WriteStream</code>. This means you can pump between them and any other read and write streams.</p>
 <h2 id="https-servers">HTTPS Servers</h2><br/>
 <p>HTTPS servers are very easy to write using vert.x.</p>
 <p>An HTTPS server has an identical API to a standard HTTP server. Getting the server to use HTTPS is just a matter of configuring the HTTP Server before <code>listen</code> is called.</p>
@@ -1621,7 +1684,10 @@ request.send_head()
 <p>Configuring an HTTP client for HTTPS is done in exactly the same way as configuring a <code>NetClient</code> for SSL. Please see the SSL client chapter for detailed instructions.</p>
 <h2 id="scaling-http-servers">Scaling HTTP servers</h2><br/>
 <p>Scaling an HTTP or HTTPS server over multiple cores is as simple as deploying more instances of the verticle. For example:</p>
-<pre class="prettyprint">vertx deploy http_server.py -instances 20
+<pre class="prettyprint">vertx runmod com.mycompany~my-mod~1.0 -instance 20
+</pre>
+<p>Or, for a raw verticle:</p>
+<pre class="prettyprint">vertx run foo.MyServer -instances 20
 </pre>
 <p>The scaling works in the same way as scaling a <code>NetServer</code>. Please see the chapter on scaling Net Servers for a detailed explanation of how this works.</p>
 <h1 id="routing-http-requests-with-pattern-matching">Routing HTTP requests with Pattern Matching</h1><br/>
@@ -1663,7 +1729,7 @@ server.request_handler(route_matcher).listen(8080, 'localhost')
 route_matcher = RouteMatcher()
 
 def matched(req):
-    blogName = req.params['blogname']
+blogName = req.params['blogname']
     post = req.params['post']
     req.response.end("blogname is %s post is %s" %(blogName, post))
 
@@ -1673,14 +1739,17 @@ server.request_handler(route_matcher).listen(8080, 'localhost')
 </pre>
 <p>Any params extracted by pattern matching are added to the map of request parameters.</p>
 <p>In the above example, a PUT request to <code>/myblog/post1</code> would result in the variable <code>blogName</code> getting the value <code>myblog</code> and the variable <code>post</code> getting the value <code>post1</code>.</p>
-<p>Valid parameter names must start with a letter of the alphabet and be followed by any letters of the alphabet or digits.</p>
+<p>Valid parameter names must start with a letter of the alphabet and be followed by any letters of the alphabet or digits or the underscore character.</p>
 <h2 id="extracting-params-using-regular-expressions">Extracting params using Regular Expressions</h2><br/>
 <p>Regular Expressions can be used to extract more complex matches. In this case capture groups are used to capture any parameters.</p>
 <p>Since the capture groups are not named they are added to the request with names <code>param0</code>, <code>param1</code>, <code>param2</code>, etc.</p>
 <p>Corresponding methods exist for each HTTP method - <code>get_re</code>, <code>post_re</code>, <code>put_re</code>, <code>delete_re</code>, <code>head_re</code>, <code>options_re</code>, <code>trace_re</code>, <code>connect_re</code> and <code>patch_re</code>.</p>
 <p>There's also an <code>all_re</code> method which applies the match to any HTTP request method.</p>
 <p>For example:</p>
-<pre class="prettyprint">server = vertx.create_http_server()
+<pre class="prettyprint">import vertx
+from core.http import RouteMatcher
+
+server = vertx.create_http_server()
 
 route_matcher = RouteMatcher()
 
@@ -1701,19 +1770,22 @@ server.request_handler(route_matcher).listen(8080, 'localhost')
 def no_match(req): req.response.end('Nothing matched')
 </pre>
 <h1 id="websockets">WebSockets</h1><br/>
-<p><a href="http://en.wikipedia.org/wiki/WebSocket">WebSockets</a> are a feature of HTML 5 that allows a full duplex socket-like connection between HTTP servers and HTTP clients (typically browsers).</p>
+<p><a href="http://en.wikipedia.org/wiki/WebSocket">WebSockets</a> are a web technology that allows a full duplex socket-like connection between HTTP servers and HTTP clients (typically browsers).</p>
 <h2 id="websockets-on-the-server">WebSockets on the server</h2><br/>
-<p>To use WebSockets on the server you create an HTTP server as normal, but instead of setting a <code>request_handler</code> you set a <code>websocket_handler</code> on the server.</p>
-<pre class="prettyprint">server = Vertx::HttpServer.new
+<p>To use WebSockets on the server you create an HTTP server as normal, but instead of setting a <code>request_handler</code> you set a <code>websocket_handler</code>.</p>
+<pre class="prettyprint">import vertx
+from core.streams import Pump
 
-server.websocket_handler do |ws|
+server = vertx.create_http_server()
 
-  # A WebSocket has connected!
+@server.websocket_handler 
+def websocket_handler(websocket):
+    pass
 
-end.listen(8080, 'localhost')
+server.listen(8080, 'localhost')
 </pre>
 <h3 id="reading-from-and-writing-to-websockets">Reading from and Writing to WebSockets</h3><br/>
-<p>The <code>websocket</code> instance passed into the handler implements both <code>ReadStream</code> and <code>WriteStream</code>, so you can read and write data to it in the normal ways. I.e by setting a <code>data_handler</code> and calling the <code>write_buffer</code> and <code>write_str</code> methods.</p>
+<p>The <code>websocket</code> instance passed into the handler implements both <code>ReadStream</code> and <code>WriteStream</code>, so you can read and write data to it in the normal ways. I.e by setting a <code>data_handler</code> and calling the <code>write</code> and <code>write_str</code> methods.</p>
 <p>See the chapter on <code>NetSocket</code> and streams and pumps for more information.</p>
 <p>For example, to echo all data received on a WebSocket:</p>
 <pre class="prettyprint">import vertx
@@ -1722,15 +1794,14 @@ from core.streams import Pump
 server = vertx.create_http_server()
 
 @server.websocket_handler 
-def websocker_handler(websocket):
-    p = new Pump(websocket, websocket)
-    p.start()
+def websocket_handler(websocket):
+    Pump(websocket, websocket).start()
 
 server.listen(8080, 'localhost')
 </pre>
-<p>The <code>websocket</code> instance also has method <code>write_binary_frame</code> for writing binary data. This has the same effect as calling <code>write_buffer</code>.</p>
+<p>The <code>websocket</code> instance also has method <code>write_binary_frame</code> for writing binary data. This has the same effect as calling <code>write</code>.</p>
 <p>Another method <code>write_text_frame</code> also exists for writing text data. This is equivalent to calling</p>
-<pre class="prettyprint">websocket.write_buffer(Buffer.create('some-string'))
+<pre class="prettyprint">websocket.write(Buffer.create('some-string'))
 </pre>
 <h3 id="rejecting-websockets">Rejecting WebSockets</h3><br/>
 <p>Sometimes you may only want to accept WebSockets which connect at a specific path.</p>
@@ -1741,30 +1812,33 @@ from core.streams import Pump
 server = vertx.create_http_server()
 
 @server.websocket_handler 
-def websocker_handler(websocket):
+def websocket_handler(websocket):
 
-  if websocket.path == '/services/echo':
-      p = Pump(websocket, websocket)
-      p.start()
-  else:
-      websocket.reject()
+    if websocket.path == '/services/echo':
+        Pump(websocket, websocket).start()
+    else:
+        websocket.reject()
 server.listen(8080, 'localhost')
 </pre>
+<h3 id="headers-on-the-websocket">Headers on the websocket</h3><br/>
+<p>You can use the <code>headers</code> property to retrieve the headers passed in the Http Request from the client that caused the upgrade to websockets.        </p>
 <h2 id="websockets-on-the-http-client">WebSockets on the HTTP client</h2><br/>
 <p>To use WebSockets from the HTTP client, you create the HTTP client as normal, then call the <code>connect_websocket</code> function, passing in the URI that you wish to connect to at the server, and a handler.</p>
 <p>The handler will then get called if the WebSocket successfully connects. If the WebSocket does not connect - perhaps the server rejects it, then any exception handler on the HTTP client will be called.</p>
 <p>Here's an example of WebSockets on the client:</p>
 <pre class="prettyprint">client = vertx.create_http_client()
+client.host = "foo.com"
 client.port = 8080
 
 def websocket_handler(websocket):
-    @websocket.data_handler
+@websocket.data_handler
     def data_handler(buff): print "got %s"% buff
 
     websocket.write_text_frame('foo')
 
-client.connect_web_socket('http://localhost:8080/services/echo', websocket_handler)
+client.connect_web_socket('/services/echo', websocket_handler)
 </pre>
+<p>Note that the host (and port) is set on the <code>HttpClient</code> instance, and the uri passed in the connect is typically a <em>relative</em> URI.    </p>
 <p>Again, the client side WebSocket implements <code>ReadStream</code> and <code>WriteStream</code>, so you can read and write to it in the same way as any other stream object.</p>
 <h2 id="websockets-in-the-browser">WebSockets in the browser</h2><br/>
 <p>To use WebSockets from a compliant browser, you use the standard WebSocket API. Here's some example client side JavaScript which uses a WebSocket.</p>
@@ -1788,8 +1862,6 @@ client.connect_web_socket('http://localhost:8080/services/echo', websocket_handl
 &lt;/script&gt;
 </pre>
 <p>For more information see the <a href="http://dev.w3.org/html5/websockets/">WebSocket API documentation</a></p>
-<h2 id="routing-websockets-with-pattern-matching">Routing WebSockets with Pattern Matching</h2><br/>
-<p><strong>TODO</strong></p>
 <h1 id="sockjs">SockJS</h1><br/>
 <p>WebSockets are a new technology, and many users are still using browsers that do not support them, or which support older, pre-final, versions.</p>
 <p>Moreover, WebSockets do not work well with many corporate proxies. This means that's it's not possible to guarantee a WebSocket connection is going to succeed for every user.</p>
@@ -1818,8 +1890,8 @@ sockJSServer = vertx.create_sockjs_server(httpServer)
 config = { 'prefix' : '/echo' }
 
 def connect_handler(sock):
-    p = Pump(sock, sock)
-    p.start()
+    Pump(sock, sock).start()
+
 sockJSServer.install_app(config, connect_hander)
 
 httpServer.listen(8080)
@@ -1829,9 +1901,9 @@ httpServer.listen(8080)
 <li><code>prefix</code>: A url prefix for the application. All http requests whose paths begins with selected prefix will be handled by the application. This property is mandatory.</li>
 <li><code>insert_JSESSIONID</code>: Some hosting providers enable sticky sessions only to requests that have JSESSIONID cookie set. This setting controls if the server should set this cookie to a dummy value. By default setting JSESSIONID cookie is enabled. More sophisticated beaviour can be achieved by supplying a function.</li>
 <li><code>session_timeout</code>: The server sends a <code>close</code> event when a client receiving connection have not been seen for a while. This delay is configured by this setting. By default the <code>close</code> event will be emitted when a receiving connection wasn't seen for 5 seconds.</li>
-<li><code>heartbeat_period</code>: In order to keep proxies and load balancers from closing long running http requests we need to pretend that the connecion is active and send a heartbeat packet once in a while. This setting controlls how often this is done. By default a heartbeat packet is sent every 25 seconds.</li>
+<li><code>heartbeat_period</code>: In order to keep proxies and load balancers from closing long running http requests we need to pretend that the connecion is active and send a heartbeat packet once in a while. This setting controlls how often this is done. By default a heartbeat packet is sent every 5 seconds.</li>
 <li><code>max_bytes_streaming</code>: Most streaming transports save responses on the client side and don't free memory used by delivered messages. Such transports need to be garbage-collected once in a while. <code>max_bytes_streaming</code> sets a minimum number of bytes that can be send over a single http streaming request before it will be closed. After that client needs to open new request. Setting this value to one effectively disables streaming and will make streaming transports to behave like polling transports. The default value is 128K.</li>
-<li><code>library_url</code>: Transports which don't support cross-domain communication natively ('eventsource' to name one) use an iframe trick. A simple page is served from the SockJS server (using its foreign domain) and is placed in an invisible iframe. Code run from this iframe doesn't need to worry about cross-domain issues, as it's being run from domain local to the SockJS server. This iframe also does need to load SockJS javascript client library, and this option lets you specify its url (if you're unsure, point it to the latest minified SockJS client release, this is the default). The default value is <code>http://cdn.sockjs.org/sockjs-0.1.min.js</code></li>
+<li><code>library_url</code>: Transports which don't support cross-domain communication natively ('eventsource' to name one) use an iframe trick. A simple page is served from the SockJS server (using its foreign domain) and is placed in an invisible iframe. Code run from this iframe doesn't need to worry about cross-domain issues, as it's being run from domain local to the SockJS server. This iframe also does need to load SockJS javascript client library, and this option lets you specify its url (if you're unsure, point it to the latest minified SockJS client release, this is the default). The default value is <code>http://cdn.sockjs.org/sockjs-0.3.4.min.js</code></li>
 </ul>
 <h2 id="reading-and-writing-data-from-a-sockjs-server">Reading and writing data from a SockJS server</h2><br/>
 <p>The object passed into the SockJS handler implements <code>ReadStream</code> and <code>WriteStream</code> much like <code>NetSocket</code> or <code>WebSocket</code>. You can therefore use the standard API for reading and writing to the SockJS socket or using it in pumps. See the chapter on Streams and Pumps for more information.</p>
@@ -1845,9 +1917,9 @@ sockJSServer = vertx.create_sockjs_server(httpServer)
 config = { 'prefix' : '/echo' }
 
 def connect_handler(sock):
-    @sock.data_handler
-    def data_handler(buffer):
-        sock.write_buffer(fuffer)
+@sock.data_handler
+def data_handler(buffer):
+    sock.write(buffer)
 sockJSServer.install_app(config, connect_hander)
 
 httpServer.listen(8080)
@@ -1889,11 +1961,10 @@ sockJSServer.bridge({'prefix' : '/eventbus'}, [], [])
 
 server.listen(8080)
 </pre>
-<p>The SockJS bridge currently only works with JSON event bus messages.</p>
 <h2 id="using-the-event-bus-from-client-side-javascript">Using the Event Bus from client side JavaScript</h2><br/>
 <p>Once you've set up a bridge, you can use the event bus from the client side as follows:</p>
 <p>In your web page, you need to load the script <code>vertxbus.js</code>, then you can access the vert.x event bus API. Here's a rough idea of how to use it. For a full working examples, please consult the bundled examples.</p>
-<pre class="prettyprint">&lt;script src="http://cdn.sockjs.org/sockjs-0.2.1.min.js"&gt;&lt;/script&gt;
+<pre class="prettyprint">&lt;script src="http://cdn.sockjs.org/sockjs-0.3.4.min.js"&gt;&lt;/script&gt;
 &lt;script src='vertxbus.js'&gt;&lt;/script&gt;
 
 &lt;script&gt;
@@ -1917,7 +1988,7 @@ server.listen(8080)
 <p>You can now communicate seamlessly between different browsers and server side components using the event bus [Read the section on securing the bridge!]</p>
 <p>You can find <code>vertxbus.js</code> in the <code>client</code> directory of the vert.x distribution.</p>
 <p>The first thing the example does is to create a instance of the event bus</p>
-<pre class="prettyprint">var eb = new vertx.EventBus('http://localhost:8080/eventbus');
+<pre class="prettyprint">var eb = new vertx.EventBus('http://localhost:8080/eventbus')
 </pre>
 <p>The parameter to the constructor is the URI where to connect to the event bus. Since we create our bridge with the prefix <code>eventbus</code> we will connect there.</p>
 <p>You can't actually do anything with the bridge until it is opened. When it is open the <code>onopen</code> handler will be called.</p>
@@ -1997,12 +2068,10 @@ server.listen(8080)
 }
 </pre>
 <p>This tells the bridge that any messages to save orders in the <code>orders</code> collection, will only be passed if the user is successful authenticated (i.e. logged in ok) first.    </p>
-<p>When a message is sent from the client that requires authorisation, the client must pass a field <code>sessionID</code> with the message that contains the unique session ID that they obtained when they logged in with the <code>auth-mgr</code>.</p>
-<p>When the bridge receives such a message, it will send a message to the <code>auth-mgr</code> to see if the session is authorised for that message. If the session is authorised the bridge will cache the authorisation for a certain amount of time (five minutes by default)</p>
 <h1 id="file-system">File System</h1><br/>
-<p>Vert.x lets you manipulate files on the file system. File system operations are asynchronous and take a handler block as the last argument.</p>
-<p>This block will be called when the operation is complete, or an error has occurred.</p>
-<p>The first argument passed into the block is an exception, if an error occurred. This will be <code>nil</code> if the operation completed successfully. If the operation returns a result that will be passed in the second argument to the handler.</p>
+<p>Vert.x lets you manipulate files on the file system. File system operations are asynchronous and take a function handler as the last argument.</p>
+<p>This handler will be called when the operation is complete, or an error has occurred.</p>
+<p>The first argument passed into the handler is an exception, if an error occurred. This will be <code>None</code> if the operation completed successfully. If the operation returns a result that will be passed in the second argument to the handler.</p>
 <h2 id="synchronous-forms">Synchronous forms</h2><br/>
 <p>For convenience, we also provide synchronous forms of most operations. It's highly recommended the asynchronous forms are always used for real applications.</p>
 <p>The synchronous form does not take a handler as an argument and returns its results directly. The name of the synchronous function is the same as the name as the asynchronous form with <code>_sync</code> appended.</p>
@@ -2014,11 +2083,13 @@ server.listen(8080)
 </ul>
 <p>Non recursive file copy. <code>source</code> is the source file name. <code>destination</code> is the destination file name.</p>
 <p>Here's an example:</p>
-<pre class="prettyprint">from core.file_system import FileSystem
+<pre class="prettyprint">import vertx
+
+fs = vertx.file_system()
 
 def handler(err, res):
-    if not err: print 'Copy was successful'         
-FileSystem.copy('foo.dat', 'bar.dat', handler
+if not err: print 'Copy was successful'         
+fs.copy('foo.dat', 'bar.dat', handler)
 </pre>
 <ul>
 <li><code>copy(source, destination, recursive)</code></li>
@@ -2069,7 +2140,7 @@ r--r--r--
         print "Last accessed: %s"% props.lastAccessTime
         // etc
 
-FileSystem.props('some-file.txt', props_handler)
+fs.props('some-file.txt', props_handler)
 </pre>
 <h2 id="lprops">lprops</h2><br/>
 <p>Retrieve properties of a link. This is like <code>props</code> but should be used when you want to retrieve properties of a link itself without following it.</p>
@@ -2092,7 +2163,7 @@ FileSystem.props('some-file.txt', props_handler)
 <p><code>link</code> is the name of the link to read. An usage example would be:</p>
 <pre class="prettyprint">def handler(err, res):
     if not err: print "Link points at %s"% res
-Vertx::FileSystem.read_sym_link('somelink', handler)
+fs.read_sym_link('somelink', handler)
 </pre>
 <h2 id="delete">delete</h2><br/>
 <p>Deletes a file or recursively deletes a directory.</p>
@@ -2118,7 +2189,7 @@ Vertx::FileSystem.read_sym_link('somelink', handler)
 <p>If <code>create_parents</code> is <code>true</code>, this creates a new directory and creates any of its parents too. Here's an example</p>
 <pre class="prettyprint">def handler(err, res):
     if not err: print "Directory created ok"
-FileSystem.mkdir('a/b/c', True, handler=handler)
+fs.mkdir('a/b/c', True, handler=handler)
 </pre>
 <ul>
 <li><code>mkdir(dirname, create_parents, perms)</code></li>
@@ -2136,12 +2207,12 @@ FileSystem.mkdir('a/b/c', True, handler=handler)
 </ul>
 <p>List only the contents of a directory which match the filter. Here's an example which only lists files with an extension <code>txt</code> in a directory.</p>
 <pre class="prettyprint">def handler(err,res):
-    if not err:
-        print 'Directory contains these .txt files'
-        @res.each
-        def each(filename):
-            print filename
-FileSystem.read_dir('mydirectory', '.*\.txt', handler)
+if not err:
+print 'Directory contains these .txt files'
+@res.each
+def each(filename):
+    print filename
+fs.read_dir('mydirectory', '.*\.txt', handler=handler)
 </pre>
 <p>The filter is a regular expression.    </p>
 <h2 id="read_file_as_buffer">read_file_as_buffer</h2><br/>
@@ -2150,12 +2221,12 @@ FileSystem.read_dir('mydirectory', '.*\.txt', handler)
 <p>The body of the file will be returned as a <code>Buffer</code> in the handler.</p>
 <p>Here is an example:</p>
 <pre class="prettyprint">def handler(err,res):
-    if not err: "File contains: %s bytes"% res.length
-FileSystem.read_file_as_buffer('myfile.dat', handler)
+if not err: "File contains: %s bytes"% res.length
+fs.read_file_as_buffer('myfile.dat', handler=handler)
 </pre>
-<h2 id="write_buffer_to_file">write_buffer_to_file</h2><br/>
+<h2 id="write_to_file">write_to_file</h2><br/>
 <p>Writes an entire <code>Buffer</code> into a new file on disk</p>
-<p><code>write_buffer_to_file(file, data)</code> Where <code>file</code> is the file name. <code>data</code> is a <code>Buffer</code> or string.</p>
+<p><code>write_to_file(file, data)</code> Where <code>file</code> is the file name. <code>data</code> is a <code>Buffer</code> or string.</p>
 <h2 id="create_file">create_file</h2><br/>
 <p>Creates a new empty file.</p>
 <p><code>create_file(file)</code>. Where <code>file</code> is the file name.</p>
@@ -2164,10 +2235,10 @@ FileSystem.read_file_as_buffer('myfile.dat', handler)
 <p><code>exists(file)</code>. Where <code>file</code> is the file name.</p>
 <p>The result is returned in the handler.</p>
 <pre class="prettyprint">def handler(err,res):
-    if not err:
-        if res: print 'exists'
-        else: print 'does not exist'
-FileSystem.exists('some-file.txt', handler)
+if not err:
+    if res: print 'exists'
+    else: print 'does not exist'
+fs.exists('some-file.txt', handler)
 </pre>
 <h2 id="fs_props">fs_props</h2><br/>
 <p>Get properties for the file system.</p>
@@ -2180,8 +2251,8 @@ FileSystem.exists('some-file.txt', handler)
 </ul>
 <p>Here is an example:</p>
 <pre class="prettyprint">def handler(err,res):
-    if not err: print "total space: %s"% res.total_space
-FileSystem.fs_props('mydir', handler)
+if not err: print "total space: %s"% res.total_space
+fs.fs_props('mydir', handler)
 </pre>
 <h2 id="open">open</h2><br/>
 <p>Opens an asynchronous file for reading \ writing.</p>
@@ -2190,18 +2261,18 @@ FileSystem.fs_props('mydir', handler)
 </ul>
 <p>When the file is opened, an instance of <code>AsyncFile</code> is passed into the result handler block:</p>
 <pre class="prettyprint">def handler(err, file):
-    if err:
-        print "Failed to open file ", err
-    else:
-        print 'File opened ok'
-        file.close()
-FileSystem.open('some-file.dat', handler=handler)
+if err:
+    print "Failed to open file ", err
+else:
+    print 'File opened ok'
+    file.close()
+fs.open('some-file.dat', handler=handler)
 </pre>
 <p>If <code>read</code> is <code>True</code>, the file will be opened for reading. If <code>write</code> is <code>True</code> the file will be opened for writing. If <code>create_new</code> is <code>True</code>, the file will be created if it doesn't already exist. If <code>flush</code> is <code>True</code> then every write on the file will be automatically flushed (synced) from the OS cache.  <br/>
 If the file is created, <code>perms</code> is a Unix-style permissions string used to describe the file permissions for the newly created file.</p>
 <h2 id="asyncfile">AsyncFile</h2><br/>
 <p>Instances of <code>AsyncFile</code> are returned from calls to <code>open</code> and you use them to read from and write to files asynchronously. They allow asynchronous random file access.</p>
-<p>AsyncFile can provide instances of <code>ReadStream</code> and <code>WriteStream</code> via the <code>getReadStream</code> and <code>getWriteStream</code> functions, so you can pump files to and from other stream objects such as net sockets, http requests and responses, and WebSockets.</p>
+<p>AsyncFile implements <code>ReadStream</code> and <code>WriteStream</code> so you can pump files to and from other stream objects such as net sockets, http requests and responses, and WebSockets.</p>
 <p>They also allow you to read and write directly to them.</p>
 <h3 id="random-access-writes">Random access writes</h3><br/>
 <p>To use an AsyncFile for random access writing you use the <code>write</code> method.</p>
@@ -2214,7 +2285,7 @@ If the file is created, <code>perms</code> is a Unix-style permissions string us
 </ul>
 <p>Here is an example of random access writes:</p>
 <pre class="prettyprint">def handler(err, async_file):
-    if err:
+if err:
         print "Failed to open file ",err
     else:
         # File open, write a buffer 5 times into a file
@@ -2227,7 +2298,7 @@ If the file is created, <code>perms</code> is a Unix-style permissions string us
                     print 'Written ok'  
             async_file.write(buff, buff.length() * i, write_handler)
 
-FileSystem.open('some-file.dat', handler=handler)
+fs.open('some-file.dat', handler=handler)
 </pre>
 <h3 id="random-access-reads">Random access reads</h3><br/>
 <p>To use an AsyncFile for random access reads you use the <code>read</code> method.</p>
@@ -2242,23 +2313,23 @@ FileSystem.open('some-file.dat', handler=handler)
 </ul>
 <p>Here's an example of random access reads:</p>
 <pre class="prettyprint">def open_handler(err, async_file):
-    if err:
+if err:
         print "Failed to open file ", err
     else:
         buff = Buffer.create(1000)
         for i in range(1,11):
             def read_handler(err, res):
-                if err:
+            if err:
                     print "Failed to read ", err
                 else:
                     print 'Read ok'
             async_file.read(buff, i * 100, i * 100, 100, read_handler)
-FileSystem.open('some-file.dat', handler=open_handler)
+fs.open('some-file.dat', handler=open_handler)
 </pre>
 <h3 id="flushing-data-to-underlying-storage">Flushing data to underlying storage.</h3><br/>
 <p>If the AsyncFile was not opened with <code>flush = true</code>, then you can manually flush any writes from the OS cache by calling the <code>flush</code> method.</p>
 <h3 id="using-asyncfile-as-readstream-and-writestream">Using AsyncFile as <code>ReadStream</code> and <code>WriteStream</code></h3><br/>
-<p>Use the methods <code>read_stream</code> and <code>write_stream</code> to get read and write streams. You can then use them with a pump to pump data to and from other read and write streams.</p>
+<p>AsyncFile implements <code>ReadStream</code> and <code>WriteStream</code>. You can then use them with a pump to pump data to and from other read and write streams.</p>
 <p>Here's an example of pumping data from a file on a client to a HTTP request:</p>
 <pre class="prettyprint">client = vertx.create_http_client()
 client.host = 'foo.com'
@@ -2268,18 +2339,17 @@ def open_handler(err, async_file):
         print "Failed to open file ", err
     else:
         def handler(resp):
-            print "resp status code %s"% resp.status_code
+        print "resp status code %s"% resp.status_code
         request = client.put('/uploads', handler)
 
-        rs = asyncFile.read_stream
-        pump = Pump(rs, request)
+        pump = Pump(async_file, request)
         pump.start()
-        @rs.end_handler
+        @async_file.end_handler
         def end_handler(): 
             # File sent, end HTTP requuest
             request.end()
 
-FileSystem.open('some-file.dat', handler=open_handler)
+fs.open('some-file.dat', handler=open_handler)
 </pre>
 <h3 id="closing-an-asyncfile">Closing an AsyncFile</h3><br/>
 <p>To close an AsyncFile call the <code>close</code> method. Closing is asynchronous and if you want to be notified when the close has been completed you can specify a handler block as an argument to <code>close</code>.</p></div>

@@ -1,0 +1,171 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <link href='http://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet/less" href="bootstrap/less/bootstrap.less">
+  <script src="bootstrap/less/less-1.3.3.min.js"></script>
+
+  <link href="google-code-prettify/prettify.css" type="text/css" rel="stylesheet"/>
+  <script type="text/javascript" src="google-code-prettify/prettify.js"></script>
+  <link href="css/vertx.css" type="text/css" rel="stylesheet"/>
+  <link href="css/sunburst.css" type="text/css" rel="stylesheet"/>
+  <title>Vert.x Development Guide</title>
+  <script>
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-30144458-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+</head>
+
+<body onload="prettyPrint()">
+
+<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+
+      <a class="btn btn-navbar" data-toggle="collapse"
+         data-target=".nav-collapse">
+        <span class="i-bar"></span>
+        <span class="i-bar"></span>
+        <span class="i-bar"></span>
+      </a>
+
+      <a class="brand" href="/">vert.x</a>
+
+      <div class="nav-collapse">
+        <ul class="nav">
+          <li><a href="/">Home</a></li>
+          <li><a href="downloads.html">Download</a></li>
+          <li><a href="install.html">Install</a></li>
+          <li><a href="tutorials.html">Tutorials</a></li>
+          <li><a href="examples.html">Examples</a></li>
+          <li class="active"><a href="docs.html">Documentation</a></li>
+          <li><a href="https://github.com/vert-x/vert.x">Source</a></li>
+          <li><a href="http://groups.google.com/group/vertx">Google Group</a></li>
+          <li><a href="community.html">Community</a></li>
+          <li><a href="http://vertxproject.wordpress.com/">Blog</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="row">
+    <div class="span12">
+      <div class="well">
+        <h1 style="font-size: 35px;">Development Guide</h1>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="span12">
+      <div class="well">
+<div>
+
+
+<div class="toc">
+<ul>
+<li><a href="#developing-with-vertx">Developing with Vert.x</a><ul>
+<li><a href="#create-your-application-using-modules">Create your application using modules</a></li>
+<li><a href="#using-a-verticle-to-co-ordinate-loading-of-an-application">Using a Verticle to co-ordinate loading of an application</a></li>
+<li><a href="#use-the-gradle-template-project-or-maven-archetype">Use the Gradle template project or Maven archetype</a></li>
+<li><a href="#create-one-project-per-module-of-your-application">Create one project per module of your application</a></li>
+<li><a href="#auto-redeploy-and-see-your-changes-immediately">Auto redeploy and see your changes immediately</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<h1 id="developing-with-vertx">Developing with Vert.x</h1><br/>
+<h2 id="create-your-application-using-modules">Create your application using modules</h2><br/>
+<p>Although Vert.x allows you to run simple Verticles directly from the command line this is only really intended for quick prototyping or trivial applications. </p>
+<p>For any real application it's highly recommended that you create it as a (set of) Vert.x modules.</p>
+<p>Creating your app as module(s) gives you the following benefits:</p>
+<ul>
+<li>Your classpath is encapsulated so modules are easier to run. You don't need to craft any long command lines.</li>
+<li>Your dependencies are encapsulated in a single artifact (the module zip file)</li>
+<li>Your module can be pushed to any Maven repository or Bintray.</li>
+<li>Your module can be catalogued in the Vert.x <a href="https://vertxmodulereg-vertxmodulereg.rhcloud.com/">module registry</a> so others can discover and use it</li>
+<li>Vert.x can automatically download and install modules from any repository given just the module identifier.</li>
+</ul>
+<p>If your application is relatively small it might make sense to create it as a single module. If your application is large split it up into a set of modules.</p>
+<h2 id="using-a-verticle-to-co-ordinate-loading-of-an-application">Using a Verticle to co-ordinate loading of an application</h2><br/>
+<p>If you have an application that is composed of multiple verticles that all need to be started at application start-up, then you can use another verticle that maintains the application configuration and starts all the other verticles. You can think of this as your application starter verticle.</p>
+<p>For example, you could create a verticle <code>app.js</code> (you could use another scripting language - Ruby, Groovy or Python if you prefer) as follows:</p>
+<pre class="prettyprint">// Start the verticles that make up the app
+
+vertx.deployVerticle("verticle1.js", appConfig.verticle1Config);
+vertx.deployVerticle("verticle2.js", appConfig.verticle2Config, 5);
+vertx.deployVerticle("verticle3.js", appConfig.verticle3Config);
+vertx.deployWorkerVerticle("verticle4.js", appConfig.verticle4Config);
+vertx.deployWorkerVerticle("verticle5.js", appConfig.verticle5Config, 10);
+</pre>
+<p>Then set the <code>app.js</code> verticle as the main of your module and then you can start your entire application by simply running:</p>
+<pre class="prettyprint">vertx runmod com.mycompany~my-mod~1.0 -conf conf.json
+</pre>
+<p>Where conf.json is a config file like:</p>
+<pre class="prettyprint">// Application config
+{
+    verticle1Config: {
+        // Config for verticle1
+    },
+    verticle2Config: {
+        // Config for verticle2
+    }, 
+    verticle3Config: {
+        // Config for verticle3
+    },
+    verticle4Config: {
+        // Config for verticle4
+    },
+    verticle5Config: {
+        // Config for verticle5
+    }  
+}
+</pre>
+<p>If your application is large and actually composed of multiple modules rather than verticles you can use the same technique.</p>
+<h2 id="use-the-gradle-template-project-or-maven-archetype">Use the Gradle template project or Maven archetype</h2><br/>
+<p>If you want to get started quickly it's recommended you use the <a href="gradle_dev.html">Gradle template project</a> or the <a href="maven_dev.html">Maven archetype</a> (depending whether you prefer Gradle or Maven) to get your project up and running.</p>
+<p>Vert.x is agnostic about what build tool you use, but doing it this way means there is much less project setup to do before you can get going developing, building and testing your module(s).</p>
+<h2 id="create-one-project-per-module-of-your-application">Create one project per module of your application</h2><br/>
+<p>Have each project output one and only one artifact (the module zip file). You can then use</p>
+<pre class="prettyprint">mvn install
+</pre>
+<p>Or</p>
+<pre class="prettyprint">./gradlew install
+</pre>
+<p>To push a module to your local Maven repository when you make a changem, and it will be automatically picked up by your other modules. Vert.x module system understands how to pull modules from local (as well as remote) Maven repositories.</p>
+<p><a id="auto-redeploy"> </a></p>
+<h2 id="auto-redeploy-and-see-your-changes-immediately">Auto redeploy and see your changes immediately</h2><br/>
+<p>When developing a Vert.x module, especially if it has a web interface, it's useful to have your module running and have it automatically pick up any changes in classes or other resources in the module without you having to rebuild.</p>
+<p>To get this to work your module must be marked as:</p>
+<pre class="prettyprint">"auto-redeploy": true
+</pre>
+<p>In your <code>mod.json</code>. See the <a href="mods_manual.html#auto-redeploy">modules manual</a> for more information on this.</p>
+<p>Then just open your Vert.x project in your IDE as normal. Then, in another window run your module using  a command line like:</p>
+<pre class="prettyprint">vertx runmod com.yourcompany~your-module~1.0 -cp &lt;classpath&gt;
+</pre>
+<p>When you specify a classpath to the <code>vertx runmod</code> command it tells Vert.x not to look in the local <code>mods</code> directory for your module but instead to look on the supplied classpath for the <code>mod.json</code> and the other module resources.</p>
+<p>So, in the case of running a module from stuff in your IDE we just need to craft a classpath which includes the directories where your IDE puts it's compiled stuff, and also where you store your <code>mod.json</code> and other resources.</p>
+<p>In the case of a standard Maven project running in IntelliJ IDEA you want to add the <code>src/main/resources</code> and <code>src/test/resources</code> directories and the <code>out/production/&lt;intellij_mod_name&gt;</code> and the <code>out/test/&lt;intellij_mod_name&gt;</code> to the classpath.</p>
+<p>An example would be:</p>
+<pre class="prettyprint">vertx runmod com.yourcompany~your-module~1.0 -cp src/main/resources/:src/test/resources/:out/production/mod-web-server/:out/test/mod-web-server/
+</pre>
+<p>This should also work with Eclipse by subsituting the out directory for wherever Eclipse copies compiled files to (<code>bin</code> directory?)</p>
+<p>Then just edit your files in your IDEA and when they're saved/compiled the module should be automatically restarted with your changes.</p></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

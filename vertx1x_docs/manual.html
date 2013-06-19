@@ -1,0 +1,379 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <link href="bootstrap/bootstrap.css" type="text/css" rel="stylesheet"/>
+
+  <link href="google-code-prettify/prettify.css" type="text/css" rel="stylesheet"/>
+  <script type="text/javascript" src="google-code-prettify/prettify.js"></script>
+  <link href="css/vertx.css" type="text/css" rel="stylesheet"/>
+  <link href="css/sunburst.css" type="text/css" rel="stylesheet"/>
+  <title>Vert.x Main Manual</title>
+  <script>
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-30144458-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+</head>
+
+<body onload="prettyPrint()">
+
+<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+
+      <a class="btn btn-navbar" data-toggle="collapse"
+         data-target=".nav-collapse">
+        <span class="i-bar"></span>
+        <span class="i-bar"></span>
+        <span class="i-bar"></span>
+      </a>
+
+      <a class="brand" href="/">vert.x</a>
+
+      <div class="nav-collapse">
+        <ul class="nav">
+          <li><a href="/">Home</a></li>
+          <li><a href="downloads.html">Download</a></li>
+          <li><a href="install.html">Install</a></li>
+          <li><a href="tutorials.html">Tutorials</a></li>
+          <li><a href="examples.html">Examples</a></li>
+          <li class="active"><a href="docs.html">Documentation</a></li>
+          <li><a href="https://github.com/vert-x/vert.x">Source</a></li>
+          <li><a href="http://groups.google.com/group/vertx">Google Group</a></li>
+          <li><a href="community.html">Community</a></li>
+          <li><a href="http://vertxproject.wordpress.com/">Blog</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="row">
+    <div class="span12">
+      <div class="well">
+        <h1 style="font-size: 35px;">Main Manual</h1>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="span12">
+      <div class="well">
+<div>
+
+
+<div class="toc">
+<ul>
+<li><a href="#introduction">Introduction</a><ul>
+<li><a href="#what-is-vertx">What is vert.x?</a></li>
+<li><a href="#vertx-embedded">Vert.x Embedded</a></li>
+<li><a href="#concepts-in-vertx">Concepts in vert.x</a><ul>
+<li><a href="#verticle">Verticle</a></li>
+<li><a href="#vertx-instances">Vert.x Instances</a></li>
+<li><a href="#polyglot">Polyglot</a></li>
+<li><a href="#concurrency">Concurrency</a></li>
+<li><a href="#event-based-programming-model">Event-based Programming Model</a></li>
+<li><a href="#event-loops">Event Loops</a></li>
+<li><a href="#message-passing">Message Passing</a></li>
+<li><a href="#shared-data">Shared data</a></li>
+<li><a href="#worker-verticles">Worker Verticles</a></li>
+<li><a href="#core-and-modules">Core and Modules</a><ul>
+<li><a href="#vertx-core">Vert.x Core</a></li>
+<li><a href="#modules">Modules</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#interacting-with-vertx">Interacting with vert.x</a><ul>
+<li><a href="#running-verticles-directly">Running Verticles directly</a></li>
+<li><a href="#running-modules-from-the-command-line">Running modules from the command line</a></li>
+</ul>
+</li>
+<li><a href="#logging">Logging</a></li>
+<li><a href="#configuring-clustering">Configuring clustering</a></li>
+<li><a href="#performance-tuning">Performance Tuning</a><ul>
+<li><a href="#improving-connection-time">Improving connection time</a></li>
+</ul>
+</li>
+<li><a href="#internals">Internals</a></li>
+</ul>
+</div>
+<h1 id="introduction">Introduction</h1><br/>
+<h2 id="what-is-vertx">What is vert.x?</h2><br/>
+<p><strong>Vert.x is the framework for the next generation of asynchronous, effortlessly scalable, concurrent applications.</strong></p>
+<p>Vert.x is an event driven application framework that runs on the JVM - a run-time with <em>real</em> concurrency and unrivalled performance. Vert.x then exposes the API in Ruby, Java, Groovy, JavaScript and Python. So <em>you</em> choose what language you want to use. Scala and Clojure support is on the roadmap too.</p>
+<p>Some of the key highlights include:</p>
+<ul>
+<li>
+<p>Polyglot. Write your application components in JavaScript, Ruby, Groovy, Java or Python. It's up to you. Or mix and match several programming languages in a single application.</p>
+</li>
+<li>
+<p>Super simple concurrency model. Vert.x allows you to write all your code as single threaded, freeing you from the hassle of multi-threaded programming. (No more <code>synchronized</code>, <code>volatile</code> or explicit locking). </p>
+</li>
+<li>
+<p>Unlike other popular event driven frameworks, Vert.x takes advantage of the JVM and scales seamlessly over available cores without having to manually fork multiple servers and handle inter process communication between them.</p>
+</li>
+<li>
+<p>Vert.x has a simple, asynchronous programming model for writing truly scalable non-blocking applications.</p>
+</li>
+<li>
+<p>Vert.x includes a distributed event bus that spans the client and server side so your applications components can communicate incredibly easily. The event bus even penetrates into in-browser JavaScript allowing you to create effortless so-called <em>real-time</em> web applications.</p>
+</li>
+<li>
+<p>Vert.x provides real power and simplicity, without being simplistic. No more sprawling xml configuration files.</p>
+</li>
+<li>
+<p>Vert.x includes a module system and public module repository, so you can easily re-use and share Vert.x modules with others.</p>
+</li>
+</ul>
+<p><em>Future applications will largely be running on mobile and embedded devices. These demand a platform that can scale with 10s, 100s or even millions of concurrent connections, and allow developers to write scalable, performant applications for them incredibly easily, in whatever language they prefer.</em></p>
+<p><strong>We believe Vert.x is that platform.</strong></p>
+<h2 id="vertx-embedded">Vert.x Embedded</h2><br/>
+<p>If you don't want the whole vert.x platform but just want to use HTTP, HTTPS, TCP, SSL, WebSockets, the event bus, or other vert.x functionality as a library in your own Java or Groovy application, then you can do this too.</p>
+<p>Just use the jar <code>vertx-core-&lt;version&gt;.jar</code> which is available in the <code>lib</code> directory in the distribution.</p>
+<p>You then have full access to the core vert.x API, in either Java or Groovy. If you use vert.x embedded you don't have to worry about verticles or any of the deployment related topics, and can just use the core API directly.</p>
+<p>Here's an example of a simple embedded web server in Java:</p>
+<pre class="prettyprint">Vertx vertx = Vertx.newVertx();
+vertx.createHttpServer().requestHandler(new Handler&lt;HttpServerRequest&gt;() {
+    public void handle(HttpServerRequest req) {
+        String file = req.path.equals("/") ? "index.html" : req.path;
+        req.response.sendFile("webroot/" + file);
+    }
+}).listen(8080);
+</pre>
+<p>And here's the same server in Groovy:</p>
+<pre class="prettyprint">def vertx = Vertx.newVertx()
+vertx.createHttpServer().requestHandler { req -&gt;
+    def file = req.uri == "/" ? "index.html" : req.uri
+    req.response.sendFile "webroot/$file"
+}.listen(8080)
+</pre>
+<p>It's as simple as that!   </p>
+<p>The api documentation (JavaDoc and GroovyDoc) is <a href="http://vertx.io/docs.html">here</a>. Also please take a look at the core manual for Java or Groovy to see full documentation on how to use the API.</p>
+<h2 id="concepts-in-vertx">Concepts in vert.x</h2><br/>
+<p>In this section I'll give an overview of the main concepts in vert.x. Many of these concepts will be discussed in more depth later on in this manual.</p>
+<h3 id="verticle">Verticle</h3><br/>
+<p>The unit of deployment in vert.x is called a <em>verticle</em> (think of a particle, for vert.x). Verticles can currently be written in JavaScript, Ruby, Java, or Groovy (we're looking to support Clojure, Scala and Python going ahead).</p>
+<p>A verticle is defined by having a <em>main</em> which is just the script (or class in the case of Java) to run to start the verticle. A verticle can also contain other scripts which are referenced from the main. It can also contain any jars, and other resources that are used by the verticle.</p>
+<p>When you write an application, you might write a single verticle, or your application could consist of a whole set of verticles communicating with each other using the event bus.</p>
+<h3 id="vertx-instances">Vert.x Instances</h3><br/>
+<p>Verticles run inside a vert.x <em>instance</em>. A single vert.x instance runs inside its own JVM instance. There can be many verticles running inside a single vert.x instance at any one time. Vert.x makes sure each verticle is isolated by giving it its own classloader so they can't interact by sharing static members, global variables or other means.</p>
+<p>There can be many vert.x instances running on the same host, or on different hosts on the network at the same time. The instances can be configured to cluster with each other forming a distributed event bus over which verticle instances can communicate.</p>
+<h3 id="polyglot">Polyglot</h3><br/>
+<p>We want you to be able to develop your verticles in a choice of programming languages. Never have developers had such a choice of great languages, and we want that to be reflected in the languages we support. Vert.x allows you to write verticles in JavaScript, Ruby, Java, and Groovy, and we aim to support Clojure, Scala and Python going ahead. These verticles can seamlessly interoperate with other verticles irrespective of what language they are written in.</p>
+<h3 id="concurrency">Concurrency</h3><br/>
+<p>A vert.x instance guarantees that a particular verticle instance is always executed by the exact same thread. This gives you a huge advantage as a developer, since you can program all your code as single threaded. Well, that won't be a big deal to you if you are coming from JavaScript where everything is single threaded, but if you're used to multi-threaded programming in Java, Scala, or even Ruby, this may come as a huge relief since you don't have to synchronize access to your state. This means a whole class of race conditions disappear, and OS thread deadlocks are a thing of the past. </p>
+<h3 id="event-based-programming-model">Event-based Programming Model</h3><br/>
+<p>Vert.x provides an event-based programming model, similar to frameworks such as node.js.</p>
+<p>Most things you do in vert.x involve setting event handlers. For example, to receive data from a TCP socket you set a handler - the handler is then called when data arrives.</p>
+<p>You also set handlers to receive messages from the event bus, to receive HTTP requests and responses, to be notified when a connection is closed, or to be notified when a timer fires. There are many examples throughout the vert.x api.</p>
+<p>Any other operations in vert.x that don't involve handlers, e.g. writing some data to a socket are guaranteed never to block.</p>
+<p>Let's imagine for a minute that the vert.x api allowed a blocking read on a TCP socket. When the code in a verticle called that blocking operation and no data arrived for, say, 1 minute, it means that thread cannot do anything else during that time - it can't do work for any other verticle.</p>
+<p>For such a blocking model to work and the system to remain responsive, each verticle instance would need to be assigned its own thread. Now consider what happens when we have thousands, 10s of thousands, or 100s of thousands of verticles running. We clearly can't have that many threads - the overhead due to context switching and stack space would be horrendous. It's clear to see such a blocking model just doesn't scale.</p>
+<h3 id="event-loops">Event Loops</h3><br/>
+<p>Internally, a vert.x instance manages a small set of threads, normally matching the number of threads to the available cores on the server. We call these threads <em>event loops</em>, since they basically just loop around (well... they do actually go to sleep if there is nothing to do) seeing if there is any work to do, for example, handling some data that's been read from a socket, or executing a timer.</p>
+<p>When a verticle instance is deployed, the server chooses an event loop which will be assigned to that instance. Any subsequent work to be done for that instance will always be dispatched using that thread. Of course, since there are potentially many thousands of verticles running at any one time, a single event loop is assigned to many verticles at the same time.</p>
+<p>We call this the <em>multi-reactor pattern</em>. It's like the <a href="http://en.wikipedia.org/wiki/Reactor_pattern">reactor pattern</a> but there's more than one event loop.</p>
+<h3 id="message-passing">Message Passing</h3><br/>
+<p>Verticles can communicate with other verticles running in the same, or different vert.x instance using the event bus. If you think of each verticle as an actor, it in some ways resembles the <a href="http://en.wikipedia.org/wiki/Actor_model">actor model</a> as popularised by the Erlang programming language.</p>
+<p>By having many verticle instances in a vert.x server instance and allowing message passing allows the system to scale well over available cores without having to allow multi-threaded execution of any verticle code. </p>
+<h3 id="shared-data">Shared data</h3><br/>
+<p>Message passing is extremely useful, but it's not always the best approach to concurrency for all types of applications.</p>
+<p>An example would be an application that wishes to provide an in-memory web cache.</p>
+<p>As requests for a resource arrive at a server, the server looks up the resource in the cache and returns it from there if the item is present, if the item is not present it loads it from disk and places it in the cache for the next time.</p>
+<p>We want this application to scale across all available cores. Modelling this using message passing is problematic. At one end of the scale we could have a single verticle that manages the cache, but this means all requests to the cache will be serialized through a single threaded verticle instance. We could improve things by having multiple instances of the verticle managing different parts of the cache, but it quickly gets ugly and complicated.</p>
+<p>Such a use case is better solved by providing a shared map structure that can be accessed directly by different verticle instances in the same vert.x instance. As requests come in, the data can be efficiently looked up in the cache with a single line of code and returned to the user.</p>
+<p>It's fashionable these days to deride shared data. But shared data is only dangerous if the data that you share is mutable.</p>
+<p>Vert.x provides a shared map and shared set facility which allows only <em>immutable</em> data to be shared between verticles.</p>
+<h3 id="worker-verticles">Worker Verticles</h3><br/>
+<p>Vert.x uses only a small number of event loop threads, and has to dispatch events to potentially thousands of verticles, and remain responsive.</p>
+<p>When you consider that, it's pretty clear that those threads can't spend too much time in any particular verticle event handler- if they do it means that the event loop can't service events for other verticles, and the whole system can grind to a halt.</p>
+<p>How do we define <em>too much time</em>? It's hard to put an exact figure on it, but one rule of thumb is anything that takes more than a few milliseconds of <em>wall-clock</em> time. (That's actual elapsed time, not CPU time).</p>
+<p>That time includes the thread sleeping or blocking on a database operation (where few CPU cycles are involved), but it also involves <em>busy waits</em> such as a computationally intensive operation, e.g. factorising a prime number.</p>
+<p>By default, verticle event handlers should not take a long time to execute, however there are cases where you can't avoid blocking, or you genuinely have computationally intensive operations to perform.</p>
+<p>An example of the former would be calling a third-party blocking database API from a verticle. In this case you don't have control of the client library you are using so you just have to block until you get the result back.</p>
+<p>Another example would be a worker verticle which needs to do an intensive calculation like calculating Fibonacci numbers. In such a case the calculation could be done a little at a time on different circuits around the event loop, but this is awkward, and just a little bit silly ;)</p>
+<p>For cases like these, vert.x allows you to mark a particular verticle instance as a <em>worker verticle</em>. A worker verticle differs from a normal verticle in that it is not assigned a vert.x event loop thread, instead it executes on a thread from an internal thread pool called the <em>background pool</em>. </p>
+<p>Worker verticles are never executed concurrently by more than one thread. Worker verticles are also not allowed to use TCP or HTTP clients or servers. Worker verticles normally communicate with other verticles using the vert.x event bus, e.g. receiving work to process.</p>
+<p>Worker verticles should be kept to a minimum, since a blocking approach doesn't scale if you want to deal with many concurrent connections.</p>
+<h3 id="core-and-modules">Core and Modules</h3><br/>
+<p>Vert.x functionality can be conceptually divided into two types: <em>Core Services</em>, and <em>Modules</em>.</p>
+<h4 id="vertx-core">Vert.x Core</h4><br/>
+<p>Vert.x core provides a set of services which can be directly called from code in a verticle. The API for core is provided in each of the programming languages that vert.x supports.</p>
+<p>The API will be described in detail in the Core API manual, but includes services such as:</p>
+<ul>
+<li>TCP/SSL servers and clients</li>
+<li>HTTP/HTTPS servers and clients</li>
+<li>WebSockets servers and clients</li>
+<li>Accessing the distributed event bus</li>
+<li>Periodic and one-off timers</li>
+<li>Buffers</li>
+<li>Flow control</li>
+<li>Accessing files on the file system</li>
+<li>Shared map and sets</li>
+<li>Logging</li>
+<li>Accessing configuration</li>
+<li>Writing SockJS servers</li>
+<li>Deploying and undeploying verticles</li>
+</ul>
+<p>Vert.x core is fairly static and is not envisaged that it will grow much over time. This is good since every service in core has to be provided in each of the languages we support - that's a lot of API adaptors to write.</p>
+<h4 id="modules">Modules</h4><br/>
+<p>Vert.x includes a module system and public module repository.</p>
+<p>Vert.x applications or reusable resources can easily be packaged as modules. These modules can be written in any of the languages that Vert.x supports, and they communicate with each other over the event bus by sending and receiving JSON messages.</p>
+<p>Since all communication is over the event bus, and not by direct calls like with vert.x core, it means it can be written once in any language, and any verticle in any other language can immediately use it without an API adaptor having to be written for each language.</p>
+<p>Whilst vert.x core is fairly static, we envisage that a wide range of modules will be available in vert.x for performing common operations. The Vert.x repository already contains several modules including a persistor, a mailer and work queues.</p>
+<p>We also encourage the community to create and contribute their own modules for others to use.</p>
+<p>For more information on modules please see the modules manual.</p>
+<h1 id="interacting-with-vertx">Interacting with vert.x</h1><br/>
+<p>The <code>vertx</code> command is used to interact with vert.x from the command line. It's main use is to run vert.x verticles.</p>
+<p>If you just type <code>vertx</code> at a command line you can see the different options the command takes.</p>
+<h2 id="running-verticles-directly">Running Verticles directly</h2><br/>
+<p>The command <code>vertx run</code> is used to start a vert.x verticle.</p>
+<p>At minimum <code>vertx run</code> takes a single parameter - the name of the main or module to run.</p>
+<p>If you're running a local verticle written in JavaScript, Ruby, or Groovy then it's just the name of the script, e.g. <code>server.js</code>, <code>server.rb</code>, or <code>server.groovy</code>. (It doesn't have to be called <code>server</code>, you can name it anything as long as it has the right extension). If the verticle is written in Java the name can either be the fully qualified class name of the Main class, <em>or</em> you can specify the Java Source file directly and Vert.x will compile it for you.</p>
+<p>The <code>vertx run</code> command can take a few optional parameters, they are:</p>
+<ul>
+<li>
+<p><code>-conf &lt;config_file&gt;</code> Provide some configuration to the verticle. <code>config_file</code> is the name of a text file containing a JSON object that represents the configuration for the verticle. This is optional.</p>
+</li>
+<li>
+<p><code>-cp &lt;path&gt;</code> The path on which to search for the main and any other resources used by the verticle. This defaults to <code>.</code> (current directory). If your verticle references other scripts, classes or other resources (e.g. jar files) then make sure these are on this path. The path can contain multiple path entries separated by <code>:</code> (colon). Each path entry can be an absolute or relative path to a directory containing scripts, or absolute or relative filenames for jar or zip files.
+    An example path might be <code>-cp classes:lib/otherscripts:jars/myjar.jar:jars/otherjar.jar</code>
+    Always use the path to reference any resources that your verticle requires. Please, <strong>do not</strong> put them on the system classpath as this can cause isolation issues between deployed verticles.</p>
+</li>
+<li>
+<p><code>-instances &lt;instances&gt;</code> The number of instances of the verticle to instantiate in the vert.x server. Each verticle instance is strictly single threaded so to scale your application across available cores you might want to deploy more than one instance. If omitted a single instance will be deployed. We'll talk more about scaling later on in this user manual.</p>
+</li>
+<li>
+<p><code>-includes &lt;mod_list&gt;</code> A comma separated list of module names to include in the classpath of this verticle.
+For more information on what including a module means please see the modules manual.</p>
+</li>
+<li>
+<p><code>-worker</code> This options determines whether the verticle is a worker verticle or not. Default is false (not a worker). This is discussed in detail later on in the manual.  </p>
+</li>
+<li>
+<p><code>-cluster</code> This option determines whether the vert.x server which is started will attempt to form a cluster with other vert.x instances on the network. Clustering vert.x instances allows vert.x to form a distributed event bus with other nodes. Default is false (not clustered).</p>
+</li>
+<li>
+<p><code>-cluster-port</code> If the <code>cluster</code> option has also been specified then this determines which port will be used for cluster communication with other vert.x instances. Default is <code>25500</code>. If you are running more than one vert.x instance on the same host and want to cluster them, then you'll need to make sure each instance has its own cluster port to avoid port conflicts.</p>
+</li>
+<li>
+<p><code>-cluster-host</code> If the <code>cluster</code> option has also been specified then this determines which host address will be used for cluster communication with other vert.x instances. By default it will try and pick one from the available interfaces. If you have more than one interface and you want to use a specific one, specify it here.</p>
+</li>
+</ul>
+<p>Here are some examples of <code>vertx run</code>:</p>
+<p>Run a JavaScript verticle server.js with default settings</p>
+<pre class="prettyprint">vertx run server.js
+</pre>
+<p>Run 10 instances of a pre-compiled Java verticle specifying classpath</p>
+<pre class="prettyprint">vertx run com.acme.MyVerticle -cp "classes:lib/myjar.jar" -instances 10
+</pre>
+<p>Run 10 instances of a Java verticle by source file</p>
+<pre class="prettyprint">vertx run MyVerticle.java -instances 10
+</pre>
+<p>Run 20 instances of a ruby worker verticle    </p>
+<pre class="prettyprint">vertx run order_worker.rb -instances 20 -worker
+</pre>
+<p>Run two JavaScript verticles on the same machine and let them cluster together with each other and any other servers on the network</p>
+<pre class="prettyprint">vertx run handler1.js -cluster
+vertx run handler1.js -cluster -cluster-port 25501
+</pre>
+<p>Run a Ruby verticle passing it some config</p>
+<pre class="prettyprint">vertx run my_vert.rb -conf my_vert.conf
+</pre>
+<p>Where <code>my_vert.conf</code> might contain something like:</p>
+<pre class="prettyprint">{
+    "name": "foo",
+    "num_widgets": 46
+}
+</pre>
+<p>The config will be available inside the verticle via the core API.    </p>
+<h2 id="running-modules-from-the-command-line">Running modules from the command line</h2><br/>
+<p>While you can run a verticle directly from the command line using <code>vertx run</code> this can be kind of fiddly since you have to specify the classpath every time.</p>
+<p>An alternative is to package your application as a <em>module</em>. For detailed information on how to package your code as a module please see the modules manual.</p>
+<p>Once you've packaged your module and installed it in the module directory, you can run a module directly from the command line in a similar way to <code>vertx run</code>.</p>
+<p>Instead of <code>vertx run</code> you use <code>vertx runmod &lt;module name&gt;</code>. This takes some of the same options as <code>vertx run</code>. They are:</p>
+<ul>
+<li>
+<p><code>-conf &lt;config_file&gt;</code></p>
+</li>
+<li>
+<p><code>-instances &lt;instances&gt;</code></p>
+</li>
+<li>
+<p><code>-cluster</code></p>
+</li>
+<li>
+<p><code>-cluster-port</code></p>
+</li>
+<li>
+<p><code>-cluster-host</code></p>
+</li>
+</ul>
+<p>They have the exact same meanings as the corresponding options in <code>vertx run</code>.</p>
+<p>If you attempt to run a module and it hasn't been installed, Vert.x will attempt to install it from the module repository. See the modules manual for more on this.</p>
+<p>Some examples of running modules directly:</p>
+<pre class="prettyprint">Run an installed module called `com.acme.my-mod-v2.1`
+
+vertx run com.acme.my-mod-v2.1
+</pre>
+<p>Run an installed module called <code>com.acme.other-mod-v1.0.beta1</code> specifying number of instances and some config</p>
+<pre class="prettyprint">vertx run com.acme.other-mod-v1.0.beta1 -instances 10 -conf other-mod.conf
+</pre>
+<p>Run the module <code>vertx.mongo-persistor-v1.0</code></p>
+<pre class="prettyprint">vertx run vertx.mongo-persistor-v1.0
+</pre>
+<h1 id="logging">Logging</h1><br/>
+<p>Each verticle gets its own logger which can be retrieved from inside the verticle. For information on how to get the logger please see the core guide for the language you are using.</p>
+<p>The log files by default go in a file called <code>vertx.log</code> in the system temp directory. On my Linux box this is <code>\tmp</code>.</p>
+<p>By default <a href="http://docs.oracle.com/javase/7/docs/technotes/guides/logging/overview.html">JUL</a> logging is used. This can be configured using the file <code>$VERTX_HOME\conf\logging.properties</code>. Where <code>VERTX_HOME</code> is the directory in which you installed vert.x.</p>
+<p>Advanced note: If you'd rather use a different logging framework, e.g. log4j you can do this by specifying a system property when running vert.x (edit the vertx.sh script), e.g.</p>
+<pre class="prettyprint">-Dorg.vertx.logger-delegate-factory-class-name=org.vertx.java.core.logging.impl.Log4jLogDelegateFactory
+</pre>
+<p>or</p>
+<pre class="prettyprint">-Dorg.vertx.logger-delegate-factory-class-name=org.vertx.java.core.logging.impl.SLF4JLogDelegateFactory
+</pre>
+<h1 id="configuring-clustering">Configuring clustering</h1><br/>
+<p>To configure clustering use the file <code>conf/cluster.xml</code> in the distribution.</p>
+<p>If you want to receive more info on cluster setup etc, then edit <code>conf/logging.properties</code> to read <code>com.hazelcast.level=INFO</code></p>
+<p>In particular when running clustered, and you have more than one network interface to choose from, make sure Hazelcast is using the correct interface by editing the <code>interfaces-enabled</code> element.</p>
+<h1 id="performance-tuning">Performance Tuning</h1><br/>
+<h2 id="improving-connection-time">Improving connection time</h2><br/>
+<p>If you're creating a lot of connections to a Vert.x server in a short period of time, you need to tweak some settings in order to avoid the TCP accept queue getting full which can result in connections being refused or packets being dropped during the handshake which can cause the client to retry.</p>
+<p>A classic symptom of this is if you see long connection times just over 3000ms at your client.#</p>
+<p>In Linux you need to increase a couple of settings in the TCP / Net config (10000 is an arbitrarily large number)</p>
+<pre class="prettyprint">sudo sysctl -w net.core.somaxconn=10000
+sudo sysctl -w net.ipv4.tcp_max_syn_backlog=10000
+</pre>
+<p>And you also need to set the accept backlog in your server code, (e.g. in Java:)</p>
+<pre class="prettyprint">HttpServer server = vertx.createHttpServer();
+server.setAcceptBacklog(10000);
+</pre>
+<h1 id="internals">Internals</h1><br/>
+<p>Vert.x uses the following amazing open source projects:</p>
+<ul>
+<li><a href="https://github.com/netty/netty">Netty</a> for much of its network IO</li>
+<li><a href="http://jruby.org/">JRuby</a> for its Ruby engine</li>
+<li><a href="http://groovy.codehaus.org/">Groovy</a></li>
+<li><a href="http://www.mozilla.org/rhino/">Mozilla Rhino</a> for its JavaScript engine</li>
+<li><a href="http://jython.org">Jython</a> for its Python engine</li>
+<li><a href="http://www.hazelcast.com/">Hazelcast</a> for group management of cluster members</li>
+</ul></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

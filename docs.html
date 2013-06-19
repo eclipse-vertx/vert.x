@@ -2,7 +2,9 @@
     "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-  <link href="bootstrap/bootstrap.css" type="text/css" rel="stylesheet"/>
+  <link href='http://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet/less" href="bootstrap/less/bootstrap.less">
+  <script src="bootstrap/less/less-1.3.3.min.js"></script>
 
   <link href="google-code-prettify/prettify.css" type="text/css"
         rel="stylesheet"/>
@@ -35,7 +37,7 @@
         <span class="i-bar"></span>
       </a>
 
-      <a class="brand" href="/">vert.x</a>
+      <a class="brand" href="/">Vert.x</a>
 
       <div class="nav-collapse">
         <ul class="nav">
@@ -68,36 +70,32 @@
   <div class="row">
     <div class="span12">
       <div class="well"> 
-        <p>The vert.x documentation is organised into a few different
+        <p>The Vert.x documentation is organised into a few different
           manuals.</p>
 
         <h2>Installation</h2>
         <p>
           The <a href="install.html">install guide</a> shows you how to
-          install vert.x
+          install Vert.x
         </p>
 
-        <h2>Basic Concepts</h2>
+        <h2>Core Concepts</h2>
         <p>
           The <a href="manual.html">main manual</a>
-          contains an introduction to vert.x concepts and deals with
-          general vert.x concepts that are independent from the
-          specific programming language
-        </p>
-        <p>
-          If you're new to vert.x it's highly recommended you read this manual first.
+          contains an introduction to Vert.x and deals with
+          general Vert.x concepts.
         </p>
 
         <h2>Reference</h2>
         <p>
           The API manual goes into detail about everything you can do with the
-          vert.x API.
+          Vert.x API.
         </p>
         <p>There's a different version of the API manual for each supported language</p>
-        <p>We also provide javadoc/yardoc/groovydoc for the API</p>
+        <p>We also provide generated API documentation (e.g. JavaDoc) for each API</p>
         <ul>
           <li>
-            Java <a href="core_manual_java.html">manual</a> | <a href="api/java/api/index.html">Javadoc</a>
+            Java <a href="core_manual_java.html">manual</a> | <a href="api/java/api/index.html">JavaDoc</a>
           </li>
 
           <li>
@@ -109,7 +107,7 @@
           </li>
 
           <li>
-            Groovy <a href="core_manual_groovy.html">manual</a> | <a href="api/groovy/api/index.html">Groovydoc</a>
+            Groovy <a href="core_manual_groovy.html">manual</a> | <a href="api/groovy/api/index.html">GroovyDoc</a>
           </li>
 
           <li>
@@ -121,11 +119,22 @@
         <p>
           The <a href="mods_manual.html">modules manual</a>
           tells you everything you need to know about using and creating
-          vert.x modules.
+          Vert.x modules.
         </p>
 
-        <h2>Vert.x 2.0 Documentation</h2>
-        <p><a href="vertx20_docs/docs.html">Beta documentation</a> for the forthcoming Vert.x 2.0</p>
+        <h2>Other Useful Docs:</h2>
+
+        <ul>
+          <li><a href="gradle_dev.html">Developing Vert.x applications with Gradle</a></li>
+          <li><a href="maven_dev.html">Developing Vert.x applications with Maven</a></li>
+          <li><a href="example_project.html">Exploring the Vert.x example project</a></li>
+          <li><a href="dev_guide.html">Development Guide</a></li>
+          <li><a href="embedding_manual.html">Embedding Vert.x</a></li>
+          <li><a href="language_support.html">Implementing support for a new language in Vert.x</a></li>
+        </ul>
+
+        <h3>Documentation for older Vert.x versions:</h3>
+        <p><a href="vertx1x_docs/docs.html">Vert.x 1.3.1-final Documentation</a></p>
         
 
         </div>

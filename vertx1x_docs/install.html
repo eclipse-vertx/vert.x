@@ -1,0 +1,125 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <link href="bootstrap/bootstrap.css" type="text/css" rel="stylesheet"/>
+
+  <link href="google-code-prettify/prettify.css" type="text/css" rel="stylesheet"/>
+  <script type="text/javascript" src="google-code-prettify/prettify.js"></script>
+  <link href="css/vertx.css" type="text/css" rel="stylesheet"/>
+  <link href="css/sunburst.css" type="text/css" rel="stylesheet"/>
+  <title>Vert.x Installation Guide</title>
+  <script>
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-30144458-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+</head>
+
+<body onload="prettyPrint()">
+
+<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+
+      <a class="btn btn-navbar" data-toggle="collapse"
+         data-target=".nav-collapse">
+        <span class="i-bar"></span>
+        <span class="i-bar"></span>
+        <span class="i-bar"></span>
+      </a>
+
+      <a class="brand" href="/">vert.x</a>
+
+      <div class="nav-collapse">
+        <ul class="nav">
+          <li><a href="/">Home</a></li>
+          <li><a href="downloads.html">Download</a></li>
+          <li class="active"><a href="install.html">Install</a></li>
+          <li><a href="tutorials.html">Tutorials</a></li>
+          <li><a href="examples.html">Examples</a></li>
+          <li><a href="docs.html">Documentation</a></li>
+          <li><a href="https://github.com/vert-x/vert.x">Source</a></li>
+          <li><a href="http://groups.google.com/group/vertx">Google Group</a></li>
+          <li><a href="community.html">Community</a></li>
+          <li><a href="http://vertxproject.wordpress.com/">Blog</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="row">
+    <div class="span12">
+      <div class="well">
+        <h1 style="font-size: 35px;">Installation Guide</h1>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="span12">
+      <div class="well">
+<div>
+
+
+<p>Before you can do anything with vert.x you need to install it, so let's describe how to do that.</p>
+<h1 id="getting-a-distro">Getting a distro</h1><br/>
+<p>The easiest way to get hold of a distribution is to <a href="downloads.html">download a binary distro</a>.
+Alternatively you can build from source. To do that see the instructions on the <a href="https://github.com/vert-x/vert.x/wiki">github wiki</a>.</p>
+<h1 id="pre-requisites">Pre-requisites</h1><br/>
+<ul>
+<li>
+<p>Operating System. Vert.x runs out of the box on Linux, OSX or Windows.</p>
+</li>
+<li>
+<p>JDK. Vert.x requires JDK 1.7.0 or later. You can use the official Oracle distribution or the OpenJDK version. Make sure the JDK bin directory is on your <code>PATH</code>.</p>
+</li>
+<li>
+<p>JRuby. If you want to use Ruby with Vert.x you will need to have installed JRuby and have the <code>JRUBY_HOME</code> environment variable pointing at the base of your JRuby installation. You will also need to install the <code>json</code> Ruby Gem since this is used in Vert.x. You can do this by running <code>jruby -S gem install json</code>. If you're not using Ruby in Vert.x you don't need any of this.</p>
+</li>
+<li>
+<p>Jython. If you want to use Python with Vert.x you will need to have installed Jython and have the <code>JYTHON_HOME</code> environment variable pointing at the base of your Jython installation. If you're not using Jython in Vert.x you don't need any of this. </p>
+</li>
+</ul>
+<h1 id="install-vertx">Install vert.x</h1><br/>
+<p>Once you've got the pre-requisites installed, you install vert.x as follows:</p>
+<ol>
+<li>Unzip the distro somewhere sensible (e.g. your home directory)</li>
+<li>Add the vert.x <code>bin</code> directory to your <code>PATH</code>.</li>
+</ol>
+<h2 id="check-the-version">Check the version</h2><br/>
+<p>To make sure you've installed it correctly, open another console and type:</p>
+<pre class="prettyprint">tim@Ethel:~/example$ vertx version
+vert.x 1.3.1.final
+</pre>
+<p>You should see output something like the above.</p>
+<h1 id="testing-the-install">Testing the install</h1><br/>
+<p>Let's test the install by writing a simple web server.</p>
+<p>Copy the following into a text editor and save it as <code>server.js</code></p>
+<pre class="prettyprint">load('vertx.js');
+
+vertx.createHttpServer().requestHandler(function(req) {
+  req.response.end("Hello World!");
+}).listen(8080, 'localhost');
+</pre>
+<p>Open a console in the directory where you saved it, and type:</p>
+<pre class="prettyprint">vertx run server.js
+</pre>
+<p>Open your browser and point it at <code>http://localhost:8080</code></p>
+<p>If you see "Hello World!" in the browser then you're all set to go!</p></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
