@@ -130,7 +130,7 @@ To enable auto-redeploy set `auto-redeploy` to `true`. Default is `false`.
 
     "auto-redeploy": true
 
-You can only use `auto-redeploy` on top level modules, not on modules that are deployed from other modules.
+If `auto-redeploy` is set to `true` for a module which has been deployed by other modules, then Vert.x will reload the top-most module.
 
 ### resident
 
