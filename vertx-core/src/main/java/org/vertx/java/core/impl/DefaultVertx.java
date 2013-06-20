@@ -54,8 +54,6 @@ public class DefaultVertx implements VertxInternal {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultVertx.class);
 
-  public static final int DEFAULT_CLUSTER_PORT = 2550;
-
   private final FileSystem fileSystem = getFileSystem();
   private final EventBus eventBus;
   private final SharedData sharedData = new SharedData();
@@ -76,7 +74,7 @@ public class DefaultVertx implements VertxInternal {
   }
 
   public DefaultVertx(String hostname) {
-    this(DEFAULT_CLUSTER_PORT, hostname);
+    this(0, hostname);
   }
 
   public DefaultVertx(int port, String hostname) {
