@@ -4,25 +4,27 @@ To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/
 a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
 -->
 
-Before you can do anything with vert.x you need to install it, so let's describe how to do that.
+Before you can do anything with Vert.x you need to install it, so let's describe how to do that.
 
 # Getting a distro
 
 The easiest way to get hold of a distribution is to [download a binary distro](downloads.html).
-Alternatively you can build from source. To do that see the instructions on the [github wiki](https://github.com/vert-x/vert.x/wiki).
+
+Alternatively you can build from source. To do that clone the [github repository](https://github.com/vert-x/vert.x)
+and read the file [`BUILD_README.md`](https://github.com/vert-x/vert.x/blob/master/BUILD_README.md).
 
 # Pre-requisites
 
 * Operating System. Vert.x runs out of the box on Linux, OSX or Windows.
 
-* JDK. Vert.x requires JDK 1.7.0 or later. You can use the official Oracle distribution or the OpenJDK version. Make sure the JDK bin directory is on your `PATH`.
+* Vert.x requires JDK 1.7.0 or later. You can use the official Oracle distribution or the OpenJDK version. Make sure the JDK bin directory is on your `PATH`.
 
-# Install vert.x
+# Install Vert.x
 
-Once you've got the pre-requisites installed, you install vert.x as follows:
+Once you've got the pre-requisites installed, you install Vert.x as follows:
 
 1. Unzip the distro somewhere sensible (e.g. your home directory)
-2. Add the vert.x `bin` directory to your `PATH` environment variable.
+2. Add the Vert.x `bin` directory to your `PATH` environment variable.
 
 For example
 
@@ -33,9 +35,9 @@ or
 
 ## Check the version
 
-To make sure you've installed it correctly, open another console and type:
+To make sure you've installed it correctly, type the following in a console:
 
-    tim@Ethel:~/example$ vertx version
+    $ vertx version
     vert.x 2.0.0-final
 
 You should see output something like the above.

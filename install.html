@@ -72,24 +72,25 @@
 <div>
 
 
-<p>Before you can do anything with vert.x you need to install it, so let's describe how to do that.</p>
+<p>Before you can do anything with Vert.x you need to install it, so let's describe how to do that.</p>
 <h1 id="getting-a-distro">Getting a distro</h1><br/>
-<p>The easiest way to get hold of a distribution is to <a href="downloads.html">download a binary distro</a>.
-Alternatively you can build from source. To do that see the instructions on the <a href="https://github.com/vert-x/vert.x/wiki">github wiki</a>.</p>
+<p>The easiest way to get hold of a distribution is to <a href="downloads.html">download a binary distro</a>.</p>
+<p>Alternatively you can build from source. To do that clone the <a href="https://github.com/vert-x/vert.x">github repository</a>
+and read the file <a href="https://github.com/vert-x/vert.x/blob/master/BUILD_README.md"><code>BUILD_README.md</code></a>.</p>
 <h1 id="pre-requisites">Pre-requisites</h1><br/>
 <ul>
 <li>
 <p>Operating System. Vert.x runs out of the box on Linux, OSX or Windows.</p>
 </li>
 <li>
-<p>JDK. Vert.x requires JDK 1.7.0 or later. You can use the official Oracle distribution or the OpenJDK version. Make sure the JDK bin directory is on your <code>PATH</code>.</p>
+<p>Vert.x requires JDK 1.7.0 or later. You can use the official Oracle distribution or the OpenJDK version. Make sure the JDK bin directory is on your <code>PATH</code>.</p>
 </li>
 </ul>
-<h1 id="install-vertx">Install vert.x</h1><br/>
-<p>Once you've got the pre-requisites installed, you install vert.x as follows:</p>
+<h1 id="install-vertx">Install Vert.x</h1><br/>
+<p>Once you've got the pre-requisites installed, you install Vert.x as follows:</p>
 <ol>
 <li>Unzip the distro somewhere sensible (e.g. your home directory)</li>
-<li>Add the vert.x <code>bin</code> directory to your <code>PATH</code> environment variable.</li>
+<li>Add the Vert.x <code>bin</code> directory to your <code>PATH</code> environment variable.</li>
 </ol>
 <p>For example</p>
 <pre class="prettyprint">tar -zxf ~/Downloads/vert.x-2.0.0-final.tar.gz
@@ -97,8 +98,8 @@ Alternatively you can build from source. To do that see the instructions on the 
 <p>or
     unzip ~/Downloads/vert.x-2.0.0-final.tar.gz</p>
 <h2 id="check-the-version">Check the version</h2><br/>
-<p>To make sure you've installed it correctly, open another console and type:</p>
-<pre class="prettyprint">tim@Ethel:~/example$ vertx version
+<p>To make sure you've installed it correctly, type the following in a console:</p>
+<pre class="prettyprint">$ vertx version
 vert.x 2.0.0-final
 </pre>
 <p>You should see output something like the above.</p>
