@@ -28,7 +28,7 @@
 </head>
 
 
-<body onload="prettyPrint()">
+<body onload="prettyPrint()" class="hp">
 
 <div class="navbar navbar-fixed-top">
   <div class="navbar-inner">
@@ -68,7 +68,6 @@
       <div class="hero-unit" style="padding: 30px;">
         <!-- <h1>Vert.x</h1> -->
         <img src="logo-white-big.png"/>
-        <br/>
 
         <p class="title">Vert.x is a light-weight, high-performance, application platform for the JVM that is designed
           for modern mobile, web, and enterprise applications.</p>
@@ -76,6 +75,7 @@
     </div>
   </div>
 
+  <br />
 
   <div class="row">
 
@@ -128,39 +128,43 @@
     </div>
   </div>
 
+  <br /><br />
+
+  <h3 class="title">Key Features</h3>
+  <br />
+
   <div class="row">
 
     <div class="span12">
       <div class="well">
-        <h3 class="title">Key Features</h3>
         <br/>
-        <ul>
+        <ul class="features">
           <li>
-            <p>The <strong>Distributed Event Bus</strong> is the nervous system of Vert.x and connects your
+            The <strong>Distributed Event Bus</strong> is the nervous system of Vert.x and connects your
               server-side components. Write your components in whatever language you want, and put them
-              where you want on your network. It even penetrates into JavaScript running in the browser!</p>
+              where you want on your network. It even penetrates into JavaScript running in the browser!
           </li>
           <li>
-            <p><strong>WebSockets</strong> and <strong>SockJS</strong> support for real-time <i>server-push</i>
-              applications.</p>
+            <strong>WebSockets</strong> and <strong>SockJS</strong> support for real-time <i>server-push</i>
+              applications.
           </li>
           <li>
-            <p>If you don't want the whole platform, Vert.x can be <strong>embedded</strong> as a library in your
-              existing Java or Groovy applications.</p>
+            If you don't want the whole platform, Vert.x can be <strong>embedded</strong> as a library in your
+              existing Java or Groovy applications.
           </li>
-          <li><p>Vert.x has a powerful <strong>module system</strong>. Package your Vert.x components into modules for encapsulation and
+          <li>Vert.x has a powerful <strong>module system</strong>. Package your Vert.x components into modules for encapsulation and
             reuse. Share them with the community by putting them in Maven Central, any other Maven repository, or
             in Bintray.
-            Advertise your module in the <strong>module registry</strong>.</p>
+            Advertise your module in the <strong>module registry</strong>.
           </li>
 
-          <li><p><strong>Ease of development.</strong> Code, Run, Debug and Test your Vert.x applications in your
+          <li><strong>Ease of development.</strong> Code, Run, Debug and Test your Vert.x applications in your
             favourite IDE. Get started with Gradle using the example <strong>Gradle template project.</strong>
               Get started with Maven using the <strong>Maven archetype</strong>.
-            Use <strong>auto-redeploy</strong> to see your changes instantly in a running module.</p>
+            Use <strong>auto-redeploy</strong> to see your changes instantly in a running module.
           </li>
 
-          <li><p>Choose from a variety of pre-written modules. Examples include Redis, JBDC, MongoDB.</p></li>
+          <li>Choose from a variety of pre-written modules. Examples include Redis, JBDC, MongoDB.</li>
 
           <li><strong>100% open source</strong>. Licensed under the Apache Software License 2.0</li>
 
@@ -171,14 +175,14 @@
 
   </div>
 
+  <br />
+  
+  <h3 class="title">Here's an example web-server</h3>
+  <br/>
+  
   <div class="row">
-
+        
     <div class="span12">
-      <div class="well">
-
-        <h3 class="title">Here's an example web-server</h3>
-        <br/>
-
         <ul class="nav nav-tabs">
           <li class="active"><a href="#ws_js" data-toggle="tab">JavaScript</a></li>
           <li><a href="#ws_ruby" data-toggle="tab">Ruby</a></li>
@@ -186,7 +190,8 @@
           <li><a href="#ws_groovy" data-toggle="tab">Groovy</a></li>
           <li><a href="#ws_java" data-toggle="tab">Java</a></li>
         </ul>
-
+        
+      <div class="well">
         <div class="tab-content">
           <div class="tab-pane active" id="ws_js">
 
@@ -286,6 +291,8 @@
     </div>
 
   </div>
+
+  <br />
 
   <div class="row">
     <div class="span12">
