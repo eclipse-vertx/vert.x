@@ -21,6 +21,8 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.file.impl.ClasspathPathResolver;
+import org.vertx.java.core.file.impl.ModuleFileSystemPathResolver;
 import org.vertx.java.core.impl.*;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
@@ -1109,12 +1111,24 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   // so that the *effective* working directory can be the module directory
   // this allows moduleRefs to read and write the file system as if they were
   // in the module dir, even though the actual working directory will be
-  // wherever vertx run or vertx start was called from
-  private void setPathAdjustment(File modDir) {
-    Path cwd = Paths.get(".").toAbsolutePath().getParent();
-    Path pmodDir = Paths.get(modDir.getAbsolutePath());
-    Path relative = cwd.relativize(pmodDir);
-    vertx.getContext().setPathAdjustment(relative);
+  // wherever vertx run or vertx runmod was called from
+  private void setPathResolver(ModuleIdentifier modID, File modDir) {
+    if (modID != null) {
+      // It's a module
+      DefaultContext context = vertx.getContext();
+      if (modDir != null) {
+        // Module deployed from file system
+        Path cwd = Paths.get(".").toAbsolutePath().getParent();
+        Path pmodDir = Paths.get(modDir.getAbsolutePath());
+        Path relative = cwd.relativize(pmodDir);
+        context.setPathResolver(new ModuleFileSystemPathResolver(relative));
+      } else {
+        // Module deployed from classpath
+        context.setPathResolver(new ClasspathPathResolver());
+      }
+    } else {
+      // Raw verticle
+    }
   }
 
   private static String genDepName() {
@@ -1256,9 +1270,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
             }
             try {
               addVerticle(deployment, verticle, verticleFactory, modID, main);
-              if (modDir != null) {
-                setPathAdjustment(modDir);
-              }
+              setPathResolver(modID, modDir);
               DefaultFutureResult<Void> vr = new DefaultFutureResult<>();
               verticle.start(vr);
               vr.setHandler(new Handler<AsyncResult<Void>>() {

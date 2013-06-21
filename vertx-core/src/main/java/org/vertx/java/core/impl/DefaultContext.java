@@ -21,6 +21,7 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.file.impl.PathResolver;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -38,7 +39,7 @@ public abstract class DefaultContext implements Context {
 
   protected final VertxInternal vertx;
   private DeploymentHandle deploymentContext;
-  private Path pathAdjustment;
+  private PathResolver pathResolver;
   private Set<Closeable> closeHooks;
   private final ClassLoader tccl;
   private boolean closed;
@@ -64,12 +65,12 @@ public abstract class DefaultContext implements Context {
     return deploymentContext;
   }
 
-  public Path getPathAdjustment() {
-    return pathAdjustment;
+  public PathResolver getPathResolver() {
+    return pathResolver;
   }
 
-  public void setPathAdjustment(Path pathAdjustment) {
-    this.pathAdjustment = pathAdjustment;
+  public void setPathResolver(PathResolver pathResolver) {
+    this.pathResolver = pathResolver;
   }
 
   public void reportException(Throwable t) {

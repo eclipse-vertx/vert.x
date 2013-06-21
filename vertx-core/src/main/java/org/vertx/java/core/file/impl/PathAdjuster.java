@@ -30,9 +30,9 @@ public class PathAdjuster {
   public static Path adjust(final VertxInternal vertx, Path path) {
     DefaultContext context = vertx.getContext();
     if (context != null) {
-      Path adjustment = context.getPathAdjustment();
-      if (adjustment != null) {
-        return adjustment.resolve(path);
+      PathResolver resolver = context.getPathResolver();
+      if (resolver != null) {
+        return resolver.resolve(path);
       }
     }
     return path;
