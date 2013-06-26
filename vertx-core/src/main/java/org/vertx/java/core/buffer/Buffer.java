@@ -426,7 +426,9 @@ public class Buffer {
    * This method is meant for internal use only.
    */
   public ByteBuf getByteBuf() {
-    return buffer;
+    // Return a duplicate so the Buffer can be written multiple times.
+    // See #648
+    return buffer.duplicate();
   }
 
   private Buffer append(String str, Charset charset) {

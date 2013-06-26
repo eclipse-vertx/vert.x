@@ -25,7 +25,6 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
-import org.vertx.java.core.streams.Pump;
 import org.vertx.java.testframework.TestClientBase;
 import org.vertx.java.testframework.TestUtils;
 import vertx.tests.core.http.TLSTestParams;
@@ -807,12 +806,9 @@ public class TestClient extends TestClientBase {
             @Override
             public void handle(AsyncResult<NetSocket> result) {
               NetSocket socket = result.result();
-// To demonstrate the issue here try sending the same buffer more than once
-//              Buffer buff = new Buffer("foo");
-//              socket.write(buff);
-//              socket.write(buff);
-              socket.write(new Buffer("foo"));
-              socket.write(new Buffer("foo"));
+              Buffer buff = new Buffer("foo");
+              socket.write(buff);
+              socket.write(buff);
             }
           });
         } else {
