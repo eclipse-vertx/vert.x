@@ -370,7 +370,7 @@ public class WebsocketsTestClient extends TestClientBase {
 //        }
         tu.azzert(ws.headers().get("upgrade").equals("websocket"));
         tu.azzert(ws.headers().get("connection").equals("Upgrade"));
-        tu.azzert(ws.headers().get("host").equals("localhost"));
+        tu.azzert(ws.headers().get("host").equals("localhost:8080"));
         for (Map.Entry<String, String> entry: extraHeaders) {
           tu.azzert(ws.headers().get(entry.getKey()).equals(entry.getValue()));
         }
