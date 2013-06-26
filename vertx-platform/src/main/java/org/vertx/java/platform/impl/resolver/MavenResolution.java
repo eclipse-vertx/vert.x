@@ -40,6 +40,15 @@ public class MavenResolution extends HttpResolution {
     uriRoot = getMavenURI(moduleIdentifier);
   }
 
+  private void addOKHandler() {
+    addHandler(200, new Handler<HttpClientResponse>() {
+      @Override
+      public void handle(HttpClientResponse resp) {
+        downloadToFile(filename, resp);
+      }
+    });
+  }
+
   protected void getModule() {
     createClient(repoHost, repoPort);
     if (moduleIdentifier.getVersion().endsWith("-SNAPSHOT")) {
@@ -50,12 +59,17 @@ public class MavenResolution extends HttpResolution {
             @Override
             public void handle(Buffer metaData) {
               // Extract the timestamp - easier this way than parsing the xml
-              String data = metaData.toString();
-              String actualURI = getResourceName(data, contentRoot, moduleIdentifier, uriRoot);
-              addHandler(200, new Handler<HttpClientResponse>() {
+              final String data = metaData.toString();
+              String actualURI = getResourceName(data, contentRoot, moduleIdentifier, uriRoot, true);
+              addOKHandler();
+              addHandler(404, new Handler<HttpClientResponse>() {
                 @Override
                 public void handle(HttpClientResponse resp) {
-                  downloadToFile(filename, resp);
+                  // Not found with -mod suffix - try the old naming (we keep this for backward compatibility)
+                  addOKHandler();
+                  removeHandler(404);
+                  String actualURI = getResourceName(data, contentRoot, moduleIdentifier, uriRoot, false);
+                  makeRequest(repoHost, repoPort, actualURI);
                 }
               });
               makeRequest(repoHost, repoPort, actualURI);
@@ -66,17 +80,22 @@ public class MavenResolution extends HttpResolution {
       // First we make a request to maven-metadata.xml
       makeRequest(repoHost, repoPort, contentRoot + '/' + uriRoot + "maven-metadata.xml");
     } else {
-      addHandler(200, new Handler<HttpClientResponse>() {
+      addOKHandler();
+      addHandler(404, new Handler<HttpClientResponse>() {
         @Override
         public void handle(HttpClientResponse resp) {
-          downloadToFile(filename, resp);
+          // Not found with -mod suffix - try the old naming (we keep this for backward compatibility)
+          addOKHandler();
+          removeHandler(404);
+          makeRequest(repoHost, repoPort, getNonVersionedResourceName(contentRoot, moduleIdentifier, uriRoot, false));
         }
       });
-      makeRequest(repoHost, repoPort, getNonVersionedResourceName(contentRoot, moduleIdentifier, uriRoot));
+      makeRequest(repoHost, repoPort, getNonVersionedResourceName(contentRoot, moduleIdentifier, uriRoot, true));
     }
   }
 
-  static String getResourceName(String data, String contentRoot, ModuleIdentifier identifier, String uriRoot) {
+  static String getResourceName(String data, String contentRoot, ModuleIdentifier identifier, String uriRoot,
+                                boolean modSuffix) {
     int pos = data.indexOf("<snapshot>");
     String actualURI = null;
     if (pos != -1) {
@@ -89,12 +108,12 @@ public class MavenResolution extends HttpResolution {
         // Timestamped SNAPSHOT
         actualURI = contentRoot + '/' + uriRoot + identifier.getName() + '-' +
             identifier.getVersion().substring(0, identifier.getVersion().length() - 9) + '-' +
-            timestamp + '-' + buildNumber + ".zip";
+            timestamp + '-' + buildNumber + (modSuffix ? "" : "-mod") + ".zip";
       }
     }
     if (actualURI == null) {
       // Non timestamped SNAPSHOT
-      actualURI = getNonVersionedResourceName(contentRoot, identifier, uriRoot);
+      actualURI = getNonVersionedResourceName(contentRoot, identifier, uriRoot, modSuffix);
     }
     return actualURI;
   }
@@ -109,8 +128,9 @@ public class MavenResolution extends HttpResolution {
     return uri.toString();
   }
 
-  private static String getNonVersionedResourceName(String contentRoot, ModuleIdentifier identifier, String uriRoot) {
-    return contentRoot + '/' + uriRoot + identifier.getName() + '-' + identifier.getVersion() + ".zip";
+  private static String getNonVersionedResourceName(String contentRoot, ModuleIdentifier identifier, String uriRoot,
+                                                    boolean modSuffix) {
+    return contentRoot + '/' + uriRoot + identifier.getName() + '-' + identifier.getVersion() + (modSuffix ? "" : "-mod") + ".zip";
   }
 
 }

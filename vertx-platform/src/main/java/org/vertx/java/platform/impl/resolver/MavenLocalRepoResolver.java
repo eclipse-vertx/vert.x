@@ -48,8 +48,14 @@ public class MavenLocalRepoResolver implements RepoResolver {
                                        String uriRoot) {
     try (Scanner scanner = new Scanner(metaDataFile).useDelimiter("\\A")) {
       String data = scanner.next();
-      String fileName = MavenResolution.getResourceName(data, repoID, id, uriRoot);
+      // First try with the -mod suffix
+      String fileName = MavenResolution.getResourceName(data, repoID, id, uriRoot, true);
       File file = new File(fileName);
+      if (!file.exists()) {
+        // And then without (for backward compatibility)
+        fileName = MavenResolution.getResourceName(data, repoID, id, uriRoot, false);
+        file = new File(fileName);
+      }
       if (file.exists()) {
         try {
           Files.copy(file.toPath(), Paths.get(filename));
@@ -81,7 +87,13 @@ public class MavenLocalRepoResolver implements RepoResolver {
     } else if (rExists) {
       return getModuleForMetaData(filename, moduleIdentifier, remoteMetaDataFile, uriRoot);
     } else {
-      File nonSnapshotFile = new File(repoID + '/' + uriRoot + moduleIdentifier.getName() + '-' + moduleIdentifier.getVersion() + ".zip");
+      // First try with -mod suffix
+      String prefix = repoID + '/' + uriRoot + moduleIdentifier.getName() + '-' + moduleIdentifier.getVersion();
+      File nonSnapshotFile = new File(prefix + "-mod.zip");
+      if (!nonSnapshotFile.exists()) {
+        // And then with no prefix for backward compatibility
+        nonSnapshotFile = new File(prefix + ".zip");
+      }
       if (nonSnapshotFile.exists()) {
         try {
           Files.copy(nonSnapshotFile.toPath(), Paths.get(filename));

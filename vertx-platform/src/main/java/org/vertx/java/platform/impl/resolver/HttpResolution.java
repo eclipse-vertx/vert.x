@@ -145,6 +145,10 @@ public abstract class HttpResolution {
     handlers.put(statusCode, handler);
   }
 
+  protected void removeHandler(int statusCode) {
+    handlers.remove(statusCode);
+  }
+
   // Standard handlers
 
   protected void downloadToFile(String file, HttpClientResponse resp) {
