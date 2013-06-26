@@ -89,7 +89,7 @@ public class MavenResolution extends HttpResolution {
         // Timestamped SNAPSHOT
         actualURI = contentRoot + '/' + uriRoot + identifier.getName() + '-' +
             identifier.getVersion().substring(0, identifier.getVersion().length() - 9) + '-' +
-            timestamp + '-' + buildNumber + ".zip";
+            timestamp + '-' + buildNumber + "-mod.zip";
       }
     }
     if (actualURI == null) {
@@ -110,7 +110,7 @@ public class MavenResolution extends HttpResolution {
   }
 
   private static String getNonVersionedResourceName(String contentRoot, ModuleIdentifier identifier, String uriRoot) {
-    return contentRoot + '/' + uriRoot + identifier.getName() + '-' + identifier.getVersion() + ".zip";
+    return contentRoot + '/' + uriRoot + identifier.getName() + '-' + identifier.getVersion() + "-mod.zip";
   }
 
 }
