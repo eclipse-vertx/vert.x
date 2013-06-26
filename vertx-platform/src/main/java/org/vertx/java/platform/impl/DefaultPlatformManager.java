@@ -1112,22 +1112,17 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   // this allows moduleRefs to read and write the file system as if they were
   // in the module dir, even though the actual working directory will be
   // wherever vertx run or vertx runmod was called from
-  private void setPathResolver(ModuleIdentifier modID, File modDir) {
-    if (modID != null) {
-      // It's a module
-      DefaultContext context = vertx.getContext();
-      if (modDir != null) {
-        // Module deployed from file system
-        Path cwd = Paths.get(".").toAbsolutePath().getParent();
-        Path pmodDir = Paths.get(modDir.getAbsolutePath());
-        Path relative = cwd.relativize(pmodDir);
-        context.setPathResolver(new ModuleFileSystemPathResolver(relative));
-      } else {
-        // Module deployed from classpath
-        context.setPathResolver(new ClasspathPathResolver());
-      }
+  private void setPathResolver(File modDir) {
+    DefaultContext context = vertx.getContext();
+    if (modDir != null) {
+      // Module deployed from file system or verticle deployed by module
+      Path cwd = Paths.get(".").toAbsolutePath().getParent();
+      Path pmodDir = Paths.get(modDir.getAbsolutePath());
+      Path relative = cwd.relativize(pmodDir);
+      context.setPathResolver(new ModuleFileSystemPathResolver(relative));
     } else {
-      // Raw verticle
+      // Module deployed from classpath
+      context.setPathResolver(new ClasspathPathResolver());
     }
   }
 
@@ -1270,7 +1265,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
             }
             try {
               addVerticle(deployment, verticle, verticleFactory, modID, main);
-              setPathResolver(modID, modDir);
+              setPathResolver(modDir);
               DefaultFutureResult<Void> vr = new DefaultFutureResult<>();
               verticle.start(vr);
               vr.setHandler(new Handler<AsyncResult<Void>>() {
