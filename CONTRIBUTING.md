@@ -34,8 +34,11 @@ To sign the Eclipse CLA you need to:
 If you don’t, you need to [register](https://dev.eclipse.org/site_login/createaccount.php).
 
 * Login into the [projects portal](https://projects.eclipse.org/), select “My Account”, and then the “Contributor License Agreement” tab.
+ 
+## After submitting
 
-Once you have signed the Eclipse CLA, make a note on the github issue that you have signed the CLA, and then you can submit a pull request via github.
+* Once you have signed the Eclipse CLA, make a note on the github issue that you have signed the CLA, and then you can submit a pull request via github.
+* Do not use your branch for any other development, otherwise further changes that you make will be visible in the PR.
 
 
 
