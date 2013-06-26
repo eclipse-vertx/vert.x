@@ -24,7 +24,7 @@ Please read this if you intend to contribute to the project.
 
 ## Submitting the changes
 
-Before submitting your pull request you must sign the [Eclipse Foundation Contributor License Agreement]().
+Before submitting your pull request you must sign the [Eclipse Foundation Contributor License Agreement](http://www.eclipse.org/legal/CLA.php).
 
 We will NOT ACCEPT any contributions without this first being signed.
 
