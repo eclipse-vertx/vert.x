@@ -255,7 +255,7 @@ public interface FileSystem {
 
   /**
    * Read the contents of the directory specified by {@code path}, asynchronously.<p>
-   * The paramater {@code filter} is a regular expression. If {@code filter} is specified then only the paths that
+   * The parameter {@code filter} is a regular expression. If {@code filter} is specified then only the paths that
    * match  @{filter}will be returned.<p>
    * The result is an array of String representing the paths of the files inside the directory.
    */

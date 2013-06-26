@@ -34,7 +34,7 @@ public interface AsyncResult<T> {
   Throwable cause();
 
   /**
-   * Did it succeeed?
+   * Did it succeed?
    */
   boolean succeeded();
 

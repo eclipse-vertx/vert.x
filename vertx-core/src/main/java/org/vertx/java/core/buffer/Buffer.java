@@ -26,7 +26,7 @@ import java.nio.charset.Charset;
 
 /**
  * A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands as
- * necessary to accomodate any bytes written to it.<p>
+ * necessary to accommodate any bytes written to it.<p>
  * There are two ways to write data to a Buffer: The first method involves methods that take the form {@code setXXX}.
  * These methods write data into the buffer starting at the specified position. The position does not have to be inside data that
  * has already been written to the buffer; the buffer will automatically expand to encompass the position plus any data that needs
@@ -93,14 +93,14 @@ public class Buffer {
   }
 
   /**
-   * Returns a {@code String} represention of the Buffer assuming it contains a {@code String} encoding in UTF-8
+   * Returns a {@code String} representation of the Buffer assuming it contains a {@code String} encoding in UTF-8
    */
   public String toString() {
     return buffer.toString(Charset.forName("UTF-8"));
   }
 
   /**
-   * Returns a {@code String} represention of the Buffer with the encoding specified by {@code enc}
+   * Returns a {@code String} representation of the Buffer with the encoding specified by {@code enc}
    */
   public String toString(String enc) {
     return buffer.toString(Charset.forName(enc));
@@ -208,7 +208,7 @@ public class Buffer {
   }
 
   /**
-   * Appends the specified {@code Buffer} to the end of this Buffer. The buffer will expand as necessary to accomodate
+   * Appends the specified {@code Buffer} to the end of this Buffer. The buffer will expand as necessary to accommodate
    * any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
@@ -220,7 +220,7 @@ public class Buffer {
   }
 
   /**
-   * Appends the specified {@code byte[]} to the end of the Buffer. The buffer will expand as necessary to accomodate any bytes written.<p>
+   * Appends the specified {@code byte[]} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
   public Buffer appendBytes(byte[] bytes) {
@@ -229,7 +229,7 @@ public class Buffer {
   }
 
   /**
-   * Appends the specified {@code byte} to the end of the Buffer. The buffer will expand as necessary to accomodate any bytes written.<p>
+   * Appends the specified {@code byte} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
   public Buffer appendByte(byte b) {
@@ -238,7 +238,7 @@ public class Buffer {
   }
 
   /**
-   * Appends the specified {@code int} to the end of the Buffer. The buffer will expand as necessary to accomodate any bytes written.<p>
+   * Appends the specified {@code int} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
   public Buffer appendInt(int i) {
@@ -247,7 +247,7 @@ public class Buffer {
   }
 
   /**
-   * Appends the specified {@code long} to the end of the Buffer. The buffer will expand as necessary to accomodate any bytes written.<p>
+   * Appends the specified {@code long} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
   public Buffer appendLong(long l) {
@@ -256,7 +256,7 @@ public class Buffer {
   }
 
   /**
-   * Appends the specified {@code short} to the end of the Buffer.The buffer will expand as necessary to accomodate any bytes written.<p>
+   * Appends the specified {@code short} to the end of the Buffer.The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
   public Buffer appendShort(short s) {
@@ -265,7 +265,7 @@ public class Buffer {
   }
 
   /**
-   * Appends the specified {@code float} to the end of the Buffer. The buffer will expand as necessary to accomodate any bytes written.<p>
+   * Appends the specified {@code float} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
   public Buffer appendFloat(float f) {
@@ -274,7 +274,7 @@ public class Buffer {
   }
 
   /**
-   * Appends the specified {@code double} to the end of the Buffer. The buffer will expand as necessary to accomodate any bytes written.<p>
+   * Appends the specified {@code double} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
   public Buffer appendDouble(double d) {
@@ -284,7 +284,7 @@ public class Buffer {
 
   /**
    * Appends the specified {@code String} to the end of the Buffer with the encoding as specified by {@code enc}.<p>
-   * The buffer will expand as necessary to accomodate any bytes written.<p>
+   * The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.<p>
    */
   public Buffer appendString(String str, String enc) {
@@ -293,7 +293,7 @@ public class Buffer {
 
   /**
    * Appends the specified {@code String str} to the end of the Buffer with UTF-8 encoding.<p>
-   * The buffer will expand as necessary to accomodate any bytes written.<p>
+   * The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together<p>
    */
   public Buffer appendString(String str) {
@@ -302,7 +302,7 @@ public class Buffer {
 
   /**
    * Sets the {@code byte} at position {@code pos} in the Buffer to the value {@code b}.<p>
-   * The buffer will expand as necessary to accomodate any value written.
+   * The buffer will expand as necessary to accommodate any value written.
    */
   public Buffer setByte(int pos, byte b) {
     ensureWritable(pos, 1);
@@ -312,7 +312,7 @@ public class Buffer {
 
   /**
    * Sets the {@code int} at position {@code pos} in the Buffer to the value {@code i}.<p>
-   * The buffer will expand as necessary to accomodate any value written.
+   * The buffer will expand as necessary to accommodate any value written.
    */
   public Buffer setInt(int pos, int i) {
     ensureWritable(pos, 4);
@@ -322,7 +322,7 @@ public class Buffer {
 
   /**
    * Sets the {@code long} at position {@code pos} in the Buffer to the value {@code l}.<p>
-   * The buffer will expand as necessary to accomodate any value written.
+   * The buffer will expand as necessary to accommodate any value written.
    */
   public Buffer setLong(int pos, long l) {
     ensureWritable(pos, 8);
@@ -332,7 +332,7 @@ public class Buffer {
 
   /**
    * Sets the {@code double} at position {@code pos} in the Buffer to the value {@code d}.<p>
-   * The buffer will expand as necessary to accomodate any value written.
+   * The buffer will expand as necessary to accommodate any value written.
    */
   public Buffer setDouble(int pos, double d) {
     ensureWritable(pos, 8);
@@ -342,7 +342,7 @@ public class Buffer {
 
   /**
    * Sets the {@code float} at position {@code pos} in the Buffer to the value {@code f}.<p>
-   * The buffer will expand as necessary to accomodate any value written.
+   * The buffer will expand as necessary to accommodate any value written.
    */
   public Buffer setFloat(int pos, float f) {
     ensureWritable(pos, 4);
@@ -352,7 +352,7 @@ public class Buffer {
 
   /**
    * Sets the {@code short} at position {@code pos} in the Buffer to the value {@code s}.<p>
-   * The buffer will expand as necessary to accomodate any value written.
+   * The buffer will expand as necessary to accommodate any value written.
    */
   public Buffer setShort(int pos, short s) {
     ensureWritable(pos, 2);
@@ -362,7 +362,7 @@ public class Buffer {
 
   /**
    * Sets the bytes at position {@code pos} in the Buffer to the bytes represented by the {@code Buffer b}.<p>
-   * The buffer will expand as necessary to accomodate any value written.
+   * The buffer will expand as necessary to accommodate any value written.
    */
   public Buffer setBuffer(int pos, Buffer b) {
     ensureWritable(pos, b.length());
@@ -372,7 +372,7 @@ public class Buffer {
 
   /**
    * Sets the bytes at position {@code pos} in the Buffer to the bytes represented by the {@code ByteBuffer b}.<p>
-   * The buffer will expand as necessary to accomodate any value written.
+   * The buffer will expand as necessary to accommodate any value written.
    */
   public Buffer setBytes(int pos, ByteBuffer b) {
     ensureWritable(pos, b.limit());
@@ -382,7 +382,7 @@ public class Buffer {
 
   /**
    * Sets the bytes at position {@code pos} in the Buffer to the bytes represented by the {@code byte[] b}.<p>
-   * The buffer will expand as necessary to accomodate any value written.
+   * The buffer will expand as necessary to accommodate any value written.
    */
   public Buffer setBytes(int pos, byte[] b) {
     ensureWritable(pos, b.length);
@@ -391,8 +391,8 @@ public class Buffer {
   }
 
   /**
-   * Sets the bytes at position {@code pos} in the Buffer to the value of {@code str} endoded in UTF-8.<p>
-   * The buffer will expand as necessary to accomodate any value written.
+   * Sets the bytes at position {@code pos} in the Buffer to the value of {@code str} encoded in UTF-8.<p>
+   * The buffer will expand as necessary to accommodate any value written.
    */
   public Buffer setString(int pos, String str) {
     return setBytes(pos, str, CharsetUtil.UTF_8);
@@ -400,7 +400,7 @@ public class Buffer {
 
   /**
    * Sets the bytes at position {@code pos} in the Buffer to the value of {@code str} encoded in encoding {@code enc}.<p>
-   * The buffer will expand as necessary to accomodate any value written.
+   * The buffer will expand as necessary to accommodate any value written.
    */
   public Buffer setString(int pos, String str, String enc) {
     return setBytes(pos, str, Charset.forName(enc));
