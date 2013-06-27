@@ -19,7 +19,6 @@ package org.vertx.java.core.buffer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
-import org.vertx.java.core.buffer.impl.UnreleasableByteBuf;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -45,6 +44,8 @@ import java.nio.charset.Charset;
 public class Buffer {
 
   private final ByteBuf buffer;
+  private final boolean wrapped;
+
   /**
    * Create an empty buffer
    */
@@ -60,14 +61,16 @@ public class Buffer {
    * automatic re-allocations as data is written to it.
    */
   public Buffer(int initialSizeHint) {
-    buffer = new UnreleasableByteBuf(Unpooled.buffer(initialSizeHint, Integer.MAX_VALUE));
+    buffer = Unpooled.unreleasableBuffer(Unpooled.buffer(initialSizeHint, Integer.MAX_VALUE));
+    wrapped = false;
   }
 
   /**
    * Create a new Buffer that contains the contents of a {@code byte[]}
    */
   public Buffer(byte[] bytes) {
-    buffer = new UnreleasableByteBuf(Unpooled.buffer(bytes.length, Integer.MAX_VALUE)).writeBytes(bytes);
+    buffer = Unpooled.unreleasableBuffer(Unpooled.buffer(bytes.length, Integer.MAX_VALUE)).writeBytes(bytes);
+    wrapped = false;
   }
 
   /**
@@ -90,6 +93,7 @@ public class Buffer {
    */
   public Buffer(ByteBuf buffer) {
     this.buffer = buffer;
+    wrapped = true;
   }
 
   /**
@@ -467,6 +471,6 @@ public class Buffer {
   }
 
   public boolean isWrapper() {
-    return !(buffer instanceof UnreleasableByteBuf);
+    return wrapped;
   }
 }
