@@ -26,7 +26,7 @@ import org.vertx.java.core.streams.WriteStream;
  * Instances of this class are created and associated to every instance of
  * {@link HttpServerRequest} that is created.<p>
  * It allows the developer to control the HTTP response that is sent back to the
- * client for a partcular HTTP request. It contains methods that allow HTTP
+ * client for a particular HTTP request. It contains methods that allow HTTP
  * headers and trailers to be set, and for a body to be written out to the response.<p>
  * It also allows files to be streamed by the kernel directly from disk to the
  * outgoing HTTP connection, bypassing user space altogether (where supported by

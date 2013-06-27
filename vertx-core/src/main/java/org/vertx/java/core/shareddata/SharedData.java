@@ -91,14 +91,14 @@ public class SharedData {
   }
 
   /**
-   * Remove the {@code Map} with the specifiec {@code name}.
+   * Remove the {@code Map} with the specific {@code name}.
    */
   public boolean removeMap(Object name) {
     return maps.remove(name) != null;
   }
 
   /**
-   * Remove the {@code Set} with the specifiec {@code name}.
+   * Remove the {@code Set} with the specific {@code name}.
    */
   public boolean removeSet(Object name) {
     return sets.remove(name) != null;
