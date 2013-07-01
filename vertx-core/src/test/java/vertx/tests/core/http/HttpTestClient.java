@@ -2721,15 +2721,15 @@ public class HttpTestClient extends TestClientBase {
                   tu.azzert(content.equals(buffer.toString("UTF-8")));
                 }
               });
+              tu.azzert(event.name().equals("file"));
+              tu.azzert(event.filename().equals("tmp-0.txt"));
+              tu.azzert(event.contentType().equals("image/gif"));
             }
           });
           req.endHandler(new VoidHandler() {
             protected void handle() {
               MultiMap attrs = req.formAttributes();
               attributeCount.set(attrs.size());
-              tu.azzert(attrs.get("name").equals("file"));
-              tu.azzert(attrs.get("filename").equals("tmp-0.txt"));
-              tu.azzert(attrs.get("Content-Type").equals("image/gif"));
               req.response().end();
             }
           });
@@ -2749,7 +2749,7 @@ public class HttpTestClient extends TestClientBase {
                 tu.azzert(0 == body.length());
               }
             });
-            tu.azzert(3 == attributeCount.get());
+            tu.azzert(0 == attributeCount.get());
             tu.testComplete();
           }
         });

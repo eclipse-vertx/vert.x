@@ -19,6 +19,7 @@ package org.vertx.java.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.multipart.*;
+import io.netty.util.ReferenceCountUtil;
 import org.vertx.java.core.VertxException;
 import org.vertx.java.core.impl.CaseInsensitiveMultiMap;
 import org.vertx.java.core.Handler;
@@ -293,6 +294,23 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
       } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
         handleException(e);
       }
+      try {
+        while (decoder.hasNext()) {
+          InterfaceHttpData data = decoder.next();
+          if (data instanceof Attribute) {
+            Attribute attr = (Attribute) data;
+            try {
+              attributes().add(urlDecode(attr.getName()), urlDecode(attr.getValue()));
+            } catch (IOException e) {
+              // Will never happen, anyway handle it somehow just in case
+              handleException(e);
+            }
+          }
+          ReferenceCountUtil.release(data);
+        }
+      } catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
+        // ignore this as it is expected
+      }
     }
     if (endHandler != null) {
       endHandler.handle(null);
@@ -517,84 +535,21 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
     }
   }
 
-
-  private class InternalMemoryAttribute extends MemoryAttribute {
-
-    private boolean notified;
-    private InternalMemoryAttribute(String name) {
-      super(name);
+  private static String urlDecode(String str) {
+    try {
+      return URLDecoder.decode(str, "UTF-8");
+    } catch (UnsupportedEncodingException e) {
+      // Highly unlikely to happen
+      throw new VertxException("UTF-8 not supported!");
     }
-
-    private InternalMemoryAttribute(String name, String value) throws IOException {
-      super(name, value);
-    }
-
-    @Override
-    public void setValue(String value) throws IOException {
-      super.setValue(value);
-      attributeCreated();
-    }
-
-
-    @Override
-    public void setContent(ByteBuf buffer) throws IOException {
-      super.setContent(buffer);
-      attributeCreated();
-    }
-
-    @Override
-    public void setContent(InputStream inputStream) throws IOException {
-      super.setContent(inputStream);
-      attributeCreated();
-    }
-
-    @Override
-    public void setContent(File file) throws IOException {
-      super.setContent(file);
-      attributeCreated();
-    }
-
-    @Override
-    public void addContent(ByteBuf buffer, boolean last) throws IOException {
-      super.addContent(buffer, last);
-      attributeCreated();
-    }
-
-    private void attributeCreated() {
-      if (!notified && isCompleted()) {
-        notified = true;
-        attributes().add(urlDecode(getName()), urlDecode(getValue()));
-      }
-    }
-
-    private String urlDecode(String str) {
-      try {
-        return URLDecoder.decode(str, "UTF-8");
-      } catch (UnsupportedEncodingException e) {
-        // Highly unlikely to happen
-        throw new VertxException("UTF-8 not supported!");
-      }
-    }
-
   }
 
 
-  private class DataFactory implements HttpDataFactory {
 
-    @Override
-    public io.netty.handler.codec.http.multipart.Attribute createAttribute(HttpRequest httpRequest, String name) {
-      return new InternalMemoryAttribute(name);
-    }
+  private class DataFactory extends DefaultHttpDataFactory {
 
-    @Override
-    public io.netty.handler.codec.http.multipart.Attribute createAttribute(HttpRequest httpRequest,
-                                                                           String name, String value) {
-      try {
-        return new InternalMemoryAttribute(name, value);
-      } catch (IOException e) {
-        // Will never happen for in memory
-        return null;
-      }
+    DataFactory() {
+      super(false);
     }
 
     @Override
@@ -608,18 +563,6 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
       }
       return nettyUpload;
 
-    }
-
-    @Override
-    public void removeHttpDataFromClean(HttpRequest httpRequest, InterfaceHttpData interfaceHttpData) {
-    }
-
-    @Override
-    public void cleanRequestHttpDatas(HttpRequest httpRequest) {
-    }
-
-    @Override
-    public void cleanAllHttpDatas() {
     }
   }
 }
