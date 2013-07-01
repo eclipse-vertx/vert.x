@@ -93,7 +93,15 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
       if ((contentType.toLowerCase().startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA)
                   || contentType.toLowerCase().startsWith(HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED)) &&
                   (method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.PATCH))) {
-        decoder = new HttpPostRequestDecoder(new DataFactory(), request);
+        decoder = new HttpPostRequestDecoder(new DataFactory(), request) {
+          @Override
+          protected void addHttpData(InterfaceHttpData data) {
+            if (data instanceof Attribute) {
+              Attribute attr = (Attribute) data;
+              attributes().add(urlDecode(attr.getName()), urlDecode(attr.getName()));
+            }
+          }
+        };
       } else {
         decoder = null;
       }
@@ -329,7 +337,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
     private final DefaultHttpServerFileUpload upload;
 
 
-    private String name;
+    private final String name;
     private String filename;
     private String contentType;
     private String contentTransferEncoding;
@@ -517,84 +525,9 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
     }
   }
 
-
-  private class InternalMemoryAttribute extends MemoryAttribute {
-
-    private boolean notified;
-    private InternalMemoryAttribute(String name) {
-      super(name);
-    }
-
-    private InternalMemoryAttribute(String name, String value) throws IOException {
-      super(name, value);
-    }
-
-    @Override
-    public void setValue(String value) throws IOException {
-      super.setValue(value);
-      attributeCreated();
-    }
-
-
-    @Override
-    public void setContent(ByteBuf buffer) throws IOException {
-      super.setContent(buffer);
-      attributeCreated();
-    }
-
-    @Override
-    public void setContent(InputStream inputStream) throws IOException {
-      super.setContent(inputStream);
-      attributeCreated();
-    }
-
-    @Override
-    public void setContent(File file) throws IOException {
-      super.setContent(file);
-      attributeCreated();
-    }
-
-    @Override
-    public void addContent(ByteBuf buffer, boolean last) throws IOException {
-      super.addContent(buffer, last);
-      attributeCreated();
-    }
-
-    private void attributeCreated() {
-      if (!notified && isCompleted()) {
-        notified = true;
-        attributes().add(urlDecode(getName()), urlDecode(getValue()));
-      }
-    }
-
-    private String urlDecode(String str) {
-      try {
-        return URLDecoder.decode(str, "UTF-8");
-      } catch (UnsupportedEncodingException e) {
-        // Highly unlikely to happen
-        throw new VertxException("UTF-8 not supported!");
-      }
-    }
-
-  }
-
-
-  private class DataFactory implements HttpDataFactory {
-
-    @Override
-    public io.netty.handler.codec.http.multipart.Attribute createAttribute(HttpRequest httpRequest, String name) {
-      return new InternalMemoryAttribute(name);
-    }
-
-    @Override
-    public io.netty.handler.codec.http.multipart.Attribute createAttribute(HttpRequest httpRequest,
-                                                                           String name, String value) {
-      try {
-        return new InternalMemoryAttribute(name, value);
-      } catch (IOException e) {
-        // Will never happen for in memory
-        return null;
-      }
+  private class DataFactory extends DefaultHttpDataFactory {
+    DataFactory() {
+      super(false);
     }
 
     @Override
@@ -609,17 +542,16 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
       return nettyUpload;
 
     }
+  }
 
-    @Override
-    public void removeHttpDataFromClean(HttpRequest httpRequest, InterfaceHttpData interfaceHttpData) {
-    }
 
-    @Override
-    public void cleanRequestHttpDatas(HttpRequest httpRequest) {
-    }
-
-    @Override
-    public void cleanAllHttpDatas() {
+  private static String urlDecode(String str) {
+    try {
+      return URLDecoder.decode(str, "UTF-8");
+    } catch (UnsupportedEncodingException e) {
+      // Highly unlikely to happen
+      throw new VertxException("UTF-8 not supported!");
     }
   }
+
 }
