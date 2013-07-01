@@ -40,7 +40,6 @@ public class ClasspathPathResolver implements PathResolver {
       if (url != null) {
         String sfile = url.getFile();
         if (sfile != null) {
-          System.out.println("File name is " + sfile);
           return Paths.get(sfile);
         }
       }
