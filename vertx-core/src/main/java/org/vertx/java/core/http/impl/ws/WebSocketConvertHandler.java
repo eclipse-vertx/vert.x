@@ -1,11 +1,11 @@
 package org.vertx.java.core.http.impl.ws;
 
-import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.MessageList;
 import io.netty.handler.codec.MessageToMessageCodec;
 import io.netty.handler.codec.http.websocketx.*;
+import io.netty.util.ReferenceCountUtil;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -18,7 +18,7 @@ public class WebSocketConvertHandler extends MessageToMessageCodec<io.netty.hand
   @Override
   protected void encode(ChannelHandlerContext ctx, WebSocketFrame msg, MessageList<Object> out) throws Exception {
     // retain message as we will re-use the data contained in it
-    ByteBufUtil.retain(msg);
+    ReferenceCountUtil.retain(msg);
     switch (msg.getType()) {
       case BINARY:
         out.add(new BinaryWebSocketFrame(msg.getBinaryData()));

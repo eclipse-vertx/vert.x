@@ -15,10 +15,10 @@
  */
 package org.vertx.java.core.http.impl;
 
-import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.MessageList;
+import io.netty.util.ReferenceCountUtil;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.impl.ConnectionBase;
@@ -57,7 +57,7 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxIn
           } catch (Throwable t) {
             context.reportException(t);
           } finally {
-            ByteBufUtil.release(msg);
+            ReferenceCountUtil.release(msg);
             context.endExecute();
           }
         } else {
@@ -68,7 +68,7 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxIn
               } catch (Throwable t) {
                 context.reportException(t);
               } finally {
-                ByteBufUtil.release(msg);
+                ReferenceCountUtil.release(msg);
               }
             }
           });
@@ -79,7 +79,7 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxIn
         }  catch (Throwable t) {
            chctx.pipeline().fireExceptionCaught(t);
         } finally {
-          ByteBufUtil.release(msg);
+          ReferenceCountUtil.release(msg);
         }
       }
     }
