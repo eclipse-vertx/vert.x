@@ -32,6 +32,8 @@ import java.nio.file.Paths;
  */
 public class ClasspathPathResolver implements PathResolver {
 
+  private static final char FILE_SEP = System.getProperty("file.separator").charAt(0);
+
   @Override
   public Path resolve(Path path) {
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
@@ -40,7 +42,8 @@ public class ClasspathPathResolver implements PathResolver {
       if (url != null) {
         String sfile = url.getFile();
         if (sfile != null) {
-          return Paths.get(sfile);
+          String substituted = FILE_SEP == '/' ? sfile : sfile.replace(FILE_SEP, '/');
+          return Paths.get(substituted);
         }
       }
     }
