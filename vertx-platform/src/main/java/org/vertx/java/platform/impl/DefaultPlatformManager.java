@@ -421,13 +421,13 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
     ModuleFields fields = new ModuleFields(conf);
     List<String> mods = new ArrayList<>();
-    String includes = fields.getIncludes();
+    String[] includes = fields.getIncludes();
     if (includes != null) {
-      mods.addAll(Arrays.asList(parseIncludeString(includes)));
+      mods.addAll(Arrays.asList(includes));
     }
-    String deploys = fields.getDeploys();
+    String[] deploys = fields.getDeploys();
     if (deploys != null) {
-      mods.addAll(Arrays.asList(parseIncludeString(deploys)));
+      mods.addAll(Arrays.asList(deploys));
     }
     if (!mods.isEmpty()) {
       File internalModsDir = new File(modDir, "mods");
@@ -725,7 +725,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
 
     // Now load any included moduleRefs
-    String includes = fields.getIncludes();
+    String[] includes = fields.getIncludes();
     if (includes != null) {
       loadIncludedModules(modRoot, modDir, mr, includes);
     }
@@ -841,8 +841,12 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   private void loadIncludedModules(File modRoot, File currentModuleDir, ModuleReference mr, String includesString) {
+    loadIncludedModules(modRoot, currentModuleDir, mr, parseIncludeString(includesString));
+  }
+  
+  private void loadIncludedModules(File modRoot, File currentModuleDir, ModuleReference mr, String[] includes) {
     checkWorkerContext();
-    for (String moduleName: parseIncludeString(includesString)) {
+    for (String moduleName: includes) {
       ModuleIdentifier modID = new ModuleIdentifier(moduleName);
       ModuleReference includedMr = moduleRefs.get(moduleName);
       if (includedMr == null) {
@@ -864,9 +868,9 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         if (prev != null) {
           includedMr = prev;
         }
-        String includes = fields.getIncludes();
-        if (includes != null) {
-          loadIncludedModules(modRoot, modDir, includedMr, includes);
+        String[] childIncludes = fields.getIncludes();
+        if (childIncludes != null) {
+          loadIncludedModules(modRoot, modDir, includedMr, childIncludes);
         }
       }
       includedMr.incRef();
