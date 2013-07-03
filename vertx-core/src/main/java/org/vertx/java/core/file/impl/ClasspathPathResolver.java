@@ -36,7 +36,9 @@ public class ClasspathPathResolver implements PathResolver {
   public Path resolve(Path path) {
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
     if (cl != null) {
-      URL url = cl.getResource(path.toString());
+      char sysSeparator = path.getFileSystem().getSeparator().charAt(0);
+      String sPath = path.toString();
+      URL url = cl.getResource(sysSeparator == '/' ? sPath : sPath.replace(sysSeparator, '/'));
       if (url != null) {
         String sfile = url.getFile();
         if (sfile != null) {
