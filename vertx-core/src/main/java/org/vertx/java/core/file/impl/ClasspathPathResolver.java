@@ -38,12 +38,13 @@ public class ClasspathPathResolver implements PathResolver {
   public Path resolve(Path path) {
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
     if (cl != null) {
-      URL url = cl.getResource(path.toString());
+      String spath = path.toString();
+      String substituted = FILE_SEP == '/' ? spath : spath.replace(FILE_SEP, '/');
+      URL url = cl.getResource(substituted);
       if (url != null) {
         String sfile = url.getFile();
         if (sfile != null) {
-          String substituted = FILE_SEP == '/' ? sfile : sfile.replace(FILE_SEP, '/');
-          return Paths.get(substituted);
+          return Paths.get(spath);
         }
       }
     }
