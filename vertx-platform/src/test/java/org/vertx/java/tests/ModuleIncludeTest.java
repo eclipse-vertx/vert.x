@@ -86,5 +86,11 @@ public class ModuleIncludeTest extends TestBase {
     startMod("io.vertx~testmod8-1~1.0");
     startTest(getMethodName());
   }
+  
+  @Test
+  public void testMultipleIncludesArray() throws Exception {
+    startMod("io.vertx~testmod9-1~1.0");
+    startTest(getMethodName());
+  }
 
 }

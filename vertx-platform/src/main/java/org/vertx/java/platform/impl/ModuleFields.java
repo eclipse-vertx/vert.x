@@ -16,6 +16,9 @@ package org.vertx.java.platform.impl;/*
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 
+import java.util.Arrays;
+
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
 /**
@@ -57,8 +60,18 @@ public class ModuleFields {
     return getBooleanField("system");
   }
 
-  public String getIncludes() {
-    return conf.getString("includes");
+  public String[] getIncludes() {
+    try {
+      JsonArray array = conf.getArray("includes");
+      if (array == null) {
+        return null;
+      }
+
+      return Arrays.copyOf(array.toArray(), array.size(), String[].class);
+    } catch (ClassCastException e) {
+      String str = conf.getString("includes");
+      return str != null ? str.trim().split("\\s*,\\s*") : null;
+    }
   }
 
   public String getDescription() {
@@ -70,10 +83,20 @@ public class ModuleFields {
   }
 
   /*
-  Comma separated list of modules that are deployed by this module
+   * Comma separated list of modules that are deployed by this module
    */
-  public String getDeploys() {
-    return conf.getString("deploys");
+  public String[] getDeploys() {
+    try {
+      JsonArray array = conf.getArray("deploys");
+      if (array == null) {
+        return null;
+      }
+
+      return Arrays.copyOf(array.toArray(), array.size(), String[].class);
+    } catch (ClassCastException e) {
+      String str = conf.getString("deploys");
+      return str != null ? str.trim().split("\\s*,\\s*") : null;
+    }
   }
 
   public String getLicence() {
