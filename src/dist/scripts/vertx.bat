@@ -82,7 +82,7 @@ set CMD_LINE_ARGS=%$
 set CLASSPATH=%CLASSPATH%;%VERTX_HOME%\lib\*;%VERTX_HOME%\conf
 
 @rem Execute vertx
-"%JAVA_EXE%" %JVM_OPTS% %JMX_OPTS% %JAVA_OPTS% %VERTX_OPTS% %VERTX_MODULE_OPTS% -Djava.util.logging.config.file="%VERTX_JUL_CONFIG%" -Dvertx.home=%VERTX_HOME% -classpath "%CLASSPATH%" org.vertx.java.platform.impl.cli.Starter %CMD_LINE_ARGS%
+"%JAVA_EXE%" %JVM_OPTS% %JMX_OPTS% %JAVA_OPTS% %VERTX_OPTS% %VERTX_MODULE_OPTS% -Djava.util.logging.config.file="%VERTX_JUL_CONFIG%" -Dvertx.home="%VERTX_HOME%" -classpath "%CLASSPATH%" org.vertx.java.platform.impl.cli.Starter %CMD_LINE_ARGS%
 
 :end
 @rem End local scope for the variables with windows NT shell
