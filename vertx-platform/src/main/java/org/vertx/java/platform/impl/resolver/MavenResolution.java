@@ -77,21 +77,32 @@ public class MavenResolution extends HttpResolution {
           });
         }
       });
-      // First we make a request to maven-metadata.xml
-      makeRequest(repoHost, repoPort, contentRoot + '/' + uriRoot + "maven-metadata.xml");
-    } else {
-      addOKHandler();
       addHandler(404, new Handler<HttpClientResponse>() {
         @Override
         public void handle(HttpClientResponse resp) {
-          // Not found with -mod suffix - try the old naming (we keep this for backward compatibility)
-          addOKHandler();
-          removeHandler(404);
-          makeRequest(repoHost, repoPort, getNonVersionedResourceName(contentRoot, moduleIdentifier, uriRoot, false));
+          // No maven-meta-data.xml - try the direct module name
+          attemptDirectDownload();
         }
       });
-      makeRequest(repoHost, repoPort, getNonVersionedResourceName(contentRoot, moduleIdentifier, uriRoot, true));
+      // First we make a request to maven-metadata.xml
+      makeRequest(repoHost, repoPort, contentRoot + '/' + uriRoot + "maven-metadata.xml");
+    } else {
+      attemptDirectDownload();
     }
+  }
+
+  protected void attemptDirectDownload() {
+    addOKHandler();
+    addHandler(404, new Handler<HttpClientResponse>() {
+      @Override
+      public void handle(HttpClientResponse resp) {
+        // Not found with -mod suffix - try the old naming (we keep this for backward compatibility)
+        addOKHandler();
+        removeHandler(404);
+        makeRequest(repoHost, repoPort, getNonVersionedResourceName(contentRoot, moduleIdentifier, uriRoot, false));
+      }
+    });
+    makeRequest(repoHost, repoPort, getNonVersionedResourceName(contentRoot, moduleIdentifier, uriRoot, true));
   }
 
   static String getResourceName(String data, String contentRoot, ModuleIdentifier identifier, String uriRoot,
