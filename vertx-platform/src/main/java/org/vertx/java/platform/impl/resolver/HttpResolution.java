@@ -110,7 +110,6 @@ public abstract class HttpResolution {
       // We use an absolute URI
       uri = new StringBuilder("http://").append(host).append(":").append(port).append(uri).toString();
     }
-    System.out.println("Requesting:" + uri + " from host: " + host + " port " + port);
     HttpClientRequest req = client.get(uri, respHandler);
     if (proxyHost != null){
       req.putHeader("host", proxyHost);
@@ -126,7 +125,6 @@ public abstract class HttpResolution {
   protected void makeRequest(String host, int port, String uri) {
     sendRequest(host, port, uri, new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
-        System.out.println("Got status code:" + resp.statusCode());
         Handler<HttpClientResponse> handler = handlers.get(resp.statusCode());
         if (handler != null) {
           handler.handle(resp);
