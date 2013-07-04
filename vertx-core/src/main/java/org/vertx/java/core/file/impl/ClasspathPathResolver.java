@@ -1,5 +1,6 @@
 package org.vertx.java.core.file.impl;
 
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -42,9 +43,10 @@ public class ClasspathPathResolver implements PathResolver {
       String substituted = FILE_SEP == '/' ? spath : spath.replace(FILE_SEP, '/');
       URL url = cl.getResource(substituted);
       if (url != null) {
-        String sfile = url.getFile();
-        if (sfile != null) {
-          return Paths.get(sfile);
+        try {
+          return Paths.get(new URI(url.toExternalForm()));
+        } catch (Exception exc) {
+          throw new RuntimeException(exc);
         }
       }
     }
