@@ -17,18 +17,33 @@
 apply from: "$rootDir/gradle/maven.gradle"
 
 dependencies {
-	compile "log4j:log4j:$log4jVersion"
-	compile "org.slf4j:slf4j-api:$slf4jVersion"
-	compile "com.fasterxml.jackson.core:jackson-core:$jacksonCoreVersion"
-	compile "com.fasterxml.jackson.core:jackson-databind:$jacksonDatabindVersion"
-	compile "com.hazelcast:hazelcast:$hazelcastVersion"
-	compile "io.netty:netty-all:$nettyVersion"
+	compile project(':vertx-core')
+  compile project(':vertx-platform')
 }
 
-artifacts {
-	platform jar
+
+// Cleanup the modules placed in the mod-test directory during the test suite
+task cleanTestTmpModules(type: Delete) {
+  delete { file("src/test/mod-test").listFiles().findAll {
+    it.name ==~ /io.vertx~lang-rhino.+/ ||
+    it.name ==~ /io.vertx~mod-maven-test.+/ ||
+    it.name ==~ /purplefox~mod-bintray-test.+/
+    }
+  }
+  delete { file(".").listFiles().findAll {
+    it.name ==~ /io.vertx#my-mod.+/
+    }
+  }
+  delete 'reloader-test-mods'
 }
 
+clean {
+  dependsOn cleanTestTmpModules
+}
+
+test {
+  dependsOn cleanTestTmpModules
+}
 
 test {
   outputs.upToDateWhen { false }
@@ -36,9 +51,9 @@ test {
   testLogging.showStandardStreams = true
 
   systemProperty 'vertx.test.timeout', 60
+  systemProperty 'vertx.mods', "$projectDir/src/test/mod-test"
 
   jvmArgs '-server', '-Xms128m', '-Xmx1024m', '-XX:MaxPermSize=128m', '-XX:NewRatio=2'
 
   testLogging { exceptionFormat "full" }
 }
-
