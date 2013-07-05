@@ -72,11 +72,16 @@ public class JsonObject extends JsonElement {
   }
 
   public JsonObject putArray(String fieldName, JsonArray value) {
-    map.put(fieldName, value.list);
+    map.put(fieldName, value == null ? null : value.list);
     return this;
   }
 
   public JsonObject putElement(String fieldName, JsonElement value) {
+    if (value == null) {
+      map.put(fieldName, null);
+      return this;
+    }
+
     if(value.isArray()){
       return this.putArray(fieldName, value.asArray());
     }
@@ -95,7 +100,7 @@ public class JsonObject extends JsonElement {
   }
 
   public JsonObject putBinary(String fieldName, byte[] binary) {
-    map.put(fieldName, Base64.encodeBytes(binary));
+    map.put(fieldName, binary == null ? null : Base64.encodeBytes(binary));
     return this;
   }
 
