@@ -53,16 +53,21 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
   }
 
   public JsonArray addObject(JsonObject value) {
-    list.add(value.map);
+    list.add(value == null ? null : value.map);
     return this;
   }
 
   public JsonArray addArray(JsonArray value) {
-    list.add(value.list);
+    list.add(value == null ? null : value.list);
     return this;
   }
 
   public JsonArray addElement(JsonElement value) {
+    if (value == null) {
+      list.add(null);
+      return this;
+    }
+
     if (value.isArray()) {
       return addArray(value.asArray());
     }
@@ -81,6 +86,11 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
   }
 
   public JsonArray addBinary(byte[] value) {
+    if (value == null) {
+      list.add(null);
+      return this;
+    }
+
     String encoded = Base64.encodeBytes(value);
     list.add(encoded);
     return this;
