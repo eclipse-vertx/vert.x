@@ -310,8 +310,9 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
         }
       } catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
         // ignore this as it is expected
+      } finally {
+        decoder.destroy();
       }
-      decoder.destroy();
     }
     if (endHandler != null) {
       endHandler.handle(null);
