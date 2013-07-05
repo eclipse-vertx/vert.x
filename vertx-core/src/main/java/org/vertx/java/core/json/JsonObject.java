@@ -166,7 +166,7 @@ public class JsonObject extends JsonElement {
 
   public byte[] getBinary(String fieldName) {
     String encoded = (String) map.get(fieldName);
-    return Base64.decode(encoded);
+    return encoded == null ? null : Base64.decode(encoded);
   }
 
   public String getString(String fieldName, String def) {
