@@ -1,5 +1,9 @@
 package org.vertx.java.core.file.impl;
 
+import org.vertx.java.core.VertxException;
+
+import java.io.File;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -42,9 +46,20 @@ public class ClasspathPathResolver implements PathResolver {
       String substituted = FILE_SEP == '/' ? spath : spath.replace(FILE_SEP, '/');
       URL url = cl.getResource(substituted);
       if (url != null) {
-        String sfile = url.getFile();
-        if (sfile != null) {
-          return Paths.get(sfile);
+        if (FILE_SEP == '/') {
+          // *nix - a bit quicker than pissing around with URIs
+          String sfile = url.getFile();
+          if (sfile != null) {
+            return Paths.get(url.getFile());
+          }
+        } else {
+          // E.g. windows
+          // See http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4701321
+          try {
+            return Paths.get(new URI(url.toExternalForm()));
+          } catch (Exception exc) {
+            throw new VertxException(exc);
+          }
         }
       }
     }
