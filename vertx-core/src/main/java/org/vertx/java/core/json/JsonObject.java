@@ -110,6 +110,10 @@ public class JsonObject extends JsonElement {
     return this;
   }
 
+  public boolean contains(String fieldName) {
+    return map.containsKey(fieldName);
+  }
+
   public String getString(String fieldName) {
     return (String) map.get(fieldName);
   }
