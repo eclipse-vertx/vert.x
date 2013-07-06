@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.tests;
+package org.vertx.java.tests.container;
 
 import org.junit.Test;
 import org.vertx.java.testframework.TestBase;

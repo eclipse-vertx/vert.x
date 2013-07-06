@@ -1,4 +1,5 @@
-package org.vertx.java.tests;/*
+package org.vertx.java.tests.container;
+/*
  * Copyright 2013 Red Hat, Inc.
  *
  * Red Hat licenses this file to you under the Apache License, version 2.0
