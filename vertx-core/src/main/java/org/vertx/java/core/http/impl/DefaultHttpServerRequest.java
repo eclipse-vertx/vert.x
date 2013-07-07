@@ -506,7 +506,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
       throw new UnsupportedOperationException();
     }
 
-    @Override
+    //@Override
     public FileUpload duplicate() {
       throw new UnsupportedOperationException();
     }
