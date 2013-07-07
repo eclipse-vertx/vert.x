@@ -157,15 +157,21 @@ class DefaultHttpServerFileUpload implements HttpServerFileUpload {
   }
 
   void receiveData(Buffer data) {
-    if (!paused) {
-      if (dataHandler != null) {
-        dataHandler.handle(data);
+    try {
+      if (!paused) {
+        if (dataHandler != null) {
+          dataHandler.handle(data);
+        }
+      } else {
+        if (pauseBuff == null) {
+          pauseBuff = new Buffer();
+        }
+        pauseBuff.appendBuffer(data);
       }
-    } else {
-      if (pauseBuff == null) {
-        pauseBuff = new Buffer();
-      }
-      pauseBuff.appendBuffer(data);
+    } finally {
+      // release the underlying buffer
+      // See https://github.com/vert-x/vert.x/issues/677
+      data.getByteBuf().release();
     }
   }
 
