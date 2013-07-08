@@ -56,7 +56,7 @@ public class ClasspathPathResolver implements PathResolver {
           // E.g. windows
           // See http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4701321
           try {
-            return Paths.get(new URI(url.toExternalForm()));
+            return Paths.get(url.toURI());
           } catch (Exception exc) {
             throw new VertxException(exc);
           }
