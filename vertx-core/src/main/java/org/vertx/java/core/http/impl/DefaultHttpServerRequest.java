@@ -80,6 +80,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   private Handler<Void> endHandler;
   private MultiMap attributes;
   private final HttpPostRequestDecoder decoder;
+  private boolean isURLEncoded;
 
   DefaultHttpServerRequest(final ServerConnection conn,
                            final HttpRequest request,
@@ -91,9 +92,10 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
     String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
     if (contentType != null) {
       HttpMethod method = request.getMethod();
-      if ((contentType.toLowerCase().startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA)
-                  || contentType.toLowerCase().startsWith(HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED)) &&
-                  (method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.PATCH))) {
+      String lowerCaseContentType = contentType.toLowerCase();
+      isURLEncoded = lowerCaseContentType.startsWith(HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
+      if ((lowerCaseContentType.startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA) || isURLEncoded) &&
+          (method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.PATCH))) {
         decoder = new HttpPostRequestDecoder(new DataFactory(), request);
       } else {
         decoder = null;
@@ -300,8 +302,12 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
           if (data instanceof Attribute) {
             Attribute attr = (Attribute) data;
             try {
-              attributes().add(urlDecode(attr.getName()), urlDecode(attr.getValue()));
-            } catch (IOException e) {
+              if (isURLEncoded) {
+                attributes().add(urlDecode(attr.getName()), urlDecode(attr.getValue()));
+              } else {
+                attributes().add(attr.getName(), attr.getValue());
+              }
+            } catch (Exception e) {
               // Will never happen, anyway handle it somehow just in case
               handleException(e);
             }
@@ -562,9 +568,9 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
     @Override
     public FileUpload createFileUpload(HttpRequest httpRequest, String name, String filename, String contentType, String contentTransferEncoding, Charset charset, long size) {
       DefaultHttpServerFileUpload upload = new DefaultHttpServerFileUpload(conn.vertx(), DefaultHttpServerRequest.this, name, filename, contentType, contentTransferEncoding, charset,
-                                                        size);
+          size);
       NettyFileUpload nettyUpload = new NettyFileUpload(upload, name, filename, contentType,
-                                                                 contentTransferEncoding, charset);
+          contentTransferEncoding, charset);
       if (uploadHandler != null) {
         uploadHandler.handle(upload);
       }
