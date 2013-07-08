@@ -190,7 +190,6 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   }
 
   private void internalHandlePing(final SockJSSocket sock) {
-    System.out.println("Received ping!!");
     PingInfo info = pingInfos.get(sock);
     if (info != null) {
       info.lastPing = System.currentTimeMillis();
@@ -219,7 +218,6 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       @Override
       public void handle(Long id) {
         if (System.currentTimeMillis() - pingInfo.lastPing >= PING_INTERVAL) {
-          System.out.println("Didn't receive ping so closing socket!!");
           // We didn't receive a ping in time so close the socket
           sock.close();
         }
