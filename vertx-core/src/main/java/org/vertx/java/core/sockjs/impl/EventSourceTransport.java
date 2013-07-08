@@ -95,11 +95,11 @@ class EventSourceTransport extends BaseTransport {
     public void close() {
       if (!closed) {
         try {
-          session.resetListener(false);
+          session.resetListener();
           req.response().end();
           req.response().close();
         } catch (IllegalStateException e) {
-          // Underlying connection might alreadu be closed - that's fine
+          // Underlying connection might already be closed - that's fine
         }
         closed = true;
       }

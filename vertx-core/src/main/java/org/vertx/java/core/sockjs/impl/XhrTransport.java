@@ -166,7 +166,7 @@ class XhrTransport extends BaseTransport {
       if (log.isTraceEnabled()) log.trace("XHR poll closing listener");
       if (!closed) {
         try {
-          session.resetListener(true);
+          session.resetListener();
           req.response().end();
           req.response().close();
           closed = true;
@@ -207,13 +207,13 @@ class XhrTransport extends BaseTransport {
     public void close() {
       if (log.isTraceEnabled()) log.trace("XHR stream closing listener");
       if (!closed) {
-        session.resetListener(false);
+        session.resetListener();
         try {
           req.response().end();
           req.response().close();
           closed = true;
         } catch (IllegalStateException e) {
-          // Underlying connection might alreadu be closed - that's fine
+          // Underlying connection might already be closed - that's fine
         }
       }
     }

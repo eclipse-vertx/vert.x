@@ -172,11 +172,11 @@ class Session extends SockJSSocketBase implements Shareable {
     return closed;
   }
 
-  synchronized void resetListener(boolean setTimer) {
+  synchronized void resetListener() {
     listener = null;
-    if (setTimer) {
-      setTimer();
-    }
+    // We set a timer that will kick in and close the session if the client doesn't come back
+    // We MUST ALWAYS do this or we can get a memory leak on the server
+    setTimer();
   }
 
   private void cancelTimer() {
@@ -265,6 +265,7 @@ class Session extends SockJSSocketBase implements Shareable {
       // Can be null if websocket session
       sessions.remove(id);
     }
+
     if (endHandler != null) {
       endHandler.handle(null);
     }
