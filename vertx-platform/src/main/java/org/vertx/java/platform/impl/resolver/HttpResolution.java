@@ -105,12 +105,10 @@ public abstract class HttpResolution {
   }
 
   protected void sendRequest(String host, int port, String uri, Handler<HttpClientResponse> respHandler) {
-    System.out.println("Making request to: " + uri + " on host " + host + " port " + port);
     final String proxyHost = getProxyHost();
     if (proxyHost != null) {
       // We use an absolute URI
       uri = new StringBuilder("http://").append(host).append(":").append(port).append(uri).toString();
-      System.out.println("Proxy uri: " + uri);
     }
     HttpClientRequest req = client.get(uri, respHandler);
     if (proxyHost != null){
