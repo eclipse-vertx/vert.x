@@ -84,8 +84,12 @@ public class BintrayResolution extends HttpResolution {
         redirectURI = new URI(location);
         client.close();
         client = null;
-        createClient(redirectURI.getHost(), redirectURI.getPort());
-        makeRequest(redirectURI.getHost(), redirectURI.getPort(), redirectURI.getPath());
+        int redirectPort = redirectURI.getPort();
+        if (redirectPort == -1) {
+          redirectPort = 80;
+        }
+        createClient(redirectURI.getHost(), redirectPort);
+        makeRequest(redirectURI.getHost(), redirectPort, redirectURI.getPath());
       } catch (URISyntaxException e) {
         log.error("Invalid redirect URI: " + location);
       }
