@@ -317,7 +317,8 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
       } catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
         // ignore this as it is expected
       } finally {
-        decoder.destroy();
+         // TODO: Add back once upgrade to new api for CR10-SNAPSHOT
+        //decoder.destroy();
       }
     }
     if (endHandler != null) {
