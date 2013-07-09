@@ -556,7 +556,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
         resp.headers().set(HttpHeaders.Names.CONTENT_LENGTH, "0");
       }
 
-      ch.write(resp);
+      ch.writeAndFlush(resp);
     }
 
     FullHttpRequest wsRequest;
@@ -571,7 +571,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
         if (log.isTraceEnabled()) log.trace("Server received request: " + request.getUri());
 
         if (HttpHeaders.is100ContinueExpected(request)) {
-          ch.write(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
+          ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
         }
 
         if (wsHandlerManager.hasHandlers() && WEBSOCKET.equalsIgnoreCase(request.headers().get(HttpHeaders.Names.UPGRADE))) {
@@ -623,7 +623,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
             break;
           case CLOSE:
             //Echo back close frame
-            ch.write(new DefaultWebSocketFrame(WebSocketFrame.FrameType.CLOSE));
+            ch.writeAndFlush(new DefaultWebSocketFrame(WebSocketFrame.FrameType.CLOSE));
         }
       } else if (msg instanceof HttpContent) {
         if (wsRequest != null) {
@@ -705,7 +705,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
           return;
         }
       }
-      ch.write(new DefaultFullHttpResponse(HTTP_1_1, BAD_GATEWAY));
+      ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, BAD_GATEWAY));
     }
   }
 }

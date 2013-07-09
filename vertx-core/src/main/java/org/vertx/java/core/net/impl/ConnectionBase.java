@@ -151,12 +151,12 @@ public abstract class ConnectionBase {
       ChannelFuture writeFuture;
       if (isSSL()) {
         // Cannot use zero-copy with HTTPS.
-        writeFuture = channel.write(new ChunkedFile(raf, 0, fileLength, 8192));
+        writeFuture = channel.writeAndFlush(new ChunkedFile(raf, 0, fileLength, 8192));
       } else {
         // No encryption - use zero-copy.
         final FileRegion region =
             new DefaultFileRegion(raf.getChannel(), 0, fileLength);
-        writeFuture = channel.write(region);
+        writeFuture = channel.writeAndFlush(region);
       }
       writeFuture.addListener(new ChannelFutureListener() {
         public void operationComplete(ChannelFuture future) throws Exception {

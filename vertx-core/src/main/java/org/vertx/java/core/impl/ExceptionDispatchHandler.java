@@ -51,7 +51,7 @@ public class ExceptionDispatchHandler extends ChannelOutboundHandlerAdapter {
   }
 
   @Override
-  public void write(ChannelHandlerContext ctx, MessageList<Object> msgs, ChannelPromise promise) throws Exception {
-    ctx.write(msgs, promise.addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE));
+  public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+    ctx.write(msg, promise.addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE));
   }
 }

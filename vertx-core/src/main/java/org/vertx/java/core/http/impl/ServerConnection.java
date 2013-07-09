@@ -150,6 +150,15 @@ class ServerConnection extends AbstractConnection {
         server.connectionMap.remove(channel);
         super.channelInactive(chctx);
       }
+
+      @Override
+      public void channelRead(ChannelHandlerContext chctx, Object msg) {
+        if (msg instanceof HttpContent) {
+          ReferenceCountUtil.release(msg);
+          return;
+        }
+        super.channelRead(chctx, msg);
+      }
     });
 
     // check if the encoder can be removed yet or not.

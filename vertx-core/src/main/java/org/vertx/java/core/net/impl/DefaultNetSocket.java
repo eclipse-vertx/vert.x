@@ -216,7 +216,7 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   private ChannelFuture writeFuture;
 
   private void doWrite(ByteBuf buff) {
-    writeFuture = channel.write(buff);
+    writeFuture = channel.writeAndFlush(buff);
   }
 
   private void callDrainHandler() {

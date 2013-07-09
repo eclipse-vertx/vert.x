@@ -2,10 +2,11 @@ package org.vertx.java.core.http.impl.ws;
 
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.MessageList;
 import io.netty.handler.codec.MessageToMessageCodec;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.ReferenceCountUtil;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -16,7 +17,7 @@ public class WebSocketConvertHandler extends MessageToMessageCodec<io.netty.hand
   public static final WebSocketConvertHandler INSTANCE = new WebSocketConvertHandler();
 
   @Override
-  protected void encode(ChannelHandlerContext ctx, WebSocketFrame msg, MessageList<Object> out) throws Exception {
+  protected void encode(ChannelHandlerContext ctx, WebSocketFrame msg, List<Object> out) throws Exception {
     // retain message as we will re-use the data contained in it
     ReferenceCountUtil.retain(msg);
     switch (msg.getType()) {
@@ -44,7 +45,7 @@ public class WebSocketConvertHandler extends MessageToMessageCodec<io.netty.hand
   }
 
   @Override
-  protected void decode(ChannelHandlerContext ctx, io.netty.handler.codec.http.websocketx.WebSocketFrame msg, MessageList<Object> out) throws Exception {
+  protected void decode(ChannelHandlerContext ctx, io.netty.handler.codec.http.websocketx.WebSocketFrame msg, List<Object> out) throws Exception {
     if (msg instanceof BinaryWebSocketFrame) {
       out.add(new DefaultWebSocketFrame(WebSocketFrame.FrameType.BINARY, msg.content().retain()));
       return;

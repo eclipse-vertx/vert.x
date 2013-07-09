@@ -21,6 +21,7 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
+import io.netty.util.ReferenceCountUtil;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
@@ -35,6 +36,7 @@ import org.vertx.java.core.net.impl.DefaultNetSocket;
 import org.vertx.java.core.net.impl.VertxNetHandler;
 
 import java.net.URI;
+import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
@@ -130,62 +132,65 @@ class ClientConnection extends AbstractConnection {
     private final DefaultContext context;
     private FullHttpResponse response;
     private boolean handshaking;
-    private MessageList<Object> buffered = MessageList.newInstance();
+    private Queue<Object> buffered = new ArrayDeque<>();
     public HandshakeInboundHandler(final Handler<WebSocket> wsConnect) {
       this.wsConnect = wsConnect;
       this.context = vertx.getContext();
     }
 
     @Override
-    public void messageReceived(final ChannelHandlerContext ctx, final MessageList<Object> msgs) throws Exception {
+    public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
       context.execute(ctx.channel().eventLoop(), new Runnable() {
         public void run() {
           boolean fire = false;
           try {
-            for (int i = 0; i < msgs.size(); i++) {
-              Object msg = msgs.get(i);
 
-              if (handshaker != null && !handshaking) {
-                if (msg instanceof HttpResponse) {
-                  HttpResponse resp = (HttpResponse) msg;
-                  if (resp.getStatus().code() != 101) {
-                    throw new WebSocketHandshakeException("Websocket connection attempt returned HTTP status code " + resp.getStatus().code());
-                  }
-                  response = new DefaultFullHttpResponse(resp.getProtocolVersion(), resp.getStatus());
-                  response.headers().add(resp.headers());
+            if (handshaker != null && !handshaking) {
+              if (msg instanceof HttpResponse) {
+                HttpResponse resp = (HttpResponse) msg;
+                if (resp.getStatus().code() != 101) {
+                  throw new WebSocketHandshakeException("Websocket connection attempt returned HTTP status code " + resp.getStatus().code());
                 }
-
-                if (msg instanceof HttpContent) {
-                  if (response != null) {
-                    response.content().writeBytes(((HttpContent) msg).content());
-                    if (msg instanceof LastHttpContent) {
-                      response.trailingHeaders().add(((LastHttpContent) msg).trailingHeaders());
-                      // copy over messages that are not processed yet
-                      for (int a = i + 1; a < msgs.size(); a++) {
-                        buffered.add(msgs.get(a));
-                      }
-                      handshakeComplete(ctx, response);
-                      channel.pipeline().remove(HandshakeInboundHandler.this);
-
-                      fire = true;
-                      return;
-                    }
-                  }
-                }
-              } else {
-                buffered.add(msg);
+                response = new DefaultFullHttpResponse(resp.getProtocolVersion(), resp.getStatus());
+                response.headers().add(resp.headers());
               }
+
+              if (msg instanceof HttpContent) {
+                if (response != null) {
+                  response.content().writeBytes(((HttpContent) msg).content());
+                  if (msg instanceof LastHttpContent) {
+                    response.trailingHeaders().add(((LastHttpContent) msg).trailingHeaders());
+                    // copy over messages that are not processed yet
+                    handshakeComplete(ctx, response);
+                    channel.pipeline().remove(HandshakeInboundHandler.this);
+
+                    fire = true;
+                  }
+                }
+              }
+            } else {
+              buffered.add(msg);
             }
           } catch (WebSocketHandshakeException e) {
             fire = false;
-            msgs.releaseAll();
-            buffered.releaseAllAndRecycle();
+            for (;;) {
+              Object m = buffered.poll();
+              if (m == null) {
+                break;
+              }
+              ReferenceCountUtil.release(m);
+            }
             client.handleException(e);
           } finally {
             if (fire) {
-              ctx.fireMessageReceived(buffered);
+              for (;;) {
+                Object m = buffered.poll();
+                if (m == null) {
+                  break;
+                }
+                ctx.fireChannelRead(m);
+              }
             }
-            msgs.recycle();
           }
         }
       });
@@ -358,6 +363,15 @@ class ClientConnection extends AbstractConnection {
         // remove from the real mapping
         client.connectionMap.remove(channel);
         super.channelInactive(chctx);
+      }
+
+      @Override
+      public void channelRead(ChannelHandlerContext chctx, Object msg) {
+        if (msg instanceof HttpContent) {
+          ReferenceCountUtil.release(msg);
+          return;
+        }
+        super.channelRead(chctx, msg);
       }
     });
     return socket;
