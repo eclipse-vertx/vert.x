@@ -1,3 +1,5 @@
+import java.text.SimpleDateFormat
+
 /*
  * Copyright 2012 the original author or authors.
  *
@@ -29,7 +31,7 @@ jar {
 		attributes(
         'Main-Class': 'org.vertx.java.deploy.impl.cli.Starter',
         'Implementation-Title': 'Vertx (see http://vertx.io/)',
-        'Vertx-Version': version
+        'Vertx-Version': version + " (built " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()) + ")"
 		)
 	}
 }
