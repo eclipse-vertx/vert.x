@@ -68,17 +68,17 @@ public class ModuleClassLoader extends URLClassLoader {
     // An example would be the class org.vertx.groovy.platform.Verticle which is in the groovy lang module but also
     // present on the pcl during IDE work.
 
+//    boolean trace = name.contains("BrokerFactory");
+//
+//    if (trace) {
+//      System.out.println("Loading " + name);
+//    }
 
-    Class<?> c;
-    try {
+    Class<?> c = doLoadClass(name);
+    if (c == null) {
       c = platformClassLoader.loadClass(name);
-    } catch (ClassNotFoundException e) {
-      // And then we try this class loader
-      c = doLoadClass(name);
-      if (c == null) {
-        throw new ClassNotFoundException(name);
-      }
     }
+
     if (resolve) {
       resolveClass(c);
     }
@@ -86,14 +86,24 @@ public class ModuleClassLoader extends URLClassLoader {
   }
 
   protected synchronized Class<?> doLoadClass(String name) {
+    //boolean trace = name.contains("BrokerFactory");
     Class<?> c = findLoadedClass(name);
+//    if (trace && c != null) {
+//      System.out.println("Found class in classloader "  + c.getClassLoader());
+//    }
     if (c == null) {
       try {
         // First try and load the class with the module classloader
         c = findClass(name);
+//        if (trace) {
+//          System.out.println("Class loaded by cl"  + this);
+//        }
       } catch (ClassNotFoundException e) {
         // Not found - maybe the parent class loaders can load it?
         try {
+//          if (trace) {
+//            System.out.println("Trying parents, there are " + parents.size());
+//          }
           // Detect circular hierarchy
           incRecurseDepth();
           Set<ModuleClassLoader> walked = getWalked();
