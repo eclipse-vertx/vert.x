@@ -58,22 +58,6 @@ public class ModuleClassLoader extends URLClassLoader {
   protected synchronized Class<?> loadClass(String name, boolean resolve)
       throws ClassNotFoundException {
 
-    // We always try with the platform classloader first
-    // This is important when running tests in an IDE where we load the module classes from the platform classpath
-    // not the module classpath
-    // If those classes are loaded from the platform cp and they reference other classes which are normally in the
-    // module, but also exist on the platform cp, then they will get loaded from the platform cp too.
-    // You can then get in a situation where two versions of the classes are present - one loaded from the pcl
-    // and the other from the mcl
-    // An example would be the class org.vertx.groovy.platform.Verticle which is in the groovy lang module but also
-    // present on the pcl during IDE work.
-
-//    boolean trace = name.contains("BrokerFactory");
-//
-//    if (trace) {
-//      System.out.println("Loading " + name);
-//    }
-
     Class<?> c = doLoadClass(name);
     if (c == null) {
       c = platformClassLoader.loadClass(name);
@@ -86,24 +70,14 @@ public class ModuleClassLoader extends URLClassLoader {
   }
 
   protected synchronized Class<?> doLoadClass(String name) {
-    //boolean trace = name.contains("BrokerFactory");
     Class<?> c = findLoadedClass(name);
-//    if (trace && c != null) {
-//      System.out.println("Found class in classloader "  + c.getClassLoader());
-//    }
     if (c == null) {
       try {
         // First try and load the class with the module classloader
         c = findClass(name);
-//        if (trace) {
-//          System.out.println("Class loaded by cl"  + this);
-//        }
       } catch (ClassNotFoundException e) {
         // Not found - maybe the parent class loaders can load it?
         try {
-//          if (trace) {
-//            System.out.println("Trying parents, there are " + parents.size());
-//          }
           // Detect circular hierarchy
           incRecurseDepth();
           Set<ModuleClassLoader> walked = getWalked();
