@@ -2712,14 +2712,13 @@ public class HttpTestClient extends TestClientBase {
       public void handle(final HttpServerRequest req) {
         if (req.uri().startsWith("/form")) {
           req.response().setChunked(true);
-          final Buffer buff = new Buffer();
           req.uploadHandler(new Handler<HttpServerFileUpload>() {
             @Override
             public void handle(final HttpServerFileUpload event) {
               event.dataHandler(new Handler<Buffer>() {
                 @Override
                 public void handle(Buffer buffer) {
-                  buff.appendBuffer(buffer);
+                  tu.azzert(content.equals(buffer.toString("UTF-8")));
                 }
               });
               tu.azzert(event.name().equals("file"));
@@ -2729,7 +2728,6 @@ public class HttpTestClient extends TestClientBase {
           });
           req.endHandler(new VoidHandler() {
             protected void handle() {
-              tu.azzert(content.equals(buff.toString("UTF-8")));
               MultiMap attrs = req.formAttributes();
               attributeCount.set(attrs.size());
               req.response().end();
@@ -2773,7 +2771,6 @@ public class HttpTestClient extends TestClientBase {
       }
     });
   }
-
 
   public void testFormUploadAttributes() throws Exception {
     final AtomicInteger attributeCount = new AtomicInteger();
