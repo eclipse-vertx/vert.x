@@ -558,6 +558,12 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       }
     }
 
+    if (enclosingModName != null && !enclosingModName.isInternalVerticleWrapper()) {
+      // Add the enclosing module as a parent
+      ModuleReference parentRef = moduleRefs.get(enclosingModName.toString());
+      mr.mcl.addParent(parentRef);
+    }
+
     if (includes != null) {
       loadIncludedModules(modRoot, currentModDir, mr, includes);
     }
