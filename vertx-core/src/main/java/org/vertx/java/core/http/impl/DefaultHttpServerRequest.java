@@ -293,10 +293,6 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
     if (decoder != null) {
       try {
         decoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
-      } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
-        handleException(e);
-      }
-      try {
         while (decoder.hasNext()) {
           InterfaceHttpData data = decoder.next();
           if (data instanceof Attribute) {
@@ -314,11 +310,12 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
           }
           ReferenceCountUtil.release(data);
         }
+      } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
+        handleException(e);
       } catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
         // ignore this as it is expected
       } finally {
-         // TODO: Add back once upgrade to new api for CR10-SNAPSHOT
-        //decoder.destroy();
+        decoder.destroy();
       }
     }
     if (endHandler != null) {
