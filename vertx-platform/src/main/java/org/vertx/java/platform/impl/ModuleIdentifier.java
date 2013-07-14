@@ -81,10 +81,6 @@ public class ModuleIdentifier {
     return version;
   }
 
-  public boolean isInternalVerticleWrapper() {
-    return owner.equals("__vertx");
-  }
-
   public static ModuleIdentifier createInternalModIDForVerticle(String depName) {
     return new ModuleIdentifier("__vertx" + SEPARATOR + depName + SEPARATOR + "__vertx");
   }
