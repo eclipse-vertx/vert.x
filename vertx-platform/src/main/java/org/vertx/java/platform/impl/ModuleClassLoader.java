@@ -39,7 +39,7 @@ public class ModuleClassLoader extends URLClassLoader {
     this.loadResourcesFromTCCL = loadResourcesFromTCCL;
   }
 
-  public void addParent(ModuleReference parent) {
+  public synchronized void addParent(ModuleReference parent) {
     parents.add(parent);
   }
 
@@ -130,7 +130,7 @@ public class ModuleClassLoader extends URLClassLoader {
   }
 
   @Override
-  public URL getResource(String name) {
+  public synchronized URL getResource(String name) {
     return doGetResource(name, true);
   }
 
@@ -162,6 +162,9 @@ public class ModuleClassLoader extends URLClassLoader {
         // to ask the TCCL to load the class - the TCCL should always be set to the moduleclassloader of the actual
         // module doing the import
         if (considerTCCL && loadResourcesFromTCCL) {
+          // We need to clear wallked as otherwise can get a circular dependency error when there's no
+          // real circuular dependency
+          walked.clear();
           ModuleClassLoader tccl = (ModuleClassLoader)Thread.currentThread().getContextClassLoader();
           if (tccl != this) {
             // Call with considerTCCL = false to prevent infinite recursion
@@ -189,7 +192,7 @@ public class ModuleClassLoader extends URLClassLoader {
   }
 
   @Override
-  public Enumeration<URL> getResources(String name) throws IOException {
+  public synchronized Enumeration<URL> getResources(String name) throws IOException {
     final List<URL> totURLs = new ArrayList<>();
 
     // Local ones
