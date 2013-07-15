@@ -91,7 +91,7 @@ public class TCPSSLHelper {
     bootstrap.option(ChannelOption.SO_LINGER, soLinger);
     bootstrap.childOption(ChannelOption.IP_TOS, trafficClass);
     if (usePooledBuffers) {
-      bootstrap.childOption(ChannelOption.ALLOCATOR, new PooledByteBufAllocator());
+      bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
     } else {
       bootstrap.childOption(ChannelOption.ALLOCATOR, UnpooledByteBufAllocator.DEFAULT);
     }
@@ -108,8 +108,11 @@ public class TCPSSLHelper {
     bootstrap.option(ChannelOption.SO_LINGER, soLinger);
     bootstrap.option(ChannelOption.IP_TOS, trafficClass);
     bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout);
-    bootstrap.option(ChannelOption.ALLOCATOR, new PooledByteBufAllocator());
-    bootstrap.option(ChannelOption.ALLOCATOR, UnpooledByteBufAllocator.DEFAULT);
+    if (usePooledBuffers) {
+      bootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+    } else {
+      bootstrap.option(ChannelOption.ALLOCATOR, UnpooledByteBufAllocator.DEFAULT);
+    }
     bootstrap.option(ChannelOption.SO_KEEPALIVE, tcpKeepAlive);
 
   }
