@@ -167,7 +167,7 @@ public class DefaultAsyncFile implements AsyncFile {
     };
 
     // retain the buffer so it is not released
-    ByteBuf buf = buffer.getByteBuf();
+    ByteBuf buf = buffer.getByteBuf().retain();
     Handler<AsyncResult<Void>> releaseHandler = new ByteBufReleaseHandler(buf, handler);
 
     if (buf.nioBufferCount() > 1) {
