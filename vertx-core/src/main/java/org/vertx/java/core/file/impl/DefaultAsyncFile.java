@@ -108,13 +108,15 @@ public class DefaultAsyncFile implements AsyncFile {
   @Override
   public AsyncFile write(Buffer buffer, int position, final Handler<AsyncResult<Void>> handler) {
     check();
-    ByteBuf buf = buffer.getByteBuf();
+    // retain the buffer so it is not released
+    final ByteBuf buf = buffer.getByteBuf().retain();
+    Handler<AsyncResult<Void>> releaseHandler = new ByteBufReleaseHandler(buf, handler);
     if (buf.nioBufferCount() > 1) {
       final Iterator<ByteBuffer> buffers = Arrays.asList(buf.nioBuffers()).iterator();
-      doWrite(buffers, position, handler);
+      doWrite(buffers, position, releaseHandler);
     } else {
       ByteBuffer bb = buf.nioBuffer();
-      doWrite(bb, position, bb.limit(),  handler);
+      doWrite(bb, position, bb.limit(),  releaseHandler);
     }
     return this;
   }
@@ -149,7 +151,6 @@ public class DefaultAsyncFile implements AsyncFile {
   public AsyncFile write(Buffer buffer) {
     check();
     final int length = buffer.length();
-    ByteBuf buf = buffer.getByteBuf();
     Handler<AsyncResult<Void>> handler = new Handler<AsyncResult<Void>>() {
 
       public void handle(AsyncResult<Void> deferred) {
@@ -165,12 +166,16 @@ public class DefaultAsyncFile implements AsyncFile {
       }
     };
 
+    // retain the buffer so it is not released
+    ByteBuf buf = buffer.getByteBuf();
+    Handler<AsyncResult<Void>> releaseHandler = new ByteBufReleaseHandler(buf, handler);
+
     if (buf.nioBufferCount() > 1) {
       final Iterator<ByteBuffer> buffers = Arrays.asList(buf.nioBuffers()).iterator();
-      doWrite(buffers, writePos, handler);
+      doWrite(buffers, writePos, releaseHandler);
     } else {
       ByteBuffer bb = buf.nioBuffer();
-      doWrite(bb, writePos, bb.limit(), handler);
+      doWrite(bb, writePos, bb.limit(), releaseHandler);
     }
     writePos += length;
     return this;
@@ -461,4 +466,23 @@ public class DefaultAsyncFile implements AsyncFile {
     }
   }
 
+  private static final class ByteBufReleaseHandler implements Handler<AsyncResult<Void>> {
+    private final ByteBuf buf;
+    private final Handler<AsyncResult<Void>> handler;
+    ByteBufReleaseHandler(ByteBuf buf, Handler<AsyncResult<Void>> handler) {
+      this.buf = buf;
+      this.handler = handler;
+    }
+
+    @Override
+    public void handle(AsyncResult<Void> event) {
+      try {
+        handler.handle(event);
+      } finally {
+      // write complete release the buffer
+
+        buf.release();
+      }
+    }
+  }
 }
