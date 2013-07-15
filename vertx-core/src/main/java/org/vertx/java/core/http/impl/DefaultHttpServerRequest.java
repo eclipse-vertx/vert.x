@@ -308,7 +308,6 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
               handleException(e);
             }
           }
-          ReferenceCountUtil.release(data);
         }
       } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
         handleException(e);

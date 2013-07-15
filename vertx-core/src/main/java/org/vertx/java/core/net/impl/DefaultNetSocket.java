@@ -64,11 +64,6 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   @Override
   public NetSocket write(Buffer data) {
     ByteBuf buf = data.getByteBuf();
-    if (data.isFromNetty()) {
-      // call retain to make sure it is not released before the write completes
-      // the write will call buf.release() by it own
-      buf.retain();
-    }
     doWrite(buf);
     return this;
   }
