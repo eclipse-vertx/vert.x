@@ -190,11 +190,6 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   @Override
   public DefaultHttpServerResponse write(Buffer chunk) {
     ByteBuf buf = chunk.getByteBuf();
-    if (chunk.isFromNetty()) {
-      // call retain to make sure it is not released before the write completes
-      // the write will call buf.release() by it own
-      buf.retain();
-    }
     return write(buf, null);
   }
 
@@ -224,11 +219,6 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
       headers().set(Names.CONTENT_LENGTH, String.valueOf(chunk.length()));
     }
     ByteBuf buf = chunk.getByteBuf();
-    if (chunk.isFromNetty()) {
-      // call retain to make sure it is not released before the write completes
-      // the write will call buf.release() by it own
-      buf.retain();
-    }
     end0(buf);
   }
 

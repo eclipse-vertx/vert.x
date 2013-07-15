@@ -19,7 +19,6 @@ package org.vertx.java.core.net.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.util.ReferenceCountUtil;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
@@ -56,7 +55,6 @@ public class VertxNetHandler extends VertxInboundHandler<DefaultNetSocket> {
         } catch (Throwable t) {
           context.reportException(t);
         } finally {
-          ReferenceCountUtil.release(msg);
           context.endExecute();
         }
       } else {
@@ -66,15 +64,12 @@ public class VertxNetHandler extends VertxInboundHandler<DefaultNetSocket> {
               sock.handleDataReceived(new Buffer((ByteBuf) msg));
             } catch (Throwable t) {
               context.reportException(t);
-            } finally {
-              ReferenceCountUtil.release(msg);
             }
           }
         });
       }
     } else {
       // just discard
-      ReferenceCountUtil.release(msg);
     }
   }
 }

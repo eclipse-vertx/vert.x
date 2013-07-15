@@ -34,6 +34,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.*;
+import org.vertx.java.core.net.impl.ByteBufHandler;
 import org.vertx.java.core.net.impl.TCPSSLHelper;
 import org.vertx.java.core.net.impl.VertxEventLoopGroup;
 
@@ -477,6 +478,8 @@ public class DefaultHttpClient implements HttpClient {
             engine.setUseClientMode(true); //We are on the client side of the connection
             pipeline.addLast("ssl", new SslHandler(engine));
           }
+          pipeline.addLast("byteBufHandler", ByteBufHandler.INSTANCE);
+
           pipeline.addLast("codec", new HttpClientCodec());
           pipeline.addLast("handler", new ClientHandler());
         }
