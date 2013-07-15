@@ -86,11 +86,6 @@ public class WebSocketImplBase {
 
   protected void writeBinaryFrameInternal(Buffer data) {
     ByteBuf buf = data.getByteBuf();
-    if (data.isFromNetty()) {
-      // call retain to make sure it is not released before the write completes
-      // the write will call buf.release() by it own
-      buf.retain();
-    }
     WebSocketFrame frame = new DefaultWebSocketFrame(WebSocketFrame.FrameType.BINARY, buf);
     writeFrame(frame);
   }

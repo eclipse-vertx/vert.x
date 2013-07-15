@@ -44,7 +44,6 @@ import java.nio.charset.Charset;
 public class Buffer {
 
   private final ByteBuf buffer;
-  private final boolean wrapped;
 
   /**
    * Create an empty buffer
@@ -62,7 +61,6 @@ public class Buffer {
    */
   public Buffer(int initialSizeHint) {
     buffer = Unpooled.unreleasableBuffer(Unpooled.buffer(initialSizeHint, Integer.MAX_VALUE));
-    wrapped = false;
   }
 
   /**
@@ -70,7 +68,6 @@ public class Buffer {
    */
   public Buffer(byte[] bytes) {
     buffer = Unpooled.unreleasableBuffer(Unpooled.buffer(bytes.length, Integer.MAX_VALUE)).writeBytes(bytes);
-    wrapped = false;
   }
 
   /**
@@ -93,7 +90,6 @@ public class Buffer {
    */
   public Buffer(ByteBuf buffer) {
     this.buffer = buffer;
-    wrapped = true;
   }
 
   /**
@@ -468,12 +464,5 @@ public class Buffer {
     if (o == null || getClass() != o.getClass()) return false;
     Buffer buffer1 = (Buffer) o;
     return buffer.equals(buffer1.buffer);
-  }
-
-  /**
-   * <strong>Internal usage only</strong>
-   */
-  public boolean isFromNetty() {
-    return wrapped;
   }
 }

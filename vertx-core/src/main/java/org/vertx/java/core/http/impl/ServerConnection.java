@@ -23,7 +23,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.util.ReferenceCountUtil;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
@@ -85,10 +84,6 @@ class ServerConnection extends AbstractConnection {
     if (paused || (msg instanceof HttpRequest && pendingResponse != null) || !pending.isEmpty()) {
       //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
       pending.add(msg);
-
-      // retain the msg as we will process it later
-      ReferenceCountUtil.retain(msg);
-
       if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
         //We pause the channel too, to prevent the queue growing too large, but we don't do this
         //until the queue reaches a certain size, to avoid pausing it too often
@@ -154,7 +149,6 @@ class ServerConnection extends AbstractConnection {
       @Override
       public void channelRead(ChannelHandlerContext chctx, Object msg) {
         if (msg instanceof HttpContent) {
-          ReferenceCountUtil.release(msg);
           return;
         }
         super.channelRead(chctx, msg);
@@ -329,8 +323,6 @@ class ServerConnection extends AbstractConnection {
             Object msg = pending.poll();
             if (msg != null) {
               processMessage(msg);
-              // release the resource now as we processed it
-              ReferenceCountUtil.release(msg);
             }
             if (channelPaused && pending.isEmpty()) {
               //Resume the actual channel
