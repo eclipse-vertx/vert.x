@@ -470,7 +470,10 @@ public class Buffer {
     return buffer.equals(buffer1.buffer);
   }
 
-  public boolean isWrapper() {
+  /**
+   * <strong>Internal usage only</strong>
+   */
+  public boolean isFromNetty() {
     return wrapped;
   }
 }

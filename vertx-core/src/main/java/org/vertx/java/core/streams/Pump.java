@@ -98,7 +98,7 @@ public class Pump {
 
   private final Handler<Buffer> dataHandler = new Handler<Buffer>() {
     public void handle(Buffer buffer) {
-      if (buffer.isWrapper()) {
+      if (buffer.isFromNetty()) {
         // copy the buffer as it was just a wrapper buffer. This means it was build from a ByteBuf which
         // was created by netty. We need copy in this case as otherwise netty may remove the the passed buffer
         // to early
