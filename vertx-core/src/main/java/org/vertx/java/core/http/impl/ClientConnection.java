@@ -30,6 +30,8 @@ import org.vertx.java.core.http.impl.ws.WebSocketConvertHandler;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.DefaultNetSocket;
 import org.vertx.java.core.net.impl.VertxNetHandler;
@@ -45,6 +47,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class ClientConnection extends AbstractConnection {
+  private static final Logger log = LoggerFactory.getLogger(ClientConnection.class);
 
   final DefaultHttpClient client;
   final String hostHeader;
@@ -201,6 +204,7 @@ class ClientConnection extends AbstractConnection {
         ctx.pipeline().addAfter(ctx.name(), "websocketConverter", WebSocketConvertHandler.INSTANCE);
         ws = new DefaultWebSocket(vertx, ClientConnection.this);
         handshaker.finishHandshake(channel, response);
+        log.debug("WebSocket handshake complete");
         wsConnect.handle(ws);
       } catch (WebSocketHandshakeException e) {
         client.handleException(e);
