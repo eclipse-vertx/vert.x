@@ -58,7 +58,7 @@ public class DefaultHttpClient implements HttpClient {
   private Handler<Throwable> exceptionHandler;
   private int port = 80;
   private String host = "localhost";
-  private final HttpConnectionPool pool = new HttpConnectionPool()  {
+  private final HttpPool pool = new PriorityHttpConnectionPool()  {
     protected void connect(Handler<ClientConnection> connectHandler, Handler<Throwable> connectErrorHandler, DefaultContext context) {
       internalConnect(connectHandler, connectErrorHandler);
     }

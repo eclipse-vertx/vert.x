@@ -1,42 +1,39 @@
-/*
- * Copyright 2011-2012 the original author or authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.vertx.java.core.http.impl;
 
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
-import java.util.ArrayDeque;
+import java.util.LinkedList;
 import java.util.Queue;
 
-/**
+/*
+ * Copyright 2013 Red Hat, Inc.
  *
+ * Red Hat licenses this file to you under the Apache License, version 2.0
+ * (the "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at:
  *
- * @author <a href="http://tfox.org">Tim Fox</a>
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
  */
-public abstract class HttpConnectionPool {
+public abstract class StandardHttpConnectionPool implements HttpPool {
 
-  private static final Logger log = LoggerFactory.getLogger(HttpConnectionPool.class);
+  private static final Logger log = LoggerFactory.getLogger(StandardHttpConnectionPool.class);
 
-  private final Queue<ClientConnection> available = new ArrayDeque<>();
+  private final Queue<ClientConnection> available = new LinkedList<>();
   private int maxPoolSize = 1;
   private int connectionCount;
-  private final Queue<Waiter> waiters = new ArrayDeque<>();
+  private final Queue<Waiter> waiters = new LinkedList<>();
 
   /**
    * Set the maximum pool size to the value specified by {@code maxConnections}<p>
@@ -57,11 +54,12 @@ public abstract class HttpConnectionPool {
     log.trace("available: " + available.size() + " connection count: " + connectionCount + " waiters: " + waiters.size());
   }
 
-  public void getConnection(Handler<ClientConnection> handler,Handler<Throwable> connectExceptionHandler, DefaultContext context) {
+
+  public void getConnection(Handler<ClientConnection> handler, Handler<Throwable> connectExceptionHandler, DefaultContext context) {
     boolean connect = false;
     ClientConnection conn;
     outer: synchronized (this) {
-      conn = selectConnection(available, connectionCount, maxPoolSize);
+      conn = available.poll();
       if (conn != null) {
         break outer;
       } else {
@@ -78,7 +76,8 @@ public abstract class HttpConnectionPool {
     // We do this outside the sync block to minimise the critical section
     if (conn != null) {
       handler.handle(conn);
-    } else if (connect) {
+    }
+    else if (connect) {
       connect(handler, connectExceptionHandler, context);
     }
   }
@@ -121,8 +120,8 @@ public abstract class HttpConnectionPool {
     }
     if (waiter != null) {
       final Waiter w = waiter;
-      w.context.execute(new Runnable() {
-        public void run() {
+      w.context.runOnContext(new VoidHandler() {
+        public void handle() {
           w.handler.handle(conn);
         }
       });
@@ -142,38 +141,7 @@ public abstract class HttpConnectionPool {
    */
   protected abstract void connect(final Handler<ClientConnection> connectHandler, final Handler<Throwable> connectErrorHandler, final DefaultContext context);
 
-  private ClientConnection selectConnection(Queue<ClientConnection> available, int connectionCount, int maxPoolSize) {
-    ClientConnection conn = null;
-
-    if (!available.isEmpty()) {
-      final boolean useOccupiedConnections = connectionCount >= maxPoolSize;
-
-      for (final ClientConnection c : available) {
-
-        // Ideal situation for all cases, a cached but unoccupied connection.
-        if (c.getOutstandingRequestCount() == 0 && !c.isClosed()) {
-          conn = c;
-          break;
-        }
-
-        if (useOccupiedConnections) {
-          // Otherwise, lets try to pick the connection that has the least amount of outstanding requests on it,
-          // even though we don't have any good way to know how long the requests in the front of this one might take
-          // it's still better than the old behavior which seems to glob all the requests into the first connection
-          // in the available list.
-          if (conn == null || (conn.getOutstandingRequestCount() > c.getOutstandingRequestCount() && !c.isClosed())) {
-            conn = c;
-          }
-        }
-      }
-
-      if (conn != null) available.remove(conn);
-    }
-    return conn; // might still be null, which would either create a connection, or put the request in a wait list
-  }
-
-
-  private static class Waiter {
+  private class Waiter {
     final Handler<ClientConnection> handler;
     final Handler<Throwable> connectionExceptionHandler;
     final DefaultContext context;
