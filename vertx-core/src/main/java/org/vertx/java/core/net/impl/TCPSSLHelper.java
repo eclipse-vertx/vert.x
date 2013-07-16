@@ -106,7 +106,6 @@ public class TCPSSLHelper {
     bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout);
     bootstrap.option(ChannelOption.ALLOCATOR, new UnpooledByteBufAllocator(false));
     bootstrap.option(ChannelOption.SO_KEEPALIVE, tcpKeepAlive);
-
   }
 
   public boolean isTCPNoDelay() {

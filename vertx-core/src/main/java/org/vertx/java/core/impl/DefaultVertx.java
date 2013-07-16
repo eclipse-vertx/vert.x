@@ -54,6 +54,11 @@ public class DefaultVertx implements VertxInternal {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultVertx.class);
 
+  static {
+    // Work around for Netty bug - will be removed once Netty fixes it
+    System.setProperty("io.netty.noPreferDirect", "true");
+  }
+
   private final FileSystem fileSystem = getFileSystem();
   private final EventBus eventBus;
   private final SharedData sharedData = new SharedData();

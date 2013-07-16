@@ -65,6 +65,7 @@ public class DefaultHttpClient implements HttpClient {
   };
   private boolean keepAlive = true;
   private boolean configurable = true;
+  private boolean closed;
   private final Closeable closeHook = new Closeable() {
     @Override
     public void close(Handler<AsyncResult<Void>> doneHandler) {
@@ -81,12 +82,14 @@ public class DefaultHttpClient implements HttpClient {
 
   // @Override
   public DefaultHttpClient exceptionHandler(Handler<Throwable> handler) {
+    checkClosed();
     this.exceptionHandler = handler;
     return this;
   }
 
   @Override
   public DefaultHttpClient setMaxPoolSize(int maxConnections) {
+    checkClosed();
     checkConfigurable();
     pool.setMaxPoolSize(maxConnections);
     return this;
@@ -94,11 +97,13 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public int getMaxPoolSize() {
+    checkClosed();
     return pool.getMaxPoolSize();
   }
 
   @Override
   public DefaultHttpClient setKeepAlive(boolean keepAlive) {
+    checkClosed();
     checkConfigurable();
     this.keepAlive = keepAlive;
     return this;
@@ -106,11 +111,13 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public boolean isKeepAlive() {
+    checkClosed();
     return keepAlive;
   }
 
   @Override
   public DefaultHttpClient setPort(int port) {
+    checkClosed();
     checkConfigurable();
     this.port = port;
     return this;
@@ -118,11 +125,13 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public int getPort() {
+    checkClosed();
     return port;
   }
 
   @Override
   public DefaultHttpClient setHost(String host) {
+    checkClosed();
     checkConfigurable();
     this.host = host;
     return this;
@@ -130,23 +139,27 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public String getHost() {
+    checkClosed();
     return host;
   }
 
   @Override
   public HttpClient connectWebsocket(final String uri, final Handler<WebSocket> wsConnect) {
+    checkClosed();
     connectWebsocket(uri, WebSocketVersion.RFC6455, wsConnect);
     return this;
   }
 
   @Override
   public HttpClient connectWebsocket(final String uri, final WebSocketVersion wsVersion, final Handler<WebSocket> wsConnect) {
+    checkClosed();
     connectWebsocket(uri, wsVersion, null, wsConnect);
     return this;
   }
 
   @Override
   public HttpClient connectWebsocket(final String uri, final WebSocketVersion wsVersion, final MultiMap headers, final Handler<WebSocket> wsConnect) {
+    checkClosed();
     configurable = false;
     getConnection(new Handler<ClientConnection>() {
       public void handle(final ClientConnection conn) {
@@ -162,12 +175,14 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public HttpClient getNow(String uri, Handler<HttpClientResponse> responseHandler) {
+    checkClosed();
     getNow(uri, null, responseHandler);
     return this;
   }
 
   @Override
   public HttpClient getNow(String uri, MultiMap headers, Handler<HttpClientResponse> responseHandler) {
+    checkClosed();
     HttpClientRequest req = get(uri, responseHandler);
     if (headers != null) {
       req.headers().set(headers);
@@ -178,57 +193,67 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public HttpClientRequest options(String uri, Handler<HttpClientResponse> responseHandler) {
-    return request("OPTIONS", uri, responseHandler);
+    checkClosed();
+    return doRequest("OPTIONS", uri, responseHandler);
   }
 
   @Override
   public HttpClientRequest get(String uri, Handler<HttpClientResponse> responseHandler) {
-    return request("GET", uri, responseHandler);
+    checkClosed();
+    return doRequest("GET", uri, responseHandler);
   }
 
   @Override
   public HttpClientRequest head(String uri, Handler<HttpClientResponse> responseHandler) {
-    return request("HEAD", uri, responseHandler);
+    checkClosed();
+    return doRequest("HEAD", uri, responseHandler);
   }
 
   @Override
   public HttpClientRequest post(String uri, Handler<HttpClientResponse> responseHandler) {
-    return request("POST", uri, responseHandler);
+    checkClosed();
+    return doRequest("POST", uri, responseHandler);
   }
 
   @Override
   public HttpClientRequest put(String uri, Handler<HttpClientResponse> responseHandler) {
-    return request("PUT", uri, responseHandler);
+    checkClosed();
+    return doRequest("PUT", uri, responseHandler);
   }
 
   @Override
   public HttpClientRequest delete(String uri, Handler<HttpClientResponse> responseHandler) {
-    return request("DELETE", uri, responseHandler);
+    checkClosed();
+    return doRequest("DELETE", uri, responseHandler);
   }
 
   @Override
   public HttpClientRequest trace(String uri, Handler<HttpClientResponse> responseHandler) {
-    return request("TRACE", uri, responseHandler);
+    checkClosed();
+    return doRequest("TRACE", uri, responseHandler);
   }
 
   @Override
   public HttpClientRequest connect(String uri, Handler<HttpClientResponse> responseHandler) {
-    return request("CONNECT", uri, responseHandler);
+    checkClosed();
+    return doRequest("CONNECT", uri, responseHandler);
   }
 
   @Override
   public HttpClientRequest patch(String uri, Handler<HttpClientResponse> responseHandler) {
-    return request("PATCH", uri, responseHandler);
+    checkClosed();
+    return doRequest("PATCH", uri, responseHandler);
   }
 
   @Override
   public HttpClientRequest request(String method, String uri, Handler<HttpClientResponse> responseHandler) {
-    configurable = false;
-    return new DefaultHttpClientRequest(this, method, uri, responseHandler, actualCtx);
+    checkClosed();
+    return doRequest(method, uri, responseHandler);
   }
 
   @Override
   public void close() {
+    checkClosed();
     pool.close();
     for (ClientConnection conn : connectionMap.values()) {
       conn.internalClose();
@@ -238,6 +263,7 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public DefaultHttpClient setSSL(boolean ssl) {
+    checkClosed();
     checkConfigurable();
     tcpHelper.setSSL(ssl);
     return this;
@@ -245,6 +271,7 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public DefaultHttpClient setVerifyHost(boolean verifyHost) {
+    checkClosed();
     checkConfigurable();
     tcpHelper.setVerifyHost(verifyHost);
     return this;
@@ -252,6 +279,7 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public DefaultHttpClient setKeyStorePath(String path) {
+    checkClosed();
     checkConfigurable();
     tcpHelper.setKeyStorePath(path);
     return this;
@@ -259,6 +287,7 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public DefaultHttpClient setKeyStorePassword(String pwd) {
+    checkClosed();
     checkConfigurable();
     tcpHelper.setKeyStorePassword(pwd);
     return this;
@@ -266,6 +295,7 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public DefaultHttpClient setTrustStorePath(String path) {
+    checkClosed();
     checkConfigurable();
     tcpHelper.setTrustStorePath(path);
     return this;
@@ -273,6 +303,7 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public DefaultHttpClient setTrustStorePassword(String pwd) {
+    checkClosed();
     checkConfigurable();
     tcpHelper.setTrustStorePassword(pwd);
     return this;
@@ -280,6 +311,7 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public DefaultHttpClient setTrustAll(boolean trustAll) {
+    checkClosed();
     checkConfigurable();
     tcpHelper.setTrustAll(trustAll);
     return this;
@@ -287,6 +319,7 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public DefaultHttpClient setTCPNoDelay(boolean tcpNoDelay) {
+    checkClosed();
     checkConfigurable();
     tcpHelper.setTCPNoDelay(tcpNoDelay);
     return this;
@@ -294,6 +327,7 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public DefaultHttpClient setSendBufferSize(int size) {
+    checkClosed();
     checkConfigurable();
     tcpHelper.setSendBufferSize(size);
     return this;
@@ -301,6 +335,7 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public DefaultHttpClient setReceiveBufferSize(int size) {
+    checkClosed();
     checkConfigurable();
     tcpHelper.setReceiveBufferSize(size);
     return this;
@@ -308,6 +343,7 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public DefaultHttpClient setTCPKeepAlive(boolean keepAlive) {
+    checkClosed();
     checkConfigurable();
     tcpHelper.setTCPKeepAlive(keepAlive);
     return this;
@@ -315,6 +351,7 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public DefaultHttpClient setReuseAddress(boolean reuse) {
+    checkClosed();
     checkConfigurable();
     tcpHelper.setReuseAddress(reuse);
     return this;
@@ -322,6 +359,7 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public DefaultHttpClient setSoLinger(int linger) {
+    checkClosed();
     checkConfigurable();
     tcpHelper.setSoLinger(linger);
     return this;
@@ -329,6 +367,7 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public DefaultHttpClient setTrafficClass(int trafficClass) {
+    checkClosed();
     checkConfigurable();
     tcpHelper.setTrafficClass(trafficClass);
     return this;
@@ -336,6 +375,7 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public DefaultHttpClient setConnectTimeout(int timeout) {
+    checkClosed();
     checkConfigurable();
     tcpHelper.setConnectTimeout(timeout);
     return this;
@@ -343,81 +383,97 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public boolean isTCPNoDelay() {
+    checkClosed();
     return tcpHelper.isTCPNoDelay();
   }
 
   @Override
   public int getSendBufferSize() {
+    checkClosed();
     return tcpHelper.getSendBufferSize();
   }
 
   @Override
   public int getReceiveBufferSize() {
+    checkClosed();
     return tcpHelper.getReceiveBufferSize();
   }
 
   @Override
   public boolean isTCPKeepAlive() {
+    checkClosed();
     return tcpHelper.isTCPKeepAlive();
   }
 
   @Override
   public boolean isReuseAddress() {
+    checkClosed();
     return tcpHelper.isReuseAddress();
   }
 
   @Override
   public int getSoLinger() {
+    checkClosed();
     return tcpHelper.getSoLinger();
   }
 
   @Override
   public int getTrafficClass() {
+    checkClosed();
     return tcpHelper.getTrafficClass();
   }
 
   @Override
   public int getConnectTimeout() {
+    checkClosed();
     return tcpHelper.getConnectTimeout();
   }
 
   @Override
   public boolean isSSL() {
+    checkClosed();
     return tcpHelper.isSSL();
   }
 
   @Override
   public boolean isVerifyHost() {
+    checkClosed();
     return tcpHelper.isVerifyHost();
   }
 
   @Override
   public boolean isTrustAll() {
+    checkClosed();
     return tcpHelper.isTrustAll();
   }
 
   @Override
   public String getKeyStorePath() {
+    checkClosed();
     return tcpHelper.getKeyStorePath();
   }
 
   @Override
   public String getKeyStorePassword() {
+    checkClosed();
     return tcpHelper.getKeyStorePassword();
   }
 
   @Override
   public String getTrustStorePath() {
+    checkClosed();
     return tcpHelper.getTrustStorePath();
   }
 
   @Override
   public String getTrustStorePassword() {
+    checkClosed();
     return tcpHelper.getTrustStorePassword();
   }
 
   @Override
   public HttpClient setUsePooledBuffers(boolean pooledBuffers) {
+    checkClosed();
     checkConfigurable();
     tcpHelper.setUsePooledBuffers(pooledBuffers);
     return this;
@@ -425,6 +481,7 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public boolean isUsePooledBuffers() {
+    checkClosed();
     return tcpHelper.isUsePooledBuffers();
   }
 
@@ -517,7 +574,18 @@ public class DefaultHttpClient implements HttpClient {
     });
   }
 
-  private void checkConfigurable() {
+  private HttpClientRequest doRequest(String method, String uri, Handler<HttpClientResponse> responseHandler) {
+    configurable = false;
+    return new DefaultHttpClientRequest(this, method, uri, responseHandler, actualCtx);
+  }
+
+  private final void checkClosed() {
+    if (closed) {
+      throw new IllegalStateException("Client is closed");
+    }
+  }
+
+  private final void checkConfigurable() {
     if (!configurable) {
       throw new IllegalStateException("Can't set property after connect has been called");
     }
