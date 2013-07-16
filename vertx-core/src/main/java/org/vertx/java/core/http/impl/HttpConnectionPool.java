@@ -21,7 +21,7 @@ import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
-import java.util.LinkedList;
+import java.util.ArrayDeque;
 import java.util.Queue;
 
 /**
@@ -33,10 +33,10 @@ public abstract class HttpConnectionPool {
 
   private static final Logger log = LoggerFactory.getLogger(HttpConnectionPool.class);
 
-  private final Queue<ClientConnection> available = new LinkedList<>();
+  private final Queue<ClientConnection> available = new ArrayDeque<>();
   private int maxPoolSize = 1;
   private int connectionCount;
-  private final Queue<Waiter> waiters = new LinkedList<>();
+  private final Queue<Waiter> waiters = new ArrayDeque<>();
 
   /**
    * Set the maximum pool size to the value specified by {@code maxConnections}<p>

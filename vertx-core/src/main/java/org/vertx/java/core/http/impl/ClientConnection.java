@@ -41,7 +41,6 @@ import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -59,7 +58,7 @@ class ClientConnection extends AbstractConnection {
   private WebSocketClientHandshaker handshaker;
   private volatile DefaultHttpClientRequest currentRequest;
   // Requests can be pipelined so we need a queue to keep track of requests
-  private final Queue<DefaultHttpClientRequest> requests = new ConcurrentLinkedQueue<>();
+  private final Queue<DefaultHttpClientRequest> requests = new ArrayDeque<>();
   private volatile DefaultHttpClientResponse currentResponse;
   private DefaultWebSocket ws;
 
