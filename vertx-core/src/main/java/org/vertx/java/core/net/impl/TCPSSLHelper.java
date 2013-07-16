@@ -57,8 +57,8 @@ public class TCPSSLHelper {
   private static SocketDefaults defaults = SocketDefaults.instance;
 
   private boolean tcpNoDelay = true;
-  private int tcpSendBufferSize = defaults.getTcpSendBufferSize();
-  private int tcpReceiveBufferSize = defaults.getTcpReceiveBufferSize();
+  private int tcpSendBufferSize = -1;
+  private int tcpReceiveBufferSize = -1;
   private boolean tcpKeepAlive = defaults.isTcpKeepAlive();
   private boolean reuseAddress = defaults.isReuseAddress();
   private int soLinger = defaults.getSoLinger();
@@ -84,9 +84,14 @@ public class TCPSSLHelper {
 
   public void applyConnectionOptions(ServerBootstrap bootstrap) {
     bootstrap.childOption(ChannelOption.TCP_NODELAY, tcpNoDelay);
-    bootstrap.childOption(ChannelOption.SO_SNDBUF, tcpSendBufferSize);
-    bootstrap.childOption(ChannelOption.SO_RCVBUF, tcpReceiveBufferSize);
-    bootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(tcpReceiveBufferSize));
+    if (tcpSendBufferSize != -1) {
+      bootstrap.childOption(ChannelOption.SO_SNDBUF, tcpSendBufferSize);
+    }
+    if (tcpReceiveBufferSize != -1) {
+      bootstrap.childOption(ChannelOption.SO_RCVBUF, tcpReceiveBufferSize);
+      bootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(tcpReceiveBufferSize));
+    }
+
     bootstrap.option(ChannelOption.SO_LINGER, soLinger);
     bootstrap.childOption(ChannelOption.IP_TOS, trafficClass);
     bootstrap.childOption(ChannelOption.ALLOCATOR, new UnpooledByteBufAllocator(false));
@@ -98,9 +103,13 @@ public class TCPSSLHelper {
 
   public void applyConnectionOptions(Bootstrap bootstrap) {
     bootstrap.option(ChannelOption.TCP_NODELAY, tcpNoDelay);
-    bootstrap.option(ChannelOption.SO_SNDBUF, tcpSendBufferSize);
-    bootstrap.option(ChannelOption.SO_RCVBUF, tcpReceiveBufferSize);
-    bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(tcpReceiveBufferSize));
+    if (tcpSendBufferSize != -1) {
+      bootstrap.option(ChannelOption.SO_SNDBUF, tcpSendBufferSize);
+    }
+    if (tcpReceiveBufferSize != -1) {
+      bootstrap.option(ChannelOption.SO_RCVBUF, tcpReceiveBufferSize);
+      bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(tcpReceiveBufferSize));
+    }
     bootstrap.option(ChannelOption.SO_LINGER, soLinger);
     bootstrap.option(ChannelOption.IP_TOS, trafficClass);
     bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout);
