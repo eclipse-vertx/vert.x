@@ -258,22 +258,24 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
       }
       channelFuture = conn.write(resp);
       headWritten = true;
-    }
-
-    if (data == null) {
-      if (trailing == null) {
-        channelFuture = conn.write(DefaultLastHttpContent.EMPTY_LAST_CONTENT);
-      } else {
-        channelFuture = conn.write(trailing);
-      }
     } else {
-      LastHttpContent content = new DefaultLastHttpContent(data);
-      if (trailing != null) {
-        content.trailingHeaders().set(trailing.trailingHeaders());
-      }
-      channelFuture = conn.write(content);
+      if (data == null) {
+        if (trailing == null) {
+          channelFuture = conn.write(DefaultLastHttpContent.EMPTY_LAST_CONTENT);
+        } else {
+          channelFuture = conn.write(trailing);
+        }
+      } else {
+        LastHttpContent content = new DefaultLastHttpContent(data);
+        if (trailing != null) {
+          content.trailingHeaders().set(trailing.trailingHeaders());
+        }
+        channelFuture = conn.write(content);
 
+      }
     }
+
+
     if (!keepAlive) {
       closeConnAfterWrite();
     }
