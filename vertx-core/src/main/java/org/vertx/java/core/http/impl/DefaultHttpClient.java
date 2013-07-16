@@ -259,6 +259,7 @@ public class DefaultHttpClient implements HttpClient {
       conn.internalClose();
     }
     actualCtx.removeCloseHook(closeHook);
+    closed = true;
   }
 
   @Override
