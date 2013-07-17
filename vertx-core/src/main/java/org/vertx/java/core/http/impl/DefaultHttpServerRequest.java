@@ -79,7 +79,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   private Handler<HttpServerFileUpload> uploadHandler;
   private Handler<Void> endHandler;
   private MultiMap attributes;
-  private final HttpPostRequestDecoder decoder;
+  private HttpPostRequestDecoder decoder;
   private boolean isURLEncoded;
 
   DefaultHttpServerRequest(final ServerConnection conn,
@@ -88,24 +88,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
     this.conn = conn;
     this.request = request;
     this.response = response;
-
-    String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
-    if (contentType != null) {
-      HttpMethod method = request.getMethod();
-      String lowerCaseContentType = contentType.toLowerCase();
-      isURLEncoded = lowerCaseContentType.startsWith(HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
-      if ((lowerCaseContentType.startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA) || isURLEncoded) &&
-          (method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.PATCH))) {
-        decoder = new HttpPostRequestDecoder(new DataFactory(), request);
-      } else {
-        decoder = null;
-      }
-    } else {
-      decoder = null;
-    }
-
   }
-
 
   @Override
   public HttpVersion version() {
@@ -272,7 +255,28 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
 
   @Override
   public MultiMap formAttributes() {
+    if (decoder == null) {
+      throw new IllegalStateException("Call expectMultiPart(true) before request body is received to receive form attributes");
+    }
     return attributes();
+  }
+
+  @Override
+  public void expectMultiPart(boolean expect) {
+    if (expect) {
+      String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
+      if (contentType != null) {
+        HttpMethod method = request.getMethod();
+        String lowerCaseContentType = contentType.toLowerCase();
+        isURLEncoded = lowerCaseContentType.startsWith(HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
+        if ((lowerCaseContentType.startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA) || isURLEncoded) &&
+            (method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.PATCH))) {
+          decoder = new HttpPostRequestDecoder(new DataFactory(), request);
+        }
+      }
+    } else {
+      decoder = null;
+    }
   }
 
   void handleData(Buffer data) {

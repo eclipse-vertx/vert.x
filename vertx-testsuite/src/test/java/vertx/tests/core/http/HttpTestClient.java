@@ -2712,6 +2712,7 @@ public class HttpTestClient extends TestClientBase {
       public void handle(final HttpServerRequest req) {
         if (req.uri().startsWith("/form")) {
           req.response().setChunked(true);
+          req.expectMultiPart(true);
           req.uploadHandler(new Handler<HttpServerFileUpload>() {
             @Override
             public void handle(final HttpServerFileUpload event) {
@@ -2778,6 +2779,7 @@ public class HttpTestClient extends TestClientBase {
       public void handle(final HttpServerRequest req) {
         if (req.uri().startsWith("/form")) {
           req.response().setChunked(true);
+          req.expectMultiPart(true);
           req.uploadHandler(new Handler<HttpServerFileUpload>() {
             @Override
             public void handle(final HttpServerFileUpload event) {
@@ -2839,6 +2841,7 @@ public class HttpTestClient extends TestClientBase {
       public void handle(final HttpServerRequest req) {
         if (req.uri().startsWith("/form")) {
           req.response().setChunked(true);
+          req.expectMultiPart(true);
           req.uploadHandler(new Handler<HttpServerFileUpload>() {
             @Override
             public void handle(final HttpServerFileUpload event) {

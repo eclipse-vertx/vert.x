@@ -122,6 +122,13 @@ public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
   NetSocket netSocket();
 
   /**
+   * Call this with true if you are expecting a multi-part form to be submitted in the request
+   * This must be called before the body of the request has been received
+   * @param expect
+   */
+  void expectMultiPart(boolean expect);
+
+  /**
    * Set the upload handler. The handler will get notified once a new file upload was received and so allow to
    * get notified by the upload in progress.
    */
@@ -130,6 +137,7 @@ public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
   /**
    * Returns a map of all form attributes which was found in the request. Be aware that this message should only get
    * called after the endHandler was notified as the map will be filled on-the-fly.
+   * {@link #expectMultiPart(boolean)} must be called first before trying to get the formAttributes
    */
   MultiMap formAttributes();
 
