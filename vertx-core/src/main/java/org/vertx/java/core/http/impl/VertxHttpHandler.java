@@ -30,7 +30,6 @@ import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import org.vertx.java.core.http.impl.ws.*;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
-import org.vertx.java.core.net.impl.ConnectionBase;
 import org.vertx.java.core.net.impl.VertxHandler;
 
 import java.util.Map;
@@ -53,6 +52,7 @@ public abstract class VertxHttpHandler<C extends AbstractConnection> extends Ver
 
   @Override
   public void channelRead(final ChannelHandlerContext chctx, Object msg) throws Exception {
+    System.out.println(msg);
     if (msg instanceof HttpContent) {
       HttpContent content = (HttpContent) msg;
       ByteBuf buf = content.content();
