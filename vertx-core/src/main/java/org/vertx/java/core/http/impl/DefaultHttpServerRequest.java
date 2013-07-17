@@ -262,7 +262,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   }
 
   @Override
-  public void expectMultiPart(boolean expect) {
+  public HttpServerRequest expectMultiPart(boolean expect) {
     if (expect) {
       String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
       if (contentType != null) {
@@ -277,6 +277,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
     } else {
       decoder = null;
     }
+    return this;
   }
 
   void handleData(Buffer data) {
