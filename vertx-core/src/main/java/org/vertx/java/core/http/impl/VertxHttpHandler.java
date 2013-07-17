@@ -52,7 +52,6 @@ public abstract class VertxHttpHandler<C extends AbstractConnection> extends Ver
 
   @Override
   public void channelRead(final ChannelHandlerContext chctx, Object msg) throws Exception {
-    System.out.println(msg);
     if (msg instanceof HttpContent) {
       HttpContent content = (HttpContent) msg;
       ByteBuf buf = content.content();
