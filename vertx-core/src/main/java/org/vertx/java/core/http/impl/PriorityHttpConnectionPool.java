@@ -26,7 +26,7 @@ import java.util.Queue;
 
 /**
  *
- *
+ * @author Nathan Pahucki
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class PriorityHttpConnectionPool implements HttpPool {
