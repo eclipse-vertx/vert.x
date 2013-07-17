@@ -23,6 +23,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.util.ReferenceCountUtil;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
@@ -61,6 +62,7 @@ class ServerConnection extends AbstractConnection {
   private final DefaultHttpServer server;
   private ChannelFuture lastWriteFuture;
   private boolean read;
+
   void startRead() {
     read = true;
   }
@@ -121,6 +123,8 @@ class ServerConnection extends AbstractConnection {
 
   //Close without checking thread - used when server is closed
   void internalClose() {
+    // make sure everything is flushed out on close
+    endRead();
     channel.close();
   }
 
@@ -167,6 +171,7 @@ class ServerConnection extends AbstractConnection {
       @Override
       public void channelRead(ChannelHandlerContext chctx, Object msg) {
         if (msg instanceof HttpContent) {
+          ReferenceCountUtil.release(msg);
           return;
         }
         super.channelRead(chctx, msg);
