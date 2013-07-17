@@ -15,7 +15,11 @@
  */
 package org.vertx.java.core.net.impl;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.CompositeByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.vertx.java.core.impl.DefaultContext;
@@ -26,16 +30,36 @@ import java.util.Map;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public abstract class VertxInboundHandler<C extends ConnectionBase> extends ChannelInboundHandlerAdapter {
+public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
   protected final VertxInternal vertx;
   protected final Map<Channel, C> connectionMap;
-  protected VertxInboundHandler(VertxInternal vertx, Map<Channel, C> connectionMap) {
+  protected VertxHandler(VertxInternal vertx, Map<Channel, C> connectionMap) {
     this.vertx = vertx;
     this.connectionMap = connectionMap;
   }
 
   protected DefaultContext getContext(C connection) {
     return connection.getContext();
+  }
+
+  protected static ByteBuf safeBuffer(ByteBuf buf) {
+    if (buf == Unpooled.EMPTY_BUFFER) {
+      return buf;
+    }
+    if (buf.isDirect() || buf instanceof CompositeByteBuf) {
+      try {
+        if (buf.isReadable()) {
+          ByteBuf buffer =  buf.alloc().heapBuffer(buf.readableBytes());
+          buffer.writeBytes(buf);
+          return buffer;
+        } else {
+          return Unpooled.EMPTY_BUFFER;
+        }
+      } finally {
+        buf.release();
+      }
+    }
+    return buf;
   }
 
   @Override

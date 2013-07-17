@@ -200,7 +200,7 @@ class ClientConnection extends AbstractConnection {
     private void handshakeComplete(ChannelHandlerContext ctx, FullHttpResponse response) {
       handshaking = true;
       try {
-        ctx.pipeline().addAfter(ctx.name(), "websocketConverter", WebSocketConvertHandler.INSTANCE);
+        //ctx.pipeline().addAfter(ctx.name(), "websocketConverter", WebSocketConvertHandler.INSTANCE);
         ws = new DefaultWebSocket(vertx, ClientConnection.this);
         handshaker.finishHandshake(channel, response);
         log.debug("WebSocket handshake complete");

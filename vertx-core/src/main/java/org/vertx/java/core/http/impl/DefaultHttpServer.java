@@ -184,12 +184,13 @@ public class DefaultHttpServer implements HttpServer, Closeable {
                 }
                 pipeline.addLast("ssl", new SslHandler(engine));
               }
-              pipeline.addLast("byteBufHandler", ByteBufHandler.INSTANCE);
-
               pipeline.addLast("flashpolicy", new FlashPolicyHandler());
               pipeline.addLast("httpDecoder", new HttpRequestDecoder());
               pipeline.addLast("httpEncoder", new HttpResponseEncoder());
-              pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
+              if (tcpHelper.isSSL()) {
+                // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
+                pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
+              }
               pipeline.addLast("handler", new ServerHandler());
             }
         });
@@ -564,6 +565,10 @@ public class DefaultHttpServer implements HttpServer, Closeable {
 
     @Override
     protected void doMessageReceived(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
+      if (conn != null) {
+        conn.startRead();
+      }
+
       Channel ch = ctx.channel();
 
       if (msg instanceof HttpRequest) {
@@ -644,6 +649,14 @@ public class DefaultHttpServer implements HttpServer, Closeable {
       }
     }
 
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+      ServerConnection conn = connectionMap.get(ctx.channel());
+      if (conn != null) {
+         conn.endRead();
+      }
+    }
+
     private String getWebSocketLocation(ChannelPipeline pipeline, FullHttpRequest req) throws Exception {
       String prefix;
       if (pipeline.get(SslHandler.class) == null) {
@@ -664,7 +677,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
         WebSocketServerHandshakerFactory.sendUnsupportedWebSocketVersionResponse(ch);
         return;
       }
-      ch.pipeline().addBefore(ctx.name(), "websocketConverter", WebSocketConvertHandler.INSTANCE);
+      //ch.pipeline().addBefore(ctx.name(), "websocketConverter", WebSocketConvertHandler.INSTANCE);
 
       HandlerHolder<ServerWebSocket> firstHandler = null;
       HandlerHolder<ServerWebSocket> wsHandler = wsHandlerManager.chooseHandler(ch.eventLoop());

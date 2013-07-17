@@ -32,8 +32,8 @@ public abstract class AbstractConnection extends ConnectionBase {
     super(vertx, channel, context);
   }
 
-  void queueForWrite(final Object obj) {
-    channel.write(obj);
+  ChannelFuture queueForWrite(final Object obj) {
+    return channel.write(obj);
   }
 
   ChannelFuture write(Object obj) {

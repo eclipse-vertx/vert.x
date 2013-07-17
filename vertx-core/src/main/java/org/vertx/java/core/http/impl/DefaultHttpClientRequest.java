@@ -17,6 +17,8 @@
 package org.vertx.java.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.CompositeByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.*;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
@@ -25,7 +27,6 @@ import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.impl.DefaultContext;
 
-import java.util.LinkedList;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -46,7 +47,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   private Handler<Throwable> exceptionHandler;
   private boolean headWritten;
   private boolean completed;
-  private LinkedList<ByteBuf> pendingChunks;
+  private ByteBuf pendingChunks;
   private int pendingMaxSize = -1;
   private boolean connecting;
   private boolean writeHead;
@@ -199,7 +200,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     check();
     if (conn != null) {
       if (!headWritten) {
-        writeHead();
+        writeHead(false);
         headWritten = true;
       }
     } else {
@@ -237,10 +238,10 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
         // No body
         prepareHeaders();
         conn.queueForWrite(request);
-        writeEndChunk();
+        writeEndChunk(Unpooled.EMPTY_BUFFER);
       } else if (chunked) {
         //Body written - we use HTTP chunking so must send an empty buffer
-        writeEndChunk();
+        writeEndChunk(Unpooled.EMPTY_BUFFER);
       }
       conn.endRequest();
     } else {
@@ -358,18 +359,26 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
       conn.doSetWriteQueueMaxSize(pendingMaxSize);
     }
     if (pendingChunks != null || writeHead || completed) {
-      writeHead();
+      boolean queueHead = pendingChunks != null || completed;
+      writeHead(queueHead);
       headWritten = true;
     }
 
     if (pendingChunks != null) {
-      for (ByteBuf chunk : pendingChunks) {
-        sendChunk(chunk);
+      ByteBuf pending = pendingChunks;
+      pendingChunks = null;
+
+      if (completed) {
+        writeEndChunk(pending);
+        conn.endRequest();
+      } else {
+        sendChunk(pending);
       }
-    }
-    if (completed) {
-      writeEndChunk();
-      conn.endRequest();
+    } else {
+      if (completed) {
+        writeEndChunk(Unpooled.EMPTY_BUFFER);
+        conn.endRequest();
+      }
     }
   }
 
@@ -381,9 +390,13 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
   }
 
-  private void writeHead() {
+  private void writeHead(boolean queue) {
     prepareHeaders();
-    conn.write(request);
+    if (queue) {
+      conn.queueForWrite(request);
+    } else {
+      conn.write(request);
+    }
   }
 
   private void prepareHeaders() {
@@ -397,7 +410,11 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   }
 
   private DefaultHttpClientRequest write(ByteBuf buff) {
-
+    int readableBytes = buff.readableBytes();
+    if (readableBytes == 0) {
+      // nothing to write to the connection just return
+      return this;
+    }
     written += buff.readableBytes();
 
     if (!raw && !chunked && !contentLengthSet()) {
@@ -407,9 +424,18 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
     if (conn == null) {
       if (pendingChunks == null) {
-        pendingChunks = new LinkedList<>();
+        pendingChunks = buff;
+      } else {
+        CompositeByteBuf pending;
+        if (pendingChunks instanceof CompositeByteBuf) {
+          pending = (CompositeByteBuf) pendingChunks;
+        } else {
+          pending = Unpooled.compositeBuffer();
+          pending.addComponent(pendingChunks).writerIndex(pendingChunks.writerIndex());
+          pendingChunks = pending;
+        }
+        pending.addComponent(buff).writerIndex(pending.writerIndex() + buff.writerIndex());
       }
-      pendingChunks.add(buff);
       connect();
     } else {
       if (!headWritten) {
@@ -426,8 +452,12 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     conn.write(new DefaultHttpContent(buff));
   }
 
-  private void writeEndChunk() {
-    conn.write(LastHttpContent.EMPTY_LAST_CONTENT);
+  private void writeEndChunk(ByteBuf buf) {
+    if (buf.isReadable()) {
+      conn.write(new DefaultLastHttpContent(buf));
+    } else {
+      conn.write(LastHttpContent.EMPTY_LAST_CONTENT);
+    }
   }
 
   private void check() {

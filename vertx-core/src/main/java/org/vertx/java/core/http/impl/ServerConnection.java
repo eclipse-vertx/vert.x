@@ -60,6 +60,17 @@ class ServerConnection extends AbstractConnection {
   private final String serverOrigin;
   private final DefaultHttpServer server;
   private ChannelFuture lastWriteFuture;
+  private boolean read;
+  void startRead() {
+    read = true;
+  }
+
+  void endRead() {
+    read = false;
+    // flush now
+    channel.flush();
+  }
+
 
   ServerConnection(DefaultHttpServer server, Channel channel, DefaultContext context, String serverOrigin) {
     super(server.vertx, channel, context);
@@ -119,7 +130,12 @@ class ServerConnection extends AbstractConnection {
 
   @Override
   ChannelFuture write(Object obj) {
-    ChannelFuture future = lastWriteFuture = super.write(obj);
+    ChannelFuture future;
+    if (!read) {
+      future = lastWriteFuture = super.write(obj);
+    } else {
+      future = lastWriteFuture = super.queueForWrite(obj);
+    }
     return future;
   }
 
@@ -130,7 +146,9 @@ class ServerConnection extends AbstractConnection {
 
     // remove old http handlers and replace the old handler with one that handle plain sockets
     channel.pipeline().remove("httpDecoder");
-    channel.pipeline().remove("chunkedWriter");
+    if (channel.pipeline().get("chunkedWriter") != null) {
+      channel.pipeline().remove("chunkedWriter");
+    }
     channel.pipeline().replace("handler", "handler", new VertxNetHandler(server.vertx, connectionMap) {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
