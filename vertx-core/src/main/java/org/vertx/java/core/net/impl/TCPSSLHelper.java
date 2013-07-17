@@ -94,7 +94,7 @@ public class TCPSSLHelper {
 
     bootstrap.option(ChannelOption.SO_LINGER, soLinger);
     bootstrap.childOption(ChannelOption.IP_TOS, trafficClass);
-    bootstrap.childOption(ChannelOption.ALLOCATOR, new UnpooledByteBufAllocator(false));
+    bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
 
     bootstrap.childOption(ChannelOption.SO_KEEPALIVE, tcpKeepAlive);
     bootstrap.option(ChannelOption.SO_REUSEADDR, reuseAddress);
@@ -113,7 +113,7 @@ public class TCPSSLHelper {
     bootstrap.option(ChannelOption.SO_LINGER, soLinger);
     bootstrap.option(ChannelOption.IP_TOS, trafficClass);
     bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout);
-    bootstrap.option(ChannelOption.ALLOCATOR, new UnpooledByteBufAllocator(false));
+    bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
     bootstrap.option(ChannelOption.SO_KEEPALIVE, tcpKeepAlive);
 
   }
