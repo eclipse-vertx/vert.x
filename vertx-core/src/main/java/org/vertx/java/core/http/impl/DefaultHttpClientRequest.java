@@ -17,6 +17,8 @@
 package org.vertx.java.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.CompositeByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.*;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
@@ -25,7 +27,6 @@ import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.impl.DefaultContext;
 
-import java.util.LinkedList;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -46,7 +47,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   private Handler<Throwable> exceptionHandler;
   private boolean headWritten;
   private boolean completed;
-  private LinkedList<ByteBuf> pendingChunks;
+  private ByteBuf pendingChunks;
   private int pendingMaxSize = -1;
   private boolean connecting;
   private boolean writeHead;
@@ -363,9 +364,8 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
 
     if (pendingChunks != null) {
-      for (ByteBuf chunk : pendingChunks) {
-        sendChunk(chunk);
-      }
+      sendChunk(pendingChunks);
+      pendingChunks = null;
     }
     if (completed) {
       writeEndChunk();
@@ -407,9 +407,18 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
     if (conn == null) {
       if (pendingChunks == null) {
-        pendingChunks = new LinkedList<>();
+        pendingChunks = buff;
+      } else {
+        CompositeByteBuf pending;
+        if (pendingChunks instanceof CompositeByteBuf) {
+          pending = (CompositeByteBuf) pendingChunks;
+        } else {
+          pending = Unpooled.compositeBuffer();
+          pending.addComponent(pendingChunks).writerIndex(pendingChunks.writerIndex());
+          pendingChunks = pending;
+        }
+        pending.addComponent(buff).writerIndex(pending.writerIndex() + buff.writerIndex());
       }
-      pendingChunks.add(buff);
       connect();
     } else {
       if (!headWritten) {
