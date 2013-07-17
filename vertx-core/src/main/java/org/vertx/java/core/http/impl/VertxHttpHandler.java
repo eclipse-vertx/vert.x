@@ -17,7 +17,6 @@ package org.vertx.java.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
-import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -50,26 +49,6 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
 
   private static ByteBuf safeBuffer(ByteBufHolder holder) {
     return safeBuffer(holder.content());
-  }
-
-  private static ByteBuf safeBuffer(ByteBuf buf) {
-    if (buf == Unpooled.EMPTY_BUFFER) {
-      return buf;
-    }
-    if (buf.isDirect() || buf instanceof CompositeByteBuf) {
-      try {
-        if (buf.isReadable()) {
-          ByteBuf buffer =  buf.alloc().heapBuffer(buf.readableBytes());
-          buffer.writeBytes(buf);
-          return buffer;
-        } else {
-          return Unpooled.EMPTY_BUFFER;
-        }
-      } finally {
-        buf.release();
-      }
-    }
-    return buf;
   }
 
   @Override

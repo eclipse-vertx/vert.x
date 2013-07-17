@@ -36,7 +36,11 @@ public class VertxNetHandler extends VertxHandler<DefaultNetSocket> {
 
 
   @Override
-  public void channelRead(ChannelHandlerContext chctx, final Object msg) {
+  public void channelRead(ChannelHandlerContext chctx, Object msg) {
+    if (msg instanceof ByteBuf) {
+      msg = safeBuffer((ByteBuf) msg);
+    }
+    final ByteBuf message = (ByteBuf) msg;
     final DefaultNetSocket sock = connectionMap.get(chctx.channel());
     if (sock != null) {
       Channel ch = chctx.channel();
@@ -48,7 +52,7 @@ public class VertxNetHandler extends VertxHandler<DefaultNetSocket> {
           context.startExecute();
 
           try {
-            sock.handleDataReceived(new Buffer((ByteBuf) msg));
+            sock.handleDataReceived(new Buffer(message));
           } catch (Throwable t) {
             context.reportException(t);
           }
@@ -61,7 +65,7 @@ public class VertxNetHandler extends VertxHandler<DefaultNetSocket> {
         context.execute(new Runnable() {
           public void run() {
             try {
-              sock.handleDataReceived(new Buffer((ByteBuf) msg));
+              sock.handleDataReceived(new Buffer(message));
             } catch (Throwable t) {
               context.reportException(t);
             }

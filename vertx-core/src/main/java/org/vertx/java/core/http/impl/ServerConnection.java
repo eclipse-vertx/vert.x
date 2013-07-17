@@ -130,7 +130,9 @@ class ServerConnection extends AbstractConnection {
 
     // remove old http handlers and replace the old handler with one that handle plain sockets
     channel.pipeline().remove("httpDecoder");
-    channel.pipeline().remove("chunkedWriter");
+    if (channel.pipeline().get("chunkedWriter") != null) {
+      channel.pipeline().remove("chunkedWriter");
+    }
     channel.pipeline().replace("handler", "handler", new VertxNetHandler(server.vertx, connectionMap) {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {

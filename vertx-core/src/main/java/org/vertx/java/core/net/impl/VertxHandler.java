@@ -15,6 +15,9 @@
  */
 package org.vertx.java.core.net.impl;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.CompositeByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -37,6 +40,26 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
 
   protected DefaultContext getContext(C connection) {
     return connection.getContext();
+  }
+
+  protected static ByteBuf safeBuffer(ByteBuf buf) {
+    if (buf == Unpooled.EMPTY_BUFFER) {
+      return buf;
+    }
+    if (buf.isDirect() || buf instanceof CompositeByteBuf) {
+      try {
+        if (buf.isReadable()) {
+          ByteBuf buffer =  buf.alloc().heapBuffer(buf.readableBytes());
+          buffer.writeBytes(buf);
+          return buffer;
+        } else {
+          return Unpooled.EMPTY_BUFFER;
+        }
+      } finally {
+        buf.release();
+      }
+    }
+    return buf;
   }
 
   @Override
