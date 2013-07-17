@@ -565,6 +565,10 @@ public class DefaultHttpServer implements HttpServer, Closeable {
 
     @Override
     protected void doMessageReceived(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
+      if (conn != null) {
+        conn.startRead();
+      }
+
       Channel ch = ctx.channel();
 
       if (msg instanceof HttpRequest) {
@@ -642,6 +646,14 @@ public class DefaultHttpServer implements HttpServer, Closeable {
         }
       } else {
         throw new IllegalStateException("Invalid message " + msg);
+      }
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+      ServerConnection conn = connectionMap.get(ctx.channel());
+      if (conn != null) {
+         conn.endRead();
       }
     }
 

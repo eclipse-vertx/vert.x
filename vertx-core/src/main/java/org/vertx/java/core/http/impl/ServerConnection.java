@@ -60,6 +60,17 @@ class ServerConnection extends AbstractConnection {
   private final String serverOrigin;
   private final DefaultHttpServer server;
   private ChannelFuture lastWriteFuture;
+  private boolean read;
+  void startRead() {
+    read = true;
+  }
+
+  void endRead() {
+    read = false;
+    // flush now
+    channel.flush();
+  }
+
 
   ServerConnection(DefaultHttpServer server, Channel channel, DefaultContext context, String serverOrigin) {
     super(server.vertx, channel, context);
@@ -119,7 +130,12 @@ class ServerConnection extends AbstractConnection {
 
   @Override
   ChannelFuture write(Object obj) {
-    ChannelFuture future = lastWriteFuture = super.write(obj);
+    ChannelFuture future;
+    if (!read) {
+      future = lastWriteFuture = super.write(obj);
+    } else {
+      future = lastWriteFuture = super.queueForWrite(obj);
+    }
     return future;
   }
 
