@@ -37,6 +37,9 @@ public abstract class AbstractConnection extends ConnectionBase {
   }
 
   ChannelFuture write(Object obj) {
+    if (read) {
+      return queueForWrite(obj);
+    }
     if (channel.isOpen()) {
       return channel.writeAndFlush(obj);
     } else {
@@ -46,5 +49,24 @@ public abstract class AbstractConnection extends ConnectionBase {
 
   Vertx vertx() {
     return vertx;
+  }
+
+  private boolean read;
+
+  void startRead() {
+    read = true;
+  }
+
+  void endReadAndFlush() {
+    read = false;
+    // flush now
+    channel.flush();
+  }
+
+  //Close without checking thread - used when server is closed
+  void internalClose() {
+    // make sure everything is flushed out on close
+    endReadAndFlush();
+    channel.close();
   }
 }

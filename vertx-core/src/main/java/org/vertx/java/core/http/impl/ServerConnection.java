@@ -61,18 +61,6 @@ class ServerConnection extends AbstractConnection {
   private final String serverOrigin;
   private final DefaultHttpServer server;
   private ChannelFuture lastWriteFuture;
-  private boolean read;
-
-  void startRead() {
-    read = true;
-  }
-
-  void endRead() {
-    read = false;
-    // flush now
-    channel.flush();
-  }
-
 
   ServerConnection(DefaultHttpServer server, Channel channel, DefaultContext context, String serverOrigin) {
     super(server.vertx, channel, context);
@@ -121,25 +109,13 @@ class ServerConnection extends AbstractConnection {
     this.wsHandler = handler;
   }
 
-  //Close without checking thread - used when server is closed
-  void internalClose() {
-    // make sure everything is flushed out on close
-    endRead();
-    channel.close();
-  }
-
   String getServerOrigin() {
     return serverOrigin;
   }
 
   @Override
   ChannelFuture write(Object obj) {
-    ChannelFuture future;
-    if (!read) {
-      future = lastWriteFuture = super.write(obj);
-    } else {
-      future = lastWriteFuture = super.queueForWrite(obj);
-    }
+    ChannelFuture future = lastWriteFuture = super.write(obj);
     return future;
   }
 
@@ -147,6 +123,9 @@ class ServerConnection extends AbstractConnection {
     DefaultNetSocket socket = new DefaultNetSocket(vertx, channel, context);
     Map<Channel, DefaultNetSocket> connectionMap = new HashMap<Channel, DefaultNetSocket>(1);
     connectionMap.put(channel, socket);
+
+    // Flush out all pending data
+    endReadAndFlush();
 
     // remove old http handlers and replace the old handler with one that handle plain sockets
     channel.pipeline().remove("httpDecoder");

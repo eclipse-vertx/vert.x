@@ -39,7 +39,7 @@ import java.util.Map;
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 
-public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHandler<C> {
+public abstract class VertxHttpHandler<C extends AbstractConnection> extends VertxHandler<C> {
   private final VertxInternal vertx;
 
   protected VertxHttpHandler(VertxInternal vertx, Map<Channel, C> connectionMap) {
@@ -89,6 +89,9 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
     final Channel ch = chctx.channel();
     final C connection = connectionMap.get(ch);
     if (connection != null) {
+      // we are reading from the channel
+      connection.startRead();
+
       final DefaultContext context = getContext(connection);
       // We need to do this since it's possible the server is being used from a worker context
       if (context.isOnCorrectWorker(ch.eventLoop())) {
@@ -153,6 +156,14 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
       }
     }
     ctx.write(msg, promise);
+  }
+
+  @Override
+  public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+    AbstractConnection conn = connectionMap.get(ctx.channel());
+    if (conn != null) {
+      conn.endReadAndFlush();
+    }
   }
 
   protected abstract void doMessageReceived(C connection, ChannelHandlerContext ctx, Object msg) throws Exception;
