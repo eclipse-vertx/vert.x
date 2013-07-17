@@ -16,6 +16,7 @@
 package org.vertx.java.core.net.impl;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.vertx.java.core.impl.DefaultContext;
@@ -26,10 +27,10 @@ import java.util.Map;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public abstract class VertxInboundHandler<C extends ConnectionBase> extends ChannelInboundHandlerAdapter {
+public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
   protected final VertxInternal vertx;
   protected final Map<Channel, C> connectionMap;
-  protected VertxInboundHandler(VertxInternal vertx, Map<Channel, C> connectionMap) {
+  protected VertxHandler(VertxInternal vertx, Map<Channel, C> connectionMap) {
     this.vertx = vertx;
     this.connectionMap = connectionMap;
   }

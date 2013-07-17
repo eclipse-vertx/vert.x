@@ -28,7 +28,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public class VertxNetHandler extends VertxInboundHandler<DefaultNetSocket> {
+public class VertxNetHandler extends VertxHandler<DefaultNetSocket> {
 
   public VertxNetHandler(VertxInternal vertx, Map<Channel, DefaultNetSocket> connectionMap) {
     super(vertx, connectionMap);

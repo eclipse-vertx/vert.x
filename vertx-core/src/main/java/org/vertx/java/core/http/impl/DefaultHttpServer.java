@@ -184,7 +184,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
                 }
                 pipeline.addLast("ssl", new SslHandler(engine));
               }
-              pipeline.addLast("byteBufHandler", ByteBufHandler.INSTANCE);
+              //pipeline.addLast("byteBufHandler", ByteBufHandler.INSTANCE);
 
               pipeline.addLast("flashpolicy", new FlashPolicyHandler());
               pipeline.addLast("httpDecoder", new HttpRequestDecoder());
@@ -664,7 +664,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
         WebSocketServerHandshakerFactory.sendUnsupportedWebSocketVersionResponse(ch);
         return;
       }
-      ch.pipeline().addBefore(ctx.name(), "websocketConverter", WebSocketConvertHandler.INSTANCE);
+      //ch.pipeline().addBefore(ctx.name(), "websocketConverter", WebSocketConvertHandler.INSTANCE);
 
       HandlerHolder<ServerWebSocket> firstHandler = null;
       HandlerHolder<ServerWebSocket> wsHandler = wsHandlerManager.chooseHandler(ch.eventLoop());

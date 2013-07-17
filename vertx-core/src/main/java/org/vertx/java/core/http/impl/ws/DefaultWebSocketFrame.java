@@ -64,7 +64,7 @@ public class DefaultWebSocketFrame implements WebSocketFrame, ReferenceCounted {
    */
   public DefaultWebSocketFrame(FrameType type, ByteBuf binaryData) {
     this.type = type;
-    this.binaryData = binaryData;
+    this.binaryData = Unpooled.unreleasableBuffer(binaryData);
   }
 
   public FrameType getType() {

@@ -89,7 +89,7 @@ public class Buffer {
    * This method is meant for internal use only.
    */
   public Buffer(ByteBuf buffer) {
-    this.buffer = buffer;
+    this.buffer = Unpooled.unreleasableBuffer(buffer);
   }
 
   /**
