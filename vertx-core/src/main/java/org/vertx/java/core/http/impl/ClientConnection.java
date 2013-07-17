@@ -227,10 +227,6 @@ class ClientConnection extends AbstractConnection {
     }
   }
 
-  void internalClose() {
-    channel.close();
-  }
-
   boolean isClosed() {
     return !channel.isOpen();
   }
@@ -348,6 +344,9 @@ class ClientConnection extends AbstractConnection {
     DefaultNetSocket socket = new DefaultNetSocket(vertx, channel, context);
     Map<Channel, DefaultNetSocket> connectionMap = new HashMap<Channel, DefaultNetSocket>(1);
     connectionMap.put(channel, socket);
+
+    // Flush out all pending data
+    endReadAndFlush();
 
     // remove old http handlers and replace the old handler with one that handle plain sockets
     channel.pipeline().remove("codec");
