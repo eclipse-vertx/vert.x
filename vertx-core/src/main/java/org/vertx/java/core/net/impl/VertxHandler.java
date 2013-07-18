@@ -21,7 +21,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
 
@@ -126,4 +125,26 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
       });
     }
   }
+
+  @Override
+  public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+    ConnectionBase conn = connectionMap.get(ctx.channel());
+    if (conn != null) {
+      conn.endReadAndFlush();
+    }
+  }
+
+  @Override
+  public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
+    final Object message = safeObject(msg);
+    final C sock = connectionMap.get(chctx.channel());
+    if (sock != null) {
+      sock.startRead();
+    }
+    channelRead(sock, chctx, message);
+  }
+
+  protected abstract void channelRead(C socket, ChannelHandlerContext chctx, Object msg) throws Exception;
+
+  protected abstract Object safeObject(Object msg) throws Exception;
 }

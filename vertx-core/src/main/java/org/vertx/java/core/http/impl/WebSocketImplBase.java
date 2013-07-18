@@ -23,6 +23,7 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.net.impl.ConnectionBase;
 
 import java.util.UUID;
 
@@ -35,7 +36,7 @@ public class WebSocketImplBase {
   private final String textHandlerID;
   private final String binaryHandlerID;
   private final VertxInternal vertx;
-  protected final AbstractConnection conn;
+  protected final ConnectionBase conn;
 
   protected Handler<Buffer> dataHandler;
   protected Handler<Void> drainHandler;
@@ -46,7 +47,7 @@ public class WebSocketImplBase {
   protected Handler<Message<String>> textHandler;
   protected boolean closed;
 
-  protected WebSocketImplBase(VertxInternal vertx, AbstractConnection conn) {
+  protected WebSocketImplBase(VertxInternal vertx, ConnectionBase conn) {
     this.vertx = vertx;
     this.textHandlerID = UUID.randomUUID().toString();
     this.binaryHandlerID = UUID.randomUUID().toString();

@@ -129,19 +129,19 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   public DefaultHttpClientRequest write(Buffer chunk) {
     check();
     ByteBuf buf = chunk.getByteBuf();
-    return write(buf);
+    return write(buf, false);
   }
 
   @Override
   public DefaultHttpClientRequest write(String chunk) {
     check();
-    return write(new Buffer(chunk).getByteBuf());
+    return write(new Buffer(chunk));
   }
 
   @Override
   public DefaultHttpClientRequest write(String chunk, String enc) {
     check();
-    return write(new Buffer(chunk, enc).getByteBuf());
+    return write(new Buffer(chunk, enc));
   }
 
   @Override
@@ -200,8 +200,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     check();
     if (conn != null) {
       if (!headWritten) {
-        writeHead(false);
-        headWritten = true;
+        writeHead();
       }
     } else {
       connect();
@@ -222,32 +221,19 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
   @Override
   public void end(Buffer chunk) {
+    check();
     if (!chunked && !contentLengthSet()) {
       headers().set(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(chunk.length()));
     }
-    write(chunk);
-    end();
+    write(chunk.getByteBuf(), true);
   }
 
   @Override
   public void end() {
     check();
-    completed = true;
-    if (conn != null) {
-      if (!headWritten) {
-        // No body
-        prepareHeaders();
-        conn.queueForWrite(request);
-        writeEndChunk(Unpooled.EMPTY_BUFFER);
-      } else if (chunked) {
-        //Body written - we use HTTP chunking so must send an empty buffer
-        writeEndChunk(Unpooled.EMPTY_BUFFER);
-      }
-      conn.endRequest();
-    } else {
-      connect();
-    }
+    write(Unpooled.EMPTY_BUFFER, true);
   }
+
 
   @Override
   public HttpClientRequest setTimeout(final long timeoutMs) {
@@ -360,26 +346,28 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     if (pendingMaxSize != -1) {
       conn.doSetWriteQueueMaxSize(pendingMaxSize);
     }
-    if (pendingChunks != null || writeHead || completed) {
-      boolean queueHead = pendingChunks != null || completed;
-      writeHead(queueHead);
-      headWritten = true;
-    }
 
     if (pendingChunks != null) {
       ByteBuf pending = pendingChunks;
       pendingChunks = null;
 
       if (completed) {
-        writeEndChunk(pending);
+        // we also need to write the head so optimize this and write all out in once
+        writeHeadWithContent(pending, true);
+
         conn.endRequest();
       } else {
-        sendChunk(pending);
+        writeHeadWithContent(pending, false);
       }
     } else {
       if (completed) {
-        writeEndChunk(Unpooled.EMPTY_BUFFER);
+        // we also need to write the head so optimize this and write all out in once
+        writeHeadWithContent(Unpooled.EMPTY_BUFFER, true);
         conn.endRequest();
+      } else {
+        if (writeHead) {
+          writeHead();
+        }
       }
     }
   }
@@ -392,13 +380,20 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
   }
 
-  private void writeHead(boolean queue) {
+  private void writeHead() {
     prepareHeaders();
-    if (queue) {
-      conn.queueForWrite(request);
+    conn.write(request);
+    headWritten = true;
+  }
+
+  private void writeHeadWithContent(ByteBuf buf, boolean end) {
+    prepareHeaders();
+    if (end) {
+      conn.write(new AssembledFullHttpRequest(request, buf));
     } else {
-      conn.write(request);
+      conn.write(new AssembledHttpRequest(request, buf));
     }
+    headWritten = true;
   }
 
   private void prepareHeaders() {
@@ -411,15 +406,20 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
   }
 
-  private DefaultHttpClientRequest write(ByteBuf buff) {
+  private DefaultHttpClientRequest write(ByteBuf buff, boolean end) {
     int readableBytes = buff.readableBytes();
-    if (readableBytes == 0) {
+    if (readableBytes == 0 && !end) {
       // nothing to write to the connection just return
       return this;
     }
+
+    if (end) {
+      completed = true;
+    }
+
     written += buff.readableBytes();
 
-    if (!raw && !chunked && !contentLengthSet()) {
+    if (!end && !raw && !chunked && !contentLengthSet()) {
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
           + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
     }
@@ -441,11 +441,17 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
       connect();
     } else {
       if (!headWritten) {
-        prepareHeaders();
-        conn.queueForWrite(request);
-        headWritten = true;
+        writeHeadWithContent(buff, end);
+      } else {
+        if (end) {
+          writeEndChunk(buff);
+        } else {
+          sendChunk(buff);
+        }
       }
-      sendChunk(buff);
+      if (end) {
+        conn.endRequest();
+      }
     }
     return this;
   }

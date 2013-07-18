@@ -26,6 +26,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.ReferenceCountUtil;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
@@ -33,6 +34,7 @@ import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.net.impl.ConnectionBase;
 import org.vertx.java.core.net.impl.DefaultNetSocket;
 import org.vertx.java.core.net.impl.VertxNetHandler;
 
@@ -45,7 +47,7 @@ import java.util.Queue;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class ServerConnection extends AbstractConnection {
+class ServerConnection extends ConnectionBase {
 
   private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
 
@@ -113,8 +115,13 @@ class ServerConnection extends AbstractConnection {
     return serverOrigin;
   }
 
+
+  Vertx vertx() {
+    return vertx;
+  }
+
   @Override
-  ChannelFuture write(Object obj) {
+  public ChannelFuture write(Object obj) {
     ChannelFuture future = lastWriteFuture = super.write(obj);
     return future;
   }
@@ -148,7 +155,7 @@ class ServerConnection extends AbstractConnection {
       }
 
       @Override
-      public void channelRead(ChannelHandlerContext chctx, Object msg) {
+      public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
         if (msg instanceof HttpContent) {
           ReferenceCountUtil.release(msg);
           return;
