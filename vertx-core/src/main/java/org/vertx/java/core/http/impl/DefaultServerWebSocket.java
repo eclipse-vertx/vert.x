@@ -6,6 +6,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.net.impl.ConnectionBase;
 
 /*
  * Copyright 2013 Red Hat, Inc.
@@ -34,7 +35,7 @@ public class DefaultServerWebSocket extends WebSocketImplBase implements ServerW
   private final MultiMap headers;
 
   public DefaultServerWebSocket(VertxInternal vertx, String path, String query, MultiMap headers,
-                                AbstractConnection conn, Runnable connectRunnable) {
+                                ConnectionBase conn, Runnable connectRunnable) {
     super(vertx, conn);
     this.path = path;
     this.query = query;

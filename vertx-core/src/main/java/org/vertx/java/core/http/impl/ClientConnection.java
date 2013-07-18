@@ -33,6 +33,7 @@ import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.net.impl.ConnectionBase;
 import org.vertx.java.core.net.impl.DefaultNetSocket;
 import org.vertx.java.core.net.impl.VertxNetHandler;
 
@@ -45,7 +46,7 @@ import java.util.Queue;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class ClientConnection extends AbstractConnection {
+class ClientConnection extends ConnectionBase {
   private static final Logger log = LoggerFactory.getLogger(ClientConnection.class);
 
   final DefaultHttpClient client;
