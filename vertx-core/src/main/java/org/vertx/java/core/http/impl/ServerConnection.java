@@ -114,7 +114,7 @@ class ServerConnection extends AbstractConnection {
   }
 
   @Override
-  ChannelFuture write(Object obj) {
+  public ChannelFuture write(Object obj) {
     ChannelFuture future = lastWriteFuture = super.write(obj);
     return future;
   }
@@ -148,7 +148,7 @@ class ServerConnection extends AbstractConnection {
       }
 
       @Override
-      public void channelRead(ChannelHandlerContext chctx, Object msg) {
+      public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
         if (msg instanceof HttpContent) {
           ReferenceCountUtil.release(msg);
           return;

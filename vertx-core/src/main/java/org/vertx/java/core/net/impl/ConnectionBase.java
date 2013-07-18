@@ -53,6 +53,41 @@ public abstract class ConnectionBase {
   protected Handler<Void> closeHandler;
   private volatile boolean writable = true;
 
+  private boolean read;
+
+  public final void startRead() {
+    read = true;
+  }
+
+  public final void endReadAndFlush() {
+    read = false;
+    // flush now
+    channel.flush();
+  }
+
+
+  //Close without checking thread - used when server is closed
+  public final void internalClose() {
+    // make sure everything is flushed out on close
+    endReadAndFlush();
+    channel.close();
+  }
+
+  public ChannelFuture queueForWrite(final Object obj) {
+    return channel.write(obj);
+  }
+
+  public ChannelFuture write(Object obj) {
+    if (read) {
+      return queueForWrite(obj);
+    }
+    if (channel.isOpen()) {
+      return channel.writeAndFlush(obj);
+    } else {
+      return null;
+    }
+  }
+
   /**
    * Close the connection
    */

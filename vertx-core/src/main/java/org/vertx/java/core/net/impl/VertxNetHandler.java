@@ -34,15 +34,10 @@ public class VertxNetHandler extends VertxHandler<DefaultNetSocket> {
     super(vertx, connectionMap);
   }
 
-
   @Override
-  public void channelRead(ChannelHandlerContext chctx, Object msg) {
-    if (msg instanceof ByteBuf) {
-      msg = safeBuffer((ByteBuf) msg);
-    }
-    final ByteBuf message = (ByteBuf) msg;
-    final DefaultNetSocket sock = connectionMap.get(chctx.channel());
+  protected void channelRead(final DefaultNetSocket sock, ChannelHandlerContext chctx, Object msg) throws Exception {
     if (sock != null) {
+      final ByteBuf buf = (ByteBuf) msg;
       Channel ch = chctx.channel();
       final DefaultContext context = getContext(sock);
       // We need to do this since it's possible the server is being used from a worker context
@@ -52,7 +47,7 @@ public class VertxNetHandler extends VertxHandler<DefaultNetSocket> {
           context.startExecute();
 
           try {
-            sock.handleDataReceived(new Buffer(message));
+            sock.handleDataReceived(new Buffer(buf));
           } catch (Throwable t) {
             context.reportException(t);
           }
@@ -65,7 +60,7 @@ public class VertxNetHandler extends VertxHandler<DefaultNetSocket> {
         context.execute(new Runnable() {
           public void run() {
             try {
-              sock.handleDataReceived(new Buffer(message));
+              sock.handleDataReceived(new Buffer(buf));
             } catch (Throwable t) {
               context.reportException(t);
             }
@@ -75,5 +70,13 @@ public class VertxNetHandler extends VertxHandler<DefaultNetSocket> {
     } else {
       // just discard
     }
+  }
+
+  @Override
+  protected Object safeObject(Object msg) throws Exception {
+    if (msg instanceof ByteBuf) {
+      return safeBuffer((ByteBuf) msg);
+    }
+    return msg;
   }
 }
