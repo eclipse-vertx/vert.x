@@ -322,11 +322,9 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
       //they can capture any exceptions on connection
       client.getConnection(new Handler<ClientConnection>() {
         public void handle(ClientConnection conn) {
-          if (!conn.isClosed()) {
-            connected(conn);
+            if (!conn.isClosed()) {
+                connected(conn);
           } else {
-            // Get another connection - Note that we DO NOT call connectionClosed() on the pool at this point
-            // that is done asynchronously in the connection closeHandler()
             connect();
           }
         }

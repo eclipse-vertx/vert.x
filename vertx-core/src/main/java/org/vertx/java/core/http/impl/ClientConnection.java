@@ -310,8 +310,7 @@ class ClientConnection extends ConnectionBase {
     return super.getContext();
   }
 
-  @Override
-  protected void handleException(Throwable e) {
+  protected void handleException(Exception e) {
     super.handleException(e);
     if (currentRequest != null) {
       currentRequest.handleException(e);

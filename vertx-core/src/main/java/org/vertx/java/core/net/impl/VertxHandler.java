@@ -91,8 +91,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   @Override
   public void exceptionCaught(ChannelHandlerContext chctx, final Throwable t) throws Exception {
     final Channel ch = chctx.channel();
-    // Don't remove the sock at this point, or the handleClosed won't be called when channelInactive is called!
-    final C sock = connectionMap.get(ch);
+    final C sock = connectionMap.remove(ch);
     if (sock != null) {
       DefaultContext context = getContext(sock);
       context.execute(ch.eventLoop(), new Runnable() {
