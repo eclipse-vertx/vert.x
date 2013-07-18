@@ -64,13 +64,13 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   @Override
   public NetSocket write(Buffer data) {
     ByteBuf buf = data.getByteBuf();
-    doWrite(buf);
+    write(buf);
     return this;
   }
 
   @Override
   public NetSocket write(String str) {
-    doWrite(Unpooled.copiedBuffer(str, CharsetUtil.UTF_8));
+    write(Unpooled.copiedBuffer(str, CharsetUtil.UTF_8));
     return this;
   }
 
@@ -79,7 +79,7 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
     if (enc == null) {
       write(str);
     } else {
-      doWrite(Unpooled.copiedBuffer(str, Charset.forName(enc)));
+      write(Unpooled.copiedBuffer(str, Charset.forName(enc)));
     }
     return this;
   }
@@ -210,8 +210,8 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
 
   private ChannelFuture writeFuture;
 
-  private void doWrite(ByteBuf buff) {
-    writeFuture = channel.writeAndFlush(buff);
+  private void write(ByteBuf buff) {
+    writeFuture = super.write(buff);
   }
 
   private void callDrainHandler() {

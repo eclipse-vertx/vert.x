@@ -22,7 +22,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.DefaultHttpContent;
-import io.netty.handler.codec.http.DefaultLastHttpContent;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.*;
@@ -39,7 +38,7 @@ import java.util.Map;
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 
-public abstract class VertxHttpHandler<C extends AbstractConnection> extends VertxHandler<C> {
+public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHandler<C> {
   private final VertxInternal vertx;
 
   protected VertxHttpHandler(VertxInternal vertx, Map<Channel, C> connectionMap) {
@@ -52,53 +51,17 @@ public abstract class VertxHttpHandler<C extends AbstractConnection> extends Ver
   }
 
   @Override
-  public void channelRead(final ChannelHandlerContext chctx, Object msg) throws Exception {
-    if (msg instanceof HttpContent) {
-      HttpContent content = (HttpContent) msg;
-      ByteBuf buf = content.content();
-      if (buf != Unpooled.EMPTY_BUFFER && buf.isDirect()) {
-        ByteBuf newBuf = safeBuffer(content);
-        if (msg instanceof LastHttpContent) {
-          LastHttpContent last = (LastHttpContent) msg;
-          msg = new DefaultLastHttpContent(newBuf);
-          ((LastHttpContent) msg).trailingHeaders().set(last.trailingHeaders());
-        } else {
-          msg = new DefaultHttpContent(newBuf);
-        }
-      }
-    } else if (msg instanceof WebSocketFrame) {
-      ByteBuf payload = safeBuffer((WebSocketFrame) msg);
-      if (msg instanceof BinaryWebSocketFrame) {
-        msg = new DefaultWebSocketFrame(org.vertx.java.core.http.impl.ws.WebSocketFrame.FrameType.BINARY, payload);
-      } else if (msg instanceof CloseWebSocketFrame) {
-        msg = new DefaultWebSocketFrame(org.vertx.java.core.http.impl.ws.WebSocketFrame.FrameType.CLOSE, payload);
-      } else if (msg instanceof PingWebSocketFrame) {
-        msg =new DefaultWebSocketFrame(org.vertx.java.core.http.impl.ws.WebSocketFrame.FrameType.PING, payload);
-      } else if (msg instanceof PongWebSocketFrame) {
-        msg = new DefaultWebSocketFrame(org.vertx.java.core.http.impl.ws.WebSocketFrame.FrameType.PONG, payload);
-      } else if (msg instanceof TextWebSocketFrame) {
-        msg = new DefaultWebSocketFrame(org.vertx.java.core.http.impl.ws.WebSocketFrame.FrameType.TEXT, payload);
-      } else if (msg instanceof ContinuationWebSocketFrame) {
-        msg = new DefaultWebSocketFrame(org.vertx.java.core.http.impl.ws.WebSocketFrame.FrameType.CONTINUATION, payload);
-      } else {
-        throw new IllegalStateException("Unsupported websocket msg " + msg);
-      }
-    }
-
-    final Object message = msg;
-    final Channel ch = chctx.channel();
-    final C connection = connectionMap.get(ch);
+  protected void channelRead(final C connection, final ChannelHandlerContext chctx, final Object msg) throws Exception {
     if (connection != null) {
       // we are reading from the channel
-      connection.startRead();
-
+      Channel ch = chctx.channel();
       final DefaultContext context = getContext(connection);
       // We need to do this since it's possible the server is being used from a worker context
       if (context.isOnCorrectWorker(ch.eventLoop())) {
         try {
           vertx.setContext(context);
           context.startExecute();
-          doMessageReceived(connection, chctx, message);
+          doMessageReceived(connection, chctx, msg);
         } catch (Throwable t) {
           context.reportException(t);
         } finally {
@@ -108,7 +71,7 @@ public abstract class VertxHttpHandler<C extends AbstractConnection> extends Ver
         context.execute(new Runnable() {
           public void run() {
             try {
-              doMessageReceived(connection, chctx, message);
+              doMessageReceived(connection, chctx, msg);
             } catch (Throwable t) {
               context.reportException(t);
             }
@@ -117,12 +80,48 @@ public abstract class VertxHttpHandler<C extends AbstractConnection> extends Ver
       }
     } else {
       try {
-        doMessageReceived(connection, chctx, message);
+        doMessageReceived(connection, chctx, msg);
       }  catch (Throwable t) {
         chctx.pipeline().fireExceptionCaught(t);
       }
     }
   }
+
+  @Override
+  protected Object safeObject(Object msg) throws Exception {
+    if (msg instanceof HttpContent) {
+      HttpContent content = (HttpContent) msg;
+      ByteBuf buf = content.content();
+      if (buf != Unpooled.EMPTY_BUFFER && buf.isDirect()) {
+        ByteBuf newBuf = safeBuffer(content);
+        if (msg instanceof LastHttpContent) {
+          LastHttpContent last = (LastHttpContent) msg;
+          return new AssembledLastHttpContent(newBuf, last.trailingHeaders());
+        } else {
+          return new DefaultHttpContent(newBuf);
+        }
+      }
+    } else if (msg instanceof WebSocketFrame) {
+      ByteBuf payload = safeBuffer((WebSocketFrame) msg);
+      if (msg instanceof BinaryWebSocketFrame) {
+        return new DefaultWebSocketFrame(org.vertx.java.core.http.impl.ws.WebSocketFrame.FrameType.BINARY, payload);
+      } else if (msg instanceof CloseWebSocketFrame) {
+        return new DefaultWebSocketFrame(org.vertx.java.core.http.impl.ws.WebSocketFrame.FrameType.CLOSE, payload);
+      } else if (msg instanceof PingWebSocketFrame) {
+        return new DefaultWebSocketFrame(org.vertx.java.core.http.impl.ws.WebSocketFrame.FrameType.PING, payload);
+      } else if (msg instanceof PongWebSocketFrame) {
+        return new DefaultWebSocketFrame(org.vertx.java.core.http.impl.ws.WebSocketFrame.FrameType.PONG, payload);
+      } else if (msg instanceof TextWebSocketFrame) {
+        return new DefaultWebSocketFrame(org.vertx.java.core.http.impl.ws.WebSocketFrame.FrameType.TEXT, payload);
+      } else if (msg instanceof ContinuationWebSocketFrame) {
+        return new DefaultWebSocketFrame(org.vertx.java.core.http.impl.ws.WebSocketFrame.FrameType.CONTINUATION, payload);
+      } else {
+        throw new IllegalStateException("Unsupported websocket msg " + msg);
+      }
+    }
+    return msg;
+  }
+
 
   @Override
   public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
@@ -156,14 +155,6 @@ public abstract class VertxHttpHandler<C extends AbstractConnection> extends Ver
       }
     }
     ctx.write(msg, promise);
-  }
-
-  @Override
-  public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-    AbstractConnection conn = connectionMap.get(ctx.channel());
-    if (conn != null) {
-      conn.endReadAndFlush();
-    }
   }
 
   protected abstract void doMessageReceived(C connection, ChannelHandlerContext ctx, Object msg) throws Exception;
