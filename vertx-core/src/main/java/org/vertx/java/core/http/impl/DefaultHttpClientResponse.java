@@ -209,7 +209,7 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
     }
   }
 
-  void handleException(Exception e) {
+  void handleException(Throwable e) {
     if (exceptionHandler != null) {
       exceptionHandler.handle(e);
     }

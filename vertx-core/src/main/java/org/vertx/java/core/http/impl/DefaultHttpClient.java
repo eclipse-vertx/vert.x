@@ -604,6 +604,9 @@ public class DefaultHttpClient implements HttpClient {
         tcpHelper.isSSL(), host, port, keepAlive, actualCtx);
     conn.closeHandler(new VoidHandler() {
       public void handle() {
+        // The connection has been closed - tell the pool about it, this allows the pool to create more
+        // connections. Note the pool doesn't actually remove the connection, when the next person to get a connection
+        // gets the closed on, they will check if it's closed and if so get another one.
         pool.connectionClosed();
       }
     });

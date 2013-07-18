@@ -309,7 +309,8 @@ class ClientConnection extends AbstractConnection {
     return super.getContext();
   }
 
-  protected void handleException(Exception e) {
+  @Override
+  protected void handleException(Throwable e) {
     super.handleException(e);
     if (currentRequest != null) {
       currentRequest.handleException(e);
