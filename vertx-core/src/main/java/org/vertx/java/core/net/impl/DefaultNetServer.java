@@ -463,7 +463,7 @@ public class DefaultNetServer implements NetServer, Closeable {
     }
 
     for (DefaultNetSocket sock : socketMap.values()) {
-      sock.internalClose();
+      sock.close();
     }
 
     // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread

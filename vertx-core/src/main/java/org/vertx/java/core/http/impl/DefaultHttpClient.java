@@ -255,7 +255,7 @@ public class DefaultHttpClient implements HttpClient {
     checkClosed();
     pool.close();
     for (ClientConnection conn : connectionMap.values()) {
-      conn.internalClose();
+      conn.close();
     }
     actualCtx.removeCloseHook(closeHook);
     closed = true;

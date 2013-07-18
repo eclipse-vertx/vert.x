@@ -222,7 +222,7 @@ class ClientConnection extends ConnectionBase {
       // Do nothing - this will be ugraded
     } else if (!keepAlive) {
       //Close it
-      internalClose();
+      super.close();
     } else {
       client.returnConnection(this);
     }

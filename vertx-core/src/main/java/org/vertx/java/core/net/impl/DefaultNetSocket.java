@@ -162,14 +162,10 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   public void close() {
     if (writeFuture != null) {
       // Close after all data is written
-      writeFuture.addListener(new ChannelFutureListener() {
-        @Override
-        public void operationComplete(ChannelFuture channelFuture) throws Exception {
-          channel.close();
-        }
-      });
+      writeFuture.addListener(ChannelFutureListener.CLOSE);
+      channel.flush();
     } else {
-      channel.close();
+      super.close();
     }
   }
 

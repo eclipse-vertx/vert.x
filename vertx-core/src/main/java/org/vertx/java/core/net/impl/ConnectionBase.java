@@ -65,14 +65,6 @@ public abstract class ConnectionBase {
     channel.flush();
   }
 
-
-  //Close without checking thread - used when server is closed
-  public final void internalClose() {
-    // make sure everything is flushed out on close
-    endReadAndFlush();
-    channel.close();
-  }
-
   public ChannelFuture queueForWrite(final Object obj) {
     return channel.write(obj);
   }
@@ -92,6 +84,8 @@ public abstract class ConnectionBase {
    * Close the connection
    */
   public void close() {
+    // make sure everything is flushed out on close
+    endReadAndFlush();
     channel.close();
   }
 

@@ -497,7 +497,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
     }
 
     for (ServerConnection conn : connectionMap.values()) {
-      conn.internalClose();
+      conn.close();
     }
 
     // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
