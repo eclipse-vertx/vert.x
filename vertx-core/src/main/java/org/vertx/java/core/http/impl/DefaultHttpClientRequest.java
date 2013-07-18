@@ -129,19 +129,19 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   public DefaultHttpClientRequest write(Buffer chunk) {
     check();
     ByteBuf buf = chunk.getByteBuf();
-    return write(buf);
+    return write(buf, false);
   }
 
   @Override
   public DefaultHttpClientRequest write(String chunk) {
     check();
-    return write(new Buffer(chunk).getByteBuf());
+    return write(new Buffer(chunk));
   }
 
   @Override
   public DefaultHttpClientRequest write(String chunk, String enc) {
     check();
-    return write(new Buffer(chunk, enc).getByteBuf());
+    return write(new Buffer(chunk, enc));
   }
 
   @Override
@@ -221,29 +221,17 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
   @Override
   public void end(Buffer chunk) {
+    check();
     if (!chunked && !contentLengthSet()) {
       headers().set(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(chunk.length()));
     }
-    write(chunk);
-    end();
+    write(chunk.getByteBuf(), true);
   }
 
   @Override
   public void end() {
     check();
-    completed = true;
-    if (conn != null) {
-      if (!headWritten) {
-        // No body
-        writeHeadWithContent(Unpooled.EMPTY_BUFFER, true);
-      } else if (chunked) {
-        //Body written - we use HTTP chunking so must send an empty buffer
-        writeEndChunk(Unpooled.EMPTY_BUFFER);
-      }
-      conn.endRequest();
-    } else {
-      connect();
-    }
+    write(Unpooled.EMPTY_BUFFER, true);
   }
 
 
@@ -416,15 +404,20 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
   }
 
-  private DefaultHttpClientRequest write(ByteBuf buff) {
+  private DefaultHttpClientRequest write(ByteBuf buff, boolean end) {
     int readableBytes = buff.readableBytes();
-    if (readableBytes == 0) {
+    if (readableBytes == 0 && !end) {
       // nothing to write to the connection just return
       return this;
     }
+
+    if (end) {
+      completed = true;
+    }
+
     written += buff.readableBytes();
 
-    if (!raw && !chunked && !contentLengthSet()) {
+    if (!end && !raw && !chunked && !contentLengthSet()) {
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
           + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
     }
@@ -446,9 +439,16 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
       connect();
     } else {
       if (!headWritten) {
-        writeHeadWithContent(buff, false);
+        writeHeadWithContent(buff, end);
       } else {
-        sendChunk(buff);
+        if (end) {
+          writeEndChunk(buff);
+        } else {
+          sendChunk(buff);
+        }
+      }
+      if (end) {
+        conn.endRequest();
       }
     }
     return this;
