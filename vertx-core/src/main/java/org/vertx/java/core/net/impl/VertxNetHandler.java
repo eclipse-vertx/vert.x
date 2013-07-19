@@ -43,8 +43,6 @@ public class VertxNetHandler extends VertxHandler<DefaultNetSocket> {
       if (context.isOnCorrectWorker(ch.eventLoop())) {
         try {
           vertx.setContext(context);
-          context.startExecute();
-
           try {
             sock.handleDataReceived(new Buffer(buf));
           } catch (Throwable t) {
@@ -52,8 +50,6 @@ public class VertxNetHandler extends VertxHandler<DefaultNetSocket> {
           }
         } catch (Throwable t) {
           context.reportException(t);
-        } finally {
-          context.endExecute();
         }
       } else {
         context.execute(new Runnable() {

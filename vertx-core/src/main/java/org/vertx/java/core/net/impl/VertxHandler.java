@@ -71,12 +71,9 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
       if (context.isOnCorrectWorker(ch.eventLoop())) {
         try {
           vertx.setContext(context);
-          context.startExecute();
           conn.handleInterestedOpsChanged();
         } catch (Throwable t) {
           context.reportException(t);
-        } finally {
-          context.endExecute();
         }
       } else {
         context.execute(new Runnable() {
