@@ -128,9 +128,14 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
 
   @Override
   public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-    ConnectionBase conn = connectionMap.get(ctx.channel());
+    C conn = connectionMap.get(ctx.channel());
     if (conn != null) {
       conn.endReadAndFlush();
+      DefaultContext context = getContext(conn);
+      // Only mark end read if its not a WorkerVerticle
+      if (context.isOnCorrectWorker(ctx.channel().eventLoop())) {
+        conn.endReadAndFlush();
+      }
     }
   }
 
@@ -138,13 +143,23 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
     final Object message = safeObject(msg);
     final C sock = connectionMap.get(chctx.channel());
+
+    DefaultContext context;
     if (sock != null) {
-      sock.startRead();
+      context = getContext(sock);
+      // Only mark start read if we are on the correct worker. This is needed as while we are in read this may will
+      // delay flushes, which is a problem when we are no on the correct worker. This is mainly a problem as
+      // WorkerVerticle may block.
+      if (context.isOnCorrectWorker(chctx.channel().eventLoop())) {
+        sock.startRead();
+      }
+    } else {
+      context = null;
     }
-    channelRead(sock, chctx, message);
+    channelRead(sock, context, chctx, message);
   }
 
-  protected abstract void channelRead(C socket, ChannelHandlerContext chctx, Object msg) throws Exception;
+  protected abstract void channelRead(C socket, DefaultContext context, ChannelHandlerContext chctx, Object msg) throws Exception;
 
   protected abstract Object safeObject(Object msg) throws Exception;
 }

@@ -54,6 +54,7 @@ public abstract class ConnectionBase {
   private volatile boolean writable = true;
 
   private boolean read;
+  private boolean needsFlush;
 
   public final void startRead() {
     read = true;
@@ -61,11 +62,15 @@ public abstract class ConnectionBase {
 
   public final void endReadAndFlush() {
     read = false;
-    // flush now
-    channel.flush();
+    if (needsFlush) {
+      needsFlush = false;
+      // flush now
+      channel.flush();
+    }
   }
 
   public ChannelFuture queueForWrite(final Object obj) {
+    needsFlush = true;
     return channel.write(obj);
   }
 
@@ -180,12 +185,12 @@ public abstract class ConnectionBase {
       ChannelFuture writeFuture;
       if (isSSL()) {
         // Cannot use zero-copy with HTTPS.
-        writeFuture = channel.writeAndFlush(new ChunkedFile(raf, 0, fileLength, 8192));
+        writeFuture = write(new ChunkedFile(raf, 0, fileLength, 8192));
       } else {
         // No encryption - use zero-copy.
         final FileRegion region =
             new DefaultFileRegion(raf.getChannel(), 0, fileLength);
-        writeFuture = channel.writeAndFlush(region);
+        writeFuture = write(region);
       }
       writeFuture.addListener(new ChannelFutureListener() {
         public void operationComplete(ChannelFuture future) throws Exception {

@@ -51,11 +51,10 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
   }
 
   @Override
-  protected void channelRead(final C connection, final ChannelHandlerContext chctx, final Object msg) throws Exception {
+  protected void channelRead(final C connection, final DefaultContext context, final ChannelHandlerContext chctx, final Object msg) throws Exception {
     if (connection != null) {
       // we are reading from the channel
       Channel ch = chctx.channel();
-      final DefaultContext context = getContext(connection);
       // We need to do this since it's possible the server is being used from a worker context
       if (context.isOnCorrectWorker(ch.eventLoop())) {
         try {

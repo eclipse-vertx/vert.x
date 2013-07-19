@@ -35,11 +35,10 @@ public class VertxNetHandler extends VertxHandler<DefaultNetSocket> {
   }
 
   @Override
-  protected void channelRead(final DefaultNetSocket sock, ChannelHandlerContext chctx, Object msg) throws Exception {
+  protected void channelRead(final DefaultNetSocket sock, final DefaultContext context, ChannelHandlerContext chctx, Object msg) throws Exception {
     if (sock != null) {
       final ByteBuf buf = (ByteBuf) msg;
       Channel ch = chctx.channel();
-      final DefaultContext context = getContext(sock);
       // We need to do this since it's possible the server is being used from a worker context
       if (context.isOnCorrectWorker(ch.eventLoop())) {
         try {
