@@ -445,7 +445,11 @@ public class TestClient extends TestClientBase {
     });
   }
 
-  private void doListen(final int count, final NetServer server) {
+  public void testListenOnWildcardPort() {
+    final NetServer server = vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
+      public void handle(NetSocket sock) {
+      }
+    });
     server.listen(0, new AsyncResultHandler<NetServer>() {
       @Override
       public void handle(AsyncResult<NetServer> ar) {
@@ -453,21 +457,11 @@ public class TestClient extends TestClientBase {
           tu.azzert(server.port() > 1024);
           tu.testComplete();
         } else {
-          // Sometimes this can fail on CI so we retry a few times
-          if (count > 0) {
-            doListen(count - 1, server);
-          }
+          ar.cause().printStackTrace();
+          tu.azzert(false);
         }
       }
     });
-  }
-
-  public void testListenOnWildcardPort() {
-    final NetServer server = vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
-      public void handle(NetSocket sock) {
-      }
-    });
-    doListen(5, server);
   }
 
   public void testClientCloseHandlersCloseFromClient() {
@@ -801,7 +795,6 @@ public class TestClient extends TestClientBase {
           @Override
           public void handle(Buffer buff) {
             received.appendBuffer(buff);
-            System.out.println("Received is now " + buff.toString());
             if (received.toString().equals("foofoo")) {
               tu.testComplete();
             }
