@@ -64,18 +64,13 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   @Override
   public NetSocket write(Buffer data) {
     ByteBuf buf = data.getByteBuf();
-    if (data.isWrapper()) {
-      // call retain to make sure it is not released before the write completes
-      // the write will call buf.release() by it own
-      buf.retain();
-    }
-    doWrite(buf);
+    write(buf);
     return this;
   }
 
   @Override
   public NetSocket write(String str) {
-    doWrite(Unpooled.copiedBuffer(str, CharsetUtil.UTF_8));
+    write(Unpooled.copiedBuffer(str, CharsetUtil.UTF_8));
     return this;
   }
 
@@ -84,7 +79,7 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
     if (enc == null) {
       write(str);
     } else {
-      doWrite(Unpooled.copiedBuffer(str, Charset.forName(enc)));
+      write(Unpooled.copiedBuffer(str, Charset.forName(enc)));
     }
     return this;
   }
@@ -167,14 +162,10 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   public void close() {
     if (writeFuture != null) {
       // Close after all data is written
-      writeFuture.addListener(new ChannelFutureListener() {
-        @Override
-        public void operationComplete(ChannelFuture channelFuture) throws Exception {
-          channel.close();
-        }
-      });
+      writeFuture.addListener(ChannelFutureListener.CLOSE);
+      channel.flush();
     } else {
-      channel.close();
+      super.close();
     }
   }
 
@@ -215,8 +206,8 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
 
   private ChannelFuture writeFuture;
 
-  private void doWrite(ByteBuf buff) {
-    writeFuture = channel.write(buff);
+  private void write(ByteBuf buff) {
+    writeFuture = super.write(buff);
   }
 
   private void callDrainHandler() {

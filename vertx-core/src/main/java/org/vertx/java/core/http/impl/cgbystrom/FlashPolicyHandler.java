@@ -5,9 +5,10 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.MessageList;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.util.CharsetUtil;
+
+import java.util.List;
 
 /**
  * A Flash policy file handler
@@ -52,7 +53,7 @@ public class FlashPolicyHandler extends ByteToMessageDecoder {
   }
 
   @Override
-  protected void decode(ChannelHandlerContext ctx, ByteBuf buffer, MessageList<Object> out) throws Exception {
+  protected void decode(ChannelHandlerContext ctx, ByteBuf buffer, List<Object> out) throws Exception {
     if (buffer.readableBytes() < 2) {
       return;
     }
@@ -67,7 +68,7 @@ public class FlashPolicyHandler extends ByteToMessageDecoder {
 
       // Make sure we don't have any downstream handlers interfering with our injected write of policy request.
       removeAllPipelineHandlers(ctx.pipeline());
-      ctx.write(policyResponse).addListener(ChannelFutureListener.CLOSE);
+      ctx.writeAndFlush(policyResponse).addListener(ChannelFutureListener.CLOSE);
       return;
     }
 

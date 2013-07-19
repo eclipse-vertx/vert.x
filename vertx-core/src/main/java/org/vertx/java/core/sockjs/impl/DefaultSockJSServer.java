@@ -93,13 +93,13 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
     config = config.copy();
     //Set the defaults
     if (config.getNumber("session_timeout") == null) {
-      config.putNumber("session_timeout", 5 * 1000); // 5 seconds default
+      config.putNumber("session_timeout", 5l * 1000); // 5 seconds default
     }
     if (config.getBoolean("insert_JSESSIONID") == null) {
       config.putBoolean("insert_JSESSIONID", true);
     }
     if (config.getNumber("heartbeat_period") == null) {
-      config.putNumber("heartbeat_period", 5l * 1000);
+      config.putNumber("heartbeat_period", 25l * 1000);
     }
     if (config.getNumber("max_bytes_streaming") == null) {
       config.putNumber("max_bytes_streaming", 128 * 1024);
@@ -421,7 +421,6 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
     installApp(new JsonObject().putString("prefix", "/amplify")
                                .putNumber("max_bytes_streaming", 4096),
                new Handler<SockJSSocket>() {
-      long timerID;
       public void handle(final SockJSSocket sock) {
         sock.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
@@ -471,6 +470,7 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
           });
         }
       });
+
 
   }
 

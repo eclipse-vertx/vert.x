@@ -70,13 +70,6 @@ class HtmlFileTransport extends BaseTransport {
     rm.getWithRegEx(htmlFileRE, new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
         if (log.isTraceEnabled()) log.trace("HtmlFile, get: " + req.uri());
-        System.out.println("req.uri is " + req.uri());
-
-        System.out.println("There are " + req.params().size() + " params");
-        for (Map.Entry<String, String> entry: req.params().entries()) {
-          System.out.println("key:" + entry.getKey() + ":value:" + entry.getValue());
-        }
-
         String callback = req.params().get("callback");
         if (callback == null) {
           callback = req.params().get("c");
@@ -141,12 +134,12 @@ class HtmlFileTransport extends BaseTransport {
     public void close() {
       if (!closed) {
         try {
-          session.resetListener(false);
+          session.resetListener();
           req.response().end();
           req.response().close();
           closed = true;
         } catch (IllegalStateException e) {
-          // Underlying connection might alreadu be closed - that's fine
+          // Underlying connection might already be closed - that's fine
         }
       }
     }

@@ -36,6 +36,7 @@ var vertx = vertx || {};
     var replyHandlers = {};
     var state = vertx.EventBus.CONNECTING;
     var sessionID = null;
+    var pingTimerID = null;
   
     that.onopen = null;
     that.onclose = null;
@@ -98,6 +99,7 @@ var vertx = vertx || {};
   
     that.close = function() {
       checkOpen();
+      if (pingTimerID) clearInterval(pingTimerID);
       state = vertx.EventBus.CLOSING;
       sockJSConn.close();
     }
@@ -107,6 +109,9 @@ var vertx = vertx || {};
     }
   
     sockJSConn.onopen = function() {
+      // Send the first ping then send a ping every 5 seconds
+      sendPing();
+      pingTimerID = setInterval(sendPing, 5000);
       state = vertx.EventBus.OPEN;
       if (that.onopen) {
         that.onopen();
@@ -149,6 +154,13 @@ var vertx = vertx || {};
           handler(body, replyHandler);
         }
       }
+    }
+
+    function sendPing() {
+      var msg = {
+        type: "ping"
+      }
+      sockJSConn.send(JSON.stringify(msg));
     }
   
     function sendOrPub(sendOrPub, address, message, replyHandler) {

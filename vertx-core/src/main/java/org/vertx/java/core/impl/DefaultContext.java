@@ -167,12 +167,10 @@ public abstract class DefaultContext implements Context {
         String threadName = currentThread.getName();
         try {
           vertx.setContext(DefaultContext.this);
-          startExecute();
           task.run();
         } catch (Throwable t) {
           reportException(t);
         } finally {
-          endExecute();
           if (!threadName.equals(currentThread.getName())) {
             currentThread.setName(threadName);
           }
@@ -184,13 +182,6 @@ public abstract class DefaultContext implements Context {
         }
       }
     };
-  }
-
-  // Place holders for when we do event loop timings
-  public void startExecute() {
-  }
-
-  public void endExecute() {
   }
 
 }

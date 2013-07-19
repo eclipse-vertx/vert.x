@@ -4,6 +4,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.net.impl.ConnectionBase;
 
 /*
  * Copyright 2013 Red Hat, Inc.
@@ -24,7 +25,7 @@ import org.vertx.java.core.impl.VertxInternal;
  */
 public class DefaultWebSocket extends WebSocketImplBase implements WebSocket {
 
-  public DefaultWebSocket(VertxInternal vertx, AbstractConnection conn) {
+  public DefaultWebSocket(VertxInternal vertx, ConnectionBase conn) {
     super(vertx, conn);
   }
 

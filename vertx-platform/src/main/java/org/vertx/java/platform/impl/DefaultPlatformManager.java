@@ -558,6 +558,13 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       }
     }
 
+    if (enclosingModName != null) {
+      // Add the enclosing module as a parent
+      ModuleReference parentRef = moduleRefs.get(enclosingModName.toString());
+      mr.mcl.addParent(parentRef);
+      parentRef.incRef();
+    }
+
     if (includes != null) {
       loadIncludedModules(modRoot, currentModDir, mr, includes);
     }
@@ -1112,18 +1119,19 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   // this allows moduleRefs to read and write the file system as if they were
   // in the module dir, even though the actual working directory will be
   // wherever vertx run or vertx runmod was called from
-  private void setPathResolver(File modDir) {
+  private void setPathResolver(ModuleIdentifier modID, File modDir) {
     DefaultContext context = vertx.getContext();
     if (modDir != null) {
-      // Module deployed from file system or verticle deployed by module
+      // Module deployed from file system or verticle deployed by module deployed from file system
       Path cwd = Paths.get(".").toAbsolutePath().getParent();
       Path pmodDir = Paths.get(modDir.getAbsolutePath());
       Path relative = cwd.relativize(pmodDir);
       context.setPathResolver(new ModuleFileSystemPathResolver(relative));
-    } else {
+    } else if (modID != null) {
       // Module deployed from classpath
       context.setPathResolver(new ClasspathPathResolver());
     }
+    // If just verticle deployed from classpath then don't set a path resolver - don't need it
   }
 
   private static String genDepName() {
@@ -1265,7 +1273,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
             }
             try {
               addVerticle(deployment, verticle, verticleFactory, modID, main);
-              setPathResolver(modDir);
+              setPathResolver(modID, modDir);
               DefaultFutureResult<Void> vr = new DefaultFutureResult<>();
               verticle.start(vr);
               vr.setHandler(new Handler<AsyncResult<Void>>() {

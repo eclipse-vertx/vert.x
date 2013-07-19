@@ -38,7 +38,6 @@ import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.cgbystrom.FlashPolicyHandler;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
-import org.vertx.java.core.http.impl.ws.WebSocketConvertHandler;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.*;
 import org.vertx.java.core.logging.Logger;
@@ -184,11 +183,13 @@ public class DefaultHttpServer implements HttpServer, Closeable {
                 }
                 pipeline.addLast("ssl", new SslHandler(engine));
               }
-
               pipeline.addLast("flashpolicy", new FlashPolicyHandler());
               pipeline.addLast("httpDecoder", new HttpRequestDecoder());
               pipeline.addLast("httpEncoder", new HttpResponseEncoder());
-              pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
+              if (tcpHelper.isSSL()) {
+                // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
+                pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
+              }
               pipeline.addLast("handler", new ServerHandler());
             }
         });
@@ -496,7 +497,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
     }
 
     for (ServerConnection conn : connectionMap.values()) {
-      conn.internalClose();
+      conn.close();
     }
 
     // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
@@ -556,7 +557,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
         resp.headers().set(HttpHeaders.Names.CONTENT_LENGTH, "0");
       }
 
-      ch.write(resp);
+      ch.writeAndFlush(resp);
     }
 
     FullHttpRequest wsRequest;
@@ -571,7 +572,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
         if (log.isTraceEnabled()) log.trace("Server received request: " + request.getUri());
 
         if (HttpHeaders.is100ContinueExpected(request)) {
-          ch.write(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
+          ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
         }
 
         if (wsHandlerManager.hasHandlers() && WEBSOCKET.equalsIgnoreCase(request.headers().get(HttpHeaders.Names.UPGRADE))) {
@@ -623,7 +624,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
             break;
           case CLOSE:
             //Echo back close frame
-            ch.write(new DefaultWebSocketFrame(WebSocketFrame.FrameType.CLOSE));
+            ch.writeAndFlush(new DefaultWebSocketFrame(WebSocketFrame.FrameType.CLOSE));
         }
       } else if (msg instanceof HttpContent) {
         if (wsRequest != null) {
@@ -663,7 +664,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
         WebSocketServerHandshakerFactory.sendUnsupportedWebSocketVersionResponse(ch);
         return;
       }
-      ch.pipeline().addBefore(ctx.name(), "websocketConverter", WebSocketConvertHandler.INSTANCE);
+      //ch.pipeline().addBefore(ctx.name(), "websocketConverter", WebSocketConvertHandler.INSTANCE);
 
       HandlerHolder<ServerWebSocket> firstHandler = null;
       HandlerHolder<ServerWebSocket> wsHandler = wsHandlerManager.chooseHandler(ch.eventLoop());
@@ -705,7 +706,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
           return;
         }
       }
-      ch.write(new DefaultFullHttpResponse(HTTP_1_1, BAD_GATEWAY));
+      ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, BAD_GATEWAY));
     }
   }
 }

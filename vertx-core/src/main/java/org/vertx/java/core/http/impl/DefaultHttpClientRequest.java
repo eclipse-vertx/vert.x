@@ -17,6 +17,8 @@
 package org.vertx.java.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.CompositeByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.*;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
@@ -25,7 +27,6 @@ import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.impl.DefaultContext;
 
-import java.util.LinkedList;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -46,7 +47,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   private Handler<Throwable> exceptionHandler;
   private boolean headWritten;
   private boolean completed;
-  private LinkedList<ByteBuf> pendingChunks;
+  private ByteBuf pendingChunks;
   private int pendingMaxSize = -1;
   private boolean connecting;
   private boolean writeHead;
@@ -128,24 +129,19 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   public DefaultHttpClientRequest write(Buffer chunk) {
     check();
     ByteBuf buf = chunk.getByteBuf();
-    if (chunk.isWrapper()) {
-      // call retain to make sure it is not released before the write completes
-      // the write will call buf.release() by it own
-      buf.retain();
-    }
-    return write(buf);
+    return write(buf, false);
   }
 
   @Override
   public DefaultHttpClientRequest write(String chunk) {
     check();
-    return write(new Buffer(chunk).getByteBuf());
+    return write(new Buffer(chunk));
   }
 
   @Override
   public DefaultHttpClientRequest write(String chunk, String enc) {
     check();
-    return write(new Buffer(chunk, enc).getByteBuf());
+    return write(new Buffer(chunk, enc));
   }
 
   @Override
@@ -205,7 +201,6 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     if (conn != null) {
       if (!headWritten) {
         writeHead();
-        headWritten = true;
       }
     } else {
       connect();
@@ -226,32 +221,19 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
   @Override
   public void end(Buffer chunk) {
+    check();
     if (!chunked && !contentLengthSet()) {
       headers().set(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(chunk.length()));
     }
-    write(chunk);
-    end();
+    write(chunk.getByteBuf(), true);
   }
 
   @Override
   public void end() {
     check();
-    completed = true;
-    if (conn != null) {
-      if (!headWritten) {
-        // No body
-        prepareHeaders();
-        conn.queueForWrite(request);
-        writeEndChunk();
-      } else if (chunked) {
-        //Body written - we use HTTP chunking so must send an empty buffer
-        writeEndChunk();
-      }
-      conn.endRequest();
-    } else {
-      connect();
-    }
+    write(Unpooled.EMPTY_BUFFER, true);
   }
+
 
   @Override
   public HttpClientRequest setTimeout(final long timeoutMs) {
@@ -340,9 +322,11 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
       //they can capture any exceptions on connection
       client.getConnection(new Handler<ClientConnection>() {
         public void handle(ClientConnection conn) {
-            if (!conn.isClosed()) {
-                connected(conn);
+          if (!conn.isClosed()) {
+            connected(conn);
           } else {
+            // Get another connection - Note that we DO NOT call connectionClosed() on the pool at this point
+            // that is done asynchronously in the connection closeHandler()
             connect();
           }
         }
@@ -362,19 +346,29 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     if (pendingMaxSize != -1) {
       conn.doSetWriteQueueMaxSize(pendingMaxSize);
     }
-    if (pendingChunks != null || writeHead || completed) {
-      writeHead();
-      headWritten = true;
-    }
 
     if (pendingChunks != null) {
-      for (ByteBuf chunk : pendingChunks) {
-        sendChunk(chunk);
+      ByteBuf pending = pendingChunks;
+      pendingChunks = null;
+
+      if (completed) {
+        // we also need to write the head so optimize this and write all out in once
+        writeHeadWithContent(pending, true);
+
+        conn.endRequest();
+      } else {
+        writeHeadWithContent(pending, false);
       }
-    }
-    if (completed) {
-      writeEndChunk();
-      conn.endRequest();
+    } else {
+      if (completed) {
+        // we also need to write the head so optimize this and write all out in once
+        writeHeadWithContent(Unpooled.EMPTY_BUFFER, true);
+        conn.endRequest();
+      } else {
+        if (writeHead) {
+          writeHead();
+        }
+      }
     }
   }
 
@@ -389,6 +383,17 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   private void writeHead() {
     prepareHeaders();
     conn.write(request);
+    headWritten = true;
+  }
+
+  private void writeHeadWithContent(ByteBuf buf, boolean end) {
+    prepareHeaders();
+    if (end) {
+      conn.write(new AssembledFullHttpRequest(request, buf));
+    } else {
+      conn.write(new AssembledHttpRequest(request, buf));
+    }
+    headWritten = true;
   }
 
   private void prepareHeaders() {
@@ -401,28 +406,52 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
   }
 
-  private DefaultHttpClientRequest write(ByteBuf buff) {
+  private DefaultHttpClientRequest write(ByteBuf buff, boolean end) {
+    int readableBytes = buff.readableBytes();
+    if (readableBytes == 0 && !end) {
+      // nothing to write to the connection just return
+      return this;
+    }
+
+    if (end) {
+      completed = true;
+    }
 
     written += buff.readableBytes();
 
-    if (!raw && !chunked && !contentLengthSet()) {
+    if (!end && !raw && !chunked && !contentLengthSet()) {
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
           + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
     }
 
     if (conn == null) {
       if (pendingChunks == null) {
-        pendingChunks = new LinkedList<>();
+        pendingChunks = buff;
+      } else {
+        CompositeByteBuf pending;
+        if (pendingChunks instanceof CompositeByteBuf) {
+          pending = (CompositeByteBuf) pendingChunks;
+        } else {
+          pending = Unpooled.compositeBuffer();
+          pending.addComponent(pendingChunks).writerIndex(pendingChunks.writerIndex());
+          pendingChunks = pending;
+        }
+        pending.addComponent(buff).writerIndex(pending.writerIndex() + buff.writerIndex());
       }
-      pendingChunks.add(buff);
       connect();
     } else {
       if (!headWritten) {
-        prepareHeaders();
-        conn.queueForWrite(request);
-        headWritten = true;
+        writeHeadWithContent(buff, end);
+      } else {
+        if (end) {
+          writeEndChunk(buff);
+        } else {
+          sendChunk(buff);
+        }
       }
-      sendChunk(buff);
+      if (end) {
+        conn.endRequest();
+      }
     }
     return this;
   }
@@ -431,8 +460,12 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     conn.write(new DefaultHttpContent(buff));
   }
 
-  private void writeEndChunk() {
-    conn.write(LastHttpContent.EMPTY_LAST_CONTENT);
+  private void writeEndChunk(ByteBuf buf) {
+    if (buf.isReadable()) {
+      conn.write(new DefaultLastHttpContent(buf));
+    } else {
+      conn.write(LastHttpContent.EMPTY_LAST_CONTENT);
+    }
   }
 
   private void check() {

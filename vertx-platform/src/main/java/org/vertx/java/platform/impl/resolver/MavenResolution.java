@@ -141,7 +141,7 @@ public class MavenResolution extends HttpResolution {
 
   private static String getNonVersionedResourceName(String contentRoot, ModuleIdentifier identifier, String uriRoot,
                                                     boolean modSuffix) {
-    return contentRoot + '/' + uriRoot + identifier.getName() + '-' + identifier.getVersion() + (modSuffix ? "" : "-mod") + ".zip";
+    return contentRoot + '/' + uriRoot + identifier.getName() + '-' + identifier.getVersion() + (modSuffix ? "-mod" : "") + ".zip";
   }
 
 }

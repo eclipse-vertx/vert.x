@@ -165,8 +165,6 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
           @Override
           protected void handle() {
             handleChunk(theChunk);
-            // release the buffer after process it
-            theChunk.getByteBuf().release();
           }
         });
       }
@@ -177,8 +175,6 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
         @Override
         protected void handle() {
           handleEnd(theTrailer);
-          // release the buffer after process it
-          theTrailer.release();
         }
       });
       hasPausedEnd = false;
@@ -191,8 +187,6 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
       if (pausedChunks == null) {
         pausedChunks = new LinkedList<>();
       }
-      // retain here we will release once the paused chunks will get processed
-      data.getByteBuf().retain();
       pausedChunks.add(data);
     } else {
       request.dataReceived();
@@ -205,7 +199,7 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
   void handleEnd(LastHttpContent trailer) {
     if (paused) {
       hasPausedEnd = true;
-      pausedTrailer = trailer.retain();
+      pausedTrailer = trailer;
     } else {
       this.trailer = trailer;
       trailers = new HttpHeadersAdapter(trailer.trailingHeaders());
@@ -215,7 +209,7 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
     }
   }
 
-  void handleException(Exception e) {
+  void handleException(Throwable e) {
     if (exceptionHandler != null) {
       exceptionHandler.handle(e);
     }

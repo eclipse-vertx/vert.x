@@ -170,12 +170,12 @@ class JsonPTransport extends BaseTransport {
     public void close() {
       if (!closed) {
         try {
-          session.resetListener(true);
+          session.resetListener();
           req.response().end();
           req.response().close();
           closed = true;
         } catch (IllegalStateException e) {
-          // Underlying connection might alreadu be closed - that's fine
+          // Underlying connection might already be closed - that's fine
         }
       }
     }

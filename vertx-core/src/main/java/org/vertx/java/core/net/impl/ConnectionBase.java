@@ -53,10 +53,44 @@ public abstract class ConnectionBase {
   protected Handler<Void> closeHandler;
   private volatile boolean writable = true;
 
+  private boolean read;
+  private boolean needsFlush;
+
+  public final void startRead() {
+    read = true;
+  }
+
+  public final void endReadAndFlush() {
+    read = false;
+    if (needsFlush) {
+      needsFlush = false;
+      // flush now
+      channel.flush();
+    }
+  }
+
+  public ChannelFuture queueForWrite(final Object obj) {
+    needsFlush = true;
+    return channel.write(obj);
+  }
+
+  public ChannelFuture write(Object obj) {
+    if (read) {
+      return queueForWrite(obj);
+    }
+    if (channel.isOpen()) {
+      return channel.writeAndFlush(obj);
+    } else {
+      return null;
+    }
+  }
+
   /**
    * Close the connection
    */
   public void close() {
+    // make sure everything is flushed out on close
+    endReadAndFlush();
     channel.close();
   }
 
@@ -151,12 +185,12 @@ public abstract class ConnectionBase {
       ChannelFuture writeFuture;
       if (isSSL()) {
         // Cannot use zero-copy with HTTPS.
-        writeFuture = channel.write(new ChunkedFile(raf, 0, fileLength, 8192));
+        writeFuture = write(new ChunkedFile(raf, 0, fileLength, 8192));
       } else {
         // No encryption - use zero-copy.
         final FileRegion region =
             new DefaultFileRegion(raf.getChannel(), 0, fileLength);
-        writeFuture = channel.write(region);
+        writeFuture = write(region);
       }
       writeFuture.addListener(new ChannelFutureListener() {
         public void operationComplete(ChannelFuture future) throws Exception {

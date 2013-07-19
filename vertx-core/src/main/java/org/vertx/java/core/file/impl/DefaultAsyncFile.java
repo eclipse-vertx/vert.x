@@ -108,7 +108,7 @@ public class DefaultAsyncFile implements AsyncFile {
   @Override
   public AsyncFile write(Buffer buffer, int position, final Handler<AsyncResult<Void>> handler) {
     check();
-    ByteBuf buf = buffer.getByteBuf();
+    final ByteBuf buf = buffer.getByteBuf();
     if (buf.nioBufferCount() > 1) {
       final Iterator<ByteBuffer> buffers = Arrays.asList(buf.nioBuffers()).iterator();
       doWrite(buffers, position, handler);
@@ -149,7 +149,6 @@ public class DefaultAsyncFile implements AsyncFile {
   public AsyncFile write(Buffer buffer) {
     check();
     final int length = buffer.length();
-    ByteBuf buf = buffer.getByteBuf();
     Handler<AsyncResult<Void>> handler = new Handler<AsyncResult<Void>>() {
 
       public void handle(AsyncResult<Void> deferred) {
@@ -165,6 +164,7 @@ public class DefaultAsyncFile implements AsyncFile {
       }
     };
 
+    ByteBuf buf = buffer.getByteBuf();
     if (buf.nioBufferCount() > 1) {
       final Iterator<ByteBuffer> buffers = Arrays.asList(buf.nioBuffers()).iterator();
       doWrite(buffers, writePos, handler);

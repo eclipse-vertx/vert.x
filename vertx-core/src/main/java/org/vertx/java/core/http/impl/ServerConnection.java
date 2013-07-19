@@ -26,6 +26,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.ReferenceCountUtil;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
@@ -33,6 +34,7 @@ import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.net.impl.ConnectionBase;
 import org.vertx.java.core.net.impl.DefaultNetSocket;
 import org.vertx.java.core.net.impl.VertxNetHandler;
 
@@ -45,7 +47,7 @@ import java.util.Queue;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class ServerConnection extends AbstractConnection {
+class ServerConnection extends ConnectionBase {
 
   private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
 
@@ -85,10 +87,6 @@ class ServerConnection extends AbstractConnection {
     if (paused || (msg instanceof HttpRequest && pendingResponse != null) || !pending.isEmpty()) {
       //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
       pending.add(msg);
-
-      // retain the msg as we will process it later
-      ReferenceCountUtil.retain(msg);
-
       if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
         //We pause the channel too, to prevent the queue growing too large, but we don't do this
         //until the queue reaches a certain size, to avoid pausing it too often
@@ -113,17 +111,17 @@ class ServerConnection extends AbstractConnection {
     this.wsHandler = handler;
   }
 
-  //Close without checking thread - used when server is closed
-  void internalClose() {
-    channel.close();
-  }
-
   String getServerOrigin() {
     return serverOrigin;
   }
 
+
+  Vertx vertx() {
+    return vertx;
+  }
+
   @Override
-  ChannelFuture write(Object obj) {
+  public ChannelFuture write(Object obj) {
     ChannelFuture future = lastWriteFuture = super.write(obj);
     return future;
   }
@@ -133,9 +131,14 @@ class ServerConnection extends AbstractConnection {
     Map<Channel, DefaultNetSocket> connectionMap = new HashMap<Channel, DefaultNetSocket>(1);
     connectionMap.put(channel, socket);
 
+    // Flush out all pending data
+    endReadAndFlush();
+
     // remove old http handlers and replace the old handler with one that handle plain sockets
     channel.pipeline().remove("httpDecoder");
-    channel.pipeline().remove("chunkedWriter");
+    if (channel.pipeline().get("chunkedWriter") != null) {
+      channel.pipeline().remove("chunkedWriter");
+    }
     channel.pipeline().replace("handler", "handler", new VertxNetHandler(server.vertx, connectionMap) {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
@@ -149,6 +152,15 @@ class ServerConnection extends AbstractConnection {
         // remove from the real mapping
         server.connectionMap.remove(channel);
         super.channelInactive(chctx);
+      }
+
+      @Override
+      public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
+        if (msg instanceof HttpContent) {
+          ReferenceCountUtil.release(msg);
+          return;
+        }
+        super.channelRead(chctx, msg);
       }
     });
 
@@ -320,8 +332,6 @@ class ServerConnection extends AbstractConnection {
             Object msg = pending.poll();
             if (msg != null) {
               processMessage(msg);
-              // release the resource now as we processed it
-              ReferenceCountUtil.release(msg);
             }
             if (channelPaused && pending.isEmpty()) {
               //Resume the actual channel

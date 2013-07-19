@@ -39,7 +39,7 @@ public class ModuleClassLoader extends URLClassLoader {
     this.loadResourcesFromTCCL = loadResourcesFromTCCL;
   }
 
-  public void addParent(ModuleReference parent) {
+  public synchronized void addParent(ModuleReference parent) {
     parents.add(parent);
   }
 
@@ -58,27 +58,11 @@ public class ModuleClassLoader extends URLClassLoader {
   protected synchronized Class<?> loadClass(String name, boolean resolve)
       throws ClassNotFoundException {
 
-    // We always try with the platform classloader first
-    // This is important when running tests in an IDE where we load the module classes from the platform classpath
-    // not the module classpath
-    // If those classes are loaded from the platform cp and they reference other classes which are normally in the
-    // module, but also exist on the platform cp, then they will get loaded from the platform cp too.
-    // You can then get in a situation where two versions of the classes are present - one loaded from the pcl
-    // and the other from the mcl
-    // An example would be the class org.vertx.groovy.platform.Verticle which is in the groovy lang module but also
-    // present on the pcl during IDE work.
-
-
-    Class<?> c;
-    try {
+    Class<?> c = doLoadClass(name);
+    if (c == null) {
       c = platformClassLoader.loadClass(name);
-    } catch (ClassNotFoundException e) {
-      // And then we try this class loader
-      c = doLoadClass(name);
-      if (c == null) {
-        throw new ClassNotFoundException(name);
-      }
     }
+
     if (resolve) {
       resolveClass(c);
     }
@@ -146,7 +130,7 @@ public class ModuleClassLoader extends URLClassLoader {
   }
 
   @Override
-  public URL getResource(String name) {
+  public synchronized URL getResource(String name) {
     return doGetResource(name, true);
   }
 
@@ -178,6 +162,9 @@ public class ModuleClassLoader extends URLClassLoader {
         // to ask the TCCL to load the class - the TCCL should always be set to the moduleclassloader of the actual
         // module doing the import
         if (considerTCCL && loadResourcesFromTCCL) {
+          // We need to clear wallked as otherwise can get a circular dependency error when there's no
+          // real circuular dependency
+          walked.clear();
           ModuleClassLoader tccl = (ModuleClassLoader)Thread.currentThread().getContextClassLoader();
           if (tccl != this) {
             // Call with considerTCCL = false to prevent infinite recursion
@@ -205,7 +192,7 @@ public class ModuleClassLoader extends URLClassLoader {
   }
 
   @Override
-  public Enumeration<URL> getResources(String name) throws IOException {
+  public synchronized Enumeration<URL> getResources(String name) throws IOException {
     final List<URL> totURLs = new ArrayList<>();
 
     // Local ones

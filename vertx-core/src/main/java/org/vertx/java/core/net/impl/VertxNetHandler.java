@@ -19,7 +19,6 @@ package org.vertx.java.core.net.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.MessageList;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
@@ -29,59 +28,50 @@ import java.util.Map;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public class VertxNetHandler extends VertxInboundHandler<DefaultNetSocket> {
+public class VertxNetHandler extends VertxHandler<DefaultNetSocket> {
 
   public VertxNetHandler(VertxInternal vertx, Map<Channel, DefaultNetSocket> connectionMap) {
     super(vertx, connectionMap);
   }
 
-
   @Override
-  public void messageReceived(ChannelHandlerContext chctx, final MessageList<Object> msgs) {
-    final DefaultNetSocket sock = connectionMap.get(chctx.channel());
+  protected void channelRead(final DefaultNetSocket sock, final DefaultContext context, ChannelHandlerContext chctx, Object msg) throws Exception {
     if (sock != null) {
+      final ByteBuf buf = (ByteBuf) msg;
       Channel ch = chctx.channel();
-      final DefaultContext context = getContext(sock);
-      final MessageList<ByteBuf> cast = msgs.cast();
       // We need to do this since it's possible the server is being used from a worker context
       if (context.isOnCorrectWorker(ch.eventLoop())) {
         try {
           vertx.setContext(context);
-          context.startExecute();
-
-          for (int i = 0; i < cast.size(); i++) {
-            try {
-              sock.handleDataReceived(new Buffer(cast.get(i)));
-            } catch (Throwable t) {
-              context.reportException(t);
-            }
+          try {
+            sock.handleDataReceived(new Buffer(buf));
+          } catch (Throwable t) {
+            context.reportException(t);
           }
         } catch (Throwable t) {
           context.reportException(t);
-        } finally {
-          msgs.releaseAllAndRecycle();
-          context.endExecute();
         }
       } else {
         context.execute(new Runnable() {
           public void run() {
             try {
-              for (int i = 0; i < cast.size(); i++) {
-                try {
-                  sock.handleDataReceived(new Buffer(cast.get(i)));
-                } catch (Throwable t) {
-                  context.reportException(t);
-                }
-              }
-            } finally {
-              msgs.releaseAllAndRecycle();
+              sock.handleDataReceived(new Buffer(buf));
+            } catch (Throwable t) {
+              context.reportException(t);
             }
           }
         });
       }
     } else {
       // just discard
-      msgs.releaseAllAndRecycle();
     }
+  }
+
+  @Override
+  protected Object safeObject(Object msg) throws Exception {
+    if (msg instanceof ByteBuf) {
+      return safeBuffer((ByteBuf) msg);
+    }
+    return msg;
   }
 }

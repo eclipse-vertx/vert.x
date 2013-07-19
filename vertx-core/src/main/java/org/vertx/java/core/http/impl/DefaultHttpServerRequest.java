@@ -79,7 +79,8 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   private Handler<HttpServerFileUpload> uploadHandler;
   private Handler<Void> endHandler;
   private MultiMap attributes;
-  private final HttpPostRequestDecoder decoder;
+  private HttpPostRequestDecoder decoder;
+  private boolean isURLEncoded;
 
   DefaultHttpServerRequest(final ServerConnection conn,
                            final HttpRequest request,
@@ -87,23 +88,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
     this.conn = conn;
     this.request = request;
     this.response = response;
-
-    String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
-    if (contentType != null) {
-      HttpMethod method = request.getMethod();
-      if ((contentType.toLowerCase().startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA)
-                  || contentType.toLowerCase().startsWith(HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED)) &&
-                  (method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.PATCH))) {
-        decoder = new HttpPostRequestDecoder(new DataFactory(), request);
-      } else {
-        decoder = null;
-      }
-    } else {
-      decoder = null;
-    }
-
   }
-
 
   @Override
   public HttpVersion version() {
@@ -270,7 +255,29 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
 
   @Override
   public MultiMap formAttributes() {
+    if (decoder == null) {
+      throw new IllegalStateException("Call expectMultiPart(true) before request body is received to receive form attributes");
+    }
     return attributes();
+  }
+
+  @Override
+  public HttpServerRequest expectMultiPart(boolean expect) {
+    if (expect) {
+      String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
+      if (contentType != null) {
+        HttpMethod method = request.getMethod();
+        String lowerCaseContentType = contentType.toLowerCase();
+        isURLEncoded = lowerCaseContentType.startsWith(HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
+        if ((lowerCaseContentType.startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA) || isURLEncoded) &&
+            (method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.PATCH))) {
+          decoder = new HttpPostRequestDecoder(new DataFactory(), request);
+        }
+      }
+    } else {
+      decoder = null;
+    }
+    return this;
   }
 
   void handleData(Buffer data) {
@@ -291,23 +298,24 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
     if (decoder != null) {
       try {
         decoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
-      } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
-        handleException(e);
-      }
-      try {
         while (decoder.hasNext()) {
           InterfaceHttpData data = decoder.next();
           if (data instanceof Attribute) {
             Attribute attr = (Attribute) data;
             try {
-              attributes().add(urlDecode(attr.getName()), urlDecode(attr.getValue()));
-            } catch (IOException e) {
+              if (isURLEncoded) {
+                attributes().add(urlDecode(attr.getName()), urlDecode(attr.getValue()));
+              } else {
+                attributes().add(attr.getName(), attr.getValue());
+              }
+            } catch (Exception e) {
               // Will never happen, anyway handle it somehow just in case
               handleException(e);
             }
           }
-          ReferenceCountUtil.release(data);
         }
+      } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
+        handleException(e);
       } catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
         // ignore this as it is expected
       } finally {
@@ -506,6 +514,11 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
       throw new UnsupportedOperationException();
     }
 
+    //@Override
+    public FileUpload duplicate() {
+      throw new UnsupportedOperationException();
+    }
+
     @Override
     public FileUpload retain() {
       return this;
@@ -557,9 +570,9 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
     @Override
     public FileUpload createFileUpload(HttpRequest httpRequest, String name, String filename, String contentType, String contentTransferEncoding, Charset charset, long size) {
       DefaultHttpServerFileUpload upload = new DefaultHttpServerFileUpload(conn.vertx(), DefaultHttpServerRequest.this, name, filename, contentType, contentTransferEncoding, charset,
-                                                        size);
+          size);
       NettyFileUpload nettyUpload = new NettyFileUpload(upload, name, filename, contentType,
-                                                                 contentTransferEncoding, charset);
+          contentTransferEncoding, charset);
       if (uploadHandler != null) {
         uploadHandler.handle(upload);
       }

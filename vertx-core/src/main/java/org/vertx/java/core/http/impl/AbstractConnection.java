@@ -18,7 +18,6 @@ package org.vertx.java.core.http.impl;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.MessageList;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
@@ -29,43 +28,11 @@ import org.vertx.java.core.net.impl.ConnectionBase;
  */
 public abstract class AbstractConnection extends ConnectionBase {
 
-  private MessageList<Object> messages;
-
   protected AbstractConnection(VertxInternal vertx, Channel channel, DefaultContext context) {
     super(vertx, channel, context);
   }
 
-  void queueForWrite(final Object obj) {
-    if (messages == null) {
-      messages = MessageList.newInstance();
-    }
-    messages.add(obj);
-  }
-
-  ChannelFuture write(Object obj) {
-    if (channel.isOpen()) {
-      if (messages != null) {
-        messages.add(obj);
-        MessageList<Object> messages = this.messages;
-        this.messages = null;
-        return channel.write(messages);
-      } else {
-        return channel.write(obj);
-      }
-    } else {
-      return null;
-    }
-  }
-
   Vertx vertx() {
     return vertx;
-  }
-
-  @Override
-  protected void handleClosed() {
-    super.handleClosed();
-    if (messages != null) {
-      messages.releaseAllAndRecycle();
-    }
   }
 }

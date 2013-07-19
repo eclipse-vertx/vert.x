@@ -44,6 +44,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   private static final String DEFAULT_AUTH_ADDRESS = "vertx.basicauthmanager.authorise";
   private static final long DEFAULT_AUTH_TIMEOUT = 5 * 60 * 1000;
   private static final long DEFAULT_REPLY_TIMEOUT = 30 * 1000;
+  private static final long PING_INTERVAL = 10 * 1000;
 
   private final Map<String, Auth> authCache = new HashMap<>();
   private final Map<SockJSSocket, Set<String>> sockAuths = new HashMap<>();
@@ -55,6 +56,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   private final EventBus eb;
   private final Set<String> acceptedReplyAddresses = new HashSet<>();
   private final Map<String, Pattern> compiledREs = new HashMap<>();
+  private final Map<SockJSSocket, PingInfo> pingInfos = new HashMap<>();
   private EventBusBridgeHook hook;
 
   private static List<JsonObject> convertArray(JsonArray permitted) {
@@ -112,6 +114,10 @@ public class EventBusBridge implements Handler<SockJSSocket> {
         }
       }
     }
+    PingInfo pingInfo = pingInfos.remove(sock);
+    if (pingInfo != null) {
+      vertx.cancelTimer(pingInfo.timerID);
+    }
     handleSocketClosed(sock);
   }
 
@@ -119,19 +125,25 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     JsonObject msg = new JsonObject(data.toString());
 
     String type = getMandatoryString(msg, "type");
-    String address = getMandatoryString(msg, "address");
     switch (type) {
       case "send":
+        String address = getMandatoryString(msg, "address");
         internalHandleSendOrPub(sock, true, msg, address);
         break;
       case "publish":
+        address = getMandatoryString(msg, "address");
         internalHandleSendOrPub(sock, false, msg, address);
         break;
       case "register":
+        address = getMandatoryString(msg, "address");
         internalHandleRegister(sock, address, handlers);
         break;
       case "unregister":
+        address = getMandatoryString(msg, "address");
         internalHandleUnregister(sock, address, handlers);
+        break;
+      case "ping":
+        internalHandlePing(sock);
         break;
       default:
         throw new IllegalStateException("Invalid type: " + type);
@@ -177,6 +189,13 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     }
   }
 
+  private void internalHandlePing(final SockJSSocket sock) {
+    PingInfo info = pingInfos.get(sock);
+    if (info != null) {
+      info.lastPing = System.currentTimeMillis();
+    }
+  }
+
   public void handle(final SockJSSocket sock) {
 
     final Map<String, Handler<Message>> handlers = new HashMap<>();
@@ -192,6 +211,19 @@ public class EventBusBridge implements Handler<SockJSSocket> {
         handleSocketData(sock, data, handlers);
       }
     });
+
+    // Start a checker to check for pings
+    final PingInfo pingInfo = new PingInfo();
+    pingInfo.timerID = vertx.setPeriodic(PING_INTERVAL, new Handler<Long>() {
+      @Override
+      public void handle(Long id) {
+        if (System.currentTimeMillis() - pingInfo.lastPing >= PING_INTERVAL) {
+          // We didn't receive a ping in time so close the socket
+          sock.close();
+        }
+      }
+    });
+    pingInfos.put(sock, pingInfo);
   }
 
   private void checkAddAccceptedReplyAddress(final String replyAddress) {
@@ -515,5 +547,9 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     return true;
   }
 
+  private static final class PingInfo {
+    long lastPing;
+    long timerID;
+  }
 
 }

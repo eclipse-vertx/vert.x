@@ -54,6 +54,11 @@ public class DefaultVertx implements VertxInternal {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultVertx.class);
 
+  static {
+    // Netty resource leak detection has a performance overhead and we do not need it in Vert.x
+    System.setProperty("io.netty.noResourceLeakDetection", "true");
+  }
+
   private final FileSystem fileSystem = getFileSystem();
   private final EventBus eventBus;
   private final SharedData sharedData = new SharedData();
