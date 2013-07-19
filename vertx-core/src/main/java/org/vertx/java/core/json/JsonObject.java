@@ -115,7 +115,7 @@ public class JsonObject extends JsonElement {
     return this;
   }
 
-  public boolean contains(String fieldName) {
+  public boolean containsField(String fieldName) {
     return map.containsKey(fieldName);
   }
 
@@ -137,6 +137,9 @@ public class JsonObject extends JsonElement {
 
   public JsonElement getElement(String fieldName) {
     Object element = map.get(fieldName);
+    if (element == null) {
+      return null;
+    }
     if (element instanceof Map<?,?>){
       return getObject(fieldName);
     }

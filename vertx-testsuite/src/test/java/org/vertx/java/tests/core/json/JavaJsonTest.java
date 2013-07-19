@@ -253,4 +253,108 @@ public class JavaJsonTest extends TestBase {
 
     assertEquals(array1, array2);
   }
+
+  @Test
+  public void testJsonObjectContainsKey() {
+    JsonObject json = new JsonObject();
+
+    assertFalse(json.containsField("foo"));
+
+    // reverse the test
+
+    json.putString("foo", "bar");
+
+    assertTrue(json.containsField("foo"));
+  }
+
+  @Test
+  public void testJsonObjectPutNullArray() {
+    JsonObject json = new JsonObject();
+
+    try {
+      json.putArray("foo", null);
+    } catch (Throwable t) {
+      fail("Should not throw exception");
+    }
+
+    assertNull(json.getArray("foo"));
+  }
+
+  @Test
+  public void testJsonObjectPutNullElement() {
+    JsonObject json = new JsonObject();
+
+    try {
+      json.putElement("foo", null);
+    } catch (Throwable t) {
+      fail("Should not throw exception");
+    }
+
+    assertNull(json.getElement("foo"));
+  }
+
+  @Test
+  public void testJsonObjectPutNullBinary() {
+    JsonObject json = new JsonObject();
+
+    try {
+      json.putBinary("foo", null);
+    } catch (Throwable t) {
+      fail("Should not throw exception");
+    }
+
+    assertNull(json.getBinary("foo"));
+  }
+
+  @Test
+  public void testJsonArrayAddNullObject() {
+    JsonArray json = new JsonArray();
+
+    try {
+      json.addObject(null);
+    } catch (Throwable t) {
+      fail("Should not throw exception");
+    }
+
+    assertNull(json.get(0));
+  }
+
+  @Test
+  public void testJsonArrayAddNullArray() {
+    JsonArray json = new JsonArray();
+
+    try {
+      json.addArray(null);
+    } catch (Throwable t) {
+      fail("Should not throw exception");
+    }
+
+    assertNull(json.get(0));
+  }
+
+  @Test
+  public void testJsonArrayAddNullElement() {
+    JsonArray json = new JsonArray();
+
+    try {
+      json.addElement(null);
+    } catch (Throwable t) {
+      fail("Should not throw exception");
+    }
+
+    assertNull(json.get(0));
+  }
+
+  @Test
+  public void testJsonArrayAddNullBinary() {
+    JsonArray json = new JsonArray();
+
+    try {
+      json.addBinary(null);
+    } catch (Throwable t) {
+      fail("Should not throw exception");
+    }
+
+    assertNull(json.get(0));
+  }
 }
