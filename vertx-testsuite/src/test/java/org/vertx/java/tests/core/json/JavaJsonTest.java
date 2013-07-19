@@ -278,6 +278,13 @@ public class JavaJsonTest extends TestBase {
     }
 
     assertNull(json.getArray("foo"));
+
+    // test serialization
+    assertEquals("{\"foo\":null}", json.encode());
+
+    // assert parsing
+    json = new JsonObject("{\"foo\":null}");
+    assertNull(json.getArray("foo"));
   }
 
   @Test
@@ -290,6 +297,13 @@ public class JavaJsonTest extends TestBase {
       fail("Should not throw exception");
     }
 
+    assertNull(json.getElement("foo"));
+
+    // test serialization
+    assertEquals("{\"foo\":null}", json.encode());
+
+    // assert parsing
+    json = new JsonObject("{\"foo\":null}");
     assertNull(json.getElement("foo"));
   }
 
@@ -304,6 +318,13 @@ public class JavaJsonTest extends TestBase {
     }
 
     assertNull(json.getBinary("foo"));
+
+    // test serialization
+    assertEquals("{\"foo\":null}", json.encode());
+
+    // assert parsing
+    json = new JsonObject("{\"foo\":null}");
+    assertNull(json.getBinary("foo"));
   }
 
   @Test
@@ -316,6 +337,13 @@ public class JavaJsonTest extends TestBase {
       fail("Should not throw exception");
     }
 
+    assertNull(json.get(0));
+
+    // test serialization
+    assertEquals("[null]", json.encode());
+
+    // assert parsing
+    json = new JsonArray("[null]");
     assertNull(json.get(0));
   }
 
