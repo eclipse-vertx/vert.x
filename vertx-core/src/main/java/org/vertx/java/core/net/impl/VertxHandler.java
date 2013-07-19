@@ -91,10 +91,10 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   @Override
   public void exceptionCaught(ChannelHandlerContext chctx, final Throwable t) throws Exception {
     final Channel ch = chctx.channel();
-    // Don't remove the sock at this point, or the handleClosed won't be called when channelInactive is called!
-    final C sock = connectionMap.get(ch);
-    if (sock != null) {
-      DefaultContext context = getContext(sock);
+    // Don't remove the connection at this point, or the handleClosed won't be called when channelInactive is called!
+    final C connection = connectionMap.get(ch);
+    if (connection != null) {
+      DefaultContext context = getContext(connection);
       context.execute(ch.eventLoop(), new Runnable() {
         public void run() {
           try {
@@ -103,7 +103,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
             }
           } catch (Throwable ignore) {
           }
-          sock.handleException(t);
+          connection.handleException(t);
         }
       });
     } else {
@@ -115,12 +115,12 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   @Override
   public void channelInactive(ChannelHandlerContext chctx) throws Exception {
     final Channel ch = chctx.channel();
-    final C sock = connectionMap.remove(ch);
-    if (sock != null) {
-      DefaultContext context = getContext(sock);
+    final C connection = connectionMap.remove(ch);
+    if (connection != null) {
+      DefaultContext context = getContext(connection);
       context.execute(ch.eventLoop(), new Runnable() {
         public void run() {
-          sock.handleClosed();
+          connection.handleClosed();
         }
       });
     }
@@ -142,24 +142,24 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   @Override
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
     final Object message = safeObject(msg);
-    final C sock = connectionMap.get(chctx.channel());
+    final C connection = connectionMap.get(chctx.channel());
 
     DefaultContext context;
-    if (sock != null) {
-      context = getContext(sock);
+    if (connection != null) {
+      context = getContext(connection);
       // Only mark start read if we are on the correct worker. This is needed as while we are in read this may will
       // delay flushes, which is a problem when we are no on the correct worker. This is mainly a problem as
       // WorkerVerticle may block.
       if (context.isOnCorrectWorker(chctx.channel().eventLoop())) {
-        sock.startRead();
+        connection.startRead();
       }
     } else {
       context = null;
     }
-    channelRead(sock, context, chctx, message);
+    channelRead(connection, context, chctx, message);
   }
 
-  protected abstract void channelRead(C socket, DefaultContext context, ChannelHandlerContext chctx, Object msg) throws Exception;
+  protected abstract void channelRead(C connection, DefaultContext context, ChannelHandlerContext chctx, Object msg) throws Exception;
 
   protected abstract Object safeObject(Object msg) throws Exception;
 }
