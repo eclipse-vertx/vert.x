@@ -445,19 +445,29 @@ public class TestClient extends TestClientBase {
     });
   }
 
+  private void doListen(final int count, final NetServer server) {
+    server.listen(0, new AsyncResultHandler<NetServer>() {
+      @Override
+      public void handle(AsyncResult<NetServer> ar) {
+        if (ar.succeeded()) {
+          tu.azzert(server.port() > 1024);
+          tu.testComplete();
+        } else {
+          // Sometimes this can fail on CI so we retry a few times
+          if (count > 0) {
+            doListen(count - 1, server);
+          }
+        }
+      }
+    });
+  }
+
   public void testListenOnWildcardPort() {
     final NetServer server = vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(NetSocket sock) {
       }
     });
-    server.listen(0, new AsyncResultHandler<NetServer>() {
-      @Override
-      public void handle(AsyncResult<NetServer> ar) {
-        tu.azzert(ar.succeeded());
-        tu.azzert(server.port() > 1024);
-        tu.testComplete();
-      }
-    });
+    doListen(5, server);
   }
 
   public void testClientCloseHandlersCloseFromClient() {
