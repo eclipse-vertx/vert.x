@@ -19,7 +19,6 @@ package org.vertx.java.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.multipart.*;
-import io.netty.util.ReferenceCountUtil;
 import org.vertx.java.core.VertxException;
 import org.vertx.java.core.impl.CaseInsensitiveMultiMap;
 import org.vertx.java.core.Handler;
@@ -206,7 +205,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
       try {
         URI uri = juri();
         String scheme = uri.getScheme();
-        if (scheme != null && (scheme.startsWith("http:") || scheme.startsWith("https"))) {
+        if (scheme != null && (scheme.startsWith("http"))) {
           absoluteURI = uri;
         } else {
           absoluteURI = new URI(conn.getServerOrigin() + uri);
