@@ -205,7 +205,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
       try {
         URI uri = juri();
         String scheme = uri.getScheme();
-        if (scheme != null && (scheme.startsWith("http"))) {
+        if (scheme != null && (scheme.equals("http") || scheme.equals("https"))) {
           absoluteURI = uri;
         } else {
           absoluteURI = new URI(conn.getServerOrigin() + uri);
