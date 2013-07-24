@@ -18,7 +18,6 @@ package org.vertx.java.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.FixedRecvByteBufAllocator;
 import org.vertx.java.core.file.impl.PathAdjuster;
@@ -62,7 +61,7 @@ public class TCPSSLHelper {
   private boolean tcpKeepAlive = defaults.isTcpKeepAlive();
   private boolean reuseAddress = defaults.isReuseAddress();
   private int soLinger = defaults.getSoLinger();
-  private int trafficClass = defaults.getTrafficClass();
+  private int trafficClass = -1;
   private int acceptBackLog = 1024;
   private int connectTimeout = 60000;
   private boolean usePooledBuffers;
@@ -93,7 +92,9 @@ public class TCPSSLHelper {
     }
 
     bootstrap.option(ChannelOption.SO_LINGER, soLinger);
-    bootstrap.childOption(ChannelOption.IP_TOS, trafficClass);
+    if (trafficClass != -1) {
+      bootstrap.childOption(ChannelOption.IP_TOS, trafficClass);
+    }
     bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
 
     bootstrap.childOption(ChannelOption.SO_KEEPALIVE, tcpKeepAlive);
@@ -111,7 +112,9 @@ public class TCPSSLHelper {
       bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(tcpReceiveBufferSize));
     }
     bootstrap.option(ChannelOption.SO_LINGER, soLinger);
-    bootstrap.option(ChannelOption.IP_TOS, trafficClass);
+    if (trafficClass != -1) {
+      bootstrap.option(ChannelOption.IP_TOS, trafficClass);
+    }
     bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout);
     bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
     bootstrap.option(ChannelOption.SO_KEEPALIVE, tcpKeepAlive);
