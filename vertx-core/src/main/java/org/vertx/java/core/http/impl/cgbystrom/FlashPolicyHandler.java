@@ -33,13 +33,13 @@ import java.util.List;
  */
 public class FlashPolicyHandler extends ByteToMessageDecoder {
   private static final String XML = "<cross-domain-policy><allow-access-from domain=\"*\" to-ports=\"*\" /></cross-domain-policy>";
-  private ByteBuf policyResponse = Unpooled.copiedBuffer(XML, CharsetUtil.UTF_8);
+  private final ByteBuf policyResponse;
 
   /**
    * Creates a handler allowing access from any domain and any port
    */
   public FlashPolicyHandler() {
-    super();
+    this(Unpooled.copiedBuffer(XML, CharsetUtil.UTF_8));
   }
 
   /**
