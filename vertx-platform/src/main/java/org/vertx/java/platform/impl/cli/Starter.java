@@ -106,9 +106,12 @@ public class Starter {
           Throwable cause = res.cause();
           if (cause instanceof VertxException) {
             VertxException ve = (VertxException)cause;
-            log.error(ve.getMessage(), ve);
+            log.error(ve.getMessage());
+            if (ve.getCause() != null) {
+              log.error(ve.getCause());
+            }
           } else {
-            log.error(cause, cause);
+            log.error(cause);
           }
         } else {
           log.trace(successMessage);
