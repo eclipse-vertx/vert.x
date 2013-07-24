@@ -1,0 +1,1 @@
+We keep this module without the -mod suffix to test backward compatibility

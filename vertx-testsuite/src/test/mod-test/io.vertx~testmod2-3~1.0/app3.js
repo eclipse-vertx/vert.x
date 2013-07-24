@@ -1,0 +1,4 @@
+function blaarg() {
+  return "elephants";
+}
+
