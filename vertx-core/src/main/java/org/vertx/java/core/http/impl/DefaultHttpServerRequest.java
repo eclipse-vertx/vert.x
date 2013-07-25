@@ -62,7 +62,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   private String uri;
   private String path;
   private String query;
-  private URI juri;
+  //private URI juri;
 
   private Handler<Buffer> dataHandler;
   private Handler<Throwable> exceptionHandler;
@@ -121,7 +121,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   @Override
   public String path() {
     if (path == null) {
-      path = juri().getPath();
+      path = UriParser.path(uri());
     }
     return path;
   }
@@ -129,7 +129,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   @Override
   public String query() {
     if (query == null) {
-      query = juri().getQuery();
+      query = UriParser.query(uri());
     }
     return query;
   }
@@ -201,7 +201,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   public URI absoluteURI() {
     if (absoluteURI == null) {
       try {
-        URI uri = juri();
+        URI uri = new URI(uri());
         String scheme = uri.getScheme();
         if (scheme != null && (scheme.equals("http") || scheme.equals("https"))) {
           absoluteURI = uri;
@@ -328,17 +328,6 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
     if (exceptionHandler != null) {
       exceptionHandler.handle(t);
     }
-  }
-
-  private URI juri() {
-    if (juri == null) {
-      try {
-        juri = new URI(uri());
-      } catch (URISyntaxException e) {
-        throw new IllegalArgumentException("Invalid uri " + uri());
-      }
-    }
-    return juri;
   }
 
   private MultiMap attributes() {
