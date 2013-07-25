@@ -1,5 +1,8 @@
 package org.vertx.java.core;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+
 /*
  * Copyright 2013 Red Hat, Inc.
  *
@@ -60,10 +63,42 @@ public interface SSLSupport<T> {
   String getKeyStorePassword();
 
   /**
+   * Set the array of custom trust managers. This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}
+   * has been set to {@code true}.<p>
+   *
+   * Custom trust managers allow to verify peer identity when it's not possible to do it using standard Java Key Store.<p>
+   *
+   * Only the first instance of a particular trust manager implementation type is used when verifying peer identity.
+   * Custom trust managers specified by this method will have higher priority than TrustManagers loaded from Java Key Store
+   * as specified by {@link #setTrustStorePath(java.lang.String) }.
+   *
+   * @return A reference to this, so multiple invocations can be chained together.
+   *
+   * @see SSLContext#init(javax.net.ssl.KeyManager[], javax.net.ssl.TrustManager[], java.security.SecureRandom)
+   * @see #setTrustStorePath(java.lang.String)
+   */
+  T setTrustManagers(TrustManager[] trustManagerFactory);
+
+  /**
+   *
+   * @return The array of custom trust managers
+   */
+  TrustManager[] getTrustManagers();
+
+  /**
    * Set the path to the SSL trust store. This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}
    * has been set to {@code true}.<p>
+   *
    * The trust store is a standard Java Key Store, and should contain the certificates of any servers that the client trusts.
+   *
+   * Only the first instance of a particular trust manager implementation type is used when verifying peer identity.
+   * Custom trust managers specified by {@link #setTrustManagers(javax.net.ssl.TrustManager[]) } method will have higher priority
+   * than TrustManagers loaded from Java Key Store as specified by this method.
+   *
    * @return A reference to this, so multiple invocations can be chained together.
+   *
+   * @see SSLContext#init(javax.net.ssl.KeyManager[], javax.net.ssl.TrustManager[], java.security.SecureRandom)
+   * @see #setTrustManagers(javax.net.ssl.TrustManager[])
    */
   T setTrustStorePath(String path);
 

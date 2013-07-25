@@ -35,6 +35,7 @@ import javax.net.ssl.SSLEngine;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.net.ssl.TrustManager;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -228,6 +229,11 @@ public class DefaultNetClient implements NetClient {
   }
 
   @Override
+  public TrustManager[] getTrustManagers() {
+    return tcpHelper.getTrustManagers();
+  }
+
+  @Override
   public String getTrustStorePath() {
     return tcpHelper.getTrustStorePath();
   }
@@ -260,6 +266,13 @@ public class DefaultNetClient implements NetClient {
   public NetClient setKeyStorePassword(String pwd) {
     checkConfigurable();
     tcpHelper.setKeyStorePassword(pwd);
+    return this;
+  }
+
+  @Override
+  public NetClient setTrustManagers(TrustManager[] trustManagers) {
+    checkConfigurable();
+    tcpHelper.setTrustManagers(trustManagers);
     return this;
   }
 

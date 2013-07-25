@@ -43,6 +43,7 @@ import javax.net.ssl.SSLParameters;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.net.ssl.TrustManager;
 
 public class DefaultHttpClient implements HttpClient {
 
@@ -294,6 +295,15 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   @Override
+  public HttpClient setTrustManagers(TrustManager[] trustManagers) {
+    checkClosed();
+    checkConfigurable();
+    tcpHelper.setTrustManagers(trustManagers);
+    return this;
+  }
+
+
+  @Override
   public DefaultHttpClient setTrustStorePath(String path) {
     checkClosed();
     checkConfigurable();
@@ -457,6 +467,12 @@ public class DefaultHttpClient implements HttpClient {
   public String getKeyStorePassword() {
     checkClosed();
     return tcpHelper.getKeyStorePassword();
+  }
+
+  @Override
+  public TrustManager[] getTrustManagers() {
+    checkClosed();
+    return tcpHelper.getTrustManagers();
   }
 
   @Override
