@@ -39,7 +39,7 @@ final class UriParser {
       i  = uri.indexOf('/', i + 3);
     }
 
-   int queryStart = uri.indexOf(i, '?');
+   int queryStart = uri.indexOf('?', i);
    if (queryStart == -1) {
      queryStart = uri.length();
    }
