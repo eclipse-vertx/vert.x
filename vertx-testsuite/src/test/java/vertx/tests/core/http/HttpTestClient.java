@@ -511,7 +511,7 @@ public class HttpTestClient extends TestClientBase {
       @Override
       public void handle(AsyncResult<HttpServer> ar) {
         tu.azzert(ar.succeeded());
-        getRequest(specificMethod, method, "some-uri", new Handler<HttpClientResponse>() {
+        getRequest(specificMethod, method, "/some-uri?foo=bar", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
             tu.testComplete();
@@ -522,6 +522,7 @@ public class HttpTestClient extends TestClientBase {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
+        tu.azzert(req.path().equals("/some-uri"), "Expected [/some-uri] but got [" + req.path() + "]");
         tu.azzert(req.method().equals(method));
         req.response().end();
       }
