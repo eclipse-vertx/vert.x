@@ -31,6 +31,7 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.http.HttpServer;
@@ -122,17 +123,32 @@ public class DefaultHttpServer implements HttpServer, Closeable {
   }
 
   public HttpServer listen(int port) {
-    listen(port, "0.0.0.0", null);
+    listen(port, "0.0.0.0", (Handler<AsyncResult<HttpServer>>) null);
     return this;
   }
 
   public HttpServer listen(int port, String host) {
-    listen(port, host, null);
+    listen(port, host, (Handler<AsyncResult<HttpServer>>) null);
     return this;
   }
 
   public HttpServer listen(int port, Handler<AsyncResult<HttpServer>> listenHandler) {
     listen(port, "0.0.0.0", listenHandler);
+    return this;
+  }
+
+  public HttpServer listen(int port, String host, final Future<Void> future) {
+    listen(port, host, new Handler<AsyncResult<HttpServer>>() {
+      @Override
+      public void handle(final AsyncResult<HttpServer> event) {
+        if (event.succeeded()) {
+          future.setResult(null);
+        }
+        else {
+          future.setFailure(event.cause());
+        }
+      }
+    });
     return this;
   }
 

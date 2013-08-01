@@ -17,6 +17,7 @@
 package org.vertx.java.core.http;
 
 import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.ServerSSLSupport;
 import org.vertx.java.core.ServerTCPSupport;
@@ -87,7 +88,13 @@ public interface HttpServer extends ServerSSLSupport<HttpServer>, ServerTCPSuppo
    *
    */
   HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler);
-  
+
+  /**
+   * Tell the server to start listening on port {@code port} and hostname or ip address given by {@code host}.
+   *
+   */
+  HttpServer listen(int port, String host, Future<Void> future);
+
   /**
    * Close the server. Any open HTTP connections will be closed.
    */
