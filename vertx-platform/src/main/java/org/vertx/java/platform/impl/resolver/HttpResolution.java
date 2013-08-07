@@ -219,7 +219,8 @@ public abstract class HttpResolution {
   }
 
   private static String getBasicAuth() {
-    if ((System.getProperty(HTTP_BASIC_AUTH_USER_PROP_NAME) != null) && (System.getProperty(HTTP_BASIC_AUTH_PASSWORD_PROP_NAME)  != null)) {
+    if ((System.getProperty(HTTP_BASIC_AUTH_USER_PROP_NAME) != null)
+        && (System.getProperty(HTTP_BASIC_AUTH_PASSWORD_PROP_NAME)  != null)) {
       String authinfo = new StringBuilder(System.getProperty(HTTP_BASIC_AUTH_USER_PROP_NAME))
           .append(":").append(System.getProperty(HTTP_BASIC_AUTH_PASSWORD_PROP_NAME)).toString();
       return Base64.encodeBytes(authinfo.getBytes());
