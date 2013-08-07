@@ -47,8 +47,8 @@ public abstract class HttpResolution {
   private static final String HTTP_PROXY_HOST_PROP_NAME = "http.proxyHost";
   private static final String HTTP_PROXY_PORT_PROP_NAME = "http.proxyPort";
 
-  private static final String HTTP_BASIC_AUTH_USER_PROP_NAME ="auth.user";
-  private static final String HTTP_BASIC_AUTH_PASSWORD_PROP_NAME ="auth.pass";
+  private static final String HTTP_BASIC_AUTH_USER_PROP_NAME ="http.authUser";
+  private static final String HTTP_BASIC_AUTH_PASSWORD_PROP_NAME ="http.authPass";
 
   public static boolean suppressDownloadCounter = true;
 
