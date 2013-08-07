@@ -7,6 +7,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
+import org.vertx.java.core.json.impl.Base64;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.platform.impl.ModuleIdentifier;
@@ -20,6 +21,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
 
 /*
  * Copyright 2013 Red Hat, Inc.
@@ -45,6 +47,9 @@ public abstract class HttpResolution {
   private static final String HTTP_PROXY_HOST_PROP_NAME = "http.proxyHost";
   private static final String HTTP_PROXY_PORT_PROP_NAME = "http.proxyPort";
 
+  private static final String HTTP_BASIC_AUTH_USER_PROP_NAME ="http.authUser";
+  private static final String HTTP_BASIC_AUTH_PASSWORD_PROP_NAME ="http.authPass";
+
   public static boolean suppressDownloadCounter = true;
 
   private final CountDownLatch latch = new CountDownLatch(1);
@@ -57,6 +62,7 @@ public abstract class HttpResolution {
   protected final int proxyPort = getProxyPort();
   private final Map<Integer, Handler<HttpClientResponse>> handlers = new HashMap<>();
   protected HttpClient client;
+
   private boolean result;
 
   public boolean waitResult() {
@@ -110,12 +116,19 @@ public abstract class HttpResolution {
       // We use an absolute URI
       uri = new StringBuilder("http://").append(host).append(":").append(port).append(uri).toString();
     }
+
     HttpClientRequest req = client.get(uri, respHandler);
     if (proxyHost != null){
       req.putHeader("host", proxyHost);
     } else {
       req.putHeader("host", host);
     }
+
+    if (getBasicAuth() != null) {
+      log.debug("Using HTTP Basic Authorization");
+      req.putHeader("Authorization","Basic " + getBasicAuth());
+    }
+
     req.putHeader("user-agent", "Vert.x Module Installer");
     req.end();
   }
@@ -203,6 +216,16 @@ public abstract class HttpResolution {
 
   private static String getProxyHost() {
     return System.getProperty(HTTP_PROXY_HOST_PROP_NAME);
+  }
+
+  private static String getBasicAuth() {
+    if ((System.getProperty(HTTP_BASIC_AUTH_USER_PROP_NAME) != null)
+        && (System.getProperty(HTTP_BASIC_AUTH_PASSWORD_PROP_NAME)  != null)) {
+      String authinfo = new StringBuilder(System.getProperty(HTTP_BASIC_AUTH_USER_PROP_NAME))
+          .append(":").append(System.getProperty(HTTP_BASIC_AUTH_PASSWORD_PROP_NAME)).toString();
+      return Base64.encodeBytes(authinfo.getBytes());
+    }
+    return null;
   }
 
   private static int getProxyPort() {
