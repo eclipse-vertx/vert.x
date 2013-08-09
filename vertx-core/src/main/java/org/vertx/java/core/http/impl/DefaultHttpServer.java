@@ -37,7 +37,6 @@ import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.cgbystrom.FlashPolicyHandler;
-import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.*;
 import org.vertx.java.core.logging.Logger;
@@ -623,8 +622,9 @@ public class DefaultHttpServer implements HttpServer, Closeable {
             }
             break;
           case CLOSE:
-            //Echo back close frame
-            ch.writeAndFlush(new DefaultWebSocketFrame(WebSocketFrame.FrameType.CLOSE));
+            // Echo back close frame and close the connection once it was written.
+            // This is specified in the WebSockets RFC 6455 Section  5.4.1
+            ch.writeAndFlush(wsFrame).addListener(ChannelFutureListener.CLOSE);
         }
       } else if (msg instanceof HttpContent) {
         if (wsRequest != null) {
