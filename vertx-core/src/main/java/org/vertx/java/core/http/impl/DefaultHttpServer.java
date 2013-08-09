@@ -664,8 +664,6 @@ public class DefaultHttpServer implements HttpServer, Closeable {
         WebSocketServerHandshakerFactory.sendUnsupportedWebSocketVersionResponse(ch);
         return;
       }
-      //ch.pipeline().addBefore(ctx.name(), "websocketConverter", WebSocketConvertHandler.INSTANCE);
-
       HandlerHolder<ServerWebSocket> firstHandler = null;
       HandlerHolder<ServerWebSocket> wsHandler = wsHandlerManager.chooseHandler(ch.eventLoop());
       while (true) {
