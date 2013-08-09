@@ -540,6 +540,8 @@ public class DefaultHttpServer implements HttpServer, Closeable {
   }
 
   public class ServerHandler extends VertxHttpHandler<ServerConnection> {
+    private boolean closeFrameSent;
+
     public ServerHandler() {
       super(vertx, DefaultHttpServer.this.connectionMap);
     }
@@ -627,9 +629,12 @@ public class DefaultHttpServer implements HttpServer, Closeable {
             ch.writeAndFlush(new DefaultWebSocketFrame(WebSocketFrame.FrameType.PONG, wsFrame.getBinaryData()));
             break;
           case CLOSE:
-            // Echo back close frame and close the connection once it was written.
-            // This is specified in the WebSockets RFC 6455 Section  5.4.1
-            ch.writeAndFlush(wsFrame).addListener(ChannelFutureListener.CLOSE);
+            if (!closeFrameSent) {
+              // Echo back close frame and close the connection once it was written.
+              // This is specified in the WebSockets RFC 6455 Section  5.4.1
+              ch.writeAndFlush(wsFrame).addListener(ChannelFutureListener.CLOSE);
+              closeFrameSent = true;
+            }
             break;
         }
       } else if (msg instanceof HttpContent) {
