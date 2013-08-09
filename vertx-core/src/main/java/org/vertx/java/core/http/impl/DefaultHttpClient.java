@@ -32,6 +32,7 @@ import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
+import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.*;
 import org.vertx.java.core.net.impl.TCPSSLHelper;
@@ -635,6 +636,8 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   private class ClientHandler extends VertxHttpHandler<ClientConnection> {
+    private boolean closeFrameSent;
+
     public ClientHandler() {
       super(vertx, DefaultHttpClient.this.connectionMap);
     }
@@ -667,7 +670,24 @@ public class DefaultHttpClient implements HttpClient {
         valid = true;
       } else if (msg instanceof WebSocketFrame) {
         WebSocketFrame frame = (WebSocketFrame) msg;
-        conn.handleWsFrame(frame);
+        switch (frame.getType()) {
+          case BINARY:
+          case TEXT:
+            conn.handleWsFrame(frame);
+            break;
+          case PING:
+            // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
+            ctx.writeAndFlush(new DefaultWebSocketFrame(WebSocketFrame.FrameType.PONG, frame.getBinaryData()));
+            break;
+          case CLOSE:
+            if (!closeFrameSent) {
+              // Echo back close frame and close the connection once it was written.
+              // This is specified in the WebSockets RFC 6455 Section  5.4.1
+              ctx.writeAndFlush(frame).addListener(ChannelFutureListener.CLOSE);
+              closeFrameSent = true;
+            }
+            break;
+        }
         valid = true;
       }
       if (!valid) {
