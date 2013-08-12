@@ -135,6 +135,10 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
     return Json.encode(this.list);
   }
 
+  public String encodePrettily() throws EncodeException {
+    return Json.encodePrettily(this.list);
+  }
+
   public JsonArray copy() {
     return new JsonArray(encode());
   }

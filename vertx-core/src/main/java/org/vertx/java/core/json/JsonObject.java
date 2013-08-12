@@ -250,6 +250,10 @@ public class JsonObject extends JsonElement {
     return Json.encode(this.map);
   }
 
+  public String encodePrettily() {
+    return Json.encodePrettily(this.map);
+  }
+
   public JsonObject copy() {
     return new JsonObject(encode());
   }
