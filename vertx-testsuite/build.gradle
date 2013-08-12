@@ -21,6 +21,9 @@ dependencies {
   compile project(':vertx-platform')
 }
 
+// We don't produce a jar
+jar.enabled = false
+assert configurations.archives.artifacts.removeAll { it.file == jar.archivePath }
 
 // Cleanup the modules placed in the mod-test directory during the test suite
 task cleanTestTmpModules(type: Delete) {
