@@ -397,9 +397,12 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   }
 
   private void prepareHeaders() {
-    request.headers().remove(HttpHeaders.Names.TRANSFER_ENCODING);
+    HttpHeaders headers = request.headers();
+    headers.remove(HttpHeaders.Names.TRANSFER_ENCODING);
     if (!raw) {
-      request.headers().set(HttpHeaders.Names.HOST, conn.hostHeader);
+      if (!headers.contains(HttpHeaders.Names.HOST)) {
+        request.headers().set(HttpHeaders.Names.HOST, conn.hostHeader);
+      }
       if (chunked) {
         HttpHeaders.setTransferEncodingChunked(request);
       }

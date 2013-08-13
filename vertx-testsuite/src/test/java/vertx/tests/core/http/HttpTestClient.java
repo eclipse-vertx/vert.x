@@ -2935,6 +2935,31 @@ public class HttpTestClient extends TestClientBase {
     }, handler);
   }
 
+  public void testHostHeaderOverridePossible() {
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
+      @Override
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
+
+        HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+            tu.testComplete();
+          }
+        });
+        req.putHeader("Host", "localhost:4444");
+        req.end();
+      }
+    };
+    startServer(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest req) {
+        tu.checkThread();
+        tu.azzert(req.headers().get("Host").equals("localhost:4444"));
+
+        req.response().end();
+      }
+    }, handler);
+  }
   // -------------------------------------------------------------------------------------------
 
   private String generateQueryString(Map<String, String> params, char delim) {

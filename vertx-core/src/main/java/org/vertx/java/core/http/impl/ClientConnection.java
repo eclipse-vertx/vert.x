@@ -72,7 +72,11 @@ class ClientConnection extends ConnectionBase {
     this.ssl = ssl;
     this.host = host;
     this.port = port;
-    this.hostHeader = host + ':' + port;
+    if ((port == 80 && !ssl) || (port == 443 && ssl)) {
+      this.hostHeader = host;
+    } else {
+      this.hostHeader = host + ':' + port;
+    }
     this.keepAlive = keepAlive;
   }
 
