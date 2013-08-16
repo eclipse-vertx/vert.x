@@ -16,6 +16,7 @@
 
 package org.vertx.java.core;
 
+import org.vertx.java.core.dns.DnsClient;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.http.HttpClient;
@@ -74,6 +75,11 @@ public interface Vertx {
    * The event bus
    */
   EventBus eventBus();
+
+  /**
+   * Return the {@link DnsClient}
+   */
+  DnsClient dnsClient();
 
   /**
    * The shared data object

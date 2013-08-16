@@ -21,6 +21,8 @@ import io.netty.channel.EventLoopGroup;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.dns.DnsClient;
+import org.vertx.java.core.dns.impl.DefaultDnsClient;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager;
@@ -62,6 +64,8 @@ public class DefaultVertx implements VertxInternal {
   private final FileSystem fileSystem = getFileSystem();
   private final EventBus eventBus;
   private final SharedData sharedData = new SharedData();
+  // TODO: Fix me
+  private final DnsClient dnsClient = new DefaultDnsClient(this, "8.8.8.8");
 
   private ExecutorService backgroundPool = VertxExecutorFactory.workerPool("vert.x-worker-thread-");
   private final OrderedExecutorFactory orderedFact = new OrderedExecutorFactory(backgroundPool);
@@ -217,6 +221,11 @@ public class DefaultVertx implements VertxInternal {
 
   public EventLoopContext createEventLoopContext() {
     return new EventLoopContext(this, orderedFact.getExecutor());
+  }
+
+  @Override
+  public DnsClient dnsClient() {
+    return dnsClient;
   }
 
   private long scheduleTimeout(final DefaultContext context, final Handler<Long> handler, long delay, boolean periodic) {
