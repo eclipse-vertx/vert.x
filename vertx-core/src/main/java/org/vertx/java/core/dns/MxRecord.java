@@ -16,7 +16,7 @@
 package org.vertx.java.core.dns;
 
 /**
- * Represent a MX record which was resolved for a domain.
+ * Represent a Mail-Exchange-Record (MX) which was resolved for a domain.
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
