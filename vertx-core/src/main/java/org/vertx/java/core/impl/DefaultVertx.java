@@ -65,8 +65,6 @@ public class DefaultVertx implements VertxInternal {
   private final FileSystem fileSystem = getFileSystem();
   private final EventBus eventBus;
   private final SharedData sharedData = new SharedData();
-  // TODO: Fix me
-  private final DnsClient dnsClient;
 
   private ExecutorService backgroundPool = VertxExecutorFactory.workerPool("vert.x-worker-thread-");
   private final OrderedExecutorFactory orderedFact = new OrderedExecutorFactory(backgroundPool);
@@ -81,7 +79,6 @@ public class DefaultVertx implements VertxInternal {
 
   public DefaultVertx() {
     this.eventBus = new DefaultEventBus(this);
-    this.dnsClient = createDnsClient();
   }
 
   public DefaultVertx(String hostname) {
@@ -90,12 +87,6 @@ public class DefaultVertx implements VertxInternal {
 
   public DefaultVertx(int port, String hostname) {
     this.eventBus = new DefaultEventBus(this, port, hostname, new HazelcastClusterManager(this));
-    this.dnsClient = createDnsClient();
-  }
-
-  private DnsClient createDnsClient() {
-    // OpenDNS servers
-    return new DefaultDnsClient(this, new InetSocketAddress("8.8.8.8", 53), new InetSocketAddress("8.8.4.4", 53));
   }
 
   /**
@@ -232,8 +223,8 @@ public class DefaultVertx implements VertxInternal {
   }
 
   @Override
-  public DnsClient dnsClient() {
-    return dnsClient;
+  public DnsClient createDnsClient(InetSocketAddress... dnsServers) {
+    return new DefaultDnsClient(this, dnsServers);
   }
 
   private long scheduleTimeout(final DefaultContext context, final Handler<Long> handler, long delay, boolean periodic) {

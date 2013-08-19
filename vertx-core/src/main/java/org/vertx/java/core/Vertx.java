@@ -26,6 +26,8 @@ import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
 
+import java.net.InetSocketAddress;
+
 /**
  * The control centre of the Vert.x Core API.<p>
  * You should normally only use a single instance of this class throughout your application. If you are running in the
@@ -79,7 +81,7 @@ public interface Vertx {
   /**
    * Return the {@link DnsClient}
    */
-  DnsClient dnsClient();
+  DnsClient createDnsClient(InetSocketAddress... dnsServers);
 
   /**
    * The shared data object
