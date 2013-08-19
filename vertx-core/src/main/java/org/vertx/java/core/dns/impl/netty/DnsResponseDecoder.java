@@ -169,9 +169,8 @@ public class DnsResponseDecoder extends MessageToMessageDecoder<DatagramPacket> 
             response.addQuestion(decodeQuestion(buf));
         }
         if (header.getResponseCode() != 0) {
-            System.err.println("Encountered error decoding DNS response for domain \""
-                    + response.getQuestions().get(0).name() + "\": "
-                    + DnsResponseCode.valueOf(header.getResponseCode()));
+            // TODO: Provide patch upstream to Netty
+            return response;
         }
         for (int i = 0; i < header.getReadAnswers(); i++) {
             response.addAnswer(decodeResource(buf, allocator));
