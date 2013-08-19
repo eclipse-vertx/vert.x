@@ -19,6 +19,7 @@ import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
 
+import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
@@ -192,7 +193,7 @@ public class WrappedVertx implements VertxInternal {
   }
 
   @Override
-  public DnsClient dnsClient() {
-    return vertx.dnsClient();
+  public DnsClient createDnsClient(InetSocketAddress... dnsServers) {
+    return vertx.createDnsClient(dnsServers);
   }
 }
