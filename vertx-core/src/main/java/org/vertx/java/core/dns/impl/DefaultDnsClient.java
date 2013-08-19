@@ -22,6 +22,8 @@ import io.netty.channel.socket.nio.NioDatagramChannel;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.dns.DnsClient;
+import org.vertx.java.core.dns.DnsResponseCode;
+import org.vertx.java.core.dns.DnsException;
 import org.vertx.java.core.dns.MxRecord;
 import org.vertx.java.core.dns.impl.netty.*;
 import org.vertx.java.core.dns.impl.netty.decoder.RecordDecoderFactory;
@@ -34,9 +36,7 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -45,13 +45,15 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class DefaultDnsClient implements DnsClient {
 
   private final Bootstrap bootstrap;
-  private final InetSocketAddress[] dnsServers;
+  private final List<InetSocketAddress> dnsServers;
 
   public DefaultDnsClient(VertxInternal vertx, InetSocketAddress... dnsServers) {
     if (dnsServers == null || dnsServers.length == 0) {
       throw new IllegalArgumentException("Need at least one default DNS Server");
     }
-    this.dnsServers = dnsServers;
+
+    // use LinkedList as we will traverse it all the time
+    this.dnsServers = new LinkedList<>(Arrays.asList(dnsServers));
     DefaultContext actualCtx = vertx.getOrCreateContext();
 
     bootstrap = new Bootstrap();
@@ -61,7 +63,6 @@ public final class DefaultDnsClient implements DnsClient {
       @Override
       protected void initChannel(DatagramChannel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
-
         pipeline.addLast(new DnsQueryEncoder());
         pipeline.addLast(new DnsResponseDecoder());
       }
@@ -154,65 +155,64 @@ public final class DefaultDnsClient implements DnsClient {
   private void lookup(final String name, final Handler handler, final int... types) {
     final DefaultFutureResult result = new DefaultFutureResult<>();
     result.setHandler(handler);
+    lookup(dnsServers.iterator(), name, result, types);
+  }
 
-    bootstrap.connect(chooseDnsServer()).addListener(new ChannelFutureListener() {
+  @SuppressWarnings("unchecked")
+  private void lookup(final Iterator<InetSocketAddress> dns, final String name, final DefaultFutureResult result, final int... types) {
+    bootstrap.connect(dns.next()).addListener(new RetryChannelFutureListener(dns, name, result, types) {
       @Override
-      public void operationComplete(ChannelFuture future) throws Exception {
-        if (!future.isSuccess()) {
-          if (!result.complete()) {
-            result.setFailure(future.cause());
-          }
-        } else {
-          DnsQuery query = new DnsQuery(ThreadLocalRandom.current().nextInt());
-          for (int type: types) {
-            query.addQuestion(new DnsQuestion(name, type));
-          }
-          future.channel().writeAndFlush(query).addListener(new ChannelFutureListener() {
-            @Override
-            public void operationComplete(ChannelFuture future) throws Exception {
-              if (!future.isSuccess()) {
-                if (!result.complete()) {
-                  result.setFailure(future.cause());
-                }
-              } else {
-                // write was successful add the handler now which will handle the responses
-                future.channel().pipeline().addLast(new SimpleChannelInboundHandler<DnsResponse>() {
-                  @Override
-                  protected void channelRead0(ChannelHandlerContext ctx, DnsResponse msg) throws Exception {
-                    List<DnsResource> resources = msg.getAnswers();
-                    List<Object> records = new ArrayList<>(resources.size());
-                    for (DnsResource resource : msg.getAnswers()) {
-                      Object record = RecordDecoderFactory.getFactory().decode(resource.type(), msg, resource);
-                      records.add(record);
-                    }
-
-                    if (!result.complete()) {
-                      result.setResult(records);
-                    }
-                    ctx.close();
-                  }
-
-                  @Override
-                  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-                    if (!result.complete()) {
-                      result.setFailure(cause);
-                    }
-                    ctx.close();
-                  }
-                });
-              }
-            }
-          });
+      public void onSuccess(ChannelFuture future) throws Exception {
+        DnsQuery query = new DnsQuery(ThreadLocalRandom.current().nextInt());
+        for (int type: types) {
+          query.addQuestion(new DnsQuestion(name, type));
         }
+        future.channel().writeAndFlush(query).addListener(new RetryChannelFutureListener(dns, name, result, types) {
+          @Override
+          public void onSuccess(ChannelFuture future) throws Exception {
+            future.channel().pipeline().addLast(new SimpleChannelInboundHandler<DnsResponse>() {
+              @Override
+              protected void channelRead0(ChannelHandlerContext ctx, DnsResponse msg) throws Exception {
+                DnsResponseCode code = DnsResponseCode.valueOf(msg.getHeader().getResponseCode());
+
+                if (code == DnsResponseCode.NOERROR) {
+                  List<DnsResource> resources = msg.getAnswers();
+                  List<Object> records = new ArrayList<>(resources.size());
+                  for (DnsResource resource : msg.getAnswers()) {
+                    Object record = RecordDecoderFactory.getFactory().decode(resource.type(), msg, resource);
+                    records.add(record);
+                  }
+
+                  setResult(result, records);
+                } else {
+                  setResult(result, new DnsException(code));
+                }
+                ctx.close();
+              }
+
+              @Override
+              public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+                setResult(result, cause);
+                ctx.close();
+              }
+            });
+          }
+        });
       }
     });
   }
 
-  private InetSocketAddress chooseDnsServer() {
-    // TODO: Round-robin ?
-    return dnsServers[0];
+  @SuppressWarnings("unchecked")
+  private static void setResult(DefaultFutureResult r, Object result) {
+    if (r.complete()) {
+      return;
+    }
+    if (result instanceof Throwable) {
+      r.setFailure((Throwable) result);
+    } else {
+      r.setResult(result);
+    }
   }
-
 
   private static final class HandlerAdapter<T> implements Handler<AsyncResult<List<T>>> {
     private final Handler handler;
@@ -235,5 +235,38 @@ public final class DefaultDnsClient implements DnsClient {
         }
       }
     }
+  }
+
+  private abstract class RetryChannelFutureListener implements ChannelFutureListener {
+    private final Iterator<InetSocketAddress> dns;
+    private final String name;
+    private final DefaultFutureResult result;
+    private final int[] types;
+
+    RetryChannelFutureListener(final Iterator<InetSocketAddress> dns, final String name, final DefaultFutureResult result, final int... types) {
+      this.dns = dns;
+      this.name = name;
+      this.result = result;
+      this.types = types;
+    }
+
+    @Override
+    public final void operationComplete(ChannelFuture future) throws Exception {
+      if (!future.isSuccess()) {
+        if (!result.complete()) {
+          if (dns.hasNext()) {
+            // try next dns server
+            lookup(dns, name, result, types);
+          } else {
+            // TODO: maybe use a special exception ?
+            result.setFailure(future.cause());
+          }
+        }
+      } else {
+        onSuccess(future);
+      }
+    }
+
+    protected abstract void onSuccess(ChannelFuture future) throws Exception;
   }
 }
