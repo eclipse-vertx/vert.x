@@ -68,31 +68,34 @@ public interface DnsClient {
   DnsClient lookup6(String name, Handler<AsyncResult<Inet6Address>> handler);
 
   /**
-   * Try to lookup all A (ipv4) records for the given name.
+   * Try to resolve all A (ipv4) records for the given name.
+   *
+   *
    *
    * @param name      The name to resolve
-   * @param handler   the {@link Handler} to notify with the {@link AsyncResult}. The {@link AsyncResult} will get
-   *                  notified with a {@link List} that contains all the resolved {@link Inet4Address}es. If non was found
-   *                  and empty {@link List} will be used.
+   * @param handler   the {@link org.vertx.java.core.Handler} to notify with the {@link org.vertx.java.core.AsyncResult}. The {@link org.vertx.java.core.AsyncResult} will get
+   *                  notified with a {@link java.util.List} that contains all the resolved {@link java.net.Inet4Address}es. If non was found
+   *                  and empty {@link java.util.List} will be used.
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
-  DnsClient lookupARecords(String name, Handler<AsyncResult<List<Inet4Address>>> handler);
+  DnsClient resolveA(String name, Handler<AsyncResult<List<Inet4Address>>> handler);
 
   /**
-   * Try to lookup all AAAA (ipv6) records for the given name.
+   * Try to resolve all AAAA (ipv6) records for the given name.
+   *
    *
    * @param name      The name to resolve
-   * @param handler   the {@link Handler} to notify with the {@link AsyncResult}. The {@link AsyncResult} will get
-   *                  notified with a {@link List} that contains all the resolved {@link Inet6Address}es. If non was found
-   *                  and empty {@link List} will be used.
+   * @param handler   the {@link org.vertx.java.core.Handler} to notify with the {@link org.vertx.java.core.AsyncResult}. The {@link org.vertx.java.core.AsyncResult} will get
+   *                  notified with a {@link java.util.List} that contains all the resolved {@link java.net.Inet6Address}es. If non was found
+   *                  and empty {@link java.util.List} will be used.
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
-  DnsClient lookupAAAARecords(String name, Handler<AsyncResult<List<Inet6Address>>> handler);
+  DnsClient resolveAAAA(String name, Handler<AsyncResult<List<Inet6Address>>> handler);
 
   /**
-   * Try to lookup the CNAME record for the given name.
+   * Try to resolve the CNAME record for the given name.
    *
    * @param name      The name to resolve the CNAME for
    * @param handler   the {@link Handler} to notify with the {@link AsyncResult}. The {@link AsyncResult} will get
@@ -101,22 +104,23 @@ public interface DnsClient {
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
-  DnsClient lookupCName(String name, Handler<AsyncResult<String>> handler);
+  DnsClient resolveCNAME(String name, Handler<AsyncResult<String>> handler);
 
   /**
-   * Try to lookup the MX records for the given name.
+   * Try to resolve the MX records for the given name.
+   *
    *
    * @param name      The name for which the MX records should be resolved
-   * @param handler   the {@link Handler} to notify with the {@link AsyncResult}. The {@link AsyncResult} will get
-   *                  notified with a List that contains all resolved {@link MxRecord}s, sorted by their
-   *                  {@link MxRecord#priority()}. If non was found it will get notified with an empty {@link List}
+   * @param handler   the {@link org.vertx.java.core.Handler} to notify with the {@link org.vertx.java.core.AsyncResult}. The {@link org.vertx.java.core.AsyncResult} will get
+   *                  notified with a List that contains all resolved {@link org.vertx.java.core.dns.MxRecord}s, sorted by their
+   *                  {@link org.vertx.java.core.dns.MxRecord#priority()}. If non was found it will get notified with an empty {@link java.util.List}
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
-  DnsClient lookupMXRecords(String name, Handler<AsyncResult<List<MxRecord>>> handler);
+  DnsClient resolveMX(String name, Handler<AsyncResult<List<MxRecord>>> handler);
 
   /**
-   * Try to lookup the TXT records for the given name.
+   * Try to resolve the TXT records for the given name.
    *
    * @param name      The name for which the TXT records should be resolved
    * @param handler   the {@link Handler} to notify with the {@link AsyncResult}. The {@link AsyncResult} will get
@@ -125,10 +129,10 @@ public interface DnsClient {
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
-  DnsClient lookupTXTRecords(String name, Handler<AsyncResult<List<String>>> handler);
+  DnsClient resolveTXT(String name, Handler<AsyncResult<List<String>>> handler);
 
   /**
-   * Try to lookup the PTR record for the given name.
+   * Try to resolve the PTR record for the given name.
    *
    * @param name      The name to resolve the PTR for
    * @param handler   the {@link Handler} to notify with the {@link AsyncResult}. The {@link AsyncResult} will get
@@ -137,5 +141,5 @@ public interface DnsClient {
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
-  DnsClient lookupPTRRecord(String name, Handler<AsyncResult<String>> handler);
+  DnsClient resolvePTR(String name, Handler<AsyncResult<String>> handler);
 }
