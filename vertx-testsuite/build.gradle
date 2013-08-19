@@ -18,7 +18,8 @@ apply from: "$rootDir/gradle/maven.gradle"
 
 dependencies {
 	compile project(':vertx-core')
-  compile project(':vertx-platform')
+  	compile project(':vertx-platform')
+        compile "org.apache.directory.server:apacheds-protocol-dns:$apacheDsVersion"
 }
 
 // We don't produce a jar

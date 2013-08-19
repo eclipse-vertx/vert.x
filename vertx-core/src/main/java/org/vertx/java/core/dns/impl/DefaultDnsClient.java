@@ -122,8 +122,22 @@ public final class DefaultDnsClient implements DnsClient {
   }
 
   @Override
-  public DnsClient resolveTXT(String name, Handler<AsyncResult<List<String>>> handler) {
-    lookup(name, handler, DnsEntry.TYPE_TXT);
+  public DnsClient resolveTXT(String name, final Handler<AsyncResult<List<String>>> handler) {
+    lookup(name, new Handler<AsyncResult>() {
+      @Override
+      public void handle(AsyncResult event) {
+        if (event.failed()) {
+          handler.handle(event);
+        } else {
+          List<String> txts = new ArrayList<>();
+          List<List<String>> records = (List<List<String>>) event.result();
+          for (List<String> txt: records) {
+            txts.addAll(txt);
+          }
+          handler.handle(new DefaultFutureResult(txts));
+        }
+      }
+    }, DnsEntry.TYPE_TXT);
     return this;
   }
 
