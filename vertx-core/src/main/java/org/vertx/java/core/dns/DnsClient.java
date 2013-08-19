@@ -25,26 +25,117 @@ import java.net.InetAddress;
 import java.util.List;
 
 /**
+ * Provides a way to asynchronous lookup informations from DNS-Servers.
+ *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public interface DnsClient {
 
-  DnsClient lookup(String record, Handler<AsyncResult<InetAddress>> handler);
+  /**
+   * Try to lookup the A (ipv4) or AAAA (ipv6) record for the given name. The first found will be used.
+   *
+   * @param name      The name to resolve
+   * @param handler   the {@link Handler} to notify with the {@link AsyncResult}. The {@link AsyncResult} will get
+   *                  notified with the resolved {@link InetAddress} if a record was found. If non was found it will
+   *                  get notifed with {@code null}.
+   *                  If an error accours it will get failed.
+   * @return          itself for method-chaining.
+   */
+  DnsClient lookup(String name, Handler<AsyncResult<InetAddress>> handler);
 
-  DnsClient lookup4(String record, Handler<AsyncResult<Inet4Address>> handler);
+  /**
+   * Try to lookup the A (ipv4) record for the given name. The first found will be used.
+   *
+   * @param name      The name to resolve
+   * @param handler   the {@link Handler} to notify with the {@link AsyncResult}. The {@link AsyncResult} will get
+   *                  notified with the resolved {@link Inet4Address} if a record was found. If non was found it will
+   *                  get notifed with {@code null}.
+   *                  If an error accours it will get failed.
+   * @return          itself for method-chaining.
+   */
+  DnsClient lookup4(String name, Handler<AsyncResult<Inet4Address>> handler);
 
-  DnsClient lookup6(String record, Handler<AsyncResult<Inet6Address>> handler);
+  /**
+   * Try to lookup the AAAA (ipv6) record for the given name. The first found will be used.
+   *
+   * @param name      The name to resolve
+   * @param handler   the {@link Handler} to notify with the {@link AsyncResult}. The {@link AsyncResult} will get
+   *                  notified with the resolved {@link Inet6Address} if a record was found. If non was found it will
+   *                  get notifed with {@code null}.
+   *                  If an error accours it will get failed.
+   * @return          itself for method-chaining.
+   */
+  DnsClient lookup6(String name, Handler<AsyncResult<Inet6Address>> handler);
 
-  DnsClient lookupARecords(String record, Handler<AsyncResult<List<InetAddress>>> handle);
+  /**
+   * Try to lookup all A (ipv4) records for the given name.
+   *
+   * @param name      The name to resolve
+   * @param handler   the {@link Handler} to notify with the {@link AsyncResult}. The {@link AsyncResult} will get
+   *                  notified with a {@link List} that contains all the resolved {@link Inet4Address}es. If non was found
+   *                  and empty {@link List} will be used.
+   *                  If an error accours it will get failed.
+   * @return          itself for method-chaining.
+   */
+  DnsClient lookupARecords(String name, Handler<AsyncResult<List<Inet4Address>>> handler);
 
-  DnsClient lookupCName(String record, Handler<AsyncResult<String>> handler);
+  /**
+   * Try to lookup all AAAA (ipv6) records for the given name.
+   *
+   * @param name      The name to resolve
+   * @param handler   the {@link Handler} to notify with the {@link AsyncResult}. The {@link AsyncResult} will get
+   *                  notified with a {@link List} that contains all the resolved {@link Inet6Address}es. If non was found
+   *                  and empty {@link List} will be used.
+   *                  If an error accours it will get failed.
+   * @return          itself for method-chaining.
+   */
+  DnsClient lookupAAAARecords(String name, Handler<AsyncResult<List<Inet6Address>>> handler);
 
-  DnsClient lookupMXRecords(String record, Handler<AsyncResult<List<MxRecord>>> handler);
+  /**
+   * Try to lookup the CNAME record for the given name.
+   *
+   * @param name      The name to resolve the CNAME for
+   * @param handler   the {@link Handler} to notify with the {@link AsyncResult}. The {@link AsyncResult} will get
+   *                  notified with the resolved {@link String} if a record was found. If non was found it will
+   *                  get notified with {@code null}.
+   *                  If an error accours it will get failed.
+   * @return          itself for method-chaining.
+   */
+  DnsClient lookupCName(String name, Handler<AsyncResult<String>> handler);
 
-  DnsClient lookupTXTRecords(String record, Handler<AsyncResult<List<String>>> handler);
+  /**
+   * Try to lookup the MX records for the given name.
+   *
+   * @param name      The name for which the MX records should be resolved
+   * @param handler   the {@link Handler} to notify with the {@link AsyncResult}. The {@link AsyncResult} will get
+   *                  notified with a List that contains all resolived {@link MxRecord}s. If non was found it will
+   *                  get notified with an empty {@link List}
+   *                  If an error accours it will get failed.
+   * @return          itself for method-chaining.
+   */
+  DnsClient lookupMXRecords(String name, Handler<AsyncResult<List<MxRecord>>> handler);
 
-  DnsClient lookupPTRRecord(String record, Handler<AsyncResult<String>> handler);
+  /**
+   * Try to lookup the TXT records for the given name.
+   *
+   * @param name      The name for which the TXT records should be resolved
+   * @param handler   the {@link Handler} to notify with the {@link AsyncResult}. The {@link AsyncResult} will get
+   *                  notified with a List that contains all resolved {@link String}s. If non was found it will
+   *                  get notified with an empty {@link List}
+   *                  If an error accours it will get failed.
+   * @return          itself for method-chaining.
+   */
+  DnsClient lookupTXTRecords(String name, Handler<AsyncResult<List<String>>> handler);
 
-  DnsClient lookupAAAARecords(String record, Handler<AsyncResult<List<InetAddress>>> handler);
-
+  /**
+   * Try to lookup the PTR record for the given name.
+   *
+   * @param name      The name to resolve the PTR for
+   * @param handler   the {@link Handler} to notify with the {@link AsyncResult}. The {@link AsyncResult} will get
+   *                  notified with the resolved {@link String} if a record was found. If non was found it will
+   *                  get notified with {@code null}.
+   *                  If an error accours it will get failed.
+   * @return          itself for method-chaining.
+   */
+  DnsClient lookupPTRRecord(String name, Handler<AsyncResult<String>> handler);
 }

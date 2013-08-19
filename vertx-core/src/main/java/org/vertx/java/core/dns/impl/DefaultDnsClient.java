@@ -69,52 +69,52 @@ public final class DefaultDnsClient implements DnsClient {
 
   @SuppressWarnings("unchecked")
   @Override
-  public DnsClient lookup4(String record, final Handler<AsyncResult<Inet4Address>> handler) {
+  public DnsClient lookup4(String name, final Handler<AsyncResult<Inet4Address>> handler) {
     final DefaultFutureResult result = new DefaultFutureResult<>();
     result.setHandler(new HandlerAdapter<Inet4Address>(handler));
-    lookup(record, result, DnsEntry.TYPE_A);
+    lookup(name, result, DnsEntry.TYPE_A);
     return this;
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public DnsClient lookup6(String record, final Handler<AsyncResult<Inet6Address>> handler) {
+  public DnsClient lookup6(String name, final Handler<AsyncResult<Inet6Address>> handler) {
     final DefaultFutureResult result = new DefaultFutureResult<>();
     result.setHandler(new HandlerAdapter<Inet6Address>(handler));
-    lookup(record, result, DnsEntry.TYPE_AAAA);
+    lookup(name, result, DnsEntry.TYPE_AAAA);
     return this;
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public DnsClient lookup(String record, final Handler<AsyncResult<InetAddress>> handler) {
+  public DnsClient lookup(String name, final Handler<AsyncResult<InetAddress>> handler) {
     final DefaultFutureResult result = new DefaultFutureResult<>();
     result.setHandler(new HandlerAdapter<InetAddress>(handler));
-    lookup(record, result, DnsEntry.TYPE_A, DnsEntry.TYPE_AAAA);
+    lookup(name, result, DnsEntry.TYPE_A, DnsEntry.TYPE_AAAA);
     return this;
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public DnsClient lookupARecords( String record, final Handler<AsyncResult<List<InetAddress>>> handler) {
+  public DnsClient lookupARecords(String name, final Handler<AsyncResult<List<Inet4Address>>> handler) {
     final DefaultFutureResult result = new DefaultFutureResult<>();
     result.setHandler(handler);
-    lookup(record, result, DnsEntry.TYPE_A);
+    lookup(name, result, DnsEntry.TYPE_A);
     return this;
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public DnsClient lookupCName(String record, Handler<AsyncResult<String>> handler) {
+  public DnsClient lookupCName(String name, Handler<AsyncResult<String>> handler) {
     final DefaultFutureResult result = new DefaultFutureResult<>();
     result.setHandler(handler);
-    lookup(record, result, DnsEntry.TYPE_CNAME);
+    lookup(name, result, DnsEntry.TYPE_CNAME);
     return this;
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public DnsClient lookupMXRecords( String record, final Handler<AsyncResult<List<MxRecord>>> handler) {
+  public DnsClient lookupMXRecords(String name, final Handler<AsyncResult<List<MxRecord>>> handler) {
     final DefaultFutureResult result = new DefaultFutureResult<>();
     result.setHandler(new Handler<AsyncResult>() {
       @Override
@@ -131,39 +131,39 @@ public final class DefaultDnsClient implements DnsClient {
         }
       }
     });
-    lookup(record, result, DnsEntry.TYPE_MX);
+    lookup(name, result, DnsEntry.TYPE_MX);
     return this;
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public DnsClient lookupTXTRecords(String record, Handler<AsyncResult<List<String>>> handler) {
+  public DnsClient lookupTXTRecords(String name, Handler<AsyncResult<List<String>>> handler) {
     final DefaultFutureResult result = new DefaultFutureResult<>();
     result.setHandler(handler);
-    lookup(record, result, DnsEntry.TYPE_TXT);
+    lookup(name, result, DnsEntry.TYPE_TXT);
     return this;
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public DnsClient lookupPTRRecord(String record, final Handler<AsyncResult<String>> handler) {
+  public DnsClient lookupPTRRecord(String name, final Handler<AsyncResult<String>> handler) {
     final DefaultFutureResult result = new DefaultFutureResult<>();
     result.setHandler(new HandlerAdapter<String>(handler));
-    lookup(record, result, DnsEntry.TYPE_PTR);
+    lookup(name, result, DnsEntry.TYPE_PTR);
     return this;
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public DnsClient lookupAAAARecords(String record, Handler<AsyncResult<List<InetAddress>>> handler) {
+  public DnsClient lookupAAAARecords(String name, Handler<AsyncResult<List<Inet6Address>>> handler) {
     final DefaultFutureResult result = new DefaultFutureResult<>();
     result.setHandler(handler);
-    lookup(record, result, DnsEntry.TYPE_AAAA);
+    lookup(name, result, DnsEntry.TYPE_AAAA);
     return this;
   }
 
   @SuppressWarnings("unchecked")
-  private void lookup(final String record, final DefaultFutureResult result, final int... types) {
+  private void lookup(final String name, final DefaultFutureResult result, final int... types) {
     bootstrap.connect(chooseDnsServer()).addListener(new ChannelFutureListener() {
       @Override
       public void operationComplete(ChannelFuture future) throws Exception {
@@ -174,7 +174,7 @@ public final class DefaultDnsClient implements DnsClient {
         } else {
           DnsQuery query = new DnsQuery(ThreadLocalRandom.current().nextInt());
           for (int type: types) {
-            query.addQuestion(new DnsQuestion(record, type));
+            query.addQuestion(new DnsQuestion(name, type));
           }
           future.channel().writeAndFlush(query).addListener(new ChannelFutureListener() {
             @Override
@@ -236,7 +236,7 @@ public final class DefaultDnsClient implements DnsClient {
       if (event.failed()) {
         handler.handle(event);
       } else {
-        List<T> result = (List<T>) event.result();
+        List<T> result = event.result();
         if (result.isEmpty()) {
           handler.handle(new DefaultFutureResult<>((T)null));
         } else {
