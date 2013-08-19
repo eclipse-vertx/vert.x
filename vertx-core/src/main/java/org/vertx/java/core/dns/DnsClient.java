@@ -142,4 +142,28 @@ public interface DnsClient {
    * @return          itself for method-chaining.
    */
   DnsClient resolvePTR(String name, Handler<AsyncResult<String>> handler);
+
+  /**
+   * Try to resolve the NS records for the given name.
+   *
+   * @param name      The name for which the NS records should be resolved
+   * @param handler   the {@link Handler} to notify with the {@link AsyncResult}. The {@link AsyncResult} will get
+   *                  notified with a List that contains all resolved {@link String}s. If non was found it will
+   *                  get notified with an empty {@link List}
+   *                  If an error accours it will get failed.
+   * @return          itself for method-chaining.
+   */
+  DnsClient resolveNS(String name, Handler<AsyncResult<List<String>>> handler);
+
+  /**
+   * Try to resolve the SRV records for the given name.
+   *
+   * @param name      The name for which the SRV records should be resolved
+   * @param handler   the {@link Handler} to notify with the {@link AsyncResult}. The {@link AsyncResult} will get
+   *                  notified with a List that contains all resolved {@link String}s. If non was found it will
+   *                  get notified with an empty {@link List}
+   *                  If an error accours it will get failed.
+   * @return          itself for method-chaining.
+   */
+  DnsClient resolveSRV(String name, Handler<AsyncResult<List<String>>> handler);
 }

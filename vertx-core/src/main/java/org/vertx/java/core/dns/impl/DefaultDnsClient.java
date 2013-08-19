@@ -138,6 +138,18 @@ public final class DefaultDnsClient implements DnsClient {
     return this;
   }
 
+  @Override
+  public DnsClient resolveNS(String name, Handler<AsyncResult<List<String>>> handler) {
+    lookup(name, handler, DnsEntry.TYPE_NS);
+    return this;
+  }
+
+  @Override
+  public DnsClient resolveSRV(String name, Handler<AsyncResult<List<String>>> handler) {
+    lookup(name, handler, DnsEntry.TYPE_SRV);
+    return this;
+  }
+
   @SuppressWarnings("unchecked")
   private void lookup(final String name, final Handler handler, final int... types) {
     final DefaultFutureResult result = new DefaultFutureResult<>();
