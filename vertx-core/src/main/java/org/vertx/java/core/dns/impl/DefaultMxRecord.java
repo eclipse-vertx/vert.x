@@ -22,7 +22,7 @@ import org.vertx.java.core.dns.impl.netty.decoder.record.MailExchangerRecord;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-final class DefaultMxRecord implements MxRecord {
+final class DefaultMxRecord implements MxRecord, Comparable<MxRecord> {
   private final MailExchangerRecord record;
 
   DefaultMxRecord(MailExchangerRecord record) {
@@ -42,5 +42,10 @@ final class DefaultMxRecord implements MxRecord {
   @Override
   public String toString() {
     return priority() + " " + name();
+  }
+
+  @Override
+  public int compareTo(MxRecord o) {
+    return Integer.valueOf(priority()).compareTo(o.priority());
   }
 }

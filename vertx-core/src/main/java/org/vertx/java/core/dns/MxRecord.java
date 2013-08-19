@@ -16,11 +16,19 @@
 package org.vertx.java.core.dns;
 
 /**
+ * Represent a MX record which was resolved for a domain.
+ *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public interface MxRecord {
 
+  /**
+   * The priority of the MX record.
+   */
   int priority();
 
+  /**
+   * The name of the MX record
+   */
   String name();
 }
