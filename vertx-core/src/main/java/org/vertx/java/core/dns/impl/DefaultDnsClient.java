@@ -33,6 +33,7 @@ import org.vertx.java.core.impl.VertxInternal;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -42,18 +43,15 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public final class DefaultDnsClient implements DnsClient {
 
-  private final VertxInternal vertx;
   private final Bootstrap bootstrap;
-  private final DefaultContext actualCtx;
-  private final String[] defaultDnsServers;
+  private final InetSocketAddress[] dnsServers;
 
-  public DefaultDnsClient(VertxInternal vertx, String... defaultDnsServers) {
-    if (defaultDnsServers == null || defaultDnsServers.length == 0) {
+  public DefaultDnsClient(VertxInternal vertx, InetSocketAddress... dnsServers) {
+    if (dnsServers == null || dnsServers.length == 0) {
       throw new IllegalArgumentException("Need at least one default DNS Server");
     }
-    this.defaultDnsServers = defaultDnsServers;
-    this.vertx = vertx;
-    actualCtx = vertx.getOrCreateContext();
+    this.dnsServers = dnsServers;
+    DefaultContext actualCtx = vertx.getOrCreateContext();
 
     bootstrap = new Bootstrap();
     bootstrap.group(actualCtx.getEventLoop());
@@ -82,7 +80,7 @@ public final class DefaultDnsClient implements DnsClient {
         }
       }
     });
-    lookup(defaultDnsServers[0], record, result, DnsEntry.TYPE_AAAA);
+    lookup(record, result, DnsEntry.TYPE_AAAA);
     return this;
   }
 
@@ -100,7 +98,7 @@ public final class DefaultDnsClient implements DnsClient {
         }
       }
     });
-    lookup(defaultDnsServers[0], record, result, DnsEntry.TYPE_AAAA);
+    lookup(record, result, DnsEntry.TYPE_AAAA);
     return this;
   }
 
@@ -118,7 +116,7 @@ public final class DefaultDnsClient implements DnsClient {
         }
       }
     });
-    lookup(defaultDnsServers[0], record, result, DnsEntry.TYPE_A, DnsEntry.TYPE_AAAA);
+    lookup(record, result, DnsEntry.TYPE_A, DnsEntry.TYPE_AAAA);
     return this;
   }
 
@@ -127,7 +125,7 @@ public final class DefaultDnsClient implements DnsClient {
   public DnsClient lookupARecords( String record, final Handler<AsyncResult<List<InetAddress>>> handler) {
     final DefaultFutureResult result = new DefaultFutureResult<>();
     result.setHandler(handler);
-    lookup(defaultDnsServers[0], record, result, DnsEntry.TYPE_A);
+    lookup(record, result, DnsEntry.TYPE_A);
     return this;
   }
 
@@ -136,7 +134,7 @@ public final class DefaultDnsClient implements DnsClient {
   public DnsClient lookupCName(String record, Handler<AsyncResult<String>> handler) {
     final DefaultFutureResult result = new DefaultFutureResult<>();
     result.setHandler(handler);
-    lookup(defaultDnsServers[0], record, result, DnsEntry.TYPE_CNAME);
+    lookup(record, result, DnsEntry.TYPE_CNAME);
     return this;
   }
 
@@ -159,7 +157,7 @@ public final class DefaultDnsClient implements DnsClient {
         }
       }
     });
-    lookup(defaultDnsServers[0], record, result, DnsEntry.TYPE_A);
+    lookup(record, result, DnsEntry.TYPE_A);
     return this;
   }
 
@@ -168,7 +166,7 @@ public final class DefaultDnsClient implements DnsClient {
   public DnsClient lookupTXTRecords(String record, Handler<AsyncResult<List<String>>> handler) {
     final DefaultFutureResult result = new DefaultFutureResult<>();
     result.setHandler(handler);
-    lookup(defaultDnsServers[0], record, result, DnsEntry.TYPE_TXT);
+    lookup(record, result, DnsEntry.TYPE_TXT);
     return this;
   }
 
@@ -177,7 +175,7 @@ public final class DefaultDnsClient implements DnsClient {
   public DnsClient lookupPTRRecord(String record, Handler<AsyncResult<List>> handler) {
     final DefaultFutureResult result = new DefaultFutureResult<>();
     result.setHandler(handler);
-    lookup(defaultDnsServers[0], record, result, DnsEntry.TYPE_PTR);
+    lookup(record, result, DnsEntry.TYPE_PTR);
     return this;
   }
 
@@ -186,13 +184,13 @@ public final class DefaultDnsClient implements DnsClient {
   public DnsClient lookupAAAARecord(String record, Handler<AsyncResult<List<InetAddress>>> handler) {
     final DefaultFutureResult result = new DefaultFutureResult<>();
     result.setHandler(handler);
-    lookup(defaultDnsServers[0], record, result, DnsEntry.TYPE_AAAA);
+    lookup(record, result, DnsEntry.TYPE_AAAA);
     return this;
   }
 
   @SuppressWarnings("unchecked")
-  private void lookup(String dnsServer, final String record, final DefaultFutureResult result, final int... types) {
-    bootstrap.connect(dnsServer, 53).addListener(new ChannelFutureListener() {
+  private void lookup(final String record, final DefaultFutureResult result, final int... types) {
+    bootstrap.connect(chooseDnsServer()).addListener(new ChannelFutureListener() {
       @Override
       public void operationComplete(ChannelFuture future) throws Exception {
         if (!future.isSuccess()) {
@@ -242,5 +240,10 @@ public final class DefaultDnsClient implements DnsClient {
         }
       }
     });
+  }
+
+  private InetSocketAddress chooseDnsServer() {
+    // TODO: Round-robin ?
+    return dnsServers[0];
   }
 }
