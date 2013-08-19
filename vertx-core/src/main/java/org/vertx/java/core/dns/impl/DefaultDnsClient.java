@@ -35,6 +35,7 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -122,11 +123,12 @@ public final class DefaultDnsClient implements DnsClient {
         if (event.failed()) {
           handler.handle(event);
         } else {
-          List<Object> records = (List<Object>) event.result();
+          List records = (List) event.result();
           for (int i = 0; i < records.size(); i++) {
             MailExchangerRecord mx = (MailExchangerRecord) records.get(i);
             records.set(i, new DefaultMxRecord(mx));
           }
+          Collections.sort((List<DefaultMxRecord>) records);
           handler.handle(new DefaultFutureResult(records));
         }
       }
