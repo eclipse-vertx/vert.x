@@ -60,6 +60,7 @@ public final class DefaultDnsClient implements DnsClient {
       @Override
       protected void initChannel(DatagramChannel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
+
         pipeline.addLast(new DnsQueryEncoder());
         pipeline.addLast(new DnsResponseDecoder());
       }
@@ -70,17 +71,8 @@ public final class DefaultDnsClient implements DnsClient {
   @Override
   public DnsClient lookup4(String record, final Handler<AsyncResult<Inet4Address>> handler) {
     final DefaultFutureResult result = new DefaultFutureResult<>();
-    result.setHandler(new Handler<AsyncResult>() {
-      @Override
-      public void handle(AsyncResult event) {
-        if (event.failed()) {
-          handler.handle(event);
-        } else {
-          handler.handle(new DefaultFutureResult<>((Inet4Address) ((List)event.result()).get(0)));
-        }
-      }
-    });
-    lookup(record, result, DnsEntry.TYPE_AAAA);
+    result.setHandler(new HandlerAdapter<Inet4Address>(handler));
+    lookup(record, result, DnsEntry.TYPE_A);
     return this;
   }
 
@@ -88,16 +80,7 @@ public final class DefaultDnsClient implements DnsClient {
   @Override
   public DnsClient lookup6(String record, final Handler<AsyncResult<Inet6Address>> handler) {
     final DefaultFutureResult result = new DefaultFutureResult<>();
-    result.setHandler(new Handler<AsyncResult>() {
-      @Override
-      public void handle(AsyncResult event) {
-        if (event.failed()) {
-          handler.handle(event);
-        } else {
-          handler.handle(new DefaultFutureResult<>((Inet6Address) ((List)event.result()).get(0)));
-        }
-      }
-    });
+    result.setHandler(new HandlerAdapter<Inet6Address>(handler));
     lookup(record, result, DnsEntry.TYPE_AAAA);
     return this;
   }
@@ -106,16 +89,7 @@ public final class DefaultDnsClient implements DnsClient {
   @Override
   public DnsClient lookup(String record, final Handler<AsyncResult<InetAddress>> handler) {
     final DefaultFutureResult result = new DefaultFutureResult<>();
-    result.setHandler(new Handler<AsyncResult>() {
-      @Override
-      public void handle(AsyncResult event) {
-        if (event.failed()) {
-          handler.handle(event);
-        } else {
-          handler.handle(new DefaultFutureResult<>((InetAddress) ((List)event.result()).get(0)));
-        }
-      }
-    });
+    result.setHandler(new HandlerAdapter<InetAddress>(handler));
     lookup(record, result, DnsEntry.TYPE_A, DnsEntry.TYPE_AAAA);
     return this;
   }
@@ -157,7 +131,7 @@ public final class DefaultDnsClient implements DnsClient {
         }
       }
     });
-    lookup(record, result, DnsEntry.TYPE_A);
+    lookup(record, result, DnsEntry.TYPE_MX);
     return this;
   }
 
@@ -172,16 +146,16 @@ public final class DefaultDnsClient implements DnsClient {
 
   @SuppressWarnings("unchecked")
   @Override
-  public DnsClient lookupPTRRecord(String record, Handler<AsyncResult<List>> handler) {
+  public DnsClient lookupPTRRecord(String record, final Handler<AsyncResult<String>> handler) {
     final DefaultFutureResult result = new DefaultFutureResult<>();
-    result.setHandler(handler);
+    result.setHandler(new HandlerAdapter<String>(handler));
     lookup(record, result, DnsEntry.TYPE_PTR);
     return this;
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public DnsClient lookupAAAARecord(String record, Handler<AsyncResult<List<InetAddress>>> handler) {
+  public DnsClient lookupAAAARecords(String record, Handler<AsyncResult<List<InetAddress>>> handler) {
     final DefaultFutureResult result = new DefaultFutureResult<>();
     result.setHandler(handler);
     lookup(record, result, DnsEntry.TYPE_AAAA);
@@ -202,7 +176,7 @@ public final class DefaultDnsClient implements DnsClient {
           for (int type: types) {
             query.addQuestion(new DnsQuestion(record, type));
           }
-          future.channel().write(query).addListener(new ChannelFutureListener() {
+          future.channel().writeAndFlush(query).addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
               if (!future.isSuccess()) {
@@ -215,12 +189,12 @@ public final class DefaultDnsClient implements DnsClient {
                   @Override
                   protected void channelRead0(ChannelHandlerContext ctx, DnsResponse msg) throws Exception {
                     List<DnsResource> resources = msg.getAnswers();
-
                     List<Object> records = new ArrayList<>(resources.size());
                     for (DnsResource resource : msg.getAnswers()) {
                       Object record = RecordDecoderFactory.getFactory().decode(resource.type(), msg, resource);
                       records.add(record);
                     }
+
                     if (!result.complete()) {
                       result.setResult(records);
                     }
@@ -232,6 +206,7 @@ public final class DefaultDnsClient implements DnsClient {
                     if (!result.complete()) {
                       result.setFailure(cause);
                     }
+                    ctx.close();
                   }
                 });
               }
@@ -245,5 +220,29 @@ public final class DefaultDnsClient implements DnsClient {
   private InetSocketAddress chooseDnsServer() {
     // TODO: Round-robin ?
     return dnsServers[0];
+  }
+
+
+  private static final class HandlerAdapter<T> implements Handler<AsyncResult<List<T>>> {
+    private final Handler handler;
+
+    HandlerAdapter(Handler handler) {
+      this.handler = handler;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void handle(AsyncResult<List<T>> event) {
+      if (event.failed()) {
+        handler.handle(event);
+      } else {
+        List<T> result = (List<T>) event.result();
+        if (result.isEmpty()) {
+          handler.handle(new DefaultFutureResult<>((T)null));
+        } else {
+          handler.handle(new DefaultFutureResult<>(result.get(0)));
+        }
+      }
+    }
   }
 }

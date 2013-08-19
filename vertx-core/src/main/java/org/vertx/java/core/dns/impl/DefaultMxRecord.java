@@ -38,4 +38,9 @@ final class DefaultMxRecord implements MxRecord {
   public String name() {
     return record.name();
   }
+
+  @Override
+  public String toString() {
+    return priority() + " " + name();
+  }
 }

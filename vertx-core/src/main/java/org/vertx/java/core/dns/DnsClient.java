@@ -43,8 +43,8 @@ public interface DnsClient {
 
   DnsClient lookupTXTRecords(String record, Handler<AsyncResult<List<String>>> handler);
 
-  DnsClient lookupPTRRecord(String record, Handler<AsyncResult<List>> handler);
+  DnsClient lookupPTRRecord(String record, Handler<AsyncResult<String>> handler);
 
-  DnsClient lookupAAAARecord(String record, Handler<AsyncResult<List<InetAddress>>> handler);
+  DnsClient lookupAAAARecords(String record, Handler<AsyncResult<List<InetAddress>>> handler);
 
 }
