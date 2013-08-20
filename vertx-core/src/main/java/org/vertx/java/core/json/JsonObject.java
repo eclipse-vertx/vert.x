@@ -72,11 +72,16 @@ public class JsonObject extends JsonElement {
   }
 
   public JsonObject putArray(String fieldName, JsonArray value) {
-    map.put(fieldName, value.list);
+    map.put(fieldName, value == null ? null : value.list);
     return this;
   }
 
   public JsonObject putElement(String fieldName, JsonElement value) {
+    if (value == null) {
+      map.put(fieldName, null);
+      return this;
+    }
+
     if(value.isArray()){
       return this.putArray(fieldName, value.asArray());
     }
@@ -95,7 +100,7 @@ public class JsonObject extends JsonElement {
   }
 
   public JsonObject putBinary(String fieldName, byte[] binary) {
-    map.put(fieldName, Base64.encodeBytes(binary));
+    map.put(fieldName, binary == null ? null : Base64.encodeBytes(binary));
     return this;
   }
 
@@ -108,6 +113,10 @@ public class JsonObject extends JsonElement {
       map.put(fieldName, value);
     }
     return this;
+  }
+
+  public boolean containsField(String fieldName) {
+    return map.containsKey(fieldName);
   }
 
   public String getString(String fieldName) {
@@ -128,6 +137,9 @@ public class JsonObject extends JsonElement {
 
   public JsonElement getElement(String fieldName) {
     Object element = map.get(fieldName);
+    if (element == null) {
+      return null;
+    }
     if (element instanceof Map<?,?>){
       return getObject(fieldName);
     }
@@ -157,7 +169,7 @@ public class JsonObject extends JsonElement {
 
   public byte[] getBinary(String fieldName) {
     String encoded = (String) map.get(fieldName);
-    return Base64.decode(encoded);
+    return encoded == null ? null : Base64.decode(encoded);
   }
 
   public String getString(String fieldName, String def) {
