@@ -2,6 +2,8 @@
 
 Vert.x is a polyglot, non-blocking, event-driven application platform that runs on the JVM.
 
+[![Launch with Cloudify](http://ranwidget.gsdev.info/embed/img/ed0286dd-f1de-48db-ae38-e9eae909d823)](http://ranwidget.gsdev.info/widget/single/ed0286dd-f1de-48db-ae38-e9eae909d823)
+
 Some of the key highlights include:
 
 * Polyglot. You can write your application components in JavaScript, Ruby, Groovy, Java or Python, and you can mix and match several programming languages in a single application.
