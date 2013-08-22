@@ -21,13 +21,12 @@ import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.dns.DnsClient;
+import org.vertx.java.core.dns.*;
 import org.vertx.java.core.dns.DnsResponseCode;
-import org.vertx.java.core.dns.DnsException;
-import org.vertx.java.core.dns.MxRecord;
 import org.vertx.java.core.dns.impl.netty.*;
 import org.vertx.java.core.dns.impl.netty.decoder.RecordDecoderFactory;
 import org.vertx.java.core.dns.impl.netty.decoder.record.MailExchangerRecord;
+import org.vertx.java.core.dns.impl.netty.decoder.record.ServiceRecord;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.VertxInternal;
@@ -94,28 +93,17 @@ public final class DefaultDnsClient implements DnsClient {
   }
 
   @Override
-  public DnsClient resolveCNAME(String name, Handler<AsyncResult<String>> handler) {
+  public DnsClient resolveCNAME(String name, Handler<AsyncResult<List<String> >> handler) {
     lookup(name, handler, DnsEntry.TYPE_CNAME);
     return this;
   }
 
   @Override
   public DnsClient resolveMX(String name, final Handler<AsyncResult<List<MxRecord>>> handler) {
-    lookup(name, new Handler<AsyncResult>() {
-      @SuppressWarnings("unchecked")
+    lookup(name, new ConvertingHandler<MailExchangerRecord, MxRecord>(handler, DefaultMxRecordComparator.INSTANCE) {
       @Override
-      public void handle(AsyncResult event) {
-        if (event.failed()) {
-          handler.handle(event);
-        } else {
-          List records = (List) event.result();
-          for (int i = 0; i < records.size(); i++) {
-            MailExchangerRecord mx = (MailExchangerRecord) records.get(i);
-            records.set(i, new DefaultMxRecord(mx));
-          }
-          Collections.sort((List<DefaultMxRecord>) records);
-          handler.handle(new DefaultFutureResult(records));
-        }
+      protected MxRecord convert(MailExchangerRecord entry) {
+        return new DefaultMxRecord(entry);
       }
     }, DnsEntry.TYPE_MX);
     return this;
@@ -124,6 +112,7 @@ public final class DefaultDnsClient implements DnsClient {
   @Override
   public DnsClient resolveTXT(String name, final Handler<AsyncResult<List<String>>> handler) {
     lookup(name, new Handler<AsyncResult>() {
+      @SuppressWarnings("unchecked")
       @Override
       public void handle(AsyncResult event) {
         if (event.failed()) {
@@ -160,8 +149,13 @@ public final class DefaultDnsClient implements DnsClient {
   }
 
   @Override
-  public DnsClient resolveSRV(String name, Handler<AsyncResult<List<String>>> handler) {
-    lookup(name, handler, DnsEntry.TYPE_SRV);
+  public DnsClient resolveSRV(String name, final Handler<AsyncResult<List<SrvRecord>>> handler) {
+    lookup(name, new ConvertingHandler<ServiceRecord, SrvRecord>(handler, DefaultSrvRecordComparator.INSTANCE) {
+      @Override
+      protected SrvRecord convert(ServiceRecord entry) {
+        return new DefaultSrvRecord(entry);
+      }
+    }, DnsEntry.TYPE_SRV);
     return this;
   }
 
@@ -249,6 +243,35 @@ public final class DefaultDnsClient implements DnsClient {
         }
       }
     }
+  }
+
+  protected abstract class ConvertingHandler<F, T> implements Handler<AsyncResult<List<F>>> {
+    private final Handler handler;
+    private final Comparator comparator;
+
+    ConvertingHandler(Handler<AsyncResult<List<T>>> handler, Comparator comparator) {
+      this.handler = handler;
+      this.comparator = comparator;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void handle(AsyncResult<List<F>> event) {
+      if (event.failed()) {
+        handler.handle(event);
+      } else {
+        List records = (List) event.result();
+        for (int i = 0; i < records.size(); i++) {
+          F record = (F) records.get(i);
+          records.set(i, convert(record));
+        }
+
+        Collections.sort(records, comparator);
+        handler.handle(new DefaultFutureResult(records));
+      }
+    }
+
+    protected abstract T convert(F entry);
   }
 
   private abstract class RetryChannelFutureListener implements ChannelFutureListener {

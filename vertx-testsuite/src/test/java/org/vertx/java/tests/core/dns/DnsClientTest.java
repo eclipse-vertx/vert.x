@@ -57,6 +57,16 @@ public class DnsClientTest extends TestBase {
   }
 
   @Test
+  public void testResolveCNAME() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testResolveSRV() {
+    startTest(getMethodName());
+  }
+
+  @Test
   public void testLookup6() {
     startTest(getMethodName());
   }
