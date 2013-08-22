@@ -90,4 +90,14 @@ public class DnsClientTest extends TestBase {
   public void testLookupNonExisting() {
     startTest(getMethodName());
   }
+
+  @Test
+  public void testReverseLookupIpv4() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testReverseLookupIpv6() {
+    startTest(getMethodName());
+  }
 }
