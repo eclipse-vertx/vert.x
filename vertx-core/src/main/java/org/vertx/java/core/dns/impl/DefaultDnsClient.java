@@ -31,10 +31,7 @@ import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.VertxInternal;
 
-import java.net.Inet4Address;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
+import java.net.*;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -45,6 +42,7 @@ public final class DefaultDnsClient implements DnsClient {
 
   private final Bootstrap bootstrap;
   private final List<InetSocketAddress> dnsServers;
+  private static final char[] HEX_TABLE = "0123456789abcdef".toCharArray();
 
   public DefaultDnsClient(VertxInternal vertx, InetSocketAddress... dnsServers) {
     if (dnsServers == null || dnsServers.length == 0) {
@@ -156,6 +154,64 @@ public final class DefaultDnsClient implements DnsClient {
         return new DefaultSrvRecord(entry);
       }
     }, DnsEntry.TYPE_SRV);
+    return this;
+  }
+
+  @Override
+  public DnsClient reverseLookup(String address, final Handler<AsyncResult<InetAddress>> handler) {
+    // TODO:  Check if the given address is a valid ip address before pass it to InetAddres.getByName(..)
+    //        This is need as otherwise it may try to perform a DNS lookup.
+    //        An other option would be to change address to be of type InetAddress.
+    try {
+      final InetAddress inetAddress = InetAddress.getByName(address);
+      byte[] addr = inetAddress.getAddress();
+
+      StringBuilder reverseName = new StringBuilder(64);
+      if (inetAddress instanceof Inet4Address) {
+        // reverse ipv4 address
+        reverseName.append(addr[3] & 0xff).append(".")
+                .append(addr[2]& 0xff).append(".")
+                .append(addr[1]& 0xff).append(".")
+                .append(addr[0]& 0xff);
+      } else {
+        // It is an ipv 6 address time to reverse it
+        for (int i = 0; i < 16; i++) {
+          reverseName.append(HEX_TABLE[(addr[15 - i] & 0xf)]);
+          reverseName.append(".");
+          reverseName.append(HEX_TABLE[(addr[15 - i] >> 4) & 0xf]);
+          if (i != 15) {
+            reverseName.append(".");
+          }
+        }
+      }
+      reverseName.append(".in-addr.arpa");
+
+      return resolvePTR(reverseName.toString(), new Handler<AsyncResult<String>>() {
+        @Override
+        public void handle(AsyncResult event) {
+          if (event.failed()) {
+            handler.handle(event);
+          } else {
+            String result = (String) event.result();
+            try {
+              handler.handle(new DefaultFutureResult<>(InetAddress.getByAddress(result, inetAddress.getAddress())));
+            } catch (UnknownHostException e) {
+              // Should never happen
+              handler.handle(new DefaultFutureResult<InetAddress>(e));
+            }
+          }
+        }
+      });
+    } catch (final UnknownHostException e) {
+      // Should never happen as we work with ip addresses as input
+      // anyway just in case notify the handler in the EventLoop thread.
+      bootstrap.group().next().execute(new Runnable() {
+        @Override
+        public void run() {
+          handler.handle(new DefaultFutureResult<InetAddress>(e));
+        }
+      });
+    }
     return this;
   }
 
@@ -306,4 +362,6 @@ public final class DefaultDnsClient implements DnsClient {
 
     protected abstract void onSuccess(ChannelFuture future) throws Exception;
   }
+
+
 }

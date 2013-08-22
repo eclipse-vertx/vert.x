@@ -428,6 +428,71 @@ public class DnsTestClient extends TestClientBase {
     });
   }
 
+  public void testReverseLookupIpv4() throws Exception {
+    final byte[] address = InetAddress.getByName("10.0.0.1").getAddress();
+
+    DnsClient dns = prepareDns(new RecordStore() {
+      @Override
+      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
+        Set<ResourceRecord> set = new HashSet<>();
+
+        ResourceRecordModifier rm = new ResourceRecordModifier();
+        rm.setDnsClass(RecordClass.IN);
+        rm.setDnsName("dns.vertx.io");
+        rm.setDnsTtl(100);
+        rm.setDnsType(RecordType.PTR);
+        rm.put(DnsAttribute.DOMAIN_NAME, "ptr.vertx.io");
+        set.add(rm.getEntry());
+        return set;
+      }
+    });
+
+    dns.reverseLookup("10.0.0.1", new Handler<AsyncResult<InetAddress>>() {
+      @Override
+      public void handle(AsyncResult<InetAddress> event) {
+        InetAddress result = event.result();
+        tu.azzert(result != null);
+        tu.azzert(result instanceof Inet4Address);
+        tu.azzert("ptr.vertx.io".equals(result.getHostName()));
+        tu.azzert(Arrays.equals(address, result.getAddress()));
+        tu.testComplete();
+      }
+    });
+  }
+
+
+  public void testReverseLookupIpv6() throws Exception {
+    final byte[] address = InetAddress.getByName("::1").getAddress();
+
+    DnsClient dns = prepareDns(new RecordStore() {
+      @Override
+      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
+        Set<ResourceRecord> set = new HashSet<>();
+
+        ResourceRecordModifier rm = new ResourceRecordModifier();
+        rm.setDnsClass(RecordClass.IN);
+        rm.setDnsName("dns.vertx.io");
+        rm.setDnsTtl(100);
+        rm.setDnsType(RecordType.PTR);
+        rm.put(DnsAttribute.DOMAIN_NAME, "ptr.vertx.io");
+        set.add(rm.getEntry());
+        return set;
+      }
+    });
+
+    dns.reverseLookup("::1", new Handler<AsyncResult<InetAddress>>() {
+      @Override
+      public void handle(AsyncResult<InetAddress> event) {
+        InetAddress result = event.result();
+        tu.azzert(result != null);
+        tu.azzert(result instanceof Inet6Address);
+        tu.azzert("ptr.vertx.io".equals(result.getHostName()));
+        tu.azzert(Arrays.equals(address, result.getAddress()));
+        tu.testComplete();
+      }
+    });
+  }
+
   private DnsClient prepareDns(RecordStore store) throws Exception {
     dnsServer = new TestDnsServer(store);
     dnsServer.start();
