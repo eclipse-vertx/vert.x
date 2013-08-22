@@ -28,22 +28,7 @@ import org.vertx.java.core.buffer.Buffer;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface ReadStream<T> extends ExceptionSupport<T> {
-
-  /**
-   * Set a data handler. As data is read, the handler will be called with the data.
-   */
-  T dataHandler(Handler<Buffer> handler);
-
-  /**
-   * Pause the {@code ReadStream}. While the stream is paused, no data will be sent to the {@code dataHandler}
-   */
-  T pause();
-
-  /**
-   * Resume reading. If the {@code ReadStream} has been paused, reading will recommence on it.
-   */
-  T resume();
+public interface ReadStream<T> extends ReadSupport<T, Buffer> {
 
   /**
    * Set an end handler. Once the stream has ended, and there is no more data to be read, this handler will be called.
