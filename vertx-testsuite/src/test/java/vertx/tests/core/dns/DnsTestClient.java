@@ -26,10 +26,8 @@ import org.apache.mina.transport.socket.DatagramAcceptor;
 import org.apache.mina.transport.socket.DatagramSessionConfig;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.dns.DnsClient;
-import org.vertx.java.core.dns.DnsException;
-import org.vertx.java.core.dns.DnsResponseCode;
-import org.vertx.java.core.dns.MxRecord;
+import org.vertx.java.core.dns.*;
+import org.vertx.java.core.dns.impl.netty.decoder.record.ServiceRecord;
 import org.vertx.java.testframework.TestClientBase;
 
 import java.io.IOException;
@@ -219,6 +217,78 @@ public class DnsTestClient extends TestClientBase {
 
   }
 
+  public void testResolveCNAME() throws Exception {
+    DnsClient dns = prepareDns(new RecordStore() {
+      @Override
+      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
+        Set<ResourceRecord> set = new HashSet<>();
+
+        ResourceRecordModifier rm = new ResourceRecordModifier();
+        rm.setDnsClass(RecordClass.IN);
+        rm.setDnsName("dns.vertx.io");
+        rm.setDnsTtl(100);
+        rm.setDnsType(RecordType.CNAME);
+        rm.put(DnsAttribute.DOMAIN_NAME, "cname.vertx.io");
+        set.add(rm.getEntry());
+        return set;
+      }
+    });
+
+    dns.resolveCNAME("vertx.io", new Handler<AsyncResult<List<String>>>() {
+      @Override
+      public void handle(AsyncResult<List<String>> event) {
+        List<String> result = event.result();
+        tu.azzert(!result.isEmpty());
+        tu.azzert(result.size() == 1);
+
+        String record = result.get(0);
+
+        tu.azzert(!record.isEmpty());
+        tu.azzert("cname.vertx.io".equals(record));
+        tu.testComplete();
+      }
+    });
+  }
+
+  public void testResolveSRV() throws Exception {
+    DnsClient dns = prepareDns(new RecordStore() {
+      @Override
+      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
+        Set<ResourceRecord> set = new HashSet<>();
+
+        ResourceRecordModifier rm = new ResourceRecordModifier();
+        rm.setDnsClass(RecordClass.IN);
+        rm.setDnsName("dns.vertx.io");
+        rm.setDnsTtl(100);
+        rm.setDnsType(RecordType.SRV);
+        rm.put(DnsAttribute.SERVICE_PRIORITY, "10");
+        rm.put(DnsAttribute.SERVICE_WEIGHT, "1");
+        rm.put(DnsAttribute.SERVICE_PORT, "80");
+        rm.put(DnsAttribute.DOMAIN_NAME, "vertx.io");
+        set.add(rm.getEntry());
+        return set;
+      }
+    });
+
+    dns.resolveSRV("vertx.io", new Handler<AsyncResult<List<SrvRecord>>>() {
+      @Override
+      public void handle(AsyncResult<List<SrvRecord>> event) {
+        List<SrvRecord> result = event.result();
+        tu.azzert(!result.isEmpty());
+        tu.azzert(result.size() == 1);
+
+        SrvRecord record = result.get(0);
+
+        tu.azzert(10 == record.priority());
+        tu.azzert(1 == record.weight());
+        tu.azzert(80 == record.port());
+        tu.azzert("vertx.io".equals(record.target()));
+
+        tu.testComplete();
+      }
+    });
+  }
+
   public void testLookup4() throws Exception {
     DnsClient dns = prepareDns(new RecordStore() {
       @Override
@@ -249,7 +319,6 @@ public class DnsTestClient extends TestClientBase {
   }
 
   public void testLookup6() throws Exception {
-    // TODO: Patch apacheds to support AAAA records
     tu.testComplete();
     /*
     DnsClient dns = prepareDns(new RecordStore() {
