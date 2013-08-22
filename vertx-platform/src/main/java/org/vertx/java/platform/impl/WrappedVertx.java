@@ -3,6 +3,8 @@ package org.vertx.java.platform.impl;
 import io.netty.channel.EventLoopGroup;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.datagram.DatagramSocket;
+import org.vertx.java.core.datagram.InternetProtocolFamily;
 import org.vertx.java.core.dns.DnsClient;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.file.FileSystem;
@@ -195,5 +197,10 @@ public class WrappedVertx implements VertxInternal {
   @Override
   public DnsClient createDnsClient(InetSocketAddress... dnsServers) {
     return vertx.createDnsClient(dnsServers);
+  }
+
+  @Override
+  public DatagramSocket createDatagramSocket(InternetProtocolFamily family) {
+    return vertx.createDatagramSocket(family);
   }
 }
