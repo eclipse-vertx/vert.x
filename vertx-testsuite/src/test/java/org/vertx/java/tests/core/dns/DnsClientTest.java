@@ -62,6 +62,11 @@ public class DnsClientTest extends TestBase {
   }
 
   @Test
+  public void testResolvePTR() {
+    startTest(getMethodName());
+  }
+
+  @Test
   public void testResolveSRV() {
     startTest(getMethodName());
   }

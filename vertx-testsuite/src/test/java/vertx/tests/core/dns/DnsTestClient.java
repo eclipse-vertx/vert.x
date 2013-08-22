@@ -255,6 +255,36 @@ public class DnsTestClient extends TestClientBase {
     });
   }
 
+  public void testResolvePTR() throws Exception {
+    DnsClient dns = prepareDns(new RecordStore() {
+      @Override
+      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
+        Set<ResourceRecord> set = new HashSet<>();
+
+        ResourceRecordModifier rm = new ResourceRecordModifier();
+        rm.setDnsClass(RecordClass.IN);
+        rm.setDnsName("dns.vertx.io");
+        rm.setDnsTtl(100);
+        rm.setDnsType(RecordType.PTR);
+        rm.put(DnsAttribute.DOMAIN_NAME, "ptr.vertx.io");
+        set.add(rm.getEntry());
+        return set;
+      }
+    });
+
+    dns.resolvePTR("10.0.0.1.in-addr.arpa", new Handler<AsyncResult<String>>() {
+      @Override
+      public void handle(AsyncResult<String> event) {
+        String result = event.result();
+        tu.azzert(result != null);
+
+        tu.azzert("ptr.vertx.io".equals(result));
+        tu.testComplete();
+      }
+    });
+  }
+
+
   public void testResolveSRV() throws Exception {
     DnsClient dns = prepareDns(new RecordStore() {
       @Override
