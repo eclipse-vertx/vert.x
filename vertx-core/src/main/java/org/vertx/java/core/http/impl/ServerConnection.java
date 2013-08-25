@@ -39,8 +39,8 @@ import org.vertx.java.core.net.impl.DefaultNetSocket;
 import org.vertx.java.core.net.impl.VertxNetHandler;
 
 import java.io.File;
+import java.util.ArrayDeque;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 
@@ -59,7 +59,7 @@ class ServerConnection extends ConnectionBase {
   private boolean channelPaused;
   private boolean paused;
   private boolean sentCheck;
-  private final Queue<Object> pending = new LinkedList<>();
+  private final Queue<Object> pending = new ArrayDeque<>(8);
   private final String serverOrigin;
   private final DefaultHttpServer server;
   private ChannelFuture lastWriteFuture;
