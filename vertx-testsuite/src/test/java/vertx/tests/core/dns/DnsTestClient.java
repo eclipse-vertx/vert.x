@@ -15,34 +15,17 @@
  */
 package vertx.tests.core.dns;
 
-
-import org.apache.directory.server.dns.DnsServer;
-import org.apache.directory.server.dns.io.encoder.DnsMessageEncoder;
-import org.apache.directory.server.dns.io.encoder.ResourceRecordEncoder;
-import org.apache.directory.server.dns.messages.*;
-import org.apache.directory.server.dns.protocol.*;
-import org.apache.directory.server.dns.store.DnsAttribute;
-import org.apache.directory.server.dns.store.RecordStore;
-import org.apache.directory.server.protocol.shared.transport.UdpTransport;
-import org.apache.mina.core.buffer.IoBuffer;
-import org.apache.mina.core.session.IoSession;
-import org.apache.mina.filter.codec.*;
-import org.apache.mina.transport.socket.DatagramAcceptor;
-import org.apache.mina.transport.socket.DatagramSessionConfig;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.dns.*;
 import org.vertx.java.testframework.TestClientBase;
 
-import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -67,21 +50,8 @@ public class DnsTestClient extends TestClientBase {
   }
 
   public void testResolveA() throws Exception {
-    DnsClient dns = prepareDns(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName("dns.vertx.io");
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.A);
-        rm.put(DnsAttribute.IP_ADDRESS, "10.0.0.1");
-        set.add(rm.getEntry());
-        return set;
-      }
-    });
+    final String ip = "10.0.0.1";
+    DnsClient dns = prepareDns(TestDnsServer.testResolveA(ip));
 
     dns.resolveA("vertx.io", new Handler<AsyncResult<List<Inet4Address>>>() {
       @Override
@@ -90,7 +60,7 @@ public class DnsTestClient extends TestClientBase {
 
         tu.azzert(!result.isEmpty());
         tu.azzert(result.size() == 1);
-        tu.azzert("10.0.0.1".equals(result.get(0).getHostAddress()));
+        tu.azzert(ip.equals(result.get(0).getHostAddress()));
         tu.testComplete();
       }
     });
@@ -98,22 +68,7 @@ public class DnsTestClient extends TestClientBase {
   }
 
   public void testResolveAAAA() throws Exception {
-    DnsClient dns = prepareDns(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName("dns.vertx.io");
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.AAAA);
-        rm.put(DnsAttribute.IP_ADDRESS, "::1");
-
-        set.add(rm.getEntry());
-        return set;
-      }
-    });
+    DnsClient dns = prepareDns(TestDnsServer.testResolveAAAA("::1"));
 
     dns.resolveAAAA("vertx.io", new Handler<AsyncResult<List<Inet6Address>>>() {
       @Override
@@ -130,22 +85,9 @@ public class DnsTestClient extends TestClientBase {
   }
 
   public void testResolveMX() throws Exception {
-    DnsClient dns = prepareDns(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName("dns.vertx.io");
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.MX);
-        rm.put(DnsAttribute.MX_PREFERENCE, String.valueOf(10));
-        rm.put(DnsAttribute.DOMAIN_NAME, "mail.vertx.io");
-        set.add(rm.getEntry());
-        return set;
-      }
-    });
+    final String mxRecord = "mail.vertx.io";
+    final int prio = 10;
+    DnsClient dns = prepareDns(TestDnsServer.testResolveMX(prio, mxRecord));
 
     dns.resolveMX("vertx.io", new Handler<AsyncResult<List<MxRecord>>>() {
       @Override
@@ -154,8 +96,8 @@ public class DnsTestClient extends TestClientBase {
         tu.azzert(!result.isEmpty());
         tu.azzert(1 == result.size());
         MxRecord record = result.get(0);
-        tu.azzert(record.priority() == 10);
-        tu.azzert("mail.vertx.io".equals(record.name()));
+        tu.azzert(record.priority() == prio);
+        tu.azzert(mxRecord.equals(record.name()));
         tu.testComplete();
       }
     });
@@ -163,21 +105,8 @@ public class DnsTestClient extends TestClientBase {
   }
 
   public void testResolveTXT() throws Exception {
-    DnsClient dns = prepareDns(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName("dns.vertx.io");
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.TXT);
-        rm.put(DnsAttribute.CHARACTER_STRING, "vertx is awesome");
-        set.add(rm.getEntry());
-        return set;
-      }
-    });
+    final String txt = "vertx is awesome";
+    DnsClient dns = prepareDns(TestDnsServer.testResolveTXT(txt));
 
     dns.resolveTXT("vertx.io", new Handler<AsyncResult<List<String>>>() {
       @Override
@@ -185,7 +114,7 @@ public class DnsTestClient extends TestClientBase {
         List<String> result = event.result();
         tu.azzert(!result.isEmpty());
         tu.azzert(result.size() == 1);
-        tu.azzert("vertx is awesome".equals(result.get(0)));
+        tu.azzert(txt.equals(result.get(0)));
         tu.testComplete();
       }
     });
@@ -193,21 +122,8 @@ public class DnsTestClient extends TestClientBase {
   }
 
   public void testResolveNS() throws Exception {
-    DnsClient dns = prepareDns(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName("dns.vertx.io");
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.NS);
-        rm.put(DnsAttribute.DOMAIN_NAME, "ns.vertx.io");
-        set.add(rm.getEntry());
-        return set;
-      }
-    });
+    final String ns = "ns.vertx.io";
+    DnsClient dns = prepareDns(TestDnsServer.testResolveNS(ns));
 
     dns.resolveNS("vertx.io", new Handler<AsyncResult<List<String>>>() {
       @Override
@@ -215,7 +131,7 @@ public class DnsTestClient extends TestClientBase {
         List<String> result = event.result();
         tu.azzert(!result.isEmpty());
         tu.azzert(result.size() == 1);
-        tu.azzert("ns.vertx.io".equals(result.get(0)));
+        tu.azzert(ns.equals(result.get(0)));
         tu.testComplete();
       }
     });
@@ -223,21 +139,8 @@ public class DnsTestClient extends TestClientBase {
   }
 
   public void testResolveCNAME() throws Exception {
-    DnsClient dns = prepareDns(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName("dns.vertx.io");
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.CNAME);
-        rm.put(DnsAttribute.DOMAIN_NAME, "cname.vertx.io");
-        set.add(rm.getEntry());
-        return set;
-      }
-    });
+    final String cname = "cname.vertx.io";
+    DnsClient dns = prepareDns(TestDnsServer.testResolveCNAME(cname));
 
     dns.resolveCNAME("vertx.io", new Handler<AsyncResult<List<String>>>() {
       @Override
@@ -249,28 +152,15 @@ public class DnsTestClient extends TestClientBase {
         String record = result.get(0);
 
         tu.azzert(!record.isEmpty());
-        tu.azzert("cname.vertx.io".equals(record));
+        tu.azzert(cname.equals(record));
         tu.testComplete();
       }
     });
   }
 
   public void testResolvePTR() throws Exception {
-    DnsClient dns = prepareDns(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName("dns.vertx.io");
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.PTR);
-        rm.put(DnsAttribute.DOMAIN_NAME, "ptr.vertx.io");
-        set.add(rm.getEntry());
-        return set;
-      }
-    });
+    final String ptr = "ptr.vertx.io";
+    DnsClient dns = prepareDns(TestDnsServer.testResolvePTR(ptr));
 
     dns.resolvePTR("10.0.0.1.in-addr.arpa", new Handler<AsyncResult<String>>() {
       @Override
@@ -278,7 +168,7 @@ public class DnsTestClient extends TestClientBase {
         String result = event.result();
         tu.azzert(result != null);
 
-        tu.azzert("ptr.vertx.io".equals(result));
+        tu.azzert(ptr.equals(result));
         tu.testComplete();
       }
     });
@@ -286,24 +176,12 @@ public class DnsTestClient extends TestClientBase {
 
 
   public void testResolveSRV() throws Exception {
-    DnsClient dns = prepareDns(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
+    final int priority = 10;
+    final int weight = 1;
+    final int port = 80;
+    final String target = "vertx.io";
 
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName("dns.vertx.io");
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.SRV);
-        rm.put(DnsAttribute.SERVICE_PRIORITY, "10");
-        rm.put(DnsAttribute.SERVICE_WEIGHT, "1");
-        rm.put(DnsAttribute.SERVICE_PORT, "80");
-        rm.put(DnsAttribute.DOMAIN_NAME, "vertx.io");
-        set.add(rm.getEntry());
-        return set;
-      }
-    });
+    DnsClient dns = prepareDns(TestDnsServer.testResolveSRV(priority, weight, port, target));
 
     dns.resolveSRV("vertx.io", new Handler<AsyncResult<List<SrvRecord>>>() {
       @Override
@@ -314,10 +192,10 @@ public class DnsTestClient extends TestClientBase {
 
         SrvRecord record = result.get(0);
 
-        tu.azzert(10 == record.priority());
-        tu.azzert(1 == record.weight());
-        tu.azzert(80 == record.port());
-        tu.azzert("vertx.io".equals(record.target()));
+        tu.azzert(priority == record.priority());
+        tu.azzert(weight == record.weight());
+        tu.azzert(port == record.port());
+        tu.azzert(target.equals(record.target()));
 
         tu.testComplete();
       }
@@ -325,51 +203,22 @@ public class DnsTestClient extends TestClientBase {
   }
 
   public void testLookup4() throws Exception {
-    DnsClient dns = prepareDns(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName("dns.vertx.io");
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.A);
-        rm.put(DnsAttribute.IP_ADDRESS, "10.0.0.1");
-
-        set.add(rm.getEntry());
-        return set;
-      }
-    });
+    final String ip = "10.0.0.1";
+    DnsClient dns = prepareDns(TestDnsServer.testLookup4(ip));
 
     dns.lookup4("vertx.io", new Handler<AsyncResult<Inet4Address>>() {
       @Override
       public void handle(AsyncResult<Inet4Address> event) {
         InetAddress result = event.result();
         tu.azzert(result != null);
-        tu.azzert("10.0.0.1".equals(result.getHostAddress()));
+        tu.azzert(ip.equals(result.getHostAddress()));
         tu.testComplete();
       }
     });
   }
 
   public void testLookup6() throws Exception {
-    DnsClient dns = prepareDns(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName("dns.vertx.io");
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.AAAA);
-        rm.put(DnsAttribute.IP_ADDRESS, "::1");
-
-        set.add(rm.getEntry());
-        return set;
-      }
-    });
+    DnsClient dns = prepareDns(TestDnsServer.testLookup6());
 
     dns.lookup6("vertx.io", new Handler<AsyncResult<Inet6Address>>() {
       @Override
@@ -383,41 +232,22 @@ public class DnsTestClient extends TestClientBase {
   }
 
   public void testLookup() throws Exception {
-    DnsClient dns = prepareDns(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName("dns.vertx.io");
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.A);
-        rm.put(DnsAttribute.IP_ADDRESS, "10.0.0.1");
-
-        set.add(rm.getEntry());
-        return set;
-      }
-    });
+    final String ip = "10.0.0.1";
+    DnsClient dns = prepareDns(TestDnsServer.testLookup(ip));
 
     dns.lookup("vertx.io", new Handler<AsyncResult<InetAddress>>() {
       @Override
       public void handle(AsyncResult<InetAddress> event) {
         InetAddress result = event.result();
         tu.azzert(result != null);
-        tu.azzert("10.0.0.1".equals(result.getHostAddress()));
+        tu.azzert(ip.equals(result.getHostAddress()));
         tu.testComplete();
       }
     });
   }
 
   public void testLookupNonExisting() throws Exception {
-    DnsClient dns = prepareDns(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        return null;
-      }
-    });
+    DnsClient dns = prepareDns(TestDnsServer.testLookupNonExisting());
     dns.lookup("gfegjegjf.sg1", new Handler<AsyncResult<InetAddress>>() {
       @Override
       public void handle(AsyncResult<InetAddress> event) {
@@ -430,22 +260,8 @@ public class DnsTestClient extends TestClientBase {
 
   public void testReverseLookupIpv4() throws Exception {
     final byte[] address = InetAddress.getByName("10.0.0.1").getAddress();
-
-    DnsClient dns = prepareDns(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName("dns.vertx.io");
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.PTR);
-        rm.put(DnsAttribute.DOMAIN_NAME, "ptr.vertx.io");
-        set.add(rm.getEntry());
-        return set;
-      }
-    });
+    final String ptr = "ptr.vertx.io";
+    DnsClient dns = prepareDns(TestDnsServer.testReverseLookup(ptr));
 
     dns.reverseLookup("10.0.0.1", new Handler<AsyncResult<InetAddress>>() {
       @Override
@@ -453,7 +269,7 @@ public class DnsTestClient extends TestClientBase {
         InetAddress result = event.result();
         tu.azzert(result != null);
         tu.azzert(result instanceof Inet4Address);
-        tu.azzert("ptr.vertx.io".equals(result.getHostName()));
+        tu.azzert(ptr.equals(result.getHostName()));
         tu.azzert(Arrays.equals(address, result.getAddress()));
         tu.testComplete();
       }
@@ -463,22 +279,9 @@ public class DnsTestClient extends TestClientBase {
 
   public void testReverseLookupIpv6() throws Exception {
     final byte[] address = InetAddress.getByName("::1").getAddress();
+    final String ptr = "ptr.vertx.io";
 
-    DnsClient dns = prepareDns(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName("dns.vertx.io");
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.PTR);
-        rm.put(DnsAttribute.DOMAIN_NAME, "ptr.vertx.io");
-        set.add(rm.getEntry());
-        return set;
-      }
-    });
+    DnsClient dns = prepareDns(TestDnsServer.testReverseLookup(ptr));
 
     dns.reverseLookup("::1", new Handler<AsyncResult<InetAddress>>() {
       @Override
@@ -486,100 +289,17 @@ public class DnsTestClient extends TestClientBase {
         InetAddress result = event.result();
         tu.azzert(result != null);
         tu.azzert(result instanceof Inet6Address);
-        tu.azzert("ptr.vertx.io".equals(result.getHostName()));
+        tu.azzert(ptr.equals(result.getHostName()));
         tu.azzert(Arrays.equals(address, result.getAddress()));
         tu.testComplete();
       }
     });
   }
 
-  private DnsClient prepareDns(RecordStore store) throws Exception {
-    dnsServer = new TestDnsServer(store);
+  private DnsClient prepareDns(TestDnsServer server) throws Exception {
+    dnsServer = server;
     dnsServer.start();
     InetSocketAddress addr = (InetSocketAddress) dnsServer.getTransports()[0].getAcceptor().getLocalAddress();
     return vertx.createDnsClient(addr);
-  }
-
-  private final class TestDnsServer extends DnsServer {
-    private final RecordStore store;
-    TestDnsServer(RecordStore store) {
-      this.store = store;
-    }
-
-    @Override
-    public void start() throws IOException {
-      UdpTransport transport = new UdpTransport("127.0.0.1", 53530);
-      setTransports( transport );
-
-      DatagramAcceptor acceptor = transport.getAcceptor();
-
-      acceptor.setHandler(new DnsProtocolHandler(this, store) {
-        @Override
-        public void sessionCreated( IoSession session ) throws Exception {
-          // USe our own codec to support AAAA testing
-          session.getFilterChain().addFirst( "codec",
-                  new ProtocolCodecFilter(new TestDnsProtocolUdpCodecFactory()));
-        }
-      });
-
-      // Allow the port to be reused even if the socket is in TIME_WAIT state
-      ((DatagramSessionConfig)acceptor.getSessionConfig()).setReuseAddress(true);
-
-      // Start the listener
-      acceptor.bind();
-    }
-  }
-
-  /**
-   * ProtocolCodecFactory which allows to test AAAA resolution
-   */
-  private final class TestDnsProtocolUdpCodecFactory implements ProtocolCodecFactory {
-    private DnsMessageEncoder encoder = new DnsMessageEncoder();
-    private TestAAAARecordEncoder recordEncoder = new TestAAAARecordEncoder();
-
-    @Override
-    public ProtocolEncoder getEncoder(IoSession session) throws Exception {
-      return new DnsUdpEncoder() {
-
-        @Override
-        public void encode(IoSession session, Object message, ProtocolEncoderOutput out) {
-          IoBuffer buf = IoBuffer.allocate( 1024 );
-          DnsMessage dnsMessage = (DnsMessage) message;
-          encoder.encode(buf, dnsMessage);
-          for (ResourceRecord record: dnsMessage.getAnswerRecords()) {
-            // This is a hack to allow to also test for AAAA resolution as DnsMessageEncoder does not support it and it
-            // is hard to extend, because the interesting methods are private...
-            // In case of RecordType.AAAA we need to encode the RecordType by ourself
-            if (record.getRecordType() == RecordType.AAAA) {
-              try {
-                recordEncoder.put(buf, record);
-              } catch (IOException e) {
-                // Should never happen
-                throw new IllegalStateException(e);
-              }
-            }
-          }
-          buf.flip();
-
-          out.write( buf );
-        }
-      };
-    }
-
-    @Override
-    public ProtocolDecoder getDecoder(IoSession session) throws Exception {
-      return new DnsUdpDecoder();
-    }
-
-    private final class TestAAAARecordEncoder extends ResourceRecordEncoder {
-      @Override
-      protected void putResourceRecordData(IoBuffer ioBuffer, ResourceRecord resourceRecord) {
-        if (!resourceRecord.get(DnsAttribute.IP_ADDRESS).equals("::1")) {
-          throw new IllegalStateException("Only supposed to be used with IPV6 address of ::1");
-        }
-        // encode the ::1
-        ioBuffer.put(new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1});
-      }
-    }
   }
 }
