@@ -994,7 +994,7 @@ It's not hard to see that if you write to an object faster than it can actually 
 
 To solve this problem a simple flow control capability is provided by some objects in the vert.x API.
 
-Any flow control aware object that can be written to is said to implement `ReadStream`, and any flow control object that can be read from is said to implement `WriteStream`.
+Any flow control aware object that can be read from is said to implement `ReadStream`, and any flow control object that can be written to is said to implement `WriteStream`.
 
 Let's take an example where we want to read from a `ReadStream` and write the data to a `WriteStream`.
 
@@ -1015,7 +1015,7 @@ A naive way to do this would be to directly take the data that's been read and i
                 
     }).listen(1234, 'localhost');
     
-There's a problem with the above example: If data is read from the socket faster than it can be written back to the socket, it will build up in the write queue of the AsyncFile, eventually running out of RAM. This might happen, for example if the client at the other end of the socket wasn't reading very fast, effectively putting back-pressure on the connection.
+There's a problem with the above example: If data is read from the socket faster than it can be written back to the socket, it will build up in the write queue of the `NetSocket`, eventually running out of RAM. This might happen, for example if the client at the other end of the socket wasn't reading very fast, effectively putting back-pressure on the connection.
 
 Since `NetSocket` implements `WriteStream`, we can check if the `WriteStream` is full before writing to it:
 
@@ -1061,8 +1061,8 @@ We're almost there, but not quite. The `NetSocket` now gets paused when the file
                 sock.write(buffer); 
             } else {
                 sock.pause();
-                
                 sock.drainHandler(function() {
+                    sock.write();
                     sock.resume();
                 });
             }
