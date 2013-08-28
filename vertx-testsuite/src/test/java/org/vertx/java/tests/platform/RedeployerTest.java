@@ -1,4 +1,4 @@
-package org.vertx.java.tests.container;
+package org.vertx.java.tests.platform;
 
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.ConcurrentHashSet;
@@ -255,7 +255,7 @@ public class RedeployerTest extends TestBase {
     File modDir = new File(modRoot, modName);
     cp[0] = modDir.toURI().toURL();
     cp[1] = new File(modDir, "lib/foo.jar").toURI().toURL(); // Add a jar in there for good measure
-    Deployment dep = new Deployment(name, null, new ModuleIdentifier(modName), 1, null, cp, null, parentName, null, true);
+    Deployment dep = new Deployment(name, null, new ModuleIdentifier(modName), 1, null, cp, null, parentName, null, true, false);
     deps.add(dep);
     return dep;
   }

@@ -1,6 +1,7 @@
 package org.vertx.java.platform.impl;
 
 import io.netty.channel.EventLoopGroup;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
@@ -17,6 +18,7 @@ import org.vertx.java.core.net.impl.DefaultNetServer;
 import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
+import org.vertx.java.core.spi.Action;
 
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -188,5 +190,10 @@ public class WrappedVertx implements VertxInternal {
   @Override
   public Context currentContext() {
     return vertx.currentContext();
+  }
+
+  @Override
+  public <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
+    vertx.executeBlocking(action, resultHandler);
   }
 }

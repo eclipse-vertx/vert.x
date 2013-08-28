@@ -19,6 +19,7 @@ apply from: "$rootDir/gradle/maven.gradle"
 dependencies {
 	compile project(':vertx-core')
   compile project(':vertx-platform')
+  compile project(':vertx-hazelcast')
 }
 
 // We don't produce a jar
@@ -55,6 +56,24 @@ test {
 
   systemProperty 'vertx.test.timeout', 60
   systemProperty 'vertx.mods', "$projectDir/src/test/mod-test"
+  systemProperty 'vertx.clusterManagerFactory', 'org.vertx.java.fakecluster.FakeClusterManagerFactory'
+
+  jvmArgs '-server', '-Xms128m', '-Xmx1024m', '-XX:MaxPermSize=128m', '-XX:NewRatio=2'
+
+  testLogging { exceptionFormat "full" }
+
+}
+
+task hazelcastTest(type: Test) {
+  outputs.upToDateWhen { false }
+
+  testLogging.showStandardStreams = true
+
+  systemProperty 'vertx.test.timeout', 60
+  systemProperty 'vertx.mods', "$projectDir/src/test/mod-test"
+  systemProperty 'vertx.clusterManagerFactory', 'org.vertx.java.spi.cluster.impl.hazelcast.HazelcastClusterManagerFactory'
+
+  include '**/HATest*'
 
   jvmArgs '-server', '-Xms128m', '-Xmx1024m', '-XX:MaxPermSize=128m', '-XX:NewRatio=2'
 

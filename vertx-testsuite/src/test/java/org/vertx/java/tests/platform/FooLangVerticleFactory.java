@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.vertx.java.tests.container;
+package org.vertx.java.tests.platform;
 
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.json.JsonObject;

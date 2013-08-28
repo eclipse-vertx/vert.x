@@ -39,11 +39,12 @@ public class Deployment {
   public final String parentDeploymentName;
   public final ModuleReference moduleReference;
   public final boolean autoRedeploy;
+  public final boolean ha;
 
   public Deployment(String name, String main, ModuleIdentifier modID, int instances, JsonObject config,
                     URL[] classpath, File modDir, String parentDeploymentName,
                     ModuleReference moduleReference,
-                    boolean autoRedeploy) {
+                    boolean autoRedeploy, boolean ha) {
     this.name = name;
     this.main = main;
     this.modID = modID;
@@ -54,5 +55,6 @@ public class Deployment {
     this.parentDeploymentName = parentDeploymentName;
     this.moduleReference = moduleReference;
     this.autoRedeploy = autoRedeploy;
+    this.ha = ha;
   }
 }

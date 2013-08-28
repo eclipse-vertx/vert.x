@@ -23,7 +23,6 @@ import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
-import org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.file.impl.DefaultFileSystem;
 import org.vertx.java.core.file.impl.WindowsFileSystem;
@@ -41,9 +40,13 @@ import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
+import org.vertx.java.core.spi.Action;
+import org.vertx.java.core.spi.cluster.ClusterManager;
+import org.vertx.java.core.spi.cluster.ClusterManagerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -73,9 +76,11 @@ public class DefaultVertx implements VertxInternal {
 
   private final ConcurrentMap<Long, InternalTimerHandler> timeouts = new ConcurrentHashMap<>();
   private final AtomicLong timeoutCounter = new AtomicLong(0);
+  private final ClusterManager clusterManager;
 
   public DefaultVertx() {
     this.eventBus = new DefaultEventBus(this);
+    this.clusterManager = null;
   }
 
   public DefaultVertx(String hostname) {
@@ -83,7 +88,26 @@ public class DefaultVertx implements VertxInternal {
   }
 
   public DefaultVertx(int port, String hostname) {
-    this.eventBus = new DefaultEventBus(this, port, hostname, new HazelcastClusterManager(this));
+    ClusterManagerFactory factory;
+    String clusterManagerFactoryClassName = System.getProperty("vertx.clusterManagerFactory");
+    if (clusterManagerFactoryClassName != null) {
+      // We allow specify a sys prop for the cluster manager factory which overrides ServiceLoader
+      try {
+        Class<?> clazz = Class.forName(clusterManagerFactoryClassName);
+        factory = (ClusterManagerFactory)clazz.newInstance();
+      } catch (Exception e) {
+        throw new IllegalStateException("Failed to instantiate " + clusterManagerFactoryClassName, e);
+      }
+    } else {
+      ServiceLoader<ClusterManagerFactory> factories = ServiceLoader.load(ClusterManagerFactory.class);
+      if (!factories.iterator().hasNext()) {
+        throw new IllegalStateException("No ClusterManagerFactory instances found on classpath");
+      }
+      factory = factories.iterator().next();
+    }
+    this.clusterManager = factory.createClusterManager(this);
+    this.clusterManager.join();
+    this.eventBus = new DefaultEventBus(this, port, hostname, clusterManager);
   }
 
   /**
@@ -305,7 +329,39 @@ public class DefaultVertx implements VertxInternal {
       eventLoopGroup = null;
     }
 
+    eventBus.close(null);
+
     setContext(null);
+  }
+
+  @Override
+  public <T> void executeBlocking(final Action<T> action, final Handler<AsyncResult<T>> resultHandler) {
+    final DefaultContext context = getOrCreateContext();
+
+    Runnable runner = new Runnable() {
+      public void run() {
+        final DefaultFutureResult<T> res = new DefaultFutureResult<>();
+        try {
+          T result = action.perform();
+          res.setResult(result);
+        } catch (Exception e) {
+          res.setFailure(e);
+        }
+        if (resultHandler != null) {
+          context.execute(new Runnable() {
+              public void run() {
+                res.setHandler(resultHandler);
+              }
+            });
+        }
+      }
+    };
+
+    context.executeOnOrderedWorkerExec(runner);
+  }
+
+  public ClusterManager clusterManager() {
+    return clusterManager;
   }
 
   private class InternalTimerHandler implements Runnable, Closeable {

@@ -81,6 +81,19 @@ public interface PlatformManager {
                     int instances, Handler<AsyncResult<String>> doneHandler);
 
   /**
+   * Deploy a module
+   * @param moduleName The name of the module to deploy
+   * @param config Any JSON config to pass to the verticle, or null if none
+   * @param instances The number of instances to deploy
+   * @param ha If true then the module is enabled for ha and will failover to any other vert.x instances
+   *           with the same group in the cluster
+   * @param doneHandler Handler will be called with deploymentID when deployed, or null if it fails to deploy
+   */
+  void deployModule(String moduleName, JsonObject config,
+                    int instances,
+                    boolean ha, Handler<AsyncResult<String>> doneHandler);
+
+  /**
    * Deploy a module from a zip file.
    * The zip must contain a valid Vert.x module. Vert.x will automatically install the module from the zip into the
    * local mods dir or the system mods dir (if it's a system module), or VERTX_MODS if set, and then deploy the

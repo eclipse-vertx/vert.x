@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.vertx.java.tests.container;
+package org.vertx.java.tests.platform;
 
 import org.junit.Test;
 
@@ -21,17 +21,16 @@ import org.junit.Test;
  * @author swilliams
  *
  */
-public class PrefixLanguageImplementationTest {
-
-  // Commented out - Vert.x requires all languages other than Java to be implemented as modules!
-
-  //private PlatformManager platformManager;
+public class SystemPropertyLanguageImplementationTest {
 
   @Test
   public void testDummy() {
-
   }
 
+  // Commented out - Vert.x requires all languages other than Java to be implemented as modules!
+
+//  private PlatformManager platformManager;
+//
 //  @BeforeClass
 //  public static void beforeClass() {
 //    System.setProperty("vertx.langs.foo", FooLangVerticleFactory.class.getName());
@@ -68,7 +67,7 @@ public class PrefixLanguageImplementationTest {
 //
 //    while (true) {
 //      try {
-//        await = latch.await(5000L, TimeUnit.MILLISECONDS);
+//        await = latch.await(5000, TimeUnit.MILLISECONDS);
 //        break;
 //      } catch (InterruptedException e) {
 //        //
@@ -82,7 +81,7 @@ public class PrefixLanguageImplementationTest {
 //
 //  @Test
 //  public void deployFooVerticleFailure() {
-//    String main = "expectedfailure:expected-to-fail.test";
+//    String main = "expected-to-fail.testfailure";
 //
 //    JsonObject config = new JsonObject();
 //    config.putString("foo", "foo");
@@ -94,7 +93,7 @@ public class PrefixLanguageImplementationTest {
 //    Handler<String> doneHandler = new Handler<String>() {
 //      @Override
 //      public void handle(String event) {
-//        // null means failed to deploy
+//        // null means deploy failed
 //        if (event == null) {
 //          latch.countDown();
 //        }
@@ -104,6 +103,7 @@ public class PrefixLanguageImplementationTest {
 //    platformManager.deployVerticle(main, config, urls, 1, includes, doneHandler);
 //
 //    boolean await;
+//
 //    while (true) {
 //      try {
 //        await = latch.await(5000, TimeUnit.MILLISECONDS);

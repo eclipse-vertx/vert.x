@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.eventbus.impl.hazelcast;
+package org.vertx.java.spi.cluster.impl.hazelcast;
 
 import com.hazelcast.nio.DataSerializable;
 import org.vertx.java.core.net.impl.ServerID;
@@ -26,40 +26,36 @@ import java.io.IOException;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HazelcastServerID implements DataSerializable {
-
-  public ServerID serverID;
+class HazelcastServerID extends ServerID implements DataSerializable {
 
   public HazelcastServerID() {
   }
 
   public HazelcastServerID(ServerID serverID) {
-    this.serverID = serverID;
+    super(serverID.port, serverID.host);
   }
 
   @Override
   public void writeData(DataOutput dataOutput) throws IOException {
-    dataOutput.writeInt(serverID.port);
-    dataOutput.writeUTF(serverID.host);
+    dataOutput.writeInt(port);
+    dataOutput.writeUTF(host);
   }
 
   @Override
   public void readData(DataInput dataInput) throws IOException {
-    int port = dataInput.readInt();
-    String host = dataInput.readUTF();
-    serverID = new ServerID(port, host);
+    port = dataInput.readInt();
+    host = dataInput.readUTF();
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    HazelcastServerID that = (HazelcastServerID) o;
-    return serverID.equals(that.serverID);
-  }
-
-  @Override
-  public int hashCode() {
-    return serverID.hashCode();
+  // We replace any ServerID instances with HazelcastServerID - this allows them to be serialized more optimally using
+  // DataSerializable
+  public static <V> V convertServerID(V val) {
+    if (val.getClass() == ServerID.class) {
+      ServerID sid = (ServerID)val;
+      HazelcastServerID hsid = new HazelcastServerID(sid);
+      return (V)hsid;
+    } else {
+      return val;
+    }
   }
 }

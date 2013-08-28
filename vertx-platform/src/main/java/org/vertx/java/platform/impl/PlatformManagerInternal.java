@@ -1,4 +1,5 @@
-package org.vertx.java.platform.impl;/*
+package org.vertx.java.platform.impl;
+/*
  * Copyright 2013 Red Hat, Inc.
  *
  * Red Hat licenses this file to you under the Apache License, version 2.0
@@ -16,9 +17,13 @@ package org.vertx.java.platform.impl;/*
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.platform.PlatformManager;
+
+import java.util.Map;
 
 /**
  * Internal interface - not designed to be publicly used
@@ -34,4 +39,9 @@ public interface PlatformManagerInternal extends PlatformManager {
   void exit();
 
   int checkNoModules();
+
+  Map<String, Deployment> deployments();
+
+  void deployModuleInternal(String moduleName, JsonObject config,
+                            int instances, boolean ha, Handler<AsyncResult<String>> doneHandler);
 }

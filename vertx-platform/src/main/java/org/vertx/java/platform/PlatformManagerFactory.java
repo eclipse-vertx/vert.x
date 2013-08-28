@@ -38,4 +38,14 @@ public interface PlatformManagerFactory {
    * @return The instance
    */
   PlatformManager createPlatformManager(int clusterPort, String clusterHost);
+
+  /**
+   * Create a clustered platform manager with HA enabled
+   * @param clusterPort The cluster port to listen on
+   * @param clusterHost The cluster host to listen on
+   * @param quorumSize The minimum number of nodes in the cluster before deployments will be activated
+   * @param haGroup The HA group this Vert.x instance participates in. If null defaults to __DEFAULT__
+   * @return The instance
+   */
+  PlatformManager createPlatformManager(int clusterPort, String clusterHost, int quorumSize, String haGroup);
 }

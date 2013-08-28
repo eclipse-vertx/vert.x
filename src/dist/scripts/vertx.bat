@@ -56,6 +56,9 @@ if not "%VERTX_MODS%" == "" set VERTX_MODULE_OPTS="-Dvertx.mods=%VERTX_MODS%"
 @rem Configure JUL using custom properties file
 if "%VERTX_JUL_CONFIG%" == "" set VERTX_JUL_CONFIG=%VERTX_HOME%\conf\logging.properties
 
+@rem Specify ClusterManagerFactory
+if "%VERTX_CLUSTERMANAGERFACTORY%" == "" set VERTX_CLUSTERMANAGERFACTORY=org.vertx.java.spi.cluster.impl.hazelcast.HazelcastClusterManagerFactory
+
 @rem Get command-line arguments, handling Windowz variants
 
 if not "%OS%" == "Windows_NT" goto win9xME_args
@@ -82,7 +85,7 @@ set CMD_LINE_ARGS=%$
 set CLASSPATH=%CLASSPATH%;%VERTX_HOME%\lib\*;%VERTX_HOME%\conf
 
 @rem Execute vertx
-"%JAVA_EXE%" %JVM_OPTS% %JMX_OPTS% %JAVA_OPTS% %VERTX_OPTS% %VERTX_MODULE_OPTS% -Djava.util.logging.config.file="%VERTX_JUL_CONFIG%" -Dvertx.home="%VERTX_HOME%" -classpath "%CLASSPATH%" org.vertx.java.platform.impl.cli.Starter %CMD_LINE_ARGS%
+"%JAVA_EXE%" %JVM_OPTS% %JMX_OPTS% %JAVA_OPTS% %VERTX_OPTS% %VERTX_MODULE_OPTS% -Djava.util.logging.config.file="%VERTX_JUL_CONFIG%" -Dvertx.home="%VERTX_HOME%" -Dvertx.clusterManagerFactory="%VERTX_CLUSTERMANAGERFACTORY%" -classpath "%CLASSPATH%" org.vertx.java.platform.impl.cli.Starter %CMD_LINE_ARGS%
 
 :end
 @rem End local scope for the variables with windows NT shell

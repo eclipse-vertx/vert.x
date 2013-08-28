@@ -1,0 +1,2 @@
+# org.vertx.java.fakecluster.FakeClusterManagerFactory
+org.vertx.java.core.spi.cluster.impl.hazelcast.HazelcastClusterManagerFactory

@@ -22,7 +22,7 @@ import org.vertx.java.core.Handler;
 /**
  * <p>Internal class used to run specific blocking actions on the worker pool.</p>
  *
- * <p>This class shouldn't be used directlty from user applications.</p>
+ * <p>This class shouldn't be used directly from user applications.</p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

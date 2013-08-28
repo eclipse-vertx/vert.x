@@ -176,5 +176,6 @@ exec "$JAVACMD" \
     "${JVM_OPTS[@]}" \
     -Djava.util.logging.config.file=${VERTX_JUL_CONFIG:-${VERTX_HOME}/conf/logging.properties} \
     -Dvertx.home=$VERTX_HOME\
+    -Dvertx.clusterManagerFactory=org.vertx.java.spi.cluster.impl.hazelcast.HazelcastClusterManagerFactory\
     -classpath "$CLASSPATH" \
     org.vertx.java.platform.impl.cli.Starter "$@"

@@ -19,12 +19,12 @@ package vertx.tests.core.eventbus;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Future;
-import org.vertx.java.core.eventbus.impl.ClusterManager;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
-import org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.spi.cluster.ClusterManager;
+import org.vertx.java.fakecluster.FakeClusterManager;
 import org.vertx.java.testframework.TestClientBase;
 
 import java.util.Map;
@@ -51,7 +51,7 @@ public abstract class EventBusAppBase extends TestClientBase {
       // FIXME - this test is a hack - we shouldn't be creating multiple eventbuses with a single vert.x
       // using private API!!
       VertxInternal vertxi = ((VertxInternal)vertx);
-      ClusterManager clusterManager = new HazelcastClusterManager(vertxi);
+      ClusterManager clusterManager = new FakeClusterManager(vertxi);
       eb = new DefaultEventBus(vertxi, 0, "localhost", clusterManager, new AsyncResultHandler<Void>() {
         @Override
         public void handle(AsyncResult<Void> asyncResult) {
