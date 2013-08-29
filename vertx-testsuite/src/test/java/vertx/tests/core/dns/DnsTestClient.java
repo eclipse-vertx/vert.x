@@ -19,6 +19,7 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.dns.*;
 import org.vertx.java.testframework.TestClientBase;
+import org.vertx.testtools.TestDnsServer;
 
 import java.net.Inet4Address;
 import java.net.Inet6Address;
