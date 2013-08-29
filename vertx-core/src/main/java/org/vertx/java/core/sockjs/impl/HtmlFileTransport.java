@@ -82,6 +82,7 @@ class HtmlFileTransport extends BaseTransport {
 
         String sessionID = req.params().get("param0");
         Session session = getSession(config.getLong("session_timeout"), config.getLong("heartbeat_period"), sessionID, sockHandler);
+        session.setAddresses(req.localAddress(), req.remoteAddress());
         session.register(new HtmlFileListener(config.getInteger("max_bytes_streaming"), req, callback, session));
       }
     });

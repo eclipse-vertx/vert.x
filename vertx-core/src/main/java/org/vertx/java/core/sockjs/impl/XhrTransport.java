@@ -18,6 +18,7 @@ package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.impl.VertxInternal;
@@ -46,7 +47,7 @@ class XhrTransport extends BaseTransport {
     H_BLOCK = new Buffer(bytes);
   }
 
-  XhrTransport(VertxInternal vertx,RouteMatcher rm, String basePath, final Map<String, Session> sessions, final JsonObject config,
+  XhrTransport(VertxInternal vertx, RouteMatcher rm, String basePath, final Map<String, Session> sessions, final JsonObject config,
             final Handler<SockJSSocket> sockHandler) {
 
     super(vertx, sessions, config);
@@ -91,6 +92,7 @@ class XhrTransport extends BaseTransport {
         setNoCacheHeaders(req);
         String sessionID = req.params().get("param0");
         Session session = getSession(config.getLong("session_timeout"), config.getLong("heartbeat_period"), sessionID, sockHandler);
+        session.setAddresses(req.localAddress(), req.remoteAddress());
         session.register(streaming? new XhrStreamingListener(config.getInteger("max_bytes_streaming"), req, session) : new XhrPollingListener(req, session));
       }
     });

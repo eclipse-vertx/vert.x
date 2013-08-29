@@ -25,6 +25,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.shareddata.Shareable;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
+import java.net.InetSocketAddress;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
@@ -41,7 +42,6 @@ import java.util.Queue;
 class Session extends SockJSSocketBase implements Shareable {
 
   private static final Logger log = LoggerFactory.getLogger(Session.class);
-
   private final Map<String, Session> sessions;
   private final Queue<String> pendingWrites = new LinkedList<>();
   private final Queue<String> pendingReads = new LinkedList<>();
@@ -61,6 +61,8 @@ class Session extends SockJSSocketBase implements Shareable {
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
   private boolean handleCalled;
+  private InetSocketAddress localAddress;
+  private InetSocketAddress remoteAddress;
 
   Session(VertxInternal vertx, Map<String, Session> sessions, long heartbeatPeriod, Handler<SockJSSocket> sockHandler) {
     this(vertx, sessions, null, -1, heartbeatPeriod, sockHandler);
@@ -166,6 +168,16 @@ class Session extends SockJSSocketBase implements Shareable {
     if (listener != null && handleCalled) {
       listener.sessionClosed();
     }
+  }
+
+  @Override
+  public InetSocketAddress remoteAddress() {
+    return remoteAddress;
+  }
+
+  @Override
+  public InetSocketAddress localAddress() {
+    return localAddress;
   }
 
   synchronized boolean isClosed() {
@@ -339,4 +351,8 @@ class Session extends SockJSSocketBase implements Shareable {
     openWritten = true;
   }
 
+  void setAddresses(InetSocketAddress localAddress, InetSocketAddress remoteAddress) {
+    this.localAddress = localAddress;
+    this.remoteAddress = remoteAddress;
+  }
 }

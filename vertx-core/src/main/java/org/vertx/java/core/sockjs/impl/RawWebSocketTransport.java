@@ -27,6 +27,8 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
+import java.net.InetSocketAddress;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -92,6 +94,15 @@ class RawWebSocketTransport {
       ws.close();
     }
 
+    @Override
+    public InetSocketAddress remoteAddress() {
+      return ws.remoteAddress();
+    }
+
+    @Override
+    public InetSocketAddress localAddress() {
+      return ws.localAddress();
+    }
   }
 
   RawWebSocketTransport(final Vertx vertx, WebSocketMatcher wsMatcher, RouteMatcher rm, String basePath,

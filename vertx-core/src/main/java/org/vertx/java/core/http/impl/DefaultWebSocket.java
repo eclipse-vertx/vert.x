@@ -23,7 +23,7 @@ import org.vertx.java.core.net.impl.ConnectionBase;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultWebSocket extends WebSocketImplBase implements WebSocket {
+public class DefaultWebSocket extends WebSocketImplBase<WebSocket> implements WebSocket {
 
   public DefaultWebSocket(VertxInternal vertx, ConnectionBase conn) {
     super(vertx, conn);

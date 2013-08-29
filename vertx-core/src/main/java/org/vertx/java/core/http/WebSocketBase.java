@@ -21,6 +21,8 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
 
+import java.net.InetSocketAddress;
+
 /**
  * Represents an HTML 5 Websocket<p>
  * Instances of this class are created and provided to the handler of an
@@ -71,5 +73,15 @@ public interface WebSocketBase<T> extends ReadStream<T>, WriteStream<T> {
    * Close the websocket
    */
   void close();
+
+  /**
+   * Return the remote address for this socket
+   */
+  InetSocketAddress remoteAddress();
+
+  /**
+   * Return the local address for this socket
+   */
+  InetSocketAddress localAddress();
 
 }
