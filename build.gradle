@@ -69,6 +69,10 @@ subprojects {
       exclude group: "io.vertx"
       exclude group: "junit"
     }
+    testCompile "io.vertx:testtools:$toolsVersion", {
+      exclude group: "io.vertx"
+      exclude group: "junit"
+    }
   }
   
   javadoc {

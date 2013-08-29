@@ -171,12 +171,12 @@ public interface DnsClient {
    * Try to do a reverse lookup of an ipaddress. This is basically the same as doing trying to resolve a PTR record
    * but allows you to just pass in the ipaddress and not a valid ptr query string.
    *
-   * @param name      The name to resolve the PTR for
+   * @param ipaddress The ipaddress to resolve the PTR for
    * @param handler   the {@link Handler} to notify with the {@link AsyncResult}. The {@link AsyncResult} will get
    *                  notified with the resolved {@link String} if a record was found. If non was found it will
    *                  get notified with {@code null}.
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
-  DnsClient reverseLookup(String name, Handler<AsyncResult<InetAddress>> handler);
+  DnsClient reverseLookup(String ipaddress, Handler<AsyncResult<InetAddress>> handler);
 }
