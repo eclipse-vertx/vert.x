@@ -158,7 +158,6 @@ public class DefaultHttpServer implements HttpServer, Closeable {
         bootstrap.channel(NioServerSocketChannel.class);
         tcpHelper.applyConnectionOptions(bootstrap);
         tcpHelper.checkSSL(vertx);
-
         bootstrap.childHandler(new ChannelInitializer<Channel>() {
             @Override
             protected void initChannel(Channel ch) throws Exception {
