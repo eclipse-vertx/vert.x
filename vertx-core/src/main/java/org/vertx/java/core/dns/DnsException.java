@@ -16,7 +16,8 @@
 package org.vertx.java.core.dns;
 
 /**
- * Exception which is thrown if the DNS query returns a {@link DnsResponseCode} which indicates and error.
+ * Exception which is used to notify the {@link org.vertx.java.core.AsyncResult}
+ * if the DNS query returns a {@link DnsResponseCode} which indicates and error.
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
@@ -32,7 +33,7 @@ public final class DnsException extends Exception {
   }
 
   /**
-   * The {@link DnsResponseCode} which caused this {@link DnsException} to be thrown.
+   * The {@link DnsResponseCode} which caused this {@link DnsException} to be created.
    */
   public DnsResponseCode code() {
     return code;
