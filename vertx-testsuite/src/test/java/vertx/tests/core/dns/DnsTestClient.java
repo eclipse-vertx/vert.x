@@ -57,6 +57,7 @@ public class DnsTestClient extends TestClientBase {
     dns.resolveA("vertx.io", new Handler<AsyncResult<List<Inet4Address>>>() {
       @Override
       public void handle(AsyncResult<List<Inet4Address>> event) {
+        tu.checkThread();
         List<Inet4Address> result = event.result();
 
         tu.azzert(!result.isEmpty());
@@ -74,6 +75,7 @@ public class DnsTestClient extends TestClientBase {
     dns.resolveAAAA("vertx.io", new Handler<AsyncResult<List<Inet6Address>>>() {
       @Override
       public void handle(AsyncResult<List<Inet6Address>> event) {
+        tu.checkThread();
         List<Inet6Address> result = event.result();
         tu.azzert(result != null);
         tu.azzert(!result.isEmpty());
@@ -93,6 +95,7 @@ public class DnsTestClient extends TestClientBase {
     dns.resolveMX("vertx.io", new Handler<AsyncResult<List<MxRecord>>>() {
       @Override
       public void handle(AsyncResult<List<MxRecord>> event) {
+        tu.checkThread();
         List<MxRecord> result = event.result();
         tu.azzert(!result.isEmpty());
         tu.azzert(1 == result.size());
@@ -112,6 +115,7 @@ public class DnsTestClient extends TestClientBase {
     dns.resolveTXT("vertx.io", new Handler<AsyncResult<List<String>>>() {
       @Override
       public void handle(AsyncResult<List<String>> event) {
+        tu.checkThread();
         List<String> result = event.result();
         tu.azzert(!result.isEmpty());
         tu.azzert(result.size() == 1);
@@ -129,6 +133,7 @@ public class DnsTestClient extends TestClientBase {
     dns.resolveNS("vertx.io", new Handler<AsyncResult<List<String>>>() {
       @Override
       public void handle(AsyncResult<List<String>> event) {
+        tu.checkThread();
         List<String> result = event.result();
         tu.azzert(!result.isEmpty());
         tu.azzert(result.size() == 1);
@@ -146,6 +151,7 @@ public class DnsTestClient extends TestClientBase {
     dns.resolveCNAME("vertx.io", new Handler<AsyncResult<List<String>>>() {
       @Override
       public void handle(AsyncResult<List<String>> event) {
+        tu.checkThread();
         List<String> result = event.result();
         tu.azzert(!result.isEmpty());
         tu.azzert(result.size() == 1);
@@ -166,6 +172,7 @@ public class DnsTestClient extends TestClientBase {
     dns.resolvePTR("10.0.0.1.in-addr.arpa", new Handler<AsyncResult<String>>() {
       @Override
       public void handle(AsyncResult<String> event) {
+        tu.checkThread();
         String result = event.result();
         tu.azzert(result != null);
 
@@ -187,6 +194,7 @@ public class DnsTestClient extends TestClientBase {
     dns.resolveSRV("vertx.io", new Handler<AsyncResult<List<SrvRecord>>>() {
       @Override
       public void handle(AsyncResult<List<SrvRecord>> event) {
+        tu.checkThread();
         List<SrvRecord> result = event.result();
         tu.azzert(!result.isEmpty());
         tu.azzert(result.size() == 1);
@@ -210,6 +218,7 @@ public class DnsTestClient extends TestClientBase {
     dns.lookup4("vertx.io", new Handler<AsyncResult<Inet4Address>>() {
       @Override
       public void handle(AsyncResult<Inet4Address> event) {
+        tu.checkThread();
         InetAddress result = event.result();
         tu.azzert(result != null);
         tu.azzert(ip.equals(result.getHostAddress()));
@@ -224,6 +233,7 @@ public class DnsTestClient extends TestClientBase {
     dns.lookup6("vertx.io", new Handler<AsyncResult<Inet6Address>>() {
       @Override
       public void handle(AsyncResult<Inet6Address> event) {
+        tu.checkThread();
         Inet6Address result = event.result();
         tu.azzert(result != null);
         tu.azzert(Arrays.equals(IP6_BYTES, result.getAddress()));
@@ -239,6 +249,7 @@ public class DnsTestClient extends TestClientBase {
     dns.lookup("vertx.io", new Handler<AsyncResult<InetAddress>>() {
       @Override
       public void handle(AsyncResult<InetAddress> event) {
+        tu.checkThread();
         InetAddress result = event.result();
         tu.azzert(result != null);
         tu.azzert(ip.equals(result.getHostAddress()));
@@ -252,6 +263,7 @@ public class DnsTestClient extends TestClientBase {
     dns.lookup("gfegjegjf.sg1", new Handler<AsyncResult<InetAddress>>() {
       @Override
       public void handle(AsyncResult<InetAddress> event) {
+        tu.checkThread();
         DnsException cause = (DnsException) event.cause();
         tu.azzert(cause.code() == DnsResponseCode.NXDOMAIN);
         tu.testComplete();
@@ -267,6 +279,7 @@ public class DnsTestClient extends TestClientBase {
     dns.reverseLookup("10.0.0.1", new Handler<AsyncResult<InetAddress>>() {
       @Override
       public void handle(AsyncResult<InetAddress> event) {
+        tu.checkThread();
         InetAddress result = event.result();
         tu.azzert(result != null);
         tu.azzert(result instanceof Inet4Address);
@@ -287,6 +300,7 @@ public class DnsTestClient extends TestClientBase {
     dns.reverseLookup("::1", new Handler<AsyncResult<InetAddress>>() {
       @Override
       public void handle(AsyncResult<InetAddress> event) {
+        tu.checkThread();
         InetAddress result = event.result();
         tu.azzert(result != null);
         tu.azzert(result instanceof Inet6Address);

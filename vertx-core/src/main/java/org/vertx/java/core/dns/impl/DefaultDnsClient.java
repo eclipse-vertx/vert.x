@@ -43,6 +43,8 @@ public final class DefaultDnsClient implements DnsClient {
   private final Bootstrap bootstrap;
   private final List<InetSocketAddress> dnsServers;
   private static final char[] HEX_TABLE = "0123456789abcdef".toCharArray();
+  private final DefaultContext actualCtx;
+  private final VertxInternal vertx;
 
   public DefaultDnsClient(VertxInternal vertx, InetSocketAddress... dnsServers) {
     if (dnsServers == null || dnsServers.length == 0) {
@@ -51,8 +53,8 @@ public final class DefaultDnsClient implements DnsClient {
 
     // use LinkedList as we will traverse it all the time
     this.dnsServers = new LinkedList<>(Arrays.asList(dnsServers));
-    DefaultContext actualCtx = vertx.getOrCreateContext();
-
+    actualCtx = vertx.getOrCreateContext();
+    this.vertx = vertx;
     bootstrap = new Bootstrap();
     bootstrap.group(actualCtx.getEventLoop());
     bootstrap.channel(NioDatagramChannel.class);
@@ -204,11 +206,11 @@ public final class DefaultDnsClient implements DnsClient {
       });
     } catch (final UnknownHostException e) {
       // Should never happen as we work with ip addresses as input
-      // anyway just in case notify the handler in the EventLoop thread.
-      bootstrap.group().next().execute(new Runnable() {
-        @Override
+      // anyway just in case notify the handler
+      actualCtx.execute(new Runnable() {
         public void run() {
           handler.handle(new DefaultFutureResult<InetAddress>(e));
+
         }
       });
     }
@@ -247,16 +249,16 @@ public final class DefaultDnsClient implements DnsClient {
                     records.add(record);
                   }
 
-                  setResult(result, records);
+                  setResult(result, ctx.channel().eventLoop(), records);
                 } else {
-                  setResult(result, new DnsException(code));
+                  setResult(result, ctx.channel().eventLoop(), new DnsException(code));
                 }
                 ctx.close();
               }
 
               @Override
               public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-                setResult(result, cause);
+                setResult(result, ctx.channel().eventLoop(), cause);
                 ctx.close();
               }
             });
@@ -267,14 +269,31 @@ public final class DefaultDnsClient implements DnsClient {
   }
 
   @SuppressWarnings("unchecked")
-  private static void setResult(DefaultFutureResult r, Object result) {
+  private void setResult(final DefaultFutureResult r, EventLoop loop, final Object result) {
     if (r.complete()) {
       return;
     }
-    if (result instanceof Throwable) {
-      r.setFailure((Throwable) result);
+    if (actualCtx.isOnCorrectWorker(loop)) {
+      try {
+        vertx.setContext(actualCtx);
+        if (result instanceof Throwable) {
+          r.setFailure((Throwable) result);
+        } else {
+          r.setResult(result);
+        }
+      } catch (Throwable t) {
+        actualCtx.reportException(t);
+      }
     } else {
-      r.setResult(result);
+      actualCtx.execute(new Runnable() {
+        public void run() {
+          if (result instanceof Throwable) {
+            r.setFailure((Throwable) result);
+          } else {
+            r.setResult(result);
+          }
+        }
+      });
     }
   }
 
