@@ -18,7 +18,7 @@ apply from: "$rootDir/gradle/maven.gradle"
 
 dependencies {
 	compile project(':vertx-core')
-  compile project(':vertx-platform')
+	compile project(':vertx-platform')
 }
 
 // We don't produce a jar

@@ -16,6 +16,7 @@
 
 package org.vertx.java.core;
 
+import org.vertx.java.core.dns.DnsClient;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.http.HttpClient;
@@ -24,6 +25,8 @@ import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
+
+import java.net.InetSocketAddress;
 
 /**
  * The control centre of the Vert.x Core API.<p>
@@ -74,6 +77,11 @@ public interface Vertx {
    * The event bus
    */
   EventBus eventBus();
+
+  /**
+   * Return the {@link DnsClient}
+   */
+  DnsClient createDnsClient(InetSocketAddress... dnsServers);
 
   /**
    * The shared data object

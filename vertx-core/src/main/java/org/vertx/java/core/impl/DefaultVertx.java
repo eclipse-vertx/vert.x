@@ -21,6 +21,8 @@ import io.netty.channel.EventLoopGroup;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.dns.DnsClient;
+import org.vertx.java.core.dns.impl.DefaultDnsClient;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager;
@@ -42,6 +44,7 @@ import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
 
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -217,6 +220,11 @@ public class DefaultVertx implements VertxInternal {
 
   public EventLoopContext createEventLoopContext() {
     return new EventLoopContext(this, orderedFact.getExecutor());
+  }
+
+  @Override
+  public DnsClient createDnsClient(InetSocketAddress... dnsServers) {
+    return new DefaultDnsClient(this, dnsServers);
   }
 
   private long scheduleTimeout(final DefaultContext context, final Handler<Long> handler, long delay, boolean periodic) {
