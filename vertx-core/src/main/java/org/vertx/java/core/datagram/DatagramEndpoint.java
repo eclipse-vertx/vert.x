@@ -17,15 +17,21 @@ package org.vertx.java.core.datagram;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.streams.ExceptionSupport;
 
 import java.net.InetSocketAddress;
 
+
 /**
- * Allow to create a new {@link DatagramSocket}. This socket can then be used to send and receive UDP
- *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public interface DatagramEndpoint {
+public interface DatagramEndpoint extends DatagramChannel<DatagramEndpoint>, ExceptionSupport<DatagramEndpoint> {
 
-  DatagramEndpoint bind(InetSocketAddress local, Handler<AsyncResult<DatagramSocket>> handler);
+  DatagramEndpoint write(Buffer packet, InetSocketAddress remote,  Handler<AsyncResult<DatagramEndpoint>> handler);
+
+  /**
+   * Set a data handler. As data is read, the handler will be called with the data.
+   */
+  DatagramEndpoint packetHandler(Handler<DatagramPacket> packetHandler);
 }

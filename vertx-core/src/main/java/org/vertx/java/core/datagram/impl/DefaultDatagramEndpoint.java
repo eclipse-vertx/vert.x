@@ -15,63 +15,56 @@
  */
 package org.vertx.java.core.datagram.impl;
 
-import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.DatagramChannel;
-import io.netty.channel.socket.nio.NioDatagramChannel;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.datagram.DatagramEndpoint;
-import org.vertx.java.core.datagram.DatagramSocket;
+import org.vertx.java.core.datagram.DatagramPacket;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
 
 import java.net.InetSocketAddress;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public class DefaultDatagramEndpoint implements DatagramEndpoint {
-  final Map<Channel, DefaultDatagramSocket> socketMap = new ConcurrentHashMap<>();
+public class DefaultDatagramEndpoint extends AbstractDatagramChannel<DatagramEndpoint> implements DatagramEndpoint{
 
-  private final VertxInternal vertx;
-  private final DefaultContext actualCtx;
-  private Bootstrap bootstrap;
-  public DefaultDatagramEndpoint(VertxInternal vertx) {
-    this.vertx = vertx;
-    actualCtx = vertx.getOrCreateContext();
+  private Handler<DatagramPacket> packetHandler;
+
+  DefaultDatagramEndpoint(VertxInternal vertx, DatagramChannel channel, DefaultContext context) {
+    super(vertx, channel, context);
   }
 
   @Override
-  public DatagramEndpoint bind(InetSocketAddress local, Handler<AsyncResult<DatagramSocket>> handler) {
-    if (bootstrap == null) {
-      bootstrap = createBootstrap();
-    }
-    ChannelFuture future = bootstrap.bind(local);
-    DefaultDatagramSocket socket = new DefaultDatagramSocket(vertx, (DatagramChannel) future.channel(), actualCtx);
-    socket.addListener(future, handler);
+  protected void handleInterestedOpsChanged() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public DatagramEndpoint write(Buffer packet, InetSocketAddress remote, Handler<AsyncResult<DatagramEndpoint>> handler) {
+    addListener(write(new io.netty.channel.socket.DatagramPacket(packet.getByteBuf(), remote)), handler);
+    return this;
+  }
+
+  @Override
+  public DatagramEndpoint packetHandler(Handler<DatagramPacket> packetHandler) {
+    this.packetHandler = packetHandler;
+    return this;
+  }
+
+  @Override
+  public DatagramEndpoint exceptionHandler(Handler<Throwable> handler) {
+    exceptionHandler = handler;
     return this;
   }
 
 
-  private Bootstrap createBootstrap() {
-    Bootstrap bootstrap = new Bootstrap();
-    bootstrap.group(actualCtx.getEventLoop());
-    bootstrap.channel(NioDatagramChannel.class);
-    bootstrap.handler(new ChannelInitializer<Channel>() {
-      @Override
-      protected void initChannel(Channel ch) throws Exception {
-        ChannelPipeline pipeline = ch.pipeline();
-        pipeline.addLast("handler", new DatagramHandler(vertx, socketMap));
-      }
-    });
-    return bootstrap;
+  void handleData(DatagramPacket data) {
+    if (packetHandler != null) {
+      packetHandler.handle(data);
+    }
   }
-
 }

@@ -20,6 +20,10 @@ import org.vertx.java.core.datagram.DatagramPacket;
 
 import java.net.InetSocketAddress;
 
+
+/**
+ * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
+ */
 class DefaultDatagramPacket implements DatagramPacket {
   private final InetSocketAddress sender;
   private final Buffer buffer;
