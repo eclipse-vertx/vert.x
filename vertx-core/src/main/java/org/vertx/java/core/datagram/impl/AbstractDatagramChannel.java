@@ -18,9 +18,9 @@ package org.vertx.java.core.datagram.impl;
 
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.socket.DatagramChannel;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.datagram.DatagramChannel;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.VertxInternal;
@@ -34,11 +34,11 @@ import java.net.NetworkInterface;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-abstract class AbstractDatagramChannel<T extends org.vertx.java.core.datagram.DatagramChannel> extends ConnectionBase
-        implements org.vertx.java.core.datagram.DatagramChannel<T> {
-  protected final DatagramChannel channel;
+abstract class AbstractDatagramChannel<T extends DatagramChannel> extends ConnectionBase
+        implements DatagramChannel<T> {
+  protected final io.netty.channel.socket.DatagramChannel channel;
 
-  AbstractDatagramChannel(VertxInternal vertx, DatagramChannel channel, DefaultContext context) {
+  AbstractDatagramChannel(VertxInternal vertx, io.netty.channel.socket.DatagramChannel channel, DefaultContext context) {
     super(vertx, channel, context);
     this.channel = channel;
   }

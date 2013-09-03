@@ -15,21 +15,23 @@
  */
 package org.vertx.java.core.datagram;
 
-import org.vertx.java.core.streams.ReadStream;
-import org.vertx.java.core.streams.WriteStream;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.streams.ExceptionSupport;
 
 import java.net.InetSocketAddress;
 
+
 /**
- * A socket which allows to communicate via UDP.
- *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public interface DatagramSocket extends DatagramChannel<DatagramSocket>, ReadStream<DatagramSocket> , WriteStream<DatagramSocket>{
+public interface BoundDatagramChannel extends DatagramChannel<BoundDatagramChannel>, ExceptionSupport<BoundDatagramChannel> {
+
+  BoundDatagramChannel write(Buffer packet, InetSocketAddress remote,  Handler<AsyncResult<BoundDatagramChannel>> handler);
 
   /**
-   * Return the {@link InetSocketAddress} of the remote peer to which this {@link DatagramSocket} is connected. If
-   * the {@link DatagramSocket} is not connected to a remote-peer it will return {@code null}.
+   * Set a data handler. As data is read, the handler will be called with the data.
    */
-  InetSocketAddress remoteAddress();
+  BoundDatagramChannel packetHandler(Handler<DatagramPacket> packetHandler);
 }

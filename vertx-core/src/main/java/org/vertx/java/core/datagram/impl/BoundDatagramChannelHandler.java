@@ -27,17 +27,18 @@ import org.vertx.java.core.net.impl.VertxHandler;
 import java.util.Map;
 
 
+
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-class DatagramHandler extends VertxHandler<DefaultDatagramSocket> {
-  DatagramHandler(VertxInternal vertx, Map<Channel, DefaultDatagramSocket> connectionMap) {
+class BoundDatagramChannelHandler extends VertxHandler<AbstractDatagramChannel> {
+  BoundDatagramChannelHandler(VertxInternal vertx, Map<Channel, AbstractDatagramChannel> connectionMap) {
     super(vertx, connectionMap);
   }
 
   @Override
-  protected void channelRead(DefaultDatagramSocket socket, DefaultContext context, ChannelHandlerContext chctx, Object msg) throws Exception {
-    socket.handlePacket((org.vertx.java.core.datagram.DatagramPacket) msg);
+  protected void channelRead(AbstractDatagramChannel endpoint, DefaultContext context, ChannelHandlerContext chctx, Object msg) throws Exception {
+    ((DefaultBoundDatagramChannel)endpoint).handleData((DefaultDatagramPacket) msg);
   }
 
   @Override

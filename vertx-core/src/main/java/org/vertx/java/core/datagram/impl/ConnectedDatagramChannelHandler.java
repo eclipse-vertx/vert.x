@@ -30,14 +30,14 @@ import java.util.Map;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-class DatagramSocketHandler extends VertxHandler<DefaultDatagramSocket> {
-  DatagramSocketHandler(VertxInternal vertx, Map<Channel, DefaultDatagramSocket> connectionMap) {
+class ConnectedDatagramChannelHandler extends VertxHandler<AbstractDatagramChannel> {
+  ConnectedDatagramChannelHandler(VertxInternal vertx, Map<Channel, AbstractDatagramChannel> connectionMap) {
     super(vertx, connectionMap);
   }
 
   @Override
-  protected void channelRead(DefaultDatagramSocket socket, DefaultContext context, ChannelHandlerContext chctx, Object msg) throws Exception {
-    socket.handleData((Buffer) msg);
+  protected void channelRead(AbstractDatagramChannel socket, DefaultContext context, ChannelHandlerContext chctx, Object msg) throws Exception {
+    ((DefaultConnectedDatagramChannel) socket).handleData((Buffer) msg);
   }
 
   @Override

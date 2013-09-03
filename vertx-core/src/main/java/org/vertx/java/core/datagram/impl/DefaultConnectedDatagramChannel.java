@@ -20,20 +20,20 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.socket.DatagramChannel;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.datagram.DatagramSocket;
+import org.vertx.java.core.datagram.ConnectedDatagramChannel;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-class DefaultDatagramSocket extends AbstractDatagramChannel<DatagramSocket> implements DatagramSocket {
+class DefaultConnectedDatagramChannel extends AbstractDatagramChannel<ConnectedDatagramChannel> implements ConnectedDatagramChannel {
 
   private Handler<Void> drainHandler;
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
 
-  DefaultDatagramSocket(VertxInternal vertx, DatagramChannel channel, DefaultContext context) {
+  DefaultConnectedDatagramChannel(VertxInternal vertx, DatagramChannel channel, DefaultContext context) {
     super(vertx, channel, context);
     channel.closeFuture().addListener(new ChannelFutureListener() {
       @Override
@@ -46,7 +46,7 @@ class DefaultDatagramSocket extends AbstractDatagramChannel<DatagramSocket> impl
   }
 
   @Override
-  public DatagramSocket write(Buffer buffer) {
+  public ConnectedDatagramChannel write(Buffer buffer) {
     write(buffer.getByteBuf()).addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
     return this;
   }
@@ -59,13 +59,13 @@ class DefaultDatagramSocket extends AbstractDatagramChannel<DatagramSocket> impl
   }
 
   @Override
-  public DatagramSocket exceptionHandler(Handler<Throwable> handler) {
+  public ConnectedDatagramChannel exceptionHandler(Handler<Throwable> handler) {
     exceptionHandler = handler;
     return this;
   }
 
   @Override
-  public DatagramSocket setWriteQueueMaxSize(int maxSize) {
+  public ConnectedDatagramChannel setWriteQueueMaxSize(int maxSize) {
     doSetWriteQueueMaxSize(maxSize);
     return this;
   }
@@ -76,19 +76,19 @@ class DefaultDatagramSocket extends AbstractDatagramChannel<DatagramSocket> impl
   }
 
   @Override
-  public DatagramSocket drainHandler(Handler<Void> handler) {
+  public ConnectedDatagramChannel drainHandler(Handler<Void> handler) {
     drainHandler = handler;
     return this;
   }
 
   @Override
-  public DatagramSocket dataHandler(Handler<Buffer> handler) {
+  public ConnectedDatagramChannel dataHandler(Handler<Buffer> handler) {
     dataHandler = handler;
     return this;
   }
 
   @Override
-  public DatagramSocket endHandler(Handler<Void> handler) {
+  public ConnectedDatagramChannel endHandler(Handler<Void> handler) {
     endHandler = handler;
     return this;
   }

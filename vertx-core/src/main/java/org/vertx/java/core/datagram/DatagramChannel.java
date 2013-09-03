@@ -29,12 +29,12 @@ import java.net.NetworkInterface;
 public interface DatagramChannel<T extends DatagramChannel> {
 
   /**
-   * Return the {@link InetSocketAddress} to which this {@link DatagramSocket} is bound too.
+   * Return the {@link InetSocketAddress} to which this {@link ConnectedDatagramChannel} is bound too.
    */
   InetSocketAddress localAddress();
 
   /**
-   * Close this {@link DatagramSocket} and notify the given handler once done.
+   * Close this {@link ConnectedDatagramChannel} and notify the given handler once done.
    */
   void close(Handler<AsyncResult<Void>> handler);
 
