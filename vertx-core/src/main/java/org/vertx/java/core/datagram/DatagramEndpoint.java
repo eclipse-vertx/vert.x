@@ -22,6 +22,7 @@ import org.vertx.java.core.Handler;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
+import java.net.StandardProtocolFamily;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -126,4 +127,8 @@ public interface DatagramEndpoint {
    * Sets the {@link java.net.StandardSocketOptions#IP_MULTICAST_IF} option.
    */
   DatagramEndpoint setNetworkInterface(NetworkInterface networkInterface);
+
+  StandardProtocolFamily getProtocolFamily();
+
+  DatagramEndpoint setProtocolFamily(StandardProtocolFamily family);
 }

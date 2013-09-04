@@ -17,10 +17,12 @@ package org.vertx.java.core.datagram.impl;
 
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.bootstrap.ChannelFactory;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.DatagramChannel;
+import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
@@ -33,6 +35,7 @@ import org.vertx.java.core.impl.VertxInternal;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
+import java.net.StandardProtocolFamily;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -55,13 +58,30 @@ public class DefaultDatagramEndpoint implements DatagramEndpoint {
   private InetAddress address;
   private NetworkInterface iface;
   private boolean configurable = true;
+  private StandardProtocolFamily family;
 
   public DefaultDatagramEndpoint(VertxInternal vertx) {
     this.vertx = vertx;
     context = vertx.getOrCreateContext();
     bootstrap = new Bootstrap();
     bootstrap.group(context.getEventLoop());
-    bootstrap.channel(NioDatagramChannel.class);
+    bootstrap.channelFactory(new ChannelFactory<Channel>() {
+      @Override
+      public Channel newChannel() {
+        StandardProtocolFamily family = DefaultDatagramEndpoint.this.getProtocolFamily();
+        if (family == null) {
+          return new NioDatagramChannel();
+        }
+        switch (family) {
+          case INET:
+            return new NioDatagramChannel(InternetProtocolFamily.IPv4);
+          case INET6:
+            return new NioDatagramChannel(InternetProtocolFamily.IPv6);
+          default:
+            return new NioDatagramChannel();
+        }
+      }
+    });
   }
 
   private void checkConfigurable() {
@@ -213,6 +233,19 @@ public class DefaultDatagramEndpoint implements DatagramEndpoint {
 
     this.iface = iface;
     bootstrap.option(ChannelOption.IP_MULTICAST_IF, iface);
+    return this;
+  }
+
+  @Override
+  public StandardProtocolFamily getProtocolFamily() {
+    return family;
+  }
+
+  @Override
+  public DatagramEndpoint setProtocolFamily(StandardProtocolFamily family) {
+    checkConfigurable();
+
+    this.family = family;
     return this;
   }
 }

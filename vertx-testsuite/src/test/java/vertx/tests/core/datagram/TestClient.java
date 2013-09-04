@@ -26,6 +26,7 @@ import org.vertx.java.testframework.TestClientBase;
 import org.vertx.java.testframework.TestUtils;
 
 import java.net.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -243,7 +244,100 @@ public class TestClient extends TestClientBase {
       // expected
     }
 
+    try {
+      endpoint.setProtocolFamily(StandardProtocolFamily.INET);
+      tu.azzert(false);
+    } catch (IllegalStateException e) {
+      // expected
+    }
+
     tu.testComplete();
+  }
+
+  public void testMulticast() throws Exception {
+    final DatagramEndpoint endpoint = vertx.createDatagramEndpoint();
+    final NetworkInterface iface = NetworkInterface.getByInetAddress(InetAddress.getByName("127.0.0.1"));
+    endpoint.setNetworkInterface(iface);
+    endpoint.setProtocolFamily(StandardProtocolFamily.INET);
+    endpoint.bind(new InetSocketAddress("127.0.0.1", 1234), new AsyncResultHandler<BoundDatagramChannel>() {
+      @Override
+      public void handle(AsyncResult<BoundDatagramChannel> event) {
+        tu.checkThread();
+        tu.azzert(event.succeeded());
+        final Buffer buffer = TestUtils.generateRandomBuffer(128);
+        server = event.result();
+
+        endpoint.bind(new InetSocketAddress("127.0.0.1", 1235), new AsyncResultHandler<BoundDatagramChannel>() {
+          @Override
+          public void handle(AsyncResult<BoundDatagramChannel> event) {
+            tu.checkThread();
+            tu.azzert(event.succeeded());
+            final BoundDatagramChannel client = event.result();
+            TestClient.this.client = client;
+
+
+            String group = "230.0.0.1";
+            final InetSocketAddress groupAddress = new InetSocketAddress(group, server.localAddress().getPort());
+
+            client.dataHandler(new Handler<DatagramPacket>() {
+              @Override
+              public void handle(DatagramPacket event) {
+                tu.checkThread();
+                tu.azzert(event.sender().equals(server.localAddress()));
+                tu.azzert(event.data().equals(buffer));
+                tu.testComplete();
+              }
+            });
+
+            client.joinGroup(groupAddress, iface, new AsyncResultHandler<BoundDatagramChannel>() {
+              @Override
+              public void handle(AsyncResult<BoundDatagramChannel> event) {
+                tu.azzert(event.succeeded());
+                server.write(buffer, groupAddress, new AsyncResultHandler<BoundDatagramChannel>() {
+                  @Override
+                  public void handle(AsyncResult<BoundDatagramChannel> event) {
+                    tu.azzert(event.succeeded());
+
+                    // leave group
+                    client.leaveGroup(groupAddress, iface, new AsyncResultHandler<BoundDatagramChannel>() {
+                      @Override
+                      public void handle(AsyncResult<BoundDatagramChannel> event) {
+                        tu.azzert(event.succeeded());
+
+                        final AtomicBoolean received = new AtomicBoolean(false);
+                        client.dataHandler(new Handler<DatagramPacket>() {
+                          @Override
+                          public void handle(DatagramPacket event) {
+                            // Should not receive any more event as it left the group
+                            received.set(true);
+                          }
+                        });
+                        server.write(buffer, groupAddress, new AsyncResultHandler<BoundDatagramChannel>() {
+                          @Override
+                          public void handle(AsyncResult<BoundDatagramChannel> event) {
+                            tu.azzert(event.succeeded());
+
+                            // schedule a timer which will check in 1 second if we received a message after the group
+                            // was left before
+                            vertx.setTimer(1000, new Handler<Long>() {
+                              @Override
+                              public void handle(Long event) {
+                                tu.azzert(!received.get());
+                                tu.testComplete();
+                              }
+                            });
+                          }
+                        });
+                      }
+                    });
+                  }
+                });
+              }
+            });
+          }
+        });
+      }
+    });
   }
 
   @Override

@@ -56,4 +56,9 @@ public class JavaDatagramTest extends TestBase {
   public void testConfigureAfterConnect() throws Exception {
     startTest(getMethodName());
   }
+
+  @Test
+  public void testMulticast() throws Exception {
+    startTest(getMethodName());
+  }
 }
