@@ -34,7 +34,7 @@ import java.net.NetworkInterface;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-abstract class AbstractDatagramChannel<T extends DatagramChannel> extends ConnectionBase
+abstract class AbstractDatagramChannel<T extends DatagramChannel, M> extends ConnectionBase
         implements DatagramChannel<T> {
   protected final io.netty.channel.socket.DatagramChannel channel;
 
@@ -131,4 +131,5 @@ abstract class AbstractDatagramChannel<T extends DatagramChannel> extends Connec
     return (T) this;
   }
 
+  abstract void handleMessage(M message);
 }

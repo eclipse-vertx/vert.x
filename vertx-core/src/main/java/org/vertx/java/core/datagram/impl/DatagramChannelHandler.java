@@ -15,33 +15,25 @@
  */
 package org.vertx.java.core.datagram.impl;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
-import io.netty.channel.socket.DatagramPacket;
-import org.vertx.java.core.buffer.Buffer;
+import io.netty.channel.ChannelHandlerContext;
+import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.net.impl.VertxHandler;
 
 import java.util.Map;
-
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-class ConnectedDatagramChannelHandler extends DatagramChannelHandler {
-  ConnectedDatagramChannelHandler(VertxInternal vertx, Map<Channel, AbstractDatagramChannel> connectionMap) {
-    super(vertx, connectionMap);
+abstract class DatagramChannelHandler extends VertxHandler<AbstractDatagramChannel> {
+  DatagramChannelHandler(VertxInternal vertx, Map<Channel, AbstractDatagramChannel> connectionMap) {
+        super(vertx, connectionMap);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
-  protected Object safeObject(Object msg) throws Exception {
-    if (msg instanceof DatagramPacket) {
-      DatagramPacket packet = (DatagramPacket) msg;
-      ByteBuf content = packet.content();
-      if (content.isDirect())  {
-        content = safeBuffer(content);
-      }
-      return new Buffer(content);
-    }
-    return msg;
+  protected void channelRead(AbstractDatagramChannel channel, DefaultContext context, ChannelHandlerContext chctx, Object msg) throws Exception {
+    channel.handleMessage(msg);
   }
 }

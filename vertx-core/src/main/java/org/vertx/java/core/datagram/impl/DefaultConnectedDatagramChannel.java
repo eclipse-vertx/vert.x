@@ -27,7 +27,7 @@ import org.vertx.java.core.impl.VertxInternal;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-class DefaultConnectedDatagramChannel extends AbstractDatagramChannel<ConnectedDatagramChannel> implements ConnectedDatagramChannel {
+class DefaultConnectedDatagramChannel extends AbstractDatagramChannel<ConnectedDatagramChannel, Buffer> implements ConnectedDatagramChannel {
 
   private Handler<Void> drainHandler;
   private Handler<Buffer> dataHandler;
@@ -106,7 +106,8 @@ class DefaultConnectedDatagramChannel extends AbstractDatagramChannel<ConnectedD
     }
   }
 
-  void handleData(Buffer buffer) {
+  @Override
+  void handleMessage(Buffer buffer) {
     if (dataHandler != null) {
       dataHandler.handle(buffer);
     }

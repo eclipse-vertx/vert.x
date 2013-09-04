@@ -33,5 +33,5 @@ public interface BoundDatagramChannel extends DatagramChannel<BoundDatagramChann
   /**
    * Set a data handler. As data is read, the handler will be called with the data.
    */
-  BoundDatagramChannel packetHandler(Handler<DatagramPacket> packetHandler);
+  BoundDatagramChannel dataHandler(Handler<DatagramPacket> packetHandler);
 }

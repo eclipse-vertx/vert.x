@@ -126,6 +126,4 @@ public interface DatagramEndpoint {
    * Sets the {@link java.net.StandardSocketOptions#IP_MULTICAST_IF} option.
    */
   DatagramEndpoint setNetworkInterface(NetworkInterface networkInterface);
-
-  DatagramEndpoint setConnectTimeoutMillis(int connectTimeoutMillis);
 }

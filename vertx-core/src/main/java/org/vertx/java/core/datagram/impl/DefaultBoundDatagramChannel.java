@@ -30,7 +30,7 @@ import java.net.InetSocketAddress;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public class DefaultBoundDatagramChannel extends AbstractDatagramChannel<BoundDatagramChannel> implements BoundDatagramChannel {
+public class DefaultBoundDatagramChannel extends AbstractDatagramChannel<BoundDatagramChannel, DatagramPacket> implements BoundDatagramChannel {
 
   private Handler<DatagramPacket> packetHandler;
 
@@ -40,7 +40,7 @@ public class DefaultBoundDatagramChannel extends AbstractDatagramChannel<BoundDa
 
   @Override
   protected void handleInterestedOpsChanged() {
-    throw new UnsupportedOperationException();
+    // nothing to do
   }
 
   @Override
@@ -50,7 +50,7 @@ public class DefaultBoundDatagramChannel extends AbstractDatagramChannel<BoundDa
   }
 
   @Override
-  public BoundDatagramChannel packetHandler(Handler<DatagramPacket> packetHandler) {
+  public BoundDatagramChannel dataHandler(Handler<DatagramPacket> packetHandler) {
     this.packetHandler = packetHandler;
     return this;
   }
@@ -62,7 +62,8 @@ public class DefaultBoundDatagramChannel extends AbstractDatagramChannel<BoundDa
   }
 
 
-  void handleData(DatagramPacket data) {
+  @Override
+  void handleMessage(DatagramPacket data) {
     if (packetHandler != null) {
       packetHandler.handle(data);
     }

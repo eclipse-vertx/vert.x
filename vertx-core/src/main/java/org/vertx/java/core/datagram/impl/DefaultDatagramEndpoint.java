@@ -19,6 +19,7 @@ package org.vertx.java.core.datagram.impl;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import org.vertx.java.core.AsyncResult;
@@ -44,25 +45,35 @@ public class DefaultDatagramEndpoint implements DatagramEndpoint {
   private Bootstrap bootstrap;
   private final Map<Channel, AbstractDatagramChannel> datagramMap = new ConcurrentHashMap<>();
 
+  private int sendBufferSize = -1;
+  private int receiveBufferSize = -1;
+  private boolean reuseAddress;
+  private int trafficClass = -1;
+  private boolean broadcast;
+  private boolean loopbackModeDisabled;
+  private int ttl = 1;
+  private InetAddress address;
+  private NetworkInterface iface;
+  private boolean configurable = true;
+
   DefaultDatagramEndpoint(VertxInternal vertx) {
     this.vertx = vertx;
     context = vertx.getOrCreateContext();
+    bootstrap = new Bootstrap();
+    bootstrap.group(context.getEventLoop());
+    bootstrap.channel(NioDatagramChannel.class);
   }
 
-  private Bootstrap bootstrap() {
-    if (bootstrap == null) {
-      Bootstrap bootstrap = new Bootstrap();
-      bootstrap.group(context.getEventLoop());
-      bootstrap.channel(NioDatagramChannel.class);
-
-      // TODO: Fill in config
+  private void checkConfigurable() {
+    if (!configurable) {
+      throw new IllegalStateException("Can't set property after connect or bind has been called");
     }
-    return bootstrap.clone();
   }
 
   @Override
   public DatagramEndpoint bind(InetSocketAddress local, Handler<AsyncResult<BoundDatagramChannel>> handler) {
-    ChannelFuture future = bootstrap().handler(new BoundDatagramChannelHandler(vertx, datagramMap)).bind(local);
+    configurable = false;
+    ChannelFuture future = bootstrap.clone().handler(new BoundDatagramChannelHandler(vertx, datagramMap)).bind(local);
     DefaultBoundDatagramChannel channel = new DefaultBoundDatagramChannel(vertx, (DatagramChannel) future.channel(), context);
     channel.addListener(future, handler);
     return this;
@@ -70,7 +81,8 @@ public class DefaultDatagramEndpoint implements DatagramEndpoint {
 
   @Override
   public DatagramEndpoint connect(InetSocketAddress local, Handler<AsyncResult<ConnectedDatagramChannel>> handler) {
-    ChannelFuture future = bootstrap().handler(new ConnectedDatagramChannelHandler(vertx, datagramMap)).bind(local);
+    configurable = false;
+    ChannelFuture future = bootstrap.clone().handler(new ConnectedDatagramChannelHandler(vertx, datagramMap)).bind(local);
     DefaultConnectedDatagramChannel channel = new DefaultConnectedDatagramChannel(vertx, (DatagramChannel) future.channel(), context);
     channel.addListener(future, handler);
     return this;
@@ -78,96 +90,127 @@ public class DefaultDatagramEndpoint implements DatagramEndpoint {
 
   @Override
   public int getSendBufferSize() {
-    return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    return sendBufferSize;
   }
 
   @Override
   public DatagramEndpoint setSendBufferSize(int sendBufferSize) {
-    return null;  //To change body of implemented methods use File | Settings | File Templates.
+    checkConfigurable();
+
+    this.sendBufferSize = sendBufferSize;
+    bootstrap.option(ChannelOption.SO_SNDBUF, sendBufferSize);
+    return this;
   }
 
   @Override
   public int getReceiveBufferSize() {
-    return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    return receiveBufferSize;
   }
 
   @Override
   public DatagramEndpoint setReceiveBufferSize(int receiveBufferSize) {
-    return null;  //To change body of implemented methods use File | Settings | File Templates.
+    checkConfigurable();
+
+    this.receiveBufferSize = receiveBufferSize;
+    bootstrap.option(ChannelOption.SO_RCVBUF, receiveBufferSize);
+    return this;
   }
 
   @Override
   public int getTrafficClass() {
-    return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    return trafficClass;
   }
 
   @Override
   public DatagramEndpoint setTrafficClass(int trafficClass) {
-    return null;  //To change body of implemented methods use File | Settings | File Templates.
+    checkConfigurable();
+
+    this.trafficClass = trafficClass;
+    bootstrap.option(ChannelOption.IP_TOS, trafficClass);
+    return this;
   }
 
   @Override
   public boolean isReuseAddress() {
-    return false;  //To change body of implemented methods use File | Settings | File Templates.
+    return reuseAddress;
   }
 
   @Override
   public DatagramEndpoint setReuseAddress(boolean reuseAddress) {
-    return null;  //To change body of implemented methods use File | Settings | File Templates.
+    checkConfigurable();
+
+    this.reuseAddress = reuseAddress;
+    bootstrap.option(ChannelOption.SO_REUSEADDR, reuseAddress);
+    return this;
   }
 
   @Override
   public boolean isBroadcast() {
-    return false;  //To change body of implemented methods use File | Settings | File Templates.
+    return broadcast;
   }
 
   @Override
   public DatagramEndpoint setBroadcast(boolean broadcast) {
-    return null;  //To change body of implemented methods use File | Settings | File Templates.
+    checkConfigurable();
+
+    this.broadcast = broadcast;
+    bootstrap.option(ChannelOption.SO_BROADCAST, broadcast);
+    return this;
   }
 
   @Override
   public boolean isLoopbackModeDisabled() {
-    return false;  //To change body of implemented methods use File | Settings | File Templates.
+    return loopbackModeDisabled;
   }
 
   @Override
   public DatagramEndpoint setLoopbackModeDisabled(boolean loopbackModeDisabled) {
-    return null;  //To change body of implemented methods use File | Settings | File Templates.
+    checkConfigurable();
+
+    this.loopbackModeDisabled = loopbackModeDisabled;
+    bootstrap.option(ChannelOption.IP_MULTICAST_LOOP_DISABLED, loopbackModeDisabled);
+    return this;
   }
 
   @Override
   public int getTimeToLive() {
-    return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    return ttl;
   }
 
   @Override
   public DatagramEndpoint setTimeToLive(int ttl) {
-    return null;  //To change body of implemented methods use File | Settings | File Templates.
+    checkConfigurable();
+
+    this.ttl = ttl;
+    bootstrap.option(ChannelOption.IP_MULTICAST_TTL, ttl);
+    return this;
   }
 
   @Override
   public InetAddress getInterface() {
-    return null;  //To change body of implemented methods use File | Settings | File Templates.
+    return address;
   }
 
   @Override
   public DatagramEndpoint setInterface(InetAddress interfaceAddress) {
-    return null;  //To change body of implemented methods use File | Settings | File Templates.
+    checkConfigurable();
+
+    address = interfaceAddress;
+    bootstrap.option(ChannelOption.IP_MULTICAST_ADDR, interfaceAddress);
+    return this;
   }
 
   @Override
   public NetworkInterface getNetworkInterface() {
-    return null;  //To change body of implemented methods use File | Settings | File Templates.
+    return iface;
   }
 
   @Override
-  public DatagramEndpoint setNetworkInterface(NetworkInterface networkInterface) {
-    return null;  //To change body of implemented methods use File | Settings | File Templates.
-  }
+  public DatagramEndpoint setNetworkInterface(NetworkInterface iface) {
+    checkConfigurable();
 
-  @Override
-  public DatagramEndpoint setConnectTimeoutMillis(int connectTimeoutMillis) {
-    return null;  //To change body of implemented methods use File | Settings | File Templates.
+    this.iface = iface;
+    bootstrap.option(ChannelOption.IP_MULTICAST_IF, iface);
+    return this;
   }
 }
