@@ -23,6 +23,8 @@ import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.dns.DnsClient;
 import org.vertx.java.core.dns.impl.DefaultDnsClient;
+import org.vertx.java.core.datagram.DatagramEndpoint;
+import org.vertx.java.core.datagram.impl.DefaultDatagramEndpoint;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.eventbus.impl.hazelcast.HazelcastClusterManager;
@@ -94,6 +96,10 @@ public class DefaultVertx implements VertxInternal {
    */
   protected FileSystem getFileSystem() {
   	return Windows.isWindows() ? new WindowsFileSystem(this) : new DefaultFileSystem(this);
+  }
+
+  public DatagramEndpoint createDatagramEndpoint() {
+    return new DefaultDatagramEndpoint(this);
   }
 
   public NetServer createNetServer() {

@@ -56,7 +56,7 @@ public class DefaultDatagramEndpoint implements DatagramEndpoint {
   private NetworkInterface iface;
   private boolean configurable = true;
 
-  DefaultDatagramEndpoint(VertxInternal vertx) {
+  public DefaultDatagramEndpoint(VertxInternal vertx) {
     this.vertx = vertx;
     context = vertx.getOrCreateContext();
     bootstrap = new Bootstrap();
@@ -75,15 +75,17 @@ public class DefaultDatagramEndpoint implements DatagramEndpoint {
     configurable = false;
     ChannelFuture future = bootstrap.clone().handler(new BoundDatagramChannelHandler(vertx, datagramMap)).bind(local);
     DefaultBoundDatagramChannel channel = new DefaultBoundDatagramChannel(vertx, (DatagramChannel) future.channel(), context);
+    datagramMap.put(future.channel(), channel);
     channel.addListener(future, handler);
     return this;
   }
 
   @Override
-  public DatagramEndpoint connect(InetSocketAddress local, Handler<AsyncResult<ConnectedDatagramChannel>> handler) {
+  public DatagramEndpoint connect(InetSocketAddress remote, Handler<AsyncResult<ConnectedDatagramChannel>> handler) {
     configurable = false;
-    ChannelFuture future = bootstrap.clone().handler(new ConnectedDatagramChannelHandler(vertx, datagramMap)).bind(local);
+    ChannelFuture future = bootstrap.clone().handler(new ConnectedDatagramChannelHandler(vertx, datagramMap)).connect(remote);
     DefaultConnectedDatagramChannel channel = new DefaultConnectedDatagramChannel(vertx, (DatagramChannel) future.channel(), context);
+    datagramMap.put(future.channel(), channel);
     channel.addListener(future, handler);
     return this;
   }
