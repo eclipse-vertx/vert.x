@@ -37,6 +37,7 @@ import java.net.NetworkInterface;
 abstract class AbstractDatagramChannel<T extends DatagramChannel, M> extends ConnectionBase
         implements DatagramChannel<T> {
   protected final io.netty.channel.socket.DatagramChannel channel;
+  private Handler<Void> drainHandler;
 
   AbstractDatagramChannel(VertxInternal vertx, io.netty.channel.socket.DatagramChannel channel, DefaultContext context) {
     super(vertx, channel, context);
@@ -128,6 +129,29 @@ abstract class AbstractDatagramChannel<T extends DatagramChannel, M> extends Con
   @SuppressWarnings("unchecked")
   public T resume() {
     doResume();
+    return (T) this;
+  }
+
+
+  @Override
+  protected void handleInterestedOpsChanged() {
+    if (drainHandler != null) {
+      drainHandler.handle(null);
+    }
+  }
+
+
+  public T setWriteQueueMaxSize(int maxSize) {
+    doSetWriteQueueMaxSize(maxSize);
+    return (T) this;
+  }
+
+  public boolean writeQueueFull() {
+    return doWriteQueueFull();
+  }
+
+  public T drainHandler(Handler<Void> handler) {
+    drainHandler = handler;
     return (T) this;
   }
 

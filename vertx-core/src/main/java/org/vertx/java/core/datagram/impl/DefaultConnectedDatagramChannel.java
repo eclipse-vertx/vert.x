@@ -29,7 +29,6 @@ import org.vertx.java.core.impl.VertxInternal;
  */
 class DefaultConnectedDatagramChannel extends AbstractDatagramChannel<ConnectedDatagramChannel, Buffer> implements ConnectedDatagramChannel {
 
-  private Handler<Void> drainHandler;
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
 
@@ -62,32 +61,8 @@ class DefaultConnectedDatagramChannel extends AbstractDatagramChannel<ConnectedD
   }
 
   @Override
-  protected void handleInterestedOpsChanged() {
-    if (drainHandler != null) {
-      drainHandler.handle(null);
-    }
-  }
-
-  @Override
   public ConnectedDatagramChannel exceptionHandler(Handler<Throwable> handler) {
     exceptionHandler = handler;
-    return this;
-  }
-
-  @Override
-  public ConnectedDatagramChannel setWriteQueueMaxSize(int maxSize) {
-    doSetWriteQueueMaxSize(maxSize);
-    return this;
-  }
-
-  @Override
-  public boolean writeQueueFull() {
-    return doWriteQueueFull();
-  }
-
-  @Override
-  public ConnectedDatagramChannel drainHandler(Handler<Void> handler) {
-    drainHandler = handler;
     return this;
   }
 

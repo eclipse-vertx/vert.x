@@ -72,7 +72,6 @@ public class DefaultBoundDatagramChannel extends AbstractDatagramChannel<BoundDa
     return this;
   }
 
-
   @Override
   void handleMessage(DatagramPacket data) {
     if (packetHandler != null) {
