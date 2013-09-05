@@ -25,9 +25,11 @@ import java.net.NetworkInterface;
 
 
 /**
+ * Base interface for different {@link DatagramChannel} sub-types.
+ *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public interface DatagramChannel<T extends DatagramChannel> extends DrainSupport<T> {
+public interface DatagramChannel<T extends DatagramChannel, D> extends DrainSupport<T> {
 
   /**
    * Return the {@link InetSocketAddress} to which this {@link ConnectedDatagramChannel} is bound too.
@@ -39,6 +41,9 @@ public interface DatagramChannel<T extends DatagramChannel> extends DrainSupport
    */
   void close(Handler<AsyncResult<Void>> handler);
 
+  /**
+   * Close this {@link ConnectedDatagramChannel} in an async fashion.
+   */
   void close();
 
   /**
@@ -97,4 +102,10 @@ public interface DatagramChannel<T extends DatagramChannel> extends DrainSupport
    */
   T block(
           InetAddress multicastAddress, InetAddress sourceToBlock, Handler<AsyncResult<T>> handler);
+
+
+  /**
+   * Set a data handler. As data is read, the handler will be called with the data.
+   */
+  T dataHandler(Handler<D> packetHandler);
 }

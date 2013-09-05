@@ -15,17 +15,18 @@
  */
 package org.vertx.java.core.datagram;
 
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
 
 import java.net.InetSocketAddress;
 
 /**
- * A socket which allows to communicate via UDP.
+ * A connected {@link DatagramChannel} which allows to communicate via UDP.
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public interface ConnectedDatagramChannel extends DatagramChannel<ConnectedDatagramChannel>, ReadStream<ConnectedDatagramChannel> , WriteStream<ConnectedDatagramChannel>{
+public interface ConnectedDatagramChannel extends DatagramChannel<ConnectedDatagramChannel, Buffer>, ReadStream<ConnectedDatagramChannel> , WriteStream<ConnectedDatagramChannel>{
 
   /**
    * Return the {@link InetSocketAddress} of the remote peer to which this {@link ConnectedDatagramChannel} is connected. If

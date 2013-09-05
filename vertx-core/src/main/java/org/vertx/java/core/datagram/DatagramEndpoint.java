@@ -25,15 +25,34 @@ import java.net.NetworkInterface;
 import java.net.StandardProtocolFamily;
 
 /**
+ * Allows to create {@link BoundDatagramChannel}s and {@link ConnectedDatagramChannel}s.
+ *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public interface DatagramEndpoint {
 
+  /**
+   * @see #bind(java.net.InetSocketAddress, org.vertx.java.core.Handler)
+   */
   DatagramEndpoint bind(String address, int port, Handler<AsyncResult<BoundDatagramChannel>> handler);
+
+  /**
+   * @see #bind(java.net.InetSocketAddress, org.vertx.java.core.Handler)
+   */
   DatagramEndpoint bind(int port, Handler<AsyncResult<BoundDatagramChannel>> handler);
+
+  /**
+   * Create a new {@link BoundDatagramChannel} by bind it to the given {@link InetSocketAddress}.
+   * The {@link Handler} will be notified once the bind operation completes.
+   */
   DatagramEndpoint bind(InetSocketAddress local, Handler<AsyncResult<BoundDatagramChannel>> handler);
 
   DatagramEndpoint connect(String address, int port,  Handler<AsyncResult<ConnectedDatagramChannel>> handler);
+
+  /**
+   * Create new {@link ConnectedDatagramChannel} by connect to the given {@link InetSocketAddress}.
+   * The {@link Handler} will be notified once the connection operation completes.
+   */
   DatagramEndpoint connect(InetSocketAddress remote, Handler<AsyncResult<ConnectedDatagramChannel>> handler);
 
   /**
@@ -131,7 +150,15 @@ public interface DatagramEndpoint {
    */
   DatagramEndpoint setNetworkInterface(NetworkInterface networkInterface);
 
+  /**
+   * Gets the {@link StandardProtocolFamily} used for multicasting or {@code null}
+   * if the default should be used.
+   */
   StandardProtocolFamily getProtocolFamily();
 
+  /**
+   * Set the {@link StandardProtocolFamily} to use when the {@link DatagramEndpoint} is used
+   * for multicasting. If not specified the default for the running OS/JDK will be used.
+   */
   DatagramEndpoint setProtocolFamily(StandardProtocolFamily family);
 }
