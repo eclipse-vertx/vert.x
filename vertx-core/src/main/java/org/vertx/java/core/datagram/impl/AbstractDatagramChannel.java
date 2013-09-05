@@ -140,16 +140,18 @@ abstract class AbstractDatagramChannel<T extends DatagramChannel, M> extends Con
     }
   }
 
-
+  @Override
   public T setWriteQueueMaxSize(int maxSize) {
     doSetWriteQueueMaxSize(maxSize);
     return (T) this;
   }
 
+  @Override
   public boolean writeQueueFull() {
     return doWriteQueueFull();
   }
 
+  @Override
   public T drainHandler(Handler<Void> handler) {
     drainHandler = handler;
     return (T) this;

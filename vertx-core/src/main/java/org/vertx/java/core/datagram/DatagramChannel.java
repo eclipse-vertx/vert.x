@@ -17,6 +17,7 @@ package org.vertx.java.core.datagram;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.streams.DrainSupport;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -26,7 +27,7 @@ import java.net.NetworkInterface;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public interface DatagramChannel<T extends DatagramChannel> {
+public interface DatagramChannel<T extends DatagramChannel> extends DrainSupport<T> {
 
   /**
    * Return the {@link InetSocketAddress} to which this {@link ConnectedDatagramChannel} is bound too.
