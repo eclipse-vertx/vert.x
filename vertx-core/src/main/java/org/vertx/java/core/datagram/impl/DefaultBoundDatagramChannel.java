@@ -43,6 +43,17 @@ public class DefaultBoundDatagramChannel extends AbstractDatagramChannel<BoundDa
     // nothing to do
   }
 
+
+  @Override
+  public BoundDatagramChannel write(String str, InetSocketAddress remote, Handler<AsyncResult<BoundDatagramChannel>> handler) {
+    return write(new Buffer(str), remote, handler);
+  }
+
+  @Override
+  public BoundDatagramChannel write(String str, String enc, InetSocketAddress remote, Handler<AsyncResult<BoundDatagramChannel>> handler) {
+    return write(new Buffer(str, enc), remote, handler);
+  }
+
   @Override
   public BoundDatagramChannel write(Buffer packet, InetSocketAddress remote, Handler<AsyncResult<BoundDatagramChannel>> handler) {
     addListener(write(new io.netty.channel.socket.DatagramPacket(packet.getByteBuf(), remote)), handler);

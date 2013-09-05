@@ -29,7 +29,8 @@ import java.net.InetSocketAddress;
 public interface BoundDatagramChannel extends DatagramChannel<BoundDatagramChannel>, ExceptionSupport<BoundDatagramChannel> {
 
   BoundDatagramChannel write(Buffer packet, InetSocketAddress remote,  Handler<AsyncResult<BoundDatagramChannel>> handler);
-
+  BoundDatagramChannel write(String str, InetSocketAddress remote, Handler<AsyncResult<BoundDatagramChannel>> handler);
+  BoundDatagramChannel write(String str, String enc, InetSocketAddress remote, Handler<AsyncResult<BoundDatagramChannel>> handler);
   /**
    * Set a data handler. As data is read, the handler will be called with the data.
    */

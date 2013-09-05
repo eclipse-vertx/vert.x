@@ -52,6 +52,16 @@ class DefaultConnectedDatagramChannel extends AbstractDatagramChannel<ConnectedD
   }
 
   @Override
+  public ConnectedDatagramChannel write(String str) {
+    return write(new Buffer(str));
+  }
+
+  @Override
+  public ConnectedDatagramChannel write(String str, String enc) {
+    return write(new Buffer(str, enc));
+  }
+
+  @Override
   protected void handleInterestedOpsChanged() {
     if (drainHandler != null) {
       drainHandler.handle(null);

@@ -29,9 +29,12 @@ import java.net.StandardProtocolFamily;
  */
 public interface DatagramEndpoint {
 
+  DatagramEndpoint bind(String address, int port, Handler<AsyncResult<BoundDatagramChannel>> handler);
+  DatagramEndpoint bind(int port, Handler<AsyncResult<BoundDatagramChannel>> handler);
   DatagramEndpoint bind(InetSocketAddress local, Handler<AsyncResult<BoundDatagramChannel>> handler);
 
-  DatagramEndpoint connect(InetSocketAddress local, Handler<AsyncResult<ConnectedDatagramChannel>> handler);
+  DatagramEndpoint connect(String address, int port,  Handler<AsyncResult<ConnectedDatagramChannel>> handler);
+  DatagramEndpoint connect(InetSocketAddress remote, Handler<AsyncResult<ConnectedDatagramChannel>> handler);
 
   /**
    * Gets the {@link java.net.StandardSocketOptions#SO_SNDBUF} option.

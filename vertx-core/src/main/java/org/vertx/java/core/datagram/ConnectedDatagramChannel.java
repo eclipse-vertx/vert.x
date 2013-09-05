@@ -32,4 +32,16 @@ public interface ConnectedDatagramChannel extends DatagramChannel<ConnectedDatag
    * the {@link ConnectedDatagramChannel} is not connected to a remote-peer it will return {@code null}.
    */
   InetSocketAddress remoteAddress();
+
+  /**
+   * Write a {@link String} to the connection, encoded in UTF-8.
+   * @return A reference to this, so multiple method calls can be chained.
+   */
+  ConnectedDatagramChannel write(String str);
+
+  /**
+   * Write a {@link String} to the connection, encoded using the encoding {@code enc}.
+   * @return A reference to this, so multiple method calls can be chained.
+   */
+  ConnectedDatagramChannel write(String str, String enc);
 }

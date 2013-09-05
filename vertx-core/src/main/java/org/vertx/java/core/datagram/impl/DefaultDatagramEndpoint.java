@@ -91,6 +91,21 @@ public class DefaultDatagramEndpoint implements DatagramEndpoint {
   }
 
   @Override
+  public DatagramEndpoint bind(String address, int port, Handler<AsyncResult<BoundDatagramChannel>> handler) {
+    return bind(new InetSocketAddress(address, port), handler);
+  }
+
+  @Override
+  public DatagramEndpoint bind(int port, Handler<AsyncResult<BoundDatagramChannel>> handler) {
+    return bind(new InetSocketAddress(port), handler);
+  }
+
+  @Override
+  public DatagramEndpoint connect(String address, int port, Handler<AsyncResult<ConnectedDatagramChannel>> handler) {
+    return connect(address, port, handler);
+  }
+
+  @Override
   public DatagramEndpoint bind(InetSocketAddress local, Handler<AsyncResult<BoundDatagramChannel>> handler) {
     configurable = false;
     ChannelFuture future = bootstrap.clone().handler(new BoundDatagramChannelHandler(vertx, datagramMap)).bind(local);

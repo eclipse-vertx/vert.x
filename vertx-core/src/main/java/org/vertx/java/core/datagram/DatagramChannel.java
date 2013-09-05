@@ -38,6 +38,8 @@ public interface DatagramChannel<T extends DatagramChannel> {
    */
   void close(Handler<AsyncResult<Void>> handler);
 
+  void close();
+
   /**
    * Joins a multicast group and notifies the {@link io.netty.channel.ChannelFuture} once the operation completes.
    */
