@@ -38,7 +38,17 @@ public class JavaDatagramTest extends TestBase {
   }
 
   @Test
-  public void testEchoConnected() throws Exception {
+  public void testEchoConnected1() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoConnected2() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoConnected3() throws Exception {
     startTest(getMethodName());
   }
 

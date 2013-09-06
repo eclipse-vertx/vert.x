@@ -35,10 +35,23 @@ public class TestClient extends TestClientBase {
   private DatagramChannel client;
   private BoundDatagramChannel server;
 
-  public void testEchoConnected() {
+  public void testEchoConnected1() {
     final DatagramEndpoint endpoint = vertx.createDatagramEndpoint();
+    endpoint.bind(new InetSocketAddress("localhost", 1234), createEchoHandler(endpoint));
+  }
 
-    endpoint.bind(new InetSocketAddress("localhost", 1234), new AsyncResultHandler<BoundDatagramChannel>() {
+  public void testEchoConnected2() {
+    final DatagramEndpoint endpoint = vertx.createDatagramEndpoint();
+    endpoint.bind("localhost", 1234, createEchoHandler(endpoint));
+  }
+
+  public void testEchoConnected3() {
+    final DatagramEndpoint endpoint = vertx.createDatagramEndpoint();
+    endpoint.bind(1234, createEchoHandler(endpoint));
+  }
+
+  private AsyncResultHandler<BoundDatagramChannel> createEchoHandler(final DatagramEndpoint endpoint) {
+    return new AsyncResultHandler<BoundDatagramChannel>() {
       @Override
       public void handle(AsyncResult<BoundDatagramChannel> event) {
         tu.checkThread();
@@ -89,9 +102,8 @@ public class TestClient extends TestClientBase {
           }
         });
       }
-    });
+    };
   }
-
   public void testEchoBound() {
     final DatagramEndpoint endpoint = vertx.createDatagramEndpoint();
 
@@ -433,7 +445,6 @@ public class TestClient extends TestClientBase {
 
   @Override
   public void stop() {
-    super.stop();
     if (client != null) {
       client.close(new AsyncResultHandler<Void>() {
         @Override
