@@ -17,12 +17,10 @@ package org.vertx.java.core.datagram.impl;
 
 
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.datagram.DatagramChannel;
 import org.vertx.java.core.impl.DefaultContext;
-import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.impl.ConnectionBase;
 
@@ -36,7 +34,7 @@ import java.net.NetworkInterface;
  */
 abstract class AbstractDatagramChannel<T extends DatagramChannel, M> extends ConnectionBase
         implements DatagramChannel<T, M> {
-  protected final io.netty.channel.socket.DatagramChannel channel;
+  private final io.netty.channel.socket.DatagramChannel channel;
   private Handler<Void> drainHandler;
   private Handler<M> dataHandler;
 
@@ -47,21 +45,14 @@ abstract class AbstractDatagramChannel<T extends DatagramChannel, M> extends Con
 
   @Override
   public void close(final Handler<AsyncResult<Void>> handler) {
-    channel.close().addListener(new ChannelFutureListener() {
-      @Override
-      public void operationComplete(ChannelFuture future) throws Exception {
-        if (future.isSuccess()) {
-          handler.handle(null);
-        } else {
-          handler.handle(new DefaultFutureResult<Void>(future.cause()));
-        }
-      }
-    });
+    channel.close().addListener(new DatagramChannelFutureListener<>(null, handler, vertx, context));
   }
 
   @SuppressWarnings("unchecked")
-  void addListener(ChannelFuture future, Handler<AsyncResult<T>> handler) {
-    future.addListener(new DatagramChannelFutureListener<>((T) this, handler, vertx, context));
+  final void addListener(ChannelFuture future, Handler<AsyncResult<T>> handler) {
+    if (handler != null) {
+      future.addListener(new DatagramChannelFutureListener<>((T) this, handler, vertx, context));
+    }
   }
 
 
@@ -167,7 +158,7 @@ abstract class AbstractDatagramChannel<T extends DatagramChannel, M> extends Con
     return (T) this;
   }
 
-  void handleMessage(M message) {
+  final void handleMessage(M message) {
     if (dataHandler != null) {
       dataHandler.handle(message);
     }

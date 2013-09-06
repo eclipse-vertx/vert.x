@@ -30,7 +30,7 @@ import java.net.InetSocketAddress;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public class DefaultBoundDatagramChannel extends AbstractDatagramChannel<BoundDatagramChannel, DatagramPacket> implements BoundDatagramChannel {
+class DefaultBoundDatagramChannel extends AbstractDatagramChannel<BoundDatagramChannel, DatagramPacket> implements BoundDatagramChannel {
 
   DefaultBoundDatagramChannel(VertxInternal vertx, DatagramChannel channel, DefaultContext context) {
     super(vertx, channel, context);
