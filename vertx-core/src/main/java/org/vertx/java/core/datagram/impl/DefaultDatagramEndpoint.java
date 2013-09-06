@@ -102,7 +102,7 @@ public class DefaultDatagramEndpoint implements DatagramEndpoint {
 
   @Override
   public DatagramEndpoint connect(String address, int port, Handler<AsyncResult<ConnectedDatagramChannel>> handler) {
-    return connect(address, port, handler);
+    return connect(new InetSocketAddress(address, port), handler);
   }
 
   @Override

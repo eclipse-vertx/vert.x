@@ -15,7 +15,6 @@
  */
 package org.vertx.java.core.datagram.impl;
 
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.socket.DatagramChannel;
 import org.vertx.java.core.Handler;
@@ -29,19 +28,10 @@ import org.vertx.java.core.impl.VertxInternal;
  */
 class DefaultConnectedDatagramChannel extends AbstractDatagramChannel<ConnectedDatagramChannel, Buffer> implements ConnectedDatagramChannel {
 
-  private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
 
   DefaultConnectedDatagramChannel(VertxInternal vertx, DatagramChannel channel, DefaultContext context) {
     super(vertx, channel, context);
-    channel.closeFuture().addListener(new ChannelFutureListener() {
-      @Override
-      public void operationComplete(ChannelFuture future) throws Exception {
-        if (endHandler != null) {
-          endHandler.handle(null);
-        }
-      }
-    });
   }
 
   @Override
@@ -61,18 +51,6 @@ class DefaultConnectedDatagramChannel extends AbstractDatagramChannel<ConnectedD
   }
 
   @Override
-  public ConnectedDatagramChannel exceptionHandler(Handler<Throwable> handler) {
-    exceptionHandler = handler;
-    return this;
-  }
-
-  @Override
-  public ConnectedDatagramChannel dataHandler(Handler<Buffer> handler) {
-    dataHandler = handler;
-    return this;
-  }
-
-  @Override
   public ConnectedDatagramChannel endHandler(Handler<Void> handler) {
     endHandler = handler;
     return this;
@@ -88,13 +66,6 @@ class DefaultConnectedDatagramChannel extends AbstractDatagramChannel<ConnectedD
       } catch (Throwable t) {
         handleHandlerException(t);
       }
-    }
-  }
-
-  @Override
-  void handleMessage(Buffer buffer) {
-    if (dataHandler != null) {
-      dataHandler.handle(buffer);
     }
   }
 }

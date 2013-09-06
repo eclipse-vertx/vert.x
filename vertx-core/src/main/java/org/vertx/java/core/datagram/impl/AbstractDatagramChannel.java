@@ -38,6 +38,7 @@ abstract class AbstractDatagramChannel<T extends DatagramChannel, M> extends Con
         implements DatagramChannel<T, M> {
   protected final io.netty.channel.socket.DatagramChannel channel;
   private Handler<Void> drainHandler;
+  private Handler<M> dataHandler;
 
   AbstractDatagramChannel(VertxInternal vertx, io.netty.channel.socket.DatagramChannel channel, DefaultContext context) {
     super(vertx, channel, context);
@@ -60,7 +61,7 @@ abstract class AbstractDatagramChannel<T extends DatagramChannel, M> extends Con
 
   @SuppressWarnings("unchecked")
   void addListener(ChannelFuture future, Handler<AsyncResult<T>> handler) {
-    future.addListener(new DatagramChannelFutureListener<T>((T) this, handler, vertx, context));
+    future.addListener(new DatagramChannelFutureListener<>((T) this, handler, vertx, context));
   }
 
 
@@ -140,6 +141,7 @@ abstract class AbstractDatagramChannel<T extends DatagramChannel, M> extends Con
     }
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public T setWriteQueueMaxSize(int maxSize) {
     doSetWriteQueueMaxSize(maxSize);
@@ -151,11 +153,30 @@ abstract class AbstractDatagramChannel<T extends DatagramChannel, M> extends Con
     return doWriteQueueFull();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public T drainHandler(Handler<Void> handler) {
     drainHandler = handler;
     return (T) this;
   }
 
-  abstract void handleMessage(M message);
+  @SuppressWarnings("unchecked")
+  @Override
+  public T dataHandler(Handler<M> handler) {
+    dataHandler = handler;
+    return (T) this;
+  }
+
+  void handleMessage(M message) {
+    if (dataHandler != null) {
+      dataHandler.handle(message);
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public T exceptionHandler(Handler<Throwable> handler) {
+    exceptionHandler = handler;
+    return (T) this;
+  }
 }

@@ -32,17 +32,9 @@ import java.net.InetSocketAddress;
  */
 public class DefaultBoundDatagramChannel extends AbstractDatagramChannel<BoundDatagramChannel, DatagramPacket> implements BoundDatagramChannel {
 
-  private Handler<DatagramPacket> packetHandler;
-
   DefaultBoundDatagramChannel(VertxInternal vertx, DatagramChannel channel, DefaultContext context) {
     super(vertx, channel, context);
   }
-
-  @Override
-  protected void handleInterestedOpsChanged() {
-    // nothing to do
-  }
-
 
   @Override
   public BoundDatagramChannel write(String str, InetSocketAddress remote, Handler<AsyncResult<BoundDatagramChannel>> handler) {
@@ -58,24 +50,5 @@ public class DefaultBoundDatagramChannel extends AbstractDatagramChannel<BoundDa
   public BoundDatagramChannel write(Buffer packet, InetSocketAddress remote, Handler<AsyncResult<BoundDatagramChannel>> handler) {
     addListener(write(new io.netty.channel.socket.DatagramPacket(packet.getByteBuf(), remote)), handler);
     return this;
-  }
-
-  @Override
-  public BoundDatagramChannel dataHandler(Handler<DatagramPacket> packetHandler) {
-    this.packetHandler = packetHandler;
-    return this;
-  }
-
-  @Override
-  public BoundDatagramChannel exceptionHandler(Handler<Throwable> handler) {
-    exceptionHandler = handler;
-    return this;
-  }
-
-  @Override
-  void handleMessage(DatagramPacket data) {
-    if (packetHandler != null) {
-      packetHandler.handle(data);
-    }
   }
 }
