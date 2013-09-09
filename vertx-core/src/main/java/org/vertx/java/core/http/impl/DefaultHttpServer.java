@@ -78,6 +78,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
   private ChannelGroup serverChannelGroup;
   private boolean listening;
   private String serverOrigin;
+  private boolean compressionSupported;
 
   private ChannelFuture bindFuture;
   private ServerID id;
@@ -185,7 +186,10 @@ public class DefaultHttpServer implements HttpServer, Closeable {
               pipeline.addLast("flashpolicy", new FlashPolicyHandler());
               pipeline.addLast("httpDecoder", new HttpRequestDecoder());
               pipeline.addLast("httpEncoder", new HttpResponseEncoder());
-              if (tcpHelper.isSSL()) {
+              if (compressionSupported) {
+                pipeline.addLast("deflater", new HttpChunkContentCompressor());
+              }
+              if (tcpHelper.isSSL() || compressionSupported) {
                 // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
                 pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
               }
@@ -490,6 +494,18 @@ public class DefaultHttpServer implements HttpServer, Closeable {
     return tcpHelper.isUsePooledBuffers();
   }
 
+  @Override
+  public HttpServer setCompressionSupported(boolean compressionSupported) {
+    checkListening();
+    this.compressionSupported = compressionSupported;
+    return this;
+  }
+
+  @Override
+  public boolean isCompressionSupported() {
+    return compressionSupported;
+  }
+
   private void actualClose(final DefaultContext closeContext, final Handler<AsyncResult<Void>> done) {
     if (id != null) {
       vertx.sharedHttpServers().remove(id);
@@ -710,6 +726,11 @@ public class DefaultHttpServer implements HttpServer, Closeable {
             firstHandler = wsHandler;
           }
         } else {
+          ChannelHandler handler = ctx.pipeline().get(HttpChunkContentCompressor.class);
+          if (handler != null) {
+            // remove compressor as its not needed anymore once connection was upgraded to websockets
+            ctx.pipeline().remove(handler);
+          }
           ws.connectNow();
           return;
         }

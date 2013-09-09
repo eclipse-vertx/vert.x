@@ -16,10 +16,7 @@
 
 package org.vertx.java.core.http.impl;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.*;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
@@ -135,10 +132,17 @@ class ServerConnection extends ConnectionBase {
     endReadAndFlush();
 
     // remove old http handlers and replace the old handler with one that handle plain sockets
-    channel.pipeline().remove("httpDecoder");
-    if (channel.pipeline().get("chunkedWriter") != null) {
-      channel.pipeline().remove("chunkedWriter");
+    ChannelPipeline pipeline = channel.pipeline();
+    ChannelHandler compressor = pipeline.get(HttpChunkContentCompressor.class);
+    if (compressor != null) {
+      pipeline.remove(compressor);
     }
+
+    pipeline.remove("httpDecoder");
+    if (pipeline.get("chunkedWriter") != null) {
+      pipeline.remove("chunkedWriter");
+    }
+
     channel.pipeline().replace("handler", "handler", new VertxNetHandler(server.vertx, connectionMap) {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
@@ -281,8 +285,9 @@ class ServerConnection extends ConnectionBase {
     super.addFuture(doneHandler, future);
   }
 
-  protected boolean isSSL() {
-    return super.isSSL();
+  @Override
+  protected boolean supportsFileRegion() {
+    return super.supportsFileRegion() && channel.pipeline().get(HttpChunkContentCompressor.class) == null;
   }
 
   protected ChannelFuture sendFile(File file) {

@@ -226,4 +226,14 @@ public interface HttpClient extends ClientSSLSupport<HttpClient>, TCPSupport<Htt
    */
   int getConnectTimeout();
 
+  /**
+   * Set if the {@link HttpClient} should try to use compression.
+   */
+  HttpClient setTryUseCompression(boolean tryUseCompression);
+
+  /**
+   * Returns {@code true} if the {@link HttpClient} should try to use compression.
+   */
+  boolean getTryUseCompression();
+
 }

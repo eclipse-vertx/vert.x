@@ -36,6 +36,10 @@ public class JavaHttpTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
+    startApp();
+  }
+
+  protected void startApp() throws Exception {
     startApp(HttpTestClient.class.getName());
   }
 

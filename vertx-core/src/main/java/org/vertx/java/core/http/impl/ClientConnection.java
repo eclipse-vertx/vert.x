@@ -205,7 +205,11 @@ class ClientConnection extends ConnectionBase {
     private void handshakeComplete(ChannelHandlerContext ctx, FullHttpResponse response) {
       handshaking = true;
       try {
-        //ctx.pipeline().addAfter(ctx.name(), "websocketConverter", WebSocketConvertHandler.INSTANCE);
+        ChannelHandler handler = ctx.pipeline().get(HttpContentDecompressor.class);
+        if (handler != null) {
+          // remove decompressor as its not needed anymore once connection was upgraded to websockets
+          ctx.pipeline().remove(handler);
+        }
         ws = new DefaultWebSocket(vertx, ClientConnection.this);
         handshaker.finishHandshake(channel, response);
         log.debug("WebSocket handshake complete");
@@ -354,9 +358,15 @@ class ClientConnection extends ConnectionBase {
     // Flush out all pending data
     endReadAndFlush();
 
+
     // remove old http handlers and replace the old handler with one that handle plain sockets
-    channel.pipeline().remove("codec");
-    channel.pipeline().replace("handler", "handler", new VertxNetHandler(client.vertx, connectionMap) {
+    ChannelPipeline pipeline = channel.pipeline();
+    ChannelHandler inflater = pipeline.get(HttpContentDecompressor.class);
+    if (inflater != null) {
+      pipeline.remove(inflater);
+    }
+    pipeline.remove("codec");
+    pipeline.replace("handler", "handler", new VertxNetHandler(client.vertx, connectionMap) {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
         // remove from the real mapping

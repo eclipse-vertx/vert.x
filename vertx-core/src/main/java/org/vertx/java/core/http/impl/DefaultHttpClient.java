@@ -19,10 +19,7 @@ package org.vertx.java.core.http.impl;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.http.HttpClientCodec;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -58,6 +55,8 @@ public class DefaultHttpClient implements HttpClient {
   private Handler<Throwable> exceptionHandler;
   private int port = 80;
   private String host = "localhost";
+  private boolean tryUseCompression;
+
   private final HttpPool pool = new PriorityHttpConnectionPool()  {
     protected void connect(Handler<ClientConnection> connectHandler, Handler<Throwable> connectErrorHandler, DefaultContext context) {
       internalConnect(connectHandler, connectErrorHandler);
@@ -486,6 +485,18 @@ public class DefaultHttpClient implements HttpClient {
     return tcpHelper.isUsePooledBuffers();
   }
 
+  @Override
+  public HttpClient setTryUseCompression(boolean tryUseCompression) {
+    checkClosed();
+    this.tryUseCompression = tryUseCompression;
+    return this;
+  }
+
+  @Override
+  public boolean getTryUseCompression() {
+    return tryUseCompression;
+  }
+
   void getConnection(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, DefaultContext context) {
     pool.getConnection(handler, connectionExceptionHandler, context);
   }
@@ -538,6 +549,9 @@ public class DefaultHttpClient implements HttpClient {
           }
 
           pipeline.addLast("codec", new HttpClientCodec());
+          if (tryUseCompression) {
+            pipeline.addLast("inflater", new HttpContentDecompressor());
+          }
           pipeline.addLast("handler", new ClientHandler());
         }
       });
