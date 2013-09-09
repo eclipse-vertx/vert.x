@@ -26,8 +26,6 @@ import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.datagram.BoundDatagramChannel;
-import org.vertx.java.core.datagram.ConnectedDatagramChannel;
 import org.vertx.java.core.datagram.DatagramEndpoint;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
@@ -46,7 +44,7 @@ public class DefaultDatagramEndpoint implements DatagramEndpoint {
   private final VertxInternal vertx;
   private final DefaultContext context;
   private Bootstrap bootstrap;
-  private final Map<Channel, AbstractDatagramChannel> datagramMap = new ConcurrentHashMap<>();
+  private final Map<Channel, DefaultDatagramChannel> datagramMap = new ConcurrentHashMap<>();
 
   private int sendBufferSize = -1;
   private int receiveBufferSize = -1;
@@ -91,35 +89,21 @@ public class DefaultDatagramEndpoint implements DatagramEndpoint {
   }
 
   @Override
-  public DatagramEndpoint bind(String address, int port, Handler<AsyncResult<BoundDatagramChannel>> handler) {
+  public DatagramEndpoint bind(String address, int port, Handler<AsyncResult<org.vertx.java.core.datagram.DatagramChannel>> handler) {
     return bind(new InetSocketAddress(address, port), handler);
   }
 
   @Override
-  public DatagramEndpoint bind(int port, Handler<AsyncResult<BoundDatagramChannel>> handler) {
+  public DatagramEndpoint bind(int port, Handler<AsyncResult<org.vertx.java.core.datagram.DatagramChannel>> handler) {
     return bind(new InetSocketAddress(port), handler);
   }
 
-  @Override
-  public DatagramEndpoint connect(String address, int port, Handler<AsyncResult<ConnectedDatagramChannel>> handler) {
-    return connect(new InetSocketAddress(address, port), handler);
-  }
 
   @Override
-  public DatagramEndpoint bind(InetSocketAddress local, Handler<AsyncResult<BoundDatagramChannel>> handler) {
+  public DatagramEndpoint bind(InetSocketAddress local, Handler<AsyncResult<org.vertx.java.core.datagram.DatagramChannel>> handler) {
     configurable = false;
-    ChannelFuture future = bootstrap.clone().handler(new BoundDatagramChannelHandler(vertx, datagramMap)).bind(local);
-    DefaultBoundDatagramChannel channel = new DefaultBoundDatagramChannel(vertx, (DatagramChannel) future.channel(), context);
-    datagramMap.put(future.channel(), channel);
-    channel.addListener(future, handler);
-    return this;
-  }
-
-  @Override
-  public DatagramEndpoint connect(InetSocketAddress remote, Handler<AsyncResult<ConnectedDatagramChannel>> handler) {
-    configurable = false;
-    ChannelFuture future = bootstrap.clone().handler(new ConnectedDatagramChannelHandler(vertx, datagramMap)).connect(remote);
-    DefaultConnectedDatagramChannel channel = new DefaultConnectedDatagramChannel(vertx, (DatagramChannel) future.channel(), context);
+    ChannelFuture future = bootstrap.clone().handler(new DatagramChannelHandler(vertx, datagramMap)).bind(local);
+    DefaultDatagramChannel channel = new DefaultDatagramChannel(vertx, (DatagramChannel) future.channel(), context);
     datagramMap.put(future.channel(), channel);
     channel.addListener(future, handler);
     return this;

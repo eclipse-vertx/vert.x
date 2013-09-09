@@ -25,7 +25,7 @@ import java.net.NetworkInterface;
 import java.net.StandardProtocolFamily;
 
 /**
- * Allows to create {@link BoundDatagramChannel}s and {@link ConnectedDatagramChannel}s.
+ * Allows to create {@link DatagramChannel}s.
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
@@ -34,26 +34,18 @@ public interface DatagramEndpoint {
   /**
    * @see #bind(java.net.InetSocketAddress, org.vertx.java.core.Handler)
    */
-  DatagramEndpoint bind(String address, int port, Handler<AsyncResult<BoundDatagramChannel>> handler);
+  DatagramEndpoint bind(String address, int port, Handler<AsyncResult<DatagramChannel>> handler);
 
   /**
    * @see #bind(java.net.InetSocketAddress, org.vertx.java.core.Handler)
    */
-  DatagramEndpoint bind(int port, Handler<AsyncResult<BoundDatagramChannel>> handler);
+  DatagramEndpoint bind(int port, Handler<AsyncResult<DatagramChannel>> handler);
 
   /**
-   * Create a new {@link BoundDatagramChannel} by bind it to the given {@link InetSocketAddress}.
+   * Create a new {@link DatagramChannel} by bind it to the given {@link InetSocketAddress}.
    * The {@link Handler} will be notified once the bind operation completes.
    */
-  DatagramEndpoint bind(InetSocketAddress local, Handler<AsyncResult<BoundDatagramChannel>> handler);
-
-  DatagramEndpoint connect(String address, int port,  Handler<AsyncResult<ConnectedDatagramChannel>> handler);
-
-  /**
-   * Create new {@link ConnectedDatagramChannel} by connect to the given {@link InetSocketAddress}.
-   * The {@link Handler} will be notified once the connection operation completes.
-   */
-  DatagramEndpoint connect(InetSocketAddress remote, Handler<AsyncResult<ConnectedDatagramChannel>> handler);
+  DatagramEndpoint bind(InetSocketAddress local, Handler<AsyncResult<DatagramChannel>> handler);
 
   /**
    * Gets the {@link java.net.StandardSocketOptions#SO_SNDBUF} option.
