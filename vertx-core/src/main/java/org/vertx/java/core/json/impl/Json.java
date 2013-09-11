@@ -18,11 +18,15 @@ package org.vertx.java.core.json.impl;
 
 
 
+import java.util.TimeZone;
+
+import org.vertx.java.core.json.DecodeException;
+import org.vertx.java.core.json.EncodeException;
+
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import org.vertx.java.core.json.DecodeException;
-import org.vertx.java.core.json.EncodeException;
+import com.fasterxml.jackson.databind.util.StdDateFormat;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -35,6 +39,9 @@ public class Json {
   static {
     // Non-standard JSON but we allow C style comments in our JSON
     mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+    
+    // Use ISO 8601 date format and UTC timezone instead of timestamps
+	mapper.setDateFormat(StdDateFormat.getISO8601Format(TimeZone.getTimeZone("UTC")));
   }
 
   public static String encode(Object obj) throws EncodeException {
