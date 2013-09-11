@@ -17,6 +17,7 @@ package org.vertx.java.core.datagram;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.NetworkSupport;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.DrainSupport;
 
@@ -28,18 +29,20 @@ import java.net.NetworkInterface;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public interface DatagramSupport<T extends DatagramSupport> extends DrainSupport<T>  {
+public interface DatagramSupport<T extends DatagramSupport> extends DrainSupport<T>, NetworkSupport<T> {
+
   /**
    * Write the given {@link org.vertx.java.core.buffer.Buffer} to the {@link java.net.InetSocketAddress}. The {@link org.vertx.java.core.Handler} will be notified once the
    * write completes.
    *
    *
    * @param packet    the {@link org.vertx.java.core.buffer.Buffer} to write
-   * @param remote    the {@link java.net.InetSocketAddress} which is the remote peer
+   * @param host      the host address of the remote peer
+   * @param port      the host port of the remote peer
    * @param handler   the {@link org.vertx.java.core.Handler} to notify once the write completes.
    * @return self     itself for method chaining
    */
-  T send(Buffer packet, InetSocketAddress remote, Handler<AsyncResult<T>> handler);
+  T send(Buffer packet, String host, int port, Handler<AsyncResult<T>> handler);
 
   /**
    * Write the given {@link String} to the {@link InetSocketAddress} using UTF8 encoding. The {@link Handler} will be notified once the
@@ -47,11 +50,12 @@ public interface DatagramSupport<T extends DatagramSupport> extends DrainSupport
    *
    *
    * @param str       the {@link String} to write
-   * @param remote    the {@link java.net.InetSocketAddress} which is the remote peer
+   * @param host      the host address of the remote peer
+   * @param port      the host port of the remote peer
    * @param handler   the {@link org.vertx.java.core.Handler} to notify once the write completes.
    * @return self     itself for method chaining
    */
-  T send(String str, InetSocketAddress remote, Handler<AsyncResult<T>> handler);
+  T send(String str, String host, int port, Handler<AsyncResult<T>> handler);
 
   /**
    * Write the given {@link String} to the {@link InetSocketAddress} using the given encoding. The {@link Handler} will be notified once the
@@ -60,51 +64,12 @@ public interface DatagramSupport<T extends DatagramSupport> extends DrainSupport
    *
    * @param str       the {@link String} to write
    * @param enc       the charset used for encoding
-   * @param remote    the {@link java.net.InetSocketAddress} which is the remote peer
+   * @param host      the host address of the remote peer
+   * @param port      the host port of the remote peer
    * @param handler   the {@link org.vertx.java.core.Handler} to notify once the write completes.
    * @return self     itself for method chaining
    */
-  T send(String str, String enc, InetSocketAddress remote, Handler<AsyncResult<T>> handler);
-
-  /**
-   * Gets the {@link java.net.StandardSocketOptions#SO_SNDBUF} option.
-   */
-  int getSendBufferSize();
-
-  /**
-   * Sets the {@link java.net.StandardSocketOptions#SO_SNDBUF} option.
-   */
-  T setSendBufferSize(int sendBufferSize);
-
-  /**
-   * Gets the {@link java.net.StandardSocketOptions#SO_RCVBUF} option.
-   */
-  int getReceiveBufferSize();
-
-  /**
-   * Sets the {@link java.net.StandardSocketOptions#SO_RCVBUF} option.
-   */
-  T setReceiveBufferSize(int receiveBufferSize);
-
-  /**
-   * Gets the {@link java.net.StandardSocketOptions#IP_TOS} option.
-   */
-  int getTrafficClass();
-
-  /**
-   * Sets the {@link java.net.StandardSocketOptions#IP_TOS} option.
-   */
-  T setTrafficClass(int trafficClass);
-
-  /**
-   * Gets the {@link java.net.StandardSocketOptions#SO_REUSEADDR} option.
-   */
-  boolean isReuseAddress();
-
-  /**
-   * Gets the {@link java.net.StandardSocketOptions#SO_REUSEADDR} option.
-   */
-  T setReuseAddress(boolean reuseAddress);
+  T send(String str, String enc, String host, int port, Handler<AsyncResult<T>> handler);
 
   /**
    * Gets the {@link java.net.StandardSocketOptions#SO_BROADCAST} option.

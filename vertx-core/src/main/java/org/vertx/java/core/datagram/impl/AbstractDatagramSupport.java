@@ -98,21 +98,21 @@ abstract class AbstractDatagramSupport<T extends DatagramSupport> extends Connec
 
   @Override
   @SuppressWarnings("unchecked")
-  public T send(Buffer packet, InetSocketAddress remote, Handler<AsyncResult<T>> handler) {
+  public T send(Buffer packet, String host, int port, Handler<AsyncResult<T>> handler) {
     configurable = false;
-    ChannelFuture future = write(new DatagramPacket(packet.getByteBuf(), remote));
+    ChannelFuture future = write(new DatagramPacket(packet.getByteBuf(), new InetSocketAddress(host, port)));
     addListener(future, handler);
     return (T) this;
   }
 
   @Override
-  public T send(String str, InetSocketAddress remote, Handler<AsyncResult<T>> handler) {
-    return send(new Buffer(str), remote, handler);
+  public T send(String str, String host, int port, Handler<AsyncResult<T>> handler) {
+    return send(new Buffer(str), host, port, handler);
   }
 
   @Override
-  public T send(String str, String enc, InetSocketAddress remote, Handler<AsyncResult<T>> handler) {
-    return send(new Buffer(str, enc), remote, handler);
+  public T send(String str, String enc, String host, int port, Handler<AsyncResult<T>> handler) {
+    return send(new Buffer(str, enc), host, port, handler);
   }
 
 

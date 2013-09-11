@@ -54,7 +54,7 @@ public class TestClient extends TestClientBase {
 
           }
         });
-        client.send(buffer, new InetSocketAddress("127.0.0.1", 1234), new AsyncResultHandler<DatagramClient>() {
+        client.send(buffer, "127.0.0.1", 1234, new AsyncResultHandler<DatagramClient>() {
           @Override
           public void handle(AsyncResult<DatagramClient> event) {
             tu.checkThread();
