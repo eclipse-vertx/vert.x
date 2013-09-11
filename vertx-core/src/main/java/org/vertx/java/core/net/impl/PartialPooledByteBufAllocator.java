@@ -121,4 +121,9 @@ public class PartialPooledByteBufAllocator implements ByteBufAllocator {
   public CompositeByteBuf compositeDirectBuffer(int maxNumComponents) {
     return POOLED.compositeDirectBuffer();
   }
+
+  @Override
+  public boolean isDirectBufferPooled() {
+    return true;
+  }
 }

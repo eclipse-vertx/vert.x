@@ -15,37 +15,56 @@
  */
 package org.vertx.java.core.datagram;
 
-
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.streams.DrainSupport;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
-import java.net.StandardProtocolFamily;
+
 
 /**
- * Allows to create {@link DatagramChannel}s.
- *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public interface DatagramEndpoint {
+public interface DatagramSupport<T extends DatagramSupport> extends DrainSupport<T>  {
+  /**
+   * Write the given {@link org.vertx.java.core.buffer.Buffer} to the {@link java.net.InetSocketAddress}. The {@link org.vertx.java.core.Handler} will be notified once the
+   * write completes.
+   *
+   *
+   * @param packet    the {@link org.vertx.java.core.buffer.Buffer} to write
+   * @param remote    the {@link java.net.InetSocketAddress} which is the remote peer
+   * @param handler   the {@link org.vertx.java.core.Handler} to notify once the write completes.
+   * @return self     itself for method chaining
+   */
+  T send(Buffer packet, InetSocketAddress remote, Handler<AsyncResult<T>> handler);
 
   /**
-   * @see #bind(java.net.InetSocketAddress, org.vertx.java.core.Handler)
+   * Write the given {@link String} to the {@link InetSocketAddress} using UTF8 encoding. The {@link Handler} will be notified once the
+   * write completes.
+   *
+   *
+   * @param str       the {@link String} to write
+   * @param remote    the {@link java.net.InetSocketAddress} which is the remote peer
+   * @param handler   the {@link org.vertx.java.core.Handler} to notify once the write completes.
+   * @return self     itself for method chaining
    */
-  DatagramEndpoint bind(String address, int port, Handler<AsyncResult<DatagramChannel>> handler);
+  T send(String str, InetSocketAddress remote, Handler<AsyncResult<T>> handler);
 
   /**
-   * @see #bind(java.net.InetSocketAddress, org.vertx.java.core.Handler)
+   * Write the given {@link String} to the {@link InetSocketAddress} using the given encoding. The {@link Handler} will be notified once the
+   * write completes.
+   *
+   *
+   * @param str       the {@link String} to write
+   * @param enc       the charset used for encoding
+   * @param remote    the {@link java.net.InetSocketAddress} which is the remote peer
+   * @param handler   the {@link org.vertx.java.core.Handler} to notify once the write completes.
+   * @return self     itself for method chaining
    */
-  DatagramEndpoint bind(int port, Handler<AsyncResult<DatagramChannel>> handler);
-
-  /**
-   * Create a new {@link DatagramChannel} by bind it to the given {@link InetSocketAddress}.
-   * The {@link Handler} will be notified once the bind operation completes.
-   */
-  DatagramEndpoint bind(InetSocketAddress local, Handler<AsyncResult<DatagramChannel>> handler);
+  T send(String str, String enc, InetSocketAddress remote, Handler<AsyncResult<T>> handler);
 
   /**
    * Gets the {@link java.net.StandardSocketOptions#SO_SNDBUF} option.
@@ -55,7 +74,7 @@ public interface DatagramEndpoint {
   /**
    * Sets the {@link java.net.StandardSocketOptions#SO_SNDBUF} option.
    */
-  DatagramEndpoint setSendBufferSize(int sendBufferSize);
+  T setSendBufferSize(int sendBufferSize);
 
   /**
    * Gets the {@link java.net.StandardSocketOptions#SO_RCVBUF} option.
@@ -65,7 +84,7 @@ public interface DatagramEndpoint {
   /**
    * Sets the {@link java.net.StandardSocketOptions#SO_RCVBUF} option.
    */
-  DatagramEndpoint setReceiveBufferSize(int receiveBufferSize);
+  T setReceiveBufferSize(int receiveBufferSize);
 
   /**
    * Gets the {@link java.net.StandardSocketOptions#IP_TOS} option.
@@ -75,7 +94,7 @@ public interface DatagramEndpoint {
   /**
    * Sets the {@link java.net.StandardSocketOptions#IP_TOS} option.
    */
-  DatagramEndpoint setTrafficClass(int trafficClass);
+  T setTrafficClass(int trafficClass);
 
   /**
    * Gets the {@link java.net.StandardSocketOptions#SO_REUSEADDR} option.
@@ -85,7 +104,7 @@ public interface DatagramEndpoint {
   /**
    * Gets the {@link java.net.StandardSocketOptions#SO_REUSEADDR} option.
    */
-  DatagramEndpoint setReuseAddress(boolean reuseAddress);
+  T setReuseAddress(boolean reuseAddress);
 
   /**
    * Gets the {@link java.net.StandardSocketOptions#SO_BROADCAST} option.
@@ -95,7 +114,7 @@ public interface DatagramEndpoint {
   /**
    * Sets the {@link java.net.StandardSocketOptions#SO_BROADCAST} option.
    */
-  DatagramEndpoint setBroadcast(boolean broadcast);
+  T setBroadcast(boolean broadcast);
 
   /**
    * Gets the {@link java.net.StandardSocketOptions#IP_MULTICAST_LOOP} option.
@@ -110,7 +129,7 @@ public interface DatagramEndpoint {
    * @param loopbackModeDisabled
    *        {@code true} if and only if the loopback mode has been disabled
    */
-  DatagramEndpoint setLoopbackModeDisabled(boolean loopbackModeDisabled);
+  T setLoopbackModeDisabled(boolean loopbackModeDisabled);
 
   /**
    * Gets the {@link java.net.StandardSocketOptions#IP_MULTICAST_TTL} option.
@@ -120,7 +139,7 @@ public interface DatagramEndpoint {
   /**
    * Sets the {@link java.net.StandardSocketOptions#IP_MULTICAST_TTL} option.
    */
-  DatagramEndpoint setTimeToLive(int ttl);
+  T setTimeToLive(int ttl);
 
   /**
    * Gets the address of the network interface used for multicast packets.
@@ -130,7 +149,7 @@ public interface DatagramEndpoint {
   /**
    * Sets the address of the network interface used for multicast packets.
    */
-  DatagramEndpoint setInterface(InetAddress interfaceAddress);
+  T setInterface(InetAddress interfaceAddress);
 
   /**
    * Gets the {@link java.net.StandardSocketOptions#IP_MULTICAST_IF} option.
@@ -140,17 +159,5 @@ public interface DatagramEndpoint {
   /**
    * Sets the {@link java.net.StandardSocketOptions#IP_MULTICAST_IF} option.
    */
-  DatagramEndpoint setNetworkInterface(NetworkInterface networkInterface);
-
-  /**
-   * Gets the {@link StandardProtocolFamily} used for multicasting or {@code null}
-   * if the default should be used.
-   */
-  StandardProtocolFamily getProtocolFamily();
-
-  /**
-   * Set the {@link StandardProtocolFamily} to use when the {@link DatagramEndpoint} is used
-   * for multicasting. If not specified the default for the running OS/JDK will be used.
-   */
-  DatagramEndpoint setProtocolFamily(StandardProtocolFamily family);
+  T setNetworkInterface(NetworkInterface networkInterface);
 }

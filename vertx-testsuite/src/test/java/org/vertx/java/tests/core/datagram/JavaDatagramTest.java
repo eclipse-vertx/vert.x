@@ -38,6 +38,12 @@ public class JavaDatagramTest extends TestBase {
   }
 
   @Test
+  public void testSendReceive() throws Exception {
+    startTest(getMethodName());
+  }
+
+  /*
+  @Test
   public void testEchoBound() throws Exception {
     startTest(getMethodName());
   }
@@ -51,7 +57,7 @@ public class JavaDatagramTest extends TestBase {
   public void testMulticastJoinLeave() throws Exception {
     startTest(getMethodName());
   }
-
+  */
   /**
    * Not support on OSX.. Need to check on which OS it works.
    *

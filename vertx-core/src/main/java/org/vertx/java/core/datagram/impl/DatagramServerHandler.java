@@ -24,20 +24,29 @@ import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.impl.VertxHandler;
 
-import java.util.Map;
+import java.util.HashMap;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-final class DatagramChannelHandler extends VertxHandler<DefaultDatagramChannel> {
-  DatagramChannelHandler(VertxInternal vertx, Map<Channel, DefaultDatagramChannel> connectionMap) {
-        super(vertx, connectionMap);
+final class DatagramServerHandler extends VertxHandler<DefaultDatagramServer> {
+  private final DefaultDatagramServer server;
+
+  DatagramServerHandler(VertxInternal vertx, DefaultDatagramServer server) {
+        super(vertx, new HashMap<Channel, DefaultDatagramServer>());
+    this.server = server;
+  }
+
+  @Override
+  public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+    super.handlerAdded(ctx);
+    connectionMap.put(ctx.channel(), server);
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  protected void channelRead(DefaultDatagramChannel channel, DefaultContext context, ChannelHandlerContext chctx, Object msg) throws Exception {
-    channel.handleMessage((org.vertx.java.core.datagram.DatagramPacket) msg);
+  protected void channelRead(DefaultDatagramServer server, DefaultContext context, ChannelHandlerContext chctx, Object msg) throws Exception {
+    server.handleMessage((org.vertx.java.core.datagram.DatagramPacket) msg);
   }
 
 

@@ -16,8 +16,9 @@
 
 package org.vertx.java.core;
 
+import org.vertx.java.core.datagram.DatagramClient;
+import org.vertx.java.core.datagram.DatagramServer;
 import org.vertx.java.core.dns.DnsClient;
-import org.vertx.java.core.datagram.DatagramEndpoint;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.http.HttpClient;
@@ -28,6 +29,7 @@ import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
 
 import java.net.InetSocketAddress;
+import java.net.StandardProtocolFamily;
 
 /**
  * The control centre of the Vert.x Core API.<p>
@@ -65,9 +67,14 @@ public interface Vertx {
   HttpClient createHttpClient();
 
   /**
-   * Create a new Datagram Endpoint
+   * Create a new Datagram client
    */
-  DatagramEndpoint createDatagramEndpoint();
+  DatagramClient createDatagramClient();
+
+  /**
+   * Create a new Datagram server
+   */
+  DatagramServer createDatagramServer(StandardProtocolFamily family);
 
   /**
    * Create a SockJS server that wraps an HTTP server

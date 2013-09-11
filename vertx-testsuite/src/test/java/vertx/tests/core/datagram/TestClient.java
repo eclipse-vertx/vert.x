@@ -26,28 +26,58 @@ import org.vertx.java.testframework.TestClientBase;
 import org.vertx.java.testframework.TestUtils;
 
 import java.net.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public class TestClient extends TestClientBase {
-  private DatagramChannel client;
-  private DatagramChannel server;
+  private DatagramClient client;
+  private DatagramServer server;
 
+  public void testSendReceive() {
+    client = vertx.createDatagramClient();
+    server = vertx.createDatagramServer(null);
+
+    server.listen(new InetSocketAddress("127.0.0.1", 1234), new AsyncResultHandler<DatagramServer>() {
+      @Override
+      public void handle(AsyncResult<DatagramServer> event) {
+        tu.checkThread();
+        tu.azzert(event.succeeded());
+        final Buffer buffer = TestUtils.generateRandomBuffer(128);
+
+        server.dataHandler(new Handler<DatagramPacket>() {
+          @Override
+          public void handle(DatagramPacket event) {
+            tu.checkThread();
+            tu.azzert(event.data().equals(buffer));
+            tu.testComplete();
+
+          }
+        });
+        client.send(buffer, new InetSocketAddress("127.0.0.1", 1234), new AsyncResultHandler<DatagramClient>() {
+          @Override
+          public void handle(AsyncResult<DatagramClient> event) {
+            tu.checkThread();
+            tu.azzert(event.succeeded());
+          }
+        });
+      }
+    });
+  }
+  /*
   public void testEchoBound() {
     final DatagramEndpoint endpoint = vertx.createDatagramEndpoint();
 
-    endpoint.bind(new InetSocketAddress("localhost", 1234), new AsyncResultHandler<DatagramChannel>() {
+    endpoint.bind(new InetSocketAddress("localhost", 1234), new AsyncResultHandler<DatagramServer>() {
       @Override
-      public void handle(AsyncResult<DatagramChannel> event) {
+      public void handle(AsyncResult<DatagramServer> event) {
         tu.checkThread();
         tu.azzert(event.succeeded());
         final Buffer buffer = TestUtils.generateRandomBuffer(128);
         server = event.result();
-        endpoint.bind(new InetSocketAddress("localhost", 1235), new AsyncResultHandler<DatagramChannel>() {
+        endpoint.bind(new InetSocketAddress("localhost", 1235), new AsyncResultHandler<DatagramServer>() {
           @Override
-          public void handle(AsyncResult<DatagramChannel> event) {
+          public void handle(AsyncResult<DatagramServer> event) {
             tu.checkThread();
             tu.azzert(event.succeeded());
             client = event.result();
@@ -59,9 +89,9 @@ public class TestClient extends TestClientBase {
                 tu.checkThread();
                 tu.azzert(event.sender().equals(client.localAddress()));
                 tu.azzert(event.data().equals(buffer));
-                server.write(event.data(), event.sender(), new AsyncResultHandler<DatagramChannel>() {
+                server.write(event.data(), event.sender(), new AsyncResultHandler<DatagramServer>() {
                   @Override
-                  public void handle(AsyncResult<DatagramChannel> event) {
+                  public void handle(AsyncResult<DatagramServer> event) {
                     tu.checkThread();
                     tu.azzert(event.succeeded());
                   }
@@ -78,9 +108,9 @@ public class TestClient extends TestClientBase {
               }
             });
 
-            client.write(buffer, server.localAddress(), new AsyncResultHandler<DatagramChannel>() {
+            client.write(buffer, server.localAddress(), new AsyncResultHandler<DatagramServer>() {
               @Override
-              public void handle(AsyncResult<DatagramChannel> event) {
+              public void handle(AsyncResult<DatagramServer> event) {
                 tu.azzert(event.succeeded());
               }
             });
@@ -93,9 +123,9 @@ public class TestClient extends TestClientBase {
   public void testConfigureAfterBind() {
     final DatagramEndpoint endpoint = vertx.createDatagramEndpoint();
 
-    endpoint.bind(new InetSocketAddress("localhost", 1234), new AsyncResultHandler<DatagramChannel>() {
+    endpoint.bind(new InetSocketAddress("localhost", 1234), new AsyncResultHandler<DatagramServer>() {
       @Override
-      public void handle(AsyncResult<DatagramChannel> event) {
+      public void handle(AsyncResult<DatagramServer> event) {
         tu.checkThread();
         server = event.result();
 
@@ -187,17 +217,17 @@ public class TestClient extends TestClientBase {
     final NetworkInterface iface = NetworkInterface.getByInetAddress(InetAddress.getByName("127.0.0.1"));
     endpoint.setNetworkInterface(iface);
     endpoint.setProtocolFamily(StandardProtocolFamily.INET);
-    endpoint.bind(new InetSocketAddress("127.0.0.1", 1234), new AsyncResultHandler<DatagramChannel>() {
+    endpoint.bind(new InetSocketAddress("127.0.0.1", 1234), new AsyncResultHandler<DatagramServer>() {
       @Override
-      public void handle(AsyncResult<DatagramChannel> event) {
+      public void handle(AsyncResult<DatagramServer> event) {
         tu.checkThread();
         tu.azzert(event.succeeded());
         final Buffer buffer = TestUtils.generateRandomBuffer(128);
         server = event.result();
 
-        endpoint.bind(new InetSocketAddress("127.0.0.1", 1235), new AsyncResultHandler<DatagramChannel>() {
+        endpoint.bind(new InetSocketAddress("127.0.0.1", 1235), new AsyncResultHandler<DatagramServer>() {
           @Override
-          public void handle(AsyncResult<DatagramChannel> event) {
+          public void handle(AsyncResult<DatagramServer> event) {
             tu.checkThread();
             tu.azzert(event.succeeded());
             client = event.result();
@@ -215,19 +245,19 @@ public class TestClient extends TestClientBase {
               }
             });
 
-            client.joinGroup(groupAddress, iface, new AsyncResultHandler<DatagramChannel>() {
+            client.joinGroup(groupAddress, iface, new AsyncResultHandler<DatagramServer>() {
               @Override
-              public void handle(AsyncResult<DatagramChannel> event) {
+              public void handle(AsyncResult<DatagramServer> event) {
                 tu.azzert(event.succeeded());
-                server.write(buffer, groupAddress, new AsyncResultHandler<DatagramChannel>() {
+                server.write(buffer, groupAddress, new AsyncResultHandler<DatagramServer>() {
                   @Override
-                  public void handle(AsyncResult<DatagramChannel> event) {
+                  public void handle(AsyncResult<DatagramServer> event) {
                     tu.azzert(event.succeeded());
 
                     // leave group
-                    client.leaveGroup(groupAddress, iface, new AsyncResultHandler<DatagramChannel>() {
+                    client.leaveGroup(groupAddress, iface, new AsyncResultHandler<DatagramServer>() {
                       @Override
-                      public void handle(AsyncResult<DatagramChannel> event) {
+                      public void handle(AsyncResult<DatagramServer> event) {
                         tu.azzert(event.succeeded());
 
                         final AtomicBoolean received = new AtomicBoolean(false);
@@ -238,9 +268,9 @@ public class TestClient extends TestClientBase {
                             received.set(true);
                           }
                         });
-                        server.write(buffer, groupAddress, new AsyncResultHandler<DatagramChannel>() {
+                        server.write(buffer, groupAddress, new AsyncResultHandler<DatagramServer>() {
                           @Override
-                          public void handle(AsyncResult<DatagramChannel> event) {
+                          public void handle(AsyncResult<DatagramServer> event) {
                             tu.azzert(event.succeeded());
 
                             // schedule a timer which will check in 1 second if we received a message after the group
@@ -271,17 +301,17 @@ public class TestClient extends TestClientBase {
     final NetworkInterface iface = NetworkInterface.getByInetAddress(InetAddress.getByName("127.0.0.1"));
     endpoint.setNetworkInterface(iface);
     endpoint.setProtocolFamily(StandardProtocolFamily.INET);
-    endpoint.bind(new InetSocketAddress("127.0.0.1", 1234), new AsyncResultHandler<DatagramChannel>() {
+    endpoint.bind(new InetSocketAddress("127.0.0.1", 1234), new AsyncResultHandler<DatagramServer>() {
       @Override
-      public void handle(AsyncResult<DatagramChannel> event) {
+      public void handle(AsyncResult<DatagramServer> event) {
         tu.checkThread();
         tu.azzert(event.succeeded());
         final Buffer buffer = TestUtils.generateRandomBuffer(128);
         server = event.result();
 
-        endpoint.bind(new InetSocketAddress("127.0.0.1", 1235), new AsyncResultHandler<DatagramChannel>() {
+        endpoint.bind(new InetSocketAddress("127.0.0.1", 1235), new AsyncResultHandler<DatagramServer>() {
           @Override
-          public void handle(AsyncResult<DatagramChannel> event) {
+          public void handle(AsyncResult<DatagramServer> event) {
             tu.checkThread();
             tu.azzert(event.succeeded());
             client = event.result();
@@ -299,18 +329,18 @@ public class TestClient extends TestClientBase {
               }
             });
 
-            client.joinGroup(groupAddress, iface, new AsyncResultHandler<DatagramChannel>() {
+            client.joinGroup(groupAddress, iface, new AsyncResultHandler<DatagramServer>() {
               @Override
-              public void handle(AsyncResult<DatagramChannel> event) {
+              public void handle(AsyncResult<DatagramServer> event) {
                 tu.azzert(event.succeeded());
-                server.write(buffer, groupAddress, new AsyncResultHandler<DatagramChannel>() {
+                server.write(buffer, groupAddress, new AsyncResultHandler<DatagramServer>() {
                   @Override
-                  public void handle(AsyncResult<DatagramChannel> event) {
+                  public void handle(AsyncResult<DatagramServer> event) {
                     tu.azzert(event.succeeded());
 
-                    client.block(groupAddress.getAddress(), iface, server.localAddress().getAddress(), new AsyncResultHandler<DatagramChannel>() {
+                    client.block(groupAddress.getAddress(), iface, server.localAddress().getAddress(), new AsyncResultHandler<DatagramServer>() {
                       @Override
-                      public void handle(AsyncResult<DatagramChannel> event) {
+                      public void handle(AsyncResult<DatagramServer> event) {
                         tu.azzert(event.succeeded());
 
                         final AtomicBoolean received = new AtomicBoolean(false);
@@ -321,9 +351,9 @@ public class TestClient extends TestClientBase {
                             received.set(true);
                           }
                         });
-                        server.write(buffer, groupAddress, new AsyncResultHandler<DatagramChannel>() {
+                        server.write(buffer, groupAddress, new AsyncResultHandler<DatagramServer>() {
                           @Override
-                          public void handle(AsyncResult<DatagramChannel> event) {
+                          public void handle(AsyncResult<DatagramServer> event) {
                             tu.azzert(event.succeeded());
 
                             // schedule a timer which will check in 1 second if we received a message after the group
@@ -348,7 +378,7 @@ public class TestClient extends TestClientBase {
       }
     });
   }
-
+  */
   @Override
   public void start() {
     super.start();
@@ -357,18 +387,7 @@ public class TestClient extends TestClientBase {
 
   @Override
   public void stop() {
-    if (client != null) {
-      client.close(new AsyncResultHandler<Void>() {
-        @Override
-        public void handle(AsyncResult<Void> event) {
-          tu.checkThread();
-          stopServer();
-        }
-      });
-    } else {
-      stopServer();
-    }
-
+    stopServer();
   }
 
   private void stopServer() {
