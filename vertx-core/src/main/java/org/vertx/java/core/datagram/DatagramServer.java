@@ -40,16 +40,6 @@ public interface DatagramServer extends DatagramSupport<DatagramServer>, Excepti
   InetSocketAddress localAddress();
 
   /**
-   * Close this {@link DatagramServer} and notify the given handler once done.
-   */
-  void close(Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Close this {@link DatagramServer} in an async fashion.
-   */
-  void close();
-
-  /**
    * Joins a multicast group and notifies the {@link io.netty.channel.ChannelFuture} once the operation completes.
    */
   DatagramServer joinGroup(InetAddress multicastAddress, Handler<AsyncResult<DatagramServer>> handler);

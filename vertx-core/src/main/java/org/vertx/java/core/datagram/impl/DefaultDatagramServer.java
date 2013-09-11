@@ -38,11 +38,6 @@ public class DefaultDatagramServer extends AbstractDatagramSupport<DatagramServe
   }
 
   @Override
-  public void close(final Handler<AsyncResult<Void>> handler) {
-    channel.close().addListener(new DatagramChannelFutureListener<>(null, handler, vertx, context));
-  }
-
-  @Override
   public DatagramServer joinGroup(InetAddress multicastAddress, Handler<AsyncResult<DatagramServer>> handler) {
     configurable = false;
     addListener(channel().joinGroup(multicastAddress), handler);

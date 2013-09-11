@@ -160,4 +160,9 @@ public interface DatagramSupport<T extends DatagramSupport> extends DrainSupport
    * Sets the {@link java.net.StandardSocketOptions#IP_MULTICAST_IF} option.
    */
   T setNetworkInterface(NetworkInterface networkInterface);
+
+
+  void close(Handler<AsyncResult<Void>> handler);
+  void close();
+
 }

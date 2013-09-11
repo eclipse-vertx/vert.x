@@ -242,6 +242,14 @@ abstract class AbstractDatagramSupport<T extends DatagramSupport> extends Connec
     return (T) this;
   }
 
+
+  @Override
+  public void close(final Handler<AsyncResult<Void>> handler) {
+    // make sure everything is flushed out on close
+    endReadAndFlush();
+    channel.close().addListener(new DatagramChannelFutureListener<>(null, handler, vertx, context));
+  }
+
   protected DatagramChannel channel() {
     return (DatagramChannel) channel;
   }
