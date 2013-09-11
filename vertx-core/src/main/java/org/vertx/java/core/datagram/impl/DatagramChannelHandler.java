@@ -29,7 +29,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-class DatagramChannelHandler extends VertxHandler<DefaultDatagramChannel> {
+final class DatagramChannelHandler extends VertxHandler<DefaultDatagramChannel> {
   DatagramChannelHandler(VertxInternal vertx, Map<Channel, DefaultDatagramChannel> connectionMap) {
         super(vertx, connectionMap);
   }

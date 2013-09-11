@@ -32,7 +32,7 @@ public interface DatagramPacket {
   InetSocketAddress sender();
 
   /**
-   * Returns the data
+   * Returns the data of the {@link DatagramPacket}
    */
   Buffer data();
 }

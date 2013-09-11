@@ -54,13 +54,11 @@ public interface DatagramChannel extends DrainSupport<DatagramChannel>, Exceptio
    */
   DatagramChannel joinGroup(InetAddress multicastAddress, Handler<AsyncResult<DatagramChannel>> handler);
 
-
   /**
    * Joins the specified multicast group at the specified interface and notifies the {@link Handler}
    * once the operation completes.
    */
   DatagramChannel joinGroup(InetSocketAddress multicastAddress, NetworkInterface networkInterface, Handler<AsyncResult<DatagramChannel>> handler);
-
 
   /**
    * Joins the specified multicast group at the specified interface and notifies the {@link Handler}
@@ -81,7 +79,6 @@ public interface DatagramChannel extends DrainSupport<DatagramChannel>, Exceptio
   DatagramChannel leaveGroup(
           InetSocketAddress multicastAddress, NetworkInterface networkInterface, Handler<AsyncResult<DatagramChannel>> handler);
 
-
   /**
    * Leave the specified multicast group at the specified interface using the specified source and notifies
    * the {@link Handler} once the operation completes.
@@ -98,7 +95,6 @@ public interface DatagramChannel extends DrainSupport<DatagramChannel>, Exceptio
           InetAddress multicastAddress, NetworkInterface networkInterface,
           InetAddress sourceToBlock, Handler<AsyncResult<DatagramChannel>> handler);
 
-
   /**
    * Block the given sourceToBlock address for the given multicastAddress and notifies the {@link Handler} once
    * the operation completes.
@@ -106,12 +102,10 @@ public interface DatagramChannel extends DrainSupport<DatagramChannel>, Exceptio
   DatagramChannel block(
           InetAddress multicastAddress, InetAddress sourceToBlock, Handler<AsyncResult<DatagramChannel>> handler);
 
-
   /**
    * Set a data handler. As data is read, the handler will be called with the data.
    */
   DatagramChannel dataHandler(Handler<DatagramPacket> packetHandler);
-
 
   /**
    * Write the given {@link org.vertx.java.core.buffer.Buffer} to the {@link InetSocketAddress}. The {@link Handler} will be notified once the
@@ -134,6 +128,7 @@ public interface DatagramChannel extends DrainSupport<DatagramChannel>, Exceptio
    * @return self     itself for method chaining
    */
   DatagramChannel write(String str, InetSocketAddress remote, Handler<AsyncResult<DatagramChannel>> handler);
+
   /**
    * Write the given {@link String} to the {@link InetSocketAddress} using the given encoding. The {@link Handler} will be notified once the
    * write completes.

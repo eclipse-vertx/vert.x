@@ -20,6 +20,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ChannelFactory;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
@@ -58,11 +59,17 @@ public class DefaultDatagramEndpoint implements DatagramEndpoint {
   private boolean configurable = true;
   private StandardProtocolFamily family;
 
-  public DefaultDatagramEndpoint(VertxInternal vertx) {
+  public DefaultDatagramEndpoint(final VertxInternal vertx) {
     this.vertx = vertx;
     context = vertx.getOrCreateContext();
     bootstrap = new Bootstrap();
     bootstrap.group(context.getEventLoop());
+    bootstrap.handler(new ChannelInitializer<DatagramChannel>() {
+      @Override
+      protected void initChannel(DatagramChannel ch) throws Exception {
+        ch.pipeline().addLast("handler", new DatagramChannelHandler(vertx, datagramMap));
+      }
+    });
     bootstrap.channelFactory(new ChannelFactory<Channel>() {
       @Override
       public Channel newChannel() {
@@ -98,11 +105,10 @@ public class DefaultDatagramEndpoint implements DatagramEndpoint {
     return bind(new InetSocketAddress(port), handler);
   }
 
-
   @Override
   public DatagramEndpoint bind(InetSocketAddress local, Handler<AsyncResult<org.vertx.java.core.datagram.DatagramChannel>> handler) {
     configurable = false;
-    ChannelFuture future = bootstrap.clone().handler(new DatagramChannelHandler(vertx, datagramMap)).bind(local);
+    ChannelFuture future = bootstrap.bind(local);
     DefaultDatagramChannel channel = new DefaultDatagramChannel(vertx, (DatagramChannel) future.channel(), context);
     datagramMap.put(future.channel(), channel);
     channel.addListener(future, handler);
