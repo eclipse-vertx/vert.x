@@ -20,14 +20,13 @@ package org.vertx.java.core.json.impl;
 
 import java.util.TimeZone;
 
+import org.vertx.java.core.json.DecodeException;
+import org.vertx.java.core.json.EncodeException;
+
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.util.ISO8601DateFormat;
 import com.fasterxml.jackson.databind.util.StdDateFormat;
-
-import org.vertx.java.core.json.DecodeException;
-import org.vertx.java.core.json.EncodeException;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
