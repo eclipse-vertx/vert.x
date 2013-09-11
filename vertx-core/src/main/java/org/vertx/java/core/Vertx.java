@@ -64,6 +64,9 @@ public interface Vertx {
    */
   HttpClient createHttpClient();
 
+  /**
+   * Create a new Datagram Endpoint
+   */
   DatagramEndpoint createDatagramEndpoint();
 
   /**
