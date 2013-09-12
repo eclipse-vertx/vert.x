@@ -136,6 +136,89 @@ public class TestClient extends TestClientBase {
     });
   }
 
+  public void testSendAfterCloseFails() {
+    peer1 = vertx.createDatagramClient();
+    peer2 = vertx.createDatagramServer(null);
+    peer1.close(new AsyncResultHandler<Void>() {
+      @Override
+      public void handle(AsyncResult<Void> event) {
+        peer1.send("Test", "127.0.0.1", 1234, new AsyncResultHandler<DatagramClient>() {
+          @Override
+          public void handle(AsyncResult<DatagramClient> event) {
+            tu.azzert(event.failed());
+            peer1 = null;
+
+            peer2.close(new AsyncResultHandler<Void>() {
+              @Override
+              public void handle(AsyncResult<Void> event) {
+                peer2.send("Test", "127.0.0.1", 1234, new AsyncResultHandler<DatagramServer>() {
+                  @Override
+                  public void handle(AsyncResult<DatagramServer> event) {
+                    tu.azzert(event.failed());
+                    peer2 = null;
+                    tu.testComplete();
+                  }
+                });
+              }
+            });
+          }
+        });
+      }
+    });
+  }
+
+  public void testBroadcast() {
+    peer1 = vertx.createDatagramClient();
+    peer2 = vertx.createDatagramServer(null);
+    peer2.exceptionHandler(new Handler<Throwable>() {
+      @Override
+      public void handle(Throwable event) {
+        tu.azzert(false);
+      }
+    });
+    peer2.setBroadcast(true);
+    peer1.setBroadcast(true);
+
+    peer2.listen(new InetSocketAddress(1234), new AsyncResultHandler<DatagramServer>() {
+      @Override
+      public void handle(AsyncResult<DatagramServer> event) {
+        tu.checkThread();
+        tu.azzert(event.succeeded());
+        final Buffer buffer = TestUtils.generateRandomBuffer(128);
+
+        peer2.dataHandler(new Handler<DatagramPacket>() {
+          @Override
+          public void handle(DatagramPacket event) {
+            tu.checkThread();
+            tu.azzert(event.data().equals(buffer));
+            tu.testComplete();
+
+          }
+        });
+        peer1.send(buffer, "255.255.255.255", 1234, new AsyncResultHandler<DatagramClient>() {
+          @Override
+          public void handle(AsyncResult<DatagramClient> event) {
+            tu.checkThread();
+            tu.azzert(event.succeeded());
+          }
+        });
+      }
+    });
+  }
+
+  public void testBroadcastFailsIfNotConfigured() {
+    peer1 = vertx.createDatagramClient();
+    peer1.send("test", "255.255.255.255", 1234, new AsyncResultHandler<DatagramClient>() {
+      @Override
+      public void handle(AsyncResult<DatagramClient> event) {
+        tu.checkThread();
+        tu.azzert(event.failed());
+        tu.testComplete();
+      }
+    });
+  }
+
+
   /*
   public void testConfigureAfterBind() {
     final DatagramEndpoint endpoint = vertx.createDatagramEndpoint();

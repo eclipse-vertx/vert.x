@@ -47,6 +47,21 @@ public class JavaDatagramTest extends TestBase {
     startTest(getMethodName());
   }
 
+  @Test
+  public void testSendAfterCloseFails() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testBroadcast() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testBroadcastFailsIfNotConfigured() {
+    startTest(getMethodName());
+  }
+
   /*
   @Test
   public void testConfigureAfterBind() throws Exception {

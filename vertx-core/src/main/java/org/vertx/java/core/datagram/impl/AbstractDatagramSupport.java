@@ -100,7 +100,7 @@ abstract class AbstractDatagramSupport<T extends DatagramSupport> extends Connec
   @SuppressWarnings("unchecked")
   public T send(Buffer packet, String host, int port, Handler<AsyncResult<T>> handler) {
     configurable = false;
-    ChannelFuture future = write(new DatagramPacket(packet.getByteBuf(), new InetSocketAddress(host, port)));
+    ChannelFuture future = channel().writeAndFlush(new DatagramPacket(packet.getByteBuf(), new InetSocketAddress(host, port)));
     addListener(future, handler);
     return (T) this;
   }
@@ -247,7 +247,10 @@ abstract class AbstractDatagramSupport<T extends DatagramSupport> extends Connec
   public void close(final Handler<AsyncResult<Void>> handler) {
     // make sure everything is flushed out on close
     endReadAndFlush();
-    channel.close().addListener(new DatagramChannelFutureListener<>(null, handler, vertx, context));
+    ChannelFuture future = channel.close();
+    if (handler != null) {
+      future.addListener(new DatagramChannelFutureListener<>(null, handler, vertx, context));
+    }
   }
 
   protected DatagramChannel channel() {
