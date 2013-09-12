@@ -31,21 +31,26 @@ import java.net.*;
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public class TestClient extends TestClientBase {
-  private DatagramClient client;
-  private DatagramServer server;
+  private DatagramSupport peer1;
+  private DatagramServer peer2;
 
   public void testSendReceive() {
-    client = vertx.createDatagramClient();
-    server = vertx.createDatagramServer(null);
-
-    server.listen(new InetSocketAddress("127.0.0.1", 1234), new AsyncResultHandler<DatagramServer>() {
+    peer1 = vertx.createDatagramClient();
+    peer2 = vertx.createDatagramServer(null);
+    peer2.exceptionHandler(new Handler<Throwable>() {
+      @Override
+      public void handle(Throwable event) {
+        tu.azzert(false);
+      }
+    });
+    peer2.listen("127.0.0.1", 1234, new AsyncResultHandler<DatagramServer>() {
       @Override
       public void handle(AsyncResult<DatagramServer> event) {
         tu.checkThread();
         tu.azzert(event.succeeded());
         final Buffer buffer = TestUtils.generateRandomBuffer(128);
 
-        server.dataHandler(new Handler<DatagramPacket>() {
+        peer2.dataHandler(new Handler<DatagramPacket>() {
           @Override
           public void handle(DatagramPacket event) {
             tu.checkThread();
@@ -54,7 +59,7 @@ public class TestClient extends TestClientBase {
 
           }
         });
-        client.send(buffer, "127.0.0.1", 1234, new AsyncResultHandler<DatagramClient>() {
+        peer1.send(buffer, "127.0.0.1", 1234, new AsyncResultHandler<DatagramClient>() {
           @Override
           public void handle(AsyncResult<DatagramClient> event) {
             tu.checkThread();
@@ -64,53 +69,64 @@ public class TestClient extends TestClientBase {
       }
     });
   }
-  /*
-  public void testEchoBound() {
-    final DatagramEndpoint endpoint = vertx.createDatagramEndpoint();
 
-    endpoint.bind(new InetSocketAddress("localhost", 1234), new AsyncResultHandler<DatagramServer>() {
+  public void testEcho() {
+    peer1 = vertx.createDatagramServer(null);
+    peer2 = vertx.createDatagramServer(null);
+    final DatagramServer peer1 = (DatagramServer) this.peer1;
+    peer1.exceptionHandler(new Handler<Throwable>() {
+      @Override
+      public void handle(Throwable event) {
+        tu.azzert(false);
+      }
+    });
+    peer2.exceptionHandler(new Handler<Throwable>() {
+      @Override
+      public void handle(Throwable event) {
+        tu.azzert(false);
+      }
+    });
+    peer2.listen("127.0.0.1", 1234, new AsyncResultHandler<DatagramServer>() {
       @Override
       public void handle(AsyncResult<DatagramServer> event) {
         tu.checkThread();
         tu.azzert(event.succeeded());
+
         final Buffer buffer = TestUtils.generateRandomBuffer(128);
-        server = event.result();
-        endpoint.bind(new InetSocketAddress("localhost", 1235), new AsyncResultHandler<DatagramServer>() {
+        peer2.dataHandler(new Handler<DatagramPacket>() {
           @Override
-          public void handle(AsyncResult<DatagramServer> event) {
+          public void handle(DatagramPacket event) {
             tu.checkThread();
-            tu.azzert(event.succeeded());
-            client = event.result();
-
-            server.dataHandler(new Handler<DatagramPacket>() {
+            tu.azzert(event.sender().equals(new InetSocketAddress("127.0.0.1", 1235)));
+            tu.azzert(event.data().equals(buffer));
+            peer2.send(event.data(), "127.0.0.1", 1235, new AsyncResultHandler<DatagramServer>() {
               @Override
-              public void handle(DatagramPacket event) {
-
+              public void handle(AsyncResult<DatagramServer> event) {
                 tu.checkThread();
-                tu.azzert(event.sender().equals(client.localAddress()));
-                tu.azzert(event.data().equals(buffer));
-                server.write(event.data(), event.sender(), new AsyncResultHandler<DatagramServer>() {
-                  @Override
-                  public void handle(AsyncResult<DatagramServer> event) {
-                    tu.checkThread();
-                    tu.azzert(event.succeeded());
-                  }
-                });
+                tu.azzert(event.succeeded());
               }
             });
-            client.dataHandler(new Handler<DatagramPacket>() {
+          }
+        });
+
+        peer1.listen("127.0.0.1", 1235, new AsyncResultHandler<DatagramServer>() {
+          @Override
+          public void handle(AsyncResult<DatagramServer> event) {
+
+            peer1.dataHandler(new Handler<DatagramPacket>() {
               @Override
               public void handle(DatagramPacket event) {
                 tu.checkThread();
-                tu.azzert(event.sender().equals(server.localAddress()));
                 tu.azzert(event.data().equals(buffer));
+                tu.azzert(event.sender().equals(new InetSocketAddress("127.0.0.1", 1234)));
                 tu.testComplete();
               }
             });
 
-            client.write(buffer, server.localAddress(), new AsyncResultHandler<DatagramServer>() {
+            peer1.send(buffer, "127.0.0.1", 1234, new AsyncResultHandler<DatagramServer>() {
               @Override
               public void handle(AsyncResult<DatagramServer> event) {
+                tu.checkThread();
                 tu.azzert(event.succeeded());
               }
             });
@@ -120,6 +136,7 @@ public class TestClient extends TestClientBase {
     });
   }
 
+  /*
   public void testConfigureAfterBind() {
     final DatagramEndpoint endpoint = vertx.createDatagramEndpoint();
 
@@ -387,12 +404,22 @@ public class TestClient extends TestClientBase {
 
   @Override
   public void stop() {
-    stopServer();
+    if (peer1 != null) {
+      peer1.close(new AsyncResultHandler<Void>() {
+        @Override
+        public void handle(AsyncResult<Void> event) {
+          tu.checkThread();
+          stopServer();
+        }
+      });
+    } else {
+      stopServer();
+    }
   }
 
   private void stopServer() {
-    if (server != null) {
-      server.close(new AsyncResultHandler<Void>() {
+    if (peer2 != null) {
+      peer2.close(new AsyncResultHandler<Void>() {
         @Override
         public void handle(AsyncResult<Void> event) {
           tu.checkThread();

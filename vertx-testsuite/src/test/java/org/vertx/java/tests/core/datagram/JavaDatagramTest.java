@@ -42,12 +42,12 @@ public class JavaDatagramTest extends TestBase {
     startTest(getMethodName());
   }
 
-  /*
   @Test
-  public void testEchoBound() throws Exception {
+  public void testEcho() throws Exception {
     startTest(getMethodName());
   }
 
+  /*
   @Test
   public void testConfigureAfterBind() throws Exception {
     startTest(getMethodName());
