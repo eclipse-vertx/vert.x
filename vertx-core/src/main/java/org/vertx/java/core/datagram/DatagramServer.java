@@ -17,8 +17,6 @@ package org.vertx.java.core.datagram;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.streams.DrainSupport;
 import org.vertx.java.core.streams.ExceptionSupport;
 
 import java.net.InetAddress;

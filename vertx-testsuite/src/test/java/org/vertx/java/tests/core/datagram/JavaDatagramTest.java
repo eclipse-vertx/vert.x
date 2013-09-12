@@ -67,12 +67,13 @@ public class JavaDatagramTest extends TestBase {
   public void testConfigureAfterBind() throws Exception {
     startTest(getMethodName());
   }
+  */
 
   @Test
   public void testMulticastJoinLeave() throws Exception {
     startTest(getMethodName());
   }
-  */
+
   /**
    * Not support on OSX.. Need to check on which OS it works.
    *

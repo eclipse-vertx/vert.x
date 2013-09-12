@@ -26,6 +26,7 @@ import org.vertx.java.testframework.TestClientBase;
 import org.vertx.java.testframework.TestUtils;
 
 import java.net.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -311,77 +312,67 @@ public class TestClient extends TestClientBase {
 
     tu.testComplete();
   }
-
+  */
   public void testMulticastJoinLeave() throws Exception {
-    final DatagramEndpoint endpoint = vertx.createDatagramEndpoint();
-    final NetworkInterface iface = NetworkInterface.getByInetAddress(InetAddress.getByName("127.0.0.1"));
-    endpoint.setNetworkInterface(iface);
-    endpoint.setProtocolFamily(StandardProtocolFamily.INET);
-    endpoint.bind(new InetSocketAddress("127.0.0.1", 1234), new AsyncResultHandler<DatagramServer>() {
+    final Buffer buffer = TestUtils.generateRandomBuffer(128);
+    final InetAddress groupAddress = InetAddress.getByName("230.0.0.1");
+
+    peer1 = vertx.createDatagramClient();
+    final DatagramClient peer1 = (DatagramClient) this.peer1;
+    peer2 = vertx.createDatagramServer(StandardProtocolFamily.INET);
+
+    peer2.dataHandler(new Handler<DatagramPacket>() {
+      @Override
+      public void handle(DatagramPacket event) {
+        tu.checkThread();
+        //tu.azzert(event.sender().equals(server.localAddress()));
+        tu.azzert(event.data().equals(buffer));
+        tu.testComplete();
+      }
+    });
+
+    peer2.listen("127.0.0.1", 1234, new AsyncResultHandler<DatagramServer>() {
       @Override
       public void handle(AsyncResult<DatagramServer> event) {
         tu.checkThread();
         tu.azzert(event.succeeded());
-        final Buffer buffer = TestUtils.generateRandomBuffer(128);
-        server = event.result();
 
-        endpoint.bind(new InetSocketAddress("127.0.0.1", 1235), new AsyncResultHandler<DatagramServer>() {
+
+        peer2.joinGroup(groupAddress, new AsyncResultHandler<DatagramServer>() {
           @Override
           public void handle(AsyncResult<DatagramServer> event) {
-            tu.checkThread();
             tu.azzert(event.succeeded());
-            client = event.result();
-
-            String group = "230.0.0.1";
-            final InetSocketAddress groupAddress = new InetSocketAddress(group, server.localAddress().getPort());
-
-            client.dataHandler(new Handler<DatagramPacket>() {
+            peer1.send(buffer, groupAddress.getHostAddress(), 1234, new AsyncResultHandler<DatagramClient>() {
               @Override
-              public void handle(DatagramPacket event) {
-                tu.checkThread();
-                tu.azzert(event.sender().equals(server.localAddress()));
-                tu.azzert(event.data().equals(buffer));
-                tu.testComplete();
-              }
-            });
-
-            client.joinGroup(groupAddress, iface, new AsyncResultHandler<DatagramServer>() {
-              @Override
-              public void handle(AsyncResult<DatagramServer> event) {
+              public void handle(AsyncResult<DatagramClient> event) {
                 tu.azzert(event.succeeded());
-                server.write(buffer, groupAddress, new AsyncResultHandler<DatagramServer>() {
+
+                // leave group
+                peer2.leaveGroup(groupAddress, new AsyncResultHandler<DatagramServer>() {
                   @Override
                   public void handle(AsyncResult<DatagramServer> event) {
                     tu.azzert(event.succeeded());
 
-                    // leave group
-                    client.leaveGroup(groupAddress, iface, new AsyncResultHandler<DatagramServer>() {
+                    final AtomicBoolean received = new AtomicBoolean(false);
+                    peer2.dataHandler(new Handler<DatagramPacket>() {
                       @Override
-                      public void handle(AsyncResult<DatagramServer> event) {
+                      public void handle(DatagramPacket event) {
+                        // Should not receive any more event as it left the group
+                        received.set(true);
+                      }
+                    });
+                    peer1.send(buffer, groupAddress.getHostAddress(), 1234, new AsyncResultHandler<DatagramClient>() {
+                      @Override
+                      public void handle(AsyncResult<DatagramClient> event) {
                         tu.azzert(event.succeeded());
 
-                        final AtomicBoolean received = new AtomicBoolean(false);
-                        client.dataHandler(new Handler<DatagramPacket>() {
+                        // schedule a timer which will check in 1 second if we received a message after the group
+                        // was left before
+                        vertx.setTimer(1000, new Handler<Long>() {
                           @Override
-                          public void handle(DatagramPacket event) {
-                            // Should not receive any more event as it left the group
-                            received.set(true);
-                          }
-                        });
-                        server.write(buffer, groupAddress, new AsyncResultHandler<DatagramServer>() {
-                          @Override
-                          public void handle(AsyncResult<DatagramServer> event) {
-                            tu.azzert(event.succeeded());
-
-                            // schedule a timer which will check in 1 second if we received a message after the group
-                            // was left before
-                            vertx.setTimer(1000, new Handler<Long>() {
-                              @Override
-                              public void handle(Long event) {
-                                tu.azzert(!received.get());
-                                tu.testComplete();
-                              }
-                            });
+                          public void handle(Long event) {
+                            tu.azzert(!received.get());
+                            tu.testComplete();
                           }
                         });
                       }
@@ -392,10 +383,12 @@ public class TestClient extends TestClientBase {
             });
           }
         });
+
       }
     });
   }
 
+  /*
   public void testMulticastJoinBlock() throws Exception {
     final DatagramEndpoint endpoint = vertx.createDatagramEndpoint();
     final NetworkInterface iface = NetworkInterface.getByInetAddress(InetAddress.getByName("127.0.0.1"));
