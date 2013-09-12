@@ -45,13 +45,6 @@ public class DefaultDatagramServer extends AbstractDatagramSupport<DatagramServe
   }
 
   @Override
-  public DatagramServer joinGroup(InetSocketAddress multicastAddress, NetworkInterface networkInterface, Handler<AsyncResult<DatagramServer>> handler) {
-    configurable = false;
-    addListener(channel().joinGroup(multicastAddress, networkInterface), handler);
-    return this;
-  }
-
-  @Override
   public DatagramServer joinGroup(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source, Handler<AsyncResult<DatagramServer>> handler) {
     configurable = false;
     addListener(channel().joinGroup(multicastAddress, networkInterface, source), handler);
@@ -62,13 +55,6 @@ public class DefaultDatagramServer extends AbstractDatagramSupport<DatagramServe
   public DatagramServer leaveGroup(InetAddress multicastAddress, Handler<AsyncResult<DatagramServer>> handler) {
     configurable = false;
     addListener(channel().leaveGroup(multicastAddress), handler);
-    return this;
-  }
-
-  @Override
-  public DatagramServer leaveGroup(InetSocketAddress multicastAddress, NetworkInterface networkInterface, Handler<AsyncResult<DatagramServer>> handler) {
-    configurable = false;
-    addListener(channel().leaveGroup(multicastAddress, networkInterface), handler);
     return this;
   }
 

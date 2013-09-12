@@ -129,5 +129,4 @@ public interface DatagramSupport<T extends DatagramSupport> extends DrainSupport
 
   void close(Handler<AsyncResult<Void>> handler);
   void close();
-
 }

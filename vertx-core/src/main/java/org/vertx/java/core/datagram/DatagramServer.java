@@ -48,12 +48,6 @@ public interface DatagramServer extends DatagramSupport<DatagramServer>, Excepti
    * Joins the specified multicast group at the specified interface and notifies the {@link Handler}
    * once the operation completes.
    */
-  DatagramServer joinGroup(InetSocketAddress multicastAddress, NetworkInterface networkInterface, Handler<AsyncResult<DatagramServer>> handler);
-
-  /**
-   * Joins the specified multicast group at the specified interface and notifies the {@link Handler}
-   * once the operation completes.
-   */
   DatagramServer joinGroup(
           InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source, Handler<AsyncResult<DatagramServer>> handler);
 
@@ -61,13 +55,6 @@ public interface DatagramServer extends DatagramSupport<DatagramServer>, Excepti
    * Leaves a multicast group and notifies the {@link Handler} once the operation completes.
    */
   DatagramServer leaveGroup(InetAddress multicastAddress, Handler<AsyncResult<DatagramServer>> handler);
-
-  /**
-   * Leaves a multicast group on a specified local interface and notifies the {@link Handler} once the
-   * operation completes.
-   */
-  DatagramServer leaveGroup(
-          InetSocketAddress multicastAddress, NetworkInterface networkInterface, Handler<AsyncResult<DatagramServer>> handler);
 
   /**
    * Leave the specified multicast group at the specified interface using the specified source and notifies
