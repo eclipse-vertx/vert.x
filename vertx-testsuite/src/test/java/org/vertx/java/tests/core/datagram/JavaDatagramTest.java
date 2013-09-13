@@ -53,6 +53,11 @@ public class JavaDatagramTest extends TestBase {
   }
 
   @Test
+  public void testListenSamePortMultipleTimes() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
   public void testSendReceive() throws Exception {
     startTest(getMethodName());
   }

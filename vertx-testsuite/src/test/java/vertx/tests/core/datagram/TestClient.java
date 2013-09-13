@@ -107,6 +107,26 @@ public class TestClient extends TestClientBase {
     });
   }
 
+  public void testListenSamePortMultipleTimes() {
+    peer2 = vertx.createDatagramServer(null);
+    peer1 = vertx.createDatagramServer(null);
+    final DatagramServer peer1 = (DatagramServer) this.peer1;
+    peer2.listen(1234, new Handler<AsyncResult<DatagramServer>>() {
+      @Override
+      public void handle(AsyncResult<DatagramServer> event) {
+        tu.checkThread();
+        tu.azzert(event.succeeded());
+        peer1.listen(1234, new Handler<AsyncResult<DatagramServer>>() {
+          @Override
+          public void handle(AsyncResult<DatagramServer> event) {
+            tu.checkThread();
+            tu.azzert(event.failed());
+            tu.testComplete();
+          }
+        });
+      }
+    });
+  }
   public void testEcho() {
     peer1 = vertx.createDatagramServer(null);
     peer2 = vertx.createDatagramServer(null);
