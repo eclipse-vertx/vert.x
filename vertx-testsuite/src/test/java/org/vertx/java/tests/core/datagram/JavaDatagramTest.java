@@ -38,6 +38,21 @@ public class JavaDatagramTest extends TestBase {
   }
 
   @Test
+  public void testListenHostPort() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testListenPort() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testListenInetSocketAddress() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
   public void testSendReceive() throws Exception {
     startTest(getMethodName());
   }

@@ -71,6 +71,42 @@ public class TestClient extends TestClientBase {
     });
   }
 
+  public void testListenHostPort() {
+    peer2 = vertx.createDatagramServer(null);
+    peer2.listen("127.0.0.1", 1234, new Handler<AsyncResult<DatagramServer>>() {
+      @Override
+      public void handle(AsyncResult<DatagramServer> event) {
+        tu.checkThread();
+        tu.azzert(event.succeeded());
+        tu.testComplete();
+      }
+    });
+  }
+
+  public void testListenPort() {
+    peer2 = vertx.createDatagramServer(null);
+    peer2.listen(1234, new Handler<AsyncResult<DatagramServer>>() {
+      @Override
+      public void handle(AsyncResult<DatagramServer> event) {
+        tu.checkThread();
+        tu.azzert(event.succeeded());
+        tu.testComplete();
+      }
+    });
+  }
+
+  public void testListenInetSocketAddress() {
+    peer2 = vertx.createDatagramServer(null);
+    peer2.listen(new InetSocketAddress("127.0.0.1", 1234), new Handler<AsyncResult<DatagramServer>>() {
+      @Override
+      public void handle(AsyncResult<DatagramServer> event) {
+        tu.checkThread();
+        tu.azzert(event.succeeded());
+        tu.testComplete();
+      }
+    });
+  }
+
   public void testEcho() {
     peer1 = vertx.createDatagramServer(null);
     peer2 = vertx.createDatagramServer(null);
