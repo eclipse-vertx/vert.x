@@ -21,6 +21,10 @@ import io.netty.channel.EventLoopGroup;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.datagram.DatagramClient;
+import org.vertx.java.core.datagram.DatagramServer;
+import org.vertx.java.core.datagram.impl.DefaultDatagramClient;
+import org.vertx.java.core.datagram.impl.DefaultDatagramServer;
 import org.vertx.java.core.dns.DnsClient;
 import org.vertx.java.core.dns.impl.DefaultDnsClient;
 import org.vertx.java.core.eventbus.EventBus;
@@ -45,6 +49,7 @@ import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
 
 import java.net.InetSocketAddress;
+import java.net.StandardProtocolFamily;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -94,6 +99,15 @@ public class DefaultVertx implements VertxInternal {
    */
   protected FileSystem getFileSystem() {
   	return Windows.isWindows() ? new WindowsFileSystem(this) : new DefaultFileSystem(this);
+  }
+
+  public DatagramClient createDatagramClient() {
+    return new DefaultDatagramClient(this);
+  }
+
+  @Override
+  public DatagramServer createDatagramServer(StandardProtocolFamily family) {
+    return new DefaultDatagramServer(this, family);
   }
 
   public NetServer createNetServer() {

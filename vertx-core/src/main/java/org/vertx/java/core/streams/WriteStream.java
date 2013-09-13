@@ -16,7 +16,6 @@
 
 package org.vertx.java.core.streams;
 
-import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 
 /**
@@ -29,7 +28,7 @@ import org.vertx.java.core.buffer.Buffer;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface WriteStream<T> extends ExceptionSupport<T> {
+public interface WriteStream<T> extends ExceptionSupport<T>, DrainSupport<T> {
 
   /**
    * Write some data to the stream. The data is put on an internal write queue, and the write actually happens
@@ -37,23 +36,4 @@ public interface WriteStream<T> extends ExceptionSupport<T> {
    * check the {@link #writeQueueFull} method before writing. This is done automatically if using a {@link Pump}.
    */
   T write(Buffer data);
-
-  /**
-   * Set the maximum size of the write queue to {@code maxSize}. You will still be able to write to the stream even
-   * if there is more than {@code maxSize} bytes in the write queue. This is used as an indicator by classes such as
-   * {@code Pump} to provide flow control.
-   */
-  T setWriteQueueMaxSize(int maxSize);
-
-  /**
-   * This will return {@code true} if there are more bytes in the write queue than the value set using {@link
-   * #setWriteQueueMaxSize}
-   */
-  boolean writeQueueFull();
-
-  /**
-   * Set a drain handler on the stream. If the write queue is full, then the handler will be called when the write
-   * queue has been reduced to maxSize / 2. See {@link Pump} for an example of this being used.
-   */
-  T drainHandler(Handler<Void> handler);
 }
