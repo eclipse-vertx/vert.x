@@ -220,22 +220,38 @@ public class TestClient extends TestClientBase {
   }
 
 
-  /*
-  public void testConfigureAfterBind() {
-    final DatagramEndpoint endpoint = vertx.createDatagramEndpoint();
-
-    endpoint.bind(new InetSocketAddress("localhost", 1234), new AsyncResultHandler<DatagramServer>() {
-      @Override
-      public void handle(AsyncResult<DatagramServer> event) {
-        tu.checkThread();
-        server = event.result();
-
-        checkConfigure(endpoint);
-      }
-    });
+  public void testConfigureAfterSendString() {
+    peer1 = vertx.createDatagramClient();
+    peer1.send("test", "127.0.0.1", 1234, null);
+    checkConfigure(peer1);
+    peer1.close();
   }
 
-  private void checkConfigure(DatagramEndpoint endpoint)  {
+  public void testConfigureAfterSendStringWithEnc() {
+    peer1 = vertx.createDatagramClient();
+    peer1.send("test", "UTF-8", "127.0.0.1", 1234, null);
+    checkConfigure(peer1);
+  }
+
+  public void testConfigureAfterSendBuffer() {
+    peer1 = vertx.createDatagramClient();
+    peer1.send(TestUtils.generateRandomBuffer(64), "127.0.0.1", 1234, null);
+    checkConfigure(peer1);
+  }
+
+  public void testConfigureAfterListen() {
+    peer2 = vertx.createDatagramServer(null);
+    peer2.listen("127.0.0.1", 1234, null);
+    checkConfigure(peer2);
+  }
+
+  public void testConfigureAfterListenWithInetSocketAddress() {
+    peer2 = vertx.createDatagramServer(null);
+    peer2.listen(new InetSocketAddress("127.0.0.1", 1234), null);
+    checkConfigure(peer2);
+  }
+
+  private void checkConfigure(DatagramSupport endpoint)  {
     try {
       endpoint.setBroadcast(true);
       tu.azzert(false);
@@ -302,17 +318,9 @@ public class TestClient extends TestClientBase {
     } catch (IllegalStateException e) {
       // expected
     }
-
-    try {
-      endpoint.setProtocolFamily(StandardProtocolFamily.INET);
-      tu.azzert(false);
-    } catch (IllegalStateException e) {
-      // expected
-    }
-
     tu.testComplete();
   }
-  */
+
   public void testMulticastJoinLeave() throws Exception {
     final Buffer buffer = TestUtils.generateRandomBuffer(128);
     final InetAddress groupAddress = InetAddress.getByName("230.0.0.1");

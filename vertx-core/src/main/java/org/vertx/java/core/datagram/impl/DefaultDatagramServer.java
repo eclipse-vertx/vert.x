@@ -66,7 +66,6 @@ public class DefaultDatagramServer extends AbstractDatagramSupport<DatagramServe
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public DatagramServer block(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress sourceToBlock, Handler<AsyncResult<DatagramServer>> handler) {
     configurable = false;
     addListener(channel().block(multicastAddress, networkInterface, sourceToBlock), handler);

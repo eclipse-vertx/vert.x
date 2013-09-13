@@ -62,12 +62,30 @@ public class JavaDatagramTest extends TestBase {
     startTest(getMethodName());
   }
 
-  /*
   @Test
-  public void testConfigureAfterBind() throws Exception {
+  public void testConfigureAfterSendString() throws Exception {
     startTest(getMethodName());
   }
-  */
+
+  @Test
+  public void testConfigureAfterSendStringWithEnc() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testConfigureAfterSendBuffer() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testConfigureAfterListen() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testConfigureAfterListenWithInetSocketAddress() throws Exception {
+    startTest(getMethodName());
+  }
 
   @Test
   public void testMulticastJoinLeave() throws Exception {
