@@ -34,7 +34,6 @@ public class Args {
       if (arg.startsWith("-")) {
         if (currentKey != null) {
           map.put(currentKey, "");
-          currentKey = null;
         }
         currentKey = arg;
       } else {

@@ -32,4 +32,9 @@ public class DefaultPlatformManagerFactory implements PlatformManagerFactory {
   public PlatformManager createPlatformManager(int clusterPort, String clusterHost) {
     return new DefaultPlatformManager(clusterPort, clusterHost);
   }
+
+  @Override
+  public PlatformManager createPlatformManager(int clusterPort, String clusterHost, int quorumSize, String haGroup) {
+    return new DefaultPlatformManager(clusterPort, clusterHost, quorumSize, haGroup);
+  }
 }

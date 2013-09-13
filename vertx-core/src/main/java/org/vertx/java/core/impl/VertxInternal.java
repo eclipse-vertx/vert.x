@@ -18,22 +18,22 @@ package org.vertx.java.core.impl;
 
 
 import io.netty.channel.EventLoopGroup;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.http.impl.DefaultHttpServer;
 import org.vertx.java.core.net.impl.DefaultNetServer;
 import org.vertx.java.core.net.impl.ServerID;
+import org.vertx.java.core.spi.VertxSPI;
 
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 /**
- * This class provides services for vert.x core internal use only
+ * This interface provides services for vert.x core internal use only
  * It is not part of the public API and should not be used by
  * developers creating vert.x applications
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface VertxInternal extends Vertx {
+public interface VertxInternal extends VertxSPI {
 
   EventLoopGroup getEventLoopGroup();
 

@@ -24,7 +24,7 @@ import java.util.ServiceLoader;
  * @author pidster
  *
  */
-public class VertxFactory {
+public abstract class VertxFactory {
 
   /**
    * Create a non clustered Vertx instance

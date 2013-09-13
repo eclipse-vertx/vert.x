@@ -31,7 +31,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.*;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -59,11 +61,14 @@ public class Starter {
   private final CountDownLatch stopLatch = new CountDownLatch(1);
 
   private Starter(String[] sargs) {
-    if (sargs.length < 1) {
-      displaySyntax();
+
+    Args args = new Args(sargs);
+    sargs = removeOptions(sargs);
+
+    if (sargs.length == 0) {
+      runBareHA(args);
     } else {
       String command = sargs[0].toLowerCase();
-      Args args = new Args(sargs);
       if ("version".equals(command)) {
         log.info(getVersion());
       } else {
@@ -96,6 +101,16 @@ public class Starter {
         }
       }
     }
+  }
+
+  private String[] removeOptions(String[] args) {
+    List<String> munged = new ArrayList<>();
+    for (String arg: args) {
+      if (!arg.startsWith("-")) {
+        munged.add(arg);
+      }
+    }
+    return munged.toArray(new String[munged.size()]);
   }
 
   private static <T> AsyncResultHandler<T> createLoggingHandler(final String successMessage, final Handler<AsyncResult<T>> doneHandler) {
@@ -161,6 +176,12 @@ public class Starter {
     return pm;
   }
 
+  private PlatformManager createPM(int port, String host, int quorumSize, String haGroup) {
+    PlatformManager pm =  PlatformLocator.factory.createPlatformManager(port, host, quorumSize, haGroup);
+    registerExitHandler(pm);
+    return pm;
+  }
+
   private void registerExitHandler(PlatformManager mgr) {
     mgr.registerExitHandler(new VoidHandler() {
       public void handle() {
@@ -169,10 +190,9 @@ public class Starter {
     });
   }
 
-  private void runVerticle(boolean zip, boolean module, String main, Args args) {
-    boolean clustered = args.map.get("-cluster") != null;
+  private PlatformManager startPM(boolean ha, boolean clustered, Args args) {
     PlatformManager mgr;
-    if (clustered) {
+    if (clustered || ha) {
       log.info("Starting clustering...");
       int clusterPort = args.getInt("-cluster-port");
       if (clusterPort == -1) {
@@ -184,14 +204,45 @@ public class Starter {
         clusterHost = getDefaultAddress();
         if (clusterHost == null) {
           log.error("Unable to find a default network interface for clustering. Please specify one using -cluster-host");
-          return;
+          return null;
         } else {
           log.info("No cluster-host specified so using address " + clusterHost);
         }
       }
-      mgr = createPM(clusterPort, clusterHost);
+      if (ha) {
+        String sQuorumSize = args.map.get("-quorum");
+        String haGroup = args.map.get("-hagroup");
+        int quorumSize = sQuorumSize == null ? 0 : Integer.valueOf(sQuorumSize);
+        mgr = createPM(clusterPort, clusterHost, quorumSize, haGroup);
+      } else {
+        mgr = createPM(clusterPort, clusterHost);
+      }
     } else {
       mgr = createPM();
+    }
+    return mgr;
+  }
+
+  private void runBareHA(Args args) {
+    boolean ha = args.map.get("-ha") != null;
+    if (!ha) {
+      log.info("Vert.x can only be run bare if -ha is specified");
+      return;
+    }
+    PlatformManager mgr = startPM(ha, false, args);
+    if (mgr == null) {
+      return;
+    }
+    addShutdownHook(mgr);
+    block();
+  }
+
+  private void runVerticle(boolean zip, boolean module, String main, Args args) {
+    boolean ha = args.map.get("-ha") != null;
+    boolean clustered = args.map.get("-cluster") != null;
+    PlatformManager mgr = startPM(ha, clustered, args);
+    if (mgr == null) {
+      return;
     }
 
     String sinstances = args.map.get("-instances");
@@ -272,6 +323,8 @@ public class Starter {
     } else if (module) {
       if (hasClasspath) {
         mgr.deployModuleFromClasspath(main, conf, instances, classpath, createLoggingHandler("Successfully deployed module", doneHandler));
+      } else if (ha) {
+        mgr.deployModule(main, conf, instances, true, createLoggingHandler("Successfully deployed module", doneHandler));
       } else {
         mgr.deployModule(main, conf, instances, createLoggingHandler("Successfully deployed module", doneHandler));
       }
@@ -312,21 +365,23 @@ public class Starter {
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
         final CountDownLatch latch = new CountDownLatch(1);
+        System.out.println("Undeploying all!");
         mgr.undeployAll(new Handler<AsyncResult<Void>>() {
           public void handle(AsyncResult<Void> res) {
+            System.out.println("Undeployed all");
             latch.countDown();
           }
         });
-        while (true) {
-          try {
-            if (!latch.await(30, TimeUnit.SECONDS)) {
-              log.error("Timed out waiting to undeploy");
-            }
-            break;
-          } catch (InterruptedException e) {
-            //OK - can get spurious wakeups
+        try {
+          if (!latch.await(30, TimeUnit.SECONDS)) {
+            log.error("Timed out waiting to undeploy");
           }
+        } catch (InterruptedException e) {
+          throw new IllegalStateException(e);
         }
+        System.out.println("Shutdown hooks done!");
+        // Now shutdown the platform manager
+        mgr.stop();
       }
     });
   }
@@ -431,7 +486,19 @@ public class Starter {
 "                               to choose one from the available interfaces.    \n" +
 "        -cp <path>             if specified Vert.x will attempt to find the    \n" +
 "                               module on the classpath represented by this     \n" +
-"                               path and not in the modules directory         \n\n" +
+"                               path and not in the modules directory           \n" +
+"        -ha                    if specified the module will be deployed as a   \n" +
+"                               high availability (HA) deployment.              \n" +
+"                               This means it can fail over to any other nodes \n" +
+"                               in the cluster started with the same HA group   \n" +
+"        -quorum                used in conjunction with -ha this specifies the \n" +
+"                               minimum number of nodes in the cluster for any  \n" +
+"                               HA deployments to be active. Defaults to 0      \n" +
+"        -hagroup               used in conjunction with -ha this specifies the \n" +
+"                               HA group this node will join. There can be      \n" +
+"                               multiple HA groups in a cluster. Nodes will only\n" +
+"                               failover to other nodes in the same group.      \n" +
+"                               Defaults to __DEFAULT__                       \n\n" +
 
 "    vertx runzip <zipfilename> [-options]                                      \n" +
 "        installs then deploys a module which is contained in the zip specified \n" +

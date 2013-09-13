@@ -17,6 +17,7 @@
 package org.vertx.java.core.impl;
 
 import io.netty.channel.EventLoop;
+import io.netty.channel.EventLoopGroup;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Context;
@@ -25,7 +26,6 @@ import org.vertx.java.core.file.impl.PathResolver;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
-import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -49,8 +49,14 @@ public abstract class DefaultContext implements Context {
   protected DefaultContext(VertxInternal vertx, Executor orderedBgExec) {
     this.vertx = vertx;
     this.orderedBgExec = orderedBgExec;
-    this.eventLoop = vertx.getEventLoopGroup().next();
-    this.tccl = Thread.currentThread().getContextClassLoader();
+    EventLoopGroup group = vertx.getEventLoopGroup();
+    if (group != null) {
+      this.eventLoop = group.next();
+      this.tccl = Thread.currentThread().getContextClassLoader();
+    } else {
+      this.eventLoop = null;
+      this.tccl = null;
+    }
   }
 
   public void setTCCL() {
