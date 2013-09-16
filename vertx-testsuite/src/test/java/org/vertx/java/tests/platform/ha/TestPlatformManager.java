@@ -33,9 +33,10 @@ public class TestPlatformManager extends DefaultPlatformManager {
   }
 
   public void simulateKill() {
-    if (clusterManager != null) {
-      clusterManager.leave();
+    if (haManager != null) {
+      haManager.simulateKill();
     }
+    super.stop();
   }
 
   // For testing only

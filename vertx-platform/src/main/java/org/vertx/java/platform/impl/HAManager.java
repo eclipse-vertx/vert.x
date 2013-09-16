@@ -198,9 +198,19 @@ public class HAManager {
   }
 
   public void stop() {
-    clusterMap.remove(nodeID);
-    vertx.cancelTimer(quorumTimerID);
-    stopped = true;
+    if (!stopped) {
+      clusterMap.remove(nodeID);
+      vertx.cancelTimer(quorumTimerID);
+      stopped = true;
+    }
+  }
+
+  public void simulateKill() {
+    if (!stopped) {
+      clusterManager.leave();
+      vertx.cancelTimer(quorumTimerID);
+      stopped = true;
+    }
   }
 
   // Set a handler that will be called when failover is complete - used in testing
@@ -458,7 +468,7 @@ public class HAManager {
     });
     vertx.setContext(ctx);
     try {
-      if (!latch.await(10, TimeUnit.SECONDS)) {
+      if (!latch.await(30, TimeUnit.SECONDS)) {
         throw new VertxException("Timed out waiting for redeploy on failover");
       }
     } catch (InterruptedException e) {

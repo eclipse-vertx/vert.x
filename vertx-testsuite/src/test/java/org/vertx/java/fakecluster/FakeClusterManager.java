@@ -9,8 +9,6 @@ import org.vertx.java.core.spi.cluster.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /*
  * Copyright 2013 Red Hat, Inc.
@@ -34,17 +32,12 @@ public class FakeClusterManager implements ClusterManager {
       Collections.synchronizedMap(new LinkedHashMap<String, FakeClusterManager>());
 
   private static List<NodeListener> nodeListeners = new ArrayList<>();
-
-  private String nodeID;
-
-  private NodeListener nodeListener;
-
   private static ConcurrentMap<String, Map> syncMaps = new ConcurrentHashMap<>();
   private static ConcurrentMap<String, AsyncMap> asyncMaps = new ConcurrentHashMap<>();
   private static ConcurrentMap<String, AsyncMultiMap> asyncMultiMaps = new ConcurrentHashMap<>();
 
-  private static ExecutorService executorService = Executors.newCachedThreadPool();
-
+  private String nodeID;
+  private NodeListener nodeListener;
   private VertxSPI vertx;
 
   public FakeClusterManager(VertxSPI vertx) {
@@ -159,6 +152,14 @@ public class FakeClusterManager implements ClusterManager {
     }
     doLeave(nodeID);
     this.nodeID = null;
+  }
+
+  public static void reset() {
+    nodes.clear();
+    nodeListeners.clear();
+    syncMaps.clear();
+    asyncMaps.clear();
+    asyncMultiMaps.clear();
   }
 
   private class FakeAsyncMap<K, V> implements AsyncMap<K, V> {

@@ -309,14 +309,14 @@ public class DefaultVertx implements VertxInternal {
       for (HttpServer server : sharedHttpServers.values()) {
         server.close();
       }
-      sharedHttpServers = null;
+      sharedHttpServers.clear();
     }
 
     if (sharedNetServers != null) {
       for (NetServer server : sharedNetServers.values()) {
         server.close();
       }
-      sharedNetServers = null;
+      sharedNetServers.clear();
     }
 
     if (backgroundPool != null) {
@@ -334,7 +334,6 @@ public class DefaultVertx implements VertxInternal {
 
     if (eventLoopGroup != null) {
       eventLoopGroup.shutdownGracefully();
-      eventLoopGroup = null;
     }
 
     eventBus.close(null);

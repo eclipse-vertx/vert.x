@@ -21,6 +21,7 @@ import junit.framework.TestCase;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.fakecluster.FakeClusterManager;
 import org.vertx.java.platform.impl.Deployment;
 
 import java.util.*;
@@ -38,6 +39,7 @@ public class HATest extends TestCase {
   }
 
   protected void tearDown() throws Exception {
+    FakeClusterManager.reset();
     super.tearDown();
   }
 
@@ -501,7 +503,7 @@ public class HATest extends TestCase {
           }
         });
       }
-      assertTrue(latch.await(10, TimeUnit.SECONDS));
+      assertTrue(latch.await(30, TimeUnit.SECONDS));
       checkModulesDeployed(node, nodeMods);
     }
 
@@ -616,7 +618,7 @@ public class HATest extends TestCase {
 
       toKill.simulateKill();
 
-      assertTrue(failoverLatch.await(10, TimeUnit.SECONDS));
+      assertTrue(failoverLatch.await(30, TimeUnit.SECONDS));
 
       int failoverNode = afailoverNode.get();
 
