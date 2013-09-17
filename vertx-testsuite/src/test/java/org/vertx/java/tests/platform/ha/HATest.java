@@ -503,7 +503,7 @@ public class HATest extends TestCase {
           }
         });
       }
-      assertTrue(latch.await(30, TimeUnit.SECONDS));
+      assertTrue(latch.await(120, TimeUnit.SECONDS));
       checkModulesDeployed(node, nodeMods);
     }
 
@@ -618,7 +618,7 @@ public class HATest extends TestCase {
 
       toKill.simulateKill();
 
-      assertTrue(failoverLatch.await(30, TimeUnit.SECONDS));
+      assertTrue(failoverLatch.await(120, TimeUnit.SECONDS));
 
       int failoverNode = afailoverNode.get();
 
