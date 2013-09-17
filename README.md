@@ -2,7 +2,7 @@
 
 Vert.x is a polyglot, non-blocking, event-driven application platform that runs on the JVM.
 
-[![Launch with Cloudify](http://ranwidget.gsdev.info/embed/img/ed0286dd-f1de-48db-ae38-e9eae909d823)](http://ranwidget.gsdev.info/widget/single/ed0286dd-f1de-48db-ae38-e9eae909d823)
+[![Launch with Cloudify](http://rantav.github.io/cloudify-widget-pages/img/gh-button.png)](http://rantav.github.io/cloudify-widget-pages/vertx.html)
 
 Some of the key highlights include:
 
