@@ -29,6 +29,7 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.spi.cluster.ClusterManager;
+import org.vertx.java.platform.DeploymentVerticleFactory;
 import org.vertx.java.platform.PlatformManagerException;
 import org.vertx.java.platform.Verticle;
 import org.vertx.java.platform.VerticleFactory;
@@ -1351,7 +1352,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           public void run() {
             Verticle verticle;
             try {
-              verticle = verticleFactory.createVerticle(main);
+              if (verticleFactory instanceof DeploymentVerticleFactory) {
+                verticle = ((DeploymentVerticleFactory)verticleFactory).createVerticle(deployment);
+              } else {
+                verticle = verticleFactory.createVerticle(main);
+              }
             } catch (Throwable t) {
               handleDeployFailure(t, deploymentID, aggHandler);
               return;
