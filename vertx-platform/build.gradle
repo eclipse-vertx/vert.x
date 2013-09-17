@@ -34,6 +34,8 @@ jar {
         'Vertx-Version': version + " (built " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()) + ")"
 		)
 	}
+
+  exclude 'logging.properties'
 }
 
 

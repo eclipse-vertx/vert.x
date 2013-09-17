@@ -44,6 +44,8 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
 
   private static final Logger log = LoggerFactory.getLogger(HazelcastClusterManager.class);
   // Hazelcast config file
+
+  private static final String DEFAULT_CONFIG_FILE = "default-cluster.xml";
   private static final String CONFIG_FILE = "cluster.xml";
 
 
@@ -63,9 +65,9 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
   }
 
   public void join() {
-    Config cfg = getConfig(null);
+    Config cfg = getConfig();
     if (cfg == null) {
-      log.warn("Cannot find cluster.xml on classpath. Using default cluster configuration");
+      log.warn("Cannot find cluster configuration on classpath. Using default hazelcast configuration");
     }
     hazelcast = Hazelcast.newHazelcastInstance(cfg);
     nodeID = hazelcast.getCluster().getLocalMember().getUuid();
@@ -148,24 +150,27 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
     }
   }
 
+  private InputStream getConfigStream() {
+    InputStream is = getClass().getClassLoader().getResourceAsStream(CONFIG_FILE);
+    if (is == null) {
+      is = getClass().getClassLoader().getResourceAsStream(CONFIG_FILE);
+    }
+    return is;
+  }
+
   /**
    * Get the Hazelcast config
-   * @param configfile May be null in which case it gets the default (cluster.xml) will be used.
    * @return a config object
    */
-  private Config getConfig(String configfile) {
-    if (configfile == null) {
-      configfile = CONFIG_FILE;
-    }
-
+  private Config getConfig() {
     Config cfg = null;
-    try (InputStream is = HazelcastClusterManager.class.getClassLoader().getResourceAsStream(configfile);
+    try (InputStream is = getConfigStream();
          InputStream bis = new BufferedInputStream(is)) {
       if (is != null) {
         cfg = new XmlConfigBuilder(bis).build();
       }
     } catch (IOException ex) {
-      // ignore
+      log.error("Failed to read config", ex);
     }
     return cfg;
   }

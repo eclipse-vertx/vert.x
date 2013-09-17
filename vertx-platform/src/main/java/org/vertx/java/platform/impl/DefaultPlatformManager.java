@@ -60,7 +60,9 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private static final char COLON = ':';
   private static final String LANG_IMPLS_SYS_PROP_ROOT = "vertx.langs.";
   private static final String LANG_PROPS_FILE_NAME = "langs.properties";
+  private static final String DEFAULT_LANG_PROPS_FILE_NAME = "default-langs.properties";
   private static final String REPOS_FILE_NAME = "repos.txt";
+  private static final String DEFAULT_REPOS_FILE_NAME = "default-repos.txt";
   private static final String LOCAL_MODS_DIR = "mods";
   private static final String SYS_MODS_DIR = "sys-mods";
   private static final String VERTX_HOME_SYS_PROP = "vertx.home";
@@ -105,7 +107,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   private DefaultPlatformManager(DefaultVertx vertx) {
-    this.platformClassLoader = Thread.currentThread().getContextClassLoader();
+    ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+    this.platformClassLoader = tccl != null ? tccl: getClass().getClassLoader();
     this.vertx = new WrappedVertx(vertx);
     this.clusterManager = vertx.clusterManager();
 
@@ -638,6 +641,16 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
   }
 
+  private InputStream findLangsFile() {
+    // First we look for langs.properties on the classpath
+    InputStream is = platformClassLoader.getResourceAsStream(LANG_PROPS_FILE_NAME);
+    if (is == null) {
+      // Now we look for default-langs.properties which is included in the vertx-platform.jar
+      is = platformClassLoader.getResourceAsStream(DEFAULT_LANG_PROPS_FILE_NAME);
+    }
+    return is;
+  }
+
   private void loadLanguageMappings() {
     // The only language that Vert.x understands out of the box is Java, so we add the default runtime and
     // extension mapping for that. This can be overridden in langs.properties
@@ -670,7 +683,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     //   prefix maps, e.g.
     //     .=java
 
-    try (InputStream is = getClass().getClassLoader().getResourceAsStream(LANG_PROPS_FILE_NAME)) {
+    try (InputStream is = findLangsFile()) {
       if (is != null) {
         Properties props = new Properties();
         props.load(new BufferedInputStream(is));
@@ -978,8 +991,18 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     return arr;
   }
 
+  private InputStream findReposFile() {
+    // First we look for repos.txt on the classpath
+    InputStream is = platformClassLoader.getResourceAsStream(REPOS_FILE_NAME);
+    if (is == null) {
+      // Now we look for repos-default.txt which is included in the vertx-platform.jar
+      is = platformClassLoader.getResourceAsStream(DEFAULT_REPOS_FILE_NAME);
+    }
+    return is;
+  }
+
   private void loadRepos() {
-    try (InputStream is = getClass().getClassLoader().getResourceAsStream(REPOS_FILE_NAME)) {
+    try (InputStream is = findReposFile()) {
       if (is != null) {
         BufferedReader rdr = new BufferedReader(new InputStreamReader(is));
         String line;
@@ -1019,7 +1042,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         }
       }
     } catch (IOException e) {
-      log.error("Failed to load " + LANG_PROPS_FILE_NAME + " " + e.getMessage());
+      log.error("Failed to load repos file ",e);
     }
   }
 

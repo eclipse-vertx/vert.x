@@ -123,9 +123,13 @@ task assemble(type: Copy, dependsOn: [subprojects.assemble]) {
   }
   into('conf') {
     from file('vertx-platform/src/main/resources')
+    rename ('default-repos.txt', 'repos.txt')
+    rename ('default-langs.properties', 'langs.properties')
+    rename ('default-cluster.xml', 'cluster.xml')
     filter(org.apache.tools.ant.filters.ReplaceTokens, tokens:[version: rootProject.version])
     exclude "**/META_INF/**"
   }
+
   into('lib') {
     from subprojects.configurations.compile    
     from subprojects.jar
