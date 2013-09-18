@@ -114,7 +114,7 @@ public class DefaultVertx implements VertxInternal {
       @Override
       public void handle(AsyncResult<Void> res) {
         if (res.succeeded()) {
-          resultHandler.handle(new DefaultFutureResult<Vertx>(inst));
+          resultHandler.handle(new DefaultFutureResult<>(inst));
         } else {
           resultHandler.handle(new DefaultFutureResult<Vertx>(res.cause()));
         }
