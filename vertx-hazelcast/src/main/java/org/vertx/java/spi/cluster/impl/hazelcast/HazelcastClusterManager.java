@@ -54,6 +54,7 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
   private HazelcastInstance hazelcast;
   private String nodeID;
   private NodeListener nodeListener;
+  private boolean active;
 
   /**
    * Constructor
@@ -64,7 +65,10 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
     System.setProperty("hazelcast.shutdownhook.enabled", "false");
   }
 
-  public void join() {
+  public synchronized void join() {
+    if (active) {
+      return;
+    }
     Config cfg = getConfig();
     if (cfg == null) {
       log.warn("Cannot find cluster configuration on classpath. Using default hazelcast configuration");
@@ -72,6 +76,8 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
     hazelcast = Hazelcast.newHazelcastInstance(cfg);
     nodeID = hazelcast.getCluster().getLocalMember().getUuid();
     hazelcast.getCluster().addMembershipListener(this);
+
+    active = true;
   }
 
 	/**
@@ -121,13 +127,20 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
     return map;
   }
 
-  public void leave() {
+  public synchronized void leave() {
+    if (!active) {
+      return;
+    }
     hazelcast.getCluster().removeMembershipListener(this);
  		hazelcast.getLifecycleService().shutdown();
+    active = false;
   }
 
   @Override
-  public void memberAdded(MembershipEvent membershipEvent) {
+  public synchronized void memberAdded(MembershipEvent membershipEvent) {
+    if (!active) {
+      return;
+    }
     try {
       if (nodeListener != null) {
         Member member = membershipEvent.getMember();
@@ -139,7 +152,10 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
   }
 
   @Override
-  public void memberRemoved(MembershipEvent membershipEvent) {
+  public synchronized void memberRemoved(MembershipEvent membershipEvent) {
+    if (!active) {
+      return;
+    }
     try {
       if (nodeListener != null) {
         Member member = membershipEvent.getMember();

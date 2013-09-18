@@ -20,6 +20,7 @@ apply from: "$rootDir/gradle/maven.gradle"
 
 dependencies {
 	compile project(':vertx-core')
+  compile "com.hazelcast:hazelcast:$hazelcastVersion"
 }
 
 artifacts {

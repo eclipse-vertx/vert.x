@@ -21,7 +21,6 @@ dependencies {
 	compile "org.slf4j:slf4j-api:$slf4jVersion"
 	compile "com.fasterxml.jackson.core:jackson-core:$jacksonCoreVersion"
 	compile "com.fasterxml.jackson.core:jackson-databind:$jacksonDatabindVersion"
-	compile "com.hazelcast:hazelcast:$hazelcastVersion"
 	compile "io.netty:netty-all:$nettyVersion"
 }
 

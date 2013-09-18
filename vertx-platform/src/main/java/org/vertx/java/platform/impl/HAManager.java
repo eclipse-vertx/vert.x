@@ -234,6 +234,7 @@ public class HAManager {
   // A node has left the cluster
   // synchronize this in case the cluster manager is naughty and calls it concurrently
   private synchronized void nodeLeft(String leftNodeID) {
+
     checkQuorum();
     if (attainedQuorum) {
 
@@ -482,13 +483,12 @@ public class HAManager {
     ArrayList<String> matchingMembers = new ArrayList<>();
     for (String node: nodes) {
       String sclusterInfo = clusterMap.get(node);
-      if (sclusterInfo == null) {
-        throw new IllegalStateException("Can't find node in map");
-      }
-      JsonObject clusterInfo = new JsonObject(sclusterInfo);
-      String memberGroup = clusterInfo.getString("group");
-      if (group.equals(memberGroup)) {
-        matchingMembers.add(node);
+      if (sclusterInfo != null) {
+        JsonObject clusterInfo = new JsonObject(sclusterInfo);
+        String memberGroup = clusterInfo.getString("group");
+        if (group.equals(memberGroup)) {
+          matchingMembers.add(node);
+        }
       }
     }
     if (!matchingMembers.isEmpty()) {
