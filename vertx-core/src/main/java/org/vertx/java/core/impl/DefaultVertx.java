@@ -18,9 +18,7 @@ package org.vertx.java.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Context;
-import org.vertx.java.core.Handler;
+import org.vertx.java.core.*;
 import org.vertx.java.core.dns.DnsClient;
 import org.vertx.java.core.dns.impl.DefaultDnsClient;
 import org.vertx.java.core.eventbus.EventBus;
@@ -51,6 +49,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.*;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -87,10 +86,10 @@ public class DefaultVertx implements VertxInternal {
   }
 
   public DefaultVertx(String hostname) {
-    this(0, hostname);
+    this(0, hostname, null);
   }
 
-  public DefaultVertx(int port, String hostname) {
+  public DefaultVertx(int port, String hostname, final Handler<AsyncResult<Vertx>> resultHandler) {
     ClusterManagerFactory factory;
     String clusterManagerFactoryClassName = System.getProperty("vertx.clusterManagerFactory");
     if (clusterManagerFactoryClassName != null) {
@@ -110,7 +109,17 @@ public class DefaultVertx implements VertxInternal {
     }
     this.clusterManager = factory.createClusterManager(this);
     this.clusterManager.join();
-    this.eventBus = new DefaultEventBus(this, port, hostname, clusterManager);
+    final Vertx inst = this;
+    this.eventBus = new DefaultEventBus(this, port, hostname, clusterManager, new AsyncResultHandler<Void>() {
+      @Override
+      public void handle(AsyncResult<Void> res) {
+        if (res.succeeded()) {
+          resultHandler.handle(new DefaultFutureResult<Vertx>(inst));
+        } else {
+          resultHandler.handle(new DefaultFutureResult<Vertx>(res.cause()));
+        }
+      }
+    });
   }
 
   /**

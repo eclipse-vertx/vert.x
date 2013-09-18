@@ -98,11 +98,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   protected DefaultPlatformManager(int port, String hostname) {
-    this(new DefaultVertx(port, hostname));
+    this(new DefaultVertx(port, hostname, null));
   }
 
   protected DefaultPlatformManager(int port, String hostname, int quorumSize, String haGroup) {
-    this(new DefaultVertx(port, hostname));
+    this(new DefaultVertx(port, hostname, null));
     this.haManager = new HAManager(vertx, this, clusterManager, quorumSize, haGroup);
   }
 

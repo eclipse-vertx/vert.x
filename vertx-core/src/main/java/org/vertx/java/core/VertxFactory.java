@@ -42,12 +42,23 @@ public abstract class VertxFactory {
   }
 
   /**
-   * Create a clustered Vertx instance
+   * Create a clustered Vertx instance.
+   * Note that the event bus might not be listening until some time after this method has returned
    * @param port The port to listen for cluster connections
    * @param hostname The hostname or ip address to listen for cluster connections
    */
   public static Vertx newVertx(int port, String hostname) {
     return loadFactory().createVertx(port, hostname);
+  }
+
+  /**
+   * Create a clustered Vertx instance returning the instance asynchronously in the resultHandler
+   * when the event bus is ready and listening
+   * @param port The port to listen for cluster connections
+   * @param hostname The hostname or ip address to listen for cluster connections
+   */
+  public static void newVertx(int port, String hostname, Handler<AsyncResult<Vertx>> resultHandler) {
+    loadFactory().createVertx(port, hostname, resultHandler);
   }
 
   private static VertxFactory loadFactory() {
@@ -65,5 +76,8 @@ public abstract class VertxFactory {
 
   protected Vertx createVertx(int port, String hostname) {
     return null;
+  }
+
+  protected void createVertx(int port, String hostname, Handler<AsyncResult<Vertx>> resultHandler) {
   }
 }

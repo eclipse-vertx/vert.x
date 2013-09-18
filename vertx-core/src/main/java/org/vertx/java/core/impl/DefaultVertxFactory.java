@@ -15,6 +15,8 @@
  */
 package org.vertx.java.core.impl;
 
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxFactory;
 
@@ -36,7 +38,12 @@ public class DefaultVertxFactory extends VertxFactory {
 
   @Override
   public Vertx createVertx(int port, String hostname) {
-    return new DefaultVertx(port, hostname);
+    return new DefaultVertx(port, hostname, null);
+  }
+
+  @Override
+  public void createVertx(int port, String hostname, final Handler<AsyncResult<Vertx>> resultHandler) {
+    new DefaultVertx(port, hostname, resultHandler);
   }
 
 }

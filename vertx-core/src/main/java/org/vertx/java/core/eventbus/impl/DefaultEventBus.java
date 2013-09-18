@@ -86,7 +86,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   public DefaultEventBus(VertxInternal vertx, int port, String hostname, ClusterManager clusterManager,
-                         AsyncResultHandler<Void> listenHandler) {
+                         Handler<AsyncResult<Void>> listenHandler) {
     this.vertx = vertx;
     this.clusterMgr = clusterManager;
     this.subs = clusterMgr.getAsyncMultiMap("subs");
@@ -408,7 +408,7 @@ public class DefaultEventBus implements EventBus {
     return bm;
   }
 
-  private NetServer setServer(int port, final String hostName, final AsyncResultHandler<Void> listenHandler) {
+  private NetServer setServer(int port, final String hostName, final Handler<AsyncResult<Void>> listenHandler) {
     final NetServer server = vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(final NetSocket socket) {
         final RecordParser parser = RecordParser.newFixed(4, null);
