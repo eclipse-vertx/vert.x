@@ -76,12 +76,30 @@ public interface EventBus {
   EventBus send(String address, Object message, Handler<Message> replyHandler);
 
   /**
+   * Send an object as a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param timeout - Timeout in ms. If no reply received within the timeout then the reply handler will be unregistered
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
+  <T> EventBus sendWithTimeout(String address, Object message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler);
+
+  /**
    * Send a JSON object as a message
    * @param address The address to send it to
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
   <T> EventBus send(String address, JsonObject message, Handler<Message<T>> replyHandler);
+
+  /**
+   * Send a JSON object as a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param timeout - Timeout in ms. If no reply received within the timeout then the reply handler will be unregistered
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
+  <T> EventBus sendWithTimeout(String address, JsonObject message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler);
 
   /**
    * Send a JSON object as a message
@@ -102,6 +120,16 @@ public interface EventBus {
    * Send a JSON array as a message
    * @param address The address to send it to
    * @param message The message
+   * @param timeout - Timeout in ms. If no reply received within the timeout then the reply handler will be unregistered
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
+  <T> EventBus sendWithTimeout(String address, JsonArray message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler);
+
+
+  /**
+   * Send a JSON array as a message
+   * @param address The address to send it to
+   * @param message The message
    */
   EventBus send(String address, JsonArray message);
 
@@ -112,6 +140,15 @@ public interface EventBus {
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
   <T> EventBus send(String address, Buffer message, Handler<Message<T>> replyHandler);
+
+  /**
+   * Send a Buffer object as a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param timeout - Timeout in ms. If no reply received within the timeout then the reply handler will be unregistered
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
+  <T> EventBus sendWithTimeout(String address, Buffer message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler);
 
   /**
    * Send a Buffer as a message
@@ -129,6 +166,16 @@ public interface EventBus {
   <T> EventBus send(String address, byte[] message, Handler<Message<T>> replyHandler);
 
   /**
+   * Send a byte[] object as a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param timeout - Timeout in ms. If no reply received within the timeout then the reply handler will be unregistered
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
+  <T> EventBus sendWithTimeout(String address, byte[] message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler);
+
+
+  /**
    * Send a byte[] as a message
    * @param address The address to send it to
    * @param message The message
@@ -142,6 +189,15 @@ public interface EventBus {
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
   <T> EventBus send(String address, String message, Handler<Message<T>> replyHandler);
+
+  /**
+   * Send a string object as a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param timeout - Timeout in ms. If no reply received within the timeout then the reply handler will be unregistered
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
+  <T> EventBus sendWithTimeout(String address, String message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler);
 
   /**
    * Send a String as a message
@@ -162,6 +218,15 @@ public interface EventBus {
    * Send an Integer as a message
    * @param address The address to send it to
    * @param message The message
+   * @param timeout - Timeout in ms. If no reply received within the timeout then the reply handler will be unregistered
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
+  <T> EventBus sendWithTimeout(String address, Integer message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler);
+
+  /**
+   * Send an Integer as a message
+   * @param address The address to send it to
+   * @param message The message
    */
   EventBus send(String address, Integer message);
 
@@ -172,6 +237,15 @@ public interface EventBus {
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
   <T> EventBus send(String address, Long message, Handler<Message<T>> replyHandler);
+
+  /**
+   * Send a long as a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param timeout - Timeout in ms. If no reply received within the timeout then the reply handler will be unregistered
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
+  <T> EventBus sendWithTimeout(String address, Long message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler);
 
   /**
    * Send a Long as a message
@@ -189,6 +263,15 @@ public interface EventBus {
   <T> EventBus send(String address, Float message, Handler<Message<T>> replyHandler);
 
   /**
+   * Send a float as a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param timeout - Timeout in ms. If no reply received within the timeout then the reply handler will be unregistered
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
+  <T> EventBus sendWithTimeout(String address, Float message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler);
+
+  /**
    * Send a Float as a message
    * @param address The address to send it to
    * @param message The message
@@ -202,6 +285,15 @@ public interface EventBus {
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
   <T> EventBus send(String address, Double message, Handler<Message<T>> replyHandler);
+
+  /**
+   * Send a double as a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param timeout - Timeout in ms. If no reply received within the timeout then the reply handler will be unregistered
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
+  <T> EventBus sendWithTimeout(String address, Double message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler);
 
   /**
    * Send a Double as a message
@@ -219,6 +311,15 @@ public interface EventBus {
   <T> EventBus send(String address, Boolean message, Handler<Message<T>> replyHandler) ;
 
   /**
+   * Send a boolean as a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param timeout - Timeout in ms. If no reply received within the timeout then the reply handler will be unregistered
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
+  <T> EventBus sendWithTimeout(String address, Boolean message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler);
+
+  /**
    * Send a Boolean as a message
    * @param address The address to send it to
    * @param message The message
@@ -232,6 +333,16 @@ public interface EventBus {
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
   <T> EventBus send(String address, Short message, Handler<Message<T>> replyHandler);
+
+
+  /**
+   * Send a short as a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param timeout - Timeout in ms. If no reply received within the timeout then the reply handler will be unregistered
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
+  <T> EventBus sendWithTimeout(String address, Short message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler);
 
   /**
    * Send a Short as a message
@@ -249,6 +360,15 @@ public interface EventBus {
   <T> EventBus send(String address, Character message, Handler<Message<T>> replyHandler);
 
   /**
+   * Send a character as a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param timeout - Timeout in ms. If no reply received within the timeout then the reply handler will be unregistered
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
+  <T> EventBus sendWithTimeout(String address, Character message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler);
+
+  /**
    * Send a Character as a message
    * @param address The address to send it to
    * @param message The message
@@ -262,6 +382,15 @@ public interface EventBus {
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
   <T> EventBus send(String address, Byte message, Handler<Message<T>> replyHandler);
+
+  /**
+   * Send a byte as a message
+   * @param address The address to send it to
+   * @param message The message
+   * @param timeout - Timeout in ms. If no reply received within the timeout then the reply handler will be unregistered
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   */
+  <T> EventBus sendWithTimeout(String address, Byte message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler);
 
   /**
    * Send a Byte as a message
@@ -409,5 +538,19 @@ public interface EventBus {
    * @param handler The handler
    */
   EventBus registerLocalHandler(String address, Handler<? extends Message> handler);
+
+  /**
+   * Sets a default timeout, in ms, for replies. If a messages is sent specify a reply handler
+   * but without specifying a timeout, then the reply handler is timed out, i.e. it is automatically unregistered
+   * if a message hasn't been received before timeout.
+   * The default value for default send timeout is -1, which means "never timeout".
+   * @param timeoutMs
+   */
+  EventBus setDefaultReplyTimeout(long timeoutMs);
+
+  /**
+   * Return the value for default send timeout
+   */
+  long getDefaultReplyTimeout();
 }
 

@@ -182,4 +182,5 @@ public class JavaEchoTest extends TestBase {
   public void testEchoNullShort() {
     runPeerTest(getMethodName());
   }
+
 }

@@ -16,6 +16,7 @@
 
 package vertx.tests.core.eventbus;
 
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
@@ -117,6 +118,92 @@ public class LocalClient extends EventBusAppBase {
         }
       });
     }
+  }
+
+  public void testReplyWithTimeoutReply() {
+    System.out.println("in test");
+    String address = "some-address";
+    eb.registerHandler(address, new Handler<Message<String>>() {
+      @Override
+      public void handle(Message<String> message) {
+        message.reply("bar");
+      }
+    });
+    eb.sendWithTimeout(address, "foo", 500, new Handler<AsyncResult<Message<String>>>() {
+      @Override
+      public void handle(AsyncResult<Message<String>> reply) {
+        tu.azzert(reply.succeeded());
+        tu.azzert("bar".equals(reply.result().body()));
+        tu.testComplete();
+      }
+    });
+  }
+
+  public void testReplyWithTimeoutNoReply() {
+    final long start = System.currentTimeMillis();
+    final long timeout = 500;
+    String address = "some-address";
+    eb.registerHandler(address, new Handler<Message<String>>() {
+      @Override
+      public void handle(final Message<String> message) {
+        // Reply *after* the timeout
+        vertx.setTimer(timeout * 2, new Handler<Long>() {
+          @Override
+          public void handle(Long tid) {
+            message.reply("bar");
+          }
+        });
+      }
+    });
+    eb.sendWithTimeout(address, "foo", timeout, new Handler<AsyncResult<Message<String>>>() {
+      boolean replied;
+      @Override
+      public void handle(AsyncResult<Message<String>> reply) {
+        tu.azzert(!replied);
+        tu.azzert(reply.failed());
+        tu.azzert(System.currentTimeMillis() - start >= timeout);
+        // Now wait a bit longer in case a reply actually comes
+        vertx.setTimer(timeout * 2, new Handler<Long>() {
+          @Override
+          public void handle(Long tid) {
+            tu.testComplete();
+          }
+        });
+        replied = true;
+      }
+    });
+  }
+
+  public void testReplyWithDefaultTimeoutNoReply() {
+    final long timeout = 500;
+    eb.setDefaultReplyTimeout(timeout);
+    String address = "some-address";
+    eb.registerHandler(address, new Handler<Message<String>>() {
+      @Override
+      public void handle(final Message<String> message) {
+        // Reply *after* the timeout
+        vertx.setTimer(timeout * 2, new Handler<Long>() {
+          @Override
+          public void handle(Long tid) {
+            message.reply("bar");
+          }
+        });
+      }
+    });
+    eb.send(address, "foo", new Handler<Message<String>>() {
+      @Override
+      public void handle(Message<String> reply) {
+        tu.azzert(false, "reply handler should not be called");
+      }
+    });
+    // Wait a bit in case a reply comes
+    vertx.setTimer(timeout * 3, new Handler<Long>() {
+      @Override
+      public void handle(Long tid) {
+        tu.testComplete();
+      }
+    });
+    eb.setDefaultReplyTimeout(-1);
   }
 
   public void testLocal1() {
