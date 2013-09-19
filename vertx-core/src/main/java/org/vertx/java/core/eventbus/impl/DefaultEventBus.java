@@ -511,8 +511,8 @@ public class DefaultEventBus implements EventBus {
     return defaultReplyTimeout;
   }
 
-  void sendReply(final ServerID dest, final BaseMessage message, final Handler replyHandler) {
-    sendOrPub(dest, message, replyHandler, -1);
+  void sendReply(ServerID dest, BaseMessage message, long timeout, Handler replyHandler) {
+    sendOrPub(dest, message, replyHandler, timeout);
   }
 
   static BaseMessage createMessage(boolean send, String address, Object message) {
