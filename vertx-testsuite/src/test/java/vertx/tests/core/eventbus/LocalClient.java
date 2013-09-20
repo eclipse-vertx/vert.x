@@ -120,7 +120,7 @@ public class LocalClient extends EventBusAppBase {
     }
   }
 
-  public void testReplyWithTimeoutReply() {
+  public void testSendWithTimeoutReply() {
     System.out.println("in test");
     String address = "some-address";
     eb.registerHandler(address, new Handler<Message<String>>() {
@@ -139,7 +139,7 @@ public class LocalClient extends EventBusAppBase {
     });
   }
 
-  public void testReplyWithTimeoutNoReply() {
+  public void testSendWithTimeoutNoReply() {
     final long start = System.currentTimeMillis();
     final long timeout = 500;
     String address = "some-address";
@@ -174,7 +174,7 @@ public class LocalClient extends EventBusAppBase {
     });
   }
 
-  public void testReplyWithDefaultTimeoutNoReply() {
+  public void testSendWithDefaultTimeoutNoReply() {
     final long timeout = 500;
     eb.setDefaultReplyTimeout(timeout);
     String address = "some-address";
@@ -204,6 +204,67 @@ public class LocalClient extends EventBusAppBase {
       }
     });
     eb.setDefaultReplyTimeout(-1);
+  }
+
+  public void testReplyWithTimeoutReply() {
+    final long timeout = 500;
+    String address = "some-address";
+    eb.registerHandler(address, new Handler<Message<String>>() {
+      @Override
+      public void handle(final Message<String> message) {
+        message.replyWithTimeout("bar", timeout, new Handler<AsyncResult<Message<String>>>() {
+          @Override
+          public void handle(AsyncResult<Message<String>> replyReply) {
+            tu.azzert(replyReply.succeeded());
+            tu.azzert("quux".equals(replyReply.result().body()));
+            tu.testComplete();
+          }
+        });
+      }
+    });
+    eb.send(address, "foo", new Handler<Message<String>>() {
+      @Override
+      public void handle(Message<String> reply) {
+        tu.azzert("bar".equals(reply.body()));
+        reply.reply("quux");
+      }
+    });
+  }
+
+  public void testReplyWithTimeoutNoReply() {
+    final long timeout = 500;
+    String address = "some-address";
+    final long start = System.currentTimeMillis();
+    eb.registerHandler(address, new Handler<Message<String>>() {
+      @Override
+      public void handle(final Message<String> message) {
+
+        message.replyWithTimeout("bar", timeout, new Handler<AsyncResult<Message<String>>>() {
+          boolean called;
+          @Override
+          public void handle(AsyncResult<Message<String>> replyReply) {
+            tu.azzert(!called);
+            tu.azzert(replyReply.failed());
+            tu.azzert(System.currentTimeMillis() - start >= timeout);
+            tu.testComplete();
+            called = true;
+          }
+        });
+      }
+    });
+    eb.send(address, "foo", new Handler<Message<String>>() {
+      @Override
+      public void handle(final Message<String> reply) {
+        tu.azzert("bar".equals(reply.body()));
+        // Delay the reply
+        vertx.setTimer(timeout * 2, new Handler<Long>() {
+          @Override
+          public void handle(Long tid) {
+            reply.reply("quux");
+          }
+        });
+      }
+    });
   }
 
   public void testLocal1() {

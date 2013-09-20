@@ -116,17 +116,27 @@ public class JavaEventBusTest extends TestBase {
   }
 
   @Test
+  public void testSendWithTimeoutReply() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testSendWithTimeoutNoReply() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testSendWithDefaultTimeoutNoReply() {
+    startTest(getMethodName());
+  }
+
+  @Test
   public void testReplyWithTimeoutReply() {
     startTest(getMethodName());
   }
 
   @Test
   public void testReplyWithTimeoutNoReply() {
-    startTest(getMethodName());
-  }
-
-  @Test
-  public void testReplyWithDefaultTimeoutNoReply() {
     startTest(getMethodName());
   }
 

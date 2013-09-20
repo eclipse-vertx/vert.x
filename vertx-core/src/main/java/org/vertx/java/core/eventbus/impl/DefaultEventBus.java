@@ -94,7 +94,15 @@ public class DefaultEventBus implements EventBus {
 
   @Override
   public EventBus send(String address, Object message, final Handler<Message> replyHandler) {
-    sendOrPub(createMessage(true, address, message), replyHandler);
+    // In order to fool the type system we need to wrap the handler - at run time the Message<String> handler
+    // will happily handle non String types as types are erased at run-time
+    Handler<Message<String>> wrapped = new Handler<Message<String>>() {
+      @Override
+      public void handle(Message msg) {
+        replyHandler.handle(msg);
+      }
+    };
+    sendOrPub(createMessage(true, address, message), wrapped);
     return this;
   }
 
@@ -511,11 +519,16 @@ public class DefaultEventBus implements EventBus {
     return defaultReplyTimeout;
   }
 
-  void sendReply(ServerID dest, BaseMessage message, long timeout, Handler replyHandler) {
-    sendOrPub(dest, message, replyHandler, timeout);
+  <T, U> void sendReply(ServerID dest, BaseMessage<U> message, Handler<Message<T>> replyHandler) {
+    sendOrPub(dest, message, replyHandler, -1);
   }
 
-  static BaseMessage createMessage(boolean send, String address, Object message) {
+  <T, U> void sendReplyWithTimeout(ServerID dest, BaseMessage<U> message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
+    Handler<Message<T>> handler = convertHandler(replyHandler);
+    sendOrPub(dest, message, handler, replyHandler, timeout);
+  }
+
+  static <U> BaseMessage<U> createMessage(boolean send, String address, U message) {
     BaseMessage bm;
     if (message instanceof String) {
       bm = new StringMessage(send, address, (String)message);
@@ -621,22 +634,22 @@ public class DefaultEventBus implements EventBus {
     }
   }
 
-  private void sendOrPub(final BaseMessage message, final Handler replyHandler) {
-    sendOrPub(null, message, replyHandler, -1);
-  }
-
-  private <T> void sendOrPubWithTimeout(final BaseMessage message,
-                                        final Handler<AsyncResult<Message<T>>> asyncResultHandler, long timeout) {
+  private <T, U> void sendOrPubWithTimeout(BaseMessage<U> message,
+                                           Handler<AsyncResult<Message<T>>> asyncResultHandler, long timeout) {
     Handler<Message<T>> handler = convertHandler(asyncResultHandler);
     sendOrPub(null, message, handler, asyncResultHandler, timeout);
   }
 
-  private void sendOrPub(ServerID replyDest, final BaseMessage message, final Handler replyHandler, long timeout) {
+  private <T, U> void sendOrPub(BaseMessage<U> message, Handler<Message<T>> replyHandler) {
+    sendOrPub(null, message, replyHandler, -1);
+  }
+
+  private <T, U> void sendOrPub(ServerID replyDest, BaseMessage<U> message, Handler<Message<T>> replyHandler, long timeout) {
     sendOrPub(replyDest, message, replyHandler, null, timeout);
   }
 
-  private void sendOrPub(ServerID replyDest, final BaseMessage message, final Handler replyHandler,
-                         final Handler asyncResultHandler, long timeout) {
+  private <T, U> void sendOrPub(ServerID replyDest, final BaseMessage<U> message, final Handler<Message<T>> replyHandler,
+                             final Handler<AsyncResult<Message<T>>> asyncResultHandler, long timeout) {
     checkStarted();
     DefaultContext context = vertx.getOrCreateContext();
     if (timeout == -1) {
