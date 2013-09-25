@@ -665,7 +665,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       Path rel = top.relativize(entry);
       String entryName = rel.toString();
       if (files[i].isDirectory()) {
-        entryName += "/";
+        entryName += FILE_SEP;
       }
       out.putNextEntry(new ZipEntry(entryName));
       if (!files[i].isDirectory()) {
