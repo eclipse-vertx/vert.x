@@ -158,6 +158,9 @@ public interface PlatformManager {
    */
   void pullInDependencies(String moduleName, Handler<AsyncResult<Void>> doneHandler);
 
+
+  void makeFatJar(String moduleName, String directory, Handler<AsyncResult<Void>> doneHandler);
+
   /**
    * Register a handler that will be called when the platform exits because of a verticle calling container.exit()
    * @param handler The handler

@@ -21,6 +21,7 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.impl.ClasspathPathResolver;
 import org.vertx.java.core.file.impl.ModuleFileSystemPathResolver;
 import org.vertx.java.core.impl.*;
@@ -42,9 +43,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 /**
  *
@@ -76,6 +79,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   // The user mods dir
   private final File modRoot;
   private final File systemModRoot;
+  private final String vertxHomeDir;
   private final ConcurrentMap<String, ModuleReference> moduleRefs = new ConcurrentHashMap<>();
   private final Redeployer redeployer;
   private final Map<String, LanguageImplInfo> languageImpls = new ConcurrentHashMap<>();
@@ -88,6 +92,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   protected final ClusterManager clusterManager;
   protected HAManager haManager;
   private boolean stopped;
+  private Queue<String> tempDeployments = new ConcurrentLinkedQueue<>();
 
   protected DefaultPlatformManager() {
     this(new DefaultVertx());
@@ -119,11 +124,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       // Default to local module directory
       modRoot = new File(LOCAL_MODS_DIR);
     }
-    String vertxHome = System.getProperty(VERTX_HOME_SYS_PROP);
-    if (vertxHome == null || modDir != null) {
+    vertxHomeDir = System.getProperty(VERTX_HOME_SYS_PROP);
+    if (vertxHomeDir == null || modDir != null) {
       systemModRoot = modRoot;
     } else {
-      systemModRoot = new File(vertxHome, SYS_MODS_DIR);
+      systemModRoot = new File(vertxHomeDir, SYS_MODS_DIR);
     }
     this.redeployer = new Redeployer(vertx, this);
     // If running on CI we don't want to use maven local to get any modules - this is because they can
@@ -300,6 +305,18 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   @Override
+  public void makeFatJar(final String moduleName, final String directory, final Handler<AsyncResult<Void>> doneHandler) {
+    final Handler<AsyncResult<Void>> wrapped = wrapDoneHandler(doneHandler);
+    runInBackground(new Runnable() {
+      public void run() {
+        ModuleIdentifier modID = new ModuleIdentifier(moduleName); // Validates it
+        doMakeFatJar(modRoot, modID, directory);
+        doneHandler.handle(new DefaultFutureResult<>((Void) null));
+      }
+    }, wrapped);
+  }
+
+  @Override
   public void reloadModules(final Set<Deployment> deps) {
 
     // If the module that has changed has been deployed by another module then we redeploy the parent module not
@@ -356,6 +373,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         unzipModuleData(tempDir, info, false);
         // And run it from there
         deployModuleFromFileSystem(modRoot, false, null, modID, config, instances, null, false, wrapped);
+        addTmpDeployment(tempDir.getAbsolutePath());
       }
     }, wrapped);
   }
@@ -474,11 +492,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private void doPullInDependencies(File modRoot, ModuleIdentifier modID) {
     File modDir = new File(modRoot, modID.toString());
     if (!modDir.exists()) {
-      log.error("Cannot find module to uninstall");
+      throw new PlatformManagerException("Cannot find module");
     }
     JsonObject conf = loadModuleConfig(modID, modDir);
     if (conf == null) {
-      log.error("Module " + modID + " does not contain a mod.json");
+      throw new PlatformManagerException("Module " + modID + " does not contain a mod.json");
     }
     ModuleFields fields = new ModuleFields(conf);
     List<String> mods = new ArrayList<>();
@@ -515,6 +533,149 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       }
     }
   }
+
+  private String locateJar(String name, ClassLoader cl) {
+    if (cl instanceof URLClassLoader) {
+      URLClassLoader urlc = (URLClassLoader)cl;
+      for (URL url: urlc.getURLs()) {
+        String surl = url.toString();
+        if (surl.contains("/" + name)) {  // The extra / is critical so we don't confuse hazelcast jar with vertx-hazelcast jar
+          String filename = url.getFile();
+          if (filename == null || "".equals(filename)) {
+            throw new IllegalStateException("Vert.x jars not available as file urls");
+          }
+          return filename;
+        }
+      }
+    }
+    if (cl.getParent() != null) {
+      return locateJar(name, cl.getParent());
+    } else {
+      throw new IllegalStateException("Cannot find jar for " + name);
+    }
+  }
+
+  private String[] locateJars(ClassLoader cl, String... names) {
+    String[] jars = new String[names.length];
+    for (int i = 0; i < jars.length; i++) {
+      jars[i] = locateJar(names[i], cl);
+    }
+    return jars;
+  }
+
+  private void doMakeFatJar(File modRoot, ModuleIdentifier modID, String directory) {
+    File modDir = new File(modRoot, modID.toString());
+    if (!modDir.exists()) {
+      throw new PlatformManagerException("Cannot find module");
+    }
+
+    // We need to name the jars explicitly - we can just grab every jar from the classloader hierarchy
+    String[] jars = locateJars(platformClassLoader, "vertx-core", "vertx-platform", "vertx-hazelcast",
+                               "netty-all", "jackson-core", "jackson-annotations", "jackson-databind", "hazelcast");
+
+    if (directory == null) {
+      directory = ".";
+    }
+
+    String tdir = generateTmpFileName();
+    File vertxHome = new File(tdir);
+    File libDir = new File(vertxHome, "lib");
+    vertx.fileSystem().mkdirSync(libDir.getAbsolutePath(), true);
+    File modHome = new File(vertxHome, "mods");
+    File modDest = new File(modHome, modID.toString());
+    vertx.fileSystem().mkdirSync(modDest.getAbsolutePath(), true);
+
+    // Copy module in
+    vertx.fileSystem().copySync(modDir.getAbsolutePath(), modDest.getAbsolutePath(), true);
+
+    //Copy vert.x libs in
+    for (String jar: jars) {
+      Path path = Paths.get(jar);
+      String jarName = path.getFileName().toString();
+      vertx.fileSystem().copySync(jar, new File(libDir, jarName).getAbsolutePath());
+      if (jarName.startsWith("vertx-platform")) {
+        // Extract FatJarStarter and put it at the top of the executable jar - this is our main class
+        File fatClassDir = new File(vertxHome, "org/vertx/java/platform/impl");
+        vertx.fileSystem().mkdirSync(fatClassDir.getAbsolutePath(), true);
+        try {
+          FileInputStream fin = new FileInputStream(jar);
+          BufferedInputStream bin = new BufferedInputStream(fin);
+          ZipInputStream zin = new ZipInputStream(bin);
+          ZipEntry ze;
+          while ((ze = zin.getNextEntry()) != null) {
+            String entryName = ze.getName();
+            if (entryName.contains("FatJarStarter")) {
+              entryName = entryName.substring(entryName.lastIndexOf('/') + 1);
+              File fatClassFile = new File(fatClassDir, entryName);
+              OutputStream out = new FileOutputStream(fatClassFile);
+              byte[] buffer = new byte[4096];
+              int len;
+              while ((len = zin.read(buffer)) != -1) {
+                out.write(buffer, 0, len);
+              }
+              out.close();
+            }
+          }
+        } catch (Exception e) {
+          throw new PlatformManagerException(e);
+        }
+      }
+    }
+    // Now create a manifest
+    String manifest =
+        "Manifest-Version: 1.0\n" +
+        "Main-Class: " + FatJarStarter.class.getName() + "\n" +
+        "Vertx-Module-ID: " + modID.toString() + "\n";
+    vertx.fileSystem().mkdirSync(new File(vertxHome, "META-INF").getAbsolutePath());
+    vertx.fileSystem().writeFileSync(new File(vertxHome, "META-INF/MANIFEST.MF").getAbsolutePath(), new Buffer(manifest));
+
+    // Now zip it all up
+    File jarName = new File(directory, modID.getName() + ModuleIdentifier.SEPARATOR + modID.getVersion() + "-fat.jar");
+    zipDir(jarName.getPath(), vertxHome.getAbsolutePath());
+
+    // And delete temp dir
+    vertx.fileSystem().deleteSync(vertxHome.getAbsolutePath(), true);
+  }
+
+  private void zipDir(String zipFile, String dirToZip) {
+    File dir = new File(dirToZip);
+    try (ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFile))) {
+      addDirToZip(dir, dir, out);
+    } catch (Exception e) {
+      throw new PlatformManagerException("Failed to unzip module", e);
+    }
+  }
+
+  void addDirToZip(File topDir, File dir, ZipOutputStream out) throws Exception {
+
+    Path top = Paths.get(topDir.getAbsolutePath());
+
+    File[] files = dir.listFiles();
+    byte[] buffer = new byte[4096];
+
+    for (int i = 0; i < files.length; i++) {
+      Path entry = Paths.get(files[i].getAbsolutePath());
+      Path rel = top.relativize(entry);
+      String entryName = rel.toString();
+      if (files[i].isDirectory()) {
+        entryName += "/";
+      }
+      out.putNextEntry(new ZipEntry(entryName));
+      if (!files[i].isDirectory()) {
+        try (FileInputStream in = new FileInputStream(files[i])) {
+          int bytesRead;
+          while ((bytesRead = in.read(buffer)) != -1) {
+            out.write(buffer, 0, bytesRead);
+          }
+        }
+      }
+      out.closeEntry();
+      if (files[i].isDirectory()) {
+        addDirToZip(topDir, files[i], out);
+      }
+    }
+  }
+
 
   // This makes sure the result is handled on the calling context
   private <T> Handler<AsyncResult<T>> wrapDoneHandler(final Handler<AsyncResult<T>> doneHandler) {
@@ -864,6 +1025,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     File modDir = locateModule(modRoot, null, modID);
     List<URL> cpList = new ArrayList<>(Arrays.asList(classpath));
     if (modDir != null) {
+      // TODO - why is this necessary???
       // Add the module directory too if found
       cpList.addAll(getModuleClasspath(modDir));
     }
@@ -1072,7 +1234,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     return TEMP_DIR + FILE_SEP + "vertx-" + UUID.randomUUID().toString();
   }
 
-  private File unzipIntoTmpDir(ModuleZipInfo zipInfo, boolean deleteZip) {
+  static File unzipIntoTmpDir(ModuleZipInfo zipInfo, boolean deleteZip) {
     String tdir = generateTmpFileName();
     File tdest = new File(tdir);
     if (!tdest.mkdir()) {
@@ -1149,7 +1311,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
   }
 
-  private String removeTopDir(String entry) {
+  private static String removeTopDir(String entry) {
     int pos = entry.indexOf(FILE_SEP);
     if (pos != -1) {
       entry = entry.substring(pos + 1);
@@ -1157,7 +1319,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     return entry;
   }
 
-  private void unzipModuleData(final File directory, final ModuleZipInfo zipinfo, boolean deleteZip) {
+  static private void unzipModuleData(final File directory, final ModuleZipInfo zipinfo, boolean deleteZip) {
     try (InputStream is = new BufferedInputStream(new FileInputStream(zipinfo.filename)); ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is))) {
       ZipEntry entry;
       while ((entry = zis.getNextEntry()) != null) {
@@ -1504,6 +1666,21 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     });
   }
 
+  private void addTmpDeployment(String tmp) {
+    tempDeployments.add(tmp);
+  }
+
+  private void deleteTmpDeployments() {
+    String tmp;
+    while ((tmp = tempDeployments.poll()) != null) {
+      try {
+        vertx.fileSystem().deleteSync(tmp, true);
+      } catch (Throwable t) {
+        log.error("Failed to delete temp deployment", t);
+      }
+    }
+  }
+
   public void stop() {
     if (stopped) {
       return;
@@ -1512,6 +1689,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       haManager.stop();
     }
     redeployer.close();
+    deleteTmpDeployments();
     vertx.stop();
     stopped = true;
   }
@@ -1544,11 +1722,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
   }
 
-  private static final class ModuleZipInfo {
+  static final class ModuleZipInfo {
     final boolean oldStyle;
     final String filename;
 
-    private ModuleZipInfo(boolean oldStyle, String filename) {
+    ModuleZipInfo(boolean oldStyle, String filename) {
       this.oldStyle = oldStyle;
       this.filename = filename;
     }

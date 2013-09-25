@@ -54,7 +54,6 @@ public class Starter {
     // Show download stats - they don't display properly in Gradle so we only have them when running
     // on the command line
     HttpResolution.suppressDownloadCounter = false;
-    System.setProperty("vertx.loadWithPlatformCL", "false");
     new Starter(args);
   }
 
@@ -95,6 +94,9 @@ public class Starter {
             case "pulldeps":
               pullDependencies(operand);
               break;
+            case "fatjar":
+              fatJar(operand, args);
+              break;
             default:
               displaySyntax();
           }
@@ -113,7 +115,7 @@ public class Starter {
     return munged.toArray(new String[munged.size()]);
   }
 
-  private static <T> AsyncResultHandler<T> createLoggingHandler(final String successMessage, final Handler<AsyncResult<T>> doneHandler) {
+  private static <T> AsyncResultHandler<T> createLoggingHandler(final String message, final Handler<AsyncResult<T>> doneHandler) {
     return new AsyncResultHandler<T>() {
       @Override
       public void handle(AsyncResult<T> res) {
@@ -126,10 +128,10 @@ public class Starter {
               log.error(ve.getCause());
             }
           } else {
-            log.error(cause);
+            log.error("Failed in " + message, cause);
           }
         } else {
-          log.trace(successMessage);
+          log.info("Succeeded in " + message);
         }
         if (doneHandler != null) {
           doneHandler.handle(res);
@@ -148,26 +150,44 @@ public class Starter {
 
   private void pullDependencies(String modName) {
     log.info("Attempting to pull in dependencies for module " + modName);
-    createPM().pullInDependencies(modName, createLoggingHandler("Successfully pulled in dependencies", unblockHandler()));
+    createPM().pullInDependencies(modName, createLoggingHandler("pulling in dependencies", unblockHandler()));
+    block();
+  }
+
+  private void fatJar(String modName, Args args) {
+    log.info("Attempting to make a fat jar for module " + modName);
+    String directory = args.map.get("-d");
+    if (directory != null && !new File(directory).exists()) {
+      log.info("Directory does not exist: " + directory);
+      return;
+    }
+    createPM().makeFatJar(modName, directory, createLoggingHandler("making fat jar", unblockHandler()));
     block();
   }
 
   private void installModule(String modName) {
     log.info("Attempting to install module " + modName);
-    createPM().installModule(modName, createLoggingHandler("Successfully installed module", unblockHandler()));
+    createPM().installModule(modName, createLoggingHandler("installing module", unblockHandler()));
     block();
   }
 
   private void uninstallModule(String modName) {
     log.info("Attempting to uninstall module " + modName);
-    createPM().uninstallModule(modName, createLoggingHandler("Successfully uninstalled module", unblockHandler()));
+    createPM().uninstallModule(modName, createLoggingHandler("uninstalling module", unblockHandler()));
     block();
   }
 
   private PlatformManager createPM() {
-    PlatformManager pm = PlatformLocator.factory.createPlatformManager();
-    registerExitHandler(pm);
-    return pm;
+    try {
+      PlatformManager pm = PlatformLocator.factory.createPlatformManager();
+      registerExitHandler(pm);
+      return pm;
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw new IllegalStateException(e);
+    }
+
+
   }
 
   private PlatformManager createPM(int port, String host) {
@@ -319,25 +339,24 @@ public class Starter {
       }
     };
     if (zip) {
-      mgr.deployModuleFromZip(main, conf, instances, createLoggingHandler("Successfully deployed module from zip", doneHandler));
+      mgr.deployModuleFromZip(main, conf, instances, createLoggingHandler("deploying module from zip", doneHandler));
     } else if (module) {
+      final String deployMsg = "deploying module";
       if (hasClasspath) {
-        mgr.deployModuleFromClasspath(main, conf, instances, classpath, createLoggingHandler("Successfully deployed module", doneHandler));
+        mgr.deployModuleFromClasspath(main, conf, instances, classpath, createLoggingHandler(deployMsg, doneHandler));
       } else if (ha) {
-        mgr.deployModule(main, conf, instances, true, createLoggingHandler("Successfully deployed module", doneHandler));
+        mgr.deployModule(main, conf, instances, true, createLoggingHandler(deployMsg, doneHandler));
       } else {
-        mgr.deployModule(main, conf, instances, createLoggingHandler("Successfully deployed module", doneHandler));
+        mgr.deployModule(main, conf, instances, createLoggingHandler(deployMsg, doneHandler));
       }
     } else {
       boolean worker = args.map.get("-worker") != null;
-
-
       String includes = args.map.get("-includes");
       if (worker) {
         mgr.deployWorkerVerticle(false, main, conf, classpath, instances, includes,
-                                 createLoggingHandler("Successfully deployed worker verticle", doneHandler));
+                                 createLoggingHandler("deploying worker verticle", doneHandler));
       } else {
-        mgr.deployVerticle(main, conf, classpath, instances, includes, createLoggingHandler("Successfully deployed verticle", doneHandler));
+        mgr.deployVerticle(main, conf, classpath, instances, includes, createLoggingHandler("deploying verticle", doneHandler));
       }
     }
 
@@ -365,10 +384,8 @@ public class Starter {
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
         final CountDownLatch latch = new CountDownLatch(1);
-        System.out.println("Undeploying all!");
         mgr.undeployAll(new Handler<AsyncResult<Void>>() {
           public void handle(AsyncResult<Void> res) {
-            System.out.println("Undeployed all");
             latch.countDown();
           }
         });
@@ -379,7 +396,6 @@ public class Starter {
         } catch (InterruptedException e) {
           throw new IllegalStateException(e);
         }
-        System.out.println("Shutdown hooks done!");
         // Now shutdown the platform manager
         mgr.stop();
       }

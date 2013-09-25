@@ -55,6 +55,8 @@ public class JULLogDelegate implements LogDelegate {
 
   public void error(final Object message, final Throwable t) {
     logger.log(Level.SEVERE, message == null ? "NULL" : message.toString(), t);
+
+    logger.log(Level.SEVERE, message == null ? "NULL" : message.toString(), t);
   }
 
   public void warn(final Object message) {

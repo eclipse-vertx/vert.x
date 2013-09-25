@@ -113,10 +113,14 @@ public class DefaultVertx implements VertxInternal {
     this.eventBus = new DefaultEventBus(this, port, hostname, clusterManager, new AsyncResultHandler<Void>() {
       @Override
       public void handle(AsyncResult<Void> res) {
-        if (res.succeeded()) {
-          resultHandler.handle(new DefaultFutureResult<>(inst));
-        } else {
-          resultHandler.handle(new DefaultFutureResult<Vertx>(res.cause()));
+        if (resultHandler != null) {
+          if (res.succeeded()) {
+            resultHandler.handle(new DefaultFutureResult<>(inst));
+          } else {
+            resultHandler.handle(new DefaultFutureResult<Vertx>(res.cause()));
+          }
+        } else if (res.failed()) {
+          log.error("Failed to start event bus", res.cause());
         }
       }
     });

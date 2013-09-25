@@ -19,7 +19,7 @@ package org.vertx.java.platform.impl;
  */
 public class ModuleIdentifier {
 
-  private static final String SEPARATOR = "~";
+  public static final String SEPARATOR = "~";
   private static final String SPLIT_REGEX = "\\" + SEPARATOR;
 
   private final String owner;
