@@ -39,6 +39,7 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.net.URLDecoder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -544,7 +545,13 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           if (filename == null || "".equals(filename)) {
             throw new IllegalStateException("Vert.x jars not available as file urls");
           }
-          return filename;
+          String correctedFileName;
+          try {
+            correctedFileName = new File(URLDecoder.decode(filename, "UTF-8")).getPath();
+          } catch (UnsupportedEncodingException e) {
+            throw new IllegalStateException(e);
+          }
+          return correctedFileName;
         }
       }
     }
