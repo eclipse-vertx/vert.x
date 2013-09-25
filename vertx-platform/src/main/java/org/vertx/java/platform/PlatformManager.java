@@ -159,7 +159,15 @@ public interface PlatformManager {
   void pullInDependencies(String moduleName, Handler<AsyncResult<Void>> doneHandler);
 
 
-  void makeFatJar(String moduleName, String directory, Handler<AsyncResult<Void>> doneHandler);
+  /**
+   * Create a fat executable jar which includes the Vert.x binaries and the module so it can be run
+   * directly with java without having to pre-install Vert.x. e.g.:
+   * java -jar mymod~1.0-fat.jar
+   * @param moduleName The name of the module to create the fat jar for
+   * @param outputDirectory Directory in which to place the jar
+   * @param doneHandler Handler that will be called on completion
+   */
+  void makeFatJar(String moduleName, String outputDirectory, Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * Register a handler that will be called when the platform exits because of a verticle calling container.exit()
