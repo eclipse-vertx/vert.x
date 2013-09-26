@@ -182,7 +182,12 @@ public class FatJarStarter extends Thread {
             byte[] buff = new byte[BUFFER_SIZE];
             BufferedOutputStream dest = null;
             try {
-              OutputStream fos = new FileOutputStream(new File(directory, entryName));
+              File fentry = new File(directory, entryName);
+              File dir = fentry.getParentFile();
+              if (!dir.exists()) {
+                dir.mkdirs();
+              }
+              OutputStream fos = new FileOutputStream(fentry);
               dest = new BufferedOutputStream(fos, BUFFER_SIZE);
               while ((count = zis.read(buff, 0, BUFFER_SIZE)) != -1) {
                 dest.write(buff, 0, count);

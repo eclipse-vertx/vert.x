@@ -667,16 +667,18 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       if (files[i].isDirectory()) {
         entryName += FILE_SEP;
       }
-      out.putNextEntry(new ZipEntry(entryName));
+
       if (!files[i].isDirectory()) {
+        out.putNextEntry(new ZipEntry(entryName));
         try (FileInputStream in = new FileInputStream(files[i])) {
           int bytesRead;
           while ((bytesRead = in.read(buffer)) != -1) {
             out.write(buffer, 0, bytesRead);
           }
         }
+        out.closeEntry();
       }
-      out.closeEntry();
+
       if (files[i].isDirectory()) {
         addDirToZip(topDir, files[i], out);
       }
