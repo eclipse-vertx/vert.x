@@ -94,7 +94,7 @@ public class DefaultEventBus implements EventBus {
   public EventBus send(String address, Object message, final Handler<Message> replyHandler) {
     // In order to fool the type system we need to wrap the handler - at run time the Message<String> handler
     // will happily handle non String types as types are erased at run-time
-    Handler<Message<String>> wrapped = new Handler<Message<String>>() {
+    Handler<Message<String>> wrapped = replyHandler == null ? null : new Handler<Message<String>>() {
       @Override
       public void handle(Message msg) {
         replyHandler.handle(msg);

@@ -1377,10 +1377,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     DefaultContext context = vertx.getContext();
     if (modDir != null) {
       // Module deployed from file system or verticle deployed by module deployed from file system
-      Path cwd = Paths.get(".").toAbsolutePath().getParent();
       Path pmodDir = Paths.get(modDir.getAbsolutePath());
-      Path relative = cwd.relativize(pmodDir);
-      context.setPathResolver(new ModuleFileSystemPathResolver(relative));
+      context.setPathResolver(new ModuleFileSystemPathResolver(pmodDir));
     } else if (modID != null) {
       // Module deployed from classpath
       context.setPathResolver(new ClasspathPathResolver());
