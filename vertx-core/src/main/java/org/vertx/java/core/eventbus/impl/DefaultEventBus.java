@@ -65,8 +65,6 @@ public class DefaultEventBus implements EventBus {
   private long defaultReplyTimeout = -1;
   private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, Handlers> handlerMap = new ConcurrentHashMap<>();
-  private final AtomicInteger seq = new AtomicInteger(0);
-  private final String prefix = UUID.randomUUID().toString();
   private final ClusterManager clusterMgr;
 
   public DefaultEventBus(VertxInternal vertx) {
@@ -658,7 +656,8 @@ public class DefaultEventBus implements EventBus {
     try {
       message.sender = serverID;
       if (replyHandler != null) {
-        message.replyAddress = prefix + String.valueOf(seq.incrementAndGet());  // Faster than using random UUID
+        // We need to use a UUID, not a counter so the address is a cryptographically secure id that can't be guessed
+        message.replyAddress = UUID.randomUUID().toString();
         long timeoutID;
         if (timeout != -1) {
           // Add a timeout to remove the reply handler to prevent leaks in case a reply never comes
@@ -668,7 +667,7 @@ public class DefaultEventBus implements EventBus {
               log.warn("Message reply handler timed out as no reply was received - it will be removed");
               unregisterHandler(message.replyAddress, replyHandler);
               if (asyncResultHandler != null) {
-                asyncResultHandler.handle(new DefaultFutureResult(new VertxException("Timed out waiting for reply")));
+                asyncResultHandler.handle(new DefaultFutureResult<Message<T>>(new VertxException("Timed out waiting for reply")));
               }
             }
           });
