@@ -669,7 +669,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       }
 
       if (!files[i].isDirectory()) {
-        out.putNextEntry(new ZipEntry(entryName));
+        out.putNextEntry(new ZipEntry(entryName.replace('\\', '/')));
         try (FileInputStream in = new FileInputStream(files[i])) {
           int bytesRead;
           while ((bytesRead = in.read(buffer)) != -1) {
