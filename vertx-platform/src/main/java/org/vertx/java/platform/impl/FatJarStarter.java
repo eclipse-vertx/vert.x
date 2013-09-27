@@ -37,13 +37,14 @@ import java.util.zip.ZipInputStream;
  * load the Vert.x Starter class using that.
  * We then execute vertx runmod module_name args using that
  */
-public class FatJarStarter extends Thread {
+public class FatJarStarter implements Runnable {
 
   private static final String TEMP_DIR = System.getProperty("java.io.tmpdir");
   private static final String FILE_SEP = System.getProperty("file.separator");
   private static final int BUFFER_SIZE = 4096;
 
   private File vertxHome;
+  private URLClassLoader platformLoader;
 
   public static void main(String[] args) {
     try {
@@ -55,7 +56,6 @@ public class FatJarStarter extends Thread {
   }
 
   private FatJarStarter() {
-    Runtime.getRuntime().addShutdownHook(this);
   }
 
   private void go(String[] args) throws Exception {
@@ -104,7 +104,7 @@ public class FatJarStarter extends Thread {
 
     // And create the class loader
 
-    URLClassLoader platformLoader = new URLClassLoader(urls.toArray(new URL[urls.size()]), urlc.getParent());
+    platformLoader = new URLClassLoader(urls.toArray(new URL[urls.size()]), urlc.getParent());
     Thread.currentThread().setContextClassLoader(platformLoader);
     Class<?> starterClass = platformLoader.loadClass("org.vertx.java.platform.impl.cli.Starter");
 
@@ -134,6 +134,12 @@ public class FatJarStarter extends Thread {
     System.setProperty("vertx.mods", modsDir.getAbsolutePath());
     System.setProperty("vertx.clusterManagerFactory", "org.vertx.java.spi.cluster.impl.hazelcast.HazelcastClusterManagerFactory");
 
+    // Add after shutdown task
+
+
+    Method afterShutdownMeth = starterClass.getMethod("addAfterShutdownTask", new Class[] { Runnable.class });
+    afterShutdownMeth.invoke(null, this);
+
     // Get the main method
 
     Method meth = starterClass.getMethod("main", new Class[] { String[].class });
@@ -147,6 +153,7 @@ public class FatJarStarter extends Thread {
   // Shutdown hook
   public void run() {
     try {
+      platformLoader.close();
       deleteDir(vertxHome);
     } catch (Exception e) {
       e.printStackTrace();

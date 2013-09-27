@@ -31,10 +31,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.Attributes;
@@ -56,6 +54,12 @@ public class Starter {
     HttpResolution.suppressDownloadCounter = false;
     new Starter(args);
   }
+
+  public static void addAfterShutdownTask(Runnable task) {
+    afterShutdownTasks.add(task);
+  }
+
+  private static Queue<Runnable> afterShutdownTasks = new ConcurrentLinkedQueue<>();
 
   private final CountDownLatch stopLatch = new CountDownLatch(1);
 
@@ -398,6 +402,15 @@ public class Starter {
         }
         // Now shutdown the platform manager
         mgr.stop();
+        // Run any extra tasks
+        Runnable task;
+        while ((task = afterShutdownTasks.poll()) != null) {
+          try {
+            task.run();
+          } catch (Throwable t) {
+            log.error("Failed to run after shutdown task", t);
+          }
+        }
       }
     });
   }
