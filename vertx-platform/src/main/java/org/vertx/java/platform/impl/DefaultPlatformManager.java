@@ -637,7 +637,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     vertx.fileSystem().writeFileSync(new File(vertxHome, "META-INF/MANIFEST.MF").getAbsolutePath(), new Buffer(manifest));
 
     // Now zip it all up
-    File jarName = new File(directory, modID.getName() + ModuleIdentifier.SEPARATOR + modID.getVersion() + "-fat.jar");
+    File jarName = new File(directory, modID.getName() + "-" + modID.getVersion() + "-fat.jar");
     zipDir(jarName.getPath(), vertxHome.getAbsolutePath());
 
     // And delete temp dir
