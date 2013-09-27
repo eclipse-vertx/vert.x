@@ -558,16 +558,19 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     if (cl.getParent() != null) {
       return locateJar(name, cl.getParent());
     } else {
-      throw new IllegalStateException("Cannot find jar for " + name);
+      return null;
     }
   }
 
   private String[] locateJars(ClassLoader cl, String... names) {
-    String[] jars = new String[names.length];
-    for (int i = 0; i < jars.length; i++) {
-      jars[i] = locateJar(names[i], cl);
+    List<String> ljars = new ArrayList<>();
+    for (int i = 0; i < names.length; i++) {
+      String jar = locateJar(names[i], cl);
+      if (jar != null) {
+        ljars.add(jar);
+      }
     }
-    return jars;
+    return ljars.toArray(new String[ljars.size()]);
   }
 
   private void doMakeFatJar(File modRoot, ModuleIdentifier modID, String directory) {
@@ -1109,7 +1112,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         boolean res = fields.isResident();
         includedMr = new ModuleReference(this, moduleName,
                                          new ModuleClassLoader(platformClassLoader,
-                                             urls.toArray(new URL[urls.size()]), fields.isLoadResourcesWithTCCL()),
+                                            urls.toArray(new URL[urls.size()]), fields.isLoadResourcesWithTCCL()),
                                          res);
         ModuleReference prev = moduleRefs.putIfAbsent(moduleName, includedMr);
         if (prev != null) {
