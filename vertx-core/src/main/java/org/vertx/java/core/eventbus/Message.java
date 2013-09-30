@@ -291,4 +291,12 @@ public interface Message<T> {
    */
   <T> void replyWithTimeout(Double message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler);
 
+  /**
+   * Signal that processing of this message failed. If the message was sent specifying a result handler
+   * the handler will be called with a failure corresponding to the failure code and message specified here
+   * @param failureCode A failure code to pass back to the sender
+   * @param message A message to pass back to the sender
+   */
+  void fail(int failureCode, String message);
+
 }

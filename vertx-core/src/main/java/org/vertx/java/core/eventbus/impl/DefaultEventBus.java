@@ -20,6 +20,8 @@ import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.eventbus.ReplyException;
+import org.vertx.java.core.eventbus.ReplyFailure;
 import org.vertx.java.core.impl.Closeable;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.DefaultFutureResult;
@@ -578,7 +580,7 @@ public class DefaultEventBus implements EventBus {
                 // Send back a pong - a byte will do
                 socket.write(PONG);
               } else {
-                receiveMessage(received);
+                receiveMessage(received, null);
               }
               parser.fixedSizeMode(4);
               size = -1;
@@ -611,14 +613,15 @@ public class DefaultEventBus implements EventBus {
     return server;
   }
 
-  private void sendToSubs(ChoosableIterable<ServerID> subs, BaseMessage message) {
+  private <T> void sendToSubs(ChoosableIterable<ServerID> subs, BaseMessage message,
+                          Handler<AsyncResult<Message<T>>> asyncResultHandler) {
     if (message.send) {
       // Choose one
       ServerID sid = subs.choose();
       if (!sid.equals(serverID)) {  //We don't send to this node
         sendRemote(sid, message);
       } else {
-        receiveMessage(message);
+        receiveMessage(message, asyncResultHandler);
       }
     } else {
       // Publish
@@ -626,7 +629,7 @@ public class DefaultEventBus implements EventBus {
         if (!sid.equals(serverID)) {  //We don't send to this node
           sendRemote(sid, message);
         } else {
-          receiveMessage(message);
+          receiveMessage(message, null);
         }
       }
     }
@@ -647,7 +650,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   private <T, U> void sendOrPub(ServerID replyDest, final BaseMessage<U> message, final Handler<Message<T>> replyHandler,
-                             final Handler<AsyncResult<Message<T>>> asyncResultHandler, long timeout) {
+                               final Handler<AsyncResult<Message<T>>> asyncResultHandler, long timeout) {
     checkStarted();
     DefaultContext context = vertx.getOrCreateContext();
     if (timeout == -1) {
@@ -667,7 +670,7 @@ public class DefaultEventBus implements EventBus {
               log.warn("Message reply handler timed out as no reply was received - it will be removed");
               unregisterHandler(message.replyAddress, replyHandler);
               if (asyncResultHandler != null) {
-                asyncResultHandler.handle(new DefaultFutureResult<Message<T>>(new VertxException("Timed out waiting for reply")));
+                asyncResultHandler.handle(new DefaultFutureResult<Message<T>>(new ReplyException(ReplyFailure.TIMEOUT, "Timed out waiting for reply")));
               }
             }
           });
@@ -680,7 +683,7 @@ public class DefaultEventBus implements EventBus {
         if (!replyDest.equals(this.serverID)) {
           sendRemote(replyDest, message);
         } else {
-          receiveMessage(message);
+          receiveMessage(message, asyncResultHandler);
         }
       } else {
         if (subs != null) {
@@ -689,9 +692,9 @@ public class DefaultEventBus implements EventBus {
               if (event.succeeded()) {
                 ChoosableIterable<ServerID> serverIDs = event.result();
                 if (serverIDs != null && !serverIDs.isEmpty()) {
-                  sendToSubs(serverIDs, message);
+                  sendToSubs(serverIDs, message, asyncResultHandler);
                 } else {
-                  receiveMessage(message);
+                  receiveMessage(message, asyncResultHandler);
                 }
               } else {
                 log.error("Failed to send message", event.cause());
@@ -700,7 +703,7 @@ public class DefaultEventBus implements EventBus {
           });
         } else {
           // Not clustered
-          receiveMessage(message);
+          receiveMessage(message, asyncResultHandler);
         }
       }
 
@@ -717,7 +720,14 @@ public class DefaultEventBus implements EventBus {
     return new Handler<Message<T>>() {
       @Override
       public void handle(Message<T> reply) {
-        handler.handle(new DefaultFutureResult<>(reply));
+        DefaultFutureResult<Message<T>> result;
+        if (reply.body() instanceof ReplyException) {
+          // This is kind of clunky - but hey-ho
+          result = new DefaultFutureResult<>((ReplyException)reply.body());
+        } else {
+          result = new DefaultFutureResult<>(reply);
+        }
+        handler.handle(result);
       }
     };
   }
@@ -854,7 +864,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   // Called when a message is incoming
-  private void receiveMessage(final BaseMessage msg) {
+  private <T> void receiveMessage(final BaseMessage msg, final Handler<AsyncResult<Message<T>>> asyncResultHandler) {
     msg.bus = this;
     final Handlers handlers = handlerMap.get(msg.address);
     if (handlers != null) {
@@ -870,12 +880,22 @@ public class DefaultEventBus implements EventBus {
           doReceive(msg, holder);
         }
       }
+    } else {
+      // no handlers
+      if (asyncResultHandler != null) {
+        vertx.runOnContext(new Handler<Void>() {
+          @Override
+          public void handle(Void v) {
+            asyncResultHandler.handle(new DefaultFutureResult<Message<T>>(new ReplyException(ReplyFailure.NO_HANDLERS)));
+          }
+        });
+      }
     }
   }
 
-  private void doReceive(final BaseMessage msg, final HandlerHolder holder) {
+  private <T> void doReceive(final BaseMessage<T> msg, final HandlerHolder<T> holder) {
     // Each handler gets a fresh copy
-    final Message copied = msg.copy();
+    final Message<T> copied = msg.copy();
 
     holder.context.execute(new Runnable() {
       public void run() {
@@ -900,15 +920,15 @@ public class DefaultEventBus implements EventBus {
     }
   }
 
-  private static class HandlerHolder {
+  private static class HandlerHolder<T> {
     final DefaultContext context;
-    final Handler handler;
+    final Handler<Message<T>> handler;
     final boolean replyHandler;
     final boolean localOnly;
     final long timeoutID;
     boolean removed;
 
-    HandlerHolder(Handler handler, boolean replyHandler, boolean localOnly, DefaultContext context, long timeoutID) {
+    HandlerHolder(Handler<Message<T>> handler, boolean replyHandler, boolean localOnly, DefaultContext context, long timeoutID) {
       this.context = context;
       this.handler = handler;
       this.replyHandler = replyHandler;

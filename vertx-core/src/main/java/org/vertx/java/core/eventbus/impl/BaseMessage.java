@@ -20,6 +20,8 @@ import io.netty.util.CharsetUtil;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.eventbus.ReplyException;
+import org.vertx.java.core.eventbus.ReplyFailure;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.net.NetSocket;
@@ -262,6 +264,11 @@ public abstract class BaseMessage<U> implements Message<U> {
   @Override
   public <T> void replyWithTimeout(Double message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
     sendReplyWithTimeout(new DoubleMessage(true, replyAddress, message), timeout, replyHandler);
+  }
+
+  @Override
+  public void fail(int failureCode, String message) {
+    sendReply(new ReplyFailureMessage(replyAddress, new ReplyException(ReplyFailure.RECIPIENT_FAILURE, failureCode, message)), null);
   }
 
   protected BaseMessage(Buffer readBuff) {
