@@ -14,11 +14,11 @@ import java.util.*;
  * A ModuleClassLoader can have multiple parents, this always includes the class loader of the module that deployed it
  * (or null if is a top level module), plus the class loaders of any modules that this module includes.
  *
- * This class loader always tries to the load the class itself. If it can't find the class it iterates
- * through its parents trying to load the class. If none of the parents can find it, the platform class loader classloader is tried.
+ * This class loader always tries to load the class with the platform classloader itself, if it can't find it there it
+ * then tries to the load the class itself,  if it still can't find the class it iterates
+ * through its parents trying to load the class.
  *
- * When locating resources this class loader always looks for the resources itself, then it asks the parents to look,
- * and finally the platform class loader classloader is asked.
+ * The same search order is used when locating resources.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -57,12 +57,15 @@ public class ModuleClassLoader extends URLClassLoader {
   @Override
   protected synchronized Class<?> loadClass(String name, boolean resolve)
       throws ClassNotFoundException {
-
-    Class<?> c = doLoadClass(name);
-    if (c == null) {
+    Class<?> c;
+    try {
       c = platformClassLoader.loadClass(name);
+    } catch (ClassNotFoundException e) {
+      c = doLoadClass(name);
+      if (c == null) {
+        throw new ClassNotFoundException(name);
+      }
     }
-
     if (resolve) {
       resolveClass(c);
     }
@@ -137,46 +140,46 @@ public class ModuleClassLoader extends URLClassLoader {
   private URL doGetResource(String name, boolean considerTCCL) {
     incRecurseDepth();
     try {
-      // First try with this class loader
-      URL url = findResource(name);
+      URL url = platformClassLoader.getResource(name);
       if (url == null) {
-        // Detect circular hierarchy
-        Set<ModuleClassLoader> walked = getWalked();
-        walked.add(this);
+        // First try with this class loader
+        url = findResource(name);
+        if (url == null) {
+          // Detect circular hierarchy
+          Set<ModuleClassLoader> walked = getWalked();
+          walked.add(this);
 
-        //Now try with the parents
-        for (ModuleReference parent: parents) {
-          checkAlreadyWalked(walked, parent);
-          url = parent.mcl.doGetResource(name, considerTCCL);
-          if (url != null) {
-            return url;
-          }
-        }
-
-        walked.remove(this);
-
-        // There's now a workaround due to dodgy classloading in Jython
-        // https://github.com/vert-x/mod-lang-jython/issues/7
-        // It seems that Jython doesn't always ask the correct classloader to load resources from modules
-        // to workaround this we can, if the resource is not found, and the TCCL is different from this classloader
-        // to ask the TCCL to load the class - the TCCL should always be set to the moduleclassloader of the actual
-        // module doing the import
-        if (considerTCCL && loadResourcesFromTCCL) {
-          // We need to clear wallked as otherwise can get a circular dependency error when there's no
-          // real circuular dependency
-          walked.clear();
-          ModuleClassLoader tccl = (ModuleClassLoader)Thread.currentThread().getContextClassLoader();
-          if (tccl != this) {
-            // Call with considerTCCL = false to prevent infinite recursion
-            url = tccl.doGetResource(name, false);
+          //Now try with the parents
+          for (ModuleReference parent: parents) {
+            checkAlreadyWalked(walked, parent);
+            url = parent.mcl.doGetResource(name, considerTCCL);
             if (url != null) {
               return url;
             }
           }
-        }
 
-        // Finally try the platform class loader
-        url = platformClassLoader.getResource(name);
+          walked.remove(this);
+
+          // There's now a workaround due to dodgy classloading in Jython
+          // https://github.com/vert-x/mod-lang-jython/issues/7
+          // It seems that Jython doesn't always ask the correct classloader to load resources from modules
+          // to workaround this we can, if the resource is not found, and the TCCL is different from this classloader
+          // to ask the TCCL to load the class - the TCCL should always be set to the moduleclassloader of the actual
+          // module doing the import
+          if (considerTCCL && loadResourcesFromTCCL) {
+            // We need to clear wallked as otherwise can get a circular dependency error when there's no
+            // real circuular dependency
+            walked.clear();
+            ModuleClassLoader tccl = (ModuleClassLoader)Thread.currentThread().getContextClassLoader();
+            if (tccl != this) {
+              // Call with considerTCCL = false to prevent infinite recursion
+              url = tccl.doGetResource(name, false);
+              if (url != null) {
+                return url;
+              }
+            }
+          }
+        }
       }
       return url;
     } finally {
@@ -194,6 +197,9 @@ public class ModuleClassLoader extends URLClassLoader {
   @Override
   public synchronized Enumeration<URL> getResources(String name) throws IOException {
     final List<URL> totURLs = new ArrayList<>();
+
+    // And platform class loader too
+    addURLs(totURLs, platformClassLoader.getResources(name));
 
     // Local ones
     addURLs(totURLs, findResources(name));
@@ -214,9 +220,6 @@ public class ModuleClassLoader extends URLClassLoader {
     } finally {
       checkClearTLs();
     }
-
-    // And platform class loader too
-    addURLs(totURLs, platformClassLoader.getResources(name));
 
     return new Enumeration<URL>() {
       Iterator<URL> iter = totURLs.iterator();

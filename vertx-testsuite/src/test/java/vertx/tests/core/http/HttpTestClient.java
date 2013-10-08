@@ -2563,7 +2563,7 @@ public class HttpTestClient extends TestClientBase {
 
   public void testConnectInvalidHost() {
     client.exceptionHandler(createNoConnectHandler());
-    client.setHost("wibble");
+    client.setHost("127.0.0.2");
     client.getNow("someurl", new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         tu.azzert(false, "Connect should not be called");
