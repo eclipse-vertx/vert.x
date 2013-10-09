@@ -120,6 +120,7 @@ task assemble(type: Copy, dependsOn: [subprojects.assemble]) {
   }
   into('client') {
     from file('src/dist/client')
+    rename ('vertxbus.js', "vertxbus-${vertxbusjsVersion}.js")
   }
   into('conf') {
     from file('vertx-platform/src/main/resources')
@@ -142,8 +143,9 @@ task assemble(type: Copy, dependsOn: [subprojects.assemble]) {
 }
 
 task minifyClient(type: com.eriwen.gradle.js.tasks.MinifyJsTask) {
+  outputs.upToDateWhen { false }
   source = file("build/$rootProject.name-$version/client/vertxbus.js")
-  dest = file("build/$rootProject.name-$version/client/vertxbus.min.js")
+  dest = file("build/$rootProject.name-$version/client/vertxbus-${vertxbusjsVersion}.min.js")
   closure {
     warningLevel = 'QUIET'
   }
