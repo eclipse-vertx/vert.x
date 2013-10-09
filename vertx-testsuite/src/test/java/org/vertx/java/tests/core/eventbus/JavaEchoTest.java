@@ -183,4 +183,45 @@ public class JavaEchoTest extends TestBase {
     runPeerTest(getMethodName());
   }
 
+  @Test
+  public void testSendWithTimeoutReply() {
+    runPeerTest(getMethodName());
+  }
+
+  @Test
+  public void testSendWithTimeoutNoReply() {
+    runPeerTest(getMethodName());
+  }
+
+  @Test
+  public void testSendWithDefaultTimeoutNoReply() {
+    runPeerTest(getMethodName());
+  }
+
+  @Test
+  public void testReplyWithTimeoutReply() {
+    runPeerTest(getMethodName());
+  }
+
+  @Test
+  public void testReplyWithTimeoutNoReply() {
+    runPeerTest(getMethodName());
+  }
+
+  @Test
+  public void testReplyNoHandlers() {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testReplyRecipientFailure() {
+    runPeerTest(getMethodName());
+  }
+
+  @Test
+  public void testReplyRecipientFailureStandardHandler() {
+    runPeerTest(getMethodName());
+  }
+
+
 }

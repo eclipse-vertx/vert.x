@@ -36,6 +36,7 @@ public class MessageFactory {
   static final byte TYPE_SHORT = 10;
   static final byte TYPE_STRING = 11;
   static final byte TYPE_JSON = 12;
+  static final byte TYPE_REPLY_FAILURE = 100;
 
   static BaseMessage read(Buffer buff) {
     byte type = buff.getByte(0);
@@ -66,6 +67,8 @@ public class MessageFactory {
         return new StringMessage(buff);
       case TYPE_JSON:
         return new JsonObjectMessage(buff);
+      case TYPE_REPLY_FAILURE:
+        return new ReplyFailureMessage(buff);
       default:
         throw new IllegalStateException("Invalid type " + type);
     }

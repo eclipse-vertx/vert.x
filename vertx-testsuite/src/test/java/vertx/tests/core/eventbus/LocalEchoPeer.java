@@ -21,6 +21,8 @@ import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.eventbus.ReplyException;
+import org.vertx.java.core.eventbus.ReplyFailure;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -145,6 +147,164 @@ public class LocalEchoPeer extends EventBusAppBase {
 
   public void testEchoNullShortInitialise() {
     echoInitialise();
+  }
+
+  public void testSendWithTimeoutReplyInitialise() {
+    String address = "some-address";
+    eb.registerHandler(address, new Handler<Message<String>>() {
+      @Override
+      public void handle(Message<String> message) {
+        message.reply("bar");
+      }
+    }, new Handler<AsyncResult<Void>>() {
+          @Override
+          public void handle(AsyncResult<Void> res) {
+            if (res.succeeded()) {
+              tu.testComplete();
+            } else {
+              tu.azzert(false, "Failed to register");
+            }
+          }
+        });
+  }
+
+  public void testSendWithTimeoutNoReplyInitialise() {
+    final long timeout = 500;
+    String address = "some-address";
+    eb.registerHandler(address, new Handler<Message<String>>() {
+      @Override
+      public void handle(final Message<String> message) {
+        // Reply *after* the timeout
+        vertx.setTimer(timeout * 2, new Handler<Long>() {
+          @Override
+          public void handle(Long tid) {
+            message.reply("bar");
+          }
+        });
+      }
+    }, new Handler<AsyncResult<Void>>() {
+      @Override
+      public void handle(AsyncResult<Void> res) {
+        if (res.succeeded()) {
+          tu.testComplete();
+        } else {
+          tu.azzert(false, "Failed to register");
+        }
+      }
+    });
+
+  }
+
+  public void testSendWithDefaultTimeoutNoReplyInitialise() {
+    final long timeout = 500;
+    eb.setDefaultReplyTimeout(timeout);
+    String address = "some-address";
+    eb.registerHandler(address, new Handler<Message<String>>() {
+      @Override
+      public void handle(final Message<String> message) {
+        // Reply *after* the timeout
+        vertx.setTimer(timeout * 2, new Handler<Long>() {
+          @Override
+          public void handle(Long tid) {
+            message.reply("bar");
+          }
+        });
+      }
+    }, new Handler<AsyncResult<Void>>() {
+      @Override
+      public void handle(AsyncResult<Void> res) {
+        if (res.succeeded()) {
+          tu.testComplete();
+        } else {
+          tu.azzert(false, "Failed to register");
+        }
+      }
+    });
+
+  }
+
+  public void testReplyWithTimeoutReplyInitialise() {
+    final long timeout = 500;
+    String address = "some-address";
+    eb.registerHandler(address, new Handler<Message<String>>() {
+      @Override
+      public void handle(final Message<String> message) {
+        message.replyWithTimeout("bar", timeout, new Handler<AsyncResult<Message<String>>>() {
+          @Override
+          public void handle(AsyncResult<Message<String>> replyReply) {
+            tu.azzert(replyReply.succeeded());
+            tu.azzert("quux".equals(replyReply.result().body()));
+            tu.testComplete();
+          }
+        });
+      }
+    }, new Handler<AsyncResult<Void>>() {
+      @Override
+      public void handle(AsyncResult<Void> res) {
+        if (res.succeeded()) {
+          tu.testComplete();
+        } else {
+          tu.azzert(false, "Failed to register");
+        }
+      }
+    });
+
+  }
+
+  public void testReplyWithTimeoutNoReplyInitialise() {
+    final long timeout = 500;
+    String address = "some-address";
+    final long start = System.currentTimeMillis();
+    eb.registerHandler(address, new Handler<Message<String>>() {
+      @Override
+      public void handle(final Message<String> message) {
+
+        message.replyWithTimeout("bar", timeout, new Handler<AsyncResult<Message<String>>>() {
+          boolean called;
+          @Override
+          public void handle(AsyncResult<Message<String>> replyReply) {
+            tu.azzert(!called);
+            tu.azzert(replyReply.failed());
+            tu.azzert(System.currentTimeMillis() - start >= timeout);
+            tu.testComplete();
+            called = true;
+          }
+        });
+      }
+    }, new Handler<AsyncResult<Void>>() {
+      @Override
+      public void handle(AsyncResult<Void> res) {
+        if (res.succeeded()) {
+          tu.testComplete();
+        } else {
+          tu.azzert(false, "Failed to register");
+        }
+      }
+    });
+  }
+
+  public void testReplyRecipientFailureInitialise() {
+    String address = "some-address";
+    final String msg = "too many giraffes";
+    eb.registerHandler(address, new Handler<Message<String>>() {
+          @Override
+          public void handle(Message<String> message) {
+            message.fail(23, msg);
+          }
+        }, new Handler<AsyncResult<Void>>() {
+          @Override
+          public void handle(AsyncResult<Void> res) {
+            if (res.succeeded()) {
+              tu.testComplete();
+            } else {
+              tu.azzert(false, "Failed to register");
+            }
+          }
+        });
+  }
+
+  public void testReplyRecipientFailureStandardHandlerInitialise() {
+    testReplyRecipientFailureInitialise();
   }
 
   private void echoInitialise() {
