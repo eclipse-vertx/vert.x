@@ -404,7 +404,7 @@ public class TestClient extends TestClientBase {
   }
 
   public void testConnectInvalidHost() {
-    client.connect(1234, "somehost", new AsyncResultHandler<NetSocket>() {
+    client.connect(1234, "127.0.0.2", new AsyncResultHandler<NetSocket>() {
       public void handle(AsyncResult<NetSocket> res) {
         tu.azzert(res.failed(), "Connect should not be called");
         tu.azzert(res.cause() != null);
@@ -434,7 +434,7 @@ public class TestClient extends TestClientBase {
     vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
       public void handle(NetSocket sock) {
       }
-    }).listen(1234, "uhqiuwhdqiwuhd", new AsyncResultHandler<NetServer>() {
+    }).listen(1234, "uiqwhdqiuwdhqu", new AsyncResultHandler<NetServer>() {
       @Override
       public void handle(AsyncResult<NetServer> ar) {
         tu.azzert(ar.failed());

@@ -59,8 +59,8 @@ public class ModuleIncludeTest extends TestBase {
 
   @Test
   public void testCircularInclude() throws Exception {
-    String deployID = startMod("io.vertx~testmod4-1~1.0");
-    assertNull(deployID); // Null implies module deploy fails - which it will because of circular deps
+    startMod("io.vertx~testmod4-1~1.0");
+    startTest(getMethodName());
   }
 
   @Test

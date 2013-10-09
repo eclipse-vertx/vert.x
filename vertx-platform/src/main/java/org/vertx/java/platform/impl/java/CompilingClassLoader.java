@@ -21,8 +21,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import javax.tools.*;
 import javax.tools.JavaFileObject.Kind;
-import java.io.File;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.Collections;
@@ -66,6 +65,10 @@ public class CompilingClassLoader extends ClassLoader {
 
       standardFileManager.setLocation(StandardLocation.SOURCE_PATH, Collections.singleton(javaSourceContext.getSourceRoot()));
       fileManager = new MemoryFileManager(loader, standardFileManager);
+
+      // TODO - this needs to be fixed so it can compile classes from the classpath otherwise can't include
+      // other .java resources from other modules
+
       JavaFileObject javaFile = standardFileManager.getJavaFileForInput(StandardLocation.SOURCE_PATH, resolveMainClassName(), Kind.SOURCE);
       JavaCompiler.CompilationTask task = javaCompiler.getTask(null, fileManager, diagnostics, null, null, Collections.singleton(javaFile));
       boolean valid = task.call();

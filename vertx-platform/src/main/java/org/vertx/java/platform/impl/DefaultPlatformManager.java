@@ -754,6 +754,18 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
   }
 
+  private ModuleReference getModuleReference(String moduleKey, URL[] urls) {
+    ModuleReference mr = moduleRefs.get(moduleKey);
+    if (mr == null) {
+      mr = new ModuleReference(this, moduleKey, new ModuleClassLoader(moduleKey, platformClassLoader, urls, false), false);
+      ModuleReference prev = moduleRefs.putIfAbsent(moduleKey, mr);
+      if (prev != null) {
+        mr = prev;
+      }
+    }
+    return mr;
+  }
+
   private void doDeployVerticle(boolean worker, boolean multiThreaded, final String main,
                                 final JsonObject config, final URL[] urls,
                                 int instances, File currentModDir,
@@ -783,14 +795,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       moduleKey = enclosingModName.toString() + "#" + main;
     }
 
-    ModuleReference mr = moduleRefs.get(moduleKey);
-    if (mr == null) {
-      mr = new ModuleReference(this, moduleKey, new ModuleClassLoader(platformClassLoader, urls, false), false);
-      ModuleReference prev = moduleRefs.putIfAbsent(moduleKey, mr);
-      if (prev != null) {
-        mr = prev;
-      }
-    }
+    ModuleReference mr = getModuleReference(moduleKey, urls);
 
     if (enclosingModName != null) {
       // Add the enclosing module as a parent
@@ -960,7 +965,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     if (mr == null) {
       boolean res = fields.isResident();
       mr = new ModuleReference(this, modID.toString(),
-          new ModuleClassLoader(platformClassLoader, moduleClasspath.toArray(new URL[moduleClasspath.size()]),
+          new ModuleClassLoader(modID.toString(), platformClassLoader, moduleClasspath.toArray(new URL[moduleClasspath.size()]),
               fields.isLoadResourcesWithTCCL()),
           res);
       ModuleReference prev = moduleRefs.putIfAbsent(modID.toString(), mr);
@@ -1095,36 +1100,49 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   private void loadIncludedModules(File modRoot, File currentModuleDir, ModuleReference mr, String includesString) {
+    Set<String> included = new HashSet<>();
+    included.add(mr.moduleKey);
+    doLoadIncludedModules(modRoot, currentModuleDir, mr, includesString, included);
+  }
+
+  private void doLoadIncludedModules(File modRoot, File currentModuleDir, ModuleReference mr, String includesString,
+                                     Set<String> included) {
     checkWorkerContext();
     for (String moduleName: parseIncludeString(includesString)) {
       ModuleIdentifier modID = new ModuleIdentifier(moduleName);
-      ModuleReference includedMr = moduleRefs.get(moduleName);
-      if (includedMr == null) {
-        File modDir = locateModule(modRoot, currentModuleDir, modID);
-        if (modDir == null) {
-          doInstallMod(modID);
-        }
-        modDir = locateModule(modRoot, currentModuleDir, modID);
-        List<URL> urls = getModuleClasspath(modDir);
-        JsonObject conf = loadModuleConfig(modID, modDir);
-        ModuleFields fields = new ModuleFields(conf);
+      if (included.contains(modID.toString())) {
+        log.warn("Module " + modID + " is included more than once in chain of includes");
+      } else {
+        included.add(modID.toString());
+        ModuleReference includedMr = moduleRefs.get(moduleName);
+        if (includedMr == null) {
+          File modDir = locateModule(modRoot, currentModuleDir, modID);
+          if (modDir == null) {
+            doInstallMod(modID);
+          }
+          modDir = locateModule(modRoot, currentModuleDir, modID);
+          List<URL> urls = getModuleClasspath(modDir);
+          JsonObject conf = loadModuleConfig(modID, modDir);
+          ModuleFields fields = new ModuleFields(conf);
 
-        boolean res = fields.isResident();
-        includedMr = new ModuleReference(this, moduleName,
-                                         new ModuleClassLoader(platformClassLoader,
-                                            urls.toArray(new URL[urls.size()]), fields.isLoadResourcesWithTCCL()),
-                                         res);
-        ModuleReference prev = moduleRefs.putIfAbsent(moduleName, includedMr);
-        if (prev != null) {
-          includedMr = prev;
+          boolean res = fields.isResident();
+          includedMr = new ModuleReference(this, moduleName,
+              new ModuleClassLoader(modID.toString(), platformClassLoader,
+                  urls.toArray(new URL[urls.size()]), fields.isLoadResourcesWithTCCL()),
+              res);
+          ModuleReference prev = moduleRefs.putIfAbsent(moduleName, includedMr);
+          if (prev != null) {
+            includedMr = prev;
+          }
+          String includes = fields.getIncludes();
+          if (includes != null) {
+            doLoadIncludedModules(modRoot, modDir, includedMr, includes, included);
+          }
         }
-        String includes = fields.getIncludes();
-        if (includes != null) {
-          loadIncludedModules(modRoot, modDir, includedMr, includes);
-        }
+        includedMr.incRef();
+        mr.mcl.addParent(includedMr);
+        includedMr.mcl.addIncludingModule(mr); // It's a two way relationship
       }
-      includedMr.incRef();
-      mr.mcl.addParent(includedMr);
     }
   }
 
