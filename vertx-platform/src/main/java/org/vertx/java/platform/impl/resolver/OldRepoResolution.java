@@ -26,15 +26,15 @@ public class OldRepoResolution extends HttpResolution {
 
   private final String contentRoot;
 
-  public OldRepoResolution(Vertx vertx, String repoHost, int repoPort, ModuleIdentifier moduleIdentifier, String filename,
+  public OldRepoResolution(Vertx vertx, String repoScheme, String repoHost, int repoPort, ModuleIdentifier moduleIdentifier, String filename,
                            String contentRoot) {
-    super(vertx, repoHost, repoPort, moduleIdentifier, filename);
+    super(vertx, repoScheme, repoHost, repoPort, moduleIdentifier, filename);
     this.contentRoot = contentRoot;
   }
 
   @Override
   protected void getModule() {
-    createClient(repoHost, repoPort);
+    createClient(repoScheme, repoHost, repoPort);
     addHandler(404, new Handler<HttpClientResponse>() {
       @Override
       public void handle(HttpClientResponse resp) {
@@ -49,6 +49,6 @@ public class OldRepoResolution extends HttpResolution {
       }
     });
     String uri = contentRoot + '/' + modID.getOwner() + '.' + modID.getName() + "-v" + modID.getVersion() + "/mod.zip";
-    makeRequest(repoHost, repoPort, uri);
+    makeRequest(repoScheme, repoHost, repoPort, uri);
   }
 }

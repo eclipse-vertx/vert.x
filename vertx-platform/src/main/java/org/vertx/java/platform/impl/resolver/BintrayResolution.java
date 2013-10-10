@@ -40,8 +40,8 @@ public class BintrayResolution extends HttpResolution {
 
   private final String uri;
 
-  public BintrayResolution(Vertx vertx, String repoHost, int repoPort, ModuleIdentifier moduleID, final String filename, String contentRoot) {
-    super(vertx, repoHost, repoPort, moduleID, filename);
+  public BintrayResolution(Vertx vertx, String repoScheme, String repoHost, int repoPort, ModuleIdentifier moduleID, final String filename, String contentRoot) {
+    super(vertx, repoScheme, repoHost, repoPort, moduleID, filename);
     addHandler(200, new Handler<HttpClientResponse>() {
       @Override
       public void handle(HttpClientResponse resp) {
@@ -69,8 +69,8 @@ public class BintrayResolution extends HttpResolution {
 
   @Override
   protected void getModule() {
-    createClient(repoHost, repoPort);
-    makeRequest(repoHost, repoPort, uri);
+    createClient(repoScheme, repoHost, repoPort);
+    makeRequest(repoScheme, repoHost, repoPort, uri);
   }
 
   protected void handle302(HttpClientResponse resp) {
@@ -88,8 +88,8 @@ public class BintrayResolution extends HttpResolution {
         if (redirectPort == -1) {
           redirectPort = 80;
         }
-        createClient(redirectURI.getHost(), redirectPort);
-        makeRequest(redirectURI.getHost(), redirectPort, redirectURI.getPath());
+        createClient(redirectURI.getScheme(), redirectURI.getHost(), redirectPort);
+        makeRequest(redirectURI.getScheme(), redirectURI.getHost(), redirectPort, redirectURI.getPath());
       } catch (URISyntaxException e) {
         log.error("Invalid redirect URI: " + location);
       }

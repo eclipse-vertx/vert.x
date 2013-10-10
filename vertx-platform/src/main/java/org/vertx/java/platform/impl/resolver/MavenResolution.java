@@ -4,6 +4,8 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClientResponse;
+import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.platform.impl.ModuleIdentifier;
 
 /*
@@ -27,14 +29,14 @@ import org.vertx.java.platform.impl.ModuleIdentifier;
  *
  */
 public class MavenResolution extends HttpResolution {
-
+  private static final Logger log = LoggerFactory.getLogger(MavenResolution.class);
   protected String contentRoot;
   protected ModuleIdentifier moduleIdentifier;
   protected String uriRoot;
 
-  public MavenResolution(Vertx vertx, String repoHost, int repoPort, ModuleIdentifier moduleIdentifier, String filename,
+  public MavenResolution(Vertx vertx, String repoScheme, String repoHost, int repoPort, ModuleIdentifier moduleIdentifier, String filename,
                          String contentRoot) {
-    super(vertx, repoHost, repoPort, moduleIdentifier, filename);
+    super(vertx, repoScheme, repoHost, repoPort, moduleIdentifier, filename);
     this.contentRoot = contentRoot;
     this.moduleIdentifier = moduleIdentifier;
     uriRoot = getMavenURI(moduleIdentifier);
@@ -50,7 +52,7 @@ public class MavenResolution extends HttpResolution {
   }
 
   protected void getModule() {
-    createClient(repoHost, repoPort);
+    createClient(repoScheme, repoHost, repoPort);
     if (moduleIdentifier.getVersion().endsWith("-SNAPSHOT")) {
       addHandler(200, new Handler<HttpClientResponse>() {
         @Override
@@ -69,13 +71,20 @@ public class MavenResolution extends HttpResolution {
                   addOKHandler();
                   removeHandler(404);
                   String actualURI = getResourceName(data, contentRoot, moduleIdentifier, uriRoot, false);
-                  makeRequest(repoHost, repoPort, actualURI);
+                  makeRequest(repoScheme, repoHost, repoPort, actualURI);
                 }
               });
-              makeRequest(repoHost, repoPort, actualURI);
+              makeRequest(repoScheme, repoHost, repoPort, actualURI);
             }
           });
         }
+      });
+      addHandler(401,new Handler<HttpClientResponse>() {
+          @Override
+          public void handle(HttpClientResponse event) {
+             log.info(event.statusCode() + " - "+event.statusMessage());
+             removeHandler(401);
+          }
       });
       addHandler(404, new Handler<HttpClientResponse>() {
         @Override
@@ -85,7 +94,7 @@ public class MavenResolution extends HttpResolution {
         }
       });
       // First we make a request to maven-metadata.xml
-      makeRequest(repoHost, repoPort, contentRoot + '/' + uriRoot + "maven-metadata.xml");
+      makeRequest(repoScheme, repoHost, repoPort, contentRoot + '/' + uriRoot + "maven-metadata.xml");
     } else {
       attemptDirectDownload();
     }
@@ -93,16 +102,23 @@ public class MavenResolution extends HttpResolution {
 
   protected void attemptDirectDownload() {
     addOKHandler();
+    addHandler(401,new Handler<HttpClientResponse>() {
+        @Override
+        public void handle(HttpClientResponse event) {
+            log.info(event.statusCode() + " - "+event.statusMessage());
+            removeHandler(401);
+        }
+    });
     addHandler(404, new Handler<HttpClientResponse>() {
       @Override
       public void handle(HttpClientResponse resp) {
         // Not found with -mod suffix - try the old naming (we keep this for backward compatibility)
         addOKHandler();
         removeHandler(404);
-        makeRequest(repoHost, repoPort, getNonVersionedResourceName(contentRoot, moduleIdentifier, uriRoot, false));
+        makeRequest(repoScheme, repoHost, repoPort, getNonVersionedResourceName(contentRoot, moduleIdentifier, uriRoot, false));
       }
     });
-    makeRequest(repoHost, repoPort, getNonVersionedResourceName(contentRoot, moduleIdentifier, uriRoot, true));
+    makeRequest(repoScheme, repoHost, repoPort, getNonVersionedResourceName(contentRoot, moduleIdentifier, uriRoot, true));
   }
 
   static String getResourceName(String data, String contentRoot, ModuleIdentifier identifier, String uriRoot,

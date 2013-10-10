@@ -27,7 +27,7 @@ public class BintrayRepoResolver extends HttpRepoResolver {
 
   @Override
   public boolean getModule(String filename, ModuleIdentifier modID) {
-    HttpResolution res = new BintrayResolution(vertx, repoHost, repoPort, modID, filename, contentRoot);
+    HttpResolution res = new BintrayResolution(vertx,repoScheme, repoHost, repoPort, modID, filename, contentRoot);
     res.getModule();
     return res.waitResult();
   }

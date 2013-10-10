@@ -56,6 +56,7 @@ public abstract class HttpResolution {
   private final Vertx vertx;
   protected final String repoHost;
   protected final int repoPort;
+  protected final String repoScheme;
   protected final ModuleIdentifier modID;
   protected final String filename;
   protected final String proxyHost = getProxyHost();
@@ -78,18 +79,20 @@ public abstract class HttpResolution {
     return result;
   }
 
-  public HttpResolution(Vertx vertx, String repoHost, int repoPort, ModuleIdentifier modID, String filename) {
+  public HttpResolution(Vertx vertx, String repoScheme, String repoHost, int repoPort, ModuleIdentifier modID, String filename) {
     this.vertx = vertx;
     this.repoHost = repoHost;
     this.repoPort = repoPort;
     this.modID = modID;
     this.filename = filename;
+    this.repoScheme = repoScheme;
   }
 
-  protected HttpClient createClient(String host, int port) {
+  protected HttpClient createClient(String scheme, String host, int port) {
     if (client != null) {
       throw new IllegalStateException("Client already created");
     }
+
     client = vertx.createHttpClient();
     if (proxyHost != null) {
       client.setHost(proxyHost);
@@ -102,6 +105,10 @@ public abstract class HttpResolution {
       client.setHost(host);
       client.setPort(port);
     }
+    if (scheme.equals("https")) {
+        client.setSSL(true);
+    }
+
     client.exceptionHandler(new Handler<Throwable>() {
       public void handle(Throwable t) {
         end(false);
@@ -110,11 +117,11 @@ public abstract class HttpResolution {
     return client;
   }
 
-  protected void sendRequest(String host, int port, String uri, Handler<HttpClientResponse> respHandler) {
+  protected void sendRequest(String scheme, String host, int port, String uri, Handler<HttpClientResponse> respHandler) {
     final String proxyHost = getProxyHost();
     if (proxyHost != null) {
       // We use an absolute URI
-      uri = new StringBuilder("http://").append(host).append(":").append(port).append(uri).toString();
+      uri = new StringBuilder().append(scheme).append("://").append(host).append(":").append(port).append(uri).toString();
     }
 
     HttpClientRequest req = client.get(uri, respHandler);
@@ -135,8 +142,8 @@ public abstract class HttpResolution {
 
   protected abstract void getModule();
 
-  protected void makeRequest(String host, int port, String uri) {
-    sendRequest(host, port, uri, new Handler<HttpClientResponse>() {
+  protected void makeRequest(String scheme, String host, int port, String uri) {
+    sendRequest(scheme, host, port, uri, new Handler<HttpClientResponse>() {
       public void handle(HttpClientResponse resp) {
         Handler<HttpClientResponse> handler = handlers.get(resp.statusCode());
         if (handler != null) {

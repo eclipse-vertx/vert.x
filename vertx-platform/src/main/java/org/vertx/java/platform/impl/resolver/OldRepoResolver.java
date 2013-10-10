@@ -28,7 +28,7 @@ public class OldRepoResolver extends HttpRepoResolver {
 
   @Override
   public boolean getModule(String filename, ModuleIdentifier moduleIdentifier) {
-    HttpResolution res = new OldRepoResolution(vertx, repoHost, repoPort, moduleIdentifier, filename, contentRoot);
+    HttpResolution res = new OldRepoResolution(vertx,repoScheme, repoHost, repoPort, moduleIdentifier, filename, contentRoot);
     res.getModule();
     return res.waitResult();
   }
