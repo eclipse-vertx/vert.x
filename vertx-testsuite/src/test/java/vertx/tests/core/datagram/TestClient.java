@@ -322,14 +322,18 @@ public class TestClient extends TestClientBase {
     Enumeration<NetworkInterface> ifaces = NetworkInterface.getNetworkInterfaces();
     while (ifaces.hasMoreElements()) {
       NetworkInterface networkInterface = ifaces.nextElement();
-      if (networkInterface.supportsMulticast()) {
-        Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
-        while (addresses.hasMoreElements()) {
-          if (addresses.nextElement() instanceof Inet4Address) {
-            iface = networkInterface;
-            break;
+      try {
+        if (networkInterface.supportsMulticast()) {
+          Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
+          while (addresses.hasMoreElements()) {
+            if (addresses.nextElement() instanceof Inet4Address) {
+              iface = networkInterface;
+              break;
+            }
           }
         }
+      } catch (SocketException e) {
+        // ignore
       }
     }
 
