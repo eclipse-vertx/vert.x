@@ -19,6 +19,9 @@ package org.vertx.java.core.impl;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import org.vertx.java.core.*;
+import org.vertx.java.core.datagram.DatagramSocket;
+import org.vertx.java.core.datagram.InternetProtocolFamily;
+import org.vertx.java.core.datagram.impl.DefaultDatagramSocket;
 import org.vertx.java.core.dns.DnsClient;
 import org.vertx.java.core.dns.impl.DefaultDnsClient;
 import org.vertx.java.core.eventbus.EventBus;
@@ -131,6 +134,11 @@ public class DefaultVertx implements VertxInternal {
    */
   protected FileSystem getFileSystem() {
   	return Windows.isWindows() ? new WindowsFileSystem(this) : new DefaultFileSystem(this);
+  }
+
+  @Override
+  public DatagramSocket createDatagramSocket(InternetProtocolFamily family) {
+    return new DefaultDatagramSocket(this, family);
   }
 
   public NetServer createNetServer() {

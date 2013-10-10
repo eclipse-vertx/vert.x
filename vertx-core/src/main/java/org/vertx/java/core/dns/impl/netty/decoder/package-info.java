@@ -15,7 +15,6 @@
  */
 
 /**
- * Handles the decoding of DNS response packets from {@link ByteBuf}s to other
- * data structures.
+ * Handles the decoding of DNS response packets.
  */
 package org.vertx.java.core.dns.impl.netty.decoder;

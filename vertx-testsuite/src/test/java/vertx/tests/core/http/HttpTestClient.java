@@ -41,11 +41,16 @@ public class HttpTestClient extends TestClientBase {
   private HttpClient client;
   private HttpServer server;
 
+  protected boolean compression() {
+    return false;
+  }
+
   @Override
   public void start() {
     super.start();
     tu.appReady();
     client = vertx.createHttpClient().setHost("localhost").setPort(8080);
+    client.setTryUseCompression(compression());
   }
 
   @Override
@@ -65,6 +70,7 @@ public class HttpTestClient extends TestClientBase {
 
   private void startServer(Handler<HttpServerRequest> serverHandler, AsyncResultHandler<HttpServer> handler) {
     server = vertx.createHttpServer();
+    server.setCompressionSupported(compression());
     server.requestHandler(serverHandler);
     server.listen(8080, "localhost", handler);
   }

@@ -109,7 +109,6 @@ public class DnsHeader {
      * Returns the type of {@link DnsMessage}.
      *
      * @see #TYPE_QUERY
-     * @see #TYPE_HEADER
      */
     public int getType() {
         return type;

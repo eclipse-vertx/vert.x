@@ -4,6 +4,8 @@ import io.netty.channel.EventLoopGroup;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.datagram.DatagramSocket;
+import org.vertx.java.core.datagram.InternetProtocolFamily;
 import org.vertx.java.core.dns.DnsClient;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.file.FileSystem;
@@ -202,5 +204,10 @@ public class WrappedVertx implements VertxInternal {
   @Override
   public <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
     vertx.executeBlocking(action, resultHandler);
+  }
+
+  @Override
+  public DatagramSocket createDatagramSocket(InternetProtocolFamily family) {
+    return vertx.createDatagramSocket(family);
   }
 }

@@ -171,7 +171,11 @@ public abstract class ConnectionBase {
     vertx.reportException(t);
   }
 
-  protected boolean isSSL() {
+  protected boolean supportsFileRegion() {
+    return !isSSL();
+  }
+
+  private boolean isSSL() {
     return channel.pipeline().get(SslHandler.class) != null;
   }
 
@@ -183,8 +187,8 @@ public abstract class ConnectionBase {
 
       // Write the content.
       ChannelFuture writeFuture;
-      if (isSSL()) {
-        // Cannot use zero-copy with HTTPS.
+      if (!supportsFileRegion()) {
+        // Cannot use zero-copy
         writeFuture = write(new ChunkedFile(raf, 0, fileLength, 8192));
       } else {
         // No encryption - use zero-copy.
