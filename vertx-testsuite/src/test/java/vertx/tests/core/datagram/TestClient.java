@@ -26,10 +26,8 @@ import org.vertx.java.core.datagram.InternetProtocolFamily;
 import org.vertx.java.testframework.TestClientBase;
 import org.vertx.java.testframework.TestUtils;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
+import java.net.*;
+import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -310,7 +308,7 @@ public class TestClient extends TestClientBase {
   }
 
   public void testConfigure() throws Exception {
-    peer1 = vertx.createDatagramSocket(null);
+    peer1 = vertx.createDatagramSocket(InternetProtocolFamily.IPv4);
 
     tu.azzert(!peer1.isBroadcast());
     peer1.setBroadcast(true);
@@ -320,10 +318,26 @@ public class TestClient extends TestClientBase {
     peer1.setMulticastLoopbackMode(false);
     tu.azzert(!peer1.isMulticastLoopbackMode());
 
-    tu.azzert(peer1.getMulticastNetworkInterface() == null);
-    NetworkInterface iface = NetworkInterface.getByInetAddress(InetAddress.getLoopbackAddress());
-    peer1.setMulticastNetworkInterface(iface.getName());
-    tu.azzert(peer1.getMulticastNetworkInterface().equals(iface.getName()));
+    NetworkInterface iface = null;
+    Enumeration<NetworkInterface> ifaces = NetworkInterface.getNetworkInterfaces();
+    while (ifaces.hasMoreElements()) {
+      NetworkInterface networkInterface = ifaces.nextElement();
+      if (networkInterface.supportsMulticast()) {
+        Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
+        while (addresses.hasMoreElements()) {
+          if (addresses.nextElement() instanceof Inet4Address) {
+            iface = networkInterface;
+            break;
+          }
+        }
+      }
+    }
+
+    if (iface != null) {
+      tu.azzert(peer1.getMulticastNetworkInterface() == null);
+      peer1.setMulticastNetworkInterface(iface.getName());
+      tu.azzert(peer1.getMulticastNetworkInterface().equals(iface.getName()));
+    }
 
     tu.azzert(peer1.getReceiveBufferSize() != 1024);
     peer1.setReceiveBufferSize(1024);
