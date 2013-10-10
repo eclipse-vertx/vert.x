@@ -41,6 +41,13 @@ class RawWebSocketTransport {
     RawWSSockJSSocket(Vertx vertx, ServerWebSocket ws) {
       super(vertx);
       this.ws = ws;
+      ws.closeHandler(new Handler<Void>() {
+        @Override
+        public void handle(Void v) {
+          // Make sure the writeHandler gets unregistered
+          RawWSSockJSSocket.super.close();
+        }
+      });
     }
 
     public SockJSSocket dataHandler(Handler<Buffer> handler) {
