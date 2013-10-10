@@ -26,6 +26,7 @@ import org.vertx.java.core.datagram.InternetProtocolFamily;
 import org.vertx.java.testframework.TestClientBase;
 import org.vertx.java.testframework.TestUtils;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -320,7 +321,7 @@ public class TestClient extends TestClientBase {
     tu.azzert(!peer1.isMulticastLoopbackMode());
 
     tu.azzert(peer1.getMulticastNetworkInterface() == null);
-    NetworkInterface iface = NetworkInterface.getNetworkInterfaces().nextElement();
+    NetworkInterface iface = NetworkInterface.getByInetAddress(InetAddress.getLoopbackAddress());
     peer1.setMulticastNetworkInterface(iface.getName());
     tu.azzert(peer1.getMulticastNetworkInterface().equals(iface.getName()));
 
