@@ -102,7 +102,7 @@ public class MavenResolution extends HttpResolution {
 
   protected void attemptDirectDownload() {
     addOKHandler();
-    addHandler(401,new Handler<HttpClientResponse>() {
+    addHandler(401, new Handler<HttpClientResponse>() {
         @Override
         public void handle(HttpClientResponse event) {
             log.info(event.statusCode() + " - "+event.statusMessage());

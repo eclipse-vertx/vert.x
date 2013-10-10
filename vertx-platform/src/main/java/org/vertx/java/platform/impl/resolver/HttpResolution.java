@@ -106,7 +106,7 @@ public abstract class HttpResolution {
       client.setPort(port);
     }
     if (scheme.equals("https")) {
-        client.setSSL(true);
+      client.setSSL(true);
     }
 
     client.exceptionHandler(new Handler<Throwable>() {
