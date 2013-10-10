@@ -80,8 +80,7 @@ public class DnsResponseHeader extends DnsHeader {
     }
 
     /**
-     * Returns the 4 bit return code. Response codes outlined in
-     * {@link ReturnCode}.
+     * Returns the 4 bit return code.
      */
     public int getResponseCode() {
         return responseCode;

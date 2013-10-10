@@ -129,7 +129,7 @@ public class DnsResponseDecoder extends MessageToMessageDecoder<DatagramPacket> 
      * Decodes a DNS response header, given a DNS packet in a byte buffer.
      *
      * @param parent
-     *            the parent {@link Message} to this header
+     *            the parent {@link DnsResponse} to this header
      * @param buf
      *            the byte buffer containing the DNS packet
      * @return a {@link DnsResponseHeader} containing the response's header
@@ -194,7 +194,7 @@ public class DnsResponseDecoder extends MessageToMessageDecoder<DatagramPacket> 
      * @param ctx
      *            the {@link io.netty.channel.ChannelHandlerContext} this
      *            {@link DnsResponseDecoder} belongs to
-     * @param buf
+     * @param packet
      *            the message being decoded, a {@link io.netty.channel.socket.DatagramPacket} containing
      *            a DNS packet
      * @param out
