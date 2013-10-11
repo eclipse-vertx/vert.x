@@ -169,7 +169,7 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
   private InputStream getConfigStream() {
     InputStream is = getClass().getClassLoader().getResourceAsStream(CONFIG_FILE);
     if (is == null) {
-      is = getClass().getClassLoader().getResourceAsStream(CONFIG_FILE);
+      is = getClass().getClassLoader().getResourceAsStream(DEFAULT_CONFIG_FILE);
     }
     return is;
   }
