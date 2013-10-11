@@ -234,7 +234,7 @@ public class JsonObject extends JsonElement {
   }
 
   public Object removeField(String fieldName) {
-    return map.remove(fieldName) != null;
+    return map.remove(fieldName);
   }
 
   public int size() {
