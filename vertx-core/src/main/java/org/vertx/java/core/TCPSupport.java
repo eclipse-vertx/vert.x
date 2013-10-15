@@ -17,7 +17,7 @@ package org.vertx.java.core;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface TCPSupport<T> extends NetworkSupport {
+public interface TCPSupport<T> extends NetworkSupport<T> {
   /**
    * If {@code tcpNoDelay} is set to {@code true} then <a href="http://en.wikipedia.org/wiki/Nagle's_algorithm">Nagle's algorithm</a>
    * will turned <b>off</b> for the TCP connections created by this instance.
