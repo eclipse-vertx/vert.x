@@ -35,6 +35,8 @@ public class RepoDownloadTestClient extends TestClientBase {
       public void handle(AsyncResult<String> res) {
         if (res.succeeded()) {
           container.deployModule("io.vertx~mod-maven-test~1.0.0");
+        } else {
+          res.cause().printStackTrace();
         }
       }
     });
@@ -49,6 +51,8 @@ public class RepoDownloadTestClient extends TestClientBase {
             public void handle(AsyncResult<String> res) {
             }
           });
+        } else {
+          res.cause().printStackTrace();
         }
       }
     });
@@ -59,6 +63,8 @@ public class RepoDownloadTestClient extends TestClientBase {
       public void handle(AsyncResult<String> res) {
         if (res.succeeded()) {
           container.deployModule("purplefox~mod-bintray-test~1.0.0");
+        } else {
+          res.cause().printStackTrace();
         }
       }
     });

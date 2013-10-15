@@ -52,7 +52,6 @@ import java.util.zip.ZipOutputStream;
 
 /**
  *
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  *
  */
@@ -757,7 +756,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private ModuleReference getModuleReference(String moduleKey, URL[] urls) {
     ModuleReference mr = moduleRefs.get(moduleKey);
     if (mr == null) {
-      mr = new ModuleReference(this, moduleKey, new ModuleClassLoader(moduleKey, platformClassLoader, urls, false), false);
+      mr = new ModuleReference(this, moduleKey, new ModuleClassLoader(moduleKey, platformClassLoader, urls), false);
       ModuleReference prev = moduleRefs.putIfAbsent(moduleKey, mr);
       if (prev != null) {
         mr = prev;
@@ -800,7 +799,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     if (enclosingModName != null) {
       // Add the enclosing module as a parent
       ModuleReference parentRef = moduleRefs.get(enclosingModName.toString());
-      mr.mcl.addParent(parentRef);
+      mr.mcl.addReference(parentRef);
       parentRef.incRef();
     }
 
@@ -965,8 +964,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     if (mr == null) {
       boolean res = fields.isResident();
       mr = new ModuleReference(this, modID.toString(),
-          new ModuleClassLoader(modID.toString(), platformClassLoader, moduleClasspath.toArray(new URL[moduleClasspath.size()]),
-              fields.isLoadResourcesWithTCCL()),
+          new ModuleClassLoader(modID.toString(), platformClassLoader, moduleClasspath.toArray(new URL[moduleClasspath.size()])),
           res);
       ModuleReference prev = moduleRefs.putIfAbsent(modID.toString(), mr);
       if (prev != null) {
@@ -977,7 +975,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     if (enclosingModID != null) {
       //If enclosed in another module then the enclosing module classloader becomes a parent of this one
       ModuleReference parentRef = moduleRefs.get(enclosingModID.toString());
-      mr.mcl.addParent(parentRef);
+      mr.mcl.addReference(parentRef);
       parentRef.incRef();
     }
 
@@ -1128,7 +1126,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           boolean res = fields.isResident();
           includedMr = new ModuleReference(this, moduleName,
               new ModuleClassLoader(modID.toString(), platformClassLoader,
-                  urls.toArray(new URL[urls.size()]), fields.isLoadResourcesWithTCCL()),
+                  urls.toArray(new URL[urls.size()])),
               res);
           ModuleReference prev = moduleRefs.putIfAbsent(moduleName, includedMr);
           if (prev != null) {
@@ -1140,8 +1138,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           }
         }
         includedMr.incRef();
-        mr.mcl.addParent(includedMr);
-        includedMr.mcl.addIncludingModule(mr); // It's a two way relationship
+        mr.mcl.addReference(includedMr);
       }
     }
   }
@@ -1506,8 +1503,10 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
     final VerticleFactory verticleFactory;
 
+    ClassLoader oldTCCL = Thread.currentThread().getContextClassLoader();
+    Thread.currentThread().setContextClassLoader(mr.mcl);
+
     try {
-      // TODO not one verticle factory per module ref, but one per language per module ref
       verticleFactory = mr.getVerticleFactory(langImplInfo.factoryName, vertx, new DefaultContainer(this));
     } catch (Throwable t) {
       throw new PlatformManagerException("Failed to instantiate verticle factory", t);
@@ -1532,8 +1531,6 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
     deployments.put(deploymentID, deployment);
 
-    ClassLoader oldTCCL = Thread.currentThread().getContextClassLoader();
-    Thread.currentThread().setContextClassLoader(mr.mcl);
     try {
       for (int i = 0; i < instances; i++) {
         // Launch the verticle instance
@@ -1550,6 +1547,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
               addVerticle(deployment, verticle, verticleFactory, modID, main);
               setPathResolver(modID, modDir);
               DefaultFutureResult<Void> vr = new DefaultFutureResult<>();
+
               verticle.start(vr);
               vr.setHandler(new Handler<AsyncResult<Void>>() {
                 @Override

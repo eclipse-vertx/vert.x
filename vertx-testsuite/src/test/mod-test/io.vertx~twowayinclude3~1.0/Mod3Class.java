@@ -17,6 +17,5 @@
 public class Mod3Class {
   public String bar() {
     return new Mod2Class().foo();
-    //return "foo";
   }
 }

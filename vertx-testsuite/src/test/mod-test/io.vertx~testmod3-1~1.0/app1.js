@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
+var console = require('vertx/console')
+
+
 var tu = require('test_utils')
 var vertx = require('vertx')
+
 load('app2.js');
 load('app3.js');
 

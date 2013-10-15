@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+var console = require("vertx/console")
 var tu = require('test_utils')
 var vertx = require('vertx')
 load('app2.js');
@@ -27,9 +28,7 @@ tu.registerTests(this);
 tu.appReady();
 
 function vertxStop() {
-  org.vertx.java.testframework.EventLog.addEvent("in vertxStop of app1.js");
   tu.unregisterAll();
   tu.appStopped();
-  org.vertx.java.testframework.EventLog.addEvent("Sent app stopped");
 }
 

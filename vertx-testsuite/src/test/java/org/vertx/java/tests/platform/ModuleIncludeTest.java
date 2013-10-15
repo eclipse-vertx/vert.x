@@ -31,7 +31,6 @@ public class ModuleIncludeTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-
   }
 
   @Override
