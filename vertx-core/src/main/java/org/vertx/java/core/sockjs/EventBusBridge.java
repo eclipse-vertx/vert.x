@@ -136,7 +136,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
         break;
       case "register":
         address = getMandatoryString(msg, "address");
-        internalHandleRegister(sock, address, handlers);
+        internalHandleRegister(sock, msg, address, handlers);
         break;
       case "unregister":
         address = getMandatoryString(msg, "address");
@@ -156,26 +156,31 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     }
   }
 
-  private void internalHandleRegister(final SockJSSocket sock, final String address, Map<String, Handler<Message>> handlers) {
+  private void internalHandleRegister(final SockJSSocket sock, JsonObject message, final String address, Map<String, Handler<Message>> handlers) {
     if (handlePreRegister(sock, address)) {
-      Handler<Message> handler = new Handler<Message>() {
-        public void handle(final Message msg) {
-          Match curMatch = checkMatches(false, address, msg.body());
-          if (curMatch.doesMatch) {
-            if (curMatch.requiresAuth && sockAuths.get(sock) == null) {
-              log.debug("Outbound message for address " + address + " rejected because auth is required and socket is not authed");
+      Match match = checkMatches(false, address, message);
+      if (match.doesMatch) {
+        Handler<Message> handler = new Handler<Message>() {
+          public void handle(final Message msg) {
+            Match curMatch = checkMatches(false, address, msg.body());
+            if (curMatch.doesMatch) {
+              if (curMatch.requiresAuth && sockAuths.get(sock) == null) {
+                log.debug("Outbound message for address " + address + " rejected because auth is required and socket is not authed");
+              } else {
+                checkAddAccceptedReplyAddress(msg.replyAddress());
+                deliverMessage(sock, address, msg);
+              }
             } else {
-              checkAddAccceptedReplyAddress(msg.replyAddress());
-              deliverMessage(sock, address, msg);
+              log.debug("Outbound message for address " + address + " rejected because there is no inbound match");
             }
-          } else {
-            log.debug("Outbound message for address " + address + " rejected because there is no inbound match");
           }
-        }
-      };
-      handlers.put(address, handler);
-      eb.registerHandler(address, handler);
-      handlePostRegister(sock, address);
+        };
+        handlers.put(address, handler);
+        eb.registerHandler(address, handler);
+        handlePostRegister(sock, address);
+      } else {
+        log.debug("Cannot register handler for address " + address + " because there is no inbound match");
+      }
     }
   }
 
