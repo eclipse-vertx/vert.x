@@ -414,19 +414,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       }
 
       if (addressOK) {
-        boolean matched = true;
-        // Can send message other than JSON too - in which case we can't do deep matching on structure of message
-        if (body instanceof JsonObject) {
-          JsonObject match = matchHolder.getObject("match");
-          if (match != null) {
-            for (String fieldName: match.getFieldNames()) {
-              if (!match.getField(fieldName).equals(((JsonObject)body).getField(fieldName))) {
-                matched = false;
-                break;
-              }
-            }
-          }
-        }
+        boolean matched = structureMatches(matchHolder.getObject("match"), body);
         if (matched) {
           Boolean b = matchHolder.getBoolean("requires_auth");
           return new Match(true, b != null && b);
@@ -446,6 +434,30 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     return m.matches();
   }
 
+  private static boolean structureMatches(JsonObject match, Object bodyObject) {
+    if (match == null) return true;
+    if (bodyObject == null) return false;
+
+    // Can send message other than JSON too - in which case we can't do deep matching on structure of message
+    if (bodyObject instanceof JsonObject) {
+      JsonObject body = (JsonObject) bodyObject;
+      for (String fieldName : match.getFieldNames()) {
+        Object mv = match.getField(fieldName);
+        Object bv = body.getField(fieldName);
+        // Support deep matching
+        if (mv instanceof JsonObject) {
+          if (!structureMatches((JsonObject) mv, bv)) {
+            return false;
+          }
+        } else if (!match.getField(fieldName).equals(body.getField(fieldName))) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    return false;
+  }
 
   private void cacheAuthorisation(String sessionID, SockJSSocket sock) {
     authCache.put(sessionID, new Auth(sessionID, sock));
