@@ -158,6 +158,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
 
   private void internalHandleRegister(final SockJSSocket sock, JsonObject message, final String address, Map<String, Handler<Message>> handlers) {
     if (handlePreRegister(sock, address)) {
+      final boolean debug = log.isDebugEnabled();
       Match match = checkMatches(false, address, message);
       if (match.doesMatch) {
         Handler<Message> handler = new Handler<Message>() {
@@ -165,13 +166,18 @@ public class EventBusBridge implements Handler<SockJSSocket> {
             Match curMatch = checkMatches(false, address, msg.body());
             if (curMatch.doesMatch) {
               if (curMatch.requiresAuth && sockAuths.get(sock) == null) {
-                log.debug("Outbound message for address " + address + " rejected because auth is required and socket is not authed");
+                if (debug) {
+                  log.debug("Outbound message for address " + address + " rejected because auth is required and socket is not authed");
+                }
               } else {
                 checkAddAccceptedReplyAddress(msg.replyAddress());
                 deliverMessage(sock, address, msg);
               }
             } else {
-              log.debug("Outbound message for address " + address + " rejected because there is no inbound match");
+              // outbound match failed
+              if (debug) {
+                log.debug("Outbound message for address " + address + " rejected because there is no inbound match");
+              }
             }
           }
         };
@@ -179,7 +185,10 @@ public class EventBusBridge implements Handler<SockJSSocket> {
         eb.registerHandler(address, handler);
         handlePostRegister(sock, address);
       } else {
-        log.debug("Cannot register handler for address " + address + " because there is no inbound match");
+        // inbound match failed
+        if (debug) {
+          log.debug("Cannot register handler for address " + address + " because there is no inbound match");
+        }
       }
     }
   }
@@ -283,7 +292,8 @@ public class EventBusBridge implements Handler<SockJSSocket> {
                            final JsonObject message) {
     final Object body = getMandatoryValue(message, "body");
     final String replyAddress = message.getString("replyAddress");
-    if (log.isDebugEnabled()) {
+    final boolean debug = log.isDebugEnabled();
+    if (debug) {
       log.debug("Received msg from client in bridge. address:"  + address + " message:" + body);
     }
     Match curMatch = checkMatches(true, address, body);
@@ -298,7 +308,10 @@ public class EventBusBridge implements Handler<SockJSSocket> {
                   cacheAuthorisation(sessionID, sock);
                   checkAndSend(send, address, body, sock, replyAddress);
                 } else {
-                  log.debug("Inbound message for address " + address + " rejected because sessionID is not authorised");
+                  // invalid session id
+                  if (debug) {
+                    log.debug("Inbound message for address " + address + " rejected because sessionID is not authorised");
+                  }
                 }
               } else {
                 log.error("Error in performing authorisation", res.cause());
@@ -306,13 +319,19 @@ public class EventBusBridge implements Handler<SockJSSocket> {
             }
           });
         } else {
-          log.debug("Inbound message for address " + address + " rejected because it requires auth and sessionID is missing");
+          // session id null
+          if (debug) {
+            log.debug("Inbound message for address " + address + " rejected because it requires auth and sessionID is missing");
+          }
         }
       } else {
         checkAndSend(send, address, body, sock, replyAddress);
       }
     } else {
-      log.debug("Inbound message for address " + address + " rejected because there is no match");
+      // inbound match failed
+      if (debug) {
+        log.debug("Inbound message for address " + address + " rejected because there is no match");
+      }
     }
   }
 
