@@ -144,6 +144,11 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
   }
 
   @Override
+  public String toString() {
+    return encode();
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o)
       return true;
