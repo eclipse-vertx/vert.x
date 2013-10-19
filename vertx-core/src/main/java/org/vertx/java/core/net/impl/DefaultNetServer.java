@@ -43,6 +43,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.net.ssl.TrustManager;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -389,6 +390,11 @@ public class DefaultNetServer implements NetServer, Closeable {
   }
 
   @Override
+  public TrustManager[] getTrustManagers() {
+    return tcpHelper.getTrustManagers();
+  }
+
+  @Override
   public String getTrustStorePath() {
     return tcpHelper.getTrustStorePath();
   }
@@ -421,6 +427,13 @@ public class DefaultNetServer implements NetServer, Closeable {
   public NetServer setKeyStorePassword(String pwd) {
     checkListening();
     tcpHelper.setKeyStorePassword(pwd);
+    return this;
+  }
+
+  @Override
+  public NetServer setTrustManagers(TrustManager[] trustManagers) {
+    checkListening();
+    tcpHelper.setTrustManagers(trustManagers);
     return this;
   }
 

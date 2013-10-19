@@ -59,6 +59,7 @@ import static io.netty.handler.codec.http.HttpHeaders.Names.HOST;
 import static io.netty.handler.codec.http.HttpHeaders.Values.WEBSOCKET;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+import javax.net.ssl.TrustManager;
 
 /**
  *
@@ -335,6 +336,12 @@ public class DefaultHttpServer implements HttpServer, Closeable {
   }
 
   @Override
+  public HttpServer setTrustManagers(TrustManager[] trustManagers) {
+    tcpHelper.setTrustManagers(trustManagers);
+    return this;
+  }
+
+  @Override
   public HttpServer setTrustStorePath(String path) {
     checkListening();
     tcpHelper.setTrustStorePath(path);
@@ -465,6 +472,11 @@ public class DefaultHttpServer implements HttpServer, Closeable {
   @Override
   public String getKeyStorePassword() {
     return tcpHelper.getKeyStorePassword();
+  }
+
+  @Override
+  public TrustManager[] getTrustManagers() {
+    return tcpHelper.getTrustManagers();
   }
 
   @Override

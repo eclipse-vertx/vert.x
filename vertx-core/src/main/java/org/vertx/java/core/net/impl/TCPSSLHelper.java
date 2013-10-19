@@ -34,6 +34,7 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 
 /**
  * Helper class for TCP and SSL attributes
@@ -48,6 +49,7 @@ public class TCPSSLHelper {
   private boolean verifyHost = true;
   private String keyStorePath;
   private String keyStorePassword;
+  private TrustManager[] trustManagers;
   private String trustStorePath;
   private String trustStorePassword;
   private boolean trustAll;
@@ -73,7 +75,7 @@ public class TCPSSLHelper {
 
   public void checkSSL(VertxInternal vertx) {
     if (ssl) {
-      sslContext = createContext(vertx, keyStorePath, keyStorePassword, trustStorePath, trustStorePassword, trustAll);
+      sslContext = createContext(vertx, keyStorePath, keyStorePassword, trustManagers, trustStorePath, trustStorePassword, trustAll);
     }
   }
 
@@ -198,6 +200,10 @@ public class TCPSSLHelper {
     return keyStorePassword;
   }
 
+  public TrustManager[] getTrustManagers() {
+    return trustManagers;
+  }
+
   public String getTrustStorePath() {
     return trustStorePath;
   }
@@ -232,6 +238,10 @@ public class TCPSSLHelper {
 
   public void setKeyStorePassword(String pwd) {
     this.keyStorePassword = pwd;
+  }
+
+  public void setTrustManagers(TrustManager[] trustManagers) {
+    this.trustManagers = trustManagers;
   }
 
   public void setTrustStorePath(String path) {
@@ -290,6 +300,7 @@ public class TCPSSLHelper {
    */
   public SSLContext createContext(VertxInternal vertx, final String ksPath,
                                    final String ksPassword,
+                                   final TrustManager[] customTrustMgrs,
                                    final String tsPath,
                                    final String tsPassword,
                                    final boolean trustAll) {
@@ -300,7 +311,17 @@ public class TCPSSLHelper {
       if (trustAll) {
         trustMgrs = new TrustManager[]{createTrustAllTrustManager()};
       } else {
-        trustMgrs = tsPath == null ? null : getTrustMgrs(vertx, tsPath, tsPassword);
+        //Load trust store if provided, and prepend the result with customTrustMgrs specified in parameter
+        TrustManager[] trustStoreMgrs = tsPath == null ? null : getTrustMgrs(vertx, tsPath, tsPassword);
+        int trustStoreMgrsLength = trustStoreMgrs == null ? 0 : trustStoreMgrs.length;
+        if (customTrustMgrs != null) {
+          trustMgrs = Arrays.copyOf(customTrustMgrs, customTrustMgrs.length + trustStoreMgrsLength);
+          if (trustStoreMgrs != null) {
+            System.arraycopy(trustStoreMgrs, 0, trustMgrs, customTrustMgrs.length, trustStoreMgrsLength);
+          }
+        } else {
+          trustMgrs = trustStoreMgrs;
+        }
       }
       context.init(keyMgrs, trustMgrs, new SecureRandom());
       return context;

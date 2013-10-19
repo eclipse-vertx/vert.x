@@ -19,3 +19,4 @@ ScratchTest.java
 test-results
 test-tmp
 *.class
+.nb-gradle
