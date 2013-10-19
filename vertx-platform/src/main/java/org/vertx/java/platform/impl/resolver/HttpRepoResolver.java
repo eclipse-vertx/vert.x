@@ -24,6 +24,7 @@ import java.net.URI;
 public abstract class HttpRepoResolver implements RepoResolver {
 
   protected final Vertx vertx;
+  protected final String repoScheme;
   protected final String repoHost;
   protected final int repoPort;
   protected final String contentRoot;
@@ -32,10 +33,11 @@ public abstract class HttpRepoResolver implements RepoResolver {
     this.vertx = vertx;
     try {
       URI uri = new URI(repoID);
+      repoScheme = uri.getScheme();
       repoHost = uri.getHost();
       int port = uri.getPort();
-      if (port == -1) {
-        port = 80;
+      if (port == -1 ) {
+        port = (repoScheme.equals("https")) ? 443 : 80;
       }
       repoPort = port;
       contentRoot = uri.getPath();
