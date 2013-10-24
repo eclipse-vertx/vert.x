@@ -20,6 +20,9 @@ Some of the key highlights include:
 
 * Vert.x can be embedded in your existing Java applications.
 
-**Please see the [website](http://vertx.io/) for full documentation and information on vert.x**
+**Please see the [website](http://vertx.io/) for full documentation and information on vert.x, which includes [project information](http://vertx.io/community.html)**
 
-**Please use [Eclipse Bugzilla](https://bugs.eclipse.org/bugs/enter_bug.cgi?product=Vertx) for any issues**
+**This is the GitHub repository for the main Vert.x main project which is an Eclipse project. For any other parts of Vert.x projects that aren't in Eclipse please look at the [vert-x organisation](https://github.com/vert-x/) on GitHub**
+
+**Please use [Eclipse Bugzilla](https://bugs.eclipse.org/bugs/enter_bug.cgi?product=Vertx) for any issues relating to the Vert.x main project (this project)**
+
