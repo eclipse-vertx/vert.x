@@ -255,6 +255,11 @@ public class LocalEchoClient extends EventBusAppBase {
     });
   }
 
+  public void testSendReplyWithTimeoutNoReplyHandler() {
+    String address = "some-address";
+    eb.send(address, "foo");
+  }
+
   public void testSendWithDefaultTimeoutNoReply() {
     final long timeout = 500;
     eb.setDefaultReplyTimeout(timeout);
