@@ -136,7 +136,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
         break;
       case "register":
         address = getMandatoryString(msg, "address");
-        internalHandleRegister(sock, address, handlers);
+        internalHandleRegister(sock, msg, address, handlers);
         break;
       case "unregister":
         address = getMandatoryString(msg, "address");
@@ -156,26 +156,40 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     }
   }
 
-  private void internalHandleRegister(final SockJSSocket sock, final String address, Map<String, Handler<Message>> handlers) {
+  private void internalHandleRegister(final SockJSSocket sock, JsonObject message, final String address, Map<String, Handler<Message>> handlers) {
     if (handlePreRegister(sock, address)) {
-      Handler<Message> handler = new Handler<Message>() {
-        public void handle(final Message msg) {
-          Match curMatch = checkMatches(false, address, msg.body());
-          if (curMatch.doesMatch) {
-            if (curMatch.requiresAuth && sockAuths.get(sock) == null) {
-              log.debug("Outbound message for address " + address + " rejected because auth is required and socket is not authed");
+      final boolean debug = log.isDebugEnabled();
+      Match match = checkMatches(false, address, message);
+      if (match.doesMatch) {
+        Handler<Message> handler = new Handler<Message>() {
+          public void handle(final Message msg) {
+            Match curMatch = checkMatches(false, address, msg.body());
+            if (curMatch.doesMatch) {
+              if (curMatch.requiresAuth && sockAuths.get(sock) == null) {
+                if (debug) {
+                  log.debug("Outbound message for address " + address + " rejected because auth is required and socket is not authed");
+                }
+              } else {
+                checkAddAccceptedReplyAddress(msg.replyAddress());
+                deliverMessage(sock, address, msg);
+              }
             } else {
-              checkAddAccceptedReplyAddress(msg.replyAddress());
-              deliverMessage(sock, address, msg);
+              // outbound match failed
+              if (debug) {
+                log.debug("Outbound message for address " + address + " rejected because there is no inbound match");
+              }
             }
-          } else {
-            log.debug("Outbound message for address " + address + " rejected because there is no inbound match");
           }
+        };
+        handlers.put(address, handler);
+        eb.registerHandler(address, handler);
+        handlePostRegister(sock, address);
+      } else {
+        // inbound match failed
+        if (debug) {
+          log.debug("Cannot register handler for address " + address + " because there is no inbound match");
         }
-      };
-      handlers.put(address, handler);
-      eb.registerHandler(address, handler);
-      handlePostRegister(sock, address);
+      }
     }
   }
 
@@ -278,7 +292,8 @@ public class EventBusBridge implements Handler<SockJSSocket> {
                            final JsonObject message) {
     final Object body = getMandatoryValue(message, "body");
     final String replyAddress = message.getString("replyAddress");
-    if (log.isDebugEnabled()) {
+    final boolean debug = log.isDebugEnabled();
+    if (debug) {
       log.debug("Received msg from client in bridge. address:"  + address + " message:" + body);
     }
     Match curMatch = checkMatches(true, address, body);
@@ -293,7 +308,10 @@ public class EventBusBridge implements Handler<SockJSSocket> {
                   cacheAuthorisation(sessionID, sock);
                   checkAndSend(send, address, body, sock, replyAddress);
                 } else {
-                  log.debug("Inbound message for address " + address + " rejected because sessionID is not authorised");
+                  // invalid session id
+                  if (debug) {
+                    log.debug("Inbound message for address " + address + " rejected because sessionID is not authorised");
+                  }
                 }
               } else {
                 log.error("Error in performing authorisation", res.cause());
@@ -301,13 +319,19 @@ public class EventBusBridge implements Handler<SockJSSocket> {
             }
           });
         } else {
-          log.debug("Inbound message for address " + address + " rejected because it requires auth and sessionID is missing");
+          // session id null
+          if (debug) {
+            log.debug("Inbound message for address " + address + " rejected because it requires auth and sessionID is missing");
+          }
         }
       } else {
         checkAndSend(send, address, body, sock, replyAddress);
       }
     } else {
-      log.debug("Inbound message for address " + address + " rejected because there is no match");
+      // inbound match failed
+      if (debug) {
+        log.debug("Inbound message for address " + address + " rejected because there is no match");
+      }
     }
   }
 
@@ -390,19 +414,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       }
 
       if (addressOK) {
-        boolean matched = true;
-        // Can send message other than JSON too - in which case we can't do deep matching on structure of message
-        if (body instanceof JsonObject) {
-          JsonObject match = matchHolder.getObject("match");
-          if (match != null) {
-            for (String fieldName: match.getFieldNames()) {
-              if (!match.getField(fieldName).equals(((JsonObject)body).getField(fieldName))) {
-                matched = false;
-                break;
-              }
-            }
-          }
-        }
+        boolean matched = structureMatches(matchHolder.getObject("match"), body);
         if (matched) {
           Boolean b = matchHolder.getBoolean("requires_auth");
           return new Match(true, b != null && b);
@@ -422,6 +434,30 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     return m.matches();
   }
 
+  private static boolean structureMatches(JsonObject match, Object bodyObject) {
+    if (match == null) return true;
+    if (bodyObject == null) return false;
+
+    // Can send message other than JSON too - in which case we can't do deep matching on structure of message
+    if (bodyObject instanceof JsonObject) {
+      JsonObject body = (JsonObject) bodyObject;
+      for (String fieldName : match.getFieldNames()) {
+        Object mv = match.getField(fieldName);
+        Object bv = body.getField(fieldName);
+        // Support deep matching
+        if (mv instanceof JsonObject) {
+          if (!structureMatches((JsonObject) mv, bv)) {
+            return false;
+          }
+        } else if (!match.getField(fieldName).equals(body.getField(fieldName))) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    return false;
+  }
 
   private void cacheAuthorisation(String sessionID, SockJSSocket sock) {
     authCache.put(sessionID, new Auth(sessionID, sock));
