@@ -195,6 +195,33 @@ public class LocalEchoPeer extends EventBusAppBase {
 
   }
 
+  public void testSendReplyWithTimeoutNoReplyHandlerInitialise() {
+    final long timeout = 500;
+    String address = "some-address";
+    eb.registerHandler(address, new Handler<Message<String>>() {
+      @Override
+      public void handle(final Message<String> message) {
+        // Reply *after* the timeout
+        message.replyWithTimeout("bar", timeout, new Handler<AsyncResult<Message<String>>>() {
+          @Override
+          public void handle(AsyncResult<Message<String>> event) {
+            tu.azzert(event.failed(), "Should not get a reply after timeout");
+            tu.testComplete();
+          }
+        });
+      }
+    }, new Handler<AsyncResult<Void>>() {
+      @Override
+      public void handle(AsyncResult<Void> res) {
+        if (res.succeeded()) {
+          tu.testComplete();
+        } else {
+          tu.azzert(false, "Failed to register");
+        }
+      }
+    });
+  }
+
   public void testSendWithDefaultTimeoutNoReplyInitialise() {
     final long timeout = 500;
     eb.setDefaultReplyTimeout(timeout);
