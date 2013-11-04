@@ -46,9 +46,14 @@ public class ModuleClassLoader extends URLClassLoader {
     this.platformClassLoader = platformClassLoader;
   }
 
-  public synchronized void addReference(ModuleReference reference) {
-    references.add(reference);
-    modGraph = null;
+  public synchronized boolean addReference(ModuleReference reference) {
+    if (!references.contains(reference)) {
+      references.add(reference);
+      modGraph = null;
+      return true;
+    } else {
+      return false;
+    }
   }
 
   public void close() {

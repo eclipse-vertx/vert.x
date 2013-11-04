@@ -92,7 +92,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   protected final ClusterManager clusterManager;
   protected HAManager haManager;
   private boolean stopped;
-  private Queue<String> tempDeployments = new ConcurrentLinkedQueue<>();
+  private final Queue<String> tempDeployments = new ConcurrentLinkedQueue<>();
 
   protected DefaultPlatformManager() {
     this(new DefaultVertx());
@@ -784,8 +784,9 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     if (enclosingModName != null) {
       // Add the enclosing module as a parent
       ModuleReference parentRef = moduleRefs.get(enclosingModName.toString());
-      mr.mcl.addReference(parentRef);
-      parentRef.incRef();
+      if (mr.mcl.addReference(parentRef)) {
+        parentRef.incRef();
+      }
     }
 
     if (includes != null) {
@@ -958,10 +959,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
     ModuleIdentifier enclosingModID = getEnclosingModID();
     if (enclosingModID != null) {
-      //If enclosed in another module then the enclosing module classloader becomes a parent of this one
+      // If enclosed in another module then the enclosing module classloader becomes a parent of this one
       ModuleReference parentRef = moduleRefs.get(enclosingModID.toString());
-      mr.mcl.addReference(parentRef);
-      parentRef.incRef();
+      if (mr.mcl.addReference(parentRef)) {
+        parentRef.incRef();
+      }
     }
 
     // Now load any included moduleRefs
@@ -1121,8 +1123,9 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
             doLoadIncludedModules(modRoot, modDir, includedMr, includes, included);
           }
         }
-        includedMr.incRef();
-        mr.mcl.addReference(includedMr);
+        if (mr.mcl.addReference(includedMr)) {
+          includedMr.incRef();
+        }
       }
     }
   }
