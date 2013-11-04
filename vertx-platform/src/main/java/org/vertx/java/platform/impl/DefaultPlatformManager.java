@@ -1655,7 +1655,14 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         count.incRequired();
         holder.context.execute(new Runnable() {
           public void run() {
-            holder.verticle.stop();
+            try {
+              holder.verticle.stop();
+            } catch (Throwable t) {
+              // If an exception is thrown from stop() it's possible the logger system has already shut down so we must
+              // report it on stderr too
+              System.err.println("Failure in stop()");
+              t.printStackTrace();
+            }
             LoggerFactory.removeLogger(holder.loggerName);
             holder.context.runCloseHooks(new AsyncResultHandler<Void>() {
               @Override
