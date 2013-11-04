@@ -524,8 +524,12 @@ public class DefaultEventBus implements EventBus {
   }
 
   <T, U> void sendReplyWithTimeout(ServerID dest, BaseMessage<U> message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    Handler<Message<T>> handler = convertHandler(replyHandler);
-    sendOrPub(dest, message, handler, replyHandler, timeout);
+    if (message.address == null) {
+      sendNoHandlersFailure(replyHandler);
+    } else {
+      Handler<Message<T>> handler = convertHandler(replyHandler);
+      sendOrPub(dest, message, handler, replyHandler, timeout);
+    }
   }
 
   static <U> BaseMessage<U> createMessage(boolean send, String address, U message) {
@@ -883,15 +887,20 @@ public class DefaultEventBus implements EventBus {
     } else {
       // no handlers
       if (asyncResultHandler != null) {
-        vertx.runOnContext(new Handler<Void>() {
-          @Override
-          public void handle(Void v) {
-            asyncResultHandler.handle(new DefaultFutureResult<Message<T>>(new ReplyException(ReplyFailure.NO_HANDLERS)));
-          }
-        });
+        sendNoHandlersFailure(asyncResultHandler);
       }
     }
   }
+
+  private <T> void sendNoHandlersFailure(final Handler<AsyncResult<Message<T>>> handler) {
+    vertx.runOnContext(new Handler<Void>() {
+      @Override
+      public void handle(Void v) {
+        handler.handle(new DefaultFutureResult<Message<T>>(new ReplyException(ReplyFailure.NO_HANDLERS)));
+      }
+    });
+  }
+
 
   private <T> void doReceive(final BaseMessage<T> msg, final HandlerHolder<T> holder) {
     // Each handler gets a fresh copy

@@ -345,7 +345,7 @@ public abstract class BaseMessage<U> implements Message<U> {
   }
 
   private <T> void sendReplyWithTimeout(BaseMessage msg, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    if (bus != null && replyAddress != null) {
+    if (bus != null) {
       bus.sendReplyWithTimeout(sender, msg, timeout, replyHandler);
     }
   }

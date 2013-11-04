@@ -206,6 +206,9 @@ public class LocalEchoPeer extends EventBusAppBase {
           @Override
           public void handle(AsyncResult<Message<String>> event) {
             tu.azzert(event.failed(), "Should not get a reply after timeout");
+            tu.azzert(event.cause() instanceof ReplyException);
+            ReplyException re = (ReplyException)event.cause();
+            tu.azzert(ReplyFailure.NO_HANDLERS == re.failureType());
             tu.testComplete();
           }
         });
