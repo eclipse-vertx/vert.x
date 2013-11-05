@@ -191,4 +191,24 @@ public class LocalClient extends EventBusAppBase {
     }
   }
 
+  public void testSendNoHandlerWithTimeoutReply() {
+    String address = "no-exist";
+    eb.sendWithTimeout(address, "foo", 500, new Handler<AsyncResult<Message<String>>>() {
+      @Override
+      public void handle(AsyncResult<Message<String>> reply) {
+        tu.azzert(reply.failed());
+        tu.azzert(reply.cause() instanceof ReplyException);
+        ReplyException ex = (ReplyException)reply.cause();
+        tu.azzert(ex.failureType() == ReplyFailure.NO_HANDLERS);
+        // give timeout a chance to trigger
+        vertx.setTimer(250, new Handler<Long>() {
+          @Override
+          public void handle(Long tid) {
+            tu.testComplete();
+          }
+        });
+      }
+    });
+  }
+
 }

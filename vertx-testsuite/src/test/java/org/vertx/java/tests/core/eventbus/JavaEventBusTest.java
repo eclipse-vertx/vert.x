@@ -146,4 +146,9 @@ public class JavaEventBusTest extends TestBase {
     assert(latch.await(5, TimeUnit.SECONDS));
     vertx.stop();
   }
+
+  @Test
+  public void testSendNoHandlerWithTimeoutReply() {
+    startTest(getMethodName());
+  }
 }

@@ -584,7 +584,7 @@ public class DefaultEventBus implements EventBus {
                 // Send back a pong - a byte will do
                 socket.write(PONG);
               } else {
-                receiveMessage(received, null);
+                receiveMessage(received, -1, null);
               }
               parser.fixedSizeMode(4);
               size = -1;
@@ -618,14 +618,15 @@ public class DefaultEventBus implements EventBus {
   }
 
   private <T> void sendToSubs(ChoosableIterable<ServerID> subs, BaseMessage message,
-                          Handler<AsyncResult<Message<T>>> asyncResultHandler) {
+                              long timeoutID,
+                              Handler<AsyncResult<Message<T>>> asyncResultHandler) {
     if (message.send) {
       // Choose one
       ServerID sid = subs.choose();
       if (!sid.equals(serverID)) {  //We don't send to this node
         sendRemote(sid, message);
       } else {
-        receiveMessage(message, asyncResultHandler);
+        receiveMessage(message, timeoutID, asyncResultHandler);
       }
     } else {
       // Publish
@@ -633,7 +634,7 @@ public class DefaultEventBus implements EventBus {
         if (!sid.equals(serverID)) {  //We don't send to this node
           sendRemote(sid, message);
         } else {
-          receiveMessage(message, null);
+          receiveMessage(message, timeoutID, null);
         }
       }
     }
@@ -654,7 +655,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   private <T, U> void sendOrPub(ServerID replyDest, final BaseMessage<U> message, final Handler<Message<T>> replyHandler,
-                               final Handler<AsyncResult<Message<T>>> asyncResultHandler, long timeout) {
+                                final Handler<AsyncResult<Message<T>>> asyncResultHandler, long timeout) {
     checkStarted();
     DefaultContext context = vertx.getOrCreateContext();
     if (timeout == -1) {
@@ -662,10 +663,10 @@ public class DefaultEventBus implements EventBus {
     }
     try {
       message.sender = serverID;
+      long timeoutID = -1;
       if (replyHandler != null) {
-        // We need to use a UUID, not a counter so the address is a cryptographically secure id that can't be guessed
+        // The address is a cryptographically secure id that can't be guessed
         message.replyAddress = UUID.randomUUID().toString();
-        long timeoutID;
         if (timeout != -1) {
           // Add a timeout to remove the reply handler to prevent leaks in case a reply never comes
           timeoutID = vertx.setTimer(timeout, new Handler<Long>() {
@@ -678,8 +679,6 @@ public class DefaultEventBus implements EventBus {
               }
             }
           });
-        } else {
-          timeoutID = -1;
         }
         registerHandler(message.replyAddress, replyHandler, null, true, true, timeoutID);
       }
@@ -687,18 +686,19 @@ public class DefaultEventBus implements EventBus {
         if (!replyDest.equals(this.serverID)) {
           sendRemote(replyDest, message);
         } else {
-          receiveMessage(message, asyncResultHandler);
+          receiveMessage(message, timeoutID, asyncResultHandler);
         }
       } else {
         if (subs != null) {
+          final long fTimeoutID = timeoutID;
           subs.get(message.address, new AsyncResultHandler<ChoosableIterable<ServerID>>() {
             public void handle(AsyncResult<ChoosableIterable<ServerID>> event) {
               if (event.succeeded()) {
                 ChoosableIterable<ServerID> serverIDs = event.result();
                 if (serverIDs != null && !serverIDs.isEmpty()) {
-                  sendToSubs(serverIDs, message, asyncResultHandler);
+                  sendToSubs(serverIDs, message, fTimeoutID, asyncResultHandler);
                 } else {
-                  receiveMessage(message, asyncResultHandler);
+                  receiveMessage(message, fTimeoutID, asyncResultHandler);
                 }
               } else {
                 log.error("Failed to send message", event.cause());
@@ -707,7 +707,7 @@ public class DefaultEventBus implements EventBus {
           });
         } else {
           // Not clustered
-          receiveMessage(message, asyncResultHandler);
+          receiveMessage(message, timeoutID, asyncResultHandler);
         }
       }
 
@@ -868,7 +868,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   // Called when a message is incoming
-  private <T> void receiveMessage(final BaseMessage msg, final Handler<AsyncResult<Message<T>>> asyncResultHandler) {
+  private <T> void receiveMessage(BaseMessage msg, long timeoutID, Handler<AsyncResult<Message<T>>> asyncResultHandler) {
     msg.bus = this;
     final Handlers handlers = handlerMap.get(msg.address);
     if (handlers != null) {
@@ -880,7 +880,7 @@ public class DefaultEventBus implements EventBus {
         }
       } else {
         // Publish
-        for (final HandlerHolder holder: handlers.list) {
+        for (HandlerHolder holder: handlers.list) {
           doReceive(msg, holder);
         }
       }
@@ -888,6 +888,9 @@ public class DefaultEventBus implements EventBus {
       // no handlers
       if (asyncResultHandler != null) {
         sendNoHandlersFailure(asyncResultHandler);
+        if (timeoutID != -1) {
+          vertx.cancelTimer(timeoutID);
+        }
       }
     }
   }
