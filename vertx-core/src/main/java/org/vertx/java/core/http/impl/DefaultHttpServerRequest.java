@@ -28,7 +28,7 @@ import org.vertx.java.core.http.HttpServerFileUpload;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.http.HttpVersion;
-import org.vertx.java.core.impl.CaseInsensitiveMultiMap;
+import org.vertx.java.core.http.CaseInsensitiveMultiMap;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetSocket;

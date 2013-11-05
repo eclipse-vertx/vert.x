@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.vertx.java.core.impl;
+package org.vertx.java.core.http;
 
 
 import org.vertx.java.core.MultiMap;
@@ -22,6 +22,9 @@ import org.vertx.java.core.MultiMap;
 import java.util.*;
 
 /**
+ * This multi-map implementation has case insensitive keys, and can be used to hold some HTTP headers
+ * prior to making an HTTP request.
+ *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public final class CaseInsensitiveMultiMap implements MultiMap {
