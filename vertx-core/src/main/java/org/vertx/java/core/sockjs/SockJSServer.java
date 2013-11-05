@@ -95,6 +95,15 @@ public interface SockJSServer {
   SockJSServer bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
               long authTimeout, String authAddress);
 
+  /**
+   * Set a EventBusBridgeHook on the SockJS server
+   * @param hook The hook
+   */
   SockJSServer setHook(EventBusBridgeHook hook);
+
+  /**
+   * Close the server
+   */
+  void close();
 }
 

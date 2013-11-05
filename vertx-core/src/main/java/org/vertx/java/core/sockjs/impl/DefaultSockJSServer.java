@@ -50,6 +50,7 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
   private WebSocketMatcher wsMatcher = new WebSocketMatcher();
   private final Map<String, Session> sessions;
   private EventBusBridgeHook hook;
+  private long timerID;
 
   public DefaultSockJSServer(final VertxInternal vertx, final HttpServer httpServer) {
     this.vertx = vertx;
@@ -69,10 +70,13 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
     httpServer.websocketHandler(wsMatcher);
     // Sanity check - a common mistake users make is to set the http request handler AFTER they have created this
     // which overwrites this one.
-    vertx.setPeriodic(5000, new Handler<Long>() {
+    timerID = vertx.setPeriodic(5000, new Handler<Long>() {
       @Override
       public void handle(Long timerID) {
-        if (httpServer.requestHandler() != DefaultSockJSServer.this) {
+        if (httpServer.requestHandler() == null) {
+          // Implies server is closed - cancel timer id
+          vertx.cancelTimer(timerID);
+        } else if (httpServer.requestHandler() != DefaultSockJSServer.this) {
           log.warn("You have overwritten the Http server request handler AFTER the SockJSServer has been created " +
                    "which will stop the SockJSServer from functioning. Make sure you set http request handler BEFORE " +
                    "you create the SockJSServer");
@@ -87,6 +91,11 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
       log.trace("Got request in sockjs server: " + req.uri());
     }
     rm.handle(req);
+  }
+
+  @Override
+  public void close() {
+    vertx.cancelTimer(timerID);
   }
 
   private static JsonObject setDefaults(JsonObject config) {
