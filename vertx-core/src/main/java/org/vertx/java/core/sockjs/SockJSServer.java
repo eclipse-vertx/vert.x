@@ -96,6 +96,17 @@ public interface SockJSServer {
               long authTimeout, String authAddress);
 
   /**
+   * Install an app which bridges the SockJS server to the event bus
+   * @param sjsConfig The config for the app
+   * @param inboundPermitted A list of JSON objects which define permitted matches for inbound (client->server) traffic
+   * @param outboundPermitted A list of JSON objects which define permitted matches for outbound (server->client)
+   * traffic
+   * @param bridgeConfig JSON object holding config for the EventBusBridge
+   */
+  SockJSServer bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
+                      JsonObject bridgeConfig);
+
+  /**
    * Set a EventBusBridgeHook on the SockJS server
    * @param hook The hook
    */

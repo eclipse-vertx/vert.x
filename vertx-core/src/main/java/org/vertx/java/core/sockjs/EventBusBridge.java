@@ -44,20 +44,30 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   private static final String DEFAULT_AUTH_ADDRESS = "vertx.basicauthmanager.authorise";
   private static final long DEFAULT_AUTH_TIMEOUT = 5 * 60 * 1000;
   private static final long DEFAULT_REPLY_TIMEOUT = 30 * 1000;
-  private static final long PING_INTERVAL = 10 * 1000;
+  private static final int DEFAULT_MAX_ADDRESS_LENGTH = 200;
+  private static final int DEFAULT_MAX_HANDLERS_PER_SOCKET = 1000;
+  private static final long DEFAULT_PING_TIMEOUT = 10 * 1000;
 
   private final Map<String, Auth> authCache = new HashMap<>();
-  private final Map<SockJSSocket, Set<String>> sockAuths = new HashMap<>();
+  private final Map<SockJSSocket, SockInfo> sockInfos = new HashMap<>();
   private final List<JsonObject> inboundPermitted;
   private final List<JsonObject> outboundPermitted;
   private final long authTimeout;
   private final String authAddress;
+  private final int maxAddressLength;
+  private final int maxHandlersPerSocket;
+  private final long pingTimeout;
   private final Vertx vertx;
   private final EventBus eb;
   private final Set<String> acceptedReplyAddresses = new HashSet<>();
   private final Map<String, Pattern> compiledREs = new HashMap<>();
-  private final Map<SockJSSocket, PingInfo> pingInfos = new HashMap<>();
   private EventBusBridgeHook hook;
+
+  private static final class SockInfo {
+    Set<String> sockAuths;
+    int handlerCount;
+    PingInfo pingInfo;
+  }
 
   private static List<JsonObject> convertArray(JsonArray permitted) {
     List<JsonObject> l = new ArrayList<>();
@@ -79,21 +89,31 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     this(vertx, inboundPermitted, outboundPermitted, authTimeout, null);
   }
 
+  /*
+  Old constructor -we keep this for backward compatibility
+   */
   public EventBusBridge(Vertx vertx, JsonArray inboundPermitted, JsonArray outboundPermitted,
                         long authTimeout,
                         String authAddress) {
+    this(vertx, inboundPermitted, outboundPermitted,
+        new JsonObject().putNumber("auth_timeout", authTimeout).putString("auth_address", authAddress));
+  }
+
+  public EventBusBridge(Vertx vertx, JsonArray inboundPermitted, JsonArray outboundPermitted,
+                        JsonObject conf) {
     this.vertx = vertx;
     this.eb = vertx.eventBus();
     this.inboundPermitted = convertArray(inboundPermitted);
     this.outboundPermitted = convertArray(outboundPermitted);
+    long authTimeout = conf.getLong("auth_timeout", DEFAULT_AUTH_TIMEOUT);
     if (authTimeout < 0) {
       throw new IllegalArgumentException("authTimeout < 0");
     }
     this.authTimeout = authTimeout;
-    if (authAddress == null) {
-      authAddress = DEFAULT_AUTH_ADDRESS;
-    }
-    this.authAddress = authAddress;
+    this.authAddress = conf.getString("auth_address", DEFAULT_AUTH_ADDRESS);
+    this.maxAddressLength = conf.getInteger("max_address_length", DEFAULT_MAX_ADDRESS_LENGTH);
+    this.maxHandlersPerSocket = conf.getInteger("max_handlers_per_socket", DEFAULT_MAX_HANDLERS_PER_SOCKET);
+    this.pingTimeout = conf.getLong("ping_interval", DEFAULT_PING_TIMEOUT);
   }
 
   private void handleSocketClosed(SockJSSocket sock, Map<String, Handler<Message>> handlers) {
@@ -105,19 +125,23 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     }
 
     //Close any cached authorisations for this connection
-    Set<String> auths = sockAuths.remove(sock);
-    if (auths != null) {
-      for (String sessionID: auths) {
-        Auth auth = authCache.remove(sessionID);
-        if (auth != null) {
-          auth.cancel();
+    SockInfo info = sockInfos.remove(sock);
+    if (info != null) {
+      Set<String> auths = info.sockAuths;
+      if (auths != null) {
+        for (String sessionID: auths) {
+          Auth auth = authCache.remove(sessionID);
+          if (auth != null) {
+            auth.cancel();
+          }
         }
       }
+      PingInfo pingInfo = info.pingInfo;
+      if (pingInfo != null) {
+        vertx.cancelTimer(pingInfo.timerID);
+      }
     }
-    PingInfo pingInfo = pingInfos.remove(sock);
-    if (pingInfo != null) {
-      vertx.cancelTimer(pingInfo.timerID);
-    }
+
     handleSocketClosed(sock);
   }
 
@@ -156,7 +180,24 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     }
   }
 
+  private boolean checkMaxHandlers(SockInfo info) {
+    if (info.handlerCount == maxHandlersPerSocket) {
+      log.error("Refusing to register as max_handlers_per_socket reached already");
+      return false;
+    } else {
+      return true;
+    }
+  }
+
   private void internalHandleRegister(final SockJSSocket sock, JsonObject message, final String address, Map<String, Handler<Message>> handlers) {
+    if (address.length() > maxAddressLength) {
+      log.error("Refusing to register as address length > max_address_length");
+      return;
+    }
+    final SockInfo info = sockInfos.get(sock);
+    if (!checkMaxHandlers(info)) {
+      return;
+    }
     if (handlePreRegister(sock, address)) {
       final boolean debug = log.isDebugEnabled();
       Match match = checkMatches(false, address, message);
@@ -165,7 +206,8 @@ public class EventBusBridge implements Handler<SockJSSocket> {
           public void handle(final Message msg) {
             Match curMatch = checkMatches(false, address, msg.body());
             if (curMatch.doesMatch) {
-              if (curMatch.requiresAuth && sockAuths.get(sock) == null) {
+              Set<String> sockAuths = info.sockAuths;
+              if (curMatch.requiresAuth && sockAuths == null) {
                 if (debug) {
                   log.debug("Outbound message for address " + address + " rejected because auth is required and socket is not authed");
                 }
@@ -184,6 +226,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
         handlers.put(address, handler);
         eb.registerHandler(address, handler);
         handlePostRegister(sock, address);
+        info.handlerCount++;
       } else {
         // inbound match failed
         if (debug) {
@@ -199,14 +242,16 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       Handler<Message> handler = handlers.remove(address);
       if (handler != null) {
         eb.unregisterHandler(address, handler);
+        SockInfo info = sockInfos.get(sock);
+        info.handlerCount--;
       }
     }
   }
 
   private void internalHandlePing(final SockJSSocket sock) {
-    PingInfo info = pingInfos.get(sock);
+    SockInfo info = sockInfos.get(sock);
     if (info != null) {
-      info.lastPing = System.currentTimeMillis();
+      info.pingInfo.lastPing = System.currentTimeMillis();
     }
   }
 
@@ -228,16 +273,18 @@ public class EventBusBridge implements Handler<SockJSSocket> {
 
     // Start a checker to check for pings
     final PingInfo pingInfo = new PingInfo();
-    pingInfo.timerID = vertx.setPeriodic(PING_INTERVAL, new Handler<Long>() {
+    pingInfo.timerID = vertx.setPeriodic(pingTimeout, new Handler<Long>() {
       @Override
       public void handle(Long id) {
-        if (System.currentTimeMillis() - pingInfo.lastPing >= PING_INTERVAL) {
+        if (System.currentTimeMillis() - pingInfo.lastPing >= pingTimeout) {
           // We didn't receive a ping in time so close the socket
           sock.close();
         }
       }
     });
-    pingInfos.put(sock, pingInfo);
+    SockInfo sockInfo = new SockInfo();
+    sockInfo.pingInfo = pingInfo;
+    sockInfos.put(sock, sockInfo);
   }
 
   private void checkAddAccceptedReplyAddress(final String replyAddress) {
@@ -292,6 +339,12 @@ public class EventBusBridge implements Handler<SockJSSocket> {
                            final JsonObject message) {
     final Object body = getMandatoryValue(message, "body");
     final String replyAddress = message.getString("replyAddress");
+    // Sanity check reply address is not too big, to avoid DoS
+    if (replyAddress != null && replyAddress.length() > 36) {
+      // vertxbus.js ids are always 36 chars
+      log.error("Will not send message, reply address is > 36 chars");
+      return;
+    }
     final boolean debug = log.isDebugEnabled();
     if (debug) {
       log.debug("Received msg from client in bridge. address:"  + address + " message:" + body);
@@ -338,9 +391,12 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   private void checkAndSend(boolean send, final String address, Object body,
                             final SockJSSocket sock,
                             final String replyAddress) {
+    final SockInfo info = sockInfos.get(sock);
+    if (replyAddress != null && !checkMaxHandlers(info)) {
+      return;
+    }
     final Handler<Message> replyHandler;
     if (replyAddress != null) {
-
       replyHandler = new Handler<Message>() {
         public void handle(Message message) {
           // Note we don't check outbound matches for replies
@@ -348,6 +404,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
           // was approved
           checkAddAccceptedReplyAddress(message.replyAddress());
           deliverMessage(sock, replyAddress, message);
+          info.handlerCount--;
         }
       };
     } else {
@@ -358,6 +415,9 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     }
     if (send) {
       eb.send(address, body, replyHandler);
+      if (replyAddress != null) {
+        info.handlerCount++;
+      }
     } else {
       eb.publish(address, body);
     }
@@ -461,21 +521,23 @@ public class EventBusBridge implements Handler<SockJSSocket> {
 
   private void cacheAuthorisation(String sessionID, SockJSSocket sock) {
     authCache.put(sessionID, new Auth(sessionID, sock));
-    Set<String> sesss = sockAuths.get(sock);
-    if (sesss == null) {
-      sesss = new HashSet<>();
-      sockAuths.put(sock, sesss);
+    SockInfo sockInfo = sockInfos.get(sock);
+    Set<String> sess = sockInfo.sockAuths;
+    if (sess == null) {
+      sess = new HashSet<>();
+      sockInfo.sockAuths = sess;
     }
-    sesss.add(sessionID);
+    sess.add(sessionID);
   }
 
   private void uncacheAuthorisation(String sessionID, SockJSSocket sock) {
     authCache.remove(sessionID);
-    Set<String> sess = sockAuths.get(sock);
+    SockInfo sockInfo = sockInfos.get(sock);
+    Set<String> sess = sockInfo.sockAuths;
     if (sess != null) {
       sess.remove(sessionID);
       if (sess.isEmpty()) {
-        sockAuths.remove(sock);
+        sockInfo.sockAuths = null;
       }
     }
   }

@@ -238,6 +238,16 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
     return this;
   }
 
+  public SockJSServer bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
+                             JsonObject bridgeConfig) {
+    EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted, bridgeConfig);
+    if (hook != null) {
+      busBridge.setHook(hook);
+    }
+    installApp(sjsConfig, busBridge);
+    return this;
+  }
+
   private Handler<HttpServerRequest> createChunkingTestHandler() {
     return new Handler<HttpServerRequest>() {
 

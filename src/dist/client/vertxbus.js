@@ -37,6 +37,13 @@ var vertx = vertx || {};
     var state = vertx.EventBus.CONNECTING;
     var sessionID = null;
     var pingTimerID = null;
+    var pingInterval = null;
+    if (options) {
+      pingInterval = options['vertxbus_ping_interval'];
+    }
+    if (!pingInterval) {
+      pingInterval = 5000;
+    }
   
     that.onopen = null;
     that.onclose = null;
