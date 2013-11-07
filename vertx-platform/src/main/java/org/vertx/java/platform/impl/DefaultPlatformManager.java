@@ -1384,11 +1384,10 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       // Module deployed from file system or verticle deployed by module deployed from file system
       Path pmodDir = Paths.get(modDir.getAbsolutePath());
       context.setPathResolver(new ModuleFileSystemPathResolver(pmodDir));
-    } else if (modID != null) {
-      // Module deployed from classpath
+    } else  {
+      // Module deployed from classpath or verticle deployed from module deployed from classpath
       context.setPathResolver(new ClasspathPathResolver());
     }
-    // If just verticle deployed from classpath then don't set a path resolver - don't need it
   }
 
   private static String genDepName() {
