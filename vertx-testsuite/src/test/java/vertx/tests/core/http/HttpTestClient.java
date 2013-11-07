@@ -2795,16 +2795,22 @@ public class HttpTestClient extends TestClientBase {
           req.expectMultiPart(true);
           req.uploadHandler(new Handler<HttpServerFileUpload>() {
             @Override
-            public void handle(final HttpServerFileUpload event) {
-              event.dataHandler(new Handler<Buffer>() {
+            public void handle(final HttpServerFileUpload up) {
+              up.dataHandler(new Handler<Buffer>() {
                 @Override
                 public void handle(Buffer buffer) {
                   tu.azzert(content.equals(buffer.toString("UTF-8")));
                 }
               });
-              tu.azzert(event.name().equals("file"));
-              tu.azzert(event.filename().equals("tmp-0.txt"));
-              tu.azzert(event.contentType().equals("image/gif"));
+              tu.azzert(up.name().equals("file"));
+              tu.azzert(up.filename().equals("tmp-0.txt"));
+              tu.azzert(up.contentType().equals("image/gif"));
+              up.endHandler(new Handler<Void>() {
+                @Override
+                public void handle(Void v) {
+                  tu.azzert(up.size() == content.length());
+                }
+              });
             }
           });
           req.endHandler(new VoidHandler() {

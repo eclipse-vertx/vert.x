@@ -46,7 +46,7 @@ class DefaultHttpServerFileUpload implements HttpServerFileUpload {
   private final String contentType;
   private final String contentTransferEncoding;
   private final Charset charset;
-  private final long size;
+  private long size;
 
   private boolean paused;
   private Buffer pauseBuff;
@@ -158,6 +158,7 @@ class DefaultHttpServerFileUpload implements HttpServerFileUpload {
 
   void receiveData(Buffer data) {
     if (!paused) {
+      size += data.length();
       if (dataHandler != null) {
         dataHandler.handle(data);
       }
