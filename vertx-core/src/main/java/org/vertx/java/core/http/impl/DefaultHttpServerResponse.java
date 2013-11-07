@@ -27,6 +27,7 @@ import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.impl.PathAdjuster;
 import org.vertx.java.core.http.HttpServerResponse;
+import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.VertxInternal;
 
 import java.io.File;
@@ -281,11 +282,27 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   }
   @Override
   public DefaultHttpServerResponse sendFile(String filename) {
-    return sendFile(filename, null);
+    return sendFile(filename, (String)null);
   }
 
   @Override
   public DefaultHttpServerResponse sendFile(String filename, String notFoundResource) {
+    doSendFile(filename, notFoundResource, null);
+    return this;
+  }
+
+  @Override
+  public HttpServerResponse sendFile(String filename, Handler<AsyncResult<Void>> resultHandler) {
+    return sendFile(filename, null, resultHandler);
+  }
+
+  @Override
+  public HttpServerResponse sendFile(String filename, String notFoundFile, Handler<AsyncResult<Void>> resultHandler) {
+    doSendFile(filename, notFoundFile, resultHandler);
+    return this;
+  }
+
+  private void doSendFile(String filename, String notFoundResource, final Handler<AsyncResult<Void>> resultHandler) {
     if (headWritten) {
       throw new IllegalStateException("Head already written");
     }
@@ -294,7 +311,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
     if (!file.exists()) {
       if (notFoundResource != null) {
         statusCode = HttpResponseStatus.NOT_FOUND.code();
-        sendFile(notFoundResource, null);
+        sendFile(notFoundResource, (String)null, resultHandler);
       } else {
         sendNotFound();
       }
@@ -320,13 +337,32 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
       channelFuture = conn.write(LastHttpContent.EMPTY_LAST_CONTENT);
       headWritten = written = true;
 
+      if (resultHandler != null) {
+        channelFuture.addListener(new ChannelFutureListener() {
+          public void operationComplete(ChannelFuture future) throws Exception {
+            final AsyncResult<Void> res;
+            if (future.isSuccess()) {
+              res = new DefaultFutureResult<>((Void)null);
+            } else {
+              res = new DefaultFutureResult<>(future.cause());
+            }
+            vertx.runOnContext(new Handler<Void>() {
+              @Override
+              public void handle(Void v) {
+                resultHandler.handle(res);
+              }
+            });
+          }
+        });
+      }
+
       if (!keepAlive) {
         closeConnAfterWrite();
       }
       conn.responseComplete();
     }
-    return this;
   }
+
 
   private boolean contentLengthSet() {
     if (headers == null) {

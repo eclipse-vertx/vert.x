@@ -16,6 +16,7 @@
 
 package org.vertx.java.core.http;
 
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
@@ -188,6 +189,18 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    * Same as {@link #sendFile(String)} but also takes the path to a resource to serve if the resource is not found
    */
   HttpServerResponse sendFile(String filename, String notFoundFile);
+
+  /**
+   * Same as {@link #sendFile(String)} but also takes a handler that will be called when the send has completed or
+   * a failure has occurred
+   */
+  HttpServerResponse sendFile(String filename, Handler<AsyncResult<Void>> resultHandler);
+
+  /**
+   * Same as {@link #sendFile(String, String)} but also takes a handler that will be called when the send has completed or
+   * a failure has occurred
+   */
+  HttpServerResponse sendFile(String filename, String notFoundFile, Handler<AsyncResult<Void>> resultHandler);
 
   /**
    * Close the underlying TCP connection

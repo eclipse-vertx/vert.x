@@ -415,6 +415,14 @@ public class JavaHttpTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void testSendFileWithHandler() {
+    startTest(getMethodName());
+  }
+
+  public void testSendFileNotFoundWith404PageAndHandler() {
+    startTest(getMethodName());
+  }
+
   public void test100ContinueHandled() {
     startTest(getMethodName());
   }
