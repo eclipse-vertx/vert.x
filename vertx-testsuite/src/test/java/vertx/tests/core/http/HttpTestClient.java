@@ -3045,6 +3045,23 @@ public class HttpTestClient extends TestClientBase {
       }
     }, handler);
   }
+
+  public void testSetGetMaxWebSocketFrameSizeServer() {
+    HttpServer server = vertx.createHttpServer();
+    int size = 61231763;
+    tu.azzert(server == server.setMaxWebSocketFrameSize(size));
+    tu.azzert(size == server.getMaxWebSocketFrameSize());
+    tu.testComplete();
+  }
+
+  public void testSetGetMaxWebSocketFrameSizeClient() {
+    HttpClient client = vertx.createHttpClient();
+    int size = 61231763;
+    tu.azzert(client == client.setMaxWebSocketFrameSize(size));
+    tu.azzert(size == client.getMaxWebSocketFrameSize());
+    tu.testComplete();
+  }
+
   // -------------------------------------------------------------------------------------------
 
   private String generateQueryString(Map<String, String> params, char delim) {

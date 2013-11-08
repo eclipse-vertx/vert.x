@@ -84,6 +84,7 @@ class ClientConnection extends ConnectionBase {
   void toWebSocket(String uri,
                    final WebSocketVersion wsVersion,
                    final MultiMap headers,
+                   int maxWebSocketFrameSize,
                    final Handler<WebSocket> wsConnect) {
     if (ws != null) {
       throw new IllegalStateException("Already websocket");
@@ -114,7 +115,8 @@ class ClientConnection extends ConnectionBase {
       } else {
         nettyHeaders = null;
       }
-      handshaker = WebSocketClientHandshakerFactory.newHandshaker(wsuri, version, null, false, nettyHeaders);
+      handshaker = WebSocketClientHandshakerFactory.newHandshaker(wsuri, version, null, false,
+                                                                  nettyHeaders, maxWebSocketFrameSize);
       final ChannelPipeline p = channel.pipeline();
       p.addBefore("handler", "handshakeCompleter", new HandshakeInboundHandler(wsConnect));
 

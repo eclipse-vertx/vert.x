@@ -656,6 +656,16 @@ public class JavaHttpTest extends TestBase {
     startTest(getMethodName());
   }
 
+  @Test
+  public void testSetGetMaxWebSocketFrameSizeServer() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testSetGetMaxWebSocketFrameSizeClient() throws Exception {
+    startTest(getMethodName());
+  }
+
   void sharedServers(String testName, boolean multipleInstances, int numInstances, int initialServers, int initialToStop) throws Exception {
 
     //We initially start then stop them to make sure the shared server cleanup code works ok

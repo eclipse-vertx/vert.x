@@ -56,6 +56,7 @@ public class DefaultHttpClient implements HttpClient {
   private int port = 80;
   private String host = "localhost";
   private boolean tryUseCompression;
+  private int maxWebSocketFrameSize = 65536;
 
   private final HttpPool pool = new PriorityHttpConnectionPool()  {
     protected void connect(Handler<ClientConnection> connectHandler, Handler<Throwable> connectErrorHandler, DefaultContext context) {
@@ -163,7 +164,7 @@ public class DefaultHttpClient implements HttpClient {
     getConnection(new Handler<ClientConnection>() {
       public void handle(final ClientConnection conn) {
         if (!conn.isClosed()) {
-          conn.toWebSocket(uri, wsVersion, headers, wsConnect);
+          conn.toWebSocket(uri, wsVersion, headers, maxWebSocketFrameSize, wsConnect);
         } else {
           connectWebsocket(uri, wsVersion, headers, wsConnect);
         }
@@ -495,6 +496,17 @@ public class DefaultHttpClient implements HttpClient {
   @Override
   public boolean getTryUseCompression() {
     return tryUseCompression;
+  }
+
+  @Override
+  public HttpClient setMaxWebSocketFrameSize(int maxSize) {
+    maxWebSocketFrameSize = maxSize;
+    return this;
+  }
+
+  @Override
+  public int getMaxWebSocketFrameSize() {
+    return maxWebSocketFrameSize;
   }
 
   void getConnection(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, DefaultContext context) {

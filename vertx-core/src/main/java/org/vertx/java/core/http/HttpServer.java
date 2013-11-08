@@ -108,4 +108,15 @@ public interface HttpServer extends ServerSSLSupport<HttpServer>, ServerTCPSuppo
    * Returns {@code true} if the {@link HttpServer} should compress the http response if the connected client supports it.
    */
   boolean isCompressionSupported();
+
+  /**
+   * Sets the maximum websocket frame size in bytes. Default is 65536 bytes.
+   * @param maxSize The size in bytes
+   */
+  HttpServer setMaxWebSocketFrameSize(int maxSize);
+
+  /**
+   * Get the  maximum websocket frame size in bytes.
+   */
+  int getMaxWebSocketFrameSize();
 }

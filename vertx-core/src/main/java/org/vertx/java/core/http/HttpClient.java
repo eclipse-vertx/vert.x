@@ -236,4 +236,15 @@ public interface HttpClient extends ClientSSLSupport<HttpClient>, TCPSupport<Htt
    */
   boolean getTryUseCompression();
 
+  /**
+   * Sets the maximum websocket frame size in bytes. Default is 65536 bytes.
+   * @param maxSize The size in bytes
+   */
+  HttpClient setMaxWebSocketFrameSize(int maxSize);
+
+  /**
+   * Get the  maximum websocket frame size in bytes.
+   */
+  int getMaxWebSocketFrameSize();
+
 }

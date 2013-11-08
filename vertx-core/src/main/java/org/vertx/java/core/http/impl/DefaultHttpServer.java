@@ -79,6 +79,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
   private boolean listening;
   private String serverOrigin;
   private boolean compressionSupported;
+  private int maxWebSocketFrameSize = 65536;
 
   private ChannelFuture bindFuture;
   private ServerID id;
@@ -506,6 +507,17 @@ public class DefaultHttpServer implements HttpServer, Closeable {
     return compressionSupported;
   }
 
+  @Override
+  public HttpServer setMaxWebSocketFrameSize(int maxSize) {
+    maxWebSocketFrameSize = maxSize;
+    return this;
+  }
+
+  @Override
+  public int getMaxWebSocketFrameSize() {
+    return maxWebSocketFrameSize;
+  }
+
   private void actualClose(final DefaultContext closeContext, final Handler<AsyncResult<Void>> done) {
     if (id != null) {
       vertx.sharedHttpServers().remove(id);
@@ -682,7 +694,9 @@ public class DefaultHttpServer implements HttpServer, Closeable {
 
     private void handshake(final FullHttpRequest request, final Channel ch, ChannelHandlerContext ctx) throws Exception {
       final WebSocketServerHandshaker shake;
-      WebSocketServerHandshakerFactory factory = new WebSocketServerHandshakerFactory(getWebSocketLocation(ch.pipeline(), request), null, false);
+      WebSocketServerHandshakerFactory factory =
+          new WebSocketServerHandshakerFactory(getWebSocketLocation(ch.pipeline(), request), null, false,
+                                               maxWebSocketFrameSize);
       shake = factory.newHandshaker(request);
 
       if (shake == null) {
