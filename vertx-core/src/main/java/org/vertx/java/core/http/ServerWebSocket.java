@@ -26,6 +26,11 @@ import org.vertx.java.core.MultiMap;
  */
 public interface ServerWebSocket extends WebSocketBase<ServerWebSocket> {
 
+  /*
+   * The uri the websocket handshake occurred at
+   */
+  String uri();
+
   /**
    * The path the websocket is attempting to connect at
    */

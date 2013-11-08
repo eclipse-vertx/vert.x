@@ -50,6 +50,7 @@ class WebSocketTransport extends BaseTransport {
       public void handle(final WebSocketMatcher.Match match) {
         if (log.isTraceEnabled()) log.trace("WS, handler");
         final Session session = new Session(vertx, sessions, config.getLong("heartbeat_period"), sockHandler);
+        session.setInfo(match.ws.localAddress(), match.ws.remoteAddress(), match.ws.uri(), match.ws.headers());
         session.register(new WebSocketListener(match.ws, session));
       }
     });
@@ -105,9 +106,9 @@ class WebSocketTransport extends BaseTransport {
       });
       ws.exceptionHandler(new Handler<Throwable>() {
         public void handle(Throwable t) {
-            closed = true;
-            session.shutdown();
-            session.handleException(t);
+          closed = true;
+          session.shutdown();
+          session.handleException(t);
           }
       });
     }

@@ -16,6 +16,7 @@
 
 package org.vertx.java.core.sockjs;
 
+import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
 
@@ -56,4 +57,15 @@ public interface SockJSSocket extends ReadStream<SockJSSocket>, WriteStream<Sock
    * Return the local address for this socket
    */
   InetSocketAddress localAddress();
+
+  /**
+   * Return the headers corresponding to the last request for this socket or the websocket handshake
+   * Any cookie headers will be removed for security reasons
+   */
+  MultiMap headers();
+
+  /**
+   * Return the URI corresponding to the last request for this socket or the websocket handshake
+   */
+  String uri();
 }

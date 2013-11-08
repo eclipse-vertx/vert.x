@@ -256,35 +256,38 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   }
 
   public void handle(final SockJSSocket sock) {
+    if (!handleSocketCreated(sock)) {
+      sock.close();
+    } else {
+      final Map<String, Handler<Message>> handlers = new HashMap<>();
 
-    final Map<String, Handler<Message>> handlers = new HashMap<>();
-
-    sock.endHandler(new VoidHandler() {
-      public void handle() {
-        handleSocketClosed(sock, handlers);
-      }
-    });
-
-    sock.dataHandler(new Handler<Buffer>() {
-      public void handle(Buffer data)  {
-        handleSocketData(sock, data, handlers);
-      }
-    });
-
-    // Start a checker to check for pings
-    final PingInfo pingInfo = new PingInfo();
-    pingInfo.timerID = vertx.setPeriodic(pingTimeout, new Handler<Long>() {
-      @Override
-      public void handle(Long id) {
-        if (System.currentTimeMillis() - pingInfo.lastPing >= pingTimeout) {
-          // We didn't receive a ping in time so close the socket
-          sock.close();
+      sock.endHandler(new VoidHandler() {
+        public void handle() {
+          handleSocketClosed(sock, handlers);
         }
-      }
-    });
-    SockInfo sockInfo = new SockInfo();
-    sockInfo.pingInfo = pingInfo;
-    sockInfos.put(sock, sockInfo);
+      });
+
+      sock.dataHandler(new Handler<Buffer>() {
+        public void handle(Buffer data)  {
+          handleSocketData(sock, data, handlers);
+        }
+      });
+
+      // Start a checker to check for pings
+      final PingInfo pingInfo = new PingInfo();
+      pingInfo.timerID = vertx.setPeriodic(pingTimeout, new Handler<Long>() {
+        @Override
+        public void handle(Long id) {
+          if (System.currentTimeMillis() - pingInfo.lastPing >= pingTimeout) {
+            // We didn't receive a ping in time so close the socket
+            sock.close();
+          }
+        }
+      });
+      SockInfo sockInfo = new SockInfo();
+      sockInfo.pingInfo = pingInfo;
+      sockInfos.put(sock, sockInfo);
+    }
   }
 
   private void checkAddAccceptedReplyAddress(final String replyAddress) {
@@ -424,18 +427,20 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   }
 
   private void authorise(final JsonObject message, final String sessionID,
-                         final Handler<AsyncResult<Boolean>> handler) {
-    // If session id is in local cache we'll consider them authorised
-    final DefaultFutureResult<Boolean> res = new DefaultFutureResult<>();
-    if (authCache.containsKey(sessionID)) {
-      res.setResult(true).setHandler(handler);
-    } else {
-      eb.send(authAddress, message, new Handler<Message<JsonObject>>() {
-        public void handle(Message<JsonObject> reply) {
-          boolean authed = reply.body().getString("status").equals("ok");
-          res.setResult(authed).setHandler(handler);
-        }
-      });
+                           final Handler<AsyncResult<Boolean>> handler) {
+    if (!handleAuthorise(message, sessionID, handler)) {
+      // If session id is in local cache we'll consider them authorised
+      final DefaultFutureResult<Boolean> res = new DefaultFutureResult<>();
+      if (authCache.containsKey(sessionID)) {
+        res.setResult(true).setHandler(handler);
+      } else {
+        eb.send(authAddress, message, new Handler<Message<JsonObject>>() {
+          public void handle(Message<JsonObject> reply) {
+            boolean authed = reply.body().getString("status").equals("ok");
+            res.setResult(authed).setHandler(handler);
+          }
+        });
+      }
     }
   }
 
@@ -585,6 +590,18 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   // ==================================================
 
   /**
+   * The socket has been created
+   * @param sock The socket
+   */
+  protected boolean handleSocketCreated(SockJSSocket sock) {
+    if (hook != null) {
+      return hook.handleSocketCreated(sock);
+    } else {
+      return true;
+    }
+  }
+
+  /**
    * The socket has been closed
    * @param sock The socket
    */
@@ -644,6 +661,21 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     }
     return true;
   }
+
+  /**
+   * Called before authorisation
+   * You can use this to override default authorisation
+   * @return true to handle authorisation yourself
+   */
+  protected boolean handleAuthorise(JsonObject message, final String sessionID,
+                                    Handler<AsyncResult<Boolean>> handler) {
+    if (hook != null) {
+      return hook.handleAuthorise(message, sessionID, handler);
+    } else {
+      return false;
+    }
+  }
+
 
   private static final class PingInfo {
     long lastPing;

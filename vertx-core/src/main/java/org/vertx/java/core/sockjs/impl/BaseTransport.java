@@ -17,6 +17,7 @@
 package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
@@ -177,5 +178,11 @@ class BaseTransport {
         req.response().end();
       }
     };
+  }
+
+  // We remove cookie headers for security reasons. See https://github.com/sockjs/sockjs-node section on
+  // Authorisation
+  static MultiMap removeCookieHeaders(MultiMap headers) {
+    return headers.remove("cookie");
   }
 }

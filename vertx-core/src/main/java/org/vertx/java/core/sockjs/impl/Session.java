@@ -17,6 +17,7 @@
 package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.DecodeException;
@@ -63,12 +64,16 @@ class Session extends SockJSSocketBase implements Shareable {
   private boolean handleCalled;
   private InetSocketAddress localAddress;
   private InetSocketAddress remoteAddress;
+  private String uri;
+  private MultiMap headers;
 
-  Session(VertxInternal vertx, Map<String, Session> sessions, long heartbeatPeriod, Handler<SockJSSocket> sockHandler) {
+  Session(VertxInternal vertx, Map<String, Session> sessions, long heartbeatPeriod,
+          Handler<SockJSSocket> sockHandler) {
     this(vertx, sessions, null, -1, heartbeatPeriod, sockHandler);
   }
 
-  Session(VertxInternal vertx, Map<String, Session> sessions, String id, long timeout, long heartbeatPeriod, Handler<SockJSSocket> sockHandler) {
+  Session(VertxInternal vertx, Map<String, Session> sessions, String id, long timeout, long heartbeatPeriod,
+          Handler<SockJSSocket> sockHandler) {
     super(vertx);
     this.sessions = sessions;
     this.id = id;
@@ -178,6 +183,16 @@ class Session extends SockJSSocketBase implements Shareable {
   @Override
   public InetSocketAddress localAddress() {
     return localAddress;
+  }
+
+  @Override
+  public MultiMap headers() {
+    return headers;
+  }
+
+  @Override
+  public String uri() {
+    return uri;
   }
 
   synchronized boolean isClosed() {
@@ -337,11 +352,9 @@ class Session extends SockJSSocketBase implements Shareable {
   }
 
   private void writeClosed(TransportListener lst, int code, String msg) {
-
     StringBuilder sb = new StringBuilder("c[");
     sb.append(String.valueOf(code)).append(",\"");
     sb.append(msg).append("\"]");
-
     lst.sendFrame(sb.toString());
   }
 
@@ -351,8 +364,11 @@ class Session extends SockJSSocketBase implements Shareable {
     openWritten = true;
   }
 
-  void setAddresses(InetSocketAddress localAddress, InetSocketAddress remoteAddress) {
+  void setInfo(InetSocketAddress localAddress, InetSocketAddress remoteAddress, String uri,
+               MultiMap headers) {
     this.localAddress = localAddress;
     this.remoteAddress = remoteAddress;
+    this.uri = uri;
+    this.headers = BaseTransport.removeCookieHeaders(headers);
   }
 }

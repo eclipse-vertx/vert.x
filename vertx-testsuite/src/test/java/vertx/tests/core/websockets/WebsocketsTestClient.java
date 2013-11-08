@@ -177,12 +177,16 @@ public class WebsocketsTestClient extends TestClientBase {
 
     final String path = "/some/path";
     final String query = "foo=bar&wibble=eek";
+    final String uri = path + "?" + query;
 
     server = vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
         tu.checkThread();
+        System.out.println("uri is:" + ws.uri());
+        tu.azzert(uri.equals(ws.uri()));
         tu.azzert(path.equals(ws.path()));
         tu.azzert(query.equals(ws.query()));
+        tu.azzert(ws.headers().get("Connection").equals("Upgrade"));
 
         ws.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {

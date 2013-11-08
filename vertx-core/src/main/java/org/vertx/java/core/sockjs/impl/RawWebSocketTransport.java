@@ -17,6 +17,7 @@
 package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
@@ -39,6 +40,7 @@ class RawWebSocketTransport {
   private static class RawWSSockJSSocket extends SockJSSocketBase {
 
     private ServerWebSocket ws;
+    private MultiMap headers;
 
     RawWSSockJSSocket(Vertx vertx, ServerWebSocket ws) {
       super(vertx);
@@ -109,6 +111,19 @@ class RawWebSocketTransport {
     @Override
     public InetSocketAddress localAddress() {
       return ws.localAddress();
+    }
+
+    @Override
+    public MultiMap headers() {
+      if (headers == null) {
+        headers = BaseTransport.removeCookieHeaders(ws.headers());
+      }
+      return headers;
+    }
+
+    @Override
+    public String uri() {
+      return ws.uri();
     }
   }
 

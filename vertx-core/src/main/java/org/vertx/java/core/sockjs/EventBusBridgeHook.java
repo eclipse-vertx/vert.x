@@ -1,11 +1,22 @@
 package org.vertx.java.core.sockjs;
 
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.json.JsonObject;
 
 /**
  * A hook that you can use to receive various events on the EventBusBridge.<p>
  */
 public interface EventBusBridgeHook {
+
+  /**
+   * Called when a new socket is created
+   * You can override this method to do things like check the origin header of a socket before
+   * accepting it
+   * @param sock The socket
+   * @return true to accept the socket, false to reject it
+   */
+  boolean handleSocketCreated(SockJSSocket sock);
 
   /**
    * The socket has been closed
@@ -44,4 +55,14 @@ public interface EventBusBridgeHook {
    * @param address The address
    */
   boolean handleUnregister(SockJSSocket sock, String address);
+
+  /**
+   * Called before authorisation - you can override authorisation here if you don't want the default
+   * @param message The auth message
+   * @param sessionID The session ID
+   * @param handler Handler - call this when authorisation is complete
+   * @return true if you wish to override authorisation
+   */
+  boolean handleAuthorise(JsonObject message, String sessionID,
+                          Handler<AsyncResult<Boolean>> handler);
 }
