@@ -16,6 +16,8 @@ import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -220,6 +222,43 @@ public abstract class HttpResolution {
       }
     });
   }
+
+  protected void handleRedirect(HttpClientResponse resp) {
+    // follow redirects
+    String location = resp.headers().get("location");
+    if (location == null) {
+      log.error("HTTP redirect with no location header");
+    } else {
+      URI redirectURI;
+      try {
+        redirectURI = new URI(location);
+        client.close();
+        client = null;
+        int redirectPort = redirectURI.getPort();
+        if (redirectPort == -1) {
+          redirectPort = 80;
+        }
+        createClient(redirectURI.getScheme(), redirectURI.getHost(), redirectPort);
+        makeRequest(redirectURI.getScheme(), redirectURI.getHost(), redirectPort, redirectURI.getPath());
+      } catch (URISyntaxException e) {
+        log.error("Invalid redirect URI: " + location);
+      }
+    }
+  }
+
+  protected void addRedirectHandlers() {
+    Handler<HttpClientResponse> handler = new Handler<HttpClientResponse>() {
+      @Override
+      public void handle(HttpClientResponse resp) {
+        handleRedirect(resp);
+      }
+    };
+    addHandler(301, handler);
+    addHandler(302, handler);
+    addHandler(303, handler);
+    addHandler(308, handler);
+  }
+
 
   private static String getProxyHost() {
     return System.getProperty(HTTP_PROXY_HOST_PROP_NAME);

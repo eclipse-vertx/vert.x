@@ -93,6 +93,7 @@ public class MavenResolution extends HttpResolution {
           attemptDirectDownload();
         }
       });
+      addRedirectHandlers();
       // First we make a request to maven-metadata.xml
       makeRequest(repoScheme, repoHost, repoPort, contentRoot + '/' + uriRoot + "maven-metadata.xml");
     } else {
@@ -118,6 +119,7 @@ public class MavenResolution extends HttpResolution {
         makeRequest(repoScheme, repoHost, repoPort, getNonVersionedResourceName(contentRoot, moduleIdentifier, uriRoot, false));
       }
     });
+    addRedirectHandlers();
     makeRequest(repoScheme, repoHost, repoPort, getNonVersionedResourceName(contentRoot, moduleIdentifier, uriRoot, true));
   }
 

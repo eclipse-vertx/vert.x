@@ -8,7 +8,7 @@ vertx.createHttpServer().requestHandler(function(req) {
     // bintray redirects to a CDN - so our client must understand redirects
     if (!sent302) {
       req.response.statusCode(302);
-      req.response.headers()['location'] = 'http://localhost:9192' + req.uri();
+      req.response.putHeader('location', 'http://localhost:9192' + req.uri());
       req.response.end();
       sent302 = true;
     } else {

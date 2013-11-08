@@ -48,12 +48,7 @@ public class BintrayResolution extends HttpResolution {
         downloadToFile(filename, resp);
       }
     });
-    addHandler(302, new Handler<HttpClientResponse>() {
-      @Override
-      public void handle(HttpClientResponse resp) {
-        handle302(resp);
-      }
-    });
+    addRedirectHandlers();
 
     String user = moduleID.getOwner();
     String repo = "vertx-mods";
@@ -73,26 +68,5 @@ public class BintrayResolution extends HttpResolution {
     makeRequest(repoScheme, repoHost, repoPort, uri);
   }
 
-  protected void handle302(HttpClientResponse resp) {
-    // follow redirects
-    String location = resp.headers().get("location");
-    if (location == null) {
-      log.error("HTTP redirect with no location header");
-    } else {
-      URI redirectURI;
-      try {
-        redirectURI = new URI(location);
-        client.close();
-        client = null;
-        int redirectPort = redirectURI.getPort();
-        if (redirectPort == -1) {
-          redirectPort = 80;
-        }
-        createClient(redirectURI.getScheme(), redirectURI.getHost(), redirectPort);
-        makeRequest(redirectURI.getScheme(), redirectURI.getHost(), redirectPort, redirectURI.getPath());
-      } catch (URISyntaxException e) {
-        log.error("Invalid redirect URI: " + location);
-      }
-    }
-  }
+
 }
