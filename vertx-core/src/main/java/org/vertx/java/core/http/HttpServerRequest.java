@@ -93,6 +93,11 @@ public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
   InetSocketAddress remoteAddress();
 
   /**
+   * Return the local (server side) address of the server that handles the request
+   */
+  InetSocketAddress localAddress();
+
+  /**
    * @return an array of the peer certificates.  Returns null if connection is
    *         not SSL.
    * @throws SSLPeerUnverifiedException SSL peer's identity has not been verified.

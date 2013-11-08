@@ -25,7 +25,7 @@ import org.vertx.java.core.net.impl.ConnectionBase;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultServerWebSocket extends WebSocketImplBase implements ServerWebSocket {
+public class DefaultServerWebSocket extends WebSocketImplBase<ServerWebSocket> implements ServerWebSocket {
 
   private final String path;
   private final String query;

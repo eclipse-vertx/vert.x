@@ -536,11 +536,14 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
     }
   }
 
+  @Override
+  public InetSocketAddress localAddress() {
+    return conn.localAddress();
+  }
+
   private static String urlDecode(String str) {
     return QueryStringDecoder.decodeComponent(str, CharsetUtil.UTF_8);
   }
-
-
 
   private class DataFactory extends DefaultHttpDataFactory {
 

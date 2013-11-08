@@ -20,18 +20,20 @@ import io.netty.buffer.ByteBuf;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.http.WebSocketBase;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.impl.ConnectionBase;
 
+import java.net.InetSocketAddress;
 import java.util.UUID;
 
 /**
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class WebSocketImplBase {
+public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
 
   private final String textHandlerID;
   private final String binaryHandlerID;
@@ -83,6 +85,16 @@ public class WebSocketImplBase {
     checkClosed();
     conn.close();
     cleanupHandlers();
+  }
+
+  @Override
+  public InetSocketAddress localAddress() {
+    return conn.localAddress();
+  }
+
+  @Override
+  public InetSocketAddress remoteAddress() {
+    return conn.remoteAddress();
   }
 
   protected void writeBinaryFrameInternal(Buffer data) {

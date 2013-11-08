@@ -19,6 +19,8 @@ package org.vertx.java.core.sockjs;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
 
+import java.net.InetSocketAddress;
+
 /**
  *
  * You interact with SockJS clients through instances of SockJS socket.<p>
@@ -44,4 +46,14 @@ public interface SockJSSocket extends ReadStream<SockJSSocket>, WriteStream<Sock
    * Close it
    */
   void close();
+
+  /**
+   * Return the remote address for this socket
+   */
+  InetSocketAddress remoteAddress();
+
+  /**
+   * Return the local address for this socket
+   */
+  InetSocketAddress localAddress();
 }
