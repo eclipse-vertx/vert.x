@@ -29,7 +29,6 @@ import java.nio.file.Files;
  * @author Janne Hietam&auml;ki
  */
 public class JavaSourceContext {
-  private final static String REMOVE_COMMENTS_REGEXP = "(?://.*)|(/\\*(?:.|[\\n\\r])*?\\*/)";
 
   private final String className;
   private final File sourceRoot;
@@ -74,7 +73,8 @@ public class JavaSourceContext {
   private static String parsePackage(File file) {
     try {
       String source = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
-      source = source.replaceAll(REMOVE_COMMENTS_REGEXP, " ");
+      // http://stackoverflow.com/questions/1657066/java-regular-expression-finding-comments-in-code
+      source = source.replaceAll( "//.*|(\"(?:\\\\[^\"]|\\\\\"|.)*?\")|(?s)/\\*.*?\\*/", "$1 " );
       for (String line : source.split("\\r?\\n")) {
         line = line.trim();
         if (!line.isEmpty()) {
