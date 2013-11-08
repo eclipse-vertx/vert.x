@@ -47,6 +47,11 @@ public abstract class BaseMessage<U> implements Message<U> {
   }
 
   @Override
+  public String address() {
+    return address;
+  }
+
+  @Override
   public U body() {
     return body;
   }

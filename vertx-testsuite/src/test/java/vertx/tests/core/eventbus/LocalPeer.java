@@ -52,6 +52,7 @@ public class LocalPeer extends EventBusAppBase {
           public void handle(Message<Buffer> msg) {
             tu.checkThread();
             tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body()));
+            tu.azzert(msg.address().equals("some-address"));
             eb.unregisterHandler("some-address", this, new AsyncResultHandler<Void>() {
               public void handle(AsyncResult<Void> event) {
                 if (event.succeeded()) {
@@ -89,6 +90,7 @@ public class LocalPeer extends EventBusAppBase {
           public void handle(Message<Buffer> msg) {
             tu.checkThread();
             tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body()));
+            tu.azzert(msg.address().equals("some-address"));
             eb.unregisterHandler(address, this, new AsyncResultHandler<Void>() {
               public void handle(AsyncResult<Void> event) {
                 if (event.succeeded()) {
@@ -121,6 +123,7 @@ public class LocalPeer extends EventBusAppBase {
             tu.checkThread();
             tu.azzert(!handled);
             tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body()));
+            tu.azzert(msg.address().equals(address));
             eb.unregisterHandler(address, this, new AsyncResultHandler<Void>() {
               public void handle(AsyncResult<Void> event) {
                 if (event.succeeded()) {
@@ -151,6 +154,7 @@ public class LocalPeer extends EventBusAppBase {
           public void handle(Message<Buffer> msg) {
             tu.checkThread();
             tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body()));
+            tu.azzert(msg.address().equals("some-address"));
             count++;
             if (count == 2) {
               final Handler<Message<Buffer>> hndlr = this;
@@ -197,6 +201,7 @@ public class LocalPeer extends EventBusAppBase {
             tu.checkThread();
             tu.azzert(!handled);
             tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body()));
+            tu.azzert(msg.address().equals(address));
             eb.unregisterHandler(address, this);
             handled = true;
             msg.reply(new Buffer("reply" + address));
@@ -224,6 +229,7 @@ public class LocalPeer extends EventBusAppBase {
             tu.checkThread();
             tu.azzert(!handled);
             tu.azzert(TestUtils.buffersEqual((Buffer) data.get("buffer"), msg.body()));
+            tu.azzert(msg.address().equals(address));
             eb.unregisterHandler(address, this);
             handled = true;
             msg.reply("reply" + address);

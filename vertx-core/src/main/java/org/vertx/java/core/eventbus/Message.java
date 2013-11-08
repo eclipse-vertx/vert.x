@@ -32,6 +32,11 @@ import org.vertx.java.core.json.JsonObject;
 public interface Message<T> {
 
   /**
+   * The address the message was sent to
+   */
+  String address();
+
+  /**
    * The body of the message
    */
   T body();
