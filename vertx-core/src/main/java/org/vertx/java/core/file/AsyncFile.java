@@ -53,7 +53,7 @@ public interface AsyncFile extends ReadStream<AsyncFile>, WriteStream<AsyncFile>
    * there are no guarantees as to order in which those writes actually occur.<p>
    * The handler will be called when the write is complete, or if an error occurs.
    */
-  AsyncFile write(Buffer buffer, int position, Handler<AsyncResult<Void>> handler);
+  AsyncFile write(Buffer buffer, long position, Handler<AsyncResult<Void>> handler);
 
   /**
    * Reads {@code length} bytes of data from the file at position {@code position} in the file, asynchronously.
@@ -62,7 +62,7 @@ public interface AsyncFile extends ReadStream<AsyncFile>, WriteStream<AsyncFile>
    * When multiple reads are invoked on the same file there are no guarantees as to order in which those reads actually occur.<p>
    * The handler will be called when the close is complete, or if an error occurs.
    */
-  AsyncFile read(Buffer buffer, int offset, int position, int length, Handler<AsyncResult<Buffer>> handler);
+  AsyncFile read(Buffer buffer, int offset, long position, int length, Handler<AsyncResult<Buffer>> handler);
 
   /**
    * Flush any writes made to this file to underlying persistent storage.<p>

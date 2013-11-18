@@ -106,7 +106,7 @@ public class DefaultAsyncFile implements AsyncFile {
   }
 
   @Override
-  public AsyncFile write(Buffer buffer, int position, final Handler<AsyncResult<Void>> handler) {
+  public AsyncFile write(Buffer buffer, long position, final Handler<AsyncResult<Void>> handler) {
     check();
     final ByteBuf buf = buffer.getByteBuf();
     if (buf.nioBufferCount() > 1) {
@@ -119,7 +119,7 @@ public class DefaultAsyncFile implements AsyncFile {
     return this;
   }
 
-  private void doWrite(final Iterator<ByteBuffer> buffers, final int position, final Handler<AsyncResult<Void>> handler) {
+  private void doWrite(final Iterator<ByteBuffer> buffers, final long position, final Handler<AsyncResult<Void>> handler) {
     final ByteBuffer b = buffers.next();
     final int limit = b.limit();
     doWrite(b, position, limit, new Handler<AsyncResult<Void>>() {
@@ -138,7 +138,7 @@ public class DefaultAsyncFile implements AsyncFile {
     });
   }
   @Override
-  public AsyncFile read(Buffer buffer, int offset, int position, int length, Handler<AsyncResult<Buffer>> handler) {
+  public AsyncFile read(Buffer buffer, int offset, long position, int length, Handler<AsyncResult<Buffer>> handler) {
     check();
     ByteBuffer bb = ByteBuffer.allocate(length);
     doRead(buffer, offset, bb, position, handler);
@@ -327,18 +327,18 @@ public class DefaultAsyncFile implements AsyncFile {
     }.run();
   }
 
-  private void doWrite(final ByteBuffer buff, final int position, final int toWrite, final Handler<AsyncResult<Void>> handler) {
+  private void doWrite(final ByteBuffer buff, final long position, final long toWrite, final Handler<AsyncResult<Void>> handler) {
     writesOutstanding += toWrite;
     writeInternal(buff, position, handler);
   }
 
-  private void writeInternal(final ByteBuffer buff, final int position, final Handler<AsyncResult<Void>> handler) {
+  private void writeInternal(final ByteBuffer buff, final long position, final Handler<AsyncResult<Void>> handler) {
 
     ch.write(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
 
       public void completed(Integer bytesWritten, Object attachment) {
 
-        int pos = position;
+        long pos = position;
 
         if (buff.hasRemaining()) {
           // partial write
@@ -371,11 +371,11 @@ public class DefaultAsyncFile implements AsyncFile {
     });
   }
 
-  private void doRead(final Buffer writeBuff, final int offset, final ByteBuffer buff, final int position, final Handler<AsyncResult<Buffer>> handler) {
+  private void doRead(final Buffer writeBuff, final int offset, final ByteBuffer buff, final long position, final Handler<AsyncResult<Buffer>> handler) {
 
     ch.read(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
 
-      int pos = position;
+      long pos = position;
 
       final DefaultFutureResult<Buffer> result = new DefaultFutureResult<>();
 
