@@ -1,0 +1,16 @@
+==============================================================
+ Vert.x
+ Copyright 2011-2013 The original author or authors
+==============================================================
+
+The Vert.x main project is dual licensed under both
+
+  * The Apache 2.0 License
+    http://www.apache.org/licenses/LICENSE-2.0.html
+
+      and
+
+  * The Eclipse Public 1.0 License
+    http://www.eclipse.org/legal/epl-v10.html
+
+It may be distributed under either license..
