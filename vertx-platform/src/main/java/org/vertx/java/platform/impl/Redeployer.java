@@ -45,6 +45,7 @@ public class Redeployer {
 
   private long timerID;
   private boolean closed;
+  private boolean scannerStarted;
 
   private Runnable checker = new Runnable() {
     public void run() {
@@ -69,7 +70,6 @@ public class Redeployer {
   public Redeployer(VertxInternal vertx, ModuleReloader reloader) {
     this.vertx = vertx;
     this.reloader = reloader;
-    setTimer();
   }
 
   private void setTimer() {
@@ -82,6 +82,7 @@ public class Redeployer {
 
   public synchronized void close() {
     vertx.cancelTimer(timerID);
+    scannerStarted = false;
     closed = true;
   }
 
@@ -104,6 +105,10 @@ public class Redeployer {
       deployments.put(deployment.modID, deps);
     }
     deps.add(deployment);
+    if (!scannerStarted) {
+      setTimer();
+      scannerStarted = true;
+    }
   }
 
   private void addDirectory(Set<File> dirs, File directory) {
