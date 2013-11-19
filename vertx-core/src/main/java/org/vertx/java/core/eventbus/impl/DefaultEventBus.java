@@ -48,6 +48,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  *
@@ -68,6 +69,7 @@ public class DefaultEventBus implements EventBus {
   private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, Handlers> handlerMap = new ConcurrentHashMap<>();
   private final ClusterManager clusterMgr;
+  private final AtomicLong replySequence = new AtomicLong(0);
 
   public DefaultEventBus(VertxInternal vertx) {
     // Just some dummy server ID
@@ -654,6 +656,16 @@ public class DefaultEventBus implements EventBus {
     sendOrPub(replyDest, message, replyHandler, null, timeout);
   }
 
+  private String generateReplyAddress() {
+    if (clusterMgr != null) {
+      // The address is a cryptographically secure id that can't be guessed
+      return UUID.randomUUID().toString();
+    } else {
+      // Just use a sequence - it's faster
+      return Long.toString(replySequence.incrementAndGet());
+    }
+  }
+
   private <T, U> void sendOrPub(ServerID replyDest, final BaseMessage<U> message, final Handler<Message<T>> replyHandler,
                                 final Handler<AsyncResult<Message<T>>> asyncResultHandler, long timeout) {
     checkStarted();
@@ -665,8 +677,7 @@ public class DefaultEventBus implements EventBus {
       message.sender = serverID;
       long timeoutID = -1;
       if (replyHandler != null) {
-        // The address is a cryptographically secure id that can't be guessed
-        message.replyAddress = UUID.randomUUID().toString();
+        message.replyAddress = generateReplyAddress();
         if (timeout != -1) {
           // Add a timeout to remove the reply handler to prevent leaks in case a reply never comes
           timeoutID = vertx.setTimer(timeout, new Handler<Long>() {
