@@ -120,6 +120,11 @@ public class JavaFileSystemTest extends TestBase {
   }
 
   @Test
+  public void testTruncateExtendsFile() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
   public void testTruncateFileDoesNotExist() throws Exception {
     startTest(getMethodName());
   }

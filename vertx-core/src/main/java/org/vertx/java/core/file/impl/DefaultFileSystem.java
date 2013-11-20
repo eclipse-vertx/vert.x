@@ -426,7 +426,7 @@ public class DefaultFileSystem implements FileSystem {
         try {
           try {
             raf = new RandomAccessFile(path, "rw");
-            raf.getChannel().truncate(len);
+            raf.setLength(len);
           } finally {
             if (raf != null) raf.close();
           }

@@ -283,6 +283,19 @@ public class TestClient extends TestClientBase {
     });
   }
 
+  public void testTruncateExtendsFile() throws Exception {
+    final String file1 = "some-file.dat";
+    long initialLen = 500;
+    final long truncatedLen = 1000;
+    createFileWithJunk(file1, initialLen);
+    tu.azzert(fileLength(file1) == initialLen);
+    testTruncate(file1, truncatedLen, true, new VoidHandler() {
+      public void handle() {
+        tu.azzert(fileLength(file1) == truncatedLen);
+      }
+    });
+  }
+
   public void testTruncateFileDoesNotExist() throws Exception {
     String file1 = "some-file.dat";
     long truncatedLen = 534;
