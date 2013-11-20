@@ -85,7 +85,7 @@ class JsonArrayMessage extends BaseMessage<JsonArray> {
 
   @Override
   protected byte type() {
-    return MessageFactory.TYPE_JSON;
+    return MessageFactory.TYPE_JSON_ARRAY;
   }
 
 }

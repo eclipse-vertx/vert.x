@@ -159,7 +159,17 @@ public class JavaEchoTest extends TestBase {
   }
 
   @Test
+  public void testEchoJsonArray() {
+    runPeerTest(getMethodName());
+  }
+
+  @Test
   public void testEchoNullJson() {
+    runPeerTest(getMethodName());
+  }
+
+  @Test
+  public void testEchoNullJsonArray() {
     runPeerTest(getMethodName());
   }
 

@@ -207,6 +207,23 @@ public class LocalEchoClient extends EventBusAppBase {
     eb.send(echoAddress(), obj, handler);
   }
 
+  public void testEchoJsonArray() {
+    JsonArray obj = new JsonArray();
+    obj.add("foo");
+    obj.add(12);
+    obj.add(true);
+    obj.add(false);
+    Handler<Message<JsonArray>> handler = echoHandler(obj);
+    eb.send(echoAddress(), obj, handler);
+  }
+
+  public void testEchoNullJsonArray() {
+    JsonArray obj = null;
+    Handler<Message<JsonArray>> handler = echoHandler(obj);
+    eb.send(echoAddress(), obj, handler);
+  }
+
+
   public void testEchoCharacter() {
     // must use new Character instance, not autoboxing
     Character chr = new Character((char)(new Random().nextInt()));

@@ -85,7 +85,7 @@ public class JsonObjectMessage extends BaseMessage<JsonObject> {
 
   @Override
   protected byte type() {
-    return MessageFactory.TYPE_JSON;
+    return MessageFactory.TYPE_JSON_OBJECT;
   }
 
 }

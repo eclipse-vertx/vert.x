@@ -129,7 +129,15 @@ public class LocalEchoPeer extends EventBusAppBase {
     echoInitialise();
   }
 
+  public void testEchoJsonArrayInitialise() {
+    echoInitialise();
+  }
+
   public void testEchoNullJsonInitialise() {
+    echoInitialise();
+  }
+
+  public void testEchoNullJsonArrayInitialise() {
     echoInitialise();
   }
 

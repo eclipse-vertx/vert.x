@@ -35,7 +35,8 @@ public class MessageFactory {
   static final byte TYPE_LONG = 9;
   static final byte TYPE_SHORT = 10;
   static final byte TYPE_STRING = 11;
-  static final byte TYPE_JSON = 12;
+  static final byte TYPE_JSON_OBJECT = 12;
+  static final byte TYPE_JSON_ARRAY = 13;
   static final byte TYPE_REPLY_FAILURE = 100;
 
   static BaseMessage read(Buffer buff) {
@@ -65,8 +66,10 @@ public class MessageFactory {
         return new ShortMessage(buff);
       case TYPE_STRING:
         return new StringMessage(buff);
-      case TYPE_JSON:
+      case TYPE_JSON_OBJECT:
         return new JsonObjectMessage(buff);
+      case TYPE_JSON_ARRAY:
+        return new JsonArrayMessage(buff);
       case TYPE_REPLY_FAILURE:
         return new ReplyFailureMessage(buff);
       default:
