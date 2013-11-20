@@ -163,7 +163,6 @@ public abstract class BaseMessage<U> implements Message<U> {
 
   @Override
   public <T> void reply(JsonArray message, Handler<Message<T>> replyHandler) {
-    System.out.println("Sending a json array");
     sendReply(new JsonArrayMessage(true, replyAddress, message), replyHandler);
   }
 
