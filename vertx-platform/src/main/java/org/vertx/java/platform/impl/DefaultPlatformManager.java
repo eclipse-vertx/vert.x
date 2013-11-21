@@ -560,7 +560,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       throw new PlatformManagerException("Cannot find module");
     }
 
-    // We need to name the jars explicitly - we can just grab every jar from the classloader hierarchy
+    // We need to name the jars explicitly - we can't just grab every jar from the classloader hierarchy
     String[] jars = locateJars(platformClassLoader, "vertx-core", "vertx-platform", "vertx-hazelcast",
                                "netty-all", "jackson-core", "jackson-annotations", "jackson-databind", "hazelcast");
 

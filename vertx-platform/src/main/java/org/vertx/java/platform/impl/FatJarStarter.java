@@ -18,6 +18,7 @@ package org.vertx.java.platform.impl;
 
 import java.io.*;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.*;
@@ -38,6 +39,7 @@ import java.util.zip.ZipInputStream;
  */
 public class FatJarStarter implements Runnable {
 
+  private static final String CP_SEPARATOR = System.getProperty("path.separator");
   private static final String TEMP_DIR = System.getProperty("java.io.tmpdir");
   private static final String FILE_SEP = System.getProperty("file.separator");
   private static final int BUFFER_SIZE = 4096;
@@ -61,6 +63,18 @@ public class FatJarStarter implements Runnable {
     URLClassLoader urlc = (URLClassLoader)FatJarStarter.class.getClassLoader();
 
     String fileName = urlc.getURLs()[0].getFile();
+
+    // Look for -cp or -classpath parameter
+    String classpath = null;
+    boolean hasCP = false;
+    for (String arg: args) {
+      if (hasCP) {
+        classpath = arg;
+        break;
+      } else if ("-cp".equals(arg) || "-classpath".equals(arg)) {
+        hasCP = true;
+      }
+    }
 
     // Unzip into temp directory
 
@@ -95,6 +109,14 @@ public class FatJarStarter implements Runnable {
     File[] files = libDir.listFiles();
 
     List<URL> urls = new ArrayList<>();
+
+    if (classpath != null) {
+      // Add any extra classpath to the beginning - this allows the user to specify classpath to say,
+      // a custom cluster.xml on the command line when running the jar e.g.
+      // java -jar my-mod~1.0-fat.jar -cp path/to/my/clusterxml
+      urls.addAll(splitCP(classpath));
+    }
+
     for (File file: files) {
       if (file.getName().endsWith(".jar") || file.getName().endsWith(".zip")) {
         urls.add(file.toURI().toURL());
@@ -147,6 +169,25 @@ public class FatJarStarter implements Runnable {
 
     String[] theargs = largs.toArray(new String[largs.size()]);
     meth.invoke(null, (Object)theargs);
+  }
+
+  private List<URL> splitCP(String cp) {
+    String[] parts;
+    if (cp.contains(CP_SEPARATOR)) {
+      parts = cp.split(CP_SEPARATOR);
+    } else {
+      parts = new String[] { cp };
+    }
+    List<URL> classpath = new ArrayList<>();
+    for (String part: parts) {
+      try {
+        URL url = new File(part).toURI().toURL();
+        classpath.add(url);
+      } catch (MalformedURLException e) {
+        throw new IllegalArgumentException("Invalid path " + part + " in cp " + cp) ;
+      }
+    }
+    return classpath;
   }
 
   // Shutdown hook
