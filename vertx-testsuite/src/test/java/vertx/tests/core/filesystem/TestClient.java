@@ -520,7 +520,7 @@ public class TestClient extends TestClientBase {
   }
 
   public void testSymLink() throws Exception {
-    String fileName = "some-file.txt";
+    final String fileName = "some-file.txt";
     final long fileSize = 1234;
     createFileWithJunk(fileName, fileSize);
     final String symlinkName = "some-sym-link.txt";
@@ -528,6 +528,9 @@ public class TestClient extends TestClientBase {
       public void handle() {
        tu.azzert(fileLength(symlinkName) == fileSize);
        tu.azzert(Files.isSymbolicLink(Paths.get(TEST_DIR + pathSep + symlinkName)));
+       // Now try reading it
+       String read = vertx.fileSystem().readSymlinkSync(TEST_DIR + pathSep + symlinkName);
+       tu.azzert(fileName.equals(read));
       }
     });
   }
