@@ -792,7 +792,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     if (includes != null) {
       loadIncludedModules(modRoot, currentModDir, mr, includes);
     }
-    doDeploy(depName, false, worker, multiThreaded, main, null, config, urls, instances, currentModDir, mr, modRoot, false,
+    doDeploy(depName, false, worker, multiThreaded, null, main, null, config, urls, instances, currentModDir, mr, modRoot, false,
         doneHandler);
   }
 
@@ -884,22 +884,26 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           extensionMappings.put(propName, propVal);
         }
       } else {
-        // value is made up of an optional module name followed by colon followed by the
-        // FQCN of the factory
-        int colonIndex = propVal.lastIndexOf(COLON);
-        String moduleName;
-        String factoryName;
-        if (colonIndex != -1) {
-          moduleName = propVal.substring(0, colonIndex);
-          factoryName = propVal.substring(colonIndex + 1);
-        } else {
-          throw new PlatformManagerException("Language mapping: " + propVal + " does not specify an implementing module");
-        }
-        LanguageImplInfo langImpl = new LanguageImplInfo(moduleName, factoryName);
+        LanguageImplInfo langImpl = parseLangImplInfo(propVal);
         languageImpls.put(propName, langImpl);
         extensionMappings.put(propName, propName); // automatically register the name as a mapping
       }
     }
+  }
+
+  private LanguageImplInfo parseLangImplInfo(String line) {
+    // value is made up of an optional module name followed by colon followed by the
+    // FQCN of the factory
+    int colonIndex = line.lastIndexOf(COLON);
+    String moduleName;
+    String factoryName;
+    if (colonIndex != -1) {
+      moduleName = line.substring(0, colonIndex);
+      factoryName = line.substring(colonIndex + 1);
+    } else {
+      throw new PlatformManagerException("Language mapping: " + line + " does not specify an implementing module");
+    }
+    return new LanguageImplInfo(moduleName, factoryName);
   }
 
   private File locateModule(File modRoot, File currentModDir, ModuleIdentifier modID) {
@@ -974,7 +978,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
     final boolean autoRedeploy = fields.isAutoRedeploy();
 
-    doDeploy(depName, autoRedeploy, worker, multiThreaded, main, modID, config,
+    doDeploy(depName, autoRedeploy, worker, multiThreaded, fields.getLangMod(), main, modID, config,
         moduleClasspath.toArray(new URL[moduleClasspath.size()]), instances, modDirToUse, mr,
         modRoot, ha, new Handler<AsyncResult<String>>() {
       @Override
@@ -1397,6 +1401,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private void doDeploy(final String depID,
                         boolean autoRedeploy,
                         boolean worker, boolean multiThreaded,
+                        String langMod,
                         String theMain,
                         final ModuleIdentifier modID,
                         final JsonObject config, final URL[] urls,
@@ -1426,22 +1431,30 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     log.debug("Deploying name : " + deploymentID + " main: " + theMain + " instances: " + instances);
 
     // How we determine which language implementation to use:
-    // 1. Look for a prefix on the main, e.g. 'groovy:org.foo.myproject.MyGroovyMain' would force the groovy
+    // 1. Look for the optional 'lang-impl' field - this can be used to specify the exact language module to use
+    // 2. Look for a prefix on the main, e.g. 'groovy:org.foo.myproject.MyGroovyMain' would force the groovy
     //    language impl to be used
-    // 2. If there is no prefix, then look at the extension, if any. If there is an extension mapping for that
+    // 3. If there is no prefix, then look at the extension, if any. If there is an extension mapping for that
     //    extension, use that.
-    // 3. No prefix and no extension mapping - use the default runtime
+    // 4. No prefix and no extension mapping - use the default runtime
 
     LanguageImplInfo langImplInfo = null;
+
+    // Get language from lang-mod field if provided
+    if (langMod != null) {
+      langImplInfo = parseLangImplInfo(langMod);
+    }
 
     final String main;
     // Look for a prefix
     int prefixMarker = theMain.indexOf(COLON);
     if (prefixMarker != -1) {
       String prefix = theMain.substring(0, prefixMarker);
-      langImplInfo = languageImpls.get(prefix);
       if (langImplInfo == null) {
-        throw new IllegalStateException("No language implementation known for prefix " + prefix);
+        langImplInfo = languageImpls.get(prefix);
+        if (langImplInfo == null) {
+          throw new IllegalStateException("No language implementation known for prefix " + prefix);
+        }
       }
       main = theMain.substring(prefixMarker + 1);
     } else {
