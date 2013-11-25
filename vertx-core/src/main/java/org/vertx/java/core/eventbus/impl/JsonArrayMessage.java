@@ -80,7 +80,7 @@ class JsonArrayMessage extends BaseMessage<JsonArray> {
 
   @Override
   protected Message<JsonArray> copy() {
-    return new JsonArrayMessage(this);
+    return immutable ? this : new JsonArrayMessage(this);
   }
 
   @Override

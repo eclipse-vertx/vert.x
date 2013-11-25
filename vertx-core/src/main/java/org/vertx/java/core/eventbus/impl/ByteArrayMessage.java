@@ -61,17 +61,20 @@ class ByteArrayMessage extends BaseMessage<byte[]> {
 
   @Override
   protected Message<byte[]> copy() {
-    byte[] bod;
-    if (body != null) {
-      bod = new byte[body.length];
-      System.arraycopy(body, 0, bod, 0, bod.length);
-    } else {
-      bod = null;
+    ByteArrayMessage copied = this;
+    if (!immutable) {
+      byte[] bod;
+      if (body != null) {
+        bod = new byte[body.length];
+        System.arraycopy(body, 0, bod, 0, bod.length);
+      } else {
+        bod = null;
+      }
+      copied = new ByteArrayMessage(send, address, bod);
+      copied.replyAddress = this.replyAddress;
+      copied.bus = this.bus;
+      copied.sender = this.sender;
     }
-    ByteArrayMessage copied = new ByteArrayMessage(send, address, bod);
-    copied.replyAddress = this.replyAddress;
-    copied.bus = this.bus;
-    copied.sender = this.sender;
     return copied;
   }
 

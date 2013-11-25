@@ -62,10 +62,13 @@ class BufferMessage extends BaseMessage<Buffer> {
 
   @Override
   protected Message<Buffer> copy() {
-    BufferMessage copied = new BufferMessage(send, address, body == null ? null : body.copy());
-    copied.replyAddress = this.replyAddress;
-    copied.bus = this.bus;
-    copied.sender = this.sender;
+    BufferMessage copied = this;
+    if (!immutable) {
+      copied = new BufferMessage(send, address, body == null ? null : body.copy());
+      copied.replyAddress = this.replyAddress;
+      copied.bus = this.bus;
+      copied.sender = this.sender;
+    }
     return copied;
   }
 

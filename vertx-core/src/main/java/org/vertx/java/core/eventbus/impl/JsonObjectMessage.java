@@ -80,7 +80,7 @@ public class JsonObjectMessage extends BaseMessage<JsonObject> {
 
   @Override
   protected Message<JsonObject> copy() {
-    return new JsonObjectMessage(this);
+    return immutable ? this : new JsonObjectMessage(this);
   }
 
   @Override
