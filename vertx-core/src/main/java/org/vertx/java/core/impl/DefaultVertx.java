@@ -49,6 +49,7 @@ import org.vertx.java.core.spi.cluster.ClusterManagerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.*;
@@ -327,14 +328,16 @@ public class DefaultVertx implements VertxInternal {
   @Override
   public void stop() {
     if (sharedHttpServers != null) {
-      for (HttpServer server : sharedHttpServers.values()) {
+      // Copy set to prevent ConcurrentModificationException
+      for (HttpServer server : new HashSet<>(sharedHttpServers.values())) {
         server.close();
       }
       sharedHttpServers.clear();
     }
 
     if (sharedNetServers != null) {
-      for (NetServer server : sharedNetServers.values()) {
+      // Copy set to prevent ConcurrentModificationException
+      for (NetServer server : new HashSet<>(sharedNetServers.values())) {
         server.close();
       }
       sharedNetServers.clear();
