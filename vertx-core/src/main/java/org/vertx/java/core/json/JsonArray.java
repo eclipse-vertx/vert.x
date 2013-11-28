@@ -29,7 +29,15 @@ import java.util.*;
  */
 public class JsonArray extends JsonElement implements Iterable<Object> {
 
-  final List<Object> list;
+  protected List<Object> list;
+
+  protected void checkCopy() {
+    if (needsCopy) {
+      // deep copy the list lazily if the object is mutated
+      list = convertList(list);
+      needsCopy = false;
+    }
+  }
 
   public JsonArray(List<Object> array) {
     this.list = array;
@@ -48,45 +56,52 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
   }
 
   public JsonArray addString(String str) {
+    checkCopy();
     list.add(str);
     return this;
   }
 
   public JsonArray addObject(JsonObject value) {
+    checkCopy();
     list.add(value.map);
     return this;
   }
 
   public JsonArray addArray(JsonArray value) {
+    checkCopy();
     list.add(value.list);
     return this;
   }
 
   public JsonArray addElement(JsonElement value) {
+    checkCopy();
     if (value.isArray()) {
       return addArray(value.asArray());
     }
-
     return addObject(value.asObject());
   }
 
   public JsonArray addNumber(Number value) {
+    checkCopy();
     list.add(value);
     return this;
   }
 
   public JsonArray addBoolean(Boolean value) {
+    checkCopy();
     list.add(value);
     return this;
   }
 
   public JsonArray addBinary(byte[] value) {
+    checkCopy();
     String encoded = Base64.encodeBytes(value);
     list.add(encoded);
     return this;
   }
 
   public JsonArray add(Object obj) {
+    checkCopy();
     if (obj instanceof JsonObject) {
       obj = ((JsonObject) obj).map;
     } else if (obj instanceof JsonArray) {
@@ -106,6 +121,7 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
 
   @Override
   public Iterator<Object> iterator() {
+    checkCopy();
     return new Iterator<Object>() {
 
       Iterator<Object> iter = list.iterator();
@@ -140,7 +156,9 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
   }
 
   public JsonArray copy() {
-    return new JsonArray(encode());
+    JsonArray copy = new JsonArray(list);
+    copy.setNeedsCopy();
+    return copy;
   }
 
   @Override
