@@ -17,6 +17,14 @@
 package org.vertx.java.core.json;
 
 public abstract class JsonElement {
+
+  protected boolean needsCopy;
+
+  protected void setNeedsCopy() {
+    // We actually do the copy lazily if the object is subsequently mutated
+    needsCopy = true;
+  }
+
   public boolean isArray() {
     return this instanceof JsonArray;
   }

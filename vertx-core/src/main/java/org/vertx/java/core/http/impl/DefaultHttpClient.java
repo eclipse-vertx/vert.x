@@ -560,7 +560,7 @@ public class DefaultHttpClient implements HttpClient {
             pipeline.addLast("ssl", new SslHandler(engine));
           }
 
-          pipeline.addLast("codec", new HttpClientCodec());
+          pipeline.addLast("codec", new HttpClientCodec(4096, 8192, 8192, false, false));
           if (tryUseCompression) {
             pipeline.addLast("inflater", new HttpContentDecompressor());
           }

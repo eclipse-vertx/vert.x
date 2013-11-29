@@ -74,8 +74,6 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
   /**
    * Adds a new value with the specified name and value.
    *
-   * If the specified value is not a {@link String}, it is converted
-   * into a {@link String} by {@link Object#toString()}.
    *
    * @param name The name
    * @param value The value being added

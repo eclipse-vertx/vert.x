@@ -33,7 +33,15 @@ import java.util.Set;
  */
 public class JsonObject extends JsonElement {
 
-  final Map<String, Object> map;
+  protected Map<String, Object> map;
+
+  protected void checkCopy() {
+    if (needsCopy) {
+      // deep copy the map lazily if the object is mutated
+      map = convertMap(map);
+      needsCopy = false;
+    }
+  }
 
   /**
    * Create a JSON object based on the specified Map
@@ -62,44 +70,51 @@ public class JsonObject extends JsonElement {
   }
 
   public JsonObject putString(String fieldName, String value) {
+    checkCopy();
     map.put(fieldName, value);
     return this;
   }
 
   public JsonObject putObject(String fieldName, JsonObject value) {
+    checkCopy();
     map.put(fieldName, value == null ? null : value.map);
     return this;
   }
 
   public JsonObject putArray(String fieldName, JsonArray value) {
+    checkCopy();
     map.put(fieldName, value.list);
     return this;
   }
 
   public JsonObject putElement(String fieldName, JsonElement value) {
-    if(value.isArray()){
+    checkCopy();
+    if (value.isArray()) {
       return this.putArray(fieldName, value.asArray());
     }
-    
     return this.putObject(fieldName, value.asObject());
   }
 
   public JsonObject putNumber(String fieldName, Number value) {
+    checkCopy();
     map.put(fieldName, value);
     return this;
   }
 
   public JsonObject putBoolean(String fieldName, Boolean value) {
+    checkCopy();
     map.put(fieldName, value);
     return this;
   }
 
   public JsonObject putBinary(String fieldName, byte[] binary) {
+    checkCopy();
     map.put(fieldName, Base64.encodeBytes(binary));
     return this;
   }
 
   public JsonObject putValue(String fieldName, Object value) {
+    checkCopy();
     if (value instanceof JsonObject) {
       putObject(fieldName, (JsonObject)value);
     } else if (value instanceof JsonArray) {
@@ -234,6 +249,7 @@ public class JsonObject extends JsonElement {
   }
 
   public Object removeField(String fieldName) {
+    checkCopy();
     return map.remove(fieldName);
   }
 
@@ -242,6 +258,7 @@ public class JsonObject extends JsonElement {
   }
 
   public JsonObject mergeIn(JsonObject other) {
+    checkCopy();
     map.putAll(other.map);
     return this;
   }
@@ -255,7 +272,9 @@ public class JsonObject extends JsonElement {
   }
 
   public JsonObject copy() {
-    return new JsonObject(encode());
+    JsonObject copy = new JsonObject(map);
+    copy.setNeedsCopy();
+    return copy;
   }
 
   @Override
@@ -292,7 +311,8 @@ public class JsonObject extends JsonElement {
   }
 
   public Map<String, Object> toMap() {
-    return convertMap(map);
+    //return convertMap(map);
+    return map;
   }
 
   @SuppressWarnings("unchecked")

@@ -248,7 +248,7 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
     MapEntry e = entries[i];
     while (e != null) {
       if (e.hash == h && eq(name, e.key)) {
-        return e.value;
+        return e.getValue();
       }
 
       e = e.next;
@@ -269,7 +269,7 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
     MapEntry e = entries[i];
     while (e != null) {
       if (e.hash == h && eq(name, e.key)) {
-        values.addFirst(e.value);
+        values.addFirst(e.getValue());
       }
       e = e.next;
     }
@@ -311,7 +311,7 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
 
     MapEntry e = head.after;
     while (e != head) {
-      names.add(e.key);
+      names.add(e.getKey());
       e = e.after;
     }
     return names;
@@ -357,14 +357,14 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
       if (value == null) {
         throw new NullPointerException("value");
       }
-      String oldValue = this.value;
+      CharSequence oldValue = this.value;
       this.value = value;
-      return oldValue;
+      return oldValue.toString();
     }
 
     @Override
     public String toString() {
-      return key + '=' + value;
+      return getKey() + '=' + getValue();
     }
   }
 }

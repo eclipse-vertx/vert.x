@@ -54,9 +54,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
-import static io.netty.handler.codec.http.HttpHeaders.Names.HOST;
-import static io.netty.handler.codec.http.HttpHeaders.Values.WEBSOCKET;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
@@ -68,6 +65,11 @@ public class DefaultHttpServer implements HttpServer, Closeable {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultHttpServer.class);
   private static final ExceptionDispatchHandler EXCEPTION_DISPATCH_HANDLER = new ExceptionDispatchHandler();
+  private static final CharSequence ALLOW = HttpHeaders.newEntity("allow");
+  private static final CharSequence GET =  HttpHeaders.newEntity("GET");
+  private static final CharSequence WEBSOCKET = HttpHeaders.newEntity(io.netty.handler.codec.http.HttpHeaders.Values.WEBSOCKET);
+  private static final CharSequence CONNECTION = HttpHeaders.newEntity(io.netty.handler.codec.http.HttpHeaders.Names.CONNECTION);
+  private static final CharSequence UPGRADE = HttpHeaders.newEntity(io.netty.handler.codec.http.HttpHeaders.Names.UPGRADE);
 
   final VertxInternal vertx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
@@ -185,8 +187,8 @@ public class DefaultHttpServer implements HttpServer, Closeable {
                 pipeline.addLast("ssl", new SslHandler(engine));
               }
               pipeline.addLast("flashpolicy", new FlashPolicyHandler());
-              pipeline.addLast("httpDecoder", new HttpRequestDecoder());
-              pipeline.addLast("httpEncoder", new HttpResponseEncoder());
+              pipeline.addLast("httpDecoder", new HttpRequestDecoder(4096, 8192, 8192, false));
+              pipeline.addLast("httpEncoder", new VertxHttpResponseEncoder());
               if (compressionSupported) {
                 pipeline.addLast("deflater", new HttpChunkContentCompressor());
               }
@@ -573,17 +575,17 @@ public class DefaultHttpServer implements HttpServer, Closeable {
       super(vertx, DefaultHttpServer.this.connectionMap);
     }
 
-    private void sendError(String err, HttpResponseStatus status, Channel ch) {
+    private void sendError(CharSequence err, HttpResponseStatus status, Channel ch) {
       FullHttpResponse resp = new DefaultFullHttpResponse(HTTP_1_1, status);
       if (status.code() == METHOD_NOT_ALLOWED.code()) {
         // SockJS requires this
-        resp.headers().set("allow", "GET");
+        resp.headers().set(ALLOW, GET);
       }
       if (err != null) {
-        resp.content().writeBytes(err.getBytes(CharsetUtil.UTF_8));
-        resp.headers().set("Content-Length", err.length());
+        resp.content().writeBytes(err.toString().getBytes(CharsetUtil.UTF_8));
+        HttpHeaders.setContentLength(resp, err.length());
       } else {
-        resp.headers().set(HttpHeaders.Names.CONTENT_LENGTH, "0");
+        HttpHeaders.setContentLength(resp, 0);
       }
 
       ch.writeAndFlush(resp);
@@ -604,7 +606,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
           ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
         }
 
-        if (wsHandlerManager.hasHandlers() && WEBSOCKET.equalsIgnoreCase(request.headers().get(HttpHeaders.Names.UPGRADE))) {
+        if (request.headers().contains(UPGRADE, WEBSOCKET, true) && wsHandlerManager.hasHandlers()) {
           // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
           // it doesn't send a normal 'Connection: Upgrade' header. Instead it
           // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
@@ -689,7 +691,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
       } else {
         prefix = "wss://";
       }
-      return prefix + req.headers().get(HOST) + new URI(req.getUri()).getPath();
+      return prefix + HttpHeaders.getHost(req) + new URI(req.getUri()).getPath();
     }
 
     private void handshake(final FullHttpRequest request, final Channel ch, ChannelHandlerContext ctx) throws Exception {
