@@ -64,8 +64,8 @@ var vertx = vertx || {};
       sendOrPub("send", address, message, replyHandler)
     }
   
-    that.publish = function(address, message, replyHandler) {
-      sendOrPub("publish", address, message, replyHandler)
+    that.publish = function(address, message) {
+      sendOrPub("publish", address, message, null)
     }
   
     that.registerHandler = function(address, handler) {
