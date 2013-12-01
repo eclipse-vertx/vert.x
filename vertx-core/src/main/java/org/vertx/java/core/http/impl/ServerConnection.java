@@ -81,7 +81,7 @@ class ServerConnection extends ConnectionBase {
   }
 
   void handleMessage(Object msg) {
-    if (paused || (msg instanceof HttpRequest && pendingResponse != null) || !pending.isEmpty()) {
+    if (paused || (pendingResponse != null && msg instanceof HttpRequest) || !pending.isEmpty()) {
       //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
       pending.add(msg);
       if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
@@ -119,8 +119,7 @@ class ServerConnection extends ConnectionBase {
 
   @Override
   public ChannelFuture write(Object obj) {
-    ChannelFuture future = lastWriteFuture = super.write(obj);
-    return future;
+    return lastWriteFuture = super.write(obj);
   }
 
   NetSocket createNetSocket() {
@@ -325,10 +324,9 @@ class ServerConnection extends ConnectionBase {
     checkNextTick();
   }
 
-  // TODO I think this can be simplified / optimised
   private void checkNextTick() {
     // Check if there are more pending messages in the queue that can be processed next time around
-    if (!sentCheck && !pending.isEmpty() && !paused && (pendingResponse == null || pending.peek() instanceof HttpContent)) {
+    if (!pending.isEmpty() && !sentCheck && !paused && (pendingResponse == null || pending.peek() instanceof HttpContent)) {
       sentCheck = true;
       vertx.runOnContext(new VoidHandler() {
         public void handle() {

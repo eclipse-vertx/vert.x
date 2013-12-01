@@ -606,7 +606,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
           ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
         }
 
-        if (request.headers().contains(UPGRADE, WEBSOCKET, true) && wsHandlerManager.hasHandlers()) {
+        if (wsHandlerManager.hasHandlers() && request.headers().contains(UPGRADE, WEBSOCKET, true)) {
           // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
           // it doesn't send a normal 'Connection: Upgrade' header. Instead it
           // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
