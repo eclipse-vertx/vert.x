@@ -34,6 +34,9 @@ import java.util.concurrent.TimeoutException;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class DefaultHttpClientRequest implements HttpClientRequest {
+  private static final CharSequence CONTENT_LENGTH = HttpHeaders.newEntity(HttpHeaders.Names.CONTENT_LENGTH);
+  private static final CharSequence TRANSFER_ENCODING = HttpHeaders.newEntity(HttpHeaders.Names.TRANSFER_ENCODING);
+  private static final CharSequence HOST = HttpHeaders.newEntity(HttpHeaders.Names.HOST);
 
   private final DefaultHttpClient client;
   private final HttpRequest request;
@@ -80,7 +83,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
                                    final Handler<HttpClientResponse> respHandler,
                                    final DefaultContext context, final boolean raw) {
     this.client = client;
-    this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method), uri);
+    this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method), uri, false);
     this.chunked = false;
     this.respHandler = respHandler;
     this.context = context;
@@ -223,7 +226,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   public void end(Buffer chunk) {
     check();
     if (!chunked && !contentLengthSet()) {
-      headers().set(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(chunk.length()));
+      headers().set("Content-Length", String.valueOf(chunk.length()));
     }
     write(chunk.getByteBuf(), true);
   }
@@ -374,7 +377,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
   private boolean contentLengthSet() {
     if (headers != null) {
-      return headers.contains(HttpHeaders.Names.CONTENT_LENGTH);
+      return request.headers().contains(CONTENT_LENGTH);
     } else {
       return false;
     }
@@ -398,10 +401,10 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
   private void prepareHeaders() {
     HttpHeaders headers = request.headers();
-    headers.remove(HttpHeaders.Names.TRANSFER_ENCODING);
+    headers.remove(TRANSFER_ENCODING);
     if (!raw) {
-      if (!headers.contains(HttpHeaders.Names.HOST)) {
-        request.headers().set(HttpHeaders.Names.HOST, conn.hostHeader);
+      if (!headers.contains(HOST)) {
+        request.headers().set(HOST, conn.hostHeader);
       }
       if (chunked) {
         HttpHeaders.setTransferEncodingChunked(request);
@@ -465,7 +468,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
   private void writeEndChunk(ByteBuf buf) {
     if (buf.isReadable()) {
-      conn.write(new DefaultLastHttpContent(buf));
+      conn.write(new DefaultLastHttpContent(buf, false));
     } else {
       conn.write(LastHttpContent.EMPTY_LAST_CONTENT);
     }

@@ -40,6 +40,14 @@ import static io.netty.handler.codec.http.HttpHeaders.Names;
  */
 public class DefaultHttpServerResponse implements HttpServerResponse {
 
+  private static final CharSequence KEEP_ALIVE = HttpHeaders.newEntity(HttpHeaders.Values.KEEP_ALIVE);
+  private static final CharSequence CONNECTION = HttpHeaders.newEntity(Names.CONNECTION);
+  private static final CharSequence CONTENT_LENGTH = HttpHeaders.newEntity(Names.CONTENT_LENGTH);
+  private static final CharSequence CONTENT_TYPE = HttpHeaders.newEntity(Names.CONTENT_TYPE);
+  private static final CharSequence TRANSFER_ENCODING = HttpHeaders.newEntity(Names.TRANSFER_ENCODING);
+  private static final CharSequence CHUNKED = HttpHeaders.newEntity(HttpHeaders.Values.CHUNKED);
+  private static final Buffer NOT_FOUND = new Buffer("<html><body>Resource not found</body><html>");
+
   private final VertxInternal vertx;
   private final ServerConnection conn;
   private final HttpResponse response;
@@ -47,7 +55,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   private final boolean keepAlive;
 
   private int statusCode = 200;
-  private String statusMessage = "OK";
+  private String statusMessage = null;
 
   private boolean headWritten;
   private boolean written;
@@ -65,9 +73,9 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   	this.vertx = vertx;
   	this.conn = conn;
     this.version = request.getProtocolVersion();
-    this.response = new DefaultHttpResponse(version, HttpResponseStatus.OK);
+    this.response = new DefaultHttpResponse(version, HttpResponseStatus.OK, false);
     this.keepAlive = version == HttpVersion.HTTP_1_1 ||
-        (version == HttpVersion.HTTP_1_0 && "Keep-Alive".equalsIgnoreCase(request.headers().get("Connection")));
+        (version == HttpVersion.HTTP_1_0 && request.headers().contains(CONNECTION, KEEP_ALIVE, true));
   }
 
   @Override
@@ -82,7 +90,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   public MultiMap trailers() {
     if (trailers == null) {
       if (trailing == null) {
-        trailing = new DefaultLastHttpContent();
+        trailing = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER, false);
       }
       trailers = new HttpHeadersAdapter(trailing.trailingHeaders());
     }
@@ -218,7 +226,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   @Override
   public void end(Buffer chunk) {
     if (!chunked && !contentLengthSet()) {
-      headers().set(Names.CONTENT_LENGTH, String.valueOf(chunk.length()));
+      headers().set("Content-Length", String.valueOf(chunk.length()));
     }
     ByteBuf buf = chunk.getByteBuf();
     end0(buf);
@@ -268,7 +276,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
         if (trailing != null) {
           content = new AssembledLastHttpContent(data, trailing.trailingHeaders());
         } else {
-          content = new DefaultLastHttpContent(data);
+          content = new DefaultLastHttpContent(data, false);
         }
         channelFuture = conn.write(content);
       }
@@ -280,6 +288,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
     written = true;
     conn.responseComplete();
   }
+
   @Override
   public DefaultHttpServerResponse sendFile(String filename) {
     return sendFile(filename, (String)null);
@@ -317,7 +326,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
       }
     } else {
       if (!contentLengthSet()) {
-        putHeader(Names.CONTENT_LENGTH, String.valueOf(file.length()));
+        putHeader("Content-Length", String.valueOf(file.length()));
       }
       if (!contentTypeSet()) {
         int li = filename.lastIndexOf('.');
@@ -325,7 +334,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
           String ext = filename.substring(li + 1, filename.length());
           String contentType = MimeMapping.getMimeTypeForExtension(ext);
           if (contentType != null) {
-            putHeader(Names.CONTENT_TYPE, contentType);
+            putHeader("Content-Type", contentType);
           }
         }
       }
@@ -368,14 +377,14 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
     if (headers == null) {
       return false;
     }
-    return headers.contains(Names.CONTENT_LENGTH);
+    return response.headers().contains(CONTENT_LENGTH);
   }
 
   private boolean contentTypeSet() {
     if (headers == null) {
       return false;
     }
-    return headers.contains(Names.CONTENT_TYPE);
+    return response.headers().contains(CONTENT_TYPE);
   }
 
   private void closeConnAfterWrite() {
@@ -390,8 +399,8 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
 
   private void sendNotFound() {
     statusCode = HttpResponseStatus.NOT_FOUND.code();
-    putHeader("content-type", "text/html");
-    end("<html><body>Resource not found</body><html>");
+    putHeader("Content-Type", "text/html");
+    end(NOT_FOUND);
   }
 
   void handleDrained() {
@@ -419,16 +428,25 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   }
 
   private void prepareHeaders() {
-    HttpResponseStatus status = statusMessage == null ? HttpResponseStatus.valueOf(statusCode) :
-            new HttpResponseStatus(statusCode, statusMessage);
+    HttpResponseStatus status;
+    if (statusCode == HttpResponseStatus.OK.code() && statusMessage == null) {
+      status = HttpResponseStatus.OK;
+    } else {
+      if (statusMessage == null) {
+        status = HttpResponseStatus.valueOf(statusCode);
+      } else {
+        // this is the most expensive way so do it as last resort
+        status = new HttpResponseStatus(statusCode, statusMessage);
+      }
+    }
     response.setStatus(status);
     if (version == HttpVersion.HTTP_1_0 && keepAlive) {
-      response.headers().set("Connection", "Keep-Alive");
+      response.headers().set(CONNECTION, KEEP_ALIVE);
     }
     if (chunked) {
-      response.headers().set(Names.TRANSFER_ENCODING, io.netty.handler.codec.http.HttpHeaders.Values.CHUNKED);
+      response.headers().set(TRANSFER_ENCODING, CHUNKED);
     } else if (version != HttpVersion.HTTP_1_0 && !contentLengthSet()) {
-      response.headers().set(Names.CONTENT_LENGTH, "0");
+      response.headers().set(CONTENT_LENGTH, "0");
     }
   }
 

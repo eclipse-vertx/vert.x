@@ -40,7 +40,7 @@ class AssembledFullHttpRequest extends AssembledHttpRequest implements FullHttpR
 
   private static LastHttpContent toLastContent(ByteBuf buf) {
     if (buf.isReadable()) {
-      return new DefaultLastHttpContent(buf);
+      return new DefaultLastHttpContent(buf, false);
     } else {
       return LastHttpContent.EMPTY_LAST_CONTENT;
     }
