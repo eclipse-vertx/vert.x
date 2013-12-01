@@ -357,9 +357,9 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
       if (value == null) {
         throw new NullPointerException("value");
       }
-      CharSequence oldValue = this.value;
+      String oldValue = this.value;
       this.value = value;
-      return oldValue.toString();
+      return oldValue;
     }
 
     @Override
