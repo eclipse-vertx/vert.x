@@ -90,5 +90,14 @@ public interface NetSocket extends ReadStream<NetSocket>, WriteStream<NetSocket>
    */
   NetSocket closeHandler(Handler<Void> handler);
 
+  /**
+   * Upgrade channel to use SSL/TLS. Be aware that for this to work SSL must be configured.
+   */
+  NetSocket ssl(Handler<Void> handler);
+
+  /**
+   * Returns {@code true} if this {@link NetSocket} is encrypted via SSL/TLS.
+   */
+  boolean isSsl();
 }
 

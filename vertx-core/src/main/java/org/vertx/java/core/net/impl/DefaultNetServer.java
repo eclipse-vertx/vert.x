@@ -38,7 +38,6 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 
-import javax.net.ssl.SSLEngine;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -123,23 +122,8 @@ public class DefaultNetServer implements NetServer, Closeable {
             ChannelPipeline pipeline = ch.pipeline();
             pipeline.addLast("exceptionDispatcher", EXCEPTION_DISPATCH_HANDLER);
             if (tcpHelper.isSSL()) {
-              SSLEngine engine = tcpHelper.getSSLContext().createSSLEngine();
-              engine.setUseClientMode(false);
-              switch (tcpHelper.getClientAuth()) {
-                case REQUEST: {
-                  engine.setWantClientAuth(true);
-                  break;
-                }
-                case REQUIRED: {
-                  engine.setNeedClientAuth(true);
-                  break;
-                }
-                case NONE: {
-                  engine.setNeedClientAuth(false);
-                  break;
-                }
-              }
-              pipeline.addLast("ssl", new SslHandler(engine));
+              SslHandler sslHandler = tcpHelper.createSslHandler(vertx, false);
+              pipeline.addLast("ssl", sslHandler);
             }
             if (tcpHelper.isSSL()) {
               // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
@@ -545,7 +529,7 @@ public class DefaultNetServer implements NetServer, Closeable {
     }
 
     private void doConnected(Channel ch, HandlerHolder<NetSocket> handler) {
-      DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, handler.context);
+      DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, handler.context, tcpHelper, false);
       socketMap.put(ch, sock);
       handler.handler.handle(sock);
     }

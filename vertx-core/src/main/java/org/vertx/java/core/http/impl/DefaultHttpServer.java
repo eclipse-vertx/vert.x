@@ -72,7 +72,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
   private static final CharSequence UPGRADE = HttpHeaders.newEntity(io.netty.handler.codec.http.HttpHeaders.Names.UPGRADE);
 
   final VertxInternal vertx;
-  private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
+  final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private final DefaultContext actualCtx;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;

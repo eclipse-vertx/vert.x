@@ -688,6 +688,89 @@ public class TestClient extends TestClientBase {
     });
   }
 
+  public void testStartTLSClientTrustAll() {
+    TLSTestParams params = TLSTestParams.deserialize(vertx.sharedData().<String, byte[]>getMap("TLSTest").get("params"));
+
+    if (params.clientTrustAll) {
+      client.setTrustAll(true);
+    }
+
+    if (params.clientTrust) {
+      client.setTrustStorePath("./src/test/keystores/client-truststore.jks")
+              .setTrustStorePassword("wibble");
+    }
+    if (params.clientCert) {
+      client.setKeyStorePath("./src/test/keystores/client-keystore.jks")
+              .setKeyStorePassword("wibble");
+    }
+
+    final boolean shouldPass = params.shouldPass;
+
+    client.connect(4043, new AsyncResultHandler<NetSocket>() {
+      public void handle(AsyncResult<NetSocket> res) {
+        tu.checkThread();
+        if (res.succeeded()) {
+          if (!shouldPass) {
+            tu.azzert(false, "Should not connect");
+            return;
+          }
+          final int numChunks = 100;
+          final int chunkSize = 100;
+
+          final Buffer received = new Buffer();
+          final Buffer sent = new Buffer();
+
+          final NetSocket socket = res.result();
+
+          socket.dataHandler(new Handler<Buffer>() {
+            boolean ssl = false;
+            @Override
+            public void handle(Buffer buffer) {
+              tu.checkThread();
+              received.appendBuffer(buffer);
+
+              if (!ssl) {
+                tu.azzert(!socket.isSsl());
+                ssl = true;
+                // server did write it's response time to upgrade to ssl too
+                socket.ssl(new Handler<Void>() {
+                  @Override
+                  public void handle(Void event) {
+                    // upgrade complete new send some data over the ssl socket
+                    for (int i = 0; i < numChunks; i++) {
+                      Buffer buff = TestUtils.generateRandomBuffer(chunkSize);
+                      sent.appendBuffer(buff);
+                      socket.write(buff);
+                    }
+                  }
+                });
+              } else {
+                tu.azzert(socket.isSsl());
+                if (received.length() == sent.length()) {
+                  tu.azzert(TestUtils.buffersEqual(sent, received));
+                  tu.testComplete();
+                }
+              }
+            }
+          });
+          // write a buffer which will be used to signal the server to upgrade to ssl
+          Buffer buff = TestUtils.generateRandomBuffer(chunkSize);
+          sent.appendBuffer(buff);
+          socket.write(buff);
+
+        } else {
+          if (shouldPass) {
+            tu.azzert(false, "Should not throw exception");
+          } else {
+            tu.testComplete();
+          }
+        }
+      }
+    });
+
+
+  }
+
   public void testSharedServersMultipleInstances1() {
     // Create a bunch of connections
     final int numConnections = vertx.sharedData().<String, Integer>getMap("params").get("numConnections");
