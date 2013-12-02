@@ -353,7 +353,7 @@ class ClientConnection extends ConnectionBase {
   }
 
   NetSocket createNetSocket() {
-    DefaultNetSocket socket = new DefaultNetSocket(vertx, channel, context);
+    DefaultNetSocket socket = new DefaultNetSocket(vertx, channel, context, client.tcpHelper, true);
     Map<Channel, DefaultNetSocket> connectionMap = new HashMap<Channel, DefaultNetSocket>(1);
     connectionMap.put(channel, socket);
 

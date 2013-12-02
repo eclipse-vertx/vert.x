@@ -21,7 +21,10 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.util.CharsetUtil;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
@@ -48,9 +51,13 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   private final Handler<Message<Buffer>> writeHandler;
   private Queue<Buffer> pendingData;
   private boolean paused = false;
+  private final TCPSSLHelper helper;
+  private boolean client;
 
-  public DefaultNetSocket(VertxInternal vertx, Channel channel, DefaultContext context) {
+  public DefaultNetSocket(VertxInternal vertx, Channel channel, DefaultContext context, TCPSSLHelper helper, boolean client) {
     super(vertx, channel, context);
+    this.helper = helper;
+    this.client = client;
     this.writeHandlerID = UUID.randomUUID().toString();
     writeHandler = new Handler<Message<Buffer>>() {
       public void handle(Message<Buffer> msg) {
@@ -252,5 +259,47 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
     }
   }
 
+  @Override
+  public NetSocket ssl(final Handler<Void> handler) {
+    SslHandler sslHandler = channel.pipeline().get(SslHandler.class);
+    if (sslHandler == null) {
+      sslHandler = helper.createSslHandler(vertx, client);
+      channel.pipeline().addFirst(sslHandler);
+    }
+    sslHandler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
+      @Override
+      public void operationComplete(final Future<Channel> future) throws Exception {
+        if (context.isOnCorrectWorker(channel.eventLoop())) {
+          if (future.isSuccess()) {
+            try {
+              vertx.setContext(context);
+              handler.handle(null);
+            } catch (Throwable t) {
+              context.reportException(t);
+            }
+          } else {
+            context.reportException(future.cause());
+          }
+
+        } else {
+          context.execute(new Runnable() {
+            public void run() {
+              if (future.isSuccess()) {
+                handler.handle(null);
+              } else {
+                context.reportException(future.cause());
+              }
+            }
+          });
+        }
+      }
+    });
+    return this;
+  }
+
+  @Override
+  public boolean isSsl() {
+    return channel.pipeline().get(SslHandler.class) != null;
+  }
 }
 

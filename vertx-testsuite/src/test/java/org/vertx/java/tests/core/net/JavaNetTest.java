@@ -191,6 +191,12 @@ public class JavaNetTest extends TestBase {
 
   @Test
   // Client trusts all server certs
+  public void testStartTLSClientTrustAll() throws Exception {
+    testTLS0(getMethodName(), false, false, true, false, false, true, true, StartTLSServer.class);
+  }
+
+  @Test
+  // Client trusts all server certs
   public void testTLSClientTrustAll() throws Exception {
     testTLS(getMethodName(), false, false, true, false, false, true, true);
   }
@@ -235,11 +241,18 @@ public class JavaNetTest extends TestBase {
                boolean serverCert, boolean serverTrust,
                boolean requireClientAuth, boolean clientTrustAll,
                boolean shouldPass) throws Exception {
+    testTLS0(testName, clientCert, clientTrust, serverCert, serverTrust, requireClientAuth, clientTrustAll, shouldPass, TLSServer.class);
+  }
+
+  private void testTLS0(String testName, boolean clientCert, boolean clientTrust,
+               boolean serverCert, boolean serverTrust,
+               boolean requireClientAuth, boolean clientTrustAll,
+               boolean shouldPass, Class<?> clazz) throws Exception {
     //Put the params in shared-data
     TLSTestParams params = new TLSTestParams(clientCert, clientTrust, serverCert, serverTrust,
-        requireClientAuth, clientTrustAll, shouldPass);
+            requireClientAuth, clientTrustAll, shouldPass);
     vertx.sharedData().getMap("TLSTest").put("params", params.serialize());
-    startApp(TLSServer.class.getName());
+    startApp(clazz.getName());
     startTest(testName);
   }
 

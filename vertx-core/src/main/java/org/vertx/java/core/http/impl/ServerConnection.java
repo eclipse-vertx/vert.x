@@ -123,7 +123,7 @@ class ServerConnection extends ConnectionBase {
   }
 
   NetSocket createNetSocket() {
-    DefaultNetSocket socket = new DefaultNetSocket(vertx, channel, context);
+    DefaultNetSocket socket = new DefaultNetSocket(vertx, channel, context, server.tcpHelper, false);
     Map<Channel, DefaultNetSocket> connectionMap = new HashMap<Channel, DefaultNetSocket>(1);
     connectionMap.put(channel, socket);
 
