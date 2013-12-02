@@ -410,6 +410,11 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
         HttpHeaders.setTransferEncodingChunked(request);
       }
     }
+    if (client.getTryUseCompression() && request.headers().get(HttpHeaders.Names.ACCEPT_ENCODING) == null) {
+      // if compression should be used but nothing is specified by the user support deflate and gzip.
+      request.headers().set(HttpHeaders.Names.ACCEPT_ENCODING,"deflate, gzip");
+
+    }
   }
 
   private DefaultHttpClientRequest write(ByteBuf buff, boolean end) {

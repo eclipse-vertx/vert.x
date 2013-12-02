@@ -453,7 +453,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
 
   private DefaultHttpServerResponse write(ByteBuf chunk, final Handler<AsyncResult<Void>> doneHandler) {
     checkWritten();
-    if (version != HttpVersion.HTTP_1_0 && !chunked && !contentLengthSet()) {
+    if (!headWritten && version != HttpVersion.HTTP_1_0 && !chunked && !contentLengthSet()) {
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
                                               + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
     }

@@ -676,8 +676,11 @@ public class HttpTestClient extends TestClientBase {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
-        tu.azzert(req.headers().size() == 1);
-        tu.azzert(req.headers().get("host").equals("localhost:8080"));
+        if (compression()) {
+          tu.azzert(req.headers().size() == 2);
+        } else {
+          tu.azzert(req.headers().size() == 1);
+        }
         tu.azzert(req.headers().get("host").equals("localhost:8080"));
         req.response().end();
       }
@@ -719,7 +722,11 @@ public class HttpTestClient extends TestClientBase {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
-        tu.azzert(req.headers().size() == 1 + headers.size());
+        if (compression()) {
+          tu.azzert(req.headers().size() == 2 + headers.size());
+        } else {
+          tu.azzert(req.headers().size() == 1 + headers.size());
+        }
         for (Map.Entry<String, String> entry : headers) {
           tu.azzert(entry.getValue().equals(req.headers().get(entry.getKey())));
         }
@@ -2083,7 +2090,9 @@ public class HttpTestClient extends TestClientBase {
         client.getNow("some-uri", new Handler<HttpClientResponse>() {
           public void handle(final HttpClientResponse response) {
             tu.azzert(response.statusCode() == 200);
-            tu.azzert(file.length() == Long.valueOf(response.headers().get("content-length")));
+            if (!compression()) {
+              tu.azzert(file.length() == Long.valueOf(response.headers().get("content-length")));
+            }
             tu.azzert("text/html".equals(response.headers().get("content-type")));
             response.bodyHandler(new Handler<Buffer>() {
               public void handle(Buffer buff) {
@@ -2244,7 +2253,9 @@ public class HttpTestClient extends TestClientBase {
         client.getNow("some-uri", new Handler<HttpClientResponse>() {
           public void handle(final HttpClientResponse response) {
             tu.azzert(response.statusCode() == 200);
-            tu.azzert(file.length() == Long.valueOf(response.headers().get("content-length")));
+            if (!compression()) {
+              tu.azzert(file.length() == Long.valueOf(response.headers().get("content-length")));
+            }
             tu.azzert("wibble".equals(response.headers().get("content-type")));
             response.bodyHandler(new Handler<Buffer>() {
               public void handle(Buffer buff) {
@@ -3126,6 +3137,58 @@ public class HttpTestClient extends TestClientBase {
     return map;
   }
 
+
+  public void testResponseBodyWriteFixedString() {
+    final String body = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+    final Buffer bodyBuff = new Buffer(body);
+
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
+      @Override
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
+        final HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+
+            resp.bodyHandler(new Handler<Buffer>() {
+              public void handle(Buffer buff) {
+                tu.azzert(TestUtils.buffersEqual(bodyBuff, buff));
+                tu.testComplete();
+              }
+            });
+          }
+        });
+        if (compression()) {
+          req.putHeader("Accept-Encoding", "deflate");
+        }
+        req.exceptionHandler(new Handler<Throwable>() {
+          @Override
+          public void handle(Throwable event) {
+            event.printStackTrace();
+          }
+        });
+        req.end();
+      }
+    };
+
+    startServer(new Handler<HttpServerRequest>() {
+      public void handle(final HttpServerRequest req) {
+        tu.checkThread();
+        req.response().exceptionHandler(new Handler<Throwable>() {
+          @Override
+          public void handle(Throwable event) {
+            event.printStackTrace();
+          }
+        });
+        req.response().setChunked(true);
+        req.response().write(body);
+        req.response().end();
+
+      }
+
+    }, handler);
+
+  }
 }
 
 
