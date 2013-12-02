@@ -304,4 +304,15 @@ public interface Message<T> {
    */
   void fail(int failureCode, String message);
 
+  /**
+   * whether is immutable
+   * @return
+   */
+  boolean isImmutable();
+
+  /**
+   * set message property of immutable
+   * @param immutable
+   */
+  void setImmutable(boolean immutable);
 }

@@ -17,6 +17,7 @@
 package org.vertx.java.core.eventbus.impl;
 
 import io.netty.util.CharsetUtil;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
@@ -26,7 +27,6 @@ import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.ServerID;
-import org.vertx.java.core.AsyncResult;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -39,6 +39,7 @@ public abstract class BaseMessage<U> implements Message<U> {
   protected String address;
   protected String replyAddress;
   protected boolean send; // Is it a send or a publish?
+  protected boolean immutable = true; //we think message is immutable.
 
   protected BaseMessage(boolean send, String address, U body) {
     this.send = send;
@@ -331,6 +332,14 @@ public abstract class BaseMessage<U> implements Message<U> {
     byte[] strBytes = str.getBytes(CharsetUtil.UTF_8);
     buff.appendInt(strBytes.length);
     buff.appendBytes(strBytes);
+  }
+
+  public boolean isImmutable() {
+    return immutable;
+  }
+
+  public void setImmutable(boolean immutable) {
+    this.immutable = immutable;
   }
 
   protected abstract byte type();
