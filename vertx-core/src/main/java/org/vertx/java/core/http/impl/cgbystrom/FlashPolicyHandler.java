@@ -4,10 +4,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ByteToMessageDecoder;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.CharsetUtil;
-
-import java.util.List;
 
 /**
  * A Flash policy file handler
@@ -30,29 +28,44 @@ import java.util.List;
  *
  * For license see LICENSE file in this directory
  */
-public class FlashPolicyHandler extends ByteToMessageDecoder {
+public class FlashPolicyHandler extends ChannelInboundHandlerAdapter {
   private static final String XML = "<cross-domain-policy><allow-access-from domain=\"*\" to-ports=\"*\" /></cross-domain-policy>";
 
+  enum ParseState {
+    MAGIC1,
+    MAGIC2
+  }
+
+  private ParseState state = ParseState.MAGIC1;
+
   @Override
-  protected void decode(ChannelHandlerContext ctx, ByteBuf buffer, List<Object> out) throws Exception {
-    if (buffer.readableBytes() < 2) {
-      return;
+  public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    ByteBuf buffer = (ByteBuf) msg;
+    int index = buffer.readerIndex();
+    switch (state) {
+      case MAGIC1:
+        if (!buffer.isReadable()) {
+          return;
+        }
+        final int magic1 = buffer.getUnsignedByte(index++);
+        state = ParseState.MAGIC2;
+        if (magic1 != '<') {
+          ctx.fireChannelRead(buffer);
+          ctx.pipeline().remove(this);
+          return;
+        }
+        // fall through
+      case MAGIC2:
+        if (!buffer.isReadable()) {
+          return;
+        }
+        final int magic2 = buffer.getUnsignedByte(index);
+        if (magic2 != 'p') {
+          ctx.fireChannelRead(buffer);
+          ctx.pipeline().remove(this);
+        } else {
+          ctx.writeAndFlush(Unpooled.copiedBuffer(XML, CharsetUtil.UTF_8)).addListener(ChannelFutureListener.CLOSE);
+        }
     }
-
-    final int magic1 = buffer.getUnsignedByte(buffer.readerIndex());
-    final int magic2 = buffer.getUnsignedByte(buffer.readerIndex() + 1);
-    boolean isFlashPolicyRequest = (magic1 == '<' && magic2 == 'p');
-
-    if (isFlashPolicyRequest) {
-      // Discard everything
-      buffer.skipBytes(buffer.readableBytes());
-
-      ctx.writeAndFlush(Unpooled.copiedBuffer(XML, CharsetUtil.UTF_8)).addListener(ChannelFutureListener.CLOSE);
-      return;
-    }
-
-    // Remove ourselves and forward bytes to next handler, important since the byte length check at top can hinder frame decoding
-    // down the pipeline
-    ctx.pipeline().remove(this);
   }
 }

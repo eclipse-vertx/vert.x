@@ -142,4 +142,49 @@ public class HttpHeadersAdapter implements MultiMap {
     }
     return this;
   }
+
+  @Override
+  public String get(CharSequence name) {
+    return headers.get(name);
+  }
+
+  @Override
+  public List<String> getAll(CharSequence name) {
+    return headers.getAll(name);
+  }
+
+  @Override
+  public boolean contains(CharSequence name) {
+    return headers.contains(name);
+  }
+
+  @Override
+  public MultiMap add(CharSequence name, CharSequence value) {
+    headers.add(name, value);
+    return this;
+  }
+
+  @Override
+  public MultiMap add(CharSequence name, Iterable<CharSequence> values) {
+    headers.add(name, values);
+    return this;
+  }
+
+  @Override
+  public MultiMap set(CharSequence name, CharSequence value) {
+    headers.set(name, value);
+    return this;
+  }
+
+  @Override
+  public MultiMap set(CharSequence name, Iterable<CharSequence> values) {
+    headers.set(name, values);
+    return this;
+  }
+
+  @Override
+  public MultiMap remove(CharSequence name) {
+    headers.remove(name);
+    return this;
+  }
 }

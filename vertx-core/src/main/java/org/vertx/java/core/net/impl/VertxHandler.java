@@ -127,7 +127,6 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
     C conn = connectionMap.get(ctx.channel());
     if (conn != null) {
-      conn.endReadAndFlush();
       DefaultContext context = getContext(conn);
       // Only mark end read if its not a WorkerVerticle
       if (context.isOnCorrectWorker(ctx.channel().eventLoop())) {

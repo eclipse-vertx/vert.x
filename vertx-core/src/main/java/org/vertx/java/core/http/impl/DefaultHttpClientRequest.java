@@ -66,19 +66,6 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     this(client, method, uri, respHandler, context, false);
   }
 
-  /*
-  Raw request - used by websockets
-  Raw requests won't have any headers set automatically, like Content-Length and Connection
-  */
-  DefaultHttpClientRequest(final DefaultHttpClient client, final String method, final String uri,
-                           final Handler<HttpClientResponse> respHandler,
-                           final DefaultContext context,
-                           final ClientConnection conn) {
-    this(client, method, uri, respHandler, context, true);
-    this.conn = conn;
-    conn.setCurrentRequest(this);
-  }
-
   private DefaultHttpClientRequest(final DefaultHttpClient client, final String method, final String uri,
                                    final Handler<HttpClientResponse> respHandler,
                                    final DefaultContext context, final boolean raw) {
@@ -247,6 +234,20 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
         handleTimeout(timeoutMs);
       }
     });
+    return this;
+  }
+
+  @Override
+  public HttpClientRequest putHeader(CharSequence name, CharSequence value) {
+    check();
+    headers().set(name, value);
+    return this;
+  }
+
+  @Override
+  public HttpClientRequest putHeader(CharSequence name, Iterable<CharSequence> values) {
+    check();
+    headers().set(name, values);
     return this;
   }
 

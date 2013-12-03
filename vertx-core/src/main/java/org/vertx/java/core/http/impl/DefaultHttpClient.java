@@ -46,8 +46,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultHttpClient implements HttpClient {
 
-  private static final ExceptionDispatchHandler EXCEPTION_DISPATCH_HANDLER = new ExceptionDispatchHandler();
-
   final VertxInternal vertx;
   final Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<>();
 
@@ -653,8 +651,6 @@ public class DefaultHttpClient implements HttpClient {
         @Override
         protected void initChannel(Channel ch) throws Exception {
           ChannelPipeline pipeline = ch.pipeline();
-          pipeline.addLast("exceptionDispatcher", EXCEPTION_DISPATCH_HANDLER);
-
           if (tcpHelper.isSSL()) {
             SSLEngine engine = tcpHelper.getSSLContext().createSSLEngine(host, port);
             if (tcpHelper.isVerifyHost()) {

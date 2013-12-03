@@ -64,7 +64,6 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 public class DefaultHttpServer implements HttpServer, Closeable {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultHttpServer.class);
-  private static final ExceptionDispatchHandler EXCEPTION_DISPATCH_HANDLER = new ExceptionDispatchHandler();
   private static final CharSequence ALLOW = HttpHeaders.newEntity("allow");
   private static final CharSequence GET =  HttpHeaders.newEntity("GET");
   private static final CharSequence WEBSOCKET = HttpHeaders.newEntity(io.netty.handler.codec.http.HttpHeaders.Values.WEBSOCKET);
@@ -166,7 +165,6 @@ public class DefaultHttpServer implements HttpServer, Closeable {
             @Override
             protected void initChannel(Channel ch) throws Exception {
               ChannelPipeline pipeline = ch.pipeline();
-              pipeline.addLast("exceptionDispatcher", EXCEPTION_DISPATCH_HANDLER);
               if (tcpHelper.isSSL()) {
                 SSLEngine engine = tcpHelper.getSSLContext().createSSLEngine();
                 engine.setUseClientMode(false);
