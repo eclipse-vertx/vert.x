@@ -24,6 +24,7 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.testframework.TestBase;
 
+import java.util.Iterator;
 /**
  *
  * TODO complete testing!!
@@ -252,5 +253,16 @@ public class JavaJsonTest extends TestBase {
     JsonArray array2 = new JsonArray().addObject(new JsonObject("{ \"a\": \"b\" }"));
 
     assertEquals(array1, array2);
+  }
+
+  @Test
+  public void testJsonArrayRemove() {
+    JsonArray array = new JsonArray(new String[] {"text1", "text2", "text3"});
+    Iterator iterator = array.iterator();
+    while(iterator.hasNext()) {
+      iterator.next();
+      iterator.remove();
+    }
+    assertTrue(array.size() == 0);
   }
 }
