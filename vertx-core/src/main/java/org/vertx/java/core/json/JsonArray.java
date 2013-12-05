@@ -1,17 +1,17 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
- * ------------------------------------------------------
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * and Apache License v2.0 which accompanies this distribution.
+ * Copyright 2011-2012 the original author or authors.
  *
- *     The Eclipse Public License is available at
- *     http://www.eclipse.org/legal/epl-v10.html
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     The Apache License v2.0 is available at
- *     http://www.opensource.org/licenses/apache2.0.php
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You may elect to redistribute this code under either of these licenses.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.vertx.java.core.json;
@@ -29,22 +29,14 @@ import java.util.*;
  */
 public class JsonArray extends JsonElement implements Iterable<Object> {
 
-  protected List<Object> list;
-
-  protected void checkCopy() {
-    if (needsCopy) {
-      // deep copy the list lazily if the object is mutated
-      list = convertList(list);
-      needsCopy = false;
-    }
-  }
+  final List<Object> list;
 
   public JsonArray(List<Object> array) {
     this.list = array;
   }
 
   public JsonArray(Object[] array) {
-    this.list = Arrays.asList(array);
+    this.list = new ArrayList<>(Arrays.asList(array));
   }
 
   public JsonArray() {
@@ -56,52 +48,45 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
   }
 
   public JsonArray addString(String str) {
-    checkCopy();
     list.add(str);
     return this;
   }
 
   public JsonArray addObject(JsonObject value) {
-    checkCopy();
     list.add(value.map);
     return this;
   }
 
   public JsonArray addArray(JsonArray value) {
-    checkCopy();
     list.add(value.list);
     return this;
   }
 
   public JsonArray addElement(JsonElement value) {
-    checkCopy();
     if (value.isArray()) {
       return addArray(value.asArray());
     }
+
     return addObject(value.asObject());
   }
 
   public JsonArray addNumber(Number value) {
-    checkCopy();
     list.add(value);
     return this;
   }
 
   public JsonArray addBoolean(Boolean value) {
-    checkCopy();
     list.add(value);
     return this;
   }
 
   public JsonArray addBinary(byte[] value) {
-    checkCopy();
     String encoded = Base64.encodeBytes(value);
     list.add(encoded);
     return this;
   }
 
   public JsonArray add(Object obj) {
-    checkCopy();
     if (obj instanceof JsonObject) {
       obj = ((JsonObject) obj).map;
     } else if (obj instanceof JsonArray) {
@@ -121,7 +106,6 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
 
   @Override
   public Iterator<Object> iterator() {
-    checkCopy();
     return new Iterator<Object>() {
 
       Iterator<Object> iter = list.iterator();
@@ -156,14 +140,7 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
   }
 
   public JsonArray copy() {
-    JsonArray copy = new JsonArray(list);
-    copy.setNeedsCopy();
-    return copy;
-  }
-
-  @Override
-  public String toString() {
-    return encode();
+    return new JsonArray(encode());
   }
 
   @Override
