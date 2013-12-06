@@ -31,7 +31,7 @@ import java.util.Locale;
  *
  * <p>Escapes and unescapes <code>String</code>s for
  * Java, Java Script, HTML, XML, and SQL.</p>
- * <p/>
+ * <p></p>
  * <p>#ThreadSafe#</p>
  *
  * @author Apache Software Foundation
@@ -52,10 +52,10 @@ public class StringEscapeUtils {
   /**
    * <p><code>StringEscapeUtils</code> instances should NOT be constructed in
    * standard programming.</p>
-   * <p/>
-   * <p>Instead, the class should be used as:
-   * <pre>StringEscapeUtils.escapeJava("foo");</pre></p>
-   * <p/>
+   * <p></p>
+   * <p>Instead, the class should be used as:</p>
+   * <pre>StringEscapeUtils.escapeJava("foo");</pre>
+   * <p></p>
    * <p>This constructor is public to permit tools that require a JavaBean
    * instance to operate.</p>
    */
@@ -68,21 +68,21 @@ public class StringEscapeUtils {
 
   /**
    * <p>Escapes the characters in a <code>String</code> using Java String rules.</p>
-   * <p/>
+   * <p></p>
    * <p>Deals correctly with quotes and control-chars (tab, backslash, cr, ff, etc.) </p>
-   * <p/>
+   * <p></p>
    * <p>So a tab becomes the characters <code>'\\'</code> and
    * <code>'t'</code>.</p>
-   * <p/>
+   * <p></p>
    * <p>The only difference between Java strings and JavaScript strings
    * is that in JavaScript, a single quote must be escaped.</p>
-   * <p/>
-   * <p>Example:
+   * <p></p>
+   * <p>Example:</p>
    * <pre>
    * input string: He didn't say, "Stop!"
    * output string: He didn't say, \"Stop!\"
    * </pre>
-   * </p>
+   *
    *
    * @param str String to escape values in, may be null
    * @return String with escaped values, <code>null</code> if null string input
@@ -94,7 +94,7 @@ public class StringEscapeUtils {
   /**
    * <p>Escapes the characters in a <code>String</code> using Java String rules to
    * a <code>Writer</code>.</p>
-   * <p/>
+   * <p></p>
    * <p>A <code>null</code> string input has no effect.</p>
    *
    * @param out Writer to write escaped string into
@@ -111,19 +111,18 @@ public class StringEscapeUtils {
    * <p>Escapes the characters in a <code>String</code> using JavaScript String rules.</p>
    * <p>Escapes any values it finds into their JavaScript String form.
    * Deals correctly with quotes and control-chars (tab, backslash, cr, ff, etc.) </p>
-   * <p/>
+   * <p></p>
    * <p>So a tab becomes the characters <code>'\\'</code> and
    * <code>'t'</code>.</p>
-   * <p/>
+   * <p></p>
    * <p>The only difference between Java strings and JavaScript strings
    * is that in JavaScript, a single quote must be escaped.</p>
-   * <p/>
-   * <p>Example:
+   * <p></p>
+   * <p>Example:</p>
    * <pre>
    * input string: He didn't say, "Stop!"
    * output string: He didn\'t say, \"Stop!\"
    * </pre>
-   * </p>
    *
    * @param str String to escape values in, may be null
    * @return String with escaped values, <code>null</code> if null string input
@@ -135,7 +134,7 @@ public class StringEscapeUtils {
   /**
    * <p>Escapes the characters in a <code>String</code> using JavaScript String rules
    * to a <code>Writer</code>.</p>
-   * <p/>
+   * <p></p>
    * <p>A <code>null</code> string input has no effect.</p>
    *
    * @param out Writer to write escaped string into
@@ -287,11 +286,11 @@ public class StringEscapeUtils {
   /**
    * <p>Unescapes any Java literals found in the <code>String</code> to a
    * <code>Writer</code>.</p>
-   * <p/>
+   * <p></p>
    * <p>For example, it will turn a sequence of <code>'\'</code> and
    * <code>'n'</code> into a newline character, unless the <code>'\'</code>
    * is preceded by another <code>'\'</code>.</p>
-   * <p/>
+   * <p></p>
    * <p>A <code>null</code> string input has no effect.</p>
    *
    * @param out the <code>Writer</code> used to output unescaped characters
@@ -380,7 +379,7 @@ public class StringEscapeUtils {
 
   /**
    * <p>Unescapes any JavaScript literals found in the <code>String</code>.</p>
-   * <p/>
+   * <p></p>
    * <p>For example, it will turn a sequence of <code>'\'</code> and <code>'n'</code>
    * into a newline character, unless the <code>'\'</code> is preceded by another
    * <code>'\'</code>.</p>
@@ -396,11 +395,11 @@ public class StringEscapeUtils {
   /**
    * <p>Unescapes any JavaScript literals found in the <code>String</code> to a
    * <code>Writer</code>.</p>
-   * <p/>
+   * <p></p>
    * <p>For example, it will turn a sequence of <code>'\'</code> and <code>'n'</code>
    * into a newline character, unless the <code>'\'</code> is preceded by another
    * <code>'\'</code>.</p>
-   * <p/>
+   * <p></p>
    * <p>A <code>null</code> string input has no effect.</p>
    *
    * @param out the <code>Writer</code> used to output unescaped characters

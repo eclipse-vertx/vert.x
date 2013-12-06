@@ -16,8 +16,7 @@
 
 package org.vertx.java.core.json;
 
-import org.vertx.java.core.json.impl.Base64;
-import org.vertx.java.core.json.impl.Json;
+import org.vertx.java.core.json.impl.*;
 
 import java.util.*;
 
@@ -95,7 +94,7 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
 
   public JsonArray addBinary(byte[] value) {
     checkCopy();
-    String encoded = Base64.encodeBytes(value);
+    String encoded = org.vertx.java.core.json.impl.Base64.encodeBytes(value);
     list.add(encoded);
     return this;
   }

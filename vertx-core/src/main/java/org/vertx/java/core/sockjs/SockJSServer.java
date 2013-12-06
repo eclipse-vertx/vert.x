@@ -66,8 +66,8 @@ public interface SockJSServer {
   /**
    * Install an app which bridges the SockJS server to the event bus
    * @param sjsConfig The config for the app
-   * @param inboundPermitted A list of JSON objects which define permitted matches for inbound (client->server) traffic
-   * @param outboundPermitted A list of JSON objects which define permitted matches for outbound (server->client)
+   * @param inboundPermitted A list of JSON objects which define permitted matches for inbound (client-&gt;server) traffic
+   * @param outboundPermitted A list of JSON objects which define permitted matches for outbound (server-&gt;client)
    * traffic
    */
   SockJSServer bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted);
@@ -75,8 +75,8 @@ public interface SockJSServer {
   /**
    * Install an app which bridges the SockJS server to the event bus
    * @param sjsConfig The config for the app
-   * @param inboundPermitted A list of JSON objects which define permitted matches for inbound (client->server) traffic
-   * @param outboundPermitted A list of JSON objects which define permitted matches for outbound (server->client)
+   * @param inboundPermitted A list of JSON objects which define permitted matches for inbound (client-&gt;server) traffic
+   * @param outboundPermitted A list of JSON objects which define permitted matches for outbound (server-&gt;client)
    * traffic
    * @param authTimeout Default time an authorisation will be cached for in the bridge (defaults to 5 minutes)
    */
@@ -86,8 +86,8 @@ public interface SockJSServer {
   /**
    * Install an app which bridges the SockJS server to the event bus
    * @param sjsConfig The config for the app
-   * @param inboundPermitted A list of JSON objects which define permitted matches for inbound (client->server) traffic
-   * @param outboundPermitted A list of JSON objects which define permitted matches for outbound (server->client)
+   * @param inboundPermitted A list of JSON objects which define permitted matches for inbound (client-&gt;server) traffic
+   * @param outboundPermitted A list of JSON objects which define permitted matches for outbound (server-&gt;client)
    * traffic
    * @param authTimeout Default time an authorisation will be cached for in the bridge (defaults to 5 minutes)
    * @param authAddress Address of auth manager. Defaults to 'vertx.basicauthmanager.authorise'
@@ -98,8 +98,8 @@ public interface SockJSServer {
   /**
    * Install an app which bridges the SockJS server to the event bus
    * @param sjsConfig The config for the app
-   * @param inboundPermitted A list of JSON objects which define permitted matches for inbound (client->server) traffic
-   * @param outboundPermitted A list of JSON objects which define permitted matches for outbound (server->client)
+   * @param inboundPermitted A list of JSON objects which define permitted matches for inbound (client-&gt;server) traffic
+   * @param outboundPermitted A list of JSON objects which define permitted matches for outbound (server-&gt;client)
    * traffic
    * @param bridgeConfig JSON object holding config for the EventBusBridge
    */

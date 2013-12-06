@@ -16,6 +16,7 @@
 
 package org.vertx.java.core.json;
 
+
 import org.vertx.java.core.json.impl.Base64;
 import org.vertx.java.core.json.impl.Json;
 
