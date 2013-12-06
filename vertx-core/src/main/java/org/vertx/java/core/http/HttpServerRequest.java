@@ -54,7 +54,7 @@ public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
 
   /**
    * The uri of the request. For example
-   * http://www.somedomain.com/somepath/somemorepath/someresource.foo?someparam=32&someotherparam=x
+   * http://www.somedomain.com/somepath/somemorepath/someresource.foo?someparam=32&amp;someotherparam=x
    */
   String uri();
 
@@ -64,7 +64,7 @@ public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
   String path();
 
   /**
-   * The query part of the uri. For example someparam=32&someotherparam=x
+   * The query part of the uri. For example someparam=32&amp;someotherparam=x
    */
   String query();
 

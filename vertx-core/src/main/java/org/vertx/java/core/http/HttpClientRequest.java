@@ -40,7 +40,7 @@ import org.vertx.java.core.streams.WriteStream;
  * <p>
  * <pre>
  *
- * HttpClientRequest req = httpClient.post("/some-url", new Handler<HttpClientResponse>() {
+ * HttpClientRequest req = httpClient.post("/some-url", new Handler&lt;HttpClientResponse&gt;() {
  *   public void handle(HttpClientResponse response) {
  *     System.out.println("Got response: " + response.statusCode);
  *   }
