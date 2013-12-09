@@ -178,7 +178,7 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
    * Get the Hazelcast config
    * @return a config object
    */
-  private Config getConfig() {
+  protected Config getConfig() {
     Config cfg = null;
     try (InputStream is = getConfigStream();
          InputStream bis = new BufferedInputStream(is)) {
