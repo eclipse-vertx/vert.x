@@ -34,6 +34,8 @@ import org.vertx.java.core.net.NetSocket;
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
+import java.util.ArrayDeque;
+import java.util.Queue;
 import java.util.UUID;
 
 public class DefaultNetSocket extends ConnectionBase implements NetSocket {
@@ -44,6 +46,8 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
   private final Handler<Message<Buffer>> writeHandler;
+  private Queue<Buffer> pendingData;
+  private boolean paused = false;
 
   public DefaultNetSocket(VertxInternal vertx, Channel channel, DefaultContext context) {
     super(vertx, channel, context);
@@ -92,12 +96,31 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
 
   @Override
   public NetSocket pause() {
+    paused = true;
     doPause();
     return this;
   }
 
   @Override
   public NetSocket resume() {
+    if (!paused) {
+      return this;
+    }
+    paused = false;
+    if (pendingData != null) {
+      for (;;) {
+        final Buffer buf = pendingData.poll();
+        if (buf == null) {
+          break;
+        }
+        vertx.runOnContext(new VoidHandler() {
+          @Override
+          protected void handle() {
+            handleDataReceived(buf);
+          }
+        });
+      }
+    }
     doResume();
     return this;
   }
@@ -194,6 +217,13 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   }
 
   void handleDataReceived(Buffer data) {
+    if (paused) {
+      if (pendingData == null) {
+        pendingData = new ArrayDeque<>();
+      }
+      pendingData.add(data);
+      return;
+    }
     if (dataHandler != null) {
       setContext();
       try {
