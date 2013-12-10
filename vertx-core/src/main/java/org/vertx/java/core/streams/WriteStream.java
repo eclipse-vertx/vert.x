@@ -36,4 +36,9 @@ public interface WriteStream<T> extends ExceptionSupport<T>, DrainSupport<T> {
    * check the {@link #writeQueueFull} method before writing. This is done automatically if using a {@link Pump}.
    */
   T write(Buffer data);
+
+  /**
+   * Close the stream. The actual close happens asynchronously.
+   */
+  void close();
 }
