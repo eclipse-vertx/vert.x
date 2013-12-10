@@ -20,6 +20,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.FixedRecvByteBufAllocator;
+import io.netty.handler.ssl.SslHandler;
 import org.vertx.java.core.file.impl.PathAdjuster;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
@@ -360,5 +361,30 @@ public class TCPSSLHelper {
       }
     }
     return ks;
+  }
+
+  public SslHandler createSslHandler(VertxInternal vertx, boolean client) {
+    if (sslContext == null) {
+      sslContext = createContext(vertx, keyStorePath, keyStorePassword, trustStorePath, trustStorePassword, trustAll);
+    }
+    SSLEngine engine = getSSLContext().createSSLEngine();
+    engine.setUseClientMode(client);
+    if (!client) {
+      switch (getClientAuth()) {
+        case REQUEST: {
+          engine.setWantClientAuth(true);
+          break;
+        }
+        case REQUIRED: {
+          engine.setNeedClientAuth(true);
+          break;
+        }
+        case NONE: {
+          engine.setNeedClientAuth(false);
+          break;
+        }
+      }
+    }
+    return new SslHandler(engine);
   }
 }

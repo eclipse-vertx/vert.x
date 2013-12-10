@@ -50,7 +50,7 @@ public class DefaultHttpClient implements HttpClient {
   final Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<>();
 
   private final DefaultContext actualCtx;
-  private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
+  final TCPSSLHelper tcpHelper = new TCPSSLHelper();
   private Bootstrap bootstrap;
   private Handler<Throwable> exceptionHandler;
   private int port = 80;
