@@ -63,8 +63,14 @@ public class DefaultDatagramSocket extends ConnectionBase
   public DatagramSocket listenMulticastGroup(String multicastAddress, String networkInterface, String source, Handler<AsyncResult<DatagramSocket>> handler) {
     configurable = false;
     try {
+      InetAddress sourceAddress;
+      if (source == null) {
+        sourceAddress = null;
+      } else {
+        sourceAddress = InetAddress.getByName(source);
+      }
       addListener(channel().joinGroup(InetAddress.getByName(multicastAddress),
-              NetworkInterface.getByName(networkInterface), InetAddress.getByName(source)), handler);
+              NetworkInterface.getByName(networkInterface), sourceAddress), handler);
     } catch (Exception e) {
       notifyException(handler, e);
     }
@@ -86,8 +92,14 @@ public class DefaultDatagramSocket extends ConnectionBase
   public DatagramSocket unlistenMulticastGroup(String multicastAddress, String networkInterface, String source, Handler<AsyncResult<DatagramSocket>> handler) {
     configurable = false;
     try {
+      InetAddress sourceAddress;
+      if (source == null) {
+        sourceAddress = null;
+      } else {
+        sourceAddress = InetAddress.getByName(source);
+      }
       addListener(channel().leaveGroup(InetAddress.getByName(multicastAddress),
-              NetworkInterface.getByName(networkInterface), InetAddress.getByName(source)), handler);
+              NetworkInterface.getByName(networkInterface), sourceAddress), handler);
     } catch (Exception e) {
       notifyException(handler, e);
     }
@@ -98,8 +110,14 @@ public class DefaultDatagramSocket extends ConnectionBase
   public DatagramSocket blockMulticastGroup(String multicastAddress, String networkInterface, String sourceToBlock, Handler<AsyncResult<DatagramSocket>> handler) {
     configurable = false;
     try {
+      InetAddress sourceAddress;
+      if (sourceToBlock == null) {
+        sourceAddress = null;
+      } else {
+        sourceAddress = InetAddress.getByName(sourceToBlock);
+      }
       addListener(channel().block(InetAddress.getByName(multicastAddress),
-              NetworkInterface.getByName(networkInterface), InetAddress.getByName(sourceToBlock)), handler);
+              NetworkInterface.getByName(networkInterface), sourceAddress), handler);
     } catch (Exception e) {
       notifyException(handler, e);
     }

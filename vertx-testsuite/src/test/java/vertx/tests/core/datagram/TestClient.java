@@ -421,62 +421,79 @@ public class TestClient extends TestClientBase {
   public void testMulticastJoinLeave() throws Exception {
     final Buffer buffer = TestUtils.generateRandomBuffer(128);
     final String groupAddress = "230.0.0.1";
-
-    peer1 = vertx.createDatagramSocket(null);
+    final String iface = NetworkInterface.getByInetAddress(InetAddress.getByName("127.0.0.1")).getName();
+    final AtomicBoolean received = new AtomicBoolean();
+    peer1 = vertx.createDatagramSocket(InternetProtocolFamily.IPv4);
     peer2 = vertx.createDatagramSocket(InternetProtocolFamily.IPv4);
 
-    peer2.dataHandler(new Handler<DatagramPacket>() {
+    peer1.setMulticastNetworkInterface(iface);
+    peer2.setMulticastNetworkInterface(iface);
+
+    peer1.dataHandler(new Handler<DatagramPacket>() {
       @Override
       public void handle(DatagramPacket event) {
         tu.checkThread();
         tu.azzert(event.data().equals(buffer));
+        received.set(true);
       }
     });
 
-    peer2.listen("127.0.0.1", 1234, new AsyncResultHandler<DatagramSocket>() {
+    peer1.listen(1234, new Handler<AsyncResult<DatagramSocket>>() {
       @Override
       public void handle(AsyncResult<DatagramSocket> event) {
         tu.checkThread();
         tu.azzert(event.succeeded());
 
-
-        peer2.listenMulticastGroup(groupAddress, new AsyncResultHandler<DatagramSocket>() {
+        peer1.listenMulticastGroup(groupAddress, iface, null, new AsyncResultHandler<DatagramSocket>() {
           @Override
           public void handle(AsyncResult<DatagramSocket> event) {
+            tu.checkThread();
             tu.azzert(event.succeeded());
-            peer1.send(buffer, groupAddress, 1234, new AsyncResultHandler<DatagramSocket>() {
+            peer2.send(buffer, groupAddress, 1234, new AsyncResultHandler<DatagramSocket>() {
               @Override
               public void handle(AsyncResult<DatagramSocket> event) {
+                tu.checkThread();
                 tu.azzert(event.succeeded());
-
-                // leave group
-                peer2.unlistenMulticastGroup(groupAddress, new AsyncResultHandler<DatagramSocket>() {
+                // leave group in 1 second so give it enough time to really receive the packet first
+                vertx.setTimer(1000, new Handler<Long>() {
                   @Override
-                  public void handle(AsyncResult<DatagramSocket> event) {
-                    tu.azzert(event.succeeded());
-
-                    final AtomicBoolean received = new AtomicBoolean(false);
-                    peer2.dataHandler(new Handler<DatagramPacket>() {
-                      @Override
-                      public void handle(DatagramPacket event) {
-                        // Should not receive any more event as it left the group
-                        received.set(true);
-                      }
-                    });
-                    peer1.send(buffer, groupAddress, 1234, new AsyncResultHandler<DatagramSocket>() {
+                  public void handle(Long event) {
+                    peer1.unlistenMulticastGroup(groupAddress, iface, null, new AsyncResultHandler<DatagramSocket>() {
                       @Override
                       public void handle(AsyncResult<DatagramSocket> event) {
+                        tu.checkThread();
                         tu.azzert(event.succeeded());
 
-                        // schedule a timer which will check in 1 second if we received a message after the group
-                        // was left before
-                        vertx.setTimer(1000, new Handler<Long>() {
+                        final AtomicBoolean receivedAfter = new AtomicBoolean();
+                        peer1.dataHandler(new Handler<DatagramPacket>() {
                           @Override
-                          public void handle(Long event) {
-                            tu.azzert(!received.get());
-                            tu.testComplete();
+                          public void handle(DatagramPacket event) {
+                            tu.checkThread();
+                            // Should not receive any more event as it left the group
+                            receivedAfter.set(true);
                           }
                         });
+
+                        peer2.send(buffer, groupAddress, 1234, new AsyncResultHandler<DatagramSocket>() {
+                          @Override
+                          public void handle(AsyncResult<DatagramSocket> event) {
+                            tu.checkThread();
+                            tu.azzert(event.succeeded());
+
+                            // schedule a timer which will check in 1 second if we received a message after the group
+                            // was left before
+                            vertx.setTimer(1000, new Handler<Long>() {
+                              @Override
+                              public void handle(Long event) {
+                                tu.checkThread();
+                                tu.azzert(!receivedAfter.get());
+                                tu.azzert(received.get());
+                                tu.testComplete();
+                              }
+                            });
+                          }
+                        });
+
                       }
                     });
                   }
@@ -485,7 +502,6 @@ public class TestClient extends TestClientBase {
             });
           }
         });
-
       }
     });
   }
