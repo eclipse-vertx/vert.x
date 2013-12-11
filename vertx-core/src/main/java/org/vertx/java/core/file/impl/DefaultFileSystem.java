@@ -33,10 +33,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
+import java.nio.file.attribute.*;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -112,6 +109,16 @@ public class DefaultFileSystem implements FileSystem {
 
   public FileSystem chmodSync(String path, String perms, String dirPerms) {
     chmodInternal(path, perms, dirPerms, null).action();
+    return this;
+  }
+
+  public FileSystem chown(String path, String user, String group, Handler<AsyncResult<Void>> handler) {
+    chownInternal(path, user, group, handler).run();
+    return this;
+  }
+
+  public FileSystem chownSync(String path, String user, String group) {
+    chownInternal(path, user, group, null).action();
     return this;
   }
 
@@ -468,6 +475,30 @@ public class DefaultFileSystem implements FileSystem {
           }
         } catch (SecurityException e) {
           throw new FileSystemException("Accessed denied for chmod on " + target);
+        } catch (IOException e) {
+          throw new FileSystemException(e);
+        }
+        return null;
+      }
+    };
+  }
+  protected BlockingAction<Void> chownInternal(String path, final String user, final String group, Handler<AsyncResult<Void>> handler) {
+    final Path target = PathAdjuster.adjust(vertx, Paths.get(path));
+    final UserPrincipalLookupService service = target.getFileSystem().getUserPrincipalLookupService();
+    return new BlockingAction<Void>(vertx, handler) {
+      public Void action() {
+
+        try {
+          final UserPrincipal userPrincipal = user == null ? null : service.lookupPrincipalByName(user);
+          final UserPrincipal groupPrincipal = group == null ? null : service.lookupPrincipalByGroupName(group);
+          if (userPrincipal != null) {
+            Files.setOwner(target, userPrincipal);
+          }
+          if (groupPrincipal != null) {
+            Files.setOwner(target, groupPrincipal);
+          }
+        } catch (SecurityException e) {
+          throw new FileSystemException("Accessed denied for chown on " + target);
         } catch (IOException e) {
           throw new FileSystemException(e);
         }

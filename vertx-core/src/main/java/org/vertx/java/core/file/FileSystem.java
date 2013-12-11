@@ -104,6 +104,19 @@ public interface FileSystem {
    */
   FileSystem chmodSync(String path, String perms, String dirPerms) ;
 
+
+  /**
+   * Change the ownership on the file represented by {@code path} to {@code user} and {code group}, asynchronously.
+   *
+   */
+  FileSystem chown(String path, String user, String group, Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Synchronous version of {@link #chown(String, String, String, Handler)}
+   *
+   */
+  FileSystem chownSync(String user, String group, String perms) ;
+
   /**
    * Obtain properties for the file represented by {@code path}, asynchronously.
    * If the file is a link, the link will be followed.

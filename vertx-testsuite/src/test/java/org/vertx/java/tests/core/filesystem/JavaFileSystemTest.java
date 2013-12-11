@@ -342,6 +342,13 @@ public class JavaFileSystemTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void testChownToRootFails() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testChownToNotExistingUserFails() throws Exception {
+    startTest(getMethodName());
+  }
 
   private AsyncResultHandler createHandler() {
     return new AsyncResultHandler<Void>() {
