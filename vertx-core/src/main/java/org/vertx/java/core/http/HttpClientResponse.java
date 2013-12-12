@@ -75,6 +75,10 @@ public interface HttpClientResponse extends ReadStream<HttpClientResponse> {
   /**
    * Get a net socket for the underlying connection of this request. USE THIS WITH CAUTION!
    * Writing to the socket directly if you don't know what you're doing can easily break the HTTP protocol
+   *
+   * One valid use-case for calling this is to receive the {@link NetSocket} after a HTTP CONNECT was issued to the
+   * remote peer and it responded with a status code of 200.
+   *
    * @return the net socket
    */
   NetSocket netSocket();

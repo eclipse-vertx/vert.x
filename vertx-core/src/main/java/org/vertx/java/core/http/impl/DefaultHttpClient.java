@@ -32,6 +32,7 @@ import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.*;
+import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.TCPSSLHelper;
 import org.vertx.java.core.net.impl.VertxEventLoopGroup;
 
@@ -39,6 +40,7 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLParameters;
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -234,9 +236,109 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   @Override
-  public HttpClientRequest connect(String uri, Handler<HttpClientResponse> responseHandler) {
+  public HttpClientRequest connect(String uri, final Handler<HttpClientResponse> responseHandler) {
     checkClosed();
-    return doRequest("CONNECT", uri, responseHandler);
+    return doRequest("CONNECT", uri, connectHandler(responseHandler));
+  }
+
+  private Handler<HttpClientResponse> connectHandler(final Handler<HttpClientResponse> responseHandler) {
+    return new Handler<HttpClientResponse>() {
+      @Override
+      public void handle(final HttpClientResponse event) {
+        HttpClientResponse response;
+        if (event.statusCode() == 200) {
+          // connect successful force the modification of the ChannelPipeline
+          // beside this also pause the socket for now so the user has a chance to register its dataHandler
+          // after received the NetSocket
+          final NetSocket socket = event.netSocket();
+          socket.pause();
+
+          response = new HttpClientResponse() {
+            private boolean resumed;
+
+            @Override
+            public int statusCode() {
+              return event.statusCode();
+            }
+
+            @Override
+            public String statusMessage() {
+              return event.statusMessage();
+            }
+
+            @Override
+            public MultiMap headers() {
+              return event.headers();
+            }
+
+            @Override
+            public MultiMap trailers() {
+              return event.trailers();
+            }
+
+            @Override
+            public List<String> cookies() {
+              return event.cookies();
+            }
+
+            @Override
+            public HttpClientResponse bodyHandler(Handler<Buffer> bodyHandler) {
+              event.bodyHandler(bodyHandler);
+              return this;
+            }
+
+            @Override
+            public NetSocket netSocket() {
+              if (!resumed) {
+                resumed = true;
+                vertx.getContext().execute(new Runnable() {
+                  @Override
+                  public void run() {
+                    // resume the socket now as the user had the chance to register a dataHandler
+                    socket.resume();
+                  }
+                });
+              }
+              return socket;
+
+            }
+
+            @Override
+            public HttpClientResponse endHandler(Handler<Void> endHandler) {
+              event.endHandler(endHandler);
+              return this;
+            }
+
+            @Override
+            public HttpClientResponse dataHandler(Handler<Buffer> handler) {
+              event.dataHandler(handler);
+              return this;
+            }
+
+            @Override
+            public HttpClientResponse pause() {
+              event.pause();
+              return this;
+            }
+
+            @Override
+            public HttpClientResponse resume() {
+              event.resume();
+              return this;
+            }
+
+            @Override
+            public HttpClientResponse exceptionHandler(Handler<Throwable> handler) {
+              event.exceptionHandler(handler);
+              return this;
+            }
+          };
+        } else {
+          response = event;
+        }
+        responseHandler.handle(response);
+      }
+    };
   }
 
   @Override
@@ -248,6 +350,10 @@ public class DefaultHttpClient implements HttpClient {
   @Override
   public HttpClientRequest request(String method, String uri, Handler<HttpClientResponse> responseHandler) {
     checkClosed();
+    if (method.equalsIgnoreCase("CONNECT")) {
+      // special handling for CONNECT
+      responseHandler = connectHandler(responseHandler);
+    }
     return doRequest(method, uri, responseHandler);
   }
 

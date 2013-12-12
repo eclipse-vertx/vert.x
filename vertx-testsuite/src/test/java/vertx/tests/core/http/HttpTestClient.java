@@ -22,7 +22,9 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.HttpHeadersAdapter;
+import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.streams.Pump;
 import org.vertx.java.testframework.TestClientBase;
 import org.vertx.java.testframework.TestUtils;
 
@@ -3188,6 +3190,90 @@ public class HttpTestClient extends TestClientBase {
 
     }, handler);
 
+  }
+
+  public void testHttpConnect() {
+    final Buffer buffer = TestUtils.generateRandomBuffer(128);
+    final Buffer received = new Buffer();
+    vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
+      @Override
+      public void handle(final NetSocket socket) {
+        socket.dataHandler(new Handler<Buffer>() {
+          @Override
+          public void handle(Buffer event) {
+            socket.write(event);
+          }
+        });
+      }
+    }).listen(1235, new AsyncResultHandler<NetServer>() {
+      @Override
+      public void handle(AsyncResult<NetServer> event) {
+        tu.checkThread();
+        tu.azzert(event.succeeded());
+
+        final NetServer netServer = event.result();
+        AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
+          @Override
+          public void handle(AsyncResult<HttpServer> ar) {
+            tu.azzert(ar.succeeded());
+            final HttpClientRequest req = client.connect("some-uri:8080", new Handler<HttpClientResponse>() {
+              @Override
+              public void handle(HttpClientResponse event) {
+                tu.checkThread();
+                tu.azzert(200 == event.statusCode());
+                NetSocket socket = event.netSocket();
+                socket.dataHandler(new Handler<Buffer>() {
+                  @Override
+                  public void handle(Buffer event) {
+                    received.appendBuffer(event);
+                    if (received.length() == buffer.length()) {
+                      netServer.close();
+                      tu.azzert(TestUtils.buffersEqual(received, buffer));
+                      tu.testComplete();
+                    }
+                  }
+                });
+                socket.write(buffer);
+              }
+            });
+            req.end();
+          }
+        };
+
+        startServer(new Handler<HttpServerRequest>() {
+          public void handle(final HttpServerRequest req) {
+            tu.checkThread();
+            req.response().exceptionHandler(new Handler<Throwable>() {
+              @Override
+              public void handle(Throwable event) {
+                event.printStackTrace();
+              }
+            });
+            vertx.createNetClient().connect(netServer.port(), new AsyncResultHandler<NetSocket>() {
+              @Override
+              public void handle(AsyncResult<NetSocket> event) {
+                tu.azzert(event.succeeded());
+                final NetSocket socket = event.result();
+                req.response().setStatusCode(200);
+                req.response().setStatusMessage("Connection established");
+                req.response().end();
+
+                // Create pumps which echo stuff
+                Pump.createPump(req.netSocket(), socket).start();
+                Pump.createPump(socket, req.netSocket()).start();
+                req.netSocket().closeHandler(new Handler<Void>() {
+                  @Override
+                  public void handle(Void event) {
+                    socket.close();
+                  }
+                });
+              }
+            });
+          }
+
+        }, handler);
+      }
+    });
   }
 }
 
