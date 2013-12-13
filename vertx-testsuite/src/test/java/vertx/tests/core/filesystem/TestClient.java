@@ -398,6 +398,26 @@ public class TestClient extends TestClientBase {
     });
   }
 
+  public void testChownToRootFails() throws Exception {
+    testChownFails("root");
+  }
+
+  public void testChownToNotExistingUserFails() throws Exception {
+    testChownFails("jfhfhjejweg");
+  }
+
+  private void testChownFails(String user) throws Exception {
+    final String file1 = "some-file.dat";
+    createFileWithJunk(file1, 100);
+    vertx.fileSystem().chown(TEST_DIR + pathSep + file1, user, null, new AsyncResultHandler<Void>() {
+      public void handle(AsyncResult<Void> result) {
+        deleteFile(file1);
+        tu.azzert(result.failed());
+        tu.testComplete();
+      }
+    });
+  }
+
   private void testChmod(final String file, final String perms, final String dirPerms,
                          final boolean shouldPass, final Handler<Void> afterOK) throws Exception {
     if (Files.isDirectory(Paths.get(TEST_DIR + pathSep + file))) {
