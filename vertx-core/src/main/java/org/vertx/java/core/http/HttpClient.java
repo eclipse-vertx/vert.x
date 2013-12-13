@@ -179,6 +179,9 @@ public interface HttpClient extends ClientSSLSupport<HttpClient>, TCPSupport<Htt
   /**
    * This method returns an {@link HttpClientRequest} instance which represents an HTTP CONNECT request with the specified {@code uri}.<p>
    * When an HTTP response is received from the server the {@code responseHandler} is called passing in the response.
+   *
+   * Because of the nature of CONNECT the connection is automatically upgraded to raw TCP if a response code of 200 is received from the
+   * remote peer. In this case you are able to get hold of the raw TCP socket via calling {@link HttpClientResponse#netSocket()}.
    */
   HttpClientRequest connect(String uri, Handler<HttpClientResponse> responseHandler);
 

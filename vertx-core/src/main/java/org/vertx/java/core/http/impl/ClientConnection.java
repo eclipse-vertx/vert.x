@@ -55,7 +55,7 @@ class ClientConnection extends ConnectionBase {
   private final String host;
   private final int port;
   boolean keepAlive;
-  private boolean wsHandshakeConnection;
+  private boolean upgradedConnection;
   private WebSocketClientHandshaker handshaker;
   private volatile DefaultHttpClientRequest currentRequest;
   // Requests can be pipelined so we need a queue to keep track of requests
@@ -128,7 +128,7 @@ class ClientConnection extends ConnectionBase {
           }
         }
       });
-      wsHandshakeConnection = true;
+      upgradedConnection = true;
 
     } catch (Exception e) {
       handleException(e);
@@ -242,7 +242,7 @@ class ClientConnection extends ConnectionBase {
 
   @Override
   public void close() {
-    if (wsHandshakeConnection) {
+    if (upgradedConnection) {
       // Do nothing - this will be ugraded
     } else if (!keepAlive) {
       //Close it
@@ -367,6 +367,8 @@ class ClientConnection extends ConnectionBase {
   }
 
   NetSocket createNetSocket() {
+    // connection was upgraded to raw TCP socket
+    upgradedConnection = true;
     DefaultNetSocket socket = new DefaultNetSocket(vertx, channel, context, client.tcpHelper, true);
     Map<Channel, DefaultNetSocket> connectionMap = new HashMap<Channel, DefaultNetSocket>(1);
     connectionMap.put(channel, socket);
