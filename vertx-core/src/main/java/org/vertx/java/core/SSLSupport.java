@@ -16,6 +16,8 @@
 
 package org.vertx.java.core;
 
+import javax.net.ssl.SSLContext;
+
 public interface SSLSupport<T> {
 
   /**
@@ -84,4 +86,11 @@ public interface SSLSupport<T> {
    * @return Get trust store password
    */
   String getTrustStorePassword();
+
+  /**
+   * Allow to set a pre-configured {@link SSLContext} to use for SSL/TLS.
+   * This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}
+   * has been set to {@code true}.<p>
+   */
+  T setContext(SSLContext context);
 }

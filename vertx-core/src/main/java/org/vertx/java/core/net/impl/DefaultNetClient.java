@@ -31,6 +31,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 
+import javax.net.ssl.SSLContext;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -280,6 +281,13 @@ public class DefaultNetClient implements NetClient {
   public NetClient setTrustAll(boolean trustAll) {
     checkConfigurable();
     tcpHelper.setTrustAll(trustAll);
+    return this;
+  }
+
+  @Override
+  public NetClient setContext(SSLContext context) {
+    checkConfigurable();
+    tcpHelper.setContext(context);
     return this;
   }
 

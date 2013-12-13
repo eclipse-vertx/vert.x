@@ -72,8 +72,12 @@ public class TCPSSLHelper {
   public TCPSSLHelper() {
   }
 
+  public void setContext(SSLContext context) {
+    this.sslContext = context;
+  }
+
   public void checkSSL(VertxInternal vertx) {
-    if (ssl) {
+    if (ssl && sslContext == null) {
       sslContext = createContext(vertx, keyStorePath, keyStorePassword, trustStorePath, trustStorePassword, trustAll);
     }
   }
@@ -228,18 +232,30 @@ public class TCPSSLHelper {
   }
 
   public void setKeyStorePath(String path) {
+    if (sslContext != null) {
+      throw new IllegalStateException("SSLContext already created");
+    }
     this.keyStorePath = path;
   }
 
   public void setKeyStorePassword(String pwd) {
+    if (sslContext != null) {
+      throw new IllegalStateException("SSLContext already created");
+    }
     this.keyStorePassword = pwd;
   }
 
   public void setTrustStorePath(String path) {
+    if (sslContext != null) {
+      throw new IllegalStateException("SSLContext already created");
+    }
     this.trustStorePath = path;
   }
 
   public void setTrustStorePassword(String pwd) {
+    if (sslContext != null) {
+      throw new IllegalStateException("SSLContext already created");
+    }
     this.trustStorePassword = pwd;
   }
 
@@ -248,6 +264,9 @@ public class TCPSSLHelper {
   }
 
   public void setTrustAll(boolean trustAll) {
+    if (sslContext != null) {
+      throw new IllegalStateException("SSLContext already created");
+    }
     this.trustAll = trustAll;
   }
 
