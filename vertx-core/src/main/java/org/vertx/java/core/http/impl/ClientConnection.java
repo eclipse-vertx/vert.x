@@ -147,6 +147,19 @@ class ClientConnection extends ConnectionBase {
     }
 
     @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+      super.channelInactive(ctx);
+      context.execute(ctx.channel().eventLoop(), new Runnable() {
+        @Override
+        public void run() {
+          if (!handshaking) {
+            client.handleException(new WebSocketHandshakeException("Connection closed while handshake in process"));
+          }
+        }
+      });
+    }
+
+    @Override
     public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
       context.execute(ctx.channel().eventLoop(), new Runnable() {
         public void run() {
@@ -201,6 +214,7 @@ class ClientConnection extends ConnectionBase {
           }
         }
       });
+
 
     }
 
