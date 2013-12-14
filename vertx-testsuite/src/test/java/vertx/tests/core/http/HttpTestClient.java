@@ -28,8 +28,14 @@ import org.vertx.java.core.streams.Pump;
 import org.vertx.java.testframework.TestClientBase;
 import org.vertx.java.testframework.TestUtils;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.*;
 import java.net.URLEncoder;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -3274,6 +3280,57 @@ public class HttpTestClient extends TestClientBase {
         }, handler);
       }
     });
+  }
+
+  public void testPreconfiguredSSLContext() throws Exception {
+    TLSTestParams params = TLSTestParams.deserialize(vertx.sharedData().<String, byte[]>getMap("TLSTest").get("params"));
+
+    client.setSSL(true);
+    TrustManager trustManager = new X509TrustManager() {
+      @Override
+      public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+      }
+
+      @Override
+      public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+      }
+
+      @Override
+      public X509Certificate[] getAcceptedIssuers() {
+        return new X509Certificate[0];
+      }
+    };
+
+    SSLContext context = SSLContext.getInstance("TLS");
+    context.init(null, new TrustManager[] {trustManager}, new SecureRandom());
+    final boolean shouldPass = params.shouldPass;
+    client.setSSL(true);
+    client.setContext(context);
+
+    client.exceptionHandler(new Handler<Throwable>() {
+      public void handle(Throwable t) {
+        if (shouldPass) {
+          tu.azzert(false, "Should not throw exception");
+        } else {
+          tu.testComplete();
+        }
+      }
+    });
+
+    client.setPort(4043);
+
+    HttpClientRequest req = client.get("someurl", new Handler<HttpClientResponse>() {
+      public void handle(final HttpClientResponse response) {
+        tu.checkThread();
+        response.bodyHandler(new Handler<Buffer>() {
+          public void handle(Buffer data) {
+            tu.azzert("bar".equals(data.toString()));
+          }
+        });
+        tu.testComplete();
+      }
+    });
+    req.end("foo");
   }
 }
 
