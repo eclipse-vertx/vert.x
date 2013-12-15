@@ -340,7 +340,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
 
   private void doSendOrPub(final boolean send, final SockJSSocket sock, final String address,
                            final JsonObject message) {
-    final Object body = getMandatoryValue(message, "body");
+    final Object body = message.getValue("body");
     final String replyAddress = message.getString("replyAddress");
     // Sanity check reply address is not too big, to avoid DoS
     if (replyAddress != null && replyAddress.length() > 36) {
