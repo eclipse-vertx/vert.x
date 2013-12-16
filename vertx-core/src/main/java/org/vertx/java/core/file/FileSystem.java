@@ -115,7 +115,7 @@ public interface FileSystem {
    * Synchronous version of {@link #chown(String, String, String, Handler)}
    *
    */
-  FileSystem chownSync(String user, String group, String perms) ;
+  FileSystem chownSync(String path, String user, String group) ;
 
   /**
    * Obtain properties for the file represented by {@code path}, asynchronously.
