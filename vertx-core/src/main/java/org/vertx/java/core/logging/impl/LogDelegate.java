@@ -26,6 +26,12 @@ public interface LogDelegate {
   boolean isDebugEnabled();
 
   boolean isTraceEnabled();
+  
+  boolean isWarnEnabled();
+  
+  boolean isFatalEnabled();
+  
+  boolean isErrorEnabled();
 
   void fatal(Object message);
 

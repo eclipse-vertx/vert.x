@@ -15,6 +15,8 @@
 
 package org.vertx.java.core.logging.impl;
 
+import org.apache.log4j.Level;
+
 /**
  * A {@link LogDelegate} which delegates to Apache Log4j
  *
@@ -39,6 +41,18 @@ public class Log4jLogDelegate implements LogDelegate {
     return logger.isTraceEnabled();
   }
 
+  public boolean isWarnEnabled() {
+    return logger.isEnabledFor(Level.WARN);
+  }
+  
+  public boolean isFatalEnabled() {
+    return logger.isEnabledFor(Level.FATAL);
+  }
+  
+  public boolean isErrorEnabled() {
+    return logger.isEnabledFor(Level.ERROR);
+  }
+  
   public void fatal(final Object message) {
     logger.fatal(message);
   }

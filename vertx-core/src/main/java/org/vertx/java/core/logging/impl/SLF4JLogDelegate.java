@@ -45,6 +45,18 @@ public class SLF4JLogDelegate implements LogDelegate{
     return logger.isTraceEnabled();
   }
 
+  public boolean isWarnEnabled() {
+    return logger.isWarnEnabled();
+  }
+  
+  public boolean isFatalEnabled() {
+    return logger.isErrorEnabled();
+  }
+  
+  public boolean isErrorEnabled() {
+    return logger.isErrorEnabled();
+  }
+  
   public void fatal(final Object message) {
     logger.error(message.toString());
   }
