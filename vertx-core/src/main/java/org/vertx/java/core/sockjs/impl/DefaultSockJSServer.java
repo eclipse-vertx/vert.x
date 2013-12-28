@@ -21,7 +21,11 @@ import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxFactory;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.http.*;
+import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.java.core.http.HttpServerResponse;
+import org.vertx.java.core.http.RouteMatcher;
+import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.WebSocketMatcher;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.JsonArray;
@@ -33,9 +37,17 @@ import org.vertx.java.core.sockjs.EventBusBridgeHook;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -102,13 +114,13 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
     config = config.copy();
     //Set the defaults
     if (config.getNumber("session_timeout") == null) {
-      config.putNumber("session_timeout", 5l * 1000); // 5 seconds default
+      config.putNumber("session_timeout", 5L * 1000); // 5 seconds default
     }
     if (config.getBoolean("insert_JSESSIONID") == null) {
       config.putBoolean("insert_JSESSIONID", true);
     }
     if (config.getNumber("heartbeat_period") == null) {
-      config.putNumber("heartbeat_period", 25l * 1000);
+      config.putNumber("heartbeat_period", 25L * 1000);
     }
     if (config.getNumber("max_bytes_streaming") == null) {
       config.putNumber("max_bytes_streaming", 128 * 1024);
@@ -124,9 +136,9 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
     }
     return config;
   }
-  
+
   public SockJSServer setHook(EventBusBridgeHook hook) {
-	  this.hook = hook;
+    this.hook = hook;
     return this;
   }
 
@@ -210,7 +222,7 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
   }
 
   public SockJSServer bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted) {
-	  EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted);
+    EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted);
     if (hook != null) {
       busBridge.setHook(hook);
     }
@@ -220,20 +232,20 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
 
   public SockJSServer bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
                      long authTimeout) {
-	  EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted, authTimeout);
-	  if (hook != null) {
-		  busBridge.setHook(hook);
-	  }
+    EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted, authTimeout);
+    if (hook != null) {
+      busBridge.setHook(hook);
+    }
     installApp(sjsConfig, busBridge);
     return this;
   }
 
   public SockJSServer bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
                      long authTimeout, String authAddress) {
-	  EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted, authTimeout, authAddress);
-	  if (hook != null) {
-		  busBridge.setHook(hook);
-	  }
+      EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted, authTimeout, authAddress);
+      if (hook != null) {
+          busBridge.setHook(hook);
+      }
     installApp(sjsConfig, busBridge);
     return this;
   }
@@ -343,14 +355,14 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
   private static String getMD5String(final String str) {
     try {
         MessageDigest md = MessageDigest.getInstance("MD5");
-        byte[] bytes = md.digest(str.getBytes("UTF-8"));
+        byte[] bytes = md.digest(str.getBytes(StandardCharsets.UTF_8));
         StringBuilder sb = new StringBuilder();
         for (byte b : bytes) {
           sb.append(Integer.toHexString(b + 127));
         }
         return sb.toString();
     }
-    catch (Exception e) {
+    catch (NoSuchAlgorithmException e) {
         log.error("Failed to generate MD5 for iframe, If-None-Match headers will be ignored");
         return null;
     }
@@ -444,7 +456,7 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
         sock.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer data) {
             String str = data.toString();
-            int n = Integer.valueOf(str);
+            int n = Integer.parseInt(str);
             if (n < 0 || n > 19) {
               n = 1;
             }

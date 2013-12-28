@@ -70,8 +70,8 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   private MultiMap trailers;
 
   DefaultHttpServerResponse(final VertxInternal vertx, ServerConnection conn, HttpRequest request) {
-  	this.vertx = vertx;
-  	this.conn = conn;
+    this.vertx = vertx;
+    this.conn = conn;
     this.version = request.getProtocolVersion();
     this.response = new DefaultHttpResponse(version, HttpResponseStatus.OK, false);
     this.keepAlive = version == HttpVersion.HTTP_1_1 ||

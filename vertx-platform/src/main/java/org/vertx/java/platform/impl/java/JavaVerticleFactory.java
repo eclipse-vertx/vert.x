@@ -59,7 +59,7 @@ public class JavaVerticleFactory implements VerticleFactory {
     verticle.setContainer(container);
     return verticle;
   }
-    
+
   public void reportException(Logger logger, Throwable t) {
     logger.error("Exception in Java verticle", t);
   }

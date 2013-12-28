@@ -68,11 +68,11 @@ public class JavaJsonTest extends TestBase {
   @Test
   public void testRetrieveArrayItemByIndex() {
     JsonArray arr = new JsonArray();
-    
+
     arr.addString("foo");
     arr.addObject(new JsonObject().putString("bar", "baz"));
     arr.addString("bap");
-    
+
     assertEquals("baz", ((JsonObject) arr.get(1)).getString("bar"));
   }
 
@@ -83,44 +83,44 @@ public class JavaJsonTest extends TestBase {
         .putObject("null", null) // this shouldn't cause a NullPointerException
         .encode()
     );
-    
+
     log.debug(
       new JsonObject()
         .putObject("null", new JsonObject().putString("foo", "bar"))
         .encode()
     );
   }
-  
+
   @Test
   public void testJsonElementTypeCheck(){
     JsonElement objElement = new JsonObject().putString("foo", "bar");
     JsonElement arrayElement = new JsonArray().addString("foo");
-    
+
     assertTrue(objElement.isObject());
     assertFalse(objElement.isArray());
-    
+
     assertFalse(arrayElement.isObject());
     assertTrue(arrayElement.isArray());
   }
-  
+
   @Test
   public void testJsonElementConversionWithoutException(){
     JsonElement objElement = new JsonObject().putString("foo", "bar");
     JsonElement arrayElement = new JsonArray().addString("foo");
-    
-    JsonObject retrievedObject = objElement.asObject();  
+
+    JsonObject retrievedObject = objElement.asObject();
     JsonArray retrievedArray = arrayElement.asArray();
-    
+
     log.debug(retrievedObject.encode());
     log.debug(retrievedArray.encode());
   }
-  
+
   @Test
   public void testJsonElementConversionWithException(){
     JsonElement objElement = new JsonObject().putString("foo", "bar");
 
     try{
-      objElement.asArray();        
+      objElement.asArray();
     }catch(ClassCastException e){
       return;
     }
@@ -133,20 +133,20 @@ public class JavaJsonTest extends TestBase {
     JsonElement arrayElement = new JsonArray().addString("foo");
 
     try{
-      arrayElement.asObject();        
+      arrayElement.asObject();
     }catch(ClassCastException e){
       return;
     }
-    
+
     fail("Coercing JsonElement(Array) into JsonObject did not throw a ClassCastException");
   }
-  
-  
+
+
   @Test
   public void testInsertJsonElementIntoJsonObjectWithouException(){
     JsonObject objElement = new JsonObject().putString("foo", "bar");
     JsonArray arrayElement = new JsonArray().addString("foo");
-    
+
     /* Insert an Object */
     log.debug(
       new JsonObject()
@@ -161,33 +161,33 @@ public class JavaJsonTest extends TestBase {
         .encode()
     );
   }
-  
+
   @Test
   public void testRetrieveJsonElementFromJsonObject(){
     JsonObject objElement = new JsonObject().putString("foo", "bar");
-    
+
     JsonObject tester = new JsonObject()
       .putElement("elementField", objElement);
 
     JsonElement testElement = tester.getElement("elementField");
-    
+
     assertEquals(objElement.getString("foo"), testElement.asObject().getString("foo"));
   }
-  
+
   @Test
   public void testRetrieveJsonElementFromJsonObject2(){
     JsonArray arrayElement = new JsonArray().addString("foo");
-    
+
     JsonObject tester = new JsonObject()
       .putElement("elementField", arrayElement);
 
     JsonElement testElement = tester.getElement("elementField");
-    
-    assertEquals(arrayElement.get(0), testElement.asArray().get(0));  
+
+    assertEquals(arrayElement.get(0), testElement.asArray().get(0));
   }
-  
+
   @Test
-  public void testRetrieveJsonElementFromJsonObjectWithException(){  
+  public void testRetrieveJsonElementFromJsonObjectWithException(){
     JsonObject tester = new JsonObject()
       .putString("elementField", "foo");
 
@@ -196,15 +196,15 @@ public class JavaJsonTest extends TestBase {
     }catch(ClassCastException e){
       return;
     }
-    
+
     fail("Retrieving a field that is not a JsonElement did not throw ClassCastException");
   }
-  
+
   @Test
   public void testInsertJsonElementIntoJsonArrayWithouException(){
     JsonObject objElement = new JsonObject().putString("foo", "bar");
     JsonArray arrayElement = new JsonArray().addString("foo");
-    
+
     /* Insert an Object */
     log.debug(
       new JsonArray()
@@ -217,32 +217,32 @@ public class JavaJsonTest extends TestBase {
         new JsonArray()
           .addElement(arrayElement)
           .encode()
-      );  
+      );
   }
-  
+
   @Test
   public void testRetrieveJsonElementFromJsonArray(){
     JsonObject objElement = new JsonObject().putString("foo", "bar");
-    
+
     /* Insert an Object */
     JsonArray tester = new JsonArray()
       .addElement(objElement);
 
     JsonElement testElement = (JsonElement)tester.get(0);
-    
+
     assertEquals(objElement.getString("foo"), testElement.asObject().getString("foo"));
   }
-  
+
   @Test
   public void testRetrieveJsonElementFromJsonArray2(){
     JsonArray arrayElement = new JsonArray().addString("foo");
-    
+
     /* Insert an Object */
     JsonArray tester = new JsonArray()
     .addElement(arrayElement);
 
     JsonElement testElement = (JsonElement)tester.get(0);
-    
+
     assertEquals(arrayElement.get(0), testElement.asArray().get(0));
   }
 

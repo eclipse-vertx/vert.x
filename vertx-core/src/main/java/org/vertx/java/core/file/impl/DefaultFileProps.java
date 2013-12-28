@@ -23,10 +23,10 @@ import java.util.Date;
 
 
 public class DefaultFileProps implements FileProps {
-  
-  private final Date creationTime;
-  private final Date lastAccessTime;
-  private final Date lastModifiedTime;
+
+  private final long creationTime;
+  private final long lastAccessTime;
+  private final long lastModifiedTime;
   private final boolean isDirectory;
   private final boolean isOther;
   private final boolean isRegularFile;
@@ -34,9 +34,9 @@ public class DefaultFileProps implements FileProps {
   private final long size;
 
   public DefaultFileProps(BasicFileAttributes attrs) {
-    creationTime = new Date(attrs.creationTime().toMillis());
-    lastModifiedTime = new Date(attrs.lastModifiedTime().toMillis());
-    lastAccessTime = new Date(attrs.lastAccessTime().toMillis());
+    creationTime = attrs.creationTime().toMillis();
+    lastModifiedTime = attrs.lastModifiedTime().toMillis();
+    lastAccessTime = attrs.lastAccessTime().toMillis();
     isDirectory = attrs.isDirectory();
     isOther = attrs.isOther();
     isRegularFile = attrs.isRegularFile();
@@ -46,17 +46,17 @@ public class DefaultFileProps implements FileProps {
 
   @Override
   public Date creationTime() {
-    return creationTime;
+    return new Date(creationTime);
   }
 
   @Override
   public Date lastAccessTime() {
-    return lastAccessTime;
+    return new Date(lastAccessTime);
   }
 
   @Override
   public Date lastModifiedTime() {
-    return lastModifiedTime;
+    return new Date(lastModifiedTime);
   }
 
   @Override

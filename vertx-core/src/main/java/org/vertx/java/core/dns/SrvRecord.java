@@ -25,35 +25,35 @@ public interface SrvRecord {
     /**
      * Returns the priority for this service record.
      */
-    public int priority();
+    int priority();
 
     /**
      * Returns the weight of this service record.
      */
-    public int weight();
+    int weight();
 
     /**
      * Returns the port the service is running on.
      */
-    public int port();
+    int port();
 
     /**
      * Returns the name for the server being queried.
      */
-    public String name();
+    String name();
 
     /**
      * Returns the protocol for the service being queried (i.e. "_tcp").
      */
-    public String protocol();
+    String protocol();
 
     /**
      * Returns the service's name (i.e. "_http").
      */
-    public String service();
+    String service();
 
     /**
      * Returns the name of the host for the service.
      */
-    public String target();
+    String target();
 }

@@ -665,6 +665,9 @@ public class DefaultHttpServer implements HttpServer, Closeable {
               closeFrameSent = true;
             }
             break;
+          case CONTINUATION:
+          case PONG:
+            break;
         }
       } else if (msg instanceof HttpContent) {
         if (wsRequest != null) {

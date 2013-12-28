@@ -35,20 +35,20 @@ import java.util.Set;
  */
 public class JavaSharedDataTest extends TestCase {
 
-	private Vertx vertx;
+  private Vertx vertx;
   private SharedData sharedData;
-  
+
   @Before
   public void setUp() {
     vertx = VertxFactory.newVertx();
     sharedData = vertx.sharedData();
   }
-  
+
   @After
   public void teardown() {
-  	vertx.stop();
+    vertx.stop();
   }
-  
+
   @Test
   public void testMap() throws Exception {
 
@@ -131,7 +131,7 @@ public class JavaSharedDataTest extends TestCase {
       //OK
     }
   }
-  
+
   @Test
   public void testSetTypes() throws Exception {
 

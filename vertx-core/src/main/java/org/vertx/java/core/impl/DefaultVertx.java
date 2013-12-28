@@ -136,7 +136,7 @@ public class DefaultVertx implements VertxInternal {
    * @return The FileSystem implementation for the OS
    */
   protected FileSystem getFileSystem() {
-  	return Windows.isWindows() ? new WindowsFileSystem(this) : new DefaultFileSystem(this);
+      return Windows.isWindows() ? new WindowsFileSystem(this) : new DefaultFileSystem(this);
   }
 
   @Override

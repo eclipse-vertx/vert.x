@@ -33,7 +33,7 @@ import java.util.jar.JarEntry;
  */
 
 public class PackageHelper {
-  private final static String CLASS_FILE = ".class";
+  private static final String CLASS_FILE = ".class";
 
   private final ClassLoader classLoader;
 

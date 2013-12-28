@@ -31,5 +31,4 @@ public class JavaClusteredEchoTest extends JavaEchoTest {
   protected String getClientClassName() {
     return ClusteredEchoClient.class.getName();
   }
-
 }

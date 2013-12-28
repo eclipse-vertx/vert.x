@@ -890,8 +890,8 @@ public class HttpTestClient extends TestClientBase {
       @Override
       public void handle(Long event) {
         tu.azzert(exception.get() != null, "Expected an exception to be set");
-        tu.azzert(!(exception.get() instanceof TimeoutException), 
-        		"Expected to not end with timeout exception, but did: " + exception.get());
+        tu.azzert(!(exception.get() instanceof TimeoutException),
+            "Expected to not end with timeout exception, but did: " + exception.get());
         tu.checkThread();
         tu.testComplete();
       }
@@ -1649,7 +1649,7 @@ public class HttpTestClient extends TestClientBase {
           public void handle(AsyncResult<Void> res) {
           }
         };
-        
+
         Buffer buff = new Buffer();
         HttpServerResponse resp = req.response();
         resp.end();
