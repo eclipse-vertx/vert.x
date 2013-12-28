@@ -81,7 +81,7 @@ class BaseTransport {
     return str;
   }
 
-  protected static abstract class BaseListener implements TransportListener {
+  protected abstract static class BaseListener implements TransportListener {
 
     protected void addCloseHandler(HttpServerResponse resp, final Session session) {
       resp.closeHandler(new VoidHandler() {

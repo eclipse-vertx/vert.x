@@ -37,7 +37,7 @@ import java.util.Set;
 
 /**
  * A cluster manager that uses Hazelcast
- * 
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class HazelcastClusterManager implements ClusterManager, MembershipListener {
@@ -60,7 +60,7 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
    * Constructor
    */
   public HazelcastClusterManager(final VertxSPI vertx) {
-  	this.vertx = vertx;
+      this.vertx = vertx;
     // We have our own shutdown hook and need to ensure ours runs before Hazelcast is shutdown
     System.setProperty("hazelcast.shutdownhook.enabled", "false");
   }
@@ -80,16 +80,16 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
     active = true;
   }
 
-	/**
-	 * Every eventbus handler has an ID. SubsMap (subscriber map) is a MultiMap which 
-	 * maps handler-IDs with server-IDs and thus allows the eventbus to determine where 
-	 * to send messages.
-	 * 
-	 * @param name A unique name by which the the MultiMap can be identified within the cluster. 
-	 *     See the cluster config file (e.g. cluster.xml in case of HazelcastClusterManager) for
-	 *     additional MultiMap config parameters.
-	 * @return subscription map
-	 */
+    /**
+     * Every eventbus handler has an ID. SubsMap (subscriber map) is a MultiMap which
+     * maps handler-IDs with server-IDs and thus allows the eventbus to determine where
+     * to send messages.
+     *
+     * @param name A unique name by which the the MultiMap can be identified within the cluster.
+     *     See the cluster config file (e.g. cluster.xml in case of HazelcastClusterManager) for
+     *     additional MultiMap config parameters.
+     * @return subscription map
+     */
   public <K, V> AsyncMultiMap<K, V> getAsyncMultiMap(final String name) {
     com.hazelcast.core.MultiMap map = hazelcast.getMultiMap(name);
     return new HazelcastAsyncMultiMap(vertx, map);
@@ -132,7 +132,7 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
       return;
     }
     hazelcast.getCluster().removeMembershipListener(this);
- 		hazelcast.getLifecycleService().shutdown();
+         hazelcast.getLifecycleService().shutdown();
     active = false;
   }
 

@@ -29,8 +29,8 @@ import org.vertx.java.core.json.EncodeException;
  */
 public class Json {
 
-  private final static ObjectMapper mapper = new ObjectMapper();
-  private final static ObjectMapper prettyMapper = new ObjectMapper();
+  private static final ObjectMapper mapper = new ObjectMapper();
+  private static final ObjectMapper prettyMapper = new ObjectMapper();
 
   static {
     // Non-standard JSON but we allow C style comments in our JSON
@@ -65,7 +65,7 @@ public class Json {
   }
 
   static {
- 	 	prettyMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
+          prettyMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
   }
 
 }

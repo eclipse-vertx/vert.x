@@ -143,7 +143,7 @@ public interface Vertx {
   boolean isWorker();
 
   /**
-	 * Stop the eventbus and any resource managed by the eventbus.
-	 */
-	void stop();
+     * Stop the eventbus and any resource managed by the eventbus.
+     */
+    void stop();
 }

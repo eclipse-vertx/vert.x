@@ -413,5 +413,4 @@ public interface FileSystem {
    * Synchronous version of {@link #fsProps(String, Handler)}
    */
   FileSystemProps fsPropsSync(String path) ;
-
 }

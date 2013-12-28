@@ -102,13 +102,13 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
     config = config.copy();
     //Set the defaults
     if (config.getNumber("session_timeout") == null) {
-      config.putNumber("session_timeout", 5l * 1000); // 5 seconds default
+      config.putNumber("session_timeout", 5L * 1000); // 5 seconds default
     }
     if (config.getBoolean("insert_JSESSIONID") == null) {
       config.putBoolean("insert_JSESSIONID", true);
     }
     if (config.getNumber("heartbeat_period") == null) {
-      config.putNumber("heartbeat_period", 25l * 1000);
+      config.putNumber("heartbeat_period", 25L * 1000);
     }
     if (config.getNumber("max_bytes_streaming") == null) {
       config.putNumber("max_bytes_streaming", 128 * 1024);
@@ -124,9 +124,9 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
     }
     return config;
   }
-  
+
   public SockJSServer setHook(EventBusBridgeHook hook) {
-	  this.hook = hook;
+      this.hook = hook;
     return this;
   }
 
@@ -210,7 +210,7 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
   }
 
   public SockJSServer bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted) {
-	  EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted);
+      EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted);
     if (hook != null) {
       busBridge.setHook(hook);
     }
@@ -220,20 +220,20 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
 
   public SockJSServer bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
                      long authTimeout) {
-	  EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted, authTimeout);
-	  if (hook != null) {
-		  busBridge.setHook(hook);
-	  }
+      EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted, authTimeout);
+      if (hook != null) {
+          busBridge.setHook(hook);
+      }
     installApp(sjsConfig, busBridge);
     return this;
   }
 
   public SockJSServer bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
                      long authTimeout, String authAddress) {
-	  EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted, authTimeout, authAddress);
-	  if (hook != null) {
-		  busBridge.setHook(hook);
-	  }
+      EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted, authTimeout, authAddress);
+      if (hook != null) {
+          busBridge.setHook(hook);
+      }
     installApp(sjsConfig, busBridge);
     return this;
   }

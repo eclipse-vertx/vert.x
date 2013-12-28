@@ -338,7 +338,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
     return attributes;
   }
 
-  private final static class NettyFileUpload implements FileUpload {
+  private static final class NettyFileUpload implements FileUpload {
 
     private final DefaultHttpServerFileUpload upload;
 

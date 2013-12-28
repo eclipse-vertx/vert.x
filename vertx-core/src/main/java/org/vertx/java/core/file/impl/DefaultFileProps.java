@@ -23,7 +23,7 @@ import java.util.Date;
 
 
 public class DefaultFileProps implements FileProps {
-  
+
   private final Date creationTime;
   private final Date lastAccessTime;
   private final Date lastModifiedTime;

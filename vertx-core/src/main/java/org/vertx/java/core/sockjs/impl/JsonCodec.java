@@ -40,7 +40,7 @@ import java.io.IOException;
  */
 public class JsonCodec {
 
-  private final static ObjectMapper mapper;
+  private static final ObjectMapper mapper;
 
   static {
     mapper = new ObjectMapper();

@@ -502,12 +502,12 @@ public class DefaultEventBus implements EventBus {
 
   @Override
   public void close(Handler<AsyncResult<Void>> doneHandler) {
-		if (clusterMgr != null) {
-			clusterMgr.leave();
-		}
-		if (server != null) {
-			server.close(doneHandler);
-		}
+        if (clusterMgr != null) {
+            clusterMgr.leave();
+        }
+        if (server != null) {
+            server.close(doneHandler);
+        }
   }
 
   @Override

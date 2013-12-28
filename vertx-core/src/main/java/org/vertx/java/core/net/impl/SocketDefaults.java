@@ -36,8 +36,7 @@ public class SocketDefaults {
   private int trafficClass;
 
   private SocketDefaults() {
-    try {
-      Socket csock = new Socket();
+    try (Socket csock = new Socket()) {
       tcpNoDelay = csock.getTcpNoDelay();
       tcpSendBufferSize = csock.getSendBufferSize();
       tcpReceiveBufferSize = csock.getReceiveBufferSize();

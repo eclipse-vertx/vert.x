@@ -87,7 +87,7 @@ public interface HttpServer extends ServerSSLSupport<HttpServer>, ServerTCPSuppo
    *
    */
   HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler);
-  
+
   /**
    * Close the server. Any open HTTP connections will be closed.
    */
