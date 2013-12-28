@@ -17,6 +17,7 @@
 package vertx.tests.core.http;
 
 import io.netty.handler.codec.http.DefaultHttpHeaders;
+
 import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
@@ -30,6 +31,7 @@ import org.vertx.java.testframework.TestUtils;
 
 import java.io.*;
 import java.net.URLEncoder;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,6 +41,19 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpTestClient extends TestClientBase {
+
+  public static final File VERTX_FILE_BASE;
+
+  static {
+    try {
+      final File vertxFileBase = Files.createTempDirectory("vertx-test").toFile();
+      vertxFileBase.deleteOnExit();
+      VERTX_FILE_BASE = vertxFileBase;
+    }
+    catch (IOException e) {
+      throw new ExceptionInInitializerError(e);
+    }
+  }
 
   private HttpClient client;
   private HttpServer server;
@@ -890,8 +905,8 @@ public class HttpTestClient extends TestClientBase {
       @Override
       public void handle(Long event) {
         tu.azzert(exception.get() != null, "Expected an exception to be set");
-        tu.azzert(!(exception.get() instanceof TimeoutException), 
-        		"Expected to not end with timeout exception, but did: " + exception.get());
+        tu.azzert(!(exception.get() instanceof TimeoutException),
+          "Expected to not end with timeout exception, but did: " + exception.get());
         tu.checkThread();
         tu.testComplete();
       }
@@ -1649,7 +1664,7 @@ public class HttpTestClient extends TestClientBase {
           public void handle(AsyncResult<Void> res) {
           }
         };
-        
+
         Buffer buff = new Buffer();
         HttpServerResponse resp = req.response();
         resp.end();
@@ -2280,11 +2295,11 @@ public class HttpTestClient extends TestClientBase {
   }
 
   private File setupFile(String fileName, String content) throws Exception {
-    fileName = "./" + fileName;
-    File file = new File(fileName);
+    File file = new File(VERTX_FILE_BASE, fileName);
     if (file.exists()) {
       file.delete();
     }
+    file.deleteOnExit();
     BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
     out.write(content);
     out.close();
