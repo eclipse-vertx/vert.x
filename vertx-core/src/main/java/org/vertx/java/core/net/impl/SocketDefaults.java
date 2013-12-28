@@ -16,16 +16,17 @@
 
 package org.vertx.java.core.net.impl;
 
+import java.io.IOException;
+import java.net.Socket;
+
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
-import java.net.Socket;
-
-public class SocketDefaults {
+public final class SocketDefaults {
 
   private static final Logger log = LoggerFactory.getLogger(SocketDefaults.class);
 
-  public static SocketDefaults instance = new SocketDefaults();
+  public static final SocketDefaults instance = new SocketDefaults();
 
   private boolean tcpNoDelay = true;
   private int tcpSendBufferSize;
@@ -44,7 +45,7 @@ public class SocketDefaults {
       reuseAddress = csock.getReuseAddress();
       soLinger = csock.getSoLinger();
       trafficClass = csock.getTrafficClass();
-    } catch (Exception e) {
+    } catch (IOException e) {
       log.warn("Failed to read socket defaults, using Vert.x defaults instead");
       tcpNoDelay = true;
       tcpSendBufferSize = 8 * 1024;

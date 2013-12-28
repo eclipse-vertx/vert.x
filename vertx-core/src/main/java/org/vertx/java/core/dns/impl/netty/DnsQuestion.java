@@ -56,11 +56,11 @@ public class DnsQuestion extends DnsEntry {
         if (other == this) {
             return true;
         }
-        if (other instanceof DnsQuestion) {
-            DnsQuestion question = (DnsQuestion) other;
-            return question.name().equals(name()) && question.type() == type() && question.dnsClass() == dnsClass();
+        if (other == null || other.getClass() != this.getClass()) {
+            return false;
         }
-        return false;
+        DnsQuestion question = (DnsQuestion) other;
+        return question.name().equals(name()) && question.type() == type() && question.dnsClass() == dnsClass();
     }
 
     @Override

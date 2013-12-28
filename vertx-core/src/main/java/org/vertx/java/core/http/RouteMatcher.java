@@ -82,6 +82,8 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
       case "CONNECT":
         route(request, connectBindings);
         break;
+      default:
+        throw new IllegalStateException("request method '" + request.method() + "' unknown!");
     }
   }
 

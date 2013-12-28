@@ -14,6 +14,7 @@
  */
 package org.vertx.java.core.logging.impl;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
@@ -41,13 +42,13 @@ public class VertxLoggerFormatter extends java.util.logging.Formatter {
 
     sb.append(VertxLoggerFormatter.LINE_SEPARATOR);
     if (record.getThrown() != null) {
-      try {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        record.getThrown().printStackTrace(pw);
-        pw.close();
-        sb.append(sw.toString());
-      } catch (Exception ex) {
+      try (StringWriter sw = new StringWriter();
+                      PrintWriter pw = new PrintWriter(sw)) {
+          record.getThrown().printStackTrace(pw);
+          sb.append(sw.toString());
+      }
+      catch (IOException ioe) {
+          sb.append("caught IOException");
       }
     }
     return sb.toString();

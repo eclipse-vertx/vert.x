@@ -1,5 +1,8 @@
 package org.vertx.java.core.json.impl;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
 /**
  * <p>Encodes and decodes to and from Base64 notation.</p>
  * <p>Homepage: <a href="http://iharder.net/base64">http://iharder.net/base64</a>.</p>
@@ -148,7 +151,7 @@ public class Base64 {
   /**
    * Preferred encoding.
    */
-  private static final String PREFERRED_ENCODING = "UTF-8";
+  private static final Charset PREFERRED_ENCODING = StandardCharsets.UTF_8;
 
   // I think I end up not using the BAD_ENCODING indicator.
   // private final static byte BAD_ENCODING = -9; // Indicates error in encoding
@@ -995,7 +998,6 @@ public class Base64 {
 
     // Isolate options
     int gzip = options & Base64.GZIP;
-    int dontBreakLines = options & Base64.DONT_BREAK_LINES;
 
     try {
       // ObjectOutputStream -> (GZIP) -> Base64 -> ByteArrayOutputStream
@@ -1037,12 +1039,7 @@ public class Base64 {
     } // end finally
 
     // Return value according to relevant encoding.
-    try {
-      return new String(baos.toByteArray(), Base64.PREFERRED_ENCODING);
-    } // end try
-    catch (java.io.UnsupportedEncodingException uue) {
-      return new String(baos.toByteArray());
-    } // end catch
+    return new String(baos.toByteArray(), Base64.PREFERRED_ENCODING);
 
   } // end encode
 
@@ -1153,13 +1150,7 @@ public class Base64 {
         }
       } // end finally
 
-      // Return value according to relevant encoding.
-      try {
-        return new String(baos.toByteArray(), Base64.PREFERRED_ENCODING);
-      } // end try
-      catch (java.io.UnsupportedEncodingException uue) {
-        return new String(baos.toByteArray());
-      } // end catch
+      return new String(baos.toByteArray(), Base64.PREFERRED_ENCODING);
     } // end if: compress
 
     // Else, don't compress. Better not to use streams at all then.
@@ -1192,12 +1183,7 @@ public class Base64 {
       } // end if: some padding needed
 
       // Return value according to relevant encoding.
-      try {
-        return new String(outBuff, 0, e, Base64.PREFERRED_ENCODING);
-      } // end try
-      catch (java.io.UnsupportedEncodingException uue) {
-        return new String(outBuff, 0, e);
-      } // end catch
+      return new String(outBuff, 0, e, Base64.PREFERRED_ENCODING);
 
     } // end else: don't compress
 
@@ -1366,13 +1352,7 @@ public class Base64 {
    * @since 1.4
    */
   public static byte[] decode(final String s, final int options) {
-    byte[] bytes;
-    try {
-      bytes = s.getBytes(Base64.PREFERRED_ENCODING);
-    } // end try
-    catch (java.io.UnsupportedEncodingException uee) {
-      bytes = s.getBytes();
-    } // end catch
+    byte[] bytes = s.getBytes(Base64.PREFERRED_ENCODING);
     // </change>
 
     // Decode

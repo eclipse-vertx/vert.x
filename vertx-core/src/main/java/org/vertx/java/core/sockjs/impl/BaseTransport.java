@@ -29,6 +29,8 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
+import io.netty.util.internal.ThreadLocalRandom;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
@@ -150,7 +152,7 @@ class BaseTransport {
         json.putArray("origins", new JsonArray().add("*:*"));
         // Java ints are signed, so we need to use a long and add the offset so
         // the result is not negative
-        json.putNumber("entropy", RAND_OFFSET + new Random().nextInt());
+        json.putNumber("entropy", RAND_OFFSET + ThreadLocalRandom.current().nextInt());
         setCORS(req);
         req.response().end(json.encode());
       }

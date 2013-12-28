@@ -962,6 +962,9 @@ public class DefaultEventBus implements EventBus {
     @Override
     public boolean equals(Object o) {
       if (this == o) return true;
+      if (o == null || o.getClass() != this.getClass()) {
+          return false;
+      }
       HandlerHolder that = (HandlerHolder) o;
       return handler.equals(that.handler);
     }
@@ -1078,7 +1081,7 @@ public class DefaultEventBus implements EventBus {
     @Override
     public boolean equals(Object o) {
       if (this == o) return true;
-      if (getClass() != o.getClass()) return false;
+      if (o == null || getClass() != o.getClass()) return false;
       HandlerEntry entry = (HandlerEntry) o;
       if (!address.equals(entry.address)) return false;
       if (!handler.equals(entry.handler)) return false;

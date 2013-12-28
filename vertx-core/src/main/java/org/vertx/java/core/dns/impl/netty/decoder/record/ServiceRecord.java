@@ -110,4 +110,61 @@ public class ServiceRecord {
         return target;
     }
 
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((name == null) ? 0 : name.hashCode());
+        result = prime * result + port;
+        result = prime * result + priority;
+        result = prime * result + ((protocol == null) ? 0 : protocol.hashCode());
+        result = prime * result + ((service == null) ? 0 : service.hashCode());
+        result = prime * result + ((target == null) ? 0 : target.hashCode());
+        result = prime * result + weight;
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        ServiceRecord other = (ServiceRecord) obj;
+        if (name == null) {
+            if (other.name != null)
+                return false;
+        }
+        else if (!name.equals(other.name))
+            return false;
+        if (port != other.port)
+            return false;
+        if (priority != other.priority)
+            return false;
+        if (protocol == null) {
+            if (other.protocol != null)
+                return false;
+        }
+        else if (!protocol.equals(other.protocol))
+            return false;
+        if (service == null) {
+            if (other.service != null)
+                return false;
+        }
+        else if (!service.equals(other.service))
+            return false;
+        if (target == null) {
+            if (other.target != null)
+                return false;
+        }
+        else if (!target.equals(other.target))
+            return false;
+        if (weight != other.weight)
+            return false;
+        return true;
+    }
 }

@@ -369,13 +369,10 @@ public class DnsEntry {
         if (this == o) {
             return true;
         }
-        if (o instanceof DnsEntry) {
-            if (o.hashCode() != hashCode()) {
-                return false;
-            }
-            DnsEntry other = (DnsEntry) o;
-            return other.name().equals(name) && other.type() == type && other.dnsClass() == dnsClass;
+        if (o == null || o.getClass() != this.getClass()) {
+            return false;
         }
-        return false;
+        DnsEntry other = (DnsEntry) o;
+        return other.name().equals(name) && other.type() == type && other.dnsClass() == dnsClass;
     }
 }
