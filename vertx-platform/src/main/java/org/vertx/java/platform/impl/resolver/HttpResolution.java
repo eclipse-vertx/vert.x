@@ -172,52 +172,56 @@ public abstract class HttpResolution {
 
   // Standard handlers
 
+  @SuppressWarnings("resource")
   protected void downloadToFile(String file, HttpClientResponse resp) {
+    final OutputStream os;
     log.info("Downloading " + modID + ". Please wait...");
-    try (final OutputStream os = new BufferedOutputStream(new FileOutputStream(file))) {
-      final AtomicInteger written = new AtomicInteger();
-      final int contentLength = Integer.valueOf(resp.headers().get("content-length"));
-      resp.dataHandler(new Handler<Buffer>() {
-        long lastPercent = 0;
-        public void handle(Buffer data) {
-          int bytesWritten = written.get();
-          try {
-            os.write(data.getBytes());
-          } catch (IOException e) {
-            log.error("Failed to write to file", e);
-            end(false);
-            return;
-          }
-          if (!suppressDownloadCounter) {
-            written.addAndGet(data.length());
-            long percent = Math.round(100 * (double)bytesWritten / contentLength);
-            if (percent > lastPercent) {
-              System.out.print("\rDownloading " + percent + "%");
-              lastPercent = percent;
-            }
-          }
-        }
-      });
-      resp.endHandler(new VoidHandler() {
-        @Override
-        protected void handle() {
-          if (!suppressDownloadCounter) {
-            System.out.println("\rDownloading 100%");
-          }
-          try {
-            os.close();
-            end(true);
-          } catch (IOException e) {
-            log.error("Failed to flush file", e);
-            end(false);
-          }
-        }
-      });
+    try {
+      os = new BufferedOutputStream(new FileOutputStream(file));
     } catch (IOException e) {
       log.error("Failed to open file", e);
       end(false);
       return;
     }
+
+    final AtomicInteger written = new AtomicInteger();
+    final int contentLength = Integer.valueOf(resp.headers().get("content-length"));
+    resp.dataHandler(new Handler<Buffer>() {
+      long lastPercent = 0;
+      public void handle(Buffer data) {
+        int bytesWritten = written.get();
+        try {
+          os.write(data.getBytes());
+        } catch (IOException e) {
+          log.error("Failed to write to file", e);
+          end(false);
+          return;
+        }
+        if (!suppressDownloadCounter) {
+          written.addAndGet(data.length());
+          long percent = Math.round(100 * (double)bytesWritten / contentLength);
+          if (percent > lastPercent) {
+            System.out.print("\rDownloading " + percent + "%");
+            lastPercent = percent;
+          }
+        }
+      }
+    });
+    resp.endHandler(new VoidHandler() {
+      @Override
+      protected void handle() {
+        if (!suppressDownloadCounter) {
+          System.out.println("\rDownloading 100%");
+        }
+        try {
+          os.close();
+          end(true);
+        } catch (IOException e) {
+          log.error("Failed to flush file", e);
+          end(false);
+        }
+      }
+    });
   }
 
   protected void handleRedirect(HttpClientResponse resp) {
