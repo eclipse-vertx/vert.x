@@ -358,7 +358,6 @@ public class DefaultAsyncFile implements AsyncFile {
 
       public void failed(Throwable exc, Object attachment) {
         if (exc instanceof Exception) {
-          final Exception e = (Exception) exc;
           context.execute(new Runnable() {
             public void run() {
               handler.handle(new DefaultFutureResult<Void>().setResult(null));

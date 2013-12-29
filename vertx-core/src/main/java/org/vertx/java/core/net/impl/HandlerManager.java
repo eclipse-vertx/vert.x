@@ -17,18 +17,17 @@
 package org.vertx.java.core.net.impl;
 
 import io.netty.channel.EventLoop;
+
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -42,14 +41,14 @@ public class HandlerManager<T> {
   private final ConcurrentMap<EventLoop, Handlers<T>> handlerMap = new ConcurrentHashMap<>();
 
   // We maintain a separate handler count so we can implement hasHandlers() efficiently
-  private volatile int handlerCount;
+  private final AtomicInteger handlerCount = new AtomicInteger(0);
 
   public HandlerManager(VertxEventLoopGroup availableWorkers) {
     this.availableWorkers = availableWorkers;
   }
 
   public boolean hasHandlers() {
-    return handlerCount != 0;
+    return handlerCount.get() != 0;
   }
 
   public HandlerHolder<T> chooseHandler(EventLoop worker) {
@@ -66,7 +65,7 @@ public class HandlerManager<T> {
       handlers = prev;
     }
     handlers.addHandler(new HandlerHolder<>(context, handler));
-    handlerCount++;
+    handlerCount.incrementAndGet();
   }
 
   public void removeHandler(Handler<T> handler, DefaultContext context) {
@@ -78,7 +77,7 @@ public class HandlerManager<T> {
     if (handlers.isEmpty()) {
       handlerMap.remove(worker);
     }
-    handlerCount--;
+    handlerCount.decrementAndGet();
     //Available workers does it's own reference counting -since workers can be shared across different Handlers
     availableWorkers.removeWorker(worker);
   }

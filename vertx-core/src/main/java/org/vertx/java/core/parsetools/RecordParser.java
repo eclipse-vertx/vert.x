@@ -132,7 +132,8 @@ public class RecordParser implements Handler<Buffer> {
    */
   public void delimitedMode(byte[] delim) {
     delimited = true;
-    this.delim = delim;
+    this.delim = new byte [delim.length];
+    System.arraycopy(delim, 0, this.delim, 0, delim.length);
     delimPos = 0;
     reset = true;
   }

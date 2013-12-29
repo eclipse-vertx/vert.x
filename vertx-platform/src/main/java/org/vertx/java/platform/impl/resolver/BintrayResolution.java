@@ -23,9 +23,6 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.platform.impl.ModuleIdentifier;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-
 public class BintrayResolution extends HttpResolution {
 
   private static final Logger log = LoggerFactory.getLogger(BintrayResolution.class);

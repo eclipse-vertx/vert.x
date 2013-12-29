@@ -219,10 +219,10 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         parents.add(entry.getKey());
       }
     }
-    
+
     final CountingCompletionHandler<Void> count = new CountingCompletionHandler<>(vertx, parents.size());
     count.setHandler(doneHandler);
-    
+
     for (String name: parents) {
       undeploy(name, new Handler<AsyncResult<Void>>() {
         public void handle(AsyncResult<Void> res) {
@@ -588,10 +588,9 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         // Extract FatJarStarter and put it at the top of the executable jar - this is our main class
         File fatClassDir = new File(vertxHome, "org/vertx/java/platform/impl");
         vertx.fileSystem().mkdirSync(fatClassDir.getAbsolutePath(), true);
-        try {
-          FileInputStream fin = new FileInputStream(jar);
-          BufferedInputStream bin = new BufferedInputStream(fin);
-          ZipInputStream zin = new ZipInputStream(bin);
+        try (FileInputStream fin = new FileInputStream(jar);
+                BufferedInputStream bin = new BufferedInputStream(fin);
+                ZipInputStream zin = new ZipInputStream(bin)) {
           ZipEntry ze;
           while ((ze = zin.getNextEntry()) != null) {
             String entryName = ze.getName();
@@ -1004,7 +1003,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       if (urls.size() < 1) {
         return null;
       }
-      try (Scanner scanner = new Scanner(urls.get(0).openStream()).useDelimiter("\\A")) {
+      try (@SuppressWarnings("resource") Scanner scanner = new Scanner(urls.get(0).openStream()).useDelimiter("\\A")) {
         String conf = scanner.next();
         return new JsonObject(conf);
       } catch (NoSuchElementException e) {
@@ -1075,7 +1074,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   private JsonObject loadModuleConfig(ModuleIdentifier modID, File modDir) {
     // Checked the byte code produced, .close() is called correctly, so the warning can be suppressed
-    try (Scanner scanner = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A")) {
+    try (@SuppressWarnings("resource") Scanner scanner = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A")) {
       String conf = scanner.next();
       return new JsonObject(conf);
     } catch (FileNotFoundException e) {
@@ -1337,7 +1336,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     return entry;
   }
 
-  static private void unzipModuleData(final File directory, final ModuleZipInfo zipinfo, boolean deleteZip) {
+  private static void unzipModuleData(final File directory, final ModuleZipInfo zipinfo, boolean deleteZip) {
     try (InputStream is = new BufferedInputStream(new FileInputStream(zipinfo.filename)); ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is))) {
       ZipEntry entry;
       while ((entry = zis.getNextEntry()) != null) {

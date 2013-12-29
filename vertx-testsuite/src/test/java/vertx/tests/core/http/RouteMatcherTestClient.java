@@ -75,69 +75,69 @@ public class RouteMatcherTestClient extends TestClientBase {
   public void testRouteWithPatternPUT() {
     testRouteWithPattern1("PUT");
   }
-  
+
   public void testRouteWithPatternPOST() {
     testRouteWithPattern1("POST");
   }
-  
+
   public void testRouteWithPatternDELETE() {
     testRouteWithPattern1("DELETE");
   }
-  
+
   public void testRouteWithPatternHEAD() {
     testRouteWithPattern1("HEAD");
   }
-  
+
   public void testRouteWithPatternOPTIONS() {
     testRouteWithPattern1("OPTIONS");
   }
-  
+
   public void testRouteWithPatternTRACE() {
     testRouteWithPattern1("TRACE");
   }
-  
+
   public void testRouteWithPatternCONNECT() {
     testRouteWithPattern1("CONNECT");
   }
-  
+
   public void testRouteWithPatternPATCH() {
     testRouteWithPattern1("PATCH");
   }
-  
+
   public void testRouteWithRegexGET() {
-    testRouteWithRegex("GET");  
+    testRouteWithRegex("GET");
   }
-  
+
   public void testRouteWithRegexPUT() {
-    testRouteWithRegex("PUT");  
+    testRouteWithRegex("PUT");
   }
-  
+
   public void testRouteWithRegexPOST() {
-    testRouteWithRegex("POST");  
+    testRouteWithRegex("POST");
   }
-  
+
   public void testRouteWithRegexDELETE() {
-    testRouteWithRegex("DELETE");  
+    testRouteWithRegex("DELETE");
   }
-  
+
   public void testRouteWithRegexHEAD() {
-    testRouteWithRegex("HEAD");  
+    testRouteWithRegex("HEAD");
   }
-  
+
   public void testRouteWithRegexOPTIONS() {
-    testRouteWithRegex("OPTIONS");  
+    testRouteWithRegex("OPTIONS");
   }
-  
+
   public void testRouteWithRegexTRACE() {
-    testRouteWithRegex("TRACE");  
+    testRouteWithRegex("TRACE");
   }
-  
+
   public void testRouteWithRegexCONNECT() {
-    testRouteWithRegex("CONNECT");  
+    testRouteWithRegex("CONNECT");
   }
-  
+
   public void testRouteWithRegexPATCH() {
-    testRouteWithRegex("PATCH");  
+    testRouteWithRegex("PATCH");
   }
 
   private void testRouteWithPattern1(String method)  {

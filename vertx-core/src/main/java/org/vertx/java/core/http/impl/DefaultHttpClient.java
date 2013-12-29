@@ -711,13 +711,13 @@ public class DefaultHttpClient implements HttpClient {
     return new DefaultHttpClientRequest(this, method, uri, responseHandler, actualCtx);
   }
 
-  private final void checkClosed() {
+  private void checkClosed() {
     if (closed) {
       throw new IllegalStateException("Client is closed");
     }
   }
 
-  private final void checkConfigurable() {
+  private void checkConfigurable() {
     if (!configurable) {
       throw new IllegalStateException("Can't set property after connect has been called");
     }
@@ -818,6 +818,9 @@ public class DefaultHttpClient implements HttpClient {
               ctx.writeAndFlush(frame).addListener(ChannelFutureListener.CLOSE);
               closeFrameSent = true;
             }
+            break;
+          case CONTINUATION:
+          case PONG:
             break;
         }
         valid = true;

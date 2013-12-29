@@ -29,7 +29,7 @@ import java.util.concurrent.Executors;
  * The pools shouldn't be too configurable by the user otherwise they
  * can get into problems. Vert.x requires quite specific behaviour from each pool
  * and things can easily break if they are configured incorrectly.
- * 
+ *
  * @author swilliams
  * @author <a href="http://tfox.org">Tim Fox</a>
  *

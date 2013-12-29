@@ -53,19 +53,18 @@ public class DnsQuestion extends DnsEntry {
 
     @Override
     public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if (other instanceof DnsQuestion) {
-            DnsQuestion question = (DnsQuestion) other;
-            return question.name().equals(name()) && question.type() == type() && question.dnsClass() == dnsClass();
-        }
+      if (other == this) {
+        return true;
+      }
+      if (other == null || other.getClass() != this.getClass()) {
         return false;
+      }
+      DnsQuestion question = (DnsQuestion) other;
+      return question.name().equals(name()) && question.type() == type() && question.dnsClass() == dnsClass();
     }
 
     @Override
     public int hashCode() {
-        return ((name().hashCode() + type()) * 7 + dnsClass()) * 7;
+      return ((name().hashCode() + type()) * 7 + dnsClass()) * 7;
     }
-
 }

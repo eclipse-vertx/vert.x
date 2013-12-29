@@ -47,7 +47,7 @@ public class LocalEchoClient extends EventBusAppBase {
     String echoAddress = (String)vertx.sharedData().getMap("echoaddress").get("echoaddress");
     return echoAddress;
   }
-  
+
   @Override
   public void start(final Future<Void> startedResult) {
     super.start(startedResult);

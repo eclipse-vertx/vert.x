@@ -119,8 +119,9 @@ public class ModuleClassLoader extends URLClassLoader {
   private Set<ModuleClassLoader> getModulesToWalk() {
     ClassLoader mcl = Thread.currentThread().getContextClassLoader();
     if (mcl instanceof ModuleClassLoader) {
-      ModuleClassLoader mmcl = (ModuleClassLoader)mcl;
-      return mmcl.getModuleGraph();
+      try (ModuleClassLoader mmcl = (ModuleClassLoader)mcl) {
+        return mmcl.getModuleGraph();
+      }
     } else {
       return getModuleGraph();
     }

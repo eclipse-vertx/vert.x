@@ -1,5 +1,8 @@
 package org.vertx.java.core.json.impl;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
 /**
  * <p>Encodes and decodes to and from Base64 notation.</p>
  * <p>Homepage: <a href="http://iharder.net/base64">http://iharder.net/base64</a>.</p>
@@ -90,27 +93,27 @@ public class Base64 {
   /**
    * No options specified. Value is zero.
    */
-  public final static int NO_OPTIONS = 0;
+  public static final int NO_OPTIONS = 0;
 
   /**
    * Specify encoding.
    */
-  public final static int ENCODE = 1;
+  public static final int ENCODE = 1;
 
   /**
    * Specify decoding.
    */
-  public final static int DECODE = 0;
+  public static final int DECODE = 0;
 
   /**
    * Specify that data should be gzip-compressed.
    */
-  public final static int GZIP = 2;
+  public static final int GZIP = 2;
 
   /**
    * Don't break lines when encoding (violates strict Base64 specification)
    */
-  public final static int DONT_BREAK_LINES = 8;
+  public static final int DONT_BREAK_LINES = 8;
 
   /**
    * Encode using Base64-like encoding that is URL- and Filename-safe as described
@@ -120,41 +123,41 @@ public class Base64 {
    * or at the very least should not be called Base64 without also specifying that is
    * was encoded using the URL- and Filename-safe dialect.
    */
-  public final static int URL_SAFE = 16;
+  public static final int URL_SAFE = 16;
 
   /**
    * Encode using the special "ordered" dialect of Base64 described here:
    * <a href="http://www.faqs.org/qa/rfcc-1940.html">http://www.faqs.org/qa/rfcc-1940.html</a>.
    */
-  public final static int ORDERED = 32;
+  public static final int ORDERED = 32;
 
   /* ********  P R I V A T E   F I E L D S  ******** */
 
   /**
    * Maximum line length (76) of Base64 output.
    */
-  private final static int MAX_LINE_LENGTH = 76;
+  private static final int MAX_LINE_LENGTH = 76;
 
   /**
    * The equals sign (=) as a byte.
    */
-  private final static byte EQUALS_SIGN = (byte) '=';
+  private static final byte EQUALS_SIGN = (byte) '=';
 
   /**
    * The new line character (\n) as a byte.
    */
-  private final static byte NEW_LINE = (byte) '\n';
+  private static final byte NEW_LINE = (byte) '\n';
 
   /**
    * Preferred encoding.
    */
-  private final static String PREFERRED_ENCODING = "UTF-8";
+  private static final Charset PREFERRED_ENCODING = StandardCharsets.UTF_8;
 
   // I think I end up not using the BAD_ENCODING indicator.
   // private final static byte BAD_ENCODING = -9; // Indicates error in encoding
-  private final static byte WHITE_SPACE_ENC = -5; // Indicates white space in encoding
+  private static final byte WHITE_SPACE_ENC = -5; // Indicates white space in encoding
 
-  private final static byte EQUALS_SIGN_ENC = -1; // Indicates equals sign in encoding
+  private static final byte EQUALS_SIGN_ENC = -1; // Indicates equals sign in encoding
 
   /* ********  S T A N D A R D   B A S E 6 4   A L P H A B E T  ******** */
 
@@ -163,7 +166,7 @@ public class Base64 {
    */
   // private final static byte[] ALPHABET;
   /* Host platform me be something funny like EBCDIC, so we hardcode these values. */
-  private final static byte[] _STANDARD_ALPHABET = {(byte) 'A',
+  private static final byte[] _STANDARD_ALPHABET = {(byte) 'A',
       (byte) 'B',
       (byte) 'C',
       (byte) 'D',
@@ -232,7 +235,7 @@ public class Base64 {
    * Translates a Base64 value to either its 6-bit reconstruction value
    * or a negative number indicating some other meaning.
    */
-  private final static byte[] _STANDARD_DECODABET = {-9, -9, -9, -9, -9, -9, -9, -9, -9, // Decimal 0 - 8
+  private static final byte[] _STANDARD_DECODABET = {-9, -9, -9, -9, -9, -9, -9, -9, -9, // Decimal 0 - 8
       -5,
       -5, // Whitespace: Tab and Linefeed
       -9,
@@ -370,7 +373,7 @@ public class Base64 {
    * <a href="http://www.faqs.org/rfcs/rfc3548.html">http://www.faqs.org/rfcs/rfc3548.html</a>.
    * Notice that the last two bytes become "hyphen" and "underscore" instead of "plus" and "slash."
    */
-  private final static byte[] _URL_SAFE_ALPHABET = {(byte) 'A',
+  private static final byte[] _URL_SAFE_ALPHABET = {(byte) 'A',
       (byte) 'B',
       (byte) 'C',
       (byte) 'D',
@@ -438,7 +441,7 @@ public class Base64 {
   /**
    * Used in decoding URL- and Filename-safe dialects of Base64.
    */
-  private final static byte[] _URL_SAFE_DECODABET = {-9, -9, -9, -9, -9, -9, -9, -9, -9, // Decimal 0 - 8
+  private static final byte[] _URL_SAFE_DECODABET = {-9, -9, -9, -9, -9, -9, -9, -9, -9, // Decimal 0 - 8
       -5,
       -5, // Whitespace: Tab and Linefeed
       -9,
@@ -575,7 +578,7 @@ public class Base64 {
    * I don't get the point of this technique, but it is described here:
    * <a href="http://www.faqs.org/qa/rfcc-1940.html">http://www.faqs.org/qa/rfcc-1940.html</a>.
    */
-  private final static byte[] _ORDERED_ALPHABET = {(byte) '-',
+  private static final byte[] _ORDERED_ALPHABET = {(byte) '-',
       (byte) '0',
       (byte) '1',
       (byte) '2',
@@ -643,7 +646,7 @@ public class Base64 {
   /**
    * Used in decoding the "ordered" dialect of Base64.
    */
-  private final static byte[] _ORDERED_DECODABET = {-9, -9, -9, -9, -9, -9, -9, -9, -9, // Decimal 0 - 8
+  private static final byte[] _ORDERED_DECODABET = {-9, -9, -9, -9, -9, -9, -9, -9, -9, // Decimal 0 - 8
       -5,
       -5, // Whitespace: Tab and Linefeed
       -9,
@@ -783,7 +786,7 @@ public class Base64 {
    * in which case one of them will be picked, though there is
    * no guarantee as to which one will be picked.
    */
-  private final static byte[] getAlphabet(final int options) {
+  private static byte[] getAlphabet(final int options) {
     if ((options & Base64.URL_SAFE) == Base64.URL_SAFE) {
       return Base64._URL_SAFE_ALPHABET;
     } else if ((options & Base64.ORDERED) == Base64.ORDERED) {
@@ -801,7 +804,7 @@ public class Base64 {
    * in which case one of them will be picked, though there is
    * no guarantee as to which one will be picked.
    */
-  private final static byte[] getDecodabet(final int options) {
+  private static byte[] getDecodabet(final int options) {
     if ((options & Base64.URL_SAFE) == Base64.URL_SAFE) {
       return Base64._URL_SAFE_DECODABET;
     } else if ((options & Base64.ORDERED) == Base64.ORDERED) {
@@ -823,7 +826,7 @@ public class Base64 {
    * <strong>feel free to delete this method (in fact you probably should)
    * if you're embedding this code into a larger program.</strong>
    */
-  public final static void main(final String[] args) {
+  public static final void main(final String[] args) {
     if (args.length < 3) {
       Base64.usage("Not enough arguments.");
     } // end if: args.length < 3
@@ -848,7 +851,7 @@ public class Base64 {
    *
    * @param msg A message to include with usage info.
    */
-  private final static void usage(final String msg) {
+  private static void usage(final String msg) {
     System.err.println(msg);
     System.err.println("Usage: java Base64 -e|-d inputfile outputfile");
   } // end usage
@@ -995,7 +998,6 @@ public class Base64 {
 
     // Isolate options
     int gzip = options & Base64.GZIP;
-    int dontBreakLines = options & Base64.DONT_BREAK_LINES;
 
     try {
       // ObjectOutputStream -> (GZIP) -> Base64 -> ByteArrayOutputStream
@@ -1037,12 +1039,7 @@ public class Base64 {
     } // end finally
 
     // Return value according to relevant encoding.
-    try {
-      return new String(baos.toByteArray(), Base64.PREFERRED_ENCODING);
-    } // end try
-    catch (java.io.UnsupportedEncodingException uue) {
-      return new String(baos.toByteArray());
-    } // end catch
+    return new String(baos.toByteArray(), Base64.PREFERRED_ENCODING);
 
   } // end encode
 
@@ -1153,13 +1150,7 @@ public class Base64 {
         }
       } // end finally
 
-      // Return value according to relevant encoding.
-      try {
-        return new String(baos.toByteArray(), Base64.PREFERRED_ENCODING);
-      } // end try
-      catch (java.io.UnsupportedEncodingException uue) {
-        return new String(baos.toByteArray());
-      } // end catch
+      return new String(baos.toByteArray(), Base64.PREFERRED_ENCODING);
     } // end if: compress
 
     // Else, don't compress. Better not to use streams at all then.
@@ -1192,12 +1183,7 @@ public class Base64 {
       } // end if: some padding needed
 
       // Return value according to relevant encoding.
-      try {
-        return new String(outBuff, 0, e, Base64.PREFERRED_ENCODING);
-      } // end try
-      catch (java.io.UnsupportedEncodingException uue) {
-        return new String(outBuff, 0, e);
-      } // end catch
+      return new String(outBuff, 0, e, Base64.PREFERRED_ENCODING);
 
     } // end else: don't compress
 
@@ -1366,13 +1352,7 @@ public class Base64 {
    * @since 1.4
    */
   public static byte[] decode(final String s, final int options) {
-    byte[] bytes;
-    try {
-      bytes = s.getBytes(Base64.PREFERRED_ENCODING);
-    } // end try
-    catch (java.io.UnsupportedEncodingException uee) {
-      bytes = s.getBytes();
-    } // end catch
+    byte[] bytes = s.getBytes(Base64.PREFERRED_ENCODING);
     // </change>
 
     // Decode

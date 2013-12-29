@@ -53,11 +53,11 @@ import org.vertx.java.core.json.JsonObject;
  */
 public interface EventBus {
 
-	/**
-	 * Close the EventBus and release all resources. 
-	 * 
-	 * @param doneHandler
-	 */
+  /**
+   * Close the EventBus and release all resources.
+   *
+   * @param doneHandler
+   */
   void close(Handler<AsyncResult<Void>> doneHandler);
 
   /**

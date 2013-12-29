@@ -45,7 +45,7 @@ public class MavenLocalRepoResolver implements RepoResolver {
                                        ModuleIdentifier id,
                                        File metaDataFile,
                                        String uriRoot) {
-    try (Scanner scanner = new Scanner(metaDataFile).useDelimiter("\\A")) {
+    try (@SuppressWarnings("resource") Scanner scanner = new Scanner(metaDataFile).useDelimiter("\\A")) {
       String data = scanner.next();
       // First try with the -mod suffix
       String fileName = MavenResolution.getResourceName(data, repoID, id, uriRoot, true);

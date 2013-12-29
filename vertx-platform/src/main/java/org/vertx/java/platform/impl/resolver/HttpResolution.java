@@ -172,6 +172,7 @@ public abstract class HttpResolution {
 
   // Standard handlers
 
+  @SuppressWarnings("resource")
   protected void downloadToFile(String file, HttpClientResponse resp) {
     final OutputStream os;
     log.info("Downloading " + modID + ". Please wait...");
@@ -182,6 +183,7 @@ public abstract class HttpResolution {
       end(false);
       return;
     }
+
     final AtomicInteger written = new AtomicInteger();
     final int contentLength = Integer.valueOf(resp.headers().get("content-length"));
     resp.dataHandler(new Handler<Buffer>() {

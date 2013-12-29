@@ -546,7 +546,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       }
     }
   }
-  
+
   private static class Match {
     public final boolean doesMatch;
     public final boolean requiresAuth;
@@ -581,11 +581,11 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   public void setHook(EventBusBridgeHook hook) {
     this.hook = hook;
   }
-  
+
   public EventBusBridgeHook getHook() {
     return hook;
   }
-  
+
   // Override these to get hooks into the bridge events
   // ==================================================
 
@@ -635,7 +635,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   protected boolean handlePreRegister(SockJSSocket sock, String address) {
     if (hook != null) {
       return hook.handlePreRegister(sock, address);
-	  }
+    }
     return true;
   }
 

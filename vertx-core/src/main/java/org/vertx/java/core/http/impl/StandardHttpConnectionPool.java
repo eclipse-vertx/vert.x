@@ -140,7 +140,7 @@ public abstract class StandardHttpConnectionPool implements HttpPool {
    */
   protected abstract void connect(final Handler<ClientConnection> connectHandler, final Handler<Throwable> connectErrorHandler, final DefaultContext context);
 
-  private class Waiter {
+  private static class Waiter {
     final Handler<ClientConnection> handler;
     final Handler<Throwable> connectionExceptionHandler;
     final DefaultContext context;

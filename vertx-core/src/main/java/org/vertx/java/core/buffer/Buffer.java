@@ -22,6 +22,7 @@ import io.netty.util.CharsetUtil;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Objects;
 
 /**
  * A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands as
@@ -464,5 +465,11 @@ public class Buffer {
     if (o == null || getClass() != o.getClass()) return false;
     Buffer buffer1 = (Buffer) o;
     return buffer.equals(buffer1.buffer);
+  }
+
+  @Override
+  public int hashCode()
+  {
+    return Objects.hash(buffer);
   }
 }

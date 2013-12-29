@@ -16,20 +16,20 @@
 
 package org.vertx.java.core.json;
 
-
 import org.vertx.java.core.json.impl.Base64;
 import org.vertx.java.core.json.impl.Json;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
- * 
+ *
  * Represents a JSON object.<p>
  * Instances of this class are not thread-safe.<p>
- * 
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class JsonObject extends JsonElement {
@@ -46,7 +46,7 @@ public class JsonObject extends JsonElement {
 
   /**
    * Create a JSON object based on the specified Map
-   * 
+   *
    * @param map
    */
   public JsonObject(Map<String, Object> map) {
@@ -62,7 +62,7 @@ public class JsonObject extends JsonElement {
 
   /**
    * Create a JSON object from a string form of a JSON object
-   * 
+   *
    * @param jsonString
    *          The string form of a JSON object
    */
@@ -309,6 +309,12 @@ public class JsonObject extends JsonElement {
       }
     }
     return true;
+  }
+
+  @Override
+  public int hashCode()
+  {
+    return Objects.hash(map);
   }
 
   public Map<String, Object> toMap() {
