@@ -16,8 +16,6 @@
 
 package org.vertx.java.core.json.impl;
 
-
-
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -65,7 +63,7 @@ public class Json {
   }
 
   static {
-          prettyMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
+    prettyMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
   }
 
 }

@@ -344,11 +344,11 @@ public class TestClient extends TestClientBase {
   }
 
   private void azzertPerms(String perms, String file1) {
-  	if (Windows.isWindows() == false) {
-  		tu.azzert(perms.equals(getPerms(file1)));
-  	}
+    if (Windows.isWindows() == false) {
+      tu.azzert(perms.equals(getPerms(file1)));
+    }
   }
-  
+
   public void testChmodRecursive1() throws Exception {
     testChmodRecursive();
   }
@@ -432,11 +432,11 @@ public class TestClient extends TestClientBase {
       vertx.fileSystem().chmod(TEST_DIR + pathSep + file, perms, handler);
     }
   }
-  
+
   public void testProps() throws Exception {
     String fileName = "some-file.txt";
     final long fileSize = 1234;
-    
+
     // The times are quite inaccurate so we give 1 second leeway
     final long start = 1000 * (System.currentTimeMillis() / 1000 - 1);
     createFileWithJunk(fileName, fileSize);
@@ -455,16 +455,16 @@ public class TestClient extends TestClientBase {
       }
     });
   }
-  
+
   public void testPropsFileDoesNotExist() throws Exception {
     String fileName = "some-file.txt";
     testProps(fileName, false, false, null);
   }
-  
+
   public void testPropsFollowLink() throws Exception {
     final String fileName = "some-file.txt";
     final long fileSize = 1234;
-    
+
     // The times are quite inaccurate so we give 1 second leeway
     final long start = 1000 * (System.currentTimeMillis() / 1000 - 1);
     createFileWithJunk(fileName, fileSize);
@@ -504,7 +504,7 @@ public class TestClient extends TestClientBase {
       }
     });
   }
-  
+
   private void testProps(final String fileName, final boolean link, final boolean shouldPass,
                          final Handler<FileProps> afterOK) throws Exception {
     AsyncResultHandler<FileProps> handler = new AsyncResultHandler<FileProps>() {
@@ -1115,19 +1115,19 @@ public class TestClient extends TestClientBase {
 
           rs.endHandler(new VoidHandler() {
             public void handle() {
-							ar.result().close(new AsyncResultHandler<Void>() {
-								@Override
-								public void handle(AsyncResult<Void> ar) {
-									tu.checkThread();
-									if (ar.failed()) {
-										tu.exception(ar.cause(), "failed to close");
-									} else {
-										tu.checkThread();
-										tu.azzert(TestUtils.buffersEqual(buff, new Buffer(content)));
-										tu.testComplete();
-									}
-								}
-							});
+              ar.result().close(new AsyncResultHandler<Void>() {
+                @Override
+                public void handle(AsyncResult<Void> ar) {
+                  tu.checkThread();
+                  if (ar.failed()) {
+                    tu.exception(ar.cause(), "failed to close");
+                  } else {
+                    tu.checkThread();
+                    tu.azzert(TestUtils.buffersEqual(buff, new Buffer(content)));
+                    tu.testComplete();
+                  }
+                }
+              });
             }
           });
         } else {
@@ -1165,7 +1165,7 @@ public class TestClient extends TestClientBase {
                 rs.endHandler(new VoidHandler() {
                   public void handle() {
                     tu.checkThread();
-										arr.result().close(new AsyncResultHandler<Void>() {
+                    arr.result().close(new AsyncResultHandler<Void>() {
                       @Override
                       public void handle(AsyncResult<Void> car) {
                         tu.checkThread();
@@ -1357,7 +1357,7 @@ public class TestClient extends TestClientBase {
     File file = new File(testDir, fileName);
     Path path = Paths.get(file.getCanonicalPath());
     Files.write(path, bytes);
-    
+
     setPerms( path, DEFAULT_FILE_PERMS );
   }
 
@@ -1380,7 +1380,7 @@ public class TestClient extends TestClientBase {
   private void mkDir(String dirName) throws Exception {
     File dir = new File(TEST_DIR + pathSep + dirName);
     dir.mkdir();
-    
+
     setPerms( Paths.get( dir.getCanonicalPath() ), DEFAULT_DIR_PERMS );
   }
 
@@ -1390,16 +1390,16 @@ public class TestClient extends TestClientBase {
   }
 
   private void setPerms(Path path, String perms) {
-  	if (Windows.isWindows() == false) {
-	    try {
-	      Files.setPosixFilePermissions( path, PosixFilePermissions.fromString( perms ) );
-	    }
-	    catch(IOException e) { 
-	      throw new RuntimeException(e.getMessage());
-	    } 
-	  }
+    if (Windows.isWindows() == false) {
+      try {
+        Files.setPosixFilePermissions( path, PosixFilePermissions.fromString( perms ) );
+      }
+      catch(IOException e) {
+        throw new RuntimeException(e.getMessage());
+      }
+    }
   }
-  
+
   private String getPerms(String fileName) {
     try {
       Set<PosixFilePermission> perms = Files.getPosixFilePermissions(Paths.get(testDir + pathSep + fileName));

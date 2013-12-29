@@ -51,15 +51,15 @@ public interface VertxInternal extends VertxSPI {
 
   Map<ServerID, DefaultNetServer> sharedNetServers();
 
-    /**
-     * Get the current context
-     * @return the context
-     */
-    DefaultContext getContext();
+  /**
+   * Get the current context
+   * @return the context
+   */
+  DefaultContext getContext();
 
-    /**
-     * Set the current context
-     */
+  /**
+   * Set the current context
+   */
   void setContext(DefaultContext context);
 
   /**

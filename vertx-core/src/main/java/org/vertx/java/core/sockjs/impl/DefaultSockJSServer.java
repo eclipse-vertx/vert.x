@@ -16,19 +16,6 @@
 
 package org.vertx.java.core.sockjs.impl;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxFactory;
@@ -49,6 +36,18 @@ import org.vertx.java.core.sockjs.EventBusBridge;
 import org.vertx.java.core.sockjs.EventBusBridgeHook;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.SockJSSocket;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -139,7 +138,7 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
   }
 
   public SockJSServer setHook(EventBusBridgeHook hook) {
-      this.hook = hook;
+    this.hook = hook;
     return this;
   }
 
@@ -223,7 +222,7 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
   }
 
   public SockJSServer bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted) {
-      EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted);
+    EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted);
     if (hook != null) {
       busBridge.setHook(hook);
     }
@@ -233,10 +232,10 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
 
   public SockJSServer bridge(JsonObject sjsConfig, JsonArray inboundPermitted, JsonArray outboundPermitted,
                      long authTimeout) {
-      EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted, authTimeout);
-      if (hook != null) {
-          busBridge.setHook(hook);
-      }
+    EventBusBridge busBridge = new EventBusBridge(vertx, inboundPermitted, outboundPermitted, authTimeout);
+    if (hook != null) {
+      busBridge.setHook(hook);
+    }
     installApp(sjsConfig, busBridge);
     return this;
   }

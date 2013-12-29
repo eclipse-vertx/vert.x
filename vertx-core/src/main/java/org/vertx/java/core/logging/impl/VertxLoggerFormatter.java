@@ -43,15 +43,14 @@ public class VertxLoggerFormatter extends java.util.logging.Formatter {
     sb.append(VertxLoggerFormatter.LINE_SEPARATOR);
     if (record.getThrown() != null) {
       try (StringWriter sw = new StringWriter();
-                      PrintWriter pw = new PrintWriter(sw)) {
-          record.getThrown().printStackTrace(pw);
-          sb.append(sw.toString());
+              PrintWriter pw = new PrintWriter(sw)) {
+        record.getThrown().printStackTrace(pw);
+        sb.append(sw.toString());
       }
       catch (IOException ioe) {
-          sb.append("caught IOException");
+        sb.append("caught IOException");
       }
     }
     return sb.toString();
   }
-
 }

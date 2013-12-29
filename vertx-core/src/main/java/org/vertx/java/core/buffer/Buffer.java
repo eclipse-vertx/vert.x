@@ -470,6 +470,6 @@ public class Buffer {
   @Override
   public int hashCode()
   {
-      return Objects.hash(buffer);
+    return Objects.hash(buffer);
   }
 }

@@ -16,18 +16,18 @@
 
 package org.vertx.java.core.net.impl;
 
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
+import io.netty.channel.EventLoop;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
-import io.netty.channel.EventLoop;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

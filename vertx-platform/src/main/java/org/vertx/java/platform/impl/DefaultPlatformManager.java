@@ -589,8 +589,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         File fatClassDir = new File(vertxHome, "org/vertx/java/platform/impl");
         vertx.fileSystem().mkdirSync(fatClassDir.getAbsolutePath(), true);
         try (FileInputStream fin = new FileInputStream(jar);
-                        BufferedInputStream bin = new BufferedInputStream(fin);
-                        ZipInputStream zin = new ZipInputStream(bin)) {
+                BufferedInputStream bin = new BufferedInputStream(fin);
+                ZipInputStream zin = new ZipInputStream(bin)) {
           ZipEntry ze;
           while ((ze = zin.getNextEntry()) != null) {
             String entryName = ze.getName();

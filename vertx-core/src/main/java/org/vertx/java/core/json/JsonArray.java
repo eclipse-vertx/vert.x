@@ -191,7 +191,7 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
   @Override
   public int hashCode()
   {
-      return Objects.hash(list);
+    return Objects.hash(list);
   }
 
   public Object[] toArray() {

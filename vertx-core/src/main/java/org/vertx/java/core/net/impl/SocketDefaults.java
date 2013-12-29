@@ -16,11 +16,11 @@
 
 package org.vertx.java.core.net.impl;
 
-import java.io.IOException;
-import java.net.Socket;
-
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+
+import java.io.IOException;
+import java.net.Socket;
 
 public final class SocketDefaults {
 

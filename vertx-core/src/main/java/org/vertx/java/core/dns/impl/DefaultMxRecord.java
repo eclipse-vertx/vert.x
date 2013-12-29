@@ -52,28 +52,28 @@ final class DefaultMxRecord implements MxRecord, Comparable<MxRecord> {
   @Override
   public int hashCode()
   {
-      final int prime = 31;
-      int result = 1;
-      result = prime * result + ((record == null) ? 0 : record.hashCode());
-      return result;
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((record == null) ? 0 : record.hashCode());
+    return result;
   }
 
   @Override
   public boolean equals(Object obj)
   {
-      if (this == obj)
-          return true;
-      if (obj == null)
-          return false;
-      if (getClass() != obj.getClass())
-          return false;
-      DefaultMxRecord other = (DefaultMxRecord) obj;
-      if (record == null) {
-          if (other.record != null)
-              return false;
-      }
-      else if (!record.equals(other.record))
-          return false;
+    if (this == obj)
       return true;
+    if (obj == null)
+      return false;
+    if (getClass() != obj.getClass())
+      return false;
+    DefaultMxRecord other = (DefaultMxRecord) obj;
+    if (record == null) {
+      if (other.record != null)
+        return false;
+    }
+    else if (!record.equals(other.record))
+      return false;
+    return true;
   }
 }

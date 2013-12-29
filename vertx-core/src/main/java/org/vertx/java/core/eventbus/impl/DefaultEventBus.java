@@ -502,12 +502,12 @@ public class DefaultEventBus implements EventBus {
 
   @Override
   public void close(Handler<AsyncResult<Void>> doneHandler) {
-        if (clusterMgr != null) {
-            clusterMgr.leave();
-        }
-        if (server != null) {
-            server.close(doneHandler);
-        }
+    if (clusterMgr != null) {
+      clusterMgr.leave();
+    }
+    if (server != null) {
+      server.close(doneHandler);
+    }
   }
 
   @Override
@@ -963,7 +963,7 @@ public class DefaultEventBus implements EventBus {
     public boolean equals(Object o) {
       if (this == o) return true;
       if (o == null || o.getClass() != this.getClass()) {
-          return false;
+        return false;
       }
       HandlerHolder that = (HandlerHolder) o;
       return handler.equals(that.handler);
@@ -973,7 +973,6 @@ public class DefaultEventBus implements EventBus {
     public int hashCode() {
       return handler.hashCode();
     }
-
   }
 
   private class ConnectionHolder {

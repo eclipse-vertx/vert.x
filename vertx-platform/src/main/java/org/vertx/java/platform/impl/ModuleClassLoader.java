@@ -120,7 +120,7 @@ public class ModuleClassLoader extends URLClassLoader {
     ClassLoader mcl = Thread.currentThread().getContextClassLoader();
     if (mcl instanceof ModuleClassLoader) {
       try (ModuleClassLoader mmcl = (ModuleClassLoader)mcl) {
-          return mmcl.getModuleGraph();
+        return mmcl.getModuleGraph();
       }
     } else {
       return getModuleGraph();

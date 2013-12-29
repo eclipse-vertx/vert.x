@@ -635,7 +635,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   protected boolean handlePreRegister(SockJSSocket sock, String address) {
     if (hook != null) {
       return hook.handlePreRegister(sock, address);
-      }
+    }
     return true;
   }
 

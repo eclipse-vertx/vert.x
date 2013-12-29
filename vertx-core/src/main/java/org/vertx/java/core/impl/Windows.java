@@ -23,17 +23,17 @@ package org.vertx.java.core.impl;
  */
 public class Windows {
 
-    private static final boolean isWindows;
+  private static final boolean isWindows;
 
-    static {
-        String os = System.getProperty("os.name").toLowerCase();
-        isWindows = os.contains("win");
-    }
+  static {
+    String os = System.getProperty("os.name").toLowerCase();
+    isWindows = os.contains("win");
+  }
 
-    /**
-     * @return true, if running on Windows
-     */
-    public static boolean isWindows() {
-        return isWindows;
-    }
+  /**
+   * @return true, if running on Windows
+   */
+  public static boolean isWindows() {
+    return isWindows;
+  }
 }

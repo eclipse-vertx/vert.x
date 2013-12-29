@@ -540,67 +540,67 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
     @Override
     public int hashCode()
     {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((charset == null) ? 0 : charset.hashCode());
-        result = prime * result + (completed ? 1231 : 1237);
-        result = prime * result + ((contentTransferEncoding == null) ? 0 : contentTransferEncoding.hashCode());
-        result = prime * result + ((contentType == null) ? 0 : contentType.hashCode());
-        result = prime * result + ((filename == null) ? 0 : filename.hashCode());
-        result = prime * result + ((name == null) ? 0 : name.hashCode());
-        result = prime * result + ((upload == null) ? 0 : upload.hashCode());
-        return result;
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + ((charset == null) ? 0 : charset.hashCode());
+      result = prime * result + (completed ? 1231 : 1237);
+      result = prime * result + ((contentTransferEncoding == null) ? 0 : contentTransferEncoding.hashCode());
+      result = prime * result + ((contentType == null) ? 0 : contentType.hashCode());
+      result = prime * result + ((filename == null) ? 0 : filename.hashCode());
+      result = prime * result + ((name == null) ? 0 : name.hashCode());
+      result = prime * result + ((upload == null) ? 0 : upload.hashCode());
+      return result;
     }
 
     @Override
     public boolean equals(Object obj)
     {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        NettyFileUpload other = (NettyFileUpload) obj;
-        if (charset == null) {
-            if (other.charset != null)
-                return false;
-        }
-        else if (!charset.equals(other.charset))
-            return false;
-        if (completed != other.completed)
-            return false;
-        if (contentTransferEncoding == null) {
-            if (other.contentTransferEncoding != null)
-                return false;
-        }
-        else if (!contentTransferEncoding.equals(other.contentTransferEncoding))
-            return false;
-        if (contentType == null) {
-            if (other.contentType != null)
-                return false;
-        }
-        else if (!contentType.equals(other.contentType))
-            return false;
-        if (filename == null) {
-            if (other.filename != null)
-                return false;
-        }
-        else if (!filename.equals(other.filename))
-            return false;
-        if (name == null) {
-            if (other.name != null)
-                return false;
-        }
-        else if (!name.equals(other.name))
-            return false;
-        if (upload == null) {
-            if (other.upload != null)
-                return false;
-        }
-        else if (!upload.equals(other.upload))
-            return false;
+      if (this == obj)
         return true;
+      if (obj == null)
+        return false;
+      if (getClass() != obj.getClass())
+        return false;
+      NettyFileUpload other = (NettyFileUpload) obj;
+      if (charset == null) {
+        if (other.charset != null)
+          return false;
+      }
+      else if (!charset.equals(other.charset))
+        return false;
+      if (completed != other.completed)
+        return false;
+      if (contentTransferEncoding == null) {
+        if (other.contentTransferEncoding != null)
+          return false;
+      }
+      else if (!contentTransferEncoding.equals(other.contentTransferEncoding))
+        return false;
+      if (contentType == null) {
+        if (other.contentType != null)
+          return false;
+      }
+      else if (!contentType.equals(other.contentType))
+        return false;
+      if (filename == null) {
+        if (other.filename != null)
+          return false;
+      }
+      else if (!filename.equals(other.filename))
+        return false;
+      if (name == null) {
+        if (other.name != null)
+          return false;
+      }
+      else if (!name.equals(other.name))
+        return false;
+      if (upload == null) {
+        if (other.upload != null)
+          return false;
+      }
+      else if (!upload.equals(other.upload))
+        return false;
+      return true;
     }
   }
 
