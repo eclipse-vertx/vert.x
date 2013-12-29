@@ -34,8 +34,8 @@ public class Server extends Verticle {
         // It's being proxied so should be absolute url
         System.out.println("******************************************* uri is " + req.uri());
 
-        tu.azzert(req.uri().equals("http://localhost:9192/maven2/io/vertx/mod-maven-test/1.0.0/mod-maven-test-1.0.0-mod.zip")
-                ||req.uri().equals("http://localhost:9192/maven2/io/vertx/mod-maven-test/1.0.0/mod-maven-test-1.0.0.zip"));
+        tu.azzert(req.uri().equals("http://localhost:9193/maven2/io/vertx/mod-maven-proxy-test/1.0.0/mod-maven-proxy-test-1.0.0-mod.zip")
+                ||req.uri().equals("http://localhost:9193/maven2/io/vertx/mod-maven-proxy-test/1.0.0/mod-maven-proxy-test-1.0.0.zip"));
         if (req.path().indexOf("..") != -1) {
           req.response().setStatusCode(403);
           req.response().end();
@@ -44,7 +44,7 @@ public class Server extends Verticle {
           req.response().sendFile("." + req.path());
         }
       }
-    }).listen(9193, "127.0.0.1", new AsyncResultHandler<HttpServer>() {
+    }).listen(9194, "127.0.0.1", new AsyncResultHandler<HttpServer>() {
       @Override
       public void handle(AsyncResult<HttpServer> ar) {
         result.setResult(null);

@@ -25,7 +25,7 @@ public class ProxyRepoDownloadTest extends TestBase {
   @Override
   protected void setUp() throws Exception {
     System.setProperty("http.proxyHost", "127.0.0.1");
-    System.setProperty("http.proxyPort", "9193");
+    System.setProperty("http.proxyPort", "9194");
     super.setUp();
 
     startApp(RepoDownloadTestClient.class.getName());

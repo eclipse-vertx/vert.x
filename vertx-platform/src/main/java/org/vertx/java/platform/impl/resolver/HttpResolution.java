@@ -274,7 +274,6 @@ public abstract class HttpResolution {
   }
 
   private static int getProxyPort() {
-    return Integer.valueOf(System.getProperty(HTTP_PROXY_PORT_PROP_NAME, "80"));
+    return Integer.parseInt(System.getProperty(HTTP_PROXY_PORT_PROP_NAME, "80"));
   }
-
 }

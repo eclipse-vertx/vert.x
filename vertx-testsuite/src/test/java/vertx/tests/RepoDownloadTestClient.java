@@ -44,7 +44,9 @@ public class RepoDownloadTestClient extends TestClientBase {
     container.deployModule("io.vertx~mod-proxy-maven-server~1.0", new AsyncResultHandler<String>() {
       public void handle(AsyncResult<String> res) {
         if (res.succeeded()) {
-          container.deployModule("io.vertx~mod-maven-test~1.0.0", new AsyncResultHandler<String>() {
+          // this should not use the same module as the regular test because if the regular test
+          // already downloaded this module, it will not actually use the proxy at all...
+          container.deployModule("io.vertx~mod-maven-proxy-test~1.0.0", new AsyncResultHandler<String>() {
             @Override
             public void handle(AsyncResult<String> res) {
             }
