@@ -724,7 +724,9 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     return null; // We are at the top level already
   }
 
+  // Get top-most module deployment for a deployment
   private Deployment getTopMostDeployment(Deployment dep) {
+    Deployment topMostMod = dep;
     while (true) {
       String parentDep = dep.parentDeploymentName;
       if (parentDep != null) {
@@ -732,8 +734,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         if (dep == null) {
           throw new IllegalStateException("Cannot find deployment " + parentDep);
         }
+        if (dep.modID != null) {
+          topMostMod = dep;
+        }
       } else {
-        return dep;
+        return topMostMod;
       }
     }
   }
