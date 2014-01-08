@@ -9,16 +9,15 @@ Please also read [this](http://wiki.eclipse.org/Development_Resources/Contributi
 
 In order for any contributions to be accepted you MUST do the following things:
 
-## Sign the [Eclipse Foundation Contributor License Agreement](http://www.eclipse.org/legal/CLA.php).
-
+* Sign the [Eclipse Foundation Contributor License Agreement](http://www.eclipse.org/legal/CLA.php).
 To sign the Eclipse CLA you need to:
 
-* Obtain an Eclipse Foundation userid. Anyone who currently uses Eclipse Bugzilla or Gerrit systems already has one of those.
+  * Obtain an Eclipse Foundation userid. Anyone who currently uses Eclipse Bugzilla or Gerrit systems already has one of those.
 If you don’t, you need to [register](https://dev.eclipse.org/site_login/createaccount.php).
 
-* Login into the [projects portal](https://projects.eclipse.org/), select “My Account”, and then the “Contributor License Agreement” tab.
+  * Login into the [projects portal](https://projects.eclipse.org/), select “My Account”, and then the “Contributor License Agreement” tab.
 
-## "Sign-off" your commits
+* "Sign-off" your commits
 
 Every commit you make in your patch or pull request MUST be "signed off".
 
@@ -48,20 +47,10 @@ You do this by adding the `-s` flag when you make the commit(s), e.g.
 
 ## Submitting the changes
 
-Before submitting your pull request you must sign the [Eclipse Foundation Contributor License Agreement](http://www.eclipse.org/legal/CLA.php).
-
-We will NOT ACCEPT any contributions without this first being signed.
-
-To sign the Eclipse CLA you need to:
-
-* Obtain an Eclipse Foundation userid. Anyone who currently uses Eclipse Bugzilla or Gerrit systems already has one of those.
-If you don’t, you need to [register](https://dev.eclipse.org/site_login/createaccount.php).
-
-* Login into the [projects portal](https://projects.eclipse.org/), select “My Account”, and then the “Contributor License Agreement” tab.
+Submit a pull request via the normal GitHub UI.
  
 ## After submitting
 
-* Once you have signed the Eclipse CLA, make a note on the github issue that you have signed the CLA, and then you can submit a pull request via github.
 * Do not use your branch for any other development, otherwise further changes that you make will be visible in the PR.
 
 
