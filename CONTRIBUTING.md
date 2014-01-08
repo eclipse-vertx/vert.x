@@ -2,6 +2,8 @@
 
 Please read this if you intend to contribute to the project.
 
+## Legal stuff
+
 Apologies in advance for the extra work required here - this is necessary to comply with the Eclipse Foundation's
 strict IP policy.
 
@@ -25,17 +27,9 @@ You do this by adding the `-s` flag when you make the commit(s), e.g.
 
     git commit -s -m "Shave the yak some more"
 
-## First things
-
-* Get a github account if you don't have one already
-* Submit a github issue if there isn't one already.
-  * Clearly describe the bug or feature
-  * Provide exact reproducable steps to reproduce the issue if its a bug
-  * Include the versions of all components
-* Fork the repository on github
-
 ## Making your changes
 
+* For the repository on GitHub
 * Create a new branch for your changes
 * Make your changes
 * Make sure you include tests
@@ -43,6 +37,7 @@ You do this by adding the `-s` flag when you make the commit(s), e.g.
 * Commit your changes into that branch
 * Use descriptive and meaningful commit messages
 * If you have a lot of commits squash them into a single commit
+* Make sure you use the `-s` flag when committing as explained above.
 * Push your changes to your branch in your forked repository
 
 ## Submitting the changes
