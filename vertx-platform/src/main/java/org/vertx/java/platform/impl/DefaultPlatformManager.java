@@ -72,6 +72,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private static final String TEMP_DIR = System.getProperty("java.io.tmpdir");
   private static final String FILE_SEP = System.getProperty("file.separator");
   private static final String MODULE_NAME_SYS_PROP = System.getProperty("vertx.modulename");
+  private static final String CLASSPATH_FILE = "vertx_classpath.txt";
 
   private final VertxInternal vertx;
   // deployment name --> deployment
@@ -299,6 +300,18 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   @Override
+  public void createModuleLink(final String moduleName, final Handler<AsyncResult<Void>> doneHandler) {
+    final Handler<AsyncResult<Void>> wrapped = wrapDoneHandler(doneHandler);
+    runInBackground(new Runnable() {
+      public void run() {
+        ModuleIdentifier modID = new ModuleIdentifier(moduleName); // Validates it
+        doCreateModuleLink(modRoot, modID);
+        doneHandler.handle(new DefaultFutureResult<>((Void) null));
+      }
+    }, wrapped);
+  }
+
+  @Override
   public void reloadModules(final Set<Deployment> deps) {
 
     // If the module that has changed has been deployed by another module then we redeploy the parent module not
@@ -476,7 +489,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     if (!modDir.exists()) {
       throw new PlatformManagerException("Cannot find module");
     }
-    JsonObject conf = loadModuleConfig(modID, modDir);
+    JsonObject conf = loadModuleConfig(createModJSONFile(modDir), modID);
     if (conf == null) {
       throw new PlatformManagerException("Module " + modID + " does not contain a mod.json");
     }
@@ -626,6 +639,26 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
     // And delete temp dir
     vertx.fileSystem().deleteSync(vertxHome.getAbsolutePath(), true);
+  }
+
+  private void doCreateModuleLink(File modRoot, ModuleIdentifier modID) {
+    File cpFile = new File(CLASSPATH_FILE);
+    if (!cpFile.exists()) {
+      throw new PlatformManagerException("Must create a module.classpath first before creating a module link");
+    }
+    File modDir = new File(modRoot, modID.toString());
+    if (modDir.exists()) {
+      throw new PlatformManagerException("Module directory " + modDir + " already exists.");
+    }
+    if (!modDir.mkdirs()) {
+      throw new PlatformManagerException("Failed to make directory " + modDir);
+    }
+    try {
+      File currentDir = new File(".").getCanonicalFile();
+      vertx.fileSystem().writeFileSync(modDir.getPath() + "/module.link", new Buffer(currentDir.getCanonicalPath() + "\n"));
+    } catch (IOException e) {
+      throw new PlatformManagerException(e);
+    }
   }
 
   private void zipDir(String zipFile, String dirToZip) {
@@ -827,29 +860,31 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     extensionMappings.put("class", "java");
     defaultLanguageImplName = "java";
 
-    // First try loading mappings from the LANG_PROPS_FILE_NAMEs file
-    // This file is structured as follows:
-    //   It should contain one line for every language implementation that is to be used with Vert.x
-    //     That line should be structured as follows:
-    //       <lang_impl_name>=[module_name:]<factory_name>
-    //     Where:
-    //       <lang_impl_name> is the name you want to give to the language implementation, e.g. 'jython'
-    //       module_name is the (optional) name of a module that contains the language implementation
-    //         if ommitted it will be assumed the language implementation is included as part of the Vert.x installation
-    //         - this is only true for the Java implementation
-    //         if included the module_name should be followed by a colon
-    //       factory_name is the FQCN of a VerticleFactory for the language implementation
-    //     Examples:
-    //       rhino=vertx.lang-rhino-v1.0.0:org.vertx.java.platform.impl.rhino.RhinoVerticleFactory
-    //       java=org.vertx.java.platform.impl.java.JavaVerticleFactory
-    //   The file should also contain one line for every extension mapping - this maps a file extension to
-    //   a <lang_impl_name> as specified above
-    //     Examples:
-    //       .js=rhino
-    //       .rb=jruby
-    //   The file can also contain a line representing the default language runtime to be used when no extension or
-    //   prefix maps, e.g.
-    //     .=java
+   /*
+    First try loading mappings from the LANG_PROPS_FILE_NAMEs file
+    This file is structured as follows:
+       It should contain one line for every language implementation that is to be used with Vert.x
+         That line should be structured as follows:
+           <lang_impl_name>=[module_name:]<factory_name>
+         Where:
+           <lang_impl_name> is the name you want to give to the language implementation, e.g. 'jython'
+           module_name is the (optional) name of a module that contains the language implementation
+             if ommitted it will be assumed the language implementation is included as part of the Vert.x installation
+             - this is only true for the Java implementation
+             if included the module_name should be followed by a colon
+           factory_name is the FQCN of a VerticleFactory for the language implementation
+         Examples:
+           rhino=vertx.lang-rhino-v1.0.0:org.vertx.java.platform.impl.rhino.RhinoVerticleFactory
+           java=org.vertx.java.platform.impl.java.JavaVerticleFactory
+       The file should also contain one line for every extension mapping - this maps a file extension to
+       a <lang_impl_name> as specified above
+         Examples:
+           .js=rhino
+           .rb=jruby
+       The file can also contain a line representing the default language runtime to be used when no extension or
+       prefix maps, e.g.
+         .=java
+    */
 
     try (InputStream is = findLangsFile()) {
       if (is != null) {
@@ -1043,6 +1078,61 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         doneHandler);
   }
 
+  private static class ModuleInfo {
+    final JsonObject modJSON;
+    final List<URL> cp;
+
+    private ModuleInfo(JsonObject modJSON, List<URL> cp) {
+      this.modJSON = modJSON;
+      this.cp = cp;
+    }
+  }
+
+  private ModuleInfo loadModuleInfo(File modDir, ModuleIdentifier modID) {
+    List<URL> cpList;
+    JsonObject modJSON;
+    File modJSONFile = createModJSONFile(modDir);
+    if (!modJSONFile.exists()) {
+      // Look for link file
+      File linkFile = new File(modDir, "module.link");
+      if (linkFile.exists()) {
+        // Load the path from the file
+        try (Scanner scanner = new Scanner(linkFile).useDelimiter("\\A")) {
+          String path = scanner.next().trim();
+          File cpFile = new File(path, CLASSPATH_FILE);
+          if (!cpFile.exists()) {
+            throw new PlatformManagerException("Module link file: " + linkFile + " points to path without module.classpath");
+          }
+          // Load the cp
+          cpList = new ArrayList<>();
+          try (Scanner scanner2 = new Scanner(cpFile)) {
+            while (scanner2.hasNextLine()) {
+              String entry = scanner2.nextLine();
+              File fentry = new File(entry);
+              if (!fentry.isAbsolute()) {
+                fentry = new File(path, entry);
+              }
+              URL url = fentry.toURI().toURL();
+              cpList.add(url);
+            }
+          } catch (Exception e) {
+            e.printStackTrace();
+            throw new PlatformManagerException(e);
+          }
+          modJSON = loadModJSONFromClasspath(modID, new URLClassLoader(cpList.toArray(new URL[cpList.size()]), platformClassLoader));
+        } catch (Exception e) {
+          throw new PlatformManagerException(e);
+        }
+      } else {
+        throw new PlatformManagerException("Module directory " + modDir + " contains no mod.json nor module.link file");
+      }
+    } else {
+      modJSON = loadModuleConfig(modJSONFile, modID);
+      cpList = getModuleClasspath(modDir);
+    }
+    return new ModuleInfo(modJSON, cpList);
+  }
+
 
   private void deployModuleFromFileSystem(File modRoot, String depName, ModuleIdentifier modID,
                                           JsonObject config,
@@ -1052,10 +1142,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     File modDir = locateModule(modRoot, currentModDir, modID);
     if (modDir != null) {
       // The module exists on the file system
-      JsonObject modJSON = loadModuleConfig(modID, modDir);
-      List<URL> urls = getModuleClasspath(modDir);
-      deployModuleFromModJson(modJSON, depName, modID, config, instances, modDir, currentModDir, urls,
-          modRoot, ha, doneHandler);
+      ModuleInfo info = loadModuleInfo(modDir, modID);
+      deployModuleFromModJson(info.modJSON, depName, modID, config, instances, modDir, currentModDir, info.cp, modRoot, ha, doneHandler);
     } else {
       JsonObject modJSON;
       if (modID.toString().equals(MODULE_NAME_SYS_PROP)) {
@@ -1078,9 +1166,9 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
   }
 
-  private JsonObject loadModuleConfig(ModuleIdentifier modID, File modDir) {
+  private JsonObject loadModuleConfig(File modJSON, ModuleIdentifier modID) {
     // Checked the byte code produced, .close() is called correctly, so the warning can be suppressed
-    try (Scanner scanner = new Scanner(new File(modDir, "mod.json")).useDelimiter("\\A")) {
+    try (Scanner scanner = new Scanner(modJSON).useDelimiter("\\A")) {
       String conf = scanner.next();
       return new JsonObject(conf);
     } catch (FileNotFoundException e) {
@@ -1114,14 +1202,13 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
             doInstallMod(modID);
           }
           modDir = locateModule(modRoot, currentModuleDir, modID);
-          List<URL> urls = getModuleClasspath(modDir);
-          JsonObject conf = loadModuleConfig(modID, modDir);
-          ModuleFields fields = new ModuleFields(conf);
+          ModuleInfo info = loadModuleInfo(modDir, modID);
+          ModuleFields fields = new ModuleFields(info.modJSON);
 
           boolean res = fields.isResident();
           includedMr = new ModuleReference(this, moduleName,
               new ModuleClassLoader(modID.toString(), platformClassLoader,
-                  urls.toArray(new URL[urls.size()])),
+                  info.cp.toArray(new URL[info.cp.size()])),
               res);
           ModuleReference prev = moduleRefs.putIfAbsent(moduleName, includedMr);
           if (prev != null) {
@@ -1284,6 +1371,10 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
   }
 
+  private File createModJSONFile(File modDir) {
+    return new File(modDir, "mod.json");
+  }
+
   private void unzipModule(final ModuleIdentifier modID, final ModuleZipInfo zipInfo, boolean deleteZip) {
     // We synchronize to prevent a race whereby it tries to unzip the same module at the
     // same time (e.g. deployModule for the same module name has been called in parallel)
@@ -1306,7 +1397,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       File tdest = unzipIntoTmpDir(zipInfo, deleteZip);
 
       // Check if it's a system module
-      JsonObject conf = loadModuleConfig(modID, tdest);
+      JsonObject conf = loadModuleConfig(createModJSONFile(tdest), modID);
       ModuleFields fields = new ModuleFields(conf);
 
       boolean system = fields.isSystem();

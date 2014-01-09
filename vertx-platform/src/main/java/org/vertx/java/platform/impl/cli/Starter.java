@@ -101,6 +101,9 @@ public class Starter {
             case "fatjar":
               fatJar(operand, args);
               break;
+            case "create-module-link":
+              createModuleLink(operand);
+              break;
             default:
               displaySyntax();
           }
@@ -166,6 +169,12 @@ public class Starter {
       return;
     }
     createPM().makeFatJar(modName, directory, createLoggingHandler("making fat jar", unblockHandler()));
+    block();
+  }
+
+  private void createModuleLink(String modName) {
+    log.info("Attempting to create module link for module " + modName);
+    createPM().createModuleLink(modName, createLoggingHandler("creating module link", unblockHandler()));
     block();
   }
 
