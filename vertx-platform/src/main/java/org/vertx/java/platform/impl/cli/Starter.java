@@ -566,6 +566,14 @@ public class Starter {
 "        Vert.x will consult the 'includes' and 'deploys' fields to determine   \n" +
 "        which modules to pull in.                                            \n\n" +
 
+"    vertx create-module-link <modname>                                         \n" +
+"        Creates a link file in the modules directory for the specified module. \n" +
+"        When vertx tries to deploy a module and it finds a link file it follows\n" +
+"        the path in the link to find a file vertx_classpath.txt which contains \n" +
+"        the classpath (one entry on each line) to where the module resources   \n" +
+"        can be found. It then loads the module using that classpath. This is   \n" +
+"        when loading modules from resources in an IDE.                       \n\n" +
+
 "    vertx version                                                              \n" +
 "        displays the version";
 
