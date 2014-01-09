@@ -209,7 +209,7 @@ public class ModuleClassLoader extends URLClassLoader {
 
     private final Object obj = new Object();
 
-    private final Map<T, Object> map = new HashMap<>();
+    private final Map<T, Object> map = new LinkedHashMap<>();
 
     @Override
     public int size() {

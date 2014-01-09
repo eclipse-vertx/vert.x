@@ -168,6 +168,8 @@ public interface PlatformManager {
    */
   void makeFatJar(String moduleName, String outputDirectory, Handler<AsyncResult<Void>> doneHandler);
 
+  void createModuleLink(String moduleName, Handler<AsyncResult<Void>> doneHandler);
+
   /**
    * Register a handler that will be called when the platform exits because of a verticle calling container.exit()
    * @param handler The handler
