@@ -92,6 +92,10 @@ public class ModuleFields {
     return conf.getString("authors");
   }
 
+  public boolean isLoadFromModuleFirst() {
+    return getBooleanField("load-from-module-first");
+  }
+
   private boolean getBooleanField(String name) {
     Boolean res = conf.getBoolean(name);
     if (res == null) {

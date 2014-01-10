@@ -38,12 +38,13 @@ import java.util.*;
  *
  * For each context the Thread context classloader is set to the ModuleClassLoader that created the context.
  *
- * When loading a class, this instance first attempts to load the class with the platform classloader, if that fails
- * it will use the context classloader.
- *
  * Consequently any class or resource loading that occurs from the same context will have the same set of modules
  * visible to it, which will be the same as the set of modules visible to the ModuleClassLoader of the module that
  * created it.
+ *
+ * We support two different load orders for modules - either loading with the platform loader first or
+ * loading with the module classloader first. This is configurable using the load-from-module-first module
+ * field.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -54,12 +55,15 @@ public class ModuleClassLoader extends URLClassLoader {
   public final String modID;
   private final Set<ModuleReference> references = new ConcurrentHashSet<>();
   private final ClassLoader platformClassLoader;
+  private final boolean loadFromModuleFirst;
   private Set<ModuleClassLoader> modGraph;
 
-  public ModuleClassLoader(String modID, ClassLoader platformClassLoader, URL[] classpath) {
+  public ModuleClassLoader(String modID, ClassLoader platformClassLoader, URL[] classpath,
+                           boolean loadFromModuleFirst) {
     super(classpath);
     this.modID = modID;
     this.platformClassLoader = platformClassLoader;
+    this.loadFromModuleFirst = loadFromModuleFirst;
   }
 
   public synchronized boolean addReference(ModuleReference reference) {
@@ -82,20 +86,18 @@ public class ModuleClassLoader extends URLClassLoader {
   @Override
   protected synchronized Class<?> loadClass(String name, boolean resolve)
       throws ClassNotFoundException {
-    Class<?> c = null;
-    try {
-      c = platformClassLoader.loadClass(name);
-    } catch (ClassNotFoundException e) {
-      Set<ModuleClassLoader> toWalk = getModulesToWalk();
-      for (ModuleClassLoader cl: toWalk) {
-        c = cl.doLoadClass(name);
-        if (c != null) {
-          break;
-        }
+    Class<?> c;
+    if (loadFromModuleFirst) {
+      try {
+        c = loadFromModule(name);
+      } catch (ClassNotFoundException e) {
+        c = platformClassLoader.loadClass(name);
       }
-
-      if (c == null) {
-        throw new ClassNotFoundException(name);
+    } else {
+      try {
+        c = platformClassLoader.loadClass(name);
+      } catch (ClassNotFoundException e) {
+        c = loadFromModule(name);
       }
     }
     if (resolve) {
@@ -104,7 +106,22 @@ public class ModuleClassLoader extends URLClassLoader {
     return c;
   }
 
-  protected synchronized Class<?> doLoadClass(String name) {
+  private Class<?> loadFromModule(String name) throws ClassNotFoundException {
+    Class<?> c = null;
+    Set<ModuleClassLoader> toWalk = getModulesToWalk();
+    for (ModuleClassLoader cl: toWalk) {
+      c = cl.doLoadClass(name);
+      if (c != null) {
+        break;
+      }
+    }
+    if (c == null) {
+      throw new ClassNotFoundException(name);
+    }
+    return c;
+  }
+
+  protected Class<?> doLoadClass(String name) {
     Class<?> c = findLoadedClass(name);
     if (c == null) {
       try {

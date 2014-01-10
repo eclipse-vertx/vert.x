@@ -776,10 +776,11 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
   }
 
-  private ModuleReference getModuleReference(String moduleKey, URL[] urls) {
+  private ModuleReference getModuleReference(String moduleKey, URL[] urls, boolean loadFromModuleFirst) {
     ModuleReference mr = moduleRefs.get(moduleKey);
     if (mr == null) {
-      mr = new ModuleReference(this, moduleKey, new ModuleClassLoader(moduleKey, platformClassLoader, urls), false);
+      mr = new ModuleReference(this, moduleKey, new ModuleClassLoader(moduleKey, platformClassLoader, urls,
+                               loadFromModuleFirst), false);
       ModuleReference prev = moduleRefs.putIfAbsent(moduleKey, mr);
       if (prev != null) {
         mr = prev;
@@ -809,19 +810,25 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     String depName = genDepName();
     ModuleIdentifier enclosingModName = getEnclosingModID();
     String moduleKey;
+    boolean loadFromModuleFirst;
     if (enclosingModName == null) {
       // We are at the top level - just use the deployment name as the key
       moduleKey = ModuleIdentifier.createInternalModIDForVerticle(depName).toString();
+      loadFromModuleFirst = false;
     } else {
       // Use the enclosing module name / or enclosing verticle PLUS the main
       moduleKey = enclosingModName.toString() + "#" + main;
+      VerticleHolder holder = getVerticleHolder();
+      Deployment dep = holder.deployment;
+      loadFromModuleFirst = dep.loadFromModuleFirst;
     }
 
-    ModuleReference mr = getModuleReference(moduleKey, urls);
+    ModuleReference mr = getModuleReference(moduleKey, urls, loadFromModuleFirst);
 
     if (enclosingModName != null) {
       // Add the enclosing module as a parent
       ModuleReference parentRef = moduleRefs.get(enclosingModName.toString());
+
       if (mr.mcl.addReference(parentRef)) {
         parentRef.incRef();
       }
@@ -831,7 +838,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       loadIncludedModules(modRoot, currentModDir, mr, includes);
     }
     doDeploy(depName, false, worker, multiThreaded, null, main, null, config, urls, instances, currentModDir, mr, modRoot, false,
-        doneHandler);
+             loadFromModuleFirst, doneHandler);
   }
 
 
@@ -994,7 +1001,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     if (mr == null) {
       boolean res = fields.isResident();
       mr = new ModuleReference(this, modID.toString(),
-          new ModuleClassLoader(modID.toString(), platformClassLoader, moduleClasspath.toArray(new URL[moduleClasspath.size()])),
+          new ModuleClassLoader(modID.toString(), platformClassLoader, moduleClasspath.toArray(new URL[moduleClasspath.size()]),
+                                fields.isLoadFromModuleFirst()),
           res);
       ModuleReference prev = moduleRefs.putIfAbsent(modID.toString(), mr);
       if (prev != null) {
@@ -1020,7 +1028,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
     doDeploy(depName, autoRedeploy, worker, multiThreaded, fields.getLangMod(), main, modID, config,
         moduleClasspath.toArray(new URL[moduleClasspath.size()]), instances, modDirToUse, mr,
-        modRoot, ha, new Handler<AsyncResult<String>>() {
+        modRoot, ha, fields.isLoadFromModuleFirst(), new Handler<AsyncResult<String>>() {
       @Override
       public void handle(AsyncResult<String> res) {
         if (res.succeeded()) {
@@ -1208,7 +1216,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           boolean res = fields.isResident();
           includedMr = new ModuleReference(this, moduleName,
               new ModuleClassLoader(modID.toString(), platformClassLoader,
-                  info.cp.toArray(new URL[info.cp.size()])),
+                  info.cp.toArray(new URL[info.cp.size()]), fields.isLoadFromModuleFirst()),
               res);
           ModuleReference prev = moduleRefs.putIfAbsent(moduleName, includedMr);
           if (prev != null) {
@@ -1506,6 +1514,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
                         final ModuleReference mr,
                         final File modRoot,
                         final boolean ha,
+                        final boolean loadFromModuleFirst,
                         Handler<AsyncResult<String>> dHandler) {
     checkWorkerContext();
 
@@ -1621,7 +1630,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
     final Deployment deployment = new Deployment(deploymentID, main, modID, instances,
         config == null ? new JsonObject() : config.copy(), urls, modDir, parentDeploymentName,
-        mr, autoRedeploy, ha);
+        mr, autoRedeploy, ha, loadFromModuleFirst);
     mr.incRef();
 
     deployments.put(deploymentID, deployment);
