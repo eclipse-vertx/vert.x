@@ -1075,13 +1075,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     if (modJSON == null) {
       throw new PlatformManagerException("Failed to find mod.json on classpath");
     }
-    File modDir = locateModule(modRoot, null, modID);
     List<URL> cpList = new ArrayList<>(Arrays.asList(classpath));
-    if (modDir != null) {
-      // TODO - why is this necessary???
-      // Add the module directory too if found
-      cpList.addAll(getModuleClasspath(modDir));
-    }
     deployModuleFromModJson(modJSON, depName, modID, config, instances, null, null, cpList, modRoot, false,
         doneHandler);
   }
@@ -1115,13 +1109,15 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           cpList = new ArrayList<>();
           try (Scanner scanner2 = new Scanner(cpFile)) {
             while (scanner2.hasNextLine()) {
-              String entry = scanner2.nextLine();
-              File fentry = new File(entry);
-              if (!fentry.isAbsolute()) {
-                fentry = new File(path, entry);
+              String entry = scanner2.nextLine().trim();
+              if (!entry.startsWith("#") && !entry.equals("")) {  // Skip blanks lines and comments
+                File fentry = new File(entry);
+                if (!fentry.isAbsolute()) {
+                  fentry = new File(path, entry);
+                }
+                URL url = fentry.toURI().toURL();
+                cpList.add(url);
               }
-              URL url = fentry.toURI().toURL();
-              cpList.add(url);
             }
           } catch (Exception e) {
             e.printStackTrace();

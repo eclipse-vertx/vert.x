@@ -33,7 +33,7 @@ public class Redeployer {
   private static final Logger log = LoggerFactory.getLogger(Redeployer.class);
 
   private static final long CHECK_PERIOD = 240;
-  private static final long GRACE_PERIOD = 500;
+  private static final long GRACE_PERIOD = 1000;
 
   private final VertxInternal vertx;
   private final ModuleReloader reloader;
