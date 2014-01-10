@@ -23,10 +23,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.io.File;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class Redeployer {
 
@@ -91,7 +88,13 @@ public class Redeployer {
     Set<Deployment> deps = deployments.get(deployment.modID);
     if (deps == null) {
       Set<File> watched = new HashSet<>();
-      for (URL url: deployment.classpath) {
+      List<URL> totCP = new ArrayList<>();
+      // We need to watch not only the classpath of the modules but also the cp of any modules that it includes
+      Collections.addAll(totCP, deployment.classpath);
+      if (deployment.includedClasspath != null) {
+        Collections.addAll(totCP, deployment.includedClasspath);
+      }
+      for (URL url: totCP) {
         String sfile = url.getFile();
         if (sfile != null) {
           File file = new File(sfile);

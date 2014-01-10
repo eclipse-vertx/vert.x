@@ -837,7 +837,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     if (includes != null) {
       loadIncludedModules(modRoot, currentModDir, mr, includes);
     }
-    doDeploy(depName, false, worker, multiThreaded, null, main, null, config, urls, instances, currentModDir, mr, modRoot, false,
+    doDeploy(depName, false, worker, multiThreaded, null, main, null, config, urls, null, instances, currentModDir, mr, modRoot, false,
              loadFromModuleFirst, doneHandler);
   }
 
@@ -1020,14 +1020,20 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
     // Now load any included moduleRefs
     String includes = fields.getIncludes();
+    // We also need to get the total set of urls for any included modules as these will have to watched too
+    // for auto-redeploy
+    URL[] includedCP = null;
     if (includes != null) {
-      loadIncludedModules(modRoot, modDir, mr, includes);
+      List<URL> includedCPList = loadIncludedModules(modRoot, modDir, mr, includes);
+      if (!includedCPList.isEmpty()) {
+        includedCP = includedCPList.toArray(new URL[includedCPList.size()]);
+      }
     }
 
     final boolean autoRedeploy = fields.isAutoRedeploy();
 
     doDeploy(depName, autoRedeploy, worker, multiThreaded, fields.getLangMod(), main, modID, config,
-        moduleClasspath.toArray(new URL[moduleClasspath.size()]), instances, modDirToUse, mr,
+        moduleClasspath.toArray(new URL[moduleClasspath.size()]), includedCP, instances, modDirToUse, mr,
         modRoot, ha, fields.isLoadFromModuleFirst(), new Handler<AsyncResult<String>>() {
       @Override
       public void handle(AsyncResult<String> res) {
@@ -1184,14 +1190,16 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
   }
 
-  private void loadIncludedModules(File modRoot, File currentModuleDir, ModuleReference mr, String includesString) {
+  private List<URL> loadIncludedModules(File modRoot, File currentModuleDir, ModuleReference mr, String includesString) {
     Set<String> included = new HashSet<>();
+    List<URL> includedCP = new ArrayList<>();
     included.add(mr.moduleKey);
-    doLoadIncludedModules(modRoot, currentModuleDir, mr, includesString, included);
+    doLoadIncludedModules(modRoot, currentModuleDir, mr, includesString, included, includedCP);
+    return includedCP;
   }
 
   private void doLoadIncludedModules(File modRoot, File currentModuleDir, ModuleReference mr, String includesString,
-                                     Set<String> included) {
+                                     Set<String> included, List<URL> includedCP) {
     checkWorkerContext();
     for (String moduleName: parseIncludeString(includesString)) {
       ModuleIdentifier modID = new ModuleIdentifier(moduleName);
@@ -1208,6 +1216,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           modDir = locateModule(modRoot, currentModuleDir, modID);
           ModuleInfo info = loadModuleInfo(modDir, modID);
           ModuleFields fields = new ModuleFields(info.modJSON);
+          includedCP.addAll(info.cp);
 
           boolean res = fields.isResident();
           includedMr = new ModuleReference(this, moduleName,
@@ -1220,12 +1229,13 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           }
           String includes = fields.getIncludes();
           if (includes != null) {
-            doLoadIncludedModules(modRoot, modDir, includedMr, includes, included);
+            doLoadIncludedModules(modRoot, modDir, includedMr, includes, included, includedCP);
           }
         }
         if (mr.mcl.addReference(includedMr)) {
           includedMr.incRef();
         }
+
       }
     }
   }
@@ -1504,7 +1514,9 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
                         String langMod,
                         String theMain,
                         final ModuleIdentifier modID,
-                        final JsonObject config, final URL[] urls,
+                        final JsonObject config,
+                        final URL[] urls,
+                        final URL[] includedURLs,
                         int instances,
                         final File modDir,
                         final ModuleReference mr,
@@ -1625,7 +1637,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     });
 
     final Deployment deployment = new Deployment(deploymentID, main, modID, instances,
-        config == null ? new JsonObject() : config.copy(), urls, modDir, parentDeploymentName,
+        config == null ? new JsonObject() : config.copy(), urls, includedURLs, modDir, parentDeploymentName,
         mr, autoRedeploy, ha, loadFromModuleFirst);
     mr.incRef();
 

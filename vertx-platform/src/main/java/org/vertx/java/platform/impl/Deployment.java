@@ -33,6 +33,7 @@ public class Deployment {
   public final int instances;
   public final JsonObject config;
   public final URL[] classpath;
+  public final URL[] includedClasspath;
   public final File modDir;
   public final List<VerticleHolder> verticles = new CopyOnWriteArrayList<>();
   public final List<String> childDeployments = new CopyOnWriteArrayList<>();
@@ -43,7 +44,7 @@ public class Deployment {
   public final boolean loadFromModuleFirst;
 
   public Deployment(String name, String main, ModuleIdentifier modID, int instances, JsonObject config,
-                    URL[] classpath, File modDir, String parentDeploymentName,
+                    URL[] classpath, URL[] includedClasspath, File modDir, String parentDeploymentName,
                     ModuleReference moduleReference,
                     boolean autoRedeploy, boolean ha,
                     boolean loadFromModuleFirst) {
@@ -53,6 +54,7 @@ public class Deployment {
     this.instances = instances;
     this.config = config;
     this.classpath = classpath;
+    this.includedClasspath = includedClasspath;
     this.modDir = modDir;
     this.parentDeploymentName = parentDeploymentName;
     this.moduleReference = moduleReference;
