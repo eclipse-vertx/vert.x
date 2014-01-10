@@ -104,7 +104,7 @@ public class ModuleClassLoader extends URLClassLoader {
     return c;
   }
 
-  protected Class<?> doLoadClass(String name) {
+  protected synchronized Class<?> doLoadClass(String name) {
     Class<?> c = findLoadedClass(name);
     if (c == null) {
       try {
