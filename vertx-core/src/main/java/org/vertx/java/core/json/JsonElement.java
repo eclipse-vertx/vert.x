@@ -16,7 +16,9 @@
 
 package org.vertx.java.core.json;
 
-public abstract class JsonElement {
+import java.io.Serializable;
+
+public abstract class JsonElement implements Serializable {
 
   protected boolean needsCopy;
 
