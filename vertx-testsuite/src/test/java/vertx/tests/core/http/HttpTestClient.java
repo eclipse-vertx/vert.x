@@ -791,7 +791,7 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testRequestTimeoutExtendedWhenResponseChunksReceived() {
-    final long timeout = 500;
+    final long timeout = 2000;
     AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
       public void handle(AsyncResult<HttpServer> ar) {
@@ -817,7 +817,7 @@ public class HttpTestClient extends TestClientBase {
       }
     };
     startServer(new Handler<HttpServerRequest>() {
-      int numChunks = 10;
+      int numChunks = 100;
       int count = 0;
       long interval = timeout * 2 / numChunks;
 
