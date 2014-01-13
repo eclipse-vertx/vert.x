@@ -42,6 +42,7 @@ public class FatJarStarter implements Runnable {
   private static final String CP_SEPARATOR = System.getProperty("path.separator");
   private static final String TEMP_DIR = System.getProperty("java.io.tmpdir");
   private static final String FILE_SEP = System.getProperty("file.separator");
+  private static final String CLUSTERMANAGER_FACTORY_PROP_NAME = "vertx.clusterManagerFactory";
   private static final int BUFFER_SIZE = 4096;
 
   private File vertxHome;
@@ -123,6 +124,19 @@ public class FatJarStarter implements Runnable {
       }
     }
 
+    // You can also add resources in a directory called "platform_lib" and this will be added to the
+    // platform claspath - so you can use it to put cluster.xml or any logging libraries that are needed
+    // on a platform level
+    File platformLibDir = new File(new File(modsDir, moduleID), "platform_lib");
+
+    urls.add(platformLibDir.toURI().toURL());
+    files = platformLibDir.listFiles();
+    for (File file: files) {
+      if (file.getName().endsWith(".jar") || file.getName().endsWith(".zip")) {
+        urls.add(file.toURI().toURL());
+      }
+    }
+
     // And create the class loader
 
     platformLoader = new URLClassLoader(urls.toArray(new URL[urls.size()]), urlc.getParent());
@@ -153,7 +167,9 @@ public class FatJarStarter implements Runnable {
 
     System.setProperty("vertx.home", vertxHome.getAbsolutePath());
     System.setProperty("vertx.mods", modsDir.getAbsolutePath());
-    System.setProperty("vertx.clusterManagerFactory", "org.vertx.java.spi.cluster.impl.hazelcast.HazelcastClusterManagerFactory");
+    if (System.getProperty(CLUSTERMANAGER_FACTORY_PROP_NAME) == null) {
+      System.setProperty(CLUSTERMANAGER_FACTORY_PROP_NAME, "org.vertx.java.spi.cluster.impl.hazelcast.HazelcastClusterManagerFactory");
+    }
 
     // Add after shutdown task
 
