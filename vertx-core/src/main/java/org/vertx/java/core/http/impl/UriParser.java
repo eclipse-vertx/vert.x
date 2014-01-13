@@ -37,14 +37,17 @@ final class UriParser {
       i  = 0;
     } else {
       i  = uri.indexOf('/', i + 3);
+      if (i == -1) {
+        // contains no /
+        return "/";
+      }
     }
 
-   int queryStart = uri.indexOf('?', i);
-   if (queryStart == -1) {
-     queryStart = uri.length();
-   }
-   return uri.substring(i, queryStart);
-
+    int queryStart = uri.indexOf('?', i);
+    if (queryStart == -1) {
+      queryStart = uri.length();
+    }
+    return uri.substring(i, queryStart);
   }
 
   /**
