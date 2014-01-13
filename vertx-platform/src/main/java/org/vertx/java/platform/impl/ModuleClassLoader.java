@@ -58,10 +58,6 @@ public class ModuleClassLoader extends URLClassLoader {
   private final boolean loadFromModuleFirst;
   private Set<ModuleClassLoader> modGraph;
 
-  // We use a single static object as a lock to prevent classes from being loaded from any modules concurrently
-  // Otherwise we can get deadlock when classes are loaded from similar sets of modules in different order
-  private static final Object lock = new Object();
-
   public ModuleClassLoader(String modID, ClassLoader platformClassLoader, URL[] classpath,
                            boolean loadFromModuleFirst) {
     super(classpath);
@@ -90,26 +86,27 @@ public class ModuleClassLoader extends URLClassLoader {
   @Override
   protected Class<?> loadClass(String name, boolean resolve)
       throws ClassNotFoundException {
-    synchronized (lock) {
-      Class<?> c;
-      if (loadFromModuleFirst) {
-        try {
-          c = loadFromModule(name);
-        } catch (ClassNotFoundException e) {
-          c = platformClassLoader.loadClass(name);
-        }
-      } else {
-        try {
-          c = platformClassLoader.loadClass(name);
-        } catch (ClassNotFoundException e) {
-          c = loadFromModule(name);
-        }
-      }
-      if (resolve) {
-        resolveClass(c);
-      }
+    Class<?> c = findLoadedClass(name);
+    if (c != null) {
       return c;
     }
+    if (loadFromModuleFirst) {
+      try {
+        c = loadFromModule(name);
+      } catch (ClassNotFoundException e) {
+        c = platformClassLoader.loadClass(name);
+      }
+    } else {
+      try {
+        c = platformClassLoader.loadClass(name);
+      } catch (ClassNotFoundException e) {
+        c = loadFromModule(name);
+      }
+    }
+    if (resolve) {
+      resolveClass(c);
+    }
+    return c;
   }
 
   private Class<?> loadFromModule(String name) throws ClassNotFoundException {
@@ -127,7 +124,7 @@ public class ModuleClassLoader extends URLClassLoader {
     return c;
   }
 
-  protected Class<?> doLoadClass(String name) {
+  protected synchronized Class<?> doLoadClass(String name) {
     Class<?> c = findLoadedClass(name);
     if (c == null) {
       try {

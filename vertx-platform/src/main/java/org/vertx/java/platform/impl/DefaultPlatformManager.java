@@ -46,6 +46,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -73,6 +74,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private static final String FILE_SEP = System.getProperty("file.separator");
   private static final String MODULE_NAME_SYS_PROP = System.getProperty("vertx.modulename");
   private static final String CLASSPATH_FILE = "vertx_classpath.txt";
+  private static final String SERIALISE_BLOCKING_PROP_NAME = "vertx.serialiseBlockingActions";
 
   private final VertxInternal vertx;
   // deployment name --> deployment
@@ -94,6 +96,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   protected HAManager haManager;
   private boolean stopped;
   private final Queue<String> tempDeployments = new ConcurrentLinkedQueue<>();
+  private Executor backgroundExec;
 
   protected DefaultPlatformManager() {
     this(new DefaultVertx());
@@ -117,6 +120,12 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     this.platformClassLoader = tccl != null ? tccl: getClass().getClassLoader();
     this.vertx = new WrappedVertx(vertx);
     this.clusterManager = vertx.clusterManager();
+
+    if (System.getProperty(SERIALISE_BLOCKING_PROP_NAME, "false").equalsIgnoreCase("true")) {
+      this.backgroundExec = new OrderedExecutorFactory(vertx.getBackgroundPool()).getExecutor();
+    } else {
+      this.backgroundExec = vertx.getBackgroundPool();
+    }
 
     String modDir = System.getProperty(MODS_DIR_PROP_NAME);
     if (modDir != null && !modDir.trim().equals("")) {
@@ -426,7 +435,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   private <T> void runInBackground(final Runnable runnable, final Handler<AsyncResult<T>> doneHandler) {
     final DefaultContext context = vertx.getOrCreateContext();
-    vertx.getBackgroundPool().execute(new Runnable() {
+    backgroundExec.execute(new Runnable() {
       public void run() {
         try {
           vertx.setContext(context);
