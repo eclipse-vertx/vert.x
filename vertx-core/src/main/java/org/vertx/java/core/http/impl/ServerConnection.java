@@ -33,12 +33,11 @@ import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.ConnectionBase;
 import org.vertx.java.core.net.impl.DefaultNetSocket;
+import org.vertx.java.core.net.impl.VertxHandler;
 import org.vertx.java.core.net.impl.VertxNetHandler;
 
 import java.io.File;
 import java.util.ArrayDeque;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Queue;
 
 /**
@@ -124,8 +123,7 @@ class ServerConnection extends ConnectionBase {
 
   NetSocket createNetSocket() {
     DefaultNetSocket socket = new DefaultNetSocket(vertx, channel, context, server.tcpHelper, false);
-    Map<Channel, DefaultNetSocket> connectionMap = new HashMap<Channel, DefaultNetSocket>(1);
-    connectionMap.put(channel, socket);
+    channel.attr(VertxHandler.KEY).set(socket);
 
     // Flush out all pending data
     endReadAndFlush();
@@ -142,20 +140,8 @@ class ServerConnection extends ConnectionBase {
       pipeline.remove("chunkedWriter");
     }
 
-    channel.pipeline().replace("handler", "handler", new VertxNetHandler(server.vertx, connectionMap) {
-      @Override
-      public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
-        // remove from the real mapping
-        server.connectionMap.remove(channel);
-        super.exceptionCaught(chctx, t);
-      }
+    channel.pipeline().replace("handler", "handler", new VertxNetHandler(server.vertx) {
 
-      @Override
-      public void channelInactive(ChannelHandlerContext chctx) throws Exception {
-        // remove from the real mapping
-        server.connectionMap.remove(channel);
-        super.channelInactive(chctx);
-      }
 
       @Override
       public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
