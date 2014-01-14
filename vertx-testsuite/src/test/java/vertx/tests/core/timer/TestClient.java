@@ -98,7 +98,7 @@ public class TestClient extends TestClientBase {
    */
   public void testTimings() throws Exception {
     final long start = System.currentTimeMillis();
-    final long delay = 500;
+    final long delay = 2000;
     vertx.setTimer(delay, new Handler<Long>() {
       public void handle(Long timerID) {
         tu.checkThread();
