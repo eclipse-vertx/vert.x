@@ -40,6 +40,18 @@ public class JULLogDelegate implements LogDelegate {
   public boolean isTraceEnabled() {
     return logger.isLoggable(Level.FINEST);
   }
+  
+  public boolean isWarnEnabled() {
+    return logger.isLoggable(Level.WARNING);
+  }
+  
+  public boolean isFatalEnabled() {
+    return logger.isLoggable(Level.SEVERE);
+  }
+  
+  public boolean isErrorEnabled() {
+    return logger.isLoggable(Level.SEVERE);
+  }
 
   public void fatal(final Object message) {
     logger.log(Level.SEVERE, message == null ? "NULL" : message.toString());

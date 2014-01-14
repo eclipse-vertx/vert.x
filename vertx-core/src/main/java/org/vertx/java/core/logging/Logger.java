@@ -15,6 +15,7 @@
 
 package org.vertx.java.core.logging;
 
+import java.text.MessageFormat;
 import org.vertx.java.core.logging.impl.LogDelegate;
 
 /**
@@ -55,52 +56,124 @@ public class Logger {
     return delegate.isTraceEnabled();
   }
 
+  public boolean isWarnEnabled() {
+    return delegate.isWarnEnabled();
+  }
+  
+  public boolean isFatalEnabled() {
+    return delegate.isFatalEnabled();
+  }
+  
+  public boolean isErrorEnabled() {
+    return delegate.isErrorEnabled();
+  }
+  
   public void fatal(final Object message) {
-    delegate.fatal(message);
+    if (isFatalEnabled()) {
+      delegate.fatal(message);
+	}
+  }
+  
+  public void fatal(final String pattern, final Object... params) {
+    if (isFatalEnabled()) {
+      delegate.fatal(MessageFormat.format(pattern, params));
+	}
   }
 
   public void fatal(final Object message, final Throwable t) {
-    delegate.fatal(message, t);
+    if (isFatalEnabled()) {
+      delegate.fatal(message, t);
+	}
   }
 
   public void error(final Object message) {
-    delegate.error(message);
+    if (isErrorEnabled()) {
+	  delegate.error(message);
+	}
   }
 
+  public void error(final String pattern, final Object... params) {
+    if (isErrorEnabled()) {
+      delegate.error(MessageFormat.format(pattern, params));
+	}
+  }
+  
   public void error(final Object message, final Throwable t) {
-    delegate.error(message, t);
+    if (isErrorEnabled()) {
+      delegate.error(message, t);
+	}
   }
 
   public void warn(final Object message) {
-    delegate.warn(message);
+    if (isWarnEnabled()) {
+	  delegate.warn(message);
+	}
   }
 
+  public void warn(final String pattern, final Object... params) {
+    if (isWarnEnabled()) {
+      delegate.warn(MessageFormat.format(pattern, params));
+	}
+  }
+  
   public void warn(final Object message, final Throwable t) {
-    delegate.warn(message, t);
+    if (isWarnEnabled()) {
+      delegate.warn(message, t);
+	}
   }
 
   public void info(final Object message) {
-    delegate.info(message);
+    if (isInfoEnabled()) {
+      delegate.info(message);
+    }
   }
 
+  public void info(final String pattern, final Object... params) {
+    if (isInfoEnabled()) {
+      delegate.info(MessageFormat.format(pattern, params));
+	}
+  }
+  
   public void info(final Object message, final Throwable t) {
-    delegate.info(message, t);
+    if (isInfoEnabled()) {
+      delegate.info(message, t);
+	}
   }
 
   public void debug(final Object message) {
-    delegate.debug(message);
+    if (isDebugEnabled()) {
+      delegate.debug(message);
+	}
   }
 
+  public void debug(final String pattern, final Object... params) {
+    if (isDebugEnabled()) {
+      delegate.debug(MessageFormat.format(pattern, params));
+	}
+  }
+  
   public void debug(final Object message, final Throwable t) {
-    delegate.debug(message, t);
+    if (isDebugEnabled()) {
+      delegate.debug(message, t);
+	}
   }
 
   public void trace(final Object message) {
-    delegate.trace(message);
+    if (isTraceEnabled()) {
+      delegate.trace(message);
+	}
   }
 
+  public void trace(final String pattern, final Object... params) {
+    if (isTraceEnabled()) {
+      delegate.trace(MessageFormat.format(pattern, params));
+	}
+  }
+  
   public void trace(final Object message, final Throwable t) {
-    delegate.trace(message, t);
+    if (isTraceEnabled()) {
+      delegate.trace(message, t);
+	}
   }
 
 }
