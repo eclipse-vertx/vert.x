@@ -29,7 +29,7 @@ public class VertxLoggerFormatter extends java.util.logging.Formatter {
   @Override
   public String format(final LogRecord record) {
     Date date = new Date();
-    SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss,SSS");
+    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
     StringBuffer sb = new StringBuffer();
     // Minimize memory allocations here.
     date.setTime(record.getMillis());
