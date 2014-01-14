@@ -62,7 +62,7 @@ public class CompilingClassLoader extends ClassLoader {
       DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
       JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
       if (javaCompiler == null) {
-        throw new RuntimeException("Unable to detect java compiler, make sure JAVA_HOME is set correctly");
+        throw new RuntimeException("Unable to detect java compiler, make sure you're using a JDK not a JRE!");
       }
       StandardJavaFileManager standardFileManager = javaCompiler.getStandardFileManager(null, null, null);
 
