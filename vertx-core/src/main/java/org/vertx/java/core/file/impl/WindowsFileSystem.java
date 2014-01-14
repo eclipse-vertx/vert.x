@@ -64,10 +64,10 @@ public class WindowsFileSystem extends DefaultFileSystem {
   }
 
   @Override
-  protected AsyncFile doOpen(String path, String perms, boolean read, boolean write, boolean createNew, boolean flush,
+  protected AsyncFile doOpen(String path, String perms, boolean read, boolean write, boolean create, boolean createNew, boolean flush,
                              DefaultContext context) {
     logInternal(perms);
-    return new DefaultAsyncFile(vertx, path, null, read, write, createNew, flush, context);
+    return super.doOpen(path, perms, read, write, create, createNew, flush, context);
   }
 
   @Override

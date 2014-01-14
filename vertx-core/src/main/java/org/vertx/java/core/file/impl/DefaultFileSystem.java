@@ -35,6 +35,7 @@ import java.io.RandomAccessFile;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -314,12 +315,12 @@ public class DefaultFileSystem implements FileSystem {
 
   public FileSystem open(String path, String perms, boolean read, boolean write, boolean createNew,
                          boolean flush, Handler<AsyncResult<AsyncFile>> handler) {
-    openInternal(path, perms, read, write, createNew, flush, handler).run();
+    openInternal(path, perms, read, write, false, createNew, flush, handler).run();
     return this;
   }
 
   public AsyncFile openSync(String path, String perms, boolean read, boolean write, boolean createNew, boolean flush) {
-    return openInternal(path, perms, read, write, createNew, flush, null).action();
+    return openInternal(path, perms, read, write, false, createNew, flush, null).action();
   }
 
   public FileSystem createFile(String path, Handler<AsyncResult<Void>> handler) {
@@ -728,34 +729,52 @@ public class DefaultFileSystem implements FileSystem {
   }
 
   private BlockingAction<AsyncFile> openInternal(String path, Handler<AsyncResult<AsyncFile>> handler) {
-    return openInternal(path, null, true, true, true, false, handler);
+    return openInternal(path, null, true, true, true, false, false, handler);
   }
 
   private BlockingAction<AsyncFile> openInternal(String path, String perms, Handler<AsyncResult<AsyncFile>> handler) {
-    return openInternal(path, perms, true, true, true, false, handler);
+    return openInternal(path, perms, true, true, true, false, false, handler);
   }
 
   private BlockingAction<AsyncFile> openInternal(String path, String perms, boolean createNew, Handler<AsyncResult<AsyncFile>> handler) {
-    return openInternal(path, perms, true, true, createNew, false, handler);
+    return openInternal(path, perms, true, true, false, createNew, false, handler);
   }
 
   private BlockingAction<AsyncFile> openInternal(String path, String perms, boolean read, boolean write, boolean createNew, Handler<AsyncResult<AsyncFile>> handler) {
-    return openInternal(path, perms, read, write, createNew, false, handler);
+    return openInternal(path, perms, read, write, false, createNew, false, handler);
   }
 
-  private BlockingAction<AsyncFile> openInternal(String p, final String perms, final boolean read, final boolean write, final boolean createNew,
+  private BlockingAction<AsyncFile> openInternal(String p, final String perms, final boolean read, final boolean write, final boolean create, final boolean createNew,
                                                  final boolean flush, Handler<AsyncResult<AsyncFile>> handler) {
     final String path = PathAdjuster.adjust(vertx, p);
     return new BlockingAction<AsyncFile>(vertx, handler) {
       public AsyncFile action() {
-        return doOpen(path, perms, read, write, createNew, flush, context);
+        return doOpen(path, perms, read, write, create, createNew, flush, context);
       }
     };
   }
 
-  protected AsyncFile doOpen(String path, String perms, boolean read, boolean write, boolean createNew,
+  //TODO: nscavell - A lot of these protected methods should probably be package private (used by WindowsFileSystem) as this is an internal implementation
+  protected AsyncFile doOpen(String path, String perms, boolean read, boolean write, boolean create, boolean createNew,
                              boolean flush, DefaultContext context) {
-    return new DefaultAsyncFile(vertx, path, perms, read, write, createNew, flush, context);
+    Set<OpenOption> options = new HashSet<>();
+    boolean readOrWrite = false;
+    if (read) {
+      readOrWrite = true;
+      options.add(StandardOpenOption.READ);
+    }
+    if (write) {
+      readOrWrite = true;
+      options.add(StandardOpenOption.WRITE);
+    }
+    if (!readOrWrite) {
+      throw new FileSystemException("Cannot open file for neither reading nor writing");
+    }
+    if (create) options.add(StandardOpenOption.CREATE);
+    if (createNew) options.add(StandardOpenOption.CREATE_NEW);
+    if (flush) options.add(StandardOpenOption.DSYNC);
+
+    return new DefaultAsyncFile(vertx, path, perms, options, context);
   }
 
   private BlockingAction<Void> createFileInternal(String path, Handler<AsyncResult<Void>> handler) {

@@ -1286,6 +1286,78 @@ public class TestClient extends TestClientBase {
     vertx.fileSystem().exists(TEST_DIR + pathSep + fileName, handler);
   }
 
+  public void testOpenNewFile() throws Exception {
+    vertx.fileSystem().open(file("some-file.dat"), new Handler<AsyncResult<AsyncFile>>() {
+      @Override
+      public void handle(final AsyncResult<AsyncFile> openResult) {
+        tu.checkThread();
+        if (openResult.succeeded()) {
+          openResult.result().write(new Buffer("Some stuff\n"), 0, new Handler<AsyncResult<Void>>() {
+            @Override
+            public void handle(AsyncResult<Void> writeResult) {
+              tu.checkThread();
+              if (writeResult.succeeded()) {
+                openResult.result().close();
+                tu.testComplete();
+              } else {
+                tu.exception(writeResult.cause(), "failed to write after open");
+              }
+            }
+          });
+        } else {
+          tu.exception(openResult.cause(), "failed to open");
+        }
+      }
+    });
+  }
+
+  public void testOpenFileExists() throws Exception {
+    createFileWithJunk("some-file.dat", 100);
+    vertx.fileSystem().open(file("some-file.dat"), new Handler<AsyncResult<AsyncFile>>() {
+      @Override
+      public void handle(AsyncResult<AsyncFile> openResult) {
+        tu.checkThread();
+        if (openResult.succeeded()) {
+          openResult.result().close();
+          tu.testComplete();
+        } else {
+          tu.exception(openResult.cause(), "failed to open");
+        }
+      }
+    });
+  }
+
+  public void testOpenCreateNew() throws Exception {
+    vertx.fileSystem().open(file("some-file.dat"), null, true, new Handler<AsyncResult<AsyncFile>>() {
+      @Override
+      public void handle(AsyncResult<AsyncFile> openResult) {
+        tu.checkThread();
+        if (openResult.succeeded()) {
+          openResult.result().close();
+          tu.testComplete();
+        } else {
+          tu.exception(openResult.cause(), "should fail on open if file exists and createNew is true");
+        }
+      }
+    });
+  }
+
+  public void testOpenCreateNewFileExists() throws Exception {
+    createFileWithJunk("some-file.dat", 100);
+    vertx.fileSystem().open(file("some-file.dat"), null, true, new Handler<AsyncResult<AsyncFile>>() {
+      @Override
+      public void handle(AsyncResult<AsyncFile> openResult) {
+        tu.checkThread();
+        if (openResult.succeeded()) {
+          openResult.result().close();
+          tu.exception(openResult.cause(), "should fail on open if file exists and createNew is true");
+        } else {
+          tu.testComplete();
+        }
+      }
+    });
+  }
+
   public void testFSProps() throws Exception {
     String fileName = "some-file.txt";
     createFileWithJunk(fileName, 1234);
@@ -1412,5 +1484,9 @@ public class TestClient extends TestClientBase {
   private void deleteFile(String fileName) {
     File file = new File(TEST_DIR + pathSep + fileName);
     file.delete();
+  }
+
+  private String file(String name) {
+    return TEST_DIR + pathSep + name;
   }
 }

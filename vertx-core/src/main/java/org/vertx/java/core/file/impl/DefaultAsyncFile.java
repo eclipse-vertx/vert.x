@@ -41,6 +41,7 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -70,18 +71,9 @@ public class DefaultAsyncFile implements AsyncFile {
   private int readPos;
   private boolean readInProgress;
 
-  DefaultAsyncFile(final VertxInternal vertx, final String path, String perms, final boolean read, final boolean write, final boolean createNew,
-            final boolean flush, final DefaultContext context) {
-    if (!read && !write) {
-      throw new FileSystemException("Cannot open file for neither reading nor writing");
-    }
+  DefaultAsyncFile(final VertxInternal vertx, final String path, String perms, Set<OpenOption> options, final DefaultContext context) {
     this.vertx = vertx;
     Path file = Paths.get(path);
-    HashSet<OpenOption> options = new HashSet<>();
-    if (read) options.add(StandardOpenOption.READ);
-    if (write) options.add(StandardOpenOption.WRITE);
-    if (createNew) options.add(StandardOpenOption.CREATE_NEW);
-    if (flush) options.add(StandardOpenOption.DSYNC);
     try {
       if (perms != null) {
         FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));

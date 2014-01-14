@@ -350,6 +350,22 @@ public class JavaFileSystemTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void testOpenNewFile() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testOpenFileExists() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testOpenCreateNew() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testOpenCreateNewFileExists() throws Exception {
+    startTest(getMethodName());
+  }
+
   private AsyncResultHandler createHandler() {
     return new AsyncResultHandler<Void>() {
       public void handle(AsyncResult<Void> event) {
