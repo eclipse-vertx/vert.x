@@ -24,6 +24,8 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.testframework.TestBase;
 
+import java.util.Iterator;
+
 /**
  *
  * TODO complete testing!!
@@ -267,5 +269,19 @@ public class JavaJsonTest extends TestBase {
     JsonArray json = new JsonArray(numbers);
     json.add(4);
     assertEquals(4, json.size());
+  }
+
+  @Test
+  public void testCreateJsonArrayFromArray2() {
+    Object[] numbers = new Integer[] {1, 2, 3};
+    // Json is not immutable
+    JsonArray json = new JsonArray(numbers);
+    try {
+      Iterator i = json.iterator();
+      i.next();
+      i.remove();
+    } catch (UnsupportedOperationException e) {
+      fail(e.getMessage());
+    }
   }
 }
