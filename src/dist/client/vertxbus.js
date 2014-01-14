@@ -116,9 +116,9 @@ var vertx = vertx || {};
     }
   
     sockJSConn.onopen = function() {
-      // Send the first ping then send a ping every 5 seconds
+      // Send the first ping then send a ping every pingInterval milliseconds
       sendPing();
-      pingTimerID = setInterval(sendPing, 5000);
+      pingTimerID = setInterval(sendPing, pingInterval);
       state = vertx.EventBus.OPEN;
       if (that.onopen) {
         that.onopen();
