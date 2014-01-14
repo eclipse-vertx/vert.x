@@ -94,8 +94,7 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
 
   public JsonArray addBinary(byte[] value) {
     checkCopy();
-    String encoded = org.vertx.java.core.json.impl.Base64.encodeBytes(value);
-    list.add(encoded);
+    list.add(value);
     return this;
   }
 

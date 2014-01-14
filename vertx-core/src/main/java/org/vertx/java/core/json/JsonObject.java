@@ -17,7 +17,6 @@
 package org.vertx.java.core.json;
 
 
-import org.vertx.java.core.json.impl.Base64;
 import org.vertx.java.core.json.impl.Json;
 
 import java.util.LinkedHashMap;
@@ -110,7 +109,7 @@ public class JsonObject extends JsonElement {
 
   public JsonObject putBinary(String fieldName, byte[] binary) {
     checkCopy();
-    map.put(fieldName, Base64.encodeBytes(binary));
+    map.put(fieldName, binary);
     return this;
   }
 
@@ -172,8 +171,7 @@ public class JsonObject extends JsonElement {
   }
 
   public byte[] getBinary(String fieldName) {
-    String encoded = (String) map.get(fieldName);
-    return encoded == null ? null : Base64.decode(encoded);
+    return (byte[]) map.get(fieldName);
   }
 
   public String getString(String fieldName, String def) {
