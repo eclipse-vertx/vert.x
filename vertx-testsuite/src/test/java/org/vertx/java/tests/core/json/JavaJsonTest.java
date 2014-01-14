@@ -259,4 +259,13 @@ public class JavaJsonTest extends TestBase {
     JsonObject json = new JsonObject();
     assertNull(json.getBinary("binary"));
   }
+
+  @Test
+  public void testCreateJsonArrayFromArray() {
+    Object[] numbers = new Integer[]{1, 2, 3};
+    // Json is not immutable
+    JsonArray json = new JsonArray(numbers);
+    json.add(4);
+    assertEquals(4, json.size());
+  }
 }
