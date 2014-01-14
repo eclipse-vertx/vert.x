@@ -85,6 +85,9 @@ public interface HttpClientRequest extends WriteStream<HttpClientRequest> {
    */
   HttpClientRequest putHeader(String name, String value);
 
+  HttpClientRequest putHeader(CharSequence name, CharSequence value);
+
+
   /**
    * Put an HTTP header - fluent API
    * @param name The header name
@@ -92,6 +95,8 @@ public interface HttpClientRequest extends WriteStream<HttpClientRequest> {
    * @return A reference to this, so multiple method calls can be chained.
    */
   HttpClientRequest putHeader(String name, Iterable<String> values);
+
+  HttpClientRequest putHeader(CharSequence name, Iterable<CharSequence> values);
 
   /**
    * Write a {@link Buffer} to the request body.

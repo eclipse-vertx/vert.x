@@ -95,6 +95,7 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    * @return A reference to this, so multiple method calls can be chained.
    */
   HttpServerResponse putHeader(String name, String value);
+  HttpServerResponse putHeader(CharSequence name, CharSequence value);
 
   /**
    * Put an HTTP header - fluent API
@@ -103,6 +104,7 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    * @return A reference to this, so multiple method calls can be chained.
    */
   HttpServerResponse putHeader(String name, Iterable<String> values);
+  HttpServerResponse putHeader(CharSequence name, Iterable<CharSequence> values);
 
 
   /**
@@ -117,6 +119,7 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    * @return A reference to this, so multiple method calls can be chained.
    */
   HttpServerResponse putTrailer(String name, String value);
+  HttpServerResponse putTrailer(CharSequence name, CharSequence value);
 
   /**
    * Put an HTTP trailer - fluent API
@@ -125,6 +128,7 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    * @return A reference to this, so multiple method calls can be chained.
    */
   HttpServerResponse putTrailer(String name, Iterable<String> values);
+  HttpServerResponse putTrailer(CharSequence name, Iterable<CharSequence> value);
 
   /**
    * Set a close handler for the response. This will be called if the underlying connection closes before the response

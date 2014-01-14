@@ -31,16 +31,14 @@ import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.impl.ConnectionBase;
 import org.vertx.java.core.net.impl.VertxHandler;
 
-import java.util.Map;
-
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHandler<C> {
   private final VertxInternal vertx;
 
-  protected VertxHttpHandler(VertxInternal vertx, Map<Channel, C> connectionMap) {
-    super(vertx, connectionMap);
+  protected VertxHttpHandler(VertxInternal vertx) {
+    super(vertx);
     this.vertx = vertx;
   }
 
