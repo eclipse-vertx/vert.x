@@ -80,7 +80,7 @@ public class DefaultAsyncFile implements AsyncFile {
     HashSet<OpenOption> options = new HashSet<>();
     if (read) options.add(StandardOpenOption.READ);
     if (write) options.add(StandardOpenOption.WRITE);
-    if (createNew) options.add(StandardOpenOption.CREATE_NEW);
+    if (createNew) options.add(StandardOpenOption.CREATE);
     if (flush) options.add(StandardOpenOption.DSYNC);
     try {
       if (perms != null) {
