@@ -2126,9 +2126,7 @@ public class HttpTestClient extends TestClientBase {
         client.getNow("some-uri", new Handler<HttpClientResponse>() {
           public void handle(final HttpClientResponse response) {
             tu.azzert(response.statusCode() == 200);
-            if (!compression()) {
-              tu.azzert(file.length() == Long.valueOf(response.headers().get("content-length")));
-            }
+            tu.azzert(file.length() == Long.valueOf(response.headers().get("content-length")));
             tu.azzert("text/html".equals(response.headers().get("content-type")));
             response.bodyHandler(new Handler<Buffer>() {
               public void handle(Buffer buff) {

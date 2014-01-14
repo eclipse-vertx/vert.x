@@ -35,11 +35,11 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.ConnectionBase;
 import org.vertx.java.core.net.impl.DefaultNetSocket;
-import org.vertx.java.core.net.impl.VertxHandler;
 import org.vertx.java.core.net.impl.VertxNetHandler;
 
 import java.net.URI;
 import java.util.ArrayDeque;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 
@@ -370,7 +370,8 @@ class ClientConnection extends ConnectionBase {
     // connection was upgraded to raw TCP socket
     upgradedConnection = true;
     DefaultNetSocket socket = new DefaultNetSocket(vertx, channel, context, client.tcpHelper, true);
-    channel.attr(VertxHandler.KEY).set(socket);
+    Map<Channel, DefaultNetSocket> connectionMap = new HashMap<Channel, DefaultNetSocket>(1);
+    connectionMap.put(channel, socket);
 
     // Flush out all pending data
     endReadAndFlush();
@@ -383,7 +384,20 @@ class ClientConnection extends ConnectionBase {
       pipeline.remove(inflater);
     }
     pipeline.remove("codec");
-    pipeline.replace("handler", "handler", new VertxNetHandler(client.vertx) {
+    pipeline.replace("handler", "handler", new VertxNetHandler(client.vertx, connectionMap) {
+      @Override
+      public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
+        // remove from the real mapping
+        client.connectionMap.remove(channel);
+        super.exceptionCaught(chctx, t);
+      }
+
+      @Override
+      public void channelInactive(ChannelHandlerContext chctx) throws Exception {
+        // remove from the real mapping
+        client.connectionMap.remove(channel);
+        super.channelInactive(chctx);
+      }
 
       @Override
       public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {

@@ -16,12 +16,15 @@
 package org.vertx.java.core.datagram.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.impl.VertxHandler;
+
+import java.util.HashMap;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -30,14 +33,14 @@ final class DatagramServerHandler extends VertxHandler<DefaultDatagramSocket> {
   private final DefaultDatagramSocket server;
 
   DatagramServerHandler(VertxInternal vertx, DefaultDatagramSocket server) {
-        super(vertx);
+        super(vertx, new HashMap<Channel, DefaultDatagramSocket>());
     this.server = server;
   }
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     super.handlerAdded(ctx);
-    ctx.channel().attr(VertxHandler.KEY).set(server);
+    connectionMap.put(ctx.channel(), server);
   }
 
   @SuppressWarnings("unchecked")

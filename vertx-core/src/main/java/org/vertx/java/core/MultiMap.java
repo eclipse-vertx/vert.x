@@ -25,8 +25,6 @@ import java.util.Set;
  */
 public interface MultiMap extends Iterable<Map.Entry<String, String>> {
 
-  String get(CharSequence name);
-
   /**
    * Returns the value of with the specified name.  If there are
    * more than one values for the specified name, the first value is returned.
@@ -44,8 +42,6 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    *         are found
    */
   List<String> getAll(String name);
-  List<String> getAll(CharSequence name);
-
 
   /**
    * Returns all entries it contains.
@@ -62,7 +58,6 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * @return True if at least one entry is found
    */
   boolean contains(String name);
-  boolean contains(CharSequence name);
 
   /**
    * Return true if empty
@@ -86,7 +81,6 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * @return {@code this}
    */
   MultiMap add(String name, String value);
-  MultiMap add(CharSequence name, CharSequence value);
 
   /**
    * Adds a new values under the specified name
@@ -97,7 +91,6 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * @return {@code this}
    */
   MultiMap add(String name, Iterable<String> values);
-  MultiMap add(CharSequence name, Iterable<CharSequence> values);
 
   /**
    * Adds all the entries from another MultiMap to this one
@@ -123,7 +116,6 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * @return {@code this}
    */
   MultiMap set(String name, String value);
-  MultiMap set(CharSequence name, CharSequence value);
 
   /**
    * Sets values for the specified name.
@@ -133,8 +125,6 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * @return {@code this}
    */
   MultiMap set(String name, Iterable<String> values);
-  MultiMap set(CharSequence name, Iterable<CharSequence> values);
-
 
   /**
    * Cleans this instance.
@@ -157,8 +147,6 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
   * @return {@code this}
   */
   MultiMap remove(String name);
-  MultiMap remove(CharSequence name);
-
 
   /**
    * Removes all

@@ -18,14 +18,11 @@ package org.vertx.java.core.http.impl;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
-import io.netty.channel.group.ChannelGroup;
-import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.netty.util.concurrent.GlobalEventExecutor;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
@@ -36,21 +33,23 @@ import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
 import org.vertx.java.core.impl.*;
 import org.vertx.java.core.net.NetSocket;
-import org.vertx.java.core.net.impl.ConnectionBase;
 import org.vertx.java.core.net.impl.TCPSSLHelper;
 import org.vertx.java.core.net.impl.VertxEventLoopGroup;
-import org.vertx.java.core.net.impl.VertxHandler;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLParameters;
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultHttpClient implements HttpClient {
 
+  private static final ExceptionDispatchHandler EXCEPTION_DISPATCH_HANDLER = new ExceptionDispatchHandler();
+
   final VertxInternal vertx;
-  private ChannelGroup group;
+  final Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<>();
 
   private final DefaultContext actualCtx;
   final TCPSSLHelper tcpHelper = new TCPSSLHelper();
@@ -362,13 +361,8 @@ public class DefaultHttpClient implements HttpClient {
   public void close() {
     checkClosed();
     pool.close();
-    if (group != null) {
-      for (Channel sock : group) {
-        ConnectionBase conn = sock.attr(VertxHandler.KEY).get();
-        if (conn != null) {
-          conn.close();
-        }
-      }
+    for (ClientConnection conn : connectionMap.values()) {
+      conn.close();
     }
     actualCtx.removeCloseHook(closeHook);
     closed = true;
@@ -647,8 +641,6 @@ public class DefaultHttpClient implements HttpClient {
   void internalConnect(final Handler<ClientConnection> connectHandler, final Handler<Throwable> connectErrorHandler) {
 
     if (bootstrap == null) {
-      group = new DefaultChannelGroup("vertx-channels", GlobalEventExecutor.INSTANCE);
-
       // Share the event loop thread to also serve the HttpClient's network traffic.
       VertxEventLoopGroup pool = new VertxEventLoopGroup();
       pool.addWorker(actualCtx.getEventLoop());
@@ -661,6 +653,8 @@ public class DefaultHttpClient implements HttpClient {
         @Override
         protected void initChannel(Channel ch) throws Exception {
           ChannelPipeline pipeline = ch.pipeline();
+          pipeline.addLast("exceptionDispatcher", EXCEPTION_DISPATCH_HANDLER);
+
           if (tcpHelper.isSSL()) {
             SSLEngine engine = tcpHelper.getSSLContext().createSSLEngine(host, port);
             if (tcpHelper.isVerifyHost()) {
@@ -748,8 +742,7 @@ public class DefaultHttpClient implements HttpClient {
         pool.connectionClosed();
       }
     });
-    ch.attr(VertxHandler.KEY).set(conn);
-    group.add(ch);
+    connectionMap.put(ch, conn);
     connectHandler.handle(conn);
   }
 
@@ -778,7 +771,7 @@ public class DefaultHttpClient implements HttpClient {
     private boolean closeFrameSent;
 
     public ClientHandler() {
-      super(vertx);
+      super(vertx, DefaultHttpClient.this.connectionMap);
     }
 
     @Override

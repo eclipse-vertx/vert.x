@@ -55,17 +55,17 @@ public final class PartialPooledByteBufAllocator implements ByteBufAllocator {
 
   @Override
   public ByteBuf ioBuffer() {
-    return POOLED.directBuffer();
+    return UNPOOLED.heapBuffer();
   }
 
   @Override
   public ByteBuf ioBuffer(int initialCapacity) {
-    return POOLED.directBuffer(initialCapacity);
+    return UNPOOLED.heapBuffer(initialCapacity);
   }
 
   @Override
   public ByteBuf ioBuffer(int initialCapacity, int maxCapacity) {
-    return POOLED.directBuffer(initialCapacity, maxCapacity);
+    return UNPOOLED.heapBuffer(initialCapacity, maxCapacity);
   }
 
   @Override

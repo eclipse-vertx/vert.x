@@ -53,6 +53,10 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   private final HttpResponse response;
   private final HttpVersion version;
   private final boolean keepAlive;
+
+  private int statusCode = 200;
+  private String statusMessage = null;
+
   private boolean headWritten;
   private boolean written;
   private Handler<Void> drainHandler;
@@ -95,23 +99,23 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
 
   @Override
   public int getStatusCode() {
-    return response.getStatus().code();
+    return statusCode;
   }
 
   @Override
   public HttpServerResponse setStatusCode(int statusCode) {
-    this.response.setStatus(HttpResponseStatus.valueOf(statusCode));
+    this.statusCode = statusCode;
     return this;
   }
 
   @Override
   public String getStatusMessage() {
-    return response.getStatus().reasonPhrase();
+    return statusMessage;
   }
 
   @Override
   public HttpServerResponse setStatusMessage(String statusMessage) {
-    this.response.setStatus(new HttpResponseStatus(response.getStatus().code(), statusMessage));
+    this.statusMessage = statusMessage;
     return this;
   }
 
@@ -155,34 +159,6 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   public DefaultHttpServerResponse putTrailer(String key, Iterable<String> values) {
     checkWritten();
     trailers().set(key, values);
-    return this;
-  }
-
-  @Override
-  public HttpServerResponse putHeader(CharSequence name, CharSequence value) {
-    checkWritten();
-    headers().set(name, value);
-    return this;
-  }
-
-  @Override
-  public HttpServerResponse putHeader(CharSequence name, Iterable<CharSequence> values) {
-    checkWritten();
-    headers().set(name, values);
-    return this;
-  }
-
-  @Override
-  public HttpServerResponse putTrailer(CharSequence name, CharSequence value) {
-    checkWritten();
-    trailers().set(name, value);
-    return this;
-  }
-
-  @Override
-  public HttpServerResponse putTrailer(CharSequence name, Iterable<CharSequence> value) {
-    checkWritten();
-    trailers().set(name, value);
     return this;
   }
 
@@ -343,7 +319,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
     File file = new File(PathAdjuster.adjust(vertx, filename));
     if (!file.exists()) {
       if (notFoundResource != null) {
-        setStatusCode(HttpResponseStatus.NOT_FOUND.code());
+        statusCode = HttpResponseStatus.NOT_FOUND.code();
         sendFile(notFoundResource, (String)null, resultHandler);
       } else {
         sendNotFound();
@@ -422,7 +398,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   }
 
   private void sendNotFound() {
-    setStatusCode(HttpResponseStatus.NOT_FOUND.code());
+    statusCode = HttpResponseStatus.NOT_FOUND.code();
     putHeader("Content-Type", "text/html");
     end(NOT_FOUND);
   }
@@ -452,6 +428,18 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   }
 
   private void prepareHeaders() {
+    HttpResponseStatus status;
+    if (statusCode == HttpResponseStatus.OK.code() && statusMessage == null) {
+      status = HttpResponseStatus.OK;
+    } else {
+      if (statusMessage == null) {
+        status = HttpResponseStatus.valueOf(statusCode);
+      } else {
+        // this is the most expensive way so do it as last resort
+        status = new HttpResponseStatus(statusCode, statusMessage);
+      }
+    }
+    response.setStatus(status);
     if (version == HttpVersion.HTTP_1_0 && keepAlive) {
       response.headers().set(CONNECTION, KEEP_ALIVE);
     }

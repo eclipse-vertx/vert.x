@@ -21,20 +21,20 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.util.AttributeKey;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
+
+import java.util.Map;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
-
-  public static final AttributeKey<ConnectionBase> KEY = new AttributeKey<>("connection");
-
   protected final VertxInternal vertx;
-  protected VertxHandler(VertxInternal vertx) {
+  protected final Map<Channel, C> connectionMap;
+  protected VertxHandler(VertxInternal vertx, Map<Channel, C> connectionMap) {
     this.vertx = vertx;
+    this.connectionMap = connectionMap;
   }
 
   protected DefaultContext getContext(C connection) {
@@ -61,11 +61,10 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     return buf;
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
     final Channel ch = ctx.channel();
-    final C conn = (C) ch.attr(KEY).get();
+    final C conn = connectionMap.get(ch);
     if (conn != null) {
       conn.setWritable(ctx.channel().isWritable());
       DefaultContext context = getContext(conn);
@@ -86,12 +85,11 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     }
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void exceptionCaught(ChannelHandlerContext chctx, final Throwable t) throws Exception {
     final Channel ch = chctx.channel();
     // Don't remove the connection at this point, or the handleClosed won't be called when channelInactive is called!
-    final C connection = (C) ch.attr(KEY).get();
+    final C connection = connectionMap.get(ch);
     if (connection != null) {
       DefaultContext context = getContext(connection);
       context.execute(ch.eventLoop(), new Runnable() {
@@ -111,11 +109,10 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     }
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void channelInactive(ChannelHandlerContext chctx) throws Exception {
     final Channel ch = chctx.channel();
-    final C connection = (C) ch.attr(KEY).getAndRemove();
+    final C connection = connectionMap.remove(ch);
     if (connection != null) {
       DefaultContext context = getContext(connection);
       context.execute(ch.eventLoop(), new Runnable() {
@@ -126,11 +123,11 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     }
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-    final C conn = (C) ctx.channel().attr(KEY).get();
+    C conn = connectionMap.get(ctx.channel());
     if (conn != null) {
+      conn.endReadAndFlush();
       DefaultContext context = getContext(conn);
       // Only mark end read if its not a WorkerVerticle
       if (context.isOnCorrectWorker(ctx.channel().eventLoop())) {
@@ -139,11 +136,10 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     }
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
     final Object message = safeObject(msg);
-    final C connection = (C) chctx.channel().attr(KEY).get();
+    final C connection = connectionMap.get(chctx.channel());
 
     DefaultContext context;
     if (connection != null) {

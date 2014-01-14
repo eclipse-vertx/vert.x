@@ -40,6 +40,8 @@ import org.vertx.java.core.net.NetSocket;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -47,14 +49,15 @@ import java.net.InetSocketAddress;
 public class DefaultNetServer implements NetServer, Closeable {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultNetServer.class);
+  private static final ExceptionDispatchHandler EXCEPTION_DISPATCH_HANDLER = new ExceptionDispatchHandler();
 
   private final VertxInternal vertx;
   private final DefaultContext actualCtx;
   private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
+  private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<Channel, DefaultNetSocket>();
   private Handler<NetSocket> connectHandler;
 
   private ChannelGroup serverChannelGroup;
-  private ChannelGroup group;
   private boolean listening;
   private ServerID id;
   private DefaultNetServer actualServer;
@@ -107,7 +110,6 @@ public class DefaultNetServer implements NetServer, Closeable {
       DefaultNetServer shared = vertx.sharedNetServers().get(id);
       if (shared == null || port == 0) { // Wildcard port will imply a new actual server each time
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
-        group = new DefaultChannelGroup("vertx-channels", GlobalEventExecutor.INSTANCE);
 
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(availableWorkers);
@@ -118,6 +120,7 @@ public class DefaultNetServer implements NetServer, Closeable {
           @Override
           protected void initChannel(Channel ch) throws Exception {
             ChannelPipeline pipeline = ch.pipeline();
+            pipeline.addLast("exceptionDispatcher", EXCEPTION_DISPATCH_HANDLER);
             if (tcpHelper.isSSL()) {
               SslHandler sslHandler = tcpHelper.createSslHandler(vertx, false);
               pipeline.addLast("ssl", sslHandler);
@@ -443,13 +446,8 @@ public class DefaultNetServer implements NetServer, Closeable {
       vertx.sharedNetServers().remove(id);
     }
 
-    if (group != null) {
-      for (Channel sock : group) {
-        ConnectionBase conn = sock.attr(VertxHandler.KEY).get();
-        if (conn != null) {
-          conn.close();
-        }
-      }
+    for (DefaultNetSocket sock : socketMap.values()) {
+      sock.close();
     }
 
     // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
@@ -488,7 +486,7 @@ public class DefaultNetServer implements NetServer, Closeable {
 
   private class ServerHandler extends VertxNetHandler {
     public ServerHandler() {
-      super(DefaultNetServer.this.vertx);
+      super(DefaultNetServer.this.vertx, socketMap);
     }
 
     @Override
@@ -532,8 +530,7 @@ public class DefaultNetServer implements NetServer, Closeable {
 
     private void doConnected(Channel ch, HandlerHolder<NetSocket> handler) {
       DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, handler.context, tcpHelper, false);
-      ch.attr(VertxHandler.KEY).set(sock);
-      group.add(ch);
+      socketMap.put(ch, sock);
       handler.handler.handle(sock);
     }
   }
