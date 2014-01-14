@@ -95,6 +95,7 @@ public abstract class HttpResolution {
     }
 
     client = vertx.createHttpClient();
+    client.setKeepAlive(false); // Not all servers will allow keep alive connections
     if (proxyHost != null) {
       client.setHost(proxyHost);
       if (proxyPort != 80) {
