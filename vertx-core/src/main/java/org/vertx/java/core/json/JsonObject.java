@@ -227,15 +227,7 @@ public class JsonObject extends JsonElement {
 
   @SuppressWarnings("unchecked")
   public <T> T getValue(String fieldName) {
-    Object obj = map.get(fieldName);
-    if (obj != null) {
-      if (obj instanceof Map) {
-        obj = new JsonObject((Map)obj);
-      } else if (obj instanceof List) {
-        obj = new JsonArray((List)obj);
-      }
-    }
-    return (T)obj;
+    return getField(fieldName);
   }
 
   @SuppressWarnings("unchecked")
