@@ -124,13 +124,18 @@ public class ModuleClassLoader extends URLClassLoader {
     return c;
   }
 
-  protected synchronized Class<?> doLoadClass(String name) {
+  protected Class<?> doLoadClass(String name) {
     Class<?> c = findLoadedClass(name);
     if (c == null) {
       try {
         c = findClass(name);
       } catch (ClassNotFoundException e) {
         return null;
+      } catch (LinkageError le) {
+        c = findLoadedClass(name);
+        if (c == null) {
+          throw le;
+        }
       }
     }
     return c;
