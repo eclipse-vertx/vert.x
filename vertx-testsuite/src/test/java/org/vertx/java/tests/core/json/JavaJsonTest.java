@@ -253,4 +253,10 @@ public class JavaJsonTest extends TestBase {
 
     assertEquals(array1, array2);
   }
+
+  @Test
+  public void testGetBinary() {
+    JsonObject json = new JsonObject();
+    assertNull(json.getBinary("binary"));
+  }
 }
