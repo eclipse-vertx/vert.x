@@ -23,15 +23,13 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
 
-import java.util.Map;
-
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public class VertxNetHandler extends VertxHandler<DefaultNetSocket> {
 
-  public VertxNetHandler(VertxInternal vertx, Map<Channel, DefaultNetSocket> connectionMap) {
-    super(vertx, connectionMap);
+  public VertxNetHandler(VertxInternal vertx) {
+    super(vertx);
   }
 
   @Override
