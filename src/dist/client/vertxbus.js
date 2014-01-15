@@ -106,7 +106,6 @@ var vertx = vertx || {};
   
     that.close = function() {
       checkOpen();
-      if (pingTimerID) clearInterval(pingTimerID);
       state = vertx.EventBus.CLOSING;
       sockJSConn.close();
     }
@@ -127,6 +126,7 @@ var vertx = vertx || {};
   
     sockJSConn.onclose = function() {
       state = vertx.EventBus.CLOSED;
+      if (pingTimerID) clearInterval(pingTimerID);
       if (that.onclose) {
         that.onclose();
       }
