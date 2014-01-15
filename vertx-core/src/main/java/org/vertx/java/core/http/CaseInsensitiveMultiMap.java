@@ -317,6 +317,55 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
     return names;
   }
 
+  @Override
+  public String get(CharSequence name) {
+    return get(name.toString());
+  }
+
+  @Override
+  public List<String> getAll(CharSequence name) {
+    return getAll(name.toString());
+  }
+
+  @Override
+  public boolean contains(CharSequence name) {
+    return contains(name.toString());
+  }
+
+  @Override
+  public MultiMap add(CharSequence name, CharSequence value) {
+    return add(name.toString(), value.toString());
+  }
+
+  @Override
+  public MultiMap add(CharSequence name, Iterable<CharSequence> values) {
+    String n = name.toString();
+    for (CharSequence seq: values) {
+      add(n, seq.toString());
+    }
+    return this;
+  }
+
+  @Override
+  public MultiMap set(CharSequence name, CharSequence value) {
+    return set(name.toString(), value.toString());
+  }
+
+  @Override
+  public MultiMap set(CharSequence name, Iterable<CharSequence> values) {
+    remove(name);
+    String n = name.toString();
+    for (CharSequence seq: values) {
+      add(n, seq.toString());
+    }
+    return this;
+  }
+
+  @Override
+  public MultiMap remove(CharSequence name) {
+    return remove(name.toString());
+  }
+
   private static final class MapEntry implements Map.Entry<String, String> {
     final int hash;
     final String key;

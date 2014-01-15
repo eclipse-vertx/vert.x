@@ -49,7 +49,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DefaultNetServer implements NetServer, Closeable {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultNetServer.class);
-  private static final ExceptionDispatchHandler EXCEPTION_DISPATCH_HANDLER = new ExceptionDispatchHandler();
 
   private final VertxInternal vertx;
   private final DefaultContext actualCtx;
@@ -120,7 +119,6 @@ public class DefaultNetServer implements NetServer, Closeable {
           @Override
           protected void initChannel(Channel ch) throws Exception {
             ChannelPipeline pipeline = ch.pipeline();
-            pipeline.addLast("exceptionDispatcher", EXCEPTION_DISPATCH_HANDLER);
             if (tcpHelper.isSSL()) {
               SslHandler sslHandler = tcpHelper.createSslHandler(vertx, false);
               pipeline.addLast("ssl", sslHandler);
