@@ -18,6 +18,7 @@ package vertx.tests;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.Handler;
 import org.vertx.java.testframework.TestClientBase;
 
 public class RepoDownloadTestClient extends TestClientBase {
@@ -32,7 +33,13 @@ public class RepoDownloadTestClient extends TestClientBase {
     container.deployModule("io.vertx~mod-maven-server~1.0", new AsyncResultHandler<String>() {
       public void handle(AsyncResult<String> res) {
         if (res.succeeded()) {
-          container.deployModule("io.vertx~mod-maven-test~1.0.0");
+          // Deploy after a delay to give server time to listen
+          vertx.setTimer(2000, new Handler<Long>() {
+            @Override
+            public void handle(Long event) {
+              container.deployModule("io.vertx~mod-maven-test~1.0.0");
+            }
+          });
         } else {
           res.cause().printStackTrace();
         }
@@ -46,9 +53,12 @@ public class RepoDownloadTestClient extends TestClientBase {
         if (res.succeeded()) {
           // this should not use the same module as the regular test because if the regular test
           // already downloaded this module, it will not actually use the proxy at all...
-          container.deployModule("io.vertx~mod-maven-proxy-test~1.0.0", new AsyncResultHandler<String>() {
+
+          // Deploy after a delay to give server time to listen
+          vertx.setTimer(2000, new Handler<Long>() {
             @Override
-            public void handle(AsyncResult<String> res) {
+            public void handle(Long event) {
+              container.deployModule("io.vertx~mod-maven-proxy-test~1.0.0");
             }
           });
         } else {
@@ -62,7 +72,13 @@ public class RepoDownloadTestClient extends TestClientBase {
     container.deployModule("io.vertx~mod-bintray-server~1.0", new AsyncResultHandler<String>() {
       public void handle(AsyncResult<String> res) {
         if (res.succeeded()) {
-          container.deployModule("purplefox~mod-bintray-test~1.0.0");
+          // Deploy after a delay to give server time to listen
+          vertx.setTimer(2000, new Handler<Long>() {
+            @Override
+            public void handle(Long event) {
+              container.deployModule("purplefox~mod-bintray-test~1.0.0");
+            }
+          });
         } else {
           res.cause().printStackTrace();
         }
