@@ -490,4 +490,8 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
   }
 
+  @Override
+  public void close() {
+    end();
+  }
 }

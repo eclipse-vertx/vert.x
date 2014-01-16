@@ -81,11 +81,6 @@ public interface NetSocket extends ReadStream<NetSocket>, WriteStream<NetSocket>
   InetSocketAddress localAddress();
 
   /**
-   * Close the NetSocket
-   */
-  void close();
-
-  /**
    * Set a handler that will be called when the NetSocket is closed
    */
   NetSocket closeHandler(Handler<Void> handler);

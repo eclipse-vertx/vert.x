@@ -45,16 +45,16 @@ public class JavaPumpTest extends TestCase {
         inp.appendBuffer(b);
         rs.addData(b);
       }
-      TestUtils.buffersEqual(inp, ws.received);
-      assertFalse(rs.paused);
-      assertEquals(0, rs.pauseCount);
-      assertEquals(0, rs.resumeCount);
+      TestUtils.buffersEqual(inp, ws.received());
+      assertFalse(rs.isPaused());
+      assertEquals(0, rs.pauseCount());
+      assertEquals(0, rs.resumeCount());
 
       p.stop();
       ws.clearReceived();
       Buffer b = TestUtils.generateRandomBuffer(100);
       rs.addData(b);
-      assertEquals(0, ws.received.length());
+      assertEquals(0, ws.received().length());
     }
   }
 
@@ -71,100 +71,23 @@ public class JavaPumpTest extends TestCase {
         Buffer b = TestUtils.generateRandomBuffer(100);
         inp.appendBuffer(b);
         rs.addData(b);
-        assertFalse(rs.paused);
-        assertEquals(i, rs.pauseCount);
-        assertEquals(i, rs.resumeCount);
+        assertFalse(rs.isPaused());
+        assertEquals(i, rs.pauseCount());
+        assertEquals(i, rs.resumeCount());
       }
       Buffer b = TestUtils.generateRandomBuffer(100);
       inp.appendBuffer(b);
       rs.addData(b);
-      assertTrue(rs.paused);
-      assertEquals(i + 1, rs.pauseCount);
-      assertEquals(i, rs.resumeCount);
+      assertTrue(rs.isPaused());
+      assertEquals(i + 1, rs.pauseCount());
+      assertEquals(i, rs.resumeCount());
 
-      TestUtils.buffersEqual(inp, ws.received);
+      TestUtils.buffersEqual(inp, ws.received());
       ws.clearReceived();
       inp = new Buffer();
-      assertFalse(rs.paused);
-      assertEquals(i + 1, rs.pauseCount);
-      assertEquals(i + 1, rs.resumeCount);
-    }
-  }
-
-  private class FakeReadStream implements ReadStream<FakeReadStream> {
-
-    private Handler<Buffer> dataHandler;
-    private boolean paused;
-    int pauseCount;
-    int resumeCount;
-
-    void addData(Buffer data) {
-      if (dataHandler != null) {
-        dataHandler.handle(data);
-      }
-    }
-
-    public FakeReadStream dataHandler(Handler<Buffer> handler) {
-      this.dataHandler = handler;
-      return this;
-    }
-
-    public FakeReadStream pause() {
-      paused = true;
-      pauseCount++;
-      return this;
-    }
-
-    public FakeReadStream resume() {
-      paused = false;
-      resumeCount++;
-      return this;
-    }
-
-    public FakeReadStream exceptionHandler(Handler<Throwable> handler) {
-      return this;
-    }
-
-    public FakeReadStream endHandler(Handler<Void> endHandler) {
-      return this;
-    }
-  }
-
-  private class FakeWriteStream implements WriteStream<FakeWriteStream> {
-
-    int maxSize;
-    Buffer received = new Buffer();
-    Handler<Void> drainHandler;
-
-    void clearReceived() {
-      boolean callDrain = writeQueueFull();
-      received = new Buffer();
-      if (callDrain && drainHandler != null) {
-        drainHandler.handle(null);
-      }
-    }
-
-    public FakeWriteStream setWriteQueueMaxSize(int maxSize) {
-      this.maxSize = maxSize;
-      return this;
-    }
-
-    public boolean writeQueueFull() {
-      return received.length() >= maxSize;
-    }
-
-    public FakeWriteStream drainHandler(Handler<Void> handler) {
-      this.drainHandler = handler;
-      return this;
-    }
-
-    public FakeWriteStream write(Buffer data) {
-      received.appendBuffer(data);
-      return this;
-    }
-
-    public FakeWriteStream exceptionHandler(Handler<Throwable> handler) {
-      return this;
+      assertFalse(rs.isPaused());
+      assertEquals(i + 1, rs.pauseCount());
+      assertEquals(i + 1, rs.resumeCount());
     }
   }
 }

@@ -36,11 +36,6 @@ public interface AsyncFile extends ReadStream<AsyncFile>, WriteStream<AsyncFile>
 
   /**
    * Close the file. The actual close happens asynchronously.
-   */
-  void close();
-
-  /**
-   * Close the file. The actual close happens asynchronously.
    * The handler will be called when the close is complete, or an error occurs.
    */
   void close(Handler<AsyncResult<Void>> handler);
