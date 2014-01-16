@@ -730,5 +730,13 @@ public class JavaHttpTest extends TestBase {
     assertEquals(numInstances + initialServers - initialToStop, vertx.sharedData().getSet("instances").size());
   }
 
+  @Test
+  public void testPreconfiguredSSLContext() throws Exception {
+    TLSTestParams params = new TLSTestParams(false, false, true, false, false, true, true);
+    vertx.sharedData().getMap("TLSTest").put("params", params.serialize());
+
+    startApp(TLSServer.class.getName());
+    startTest(getMethodName());
+  }
 
 }

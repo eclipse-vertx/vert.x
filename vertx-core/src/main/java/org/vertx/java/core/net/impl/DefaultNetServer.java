@@ -38,6 +38,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 
+import javax.net.ssl.SSLContext;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -417,6 +418,13 @@ public class DefaultNetServer implements NetServer, Closeable {
   public NetServer setTrustStorePassword(String pwd) {
     checkListening();
     tcpHelper.setTrustStorePassword(pwd);
+    return this;
+  }
+
+  @Override
+  public NetServer setContext(SSLContext context) {
+    checkListening();
+    tcpHelper.setContext(context);
     return this;
   }
 
