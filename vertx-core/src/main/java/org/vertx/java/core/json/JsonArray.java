@@ -16,6 +16,7 @@
 
 package org.vertx.java.core.json;
 
+import org.vertx.java.core.VertxException;
 import org.vertx.java.core.json.impl.*;
 
 import java.util.*;
@@ -99,14 +100,24 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
     return this;
   }
 
-  public JsonArray add(Object obj) {
-    checkCopy();
-    if (obj instanceof JsonObject) {
-      obj = ((JsonObject) obj).map;
-    } else if (obj instanceof JsonArray) {
-      obj = ((JsonArray) obj).list;
+  public JsonArray add(Object value) {
+
+    if (value instanceof JsonObject) {
+      addObject((JsonObject)value);
+    } else if (value instanceof JsonArray) {
+      addArray((JsonArray)value);
+    } else if (value instanceof String) {
+      addString((String)value);
+    } else if (value instanceof Number) {
+      addNumber((Number)value);
+    } else if (value instanceof Boolean) {
+      addBoolean((Boolean)value);
+    } else if (value instanceof byte[]) {
+      addBinary((byte[])value);
+    } else {
+      throw new VertxException("Cannot add objects of class " + value.getClass() +" to JsonArray");
     }
-    list.add(obj);
+
     return this;
   }
 

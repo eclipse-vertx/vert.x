@@ -17,19 +17,17 @@
 package org.vertx.java.core.json;
 
 
+import org.vertx.java.core.VertxException;
 import org.vertx.java.core.json.impl.Base64;
 import org.vertx.java.core.json.impl.Json;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * 
  * Represents a JSON object.<p>
  * Instances of this class are not thread-safe.<p>
- * 
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class JsonObject extends JsonElement {
@@ -91,9 +89,9 @@ public class JsonObject extends JsonElement {
   public JsonObject putElement(String fieldName, JsonElement value) {
     checkCopy();
     if (value.isArray()) {
-      return this.putArray(fieldName, value.asArray());
+      return putArray(fieldName, value.asArray());
     }
-    return this.putObject(fieldName, value.asObject());
+    return putObject(fieldName, value.asObject());
   }
 
   public JsonObject putNumber(String fieldName, Number value) {
@@ -115,13 +113,20 @@ public class JsonObject extends JsonElement {
   }
 
   public JsonObject putValue(String fieldName, Object value) {
-    checkCopy();
     if (value instanceof JsonObject) {
       putObject(fieldName, (JsonObject)value);
     } else if (value instanceof JsonArray) {
       putArray(fieldName, (JsonArray)value);
+    } else if (value instanceof String) {
+      putString(fieldName, (String)value);
+    } else if (value instanceof Number) {
+      putNumber(fieldName, (Number)value);
+    } else if (value instanceof Boolean) {
+      putBoolean(fieldName, (Boolean)value);
+    } else if (value instanceof byte[]) {
+      putBinary(fieldName, (byte[])value);
     } else {
-      map.put(fieldName, value);
+      throw new VertxException("Cannot put objects of class " + value.getClass() +" in JsonObject");
     }
     return this;
   }
