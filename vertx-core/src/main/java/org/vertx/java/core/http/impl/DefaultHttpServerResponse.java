@@ -250,7 +250,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   @Override
   public void end(Buffer chunk) {
     if (!chunked && !contentLengthSet()) {
-      headers().set("Content-Length", String.valueOf(chunk.length()));
+      headers().set(CONTENT_LENGTH, String.valueOf(chunk.length()));
     }
     ByteBuf buf = chunk.getByteBuf();
     end0(buf);
