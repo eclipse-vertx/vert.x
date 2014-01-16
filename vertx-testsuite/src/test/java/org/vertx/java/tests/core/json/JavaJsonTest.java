@@ -284,4 +284,11 @@ public class JavaJsonTest extends TestBase {
       fail(e.getMessage());
     }
   }
+
+  @Test
+  public void testContainsField() {
+    JsonObject obj = new JsonObject().putString("s", "bar");
+    assertTrue(obj.containsField("s"));
+    assertFalse(obj.containsField("t"));
+  }
 }

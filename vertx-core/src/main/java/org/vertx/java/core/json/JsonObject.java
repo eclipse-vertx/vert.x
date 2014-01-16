@@ -251,6 +251,15 @@ public class JsonObject extends JsonElement {
     return map.remove(fieldName);
   }
 
+  /**
+    * The containsField() method returns a boolean indicating whether the object has the specified property.
+    * @param fieldName to lookup
+    * @return true if property exist (null value is also considered to exist).
+    */
+  public boolean containsField(String fieldName) {
+    return map.containsKey(fieldName);
+  }
+
   public int size() {
     return map.size();
   }
