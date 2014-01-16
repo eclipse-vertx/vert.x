@@ -27,247 +27,247 @@ public final class HttpHeaders {
   /**
    * Accept header name
    */
-  public static final CharSequence ACCEPT = io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT;
+  public static final CharSequence ACCEPT = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT);
 
   /**
    * Accept-Charset header name
    */
-  public static final CharSequence ACCEPT_CHARSET = io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_CHARSET;
+  public static final CharSequence ACCEPT_CHARSET = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_CHARSET);
 
   /**
    * Accept-Encoding header name
    */
-  public static final CharSequence ACCEPT_ENCODING = io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_ENCODING;
+  public static final CharSequence ACCEPT_ENCODING = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_ENCODING);
 
   /**
    * Accept-Language header name
    */
-  public static final CharSequence ACCEPT_LANGUAGE = io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_LANGUAGE;
+  public static final CharSequence ACCEPT_LANGUAGE = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_LANGUAGE);
 
   /**
    * Accept-Ranges header name
    */
-  public static final CharSequence ACCEPT_RANGES = io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_RANGES;
+  public static final CharSequence ACCEPT_RANGES = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_RANGES);
 
   /**
    * Accept-Patch header name
    */
-  public static final CharSequence ACCEPT_PATCH = io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_PATCH;
+  public static final CharSequence ACCEPT_PATCH = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_PATCH);
 
   /**
    * Access-Control-Allow-Credentials header name
    */
-  public static final CharSequence ACCESS_CONTROL_ALLOW_CREDENTIALS = io.netty.handler.codec.http.HttpHeaders.Names.ACCESS_CONTROL_ALLOW_CREDENTIALS;
+  public static final CharSequence ACCESS_CONTROL_ALLOW_CREDENTIALS = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.ACCESS_CONTROL_ALLOW_CREDENTIALS);
 
   /**
    * Access-Control-Allow-Headers header name
    */
-  public static final CharSequence ACCESS_CONTROL_ALLOW_HEADERS = io.netty.handler.codec.http.HttpHeaders.Names.ACCESS_CONTROL_ALLOW_HEADERS;
+  public static final CharSequence ACCESS_CONTROL_ALLOW_HEADERS = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.ACCESS_CONTROL_ALLOW_HEADERS);
 
   /**
    * Access-Control-Allow-Methods header name
    */
-  public static final CharSequence ACCESS_CONTROL_ALLOW_METHODS = io.netty.handler.codec.http.HttpHeaders.Names.ACCESS_CONTROL_ALLOW_METHODS;
+  public static final CharSequence ACCESS_CONTROL_ALLOW_METHODS = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.ACCESS_CONTROL_ALLOW_METHODS);
 
   /**
    * Access-Control-Allow-Origin header name
    */
-  public static final CharSequence ACCESS_CONTROL_ALLOW_ORIGIN = io.netty.handler.codec.http.HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN;
+  public static final CharSequence ACCESS_CONTROL_ALLOW_ORIGIN = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN);
 
   /**
    * Access-Control-Expose-Headers header name
    */
-  public static final CharSequence ACCESS_CONTROL_EXPOSE_HEADERS = io.netty.handler.codec.http.HttpHeaders.Names.ACCESS_CONTROL_EXPOSE_HEADERS;
+  public static final CharSequence ACCESS_CONTROL_EXPOSE_HEADERS = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.ACCESS_CONTROL_EXPOSE_HEADERS);
 
   /**
    * Access-Control-Max-Age header name
    */
-  public static final CharSequence ACCESS_CONTROL_MAX_AGE = io.netty.handler.codec.http.HttpHeaders.Names.ACCESS_CONTROL_MAX_AGE;
+  public static final CharSequence ACCESS_CONTROL_MAX_AGE = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.ACCESS_CONTROL_MAX_AGE);
 
   /**
    * Access-Control-Request-Headers header name
    */
-  public static final CharSequence ACCESS_CONTROL_REQUEST_HEADERS = io.netty.handler.codec.http.HttpHeaders.Names.ACCESS_CONTROL_REQUEST_HEADERS;
+  public static final CharSequence ACCESS_CONTROL_REQUEST_HEADERS = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.ACCESS_CONTROL_REQUEST_HEADERS);
 
   /**
    * Access-Control-Request-Method header name
    */
-  public static final CharSequence ACCESS_CONTROL_REQUEST_METHOD = io.netty.handler.codec.http.HttpHeaders.Names.ACCESS_CONTROL_REQUEST_METHOD;
+  public static final CharSequence ACCESS_CONTROL_REQUEST_METHOD = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.ACCESS_CONTROL_REQUEST_METHOD);
 
   /**
    *  Age header name
    */
-  public static final CharSequence AGE = io.netty.handler.codec.http.HttpHeaders.Names.AGE;
+  public static final CharSequence AGE = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.AGE);
 
   /**
    * Allow header name
    */
-  public static final CharSequence ALLOW = io.netty.handler.codec.http.HttpHeaders.Names.ALLOW;
+  public static final CharSequence ALLOW = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.ALLOW);
 
   /**
    * Authorization header name
    */
-  public static final CharSequence AUTHORIZATION = io.netty.handler.codec.http.HttpHeaders.Names.AUTHORIZATION;
+  public static final CharSequence AUTHORIZATION = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.AUTHORIZATION);
 
   /**
    * Cache-Control header name
    */
-  public static final CharSequence CACHE_CONTROL = io.netty.handler.codec.http.HttpHeaders.Names.CACHE_CONTROL;
+  public static final CharSequence CACHE_CONTROL = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.CACHE_CONTROL);
 
   /**
    * Connection header name
    */
-  public static final CharSequence CONNECTION = io.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
+  public static final CharSequence CONNECTION = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.CONNECTION);
 
   /**
    * Content-Base header name
    */
-  public static final CharSequence CONTENT_BASE = io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_BASE;
+  public static final CharSequence CONTENT_BASE = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_BASE);
 
   /**
    * Content-Encoding header name
    */
-  public static final CharSequence CONTENT_ENCODING = io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_ENCODING;
+  public static final CharSequence CONTENT_ENCODING = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_ENCODING);
 
   /**
    * Content-Language header name
    */
-  public static final CharSequence CONTENT_LANGUAGE = io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LANGUAGE;
+  public static final CharSequence CONTENT_LANGUAGE = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LANGUAGE);
 
   /**
    * Content-Length header name
    */
-  public static final CharSequence CONTENT_LENGTH = io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
+  public static final CharSequence CONTENT_LENGTH = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH);
 
   /**
    * Content-Location header name
    */
-  public static final CharSequence CONTENT_LOCATION = io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LOCATION;
+  public static final CharSequence CONTENT_LOCATION = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LOCATION);
 
   /**
    * Content-Transfer-Encoding header name
    */
-  public static final CharSequence CONTENT_TRANSFER_ENCODING = io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TRANSFER_ENCODING;
+  public static final CharSequence CONTENT_TRANSFER_ENCODING = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TRANSFER_ENCODING);
 
   /**
    * Content-MD5 header name
    */
-  public static final CharSequence CONTENT_MD5 = io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_MD5;
+  public static final CharSequence CONTENT_MD5 = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_MD5);
 
   /**
    * Content-Rage header name
    */
-  public static final CharSequence CONTENT_RANGE = io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_RANGE;
+  public static final CharSequence CONTENT_RANGE = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_RANGE);
 
   /**
    * Content-Type header name
    */
-  public static final CharSequence CONTENT_TYPE = io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
+  public static final CharSequence CONTENT_TYPE = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE);
 
   /**
    * Content-Cookie header name
    */
-  public static final CharSequence COOKIE = io.netty.handler.codec.http.HttpHeaders.Names.COOKIE;
+  public static final CharSequence COOKIE = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.COOKIE);
 
   /**
    * Date header name
    */
-  public static final CharSequence DATE = io.netty.handler.codec.http.HttpHeaders.Names.DATE;
+  public static final CharSequence DATE = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.DATE);
 
   /**
    * Etag header name
    */
-  public static final CharSequence ETAG = io.netty.handler.codec.http.HttpHeaders.Names.ETAG;
+  public static final CharSequence ETAG = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.ETAG);
 
   /**
    * Expect header name
    */
-  public static final CharSequence EXPECT = io.netty.handler.codec.http.HttpHeaders.Names.EXPECT;
+  public static final CharSequence EXPECT = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.EXPECT);
 
   /**
    * Expires header name
    */
-  public static final CharSequence EXPIRES = io.netty.handler.codec.http.HttpHeaders.Names.EXPIRES;
+  public static final CharSequence EXPIRES = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.EXPIRES);
 
   /**
    * From header name
    */
-  public static final CharSequence FROM = io.netty.handler.codec.http.HttpHeaders.Names.FROM;
+  public static final CharSequence FROM = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.FROM);
 
   /**
    * Host header name
    */
-  public static final CharSequence HOST = io.netty.handler.codec.http.HttpHeaders.Names.HOST;
+  public static final CharSequence HOST = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.HOST);
 
   /**
    * If-Match header name
    */
-  public static final CharSequence IF_MATCH = io.netty.handler.codec.http.HttpHeaders.Names.IF_MATCH;
+  public static final CharSequence IF_MATCH = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.IF_MATCH);
 
   /**
    * If-Modified-Since header name
    */
-  public static final CharSequence IF_MODIFIED_SINCE = io.netty.handler.codec.http.HttpHeaders.Names.IF_MODIFIED_SINCE;
+  public static final CharSequence IF_MODIFIED_SINCE = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.IF_MODIFIED_SINCE);
 
   /**
    * If-None-Match header name
    */
-  public static final CharSequence IF_NONE_MATCH = io.netty.handler.codec.http.HttpHeaders.Names.IF_NONE_MATCH;
+  public static final CharSequence IF_NONE_MATCH = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.IF_NONE_MATCH);
 
   /**
    * Last-Modified header name
    */
-  public static final CharSequence LAST_MODIFIED = io.netty.handler.codec.http.HttpHeaders.Names.LAST_MODIFIED;
+  public static final CharSequence LAST_MODIFIED = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.LAST_MODIFIED);
 
   /**
    * Location header name
    */
-  public static final CharSequence LOCATION = io.netty.handler.codec.http.HttpHeaders.Names.LOCATION;
+  public static final CharSequence LOCATION = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.LOCATION);
 
   /**
    * Origin header name
    */
-  public static final CharSequence ORIGIN = io.netty.handler.codec.http.HttpHeaders.Names.ORIGIN;
+  public static final CharSequence ORIGIN = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.ORIGIN);
 
   /**
    * Proxy-Authenticate header name
    */
-  public static final CharSequence PROXY_AUTHENTICATE = io.netty.handler.codec.http.HttpHeaders.Names.PROXY_AUTHENTICATE;
+  public static final CharSequence PROXY_AUTHENTICATE = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.PROXY_AUTHENTICATE);
 
   /**
    * Proxy-Authorization header name
    */
-  public static final CharSequence PROXY_AUTHORIZATION = io.netty.handler.codec.http.HttpHeaders.Names.PROXY_AUTHORIZATION;
+  public static final CharSequence PROXY_AUTHORIZATION = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.PROXY_AUTHORIZATION);
 
   /**
    * Referer header name
    */
-  public static final CharSequence REFERER = io.netty.handler.codec.http.HttpHeaders.Names.REFERER;
+  public static final CharSequence REFERER = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.REFERER);
 
   /**
    * Retry-After header name
    */
-  public static final CharSequence RETRY_AFTER = io.netty.handler.codec.http.HttpHeaders.Names.RETRY_AFTER;
+  public static final CharSequence RETRY_AFTER = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.RETRY_AFTER);
 
   /**
    * Server header name
    */
-  public static final CharSequence SERVER = io.netty.handler.codec.http.HttpHeaders.Names.SERVER;
+  public static final CharSequence SERVER = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.SERVER);
 
   /**
    * Transfer-Encoding header name
    */
-  public static final CharSequence TRANSFER_ENCODING = io.netty.handler.codec.http.HttpHeaders.Names.TRANSFER_ENCODING;
+  public static final CharSequence TRANSFER_ENCODING = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.TRANSFER_ENCODING);
 
   /**
    * Upgrade header name
    */
-  public static final CharSequence UPGRADE = io.netty.handler.codec.http.HttpHeaders.Names.UPGRADE;
+  public static final CharSequence UPGRADE = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.UPGRADE);
 
   /**
    * User-Agent header name
    */
-  public static final CharSequence USER_AGENT = io.netty.handler.codec.http.HttpHeaders.Names.USER_AGENT;
+  public static final CharSequence USER_AGENT = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.USER_AGENT);
 
 
   /**
