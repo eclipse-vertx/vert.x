@@ -26,6 +26,8 @@ import org.vertx.java.core.eventbus.ReplyFailure;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
+import static vertx.tests.core.eventbus.LocalEchoClient.TIMEOUT;
+
 import java.util.UUID;
 
 /**
@@ -177,13 +179,12 @@ public class LocalEchoPeer extends EventBusAppBase {
   }
 
   public void testSendWithTimeoutNoReplyInitialise() {
-    final long timeout = 500;
     String address = "some-address";
     eb.registerHandler(address, new Handler<Message<String>>() {
       @Override
       public void handle(final Message<String> message) {
         // Reply *after* the timeout
-        vertx.setTimer(timeout * 2, new Handler<Long>() {
+        vertx.setTimer(TIMEOUT * 2, new Handler<Long>() {
           @Override
           public void handle(Long tid) {
             message.reply("bar");
@@ -204,13 +205,13 @@ public class LocalEchoPeer extends EventBusAppBase {
   }
 
   public void testSendReplyWithTimeoutNoReplyHandlerInitialise() {
-    final long timeout = 500;
+
     String address = "some-address";
     eb.registerHandler(address, new Handler<Message<String>>() {
       @Override
       public void handle(final Message<String> message) {
         // Reply *after* the timeout
-        message.replyWithTimeout("bar", timeout, new Handler<AsyncResult<Message<String>>>() {
+        message.replyWithTimeout("bar", TIMEOUT, new Handler<AsyncResult<Message<String>>>() {
           @Override
           public void handle(AsyncResult<Message<String>> event) {
             tu.azzert(event.failed(), "Should not get a reply after timeout");
@@ -234,14 +235,14 @@ public class LocalEchoPeer extends EventBusAppBase {
   }
 
   public void testSendWithDefaultTimeoutNoReplyInitialise() {
-    final long timeout = 500;
-    eb.setDefaultReplyTimeout(timeout);
+
+    eb.setDefaultReplyTimeout(TIMEOUT);
     String address = "some-address";
     eb.registerHandler(address, new Handler<Message<String>>() {
       @Override
       public void handle(final Message<String> message) {
         // Reply *after* the timeout
-        vertx.setTimer(timeout * 2, new Handler<Long>() {
+        vertx.setTimer(TIMEOUT * 2, new Handler<Long>() {
           @Override
           public void handle(Long tid) {
             message.reply("bar");
@@ -262,12 +263,12 @@ public class LocalEchoPeer extends EventBusAppBase {
   }
 
   public void testReplyWithTimeoutReplyInitialise() {
-    final long timeout = 500;
+
     String address = "some-address";
     eb.registerHandler(address, new Handler<Message<String>>() {
       @Override
       public void handle(final Message<String> message) {
-        message.replyWithTimeout("bar", timeout, new Handler<AsyncResult<Message<String>>>() {
+        message.replyWithTimeout("bar", TIMEOUT, new Handler<AsyncResult<Message<String>>>() {
           @Override
           public void handle(AsyncResult<Message<String>> replyReply) {
             tu.azzert(replyReply.succeeded());
@@ -290,20 +291,20 @@ public class LocalEchoPeer extends EventBusAppBase {
   }
 
   public void testReplyWithTimeoutNoReplyInitialise() {
-    final long timeout = 500;
+
     String address = "some-address";
     final long start = System.currentTimeMillis();
     eb.registerHandler(address, new Handler<Message<String>>() {
       @Override
       public void handle(final Message<String> message) {
 
-        message.replyWithTimeout("bar", timeout, new Handler<AsyncResult<Message<String>>>() {
+        message.replyWithTimeout("bar", TIMEOUT, new Handler<AsyncResult<Message<String>>>() {
           boolean called;
           @Override
           public void handle(AsyncResult<Message<String>> replyReply) {
             tu.azzert(!called);
             tu.azzert(replyReply.failed());
-            tu.azzert(System.currentTimeMillis() - start >= timeout);
+            tu.azzert(System.currentTimeMillis() - start >= TIMEOUT);
             tu.testComplete();
             called = true;
           }

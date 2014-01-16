@@ -43,6 +43,8 @@ public class LocalEchoClient extends EventBusAppBase {
 
   private static final Logger log = LoggerFactory.getLogger(LocalEchoClient.class);
 
+  public final static long TIMEOUT = 1500;
+
   private String echoAddress() {
     String echoAddress = (String)vertx.sharedData().getMap("echoaddress").get("echoaddress");
     return echoAddress;
@@ -251,17 +253,17 @@ public class LocalEchoClient extends EventBusAppBase {
 
   public void testSendWithTimeoutNoReply() {
     final long start = System.currentTimeMillis();
-    final long timeout = 500;
+
     String address = "some-address";
-    eb.sendWithTimeout(address, "foo", timeout, new Handler<AsyncResult<Message<String>>>() {
+    eb.sendWithTimeout(address, "foo", TIMEOUT, new Handler<AsyncResult<Message<String>>>() {
       boolean replied;
       @Override
       public void handle(AsyncResult<Message<String>> reply) {
         tu.azzert(!replied);
         tu.azzert(reply.failed());
-        tu.azzert(System.currentTimeMillis() - start >= timeout);
+        tu.azzert(System.currentTimeMillis() - start >= TIMEOUT);
         // Now wait a bit longer in case a reply actually comes
-        vertx.setTimer(timeout * 2, new Handler<Long>() {
+        vertx.setTimer(TIMEOUT * 2, new Handler<Long>() {
           @Override
           public void handle(Long tid) {
             tu.testComplete();
@@ -278,8 +280,8 @@ public class LocalEchoClient extends EventBusAppBase {
   }
 
   public void testSendWithDefaultTimeoutNoReply() {
-    final long timeout = 500;
-    eb.setDefaultReplyTimeout(timeout);
+
+    eb.setDefaultReplyTimeout(TIMEOUT);
     String address = "some-address";
     eb.send(address, "foo", new Handler<Message<String>>() {
       @Override
@@ -288,7 +290,7 @@ public class LocalEchoClient extends EventBusAppBase {
       }
     });
     // Wait a bit in case a reply comes
-    vertx.setTimer(timeout * 3, new Handler<Long>() {
+    vertx.setTimer(TIMEOUT * 3, new Handler<Long>() {
       @Override
       public void handle(Long tid) {
         tu.testComplete();
@@ -298,7 +300,7 @@ public class LocalEchoClient extends EventBusAppBase {
   }
 
   public void testReplyWithTimeoutReply() {
-    final long timeout = 500;
+
     String address = "some-address";
     eb.send(address, "foo", new Handler<Message<String>>() {
       @Override
@@ -310,7 +312,7 @@ public class LocalEchoClient extends EventBusAppBase {
   }
 
   public void testReplyWithTimeoutNoReply() {
-    final long timeout = 500;
+
     String address = "some-address";
     final long start = System.currentTimeMillis();
     eb.send(address, "foo", new Handler<Message<String>>() {
@@ -318,7 +320,7 @@ public class LocalEchoClient extends EventBusAppBase {
       public void handle(final Message<String> reply) {
         tu.azzert("bar".equals(reply.body()));
         // Delay the reply
-        vertx.setTimer(timeout * 2, new Handler<Long>() {
+        vertx.setTimer(TIMEOUT * 2, new Handler<Long>() {
           @Override
           public void handle(Long tid) {
             reply.reply("quux");
@@ -330,8 +332,8 @@ public class LocalEchoClient extends EventBusAppBase {
 
   public void testReplyNoHandlers() {
     String address = "some-address";
-    long timeout = 500;
-    eb.sendWithTimeout(address, "foo", timeout, new Handler<AsyncResult<Message<String>>>() {
+
+    eb.sendWithTimeout(address, "foo", TIMEOUT, new Handler<AsyncResult<Message<String>>>() {
       @Override
       public void handle(AsyncResult<Message<String>> reply) {
         tu.azzert(reply.failed());
@@ -345,10 +347,10 @@ public class LocalEchoClient extends EventBusAppBase {
 
   public void testReplyRecipientFailure() {
     String address = "some-address";
-    long timeout = 500;
+
     final String msg = "too many giraffes";
 
-    eb.sendWithTimeout(address, "foo", timeout, new Handler<AsyncResult<Message<String>>>() {
+    eb.sendWithTimeout(address, "foo", TIMEOUT, new Handler<AsyncResult<Message<String>>>() {
       @Override
       public void handle(AsyncResult<Message<String>> reply) {
         tu.azzert(reply.failed());

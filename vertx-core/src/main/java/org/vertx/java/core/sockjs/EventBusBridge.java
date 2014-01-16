@@ -514,7 +514,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
           if (!structureMatches((JsonObject) mv, bv)) {
             return false;
           }
-        } else if (!mv.equals(bv)) {
+        } else if (!match.getField(fieldName).equals(body.getField(fieldName))) {
           return false;
         }
       }
