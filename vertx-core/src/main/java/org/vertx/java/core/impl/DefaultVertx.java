@@ -18,6 +18,7 @@ package org.vertx.java.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
+import io.netty.util.ResourceLeakDetector;
 import org.vertx.java.core.*;
 import org.vertx.java.core.datagram.DatagramSocket;
 import org.vertx.java.core.datagram.InternetProtocolFamily;
@@ -65,7 +66,7 @@ public class DefaultVertx implements VertxInternal {
 
   static {
     // Netty resource leak detection has a performance overhead and we do not need it in Vert.x
-    System.setProperty("io.netty.noResourceLeakDetection", "true");
+    ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.DISABLED);
     // Use the JDK deflater/inflater by default
     System.setProperty("io.netty.noJdkZlibDecoder", "false");
   }
