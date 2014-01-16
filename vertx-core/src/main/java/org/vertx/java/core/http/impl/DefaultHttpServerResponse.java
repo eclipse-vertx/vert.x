@@ -21,18 +21,18 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpVersion;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.impl.PathAdjuster;
-import org.vertx.java.core.http.HttpServerResponse;
+import org.vertx.java.core.http.*;
 import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.VertxInternal;
 
 import java.io.File;
-
-import static io.netty.handler.codec.http.HttpHeaders.Names;
 
 /**
  *
@@ -41,10 +41,6 @@ import static io.netty.handler.codec.http.HttpHeaders.Names;
 public class DefaultHttpServerResponse implements HttpServerResponse {
 
   private static final CharSequence KEEP_ALIVE = HttpHeaders.newEntity(HttpHeaders.Values.KEEP_ALIVE);
-  private static final CharSequence CONNECTION = HttpHeaders.newEntity(Names.CONNECTION);
-  private static final CharSequence CONTENT_LENGTH = HttpHeaders.newEntity(Names.CONTENT_LENGTH);
-  private static final CharSequence CONTENT_TYPE = HttpHeaders.newEntity(Names.CONTENT_TYPE);
-  private static final CharSequence TRANSFER_ENCODING = HttpHeaders.newEntity(Names.TRANSFER_ENCODING);
   private static final CharSequence CHUNKED = HttpHeaders.newEntity(HttpHeaders.Values.CHUNKED);
   private static final Buffer NOT_FOUND = new Buffer("<html><body>Resource not found</body><html>");
 
@@ -71,7 +67,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
     this.version = request.getProtocolVersion();
     this.response = new DefaultHttpResponse(version, HttpResponseStatus.OK, false);
     this.keepAlive = version == HttpVersion.HTTP_1_1 ||
-        (version == HttpVersion.HTTP_1_0 && request.headers().contains(CONNECTION, KEEP_ALIVE, true));
+        (version == HttpVersion.HTTP_1_0 && request.headers().contains(org.vertx.java.core.http.HttpHeaders.CONNECTION, KEEP_ALIVE, true));
   }
 
   @Override
@@ -250,7 +246,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   @Override
   public void end(Buffer chunk) {
     if (!chunked && !contentLengthSet()) {
-      headers().set(CONTENT_LENGTH, String.valueOf(chunk.length()));
+      headers().set(org.vertx.java.core.http.HttpHeaders.CONTENT_LENGTH, String.valueOf(chunk.length()));
     }
     ByteBuf buf = chunk.getByteBuf();
     end0(buf);
@@ -401,14 +397,14 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
     if (headers == null) {
       return false;
     }
-    return response.headers().contains(CONTENT_LENGTH);
+    return response.headers().contains(org.vertx.java.core.http.HttpHeaders.CONTENT_LENGTH);
   }
 
   private boolean contentTypeSet() {
     if (headers == null) {
       return false;
     }
-    return response.headers().contains(CONTENT_TYPE);
+    return response.headers().contains(org.vertx.java.core.http.HttpHeaders.CONTENT_TYPE);
   }
 
   private void closeConnAfterWrite() {
@@ -453,12 +449,12 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
 
   private void prepareHeaders() {
     if (version == HttpVersion.HTTP_1_0 && keepAlive) {
-      response.headers().set(CONNECTION, KEEP_ALIVE);
+      response.headers().set(org.vertx.java.core.http.HttpHeaders.CONNECTION, KEEP_ALIVE);
     }
     if (chunked) {
-      response.headers().set(TRANSFER_ENCODING, CHUNKED);
+      response.headers().set(org.vertx.java.core.http.HttpHeaders.TRANSFER_ENCODING, CHUNKED);
     } else if (version != HttpVersion.HTTP_1_0 && !contentLengthSet()) {
-      response.headers().set(CONTENT_LENGTH, "0");
+      response.headers().set(org.vertx.java.core.http.HttpHeaders.CONTENT_LENGTH, "0");
     }
   }
 
