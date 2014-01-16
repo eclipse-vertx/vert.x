@@ -635,6 +635,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
               conn = new ServerConnection(DefaultHttpServer.this, ch, reqHandler.context, serverOrigin);
               conn.requestHandler(reqHandler.handler);
               connectionMap.put(ch, conn);
+              conn.setContext();
               conn.handleMessage(msg);
             }
           } else {

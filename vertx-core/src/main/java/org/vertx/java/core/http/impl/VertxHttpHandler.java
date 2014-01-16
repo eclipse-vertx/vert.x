@@ -74,6 +74,7 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
       }
     } else {
       try {
+        vertx.setContext(context);
         doMessageReceived(connection, chctx, msg);
       }  catch (Throwable t) {
         chctx.pipeline().fireExceptionCaught(t);

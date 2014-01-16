@@ -182,7 +182,6 @@ class ServerConnection extends ConnectionBase {
   }
 
   private void handleRequest(DefaultHttpServerRequest req, DefaultHttpServerResponse resp) {
-    setContext();
     try {
       this.currentRequest = req;
       pendingResponse = resp;
@@ -196,7 +195,6 @@ class ServerConnection extends ConnectionBase {
 
   private void handleChunk(Buffer chunk) {
     try {
-      setContext();
       currentRequest.handleData(chunk);
     } catch (Throwable t) {
       handleHandlerException(t);
@@ -205,7 +203,6 @@ class ServerConnection extends ConnectionBase {
 
   private void handleEnd() {
     try {
-      setContext();
       currentRequest.handleEnd();
       currentRequest = null;
     } catch (Throwable t) {
@@ -244,7 +241,6 @@ class ServerConnection extends ConnectionBase {
   private void handleWsFrame(WebSocketFrame frame) {
     try {
       if (ws != null) {
-        setContext();
         ws.handleFrame(frame);
       }
     } catch (Throwable t) {
@@ -345,5 +341,9 @@ class ServerConnection extends ConnectionBase {
         }
       });
     }
+  }
+
+  protected void setContext() {
+     super.setContext();
   }
 }
