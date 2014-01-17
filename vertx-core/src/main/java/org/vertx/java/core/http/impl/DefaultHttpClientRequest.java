@@ -20,11 +20,12 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpVersion;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.http.HttpClientRequest;
-import org.vertx.java.core.http.HttpClientResponse;
+import org.vertx.java.core.http.*;
 import org.vertx.java.core.impl.DefaultContext;
 
 import java.util.concurrent.TimeoutException;
@@ -34,10 +35,7 @@ import java.util.concurrent.TimeoutException;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class DefaultHttpClientRequest implements HttpClientRequest {
-  private static final CharSequence CONTENT_LENGTH = HttpHeaders.newEntity(HttpHeaders.Names.CONTENT_LENGTH);
-  private static final CharSequence TRANSFER_ENCODING = HttpHeaders.newEntity(HttpHeaders.Names.TRANSFER_ENCODING);
-  private static final CharSequence HOST = HttpHeaders.newEntity(HttpHeaders.Names.HOST);
-
+  private static final CharSequence DEFLATE_GZIP = org.vertx.java.core.http.HttpHeaders.createOptimized("deflate, gzip");
   private final DefaultHttpClient client;
   private final HttpRequest request;
   private final Handler<HttpClientResponse> respHandler;
@@ -213,7 +211,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   public void end(Buffer chunk) {
     check();
     if (!chunked && !contentLengthSet()) {
-      headers().set("Content-Length", String.valueOf(chunk.length()));
+      headers().set(org.vertx.java.core.http.HttpHeaders.CONTENT_LENGTH, String.valueOf(chunk.length()));
     }
     write(chunk.getByteBuf(), true);
   }
@@ -383,7 +381,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
   private boolean contentLengthSet() {
     if (headers != null) {
-      return request.headers().contains(CONTENT_LENGTH);
+      return request.headers().contains(org.vertx.java.core.http.HttpHeaders.CONTENT_LENGTH);
     } else {
       return false;
     }
@@ -407,10 +405,10 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
 
   private void prepareHeaders() {
     HttpHeaders headers = request.headers();
-    headers.remove(TRANSFER_ENCODING);
+    headers.remove(org.vertx.java.core.http.HttpHeaders.TRANSFER_ENCODING);
     if (!raw) {
-      if (!headers.contains(HOST)) {
-        request.headers().set(HOST, conn.hostHeader);
+      if (!headers.contains(org.vertx.java.core.http.HttpHeaders.HOST)) {
+        request.headers().set(org.vertx.java.core.http.HttpHeaders.HOST, conn.hostHeader);
       }
       if (chunked) {
         HttpHeaders.setTransferEncodingChunked(request);
@@ -418,7 +416,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
     if (client.getTryUseCompression() && request.headers().get(HttpHeaders.Names.ACCEPT_ENCODING) == null) {
       // if compression should be used but nothing is specified by the user support deflate and gzip.
-      request.headers().set(HttpHeaders.Names.ACCEPT_ENCODING,"deflate, gzip");
+      request.headers().set(HttpHeaders.Names.ACCEPT_ENCODING, DEFLATE_GZIP);
 
     }
   }

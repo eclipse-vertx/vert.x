@@ -62,7 +62,6 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   private String uri;
   private String path;
   private String query;
-  //private URI juri;
 
   private Handler<Buffer> dataHandler;
   private Handler<Throwable> exceptionHandler;

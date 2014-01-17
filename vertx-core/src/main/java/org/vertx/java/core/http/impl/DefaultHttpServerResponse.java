@@ -40,8 +40,9 @@ import java.io.File;
  */
 public class DefaultHttpServerResponse implements HttpServerResponse {
 
-  private static final CharSequence KEEP_ALIVE = HttpHeaders.newEntity(HttpHeaders.Values.KEEP_ALIVE);
-  private static final CharSequence CHUNKED = HttpHeaders.newEntity(HttpHeaders.Values.CHUNKED);
+  private static final CharSequence KEEP_ALIVE = org.vertx.java.core.http.HttpHeaders.createOptimized(HttpHeaders.Values.KEEP_ALIVE);
+  private static final CharSequence CHUNKED = org.vertx.java.core.http.HttpHeaders.createOptimized(HttpHeaders.Values.CHUNKED);
+  private static final CharSequence TEXT_HTML = org.vertx.java.core.http.HttpHeaders.createOptimized("text/html");
   private static final Buffer NOT_FOUND = new Buffer("<html><body>Resource not found</body><html>");
 
   private final VertxInternal vertx;
@@ -346,7 +347,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
       }
     } else {
       if (!contentLengthSet()) {
-        putHeader("Content-Length", String.valueOf(file.length()));
+        putHeader(org.vertx.java.core.http.HttpHeaders.CONTENT_LENGTH, String.valueOf(file.length()));
       }
       if (!contentTypeSet()) {
         int li = filename.lastIndexOf('.');
@@ -354,7 +355,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
           String ext = filename.substring(li + 1, filename.length());
           String contentType = MimeMapping.getMimeTypeForExtension(ext);
           if (contentType != null) {
-            putHeader("Content-Type", contentType);
+            putHeader(org.vertx.java.core.http.HttpHeaders.CONTENT_TYPE, contentType);
           }
         }
       }
@@ -419,7 +420,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
 
   private void sendNotFound() {
     setStatusCode(HttpResponseStatus.NOT_FOUND.code());
-    putHeader("Content-Type", "text/html");
+    putHeader(org.vertx.java.core.http.HttpHeaders.CONTENT_TYPE, TEXT_HTML);
     end(NOT_FOUND);
   }
 

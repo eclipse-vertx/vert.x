@@ -269,6 +269,10 @@ public final class HttpHeaders {
    */
   public static final CharSequence USER_AGENT = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.USER_AGENT);
 
+  /**
+   * Set-Cookie header name
+   */
+  public static final CharSequence SET_COOKIE = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.SET_COOKIE);
 
   /**
    * Create an optimized {@link java.lang.CharSequence} which can be used as header name or value.

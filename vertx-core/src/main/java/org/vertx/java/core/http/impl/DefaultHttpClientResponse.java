@@ -17,7 +17,6 @@
 package org.vertx.java.core.http.impl;
 
 import io.netty.handler.codec.http.DefaultHttpHeaders;
-import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import org.vertx.java.core.Handler;
@@ -38,8 +37,6 @@ import java.util.Queue;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class DefaultHttpClientResponse implements HttpClientResponse  {
-
-  private static final CharSequence SET_COOKIE = HttpHeaders.newEntity("Set-Cookie");
 
   private final int statusCode;
   private final String statusMessage;
@@ -102,9 +99,9 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
   public List<String> cookies() {
     if (cookies == null) {
       cookies = new ArrayList<>();
-      cookies.addAll(response.headers().getAll(SET_COOKIE));
+      cookies.addAll(response.headers().getAll(org.vertx.java.core.http.HttpHeaders.SET_COOKIE));
       if (trailer != null) {
-        cookies.addAll(trailer.trailingHeaders().getAll(SET_COOKIE));
+        cookies.addAll(trailer.trailingHeaders().getAll(org.vertx.java.core.http.HttpHeaders.SET_COOKIE));
       }
     }
     return cookies;

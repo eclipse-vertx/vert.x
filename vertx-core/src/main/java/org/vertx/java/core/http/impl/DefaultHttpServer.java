@@ -24,6 +24,8 @@ import io.netty.channel.group.ChannelGroupFutureListener;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.ssl.SslHandler;
@@ -33,9 +35,7 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
-import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.core.http.ServerWebSocket;
+import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.cgbystrom.FlashPolicyHandler;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.impl.ws.WebSocketFrame;
@@ -64,11 +64,10 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 public class DefaultHttpServer implements HttpServer, Closeable {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultHttpServer.class);
-  private static final CharSequence ALLOW = HttpHeaders.newEntity("allow");
-  private static final CharSequence GET =  HttpHeaders.newEntity("GET");
-  private static final CharSequence WEBSOCKET = HttpHeaders.newEntity(io.netty.handler.codec.http.HttpHeaders.Values.WEBSOCKET);
-  private static final CharSequence CONNECTION = HttpHeaders.newEntity(io.netty.handler.codec.http.HttpHeaders.Names.CONNECTION);
-  private static final CharSequence UPGRADE = HttpHeaders.newEntity(io.netty.handler.codec.http.HttpHeaders.Names.UPGRADE);
+  private static final CharSequence ALLOW = org.vertx.java.core.http.HttpHeaders.createOptimized("allow");
+  private static final CharSequence GET =  org.vertx.java.core.http.HttpHeaders.createOptimized("GET");
+  private static final CharSequence WEBSOCKET = org.vertx.java.core.http.HttpHeaders.createOptimized(io.netty.handler.codec.http.HttpHeaders.Values.WEBSOCKET);
+  private static final CharSequence UPGRADE = org.vertx.java.core.http.HttpHeaders.createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.UPGRADE);
 
   final VertxInternal vertx;
   final TCPSSLHelper tcpHelper = new TCPSSLHelper();
@@ -608,7 +607,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
           // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
           // it doesn't send a normal 'Connection: Upgrade' header. Instead it
           // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
-          String connectionHeader = request.headers().get(CONNECTION);
+          String connectionHeader = request.headers().get(org.vertx.java.core.http.HttpHeaders.CONNECTION);
           if (connectionHeader == null || !connectionHeader.toLowerCase().contains("upgrade")) {
             sendError("\"Connection\" must be \"Upgrade\".", BAD_REQUEST, ch);
             return;
