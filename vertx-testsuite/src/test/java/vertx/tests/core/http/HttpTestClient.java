@@ -3077,6 +3077,66 @@ public class HttpTestClient extends TestClientBase {
     tu.testComplete();
   }
 
+  public void testRequestsTimeoutInQueue() {
+    client.setKeepAlive(false);
+    client.setMaxPoolSize(1);
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
+      @Override
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
+
+        final long start = System.currentTimeMillis();
+
+        // Add a few requests that should all timeout
+        for (int i = 0; i < 5; i++) {
+          HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
+            public void handle(HttpClientResponse resp) {
+              tu.checkThread();
+              tu.azzert(false, "Should not be called");
+            }
+          });
+          req.exceptionHandler(new Handler<Throwable>() {
+            @Override
+            public void handle(Throwable t) {
+              tu.azzert(t instanceof TimeoutException);
+            }
+          });
+          req.setTimeout(500);
+          req.end();
+        }
+        // Now another request that should not timeout
+        HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
+          public void handle(HttpClientResponse resp) {
+            tu.checkThread();
+            tu.azzert(resp.statusCode() == 200);
+            tu.testComplete();
+          }
+        });
+        req.exceptionHandler(new Handler<Throwable>() {
+          @Override
+          public void handle(Throwable t) {
+            tu.azzert(false, "Should not throw exception");
+          }
+        });
+        req.setTimeout(3000);
+        req.end();
+      }
+    };
+    startServer(new Handler<HttpServerRequest>() {
+      public void handle(final HttpServerRequest req) {
+        tu.checkThread();
+        //Send response after 1 sec
+        vertx.setTimer(1000, new Handler<Long>() {
+          @Override
+          public void handle(Long event) {
+            req.response().end();
+          }
+        });
+      }
+    }, handler);
+
+  }
+
   // -------------------------------------------------------------------------------------------
 
   private String generateQueryString(Map<String, String> params, char delim) {
