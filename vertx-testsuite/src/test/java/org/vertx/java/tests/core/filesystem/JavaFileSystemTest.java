@@ -350,6 +350,14 @@ public class JavaFileSystemTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void testChownToOwnUser() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testChownToOwnGroup() throws Exception {
+    startTest(getMethodName());
+  }
+
   private AsyncResultHandler createHandler() {
     return new AsyncResultHandler<Void>() {
       public void handle(AsyncResult<Void> event) {

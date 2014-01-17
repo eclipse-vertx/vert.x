@@ -36,12 +36,8 @@ import org.vertx.java.testframework.TestUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
+import java.nio.file.*;
+import java.nio.file.attribute.*;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -413,6 +409,39 @@ public class TestClient extends TestClientBase {
       public void handle(AsyncResult<Void> result) {
         deleteFile(file1);
         tu.azzert(result.failed());
+        tu.testComplete();
+      }
+    });
+  }
+
+
+  public void testChownToOwnUser() throws Exception {
+    final String file1 = "some-file.dat";
+    createFileWithJunk(file1, 100);
+    String fullPath = TEST_DIR + pathSep + file1;
+    Path path = Paths.get(fullPath);
+    UserPrincipal owner = Files.getOwner(path);
+    String user = owner.getName();
+    vertx.fileSystem().chown(fullPath, user, null, new AsyncResultHandler<Void>() {
+      public void handle(AsyncResult<Void> result) {
+        deleteFile(file1);
+        tu.azzert(result.succeeded());
+        tu.testComplete();
+      }
+    });
+  }
+
+  public void testChownToOwnGroup() throws Exception {
+    final String file1 = "some-file.dat";
+    createFileWithJunk(file1, 100);
+    String fullPath = TEST_DIR + pathSep + file1;
+    Path path = Paths.get(fullPath);
+    GroupPrincipal group = Files.readAttributes(path, PosixFileAttributes.class, LinkOption.NOFOLLOW_LINKS).group();
+
+    vertx.fileSystem().chown(fullPath, null, group.getName(), new AsyncResultHandler<Void>() {
+      public void handle(AsyncResult<Void> result) {
+        deleteFile(file1);
+        tu.azzert(result.succeeded());
         tu.testComplete();
       }
     });

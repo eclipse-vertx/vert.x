@@ -482,6 +482,7 @@ public class DefaultFileSystem implements FileSystem {
       }
     };
   }
+
   protected BlockingAction<Void> chownInternal(String path, final String user, final String group, Handler<AsyncResult<Void>> handler) {
     final Path target = PathAdjuster.adjust(vertx, Paths.get(path));
     final UserPrincipalLookupService service = target.getFileSystem().getUserPrincipalLookupService();
@@ -490,12 +491,17 @@ public class DefaultFileSystem implements FileSystem {
 
         try {
           final UserPrincipal userPrincipal = user == null ? null : service.lookupPrincipalByName(user);
-          final UserPrincipal groupPrincipal = group == null ? null : service.lookupPrincipalByGroupName(group);
+          final GroupPrincipal groupPrincipal = group == null ? null : service.lookupPrincipalByGroupName(group);
+          if (groupPrincipal != null) {
+            PosixFileAttributeView view = Files.getFileAttributeView(target, PosixFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+            if (view == null) {
+              throw new FileSystemException("Change group of file not supported");
+            }
+            view.setGroup(groupPrincipal);
+
+          }
           if (userPrincipal != null) {
             Files.setOwner(target, userPrincipal);
-          }
-          if (groupPrincipal != null) {
-            Files.setOwner(target, groupPrincipal);
           }
         } catch (SecurityException e) {
           throw new FileSystemException("Accessed denied for chown on " + target);
