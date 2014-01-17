@@ -119,7 +119,6 @@ class ClientConnection extends ConnectionBase {
                                                                   nettyHeaders, maxWebSocketFrameSize);
       final ChannelPipeline p = channel.pipeline();
       p.addBefore("handler", "handshakeCompleter", new HandshakeInboundHandler(wsConnect));
-
       handshaker.handshake(channel).addListener(new ChannelFutureListener() {
         @Override
         public void operationComplete(ChannelFuture future) throws Exception {
@@ -139,7 +138,7 @@ class ClientConnection extends ConnectionBase {
     private final Handler<WebSocket> wsConnect;
     private final DefaultContext context;
     private FullHttpResponse response;
-    private boolean handshaking;
+    private boolean handshaking = true;
     private Queue<Object> buffered = new ArrayDeque<>();
     public HandshakeInboundHandler(final Handler<WebSocket> wsConnect) {
       this.wsConnect = wsConnect;
@@ -152,7 +151,9 @@ class ClientConnection extends ConnectionBase {
       context.execute(ctx.channel().eventLoop(), new Runnable() {
         @Override
         public void run() {
-          if (!handshaking) {
+          // if still handshaking this means we not got any response back from the server and so need to notify the client
+          // about it as otherwise the client would never been notified.
+          if (handshaking) {
             client.handleException(new WebSocketHandshakeException("Connection closed while handshake in process"));
           }
         }
@@ -166,7 +167,7 @@ class ClientConnection extends ConnectionBase {
           boolean fire = false;
           try {
 
-            if (handshaker != null && !handshaking) {
+            if (handshaker != null && handshaking) {
               if (msg instanceof HttpResponse) {
                 HttpResponse resp = (HttpResponse) msg;
                 if (resp.getStatus().code() != 101) {
@@ -219,7 +220,7 @@ class ClientConnection extends ConnectionBase {
     }
 
     private void handshakeComplete(ChannelHandlerContext ctx, FullHttpResponse response) {
-      handshaking = true;
+      handshaking = false;
       try {
         ChannelHandler handler = ctx.pipeline().get(HttpContentDecompressor.class);
         if (handler != null) {
