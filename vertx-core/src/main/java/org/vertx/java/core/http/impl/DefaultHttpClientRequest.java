@@ -35,7 +35,6 @@ import java.util.concurrent.TimeoutException;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class DefaultHttpClientRequest implements HttpClientRequest {
-  private static final CharSequence DEFLATE_GZIP = org.vertx.java.core.http.HttpHeaders.createOptimized("deflate, gzip");
   private final DefaultHttpClient client;
   private final HttpRequest request;
   private final Handler<HttpClientResponse> respHandler;
@@ -414,9 +413,9 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
         HttpHeaders.setTransferEncodingChunked(request);
       }
     }
-    if (client.getTryUseCompression() && request.headers().get(HttpHeaders.Names.ACCEPT_ENCODING) == null) {
+    if (client.getTryUseCompression() && request.headers().get(org.vertx.java.core.http.HttpHeaders.ACCEPT_ENCODING) == null) {
       // if compression should be used but nothing is specified by the user support deflate and gzip.
-      request.headers().set(HttpHeaders.Names.ACCEPT_ENCODING, DEFLATE_GZIP);
+      request.headers().set(org.vertx.java.core.http.HttpHeaders.ACCEPT_ENCODING, org.vertx.java.core.http.HttpHeaders.DEFLATE_GZIP);
 
     }
   }

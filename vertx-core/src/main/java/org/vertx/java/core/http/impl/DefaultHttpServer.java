@@ -25,7 +25,6 @@ import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.ssl.SslHandler;
@@ -64,10 +63,6 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 public class DefaultHttpServer implements HttpServer, Closeable {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultHttpServer.class);
-  private static final CharSequence ALLOW = org.vertx.java.core.http.HttpHeaders.createOptimized("allow");
-  private static final CharSequence GET =  org.vertx.java.core.http.HttpHeaders.createOptimized("GET");
-  private static final CharSequence WEBSOCKET = org.vertx.java.core.http.HttpHeaders.createOptimized(io.netty.handler.codec.http.HttpHeaders.Values.WEBSOCKET);
-  private static final CharSequence UPGRADE = org.vertx.java.core.http.HttpHeaders.createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.UPGRADE);
 
   final VertxInternal vertx;
   final TCPSSLHelper tcpHelper = new TCPSSLHelper();
@@ -576,7 +571,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
       FullHttpResponse resp = new DefaultFullHttpResponse(HTTP_1_1, status);
       if (status.code() == METHOD_NOT_ALLOWED.code()) {
         // SockJS requires this
-        resp.headers().set(ALLOW, GET);
+        resp.headers().set(org.vertx.java.core.http.HttpHeaders.ALLOW, org.vertx.java.core.http.HttpHeaders.GET);
       }
       if (err != null) {
         resp.content().writeBytes(err.toString().getBytes(CharsetUtil.UTF_8));
@@ -603,7 +598,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
           ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
         }
 
-        if (wsHandlerManager.hasHandlers() && request.headers().contains(UPGRADE, WEBSOCKET, true)) {
+        if (wsHandlerManager.hasHandlers() && request.headers().contains(org.vertx.java.core.http.HttpHeaders.UPGRADE, org.vertx.java.core.http.HttpHeaders.WEBSOCKET, true)) {
           // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
           // it doesn't send a normal 'Connection: Upgrade' header. Instead it
           // sends: 'Connection: keep-alive, Upgrade'. Brilliant.

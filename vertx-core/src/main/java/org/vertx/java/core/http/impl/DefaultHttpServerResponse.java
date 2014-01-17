@@ -40,9 +40,6 @@ import java.io.File;
  */
 public class DefaultHttpServerResponse implements HttpServerResponse {
 
-  private static final CharSequence KEEP_ALIVE = org.vertx.java.core.http.HttpHeaders.createOptimized(HttpHeaders.Values.KEEP_ALIVE);
-  private static final CharSequence CHUNKED = org.vertx.java.core.http.HttpHeaders.createOptimized(HttpHeaders.Values.CHUNKED);
-  private static final CharSequence TEXT_HTML = org.vertx.java.core.http.HttpHeaders.createOptimized("text/html");
   private static final Buffer NOT_FOUND = new Buffer("<html><body>Resource not found</body><html>");
 
   private final VertxInternal vertx;
@@ -68,7 +65,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
     this.version = request.getProtocolVersion();
     this.response = new DefaultHttpResponse(version, HttpResponseStatus.OK, false);
     this.keepAlive = version == HttpVersion.HTTP_1_1 ||
-        (version == HttpVersion.HTTP_1_0 && request.headers().contains(org.vertx.java.core.http.HttpHeaders.CONNECTION, KEEP_ALIVE, true));
+        (version == HttpVersion.HTTP_1_0 && request.headers().contains(org.vertx.java.core.http.HttpHeaders.CONNECTION, org.vertx.java.core.http.HttpHeaders.KEEP_ALIVE, true));
   }
 
   @Override
@@ -420,7 +417,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
 
   private void sendNotFound() {
     setStatusCode(HttpResponseStatus.NOT_FOUND.code());
-    putHeader(org.vertx.java.core.http.HttpHeaders.CONTENT_TYPE, TEXT_HTML);
+    putHeader(org.vertx.java.core.http.HttpHeaders.CONTENT_TYPE, org.vertx.java.core.http.HttpHeaders.TEXT_HTML);
     end(NOT_FOUND);
   }
 
@@ -450,10 +447,10 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
 
   private void prepareHeaders() {
     if (version == HttpVersion.HTTP_1_0 && keepAlive) {
-      response.headers().set(org.vertx.java.core.http.HttpHeaders.CONNECTION, KEEP_ALIVE);
+      response.headers().set(org.vertx.java.core.http.HttpHeaders.CONNECTION, org.vertx.java.core.http.HttpHeaders.KEEP_ALIVE);
     }
     if (chunked) {
-      response.headers().set(org.vertx.java.core.http.HttpHeaders.TRANSFER_ENCODING, CHUNKED);
+      response.headers().set(org.vertx.java.core.http.HttpHeaders.TRANSFER_ENCODING, org.vertx.java.core.http.HttpHeaders.CHUNKED);
     } else if (version != HttpVersion.HTTP_1_0 && !contentLengthSet()) {
       response.headers().set(org.vertx.java.core.http.HttpHeaders.CONTENT_LENGTH, "0");
     }

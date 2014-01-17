@@ -260,11 +260,6 @@ public final class HttpHeaders {
   public static final CharSequence TRANSFER_ENCODING = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.TRANSFER_ENCODING);
 
   /**
-   * Upgrade header name
-   */
-  public static final CharSequence UPGRADE = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.UPGRADE);
-
-  /**
    * User-Agent header name
    */
   public static final CharSequence USER_AGENT = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.USER_AGENT);
@@ -273,6 +268,58 @@ public final class HttpHeaders {
    * Set-Cookie header name
    */
   public static final CharSequence SET_COOKIE = createOptimized(io.netty.handler.codec.http.HttpHeaders.Names.SET_COOKIE);
+
+  /**
+   * application/x-www-form-urlencoded header value
+   */
+  public static final CharSequence APPLICATION_X_WWW_FORM_URLENCODED = createOptimized(io.netty.handler.codec.http.HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
+
+  /**
+   * chunked header value
+   */
+  public static final CharSequence CHUNKED =  createOptimized(io.netty.handler.codec.http.HttpHeaders.Values.CHUNKED);
+  /**
+   * close header value
+   */
+  public static final CharSequence CLOSE =  createOptimized(io.netty.handler.codec.http.HttpHeaders.Values.CLOSE);
+
+  /**
+   * 100-continue header value
+   */
+  public static final CharSequence CONTINUE =  createOptimized(io.netty.handler.codec.http.HttpHeaders.Values.CONTINUE);
+
+  /**
+   * identity header value
+   */
+  public static final CharSequence IDENTITY =  createOptimized(io.netty.handler.codec.http.HttpHeaders.Values.IDENTITY);
+  /**
+   * keep-alive header value
+   */
+  public static final CharSequence KEEP_ALIVE = createOptimized(io.netty.handler.codec.http.HttpHeaders.Values.KEEP_ALIVE);
+
+  /**
+   * Upgrade header value
+   */
+  public static final CharSequence UPGRADE = createOptimized(io.netty.handler.codec.http.HttpHeaders.Values.UPGRADE);
+  /**
+   * WebSocket header value
+   */
+  public static final CharSequence WEBSOCKET = createOptimized(io.netty.handler.codec.http.HttpHeaders.Values.WEBSOCKET);
+
+  /**
+   * deflate,gzip header value
+   */
+  public static final CharSequence DEFLATE_GZIP = createOptimized("deflate, gzip");
+
+  /**
+   * text/html header value
+   */
+  public static final CharSequence TEXT_HTML = createOptimized("text/html");
+
+  /**
+   * GET header value
+   */
+  public static final CharSequence GET = createOptimized("GET");
 
   /**
    * Create an optimized {@link java.lang.CharSequence} which can be used as header name or value.
