@@ -75,4 +75,12 @@ public class WindowsFileSystem extends DefaultFileSystem {
     logInternal(perms);
     return super.createFileInternal(p, null, handler);
   }
+
+  @Override
+  protected BlockingAction<Void> chownInternal(String path, String user, String group, Handler<AsyncResult<Void>> handler) {
+    if (group != null && log.isDebugEnabled()) {
+      log.debug("You are running on Windows and POSIX style file ownership is not supported");
+    }
+    return super.chownInternal(path, user, group, handler);
+  }
 }
