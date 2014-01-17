@@ -29,7 +29,7 @@ public interface HttpPool {
 
   void getConnection(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, DefaultContext context);
 
-  void connectionClosed();
+  void connectionClosed(ClientConnection conn);
 
   void returnConnection(ClientConnection conn);
 

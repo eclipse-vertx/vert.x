@@ -33,10 +33,10 @@ public class RepoDownloadTest extends TestBase {
     super.tearDown();
   }
 
-  @Test
-  public void testMavenDownload() throws Exception {
-    startTest(getMethodName());
-  }
+//  @Test
+//  public void testMavenDownload() throws Exception {
+//    startTest(getMethodName());
+//  }
 
   @Test
   public void testBintrayDownload() throws Exception {

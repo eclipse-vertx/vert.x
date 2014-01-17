@@ -193,7 +193,10 @@ class ClientConnection extends ConnectionBase {
             } else {
               buffered.add(msg);
             }
-          } catch (WebSocketHandshakeException e) {
+          }
+          catch (WebSocketHandshakeException e) {
+            handshaking = false;
+            actualClose();
             fire = false;
             for (;;) {
               Object m = buffered.poll();
@@ -244,13 +247,18 @@ class ClientConnection extends ConnectionBase {
   @Override
   public void close() {
     if (upgradedConnection) {
-      // Do nothing - this will be ugraded
+      // Do nothing - this will be upgraded
     } else if (!keepAlive) {
-      //Close it
-      super.close();
+      // Close it
+      actualClose();
     } else {
+      // Keep alive
       client.returnConnection(this);
     }
+  }
+
+  void actualClose() {
+    super.close();
   }
 
   boolean isClosed() {

@@ -637,7 +637,6 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   void internalConnect(final Handler<ClientConnection> connectHandler, final Handler<Throwable> connectErrorHandler) {
-
     if (bootstrap == null) {
       // Share the event loop thread to also serve the HttpClient's network traffic.
       VertxEventLoopGroup pool = new VertxEventLoopGroup();
@@ -688,7 +687,7 @@ public class DefaultHttpClient implements HttpClient {
                 if (future.isSuccess()) {
                   connected(ch, connectHandler);
                 } else {
-                  failed(ch, connectErrorHandler, new SSLHandshakeException("Failed to create SSL connection"));
+                  connectionFailed(ch, connectErrorHandler, new SSLHandshakeException("Failed to create SSL connection"));
                 }
               }
             });
@@ -696,7 +695,7 @@ public class DefaultHttpClient implements HttpClient {
             connected(ch, connectHandler);
           }
         } else {
-          failed(ch, connectErrorHandler, channelFuture.cause());
+          connectionFailed(ch, connectErrorHandler, channelFuture.cause());
         }
       }
     });
@@ -735,21 +734,21 @@ public class DefaultHttpClient implements HttpClient {
         // The connection has been closed - tell the pool about it, this allows the pool to create more
         // connections. Note the pool doesn't actually remove the connection, when the next person to get a connection
         // gets the closed on, they will check if it's closed and if so get another one.
-        pool.connectionClosed();
+        pool.connectionClosed(conn);
       }
     });
     connectionMap.put(ch, conn);
     connectHandler.handle(conn);
   }
 
-  private void failed(final Channel ch, final Handler<Throwable> connectionExceptionHandler,
-                      final Throwable t) {
+  private void connectionFailed(final Channel ch, final Handler<Throwable> connectionExceptionHandler,
+                                final Throwable t) {
     // If no specific exception handler is provided, fall back to the HttpClient's exception handler.
     final Handler<Throwable> exHandler = connectionExceptionHandler == null ? exceptionHandler : connectionExceptionHandler;
 
     actualCtx.execute(ch.eventLoop(), new Runnable() {
       public void run() {
-        pool.connectionClosed();
+        pool.connectionClosed(null);
         try {
           ch.close();
         } catch (Exception ignore) {

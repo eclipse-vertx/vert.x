@@ -291,6 +291,8 @@ public class WebsocketsTestClient extends TestClientBase {
         tu.azzert(ar.succeeded());
         client.exceptionHandler(new Handler<Throwable>() {
           public void handle(Throwable t) {
+            System.out.println("exce handler called");
+            new Exception().printStackTrace();
             tu.testComplete();
           }
         });
