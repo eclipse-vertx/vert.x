@@ -193,8 +193,7 @@ class ClientConnection extends ConnectionBase {
             } else {
               buffered.add(msg);
             }
-          }
-          catch (WebSocketHandshakeException e) {
+          } catch (WebSocketHandshakeException e) {
             handshaking = false;
             actualClose();
             fire = false;

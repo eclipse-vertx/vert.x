@@ -3077,27 +3077,6 @@ public class HttpTestClient extends TestClientBase {
     tu.testComplete();
   }
 
-//  public void testCloseClientWithoutOutstandingRequest() {
-//    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
-//      @Override
-//      public void handle(AsyncResult<HttpServer> ar) {
-//        tu.azzert(ar.succeeded());
-//
-//        HttpClientRequest req = client.get("some-uri", new Handler<HttpClientResponse>() {
-//          @Override
-//          public void handle(HttpClientResponse resp) {
-//          }
-//        });
-//        client.
-//      }
-//    };
-//    startServer(new Handler<HttpServerRequest>() {
-//      public void handle(HttpServerRequest req) {
-//        // Don't respond
-//      }
-//    }, handler);
-//  }
-
   // -------------------------------------------------------------------------------------------
 
   private String generateQueryString(Map<String, String> params, char delim) {
