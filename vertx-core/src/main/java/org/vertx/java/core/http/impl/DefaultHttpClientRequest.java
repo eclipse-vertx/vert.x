@@ -326,9 +326,14 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
       //they can capture any exceptions on connection
       client.getConnection(new Handler<ClientConnection>() {
         public void handle(ClientConnection conn) {
-          if (!conn.isClosed()) {
+          if (exceptionOccurred) {
+            // The request already timed out before it has left the pool waiter queue
+            // So return it
+            conn.close();
+          } else if (!conn.isClosed()) {
             connected(conn);
           } else {
+            // The connection has been closed - closed connections can be in the pool
             // Get another connection - Note that we DO NOT call connectionClosed() on the pool at this point
             // that is done asynchronously in the connection closeHandler()
             connect();
