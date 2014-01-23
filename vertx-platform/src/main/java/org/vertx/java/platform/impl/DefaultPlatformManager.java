@@ -1132,6 +1132,15 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
                 }
                 URL url = fentry.toURI().toURL();
                 cpList.add(url);
+                if (fentry.exists() && fentry.isDirectory()) {
+                  File[] files = fentry.listFiles();
+                  for (File file : files) {
+                    String fPath = file.getCanonicalPath();
+                    if (fPath.endsWith(".jar") || fPath.endsWith(".zip")) {
+                      cpList.add(file.getCanonicalFile().toURI().toURL());
+                    }
+                  }
+                }
               }
             }
           } catch (Exception e) {
