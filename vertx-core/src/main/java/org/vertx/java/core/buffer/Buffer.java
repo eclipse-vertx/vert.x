@@ -220,11 +220,31 @@ public class Buffer {
   }
 
   /**
+   * Appends the specified {@code Buffer} starting at the {@code offset} using {@code len} to the end of this Buffer. The buffer will expand as necessary to accommodate
+   * any bytes written.<p>
+   * Returns a reference to {@code this} so multiple operations can be appended together.
+   */
+  public Buffer appendBuffer(Buffer buff, int offset,int len) {
+    buffer.writeBytes(buff.getByteBuf(), offset, len);
+    return this;
+  }
+
+  /**
    * Appends the specified {@code byte[]} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
   public Buffer appendBytes(byte[] bytes) {
     buffer.writeBytes(bytes);
+    return this;
+  }
+
+  /**
+   * Appends the specified number of bytes from {@code byte[]} to the end of the Buffer, starting at the given offset.
+   * The buffer will expand as necessary to accommodate any bytes written.<p>
+   * Returns a reference to {@code this} so multiple operations can be appended together.
+   */
+  public Buffer appendBytes(byte[] bytes, int offset, int len) {
+    buffer.writeBytes(bytes, offset, len);
     return this;
   }
 
@@ -371,6 +391,16 @@ public class Buffer {
   }
 
   /**
+   * Sets the bytes at position {@code pos} in the Buffer to the bytes represented by the {@code Buffer b} on the given {@code offset} and {@code len}.<p>
+   * The buffer will expand as necessary to accommodate any value written.
+   */
+  public Buffer setBuffer(int pos, Buffer b, int offset, int len) {
+    ensureWritable(pos, len);
+    buffer.setBytes(pos, b.getByteBuf(), offset, len);
+    return this;
+  }
+
+  /**
    * Sets the bytes at position {@code pos} in the Buffer to the bytes represented by the {@code ByteBuffer b}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
@@ -387,6 +417,17 @@ public class Buffer {
   public Buffer setBytes(int pos, byte[] b) {
     ensureWritable(pos, b.length);
     buffer.setBytes(pos, b);
+    return this;
+  }
+
+
+  /**
+   * Sets the given number of bytes at position {@code pos} in the Buffer to the bytes represented by the {@code byte[] b}.<p></p>
+   * The buffer will expand as necessary to accommodate any value written.
+   */
+  public Buffer setBytes(int pos, byte[] b, int offset, int len) {
+    ensureWritable(pos, len);
+    buffer.setBytes(pos, b, offset, len);
     return this;
   }
 
