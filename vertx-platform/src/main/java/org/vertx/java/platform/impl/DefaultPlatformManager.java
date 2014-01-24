@@ -43,10 +43,7 @@ import java.net.URLDecoder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
+import java.util.concurrent.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -80,18 +77,18 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   // deployment name --> deployment
   protected final Map<String, Deployment> deployments = new ConcurrentHashMap<>();
   // The user mods dir
-  private final File modRoot;
-  private final File systemModRoot;
-  private final String vertxHomeDir;
+  private File modRoot;
+  private File systemModRoot;
+  private String vertxHomeDir;
   private final ConcurrentMap<String, ModuleReference> moduleRefs = new ConcurrentHashMap<>();
-  private final Redeployer redeployer;
+  private Redeployer redeployer;
   private final Map<String, LanguageImplInfo> languageImpls = new ConcurrentHashMap<>();
   private final Map<String, String> extensionMappings = new ConcurrentHashMap<>();
   private String defaultLanguageImplName;
   private final List<RepoResolver> repos = new ArrayList<>();
   private Handler<Void> exitHandler;
-  private final ClassLoader platformClassLoader;
-  private final boolean disableMavenLocal;
+  private ClassLoader platformClassLoader;
+  private boolean disableMavenLocal;
   protected final ClusterManager clusterManager;
   protected HAManager haManager;
   private boolean stopped;
@@ -99,27 +96,54 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private Executor backgroundExec;
 
   protected DefaultPlatformManager() {
-    this(new DefaultVertx());
+    DefaultVertx v = new DefaultVertx();
+    this.vertx = new WrappedVertx(v);
+    this.clusterManager = v.clusterManager();
+    init();
   }
 
   protected DefaultPlatformManager(String hostname) {
-    this(new DefaultVertx(hostname));
+    DefaultVertx v = new DefaultVertx(hostname);
+    this.vertx = new WrappedVertx(v);
+    this.clusterManager = v.clusterManager();
+    init();
   }
 
   protected DefaultPlatformManager(int port, String hostname) {
-    this(new DefaultVertx(port, hostname, null));
+    final CountDownLatch latch = new CountDownLatch(1);
+    DefaultVertx v = new DefaultVertx(port, hostname, new Handler<AsyncResult<Vertx>>() {
+      @Override
+      public void handle(AsyncResult<Vertx> result) {
+        latch.countDown();
+      }
+    });
+    try {
+      latch.await(10, TimeUnit.SECONDS);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    this.vertx = new WrappedVertx(v);
+    this.clusterManager = v.clusterManager();
+    init();
   }
 
   protected DefaultPlatformManager(int port, String hostname, int quorumSize, String haGroup) {
-    this(new DefaultVertx(port, hostname, null));
+    DefaultVertx v = new DefaultVertx(port, hostname, null);
+    this.vertx = new WrappedVertx(v);
+    this.clusterManager = v.clusterManager();
+    init();
     this.haManager = new HAManager(vertx, this, clusterManager, quorumSize, haGroup);
   }
 
   private DefaultPlatformManager(DefaultVertx vertx) {
-    ClassLoader tccl = Thread.currentThread().getContextClassLoader();
-    this.platformClassLoader = tccl != null ? tccl: getClass().getClassLoader();
     this.vertx = new WrappedVertx(vertx);
     this.clusterManager = vertx.clusterManager();
+    init();
+  }
+
+  private void init() {
+    ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+    this.platformClassLoader = tccl != null ? tccl: getClass().getClassLoader();
 
     if (System.getProperty(SERIALISE_BLOCKING_PROP_NAME, "false").equalsIgnoreCase("true")) {
       this.backgroundExec = new OrderedExecutorFactory(vertx.getBackgroundPool()).getExecutor();
