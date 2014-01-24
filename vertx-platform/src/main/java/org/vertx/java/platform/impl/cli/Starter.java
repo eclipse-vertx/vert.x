@@ -69,7 +69,11 @@ public class Starter {
     sargs = removeOptions(sargs);
 
     if (sargs.length == 0) {
-      runBareHA(args);
+      if (args.map.get("-ha") != null) {
+        runBareHA(args);
+      } else {
+        displaySyntax();
+      }
     } else {
       String command = sargs[0].toLowerCase();
       if ("version".equals(command)) {
@@ -257,12 +261,7 @@ public class Starter {
   }
 
   private void runBareHA(Args args) {
-    boolean ha = args.map.get("-ha") != null;
-    if (!ha) {
-      log.info("Vert.x can only be run bare if -ha is specified");
-      return;
-    }
-    PlatformManager mgr = startPM(ha, false, args);
+    PlatformManager mgr = startPM(true, false, args);
     if (mgr == null) {
       return;
     }
