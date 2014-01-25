@@ -1171,7 +1171,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
             e.printStackTrace();
             throw new PlatformManagerException(e);
           }
-          modJSON = loadModJSONFromClasspath(modID, new URLClassLoader(cpList.toArray(new URL[cpList.size()]), platformClassLoader));
+          modJSON = loadModJSONFromClasspath(modID, new ModJSONClassLoader(cpList.toArray(new URL[cpList.size()]), platformClassLoader));
         } catch (Exception e) {
           throw new PlatformManagerException(e);
         }
@@ -1922,5 +1922,23 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
   }
 
+  private static class ModJSONClassLoader extends URLClassLoader {
+
+    private final ClassLoader parent;
+
+    private ModJSONClassLoader(URL[] urls, ClassLoader parent) {
+      super(urls, parent);
+      this.parent = parent;
+    }
+
+    @Override
+    public Enumeration<URL> getResources(String name) throws IOException {
+      List<URL> resources = new ArrayList<>(Collections.list(findResources(name)));
+      if (parent != null) {
+        resources.addAll(Collections.list(parent.getResources(name)));
+      }
+      return Collections.enumeration(resources);
+    }
+  }
 
 }
