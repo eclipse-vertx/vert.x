@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors 
+ * Copyright (c) 2011-2013 The original author or authors
  * ------------------------------------------------------
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -24,26 +24,22 @@ import org.vertx.java.core.spi.cluster.ClusterManagerFactory;
  */
 public class ProgrammableClusterManagerFactory implements ClusterManagerFactory {
 
-    private static Config config;
+  private static Config config;
 
-    @Override
-    public ClusterManager createClusterManager(VertxSPI vertx) {
-        return new HazelcastClusterManager(vertx){
-            @Override
-            protected Config getConfig() {
-                return config;
-            }
-        };
-    }
-
-    /**
-     * Returns a mutable Config object.  Call this method before creating the PlatformManager.
-     */
-    public static Config getConfig() {
-        if(config==null) {
-            System.setProperty("vertx.clusterManagerFactory", ProgrammableClusterManagerFactory.class.getName());
-            config = new Config();
-        }
+  @Override
+  public ClusterManager createClusterManager(VertxSPI vertx) {
+    return new HazelcastClusterManager(vertx) {
+      @Override
+      protected Config getConfig() {
         return config;
-    }
+      }
+    };
+  }
+
+  /**
+   * Sets the Config object to be used for clustering.  Call this method before creating the PlatformManager.
+   */
+  public static void setConfig(Config config) {
+    ProgrammableClusterManagerFactory.config = config;
+  }
 }
