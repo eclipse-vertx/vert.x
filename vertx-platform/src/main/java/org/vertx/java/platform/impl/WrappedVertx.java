@@ -38,6 +38,7 @@ import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.spi.Action;
+import org.vertx.java.core.spi.cluster.ClusterManager;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -133,6 +134,11 @@ public class WrappedVertx implements VertxInternal {
   @Override
   public EventLoopContext createEventLoopContext() {
     return vertx.createEventLoopContext();
+  }
+
+  @Override
+  public ClusterManager clusterManager() {
+    return vertx.clusterManager();
   }
 
   @Override

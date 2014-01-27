@@ -22,6 +22,7 @@ import org.vertx.java.core.http.impl.DefaultHttpServer;
 import org.vertx.java.core.net.impl.DefaultNetServer;
 import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.spi.VertxSPI;
+import org.vertx.java.core.spi.cluster.ClusterManager;
 
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -66,4 +67,6 @@ public interface VertxInternal extends VertxSPI {
    * @return event loop context
    */
   EventLoopContext createEventLoopContext();
+
+  ClusterManager clusterManager();
 }

@@ -110,6 +110,25 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   protected DefaultPlatformManager(int port, String hostname) {
+    this.vertx = createVertxSynchronously(port, hostname);
+    this.clusterManager = vertx.clusterManager();
+    init();
+  }
+
+  protected DefaultPlatformManager(int port, String hostname, int quorumSize, String haGroup) {
+    this.vertx = createVertxSynchronously(port, hostname);
+    this.clusterManager = vertx.clusterManager();
+    init();
+    this.haManager = new HAManager(vertx, this, clusterManager, quorumSize, haGroup);
+  }
+
+  private DefaultPlatformManager(DefaultVertx vertx) {
+    this.vertx = new WrappedVertx(vertx);
+    this.clusterManager = vertx.clusterManager();
+    init();
+  }
+
+  private VertxInternal createVertxSynchronously(int port, String hostname) {
     final CountDownLatch latch = new CountDownLatch(1);
     DefaultVertx v = new DefaultVertx(port, hostname, new Handler<AsyncResult<Vertx>>() {
       @Override
@@ -122,23 +141,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     } catch (Exception e) {
       e.printStackTrace();
     }
-    this.vertx = new WrappedVertx(v);
-    this.clusterManager = v.clusterManager();
-    init();
-  }
-
-  protected DefaultPlatformManager(int port, String hostname, int quorumSize, String haGroup) {
-    DefaultVertx v = new DefaultVertx(port, hostname, null);
-    this.vertx = new WrappedVertx(v);
-    this.clusterManager = v.clusterManager();
-    init();
-    this.haManager = new HAManager(vertx, this, clusterManager, quorumSize, haGroup);
-  }
-
-  private DefaultPlatformManager(DefaultVertx vertx) {
-    this.vertx = new WrappedVertx(vertx);
-    this.clusterManager = vertx.clusterManager();
-    init();
+    return new WrappedVertx(v);
   }
 
   private void init() {

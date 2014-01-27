@@ -41,7 +41,9 @@ import org.vertx.java.core.net.NetSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -58,12 +60,12 @@ public class DefaultNetServer implements NetServer, Closeable {
 
   private ChannelGroup serverChannelGroup;
   private boolean listening;
-  private ServerID id;
+  private volatile ServerID id;
   private DefaultNetServer actualServer;
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
   private String host;
-  private int port;
+  private volatile int port;
   private ChannelFuture bindFuture;
 
   public DefaultNetServer(VertxInternal vertx) {
@@ -143,11 +145,17 @@ public class DefaultNetServer implements NetServer, Closeable {
           bindFuture = bootstrap.bind(addr).addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
-              if (future.isSuccess()) {
+              runListeners();
+            }
+          });
+          this.addListener(new Runnable() {
+            @Override
+            public void run() {
+              if (bindFuture.isSuccess()) {
                 log.trace("Net server listening on " + host + ":" + bindFuture.channel().localAddress());
                 // Update port to actual port - wildcard port 0 might have been used
                 DefaultNetServer.this.port = ((InetSocketAddress)bindFuture.channel().localAddress()).getPort();
-                id = new ServerID(DefaultNetServer.this.port, id.host);
+                DefaultNetServer.this.id = new ServerID(DefaultNetServer.this.port, id.host);
                 vertx.sharedNetServers().put(id, DefaultNetServer.this);
               } else {
                 vertx.sharedNetServers().remove(id);
@@ -187,32 +195,53 @@ public class DefaultNetServer implements NetServer, Closeable {
       }
 
       // just add it to the future so it gets notified once the bind is complete
-      actualServer.bindFuture.addListener(new ChannelFutureListener() {
-        @Override
-        public void operationComplete(final ChannelFuture future) throws Exception {
+      actualServer.addListener(new Runnable() {
+        public void run() {
           if (listenHandler != null) {
             final AsyncResult<NetServer> res;
-            if (future.isSuccess()) {
+            if (actualServer.bindFuture.isSuccess()) {
               res = new DefaultFutureResult<NetServer>(DefaultNetServer.this);
             } else {
               listening = false;
-              res = new DefaultFutureResult<>(future.cause());
+              res = new DefaultFutureResult<>(actualServer.bindFuture.cause());
             }
-            actualCtx.execute(future.channel().eventLoop(), new Runnable() {
+            actualCtx.execute(actualServer.bindFuture.channel().eventLoop(), new Runnable() {
               @Override
               public void run() {
                 listenHandler.handle(res);
               }
             });
-          } else if (!future.isSuccess()) {
+          } else if (!actualServer.bindFuture.isSuccess()) {
             // No handler - log so user can see failure
-            actualCtx.reportException(future.cause());
+            actualCtx.reportException(actualServer.bindFuture.cause());
             listening = false;
           }
         }
       });
+
     }
     return this;
+  }
+
+  private Queue<Runnable> bindListeners = new ConcurrentLinkedQueue<>();
+
+  private boolean listenersRun;
+
+  private synchronized void addListener(Runnable runner) {
+    if (!listenersRun) {
+      bindListeners.add(runner);
+    } else {
+      // Run it now
+      runner.run();
+    }
+  }
+
+  private synchronized void runListeners() {
+    Runnable runner;
+    while ((runner = bindListeners.poll()) != null) {
+      runner.run();
+    }
+    listenersRun = true;
   }
 
   public void close() {
