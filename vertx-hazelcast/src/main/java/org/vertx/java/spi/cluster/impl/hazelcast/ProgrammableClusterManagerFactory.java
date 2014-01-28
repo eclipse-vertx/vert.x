@@ -24,7 +24,7 @@ import org.vertx.java.core.spi.cluster.ClusterManagerFactory;
  */
 public class ProgrammableClusterManagerFactory implements ClusterManagerFactory {
 
-  private static Config config;
+  private volatile static Config config;
 
   @Override
   public ClusterManager createClusterManager(VertxSPI vertx) {
