@@ -82,16 +82,20 @@ public class JsonObject extends JsonElement {
 
   public JsonObject putArray(String fieldName, JsonArray value) {
     checkCopy();
-    map.put(fieldName, value.list);
+    map.put(fieldName, value == null ? null : value.list);
     return this;
   }
 
   public JsonObject putElement(String fieldName, JsonElement value) {
     checkCopy();
-    if (value.isArray()) {
+    if (value == null) {
+      map.put(fieldName, null);
+      return this;
+    } else if (value.isArray()) {
       return putArray(fieldName, value.asArray());
+    } else {
+      return putObject(fieldName, value.asObject());
     }
-    return putObject(fieldName, value.asObject());
   }
 
   public JsonObject putNumber(String fieldName, Number value) {
@@ -108,12 +112,14 @@ public class JsonObject extends JsonElement {
 
   public JsonObject putBinary(String fieldName, byte[] binary) {
     checkCopy();
-    map.put(fieldName, Base64.encodeBytes(binary));
+    map.put(fieldName, binary == null ? null : Base64.encodeBytes(binary));
     return this;
   }
 
   public JsonObject putValue(String fieldName, Object value) {
-    if (value instanceof JsonObject) {
+    if (value == null) {
+      putObject(fieldName, null);
+    } else if (value instanceof JsonObject) {
       putObject(fieldName, (JsonObject)value);
     } else if (value instanceof JsonArray) {
       putArray(fieldName, (JsonArray)value);
@@ -149,6 +155,8 @@ public class JsonObject extends JsonElement {
 
   public JsonElement getElement(String fieldName) {
     Object element = map.get(fieldName);
+    if (element == null) return null;
+
     if (element instanceof Map<?,?>){
       return getObject(fieldName);
     }
