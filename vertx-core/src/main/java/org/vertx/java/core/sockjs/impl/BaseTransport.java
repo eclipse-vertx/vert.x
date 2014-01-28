@@ -87,7 +87,7 @@ class BaseTransport {
       resp.closeHandler(new VoidHandler() {
         public void handle() {
           if (log.isTraceEnabled()) log.trace("Connection closed (from client?), closing session");
-          // Connection has been closed fron the client or network error so
+          // Connection has been closed from the client or network error so
           // we remove the session
           session.shutdown();
           close();

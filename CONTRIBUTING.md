@@ -9,7 +9,7 @@ strict IP policy.
 
 Please also read [this](http://wiki.eclipse.org/Development_Resources/Contributing_via_Git)
 
-In order for any contributions to be accepted you MUST do the following things:
+In order for any contributions to be accepted you MUST do the following things.
 
 * Sign the [Eclipse Foundation Contributor License Agreement](http://www.eclipse.org/legal/CLA.php).
 To sign the Eclipse CLA you need to:
@@ -18,6 +18,8 @@ To sign the Eclipse CLA you need to:
 If you don’t, you need to [register](https://dev.eclipse.org/site_login/createaccount.php).
 
   * Login into the [projects portal](https://projects.eclipse.org/), select “My Account”, and then the “Contributor License Agreement” tab.
+
+* Add your github username in your Eclipse Foundation account settings. Log in it to Eclipse and go to account settings.
 
 * "Sign-off" your commits
 
