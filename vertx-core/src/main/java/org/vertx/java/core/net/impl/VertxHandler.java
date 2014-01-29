@@ -16,6 +16,7 @@
 package org.vertx.java.core.net.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -41,14 +42,14 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     return connection.getContext();
   }
 
-  protected static ByteBuf safeBuffer(ByteBuf buf) {
+  protected static ByteBuf safeBuffer(ByteBuf buf, ByteBufAllocator allocator) {
     if (buf == Unpooled.EMPTY_BUFFER) {
       return buf;
     }
     if (buf.isDirect() || buf instanceof CompositeByteBuf) {
       try {
         if (buf.isReadable()) {
-          ByteBuf buffer =  buf.alloc().heapBuffer(buf.readableBytes());
+          ByteBuf buffer =  allocator.heapBuffer(buf.readableBytes());
           buffer.writeBytes(buf);
           return buffer;
         } else {
@@ -137,7 +138,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
 
   @Override
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
-    final Object message = safeObject(msg);
+    final Object message = safeObject(msg, chctx.alloc());
     final C connection = connectionMap.get(chctx.channel());
 
     DefaultContext context;
@@ -157,5 +158,5 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
 
   protected abstract void channelRead(C connection, DefaultContext context, ChannelHandlerContext chctx, Object msg) throws Exception;
 
-  protected abstract Object safeObject(Object msg) throws Exception;
+  protected abstract Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception;
 }

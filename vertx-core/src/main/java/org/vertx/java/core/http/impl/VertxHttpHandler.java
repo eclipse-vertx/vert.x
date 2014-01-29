@@ -16,6 +16,7 @@
 package org.vertx.java.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -44,8 +45,8 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
     this.vertx = vertx;
   }
 
-  private static ByteBuf safeBuffer(ByteBufHolder holder) {
-    return safeBuffer(holder.content());
+  private static ByteBuf safeBuffer(ByteBufHolder holder, ByteBufAllocator allocator) {
+    return safeBuffer(holder.content(), allocator);
   }
 
   @Override
@@ -82,12 +83,12 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
   }
 
   @Override
-  protected Object safeObject(Object msg) throws Exception {
+  protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
     if (msg instanceof HttpContent) {
       HttpContent content = (HttpContent) msg;
       ByteBuf buf = content.content();
       if (buf != Unpooled.EMPTY_BUFFER && buf.isDirect()) {
-        ByteBuf newBuf = safeBuffer(content);
+        ByteBuf newBuf = safeBuffer(content, allocator);
         if (msg instanceof LastHttpContent) {
           LastHttpContent last = (LastHttpContent) msg;
           return new AssembledLastHttpContent(newBuf, last.trailingHeaders());
@@ -96,7 +97,7 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
         }
       }
     } else if (msg instanceof WebSocketFrame) {
-      ByteBuf payload = safeBuffer((WebSocketFrame) msg);
+      ByteBuf payload = safeBuffer((WebSocketFrame) msg, allocator);
       if (msg instanceof BinaryWebSocketFrame) {
         return new DefaultWebSocketFrame(org.vertx.java.core.http.impl.ws.WebSocketFrame.FrameType.BINARY, payload);
       } else if (msg instanceof CloseWebSocketFrame) {
@@ -123,7 +124,7 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
       org.vertx.java.core.http.impl.ws.WebSocketFrame frame = (org.vertx.java.core.http.impl.ws.WebSocketFrame) msg;
       ByteBuf buf = ((org.vertx.java.core.http.impl.ws.WebSocketFrame) msg).getBinaryData();
       if (buf != Unpooled.EMPTY_BUFFER) {
-         buf = safeBuffer(buf);
+         buf = safeBuffer(buf, ctx.alloc());
       }
       switch (frame.getType()) {
         case BINARY:

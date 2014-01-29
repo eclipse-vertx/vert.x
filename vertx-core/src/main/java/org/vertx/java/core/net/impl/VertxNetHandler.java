@@ -17,6 +17,7 @@
 package org.vertx.java.core.net.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import org.vertx.java.core.buffer.Buffer;
@@ -68,9 +69,9 @@ public class VertxNetHandler extends VertxHandler<DefaultNetSocket> {
   }
 
   @Override
-  protected Object safeObject(Object msg) throws Exception {
+  protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
     if (msg instanceof ByteBuf) {
-      return safeBuffer((ByteBuf) msg);
+      return safeBuffer((ByteBuf) msg, allocator);
     }
     return msg;
   }

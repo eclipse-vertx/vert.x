@@ -16,6 +16,7 @@
 package org.vertx.java.core.datagram.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
@@ -67,12 +68,12 @@ final class DatagramServerHandler extends VertxHandler<DefaultDatagramSocket> {
   }
 
   @Override
-  protected Object safeObject(Object msg) throws Exception {
+  protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
     if (msg instanceof DatagramPacket) {
       DatagramPacket packet = (DatagramPacket) msg;
       ByteBuf content = packet.content();
       if (content.isDirect())  {
-        content = safeBuffer(content);
+        content = safeBuffer(content, allocator);
       }
       return new DefaultDatagramPacket(packet.sender(), new Buffer(content));
     }
