@@ -17,7 +17,7 @@
 apply from: "$rootDir/gradle/maven.gradle"
 
 dependencies {
-	compile project(':vertx-core')
+  compile project(':vertx-core')
   compile project(':vertx-platform')
   compile project(':vertx-hazelcast')
 }
@@ -57,6 +57,7 @@ test {
   systemProperty 'vertx.test.timeout', 60
   systemProperty 'vertx.mods', "$projectDir/src/test/mod-test"
   systemProperty 'vertx.clusterManagerFactory', 'org.vertx.java.fakecluster.FakeClusterManagerFactory'
+  systemProperty 'io.netty.leakDetectionLevel', 'PARANOID'
 
   jvmArgs '-server', '-Xms128m', '-Xmx1024m', '-XX:MaxPermSize=128m', '-XX:NewRatio=2'
 
@@ -72,6 +73,8 @@ task hazelcastTest(type: Test) {
   systemProperty 'vertx.test.timeout', 60
   systemProperty 'vertx.mods', "$projectDir/src/test/mod-test"
   systemProperty 'vertx.clusterManagerFactory', 'org.vertx.java.spi.cluster.impl.hazelcast.HazelcastClusterManagerFactory'
+  systemProperty 'io.netty.leakDetectionLevel', 'PARANOID'
+
 
   include '**/HATest*'
 

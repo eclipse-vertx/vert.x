@@ -48,7 +48,8 @@ public class DefaultWebSocketFrame implements WebSocketFrame, ReferenceCounted {
    * Creates a new text frame from with the specified string.
    */
   public DefaultWebSocketFrame(String textData) {
-    this(FrameType.TEXT, Unpooled.copiedBuffer(textData, CharsetUtil.UTF_8));
+    this.type = FrameType.TEXT;
+    this.binaryData = Unpooled.copiedBuffer(textData, CharsetUtil.UTF_8);
   }
 
   /**
