@@ -27,6 +27,8 @@ import java.util.concurrent.TimeUnit;
 
 public class PullInDepsTest extends TestBase {
 
+  public static final String MOD_TEST_BASE = System.getProperty("vertx.mods", "src/test/mod-test");
+
   @Override
   protected void setUp() throws Exception {
     super.setUp();
@@ -35,7 +37,7 @@ public class PullInDepsTest extends TestBase {
   @Override
   protected void tearDown() throws Exception {
     super.tearDown();
-    vertx.fileSystem().deleteSync("src/test/mod-test/io.vertx~mod-pullin~1.0/mods", true);
+    vertx.fileSystem().deleteSync(MOD_TEST_BASE + "/io.vertx~mod-pullin~1.0/mods", true);
   }
 
   @Test
@@ -51,13 +53,13 @@ public class PullInDepsTest extends TestBase {
         } catch (Exception e) {
           fail("caught exception");
         }
-        assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods");
-        assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-a~2.0.0");
-        assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-b~1.0.1");
-        assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-c~0.1");
-        assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-d~1.2-beta");
+        assertFileExists(MOD_TEST_BASE + "/io.vertx~mod-pullin~1.0/mods");
+        assertFileExists(MOD_TEST_BASE + "/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-a~2.0.0");
+        assertFileExists(MOD_TEST_BASE + "/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-b~1.0.1");
+        assertFileExists(MOD_TEST_BASE + "/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-c~0.1");
+        assertFileExists(MOD_TEST_BASE + "/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-d~1.2-beta");
         // Nested
-        assertFileExists("src/test/mod-test/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-d~1.2-beta/mods/io.vertx~mod-pullin-e~2.2");
+        assertFileExists(MOD_TEST_BASE + "/io.vertx~mod-pullin~1.0/mods/io.vertx~mod-pullin-d~1.2-beta/mods/io.vertx~mod-pullin-e~2.2");
         latch.countDown();
       }
     });
