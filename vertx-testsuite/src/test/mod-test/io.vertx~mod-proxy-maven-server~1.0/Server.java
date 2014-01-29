@@ -32,8 +32,6 @@ public class Server extends Verticle {
     vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         // It's being proxied so should be absolute url
-        System.out.println("******************************************* uri is " + req.uri());
-
         tu.azzert(req.uri().equals("http://localhost:9193/maven2/io/vertx/mod-maven-proxy-test/1.0.0/mod-maven-proxy-test-1.0.0-mod.zip")
                 ||req.uri().equals("http://localhost:9193/maven2/io/vertx/mod-maven-proxy-test/1.0.0/mod-maven-proxy-test-1.0.0.zip"));
         if (req.path().indexOf("..") != -1) {

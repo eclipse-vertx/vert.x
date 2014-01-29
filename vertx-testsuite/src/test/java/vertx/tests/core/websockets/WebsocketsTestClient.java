@@ -182,7 +182,6 @@ public class WebsocketsTestClient extends TestClientBase {
     server = vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
       public void handle(final ServerWebSocket ws) {
         tu.checkThread();
-        System.out.println("uri is:" + ws.uri());
         tu.azzert(uri.equals(ws.uri()));
         tu.azzert(path.equals(ws.path()));
         tu.azzert(query.equals(ws.query()));
