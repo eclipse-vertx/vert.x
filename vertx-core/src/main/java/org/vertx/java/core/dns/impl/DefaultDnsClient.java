@@ -30,6 +30,7 @@ import org.vertx.java.core.dns.impl.netty.decoder.record.ServiceRecord;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.net.impl.PartialPooledByteBufAllocator;
 
 import java.net.*;
 import java.util.*;
@@ -58,6 +59,7 @@ public final class DefaultDnsClient implements DnsClient {
     bootstrap = new Bootstrap();
     bootstrap.group(actualCtx.getEventLoop());
     bootstrap.channel(NioDatagramChannel.class);
+    bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
     bootstrap.handler(new ChannelInitializer<DatagramChannel>() {
       @Override
       protected void initChannel(DatagramChannel ch) throws Exception {

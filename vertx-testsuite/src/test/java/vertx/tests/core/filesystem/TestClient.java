@@ -16,6 +16,7 @@
 
 package vertx.tests.core.filesystem;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
@@ -1071,7 +1072,8 @@ public class TestClient extends TestClientBase {
     final int chunks = 10;
     byte[] content1 = TestUtils.generateRandomByteArray(chunkSize * (chunks / 2 ));
     byte[] content2 = TestUtils.generateRandomByteArray(chunkSize * (chunks / 2 ));
-    final Buffer buff = new Buffer(Unpooled.wrappedBuffer(content1, content2));
+    final ByteBuf byteBuf = Unpooled.wrappedBuffer(content1, content2);
+    final Buffer buff = new Buffer(byteBuf);
     vertx.fileSystem().open(TEST_DIR + pathSep + fileName, new AsyncResultHandler<AsyncFile>() {
       public void handle(AsyncResult<AsyncFile> ar) {
         tu.checkThread();
@@ -1103,6 +1105,7 @@ public class TestClient extends TestClientBase {
                   return;
                 }
                 tu.azzert(TestUtils.buffersEqual(buff, new Buffer(readBytes)));
+                byteBuf.release();
                 tu.testComplete();
               }
             }
