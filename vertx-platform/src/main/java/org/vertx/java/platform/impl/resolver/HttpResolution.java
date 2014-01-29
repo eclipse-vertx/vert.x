@@ -58,11 +58,14 @@ public abstract class HttpResolution {
   protected final String repoHost;
   protected final int repoPort;
   protected final String repoScheme;
+  protected final String repoPassword;
+  protected final String repoUsername;
   protected final ModuleIdentifier modID;
   protected final String filename;
   protected final String proxyHost = getProxyHost();
   protected final int proxyPort = getProxyPort();
   private final Map<Integer, Handler<HttpClientResponse>> handlers = new HashMap<>();
+
   protected HttpClient client;
 
   private boolean result;
@@ -80,10 +83,12 @@ public abstract class HttpResolution {
     return result;
   }
 
-  public HttpResolution(Vertx vertx, String repoScheme, String repoHost, int repoPort, ModuleIdentifier modID, String filename) {
+  public HttpResolution(Vertx vertx, String repoScheme, String repoUsername, String repoPassword, String repoHost, int repoPort, ModuleIdentifier modID, String filename) {
     this.vertx = vertx;
     this.repoHost = repoHost;
     this.repoPort = repoPort;
+    this.repoUsername = repoUsername;
+    this.repoPassword = repoPassword;
     this.modID = modID;
     this.filename = filename;
     this.repoScheme = repoScheme;
@@ -264,11 +269,14 @@ public abstract class HttpResolution {
     return System.getProperty(HTTP_PROXY_HOST_PROP_NAME);
   }
 
-  private static String getBasicAuth() {
-    if ((System.getProperty(HTTP_BASIC_AUTH_USER_PROP_NAME) != null)
-        && (System.getProperty(HTTP_BASIC_AUTH_PASSWORD_PROP_NAME)  != null)) {
-      String authinfo = new StringBuilder(System.getProperty(HTTP_BASIC_AUTH_USER_PROP_NAME))
-          .append(":").append(System.getProperty(HTTP_BASIC_AUTH_PASSWORD_PROP_NAME)).toString();
+  private String getBasicAuth() {
+    String authinfo;
+    if (repoUsername != null && repoPassword != null) {
+      authinfo = repoUsername + ":" + repoPassword;
+      return Base64.encodeBytes(authinfo.getBytes());
+    } else if ((System.getProperty(HTTP_BASIC_AUTH_USER_PROP_NAME) != null)
+            && (System.getProperty(HTTP_BASIC_AUTH_PASSWORD_PROP_NAME)  != null)) {
+      authinfo = System.getProperty(HTTP_BASIC_AUTH_USER_PROP_NAME) + ":" + System.getProperty(HTTP_BASIC_AUTH_PASSWORD_PROP_NAME);
       return Base64.encodeBytes(authinfo.getBytes());
     }
     return null;

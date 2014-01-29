@@ -42,6 +42,8 @@ public abstract class HttpRepoResolver implements RepoResolver {
   protected final Vertx vertx;
   protected final String repoScheme;
   protected final String repoHost;
+  protected final String repoUsername;
+  protected final String repoPassword;
   protected final int repoPort;
   protected final String contentRoot;
 
@@ -49,6 +51,14 @@ public abstract class HttpRepoResolver implements RepoResolver {
     this.vertx = vertx;
     try {
       URI uri = new URI(repoID);
+      if (uri.getUserInfo() != null && uri.getUserInfo().contains(":")) {
+        repoUsername = uri.getUserInfo().substring(0, uri.getUserInfo().indexOf(":"));
+        repoPassword = uri.getUserInfo().substring(uri.getUserInfo().indexOf(":")+1);
+      } else {
+        repoUsername = null;
+        repoPassword = null;
+      }
+
       repoScheme = uri.getScheme();
       repoHost = uri.getHost();
       int port = uri.getPort();

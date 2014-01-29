@@ -30,9 +30,9 @@ public class MavenResolution extends HttpResolution {
   protected ModuleIdentifier moduleIdentifier;
   protected String uriRoot;
 
-  public MavenResolution(Vertx vertx, String repoScheme, String repoHost, int repoPort, ModuleIdentifier moduleIdentifier, String filename,
+  public MavenResolution(Vertx vertx, String repoScheme, String repoUsername, String repoPassword, String repoHost, int repoPort, ModuleIdentifier moduleIdentifier, String filename,
                          String contentRoot) {
-    super(vertx, repoScheme, repoHost, repoPort, moduleIdentifier, filename);
+    super(vertx, repoScheme, repoUsername, repoPassword, repoHost, repoPort, moduleIdentifier, filename);
     this.contentRoot = contentRoot;
     this.moduleIdentifier = moduleIdentifier;
     uriRoot = getMavenURI(moduleIdentifier);
