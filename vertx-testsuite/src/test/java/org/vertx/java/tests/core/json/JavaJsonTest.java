@@ -82,15 +82,74 @@ public class JavaJsonTest extends TestBase {
   public void testPutsNullObjectWithoutException() {
     log.debug(
       new JsonObject()
+        .putString("null", null)
+        .encode()
+    );
+    log.debug(
+      new JsonObject()
         .putObject("null", null) // this shouldn't cause a NullPointerException
         .encode()
     );
-    
+    log.debug(
+      new JsonObject()
+        .putArray("null", null)
+        .encode()
+    );
+    log.debug(
+      new JsonObject()
+        .putElement("null", null)
+        .encode()
+    );
+    log.debug(
+      new JsonObject()
+        .putNumber("null", null)
+        .encode()
+    );
+    log.debug(
+      new JsonObject()
+        .putBoolean("null", null)
+        .encode()
+    );
+    log.debug(
+      new JsonObject()
+        .putBinary("null", null)
+        .encode()
+    );
+    log.debug(
+      new JsonObject()
+        .putValue("null", null)
+        .encode()
+    );
+
     log.debug(
       new JsonObject()
         .putObject("null", new JsonObject().putString("foo", "bar"))
         .encode()
     );
+  }
+
+  @Test
+  public void testGetNullValues() {
+    assertNull(new JsonObject().putString("foo", null).getString("foo"));
+    assertNull(new JsonObject().putObject("foo", null).getObject("foo"));
+    assertNull(new JsonObject().putArray("foo", null).getArray("foo"));
+    assertNull(new JsonObject().putElement("foo", null).getElement("foo"));
+    assertNull(new JsonObject().putNumber("foo", null).getNumber("foo"));
+    assertNull(new JsonObject().putBoolean("foo", null).getBoolean("foo"));
+    assertNull(new JsonObject().putBinary("foo", null).getBinary("foo"));
+    assertNull(new JsonObject().putValue("foo", null).getValue("foo"));
+  }
+
+  @Test
+  public void testContainsNullValues() {
+    assertTrue(new JsonObject().putString("foo", null).containsField("foo"));
+    assertTrue(new JsonObject().putObject("foo", null).containsField("foo"));
+    assertTrue(new JsonObject().putArray("foo", null).containsField("foo"));
+    assertTrue(new JsonObject().putElement("foo", null).containsField("foo"));
+    assertTrue(new JsonObject().putNumber("foo", null).containsField("foo"));
+    assertTrue(new JsonObject().putBoolean("foo", null).containsField("foo"));
+    assertTrue(new JsonObject().putBinary("foo", null).containsField("foo"));
+    assertTrue(new JsonObject().putValue("foo", null).containsField("foo"));
   }
   
   @Test
