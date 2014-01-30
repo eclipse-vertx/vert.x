@@ -27,7 +27,7 @@ public class OldRepoResolution extends HttpResolution {
 
   public OldRepoResolution(Vertx vertx, String repoScheme, String repoHost, int repoPort, ModuleIdentifier moduleIdentifier, String filename,
                            String contentRoot) {
-    super(vertx, repoScheme, repoHost, repoPort, moduleIdentifier, filename);
+    super(vertx, repoScheme, null, null, repoHost, repoPort, moduleIdentifier, filename);
     this.contentRoot = contentRoot;
   }
 

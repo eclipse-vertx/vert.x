@@ -23,9 +23,6 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.platform.impl.ModuleIdentifier;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-
 public class BintrayResolution extends HttpResolution {
 
   private static final Logger log = LoggerFactory.getLogger(BintrayResolution.class);
@@ -33,7 +30,7 @@ public class BintrayResolution extends HttpResolution {
   private final String uri;
 
   public BintrayResolution(Vertx vertx, String repoScheme, String repoHost, int repoPort, ModuleIdentifier moduleID, final String filename, String contentRoot) {
-    super(vertx, repoScheme, repoHost, repoPort, moduleID, filename);
+    super(vertx, repoScheme, null, null, repoHost, repoPort, moduleID, filename);
     addHandler(200, new Handler<HttpClientResponse>() {
       @Override
       public void handle(HttpClientResponse resp) {
