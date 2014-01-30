@@ -130,10 +130,14 @@ public class FatJarStarter implements Runnable {
     File platformLibDir = new File(new File(modsDir, moduleID), "platform_lib");
 
     urls.add(platformLibDir.toURI().toURL());
-    files = platformLibDir.listFiles();
-    for (File file: files) {
-      if (file.getName().endsWith(".jar") || file.getName().endsWith(".zip")) {
-        urls.add(file.toURI().toURL());
+    if (platformLibDir.exists()) {
+      files = platformLibDir.listFiles();
+      if (files != null) {
+        for (File file: files) {
+          if (file.getName().endsWith(".jar") || file.getName().endsWith(".zip")) {
+            urls.add(file.toURI().toURL());
+          }
+        }
       }
     }
 
