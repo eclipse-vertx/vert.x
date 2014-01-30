@@ -195,10 +195,6 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       return;
     }
     final SockInfo info = sockInfos.get(sock);
-    if (info == null) {
-      // Connection already closed
-      return;
-    }
     if (!checkMaxHandlers(info)) {
       return;
     }
@@ -247,10 +243,6 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       if (handler != null) {
         eb.unregisterHandler(address, handler);
         SockInfo info = sockInfos.get(sock);
-        if (info == null) {
-          // Connection already closed
-          return;
-        }
         info.handlerCount--;
       }
     }
@@ -403,10 +395,6 @@ public class EventBusBridge implements Handler<SockJSSocket> {
                             final SockJSSocket sock,
                             final String replyAddress) {
     final SockInfo info = sockInfos.get(sock);
-    if (info == null) {
-      // Connection already closed
-      return;
-    }
     if (replyAddress != null && !checkMaxHandlers(info)) {
       return;
     }
@@ -539,10 +527,6 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   private void cacheAuthorisation(String sessionID, SockJSSocket sock) {
     authCache.put(sessionID, new Auth(sessionID, sock));
     SockInfo sockInfo = sockInfos.get(sock);
-    if (sockInfo == null) {
-      // Connection already closed
-      return;
-    }
     Set<String> sess = sockInfo.sockAuths;
     if (sess == null) {
       sess = new HashSet<>();
@@ -554,10 +538,6 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   private void uncacheAuthorisation(String sessionID, SockJSSocket sock) {
     authCache.remove(sessionID);
     SockInfo sockInfo = sockInfos.get(sock);
-    if (sockInfo == null) {
-      // Connection already closed
-      return;
-    }
     Set<String> sess = sockInfo.sockAuths;
     if (sess != null) {
       sess.remove(sessionID);
