@@ -34,9 +34,15 @@ public abstract class HttpRepoResolver implements RepoResolver {
     this.vertx = vertx;
     try {
       URI uri = new URI(repoID);
-      if (uri.getUserInfo() != null && uri.getUserInfo().contains(":")) {
-        repoUsername = uri.getUserInfo().substring(0, uri.getUserInfo().indexOf(":"));
-        repoPassword = uri.getUserInfo().substring(uri.getUserInfo().indexOf(":")+1);
+      if (uri.getUserInfo() != null) {
+        int i = uri.getUserInfo().indexOf(":");
+        if (i > 0) {
+          repoUsername = uri.getUserInfo().substring(0, i);
+          repoPassword = uri.getUserInfo().substring(i + 1);
+        } else {
+          repoUsername = null;
+          repoPassword = null;
+        }
       } else {
         repoUsername = null;
         repoPassword = null;
@@ -51,6 +57,7 @@ public abstract class HttpRepoResolver implements RepoResolver {
       repoPort = port;
       contentRoot = uri.getPath();
     } catch (Exception e) {
+      e.printStackTrace();
       throw new IllegalArgumentException(repoID + " is not a valid repository identifier");
     }
   }

@@ -270,16 +270,22 @@ public abstract class HttpResolution {
   }
 
   private String getBasicAuth() {
-    String authinfo;
     if (repoUsername != null && repoPassword != null) {
-      authinfo = repoUsername + ":" + repoPassword;
-      return Base64.encodeBytes(authinfo.getBytes());
-    } else if ((System.getProperty(HTTP_BASIC_AUTH_USER_PROP_NAME) != null)
-            && (System.getProperty(HTTP_BASIC_AUTH_PASSWORD_PROP_NAME)  != null)) {
-      authinfo = System.getProperty(HTTP_BASIC_AUTH_USER_PROP_NAME) + ":" + System.getProperty(HTTP_BASIC_AUTH_PASSWORD_PROP_NAME);
-      return Base64.encodeBytes(authinfo.getBytes());
+      return autoInfo(repoUsername, repoPassword);
+    } else {
+      String user = System.getProperty(HTTP_BASIC_AUTH_USER_PROP_NAME);
+      if (user != null) {
+        String pass = System.getProperty(HTTP_BASIC_AUTH_PASSWORD_PROP_NAME);
+        if (pass != null) {
+          return autoInfo(user, pass);
+        }
+      }
     }
     return null;
+  }
+
+  private String autoInfo(String user, String pass) {
+    return Base64.encodeBytes((user + ":" + pass).getBytes());
   }
 
   private static int getProxyPort() {
