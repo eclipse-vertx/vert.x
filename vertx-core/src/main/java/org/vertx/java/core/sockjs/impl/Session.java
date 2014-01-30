@@ -281,7 +281,6 @@ class Session extends SockJSSocketBase implements Shareable {
   // Actually close the session - when the user calls close() the session actually continues to exist until timeout
   // Yes, I know it's weird but that's the way SockJS likes it.
   private void doClose() {
-    System.out.println(("**** do close called !!"));
     super.close(); // We must call this or handlers don't get unregistered and we get a leak
     if (heartbeatID != -1) {
       vertx.cancelTimer(heartbeatID);
@@ -291,7 +290,6 @@ class Session extends SockJSSocketBase implements Shareable {
     }
     if (id != null) {
       // Can be null if websocket session
-      System.out.println(("**** removing session!!"));
       sessions.remove(id);
     }
 

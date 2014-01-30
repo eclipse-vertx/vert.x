@@ -271,7 +271,6 @@ public class EventBusBridge implements Handler<SockJSSocket> {
 
       sock.endHandler(new VoidHandler() {
         public void handle() {
-          System.out.println("In handlesocketclosed");
           handleSocketClosed(sock, handlers);
         }
       });
