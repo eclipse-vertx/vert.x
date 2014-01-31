@@ -8,7 +8,7 @@
 
 # Add default JVM options here. You can also use JAVA_OPTS and VERTX_OPTS to pass JVM options to this script.
 
-# VERTX_OPTS="-Dvertx.serialiseBlockingActions=true"
+# VERTX_OPTS="-Dvertx.serialiseBlockingActions=true -Dvertx.javaCompilerOptions=-Xlint:deprecation"
 
 # If you're deploying and undeploying a lot of verticles with dynamic languages it's recommended to enable GC'ing
 # of generated classes and prevent OOM due to a lot of gc
