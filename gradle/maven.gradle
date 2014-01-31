@@ -145,9 +145,9 @@ modifyPom {
     }
 
     scm {
-      connection 'scm:https://vert-x@github.com/purplefox/vert.x'
-      developerConnection 'scm:git@github.com:purplefox/vert.x.git'
-      url 'https://github.com/purplefox/vert.x'
+      connection 'scm:https://vert-x@github.com/eclipse/vert.x'
+      developerConnection 'scm:git@github.com:eclipse/vert.x.git'
+      url 'https://github.com/eclipse/vert.x'
     }
 
     licenses {
