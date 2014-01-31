@@ -25,12 +25,14 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.file.impl.PathAdjuster;
 import org.vertx.java.core.impl.DefaultContext;
+import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.NetSocket;
 
@@ -162,8 +164,33 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
 
   @Override
   public NetSocket sendFile(String filename) {
+    return sendFile(filename, null);
+  }
+
+  @Override
+  public NetSocket sendFile(String filename, final Handler<AsyncResult<Void>> resultHandler) {
     File f = new File(PathAdjuster.adjust(vertx, filename));
-    super.sendFile(f);
+    ChannelFuture future = super.sendFile(f);
+
+    if (resultHandler != null) {
+      future.addListener(new ChannelFutureListener() {
+        public void operationComplete(ChannelFuture future) throws Exception {
+          final AsyncResult<Void> res;
+          if (future.isSuccess()) {
+            res = new DefaultFutureResult<>((Void)null);
+          } else {
+            res = new DefaultFutureResult<>(future.cause());
+          }
+          vertx.runOnContext(new Handler<Void>() {
+            @Override
+            public void handle(Void v) {
+              resultHandler.handle(res);
+            }
+          });
+        }
+      });
+    }
+
     return this;
   }
 
