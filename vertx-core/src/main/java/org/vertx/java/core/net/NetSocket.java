@@ -16,6 +16,7 @@
 
 package org.vertx.java.core.net;
 
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.ReadStream;
@@ -69,6 +70,12 @@ public interface NetSocket extends ReadStream<NetSocket>, WriteStream<NetSocket>
    * bypassing userspace altogether (where supported by the underlying operating system. This is a very efficient way to stream files.
    */
   NetSocket sendFile(String filename);
+
+  /**
+   * Same as {@link #sendFile(String)} but also takes a handler that will be called when the send has completed or
+   * a failure has occurred
+   */
+  NetSocket sendFile(String filename, Handler<AsyncResult<Void>> resultHandler);
 
   /**
    * Return the remote address for this socket
