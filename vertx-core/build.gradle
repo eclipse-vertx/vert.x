@@ -21,7 +21,12 @@ dependencies {
 	compile "org.slf4j:slf4j-api:$slf4jVersion"
 	compile "com.fasterxml.jackson.core:jackson-core:$jacksonCoreVersion"
 	compile "com.fasterxml.jackson.core:jackson-databind:$jacksonDatabindVersion"
-	compile "io.netty:netty-all:$nettyVersion"
+	compile "io.netty:netty-buffer:$nettyVersion"
+	compile "io.netty:netty-common:$nettyVersion"
+	compile "io.netty:netty-transport:$nettyVersion"
+	compile "io.netty:netty-codec:$nettyVersion"
+	compile "io.netty:netty-codec-http:$nettyVersion"
+	compile "io.netty:netty-handler:$nettyVersion"
 }
 
 artifacts {
