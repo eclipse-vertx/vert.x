@@ -36,37 +36,51 @@ public class ClasspathPathResolver implements PathResolver {
 
   private static final char FILE_SEP = System.getProperty("file.separator").charAt(0);
 
-  @Override
-  public Path resolve(Path path) {
+  public static Path resolvePath(Path path) {
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
     if (cl != null) {
       String spath = path.toString();
       String substituted = FILE_SEP == '/' ? spath : spath.replace(FILE_SEP, '/');
       URL url = cl.getResource(substituted);
       if (url != null) {
-        if (FILE_SEP == '/') {
-          // *nix - a bit quicker than pissing around with URIs
-          String sfile = url.getFile();
-          if (sfile != null) {
-            return Paths.get(url.getFile());
-          }
-        } else {
-          // E.g. windows
-          // See http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4701321
-
-          try {
-              URI uri = url.toURI();
-              if (uri.isOpaque()) {
-                return Paths.get(url.getPath());
-              } else {
-                return Paths.get(uri);
-              }
-          } catch (Exception exc) {
-            throw new VertxException(exc);
-          }
+        Path thePath = urlToPath(url);
+        if (thePath != null) {
+          return thePath;
         }
       }
     }
     return path;
+  }
+
+  public static Path urlToPath(URL url) {
+    if (FILE_SEP == '/') {
+      // *nix - a bit quicker than pissing around with URIs
+      String sfile = url.getFile();
+      if (sfile != null) {
+        return Paths.get(url.getFile());
+      } else {
+        return null;
+      }
+    } else {
+      // E.g. windows
+      // See http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4701321
+
+      try {
+        URI uri = url.toURI();
+        if (uri.isOpaque()) {
+          return Paths.get(url.getPath());
+        } else {
+          return Paths.get(uri);
+        }
+      } catch (Exception exc) {
+        throw new VertxException(exc);
+      }
+    }
+  }
+
+
+  @Override
+  public Path resolve(Path path) {
+    return resolvePath(path);
   }
 }
