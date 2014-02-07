@@ -682,7 +682,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private void doCreateModuleLink(File modRoot, ModuleIdentifier modID) {
     File cpFile = new File(CLASSPATH_FILE);
     if (!cpFile.exists()) {
-      throw new PlatformManagerException("Must create a module.classpath first before creating a module link");
+      throw new PlatformManagerException("Must create a vertx_classpath.txt file first before creating a module link");
     }
     File modDir = new File(modRoot, modID.toString());
     if (modDir.exists()) {
@@ -1153,7 +1153,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           String path = scanner.next().trim();
           File cpFile = new File(path, CLASSPATH_FILE);
           if (!cpFile.exists()) {
-            throw new PlatformManagerException("Module link file: " + linkFile + " points to path without module.classpath");
+            throw new PlatformManagerException("Module link file: " + linkFile + " points to path without vertx_classpath.txt");
           }
           // Load the cp
           cpList = new ArrayList<>();
