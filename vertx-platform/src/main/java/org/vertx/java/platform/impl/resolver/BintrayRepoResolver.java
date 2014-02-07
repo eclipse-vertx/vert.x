@@ -16,8 +16,11 @@
 
 package org.vertx.java.platform.impl.resolver;
 
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.platform.impl.ModuleIdentifier;
+import org.vertx.java.platform.impl.resolver.requesters.GetRequest;
 
 public class BintrayRepoResolver extends HttpRepoResolver {
 
@@ -25,15 +28,37 @@ public class BintrayRepoResolver extends HttpRepoResolver {
     super(vertx, repoID);
   }
 
-  @Override
-  public boolean getModule(String filename, ModuleIdentifier modID) {
-    HttpResolution res = new BintrayResolution(vertx, repoScheme, repoHost, repoPort, modID, filename, contentRoot);
-    res.getModule();
-    return res.waitResult();
-  }
-
   public boolean isOldStyle() {
     return false;
   }
 
+  @Override
+  public void findResource(ModuleIdentifier modID) {
+    if (modID.isSnapshot()) {
+      // The material that should be uploaded to Bintray is publishable, working software - releases and not snapshots.
+      // https://bintray.com/docs/whatisbintray/whatisbintray_forwhatbintrayshouldandshouldnotbeused.html
+      findWaiter.end(ResolverResult.FAILED);
+      return;
+    }
+
+    String user = modID.getOwner();
+    String repo = "vertx-mods";
+    String modName = modID.getName();
+    String version = modID.getVersion();
+    String uri = contentRoot + '/' + user + '/' + repo + '/' + modName + '/' + modName + '-' + version + ".zip";
+
+    GetRequest getRequest = createGetRequest();
+    getRequest.addHandler(200, createResourceFoundHandler(modID, uri));
+    getRequest.setUnknownStatusHandler(createFailOnUnknownStatusFindHandler());
+    getRequest.send(uri);
+  }
+
+  private Handler<HttpClientResponse> createResourceFoundHandler(final ModuleIdentifier modID, final String uri) {
+    return new Handler<HttpClientResponse>() {
+      @Override
+      public void handle(HttpClientResponse resp) {
+        findWaiter.end(new ResolverResult(BintrayRepoResolver.this, modID, true, uri, false, null));
+      }
+    };
+  }
 }
