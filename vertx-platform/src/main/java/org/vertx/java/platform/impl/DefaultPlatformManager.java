@@ -256,10 +256,10 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         parents.add(entry.getKey());
       }
     }
-    
+
     final CountingCompletionHandler<Void> count = new CountingCompletionHandler<>(vertx, parents.size());
     count.setHandler(doneHandler);
-    
+
     for (String name: parents) {
       undeploy(name, new Handler<AsyncResult<Void>>() {
         public void handle(AsyncResult<Void> res) {
@@ -414,6 +414,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     if (exitHandler != null) {
       exitHandler.handle(null);
     }
+    closeRepos();
   }
 
   @Override
@@ -523,7 +524,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private void doPullInDependencies(File modRoot, ModuleIdentifier modID) {
     File modDir = new File(modRoot, modID.toString());
     if (!modDir.exists()) {
-      throw new PlatformManagerException("Cannot find module");
+      throw new PlatformManagerException("Cannot find module " + modID);
     }
     JsonObject conf = loadModuleConfig(createModJSONFile(modDir), modID);
     if (conf == null) {
@@ -606,7 +607,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private void doMakeFatJar(File modRoot, ModuleIdentifier modID, String directory) {
     File modDir = new File(modRoot, modID.toString());
     if (!modDir.exists()) {
-      throw new PlatformManagerException("Cannot find module");
+      throw new PlatformManagerException("Cannot find module " + modID);
     }
 
     // We need to name the jars explicitly - we can't just grab every jar from the classloader hierarchy
@@ -816,7 +817,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     ModuleReference mr = moduleRefs.get(moduleKey);
     if (mr == null) {
       mr = new ModuleReference(this, moduleKey, new ModuleClassLoader(moduleKey, platformClassLoader, urls,
-                               loadFromModuleFirst), false);
+          loadFromModuleFirst), false);
       ModuleReference prev = moduleRefs.putIfAbsent(moduleKey, mr);
       if (prev != null) {
         mr = prev;
@@ -828,8 +829,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private void doDeployVerticle(boolean worker, boolean multiThreaded, final String main,
                                 final JsonObject config, final URL[] urls,
                                 int instances, File currentModDir,
-                                String includes, Handler<AsyncResult<String>> doneHandler)
-  {
+                                String includes, Handler<AsyncResult<String>> doneHandler) {
     checkWorkerContext();
 
     if (main == null) {
@@ -1373,7 +1373,13 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         }
       }
     } catch (IOException e) {
-      log.error("Failed to load repos file ",e);
+      log.error("Failed to load repos file ", e);
+    }
+  }
+
+  private void closeRepos() {
+    for (RepoResolver repo : repos) {
+      repo.close();
     }
   }
 
@@ -1390,17 +1396,34 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   private ModuleZipInfo getModule(ModuleIdentifier modID) {
-    String fileName = generateTmpFileName() + ".zip";
-    for (RepoResolver resolver: repos) {
-      if (resolver.getModule(fileName, modID)) {
-        return new ModuleZipInfo(resolver.isOldStyle(), fileName);
+    Path targetPath = Paths.get(generateTmpFileName() + ".zip");
+
+    ResolverResult resolvedResource = ResolverResult.FAILED;
+
+    for (RepoResolver resolver : repos) {
+      ResolverResult resolverResult = resolver.findModule(modID);
+      if (resolverResult.wasFound()) {
+        if (modID.isSnapshot()) {
+          if (resolvedResource == ResolverResult.FAILED || resolverResult.getTimestamp().after(resolvedResource.getTimestamp())) {
+            resolvedResource = resolverResult;
+          }
+        } else {
+          resolvedResource = resolverResult;
+          break;
+        }
       }
     }
-    throw new PlatformManagerException("Module " + modID + " not found in any repositories");
+
+    if (resolvedResource == ResolverResult.FAILED) {
+      throw new PlatformManagerException("Module " + modID + " not found in any repositories");
+    } else {
+      resolvedResource.obtainModule(targetPath);
+      return new ModuleZipInfo(resolvedResource.isOldStyleRepo(), targetPath.toAbsolutePath().toString());
+    }
   }
 
   private static String generateTmpFileName() {
-    return TEMP_DIR + FILE_SEP + "vertx-" + UUID.randomUUID().toString();
+    return PathUtils.getPath(false, TEMP_DIR, "vertx-" + UUID.randomUUID());
   }
 
   static File unzipIntoTmpDir(ModuleZipInfo zipInfo, boolean deleteZip) {
@@ -1464,7 +1487,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       // Now copy it to the proper directory
       String moveFrom = tdest.getAbsolutePath();
       safeMove(moveFrom, system ? sdest.getAbsolutePath() : fdest.getAbsolutePath());
-      log.info("Module " + modID +" successfully installed");
+      log.info("Module " + modID + " successfully installed");
     }
   }
 
@@ -1543,7 +1566,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       // Module deployed from file system or verticle deployed by module deployed from file system
       Path pmodDir = Paths.get(modDir.getAbsolutePath());
       context.setPathResolver(new ModuleFileSystemPathResolver(pmodDir));
-    } else  {
+    } else {
       // Module deployed from classpath or verticle deployed from module deployed from classpath
       context.setPathResolver(new ClasspathPathResolver());
     }
@@ -1906,10 +1929,12 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private static class LanguageImplInfo {
     final String moduleName;
     final String factoryName;
+
     private LanguageImplInfo(String moduleName, String factoryName) {
       this.moduleName = moduleName;
       this.factoryName = factoryName;
     }
+
     public String toString() {
       return (moduleName == null ? ":" : (moduleName + ":")) + factoryName;
     }

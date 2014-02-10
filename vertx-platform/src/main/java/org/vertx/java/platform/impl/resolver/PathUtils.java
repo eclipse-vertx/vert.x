@@ -16,17 +16,16 @@
 
 package org.vertx.java.platform.impl.resolver;
 
-import org.vertx.java.platform.impl.ModuleIdentifier;
+import java.nio.file.Paths;
 
-import java.nio.file.Path;
+public class PathUtils {
 
-public interface RepoResolver {
-
-  boolean isOldStyle();
-
-  ResolverResult findModule(ModuleIdentifier moduleIdentifier);
-
-  boolean obtainModule(ResolverResult resourceData, Path targetPath);
-
-  void close();
+  public static String getPath(boolean isRemote, String first, String... more) {
+    String path = Paths.get(first, more).toString();
+    if (isRemote) {
+      // make sure we use forward slashes even on Windows
+      path = path.replace('\\', '/');
+    }
+    return path;
+  }
 }
