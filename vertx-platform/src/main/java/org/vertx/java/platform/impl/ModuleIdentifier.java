@@ -20,6 +20,7 @@ public class ModuleIdentifier {
 
   public static final String SEPARATOR = "~";
   private static final String SPLIT_REGEX = "\\" + SEPARATOR;
+  private static final String SNAPSHOT_STRING = "-SNAPSHOT";
 
   private final String owner;
   private final String name;
@@ -78,6 +79,18 @@ public class ModuleIdentifier {
 
   public String getVersion() {
     return version;
+  }
+
+  public String getVersionWithoutSnapshot() {
+    if (isSnapshot()) {
+      return version.substring(0, version.length() - SNAPSHOT_STRING.length());
+    } else {
+      return version;
+    }
+  }
+
+  public boolean isSnapshot() {
+    return version.endsWith(SNAPSHOT_STRING);
   }
 
   public static ModuleIdentifier createInternalModIDForVerticle(String depName) {

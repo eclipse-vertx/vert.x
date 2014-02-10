@@ -16,8 +16,13 @@
 
 package org.vertx.java.platform.impl.resolver;
 
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.platform.impl.ModuleIdentifier;
+import org.vertx.java.platform.impl.resolver.requesters.GetRequest;
+
+import java.util.Date;
 
 public class OldRepoResolver extends HttpRepoResolver {
 
@@ -26,13 +31,41 @@ public class OldRepoResolver extends HttpRepoResolver {
   }
 
   @Override
-  public boolean getModule(String filename, ModuleIdentifier moduleIdentifier) {
-    HttpResolution res = new OldRepoResolution(vertx, repoScheme, repoHost, repoPort, moduleIdentifier, filename, contentRoot);
-    res.getModule();
-    return res.waitResult();
+  public void findResource(ModuleIdentifier moduleIdentifier) {
+    GetRequest getRequest = createGetRequest();
+    String uri = contentRoot + '/' + moduleIdentifier.getOwner() + '.' + moduleIdentifier.getName() + "-v" +
+        moduleIdentifier.getVersion() + "/mod.zip";
+    getRequest.addHandler(200, createResourceFoundHandler(moduleIdentifier, uri));
+    getRequest.addHandler(404, createResourceNotFoundHandler());
+    getRequest.setUnknownStatusHandler(createFailOnUnknownStatusFindHandler());
+    getRequest.send(uri);
   }
 
+  @Override
   public boolean isOldStyle() {
     return true;
+  }
+
+  private Handler<HttpClientResponse> createResourceFoundHandler(final ModuleIdentifier moduleIdentifier,
+                                                                 final String uri) {
+    return new Handler<HttpClientResponse>() {
+      @Override
+      public void handle(HttpClientResponse resp) {
+        // Using standard base time because the old repo resolution has no timestamp.
+        // This implies that if this artifact is a SNAPSHOT, it will only be used if there are no other SNAPSHOT
+        // versions on other non-old-repos.
+        findWaiter.end(new ResolverResult(OldRepoResolver.this, moduleIdentifier, true, uri, false, new Date(0)));
+      }
+    };
+  }
+
+  private Handler<HttpClientResponse> createResourceNotFoundHandler() {
+    return new Handler<HttpClientResponse>() {
+      @Override
+      public void handle(HttpClientResponse resp) {
+        //NOOP
+        findWaiter.end(ResolverResult.FAILED);
+      }
+    };
   }
 }

@@ -24,7 +24,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.platform.PlatformLocator;
 import org.vertx.java.platform.PlatformManager;
 import org.vertx.java.platform.impl.Args;
-import org.vertx.java.platform.impl.resolver.HttpResolution;
+import org.vertx.java.platform.impl.resolver.HttpRepoResolver;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -51,7 +51,7 @@ public class Starter {
   public static void main(String[] args) {
     // Show download stats - they don't display properly in Gradle so we only have them when running
     // on the command line
-    HttpResolution.suppressDownloadCounter = false;
+    HttpRepoResolver.suppressDownloadCounter = false;
     new Starter(args);
   }
 
