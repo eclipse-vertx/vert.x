@@ -72,6 +72,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private static final String MODULE_NAME_SYS_PROP = System.getProperty("vertx.modulename");
   private static final String CLASSPATH_FILE = "vertx_classpath.txt";
   private static final String SERIALISE_BLOCKING_PROP_NAME = "vertx.serialiseBlockingActions";
+  private static final String MODULE_LINK_FILE = "module.link";
+  private static final String MOD_JSON_FILE = "mod.json";
 
   private final VertxInternal vertx;
   // deployment name --> deployment
@@ -680,7 +682,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private void doCreateModuleLink(File modRoot, ModuleIdentifier modID) {
     File cpFile = new File(CLASSPATH_FILE);
     if (!cpFile.exists()) {
-      throw new PlatformManagerException("Must create a module.classpath first before creating a module link");
+      throw new PlatformManagerException("Must create a vertx_classpath.txt file first before creating a module link");
     }
     File modDir = new File(modRoot, modID.toString());
     if (modDir.exists()) {
@@ -691,7 +693,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
     try {
       File currentDir = new File(".").getCanonicalFile();
-      vertx.fileSystem().writeFileSync(modDir.getPath() + "/module.link", new Buffer(currentDir.getCanonicalPath() + "\n"));
+      vertx.fileSystem().writeFileSync(modDir.getPath() + "/" + MODULE_LINK_FILE, new Buffer(currentDir.getCanonicalPath() + "\n"));
     } catch (IOException e) {
       throw new PlatformManagerException(e);
     }
@@ -1089,12 +1091,16 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   private JsonObject loadModJSONFromClasspath(ModuleIdentifier modID, ClassLoader cl) {
+    URL url = cl.getResource(MOD_JSON_FILE);
+    if (url == null) {
+      return null;
+    }
+    return loadModJSONFromURL(modID, url);
+  }
+
+  private JsonObject loadModJSONFromURL(ModuleIdentifier modID, URL url) {
     try {
-      List<URL> urls = Collections.list(cl.getResources("mod.json"));
-      if (urls.size() < 1) {
-        return null;
-      }
-      try (Scanner scanner = new Scanner(urls.get(0).openStream()).useDelimiter("\\A")) {
+      try (Scanner scanner = new Scanner(url.openStream()).useDelimiter("\\A")) {
         String conf = scanner.next();
         return new JsonObject(conf);
       } catch (NoSuchElementException e) {
@@ -1125,10 +1131,12 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   private static class ModuleInfo {
     final JsonObject modJSON;
     final List<URL> cp;
+    final File modDir;
 
-    private ModuleInfo(JsonObject modJSON, List<URL> cp) {
+    private ModuleInfo(JsonObject modJSON, List<URL> cp, File modDir) {
       this.modJSON = modJSON;
       this.cp = cp;
+      this.modDir = modDir;
     }
   }
 
@@ -1138,14 +1146,14 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     File modJSONFile = createModJSONFile(modDir);
     if (!modJSONFile.exists()) {
       // Look for link file
-      File linkFile = new File(modDir, "module.link");
+      File linkFile = new File(modDir, MODULE_LINK_FILE);
       if (linkFile.exists()) {
         // Load the path from the file
         try (Scanner scanner = new Scanner(linkFile).useDelimiter("\\A")) {
           String path = scanner.next().trim();
           File cpFile = new File(path, CLASSPATH_FILE);
           if (!cpFile.exists()) {
-            throw new PlatformManagerException("Module link file: " + linkFile + " points to path without module.classpath");
+            throw new PlatformManagerException("Module link file: " + linkFile + " points to path without vertx_classpath.txt");
           }
           // Load the cp
           cpList = new ArrayList<>();
@@ -1174,7 +1182,18 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
             e.printStackTrace();
             throw new PlatformManagerException(e);
           }
-          modJSON = loadModJSONFromClasspath(modID, new ModJSONClassLoader(cpList.toArray(new URL[cpList.size()]), platformClassLoader));
+          ClassLoader cl = new ModJSONClassLoader(cpList.toArray(new URL[cpList.size()]), platformClassLoader);
+          URL url = cl.getResource(MOD_JSON_FILE);
+          if (url != null) {
+            // Find the file for the url
+            Path p = ClasspathPathResolver.urlToPath(url);
+            Path parent = p.getParent();
+            // And we set the directory where mod.json is as the module directory
+            modDir = parent.toFile();
+            modJSON = loadModJSONFromURL(modID, url);
+          } else {
+            throw new PlatformManagerException("Cannot find mod.json");
+          }
         } catch (Exception e) {
           throw new PlatformManagerException(e);
         }
@@ -1185,7 +1204,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       modJSON = loadModuleConfig(modJSONFile, modID);
       cpList = getModuleClasspath(modDir);
     }
-    return new ModuleInfo(modJSON, cpList);
+    return new ModuleInfo(modJSON, cpList, modDir);
   }
 
 
@@ -1198,7 +1217,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     if (modDir != null) {
       // The module exists on the file system
       ModuleInfo info = loadModuleInfo(modDir, modID);
-      deployModuleFromModJson(info.modJSON, depName, modID, config, instances, modDir, currentModDir, info.cp, modRoot, ha, doneHandler);
+      deployModuleFromModJson(info.modJSON, depName, modID, config, instances, info.modDir, currentModDir, info.cp, modRoot, ha, doneHandler);
     } else {
       JsonObject modJSON;
       if (modID.toString().equals(MODULE_NAME_SYS_PROP)) {
@@ -1431,7 +1450,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   private File createModJSONFile(File modDir) {
-    return new File(modDir, "mod.json");
+    return new File(modDir, MOD_JSON_FILE);
   }
 
   private void unzipModule(final ModuleIdentifier modID, final ModuleZipInfo zipInfo, boolean deleteZip) {
@@ -1537,7 +1556,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   // this allows moduleRefs to read and write the file system as if they were
   // in the module dir, even though the actual working directory will be
   // wherever vertx run or vertx runmod was called from
-  private void setPathResolver(ModuleIdentifier modID, File modDir) {
+  private void setPathResolver(File modDir) {
     DefaultContext context = vertx.getContext();
     if (modDir != null) {
       // Module deployed from file system or verticle deployed by module deployed from file system
@@ -1702,7 +1721,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
             }
             try {
               addVerticle(deployment, verticle, verticleFactory, modID, main);
-              setPathResolver(modID, modDir);
+              setPathResolver(modDir);
               DefaultFutureResult<Void> vr = new DefaultFutureResult<>();
 
               verticle.start(vr);
