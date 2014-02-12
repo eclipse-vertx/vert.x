@@ -38,6 +38,8 @@ import java.util.Queue;
  */
 public class DefaultHttpClientResponse implements HttpClientResponse  {
 
+  private static final int PAUSED_CHUNKS_PER_TASK = 2;
+
   private final int statusCode;
   private final String statusMessage;
   private final DefaultHttpClientRequest request;
@@ -158,16 +160,12 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
 
   private void doResume() {
     if (pausedChunks != null) {
-      Buffer chunk;
-      while ((chunk = pausedChunks.poll()) != null) {
-        final Buffer theChunk = chunk;
-        vertx.runOnContext(new VoidHandler() {
-          @Override
-          protected void handle() {
-            handleChunk(theChunk);
-          }
-        });
-      }
+      vertx.runOnContext(new VoidHandler() {
+        @Override
+        protected void handle() {
+          handlePausedChunks();
+        }
+      });
     }
     if (hasPausedEnd) {
       final LastHttpContent theTrailer = pausedTrailer;
@@ -182,8 +180,42 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
     }
   }
 
+  void handlePausedChunks() {
+    if (!paused) {
+      int processedChunks = 0;
+      Buffer data;
+      while(processedChunks < PAUSED_CHUNKS_PER_TASK && (data = pausedChunks.poll()) != null) {
+        request.dataReceived();
+        dataHandler.handle(data);
+        processedChunks++;
+      }
+
+      if(pausedChunks.isEmpty()) {
+        pausedChunks = null;
+        if (hasPausedEnd) {
+          final LastHttpContent theTrailer = pausedTrailer;
+          vertx.runOnContext(new VoidHandler() {
+            @Override
+            protected void handle() {
+              handleEnd(theTrailer);
+            }
+          });
+          hasPausedEnd = false;
+          pausedTrailer = null;
+        }
+      } else {
+        vertx.runOnContext(new VoidHandler() {
+          @Override
+          protected void handle() {
+            handlePausedChunks();
+          }
+        });
+      }
+    }
+  }
+
   void handleChunk(Buffer data) {
-    if (paused) {
+    if (paused || (pausedChunks !=null && !pausedChunks.isEmpty())) {
       if (pausedChunks == null) {
         pausedChunks = new LinkedList<>();
       }
@@ -197,7 +229,7 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
   }
 
   void handleEnd(LastHttpContent trailer) {
-    if (paused) {
+    if (paused || (pausedChunks !=null && !pausedChunks.isEmpty())) {
       hasPausedEnd = true;
       pausedTrailer = trailer;
     } else {
