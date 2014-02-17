@@ -156,7 +156,7 @@ public abstract class ConnectionBase {
               }
             });
           } else if (!channelFuture.isSuccess()) {
-            vertx.reportException(channelFuture.cause());
+            handleException(channelFuture.cause());
           }
         }
       });
