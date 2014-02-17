@@ -586,7 +586,7 @@ public class DefaultEventBus implements EventBus {
                 // Send back a pong - a byte will do
                 socket.write(PONG);
               } else {
-                receiveMessage(received, -1, null);
+                receiveMessage(received, -1, null, null);
               }
               parser.fixedSizeMode(4);
               size = -1;
@@ -627,14 +627,15 @@ public class DefaultEventBus implements EventBus {
 
   private <T> void sendToSubs(ChoosableIterable<ServerID> subs, BaseMessage message,
                               long timeoutID,
-                              Handler<AsyncResult<Message<T>>> asyncResultHandler) {
+                              Handler<AsyncResult<Message<T>>> asyncResultHandler,
+                              Handler<Message<T>> replyHandler) {
     if (message.send) {
       // Choose one
       ServerID sid = subs.choose();
       if (!sid.equals(serverID)) {  //We don't send to this node
         sendRemote(sid, message);
       } else {
-        receiveMessage(message, timeoutID, asyncResultHandler);
+        receiveMessage(message, timeoutID, asyncResultHandler, replyHandler);
       }
     } else {
       // Publish
@@ -642,7 +643,7 @@ public class DefaultEventBus implements EventBus {
         if (!sid.equals(serverID)) {  //We don't send to this node
           sendRemote(sid, message);
         } else {
-          receiveMessage(message, timeoutID, null);
+          receiveMessage(message, timeoutID, null, replyHandler);
         }
       }
     }
@@ -703,7 +704,7 @@ public class DefaultEventBus implements EventBus {
         if (!replyDest.equals(this.serverID)) {
           sendRemote(replyDest, message);
         } else {
-          receiveMessage(message, timeoutID, asyncResultHandler);
+          receiveMessage(message, timeoutID, asyncResultHandler, replyHandler);
         }
       } else {
         if (subs != null) {
@@ -713,9 +714,9 @@ public class DefaultEventBus implements EventBus {
               if (event.succeeded()) {
                 ChoosableIterable<ServerID> serverIDs = event.result();
                 if (serverIDs != null && !serverIDs.isEmpty()) {
-                  sendToSubs(serverIDs, message, fTimeoutID, asyncResultHandler);
+                  sendToSubs(serverIDs, message, fTimeoutID, asyncResultHandler, replyHandler);
                 } else {
-                  receiveMessage(message, fTimeoutID, asyncResultHandler);
+                  receiveMessage(message, fTimeoutID, asyncResultHandler, replyHandler);
                 }
               } else {
                 log.error("Failed to send message", event.cause());
@@ -724,7 +725,7 @@ public class DefaultEventBus implements EventBus {
           });
         } else {
           // Not clustered
-          receiveMessage(message, timeoutID, asyncResultHandler);
+          receiveMessage(message, timeoutID, asyncResultHandler, replyHandler);
         }
       }
 
@@ -885,7 +886,8 @@ public class DefaultEventBus implements EventBus {
   }
 
   // Called when a message is incoming
-  private <T> void receiveMessage(BaseMessage msg, long timeoutID, Handler<AsyncResult<Message<T>>> asyncResultHandler) {
+  private <T> void receiveMessage(BaseMessage msg, long timeoutID, Handler<AsyncResult<Message<T>>> asyncResultHandler,
+                                  Handler<Message<T>> replyHandler) {
     msg.bus = this;
     final Handlers handlers = handlerMap.get(msg.address);
     if (handlers != null) {
@@ -907,6 +909,9 @@ public class DefaultEventBus implements EventBus {
         sendNoHandlersFailure(asyncResultHandler);
         if (timeoutID != -1) {
           vertx.cancelTimer(timeoutID);
+        }
+        if (replyHandler != null) {
+          unregisterHandler(msg.replyAddress, replyHandler);
         }
       }
     }
