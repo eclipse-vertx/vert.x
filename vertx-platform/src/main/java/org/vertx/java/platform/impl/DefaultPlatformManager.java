@@ -1103,7 +1103,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   private JsonObject loadModJSONFromURL(ModuleIdentifier modID, URL url) {
     try {
-      try (Scanner scanner = new Scanner(url.openStream()).useDelimiter("\\A")) {
+      try (Scanner scanner = new Scanner(url.openStream(), "UTF-8").useDelimiter("\\A")) {
         String conf = scanner.next();
         return new JsonObject(conf);
       } catch (NoSuchElementException e) {
