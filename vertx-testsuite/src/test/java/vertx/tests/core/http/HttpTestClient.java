@@ -2671,6 +2671,7 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testConnectInvalidHost() {
+    client.setConnectTimeout(1000);
     client.exceptionHandler(createNoConnectHandler());
     client.setHost("127.0.0.2");
     client.getNow("someurl", new Handler<HttpClientResponse>() {
