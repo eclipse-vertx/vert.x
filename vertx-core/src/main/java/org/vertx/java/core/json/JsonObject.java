@@ -326,8 +326,7 @@ public class JsonObject extends JsonElement {
   }
 
   public Map<String, Object> toMap() {
-    //return convertMap(map);
-    return map;
+    return convertMap(map);
   }
 
   @SuppressWarnings("unchecked")
