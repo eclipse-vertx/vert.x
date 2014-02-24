@@ -65,7 +65,7 @@ public class JsonObject extends JsonElement {
   protected JsonObject(Map<String, Object> map, boolean requireCopy) {
     // For internal use therefore does not need to perform a deep copy
     if(requireCopy) {
-        this.setNeedsCopy();
+      this.setNeedsCopy();
     }
     this.map = map;
   }

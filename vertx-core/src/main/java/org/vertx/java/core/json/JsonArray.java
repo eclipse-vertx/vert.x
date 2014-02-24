@@ -40,7 +40,7 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
   }
 
   public JsonArray(List<Object> array) {
-      this(convertList(array), false);
+    this(convertList(array), false);
   }
 
   public JsonArray(Object[] array) {
@@ -49,7 +49,7 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
 
   protected JsonArray(List<Object> array, boolean requireCopy) {
     if (requireCopy) {
-        this.setNeedsCopy();
+      this.setNeedsCopy();
     }
     this.list = array;
   }
