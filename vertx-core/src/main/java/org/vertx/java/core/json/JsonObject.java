@@ -42,12 +42,31 @@ public class JsonObject extends JsonElement {
     }
   }
 
+
   /**
    * Create a JSON object based on the specified Map
-   * 
+   *
    * @param map
    */
   public JsonObject(Map<String, Object> map) {
+    // For the public constructor require a deep copy up front to prevent mutation
+    // without checking the needsCopy flag
+    this(convertMap(map), false);
+  }
+
+    /**
+     * Create a JSON object based on the specified Map.
+     *
+     * Does not require a deep copy of the map.
+     *
+     * @param map
+     * @param requireCopy whether or not this object needs to perform a copy on write
+     */
+  protected JsonObject(Map<String, Object> map, boolean requireCopy) {
+    // For internal use therefore does not need to perform a deep copy
+    if(requireCopy) {
+      this.setNeedsCopy();
+    }
     this.map = map;
   }
 
@@ -144,13 +163,13 @@ public class JsonObject extends JsonElement {
   @SuppressWarnings("unchecked")
   public JsonObject getObject(String fieldName) {
     Map<String, Object> m = (Map<String, Object>) map.get(fieldName);
-    return m == null ? null : new JsonObject(m);
+    return m == null ? null : new JsonObject(m, true);
   }
 
   @SuppressWarnings("unchecked")
   public JsonArray getArray(String fieldName) {
     List<Object> l = (List<Object>) map.get(fieldName);
-    return l == null ? null : new JsonArray(l);
+    return l == null ? null : new JsonArray(l, true);
   }
 
   public JsonElement getElement(String fieldName) {
@@ -247,9 +266,9 @@ public class JsonObject extends JsonElement {
   public <T> T getField(String fieldName) {
     Object obj = map.get(fieldName);
     if (obj instanceof Map) {
-      obj = new JsonObject((Map)obj);
+      obj = new JsonObject((Map)obj, true);
     } else if (obj instanceof List) {
-      obj = new JsonArray((List)obj);
+      obj = new JsonArray((List)obj, true);
     }
     return (T)obj;
   }
@@ -287,8 +306,7 @@ public class JsonObject extends JsonElement {
   }
 
   public JsonObject copy() {
-    JsonObject copy = new JsonObject(map);
-    copy.setNeedsCopy();
+    JsonObject copy = new JsonObject(map, true);
     this.setNeedsCopy();
     return copy;
   }
