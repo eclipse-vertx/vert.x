@@ -289,6 +289,7 @@ public class JsonObject extends JsonElement {
   public JsonObject copy() {
     JsonObject copy = new JsonObject(map);
     copy.setNeedsCopy();
+    this.setNeedsCopy();
     return copy;
   }
 

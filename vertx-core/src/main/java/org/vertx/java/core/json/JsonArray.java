@@ -168,6 +168,7 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
   public JsonArray copy() {
     JsonArray copy = new JsonArray(list);
     copy.setNeedsCopy();
+    this.setNeedsCopy();
     return copy;
   }
 
