@@ -185,6 +185,10 @@ public class ModuleClassLoader extends URLClassLoader {
     return url;
   }
 
+  @Override
+  public void addURL(URL url) {
+    super.addURL(url);
+  }
 
   @Override
   public synchronized Enumeration<URL> getResources(String name) throws IOException {
