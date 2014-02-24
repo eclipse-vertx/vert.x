@@ -228,7 +228,7 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
       if (obj instanceof List) {
         retVal = new JsonArray((List<Object>) obj);
       } else if (obj instanceof Map) {
-        retVal = new JsonObject((Map<String, Object>) obj);
+        retVal = new JsonObject((Map<String, Object>) obj, true);
       }
     }
     return (T)retVal;
