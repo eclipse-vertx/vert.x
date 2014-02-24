@@ -231,7 +231,8 @@ class ClientConnection extends ConnectionBase {
   @Override
   public void close() {
     if (upgradedConnection) {
-      // Do nothing - this will be upgraded
+      // Close it
+      actualClose();
     } else if (!keepAlive) {
       // Close it
       actualClose();
