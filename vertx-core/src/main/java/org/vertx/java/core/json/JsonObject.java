@@ -93,29 +93,20 @@ public class JsonObject extends JsonElement {
     return this;
   }
 
-  private void requireCopy(JsonElement value) {
-      if (value != null) {
-          value.setNeedsCopy();
-      }
-  }
-
   public JsonObject putObject(String fieldName, JsonObject value) {
     checkCopy();
-    requireCopy(value);
     map.put(fieldName, value == null ? null : value.map);
     return this;
   }
 
   public JsonObject putArray(String fieldName, JsonArray value) {
     checkCopy();
-    requireCopy(value);
     map.put(fieldName, value == null ? null : value.list);
     return this;
   }
 
   public JsonObject putElement(String fieldName, JsonElement value) {
     checkCopy();
-    requireCopy(value);
     if (value == null) {
       map.put(fieldName, null);
       return this;
@@ -178,7 +169,7 @@ public class JsonObject extends JsonElement {
   @SuppressWarnings("unchecked")
   public JsonArray getArray(String fieldName) {
     List<Object> l = (List<Object>) map.get(fieldName);
-    return l == null ? null : new JsonArray(l);
+    return l == null ? null : new JsonArray(l, true);
   }
 
   public JsonElement getElement(String fieldName) {
@@ -277,7 +268,7 @@ public class JsonObject extends JsonElement {
     if (obj instanceof Map) {
       obj = new JsonObject((Map)obj, true);
     } else if (obj instanceof List) {
-      obj = new JsonArray((List)obj);
+      obj = new JsonArray((List)obj, true);
     }
     return (T)obj;
   }

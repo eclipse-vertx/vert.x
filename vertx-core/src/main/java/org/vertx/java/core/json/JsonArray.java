@@ -40,11 +40,18 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
   }
 
   public JsonArray(List<Object> array) {
-    this.list = array;
+      this(convertList(array), false);
   }
 
   public JsonArray(Object[] array) {
-    this.list = new ArrayList<>(Arrays.asList(array));
+    this(convertList(Arrays.asList(array)), false);
+  }
+
+  protected JsonArray(List<Object> array, boolean requireCopy) {
+    if (requireCopy) {
+        this.setNeedsCopy();
+    }
+    this.list = array;
   }
 
   public JsonArray() {
@@ -166,8 +173,7 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
   }
 
   public JsonArray copy() {
-    JsonArray copy = new JsonArray(list);
-    copy.setNeedsCopy();
+    JsonArray copy = new JsonArray(list, true);
     this.setNeedsCopy();
     return copy;
   }
@@ -226,7 +232,7 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
     Object retVal = obj;
     if (obj != null) {
       if (obj instanceof List) {
-        retVal = new JsonArray((List<Object>) obj);
+        retVal = new JsonArray((List<Object>) obj, true);
       } else if (obj instanceof Map) {
         retVal = new JsonObject((Map<String, Object>) obj, true);
       }
