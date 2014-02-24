@@ -307,7 +307,6 @@ public class JsonObject extends JsonElement {
   }
 
   public String encode() {
-    checkCopy();
     return Json.encode(this.map);
   }
 
