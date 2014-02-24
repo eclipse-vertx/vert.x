@@ -1103,7 +1103,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   private JsonObject loadModJSONFromURL(ModuleIdentifier modID, URL url) {
     try {
-      try (Scanner scanner = new Scanner(url.openStream()).useDelimiter("\\A")) {
+      try (Scanner scanner = new Scanner(url.openStream(), "UTF-8").useDelimiter("\\A")) {
         String conf = scanner.next();
         return new JsonObject(conf);
       } catch (NoSuchElementException e) {
@@ -1152,7 +1152,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       File linkFile = new File(modDir, MODULE_LINK_FILE);
       if (linkFile.exists()) {
         // Load the path from the file
-        try (Scanner scanner = new Scanner(linkFile).useDelimiter("\\A")) {
+        try (Scanner scanner = new Scanner(linkFile, "UTF-8").useDelimiter("\\A")) {
           String path = scanner.next().trim();
           File cpFile = new File(path, CLASSPATH_FILE);
           if (!cpFile.exists()) {
@@ -1160,7 +1160,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
           }
           // Load the cp
           cpList = new ArrayList<>();
-          try (Scanner scanner2 = new Scanner(cpFile)) {
+          try (Scanner scanner2 = new Scanner(cpFile, "UTF-8")) {
             while (scanner2.hasNextLine()) {
               String entry = scanner2.nextLine().trim();
               if (!entry.startsWith("#") && !entry.equals("")) {  // Skip blanks lines and comments
@@ -1245,7 +1245,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   private JsonObject loadModuleConfig(File modJSON, ModuleIdentifier modID) {
     // Checked the byte code produced, .close() is called correctly, so the warning can be suppressed
-    try (Scanner scanner = new Scanner(modJSON).useDelimiter("\\A")) {
+    try (Scanner scanner = new Scanner(modJSON, "UTF-8").useDelimiter("\\A")) {
       String conf = scanner.next();
       return new JsonObject(conf);
     } catch (FileNotFoundException e) {

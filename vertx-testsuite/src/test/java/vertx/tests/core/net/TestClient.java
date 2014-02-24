@@ -404,6 +404,7 @@ public class TestClient extends TestClientBase {
   }
 
   public void testConnectInvalidHost() {
+    client.setConnectTimeout(1000);
     client.connect(1234, "127.0.0.2", new AsyncResultHandler<NetSocket>() {
       public void handle(AsyncResult<NetSocket> res) {
         tu.azzert(res.failed(), "Connect should not be called");
