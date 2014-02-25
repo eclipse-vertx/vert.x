@@ -34,22 +34,16 @@ public class JsonObject extends JsonElement {
 
   protected Map<String, Object> map;
 
-  protected void checkCopy() {
-    if (needsCopy) {
-      // deep copy the map lazily if the object is mutated
-      map = convertMap(map);
-      needsCopy = false;
-    }
-  }
-
   /**
    * Create a JSON object based on the specified Map
-   * 
    * @param map
    */
   public JsonObject(Map<String, Object> map) {
+    checkMap(map);
     this.map = map;
   }
+
+
 
   /**
    * Create an empty JSON object
@@ -69,25 +63,21 @@ public class JsonObject extends JsonElement {
   }
 
   public JsonObject putString(String fieldName, String value) {
-    checkCopy();
     map.put(fieldName, value);
     return this;
   }
 
   public JsonObject putObject(String fieldName, JsonObject value) {
-    checkCopy();
     map.put(fieldName, value == null ? null : value.map);
     return this;
   }
 
   public JsonObject putArray(String fieldName, JsonArray value) {
-    checkCopy();
     map.put(fieldName, value == null ? null : value.list);
     return this;
   }
 
   public JsonObject putElement(String fieldName, JsonElement value) {
-    checkCopy();
     if (value == null) {
       map.put(fieldName, null);
       return this;
@@ -99,19 +89,16 @@ public class JsonObject extends JsonElement {
   }
 
   public JsonObject putNumber(String fieldName, Number value) {
-    checkCopy();
     map.put(fieldName, value);
     return this;
   }
 
   public JsonObject putBoolean(String fieldName, Boolean value) {
-    checkCopy();
     map.put(fieldName, value);
     return this;
   }
 
   public JsonObject putBinary(String fieldName, byte[] binary) {
-    checkCopy();
     map.put(fieldName, binary == null ? null : Base64.encodeBytes(binary));
     return this;
   }
@@ -255,7 +242,6 @@ public class JsonObject extends JsonElement {
   }
 
   public Object removeField(String fieldName) {
-    checkCopy();
     return map.remove(fieldName);
   }
 
@@ -273,7 +259,6 @@ public class JsonObject extends JsonElement {
   }
 
   public JsonObject mergeIn(JsonObject other) {
-    checkCopy();
     map.putAll(other.map);
     return this;
   }
@@ -286,11 +271,12 @@ public class JsonObject extends JsonElement {
     return Json.encodePrettily(this.map);
   }
 
+  /**
+   * @return a copy of this JsonObject such that changes in the original are not reflected in the copy, and
+   * vice versa
+   */
   public JsonObject copy() {
-    JsonObject copy = new JsonObject(map);
-    copy.setNeedsCopy();
-    this.setNeedsCopy();
-    return copy;
+    return new JsonObject(convertMap(map));
   }
 
   @Override
@@ -326,26 +312,16 @@ public class JsonObject extends JsonElement {
     return true;
   }
 
+  /**
+   *
+   * @return the underlying Map for this JsonObject
+   */
   public Map<String, Object> toMap() {
-    return convertMap(map);
+    return map;
   }
 
-  @SuppressWarnings("unchecked")
-  static Map<String, Object> convertMap(Map<String, Object> map) {
-    Map<String, Object> converted = new LinkedHashMap<>(map.size());
-    for (Map.Entry<String, Object> entry : map.entrySet()) {
-      Object obj = entry.getValue();
-      if (obj instanceof Map) {
-        Map<String, Object> jm = (Map<String, Object>) obj;
-        converted.put(entry.getKey(), convertMap(jm));
-      } else if (obj instanceof List) {
-        List<Object> list = (List<Object>) obj;
-        converted.put(entry.getKey(), JsonArray.convertList(list));
-      } else {
-        converted.put(entry.getKey(), obj);
-      }
-    }
-    return converted;
-  }
+
+
+
 
 }

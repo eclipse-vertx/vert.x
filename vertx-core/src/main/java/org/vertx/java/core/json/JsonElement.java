@@ -16,16 +16,14 @@
 
 package org.vertx.java.core.json;
 
+import org.vertx.java.core.VertxException;
+
 import java.io.Serializable;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public abstract class JsonElement implements Serializable {
-
-  protected boolean needsCopy;
-
-  protected void setNeedsCopy() {
-    // We actually do the copy lazily if the object is subsequently mutated
-    needsCopy = true;
-  }
 
   public boolean isArray() {
     return this instanceof JsonArray;
@@ -41,5 +39,48 @@ public abstract class JsonElement implements Serializable {
 
   public JsonObject asObject() {
     return (JsonObject) this;
+  }
+
+  protected static void checkMap(Map<String, Object> map) {
+    for (Object value: map.values()) {
+      checkValue(value);
+    }
+  }
+
+  protected static void checkList(List list) {
+    for (Object value: list) {
+      checkValue(value);
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  protected static Map<String, Object> convertMap(Map<String, Object> map) {
+    Map<String, Object> converted = new LinkedHashMap<>(map.size());
+    for (Map.Entry<String, Object> entry : map.entrySet()) {
+      Object obj = entry.getValue();
+      if (obj instanceof Map) {
+        Map<String, Object> jm = (Map<String, Object>) obj;
+        converted.put(entry.getKey(), convertMap(jm));
+      } else if (obj instanceof List) {
+        List<Object> list = (List<Object>) obj;
+        converted.put(entry.getKey(), JsonArray.convertList(list));
+      } else {
+        converted.put(entry.getKey(), obj);
+      }
+    }
+    return converted;
+  }
+
+  @SuppressWarnings("unchecked")
+  protected static void checkValue(Object value) {
+    if (value == null || value instanceof String || value instanceof Number || value instanceof Boolean) {
+      // OK
+    } else if (value instanceof Map) {
+      checkMap((Map)value);
+    } else if (value instanceof List) {
+      checkList((List)value);
+    } else {
+      throw new VertxException("Cannot have objects of class " + value.getClass() +" in JSON");
+    }
   }
 }

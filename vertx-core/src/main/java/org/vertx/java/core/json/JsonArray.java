@@ -31,20 +31,14 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
 
   protected List<Object> list;
 
-  protected void checkCopy() {
-    if (needsCopy) {
-      // deep copy the list lazily if the object is mutated
-      list = convertList(list);
-      needsCopy = false;
-    }
-  }
-
   public JsonArray(List<Object> array) {
     this.list = array;
+    checkList(list);
   }
 
   public JsonArray(Object[] array) {
     this.list = new ArrayList<>(Arrays.asList(array));
+    checkList(list);
   }
 
   public JsonArray() {
@@ -56,25 +50,21 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
   }
 
   public JsonArray addString(String str) {
-    checkCopy();
     list.add(str);
     return this;
   }
 
   public JsonArray addObject(JsonObject value) {
-    checkCopy();
     list.add(value.map);
     return this;
   }
 
   public JsonArray addArray(JsonArray value) {
-    checkCopy();
     list.add(value.list);
     return this;
   }
 
   public JsonArray addElement(JsonElement value) {
-    checkCopy();
     if (value.isArray()) {
       return addArray(value.asArray());
     }
@@ -82,26 +72,22 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
   }
 
   public JsonArray addNumber(Number value) {
-    checkCopy();
     list.add(value);
     return this;
   }
 
   public JsonArray addBoolean(Boolean value) {
-    checkCopy();
     list.add(value);
     return this;
   }
 
   public JsonArray addBinary(byte[] value) {
-    checkCopy();
     String encoded = org.vertx.java.core.json.impl.Base64.encodeBytes(value);
     list.add(encoded);
     return this;
   }
 
   public JsonArray add(Object value) {
-
     if (value instanceof JsonObject) {
       addObject((JsonObject)value);
     } else if (value instanceof JsonArray) {
@@ -117,7 +103,6 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
     } else {
       throw new VertxException("Cannot add objects of class " + value.getClass() +" to JsonArray");
     }
-
     return this;
   }
 
@@ -131,7 +116,6 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
 
   @Override
   public Iterator<Object> iterator() {
-    checkCopy();
     return new Iterator<Object>() {
 
       Iterator<Object> iter = list.iterator();
@@ -165,11 +149,12 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
     return Json.encodePrettily(this.list);
   }
 
+  /**
+   *
+   * @return a copy of the JsonArray
+   */
   public JsonArray copy() {
-    JsonArray copy = new JsonArray(list);
-    copy.setNeedsCopy();
-    this.setNeedsCopy();
-    return copy;
+    return new JsonArray(convertList(list));
   }
 
   @Override
