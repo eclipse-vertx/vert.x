@@ -31,14 +31,16 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
 
   protected List<Object> list;
 
-  public JsonArray(List<Object> array) {
-    this.list = array;
-    checkList(list);
+  public JsonArray(List<Object> list) {
+    this(list, true);
   }
 
   public JsonArray(Object[] array) {
-    this.list = new ArrayList<>(Arrays.asList(array));
-    checkList(list);
+    this(new ArrayList<>(Arrays.asList(array)), true);
+  }
+
+  protected JsonArray(List<Object> list, boolean copy) {
+    this.list = copy ? convertList(list): list;
   }
 
   public JsonArray() {
@@ -154,7 +156,7 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
    * @return a copy of the JsonArray
    */
   public JsonArray copy() {
-    return new JsonArray(convertList(list));
+    return new JsonArray(list, true);
   }
 
   @Override
@@ -189,31 +191,18 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
     return convertList(list).toArray();
   }
 
-  @SuppressWarnings("unchecked")
-  static List<Object> convertList(List<?> list) {
-    List<Object> arr = new ArrayList<>(list.size());
-    for (Object obj : list) {
-      if (obj instanceof Map) {
-        arr.add(JsonObject.convertMap((Map<String, Object>) obj));
-      } else if (obj instanceof JsonObject) {
-        arr.add(((JsonObject) obj).toMap());
-      } else if (obj instanceof List) {
-        arr.add(convertList((List<?>) obj));
-      } else {
-        arr.add(obj);
-      }
-    }
-    return arr;
+  public List toList() {
+    return convertList(list);
   }
 
   @SuppressWarnings("unchecked")
-  private static <T> T convertObject(final Object obj) {
+  private <T> T convertObject(final Object obj) {
     Object retVal = obj;
     if (obj != null) {
       if (obj instanceof List) {
-        retVal = new JsonArray((List<Object>) obj);
+        retVal = new JsonArray((List<Object>) obj, false);
       } else if (obj instanceof Map) {
-        retVal = new JsonObject((Map<String, Object>) obj);
+        retVal = new JsonObject((Map<String, Object>) obj, false);
       }
     }
     return (T)retVal;

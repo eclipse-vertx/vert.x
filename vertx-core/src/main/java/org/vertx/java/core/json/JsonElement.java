@@ -19,6 +19,7 @@ package org.vertx.java.core.json;
 import org.vertx.java.core.VertxException;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,20 +42,8 @@ public abstract class JsonElement implements Serializable {
     return (JsonObject) this;
   }
 
-  protected static void checkMap(Map<String, Object> map) {
-    for (Object value: map.values()) {
-      checkValue(value);
-    }
-  }
-
-  protected static void checkList(List list) {
-    for (Object value: list) {
-      checkValue(value);
-    }
-  }
-
   @SuppressWarnings("unchecked")
-  protected static Map<String, Object> convertMap(Map<String, Object> map) {
+  protected Map<String, Object> convertMap(Map<String, Object> map) {
     Map<String, Object> converted = new LinkedHashMap<>(map.size());
     for (Map.Entry<String, Object> entry : map.entrySet()) {
       Object obj = entry.getValue();
@@ -63,24 +52,32 @@ public abstract class JsonElement implements Serializable {
         converted.put(entry.getKey(), convertMap(jm));
       } else if (obj instanceof List) {
         List<Object> list = (List<Object>) obj;
-        converted.put(entry.getKey(), JsonArray.convertList(list));
-      } else {
+        converted.put(entry.getKey(), convertList(list));
+      } else if (obj == null || obj instanceof String || obj instanceof Number || obj instanceof Boolean) {
+        // OK
         converted.put(entry.getKey(), obj);
+      } else {
+        throw new VertxException("Cannot have objects of class " + obj.getClass() +" in JSON");
       }
     }
     return converted;
   }
 
   @SuppressWarnings("unchecked")
-  protected static void checkValue(Object value) {
-    if (value == null || value instanceof String || value instanceof Number || value instanceof Boolean) {
-      // OK
-    } else if (value instanceof Map) {
-      checkMap((Map)value);
-    } else if (value instanceof List) {
-      checkList((List)value);
-    } else {
-      throw new VertxException("Cannot have objects of class " + value.getClass() +" in JSON");
+  protected List<Object> convertList(List<?> list) {
+    List<Object> arr = new ArrayList<>(list.size());
+    for (Object obj : list) {
+      if (obj instanceof Map) {
+        arr.add(convertMap((Map<String, Object>) obj));
+      } else if (obj instanceof List) {
+        arr.add(convertList((List<?>)obj));
+      } else if (obj == null || obj instanceof String || obj instanceof Number || obj instanceof Boolean) {
+        arr.add(obj);
+      } else {
+        throw new VertxException("Cannot have objects of class " + obj.getClass() +" in JSON");
+      }
     }
+    return arr;
   }
+
 }

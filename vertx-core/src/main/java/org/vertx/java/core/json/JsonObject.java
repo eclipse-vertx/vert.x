@@ -39,11 +39,8 @@ public class JsonObject extends JsonElement {
    * @param map
    */
   public JsonObject(Map<String, Object> map) {
-    checkMap(map);
-    this.map = map;
+    this(map, true);
   }
-
-
 
   /**
    * Create an empty JSON object
@@ -51,6 +48,11 @@ public class JsonObject extends JsonElement {
   public JsonObject() {
     this.map = new LinkedHashMap<>();
   }
+
+  protected JsonObject(Map<String, Object> map, boolean copy) {
+    this.map = copy ? convertMap(map) : map;
+  }
+
 
   /**
    * Create a JSON object from a string form of a JSON object
@@ -131,13 +133,13 @@ public class JsonObject extends JsonElement {
   @SuppressWarnings("unchecked")
   public JsonObject getObject(String fieldName) {
     Map<String, Object> m = (Map<String, Object>) map.get(fieldName);
-    return m == null ? null : new JsonObject(m);
+    return m == null ? null : new JsonObject(m, false);
   }
 
   @SuppressWarnings("unchecked")
   public JsonArray getArray(String fieldName) {
     List<Object> l = (List<Object>) map.get(fieldName);
-    return l == null ? null : new JsonArray(l);
+    return l == null ? null : new JsonArray(l, false);
   }
 
   public JsonElement getElement(String fieldName) {
@@ -234,9 +236,9 @@ public class JsonObject extends JsonElement {
   public <T> T getField(String fieldName) {
     Object obj = map.get(fieldName);
     if (obj instanceof Map) {
-      obj = new JsonObject((Map)obj);
+      obj = new JsonObject((Map)obj, false);
     } else if (obj instanceof List) {
-      obj = new JsonArray((List)obj);
+      obj = new JsonArray((List)obj, false);
     }
     return (T)obj;
   }
@@ -276,7 +278,7 @@ public class JsonObject extends JsonElement {
    * vice versa
    */
   public JsonObject copy() {
-    return new JsonObject(convertMap(map));
+    return new JsonObject(map, true);
   }
 
   @Override
@@ -317,11 +319,7 @@ public class JsonObject extends JsonElement {
    * @return the underlying Map for this JsonObject
    */
   public Map<String, Object> toMap() {
-    return map;
+    return convertMap(map);
   }
-
-
-
-
 
 }
