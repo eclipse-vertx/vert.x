@@ -26,9 +26,9 @@ import org.vertx.java.core.eventbus.ReplyFailure;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
-import static vertx.tests.core.eventbus.LocalEchoClient.TIMEOUT;
-
 import java.util.UUID;
+
+import static vertx.tests.core.eventbus.LocalEchoClient.TIMEOUT;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

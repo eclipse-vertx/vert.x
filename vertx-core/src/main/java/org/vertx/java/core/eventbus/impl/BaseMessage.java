@@ -17,6 +17,7 @@
 package org.vertx.java.core.eventbus.impl;
 
 import io.netty.util.CharsetUtil;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
@@ -26,7 +27,6 @@ import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.ServerID;
-import org.vertx.java.core.AsyncResult;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

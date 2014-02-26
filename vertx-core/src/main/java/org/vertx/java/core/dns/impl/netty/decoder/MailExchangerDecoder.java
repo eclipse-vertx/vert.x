@@ -16,10 +16,10 @@
 package org.vertx.java.core.dns.impl.netty.decoder;
 
 import io.netty.buffer.ByteBuf;
-import org.vertx.java.core.dns.impl.netty.decoder.record.MailExchangerRecord;
 import org.vertx.java.core.dns.impl.netty.DnsResource;
 import org.vertx.java.core.dns.impl.netty.DnsResponse;
 import org.vertx.java.core.dns.impl.netty.DnsResponseDecoder;
+import org.vertx.java.core.dns.impl.netty.decoder.record.MailExchangerRecord;
 
 /**
  * Decodes MX (mail exchanger) resource records.

@@ -16,9 +16,9 @@
 package org.vertx.java.core.dns.impl.netty.decoder;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.util.CharsetUtil;
 import org.vertx.java.core.dns.impl.netty.DnsResource;
 import org.vertx.java.core.dns.impl.netty.DnsResponse;
-import io.netty.util.CharsetUtil;
 
 import java.util.ArrayList;
 import java.util.List;

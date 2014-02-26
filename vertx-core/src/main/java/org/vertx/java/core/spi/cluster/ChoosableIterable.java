@@ -16,8 +16,6 @@
 
 package org.vertx.java.core.spi.cluster;
 
-import java.util.Iterator;
-
 /**
  *
  * An extension of Iterable which allows keeps track of an iterator internally to allow the next element to be chosen

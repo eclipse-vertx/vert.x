@@ -14,7 +14,6 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-import org.vertx.java.platform.Verticle;
 import org.vertx.java.testframework.TestClientBase;
 
 public class MainA extends TestClientBase {

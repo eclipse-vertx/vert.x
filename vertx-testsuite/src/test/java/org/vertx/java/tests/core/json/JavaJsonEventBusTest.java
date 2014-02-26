@@ -17,12 +17,9 @@
 package org.vertx.java.tests.core.json;
 
 import org.junit.Test;
-
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-
 import org.vertx.java.testframework.TestBase;
-
 import vertx.tests.core.json.TestClient;
 
 

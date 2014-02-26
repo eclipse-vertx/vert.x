@@ -17,7 +17,6 @@
 package vertx.tests.core.http;
 
 import io.netty.handler.codec.http.DefaultHttpHeaders;
-
 import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;

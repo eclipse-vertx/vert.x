@@ -17,7 +17,7 @@
 package org.vertx.java.core.json;
 
 import org.vertx.java.core.VertxException;
-import org.vertx.java.core.json.impl.*;
+import org.vertx.java.core.json.impl.Json;
 
 import java.util.*;
 

@@ -21,7 +21,10 @@ import org.vertx.java.core.VertxException;
 import org.vertx.java.core.json.impl.Base64;
 import org.vertx.java.core.json.impl.Json;
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * 

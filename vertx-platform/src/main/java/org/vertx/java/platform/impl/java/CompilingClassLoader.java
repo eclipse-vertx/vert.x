@@ -21,7 +21,8 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import javax.tools.*;
 import javax.tools.JavaFileObject.Kind;
-import java.io.*;
+import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
