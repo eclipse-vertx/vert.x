@@ -84,6 +84,11 @@ public class ModuleClassLoader extends URLClassLoader {
   }
 
   @Override
+  public void addURL(URL url) {
+    super.addURL(url);
+  }
+
+  @Override
   protected Class<?> loadClass(String name, boolean resolve)
       throws ClassNotFoundException {
     Class<?> c = findLoadedClass(name);
