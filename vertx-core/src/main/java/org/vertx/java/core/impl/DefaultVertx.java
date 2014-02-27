@@ -321,6 +321,8 @@ public class DefaultVertx implements VertxInternal {
     contextTL.set(context);
     if (context != null) {
       context.setTCCL();
+    } else {
+      Thread.currentThread().setContextClassLoader(null);
     }
   }
 
