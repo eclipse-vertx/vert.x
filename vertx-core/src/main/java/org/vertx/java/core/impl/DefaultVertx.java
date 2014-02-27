@@ -81,7 +81,6 @@ public class DefaultVertx implements VertxInternal {
 
   private Map<ServerID, DefaultHttpServer> sharedHttpServers = new HashMap<>();
   private Map<ServerID, DefaultNetServer> sharedNetServers = new HashMap<>();
-  private final ThreadLocal<DefaultContext> contextTL = new ThreadLocal<>();
 
   private final ConcurrentMap<Long, InternalTimerHandler> timeouts = new ConcurrentHashMap<>();
   private final AtomicLong timeoutCounter = new AtomicLong(0);
@@ -318,14 +317,21 @@ public class DefaultVertx implements VertxInternal {
   }
 
   public void setContext(DefaultContext context) {
-    contextTL.set(context);
+    Thread current = Thread.currentThread();
+    if (current instanceof VertxThread) {
+        ((VertxThread) current).setContext(context);
+    }
     if (context != null) {
       context.setTCCL();
     }
   }
 
   public DefaultContext getContext() {
-    return contextTL.get();
+      Thread current = Thread.currentThread();
+      if (current instanceof VertxThread) {
+          return ((VertxThread) current).getContext();
+      }
+    return null;
   }
 
   @Override
