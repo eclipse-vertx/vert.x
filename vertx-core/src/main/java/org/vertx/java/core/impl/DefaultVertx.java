@@ -319,7 +319,7 @@ public class DefaultVertx implements VertxInternal {
   public void setContext(DefaultContext context) {
     Thread current = Thread.currentThread();
     if (current instanceof VertxThread) {
-        ((VertxThread) current).setContext(context);
+      ((VertxThread)current).setContext(context);
     }
     if (context != null) {
       context.setTCCL();
@@ -327,10 +327,10 @@ public class DefaultVertx implements VertxInternal {
   }
 
   public DefaultContext getContext() {
-      Thread current = Thread.currentThread();
-      if (current instanceof VertxThread) {
-          return ((VertxThread) current).getContext();
-      }
+    Thread current = Thread.currentThread();
+    if (current instanceof VertxThread) {
+      return ((VertxThread)current).getContext();
+    }
     return null;
   }
 
