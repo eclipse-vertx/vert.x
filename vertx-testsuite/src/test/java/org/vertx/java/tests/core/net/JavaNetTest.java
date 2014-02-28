@@ -439,7 +439,7 @@ public class JavaNetTest extends TestBase {
 
   @Test
   public void testListenOnWildcardPort() throws Exception {
-    startTest(getMethodName(), false);
+    startTest(getMethodName());
   }
 
   @Test
