@@ -163,7 +163,6 @@ public abstract class DefaultContext implements Context {
 
   private void unsetContext() {
     vertx.setContext(null);
-    Thread.currentThread().setContextClassLoader(null);
   }
 
   protected Runnable wrapTask(final Runnable task) {
