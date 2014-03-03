@@ -82,7 +82,14 @@ class BaseTransport {
   }
 
   protected static abstract class BaseListener implements TransportListener {
+    protected final HttpServerRequest req;
+    protected final Session session;
+    protected boolean closed;
 
+    protected BaseListener(final HttpServerRequest req, final Session session) {
+      this.req = req;
+      this.session = session;
+    }
     protected void addCloseHandler(HttpServerResponse resp, final Session session) {
       resp.closeHandler(new VoidHandler() {
         public void handle() {
@@ -90,11 +97,12 @@ class BaseTransport {
           // Connection has been closed from the client or network error so
           // we remove the session
           session.shutdown();
-          close();
+          closed = true;
         }
       });
     }
 
+    @Override
     public void sessionClosed() {
     }
   }

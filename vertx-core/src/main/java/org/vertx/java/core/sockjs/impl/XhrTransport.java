@@ -123,14 +123,11 @@ class XhrTransport extends BaseTransport {
   }
 
   private abstract class BaseXhrListener extends BaseListener {
-    final HttpServerRequest req;
-    final Session session;
 
     boolean headersWritten;
 
     BaseXhrListener(HttpServerRequest req, Session session) {
-      this.req = req;
-      this.session = session;
+      super(req, session);
     }
 
     public void sendFrame(String body) {
@@ -146,6 +143,12 @@ class XhrTransport extends BaseTransport {
 
     public void close() {
     }
+
+    @Override
+    public void sessionClosed() {
+      session.writeClosed(this);
+      close();
+    }
   }
 
   private class XhrPollingListener extends BaseXhrListener {
@@ -154,8 +157,6 @@ class XhrTransport extends BaseTransport {
       super(req, session);
       addCloseHandler(req.response(), session);
     }
-
-    boolean closed;
 
     public void sendFrame(String body) {
       super.sendFrame(body);
@@ -182,7 +183,6 @@ class XhrTransport extends BaseTransport {
 
     int bytesSent;
     int maxBytesStreaming;
-    boolean closed;
 
     XhrStreamingListener(int maxBytesStreaming, HttpServerRequest req, final Session session) {
       super(req, session);

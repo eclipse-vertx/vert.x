@@ -129,15 +129,12 @@ class JsonPTransport extends BaseTransport {
 
   private class JsonPListener extends BaseListener {
 
-    final HttpServerRequest req;
-    final Session session;
     final String callback;
     boolean headersWritten;
     boolean closed;
 
     JsonPListener(HttpServerRequest req, Session session, String callback) {
-      this.req = req;
-      this.session = session;
+      super(req, session);
       this.callback = callback;
       addCloseHandler(req.response(), session);
     }

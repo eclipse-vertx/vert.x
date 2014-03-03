@@ -91,18 +91,15 @@ class HtmlFileTransport extends BaseTransport {
   private class HtmlFileListener extends BaseListener {
 
     final int maxBytesStreaming;
-    final HttpServerRequest req;
     final String callback;
-    final Session session;
     boolean headersWritten;
     int bytesSent;
     boolean closed;
 
     HtmlFileListener(int maxBytesStreaming, HttpServerRequest req, String callback, Session session) {
+      super(req, session);
       this.maxBytesStreaming = maxBytesStreaming;
-      this.req = req;
       this.callback = callback;
-      this.session = session;
       addCloseHandler(req.response(), session);
     }
 

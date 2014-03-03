@@ -293,8 +293,11 @@ class Session extends SockJSSocketBase implements Shareable {
       sessions.remove(id);
     }
 
-    if (endHandler != null) {
-      endHandler.handle(null);
+    if (!closed) {
+      closed = true;
+      if (endHandler != null) {
+        endHandler.handle(null);
+      }
     }
   }
 

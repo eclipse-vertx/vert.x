@@ -55,17 +55,14 @@ class EventSourceTransport extends BaseTransport {
   private class EventSourceListener extends BaseListener {
 
     final int maxBytesStreaming;
-    final HttpServerRequest req;
-    final Session session;
 
     boolean headersWritten;
     int bytesSent;
     boolean closed;
 
     EventSourceListener(int maxBytesStreaming, HttpServerRequest req, Session session) {
+      super(req, session);
       this.maxBytesStreaming = maxBytesStreaming;
-      this.req = req;
-      this.session = session;
       addCloseHandler(req.response(), session);
     }
 
