@@ -105,6 +105,7 @@ public abstract class PriorityHttpConnectionPool implements HttpPool {
       connectionCount--;
       if (conn != null) {
         allConnections.remove(conn);
+        available.remove(conn);
       }
       if (connectionCount < maxPoolSize) {
         //Now the connection count has come down, maybe there is another waiter that can
