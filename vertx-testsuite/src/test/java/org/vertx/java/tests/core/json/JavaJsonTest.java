@@ -314,6 +314,22 @@ public class JavaJsonTest extends TestBase {
 
     assertEquals(array1, array2);
   }
+  
+  @Test
+  public void testJsonArraysWithNullsEquality() {
+    JsonArray array1 = new JsonArray(new Object[]{null, "a"});
+    JsonArray array2 = new JsonArray(new Object[]{null, "a"});
+
+    assertEquals(array1, array2);
+  }
+
+  @Test
+  public void testJsonArraysWithNullsEquality2() {
+    JsonArray array1 = new JsonArray(new Object[]{null, "a"});
+    JsonArray array2 = new JsonArray(new Object[]{"b", "a"});
+
+    assertFalse(array1.equals(array2));
+  }
 
   @Test
   public void testGetBinary() {

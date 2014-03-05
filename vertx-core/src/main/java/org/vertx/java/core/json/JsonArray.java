@@ -180,7 +180,11 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
     Iterator<?> iter = that.list.iterator();
     for (Object entry : this.list) {
       Object other = iter.next();
-      if (!entry.equals(other)) {
+      if (entry == null) {
+        if (other != null) {
+          return false;
+        }
+      } else if (!entry.equals(other)) {
         return false;
       }
     }
