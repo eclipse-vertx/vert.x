@@ -57,6 +57,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   private final int maxAddressLength;
   private final int maxHandlersPerSocket;
   private final long pingTimeout;
+  private final long replyTimeout;
   private final Vertx vertx;
   private final EventBus eb;
   private final Set<String> acceptedReplyAddresses = new HashSet<>();
@@ -114,6 +115,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     this.maxAddressLength = conf.getInteger("max_address_length", DEFAULT_MAX_ADDRESS_LENGTH);
     this.maxHandlersPerSocket = conf.getInteger("max_handlers_per_socket", DEFAULT_MAX_HANDLERS_PER_SOCKET);
     this.pingTimeout = conf.getLong("ping_interval", DEFAULT_PING_TIMEOUT);
+    this.replyTimeout = conf.getLong("reply_timeout", DEFAULT_REPLY_TIMEOUT);
   }
 
   private void handleSocketClosed(SockJSSocket sock, Map<String, Handler<Message>> handlers) {
@@ -298,7 +300,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       // So we cache the reply address, so we can check against it
       acceptedReplyAddresses.add(replyAddress);
       // And we remove after timeout in case the reply never comes
-      vertx.setTimer(DEFAULT_REPLY_TIMEOUT, new Handler<Long>() {
+      vertx.setTimer(replyTimeout, new Handler<Long>() {
         public void handle(Long id) {
           acceptedReplyAddresses.remove(replyAddress);
         }
@@ -398,16 +400,19 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     if (replyAddress != null && !checkMaxHandlers(info)) {
       return;
     }
-    final Handler<Message> replyHandler;
+    final Handler<AsyncResult<Message<Object>>> replyHandler;
     if (replyAddress != null) {
-      replyHandler = new Handler<Message>() {
-        public void handle(Message message) {
-          // Note we don't check outbound matches for replies
-          // Replies are always let through if the original message
-          // was approved
-          checkAddAccceptedReplyAddress(message.replyAddress());
-          deliverMessage(sock, replyAddress, message);
-          info.handlerCount--;
+      replyHandler = new Handler<AsyncResult<Message<Object>>>() {
+        public void handle(AsyncResult<Message<Object>> result) {
+          if (result.succeeded()) {
+            Message message = result.result();
+            // Note we don't check outbound matches for replies
+            // Replies are always let through if the original message
+            // was approved
+            checkAddAccceptedReplyAddress(message.replyAddress());
+            deliverMessage(sock, replyAddress, message);
+            info.handlerCount--;
+          }
         }
       };
     } else {
@@ -417,7 +422,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       log.debug("Forwarding message to address " + address + " on event bus");
     }
     if (send) {
-      eb.send(address, body, replyHandler);
+      eb.sendWithTimeout(address, body, replyTimeout, replyHandler);
       if (replyAddress != null) {
         info.handlerCount++;
       }
