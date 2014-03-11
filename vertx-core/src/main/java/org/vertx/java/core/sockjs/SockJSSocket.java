@@ -49,6 +49,11 @@ public interface SockJSSocket extends ReadStream<SockJSSocket>, WriteStream<Sock
   void close();
 
   /**
+   * Indicates that this socket has timed out, and any sessions (if any) associated with it should be closed/shutdown.
+   */
+  void timeout();
+
+  /**
    * Return the remote address for this socket
    */
   InetSocketAddress remoteAddress();

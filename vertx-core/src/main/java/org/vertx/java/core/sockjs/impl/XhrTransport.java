@@ -143,12 +143,6 @@ class XhrTransport extends BaseTransport {
 
     public void close() {
     }
-
-    @Override
-    public void sessionClosed() {
-      session.writeClosed(this);
-      close();
-    }
   }
 
   private class XhrPollingListener extends BaseXhrListener {

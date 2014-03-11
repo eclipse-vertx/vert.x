@@ -281,8 +281,8 @@ public class EventBusBridge implements Handler<SockJSSocket> {
         @Override
         public void handle(Long id) {
           if (System.currentTimeMillis() - pingInfo.lastPing >= pingTimeout) {
-            // We didn't receive a ping in time so close the socket
-            sock.close();
+            // We didn't receive a ping in time so time out the socket
+            sock.timeout();
           }
         }
       });

@@ -157,6 +157,13 @@ class Session extends SockJSSocketBase implements Shareable {
     return this;
   }
 
+  @Override
+  public void timeout() {
+    if (!closed) {
+      close();
+    }
+    shutdown();
+  }
 
   public synchronized void shutdown() {
     doClose();

@@ -104,6 +104,8 @@ class BaseTransport {
 
     @Override
     public void sessionClosed() {
+      session.writeClosed(this);
+      close();
     }
   }
 
