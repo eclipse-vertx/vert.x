@@ -73,7 +73,7 @@ public abstract class HttpResolution {
   public boolean waitResult() {
     while (true) {
       try {
-        if (!latch.await(300, TimeUnit.SECONDS)) {
+        if (!latch.await(3600, TimeUnit.SECONDS)) {
           throw new IllegalStateException("Timed out waiting to download module");
         }
         break;
