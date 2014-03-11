@@ -104,6 +104,11 @@ class RawWebSocketTransport {
     }
 
     @Override
+    public void timeout() {
+      close();
+    }
+
+    @Override
     public InetSocketAddress remoteAddress() {
       return ws.remoteAddress();
     }
