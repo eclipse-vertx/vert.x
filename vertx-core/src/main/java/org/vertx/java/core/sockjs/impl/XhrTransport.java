@@ -72,7 +72,7 @@ class XhrTransport extends BaseTransport {
         if (log.isTraceEnabled()) log.trace("XHR send, post, " + req.uri());
         String sessionID = req.params().get("param0");
         final Session session = sessions.get(sessionID);
-        if (session != null) {
+        if (session != null && !session.isClosed()) {
           handleSend(req, session);
         } else {
           req.response().setStatusCode(404);
@@ -142,12 +142,6 @@ class XhrTransport extends BaseTransport {
     }
 
     public void close() {
-    }
-
-    @Override
-    public void sessionClosed() {
-      session.writeClosed(this);
-      close();
     }
   }
 
