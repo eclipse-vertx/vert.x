@@ -82,7 +82,14 @@ class BaseTransport {
   }
 
   protected static abstract class BaseListener implements TransportListener {
+    protected final HttpServerRequest req;
+    protected final Session session;
+    protected boolean closed;
 
+    protected BaseListener(final HttpServerRequest req, final Session session) {
+      this.req = req;
+      this.session = session;
+    }
     protected void addCloseHandler(HttpServerResponse resp, final Session session) {
       resp.closeHandler(new VoidHandler() {
         public void handle() {
@@ -90,11 +97,12 @@ class BaseTransport {
           // Connection has been closed from the client or network error so
           // we remove the session
           session.shutdown();
-          close();
+          closed = true;
         }
       });
     }
 
+    @Override
     public void sessionClosed() {
     }
   }
@@ -183,6 +191,20 @@ class BaseTransport {
   // We remove cookie headers for security reasons. See https://github.com/sockjs/sockjs-node section on
   // Authorisation
   static MultiMap removeCookieHeaders(MultiMap headers) {
-    return headers.remove("cookie");
+    // We don't want to remove the JSESSION cookie.
+    String jsessionid = null;
+    for (String cookie : headers.getAll("cookie")) {
+      if (cookie.startsWith("JSESSIONID=")) {
+        jsessionid = cookie;
+      }
+    }
+    headers.remove("cookie");
+
+    // Add back jsessionid cookie header
+    if (jsessionid != null) {
+      headers.add("cookie", jsessionid);
+    }
+
+    return headers;
   }
 }
