@@ -455,7 +455,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     runInBackground(new Runnable() {
       public void run() {
         if (deployment.modDir != null) {
-          deployModuleFromFileSystem(modRoot, deployment.name, deployment.modID, deployment.config,
+          deployModuleFromFileSystem(deployment.modDir.getParentFile(), deployment.name, deployment.modID, deployment.config,
               deployment.instances,
               null, deployment.ha, null);
         } else {
