@@ -70,7 +70,7 @@ class JsonPTransport extends BaseTransport {
         if (log.isTraceEnabled()) log.trace("JsonP, post: " + req.uri());
         String sessionID = req.params().get("param0");
         final Session session = sessions.get(sessionID);
-        if (session != null) {
+        if (session != null && !session.isClosed()) {
           handleSend(req, session);
         } else {
           req.response().setStatusCode(404);
