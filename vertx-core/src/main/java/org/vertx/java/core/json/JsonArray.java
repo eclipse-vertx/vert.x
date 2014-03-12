@@ -57,16 +57,20 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
   }
 
   public JsonArray addObject(JsonObject value) {
-    list.add(value.map);
+    list.add(value == null ? null : value.map);
     return this;
   }
 
   public JsonArray addArray(JsonArray value) {
-    list.add(value.list);
+    list.add(value == null ? null : value.list);
     return this;
   }
 
   public JsonArray addElement(JsonElement value) {
+    if (value == null) {
+      list.add(null);
+      return this;
+    }
     if (value.isArray()) {
       return addArray(value.asArray());
     }
@@ -84,20 +88,22 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
   }
 
   public JsonArray addBinary(byte[] value) {
-    String encoded = org.vertx.java.core.json.impl.Base64.encodeBytes(value);
+    String encoded = (value == null) ? null : org.vertx.java.core.json.impl.Base64.encodeBytes(value);
     list.add(encoded);
     return this;
   }
 
   public JsonArray add(Object value) {
-    if (value instanceof JsonObject) {
-      addObject((JsonObject)value);
+    if (value == null) {
+      list.add(null);
+    } else if (value instanceof JsonObject) {
+      addObject((JsonObject) value);
     } else if (value instanceof JsonArray) {
-      addArray((JsonArray)value);
+      addArray((JsonArray) value);
     } else if (value instanceof String) {
-      addString((String)value);
+      addString((String) value);
     } else if (value instanceof Number) {
-      addNumber((Number)value);
+      addNumber((Number) value);
     } else if (value instanceof Boolean) {
       addBoolean((Boolean)value);
     } else if (value instanceof byte[]) {

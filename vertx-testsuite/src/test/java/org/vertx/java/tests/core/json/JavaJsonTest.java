@@ -129,6 +129,18 @@ public class JavaJsonTest extends TestBase {
   }
 
   @Test
+  public void testNullValuesInArray() {
+    assertNull(new JsonArray().add(null).get(0));
+    assertNull(new JsonArray().addArray(null).get(0));
+    assertNull(new JsonArray().addBoolean(null).get(0));
+    assertNull(new JsonArray().addBinary(null).get(0));
+    assertNull(new JsonArray().addElement(null).get(0));
+    assertNull(new JsonArray().addNumber(null).get(0));
+    assertNull(new JsonArray().addObject(null).get(0));
+    assertNull(new JsonArray().addString(null).get(0));
+  }
+
+  @Test
   public void testGetNullValues() {
     assertNull(new JsonObject().putString("foo", null).getString("foo"));
     assertNull(new JsonObject().putObject("foo", null).getObject("foo"));
