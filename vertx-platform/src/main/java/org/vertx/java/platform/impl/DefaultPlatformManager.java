@@ -415,7 +415,10 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   public void exit() {
     // We tell the cluster manager to leave - this is because Hazelcast uses non daemon threads which will prevent
     // JVM exit and shutdown hooks to be called
-    vertx.clusterManager().leave();
+    ClusterManager mgr = vertx.clusterManager();
+    if (mgr != null) {
+      vertx.clusterManager().leave();
+    }
     if (exitHandler != null) {
       exitHandler.handle(null);
     }
