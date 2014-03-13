@@ -530,7 +530,10 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   }
 
   private void cacheAuthorisation(String sessionID, SockJSSocket sock) {
-    authCache.put(sessionID, new Auth(sessionID, sock));
+    Auth oldAuth = authCache.put(sessionID, new Auth(sessionID, sock));
+    if (oldAuth != null) {
+      oldAuth.cancel();
+    }
     SockInfo sockInfo = sockInfos.get(sock);
     Set<String> sess = sockInfo.sockAuths;
     if (sess == null) {
