@@ -85,7 +85,31 @@ public class JavaWebsocketTest extends TestBase {
     startTest(getMethodName());
   }
 
-   @Test
+  public void testValidSubProtocolHybi00() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testValidSubProtocolHybi08() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testValidSubProtocolHybi17() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testInvalidSubProtocolHybi00() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testInvalidSubProtocolHybi08() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testInvalidSubProtocolHybi17() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
   public void testSharedServersMultipleInstances1() throws Exception {
     int numInstances = Runtime.getRuntime().availableProcessors() * 2;
     sharedServers(getMethodName(), true, numInstances, 0, 0);

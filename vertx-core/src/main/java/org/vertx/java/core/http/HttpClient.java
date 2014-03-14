@@ -21,6 +21,8 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.TCPSupport;
 
+import java.util.Set;
+
 /**
  * An HTTP client that maintains a pool of connections to a specific host, at a specific port. The client supports
  * pipelining of requests.<p>
@@ -118,6 +120,14 @@ public interface HttpClient extends ClientSSLSupport<HttpClient>, TCPSupport<Htt
    * The connect is done asynchronously and {@code wsConnect} is called back with the websocket
    */
   HttpClient connectWebsocket(String uri, WebSocketVersion wsVersion, MultiMap headers, Handler<WebSocket> wsConnect);
+
+  /**
+   * Attempt to connect an HTML5 websocket to the specified URI<p>
+   * This version of the method allows you to specify the websockets version using the {@code wsVersion parameter}
+   * You can also specify a set of headers to append to the upgrade request and specify the supported subprotocols.
+   * The connect is done asynchronously and {@code wsConnect} is called back with the websocket
+   */
+  HttpClient connectWebsocket(String uri, WebSocketVersion wsVersion, MultiMap headers, Set<String> subprotocols, Handler<WebSocket> wsConnect);
 
   /**
    * This is a quick version of the {@link #get(String, org.vertx.java.core.Handler)}

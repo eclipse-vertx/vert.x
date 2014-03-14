@@ -38,10 +38,7 @@ import org.vertx.java.core.net.impl.DefaultNetSocket;
 import org.vertx.java.core.net.impl.VertxNetHandler;
 
 import java.net.URI;
-import java.util.ArrayDeque;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -85,6 +82,7 @@ class ClientConnection extends ConnectionBase {
                    final WebSocketVersion wsVersion,
                    final MultiMap headers,
                    int maxWebSocketFrameSize,
+                   final Set<String> subProtocols,
                    final Handler<WebSocket> wsConnect) {
     if (ws != null) {
       throw new IllegalStateException("Already websocket");
@@ -115,7 +113,20 @@ class ClientConnection extends ConnectionBase {
       } else {
         nettyHeaders = null;
       }
-      handshaker = WebSocketClientHandshakerFactory.newHandshaker(wsuri, version, null, false,
+      String wsSubProtocols = null;
+      if (subProtocols != null && !subProtocols.isEmpty()) {
+        StringBuilder sb = new StringBuilder();
+
+        Iterator<String> protocols = subProtocols.iterator();
+        while (protocols.hasNext()) {
+          sb.append(protocols.next());
+          if (protocols.hasNext()) {
+            sb.append(",");
+          }
+        }
+        wsSubProtocols = sb.toString();
+      }
+      handshaker = WebSocketClientHandshakerFactory.newHandshaker(wsuri, version, wsSubProtocols, false,
                                                                   nettyHeaders, maxWebSocketFrameSize);
       final ChannelPipeline p = channel.pipeline();
       p.addBefore("handler", "handshakeCompleter", new HandshakeInboundHandler(wsConnect));
