@@ -14,9 +14,7 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package org.vertx.java.core.http.impl.ws;
-
-import io.netty.buffer.ByteBuf;
+package org.vertx.java.core.http;
 
 /**
  * A Web Socket frame that represents either text or binary data.
@@ -39,7 +37,7 @@ public interface WebSocketFrame {
     PONG,
   }
 
-  FrameType getType();
+  FrameType type();
 
   /**
    * Returns {@code true} if and only if the content of this frame is a string
@@ -54,36 +52,20 @@ public interface WebSocketFrame {
   boolean isBinary();
 
   /**
-   * Returns the content of this frame as-is, with no UTF-8 decoding.
-   */
-  ByteBuf getBinaryData();
-
-  /**
    * Converts the content of this frame into a UTF-8 string and returns the
    * converted string.
    */
-  String getTextData();
-
-  /**
-   * Sets the type and the content of this frame.
-   *
-   * @param binaryData the content of the frame.  If <tt>(type &amp; 0x80 == 0)</tt>,
-   *                   it must be encoded in UTF-8.
-   * @throws IllegalArgumentException if If <tt>(type &amp; 0x80 == 0)</tt> and the data is not encoded
-   *                                  in UTF-8
-   */
-  void setBinaryData(ByteBuf binaryData);
-
-  /**
-   * Set the type of the content of this frame and populate it with the given content
-   *
-   * @param textData the content of the frame. Must be valid UTF-8
-   */
-  void setTextData(String textData);
+  String textData();
 
   /**
    * Returns the string representation of this frame.  Please note that this
-   * method is not identical to {@link #getTextData()}.
+   * method is not identical to {@link #textData()}.
    */
   String toString();
+
+  /**
+   * Returns {@code true} if this is the final frame.  This should be {@code true} unless a number of 
+   * coninuation frames are expected to follow this frame.
+   */
+  boolean isFinalFrame();
 }

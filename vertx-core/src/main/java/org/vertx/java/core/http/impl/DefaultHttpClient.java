@@ -30,7 +30,7 @@ import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
-import org.vertx.java.core.http.impl.ws.WebSocketFrame;
+import org.vertx.java.core.http.impl.ws.WebSocketFrameInternal;
 import org.vertx.java.core.impl.Closeable;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.DefaultFutureResult;
@@ -798,10 +798,11 @@ public class DefaultHttpClient implements HttpClient {
           conn.handleResponseEnd((LastHttpContent)chunk);
         }
         valid = true;
-      } else if (msg instanceof WebSocketFrame) {
-        WebSocketFrame frame = (WebSocketFrame) msg;
-        switch (frame.getType()) {
+      } else if (msg instanceof WebSocketFrameInternal) {
+        WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
+        switch (frame.type()) {
           case BINARY:
+          case CONTINUATION:
           case TEXT:
             conn.handleWsFrame(frame);
             break;

@@ -20,7 +20,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.ServerWebSocket;
-import org.vertx.java.core.http.impl.ws.WebSocketFrame;
+import org.vertx.java.core.http.WebSocketFrame;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.impl.ConnectionBase;
 
@@ -117,6 +117,13 @@ public class DefaultServerWebSocket extends WebSocketImplBase<ServerWebSocket> i
   public ServerWebSocket closeHandler(Handler<Void> handler) {
     checkClosed();
     this.closeHandler = handler;
+    return this;
+  }
+
+  @Override
+  public ServerWebSocket frameHandler(Handler<WebSocketFrame> handler) {
+    checkClosed();
+    this.frameHandler = handler;
     return this;
   }
 

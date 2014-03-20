@@ -154,6 +154,16 @@ public class JavaWebsocketTest extends TestBase {
     startTest(getMethodName());
   }
 
+  @Test
+  public void testContinuationWriteFromConnectHybi08() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testContinuationWriteFromConnectHybi17() throws Exception {
+    startTest(getMethodName());
+  }
+
   void sharedServers(String testName, boolean multipleInstances, int numInstances, int initialServers, int initialToStop) throws Exception {
 
     //We initially start then stop them to make sure the shared server cleanup code works ok

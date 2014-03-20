@@ -26,7 +26,9 @@ import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.*;
+import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
+import org.vertx.java.core.http.impl.ws.WebSocketFrameInternal;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.impl.ConnectionBase;
@@ -98,21 +100,24 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
       }
     } else if (msg instanceof WebSocketFrame) {
       ByteBuf payload = safeBuffer((WebSocketFrame) msg, allocator);
+      boolean isFinal = ((WebSocketFrame) msg).isFinalFragment();
+        org.vertx.java.core.http.WebSocketFrame.FrameType frameType;
       if (msg instanceof BinaryWebSocketFrame) {
-        return new DefaultWebSocketFrame(org.vertx.java.core.http.impl.ws.WebSocketFrame.FrameType.BINARY, payload);
+        frameType = org.vertx.java.core.http.WebSocketFrame.FrameType.BINARY;
       } else if (msg instanceof CloseWebSocketFrame) {
-        return new DefaultWebSocketFrame(org.vertx.java.core.http.impl.ws.WebSocketFrame.FrameType.CLOSE, payload);
+        frameType = org.vertx.java.core.http.WebSocketFrame.FrameType.CLOSE;
       } else if (msg instanceof PingWebSocketFrame) {
-        return new DefaultWebSocketFrame(org.vertx.java.core.http.impl.ws.WebSocketFrame.FrameType.PING, payload);
+        frameType = org.vertx.java.core.http.WebSocketFrame.FrameType.PING;
       } else if (msg instanceof PongWebSocketFrame) {
-        return new DefaultWebSocketFrame(org.vertx.java.core.http.impl.ws.WebSocketFrame.FrameType.PONG, payload);
+        frameType = org.vertx.java.core.http.WebSocketFrame.FrameType.PONG;
       } else if (msg instanceof TextWebSocketFrame) {
-        return new DefaultWebSocketFrame(org.vertx.java.core.http.impl.ws.WebSocketFrame.FrameType.TEXT, payload);
+        frameType = org.vertx.java.core.http.WebSocketFrame.FrameType.TEXT;
       } else if (msg instanceof ContinuationWebSocketFrame) {
-        return new DefaultWebSocketFrame(org.vertx.java.core.http.impl.ws.WebSocketFrame.FrameType.CONTINUATION, payload);
+        frameType = org.vertx.java.core.http.WebSocketFrame.FrameType.CONTINUATION;
       } else {
         throw new IllegalStateException("Unsupported websocket msg " + msg);
       }
+      return new DefaultWebSocketFrame(frameType, payload, isFinal);
     }
     return msg;
   }
@@ -120,13 +125,13 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
 
   @Override
   public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-    if (msg instanceof org.vertx.java.core.http.impl.ws.WebSocketFrame) {
-      org.vertx.java.core.http.impl.ws.WebSocketFrame frame = (org.vertx.java.core.http.impl.ws.WebSocketFrame) msg;
-      ByteBuf buf = ((org.vertx.java.core.http.impl.ws.WebSocketFrame) msg).getBinaryData();
+    if (msg instanceof WebSocketFrameInternal) {
+      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
+      ByteBuf buf = frame.getBinaryData();
       if (buf != Unpooled.EMPTY_BUFFER) {
          buf = safeBuffer(buf, ctx.alloc());
       }
-      switch (frame.getType()) {
+      switch (frame.type()) {
         case BINARY:
           msg = new BinaryWebSocketFrame(buf);
           break;
