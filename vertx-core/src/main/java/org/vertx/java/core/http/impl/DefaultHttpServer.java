@@ -687,7 +687,14 @@ public class DefaultHttpServer implements HttpServer, Closeable {
       } else {
         prefix = "wss://";
       }
-      return prefix + HttpHeaders.getHost(req) + new URI(req.getUri()).getPath();
+      URI uri = new URI(req.getUri());
+      String path = uri.getRawPath();
+      String loc =  prefix + HttpHeaders.getHost(req) + path;
+      String query = uri.getRawQuery();
+      if (query != null) {
+        loc += "?" + query;
+      }
+      return loc;
     }
 
     private void handshake(final FullHttpRequest request, final Channel ch, ChannelHandlerContext ctx) throws Exception {
