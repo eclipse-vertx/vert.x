@@ -27,8 +27,8 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.net.NetSocket;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
@@ -181,7 +181,7 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
   void handleChunk(Buffer data) {
     if (paused) {
       if (pausedChunks == null) {
-        pausedChunks = new LinkedList<>();
+        pausedChunks = new ArrayDeque<>();
       }
       pausedChunks.add(data);
     } else {
