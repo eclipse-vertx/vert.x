@@ -24,6 +24,8 @@ import io.netty.channel.group.ChannelGroupFutureListener;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.ssl.SslHandler;
@@ -52,7 +54,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -79,6 +81,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
   private String serverOrigin;
   private boolean compressionSupported;
   private int maxWebSocketFrameSize = 65536;
+  private Set<String> webSocketSubProtocols = Collections.unmodifiableSet(Collections.<String>emptySet());
 
   private ChannelFuture bindFuture;
   private ServerID id;
@@ -210,7 +213,6 @@ public class DefaultHttpServer implements HttpServer, Closeable {
             }
           });
         } catch (final Throwable t) {
-          t.printStackTrace();
           // Make sure we send the exception back through the handler (if any)
           if (listenHandler != null) {
             vertx.runOnContext(new VoidHandler() {
@@ -516,6 +518,21 @@ public class DefaultHttpServer implements HttpServer, Closeable {
     return maxWebSocketFrameSize;
   }
 
+  @Override
+  public HttpServer setWebSocketSubProtocols(String... subProtocols) {
+    if (subProtocols == null || subProtocols.length == 0) {
+      webSocketSubProtocols = Collections.unmodifiableSet(Collections.<String>emptySet());
+    } else {
+      webSocketSubProtocols = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(subProtocols)));
+    }
+    return this;
+  }
+
+  @Override
+  public Set<String> getWebSocketSubProtocols() {
+    return webSocketSubProtocols;
+  }
+
   private void actualClose(final DefaultContext closeContext, final Handler<AsyncResult<Void>> done) {
     if (id != null) {
       vertx.sharedHttpServers().remove(id);
@@ -699,8 +716,21 @@ public class DefaultHttpServer implements HttpServer, Closeable {
 
     private void handshake(final FullHttpRequest request, final Channel ch, ChannelHandlerContext ctx) throws Exception {
       final WebSocketServerHandshaker shake;
+      String subProtocols = null;
+      Set<String> webSocketSubProtocols = DefaultHttpServer.this.webSocketSubProtocols;
+      if (!webSocketSubProtocols.isEmpty()) {
+        StringBuilder sb = new StringBuilder();
+        Iterator<String> protocols = webSocketSubProtocols.iterator();
+        while(protocols.hasNext()) {
+          sb.append(protocols.next());
+          if (protocols.hasNext()) {
+            sb.append(',');
+          }
+        }
+        subProtocols = sb.toString();
+      }
       WebSocketServerHandshakerFactory factory =
-          new WebSocketServerHandshakerFactory(getWebSocketLocation(ch.pipeline(), request), null, false,
+          new WebSocketServerHandshakerFactory(getWebSocketLocation(ch.pipeline(), request), subProtocols, false,
                                                maxWebSocketFrameSize);
       shake = factory.newHandshaker(request);
 
@@ -731,6 +761,8 @@ public class DefaultHttpServer implements HttpServer, Closeable {
             connectionMap.put(ch, wsConn);
             try {
               shake.handshake(ch, request);
+            } catch (WebSocketHandshakeException e) {
+              wsConn.handleException(e);
             } catch (Exception e) {
               log.error("Failed to generate shake response", e);
             }

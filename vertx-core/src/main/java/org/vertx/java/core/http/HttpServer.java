@@ -21,6 +21,8 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.ServerSSLSupport;
 import org.vertx.java.core.ServerTCPSupport;
 
+import java.util.Set;
+
 /**
  * An HTTP and WebSockets server<p>
  * If an instance is instantiated from an event loop then the handlers
@@ -116,7 +118,18 @@ public interface HttpServer extends ServerSSLSupport<HttpServer>, ServerTCPSuppo
   HttpServer setMaxWebSocketFrameSize(int maxSize);
 
   /**
-   * Get the  maximum websocket frame size in bytes.
+   * Get the maximum websocket frame size in bytes.
    */
   int getMaxWebSocketFrameSize();
+
+  /**
+   * Set the supported websocket subprotocols. Using null to disable support of subprotocols.
+   */
+  HttpServer setWebSocketSubProtocols(String... subProtocols);
+
+  /**
+   * Returns a immutable {@link Set} which holds all the supported subprotocols. An empty set is returned if
+   * non are supported. This is the default.
+   */
+  Set<String> getWebSocketSubProtocols();
 }
