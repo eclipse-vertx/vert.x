@@ -1960,6 +1960,15 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
 
     @Override
+    public URL getResource(String name) {
+      URL url = findResource(name);
+      if (url == null) {
+        url = super.getResource(name);
+      }
+      return url;
+    }
+
+    @Override
     public Enumeration<URL> getResources(String name) throws IOException {
       List<URL> resources = new ArrayList<>(Collections.list(findResources(name)));
       if (parent != null) {

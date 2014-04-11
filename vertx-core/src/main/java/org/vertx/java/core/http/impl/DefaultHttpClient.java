@@ -45,6 +45,7 @@ import javax.net.ssl.SSLParameters;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultHttpClient implements HttpClient {
@@ -162,14 +163,20 @@ public class DefaultHttpClient implements HttpClient {
 
   @Override
   public HttpClient connectWebsocket(final String uri, final WebSocketVersion wsVersion, final MultiMap headers, final Handler<WebSocket> wsConnect) {
+    connectWebsocket(uri, wsVersion, headers, null, wsConnect);
+    return this;
+  }
+
+  @Override
+  public HttpClient connectWebsocket(final String uri, final WebSocketVersion wsVersion, final MultiMap headers, final Set<String> subprotocols, final Handler<WebSocket> wsConnect) {
     checkClosed();
     configurable = false;
     getConnection(new Handler<ClientConnection>() {
       public void handle(final ClientConnection conn) {
         if (!conn.isClosed()) {
-          conn.toWebSocket(uri, wsVersion, headers, maxWebSocketFrameSize, wsConnect);
+          conn.toWebSocket(uri, wsVersion, headers, maxWebSocketFrameSize, subprotocols, wsConnect);
         } else {
-          connectWebsocket(uri, wsVersion, headers, wsConnect);
+          connectWebsocket(uri, wsVersion, headers, subprotocols, wsConnect);
         }
       }
     }, exceptionHandler, actualCtx);

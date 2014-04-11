@@ -35,8 +35,7 @@ public final class PartialPooledByteBufAllocator implements ByteBufAllocator {
   // Make sure we use the same number of areas as EventLoop's to reduce condition.
   // We can remove this once the following netty issue is fixed:
   // See https://github.com/netty/netty/issues/2264
-  private static final ByteBufAllocator POOLED = new PooledByteBufAllocator(
-          false, VertxExecutorFactory.eventLoopSize(), VertxExecutorFactory.eventLoopSize(), 8192, 11);
+  private static final ByteBufAllocator POOLED = new PooledByteBufAllocator(false);
   private static final ByteBufAllocator UNPOOLED = new UnpooledByteBufAllocator(false);
 
   public static final PartialPooledByteBufAllocator INSTANCE = new PartialPooledByteBufAllocator();
