@@ -243,8 +243,14 @@ public abstract class HttpResolution {
         if (redirectPort == -1) {
           redirectPort = 80;
         }
+        // Use raw values from location header
+        String uri = redirectURI.getRawPath();
+        String query = redirectURI.getRawQuery();
+        if (query != null) {
+          uri = uri + "?" + query; // Include query in URL
+        }
         createClient(redirectURI.getScheme(), redirectURI.getHost(), redirectPort);
-        makeRequest(redirectURI.getScheme(), redirectURI.getHost(), redirectPort, redirectURI.getPath());
+        makeRequest(redirectURI.getScheme(), redirectURI.getHost(), redirectPort, uri);
       } catch (URISyntaxException e) {
         log.error("Invalid redirect URI: " + location);
       }
