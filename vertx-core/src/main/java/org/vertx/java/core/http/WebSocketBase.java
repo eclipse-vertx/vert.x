@@ -70,6 +70,11 @@ public interface WebSocketBase<T> extends ReadStream<T>, WriteStream<T> {
   T closeHandler(Handler<Void> handler);
 
   /**
+   * Set a frame handler on the connection
+   */
+  T frameHandler(Handler<WebSocketFrame> handler);
+
+  /**
    * Close the websocket
    */
   void close();

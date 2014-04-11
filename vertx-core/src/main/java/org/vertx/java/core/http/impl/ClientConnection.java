@@ -27,7 +27,7 @@ import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.core.http.WebSocketVersion;
-import org.vertx.java.core.http.impl.ws.WebSocketFrame;
+import org.vertx.java.core.http.impl.ws.WebSocketFrameInternal;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
@@ -321,7 +321,7 @@ class ClientConnection extends ConnectionBase {
     }
   }
 
-  void handleWsFrame(WebSocketFrame frame) {
+  void handleWsFrame(WebSocketFrameInternal frame) {
     if (ws != null) {
       setContext();
       ws.handleFrame(frame);

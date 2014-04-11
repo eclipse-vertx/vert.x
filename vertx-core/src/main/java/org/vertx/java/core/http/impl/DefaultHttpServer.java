@@ -38,9 +38,10 @@ import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
+import org.vertx.java.core.http.WebSocketFrame;
 import org.vertx.java.core.http.impl.cgbystrom.FlashPolicyHandler;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
-import org.vertx.java.core.http.impl.ws.WebSocketFrame;
+import org.vertx.java.core.http.impl.ws.WebSocketFrameInternal;
 import org.vertx.java.core.impl.Closeable;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.DefaultFutureResult;
@@ -656,11 +657,12 @@ public class DefaultHttpServer implements HttpServer, Closeable {
             conn.handleMessage(msg);
           }
         }
-      } else if (msg instanceof WebSocketFrame) {
+      } else if (msg instanceof WebSocketFrameInternal) {
         //Websocket frame
-        WebSocketFrame wsFrame = (WebSocketFrame)msg;
-        switch (wsFrame.getType()) {
+        WebSocketFrameInternal wsFrame = (WebSocketFrameInternal)msg;
+        switch (wsFrame.type()) {
           case BINARY:
+          case CONTINUATION:
           case TEXT:
             if (conn != null) {
               conn.handleMessage(msg);

@@ -21,8 +21,9 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.WebSocketBase;
+import org.vertx.java.core.http.WebSocketFrame;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
-import org.vertx.java.core.http.impl.ws.WebSocketFrame;
+import org.vertx.java.core.http.impl.ws.WebSocketFrameInternal;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.impl.ConnectionBase;
 
@@ -40,6 +41,7 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
   private final VertxInternal vertx;
   protected final ConnectionBase conn;
 
+  protected Handler<WebSocketFrame> frameHandler;
   protected Handler<Buffer> dataHandler;
   protected Handler<Void> drainHandler;
   protected Handler<Throwable> exceptionHandler;
@@ -128,10 +130,14 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
     }
   }
 
-  void handleFrame(WebSocketFrame frame) {
+  void handleFrame(WebSocketFrameInternal frame) {
     if (dataHandler != null) {
       Buffer buff = new Buffer(frame.getBinaryData());
       dataHandler.handle(buff);
+    }
+
+    if (frameHandler != null) {
+      frameHandler.handle(frame);
     }
   }
 

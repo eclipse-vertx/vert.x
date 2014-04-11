@@ -28,7 +28,7 @@ import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
-import org.vertx.java.core.http.impl.ws.WebSocketFrame;
+import org.vertx.java.core.http.impl.ws.WebSocketFrameInternal;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.ConnectionBase;
@@ -241,7 +241,7 @@ class ServerConnection extends ConnectionBase {
     }
   }
 
-  private void handleWsFrame(WebSocketFrame frame) {
+  private void handleWsFrame(WebSocketFrameInternal frame) {
     try {
       if (ws != null) {
         setContext();
@@ -316,8 +316,8 @@ class ServerConnection extends ConnectionBase {
           pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
         }
       }
-    } else if (msg instanceof WebSocketFrame) {
-      WebSocketFrame frame = (WebSocketFrame) msg;
+    } else if (msg instanceof WebSocketFrameInternal) {
+      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
       handleWsFrame(frame);
     }
 

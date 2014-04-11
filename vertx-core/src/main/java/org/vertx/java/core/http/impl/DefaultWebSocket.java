@@ -19,6 +19,7 @@ package org.vertx.java.core.http.impl;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.WebSocket;
+import org.vertx.java.core.http.WebSocketFrame;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.impl.ConnectionBase;
 
@@ -65,6 +66,13 @@ public class DefaultWebSocket extends WebSocketImplBase<WebSocket> implements We
   public WebSocket closeHandler(Handler<Void> handler) {
     checkClosed();
     this.closeHandler = handler;
+    return this;
+  }
+
+  @Override
+  public WebSocket frameHandler(Handler<WebSocketFrame> handler) {
+    checkClosed();
+    this.frameHandler = handler;
     return this;
   }
 

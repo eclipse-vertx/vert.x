@@ -22,33 +22,45 @@ import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCounted;
 
 /**
- * The default {@link WebSocketFrame} implementation.
+ * The default {@link WebSocketFrameInternal} implementation.
  *
  * @author <a href="http://www.jboss.org/netty/">The Netty Project</a>
  * @author <a href="http://gleamynode.net/">Trustin Lee</a>
  * @version $Rev: 2080 $, $Date: 2010-01-26 18:04:19 +0900 (Tue, 26 Jan 2010) $
  */
-public class DefaultWebSocketFrame implements WebSocketFrame, ReferenceCounted {
+public class DefaultWebSocketFrame implements WebSocketFrameInternal, ReferenceCounted {
 
   private final FrameType type;
+  private final boolean isFinalFrame;
   private ByteBuf binaryData;
 
   /**
    * Creates a new empty text frame.
    */
   public DefaultWebSocketFrame() {
-    this(null, Unpooled.EMPTY_BUFFER);
+    this(null, Unpooled.EMPTY_BUFFER, true);
   }
 
+  /**
+   * Creates a new empty text frame.
+   */
   public DefaultWebSocketFrame(FrameType frameType) {
-    this(frameType, Unpooled.EMPTY_BUFFER);
+    this(frameType, Unpooled.EMPTY_BUFFER, true);
   }
 
   /**
    * Creates a new text frame from with the specified string.
    */
   public DefaultWebSocketFrame(String textData) {
+    this(textData, true);
+  }
+
+  /**
+   * Creates a new text frame from with the specified string.
+   */
+  public DefaultWebSocketFrame(String textData, boolean isFinalFrame) {
     this.type = FrameType.TEXT;
+    this.isFinalFrame = isFinalFrame;
     this.binaryData = Unpooled.copiedBuffer(textData, CharsetUtil.UTF_8);
   }
 
@@ -62,11 +74,26 @@ public class DefaultWebSocketFrame implements WebSocketFrame, ReferenceCounted {
    *                                  in UTF-8
    */
   public DefaultWebSocketFrame(FrameType type, ByteBuf binaryData) {
+    this(type, binaryData, true);
+  }
+
+  /**
+   * Creates a new frame with the specified frame type and the specified data.
+   *
+   * @param type       the type of the frame. {@code 0} is the only allowed type currently.
+   * @param binaryData the content of the frame.  If <tt>(type &amp; 0x80 == 0)</tt>,
+   *                   it must be encoded in UTF-8.
+   * @param isFinalFrame If this is the final frame in a sequence
+   * @throws IllegalArgumentException if If <tt>(type &amp; 0x80 == 0)</tt> and the data is not encoded
+   *                                  in UTF-8
+   */
+  public DefaultWebSocketFrame(FrameType type, ByteBuf binaryData, boolean isFinalFrame) {
     this.type = type;
+    this.isFinalFrame = isFinalFrame;
     this.binaryData = Unpooled.unreleasableBuffer(binaryData);
   }
 
-  public FrameType getType() {
+  public FrameType type() {
     return type;
   }
 
@@ -82,7 +109,7 @@ public class DefaultWebSocketFrame implements WebSocketFrame, ReferenceCounted {
     return binaryData;
   }
 
-  public String getTextData() {
+  public String textData() {
     return getBinaryData().toString(CharsetUtil.UTF_8);
   }
 
@@ -103,7 +130,7 @@ public class DefaultWebSocketFrame implements WebSocketFrame, ReferenceCounted {
   @Override
   public String toString() {
     return getClass().getSimpleName() +
-        "(type: " + getType() + ", " + "data: " + getBinaryData() + ')';
+        "(type: " + type() + ", " + "data: " + getBinaryData() + ')';
   }
 
   @Override
@@ -129,5 +156,10 @@ public class DefaultWebSocketFrame implements WebSocketFrame, ReferenceCounted {
   @Override
   public boolean release(int decrement) {
     return binaryData.release(decrement);
+  }
+
+  @Override
+  public boolean isFinalFrame() {
+    return isFinalFrame;
   }
 }
