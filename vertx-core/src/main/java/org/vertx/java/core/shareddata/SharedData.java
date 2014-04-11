@@ -44,6 +44,7 @@ import java.util.concurrent.ConcurrentMap;
  *   {@code byte[]} - this will be automatically copied, and the copy will be stored in the structure.
  *   {@link org.vertx.java.core.buffer.Buffer} - this will be automatically copied, and the copy will be stored in the
  *   structure.
+ *   Classes implementing {@link org.vertx.java.core.shareddata.Shareable}
  * </pre>
  * <p>
  *
