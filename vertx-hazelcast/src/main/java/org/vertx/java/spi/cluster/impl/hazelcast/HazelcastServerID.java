@@ -16,11 +16,11 @@
 
 package org.vertx.java.spi.cluster.impl.hazelcast;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import org.vertx.java.core.net.impl.ServerID;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 /**
@@ -36,13 +36,13 @@ class HazelcastServerID extends ServerID implements DataSerializable {
   }
 
   @Override
-  public void writeData(DataOutput dataOutput) throws IOException {
+  public void writeData(ObjectDataOutput dataOutput) throws IOException {
     dataOutput.writeInt(port);
     dataOutput.writeUTF(host);
   }
 
   @Override
-  public void readData(DataInput dataInput) throws IOException {
+  public void readData(ObjectDataInput dataInput) throws IOException {
     port = dataInput.readInt();
     host = dataInput.readUTF();
   }
@@ -58,4 +58,5 @@ class HazelcastServerID extends ServerID implements DataSerializable {
       return val;
     }
   }
+
 }

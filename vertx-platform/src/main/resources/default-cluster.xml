@@ -1,45 +1,63 @@
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-basic.xsd"
+<?xml version="1.0" encoding="UTF-8"?>
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.2.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-	<properties>
-	    <property name="hazelcast.mancenter.enabled">false</property>
-	    <property name="hazelcast.memcache.enabled">false</property>
-	    <property name="hazelcast.rest.enabled">false</property>
-	    <property name="hazelcast.wait.seconds.before.join">0</property>
-	    <property name="hazelcast.logging.type">jdk</property>
-	</properties>
+    <properties>
+        <property name="hazelcast.mancenter.enabled">false</property>
+        <property name="hazelcast.memcache.enabled">false</property>
+        <property name="hazelcast.rest.enabled">false</property>
+        <property name="hazelcast.wait.seconds.before.join">0</property>
+        <property name="hazelcast.logging.type">jdk</property>
+    </properties>
+
     <group>
         <name>dev</name>
         <password>dev-pass</password>
     </group>
+    <management-center enabled="false">http://localhost:8080/mancenter</management-center>
     <network>
-        <port auto-increment="true">5701</port>
+        <port auto-increment="true" port-count="100">5701</port>
+        <outbound-ports>
+            <!--
+            Allowed port range when connecting to other nodes.
+            0 or * means use system provided port.
+            -->
+            <ports>0</ports>
+        </outbound-ports>
         <join>
             <multicast enabled="true">
                 <multicast-group>224.2.2.3</multicast-group>
                 <multicast-port>54327</multicast-port>
             </multicast>
             <tcp-ip enabled="false">
-                <interface>192.168.1.28</interface>
+                <interface>127.0.0.1</interface>
             </tcp-ip>
             <aws enabled="false">
                 <access-key>my-access-key</access-key>
                 <secret-key>my-secret-key</secret-key>
-                <region>us-east-1</region>
+                <!--optional, default is us-east-1 -->
+                <region>us-west-1</region>
+                <!--optional, default is ec2.amazonaws.com. If set, region shouldn't be set as it will override this property -->
+                <host-header>ec2.amazonaws.com</host-header>
+                <!-- optional, only instances belonging to this group will be discovered, default will try all running instances -->
+                <security-group-name>hazelcast-sg</security-group-name>
+                <tag-key>type</tag-key>
+                <tag-value>hz-nodes</tag-value>
             </aws>
         </join>
-        <!--
-        If you have more than one network interface, edit this to select which
-        one you want to use
-        <interfaces enabled="true">
-            <interface>192.168.1.16</interface>
+        <interfaces enabled="false">
+            <interface>10.10.1.*</interface>
         </interfaces>
-        -->
-        
+        <ssl enabled="false" />
+        <socket-interceptor enabled="false" />
         <symmetric-encryption enabled="false">
             <!--
-               encryption algorithm such as DES/ECB/PKCS5Padding, PBEWithMD5AndDES,
-               AES/CBC/PKCS5Padding, Blowfish, DESede
+               encryption algorithm such as
+               DES/ECB/PKCS5Padding,
+               PBEWithMD5AndDES,
+               AES/CBC/PKCS5Padding,
+               Blowfish,
+               DESede
             -->
             <algorithm>PBEWithMD5AndDES</algorithm>
             <!-- salt value to use when generating the secret key -->
@@ -49,45 +67,69 @@
             <!-- iteration count to use when generating the secret key -->
             <iteration-count>19</iteration-count>
         </symmetric-encryption>
-        <asymmetric-encryption enabled="false">
-            <!-- encryption algorithm -->
-            <algorithm>RSA/NONE/PKCS1PADDING</algorithm>
-            <!-- private key password -->
-            <keyPassword>thekeypass</keyPassword>
-            <!-- private key alias -->
-            <keyAlias>local</keyAlias>
-            <!-- key store type -->
-            <storeType>JKS</storeType>
-            <!-- key store password -->
-            <storePassword>thestorepass</storePassword>
-            <!-- path to the key store -->
-            <storePath>keystore</storePath>
-        </asymmetric-encryption>
     </network>
-    <executor-service>
-        <core-pool-size>4</core-pool-size>
-        <max-pool-size>20</max-pool-size>
-        <keep-alive-seconds>60</keep-alive-seconds>
+    <partition-group enabled="false"/>
+    <executor-service name="default">
+        <pool-size>16</pool-size>
+        <!--Queue capacity. 0 means Integer.MAX_VALUE.-->
+        <queue-capacity>0</queue-capacity>
     </executor-service>
-    <map name="subs">
+    <queue name="default">
         <!--
-            Number of backups. If 1 is set as the backup-count for example, then all entries of
-            the map will be copied to another JVM for fail-safety. 0 means no backup.
+            Maximum size of the queue. When a JVM's local queue size reaches the maximum,
+            all put/offer operations will get blocked until the queue size
+            of the JVM goes down below the maximum.
+            Any integer between 0 and Integer.MAX_VALUE. 0 means
+            Integer.MAX_VALUE. Default is 0.
+        -->
+        <max-size>0</max-size>
+        <!--
+            Number of backups. If 1 is set as the backup-count for example,
+            then all entries of the map will be copied to another JVM for
+            fail-safety. 0 means no backup.
+        -->
+        <backup-count>1</backup-count>
+
+        <!--
+            Number of async backups. 0 means no backup.
+        -->
+        <async-backup-count>0</async-backup-count>
+
+        <empty-queue-ttl>-1</empty-queue-ttl>
+    </queue>
+    <map name="default">
+        <!--
+           Data type that will be used for storing recordMap.
+           Possible values:
+           BINARY (default): keys and values will be stored as binary data
+           OBJECT : values will be stored in their object forms
+           OFFHEAP : values will be stored in non-heap region of JVM
+        -->
+        <in-memory-format>BINARY</in-memory-format>
+
+        <!--
+            Number of backups. If 1 is set as the backup-count for example,
+            then all entries of the map will be copied to another JVM for
+            fail-safety. 0 means no backup.
         -->
         <backup-count>1</backup-count>
         <!--
-            Maximum number of seconds for each entry to stay in the map. Entries that are
-            older than <time-to-live-seconds> and not updated for <time-to-live-seconds>
-            will get automatically evicted from the map.
-            Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+            Number of async backups. 0 means no backup.
         -->
+        <async-backup-count>0</async-backup-count>
+        <!--
+			Maximum number of seconds for each entry to stay in the map. Entries that are
+			older than <time-to-live-seconds> and not updated for <time-to-live-seconds>
+			will get automatically evicted from the map.
+			Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+		-->
         <time-to-live-seconds>0</time-to-live-seconds>
         <!--
-            Maximum number of seconds for each entry to stay idle in the map. Entries that are
-            idle(not touched) for more than <max-idle-seconds> will get
-            automatically evicted from the map. Entry is touched if get, put or containsKey is called.
-            Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
-        -->
+			Maximum number of seconds for each entry to stay idle in the map. Entries that are
+			idle(not touched) for more than <max-idle-seconds> will get
+			automatically evicted from the map. Entry is touched if get, put or containsKey is called.
+			Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+		-->
         <max-idle-seconds>0</max-idle-seconds>
         <!--
             Valid values are:
@@ -103,7 +145,7 @@
             Any integer between 0 and Integer.MAX_VALUE. 0 means
             Integer.MAX_VALUE. Default is 0.
         -->
-        <max-size policy="cluster_wide_map_size">0</max-size>
+        <max-size policy="PER_NODE">0</max-size>
         <!--
             When max. size is reached, specified percentage of
             the map will be evicted. Any integer between 0 and 100.
@@ -118,16 +160,56 @@
             cluster, there might an existing entry with the same key already.
             Values of these entries might be different for that same key.
             Which value should be set for the key? Conflict is resolved by
-            the policy set here. Default policy is hz.ADD_NEW_ENTRY
+            the policy set here. Default policy is PutIfAbsentMapMergePolicy
 
             There are built-in merge policies such as
-            hz.NO_MERGE      ; no entry will merge.
-            hz.ADD_NEW_ENTRY ; entry will be added if the merging entry's key
-                               doesn't exist in the cluster.
-            hz.HIGHER_HITS   ; entry with the higher hits wins.
-            hz.LATEST_UPDATE ; entry with the latest update wins.
+            com.hazelcast.map.merge.PassThroughMergePolicy; entry will be added if there is no existing entry for the key.
+            com.hazelcast.map.merge.PutIfAbsentMapMergePolicy ; entry will be added if the merging entry doesn't exist in the cluster.
+            com.hazelcast.map.merge.HigherHitsMapMergePolicy ; entry with the higher hits wins.
+            com.hazelcast.map.merge.LatestUpdateMapMergePolicy ; entry with the latest update wins.
         -->
-        <merge-policy>hz.LATEST_UPDATE</merge-policy>
+        <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>
 
     </map>
+
+    <multimap name="default">
+        <backup-count>1</backup-count>
+        <value-collection-type>SET</value-collection-type>
+    </multimap>
+
+    <multimap name="default">
+        <backup-count>1</backup-count>
+        <value-collection-type>SET</value-collection-type>
+    </multimap>
+
+    <list name="default">
+        <backup-count>1</backup-count>
+    </list>
+
+    <set name="default">
+        <backup-count>1</backup-count>
+    </set>
+
+    <jobtracker name="default">
+        <max-thread-size>0</max-thread-size>
+        <!-- Queue size 0 means number of partitions * 2 -->
+        <queue-size>0</queue-size>
+        <retry-count>0</retry-count>
+        <chunk-size>1000</chunk-size>
+        <communicate-stats>true</communicate-stats>
+        <topology-changed-strategy>CANCEL_RUNNING_OPERATION</topology-changed-strategy>
+    </jobtracker>
+
+    <semaphore name="default">
+        <initial-permits>0</initial-permits>
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+    </semaphore>
+
+    <serialization>
+        <portable-version>0</portable-version>
+    </serialization>
+
+    <services enable-defaults="true" />
+
 </hazelcast>
