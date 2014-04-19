@@ -16,11 +16,29 @@
 
 apply from: "$rootDir/gradle/maven.gradle"
 
-dependencies {
-  compile project(':vertx-core')
-  compile project(':vertx-platform')
-  compile project(':vertx-hazelcast')
+
+if (hasProperty("h3") || hasProperty("hazelcast3")) {
+
+    for (int i = 0; i < 10; i++) {
+        println("YOU ARE TESTING WITH HAZELCAST 3!")
+    }
+
+    dependencies {
+        compile project(':vertx-core')
+        compile project(':vertx-platform')
+        compile project(':vertx-hazelcast3')
+    }
+} else {
+
+
+    println("normal test")
+    dependencies {
+        compile project(':vertx-core')
+        compile project(':vertx-platform')
+        compile project(':vertx-hazelcast')
+    }
 }
+
 
 // We don't produce a jar
 jar.enabled = false
@@ -72,7 +90,16 @@ task hazelcastTest(type: Test) {
 
   systemProperty 'vertx.test.timeout', 60
   systemProperty 'vertx.mods', "$projectDir/src/test/mod-test"
-  systemProperty 'vertx.clusterManagerFactory', 'org.vertx.java.spi.cluster.impl.hazelcast.HazelcastClusterManagerFactory'
+
+
+
+  if (hasProperty("h3") || hasProperty("hazelcast3")) {
+        systemProperty 'vertx.clusterManagerFactory', 'org.vertx.java.spi.cluster.impl.hazelcast.Hazelcast3ClusterManagerFactory'
+  } else {
+
+        systemProperty 'vertx.clusterManagerFactory', 'org.vertx.java.spi.cluster.impl.hazelcast.HazelcastClusterManagerFactory'
+  }
+
   systemProperty 'io.netty.leakDetectionLevel', 'PARANOID'
 
 

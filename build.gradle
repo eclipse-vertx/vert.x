@@ -108,38 +108,86 @@ task clean(type: Delete, dependsOn: [subprojects.clean]) {
   }
 }
 
-task assemble(type: Copy, dependsOn: [subprojects.assemble]) {
+
+
+task assembleHazelcast3(type: Copy, dependsOn: [subprojects.assemble]) {
+    group = 'vert.x'
+    description 'Create distribution for Hazelcast 3 by building and assembling dist directory'
+
+    destinationDir file("build/${rootProject.name}.hazel3cluster-${version}")
+    outputs.dir destinationDir
+    into('bin') {
+        from file('src/dist/scripts')
+        // fileMode 755
+    }
+    into('client') {
+        from file('src/dist/client')
+        rename ('vertxbus.js', "vertxbus-${vertxbusjsVersion}.js")
+    }
+    into('conf') {
+        from file('vertx-platform/src/main/resources')
+        rename ('default-repos.txt', 'repos.txt')
+        rename ('default-langs.properties', 'langs.properties')
+        rename ('default-cluster-hazelcast-3.xml', 'cluster.xml')
+        filter(org.apache.tools.ant.filters.ReplaceTokens, tokens:[version: rootProject.version])
+        exclude "**/META_INF/**"
+    }
+
+
+    into('lib') {
+        from subprojects.configurations.compile
+        from subprojects.jar
+        // Don't just include everything!!
+        includes = ["jackson*.jar", "netty*.jar", "hazelcast-3*.jar",
+                    "vertx-core*.jar", "vertx-platform*.jar", 'vertx-hazelcast3*.jar']
+    }
+    doLast {
+        project.ant.chmod(file: "build/$rootProject.name-$version/bin", perm: 'ugo+x')
+    }
+}
+
+
+task assembleHazelcast2(type: Copy, dependsOn: [subprojects.assemble]) {
+    group = 'vert.x'
+    description 'Build the parent and all of the vert.x subprojects'
+
+    destinationDir file("build/$rootProject.name-$version")
+    outputs.dir destinationDir
+    into('bin') {
+        from file('src/dist/scripts')
+        // fileMode 755
+    }
+    into('client') {
+        from file('src/dist/client')
+        rename ('vertxbus.js', "vertxbus-${vertxbusjsVersion}.js")
+    }
+    into('conf') {
+        from file('vertx-platform/src/main/resources')
+        rename ('default-repos.txt', 'repos.txt')
+        rename ('default-langs.properties', 'langs.properties')
+        rename ('default-cluster.xml', 'cluster.xml')
+        filter(org.apache.tools.ant.filters.ReplaceTokens, tokens:[version: rootProject.version])
+        exclude "**/META_INF/**"
+    }
+
+
+    into('lib') {
+        from subprojects.configurations.compile
+        from subprojects.jar
+        // Don't just include everything!!
+        includes = ["jackson*.jar", "netty*.jar", "hazelcast-2*.jar",
+                    "vertx-core*.jar", "vertx-platform*.jar",
+                    'vertx-hazelcast-*.jar']
+
+    }
+    doLast {
+        project.ant.chmod(file: "build/$rootProject.name-$version/bin", perm: 'ugo+x')
+    }
+}
+
+task assemble(dependsOn: [assembleHazelcast2, assembleHazelcast3]) {
   group = 'vert.x'
   description 'Build the parent and all of the vert.x subprojects'
-
-  destinationDir file("build/$rootProject.name-$version")
-  outputs.dir destinationDir
-  into('bin') {
-    from file('src/dist/scripts')
-    // fileMode 755
-  }
-  into('client') {
-    from file('src/dist/client')
-    rename ('vertxbus.js', "vertxbus-${vertxbusjsVersion}.js")
-  }
-  into('conf') {
-    from file('vertx-platform/src/main/resources')
-    rename ('default-repos.txt', 'repos.txt')
-    rename ('default-langs.properties', 'langs.properties')
-    rename ('default-cluster.xml', 'cluster.xml')
-    filter(org.apache.tools.ant.filters.ReplaceTokens, tokens:[version: rootProject.version])
-    exclude "**/META_INF/**"
-  }
-
-  into('lib') {
-    from subprojects.configurations.compile    
-    from subprojects.jar
-    // Don't just include everything!!
-    includes = ["jackson*.jar", "netty*.jar", "hazelcast*.jar", "vertx*.jar"]
-  }
-  doLast {
-    project.ant.chmod(file: "build/$rootProject.name-$version/bin", perm: 'ugo+x')
-  }
 }
 
 task minifyClient(type: com.eriwen.gradle.js.tasks.MinifyJsTask) {
@@ -151,7 +199,23 @@ task minifyClient(type: com.eriwen.gradle.js.tasks.MinifyJsTask) {
   }
 }
 
-task javadocs(type: Javadoc, dependsOn: subprojects.javadoc) {
+
+task javadocshz3(type: Javadoc, dependsOn: subprojects.javadoc) {
+    group = null       // hide the task
+    description = null // hide the task
+
+    source = subprojects.sourceSets.main.java
+    classpath = files(subprojects.configurations.compile)
+
+    excludes = ["**/impl/**"]
+    includes = ["**/core/**", "**/platform/**"]
+
+    destinationDir file("build/${rootProject.name}.hazel3cluster-$version/api-docs/java/api")
+    inputs.files classpath
+    outputs.dir destinationDir
+}
+
+task javadocs(type: Javadoc, dependsOn: [javadocshz3, subprojects.javadoc]) {
   group = null       // hide the task
   description = null // hide the task
 
@@ -171,6 +235,7 @@ task createDocs(dependsOn: [subprojects.classes, 'javadocs']) {
   description = 'Build all of the various docs for the project'
 }
 
+
 task distZip(type: Zip, dependsOn : ['assemble', 'minifyClient', 'createDocs']) {
   group = 'vert.x'
   description 'Create the Zip distribution'
@@ -181,6 +246,20 @@ task distZip(type: Zip, dependsOn : ['assemble', 'minifyClient', 'createDocs']) 
   from 'build'
   include "$rootProject.name-$version/**"
 }
+
+
+task distZipHazelcast3(type: Zip, dependsOn : ['assemble', 'minifyClient', 'createDocs']) {
+    group = 'vert.x'
+    description 'Create the Zip distribution for Hazelcast 3'
+
+
+    destinationDir file('build/distributions')
+    baseName = "${rootProject.name}.hazel3cluster"
+    version = rootProject.version
+    from 'build'
+    include "${rootProject.name}.hazel3cluster-${version}/**"
+}
+
 
 task distTar(type: Tar, dependsOn: ['assemble', 'minifyClient', 'createDocs']) {
   group = 'vert.x'
@@ -197,7 +276,24 @@ task distTar(type: Tar, dependsOn: ['assemble', 'minifyClient', 'createDocs']) {
   include "${rootProject.name}-$version/**"
 }
 
-task dist(dependsOn: ['distTar', 'distZip']){
+
+task distTarHazelcast3(type: Tar, dependsOn: ['assemble', 'minifyClient', 'createDocs']) {
+    group = 'vert.x'
+    description 'Create the GZIP distribution'
+
+    compression = org.gradle.api.tasks.bundling.Compression.GZIP
+    destinationDir file('build/distributions')
+    inputs.files files("build/${rootProject.name}.hazel3cluster-$version")
+    outputs.dir destinationDir
+    baseName = "${rootProject.name}.hazel3cluster"
+    version = rootProject.version
+    extension = 'tar.gz'
+    from 'build'
+    include "${rootProject.name}.hazel3cluster-${version}/**"
+}
+
+
+task dist(dependsOn: ['distTar', 'distZip', 'distZipHazelcast3', 'distTarHazelcast3']){
   group = 'vert.x'
   description 'Create distributions - tar.gz and zip'
 }
