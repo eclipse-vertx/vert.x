@@ -133,7 +133,7 @@ public class MavenResolution extends HttpResolution {
         // Timestamped SNAPSHOT
         actualURI = contentRoot + '/' + uriRoot + identifier.getName() + '-' +
             identifier.getVersion().substring(0, identifier.getVersion().length() - 9) + '-' +
-            timestamp + '-' + buildNumber + (modSuffix ? "" : "-mod") + ".zip";
+            timestamp + '-' + buildNumber + (modSuffix ? "-mod" : "") + ".zip";
       }
     }
     if (actualURI == null) {
