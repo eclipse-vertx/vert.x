@@ -30,8 +30,8 @@ import org.vertx.java.core.logging.impl.LogDelegate;
  *
  * <p>If you would prefer to use Log4J or SLF4J instead of JUL then you can set a system property called
  * {@code org.vertx.logger-delegate-factory-class-name} to the class name of the delegate for your logging system.
- * For Log4J the value is {@code org.vertx.java.core.logging.Log4JLogDelegateFactory}, for SLF4J the value
- * is {@code org.vertx.java.core.logging.SLF4JLogDelegateFactory}. You will need to ensure whatever jar files
+ * For Log4J the value is {@code org.vertx.java.core.logging.impl.Log4JLogDelegateFactory}, for SLF4J the value
+ * is {@code org.vertx.java.core.logging.impl.SLF4JLogDelegateFactory}. You will need to ensure whatever jar files
  * required by your favourite log framework are on your classpath.</p>
  *
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
