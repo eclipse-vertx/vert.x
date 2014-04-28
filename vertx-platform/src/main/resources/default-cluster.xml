@@ -17,20 +17,13 @@
     <management-center enabled="false">http://localhost:8080/mancenter</management-center>
     <network>
         <port auto-increment="true" port-count="100">5701</port>
-        <outbound-ports>
-            <!--
-            Allowed port range when connecting to other nodes.
-            0 or * means use system provided port.
-            -->
-            <ports>0</ports>
-        </outbound-ports>
         <join>
             <multicast enabled="true">
                 <multicast-group>224.2.2.3</multicast-group>
                 <multicast-port>54327</multicast-port>
             </multicast>
             <tcp-ip enabled="false">
-                <interface>127.0.0.1</interface>
+                <interface>192.168.1.28</interface>
             </tcp-ip>
             <aws enabled="false">
                 <access-key>my-access-key</access-key>
@@ -45,11 +38,6 @@
                 <tag-value>hz-nodes</tag-value>
             </aws>
         </join>
-        <interfaces enabled="false">
-            <interface>10.10.1.*</interface>
-        </interfaces>
-        <ssl enabled="false" />
-        <socket-interceptor enabled="false" />
         <symmetric-encryption enabled="false">
             <!--
                encryption algorithm such as
@@ -71,41 +59,11 @@
     <partition-group enabled="false"/>
     <executor-service name="default">
         <pool-size>16</pool-size>
+
         <!--Queue capacity. 0 means Integer.MAX_VALUE.-->
         <queue-capacity>0</queue-capacity>
     </executor-service>
-    <queue name="default">
-        <!--
-            Maximum size of the queue. When a JVM's local queue size reaches the maximum,
-            all put/offer operations will get blocked until the queue size
-            of the JVM goes down below the maximum.
-            Any integer between 0 and Integer.MAX_VALUE. 0 means
-            Integer.MAX_VALUE. Default is 0.
-        -->
-        <max-size>0</max-size>
-        <!--
-            Number of backups. If 1 is set as the backup-count for example,
-            then all entries of the map will be copied to another JVM for
-            fail-safety. 0 means no backup.
-        -->
-        <backup-count>1</backup-count>
-
-        <!--
-            Number of async backups. 0 means no backup.
-        -->
-        <async-backup-count>0</async-backup-count>
-
-        <empty-queue-ttl>-1</empty-queue-ttl>
-    </queue>
-    <map name="default">
-        <!--
-           Data type that will be used for storing recordMap.
-           Possible values:
-           BINARY (default): keys and values will be stored as binary data
-           OBJECT : values will be stored in their object forms
-           OFFHEAP : values will be stored in non-heap region of JVM
-        -->
-        <in-memory-format>BINARY</in-memory-format>
+    <map name="subs">
 
         <!--
             Number of backups. If 1 is set as the backup-count for example,
@@ -113,10 +71,6 @@
             fail-safety. 0 means no backup.
         -->
         <backup-count>1</backup-count>
-        <!--
-            Number of async backups. 0 means no backup.
-        -->
-        <async-backup-count>0</async-backup-count>
         <!--
 			Maximum number of seconds for each entry to stay in the map. Entries that are
 			older than <time-to-live-seconds> and not updated for <time-to-live-seconds>
@@ -168,48 +122,8 @@
             com.hazelcast.map.merge.HigherHitsMapMergePolicy ; entry with the higher hits wins.
             com.hazelcast.map.merge.LatestUpdateMapMergePolicy ; entry with the latest update wins.
         -->
-        <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>
+        <merge-policy>com.hazelcast.map.merge.LatestUpdateMapMergePolicy</merge-policy>
 
     </map>
-
-    <multimap name="default">
-        <backup-count>1</backup-count>
-        <value-collection-type>SET</value-collection-type>
-    </multimap>
-
-    <multimap name="default">
-        <backup-count>1</backup-count>
-        <value-collection-type>SET</value-collection-type>
-    </multimap>
-
-    <list name="default">
-        <backup-count>1</backup-count>
-    </list>
-
-    <set name="default">
-        <backup-count>1</backup-count>
-    </set>
-
-    <jobtracker name="default">
-        <max-thread-size>0</max-thread-size>
-        <!-- Queue size 0 means number of partitions * 2 -->
-        <queue-size>0</queue-size>
-        <retry-count>0</retry-count>
-        <chunk-size>1000</chunk-size>
-        <communicate-stats>true</communicate-stats>
-        <topology-changed-strategy>CANCEL_RUNNING_OPERATION</topology-changed-strategy>
-    </jobtracker>
-
-    <semaphore name="default">
-        <initial-permits>0</initial-permits>
-        <backup-count>1</backup-count>
-        <async-backup-count>0</async-backup-count>
-    </semaphore>
-
-    <serialization>
-        <portable-version>0</portable-version>
-    </serialization>
-
-    <services enable-defaults="true" />
 
 </hazelcast>
