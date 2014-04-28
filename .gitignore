@@ -19,7 +19,3 @@ ScratchTest.java
 test-results
 test-tmp
 *.class
-
-gradle.properties~
-
-settings.gradle~

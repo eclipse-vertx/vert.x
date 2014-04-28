@@ -49,7 +49,6 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
   private static final String CONFIG_FILE = "cluster.xml";
 
 
-
   private final VertxSPI vertx;
 
   private HazelcastInstance hazelcast;
@@ -132,7 +131,7 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
     if (!active) {
       return;
     }
-    hazelcast.getCluster().removeMembershipListener(this);
+    hazelcast.getCluster().removeMembershipListener(nodeID);
  		hazelcast.getLifecycleService().shutdown();
     active = false;
   }
@@ -167,7 +166,12 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
     }
   }
 
-  private InputStream getConfigStream() {
+    @Override
+    public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+
+    }
+
+    private InputStream getConfigStream() {
     ClassLoader ctxClsLoader = Thread.currentThread().getContextClassLoader();
     InputStream is = null;
     if (ctxClsLoader != null) {

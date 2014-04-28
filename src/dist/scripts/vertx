@@ -13,7 +13,6 @@
 # If you're deploying and undeploying a lot of verticles with dynamic languages it's recommended to enable GC'ing
 # of generated classes and prevent OOM due to a lot of gc
 # JVM_OPTS="-XX:+CMSClassUnloadingEnabled -XX:-UseGCOverheadLimit"
-# To manually override the cluster manager.  -Dvertx.clusterManagerFactory=org.vertx.java.spi.cluster.impl.mycluster.MyClusterManagerFactory
 JVM_OPTS=""
 
 JMX_OPTS=""
@@ -179,5 +178,6 @@ exec "$JAVACMD" \
     "${JVM_OPTS[@]}" \
     -Djava.util.logging.config.file=${VERTX_JUL_CONFIG:-${VERTX_HOME}/conf/logging.properties} \
     -Dvertx.home=$VERTX_HOME\
+    -Dvertx.clusterManagerFactory=org.vertx.java.spi.cluster.impl.hazelcast.HazelcastClusterManagerFactory\
     -classpath "$CLASSPATH" \
     org.vertx.java.platform.impl.cli.Starter "$@"

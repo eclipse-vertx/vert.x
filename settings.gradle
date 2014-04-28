@@ -17,7 +17,6 @@
 include 'vertx-core'
 include 'vertx-platform'
 include 'vertx-hazelcast'
-include 'vertx-hazelcast3'
 include 'vertx-testsuite'
 
 rootProject.name='vert.x'
