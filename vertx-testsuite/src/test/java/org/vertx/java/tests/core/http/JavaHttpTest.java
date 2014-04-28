@@ -681,6 +681,11 @@ public class JavaHttpTest extends TestBase {
     startTest(getMethodName());
   }
 
+  @Test
+  public void testSendFileDirectory() throws Exception {
+    startTest(getMethodName());
+  }
+
   void sharedServers(String testName, boolean multipleInstances, int numInstances, int initialServers, int initialToStop) throws Exception {
 
     //We initially start then stop them to make sure the shared server cleanup code works ok
