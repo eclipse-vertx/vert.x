@@ -912,7 +912,7 @@ public class TestClient extends TestClientBase {
         InetSocketAddress addr = socket.remoteAddress();
         tu.azzert(addr.getHostName().startsWith("localhost"));
       }
-    }).listen(1234,  new AsyncResultHandler<NetServer>() {
+    }).listen(1234, new AsyncResultHandler<NetServer>() {
       @Override
       public void handle(AsyncResult<NetServer> ar) {
         if (ar.succeeded()) {
@@ -924,6 +924,48 @@ public class TestClient extends TestClientBase {
               tu.azzert(addr.getHostName().equals("localhost"));
               tu.azzert(addr.getPort() == 1234);
               tu.testComplete();
+            }
+          });
+        } else {
+          ar.cause().printStackTrace();
+        }
+      }
+    });
+  }
+
+  public void testSendFileDirectory() throws Exception {
+    vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
+      @Override
+      public void handle(NetSocket socket) {
+        InetSocketAddress addr = socket.remoteAddress();
+        tu.azzert(addr.getHostName().startsWith("localhost"));
+      }
+    }).listen(1234,  new AsyncResultHandler<NetServer>() {
+      @Override
+      public void handle(AsyncResult<NetServer> ar) {
+        if (ar.succeeded()) {
+          vertx.createNetClient().connect(1234, new AsyncResultHandler<NetSocket>() {
+            @Override
+            public void handle(AsyncResult<NetSocket> result) {
+              final NetSocket socket = result.result();
+              vertx.fileSystem().mkdir("testdirectory", new Handler<AsyncResult<Void>>() {
+                @Override
+                public void handle(AsyncResult<Void> event) {
+                  try {
+                    socket.sendFile("testdirectory");
+                    // should throw exception and never hit the azzert
+                    tu.azzert(false);
+                  } catch (IllegalArgumentException e) {
+                    vertx.fileSystem().delete("testdirectory", new Handler<AsyncResult<Void>>() {
+                      @Override
+                      public void handle(AsyncResult<Void> event) {
+                        tu.testComplete();
+                      }
+                    });
+                  }
+                }
+              });
+
             }
           });
         } else {

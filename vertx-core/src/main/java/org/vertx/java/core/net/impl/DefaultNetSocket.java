@@ -170,6 +170,9 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   @Override
   public NetSocket sendFile(String filename, final Handler<AsyncResult<Void>> resultHandler) {
     File f = new File(PathAdjuster.adjust(vertx, filename));
+    if (f.isDirectory()) {
+      throw new IllegalArgumentException("filename must point to a file and not to a directory");
+    }
     ChannelFuture future = super.sendFile(f);
 
     if (resultHandler != null) {

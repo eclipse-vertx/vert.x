@@ -39,6 +39,7 @@ import java.io.File;
 public class DefaultHttpServerResponse implements HttpServerResponse {
 
   private static final Buffer NOT_FOUND = new Buffer("<html><body>Resource not found</body><html>");
+  private static final Buffer FORBIDDEN = new Buffer("<html><body>Forbidden</body><html>");
 
   private final VertxInternal vertx;
   private final ServerConnection conn;
@@ -336,10 +337,13 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
     if (!file.exists()) {
       if (notFoundResource != null) {
         setStatusCode(HttpResponseStatus.NOT_FOUND.code());
-        sendFile(notFoundResource, (String)null, resultHandler);
+        sendFile(notFoundResource, (String) null, resultHandler);
       } else {
         sendNotFound();
       }
+    } else if (file.isDirectory()) {
+      // send over a 403 Forbidden
+      sendForbidden();
     } else {
       if (!contentLengthSet()) {
         putHeader(org.vertx.java.core.http.HttpHeaders.CONTENT_LENGTH, String.valueOf(file.length()));
@@ -411,6 +415,12 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
         }
       });
     }
+  }
+
+  private void sendForbidden() {
+    setStatusCode(HttpResponseStatus.FORBIDDEN.code());
+    putHeader(org.vertx.java.core.http.HttpHeaders.CONTENT_TYPE, org.vertx.java.core.http.HttpHeaders.TEXT_HTML);
+    end(FORBIDDEN);
   }
 
   private void sendNotFound() {
