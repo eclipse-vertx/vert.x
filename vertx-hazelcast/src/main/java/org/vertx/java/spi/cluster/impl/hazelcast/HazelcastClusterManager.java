@@ -53,6 +53,8 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
 
   private HazelcastInstance hazelcast;
   private String nodeID;
+  private String membershipListenerId;
+
   private NodeListener nodeListener;
   private boolean active;
 
@@ -74,8 +76,11 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
       log.warn("Cannot find cluster configuration on classpath. Using default hazelcast configuration");
     }
     hazelcast = Hazelcast.newHazelcastInstance(cfg);
+
     nodeID = hazelcast.getCluster().getLocalMember().getUuid();
-    hazelcast.getCluster().addMembershipListener(this);
+
+
+    membershipListenerId = hazelcast.getCluster().addMembershipListener(this);
 
     active = true;
   }
@@ -131,8 +136,13 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
     if (!active) {
       return;
     }
-    hazelcast.getCluster().removeMembershipListener(this);
- 		hazelcast.getLifecycleService().shutdown();
+    boolean left = hazelcast.getCluster().removeMembershipListener(membershipListenerId);
+
+    if (!left) {
+        log.warn("Unable to remove membership listener");
+    }
+
+ 	hazelcast.getLifecycleService().shutdown();
     active = false;
   }
 
@@ -166,7 +176,12 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
     }
   }
 
-  private InputStream getConfigStream() {
+    @Override
+    public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+
+    }
+
+    private InputStream getConfigStream() {
     ClassLoader ctxClsLoader = Thread.currentThread().getContextClassLoader();
     InputStream is = null;
     if (ctxClsLoader != null) {
