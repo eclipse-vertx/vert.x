@@ -27,6 +27,7 @@ public interface Handler<E> {
 
   /**
    * Something has happened, so handle it.
+   * @TODO Add a better description about types or objects that can be events
    */
   void handle(E event);
 }
