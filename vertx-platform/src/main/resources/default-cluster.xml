@@ -17,6 +17,13 @@
     <management-center enabled="false">http://localhost:8080/mancenter</management-center>
     <network>
         <port auto-increment="true" port-count="100">5701</port>
+        <outbound-ports>
+            <!--
+            Allowed port range when connecting to other nodes.
+            0 or * means use system provided port.
+            -->
+            <ports>0</ports>
+        </outbound-ports>
         <join>
             <multicast enabled="true">
                 <multicast-group>224.2.2.3</multicast-group>
@@ -38,6 +45,11 @@
                 <tag-value>hz-nodes</tag-value>
             </aws>
         </join>
+        <interfaces enabled="false">
+            <interface>10.10.1.*</interface>
+        </interfaces>
+        <ssl enabled="false" />
+        <socket-interceptor enabled="false" />
         <symmetric-encryption enabled="false">
             <!--
                encryption algorithm such as
@@ -59,7 +71,6 @@
     <partition-group enabled="false"/>
     <executor-service name="default">
         <pool-size>16</pool-size>
-
         <!--Queue capacity. 0 means Integer.MAX_VALUE.-->
         <queue-capacity>0</queue-capacity>
     </executor-service>
