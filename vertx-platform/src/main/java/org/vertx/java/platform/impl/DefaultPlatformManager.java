@@ -258,10 +258,10 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         parents.add(entry.getKey());
       }
     }
-    
+
     final CountingCompletionHandler<Void> count = new CountingCompletionHandler<>(vertx, parents.size());
     count.setHandler(doneHandler);
-    
+
     for (String name: parents) {
       undeploy(name, new Handler<AsyncResult<Void>>() {
         public void handle(AsyncResult<Void> res) {
@@ -1173,15 +1173,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
                 }
                 URL url = fentry.toURI().toURL();
                 cpList.add(url);
-                if (fentry.exists() && fentry.isDirectory()) {
-                  File[] files = fentry.listFiles();
-                  for (File file : files) {
-                    String fPath = file.getCanonicalPath();
-                    if (fPath.endsWith(".jar") || fPath.endsWith(".zip")) {
-                      cpList.add(file.getCanonicalFile().toURI().toURL());
-                    }
-                  }
-                }
+                addLibrariesRecursively(cpList, fentry);
               }
             }
           } catch (Exception e) {
@@ -1213,6 +1205,21 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     return new ModuleInfo(modJSON, cpList, modDir);
   }
 
+  private void addLibrariesRecursively(List<URL> cpList, File fentry) throws IOException {
+    if (fentry.exists() && fentry.isDirectory()) {
+      File[] files = fentry.listFiles();
+      for (File file : files) {
+        if (file.isDirectory()) {
+          addLibrariesRecursively(cpList, file);
+        } else {
+          String fPath = file.getCanonicalPath();
+          if (fPath.endsWith(".jar") || fPath.endsWith(".zip")) {
+            cpList.add(file.getCanonicalFile().toURI().toURL());
+          }
+        }
+      }
+    }
+  }
 
   private void deployModuleFromFileSystem(File modRoot, String depName, ModuleIdentifier modID,
                                           JsonObject config,
