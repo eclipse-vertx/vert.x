@@ -142,7 +142,7 @@ public interface Container {
   void deployModule(String moduleName, int instances, Handler<AsyncResult<String>> doneHandler);
 
   /**
-   * Deploy a worker verticle programmatically
+   * Deploy a verticle programmatically
    * @param main The main of the verticle
    */
   void deployVerticle(String main);
