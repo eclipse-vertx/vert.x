@@ -58,6 +58,30 @@ public interface HttpClient extends ClientSSLSupport<HttpClient>, TCPSupport<Htt
   int getMaxPoolSize();
 
   /**
+   * Set the maximum waiter queue size<p>
+   * The client will keep up to {@code maxWaiterQueueSize} requests in an internal waiting queue<p>
+   * @return A reference to this, so multiple invocations can be chained together.
+   */
+  HttpClient setMaxWaiterQueueSize(int maxWaiterQueueSize);
+
+  /**
+   * Returns the maximum number of waiting requests
+   */
+  int getMaxWaiterQueueSize();
+
+  /**
+   * Set the maximum outstanding request size for every connection<p>
+   * The connection will keep up to {@code connectionMaxOutstandingRequestCount} outstanding requests<p>
+   * @return A reference to this, so multiple invocations can be chained together.
+   */
+  HttpClient setConnectionMaxOutstandingRequestCount(int connectionMaxOutstandingRequestCount);
+
+  /**
+   * Returns the maximum number of outstanding requests for each connection
+   */
+  int getConnectionMaxOutstandingRequestCount();
+
+  /**
    * If {@code keepAlive} is {@code true} then, after the request has ended the connection will be returned to the pool
    * where it can be used by another request. In this manner, many HTTP requests can be pipe-lined over an HTTP connection.
    * Keep alive connections will not be closed until the {@link #close() close()} method is invoked.<p>
