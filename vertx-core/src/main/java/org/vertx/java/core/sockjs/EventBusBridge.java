@@ -20,6 +20,7 @@ import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.eventbus.ReplyException;
 import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
@@ -411,8 +412,15 @@ public class EventBusBridge implements Handler<SockJSSocket> {
             // was approved
             checkAddAccceptedReplyAddress(message.replyAddress());
             deliverMessage(sock, replyAddress, message);
-            info.handlerCount--;
+          } else {
+            ReplyException cause = (ReplyException) result.cause();
+            JsonObject envelope =
+                new JsonObject().putString("address", address).putNumber("failureCode",
+                    cause.failureCode()).putString("failureType", cause.failureType().name())
+                    .putString("message", cause.getMessage());
+            sock.write(new Buffer(envelope.encode()));
           }
+          info.handlerCount--;
         }
       };
     } else {
