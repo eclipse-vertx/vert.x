@@ -331,5 +331,11 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   public boolean isSsl() {
     return channel.pipeline().get(SslHandler.class) != null;
   }
+
+  @Override
+  public NetSocket flush() {
+    channel.flush();
+    return this;
+  }
 }
 
