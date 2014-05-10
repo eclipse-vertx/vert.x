@@ -422,9 +422,11 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       log.debug("Forwarding message to address " + address + " on event bus");
     }
     if (send) {
-      eb.sendWithTimeout(address, body, replyTimeout, replyHandler);
       if (replyAddress != null) {
+        eb.sendWithTimeout(address, body, replyTimeout, replyHandler);
         info.handlerCount++;
+      } else {
+        eb.send(address, body);
       }
     } else {
       eb.publish(address, body);
