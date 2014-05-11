@@ -2486,18 +2486,23 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testPooling() throws Exception {
-    testPooling(true);
+    testPooling(true, true);
+  }
+
+  public void testPoolingNoPipelining() throws Exception {
+    testPooling(true, false);
   }
 
   public void testPoolingNoKeepAlive() throws Exception {
-    testPooling(false);
+    testPooling(false, false);
+    testPooling(false, true);
   }
 
-  private void testPooling(final boolean keepAlive) throws Exception {
+  private void testPooling(final boolean keepAlive, final boolean pipelining) throws Exception {
     final String path = "foo.txt";
     final int numGets = 1000;
     int maxPoolSize = 10;
-    client.setKeepAlive(keepAlive).setMaxPoolSize(maxPoolSize);
+    client.setKeepAlive(keepAlive).setPipelining(pipelining).setMaxPoolSize(maxPoolSize);
     final AtomicInteger cnt = new AtomicInteger(0);
     for (int i = 0; i < numGets; i++) {
       final int theCount = i;

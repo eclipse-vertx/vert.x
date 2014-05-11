@@ -68,6 +68,7 @@ public class DefaultHttpClient implements HttpClient {
     }
   };
   private boolean keepAlive = true;
+  private boolean pipelining = true;
   private boolean configurable = true;
   private boolean closed;
   private final Closeable closeHook = new Closeable() {
@@ -117,6 +118,20 @@ public class DefaultHttpClient implements HttpClient {
   public boolean isKeepAlive() {
     checkClosed();
     return keepAlive;
+  }
+
+  @Override
+  public DefaultHttpClient setPipelining(boolean pipelining) {
+    checkClosed();
+    checkConfigurable();
+    this.pipelining = pipelining;
+    return this;
+  }
+
+  @Override
+  public boolean isPipelining() {
+    checkClosed();
+    return pipelining;
   }
 
   @Override
@@ -738,7 +753,7 @@ public class DefaultHttpClient implements HttpClient {
 
   private void createConn(Channel ch, Handler<ClientConnection> connectHandler) {
     final ClientConnection conn = new ClientConnection(vertx, DefaultHttpClient.this, ch,
-        tcpHelper.isSSL(), host, port, keepAlive, actualCtx);
+        tcpHelper.isSSL(), host, port, keepAlive, pipelining, actualCtx);
     conn.closeHandler(new VoidHandler() {
       public void handle() {
         // The connection has been closed - tell the pool about it, this allows the pool to create more
