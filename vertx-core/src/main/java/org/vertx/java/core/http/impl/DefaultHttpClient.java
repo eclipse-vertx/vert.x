@@ -39,6 +39,7 @@ import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.TCPSSLHelper;
 import org.vertx.java.core.net.impl.VertxEventLoopGroup;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLParameters;
@@ -389,6 +390,14 @@ public class DefaultHttpClient implements HttpClient {
     checkClosed();
     checkConfigurable();
     tcpHelper.setVerifyHost(verifyHost);
+    return this;
+  }
+
+  @Override
+  public HttpClient setSSLContext(SSLContext sslContext) {
+    checkClosed();
+    checkConfigurable();
+    tcpHelper.setExternalSSLContext(sslContext);
     return this;
   }
 

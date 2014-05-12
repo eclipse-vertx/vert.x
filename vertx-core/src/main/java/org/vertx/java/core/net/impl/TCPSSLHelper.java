@@ -69,6 +69,8 @@ public class TCPSSLHelper {
 
   private SSLContext sslContext;
 
+  private SSLContext externalSSLContext = null;
+
   public TCPSSLHelper() {
   }
 
@@ -223,6 +225,10 @@ public class TCPSSLHelper {
     this.ssl = ssl;
   }
 
+  public void setExternalSSLContext(SSLContext externalSSLContext) {
+    this.externalSSLContext = externalSSLContext;
+  }
+
   public void setVerifyHost(boolean verifyHost) {
     this.verifyHost = verifyHost;
   }
@@ -294,6 +300,9 @@ public class TCPSSLHelper {
                                    final String tsPath,
                                    final String tsPassword,
                                    final boolean trustAll) {
+    if ( externalSSLContext != null ) {
+      return externalSSLContext;
+    }
     try {
       SSLContext context = SSLContext.getInstance("TLS");
       KeyManager[] keyMgrs = ksPath == null ? null : getKeyMgrs(vertx, ksPath, ksPassword);
