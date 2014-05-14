@@ -70,7 +70,7 @@
     <module>vertx-hazelcast</module>
     <module>vertx-platform</module>
     <module>vertx-testsuite</module>
-    <module>dist</module>
+    <module>vertx-dist</module>
   </modules>
 
   <dependencyManagement>
