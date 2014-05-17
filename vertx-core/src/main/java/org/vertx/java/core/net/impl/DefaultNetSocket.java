@@ -25,6 +25,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
@@ -42,6 +43,9 @@ import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.UUID;
+
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
 
 public class DefaultNetSocket extends ConnectionBase implements NetSocket {
 
@@ -330,6 +334,11 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   @Override
   public boolean isSsl() {
     return channel.pipeline().get(SslHandler.class) != null;
+  }
+  
+  @Override
+  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
+    return getPeerCertificateChain();
   }
 }
 

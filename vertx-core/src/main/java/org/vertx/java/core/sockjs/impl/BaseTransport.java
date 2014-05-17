@@ -56,10 +56,10 @@ class BaseTransport {
   }
 
   protected Session getSession(final long timeout, final long heartbeatPeriod, final String sessionID,
-                               Handler<SockJSSocket> sockHandler) {
+                               Handler<SockJSSocket> sockHandler, final HttpServerRequest req) {
     Session session = sessions.get(sessionID);
     if (session == null) {
-      session = new Session(vertx, sessions, sessionID, timeout, heartbeatPeriod, sockHandler);
+      session = new HttpSession(vertx, sessions, sessionID, timeout, heartbeatPeriod, sockHandler, req);
       sessions.put(sessionID, session);
     }
     return session;

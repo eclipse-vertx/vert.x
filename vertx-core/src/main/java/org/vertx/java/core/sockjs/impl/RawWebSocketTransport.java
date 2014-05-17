@@ -30,6 +30,9 @@ import org.vertx.java.core.sockjs.SockJSSocket;
 
 import java.net.InetSocketAddress;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -124,6 +127,11 @@ class RawWebSocketTransport {
     @Override
     public String uri() {
       return ws.uri();
+    }
+    
+    @Override
+    public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
+      return ws.peerCertificateChain();
     }
   }
 
