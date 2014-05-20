@@ -16,10 +16,11 @@ package org.vertx.java.tests.newtests;
  * under the License.
  *
  */
+
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public class ATest {
+public class JUnitAsyncHelper {
 
   private final CountDownLatch latch = new CountDownLatch(1);
   private volatile Throwable throwable;
@@ -65,7 +66,7 @@ public class ATest {
     }
   }
 
-  public void assertBlock(Runnable runner) {
+  public void doAssert(Runnable runner) {
     try {
       runner.run();
     } catch (Throwable t) {
@@ -77,6 +78,8 @@ public class ATest {
   public boolean isAwaitCalled() {
     return awaitCalled;
   }
+
+
 
 }
 

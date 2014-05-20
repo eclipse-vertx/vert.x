@@ -1,7 +1,6 @@
 package org.vertx.java.tests.newtests;
 
 import org.junit.*;
-import org.vertx.java.tests.newtests.ATest;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,15 +24,15 @@ import static org.junit.Assert.*;
  * under the License.
  *
  */
-public class ATestTest {
+public class JUnitAsyncHelperTest {
 
   ExecutorService executor;
-  ATest atest;
+  JUnitAsyncHelper atest;
 
   @Before
   public void before() {
     executor = Executors.newFixedThreadPool(10);
-    atest = new ATest();
+    atest = new JUnitAsyncHelper();
   }
 
   @After
@@ -45,7 +44,7 @@ public class ATestTest {
   @Test
   public void testAssertionFailedFromOtherThread() {
     executor.execute(() -> {
-      atest.assertBlock(() -> {
+      atest.doAssert(() -> {
         assertEquals("foo", "bar");
       });
       atest.testComplete();
@@ -60,7 +59,7 @@ public class ATestTest {
   @Test
   public void testAssertionFailedFromMainThread() {
 
-    atest.assertBlock(() -> {
+    atest.doAssert(() -> {
       assertEquals("foo", "bar");
     });
     atest.testComplete();
@@ -75,7 +74,7 @@ public class ATestTest {
   @Test
   public void testAssertionPassedFromOtherThread() {
     executor.execute(() -> {
-      atest.assertBlock(() -> {
+      atest.doAssert(() -> {
         assertEquals("foo", "foo");
       });
       atest.testComplete();
@@ -85,7 +84,7 @@ public class ATestTest {
 
   @Test
   public void testAssertionPassedFromMainThread() {
-    atest.assertBlock(() -> {
+    atest.doAssert(() -> {
       assertEquals("foo", "foo");
     });
     atest.testComplete();
@@ -126,7 +125,7 @@ public class ATestTest {
   public void testFailFromOtherThread() {
     String msg = "too many aardvarks!";
     executor.execute(() -> {
-      atest.assertBlock(() -> {
+      atest.doAssert(() -> {
         fail(msg);
       });
       atest.testComplete();
@@ -141,7 +140,7 @@ public class ATestTest {
   @Test
   public void testSuccessfulCompletion() {
     executor.execute(() -> {
-      atest.assertBlock(() -> {
+      atest.doAssert(() -> {
         assertEquals("foo", "foo");
         assertFalse(false);
       });
@@ -153,7 +152,7 @@ public class ATestTest {
   @Test
   public void testTestCompleteCalledMultipleTimes() {
     executor.execute(() -> {
-      atest.assertBlock(() -> {
+      atest.doAssert(() -> {
         assertEquals("foo", "foo");
       });
       atest.testComplete();
@@ -169,7 +168,7 @@ public class ATestTest {
   @Test
   public void testAwaitCalledMultipleTimes() {
     executor.execute(() -> {
-      atest.assertBlock(() -> {
+      atest.doAssert(() -> {
         assertEquals("foo", "foo");
       });
       atest.testComplete();
@@ -186,7 +185,7 @@ public class ATestTest {
   public void testRuntimeExceptionThrownFromAssertBlock() {
     String msg = "foo bar";
     executor.execute(() -> {
-      atest.assertBlock(() -> {
+      atest.doAssert(() -> {
         throw new RuntimeException(msg);
       });
       atest.testComplete();
@@ -202,7 +201,7 @@ public class ATestTest {
   public void testGeneralErrorThrownFromAssertBlock() {
     String msg = "wibble quux";
     executor.execute(() -> {
-      atest.assertBlock(() -> {
+      atest.doAssert(() -> {
         throw new Error(msg);
       });
       atest.testComplete();
