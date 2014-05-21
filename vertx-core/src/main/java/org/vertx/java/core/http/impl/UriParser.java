@@ -21,7 +21,7 @@ package org.vertx.java.core.http.impl;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-final class UriParser {
+public final class UriParser {
 
   private UriParser() {
 
@@ -31,15 +31,21 @@ final class UriParser {
    * Extract the path out of the uri.
    *
    */
-  static String path(String uri) {
-    int i = uri.indexOf("://");
-    if (i == -1) {
-      i  = 0;
+  public static String path(String uri) {
+    int i;
+
+    if (uri.startsWith("/")) {
+      i = 0;
     } else {
-      i  = uri.indexOf('/', i + 3);
+      i = uri.indexOf("://");
       if (i == -1) {
-        // contains no /
-        return "/";
+        i  = 0;
+      } else {
+        i  = uri.indexOf('/', i + 3);
+        if (i == -1) {
+          // contains no /
+          return "/";
+        }
       }
     }
 
@@ -53,7 +59,7 @@ final class UriParser {
   /**
    * Extract the query out of a uri or returns {@code null} if no query was found.
    */
-  static String query(String uri) {
+  public static String query(String uri) {
     int i = uri.indexOf('?');
     if (i == -1) {
       return null;
