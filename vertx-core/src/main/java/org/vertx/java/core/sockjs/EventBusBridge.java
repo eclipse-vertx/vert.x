@@ -274,6 +274,19 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     sock.write(new Buffer(envelope.encode()));
   }
 
+    /**
+     * Method too reply a status to the caller of the socket
+     *
+     * @param sock
+     * @param replyAddress
+     * @param status
+     */
+  private static void replyStatus(SockJSSocket sock, String replyAddress, String status) {
+    JsonObject body = new JsonObject().putString("status", status);
+    JsonObject envelope = new JsonObject().putString("address", replyAddress).putValue("body", body);
+    sock.write(new Buffer(envelope.encode()));
+  }
+
   private void doSendOrPub(final boolean send, final SockJSSocket sock, final String address,
                            final JsonObject message) {
     final Object body = getMandatoryValue(message, "body");
@@ -294,20 +307,24 @@ public class EventBusBridge implements Handler<SockJSSocket> {
                   checkAndSend(send, address, body, sock, replyAddress);
                 } else {
                   log.debug("Inbound message for address " + address + " rejected because sessionID is not authorised");
+                  replyStatus(sock, replyAddress, "access_denied");
                 }
               } else {
                 log.error("Error in performing authorisation", res.cause());
+                replyStatus(sock, replyAddress, "auth_error");
               }
             }
           });
         } else {
           log.debug("Inbound message for address " + address + " rejected because it requires auth and sessionID is missing");
+          replyStatus(sock, replyAddress, "auth_required");
         }
       } else {
         checkAndSend(send, address, body, sock, replyAddress);
       }
     } else {
       log.debug("Inbound message for address " + address + " rejected because there is no match");
+      replyStatus(sock, replyAddress, "access_denied");
     }
   }
 
