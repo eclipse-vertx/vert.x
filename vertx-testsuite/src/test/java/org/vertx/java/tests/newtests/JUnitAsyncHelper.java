@@ -79,6 +79,23 @@ public class JUnitAsyncHelper {
     return awaitCalled;
   }
 
+  public void close() {
+    checkTestCompleteCalled();
+  }
+
+  // We override this too in case the test forgot to call close()
+  @Override
+  protected void finalize() {
+    checkTestCompleteCalled();
+  }
+
+  private void checkTestCompleteCalled() {
+    if (!testCompleteCalled && throwable == null) {
+      testCompleteCalled = true;
+      throw new IllegalStateException("Closed without calling testComplete()! Your test must call testComplete() before exiting");
+    }
+  }
+
 
 
 }
