@@ -29,7 +29,7 @@ import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.SocketDefaults;
 import org.vertx.java.testframework.TestUtils;
-import org.vertx.java.tests.newtests.JUnitAsyncHelper;
+import org.vertx.java.tests.newtests.AsyncTestBase;
 
 import java.net.InetSocketAddress;
 import java.net.URL;
@@ -40,24 +40,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 import static org.vertx.java.tests.newtests.TestUtils.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JavaNetTest {
+public class JavaNetTest extends AsyncTestBase {
 
   private Vertx vertx;
-  private JUnitAsyncHelper helper;
   private NetServer server;
   private NetClient client;
 
   @Before
   public void before() {
     vertx = VertxFactory.newVertx();
-    helper = new JUnitAsyncHelper();
     client = vertx.createNetClient();
     server = vertx.createNetServer();
   }
@@ -72,6 +68,7 @@ public class JavaNetTest {
 
   @After
   public void after() throws Exception {
+    super.after();
     if (client != null) {
       client.close();
     }
@@ -79,7 +76,6 @@ public class JavaNetTest {
       awaitClose(server);
     }
     vertx.stop();
-    helper.close();
   }
 
   @Test
@@ -101,7 +97,7 @@ public class JavaNetTest {
     assertEquals(false, client.isUsePooledBuffers());
     assertEquals(SocketDefaults.instance.isReuseAddress(), client.isReuseAddress());
     assertEquals(-1, client.getTrafficClass());
-    helper.testComplete();
+    testComplete();
   }
 
   @Test
@@ -222,7 +218,7 @@ public class JavaNetTest {
     assertEquals(client, client.setTrafficClass(trafficClass));
     assertEquals(trafficClass, client.getTrafficClass());
 
-    helper.testComplete();
+    testComplete();
   }
 
   @Test
@@ -242,7 +238,7 @@ public class JavaNetTest {
     assertEquals(false, server.isUsePooledBuffers());
     assertEquals(true, server.isReuseAddress());
     assertEquals(-1, server.getTrafficClass());
-    helper.testComplete();
+    testComplete();
   }
 
   @Test
@@ -341,7 +337,7 @@ public class JavaNetTest {
     assertEquals(server, server.setTrafficClass(trafficClass));
     assertEquals(trafficClass, server.getTrafficClass());
 
-    helper.testComplete();
+    testComplete();
   }
 
   @Test
@@ -382,23 +378,19 @@ public class JavaNetTest {
           buff.appendBuffer(buffer);
           if (buff.length() == length) {
             dataChecker.accept(buff);
-            helper.testComplete();
+            testComplete();
           }
           if (buff.length() > length) {
-            helper.doAssert(() -> {
-              fail("Too many bytes received");
-            });
+            fail("Too many bytes received");
           }
         });
         writer.accept(sock);
       } else {
-        helper.doAssert(() -> {
-          fail("failed to connect");
-        });
+        fail("failed to connect");
       }
     };
     startEchoServer(s -> client.connect(1234, "localhost", clientHandler) );
-    helper.await();
+    await();
   }
 
   void startEchoServer(Handler<AsyncResult<NetServer>> listenHandler ) {
@@ -425,7 +417,7 @@ public class JavaNetTest {
           if (res.succeeded()) {
             res.result().close();
             if (connCount.incrementAndGet() == numConnections) {
-              helper.testComplete();
+              testComplete();
             }
           }
         };
@@ -436,98 +428,86 @@ public class JavaNetTest {
         }
       }
     });
-    helper.await();
+    await();
   }
 
   @Test
   public void testConnectInvalidPort() {
     client.connect(9998, res -> {
-      helper.doAssert(() -> {
-        assertTrue(res.failed());
-        assertFalse(res.succeeded());
-        assertNotNull(res.cause());
-        helper.testComplete();
-      });
+      assertTrue(res.failed());
+      assertFalse(res.succeeded());
+      assertNotNull(res.cause());
+      testComplete();
     });
-    helper.await();
+    await();
   }
 
   @Test
   public void testConnectInvalidHost() {
     client.setConnectTimeout(1000);
     client.connect(1234, "127.0.0.2", res -> {
-      helper.doAssert(() -> {
-        assertTrue(res.failed());
-        assertFalse(res.succeeded());
-        assertNotNull(res.cause());
-        helper.testComplete();
-      });
+      assertTrue(res.failed());
+      assertFalse(res.succeeded());
+      assertNotNull(res.cause());
+      testComplete();
     });
-    helper.await();
+    await();
   }
 
   @Test
   public void testListenInvalidPort() {
     server.connectHandler((netSocket) -> {}).listen(80, ar -> {
-      helper.doAssert(() -> {
-        assertTrue(ar.failed());
-        assertFalse(ar.succeeded());
-        assertNotNull(ar.cause());
-        helper.testComplete();
-      });
+      assertTrue(ar.failed());
+      assertFalse(ar.succeeded());
+      assertNotNull(ar.cause());
+      testComplete();
     });
-    helper.await();
+    await();
   }
 
   @Test
   public void testListenInvalidHost() {
     server.connectHandler(netSocket -> {}).listen(80, "uhqwduhqwudhqwuidhqwiudhqwudqwiuhd", ar -> {
-      helper.doAssert(() -> {
-        assertTrue(ar.failed());
-        assertFalse(ar.succeeded());
-        assertNotNull(ar.cause());
-        helper.testComplete();
-      });
+      assertTrue(ar.failed());
+      assertFalse(ar.succeeded());
+      assertNotNull(ar.cause());
+      testComplete();
     });
-    helper.await();
+    await();
   }
 
   @Test
   public void testListenOnWildcardPort() {
     server.connectHandler((netSocket) -> {}).listen(0, ar -> {
-      helper.doAssert(() -> {
-        assertFalse(ar.failed());
-        assertTrue(ar.succeeded());
-        assertNull(ar.cause());
-        assertTrue(server.port() > 1024);
-        assertEquals(server, ar.result());
-        helper.testComplete();
-      });
+      assertFalse(ar.failed());
+      assertTrue(ar.succeeded());
+      assertNull(ar.cause());
+      assertTrue(server.port() > 1024);
+      assertEquals(server, ar.result());
+      testComplete();
     });
-    helper.await();
+    await();
   }
 
   @Test
   public void testClientCloseHandlersCloseFromClient() {
     startEchoServer(s -> clientCloseHandlers(true));
-    helper.await();
+    await();
   }
 
   @Test
   public void testClientCloseHandlersCloseFromServer() {
     server.connectHandler((netSocket) -> netSocket.close() ).listen(1234, (s) -> clientCloseHandlers(false));
-    helper.await();
+    await();
   }
 
   void clientCloseHandlers(boolean closeFromClient) {
     client.connect(1234, ar -> {
       AtomicInteger counter = new AtomicInteger(0);
-      ar.result().endHandler(v -> helper.doAssert(() -> assertEquals(1, counter.incrementAndGet())));
+      ar.result().endHandler(v -> assertEquals(1, counter.incrementAndGet()));
       ar.result().closeHandler(v -> {
-        helper.doAssert(() -> {
-          assertEquals(2, counter.incrementAndGet());
-          helper.testComplete();
-        });
+        assertEquals(2, counter.incrementAndGet());
+        testComplete();
       });
       if (closeFromClient) {
         ar.result().close();
@@ -538,25 +518,23 @@ public class JavaNetTest {
   @Test
   public void testServerCloseHandlersCloseFromClient() {
     serverCloseHandlers(false, s -> client.connect(1234, ar -> ar.result().close()));
-    helper.await();
+    await();
   }
 
   @Test
   public void testServerCloseHandlersCloseFromServer() {
     serverCloseHandlers(true, s -> client.connect(1234, ar -> {
     }));
-    helper.await();
+    await();
   }
 
   void serverCloseHandlers(boolean closeFromServer, Handler<AsyncResult<NetServer>> listenHandler) {
     server.connectHandler((sock) -> {
       AtomicInteger counter = new AtomicInteger(0);
-      sock.endHandler(v ->  helper.doAssert(() ->  assertEquals(1, counter.incrementAndGet())));
+      sock.endHandler(v ->  assertEquals(1, counter.incrementAndGet()));
       sock.closeHandler(v -> {
-        helper.doAssert(() -> {
           assertEquals(2, counter.incrementAndGet());
-          helper.testComplete();
-        });
+          testComplete();
       });
       if (closeFromServer) {
         sock.close();
@@ -569,7 +547,7 @@ public class JavaNetTest {
     pausingServer((s) -> {
       client.connect(1234, ar -> {
         NetSocket sock = ar.result();
-        helper.doAssert(() -> assertFalse(sock.writeQueueFull()));
+        assertFalse(sock.writeQueueFull());
         sock.setWriteQueueMaxSize(1000);
         Buffer buff = TestUtils.generateRandomBuffer(10000);
         vertx.setPeriodic(1, id -> {
@@ -577,8 +555,8 @@ public class JavaNetTest {
           if (sock.writeQueueFull()) {
             vertx.cancelTimer(id);
             sock.drainHandler(v -> {
-              helper.doAssert(() -> assertFalse(sock.writeQueueFull()));
-              helper.testComplete();
+              assertFalse(sock.writeQueueFull());
+              testComplete();
             });
             // Tell the server to resume
             vertx.eventBus().send("server_resume", "");
@@ -586,7 +564,7 @@ public class JavaNetTest {
         });
       });
     });
-    helper.await();
+    await();
   }
 
   void pausingServer(Handler<AsyncResult<NetServer>> listenHandler) {
@@ -609,7 +587,7 @@ public class JavaNetTest {
         });
       });
     });
-    helper.await();
+    await();
   }
 
   void setHandlers(NetSocket sock) {
@@ -620,7 +598,7 @@ public class JavaNetTest {
 
   void drainingServer(Handler<AsyncResult<NetServer>> listenHandler) {
     server.connectHandler(sock -> {
-      helper.doAssert(() -> assertFalse(sock.writeQueueFull()));
+      assertFalse(sock.writeQueueFull());
       sock.setWriteQueueMaxSize(1000);
 
       Buffer buff = TestUtils.generateRandomBuffer(10000);
@@ -630,9 +608,9 @@ public class JavaNetTest {
         if (sock.writeQueueFull()) {
           vertx.cancelTimer(id);
           sock.drainHandler(v -> {
-            helper.doAssert(() -> assertFalse(sock.writeQueueFull()));
+            assertFalse(sock.writeQueueFull());
             // End test after a short delay to give the client some time to read the data
-            vertx.setTimer(100, id2 -> helper.testComplete());
+            vertx.setTimer(100, id2 -> testComplete());
           });
 
           // Tell the client to resume
@@ -658,18 +636,15 @@ public class JavaNetTest {
 
     //The server delays starting for a a few seconds, but it should still connect
     client.connect(1234, (res) -> {
-      helper.doAssert(() -> {
-        assertTrue(res.succeeded());
-        assertFalse(res.failed());
-        helper.testComplete();
-      });
+      assertTrue(res.succeeded());
+      assertFalse(res.failed());
+      testComplete();
     });
 
     // Start the server after a delay
-    vertx.setTimer(2000, id -> startEchoServer(s -> {
-    }));
+    vertx.setTimer(2000, id -> startEchoServer(s -> {}));
 
-    helper.await();
+    await();
   }
 
   @Test
@@ -678,14 +653,12 @@ public class JavaNetTest {
     client.setReconnectInterval(10);
 
     client.connect(1234, (res) -> {
-      helper.doAssert(() -> {
-        assertFalse(res.succeeded());
-        assertTrue(res.failed());
-        helper.testComplete();
-      });
+      assertFalse(res.succeeded());
+      assertTrue(res.failed());
+      testComplete();
     });
 
-    helper.await();
+    await();
   }
 
   @Test
@@ -767,11 +740,11 @@ public class JavaNetTest {
       socket.dataHandler(buff -> {
         socket.write(buff); // echo the data
         if (startTLS && !upgradedServer.get()) {
-          helper.doAssert(() -> assertFalse(socket.isSsl()));
-          socket.ssl(v -> helper.doAssert(() -> assertTrue(socket.isSsl())));
+          assertFalse(socket.isSsl());
+          socket.ssl(v -> assertTrue(socket.isSsl()));
           upgradedServer.set(true);
         } else {
-          helper.doAssert(() -> assertTrue(socket.isSsl()));
+          assertTrue(socket.isSsl());
         }
       });
     };
@@ -791,7 +764,7 @@ public class JavaNetTest {
       client.connect(4043, ar2 -> {
         if (ar2.succeeded()) {
           if (!shouldPass) {
-            helper.doAssert(() -> fail("Should not connect"));
+            fail("Should not connect");
             return;
           }
           final int numChunks = 100;
@@ -804,22 +777,20 @@ public class JavaNetTest {
           socket.dataHandler(buffer -> {
             received.appendBuffer(buffer);
             if (received.length() == sent.length()) {
-              helper.doAssert(() -> {
-                TestUtils.buffersEqual(sent, received);
-                helper.testComplete();
-              });
+              TestUtils.buffersEqual(sent, received);
+              testComplete();
             }
             if (startTLS && !upgradedClient.get()) {
-              helper.doAssert(() -> assertFalse(socket.isSsl()));
+              assertFalse(socket.isSsl());
               socket.ssl(v -> {
-                helper.doAssert(() -> assertTrue(socket.isSsl()));
+                assertTrue(socket.isSsl());
                 // Now send the rest
                 for (int i = 1; i < numChunks; i++) {
                   sendBuffer(socket, sent, chunkSize);
                 }
               });
             } else {
-              helper.doAssert(() -> assertTrue(socket.isSsl()));
+              assertTrue(socket.isSsl());
             }
           });
 
@@ -830,14 +801,14 @@ public class JavaNetTest {
           }
         } else {
           if (shouldPass) {
-            helper.doAssert(() -> fail("Should not fail to connect"));
+            fail("Should not fail to connect");
           } else {
-            helper.testComplete();
+            testComplete();
           }
         }
       });
     });
-    helper.await();
+    await();
   }
 
   void sendBuffer(NetSocket socket, Buffer sent, int chunkSize) {
@@ -870,7 +841,7 @@ public class JavaNetTest {
         if (ar.succeeded()) {
           latch.countDown();
         } else {
-          helper.doAssert(() -> fail("Failed to bind server"));
+          fail("Failed to bind server");
         }
       });
     }
@@ -886,7 +857,7 @@ public class JavaNetTest {
           });
           res.result().close();
         } else {
-          helper.doAssert(() -> fail("Failed to connect"));
+          fail("Failed to connect");
         }
       });
     }
@@ -906,14 +877,14 @@ public class JavaNetTest {
 
     for (NetServer server: servers) {
       server.close(ar -> {
-        helper.doAssert(() -> assertTrue(ar.succeeded()));
+        assertTrue(ar.succeeded());
         closeLatch.countDown();
       });
     }
 
     assertTrue(closeLatch.await(10, TimeUnit.SECONDS));
 
-    helper.testComplete();
+    testComplete();
   }
 
   @Test
@@ -922,12 +893,12 @@ public class JavaNetTest {
     CountDownLatch latch = new CountDownLatch(1);
     NetServer theServer = vertx.createNetServer();
     theServer.connectHandler(sock -> {
-      helper.doAssert(() -> fail("Should not connect"));
+      fail("Should not connect");
     }).listen(4321, "localhost", ar -> {
       if (ar.succeeded()) {
         latch.countDown();
       } else {
-        helper.doAssert(() -> fail("Failed to bind server"));
+        fail("Failed to bind server");
       }
     });
     assertTrue(latch.await(10, TimeUnit.SECONDS));
@@ -940,18 +911,18 @@ public class JavaNetTest {
     CountDownLatch latch = new CountDownLatch(1);
     NetServer theServer = vertx.createNetServer();
     theServer.connectHandler(sock -> {
-      helper.doAssert(() -> fail("Should not connect"));
+      fail("Should not connect");
     }).listen(4321, "localhost", ar -> {
       if (ar.succeeded()) {
         latch.countDown();
       } else {
-        helper.doAssert(() -> fail("Failed to bind server"));
+        fail("Failed to bind server");
       }
     });
     assertTrue(latch.await(10, TimeUnit.SECONDS));
     CountDownLatch closeLatch = new CountDownLatch(1);
     server.close(ar -> {
-      helper.doAssert(() -> assertTrue(ar.succeeded()));
+      assertTrue(ar.succeeded());
       closeLatch.countDown();
     });
     assertTrue(closeLatch.await(10, TimeUnit.SECONDS));
@@ -977,10 +948,8 @@ public class JavaNetTest {
       });
     });
     server.listen(1234, ar -> {
-      helper.doAssert(() -> {
-        assertTrue(ar.succeeded());
-        latch.countDown();
-      });
+      assertTrue(ar.succeeded());
+      latch.countDown();
     });
     assertTrue(latch.await(10, TimeUnit.SECONDS));
 
@@ -1003,27 +972,25 @@ public class JavaNetTest {
     });
     assertTrue(receivedLatch.await(10, TimeUnit.SECONDS));
 
-    helper.testComplete();
+    testComplete();
   }
 
   @Test
   public void testRemoteAddress() throws Exception {
     server.connectHandler(socket -> {
       InetSocketAddress addr = socket.remoteAddress();
-      helper.doAssert(() -> assertTrue(addr.getHostName().startsWith("localhost")));
+      assertTrue(addr.getHostName().startsWith("localhost"));
     }).listen(1234, ar -> {
-      helper.doAssert(() -> assertTrue(ar.succeeded()));
+      assertTrue(ar.succeeded());
       vertx.createNetClient().connect(1234, result -> {
         NetSocket socket = result.result();
         InetSocketAddress addr = socket.remoteAddress();
-        helper.doAssert(() -> {
-          assertEquals(addr.getHostName(), "localhost");
-          assertEquals(addr.getPort(), 1234);
-          helper.testComplete();
-        });
+        assertEquals(addr.getHostName(), "localhost");
+        assertEquals(addr.getPort(), 1234);
+        testComplete();
       });
     });
-    helper.await();
+    await();
   }
 
   @Test
@@ -1033,11 +1000,11 @@ public class JavaNetTest {
       socket.dataHandler(buff -> {
         received.appendBuffer(buff);
         if (received.toString().equals("foofoo")) {
-          helper.testComplete();
+          testComplete();
         }
       });
     }).listen(1234, ar -> {
-      helper.doAssert(() -> assertTrue(ar.succeeded()));
+      assertTrue(ar.succeeded());
       client.connect(1234, result -> {
         NetSocket socket = result.result();
         Buffer buff = new Buffer("foo");
@@ -1045,7 +1012,7 @@ public class JavaNetTest {
         socket.write(buff);
       });
     });
-    helper.await();
+    await();
   }
 
   @Test
@@ -1053,30 +1020,28 @@ public class JavaNetTest {
     String dir = System.getProperty("java.io.tmpdir") + "/" + UUID.randomUUID();
     vertx.createNetServer().connectHandler(socket -> {
       InetSocketAddress addr = socket.remoteAddress();
-      helper.doAssert(() -> assertTrue(addr.getHostName().startsWith("localhost")));
+      assertTrue(addr.getHostName().startsWith("localhost"));
     }).listen(1234, ar -> {
-      helper.doAssert(() -> assertTrue(ar.succeeded()));
+      assertTrue(ar.succeeded());
       client.connect(1234, result -> {
-        helper.doAssert(() -> assertTrue(result.succeeded()));
+        assertTrue(result.succeeded());
         NetSocket socket = result.result();
         vertx.fileSystem().mkdir(dir, result2 -> {
-          helper.doAssert(() -> assertTrue(result2.succeeded()));
+          assertTrue(result2.succeeded());
           try {
             socket.sendFile(dir);
             // should throw exception and never hit the assert
-            helper.doAssert(() -> fail("Should throw exception"));
+            fail("Should throw exception");
           } catch (IllegalArgumentException e) {
             vertx.fileSystem().delete(dir, result3 -> {
-              helper.doAssert(() -> {
-                assertTrue(result3.succeeded());
-                helper.testComplete();
-              });
+              assertTrue(result3.succeeded());
+              testComplete();
             });
           }
         });
       });
     });
-    helper.await();
+    await();
   }
 
 }

@@ -21,6 +21,9 @@ package org.vertx.java.tests.newtests;
 
 import org.vertx.java.core.buffer.Buffer;
 
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class TestUtils {
   /**
    * Creates a Buffer of random bytes.

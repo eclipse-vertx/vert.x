@@ -1,13 +1,5 @@
 package org.vertx.java.tests.newtests;
 
-import org.junit.*;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.*;
-
 /*
  * Copyright 2013 Red Hat, Inc.
  *
@@ -24,33 +16,39 @@ import static org.junit.Assert.*;
  * under the License.
  *
  */
-public class JUnitAsyncHelperTest {
+
+import org.junit.*;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
+public class AsyncTestBaseTest extends AsyncTestBase {
 
   ExecutorService executor;
-  JUnitAsyncHelper atest;
 
   @Before
   public void before() {
     executor = Executors.newFixedThreadPool(10);
-    atest = new JUnitAsyncHelper();
   }
 
   @After
-  public void after() {
-    assertTrue(atest.isAwaitCalled()); // Make sure that user actually called await in the test or might get a false +ve
+  public void after() throws Exception {
+    super.after();
     executor.shutdownNow();
   }
 
   @Test
   public void testAssertionFailedFromOtherThread() {
     executor.execute(() -> {
-      atest.doAssert(() -> {
-        assertEquals("foo", "bar");
-      });
-      atest.testComplete();
+      assertEquals("foo", "bar");
+      testComplete();
     });
     try {
-      atest.await();
+      await();
     } catch (ComparisonFailure error) {
       assertTrue(error.getMessage().startsWith("expected:"));
     }
@@ -58,14 +56,10 @@ public class JUnitAsyncHelperTest {
 
   @Test
   public void testAssertionFailedFromMainThread() {
-
-    atest.doAssert(() -> {
-      assertEquals("foo", "bar");
-    });
-    atest.testComplete();
-
+    assertEquals("foo", "bar");
+    testComplete();
     try {
-      atest.await();
+      await();
     } catch (ComparisonFailure error) {
       assertTrue(error.getMessage().startsWith("expected:"));
     }
@@ -74,21 +68,17 @@ public class JUnitAsyncHelperTest {
   @Test
   public void testAssertionPassedFromOtherThread() {
     executor.execute(() -> {
-      atest.doAssert(() -> {
-        assertEquals("foo", "foo");
-      });
-      atest.testComplete();
+      assertEquals("foo", "foo");
+      testComplete();
     });
-    atest.await();
+    await();
   }
 
   @Test
   public void testAssertionPassedFromMainThread() {
-    atest.doAssert(() -> {
-      assertEquals("foo", "foo");
-    });
-    atest.testComplete();
-    atest.await();
+    assertEquals("foo", "foo");
+    testComplete();
+    await();
   }
 
   @Test
@@ -96,7 +86,7 @@ public class JUnitAsyncHelperTest {
     long timeout = 5000;
     long start = System.currentTimeMillis();
     try {
-      atest.await(timeout, TimeUnit.MILLISECONDS);
+      await(timeout, TimeUnit.MILLISECONDS);
     } catch (IllegalStateException error) {
       long now = System.currentTimeMillis();
       assertTrue(error.getMessage().startsWith("Timed out in waiting for test complete"));
@@ -110,7 +100,7 @@ public class JUnitAsyncHelperTest {
   public void testTimeoutDefault() {
     long start = System.currentTimeMillis();
     try {
-      atest.await();
+      await();
     } catch (IllegalStateException error) {
       long now = System.currentTimeMillis();
       assertTrue(error.getMessage().startsWith("Timed out in waiting for test complete"));
@@ -125,13 +115,11 @@ public class JUnitAsyncHelperTest {
   public void testFailFromOtherThread() {
     String msg = "too many aardvarks!";
     executor.execute(() -> {
-      atest.doAssert(() -> {
-        fail(msg);
-      });
-      atest.testComplete();
+      fail(msg);
+      testComplete();
     });
     try {
-      atest.await();
+      await();
     } catch (AssertionError error) {
       assertTrue(error.getMessage().equals(msg));
     }
@@ -140,76 +128,38 @@ public class JUnitAsyncHelperTest {
   @Test
   public void testSuccessfulCompletion() {
     executor.execute(() -> {
-      atest.doAssert(() -> {
-        assertEquals("foo", "foo");
-        assertFalse(false);
-      });
-      atest.testComplete();
+      assertEquals("foo", "foo");
+      assertFalse(false);
+      testComplete();
     });
-    atest.await();
+    await();
   }
 
   @Test
   public void testTestCompleteCalledMultipleTimes() {
     executor.execute(() -> {
-      atest.doAssert(() -> {
-        assertEquals("foo", "foo");
-      });
-      atest.testComplete();
+      assertEquals("foo", "foo");
+      testComplete();
       try {
-        atest.testComplete();
+        testComplete();
       } catch (IllegalStateException e) {
         //OK
       }
     });
-    atest.await();
+    await();
   }
 
   @Test
   public void testAwaitCalledMultipleTimes() {
     executor.execute(() -> {
-      atest.doAssert(() -> {
-        assertEquals("foo", "foo");
-      });
-      atest.testComplete();
+      assertEquals("foo", "foo");
+      testComplete();
     });
-    atest.await();
+    await();
     try {
-      atest.await();
+      await();
     } catch (IllegalStateException e) {
       //OK
-    }
-  }
-
-  @Test
-  public void testRuntimeExceptionThrownFromAssertBlock() {
-    String msg = "foo bar";
-    executor.execute(() -> {
-      atest.doAssert(() -> {
-        throw new RuntimeException(msg);
-      });
-      atest.testComplete();
-    });
-    try {
-      atest.await();
-    } catch (RuntimeException e) {
-      assertEquals(msg, e.getMessage());
-    }
-  }
-
-  @Test
-  public void testGeneralErrorThrownFromAssertBlock() {
-    String msg = "wibble quux";
-    executor.execute(() -> {
-      atest.doAssert(() -> {
-        throw new Error(msg);
-      });
-      atest.testComplete();
-    });
-    try {
-      atest.await();
-    } catch (Error e) {
-      assertEquals(msg, e.getMessage());
     }
   }
 
