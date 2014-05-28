@@ -22,6 +22,8 @@ import org.junit.Test;
 import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.file.impl.ClasspathPathResolver;
+import org.vertx.java.core.impl.ConcurrentHashSet;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
@@ -29,9 +31,12 @@ import org.vertx.java.core.net.impl.SocketDefaults;
 import org.vertx.java.testframework.TestUtils;
 import org.vertx.java.tests.newtests.JUnitAsyncHelper;
 
-import java.util.Random;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.net.InetSocketAddress;
+import java.net.URL;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -416,7 +421,7 @@ public class JavaNetTest {
       final int numConnections = 100;
       final AtomicInteger connCount = new AtomicInteger(0);
       for (int i = 0; i < numConnections; i++) {
-        AsyncResultHandler<NetSocket> handler =  res -> {
+        AsyncResultHandler<NetSocket> handler = res -> {
           if (res.succeeded()) {
             res.result().close();
             if (connCount.incrementAndGet() == numConnections) {
@@ -426,7 +431,7 @@ public class JavaNetTest {
         };
         if (host == null) {
           client.connect(port, handler);
-        } else  {
+        } else {
           client.connect(port, host, handler);
         }
       }
@@ -451,7 +456,7 @@ public class JavaNetTest {
   public void testConnectInvalidHost() {
     client.setConnectTimeout(1000);
     client.connect(1234, "127.0.0.2", res -> {
-      helper.doAssert( () -> {
+      helper.doAssert(() -> {
         assertTrue(res.failed());
         assertFalse(res.succeeded());
         assertNotNull(res.cause());
@@ -538,7 +543,8 @@ public class JavaNetTest {
 
   @Test
   public void testServerCloseHandlersCloseFromServer() {
-    serverCloseHandlers(true, s -> client.connect(1234, ar -> {}));
+    serverCloseHandlers(true, s -> client.connect(1234, ar -> {
+    }));
     helper.await();
   }
 
@@ -599,7 +605,8 @@ public class JavaNetTest {
         NetSocket sock = ar.result();
         sock.pause();
         setHandlers(sock);
-        sock.dataHandler(buf -> {});
+        sock.dataHandler(buf -> {
+        });
       });
     });
     helper.await();
@@ -633,6 +640,443 @@ public class JavaNetTest {
         }
       });
     }).listen(1234, listenHandler);
+  }
+
+  @Test
+  public void testReconnectAttemptsInfinite() {
+    reconnectAttempts(-1);
+  }
+
+  @Test
+  public void testReconnectAttemptsMany() {
+    reconnectAttempts(100000);
+  }
+
+  void reconnectAttempts(int attempts) {
+    client.setReconnectAttempts(attempts);
+    client.setReconnectInterval(10);
+
+    //The server delays starting for a a few seconds, but it should still connect
+    client.connect(1234, (res) -> {
+      helper.doAssert(() -> {
+        assertTrue(res.succeeded());
+        assertFalse(res.failed());
+        helper.testComplete();
+      });
+    });
+
+    // Start the server after a delay
+    vertx.setTimer(2000, id -> startEchoServer(s -> {
+    }));
+
+    helper.await();
+  }
+
+  @Test
+  public void testReconnectAttemptsNotEnough() {
+    client.setReconnectAttempts(100);
+    client.setReconnectInterval(10);
+
+    client.connect(1234, (res) -> {
+      helper.doAssert(() -> {
+        assertFalse(res.succeeded());
+        assertTrue(res.failed());
+        helper.testComplete();
+      });
+    });
+
+    helper.await();
+  }
+
+  @Test
+  // StartTLS
+  public void testStartTLSClientTrustAll() throws Exception {
+    testTLS(false, false, true, false, false, true, true, true);
+  }
+
+  @Test
+  // Client trusts all server certs
+  public void testTLSClientTrustAll() throws Exception {
+    testTLS(false, false, true, false, false, true, true, false);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts (not trust all)
+  public void testTLSClientTrustServerCert() throws Exception {
+    testTLS(false, true, true, false, false, false, true, false);
+  }
+
+  @Test
+  // Server specifies cert that the client doesn't trust
+  public void testTLSClientUntrustedServer() throws Exception {
+    testTLS(false, false, true, false, false, false, false, false);
+  }
+
+  @Test
+  //Client specifies cert even though it's not required
+  public void testTLSClientCertNotRequired() throws Exception {
+    testTLS(true, true, true, true, false, false, true, false);
+  }
+
+  @Test
+  //Client specifies cert and it's not required
+  public void testTLSClientCertRequired() throws Exception {
+    testTLS(true, true, true, true, true, false, true, false);
+  }
+
+  @Test
+  //Client doesn't specify cert but it's required
+  public void testTLSClientCertRequiredNoClientCert() throws Exception {
+    testTLS(false, true, true, true, true, false, false, false);
+  }
+
+  @Test
+  //Client specifies cert but it's not trusted
+  public void testTLSClientCertClientNotTrusted() throws Exception {
+    testTLS(true, true, true, false, true, false, false, false);
+  }
+
+  String findFileOnClasspath(String fileName) {
+    URL url = getClass().getClassLoader().getResource(fileName);
+    if (url == null) {
+      throw new IllegalArgumentException("Cannot find file " + fileName + " on classpath");
+    }
+    Path path = ClasspathPathResolver.urlToPath(url).toAbsolutePath();
+    return path.toString();
+  }
+
+  void testTLS(boolean clientCert, boolean clientTrust,
+                boolean serverCert, boolean serverTrust,
+                boolean requireClientAuth, boolean clientTrustAll,
+                boolean shouldPass, boolean startTLS) throws Exception {
+
+    if (!startTLS) {
+      server.setSSL(true);
+    }
+    if (serverTrust) {
+      server.setTrustStorePath(findFileOnClasspath("tls/server-truststore.jks")).setTrustStorePassword("wibble");
+    }
+    if (serverCert) {
+      server.setKeyStorePath(findFileOnClasspath("tls/server-keystore.jks")).setKeyStorePassword("wibble");
+    }
+    if (requireClientAuth) {
+      server.setClientAuthRequired(true);
+    }
+    Handler<NetSocket> serverHandler = socket -> {
+      AtomicBoolean upgradedServer = new AtomicBoolean();
+      socket.dataHandler(buff -> {
+        socket.write(buff); // echo the data
+        if (startTLS && !upgradedServer.get()) {
+          helper.doAssert(() -> assertFalse(socket.isSsl()));
+          socket.ssl(v -> helper.doAssert(() -> assertTrue(socket.isSsl())));
+          upgradedServer.set(true);
+        } else {
+          helper.doAssert(() -> assertTrue(socket.isSsl()));
+        }
+      });
+    };
+    server.connectHandler(serverHandler).listen(4043, "localhost", ar -> {
+      if (!startTLS) {
+        client.setSSL(true);
+        if (clientTrustAll) {
+          client.setTrustAll(true);
+        }
+        if (clientTrust) {
+          client.setTrustStorePath(findFileOnClasspath("tls/client-truststore.jks")).setTrustStorePassword("wibble");
+        }
+        if (clientCert) {
+          client.setKeyStorePath(findFileOnClasspath("tls/client-keystore.jks")).setKeyStorePassword("wibble");
+        }
+      }
+      client.connect(4043, ar2 -> {
+        if (ar2.succeeded()) {
+          if (!shouldPass) {
+            helper.doAssert(() -> fail("Should not connect"));
+            return;
+          }
+          final int numChunks = 100;
+          final int chunkSize = 100;
+          final Buffer received = new Buffer();
+          final Buffer sent = new Buffer();
+          final NetSocket socket = ar2.result();
+
+          final AtomicBoolean upgradedClient = new AtomicBoolean();
+          socket.dataHandler(buffer -> {
+            received.appendBuffer(buffer);
+            if (received.length() == sent.length()) {
+              helper.doAssert(() -> {
+                TestUtils.buffersEqual(sent, received);
+                helper.testComplete();
+              });
+            }
+            if (startTLS && !upgradedClient.get()) {
+              helper.doAssert(() -> assertFalse(socket.isSsl()));
+              socket.ssl(v -> {
+                helper.doAssert(() -> assertTrue(socket.isSsl()));
+                // Now send the rest
+                for (int i = 1; i < numChunks; i++) {
+                  sendBuffer(socket, sent, chunkSize);
+                }
+              });
+            } else {
+              helper.doAssert(() -> assertTrue(socket.isSsl()));
+            }
+          });
+
+          //Now send some data
+          int numToSend = startTLS ? 1 : numChunks;
+          for (int i = 0; i < numToSend; i++) {
+            sendBuffer(socket, sent, chunkSize);
+          }
+        } else {
+          if (shouldPass) {
+            helper.doAssert(() -> fail("Should not fail to connect"));
+          } else {
+            helper.testComplete();
+          }
+        }
+      });
+    });
+    helper.await();
+  }
+
+  void sendBuffer(NetSocket socket, Buffer sent, int chunkSize) {
+    Buffer buff = TestUtils.generateRandomBuffer(chunkSize);
+    sent.appendBuffer(buff);
+    socket.write(buff);
+  }
+
+  @Test
+  public void testSharedServersRoundRobin() throws Exception {
+
+    int numServers = 5;
+    int numConnections = numServers * 100;
+
+    List<NetServer> servers = new ArrayList<>();
+    Set<NetServer> connectedServers = new ConcurrentHashSet<>();
+    Map<NetServer, Integer> connectCount = new ConcurrentHashMap<>();
+
+    CountDownLatch latch = new CountDownLatch(numServers);
+    for (int i = 0; i < numServers; i++) {
+      NetServer theServer = vertx.createNetServer();
+      servers.add(theServer);
+      theServer.connectHandler(sock -> {
+        connectedServers.add(theServer);
+        Integer cnt = connectCount.get(theServer);
+        int icnt = cnt == null ? 0 : cnt;
+        icnt++;
+        connectCount.put(theServer, icnt);
+      }).listen(1234, "localhost", ar -> {
+        if (ar.succeeded()) {
+          latch.countDown();
+        } else {
+          helper.doAssert(() -> fail("Failed to bind server"));
+        }
+      });
+    }
+    assertTrue(latch.await(10, TimeUnit.SECONDS));
+
+    // Create a bunch of connections
+    CountDownLatch latchClient = new CountDownLatch(numConnections);
+    for (int i = 0; i < numConnections; i++) {
+      client.connect(1234, "localhost", res -> {
+        if (res.succeeded()) {
+          res.result().closeHandler(v -> {
+            latchClient.countDown();
+          });
+          res.result().close();
+        } else {
+          helper.doAssert(() -> fail("Failed to connect"));
+        }
+      });
+    }
+
+    assertTrue(latchClient.await(10, TimeUnit.SECONDS));
+
+    assertEquals(numServers, connectedServers.size());
+    for (NetServer server: servers) {
+      assertTrue(connectedServers.contains(server));
+    }
+    assertEquals(numServers, connectCount.size());
+    for (int cnt: connectCount.values()) {
+      assertEquals(numConnections / numServers, cnt);
+    }
+
+    CountDownLatch closeLatch = new CountDownLatch(numServers);
+
+    for (NetServer server: servers) {
+      server.close(ar -> {
+        helper.doAssert(() -> assertTrue(ar.succeeded()));
+        closeLatch.countDown();
+      });
+    }
+
+    assertTrue(closeLatch.await(10, TimeUnit.SECONDS));
+
+    helper.testComplete();
+  }
+
+  @Test
+  public void testSharedServersRoundRobinWithOtherServerRunningOnDifferentPort() throws Exception {
+    // Have a server running on a different port to make sure it doesn't interact
+    CountDownLatch latch = new CountDownLatch(1);
+    NetServer theServer = vertx.createNetServer();
+    theServer.connectHandler(sock -> {
+      helper.doAssert(() -> fail("Should not connect"));
+    }).listen(4321, "localhost", ar -> {
+      if (ar.succeeded()) {
+        latch.countDown();
+      } else {
+        helper.doAssert(() -> fail("Failed to bind server"));
+      }
+    });
+    assertTrue(latch.await(10, TimeUnit.SECONDS));
+    testSharedServersRoundRobin();
+  }
+
+  @Test
+  public void testSharedServersRoundRobinButFirstStartAndStopServer() throws Exception {
+    // Start and stop a server on the same port/host before hand to make sure it doesn't interact
+    CountDownLatch latch = new CountDownLatch(1);
+    NetServer theServer = vertx.createNetServer();
+    theServer.connectHandler(sock -> {
+      helper.doAssert(() -> fail("Should not connect"));
+    }).listen(4321, "localhost", ar -> {
+      if (ar.succeeded()) {
+        latch.countDown();
+      } else {
+        helper.doAssert(() -> fail("Failed to bind server"));
+      }
+    });
+    assertTrue(latch.await(10, TimeUnit.SECONDS));
+    CountDownLatch closeLatch = new CountDownLatch(1);
+    server.close(ar -> {
+      helper.doAssert(() -> assertTrue(ar.succeeded()));
+      closeLatch.countDown();
+    });
+    assertTrue(closeLatch.await(10, TimeUnit.SECONDS));
+    testSharedServersRoundRobin();
+  }
+
+  @Test
+  // This tests using NetSocket.writeHandlerID (on the server side)
+  // Send some data and make sure it is fanned out to all connections
+  public void testFanout() throws Exception {
+
+    CountDownLatch latch = new CountDownLatch(1);
+    Set<String> connections = new ConcurrentHashSet<>();
+    server.connectHandler(socket -> {
+      connections.add(socket.writeHandlerID());
+      socket.dataHandler(buffer -> {
+        for (String actorID : connections) {
+          vertx.eventBus().publish(actorID, buffer);
+        }
+      });
+      socket.closeHandler(v -> {
+        connections.remove(socket.writeHandlerID());
+      });
+    });
+    server.listen(1234, ar -> {
+      helper.doAssert(() -> {
+        assertTrue(ar.succeeded());
+        latch.countDown();
+      });
+    });
+    assertTrue(latch.await(10, TimeUnit.SECONDS));
+
+    int numConnections = 10;
+    CountDownLatch connectLatch = new CountDownLatch(numConnections);
+    CountDownLatch receivedLatch = new CountDownLatch(numConnections);
+    for (int i = 0; i < numConnections; i++) {
+      client.connect(1234, res -> {
+        connectLatch.countDown();
+        res.result().dataHandler(data -> {
+          receivedLatch.countDown();
+        });
+      });
+    }
+    assertTrue(connectLatch.await(10, TimeUnit.SECONDS));
+
+    // Send some data
+    client.connect(1234, res -> {
+      res.result().write("foo");
+    });
+    assertTrue(receivedLatch.await(10, TimeUnit.SECONDS));
+
+    helper.testComplete();
+  }
+
+  @Test
+  public void testRemoteAddress() throws Exception {
+    server.connectHandler(socket -> {
+      InetSocketAddress addr = socket.remoteAddress();
+      helper.doAssert(() -> assertTrue(addr.getHostName().startsWith("localhost")));
+    }).listen(1234, ar -> {
+      helper.doAssert(() -> assertTrue(ar.succeeded()));
+      vertx.createNetClient().connect(1234, result -> {
+        NetSocket socket = result.result();
+        InetSocketAddress addr = socket.remoteAddress();
+        helper.doAssert(() -> {
+          assertEquals(addr.getHostName(), "localhost");
+          assertEquals(addr.getPort(), 1234);
+          helper.testComplete();
+        });
+      });
+    });
+    helper.await();
+  }
+
+  @Test
+  public void testWriteSameBufferMoreThanOnce() throws Exception {
+    vertx.createNetServer().connectHandler(socket -> {
+      final Buffer received = new Buffer();
+      socket.dataHandler(buff -> {
+        received.appendBuffer(buff);
+        if (received.toString().equals("foofoo")) {
+          helper.testComplete();
+        }
+      });
+    }).listen(1234, ar -> {
+      helper.doAssert(() -> assertTrue(ar.succeeded()));
+      client.connect(1234, result -> {
+        NetSocket socket = result.result();
+        Buffer buff = new Buffer("foo");
+        socket.write(buff);
+        socket.write(buff);
+      });
+    });
+    helper.await();
+  }
+
+  @Test
+  public void testSendFileDirectory() throws Exception {
+    String dir = System.getProperty("java.io.tmpdir") + "/" + UUID.randomUUID();
+    vertx.createNetServer().connectHandler(socket -> {
+      InetSocketAddress addr = socket.remoteAddress();
+      helper.doAssert(() -> assertTrue(addr.getHostName().startsWith("localhost")));
+    }).listen(1234, ar -> {
+      helper.doAssert(() -> assertTrue(ar.succeeded()));
+      client.connect(1234, result -> {
+        helper.doAssert(() -> assertTrue(result.succeeded()));
+        NetSocket socket = result.result();
+        vertx.fileSystem().mkdir(dir, result2 -> {
+          helper.doAssert(() -> assertTrue(result2.succeeded()));
+          try {
+            socket.sendFile(dir);
+            // should throw exception and never hit the assert
+            helper.doAssert(() -> fail("Should throw exception"));
+          } catch (IllegalArgumentException e) {
+            vertx.fileSystem().delete(dir, result3 -> {
+              helper.doAssert(() -> {
+                assertTrue(result3.succeeded());
+                helper.testComplete();
+              });
+            });
+          }
+        });
+      });
+    });
+    helper.await();
   }
 
 }
