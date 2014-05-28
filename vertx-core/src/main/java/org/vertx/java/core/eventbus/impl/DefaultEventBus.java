@@ -1101,9 +1101,7 @@ public class DefaultEventBus implements EventBus {
 
     @Override
     public int hashCode() {
-      int result = address != null ? address.hashCode() : 0;
-      result = 31 * result + (handler != null ? handler.hashCode() : 0);
-      return result;
+      return 31 * address.hashCode() + handler.hashCode();
     }
 
     // Called by context on undeploy
