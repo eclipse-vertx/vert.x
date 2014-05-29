@@ -1,50 +1,33 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
- * ------------------------------------------------------
+ * Copyright 2014 Red Hat, Inc.
+ *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * and Apache License v2.0 which accompanies this distribution.
  *
- *     The Eclipse Public License is available at
- *     http://www.eclipse.org/legal/epl-v10.html
+ * The Eclipse Public License is available at
+ * http://www.eclipse.org/legal/epl-v10.html
  *
- *     The Apache License v2.0 is available at
- *     http://www.opensource.org/licenses/apache2.0.php
+ * The Apache License v2.0 is available at
+ * http://www.opensource.org/licenses/apache2.0.php
  *
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package org.vertx.java.tests.core.json;
+package org.vertx.java.tests.newtests;
 
 import org.junit.Test;
+import static org.junit.Assert.*;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonElement;
 import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.testframework.TestBase;
 
 import java.util.Iterator;
 
 /**
- *
- * TODO complete testing!!
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JavaJsonTest extends TestBase {
-
-  private static final Logger log = LoggerFactory.getLogger(JavaJsonTest.class);
-
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-  }
-
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
-  }
+public class JSONTest {
 
   @Test
   public void testJsonObject() throws Exception {
@@ -65,67 +48,30 @@ public class JavaJsonTest extends TestBase {
     JsonObject object2 = object.copy();
 
     JsonArray array2 = object2.getArray("array");
+    assertNotSame(array, array2);
   }
 
   @Test
   public void testRetrieveArrayItemByIndex() {
     JsonArray arr = new JsonArray();
-    
     arr.addString("foo");
     arr.addObject(new JsonObject().putString("bar", "baz"));
     arr.addString("bap");
-    
     assertEquals("baz", ((JsonObject) arr.get(1)).getString("bar"));
+    assertEquals("bap", arr.get(2));
+    assertEquals("foo", arr.get(0));
   }
 
   @Test
-  public void testPutsNullObjectWithoutException() {
-    log.debug(
-      new JsonObject()
-        .putString("null", null)
-        .encode()
-    );
-    log.debug(
-      new JsonObject()
-        .putObject("null", null) // this shouldn't cause a NullPointerException
-        .encode()
-    );
-    log.debug(
-      new JsonObject()
-        .putArray("null", null)
-        .encode()
-    );
-    log.debug(
-      new JsonObject()
-        .putElement("null", null)
-        .encode()
-    );
-    log.debug(
-      new JsonObject()
-        .putNumber("null", null)
-        .encode()
-    );
-    log.debug(
-      new JsonObject()
-        .putBoolean("null", null)
-        .encode()
-    );
-    log.debug(
-      new JsonObject()
-        .putBinary("null", null)
-        .encode()
-    );
-    log.debug(
-      new JsonObject()
-        .putValue("null", null)
-        .encode()
-    );
-
-    log.debug(
-      new JsonObject()
-        .putObject("null", new JsonObject().putString("foo", "bar"))
-        .encode()
-    );
+  public void testPutsNullObject() {
+    String nullEncode = "{\"null\":null}";
+    assertEquals(nullEncode, new JsonObject().putString("null", null).encode());
+    assertEquals(nullEncode, new JsonObject().putObject("null", null).encode());
+    assertEquals(nullEncode, new JsonObject().putArray("null", null).encode());
+    assertEquals(nullEncode, new JsonObject().putElement("null", null).encode());
+    assertEquals(nullEncode, new JsonObject().putNumber("null", null).encode());
+    assertEquals(nullEncode, new JsonObject().putBoolean("null", null).encode());
+    assertEquals(nullEncode, new JsonObject().putValue("null", null).encode());
   }
 
   @Test
@@ -163,160 +109,132 @@ public class JavaJsonTest extends TestBase {
     assertTrue(new JsonObject().putBinary("foo", null).containsField("foo"));
     assertTrue(new JsonObject().putValue("foo", null).containsField("foo"));
   }
-  
+
   @Test
   public void testJsonElementTypeCheck(){
     JsonElement objElement = new JsonObject().putString("foo", "bar");
     JsonElement arrayElement = new JsonArray().addString("foo");
-    
     assertTrue(objElement.isObject());
     assertFalse(objElement.isArray());
-    
     assertFalse(arrayElement.isObject());
     assertTrue(arrayElement.isArray());
   }
-  
+
   @Test
   public void testJsonElementConversionWithoutException(){
     JsonElement objElement = new JsonObject().putString("foo", "bar");
     JsonElement arrayElement = new JsonArray().addString("foo");
-    
-    JsonObject retrievedObject = objElement.asObject();  
+    JsonObject retrievedObject = objElement.asObject();
     JsonArray retrievedArray = arrayElement.asArray();
-    
-    log.debug(retrievedObject.encode());
-    log.debug(retrievedArray.encode());
+    assertEquals("{\"foo\":\"bar\"}", retrievedObject.encode());
+    assertEquals("[\"foo\"]", retrievedArray.encode());
   }
-  
+
   @Test
   public void testJsonElementConversionWithException(){
     JsonElement objElement = new JsonObject().putString("foo", "bar");
-
-    try{
-      objElement.asArray();        
-    }catch(ClassCastException e){
-      return;
+    try {
+      objElement.asArray();
+      fail("Coercing JsonElement(Object) into JsonArray did not throw a ClassCastException");
+    } catch(ClassCastException e){
+      // OK
     }
-
-    fail("Coercing JsonElement(Object) into JsonArray did not throw a ClassCastException");
   }
 
   @Test
   public void testJsonElementConversionWithException2(){
     JsonElement arrayElement = new JsonArray().addString("foo");
-
-    try{
-      arrayElement.asObject();        
-    }catch(ClassCastException e){
-      return;
+    try {
+      arrayElement.asObject();
+      fail("Coercing JsonElement(Array) into JsonObject did not throw a ClassCastException");
+    } catch(ClassCastException e){
+      // OK
     }
-    
-    fail("Coercing JsonElement(Array) into JsonObject did not throw a ClassCastException");
   }
-  
-  
+
+
   @Test
   public void testInsertJsonElementIntoJsonObjectWithouException(){
     JsonObject objElement = new JsonObject().putString("foo", "bar");
     JsonArray arrayElement = new JsonArray().addString("foo");
-    
+
     /* Insert an Object */
-    log.debug(
-      new JsonObject()
-        .putElement("elementField", objElement)
-        .encode()
-    );
+    assertEquals("{\"elementField\":{\"foo\":\"bar\"}}", new JsonObject().putElement("elementField", objElement).encode());
 
     /* Insert an Array */
-    log.debug(
-      new JsonObject()
-        .putElement("elementField", arrayElement)
-        .encode()
-    );
+    assertEquals("{\"elementField\":[\"foo\"]}", new JsonObject().putElement("elementField", arrayElement).encode());
   }
-  
+
   @Test
-  public void testRetrieveJsonElementFromJsonObject(){
+  public void testRetrieveJsonElementFromJsonObject() {
     JsonObject objElement = new JsonObject().putString("foo", "bar");
-    
-    JsonObject tester = new JsonObject()
-      .putElement("elementField", objElement);
+
+    JsonObject tester = new JsonObject().putElement("elementField", objElement);
 
     JsonElement testElement = tester.getElement("elementField");
-    
+
     assertEquals(objElement.getString("foo"), testElement.asObject().getString("foo"));
   }
-  
+
   @Test
-  public void testRetrieveJsonElementFromJsonObject2(){
+  public void testRetrieveJsonElementFromJsonObject2() {
     JsonArray arrayElement = new JsonArray().addString("foo");
-    
+
     JsonObject tester = new JsonObject()
       .putElement("elementField", arrayElement);
 
     JsonElement testElement = tester.getElement("elementField");
-    
-    assertEquals(arrayElement.get(0), testElement.asArray().get(0));  
-  }
-  
-  @Test
-  public void testRetrieveJsonElementFromJsonObjectWithException(){  
-    JsonObject tester = new JsonObject()
-      .putString("elementField", "foo");
 
+    assertEquals((String)arrayElement.get(0), (String)testElement.asArray().get(0));
+  }
+
+  @Test
+  public void testRetrieveJsonElementFromJsonObjectWithException(){
+    JsonObject tester = new JsonObject().putString("elementField", "foo");
     try{
       tester.getElement("elementField");
-    }catch(ClassCastException e){
-      return;
+      fail("Retrieving a field that is not a JsonElement did not throw ClassCastException");
+    } catch(ClassCastException e){
+      // OK
     }
-    
-    fail("Retrieving a field that is not a JsonElement did not throw ClassCastException");
   }
-  
+
   @Test
   public void testInsertJsonElementIntoJsonArrayWithouException(){
     JsonObject objElement = new JsonObject().putString("foo", "bar");
     JsonArray arrayElement = new JsonArray().addString("foo");
-    
+
     /* Insert an Object */
-    log.debug(
-      new JsonArray()
-        .addElement(objElement)
-        .encode()
-    );
+    assertEquals("[{\"foo\":\"bar\"}]", new JsonArray().addElement(objElement).encode());
 
     /* Insert an Array */
-    log.debug(
-        new JsonArray()
-          .addElement(arrayElement)
-          .encode()
-      );  
+    assertEquals("[[\"foo\"]]", new JsonArray().addElement(arrayElement).encode());
   }
-  
+
   @Test
   public void testRetrieveJsonElementFromJsonArray(){
     JsonObject objElement = new JsonObject().putString("foo", "bar");
-    
+
     /* Insert an Object */
     JsonArray tester = new JsonArray()
       .addElement(objElement);
 
-    JsonElement testElement = (JsonElement)tester.get(0);
-    
+    JsonElement testElement = tester.get(0);
+
     assertEquals(objElement.getString("foo"), testElement.asObject().getString("foo"));
   }
-  
+
   @Test
   public void testRetrieveJsonElementFromJsonArray2(){
     JsonArray arrayElement = new JsonArray().addString("foo");
-    
+
     /* Insert an Object */
     JsonArray tester = new JsonArray()
-    .addElement(arrayElement);
+      .addElement(arrayElement);
 
-    JsonElement testElement = (JsonElement)tester.get(0);
-    
-    assertEquals(arrayElement.get(0), testElement.asArray().get(0));
+    JsonElement testElement = tester.get(0);
+
+    assertEquals((String)arrayElement.get(0), (String)testElement.asArray().get(0));
   }
 
   @Test
@@ -326,7 +244,7 @@ public class JavaJsonTest extends TestBase {
 
     assertEquals(array1, array2);
   }
-  
+
   @Test
   public void testJsonArraysWithNullsEquality() {
     JsonArray array1 = new JsonArray(new Object[]{null, "a"});
@@ -378,6 +296,4 @@ public class JavaJsonTest extends TestBase {
     assertTrue(obj.containsField("s"));
     assertFalse(obj.containsField("t"));
   }
-
-
 }

@@ -18,6 +18,7 @@ package org.vertx.java.tests.newtests;
  */
 
 import org.hamcrest.Matcher;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.internal.ArrayComparisonFailure;
 
@@ -82,6 +83,7 @@ public class AsyncTestBase {
     }
   }
 
+  @After
   protected void after() throws Exception {
     assertTrue(awaitCalled);
     checkTestCompleteCalled();
