@@ -13,13 +13,12 @@ public class VertxTestBase extends AsyncTestBase {
   protected Vertx vertx;
 
   @Before
-  public void before() throws Exception {
+  public void beforeVertxTestBase() throws Exception {
     vertx = VertxFactory.newVertx();
   }
 
   @After
-  public void after() throws Exception {
+  public void afterVertxTestBase() throws Exception {
     vertx.stop();
-    super.after();
   }
 }

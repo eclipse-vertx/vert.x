@@ -17,7 +17,10 @@ package org.vertx.java.tests.newtests;
  *
  */
 
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ComparisonFailure;
+import org.junit.Test;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -37,7 +40,6 @@ public class AsyncTestBaseTest extends AsyncTestBase {
 
   @After
   public void after() throws Exception {
-    super.after();
     executor.shutdownNow();
   }
 

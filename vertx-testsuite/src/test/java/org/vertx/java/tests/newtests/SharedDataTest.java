@@ -64,7 +64,7 @@ public class SharedDataTest {
   @Test
   public void testMapTypes() throws Exception {
 
-    Map map = sharedData.getMap("foo");
+    Map<String, Object> map = sharedData.getMap("foo");
 
     String key = "key";
 

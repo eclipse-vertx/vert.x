@@ -19,7 +19,6 @@ package org.vertx.java.tests.newtests;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
@@ -29,6 +28,7 @@ import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.http.impl.HttpHeadersAdapter;
 
 import java.io.BufferedWriter;
@@ -44,7 +44,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+
+import static org.vertx.java.tests.newtests.TestUtils.*;
 
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
@@ -54,6 +57,7 @@ public class HttpTest extends VertxTestBase {
   private static final int DEFAULT_HTTP_PORT = Integer.getInteger("vertx.http.port", 8080);
 
   public static final File VERTX_FILE_BASE;
+
   static {
     try {
       final File vertxFileBase = Files.createTempDirectory("vertx-test").toFile();
@@ -70,7 +74,6 @@ public class HttpTest extends VertxTestBase {
 
   @Before
   public void before() throws Exception {
-    super.before();
     server = vertx.createHttpServer();
     client = vertx.createHttpClient().setPort(port);
   }
@@ -83,7 +86,6 @@ public class HttpTest extends VertxTestBase {
       latch.countDown();
     });
     assertTrue(latch.await(10, TimeUnit.SECONDS));
-    super.after();
   }
 
   @Test
@@ -109,19 +111,19 @@ public class HttpTest extends VertxTestBase {
     assertTrue(client.setVerifyHost(true) == client);
     assertTrue(client.isVerifyHost());
 
-    String pwd = TestUtils.randomUnicodeString(10);
+    String pwd = randomUnicodeString(10);
     assertTrue(client.setKeyStorePassword(pwd) == client);
     assertTrue(client.getKeyStorePassword().equals(pwd));
 
-    String path = TestUtils.randomUnicodeString(10);
+    String path = randomUnicodeString(10);
     assertTrue(client.setKeyStorePath(path) == client);
     assertTrue(client.getKeyStorePath().equals(path));
 
-    pwd = TestUtils.randomUnicodeString(10);
+    pwd = randomUnicodeString(10);
     assertTrue(client.setTrustStorePassword(pwd) == client);
     assertTrue(client.getTrustStorePassword().equals(pwd));
 
-    path = TestUtils.randomUnicodeString(10);
+    path = randomUnicodeString(10);
     assertTrue(client.setTrustStorePath(path) == client);
     assertTrue(client.getTrustStorePath().equals(path));
 
@@ -205,19 +207,19 @@ public class HttpTest extends VertxTestBase {
     assertTrue(server.isSSL());
 
 
-    String pwd = TestUtils.randomUnicodeString(10);
+    String pwd = randomUnicodeString(10);
     assertTrue(server.setKeyStorePassword(pwd) == server);
     assertEquals(pwd, server.getKeyStorePassword());
 
-    String path = TestUtils.randomUnicodeString(10);
+    String path = randomUnicodeString(10);
     assertTrue(server.setKeyStorePath(path) == server);
     assertEquals(path, server.getKeyStorePath());
 
-    pwd = TestUtils.randomUnicodeString(10);
+    pwd = randomUnicodeString(10);
     assertTrue(server.setTrustStorePassword(pwd) == server);
     assertEquals(pwd, server.getTrustStorePassword());
 
-    path = TestUtils.randomUnicodeString(10);
+    path = randomUnicodeString(10);
     assertTrue(server.setTrustStorePath(path) == server);
     assertEquals(path, server.getTrustStorePath());
 
@@ -511,7 +513,7 @@ public class HttpTest extends VertxTestBase {
 
   @Test
   public void testAbsoluteURI() {
-    testURIAndPath("http://localhost:8080/this/is/a/path/foo.html", "/this/is/a/path/foo.html");
+    testURIAndPath("http://localhost:"+port+"/this/is/a/path/foo.html", "/this/is/a/path/foo.html");
   }
 
   @Test
@@ -826,14 +828,14 @@ public class HttpTest extends VertxTestBase {
 
   @Test
   public void testRequestBodyBufferAtEnd() {
-    final Buffer body = TestUtils.randomBuffer(1000);
+    final Buffer body = randomBuffer(1000);
     server.requestHandler(req -> req.bodyHandler(buffer -> {
       assertEquals(body, buffer);
-      testComplete();
+      req.response().end();
     }));
 
     server.listen(port, onSuccess(server -> {
-      client.post("some-uri", resp -> noOpHandler()).end(body);
+      client.post("some-uri", resp -> testComplete()).end(body);
     }));
 
     await();
@@ -855,7 +857,7 @@ public class HttpTest extends VertxTestBase {
   }
 
   private void testRequestBodyStringAtEnd(final String encoding) {
-    final String body = TestUtils.randomUnicodeString(1000);
+    final String body = randomUnicodeString(1000);
     final Buffer bodyBuff;
 
     if (encoding == null) {
@@ -899,12 +901,12 @@ public class HttpTest extends VertxTestBase {
     server.requestHandler(req -> {
       req.bodyHandler(buffer -> {
         assertEquals(body, buffer);
-        testComplete();
+        req.response().end();
       });
     });
 
     server.listen(port, onSuccess(server -> {
-      HttpClientRequest req = client.post("some-uri", noOpHandler());
+      HttpClientRequest req = client.post("some-uri", resp -> testComplete());
       final int numWrites = 10;
       final int chunkSize = 100;
 
@@ -914,7 +916,7 @@ public class HttpTest extends VertxTestBase {
         req.headers().set("Content-Length", String.valueOf(numWrites * chunkSize));
       }
       for (int i = 0; i < numWrites; i++) {
-        Buffer b = TestUtils.randomBuffer(chunkSize);
+        Buffer b = randomBuffer(chunkSize);
         body.appendBuffer(b);
         req.write(b);
       }
@@ -955,7 +957,7 @@ public class HttpTest extends VertxTestBase {
   }
 
   private void testRequestBodyWriteString(final boolean chunked, final String encoding) {
-    final String body = TestUtils.randomUnicodeString(1000);
+    final String body = randomUnicodeString(1000);
     final Buffer bodyBuff;
 
     if (encoding == null) {
@@ -989,6 +991,550 @@ public class HttpTest extends VertxTestBase {
     }));
 
     await();
+  }
+
+  @Test
+  public void testRequestWriteBuffer() {
+    final Buffer body = randomBuffer(1000);
+
+    server.requestHandler(req -> {
+      req.bodyHandler(buff -> {
+        assertEquals(body, buff);
+        testComplete();
+      });
+    });
+
+    server.listen(port, onSuccess(s -> {
+      HttpClientRequest req = client.post("some-uri", noOpHandler());
+      req.setChunked(true);
+      req.write(body);
+      req.end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testDefaultStatus() {
+    testStatusCode(-1, null);
+  }
+
+  @Test
+  public void testOtherStatus() {
+    // Doesn't really matter which one we choose
+    testStatusCode(405, null);
+  }
+
+  @Test
+  public void testStatusMessage() {
+    testStatusCode(404, "some message");
+  }
+
+  private void testStatusCode(final int code, final String statusMessage) {
+    server.requestHandler(req -> {
+      if (code != -1) {
+        req.response().setStatusCode(code);
+      }
+      if (statusMessage != null) {
+        req.response().setStatusMessage(statusMessage);
+      }
+      req.response().end();
+    });
+
+    server.listen(port, onSuccess(s -> {
+      client.getNow("some-uri", resp -> {
+        if (code != -1) {
+          assertEquals(code, resp.statusCode());
+        } else {
+          assertEquals(200, resp.statusCode());
+        }
+        if (statusMessage != null) {
+          assertEquals(statusMessage, resp.statusMessage());
+        }
+        testComplete();
+      });
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testResponseTrailersPutAll() {
+    testResponseTrailers(false);
+  }
+
+  @Test
+  public void testResponseTrailersPutIndividually() {
+    testResponseTrailers(true);
+  }
+
+  private void testResponseTrailers(final boolean individually) {
+    final MultiMap trailers = getHeaders(10);
+
+    server.requestHandler(req -> {
+      req.response().setChunked(true);
+      if (individually) {
+        for (Map.Entry<String, String> header : trailers) {
+          req.response().trailers().add(header.getKey(), header.getValue());
+        }
+      } else {
+        req.response().trailers().set(trailers);
+      }
+      req.response().end();
+    });
+
+    server.listen(port, onSuccess(s -> {
+      client.getNow("some-uri", resp -> {
+        resp.endHandler(v -> {
+          assertEquals(trailers.size(), resp.trailers().size());
+          for (Map.Entry<String, String> entry : trailers) {
+            assertEquals(entry.getValue(), resp.trailers().get(entry.getKey()));
+          }
+          testComplete();
+        });
+      });
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testResponseNoTrailers() {
+    server.requestHandler(req -> {
+      req.response().setChunked(true);
+      req.response().end();
+    });
+
+    server.listen(port, onSuccess(s -> {
+      client.getNow("some-uri", resp -> {
+        resp.endHandler(v -> {
+          assertTrue(resp.trailers().isEmpty());
+          testComplete();
+        });
+      });
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testUseResponseAfterComplete() {
+    server.requestHandler(req -> {
+      Buffer buff = new Buffer();
+      HttpServerResponse resp = req.response();
+      resp.end();
+
+      try {
+        resp.drainHandler(noOpHandler());
+        fail("Should throw exception");
+      } catch (IllegalStateException e) {
+        //OK
+      }
+
+      try {
+        resp.end();
+        fail("Should throw exception");
+      } catch (IllegalStateException e) {
+        //OK
+      }
+      try {
+        resp.end("foo");
+        fail("Should throw exception");
+      } catch (IllegalStateException e) {
+        //OK
+      }
+      try {
+        resp.end(buff);
+        fail("Should throw exception");
+      } catch (IllegalStateException e) {
+        //OK
+      }
+      try {
+        resp.end("foo", "UTF-8");
+        fail("Should throw exception");
+      } catch (IllegalStateException e) {
+        //OK
+      }
+      try {
+        resp.exceptionHandler(new Handler<Throwable>() {
+          public void handle(Throwable t) {
+          }
+        });
+        fail("Should throw exception");
+      } catch (IllegalStateException e) {
+        //OK
+      }
+      try {
+        resp.setChunked(false);
+        fail("Should throw exception");
+      } catch (IllegalStateException e) {
+        //OK
+      }
+      try {
+        resp.setWriteQueueMaxSize(123);
+        fail("Should throw exception");
+      } catch (IllegalStateException e) {
+        //OK
+      }
+      try {
+        resp.write(buff);
+        fail("Should throw exception");
+      } catch (IllegalStateException e) {
+        //OK
+      }
+      try {
+        resp.write("foo");
+        fail("Should throw exception");
+      } catch (IllegalStateException e) {
+        //OK
+      }
+      try {
+        resp.write("foo", "UTF-8");
+        fail("Should throw exception");
+      } catch (IllegalStateException e) {
+        //OK
+      }
+
+      try {
+        resp.write(buff);
+        fail("Should throw exception");
+      } catch (IllegalStateException e) {
+        //OK
+      }
+
+      try {
+        resp.writeQueueFull();
+        fail("Should throw exception");
+      } catch (IllegalStateException e) {
+        //OK
+      }
+
+      try {
+        resp.sendFile("asokdasokd");
+        fail("Should throw exception");
+      } catch (IllegalStateException e) {
+        //OK
+      }
+
+      testComplete();
+    });
+
+    server.listen(port, onSuccess(s -> {
+      client.getNow("some-uri", noOpHandler());
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testResponseBodyBufferAtEnd() {
+    final Buffer body = randomBuffer(1000);
+
+    server.requestHandler(req -> {
+      req.response().end(body);
+    });
+
+    server.listen(port, onSuccess(s -> {
+      client.getNow("some-uri", resp -> {
+        resp.bodyHandler(buff -> {
+          assertEquals(body, buff);
+          testComplete();
+        });
+      });
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testResponseBodyStringDefaultEncodingAtEnd() {
+    testResponseBodyStringAtEnd(null);
+  }
+
+  @Test
+  public void testResponseBodyStringUTF8AtEnd() {
+    testResponseBodyStringAtEnd("UTF-8");
+  }
+
+  @Test
+  public void testResponseBodyStringUTF16AtEnd() {
+    testResponseBodyStringAtEnd("UTF-16");
+  }
+
+  private void testResponseBodyStringAtEnd(final String encoding) {
+    final String body = randomUnicodeString(1000);
+    final Buffer bodyBuff;
+
+    if (encoding == null) {
+      bodyBuff = new Buffer(body);
+    } else {
+      bodyBuff = new Buffer(body, encoding);
+    }
+
+    server.requestHandler(req -> {
+      if (encoding == null) {
+        req.response().end(body);
+      } else {
+        req.response().end(body, encoding);
+      }
+    });
+
+    server.listen(port, onSuccess(s -> {
+      client.getNow("some-uri", resp -> {
+        resp.bodyHandler(buff -> {
+          assertEquals(bodyBuff, buff);
+          testComplete();
+        });
+      });
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testResponseBodyWriteStringNonChunked() {
+    server.requestHandler(req -> {
+      try {
+        req.response().write("foo");
+        fail("Should throw exception");
+      } catch (IllegalStateException e) {
+        //OK
+        testComplete();
+      }
+    });
+
+    server.listen(port, onSuccess(s -> {
+      client.post("some-uri", noOpHandler()).end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testResponseBodyWriteBufferChunked() {
+    testResponseBodyWriteBuffer(true);
+  }
+
+  @Test
+  public void testResponseBodyWriteBufferNonChunked() {
+    testResponseBodyWriteBuffer(false);
+  }
+
+  private void testResponseBodyWriteBuffer(final boolean chunked) {
+    final Buffer body = new Buffer();
+
+    final int numWrites = 10;
+    final int chunkSize = 100;
+
+    server.requestHandler(req -> {
+      if (chunked) {
+        req.response().setChunked(true);
+      } else {
+        req.response().headers().set("Content-Length", String.valueOf(numWrites * chunkSize));
+      }
+
+      for (int i = 0; i < numWrites; i++) {
+        Buffer b = randomBuffer(chunkSize);
+        body.appendBuffer(b);
+        req.response().write(b);
+      }
+      req.response().end();
+    });
+
+    server.listen(port, onSuccess(s -> {
+      client.getNow("some-uri", resp -> {
+        resp.bodyHandler(buff -> {
+          assertEquals(body, buff);
+          testComplete();
+        });
+      });
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testResponseBodyWriteStringChunkedDefaultEncoding() {
+    testResponseBodyWriteString(true, null);
+  }
+
+  @Test
+  public void testResponseBodyWriteStringChunkedUTF8() {
+    testResponseBodyWriteString(true, "UTF-8");
+  }
+
+  @Test
+  public void testResponseBodyWriteStringChunkedUTF16() {
+    testResponseBodyWriteString(true, "UTF-16");
+  }
+
+  @Test
+  public void testResponseBodyWriteStringNonChunkedDefaultEncoding() {
+    testResponseBodyWriteString(false, null);
+  }
+
+  @Test
+  public void testResponseBodyWriteStringNonChunkedUTF8() {
+    testResponseBodyWriteString(false, "UTF-8");
+  }
+
+  @Test
+  public void testResponseBodyWriteStringNonChunkedUTF16() {
+    testResponseBodyWriteString(false, "UTF-16");
+  }
+
+  private void testResponseBodyWriteString(final boolean chunked, final String encoding) {
+    final String body = randomUnicodeString(1000);
+    final Buffer bodyBuff;
+
+    if (encoding == null) {
+      bodyBuff = new Buffer(body);
+    } else {
+      bodyBuff = new Buffer(body, encoding);
+    }
+
+    server.requestHandler(req -> {
+      if (chunked) {
+        req.response().setChunked(true);
+      } else {
+        req.response().headers().set("Content-Length", String.valueOf(bodyBuff.length()));
+      }
+      if (encoding == null) {
+        req.response().write(body);
+      } else {
+        req.response().write(body, encoding);
+      }
+      req.response().end();
+    });
+
+    server.listen(port, onSuccess(s -> {
+      client.getNow("some-uri", resp -> {
+        resp.bodyHandler(buff -> {
+          assertEquals(bodyBuff, buff);
+          testComplete();
+        });
+      });
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testResponseWriteBuffer() {
+    final Buffer body = randomBuffer(1000);
+
+    server.requestHandler(req -> {
+      req.response().setChunked(true);
+      req.response().write(body);
+      req.response().end();
+    });
+
+    server.listen(port, onSuccess(s -> {
+      client.post("some-uri", resp -> {
+        resp.bodyHandler(buff -> {
+          assertEquals(body , buff);
+          testComplete();
+        });
+      }).end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testPipelining() {
+    final int requests = 100;
+
+    AtomicInteger reqCount = new AtomicInteger(0);
+    server.requestHandler(req -> {
+      int theCount = reqCount.get();
+      assertEquals(theCount, Integer.parseInt(req.headers().get("count")));
+      reqCount.incrementAndGet();
+      req.response().setChunked(true);
+      req.bodyHandler(buff -> {
+        assertEquals("This is content " + theCount, buff.toString());
+        //We write the response back after a random time to increase the chances of responses written in the
+        //wrong order if we didn't implement pipelining correctly
+        vertx.setTimer(1 + (long) (10 * Math.random()), id -> {
+          req.response().headers().set("count", String.valueOf(theCount));
+          req.response().write(buff);
+          req.response().end();
+        });
+      });
+    });
+
+    server.listen(port, onSuccess(s -> {
+      for (int count = 0; count < requests; count++) {
+        final int theCount = count;
+        HttpClientRequest req = client.post("some-uri", resp -> {
+          assertEquals(theCount, Integer.parseInt(resp.headers().get("count")));
+          resp.bodyHandler(buff -> {
+            assertEquals("This is content " + theCount, buff.toString());
+            if (theCount == requests - 1) {
+              testComplete();
+            }
+          });
+        });
+        req.setChunked(true);
+        req.headers().set("count", String.valueOf(count));
+        req.write("This is content " + count);
+        req.end();
+      }
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testSendFile() throws Exception {
+    final String content = randomUnicodeString(10000);
+    final File file = setupFile("test-send-file.html", content);
+
+    server.requestHandler(req -> {
+      req.response().sendFile(file.getAbsolutePath());
+    });
+
+    server.listen(port, onSuccess(s -> {
+      client.getNow("some-uri", resp -> {
+        assertEquals(200, resp.statusCode());
+        assertEquals("text/html", resp.headers().get("Content-Type"));
+        resp.bodyHandler(buff -> {
+          assertEquals(content, buff.toString());
+          file.delete();
+          testComplete();
+        });
+      });
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testSendFileWithHandler() throws Exception {
+    CountDownLatch latch = new CountDownLatch(2);
+
+    final String content = TestUtils.randomUnicodeString(10000);
+    final File file = setupFile("test-send-file.html", content);
+
+    server.requestHandler(req -> {
+      req.response().sendFile(file.getAbsolutePath(), onSuccess(v -> latch.countDown()));
+    });
+
+    server.listen(port, onSuccess(s -> {
+      client.getNow("some-uri", resp -> {
+        assertEquals(200, resp.statusCode());
+        assertEquals("text/html", resp.headers().get("Content-Type"));
+        resp.bodyHandler(buff -> {
+          assertEquals(content, buff.toString());
+          file.delete();
+          latch.countDown();
+        });
+      });
+    }));
+
+    assertTrue(latch.await(10, TimeUnit.SECONDS));
+
+    testComplete();
   }
 
   @Test
@@ -1035,9 +1581,9 @@ public class HttpTest extends VertxTestBase {
     for (int i = 0; i < num; i++) {
       String key;
       do {
-        key = TestUtils.randomAlphaString(1 + (int) ((19) * Math.random())).toLowerCase();
+        key = randomAlphaString(1 + (int) ((19) * Math.random())).toLowerCase();
       } while (map.containsKey(key));
-      map.put(key, TestUtils.randomAlphaString(1 + (int) ((19) * Math.random())));
+      map.put(key, randomAlphaString(1 + (int) ((19) * Math.random())));
     }
     return map;
   }

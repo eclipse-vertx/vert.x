@@ -51,7 +51,6 @@ public class NetTest extends VertxTestBase {
 
   @Before
   public void before() throws Exception {
-    super.before();
     client = vertx.createNetClient();
     server = vertx.createNetServer();
   }
@@ -72,7 +71,6 @@ public class NetTest extends VertxTestBase {
     if (server != null) {
       awaitClose(server);
     }
-    super.after();
   }
 
   @Test

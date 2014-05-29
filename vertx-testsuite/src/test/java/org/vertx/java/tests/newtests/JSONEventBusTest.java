@@ -37,7 +37,6 @@ public class JSONEventBusTest extends VertxTestBase {
 
   @Before
   public void before() throws Exception {
-    super.before();
     eb = vertx.eventBus();
   }
 

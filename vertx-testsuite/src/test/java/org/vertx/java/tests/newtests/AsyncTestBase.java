@@ -39,10 +39,10 @@ public class AsyncTestBase {
   protected void testComplete() {
     if (testCompleteCalled) {
       throw new IllegalStateException("testComplete() already called");
-    }
+      }
     testCompleteCalled = true;
-    latch.countDown();
-  }
+      latch.countDown();
+    }
 
   protected void await() {
     await(10, TimeUnit.SECONDS);
@@ -84,13 +84,13 @@ public class AsyncTestBase {
   }
 
   @After
-  protected void after() throws Exception {
+  public void afterAsyncTestBase() {
     checkTestCompleteCalled();
   }
 
   private void handleThrowable(Throwable t) {
     throwable = t;
-    latch.countDown();
+      latch.countDown();
     if (t instanceof AssertionError) {
       throw (AssertionError)t;
     }
