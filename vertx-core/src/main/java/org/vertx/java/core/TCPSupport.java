@@ -47,6 +47,13 @@ public interface TCPSupport<T> extends NetworkSupport<T> {
   T setUsePooledBuffers(boolean pooledBuffers);
 
   /**
+   * Set the amount of seconds required to close an idle connection.
+   * A value of 0 means that idle connections are not closed
+   * @return a reference to this so multiple method calls can be chained together
+   */
+  T setIdleTimeout(int idleTimeout);
+
+  /**
    * @return true if Nagle's algorithm is disabled.
    */
   boolean isTCPNoDelay();
@@ -66,4 +73,9 @@ public interface TCPSupport<T> extends NetworkSupport<T> {
    * @return {@code true} if pooled buffers are used
    */
   boolean isUsePooledBuffers();
+
+  /**
+   * @return the amount of seconds required to close an idle connection (0 means no closing idle connections)
+   */
+  int getIdleTimeout();
 }

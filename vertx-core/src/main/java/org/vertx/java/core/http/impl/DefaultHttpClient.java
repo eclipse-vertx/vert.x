@@ -23,6 +23,9 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.timeout.IdleStateHandler;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
@@ -601,6 +604,20 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   @Override
+  public HttpClient setIdleTimeout(int idleTimeout) {
+    checkClosed();
+    checkConfigurable();
+    tcpHelper.setIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  @Override
+  public int getIdleTimeout() {
+    checkClosed();
+    return tcpHelper.getIdleTimeout();
+  }
+
+  @Override
   public HttpClient setTryUseCompression(boolean tryUseCompression) {
     checkClosed();
     this.tryUseCompression = tryUseCompression;
@@ -669,6 +686,25 @@ public class DefaultHttpClient implements HttpClient {
             }
             engine.setUseClientMode(true); //We are on the client side of the connection
             pipeline.addLast("ssl", new SslHandler(engine));
+          }
+
+          // Handlers to close connections in idle state (inactivity during a period of time)
+          if (tcpHelper.getIdleTimeout() > 0 && !tcpHelper.isTCPKeepAlive()) {
+            // IdleStateHandler accepts 3 parameters: readerIdleTime, writerIdleTime, and allIdleTime.
+            // Only allIdleTime is enabled (different from 0) to trigger an event
+            // when neither read nor write was performed for the specified period of time.
+            pipeline.addLast("idle", new IdleStateHandler(0, 0, tcpHelper.getIdleTimeout()));
+            pipeline.addLast("closeIdle", new ChannelDuplexHandler() {
+              @Override
+              public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+                if (evt instanceof IdleStateEvent) {
+                  IdleStateEvent e = (IdleStateEvent) evt;
+                  if (e.state() == IdleState.ALL_IDLE) {
+                    ctx.close();
+                  }
+                }
+              }
+            });
           }
 
           pipeline.addLast("codec", new HttpClientCodec(4096, 8192, 8192, false, false));
