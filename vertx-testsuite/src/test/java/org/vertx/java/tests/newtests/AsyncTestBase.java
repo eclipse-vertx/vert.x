@@ -18,7 +18,6 @@ package org.vertx.java.tests.newtests;
  */
 
 import org.hamcrest.Matcher;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.internal.ArrayComparisonFailure;
 
@@ -38,7 +37,7 @@ public class AsyncTestBase {
 
   protected void testComplete() {
     if (testCompleteCalled) {
-      throw new IllegalStateException("testComplete already called");
+      throw new IllegalStateException("testComplete() already called");
     }
     testCompleteCalled = true;
     latch.countDown();
@@ -50,7 +49,7 @@ public class AsyncTestBase {
 
   public void await(long delay, TimeUnit timeUnit) {
     if (awaitCalled) {
-      throw new IllegalStateException("testComplete already called");
+      throw new IllegalStateException("await() already called");
     }
     awaitCalled = true;
     try {
@@ -77,13 +76,12 @@ public class AsyncTestBase {
   }
 
   private void checkTestCompleteCalled() {
-    if (!testCompleteCalled && throwable == null && !timedOut) {
+    if (!testCompleteCalled && !timedOut) {
       testCompleteCalled = true;
-      throw new IllegalStateException("Your test must call testComplete() before exiting test");
+      throw new IllegalStateException("Your test must call testComplete() before exiting test - maybe you didn't await()?");
     }
   }
 
-  @After
   protected void after() throws Exception {
     assertTrue(awaitCalled);
     checkTestCompleteCalled();

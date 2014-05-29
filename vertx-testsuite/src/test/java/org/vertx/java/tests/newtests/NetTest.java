@@ -14,7 +14,7 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package org.vertx.java.tests.newtests.net;
+package org.vertx.java.tests.newtests;
 
 import org.junit.After;
 import org.junit.Before;
@@ -29,7 +29,6 @@ import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.SocketDefaults;
 import org.vertx.java.testframework.TestUtils;
-import org.vertx.java.tests.newtests.AsyncTestBase;
 
 import java.net.InetSocketAddress;
 import java.net.URL;
@@ -45,15 +44,14 @@ import static org.vertx.java.tests.newtests.TestUtils.*;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JavaNetTest extends AsyncTestBase {
+public class NetTest extends VertxTestBase {
 
-  private Vertx vertx;
   private NetServer server;
   private NetClient client;
 
   @Before
-  public void before() {
-    vertx = VertxFactory.newVertx();
+  public void before() throws Exception {
+    super.before();
     client = vertx.createNetClient();
     server = vertx.createNetServer();
   }
@@ -68,14 +66,13 @@ public class JavaNetTest extends AsyncTestBase {
 
   @After
   public void after() throws Exception {
-    super.after();
     if (client != null) {
       client.close();
     }
     if (server != null) {
       awaitClose(server);
     }
-    vertx.stop();
+    super.after();
   }
 
   @Test
