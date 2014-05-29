@@ -1,36 +1,36 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
- * ------------------------------------------------------
+ * Copyright 2014 Red Hat, Inc.
+ *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * and Apache License v2.0 which accompanies this distribution.
  *
- *     The Eclipse Public License is available at
- *     http://www.eclipse.org/legal/epl-v10.html
+ * The Eclipse Public License is available at
+ * http://www.eclipse.org/legal/epl-v10.html
  *
- *     The Apache License v2.0 is available at
- *     http://www.opensource.org/licenses/apache2.0.php
+ * The Apache License v2.0 is available at
+ * http://www.opensource.org/licenses/apache2.0.php
  *
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package org.vertx.java.tests.core.parsetools;
+package org.vertx.java.tests.newtests;
 
-import junit.framework.TestCase;
 import org.junit.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.parsetools.RecordParser;
-import org.vertx.java.testframework.TestUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static org.junit.Assert.*;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JavaRecordParserTest extends TestCase {
+public class RecordParserTest {
 
   @Test
   /*
@@ -83,14 +83,11 @@ public class JavaRecordParserTest extends TestCase {
     final int lines = 8;
     final List<Object> types = new ArrayList<Object>();
 
-    final Buffer[] results = new Buffer[lines];
-
     class MyHandler implements Handler<Buffer> {
       RecordParser parser = RecordParser.newFixed(10, this);
       int pos;
 
       public void handle(Buffer buff) {
-        results[pos++] = buff;
         if (pos < lines) {
           Object type = types.get(pos);
           if (type instanceof byte[]) {
@@ -107,35 +104,35 @@ public class JavaRecordParserTest extends TestCase {
     MyHandler out = new MyHandler();
     Buffer[] expected = new Buffer[lines];
     Buffer input = new Buffer(100);
-    expected[0] = TestUtils.generateRandomBuffer(10);
+    expected[0] = TestUtils.randomBuffer(10);
     input.appendBuffer(expected[0]);
     types.add(expected[0].length());
-    expected[1] = TestUtils.generateRandomBuffer(100);
+    expected[1] = TestUtils.randomBuffer(100);
     input.appendBuffer(expected[1]);
     types.add(expected[1].length());
     byte[] delim = new byte[]{23, -120, 100, 3};
-    expected[2] = TestUtils.generateRandomBuffer(50, true, delim[0]);
+    expected[2] = TestUtils.randomBuffer(50, true, delim[0]);
     input.appendBuffer(expected[2]);
     types.add(delim);
     input.appendBuffer(new Buffer(delim));
-    expected[3] = TestUtils.generateRandomBuffer(1000);
+    expected[3] = TestUtils.randomBuffer(1000);
     input.appendBuffer(expected[3]);
     types.add(expected[3].length());
-    expected[4] = TestUtils.generateRandomBuffer(230, true, delim[0]);
+    expected[4] = TestUtils.randomBuffer(230, true, delim[0]);
     input.appendBuffer(expected[4]);
     types.add(delim);
     input.appendBuffer(new Buffer(delim));
     delim = new byte[]{17};
-    expected[5] = TestUtils.generateRandomBuffer(341, true, delim[0]);
+    expected[5] = TestUtils.randomBuffer(341, true, delim[0]);
     input.appendBuffer(expected[5]);
     types.add(delim);
     input.appendBuffer(new Buffer(delim));
     delim = new byte[]{54, -32, 0};
-    expected[6] = TestUtils.generateRandomBuffer(1234, true, delim[0]);
+    expected[6] = TestUtils.randomBuffer(1234, true, delim[0]);
     input.appendBuffer(expected[6]);
     types.add(delim);
     input.appendBuffer(new Buffer(delim));
-    expected[7] = TestUtils.generateRandomBuffer(100);
+    expected[7] = TestUtils.randomBuffer(100);
     input.appendBuffer(expected[7]);
     types.add(expected[7].length());
 
@@ -229,8 +226,8 @@ public class JavaRecordParserTest extends TestCase {
 
   private void checkResults(Buffer[] expected, Buffer[] results) {
     for (int i = 0; i < expected.length; i++) {
-      assert TestUtils.buffersEqual(expected[i], results[i]) : "Expected:" + expected[i] + " length:" + expected[i].length() +
-          " Actual:" + results[i] + " length:" + results[i].length();
+      assertTrue("Expected:" + expected[i] + " length:" + expected[i].length() +
+        " Actual:" + results[i] + " length:" + results[i].length(), TestUtils.buffersEqual(expected[i], results[i]));
     }
   }
 
@@ -238,7 +235,7 @@ public class JavaRecordParserTest extends TestCase {
     //We create lines of length one to <lines> and shuffle them
     List<Buffer> lineList = new ArrayList<Buffer>();
     for (int i = 0; i < lines; i++) {
-      lineList.add(TestUtils.generateRandomBuffer(i + 1, delim, delimByte));
+      lineList.add(TestUtils.randomBuffer(i + 1, delim, delimByte));
     }
     Collections.shuffle(lineList);
     return lineList;
@@ -259,10 +256,10 @@ public class JavaRecordParserTest extends TestCase {
    */
   public void testSpreadDelimiter() {
     doTestDelimited(new Buffer("start-a-b-c-dddabc"), "abc".getBytes(),
-            new Integer[] { 18 }, new Buffer("start-a-b-c-ddd"));
+      new Integer[] { 18 }, new Buffer("start-a-b-c-ddd"));
     doTestDelimited(new Buffer("start-abc-dddabc"), "abc".getBytes(),
-            new Integer[] { 18 }, new Buffer("start-"), new Buffer("-ddd"));
+      new Integer[] { 18 }, new Buffer("start-"), new Buffer("-ddd"));
     doTestDelimited(new Buffer("start-ab-c-dddabc"), "abc".getBytes(),
-            new Integer[] { 18 }, new Buffer("start-ab-c-ddd"));
+      new Integer[] { 18 }, new Buffer("start-ab-c-ddd"));
   }
 }

@@ -1,22 +1,21 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
- * ------------------------------------------------------
+ * Copyright 2014 Red Hat, Inc.
+ *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * and Apache License v2.0 which accompanies this distribution.
  *
- *     The Eclipse Public License is available at
- *     http://www.eclipse.org/legal/epl-v10.html
+ * The Eclipse Public License is available at
+ * http://www.eclipse.org/legal/epl-v10.html
  *
- *     The Apache License v2.0 is available at
- *     http://www.opensource.org/licenses/apache2.0.php
+ * The Apache License v2.0 is available at
+ * http://www.opensource.org/licenses/apache2.0.php
  *
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package org.vertx.java.tests.core.shareddata;
+package org.vertx.java.tests.newtests;
 
-import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,7 +23,7 @@ import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxFactory;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.shareddata.SharedData;
-import org.vertx.java.testframework.TestUtils;
+import static org.junit.Assert.*;
 
 import java.util.Map;
 import java.util.Random;
@@ -33,22 +32,22 @@ import java.util.Set;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JavaSharedDataTest extends TestCase {
+public class SharedDataTest {
 
-	private Vertx vertx;
+  private Vertx vertx;
   private SharedData sharedData;
-  
+
   @Before
   public void setUp() {
     vertx = VertxFactory.newVertx();
     sharedData = vertx.sharedData();
   }
-  
+
   @After
   public void teardown() {
-  	vertx.stop();
+    vertx.stop();
   }
-  
+
   @Test
   public void testMap() throws Exception {
 
@@ -103,7 +102,7 @@ public class JavaSharedDataTest extends TestCase {
     map.put(key, c);
     assertEquals(c, map.get(key));
 
-    Buffer buff = TestUtils.generateRandomBuffer(100);
+    Buffer buff = org.vertx.java.testframework.TestUtils.generateRandomBuffer(100);
     map.put(key, buff);
     Buffer got1 = (Buffer)map.get(key);
     assertTrue(got1 != buff); // Make sure it's copied
@@ -114,15 +113,15 @@ public class JavaSharedDataTest extends TestCase {
     assertEquals(buff, map.get(key));
 
 
-    byte[] bytes = TestUtils.generateRandomByteArray(100);
+    byte[] bytes = org.vertx.java.testframework.TestUtils.generateRandomByteArray(100);
     map.put(key, bytes);
     byte[] bgot1 = (byte[]) map.get(key);
     assertTrue(bgot1 != bytes);
-    assertTrue(TestUtils.byteArraysEqual(bytes, bgot1));
+    assertTrue(org.vertx.java.testframework.TestUtils.byteArraysEqual(bytes, bgot1));
     byte[] bgot2 = (byte[]) map.get(key);
     assertTrue(bgot2 != bytes);
     assertTrue(bgot1 != bgot2);
-    assertTrue(TestUtils.byteArraysEqual(bytes, bgot2));
+    assertTrue(org.vertx.java.testframework.TestUtils.byteArraysEqual(bytes, bgot2));
 
     try {
       map.put(key, new SomeOtherClass());
@@ -131,11 +130,11 @@ public class JavaSharedDataTest extends TestCase {
       //OK
     }
   }
-  
+
   @Test
   public void testSetTypes() throws Exception {
 
-    Set set = sharedData.getSet("foo");
+    Set<Object> set = sharedData.getSet("foo");
 
     double d = new Random().nextDouble();
     set.add(d);
@@ -180,7 +179,7 @@ public class JavaSharedDataTest extends TestCase {
     assertEquals(c, set.iterator().next());
     set.clear();
 
-    Buffer buff = TestUtils.generateRandomBuffer(100);
+    Buffer buff = org.vertx.java.testframework.TestUtils.generateRandomBuffer(100);
     set.add(buff);
     Buffer got1 = (Buffer)set.iterator().next();
     assertTrue(got1 != buff); // Make sure it's copied
@@ -192,15 +191,15 @@ public class JavaSharedDataTest extends TestCase {
     set.clear();
 
 
-    byte[] bytes = TestUtils.generateRandomByteArray(100);
+    byte[] bytes = org.vertx.java.testframework.TestUtils.generateRandomByteArray(100);
     set.add(bytes);
     byte[] bgot1 = (byte[]) set.iterator().next();
     assertTrue(bgot1 != bytes);
-    assertTrue(TestUtils.byteArraysEqual(bytes, bgot1));
+    assertTrue(org.vertx.java.testframework.TestUtils.byteArraysEqual(bytes, bgot1));
     byte[] bgot2 = (byte[]) set.iterator().next();
     assertTrue(bgot2 != bytes);
     assertTrue(bgot1 != bgot2);
-    assertTrue(TestUtils.byteArraysEqual(bytes, bgot2));
+    assertTrue(org.vertx.java.testframework.TestUtils.byteArraysEqual(bytes, bgot2));
     set.clear();
 
     try {
@@ -227,6 +226,4 @@ public class JavaSharedDataTest extends TestCase {
 
   class SomeOtherClass {
   }
-
 }
-

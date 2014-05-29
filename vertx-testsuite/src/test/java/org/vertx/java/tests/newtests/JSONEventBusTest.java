@@ -16,6 +16,7 @@
 
 package org.vertx.java.tests.newtests;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
@@ -32,10 +33,17 @@ import java.util.Map;
  */
 public class JSONEventBusTest extends VertxTestBase {
 
+  EventBus eb;
+
+  @Before
+  public void before() throws Exception {
+    super.before();
+    eb = vertx.eventBus();
+  }
+
   @Test
   public void testChangesNotVisibleObject1() {
     JsonObject obj = new JsonObject();
-    EventBus eb = vertx.eventBus();
     eb.registerHandler("foo", (Message<JsonObject> msg) -> {
       assertFalse(msg.body().containsField("b"));
       testComplete();
@@ -48,7 +56,6 @@ public class JSONEventBusTest extends VertxTestBase {
   @Test
   public void testChangesNotVisibleObject2() {
     final JsonObject obj = new JsonObject();
-    EventBus eb = vertx.eventBus();
     eb.registerHandler("foo", (Message<JsonObject> msg) -> {
       msg.body().putString("b", "uqwduihwqd");
     });
@@ -64,7 +71,6 @@ public class JSONEventBusTest extends VertxTestBase {
   public void testChangesNotVisibleObject3() {
     Map<String, Object> map = new HashMap<>();
     final JsonObject obj = new JsonObject(map);
-    EventBus eb = vertx.eventBus();
     eb.registerHandler("foo", (Message<JsonObject> msg) -> {
       vertx.setTimer(1000, id -> {
         assertFalse(msg.body().containsField("b"));
@@ -79,7 +85,6 @@ public class JSONEventBusTest extends VertxTestBase {
   @Test
   public void testChangesNotVisibleArray1() {
     JsonArray obj = new JsonArray();
-    EventBus eb = vertx.eventBus();
     eb.registerHandler("foo", (Message<JsonArray> msg) -> {
       assertEquals(0, msg.body().size());
       testComplete();
@@ -92,7 +97,6 @@ public class JSONEventBusTest extends VertxTestBase {
   @Test
   public void testChangesNotVisibleArray2() {
     final JsonArray obj = new JsonArray();
-    EventBus eb = vertx.eventBus();
     eb.registerHandler("foo", (Message<JsonArray> msg) ->  msg.body().add("blah"));
     eb.send("foo", obj);
     vertx.setTimer(1000, id -> {
@@ -106,7 +110,6 @@ public class JSONEventBusTest extends VertxTestBase {
   public void testChangesNotVisibleArray3() {
     List<Object> list = new ArrayList<>();
     final JsonArray obj = new JsonArray(list);
-    EventBus eb = vertx.eventBus();
     eb.registerHandler("foo", (Message<JsonArray> msg) -> {
       vertx.setTimer(1000, id -> {
         assertEquals(0, msg.body().size());
