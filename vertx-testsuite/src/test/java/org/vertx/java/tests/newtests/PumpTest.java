@@ -1,34 +1,34 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
- * ------------------------------------------------------
+ * Copyright 2014 Red Hat, Inc.
+ *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * and Apache License v2.0 which accompanies this distribution.
  *
- *     The Eclipse Public License is available at
- *     http://www.eclipse.org/legal/epl-v10.html
+ * The Eclipse Public License is available at
+ * http://www.eclipse.org/legal/epl-v10.html
  *
- *     The Apache License v2.0 is available at
- *     http://www.opensource.org/licenses/apache2.0.php
+ * The Apache License v2.0 is available at
+ * http://www.opensource.org/licenses/apache2.0.php
  *
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package org.vertx.java.tests.core.streams;
+package org.vertx.java.tests.newtests;
 
-import junit.framework.TestCase;
 import org.junit.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.Pump;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
-import org.vertx.java.testframework.TestUtils;
+import static org.vertx.java.tests.newtests.TestUtils.*;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JavaPumpTest extends TestCase {
+public class PumpTest {
 
   @Test
   public void testPumpBasic() throws Exception {
@@ -41,18 +41,18 @@ public class JavaPumpTest extends TestCase {
 
       Buffer inp = new Buffer();
       for (int j = 0; j < 10; j++) {
-        Buffer b = TestUtils.generateRandomBuffer(100);
+        Buffer b = randomBuffer(100);
         inp.appendBuffer(b);
         rs.addData(b);
       }
-      TestUtils.buffersEqual(inp, ws.received);
+      buffersEqual(inp, ws.received);
       assertFalse(rs.paused);
       assertEquals(0, rs.pauseCount);
       assertEquals(0, rs.resumeCount);
 
       p.stop();
       ws.clearReceived();
-      Buffer b = TestUtils.generateRandomBuffer(100);
+      Buffer b = randomBuffer(100);
       rs.addData(b);
       assertEquals(0, ws.received.length());
     }
@@ -68,21 +68,21 @@ public class JavaPumpTest extends TestCase {
     for (int i = 0; i < 10; i++) {   // Repeat a few times
       Buffer inp = new Buffer();
       for (int j = 0; j < 4; j++) {
-        Buffer b = TestUtils.generateRandomBuffer(100);
+        Buffer b = randomBuffer(100);
         inp.appendBuffer(b);
         rs.addData(b);
         assertFalse(rs.paused);
         assertEquals(i, rs.pauseCount);
         assertEquals(i, rs.resumeCount);
       }
-      Buffer b = TestUtils.generateRandomBuffer(100);
+      Buffer b = randomBuffer(100);
       inp.appendBuffer(b);
       rs.addData(b);
       assertTrue(rs.paused);
       assertEquals(i + 1, rs.pauseCount);
       assertEquals(i, rs.resumeCount);
 
-      TestUtils.buffersEqual(inp, ws.received);
+      buffersEqual(inp, ws.received);
       ws.clearReceived();
       inp = new Buffer();
       assertFalse(rs.paused);
