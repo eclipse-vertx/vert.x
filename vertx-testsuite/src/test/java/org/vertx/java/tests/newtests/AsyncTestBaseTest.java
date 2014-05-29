@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class AsyncTestBaseTest extends AsyncTestBase {
 
-  ExecutorService executor;
+  private ExecutorService executor;
 
   @Before
   public void before() {

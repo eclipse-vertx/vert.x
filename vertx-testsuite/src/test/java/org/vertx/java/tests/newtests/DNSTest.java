@@ -34,9 +34,9 @@ import java.util.List;
 public class DNSTest extends VertxTestBase {
 
   // bytes representation of ::1
-  static final byte[] IP6_BYTES = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+  private static final byte[] IP6_BYTES = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
 
-  TestDnsServer dnsServer;
+  private TestDnsServer dnsServer;
 
   @Test
   public void testResolveA() throws Exception {

@@ -33,7 +33,7 @@ import java.util.Map;
  */
 public class JSONEventBusTest extends VertxTestBase {
 
-  EventBus eb;
+  private EventBus eb;
 
   @Before
   public void before() throws Exception {

@@ -510,7 +510,9 @@ public class DefaultEventBus implements EventBus {
 		}
 		if (server != null) {
 			server.close(doneHandler);
-		}
+		} else if (doneHandler != null) {
+      vertx.runOnContext(v-> doneHandler.handle(new DefaultFutureResult<>((Void)null)));
+    }
   }
 
   @Override

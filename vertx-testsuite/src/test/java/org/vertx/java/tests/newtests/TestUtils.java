@@ -55,7 +55,7 @@ public class TestUtils {
     for (int i = 0; i < length; i++) {
       byte rand;
       do {
-        rand = (byte) ((int) (Math.random() * 255) - 128);
+        rand = randomByte();
       } while (avoid && rand == avoidByte);
 
       line[i] = rand;
@@ -73,6 +73,13 @@ public class TestUtils {
   public static Buffer randomBuffer(int length, boolean avoid, byte avoidByte) {
     byte[] line = randomByteArray(length, avoid, avoidByte);
     return new Buffer(line);
+  }
+
+  /**
+   * @return a random byte
+   */
+  public static byte randomByte() {
+    return (byte) ((int) (Math.random() * 255) - 128);
   }
 
   /**
