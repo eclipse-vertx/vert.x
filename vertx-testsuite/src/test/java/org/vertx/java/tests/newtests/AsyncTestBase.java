@@ -77,7 +77,7 @@ public class AsyncTestBase {
   }
 
   private void checkTestCompleteCalled() {
-    if (!testCompleteCalled && !timedOut) {
+    if (!testCompleteCalled && !timedOut && throwable == null) {
       testCompleteCalled = true;
       throw new IllegalStateException("Your test must call testComplete() before exiting test - maybe you didn't await()?");
     }
@@ -85,13 +85,15 @@ public class AsyncTestBase {
 
   @After
   protected void after() throws Exception {
-    assertTrue(awaitCalled);
     checkTestCompleteCalled();
   }
 
   private void handleThrowable(Throwable t) {
     throwable = t;
     latch.countDown();
+    if (t instanceof AssertionError) {
+      throw (AssertionError)t;
+    }
   }
 
   protected void assertTrue(String message, boolean condition) {

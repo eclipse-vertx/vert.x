@@ -55,14 +55,49 @@ public class AsyncTestBaseTest extends AsyncTestBase {
   }
 
   @Test
-  public void testAssertionFailedFromMainThread() {
-    assertEquals("foo", "bar");
-    testComplete();
+  public void testAssertionFailedFromOtherThreadAwaitBeforeAssertAndTestComplete() {
+    executor.execute(() -> {
+      //Pause to make sure await() is called before assertion and testComplete
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+        fail(e.getMessage());
+      }
+      assertEquals("foo", "bar");
+      testComplete();
+    });
     try {
       await();
     } catch (ComparisonFailure error) {
       assertTrue(error.getMessage().startsWith("expected:"));
     }
+  }
+
+  @Test
+  public void testAssertThrowsAssertionError() {
+    executor.execute(() -> {
+      try {
+        assertEquals("foo", "bar");
+        fail("Should throw AssertionError"); // Hmm tricky
+      } catch (AssertionError err) {
+      }
+      testComplete();
+    });
+    try {
+      await();
+    } catch (ComparisonFailure error) {
+      assertTrue(error.getMessage().startsWith("expected:"));
+    }
+  }
+
+  @Test
+  public void testAssertionFailedFromMainThread() {
+    try {
+      assertEquals("foo", "bar");
+    } catch (ComparisonFailure error) {
+      assertTrue(error.getMessage().startsWith("expected:"));
+    }
+    testComplete();
   }
 
   @Test
