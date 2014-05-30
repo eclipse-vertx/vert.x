@@ -16,20 +16,22 @@
 
 package org.vertx.java.tests.newtests;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxFactory;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.ReplyException;
 import org.vertx.java.core.eventbus.ReplyFailure;
-import org.vertx.java.core.json.JsonArray;
-import org.vertx.java.core.json.JsonObject;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -38,17 +40,26 @@ import static org.vertx.java.tests.newtests.TestUtils.*;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class LocalEventBusTest extends VertxTestBase {
+public class LocalEventBusTest extends EventBusTestBase {
 
+  private Vertx vertx;
   private EventBus eb;
 
   @Before
   public void before() throws Exception {
+    vertx = VertxFactory.newVertx();
     eb = vertx.eventBus();
   }
 
-  private static final String ADDRESS1 = "some-address1";
-  private static final String ADDRESS2 = "some-address2";
+  @After
+  public void after() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    vertx.stop(ar -> {
+      assertTrue(ar.succeeded());
+      latch.countDown();
+    });
+    assertTrue(latch.await(30, TimeUnit.SECONDS));
+  }
 
   @Test
   public void testRegisterUnregister() {
@@ -420,471 +431,11 @@ public class LocalEventBusTest extends VertxTestBase {
 
   // Sends with different types
 
-  @Test
-  public void testSendString() {
-    String str = randomUnicodeString(100);
-    testSend(str);
-  }
 
-  @Test
-  public void testSendNullString() {
-    testSendNull((String)null);
-  }
-
-  @Test
-  public void testReplyString() {
-    String str = randomUnicodeString(100);
-    testReply(str);
-  }
-
-  @Test
-  public void testReplyNullString() {
-    testReplyNull((String) null);
-  }
-
-  @Test
-  public void testPublishString() {
-    String str = randomUnicodeString(100);
-    testPublish(str);
-  }
-
-  @Test
-  public void testPublishNullString() {
-    testPublishNull((String)null);
-  }
-
-  @Test
-  public void testSendBooleanTrue() {
-    testSend(true);
-  }
-
-  @Test
-  public void testSendBooleanFalse() {
-    testSend(false);
-  }
-
-  @Test
-  public void testSendNullBoolean() {
-    testSendNull((Boolean)null);
-  }
-
-  @Test
-  public void testReplyBooleanTrue() {
-    testReply(true);
-  }
-
-  @Test
-  public void testReplyBooleanFalse() {
-    testReply(false);
-  }
-
-  @Test
-  public void testReplyNullBoolean() {
-    testReplyNull((Boolean) null);
-  }
-
-  @Test
-  public void testPublishBooleanTrue() {
-    testPublish(true);
-  }
-
-  @Test
-  public void testPublishBooleanFalse() {
-    testPublish(false);
-  }
-
-  @Test
-  public void testPublishNullBoolean() {
-    testPublishNull((Boolean) null);
-  }
-
-  @Test
-  public void testSendBuffer() {
-    Buffer sent = randomBuffer(100);
-    testSendWithAsserter(sent, (buffer) -> {
-      buffersEqual(sent, buffer);
-      assertFalse(sent == buffer); // Make sure it's copied
-    });
-  }
-
-  @Test
-  public void testSendNullBuffer() {
-    testSendNull((Buffer)null);
-  }
-
-  @Test
-  public void testReplyBuffer() {
-    Buffer sent = randomBuffer(100);
-    testReplyWithAsserter(sent, (bytes) -> {
-      buffersEqual(sent, bytes);
-      assertFalse(sent == bytes); // Make sure it's copied
-    });
-  }
-
-  @Test
-  public void testReplyNullBuffer() {
-    testReplyNull((Buffer) null);
-  }
-
-  @Test
-  public void testPublishBuffer() {
-    Buffer sent = randomBuffer(100);
-    testPublishWithAsserter(sent, (buffer) -> {
-      buffersEqual(sent, buffer);
-      assertFalse(sent == buffer); // Make sure it's copied
-    });
-  }
-
-  @Test
-  public void testPublishNullBuffer() {
-    testPublishNull((Buffer)null);
-  }
-
-  @Test
-  public void testSendByte() {
-    testSend(randomByte());
-  }
-
-  @Test
-  public void testSendNullByte() {
-    testSendNull((Byte) null);
-  }
-
-  @Test
-  public void testReplyByte() {
-    testReply(randomByte());
-  }
-
-  @Test
-  public void testReplyNullByte() {
-    testReplyNull((Byte) null);
-  }
-
-  @Test
-  public void testPublishByte() {
-    testPublish(randomByte());
-  }
-
-  @Test
-  public void testPublishNullByte() {
-    testPublish((Byte)null);
-  }
-
-  @Test
-  public void testSendByteArray() {
-    byte[] sent = randomByteArray(100);
-    testSendWithAsserter(sent, (bytes) -> {
-      byteArraysEqual(sent, bytes);
-      assertFalse(sent == bytes); // Make sure it's copied
-    });
-  }
-
-  @Test
-  public void testSendNullByteArray() {
-    testSendNull((byte[])null);
-  }
-
-  @Test
-  public void testReplyByteArray() {
-    byte[] sent = randomByteArray(100);
-    testReplyWithAsserter(sent, (bytes) -> {
-      byteArraysEqual(sent, bytes);
-      assertFalse(sent == bytes); // Make sure it's copied
-    });
-  }
-
-  @Test
-  public void testReplyNullByteArray() {
-    testReplyNull((byte[]) null);
-  }
-
-  @Test
-  public void testPublishByteArray() {
-    byte[] sent = randomByteArray(100);
-    testPublishWithAsserter(sent, (bytes) -> {
-      byteArraysEqual(sent, bytes);
-      assertFalse(sent == bytes); // Make sure it's copied
-    });
-  }
-
-  @Test
-  public void testPublishNullByteArray() {
-    testPublishNull((byte[])null);
-  }
-
-  @Test
-  public void testSendCharacter() {
-    testSend('Y');
-  }
-
-  @Test
-  public void testSendNullCharacter() {
-    testSendNull((Character)null);
-  }
-
-  @Test
-  public void testReplyCharacter() {
-    testReply('Y');
-  }
-
-  @Test
-  public void testReplyNullCharacter() {
-    testReplyNull((Character) null);
-  }
-
-  @Test
-  public void testPublishCharacter() {
-    testPublish('Y');
-  }
-
-  @Test
-  public void testPublishNullCharacter() {
-    testPublishNull((Character)null);
-  }
-
-  @Test
-  public void testSendDouble() {
-    testSend(134.456d);
-  }
-
-  @Test
-  public void testSendNullDouble() {
-    testSendNull((Double)null);
-  }
-
-  @Test
-  public void testReplyDouble() {
-    testReply(134.456d);
-  }
-
-  @Test
-  public void testReplyNullDouble() {
-    testReplyNull((Double) null);
-  }
-
-  @Test
-  public void testPublishDouble() {
-    testPublish(134.56d);
-  }
-
-  @Test
-  public void testPublishNullDouble() {
-    testPublishNull((Double)null);
-  }
-
-  @Test
-  public void testSendFloat() {
-    testSend(13.456f);
-  }
-
-  @Test
-  public void testSendNullFloat() {
-    testSendNull((Float)null);
-  }
-
-  @Test
-  public void testReplyFloat() {
-    testReply(13.456f);
-  }
-
-  @Test
-  public void testReplyNullFloat() {
-    testReplyNull((Float) null);
-  }
-
-  @Test
-  public void testPublishFloat() {
-    testPublish(12.123f);
-  }
-
-  @Test
-  public void testPublishNullFloat() {
-    testPublishNull((Float)null);
-  }
-
-  @Test
-  public void testSendInteger() {
-    testSend(123);
-  }
-
-  @Test
-  public void testSendNullInteger() {
-    testSendNull((Integer)null);
-  }
-
-  @Test
-  public void testReplyInteger() {
-    testReply(123);
-  }
-
-  @Test
-  public void testReplyNullInteger() {
-    testReplyNull((Integer) null);
-  }
-
-  @Test
-  public void testPublishInteger() {
-    testPublish(123);
-  }
-
-  @Test
-  public void testPublishNullInteger() {
-    testPublishNull((Integer)null);
-  }
-
-  @Test
-  public void testSendLong() {
-    testSend(123l);
-  }
-
-  @Test
-  public void testSendNullLong() {
-    testSendNull((Long)null);
-  }
-
-  @Test
-  public void testReplyLong() {
-    testReply(123l);
-  }
-
-  @Test
-  public void testReplyNullLong() {
-    testReplyNull((Long) null);
-  }
-
-  @Test
-  public void testPublishLong() {
-    testPublish(123123l);
-  }
-
-  @Test
-  public void testPublishNullLong() {
-    testPublishNull((Long)null);
-  }
-
-  @Test
-  public void testSendShort() {
-    testSend((short)123);
-  }
-
-  @Test
-  public void testSendNullShort() {
-    testSendNull((Short)null);
-  }
-
-  @Test
-  public void testReplyShort() {
-    testReply((short) 123);
-  }
-
-  @Test
-  public void testReplyNullShort() {
-    testReplyNull((Short) null);
-  }
-
-  @Test
-  public void testPublishShort() {
-    testPublish((short)1234);
-  }
-
-  @Test
-  public void testPublishNullShort() {
-    testPublishNull((Short)null);
-  }
-
-  @Test
-  public void testSendJsonArray() {
-    JsonArray arr = new JsonArray();
-    arr.add("hello").add(123).add(false);
-    testSendWithAsserter(arr, (received) -> {
-      assertEquals(arr, received);
-      assertFalse(arr == received); // Make sure it's copied
-    });
-  }
-
-  @Test
-  public void testSendNullJsonArray() {
-    testSendNull((JsonArray)null);
-  }
-
-  @Test
-  public void testReplyJsonArray() {
-    JsonArray arr = new JsonArray();
-    arr.add("hello").add(123).add(false);
-    testReplyWithAsserter(arr, (received) -> {
-      assertEquals(arr, received);
-      assertFalse(arr == received); // Make sure it's copied
-    });
-  }
-
-  @Test
-  public void testReplyNullJsonArray() {
-    testReplyNull((JsonArray) null);
-  }
-
-  @Test
-  public void testPublishJsonArray() {
-    JsonArray arr = new JsonArray();
-    arr.add("hello").add(123).add(false);
-    testPublishWithAsserter(arr, (received) -> {
-      assertEquals(arr, received);
-      assertFalse(arr == received); // Make sure it's copied
-    });
-  }
-
-  @Test
-  public void testPublishNullJsonArray() {
-    testPublishNull((JsonArray)null);
-  }
-
-  @Test
-  public void testSendJsonObject() {
-    JsonObject obj = new JsonObject();
-    obj.putString("foo", "bar").putNumber("quux", 123);
-    testSendWithAsserter(obj, (received) -> {
-      assertEquals(obj, received);
-      assertFalse(obj == received); // Make sure it's copied
-    });
-  }
-
-  @Test
-  public void testSendNullJsonObject() {
-    testSendNull((JsonObject)null);
-  }
-
-  @Test
-  public void testReplyJsonObject() {
-    JsonObject obj = new JsonObject();
-    obj.putString("foo", "bar").putNumber("quux", 123);
-    testReplyWithAsserter(obj, (received) -> {
-      assertEquals(obj, received);
-      assertFalse(obj == received); // Make sure it's copied
-    });
-  }
-
-  @Test
-  public void testReplyNullJsonObject() {
-    testReplyNull((JsonObject) null);
-  }
-
-  @Test
-  public void testPublishJsonObject() {
-    JsonObject obj = new JsonObject();
-    obj.putString("foo", "bar").putNumber("quux", 123);
-    testPublishWithAsserter(obj, (received) -> {
-      assertEquals(obj, received);
-      assertFalse(obj == received); // Make sure it's copied
-    });
-  }
-
-  @Test
-  public void testPublishNullJsonObject() {
-    testPublishNull((JsonObject)null);
-  }
 
   @Test
   public void testPublish() {
-    String str = randomUnicodeString(1000);
+    String str = randomUnicodeString(100);
     eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
       assertEquals(str, msg.body());
       testComplete();
@@ -895,7 +446,7 @@ public class LocalEventBusTest extends VertxTestBase {
 
   @Test
   public void testPublishMultipleHandlers() {
-    String str = randomUnicodeString(1000);
+    String str = randomUnicodeString(100);
     AtomicInteger count = new AtomicInteger();
     eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
       assertEquals(str, msg.body());
@@ -969,25 +520,22 @@ public class LocalEventBusTest extends VertxTestBase {
     await();
   }
 
-  private <T> void testSend(T val) {
-    eb.registerHandler(ADDRESS1,msg -> {
-      assertEquals(val, msg.body());
-      testComplete();
-    });
-    eb.send(ADDRESS1, val);
-    await();
-  }
-
-  private <T> void testSendWithAsserter(T val, Consumer<T> consumer) {
+  @Override
+  protected <T> void testSend(T val, Consumer<T> consumer) {
     eb.registerHandler(ADDRESS1, (Message<T> msg) -> {
-      consumer.accept(msg.body());
+      if (consumer == null) {
+        assertEquals(val, msg.body());
+      } else {
+        consumer.accept(msg.body());
+      }
       testComplete();
     });
     eb.send(ADDRESS1, val);
     await();
   }
 
-  private <T> void testSendNull(T obj) {
+  @Override
+  protected <T> void testSendNull(T obj) {
     eb.registerHandler(ADDRESS1,msg -> {
       assertNull(msg.body());
       testComplete();
@@ -996,92 +544,74 @@ public class LocalEventBusTest extends VertxTestBase {
     await();
   }
 
-  private <T> void testReply(T val) {
+  @Override
+  protected <T> void testReply(T val, Consumer<T> consumer) {
+    String str = randomUnicodeString(1000);
     eb.registerHandler(ADDRESS1, msg -> {
-      assertEquals("foo", msg.body());
+      assertEquals(str, msg.body());
       msg.reply(val);
     });
-    eb.send(ADDRESS1, "foo", (Message<T> reply) -> {
-      assertEquals(val, reply.body());
+    eb.send(ADDRESS1, str, (Message<T>reply) -> {
+      if (consumer == null) {
+        assertEquals(val, reply.body());
+      } else {
+        consumer.accept(reply.body());
+      }
       testComplete();
     });
     await();
   }
 
-  private <T> void testReplyWithAsserter(T val, Consumer<T> consumer) {
+  @Override
+  protected <T> void testReplyNull(T val) {
+    String str = randomUnicodeString(1000);
     eb.registerHandler(ADDRESS1, msg -> {
-      assertEquals("foo", msg.body());
-      msg.reply(val);
-    });
-    eb.send(ADDRESS1, "foo", (Message<T>reply) -> {
-      consumer.accept(reply.body());
-      testComplete();
-    });
-    await();
-  }
-
-  private <T> void testReplyNull(T val) {
-    eb.registerHandler(ADDRESS1, msg -> {
-      assertEquals("foo", msg.body());
+      assertEquals(str, msg.body());
       msg.reply((T)null);
     });
-    eb.send(ADDRESS1, "foo", (Message<T>reply) -> {
+    eb.send(ADDRESS1, str, (Message<T>reply) -> {
       assertNull(reply.body());
       testComplete();
     });
     await();
   }
 
-  private <T> void testPublish(T val) {
+  @Override
+  protected <T> void testPublishNull(T val) {
     AtomicInteger count = new AtomicInteger();
-    eb.registerHandler(ADDRESS1, (Message<T> msg) -> {
-      assertEquals(val, msg.body());
-      if (count.incrementAndGet() == 2) {
-        testComplete();
+    class MyHandler implements Handler<Message<T>> {
+      @Override
+      public void handle(Message<T> msg) {
+        assertNull(msg.body());
+        if (count.incrementAndGet() == 2) {
+          testComplete();
+        }
       }
-    });
-    eb.registerHandler(ADDRESS1, (Message<T> msg) -> {
-      assertEquals(val, msg.body());
-      if (count.incrementAndGet() == 2) {
-        testComplete();
-      }
-    });
-    eb.publish(ADDRESS1, (T)val);
-    await();
-  }
-
-  private <T> void testPublishNull(T val) {
-    AtomicInteger count = new AtomicInteger();
-    eb.registerHandler(ADDRESS1, (Message<T> msg) -> {
-      assertNull(msg.body());
-      if (count.incrementAndGet() == 2) {
-        testComplete();
-      }
-    });
-    eb.registerHandler(ADDRESS1, (Message<T> msg) -> {
-      assertNull(msg.body());
-      if (count.incrementAndGet() == 2) {
-        testComplete();
-      }
-    });
+    }
+    eb.registerHandler(ADDRESS1, new MyHandler());
+    eb.registerHandler(ADDRESS1, new MyHandler());
     eb.publish(ADDRESS1, (T)null);
     await();
   }
 
-  private <T> void testPublishWithAsserter(T val, Consumer<T> consumer) {
+  @Override
+  protected <T> void testPublish(T val, Consumer<T> consumer) {
     AtomicInteger count = new AtomicInteger();
-    eb.registerHandler(ADDRESS1, (Message<T> msg) -> {
-      consumer.accept(msg.body());
-      if (count.incrementAndGet() == 2) {
-        testComplete();
+    class MyHandler implements Handler<Message<T>> {
+      @Override
+      public void handle(Message<T> msg) {
+        if (consumer == null) {
+          assertEquals(val, msg.body());
+        } else {
+          consumer.accept(msg.body());
+        }
+        if (count.incrementAndGet() == 2) {
+          testComplete();
+        }
       }
-    });
-    eb.registerHandler(ADDRESS1, (Message<T> msg) -> {
-      consumer.accept(msg.body());
-      if (count.incrementAndGet() == 2) {
-        testComplete();
-      }
-    });
+    }
+    eb.registerHandler(ADDRESS1, new MyHandler());
+    eb.registerHandler(ADDRESS1, new MyHandler());
     eb.publish(ADDRESS1, (T)val);
     await();
   }

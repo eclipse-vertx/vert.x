@@ -21,10 +21,15 @@ package org.vertx.java.tests.newtests;
 
 import org.vertx.java.core.buffer.Buffer;
 
+import java.util.Random;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class TestUtils {
+
+  private static Random random = new Random();
+
   /**
    * Creates a Buffer of random bytes.
    * @param length The length of the Buffer
@@ -80,6 +85,55 @@ public class TestUtils {
    */
   public static byte randomByte() {
     return (byte) ((int) (Math.random() * 255) - 128);
+  }
+
+  /**
+   * @return a random int
+   */
+  public static int randomInt() {
+    return random.nextInt();
+  }
+
+  /**
+   * @return a random long
+   */
+  public static long randomLong() {
+    return random.nextLong();
+  }
+
+  /**
+   * @return a random boolean
+   */
+  public static boolean randomBoolean() {
+    return random.nextBoolean();
+  }
+
+  /**
+   * @return a random char
+   */
+  public static char randomChar() {
+    return (char)(random.nextInt(16));
+  }
+
+  /**
+   * @return a random short
+   */
+  public static short randomShort() {
+    return (short)(random.nextInt(16) - Short.MAX_VALUE);
+  }
+
+  /**
+   * @return a random random float
+   */
+  public static float randomFloat() {
+    return random.nextFloat();
+  }
+
+  /**
+   * @return a random random double
+   */
+  public static double randomDouble() {
+    return random.nextDouble();
   }
 
   /**

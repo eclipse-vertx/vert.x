@@ -82,6 +82,11 @@ public class WrappedVertx implements VertxInternal {
   }
 
   @Override
+  public void stop(Handler<AsyncResult<Void>> doneHandler) {
+    vertx.stop(doneHandler);
+  }
+
+  @Override
   public EventLoopGroup getEventLoopGroup() {
     return vertx.getEventLoopGroup();
   }

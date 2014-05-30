@@ -338,6 +338,11 @@ public class DefaultVertx implements VertxInternal {
 
   @Override
   public void stop() {
+    stop(null);
+  }
+
+  @Override
+  public void stop(Handler<AsyncResult<Void>> doneHandler) {
     if (sharedHttpServers != null) {
       // Copy set to prevent ConcurrentModificationException
       for (HttpServer server : new HashSet<>(sharedHttpServers.values())) {
@@ -371,7 +376,7 @@ public class DefaultVertx implements VertxInternal {
       eventLoopGroup.shutdownGracefully();
     }
 
-    eventBus.close(null);
+    eventBus.close(doneHandler);
 
     setContext(null);
   }

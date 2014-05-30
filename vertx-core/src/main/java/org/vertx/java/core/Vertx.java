@@ -146,4 +146,9 @@ public interface Vertx {
 	 * Stop the eventbus and any resource managed by the eventbus.
 	 */
 	void stop();
+
+  /**
+   * Stop the eventbus and any resource managed by the eventbus.
+   */
+  void stop(Handler<AsyncResult<Void>> doneHandler);
 }
