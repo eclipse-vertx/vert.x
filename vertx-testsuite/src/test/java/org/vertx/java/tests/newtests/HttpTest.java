@@ -21,6 +21,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
@@ -29,23 +30,33 @@ import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
+import org.vertx.java.core.http.HttpVersion;
 import org.vertx.java.core.http.impl.HttpHeadersAdapter;
+import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.streams.Pump;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -2004,12 +2015,575 @@ public class HttpTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testConnectInvalidPort() {
+    client.exceptionHandler(t -> testComplete());
+    client.setPort(9998);
+    client.getNow("someurl", resp -> fail("Connect should not be called"));
+
+    await();
+  }
+
+  @Test
+  public void testConnectInvalidHost() {
+    client.setConnectTimeout(1000);
+    client.exceptionHandler(t -> testComplete());
+    client.setHost("127.0.0.2");
+    client.getNow("someurl", resp -> fail("Connect should not be called"));
+
+    await();
+  }
+
+  @Test
+  public void testSetHandlersAfterListening() throws Exception {
+    server.requestHandler(noOpHandler());
+
+    server.listen(port, onSuccess(s -> {
+      try {
+        server.requestHandler(noOpHandler());
+        fail("Should throw exception");
+      } catch (IllegalStateException e) {
+        //Ok
+      }
+      try {
+        server.websocketHandler(noOpHandler());
+        fail("Should throw exception");
+      } catch (IllegalStateException e) {
+        //Ok
+      }
+      testComplete();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testSharedServersRoundRobin() throws Exception {
+    int numServers = 5;
+    int numRequests = numServers * 100;
+
+    List<HttpServer> servers = new ArrayList<>();
+    Set<HttpServer> connectedServers = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    Map<HttpServer, Integer> requestCount = new ConcurrentHashMap<>();
+
+    CountDownLatch latchListen = new CountDownLatch(numServers);
+    CountDownLatch latchConns = new CountDownLatch(numRequests);
+    for (int i = 0; i < numServers; i++) {
+      HttpServer theServer = vertx.createHttpServer();
+      servers.add(theServer);
+      theServer.requestHandler(req -> {
+        connectedServers.add(theServer);
+        Integer cnt = requestCount.get(theServer);
+        int icnt = cnt == null ? 0 : cnt;
+        icnt++;
+        requestCount.put(theServer, icnt);
+        latchConns.countDown();
+        req.response().end();
+      }).listen(port, onSuccess(s -> latchListen.countDown()));
+    }
+    assertTrue(latchListen.await(10, TimeUnit.SECONDS));
+
+    // Create a bunch of connections
+    CountDownLatch latchClient = new CountDownLatch(numRequests);
+    client.setKeepAlive(false);
+    for (int i = 0; i < numRequests; i++) {
+      client.getNow("some-uri", res -> latchClient.countDown());
+    }
+
+    assertTrue(latchClient.await(10, TimeUnit.SECONDS));
+    assertTrue(latchConns.await(10, TimeUnit.SECONDS));
+
+    assertEquals(numServers, connectedServers.size());
+    for (HttpServer server : servers) {
+      assertTrue(connectedServers.contains(server));
+    }
+    assertEquals(numServers, requestCount.size());
+    for (int cnt : requestCount.values()) {
+      assertEquals(numRequests / numServers, cnt);
+    }
+
+    CountDownLatch closeLatch = new CountDownLatch(numServers);
+
+    for (HttpServer server : servers) {
+      server.close(ar -> {
+        assertTrue(ar.succeeded());
+        closeLatch.countDown();
+      });
+    }
+
+    assertTrue(closeLatch.await(10, TimeUnit.SECONDS));
+
+    testComplete();
+  }
+
+  @Test
+  public void testSharedServersRoundRobinWithOtherServerRunningOnDifferentPort() throws Exception {
+    // Have a server running on a different port to make sure it doesn't interact
+    CountDownLatch latch = new CountDownLatch(1);
+    HttpServer theServer = vertx.createHttpServer();
+    theServer.requestHandler(req -> {
+      fail("Should not process request");
+    }).listen(8081, onSuccess(s -> latch.countDown()));
+    assertTrue(latch.await(10, TimeUnit.SECONDS));
+
+    testSharedServersRoundRobin();
+  }
+
+  @Test
+  public void testSharedServersRoundRobinButFirstStartAndStopServer() throws Exception {
+    // Start and stop a server on the same port/host before hand to make sure it doesn't interact
+    CountDownLatch latch = new CountDownLatch(1);
+    HttpServer theServer = vertx.createHttpServer();
+    theServer.requestHandler(req -> {
+      fail("Should not process request");
+    }).listen(port, onSuccess(s -> latch.countDown()));
+    assertTrue(latch.await(10, TimeUnit.SECONDS));
+
+    CountDownLatch closeLatch = new CountDownLatch(1);
+    theServer.close(ar -> {
+      assertTrue(ar.succeeded());
+      closeLatch.countDown();
+    });
+    assertTrue(closeLatch.await(10, TimeUnit.SECONDS));
+
+    testSharedServersRoundRobin();
+  }
+
+  @Test
+  public void testHeadNoBody() {
+    server.requestHandler(req -> {
+      assertEquals("HEAD", req.method());
+      // Head never contains a body but it can contain a Content-Length header
+      // Since headers from HEAD must correspond EXACTLY with corresponding headers for GET
+      req.response().headers().set("Content-Length", String.valueOf(41));
+      req.response().end();
+    });
+
+    server.listen(port, onSuccess(s -> {
+      client.head("some-uri", resp -> {
+        assertEquals(41, Integer.parseInt(resp.headers().get("Content-Length")));
+        resp.endHandler(v -> testComplete());
+      }).end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testRemoteAddress() {
+    server.requestHandler(req -> {
+      assertEquals("localhost", req.remoteAddress().getHostName());
+      req.response().end();
+    });
+
+    server.listen(port, "localhost", onSuccess(s -> {
+      client.getNow("some-uri", resp -> resp.endHandler(v -> testComplete()));
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testGetAbsoluteURI() {
+    server.requestHandler(req -> {
+      assertEquals("http://localhost:" + port + "/foo/bar", req.absoluteURI().toString());
+      req.response().end();
+    });
+
+    server.listen(port, "localhost", onSuccess(s -> {
+      client.getNow("/foo/bar", resp -> resp.endHandler(v -> testComplete()));
+    }));
+
+    await();
+  }
 
   @Test
   public void testListenInvalidPort() {
     server.requestHandler(noOpHandler()).listen(1128371831, onFailure(server -> {
       testComplete();
     }));
+    await();
+  }
+
+  @Test
+  public void testListenInvalidHost() {
+    server.requestHandler(noOpHandler());
+    server.listen(port, "iqwjdoqiwjdoiqwdiojwd", onFailure(s -> testComplete()));
+  }
+
+  @Test
+  public void testPauseClientResponse() {
+    int numWrites = 10;
+    int numBytes = 100;
+    server.requestHandler(req -> {
+      req.response().setChunked(true);
+      // Send back a big response in several chunks
+      for (int i = 0; i < numWrites; i++) {
+        req.response().write(randomBuffer(numBytes));
+      }
+      req.response().end();
+    });
+
+    AtomicBoolean paused = new AtomicBoolean();
+    Buffer totBuff = new Buffer();
+    final HttpClientRequest clientRequest = client.get("some-uri", resp -> {
+      resp.pause();
+      paused.set(true);
+      resp.dataHandler(chunk -> {
+        if (paused.get()) {
+          fail("Shouldn't receive chunks when paused");
+        } else {
+          totBuff.appendBuffer(chunk);
+        }
+      });
+      resp.endHandler(v -> {
+        if (paused.get()) {
+          fail("Shouldn't receive chunks when paused");
+        } else {
+          assertEquals(numWrites * numBytes, totBuff.length());
+          testComplete();
+        }
+      });
+      vertx.setTimer(500, id -> {
+        paused.set(false);
+        resp.resume();
+      });
+    });
+
+    server.listen(port, onSuccess(s -> clientRequest.end()));
+
+    await();
+  }
+
+  @Test
+  public void testHttpVersion() {
+    server.requestHandler(req -> {
+      assertEquals(HttpVersion.HTTP_1_1, req.version());
+      req.response().end();
+    });
+
+    server.listen(port, onSuccess(s -> {
+      client.getNow("some-uri", resp -> resp.endHandler(v -> testComplete()));
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testFormUploadFile() throws Exception {
+    final AtomicInteger attributeCount = new AtomicInteger();
+    final String content = "Vert.x rocks!";
+
+    server.requestHandler(req -> {
+      if (req.method().equals("POST")) {
+        assertEquals(req.path(), "/form");
+        req.response().setChunked(true);
+        req.expectMultiPart(true);
+        req.uploadHandler(upload -> {
+          upload.dataHandler(buffer -> {
+            assertEquals(content, buffer.toString("UTF-8"));
+          });
+          assertEquals("file", upload.name());
+          assertEquals("tmp-0.txt", upload.filename());
+          assertEquals("image/gif", upload.contentType());
+          upload.endHandler(v -> {
+            assertEquals(content.length(), upload.size());
+          });
+        });
+        req.endHandler(v -> {
+          MultiMap attrs = req.formAttributes();
+          attributeCount.set(attrs.size());
+          req.response().end();
+        });
+      }
+    });
+
+    server.listen(port, onSuccess(s -> {
+      HttpClientRequest req = client.post("/form", resp -> {
+        // assert the response
+        assertEquals(200, resp.statusCode());
+        resp.bodyHandler(body -> {
+          assertEquals(0, body.length());
+        });
+        assertEquals(0, attributeCount.get());
+        testComplete();
+      });
+
+      final String boundary = "dLV9Wyq26L_-JQxk6ferf-RT153LhOO";
+      Buffer buffer = new Buffer();
+      final String body =
+        "--" + boundary + "\r\n" +
+          "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
+          "Content-Type: image/gif\r\n" +
+          "\r\n" +
+          content + "\r\n" +
+          "--" + boundary + "--\r\n";
+
+      buffer.appendString(body);
+      req.headers().set("content-length", String.valueOf(buffer.length()));
+      req.headers().set("content-type", "multipart/form-data; boundary=" + boundary);
+      req.write(buffer).end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testFormUploadAttributes() throws Exception {
+    final AtomicInteger attributeCount = new AtomicInteger();
+    server.requestHandler(req -> {
+      if (req.method().equals("POST")) {
+        assertEquals(req.path(), "/form");
+        req.response().setChunked(true);
+        req.expectMultiPart(true);
+        req.uploadHandler(upload -> upload.dataHandler(buffer -> {
+          fail("Should get here");
+        }));
+        req.endHandler(v -> {
+          MultiMap attrs = req.formAttributes();
+          attributeCount.set(attrs.size());
+          assertEquals("vert x", attrs.get("framework"));
+          assertEquals("jvm", attrs.get("runson"));
+          req.response().end();
+        });
+      }
+    });
+
+    server.listen(port, onSuccess(s -> {
+      HttpClientRequest req = client.post("/form", resp -> {
+        // assert the response
+        assertEquals(200, resp.statusCode());
+        resp.bodyHandler(body -> {
+          assertEquals(0, body.length());
+        });
+        assertEquals(2, attributeCount.get());
+        testComplete();
+      });
+      try {
+        Buffer buffer = new Buffer();
+        // Make sure we have one param that needs url encoding
+        buffer.appendString("framework=" + URLEncoder.encode("vert x", "UTF-8") + "&runson=jvm", "UTF-8");
+        req.headers().set("content-length", String.valueOf(buffer.length()));
+        req.headers().set("content-type", "application/x-www-form-urlencoded");
+        req.write(buffer).end();
+      } catch (UnsupportedEncodingException e) {
+        fail(e.getMessage());
+      }
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testFormUploadAttributes2() throws Exception {
+    final AtomicInteger attributeCount = new AtomicInteger();
+    server.requestHandler(req -> {
+      if (req.method().equals("POST")) {
+        assertEquals(req.path(), "/form");
+        req.expectMultiPart(true);
+        req.uploadHandler(event -> event.dataHandler(buffer -> {
+          fail("Should not get here");
+        }));
+        req.endHandler(v -> {
+          MultiMap attrs = req.formAttributes();
+          attributeCount.set(attrs.size());
+          assertEquals("junit-testUserAlias", attrs.get("origin"));
+          assertEquals("admin@foo.bar", attrs.get("login"));
+          assertEquals("admin", attrs.get("pass word"));
+          req.response().end();
+        });
+      }
+    });
+
+    server.listen(port, onSuccess(s -> {
+      HttpClientRequest req = client.post("/form", resp -> {
+        // assert the response
+        assertEquals(200, resp.statusCode());
+        resp.bodyHandler(body -> {
+          assertEquals(0, body.length());
+        });
+        assertEquals(3, attributeCount.get());
+        testComplete();
+      });
+      Buffer buffer = new Buffer();
+      buffer.appendString("origin=junit-testUserAlias&login=admin%40foo.bar&pass+word=admin");
+      req.headers().set("content-length", String.valueOf(buffer.length()));
+      req.headers().set("content-type", "application/x-www-form-urlencoded");
+      req.write(buffer).end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testAccessNetSocket() throws Exception {
+    final Buffer toSend = randomBuffer(1000);
+
+    server.requestHandler(req -> {
+      req.response().headers().set("HTTP/1.1", "101 Upgrade");
+      req.bodyHandler(data -> {
+        assertTrue(buffersEqual(toSend, data));
+        req.response().end();
+      });
+    });
+
+    server.listen(port, onSuccess(s -> {
+      HttpClientRequest req = client.get("someurl", resp -> {
+        resp.endHandler(v -> {
+          assertNotNull(resp.netSocket());
+          testComplete();
+        });
+      });
+      req.headers().set("content-length", String.valueOf(toSend.length()));
+      req.write(toSend);
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testHostHeaderOverridePossible() {
+    server.requestHandler(req -> {
+      assertEquals("localhost:4444", req.headers().get("Host"));
+      req.response().end();
+    });
+
+    server.listen(port, onSuccess(s -> {
+      HttpClientRequest req = client.get("some-uri", resp -> testComplete());
+      req.putHeader("Host", "localhost:4444");
+      req.end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testSetGetMaxWebSocketFrameSizeServer() {
+    int size = 61231763;
+    assertTrue(server == server.setMaxWebSocketFrameSize(size));
+    assertTrue(size == server.getMaxWebSocketFrameSize());
+    testComplete();
+  }
+
+  @Test
+  public void testSetGetMaxWebSocketFrameSizeClient() {
+    int size = 61231763;
+    assertTrue(client == client.setMaxWebSocketFrameSize(size));
+    assertTrue(size == client.getMaxWebSocketFrameSize());
+    testComplete();
+  }
+
+  @Test
+  public void testResponseBodyWriteFixedString() {
+    final String body = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+    final Buffer bodyBuff = new Buffer(body);
+
+    server.requestHandler(req -> {
+      req.response().setChunked(true);
+      req.response().write(body);
+      req.response().end();
+    });
+
+    server.listen(port, onSuccess(s -> {
+      client.get("some-uri", resp -> {
+        resp.bodyHandler(buff -> {
+          assertTrue(buffersEqual(bodyBuff, buff));
+          testComplete();
+        });
+      }).end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testHttpConnect() {
+    final Buffer buffer = randomBuffer(128);
+    final Buffer received = new Buffer();
+    vertx.createNetServer().connectHandler(socket -> {
+      socket.dataHandler(socket::write);
+    }).listen(1235, onSuccess(netServer -> {
+      server.requestHandler(req -> {
+        vertx.createNetClient().connect(netServer.port(), onSuccess(socket -> {
+          req.response().setStatusCode(200);
+          req.response().setStatusMessage("Connection established");
+          req.response().end();
+
+          // Create pumps which echo stuff
+          Pump.createPump(req.netSocket(), socket).start();
+          Pump.createPump(socket, req.netSocket()).start();
+          req.netSocket().closeHandler(v -> socket.close());
+        }));
+      });
+      server.listen(port, onSuccess(s -> {
+        client.connect("some-uri", resp -> {
+          assertEquals(200, resp.statusCode());
+          NetSocket socket = resp.netSocket();
+          socket.dataHandler(buff -> {
+            received.appendBuffer(buff);
+            if (received.length() == buffer.length()) {
+              netServer.close();
+              assertTrue(buffersEqual(buffer, received));
+              testComplete();
+            }
+          });
+          socket.write(buffer);
+        }).end();
+      }));
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testRequestsTimeoutInQueue() {
+    server.requestHandler(req -> {
+      vertx.setTimer(1000, id -> {
+        req.response().end();
+      });
+    });
+
+    client.setKeepAlive(false);
+    client.setMaxPoolSize(1);
+    server.listen(port, onSuccess(s -> {
+      // Add a few requests that should all timeout
+      for (int i = 0; i < 5; i++) {
+        HttpClientRequest req = client.get("some-uri", resp -> {
+          fail("Should not be called");
+        });
+        req.exceptionHandler(t -> assertTrue(t instanceof TimeoutException));
+        req.setTimeout(500);
+        req.end();
+      }
+      // Now another request that should not timeout
+      HttpClientRequest req = client.get("some-uri", resp -> {
+        assertEquals(200, resp.statusCode());
+        testComplete();
+      });
+      req.exceptionHandler(t -> fail("Should not throw exception"));
+      req.setTimeout(3000);
+      req.end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testSendFileDirectory() {
+    File file = new File(VERTX_FILE_BASE, "testdirectory");
+    server.requestHandler(req -> {
+      vertx.fileSystem().mkdir(file.getAbsolutePath(), onSuccess(v -> {
+        req.response().sendFile(file.getAbsolutePath());
+      }));
+    });
+
+    server.listen(port, onSuccess(s -> {
+      client.getNow("some-uri", resp -> {
+        assertEquals(403, resp.statusCode());
+        vertx.fileSystem().delete(file.getAbsolutePath(), v -> testComplete());
+      });
+    }));
+
     await();
   }
 
