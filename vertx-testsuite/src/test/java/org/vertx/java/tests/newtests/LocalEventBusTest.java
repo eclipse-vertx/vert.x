@@ -44,7 +44,6 @@ public class LocalEventBusTest extends VertxTestBase {
 
   @Before
   public void before() throws Exception {
-    super.before();
     eb = vertx.eventBus();
   }
 

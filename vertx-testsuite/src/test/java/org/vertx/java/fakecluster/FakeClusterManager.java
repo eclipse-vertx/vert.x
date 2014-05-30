@@ -28,8 +28,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public class FakeClusterManager implements ClusterManager {
 
-  private static Map<String, FakeClusterManager> nodes =
-      Collections.synchronizedMap(new LinkedHashMap<String, FakeClusterManager>());
+  private static Map<String, FakeClusterManager> nodes = Collections.synchronizedMap(new LinkedHashMap<>());
 
   private static List<NodeListener> nodeListeners = new ArrayList<>();
   private static ConcurrentMap<String, Map> syncMaps = new ConcurrentHashMap<>();

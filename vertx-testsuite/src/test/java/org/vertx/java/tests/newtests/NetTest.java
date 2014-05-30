@@ -30,8 +30,10 @@ import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.SocketDefaults;
 import org.vertx.java.testframework.TestUtils;
 
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
@@ -822,7 +824,8 @@ public class NetTest extends VertxTestBase {
     Set<NetServer> connectedServers = new ConcurrentHashSet<>();
     Map<NetServer, Integer> connectCount = new ConcurrentHashMap<>();
 
-    CountDownLatch latch = new CountDownLatch(numServers);
+    CountDownLatch latchListen = new CountDownLatch(numServers);
+    CountDownLatch latchConns = new CountDownLatch(numConnections);
     for (int i = 0; i < numServers; i++) {
       NetServer theServer = vertx.createNetServer();
       servers.add(theServer);
@@ -832,15 +835,16 @@ public class NetTest extends VertxTestBase {
         int icnt = cnt == null ? 0 : cnt;
         icnt++;
         connectCount.put(theServer, icnt);
+        latchConns.countDown();
       }).listen(1234, "localhost", ar -> {
         if (ar.succeeded()) {
-          latch.countDown();
+          latchListen.countDown();
         } else {
           fail("Failed to bind server");
         }
       });
     }
-    assertTrue(latch.await(10, TimeUnit.SECONDS));
+    assertTrue(latchListen.await(10, TimeUnit.SECONDS));
 
     // Create a bunch of connections
     CountDownLatch latchClient = new CountDownLatch(numConnections);
@@ -858,6 +862,7 @@ public class NetTest extends VertxTestBase {
     }
 
     assertTrue(latchClient.await(10, TimeUnit.SECONDS));
+    assertTrue(latchConns.await(10, TimeUnit.SECONDS));
 
     assertEquals(numServers, connectedServers.size());
     for (NetServer server: servers) {
@@ -1012,7 +1017,8 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testSendFileDirectory() throws Exception {
-    String dir = System.getProperty("java.io.tmpdir") + "/" + UUID.randomUUID();
+    final File fDir = Files.createTempDirectory("vertx-test").toFile();
+    fDir.deleteOnExit();
     vertx.createNetServer().connectHandler(socket -> {
       InetSocketAddress addr = socket.remoteAddress();
       assertTrue(addr.getHostName().startsWith("localhost"));
@@ -1021,19 +1027,13 @@ public class NetTest extends VertxTestBase {
       client.connect(1234, result -> {
         assertTrue(result.succeeded());
         NetSocket socket = result.result();
-        vertx.fileSystem().mkdir(dir, result2 -> {
-          assertTrue(result2.succeeded());
-          try {
-            socket.sendFile(dir);
-            // should throw exception and never hit the assert
-            fail("Should throw exception");
-          } catch (IllegalArgumentException e) {
-            vertx.fileSystem().delete(dir, result3 -> {
-              assertTrue(result3.succeeded());
-              testComplete();
-            });
-          }
-        });
+        try {
+          socket.sendFile(fDir.getAbsolutePath().toString());
+          // should throw exception and never hit the assert
+          fail("Should throw exception");
+        } catch (IllegalArgumentException e) {
+          testComplete();
+        }
       });
     });
     await();
