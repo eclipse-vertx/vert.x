@@ -25,6 +25,8 @@ import org.vertx.java.core.datagram.InternetProtocolFamily;
 
 import java.net.*;
 import java.util.Enumeration;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import static org.vertx.java.tests.newtests.TestUtils.*;
 
@@ -37,35 +39,23 @@ public class DatagramTest extends VertxTestBase {
   private volatile DatagramSocket peer1;
   private volatile DatagramSocket peer2;
 
-  @Before
-  public void before() throws Exception {
-    super.before();
-  }
-
   @After
   public void after() throws Exception {
     if (peer1 != null) {
+      CountDownLatch latch = new CountDownLatch(2);
       peer1.close(ar -> {
         assertTrue(ar.succeeded());
+        latch.countDown();
         if (peer2 != null) {
           peer2.close(ar2 -> {
             assertTrue(ar2.succeeded());
-            callSuperAfter();
+            latch.countDown();
           });
         } else {
-          callSuperAfter();
+          latch.countDown();
         }
       });
-    } else {
-      super.after();
-    }
-  }
-
-  private void callSuperAfter() {
-    try {
-      super.after();
-    } catch (Exception e) {
-      fail(e.getMessage());
+      latch.await(10L, TimeUnit.SECONDS);
     }
   }
 

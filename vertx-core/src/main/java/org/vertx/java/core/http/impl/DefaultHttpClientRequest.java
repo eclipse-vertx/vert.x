@@ -115,7 +115,8 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   public DefaultHttpClientRequest write(Buffer chunk) {
     check();
     ByteBuf buf = chunk.getByteBuf();
-    return write(buf, false);
+    write(buf, false);
+    return this;
   }
 
   @Override
@@ -419,54 +420,59 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
   }
 
-  private DefaultHttpClientRequest write(ByteBuf buff, boolean end) {
+  private void write(final ByteBuf buff, final boolean end) {
     int readableBytes = buff.readableBytes();
     if (readableBytes == 0 && !end) {
       // nothing to write to the connection just return
-      return this;
+      return;
     }
 
     if (end) {
       completed = true;
     }
-
-    written += buff.readableBytes();
-
     if (!end && !raw && !chunked && !contentLengthSet()) {
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
-          + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
+              + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
     }
 
-    if (conn == null) {
-      if (pendingChunks == null) {
-        pendingChunks = buff;
-      } else {
-        CompositeByteBuf pending;
-        if (pendingChunks instanceof CompositeByteBuf) {
-          pending = (CompositeByteBuf) pendingChunks;
+    // Execute the actual write on the correct Context as the connected(...) callback may race with this otherwise
+    // if a connect() call was triggered before this and not completed
+    context.execute(new Runnable() {
+
+      @Override
+      public void run() {
+        written += buff.readableBytes();
+        if (conn == null) {
+          if (pendingChunks == null) {
+            pendingChunks = buff;
+          } else {
+            CompositeByteBuf pending;
+            if (pendingChunks instanceof CompositeByteBuf) {
+              pending = (CompositeByteBuf) pendingChunks;
+            } else {
+              pending = Unpooled.compositeBuffer();
+              pending.addComponent(pendingChunks).writerIndex(pendingChunks.writerIndex());
+              pendingChunks = pending;
+            }
+            pending.addComponent(buff).writerIndex(pending.writerIndex() + buff.writerIndex());
+          }
+          connect();
         } else {
-          pending = Unpooled.compositeBuffer();
-          pending.addComponent(pendingChunks).writerIndex(pendingChunks.writerIndex());
-          pendingChunks = pending;
-        }
-        pending.addComponent(buff).writerIndex(pending.writerIndex() + buff.writerIndex());
-      }
-      connect();
-    } else {
-      if (!headWritten) {
-        writeHeadWithContent(buff, end);
-      } else {
-        if (end) {
-          writeEndChunk(buff);
-        } else {
-          sendChunk(buff);
+          if (!headWritten) {
+            writeHeadWithContent(buff, end);
+          } else {
+            if (end) {
+              writeEndChunk(buff);
+            } else {
+              sendChunk(buff);
+            }
+          }
+          if (end) {
+            conn.endRequest();
+          }
         }
       }
-      if (end) {
-        conn.endRequest();
-      }
-    }
-    return this;
+    });
   }
 
   private void sendChunk(ByteBuf buff) {
