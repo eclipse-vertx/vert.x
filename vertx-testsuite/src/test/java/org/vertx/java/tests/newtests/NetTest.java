@@ -22,7 +22,6 @@ import org.junit.Test;
 import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.file.impl.ClasspathPathResolver;
 import org.vertx.java.core.impl.ConcurrentHashSet;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
@@ -704,15 +703,6 @@ public class NetTest extends VertxTestBase {
   //Client specifies cert but it's not trusted
   public void testTLSClientCertClientNotTrusted() throws Exception {
     testTLS(true, true, true, false, true, false, false, false);
-  }
-
-  String findFileOnClasspath(String fileName) {
-    URL url = getClass().getClassLoader().getResource(fileName);
-    if (url == null) {
-      throw new IllegalArgumentException("Cannot find file " + fileName + " on classpath");
-    }
-    Path path = ClasspathPathResolver.urlToPath(url).toAbsolutePath();
-    return path.toString();
   }
 
   void testTLS(boolean clientCert, boolean clientTrust,

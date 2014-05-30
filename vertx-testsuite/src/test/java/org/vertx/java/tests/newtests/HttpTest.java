@@ -21,15 +21,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.http.HttpClient;
-import org.vertx.java.core.http.HttpClientRequest;
-import org.vertx.java.core.http.HttpClientResponse;
-import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.http.HttpServerResponse;
+import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.HttpHeadersAdapter;
+import vertx.tests.core.http.TLSServer;
+import vertx.tests.core.http.TLSTestParams;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -1536,6 +1535,108 @@ public class HttpTest extends VertxTestBase {
 
     testComplete();
   }
+
+
+  @Test
+  // Client trusts all server certs
+  public void testTLSClientTrustAll() throws Exception {
+    testTLS(false, false, true, false, false, true, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts (not trust all)
+  public void testTLSClientTrustServerCert() throws Exception {
+    testTLS(false, true, true, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client doesn't trust
+  public void testTLSClientUntrustedServer() throws Exception {
+    testTLS(false, false, true, false, false, false, false);
+  }
+
+  @Test
+  //Client specifies cert even though it's not required
+  public void testTLSClientCertNotRequired() throws Exception {
+    testTLS(true, true, true, true, false, false, true);
+  }
+
+  @Test
+  //Client specifies cert and it's not required
+  public void testTLSClientCertRequired() throws Exception {
+    testTLS(true, true, true, true, true, false, true);
+  }
+
+  @Test
+  //Client doesn't specify cert but it's required
+  public void testTLSClientCertRequiredNoClientCert() throws Exception {
+    testTLS(false, true, true, true, true, false, false);
+  }
+
+  @Test
+  //Client specifies cert but it's not trusted
+  public void testTLSClientCertClientNotTrusted() throws Exception {
+    testTLS(true, true, true, false, true, false, false);
+  }
+
+  private void testTLS(boolean clientCert, boolean clientTrust,
+                       boolean serverCert, boolean serverTrust,
+                       boolean requireClientAuth, boolean clientTrustAll,
+                       boolean shouldPass) throws Exception {
+    server.setSSL(true);
+    if (serverTrust) {
+      server.setTrustStorePath(findFileOnClasspath("tls/server-truststore.jks")).setTrustStorePassword("wibble");
+    }
+    if (serverCert) {
+      server.setKeyStorePath(findFileOnClasspath("tls/server-keystore.jks")).setKeyStorePassword("wibble");
+    }
+    if (requireClientAuth) {
+      server.setClientAuthRequired(true);
+    }
+    server.requestHandler(req -> {
+      req.bodyHandler(buffer -> {
+        assertEquals("foo", buffer.toString());
+        req.response().end("bar");
+      });
+    });
+    server.listen(4043, ar -> {
+      assertTrue(ar.succeeded());
+      client.setSSL(true);
+      if (clientTrustAll) {
+        client.setTrustAll(true);
+      }
+      if (clientTrust) {
+        client.setTrustStorePath(findFileOnClasspath("tls/client-truststore.jks")).setTrustStorePassword("wibble");
+      }
+      if (clientCert) {
+        client.setKeyStorePath(findFileOnClasspath("tls/client-keystore.jks")).setKeyStorePassword("wibble");
+      }
+      client.exceptionHandler(t -> {
+        if (shouldPass) {
+          fail("Should not throw exception");
+        } else {
+          testComplete();
+        }
+      });
+      client.setPort(4043);
+      HttpClientRequest req = client.get("someurl", response -> {
+        response.bodyHandler(data -> assertEquals("bar", data.toString()));
+        testComplete();
+      });
+      // NOTE: If you set a request handler now and an error happens on the request, the error is reported to the
+      // request handler and NOT the client handler. Only if no handler is set on the request, or an error happens
+      // that is not in the context of a request will the client handler get called. I can't figure out why an empty
+      // handler was specified here originally, but if we want the client handler (specified above) to fire, we should
+      // not set an empty handler here. The alternative would be to move the logic
+//    req.exceptionHandler(new Handler<Throwable>() {
+//      public void handle(Throwable t) {
+//      }
+//    });
+      req.end("foo");
+    });
+    await();
+  }
+
 
   @Test
   public void testListenInvalidPort() {
