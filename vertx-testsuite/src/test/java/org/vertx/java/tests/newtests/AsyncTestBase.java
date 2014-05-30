@@ -39,10 +39,10 @@ public class AsyncTestBase {
   protected void testComplete() {
     if (testCompleteCalled) {
       throw new IllegalStateException("testComplete() already called");
-      }
-    testCompleteCalled = true;
-      latch.countDown();
     }
+    testCompleteCalled = true;
+    latch.countDown();
+  }
 
   protected void await() {
     await(10, TimeUnit.SECONDS);
@@ -69,6 +69,7 @@ public class AsyncTestBase {
             // Unexpected throwable- Should never happen
             throw new IllegalStateException(throwable);
           }
+
         }
       }
     } catch (InterruptedException e) {
@@ -77,9 +78,8 @@ public class AsyncTestBase {
   }
 
   private void checkTestCompleteCalled() {
-    if (!testCompleteCalled && !timedOut && throwable == null) {
-      testCompleteCalled = true;
-      throw new IllegalStateException("Your test must call testComplete() before exiting test - maybe you didn't await()?");
+    if (!testCompleteCalled && !awaitCalled && !timedOut && throwable != null) {
+      throw new IllegalStateException("You either forget to call testComplete() or forgot to await() for an asynchronous test");
     }
   }
 
@@ -94,6 +94,10 @@ public class AsyncTestBase {
     if (t instanceof AssertionError) {
       throw (AssertionError)t;
     }
+  }
+
+  protected void clearThrown() {
+    throwable = null;
   }
 
   protected void assertTrue(String message, boolean condition) {

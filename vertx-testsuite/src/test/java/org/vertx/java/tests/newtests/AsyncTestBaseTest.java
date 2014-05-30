@@ -76,19 +76,20 @@ public class AsyncTestBaseTest extends AsyncTestBase {
   }
 
   @Test
-  public void testAssertThrowsAssertionError() {
+  public void testAssertionFailedFromOtherThreadForgotToCallAwait() throws Exception {
     executor.execute(() -> {
-      try {
-        assertEquals("foo", "bar");
-        fail("Should throw AssertionError"); // Hmm tricky
-      } catch (AssertionError err) {
-      }
+      assertEquals("foo", "bar");
       testComplete();
     });
+    Thread.sleep(500);
     try {
-      await();
-    } catch (ComparisonFailure error) {
-      assertTrue(error.getMessage().startsWith("expected:"));
+      super.afterAsyncTestBase();
+      fail("Should throw exception");
+    } catch (IllegalStateException e) {
+      // OK
+    } finally {
+      // Cancel the error condition
+      clearThrown();
     }
   }
 
