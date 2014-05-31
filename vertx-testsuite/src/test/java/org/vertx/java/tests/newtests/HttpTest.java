@@ -17,20 +17,15 @@
 package org.vertx.java.tests.newtests;
 
 import io.netty.handler.codec.http.DefaultHttpHeaders;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.http.HttpVersion;
 import org.vertx.java.core.http.impl.HttpHeadersAdapter;
@@ -66,9 +61,7 @@ import static org.vertx.java.tests.newtests.TestUtils.*;
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public class HttpTest extends VertxTestBase {
-
-  private static final int DEFAULT_HTTP_PORT = Integer.getInteger("vertx.http.port", 8080);
+public class HttpTest extends HttpTestBase {
 
   public static final File VERTX_FILE_BASE;
 
@@ -80,26 +73,6 @@ public class HttpTest extends VertxTestBase {
     } catch (IOException e) {
       throw new ExceptionInInitializerError(e);
     }
-  }
-
-  private HttpServer server;
-  private HttpClient client;
-  private int port = DEFAULT_HTTP_PORT;
-
-  @Before
-  public void before() throws Exception {
-    server = vertx.createHttpServer();
-    client = vertx.createHttpClient().setPort(port);
-  }
-
-  @After
-  public void after() throws Exception {
-    client.close();
-    CountDownLatch latch = new CountDownLatch(1);
-    server.close((asyncResult) -> {
-      latch.countDown();
-    });
-    assertTrue(latch.await(10, TimeUnit.SECONDS));
   }
 
   @Test
@@ -395,12 +368,6 @@ public class HttpTest extends VertxTestBase {
   }
 
   @Test
-  public void testNoContext() {
-    //TODO: I don't think we need this one anymore
-    testComplete();
-  }
-
-  @Test
   public void testSimpleGET() {
     String uri = "/some-uri?foo=bar";
     testSimpleRequest(uri, "GET", client.get(uri, resp -> testComplete()));
@@ -527,7 +494,7 @@ public class HttpTest extends VertxTestBase {
 
   @Test
   public void testAbsoluteURI() {
-    testURIAndPath("http://localhost:"+port+"/this/is/a/path/foo.html", "/this/is/a/path/foo.html");
+    testURIAndPath("http://localhost:" + port + "/this/is/a/path/foo.html", "/this/is/a/path/foo.html");
   }
 
   @Test
@@ -1170,10 +1137,7 @@ public class HttpTest extends VertxTestBase {
         //OK
       }
       try {
-        resp.exceptionHandler(new Handler<Throwable>() {
-          public void handle(Throwable t) {
-          }
-        });
+        resp.exceptionHandler(noOpHandler());
         fail("Should throw exception");
       } catch (IllegalStateException e) {
         //OK
@@ -1446,7 +1410,7 @@ public class HttpTest extends VertxTestBase {
     server.listen(port, onSuccess(s -> {
       client.post("some-uri", resp -> {
         resp.bodyHandler(buff -> {
-          assertEquals(body , buff);
+          assertEquals(body, buff);
           testComplete();
         });
       }).end();
@@ -2630,28 +2594,6 @@ public class HttpTest extends VertxTestBase {
 
     server.listen(port, onSuccess(consumer));
   }
-
-  private <T> Handler<AsyncResult<T>> onSuccess(Consumer<T> consumer) {
-    return result -> {
-      assertTrue(result.succeeded());
-      consumer.accept(result.result());
-    };
-  }
-
-  private <T> Handler<AsyncResult<T>> onFailure(Consumer<T> consumer) {
-    return result -> {
-      assertFalse(result.succeeded());
-      consumer.accept(result.result());
-    };
-  }
-
-  @SuppressWarnings("unchecked")
-  public <E> Handler<E> noOpHandler() {
-    return noOp;
-  }
-
-  private static final Handler noOp = e -> {
-  };
 
   private static MultiMap getHeaders(int num) {
     Map<String, String> map = genMap(num);
