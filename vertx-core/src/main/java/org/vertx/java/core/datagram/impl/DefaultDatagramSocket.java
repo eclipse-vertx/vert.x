@@ -398,16 +398,12 @@ public class DefaultDatagramSocket extends ConnectionBase
     if (context.isOnCorrectWorker(channel().eventLoop())) {
       try {
         vertx.setContext(context);
-        handler.handle(new DefaultFutureResult<DatagramSocket>(cause));
+        handler.handle(new DefaultFutureResult<>(cause));
       } catch (Throwable t) {
         context.reportException(t);
       }
     } else {
-      context.execute(new Runnable() {
-        public void run() {
-          handler.handle(new DefaultFutureResult<DatagramSocket>(cause));
-        }
-      });
+      context.execute(() -> handler.handle(new DefaultFutureResult<>(cause)));
     }
   }
 }

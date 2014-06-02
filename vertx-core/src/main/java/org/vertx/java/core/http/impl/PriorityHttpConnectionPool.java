@@ -138,11 +138,7 @@ public abstract class PriorityHttpConnectionPool implements HttpPool {
     }
     if (waiter != null) {
       final Waiter w = waiter;
-      w.context.execute(new Runnable() {
-        public void run() {
-          w.handler.handle(conn);
-        }
-      });
+      w.context.execute(() ->  w.handler.handle(conn));
     }
   }
 

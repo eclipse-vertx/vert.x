@@ -216,12 +216,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
         } catch (final Throwable t) {
           // Make sure we send the exception back through the handler (if any)
           if (listenHandler != null) {
-            vertx.runOnContext(new VoidHandler() {
-              @Override
-              protected void handle() {
-                listenHandler.handle(new DefaultFutureResult<HttpServer>(t));
-              }
-            });
+            vertx.runOnContext(v -> listenHandler.handle(new DefaultFutureResult<>(t)));
           } else {
             // No handler - log so user can see failure
             actualCtx.reportException(t);
@@ -247,12 +242,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
               res = new DefaultFutureResult<>(future.cause());
               listening = false;
             }
-            actualCtx.execute(future.channel().eventLoop(), new Runnable() {
-              @Override
-              public void run() {
-                listenHandler.handle(res);
-              }
-            });
+            actualCtx.execute(future.channel().eventLoop(), () -> listenHandler.handle(res));
           } else if (!future.isSuccess()) {
             listening  = false;
             // No handler - log so user can see failure
@@ -551,11 +541,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
     final CountDownLatch latch = new CountDownLatch(1);
 
     ChannelGroupFuture fut = serverChannelGroup.close();
-    fut.addListener(new ChannelGroupFutureListener() {
-      public void operationComplete(ChannelGroupFuture channelGroupFuture) throws Exception {
-        latch.countDown();
-      }
-    });
+    fut.addListener(cgf -> latch.countDown());
 
     // Always sync
     try {
@@ -568,11 +554,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
 
   private void executeCloseDone(final DefaultContext closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {
     if (done != null) {
-      closeContext.execute(new Runnable() {
-        public void run() {
-          done.handle(new DefaultFutureResult<Void>(e));
-        }
-      });
+      closeContext.execute(() -> done.handle(new DefaultFutureResult<>(e)));
     }
   }
 
@@ -758,16 +740,14 @@ public class DefaultHttpServer implements HttpServer, Closeable {
         final ServerConnection wsConn = new ServerConnection(DefaultHttpServer.this, ch, wsHandler.context, serverOrigin);
         wsConn.wsHandler(wsHandler.handler);
 
-        Runnable connectRunnable = new Runnable() {
-          public void run() {
-            connectionMap.put(ch, wsConn);
-            try {
-              shake.handshake(ch, request);
-            } catch (WebSocketHandshakeException e) {
-              wsConn.handleException(e);
-            } catch (Exception e) {
-              log.error("Failed to generate shake response", e);
-            }
+        Runnable connectRunnable = () -> {
+          connectionMap.put(ch, wsConn);
+          try {
+            shake.handshake(ch, request);
+          } catch (WebSocketHandshakeException e) {
+            wsConn.handleException(e);
+          } catch (Exception e) {
+            log.error("Failed to generate shake response", e);
           }
         };
 

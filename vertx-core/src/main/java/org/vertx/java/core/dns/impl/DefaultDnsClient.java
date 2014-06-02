@@ -190,31 +190,23 @@ public final class DefaultDnsClient implements DnsClient {
       }
       reverseName.append(".in-addr.arpa");
 
-      return resolvePTR(reverseName.toString(), new Handler<AsyncResult<String>>() {
-        @Override
-        public void handle(AsyncResult event) {
-          if (event.failed()) {
-            handler.handle(event);
+      return resolvePTR(reverseName.toString(), ar -> {
+          if (ar.failed()) {
+            handler.handle(new DefaultFutureResult<>(ar.cause()));
           } else {
-            String result = (String) event.result();
+            String result = ar.result();
             try {
               handler.handle(new DefaultFutureResult<>(InetAddress.getByAddress(result, inetAddress.getAddress())));
             } catch (UnknownHostException e) {
               // Should never happen
-              handler.handle(new DefaultFutureResult<InetAddress>(e));
+              handler.handle(new DefaultFutureResult<>(e));
             }
           }
-        }
-      });
+        });
     } catch (final UnknownHostException e) {
       // Should never happen as we work with ip addresses as input
       // anyway just in case notify the handler
-      actualCtx.execute(new Runnable() {
-        public void run() {
-          handler.handle(new DefaultFutureResult<InetAddress>(e));
-
-        }
-      });
+      actualCtx.execute(() -> handler.handle(new DefaultFutureResult<>(e)));
     }
     return this;
   }
@@ -287,13 +279,11 @@ public final class DefaultDnsClient implements DnsClient {
         actualCtx.reportException(t);
       }
     } else {
-      actualCtx.execute(new Runnable() {
-        public void run() {
-          if (result instanceof Throwable) {
-            r.setFailure((Throwable) result);
-          } else {
-            r.setResult(result);
-          }
+      actualCtx.execute(() -> {
+        if (result instanceof Throwable) {
+          r.setFailure((Throwable) result);
+        } else {
+          r.setResult(result);
         }
       });
     }

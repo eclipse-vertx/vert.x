@@ -98,21 +98,16 @@ public class DefaultEventBus implements EventBus {
   }
 
   @Override
-  public EventBus send(String address, Object message, final Handler<Message> replyHandler) {
+  public EventBus send(String address, Object message, Handler<Message> replyHandler) {
     // In order to fool the type system we need to wrap the handler - at run time the Message<String> handler
     // will happily handle non String types as types are erased at run-time
-    Handler<Message<String>> wrapped = replyHandler == null ? null : new Handler<Message<String>>() {
-      @Override
-      public void handle(Message msg) {
-        replyHandler.handle(msg);
-      }
-    };
+    Handler<Message<String>> wrapped = replyHandler == null ? null : replyHandler::handle;
     sendOrPub(createMessage(true, address, message), wrapped);
     return this;
   }
 
   @Override
-  public <T> EventBus sendWithTimeout(String address, Object message, long timeout, final Handler<AsyncResult<Message<T>>> replyHandler) {
+  public <T> EventBus sendWithTimeout(String address, Object message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
     sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
     return this;
   }
@@ -124,13 +119,13 @@ public class DefaultEventBus implements EventBus {
   }
 
   @Override
-  public <T> EventBus send(String address, JsonObject message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, JsonObject message, Handler<Message<T>> replyHandler) {
     sendOrPub(new JsonObjectMessage(true, address, message), replyHandler);
     return this;
   }
 
   @Override
-  public <T> EventBus sendWithTimeout(String address, JsonObject message, long timeout, final Handler<AsyncResult<Message<T>>> replyHandler) {
+  public <T> EventBus sendWithTimeout(String address, JsonObject message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
     sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
     return this;
   }
@@ -142,13 +137,13 @@ public class DefaultEventBus implements EventBus {
   }
 
   @Override
-  public <T> EventBus send(String address, JsonArray message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, JsonArray message, Handler<Message<T>> replyHandler) {
     sendOrPub(new JsonArrayMessage(true, address, message), replyHandler);
     return this;
   }
 
   @Override
-  public <T> EventBus sendWithTimeout(String address, JsonArray message, long timeout, final Handler<AsyncResult<Message<T>>> replyHandler) {
+  public <T> EventBus sendWithTimeout(String address, JsonArray message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
     sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
     return this;
   }
@@ -160,13 +155,13 @@ public class DefaultEventBus implements EventBus {
   }
 
   @Override
-  public <T> EventBus send(String address, Buffer message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, Buffer message, Handler<Message<T>> replyHandler) {
     sendOrPub(new BufferMessage(true, address, message), replyHandler);
     return this;
   }
 
   @Override
-  public <T> EventBus sendWithTimeout(String address, Buffer message, long timeout, final Handler<AsyncResult<Message<T>>> replyHandler) {
+  public <T> EventBus sendWithTimeout(String address, Buffer message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
     sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
     return this;
   }
@@ -178,13 +173,13 @@ public class DefaultEventBus implements EventBus {
   }
 
   @Override
-  public <T> EventBus send(String address, byte[] message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, byte[] message, Handler<Message<T>> replyHandler) {
     sendOrPub(new ByteArrayMessage(true, address, message), replyHandler);
     return this;
   }
 
   @Override
-  public <T> EventBus sendWithTimeout(String address, byte[] message, long timeout, final Handler<AsyncResult<Message<T>>> replyHandler) {
+  public <T> EventBus sendWithTimeout(String address, byte[] message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
     sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
     return this;
   }
@@ -196,13 +191,13 @@ public class DefaultEventBus implements EventBus {
   }
 
   @Override
-  public <T> EventBus send(String address, String message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, String message, Handler<Message<T>> replyHandler) {
     sendOrPub(new StringMessage(true, address, message), replyHandler);
     return this;
   }
 
   @Override
-  public <T> EventBus sendWithTimeout(String address, String message, long timeout, final Handler<AsyncResult<Message<T>>> replyHandler) {
+  public <T> EventBus sendWithTimeout(String address, String message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
     sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
     return this;
   }
@@ -214,13 +209,13 @@ public class DefaultEventBus implements EventBus {
   }
 
   @Override
-  public <T> EventBus send(String address, Integer message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, Integer message, Handler<Message<T>> replyHandler) {
     sendOrPub(new IntMessage(true, address, message), replyHandler);
     return this;
   }
 
   @Override
-  public <T> EventBus sendWithTimeout(String address, Integer message, long timeout, final Handler<AsyncResult<Message<T>>> replyHandler) {
+  public <T> EventBus sendWithTimeout(String address, Integer message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
     sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
     return this;
   }
@@ -232,13 +227,13 @@ public class DefaultEventBus implements EventBus {
   }
 
   @Override
-  public <T> EventBus send(String address, Long message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, Long message, Handler<Message<T>> replyHandler) {
     sendOrPub(new LongMessage(true, address, message), replyHandler);
     return this;
   }
 
   @Override
-  public <T> EventBus sendWithTimeout(String address, Long message, long timeout, final Handler<AsyncResult<Message<T>>> replyHandler) {
+  public <T> EventBus sendWithTimeout(String address, Long message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
     sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
     return this;
   }
@@ -250,13 +245,13 @@ public class DefaultEventBus implements EventBus {
   }
 
   @Override
-  public <T> EventBus send(String address, Float message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, Float message, Handler<Message<T>> replyHandler) {
     sendOrPub(new FloatMessage(true, address, message), replyHandler);
     return this;
   }
 
   @Override
-  public <T> EventBus sendWithTimeout(String address, Float message, long timeout, final Handler<AsyncResult<Message<T>>> replyHandler) {
+  public <T> EventBus sendWithTimeout(String address, Float message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
     sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
     return this;
   }
@@ -268,13 +263,13 @@ public class DefaultEventBus implements EventBus {
   }
 
   @Override
-  public <T> EventBus send(String address, Double message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, Double message, Handler<Message<T>> replyHandler) {
     sendOrPub(new DoubleMessage(true, address, message), replyHandler);
     return this;
   }
 
   @Override
-  public <T> EventBus sendWithTimeout(String address, Double message, long timeout, final Handler<AsyncResult<Message<T>>> replyHandler) {
+  public <T> EventBus sendWithTimeout(String address, Double message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
     sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
     return this;
   }
@@ -286,13 +281,13 @@ public class DefaultEventBus implements EventBus {
   }
 
   @Override
-  public <T> EventBus send(String address, Boolean message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, Boolean message, Handler<Message<T>> replyHandler) {
     sendOrPub(new BooleanMessage(true, address, message), replyHandler);
     return this;
   }
 
   @Override
-  public <T> EventBus sendWithTimeout(String address, Boolean message, long timeout, final Handler<AsyncResult<Message<T>>> replyHandler) {
+  public <T> EventBus sendWithTimeout(String address, Boolean message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
     sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
     return this;
   }
@@ -304,13 +299,13 @@ public class DefaultEventBus implements EventBus {
   }
 
   @Override
-  public <T> EventBus send(String address, Short message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, Short message, Handler<Message<T>> replyHandler) {
     sendOrPub(new ShortMessage(true, address, message), replyHandler);
     return this;
   }
 
   @Override
-  public <T> EventBus sendWithTimeout(String address, Short message, long timeout, final Handler<AsyncResult<Message<T>>> replyHandler) {
+  public <T> EventBus sendWithTimeout(String address, Short message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
     sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
     return this;
   }
@@ -322,13 +317,13 @@ public class DefaultEventBus implements EventBus {
   }
 
   @Override
-  public <T> EventBus send(String address, Character message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, Character message, Handler<Message<T>> replyHandler) {
     sendOrPub(new CharacterMessage(true, address, message), replyHandler);
     return this;
   }
 
   @Override
-  public <T> EventBus sendWithTimeout(String address, Character message, long timeout, final Handler<AsyncResult<Message<T>>> replyHandler) {
+  public <T> EventBus sendWithTimeout(String address, Character message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
     sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
     return this;
   }
@@ -340,13 +335,13 @@ public class DefaultEventBus implements EventBus {
   }
 
   @Override
-  public <T> EventBus send(String address, Byte message, final Handler<Message<T>> replyHandler) {
+  public <T> EventBus send(String address, Byte message, Handler<Message<T>> replyHandler) {
     sendOrPub(new ByteMessage(true, address, message), replyHandler);
     return this;
   }
 
   @Override
-  public <T> EventBus sendWithTimeout(String address, Byte message, long timeout, final Handler<AsyncResult<Message<T>>> replyHandler) {
+  public <T> EventBus sendWithTimeout(String address, Byte message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
     sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
     return this;
   }
@@ -575,56 +570,51 @@ public class DefaultEventBus implements EventBus {
     return bm;
   }
 
-  private NetServer setServer(int port, final String hostName, final Handler<AsyncResult<Void>> listenHandler) {
-    final NetServer server = vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
-      public void handle(final NetSocket socket) {
-        final RecordParser parser = RecordParser.newFixed(4, null);
-        Handler<Buffer> handler = new Handler<Buffer>() {
-          int size = -1;
-          public void handle(Buffer buff) {
-            if (size == -1) {
-              size = buff.getInt(0);
-              parser.fixedSizeMode(size);
-            } else {
-              BaseMessage received = MessageFactory.read(buff);
-              if (received.type() == MessageFactory.TYPE_PING) {
-                // Send back a pong - a byte will do
-                socket.write(PONG);
-              } else {
-                receiveMessage(received, -1, null, null);
-              }
-              parser.fixedSizeMode(4);
-              size = -1;
-            }
-          }
-        };
-        parser.setOutput(handler);
-        socket.dataHandler(parser);
-      }
-
-    });
-    server.listen(port, hostName, new AsyncResultHandler<NetServer>() {
-      @Override
-      public void handle(AsyncResult<NetServer> asyncResult) {
-        if (asyncResult.succeeded()) {
-          // Obtain system configured public host/port
-          int publicPort = Integer.getInteger("vertx.cluster.public.port", -1);
-          String publicHost = System.getProperty("vertx.cluster.public.host", null);
-
-          // If using a wilcard port (0) then we ask the server for the actual port:
-          int serverPort = (publicPort == -1) ? server.port() : publicPort;
-          String serverHost = (publicHost == null) ? hostName : publicHost;
-          DefaultEventBus.this.serverID = new ServerID(serverPort, serverHost);
-        }
-        if (listenHandler != null) {
-          if (asyncResult.succeeded()) {
-            listenHandler.handle(new DefaultFutureResult<>((Void)null));
+  private NetServer setServer(int port, String hostName, Handler<AsyncResult<Void>> listenHandler) {
+    NetServer server = vertx.createNetServer().connectHandler(socket -> {
+      RecordParser parser = RecordParser.newFixed(4, null);
+      Handler<Buffer> handler = new Handler<Buffer>() {
+        int size = -1;
+        public void handle(Buffer buff) {
+          if (size == -1) {
+            size = buff.getInt(0);
+            parser.fixedSizeMode(size);
           } else {
-            listenHandler.handle(new DefaultFutureResult<Void>(asyncResult.cause()));
+            BaseMessage received = MessageFactory.read(buff);
+            if (received.type() == MessageFactory.TYPE_PING) {
+              // Send back a pong - a byte will do
+              socket.write(PONG);
+            } else {
+              receiveMessage(received, -1, null, null);
+            }
+            parser.fixedSizeMode(4);
+            size = -1;
           }
-        } else if (asyncResult.failed()) {
-          log.error("Failed to listen", asyncResult.cause());
         }
+      };
+      parser.setOutput(handler);
+      socket.dataHandler(parser);
+    });
+
+    server.listen(port, hostName, asyncResult -> {
+      if (asyncResult.succeeded()) {
+        // Obtain system configured public host/port
+        int publicPort = Integer.getInteger("vertx.cluster.public.port", -1);
+        String publicHost = System.getProperty("vertx.cluster.public.host", null);
+
+        // If using a wilcard port (0) then we ask the server for the actual port:
+        int serverPort = (publicPort == -1) ? server.port() : publicPort;
+        String serverHost = (publicHost == null) ? hostName : publicHost;
+        DefaultEventBus.this.serverID = new ServerID(serverPort, serverHost);
+      }
+      if (listenHandler != null) {
+        if (asyncResult.succeeded()) {
+          listenHandler.handle(new DefaultFutureResult<>((Void)null));
+        } else {
+          listenHandler.handle(new DefaultFutureResult<>(asyncResult.cause()));
+        }
+      } else if (asyncResult.failed()) {
+        log.error("Failed to listen", asyncResult.cause());
       }
     });
     return server;
@@ -678,8 +668,8 @@ public class DefaultEventBus implements EventBus {
     }
   }
 
-  private <T, U> void sendOrPub(ServerID replyDest, final BaseMessage<U> message, final Handler<Message<T>> replyHandler,
-                                final Handler<AsyncResult<Message<T>>> asyncResultHandler, long timeout) {
+  private <T, U> void sendOrPub(ServerID replyDest, BaseMessage<U> message, Handler<Message<T>> replyHandler,
+                                Handler<AsyncResult<Message<T>>> asyncResultHandler, long timeout) {
     checkStarted();
     DefaultContext context = vertx.getOrCreateContext();
     if (timeout == -1) {
@@ -692,14 +682,11 @@ public class DefaultEventBus implements EventBus {
         message.replyAddress = generateReplyAddress();
         if (timeout != -1) {
           // Add a timeout to remove the reply handler to prevent leaks in case a reply never comes
-          timeoutID = vertx.setTimer(timeout, new Handler<Long>() {
-            @Override
-            public void handle(Long timerID) {
-              log.warn("Message reply handler timed out as no reply was received - it will be removed");
-              unregisterHandler(message.replyAddress, replyHandler);
-              if (asyncResultHandler != null) {
-                asyncResultHandler.handle(new DefaultFutureResult<Message<T>>(new ReplyException(ReplyFailure.TIMEOUT, "Timed out waiting for reply")));
-              }
+          timeoutID = vertx.setTimer(timeout, timerID -> {
+            log.warn("Message reply handler timed out as no reply was received - it will be removed");
+            unregisterHandler(message.replyAddress, replyHandler);
+            if (asyncResultHandler != null) {
+              asyncResultHandler.handle(new DefaultFutureResult<>(new ReplyException(ReplyFailure.TIMEOUT, "Timed out waiting for reply")));
             }
           });
         }
@@ -713,19 +700,17 @@ public class DefaultEventBus implements EventBus {
         }
       } else {
         if (subs != null) {
-          final long fTimeoutID = timeoutID;
-          subs.get(message.address, new AsyncResultHandler<ChoosableIterable<ServerID>>() {
-            public void handle(AsyncResult<ChoosableIterable<ServerID>> event) {
-              if (event.succeeded()) {
-                ChoosableIterable<ServerID> serverIDs = event.result();
-                if (serverIDs != null && !serverIDs.isEmpty()) {
-                  sendToSubs(serverIDs, message, fTimeoutID, asyncResultHandler, replyHandler);
-                } else {
-                  receiveMessage(message, fTimeoutID, asyncResultHandler, replyHandler);
-                }
+          long fTimeoutID = timeoutID;
+          subs.get(message.address, asyncResult -> {
+            if (asyncResult.succeeded()) {
+              ChoosableIterable<ServerID> serverIDs = asyncResult.result();
+              if (serverIDs != null && !serverIDs.isEmpty()) {
+                sendToSubs(serverIDs, message, fTimeoutID, asyncResultHandler, replyHandler);
               } else {
-                log.error("Failed to send message", event.cause());
+                receiveMessage(message, fTimeoutID, asyncResultHandler, replyHandler);
               }
+            } else {
+              log.error("Failed to send message", asyncResult.cause());
             }
           });
         } else {
@@ -743,19 +728,16 @@ public class DefaultEventBus implements EventBus {
     }
   }
 
-  private <T> Handler<Message<T>> convertHandler(final Handler<AsyncResult<Message<T>>> handler) {
-    return new Handler<Message<T>>() {
-      @Override
-      public void handle(Message<T> reply) {
-        DefaultFutureResult<Message<T>> result;
-        if (reply.body() instanceof ReplyException) {
-          // This is kind of clunky - but hey-ho
-          result = new DefaultFutureResult<>((ReplyException)reply.body());
-        } else {
-          result = new DefaultFutureResult<>(reply);
-        }
-        handler.handle(result);
+  private <T> Handler<Message<T>> convertHandler(Handler<AsyncResult<Message<T>>> handler) {
+    return reply -> {
+      DefaultFutureResult<Message<T>> result;
+      if (reply.body() instanceof ReplyException) {
+        // This is kind of clunky - but hey-ho
+        result = new DefaultFutureResult<>((ReplyException)reply.body());
+      } else {
+        result = new DefaultFutureResult<>(reply);
       }
+      handler.handle(result);
     };
   }
 
@@ -779,11 +761,9 @@ public class DefaultEventBus implements EventBus {
         handlers = prevHandlers;
       }
       if (completionHandler == null) {
-        completionHandler = new Handler<AsyncResult<Void>>() {
-          public void handle(AsyncResult<Void> event) {
-            if (event.failed()) {
-              log.error("Failed to remove entry", event.cause());
-            }
+        completionHandler = asyncResult -> {
+          if (asyncResult.failed()) {
+            log.error("Failed to remove entry", asyncResult.cause());
           }
         };
       }
@@ -812,10 +792,7 @@ public class DefaultEventBus implements EventBus {
 
   private void cleanSubsForServerID(ServerID theServerID) {
     if (subs != null) {
-      subs.removeAllForValue(theServerID, new Handler<AsyncResult<Void>>() {
-        public void handle(AsyncResult<Void> event) {
-        }
-      });
+      subs.removeAllForValue(theServerID, ar -> {});
     }
   }
 
@@ -845,7 +822,7 @@ public class DefaultEventBus implements EventBus {
     }
   }
 
-  private void sendRemote(final ServerID theServerID, final BaseMessage message) {
+  private void sendRemote(ServerID theServerID, BaseMessage message) {
     // We need to deal with the fact that connecting can take some time and is async, and we cannot
     // block to wait for it. So we add any sends to a pending list if not connected yet.
     // Once we connect we send them.
@@ -870,23 +847,19 @@ public class DefaultEventBus implements EventBus {
     holder.writeMessage(message);
   }
 
-  private void schedulePing(final ConnectionHolder holder) {
-    holder.pingTimeoutID = vertx.setTimer(PING_INTERVAL, new Handler<Long>() {
-      public void handle(Long ignore) {
-        // If we don't get a pong back in time we close the connection
-        holder.timeoutID = vertx.setTimer(PING_REPLY_INTERVAL, new Handler<Long>() {
-          public void handle(Long timerID) {
-            // Didn't get pong in time - consider connection dead
-            log.warn("No pong from server " + serverID + " - will consider it dead, timerID: " + timerID + " holder " + holder);
-            cleanupConnection(holder.theServerID, holder, true);
-          }
-        });
-        new PingMessage(serverID).write(holder.socket);
-      }
+  private void schedulePing(ConnectionHolder holder) {
+    holder.pingTimeoutID = vertx.setTimer(PING_INTERVAL, id1 -> {
+      // If we don't get a pong back in time we close the connection
+      holder.timeoutID = vertx.setTimer(PING_REPLY_INTERVAL, id2 -> {
+        // Didn't get pong in time - consider connection dead
+        log.warn("No pong from server " + serverID + " - will consider it dead, timerID: " + id2 + " holder " + holder);
+        cleanupConnection(holder.theServerID, holder, true);
+      });
+      new PingMessage(serverID).write(holder.socket);
     });
   }
 
-  private void removeSub(String subName, ServerID theServerID, final Handler<AsyncResult<Void>> completionHandler) {
+  private void removeSub(String subName, ServerID theServerID, Handler<AsyncResult<Void>> completionHandler) {
     subs.remove(subName, theServerID, completionHandler);
   }
 
@@ -894,7 +867,7 @@ public class DefaultEventBus implements EventBus {
   private <T> void receiveMessage(BaseMessage msg, long timeoutID, Handler<AsyncResult<Message<T>>> asyncResultHandler,
                                   Handler<Message<T>> replyHandler) {
     msg.bus = this;
-    final Handlers handlers = handlerMap.get(msg.address);
+    Handlers handlers = handlerMap.get(msg.address);
     if (handlers != null) {
       if (msg.send) {
         //Choose one
@@ -922,32 +895,30 @@ public class DefaultEventBus implements EventBus {
     }
   }
 
-  private <T> void sendNoHandlersFailure(final Handler<AsyncResult<Message<T>>> handler) {
+  private <T> void sendNoHandlersFailure(Handler<AsyncResult<Message<T>>> handler) {
     vertx.runOnContext(new Handler<Void>() {
       @Override
       public void handle(Void v) {
-        handler.handle(new DefaultFutureResult<Message<T>>(new ReplyException(ReplyFailure.NO_HANDLERS)));
+        handler.handle(new DefaultFutureResult<>(new ReplyException(ReplyFailure.NO_HANDLERS)));
       }
     });
   }
 
 
-  private <T> void doReceive(final BaseMessage<T> msg, final HandlerHolder<T> holder) {
+  private <T> void doReceive(BaseMessage<T> msg, HandlerHolder<T> holder) {
     // Each handler gets a fresh copy
-    final Message<T> copied = msg.copy();
+    Message<T> copied = msg.copy();
 
-    holder.context.execute(new Runnable() {
-      public void run() {
-        // Need to check handler is still there - the handler might have been removed after the message were sent but
-        // before it was received
-        try {
-          if (!holder.removed) {
-            holder.handler.handle(copied);
-          }
-        } finally {
-          if (holder.replyHandler) {
-            unregisterHandler(msg.address, holder.handler);
-          }
+    holder.context.execute(() -> {
+      // Need to check handler is still there - the handler might have been removed after the message were sent but
+      // before it was received
+      try {
+        if (!holder.removed) {
+          holder.handler.handle(copied);
+        }
+      } finally {
+        if (holder.replyHandler) {
+          unregisterHandler(msg.address, holder.handler);
         }
       }
     });
@@ -1016,26 +987,16 @@ public class DefaultEventBus implements EventBus {
       }
     }
 
-    synchronized void connected(final ServerID theServerID, NetSocket socket) {
+    synchronized void connected(ServerID theServerID, NetSocket socket) {
       this.socket = socket;
       this.theServerID = theServerID;
       connected = true;
-      socket.exceptionHandler(new Handler<Throwable>() {
-        public void handle(Throwable t) {
-          cleanupConnection(theServerID, ConnectionHolder.this, true);
-        }
-      });
-      socket.closeHandler(new VoidHandler() {
-        public void handle() {
-          cleanupConnection(theServerID, ConnectionHolder.this, false);
-        }
-      });
-      socket.dataHandler(new Handler<Buffer>() {
-        public void handle(Buffer data) {
-          // Got a pong back
-          vertx.cancelTimer(timeoutID);
-          schedulePing(ConnectionHolder.this);
-        }
+      socket.exceptionHandler(t -> cleanupConnection(theServerID, ConnectionHolder.this, true));
+      socket.closeHandler(v -> cleanupConnection(theServerID, ConnectionHolder.this, false));
+      socket.dataHandler(data -> {
+        // Got a pong back
+        vertx.cancelTimer(timeoutID);
+        schedulePing(ConnectionHolder.this);
       });
       // Start a pinger
       schedulePing(ConnectionHolder.this);
@@ -1045,14 +1006,12 @@ public class DefaultEventBus implements EventBus {
       pending.clear();
     }
 
-    void connect(NetClient client, final ServerID theServerID) {
-      client.connect(theServerID.port, theServerID.host, new AsyncResultHandler<NetSocket>() {
-        public void handle(AsyncResult<NetSocket> res) {
-          if (res.succeeded()) {
-            connected(theServerID, res.result());
-          } else {
-            cleanupConnection(theServerID, ConnectionHolder.this, true);
-          }
+    void connect(NetClient client, ServerID theServerID) {
+      client.connect(theServerID.port, theServerID.host, res -> {
+        if (res.succeeded()) {
+          connected(theServerID, res.result());
+        } else {
+          cleanupConnection(theServerID, ConnectionHolder.this, true);
         }
       });
     }

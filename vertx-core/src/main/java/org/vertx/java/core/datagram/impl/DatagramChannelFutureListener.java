@@ -51,20 +51,15 @@ final class DatagramChannelFutureListener<T> implements ChannelFutureListener {
         context.reportException(t);
       }
     } else {
-      context.execute(new Runnable() {
-        public void run() {
-          notifyHandler(future);
-        }
-      });
+      context.execute(() -> notifyHandler(future));
     }
-
   }
 
   private void notifyHandler(ChannelFuture future) {
     if (future.isSuccess()) {
       handler.handle(new DefaultFutureResult<>(result));
     } else {
-      handler.handle(new DefaultFutureResult<T>(future.cause()));
+      handler.handle(new DefaultFutureResult<>(future.cause()));
     }
   }
 }

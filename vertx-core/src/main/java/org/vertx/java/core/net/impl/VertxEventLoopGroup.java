@@ -34,7 +34,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implements EventLoopGroup {
 
   private int pos;
-
   private final List<EventLoopHolder> workers = new ArrayList<>();
   private final CountDownLatch latch = new CountDownLatch(1);
   private final AtomicBoolean gracefulShutdown = new AtomicBoolean();
@@ -109,12 +108,9 @@ public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implem
     if (gracefulShutdown.compareAndSet(false, true)) {
       final AtomicInteger counter = new AtomicInteger(workers.size());
       for (EventLoopHolder holder : workers) {
-        holder.worker.shutdownGracefully().addListener(new GenericFutureListener() {
-          @Override
-          public void operationComplete(Future future) throws Exception {
-            if (counter.decrementAndGet() == 0) {
-              terminationFuture.setSuccess(null);
-            }
+        holder.worker.shutdownGracefully().addListener(future -> {
+          if (counter.decrementAndGet() == 0) {
+            terminationFuture.setSuccess(null);
           }
         });
       }

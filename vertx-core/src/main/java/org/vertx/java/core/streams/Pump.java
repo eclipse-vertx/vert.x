@@ -90,22 +90,9 @@ public class Pump {
     return pumped;
   }
 
-  private final Handler<Void> drainHandler = new Handler<Void>() {
-    public void handle(Void v) {
-      readStream.resume();
-    }
-  };
+  private final Handler<Void> drainHandler;
 
-  private final Handler<Buffer> dataHandler = new Handler<Buffer>() {
-    public void handle(Buffer buffer) {
-      writeStream.write(buffer);
-      pumped += buffer.length();
-      if (writeStream.writeQueueFull()) {
-        readStream.pause();
-        writeStream.drainHandler(drainHandler);
-      }
-    }
-  };
+  private final Handler<Buffer> dataHandler;
 
   /**
    * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream}. Set the write queue max size
@@ -119,6 +106,15 @@ public class Pump {
   private Pump(ReadStream<?> rs, WriteStream<?> ws) {
     this.readStream = rs;
     this.writeStream = ws;
+    drainHandler = v-> readStream.resume();
+    dataHandler = buffer -> {
+      writeStream.write(buffer);
+      pumped += buffer.length();
+      if (writeStream.writeQueueFull()) {
+        readStream.pause();
+        writeStream.drainHandler(drainHandler);
+      }
+    };
   }
 
 

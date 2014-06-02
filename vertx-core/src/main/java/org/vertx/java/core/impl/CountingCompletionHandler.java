@@ -72,11 +72,7 @@ public class CountingCompletionHandler<T> {
     if (vertx.getContext() == context) {
       doneHandler.handle(result);
     } else {
-      context.execute(new Runnable() {
-        public void run() {
-          doneHandler.handle(result);
-        }
-      });
+      context.execute(() -> doneHandler.handle(result));
     }
   }
 
@@ -84,10 +80,10 @@ public class CountingCompletionHandler<T> {
   void checkDone() {
     if (doneHandler != null) {
       if (cause != null) {
-        callHandler(new DefaultFutureResult<T>(cause));
+        callHandler(new DefaultFutureResult<>(cause));
       } else {
         if (count == required) {
-          final DefaultFutureResult<T> res = new DefaultFutureResult<T>((T)null);
+          final DefaultFutureResult<T> res = new DefaultFutureResult<>((T)null);
           callHandler(res);
         }
       }

@@ -225,12 +225,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   @Override
   public HttpClientRequest setTimeout(final long timeoutMs) {
     cancelOutstandingTimeoutTimer();
-    currentTimeoutTimerId = client.getVertx().setTimer(timeoutMs, new Handler<Long>() {
-      @Override
-      public void handle(Long event) {
-        handleTimeout(timeoutMs);
-      }
-    });
+    currentTimeoutTimerId = client.getVertx().setTimer(timeoutMs, id ->  handleTimeout(timeoutMs));
     return this;
   }
 
@@ -321,20 +316,18 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
       //We defer actual connection until the first part of body is written or end is called
       //This gives the user an opportunity to set an exception handler before connecting so
       //they can capture any exceptions on connection
-      client.getConnection(new Handler<ClientConnection>() {
-        public void handle(ClientConnection conn) {
-          if (exceptionOccurred) {
-            // The request already timed out before it has left the pool waiter queue
-            // So return it
-            conn.close();
-          } else if (!conn.isClosed()) {
-            connected(conn);
-          } else {
-            // The connection has been closed - closed connections can be in the pool
-            // Get another connection - Note that we DO NOT call connectionClosed() on the pool at this point
-            // that is done asynchronously in the connection closeHandler()
-            connect();
-          }
+      client.getConnection(conn -> {
+        if (exceptionOccurred) {
+          // The request already timed out before it has left the pool waiter queue
+          // So return it
+          conn.close();
+        } else if (!conn.isClosed()) {
+          connected(conn);
+        } else {
+          // The connection has been closed - closed connections can be in the pool
+          // Get another connection - Note that we DO NOT call connectionClosed() on the pool at this point
+          // that is done asynchronously in the connection closeHandler()
+          connect();
         }
       }, exceptionHandler, context);
 

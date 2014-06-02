@@ -65,13 +65,11 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
           context.reportException(t);
         }
       } else {
-        context.execute(new Runnable() {
-          public void run() {
-            try {
-              doMessageReceived(connection, chctx, msg);
-            } catch (Throwable t) {
-              context.reportException(t);
-            }
+        context.execute(() -> {
+          try {
+            doMessageReceived(connection, chctx, msg);
+          } catch (Throwable t) {
+            context.reportException(t);
           }
         });
       }

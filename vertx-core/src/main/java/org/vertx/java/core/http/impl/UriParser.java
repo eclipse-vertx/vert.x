@@ -29,7 +29,6 @@ final class UriParser {
 
   /**
    * Extract the path out of the uri.
-   *
    */
   static String path(String uri) {
     int i = uri.indexOf("://");

@@ -43,26 +43,17 @@ public abstract class BlockingAction<T>  {
    */
   public void run() {
     context = vertx.getOrCreateContext();
-
-    Runnable runner = new Runnable() {
-      public void run() {
-        final DefaultFutureResult<T> res = new DefaultFutureResult<>();
-        try {
-          res.setResult(action());
-        } catch (Exception e) {
-          res.setFailure(e);
-        }
-        if (handler != null) {
-          context.execute(new Runnable() {
-            public void run() {
-              res.setHandler(handler);
-            }
-          });
-        }
+    context.executeOnOrderedWorkerExec(() -> {
+      final DefaultFutureResult<T> res = new DefaultFutureResult<>();
+      try {
+        res.setResult(action());
+      } catch (Exception e) {
+        res.setFailure(e);
       }
-    };
-
-    context.executeOnOrderedWorkerExec(runner);
+      if (handler != null) {
+        context.execute(() -> res.setHandler(handler));
+      }
+    });
   }
 
   public abstract T action();

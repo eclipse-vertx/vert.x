@@ -116,18 +116,15 @@ public class DefaultVertx implements VertxInternal {
     this.clusterManager = factory.createClusterManager(this);
     this.clusterManager.join();
     final Vertx inst = this;
-    this.eventBus = new DefaultEventBus(this, port, hostname, clusterManager, new AsyncResultHandler<Void>() {
-      @Override
-      public void handle(AsyncResult<Void> res) {
-        if (resultHandler != null) {
-          if (res.succeeded()) {
-            resultHandler.handle(new DefaultFutureResult<>(inst));
-          } else {
-            resultHandler.handle(new DefaultFutureResult<Vertx>(res.cause()));
-          }
-        } else if (res.failed()) {
-          log.error("Failed to start event bus", res.cause());
+    this.eventBus = new DefaultEventBus(this, port, hostname, clusterManager, res -> {
+      if (resultHandler != null) {
+        if (res.succeeded()) {
+          resultHandler.handle(new DefaultFutureResult<>(inst));
+        } else {
+          resultHandler.handle(new DefaultFutureResult<>(res.cause()));
         }
+      } else if (res.failed()) {
+        log.error("Failed to start event bus", res.cause());
       }
     });
   }
@@ -384,27 +381,18 @@ public class DefaultVertx implements VertxInternal {
   @Override
   public <T> void executeBlocking(final Action<T> action, final Handler<AsyncResult<T>> resultHandler) {
     final DefaultContext context = getOrCreateContext();
-
-    Runnable runner = new Runnable() {
-      public void run() {
-        final DefaultFutureResult<T> res = new DefaultFutureResult<>();
-        try {
-          T result = action.perform();
-          res.setResult(result);
-        } catch (Exception e) {
-          res.setFailure(e);
-        }
-        if (resultHandler != null) {
-          context.execute(new Runnable() {
-              public void run() {
-                res.setHandler(resultHandler);
-              }
-            });
-        }
+    context.executeOnOrderedWorkerExec(() -> {
+      DefaultFutureResult<T> res = new DefaultFutureResult<>();
+      try {
+        T result = action.perform();
+        res.setResult(result);
+      } catch (Exception e) {
+        res.setFailure(e);
       }
-    };
-
-    context.executeOnOrderedWorkerExec(runner);
+      if (resultHandler != null) {
+        context.execute(() -> res.setHandler(resultHandler));
+      }
+    });
   }
 
   public ClusterManager clusterManager() {

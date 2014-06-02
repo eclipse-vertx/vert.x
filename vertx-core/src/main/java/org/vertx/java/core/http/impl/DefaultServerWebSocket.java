@@ -80,7 +80,7 @@ public class DefaultServerWebSocket extends WebSocketImplBase<ServerWebSocket> i
   @Override
   public void close() {
     checkClosed();
-    if (this.connectRunnable != null) {
+    if (connectRunnable != null) {
       // Server side
       if (rejected) {
         throw new IllegalStateException("Cannot close websocket, it has been rejected");

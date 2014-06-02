@@ -122,17 +122,14 @@ public class DefaultAsyncFile implements AsyncFile {
   private void doWrite(final Iterator<ByteBuffer> buffers, final long position, final Handler<AsyncResult<Void>> handler) {
     final ByteBuffer b = buffers.next();
     final int limit = b.limit();
-    doWrite(b, position, limit, new Handler<AsyncResult<Void>>() {
-      @Override
-      public void handle(AsyncResult<Void> event) {
-        if (event.failed()) {
-          handler.handle(event);
+    doWrite(b, position, limit, ar -> {
+      if (ar.failed()) {
+        handler.handle(ar);
+      } else {
+        if (buffers.hasNext()) {
+          doWrite(buffers, position + limit, handler);
         } else {
-          if (buffers.hasNext()) {
-            doWrite(buffers, position + limit, handler);
-          } else {
-            handler.handle(event);
-          }
+          handler.handle(ar);
         }
       }
     });
@@ -149,18 +146,15 @@ public class DefaultAsyncFile implements AsyncFile {
   public AsyncFile write(Buffer buffer) {
     check();
     final int length = buffer.length();
-    Handler<AsyncResult<Void>> handler = new Handler<AsyncResult<Void>>() {
-
-      public void handle(AsyncResult<Void> deferred) {
-        if (deferred.succeeded()) {
-          checkContext();
-          checkDrained();
-          if (writesOutstanding == 0 && closedDeferred != null) {
-            closedDeferred.run();
-          }
-        } else {
-          handleException(deferred.cause());
+    Handler<AsyncResult<Void>> handler = ar -> {
+      if (ar.succeeded()) {
+        checkContext();
+        checkDrained();
+        if (writesOutstanding == 0 && closedDeferred != null) {
+          closedDeferred.run();
         }
+      } else {
+        handleException(ar.cause());
       }
     };
 
@@ -226,25 +220,22 @@ public class DefaultAsyncFile implements AsyncFile {
     if (!readInProgress) {
       readInProgress = true;
       Buffer buff = new Buffer(BUFFER_SIZE);
-      read(buff, 0, readPos, BUFFER_SIZE, new Handler<AsyncResult<Buffer>>() {
-
-        public void handle(AsyncResult<Buffer> ar) {
-          if (ar.succeeded()) {
-            readInProgress = false;
-            Buffer buffer = ar.result();
-            if (buffer.length() == 0) {
-              // Empty buffer represents end of file
-              handleEnd();
-            } else {
-              readPos += buffer.length();
-              handleData(buffer);
-              if (!paused && dataHandler != null) {
-                doRead();
-              }
-            }
+      read(buff, 0, readPos, BUFFER_SIZE, ar -> {
+        if (ar.succeeded()) {
+          readInProgress = false;
+          Buffer buffer = ar.result();
+          if (buffer.length() == 0) {
+            // Empty buffer represents end of file
+            handleEnd();
           } else {
-            handleException(ar.cause());
+            readPos += buffer.length();
+            handleData(buffer);
+            if (!paused && dataHandler != null) {
+              doRead();
+            }
           }
+        } else {
+          handleException(ar.cause());
         }
       });
     }
@@ -347,11 +338,9 @@ public class DefaultAsyncFile implements AsyncFile {
           writeInternal(buff, pos, handler);
         } else {
           // It's been fully written
-          context.execute(new Runnable() {
-            public void run() {
-              writesOutstanding -= buff.limit();
-              handler.handle(new DefaultFutureResult<Void>().setResult(null));
-            }
+          context.execute(() -> {
+            writesOutstanding -= buff.limit();
+            handler.handle(new DefaultFutureResult<Void>().setResult(null));
           });
         }
       }
@@ -359,11 +348,7 @@ public class DefaultAsyncFile implements AsyncFile {
       public void failed(Throwable exc, Object attachment) {
         if (exc instanceof Exception) {
           final Exception e = (Exception) exc;
-          context.execute(new Runnable() {
-            public void run() {
-              handler.handle(new DefaultFutureResult<Void>().setResult(null));
-            }
-          });
+          context.execute(() -> handler.handle(new DefaultFutureResult<Void>().setResult(null)));
         } else {
           log.error("Error occurred", exc);
         }

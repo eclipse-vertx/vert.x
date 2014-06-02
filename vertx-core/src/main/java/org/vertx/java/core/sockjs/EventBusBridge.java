@@ -204,24 +204,22 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       final boolean debug = log.isDebugEnabled();
       Match match = checkMatches(false, address, message);
       if (match.doesMatch) {
-        Handler<Message> handler = new Handler<Message>() {
-          public void handle(final Message msg) {
-            Match curMatch = checkMatches(false, address, msg.body());
-            if (curMatch.doesMatch) {
-              Set<String> sockAuths = info.sockAuths;
-              if (curMatch.requiresAuth && sockAuths == null) {
-                if (debug) {
-                  log.debug("Outbound message for address " + address + " rejected because auth is required and socket is not authed");
-                }
-              } else {
-                checkAddAccceptedReplyAddress(msg.replyAddress());
-                deliverMessage(sock, address, msg);
+        Handler<Message> handler = msg -> {
+          Match curMatch = checkMatches(false, address, msg.body());
+          if (curMatch.doesMatch) {
+            Set<String> sockAuths = info.sockAuths;
+            if (curMatch.requiresAuth && sockAuths == null) {
+              if (debug) {
+                log.debug("Outbound message for address " + address + " rejected because auth is required and socket is not authed");
               }
             } else {
-              // outbound match failed
-              if (debug) {
-                log.debug("Outbound message for address " + address + " rejected because there is no inbound match");
-              }
+              checkAddAccceptedReplyAddress(msg.replyAddress());
+              deliverMessage(sock, address, msg);
+            }
+          } else {
+            // outbound match failed
+            if (debug) {
+              log.debug("Outbound message for address " + address + " rejected because there is no inbound match");
             }
           }
         };
@@ -263,27 +261,15 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     } else {
       final Map<String, Handler<Message>> handlers = new HashMap<>();
 
-      sock.endHandler(new VoidHandler() {
-        public void handle() {
-          handleSocketClosed(sock, handlers);
-        }
-      });
-
-      sock.dataHandler(new Handler<Buffer>() {
-        public void handle(Buffer data)  {
-          handleSocketData(sock, data, handlers);
-        }
-      });
+      sock.endHandler(v ->  handleSocketClosed(sock, handlers));
+      sock.dataHandler(data ->  handleSocketData(sock, data, handlers));
 
       // Start a checker to check for pings
       final PingInfo pingInfo = new PingInfo();
-      pingInfo.timerID = vertx.setPeriodic(pingTimeout, new Handler<Long>() {
-        @Override
-        public void handle(Long id) {
-          if (System.currentTimeMillis() - pingInfo.lastPing >= pingTimeout) {
-            // We didn't receive a ping in time so close the socket
-            sock.close();
-          }
+      pingInfo.timerID = vertx.setPeriodic(pingTimeout, id -> {
+        if (System.currentTimeMillis() - pingInfo.lastPing >= pingTimeout) {
+          // We didn't receive a ping in time so close the socket
+          sock.close();
         }
       });
       SockInfo sockInfo = new SockInfo();
@@ -300,11 +286,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       // So we cache the reply address, so we can check against it
       acceptedReplyAddresses.add(replyAddress);
       // And we remove after timeout in case the reply never comes
-      vertx.setTimer(replyTimeout, new Handler<Long>() {
-        public void handle(Long id) {
-          acceptedReplyAddresses.remove(replyAddress);
-        }
-      });
+      vertx.setTimer(replyTimeout, id ->  acceptedReplyAddresses.remove(replyAddress));
     }
   }
 
@@ -359,21 +341,19 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       if (curMatch.requiresAuth) {
         final String sessionID = message.getString("sessionID");
         if (sessionID != null) {
-          authorise(message, sessionID, new AsyncResultHandler<Boolean>() {
-            public void handle(AsyncResult<Boolean> res) {
-              if (res.succeeded()) {
-                if (res.result()) {
-                  cacheAuthorisation(sessionID, sock);
-                  checkAndSend(send, address, body, sock, replyAddress);
-                } else {
-                  // invalid session id
-                  if (debug) {
-                    log.debug("Inbound message for address " + address + " rejected because sessionID is not authorised");
-                  }
-                }
+          authorise(message, sessionID, res -> {
+            if (res.succeeded()) {
+              if (res.result()) {
+                cacheAuthorisation(sessionID, sock);
+                checkAndSend(send, address, body, sock, replyAddress);
               } else {
-                log.error("Error in performing authorisation", res.cause());
+                // invalid session id
+                if (debug) {
+                  log.debug("Inbound message for address " + address + " rejected because sessionID is not authorised");
+                }
               }
+            } else {
+              log.error("Error in performing authorisation", res.cause());
             }
           });
         } else {
@@ -402,17 +382,15 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     }
     final Handler<AsyncResult<Message<Object>>> replyHandler;
     if (replyAddress != null) {
-      replyHandler = new Handler<AsyncResult<Message<Object>>>() {
-        public void handle(AsyncResult<Message<Object>> result) {
-          if (result.succeeded()) {
-            Message message = result.result();
-            // Note we don't check outbound matches for replies
-            // Replies are always let through if the original message
-            // was approved
-            checkAddAccceptedReplyAddress(message.replyAddress());
-            deliverMessage(sock, replyAddress, message);
-            info.handlerCount--;
-          }
+      replyHandler = result -> {
+        if (result.succeeded()) {
+          Message message = result.result();
+          // Note we don't check outbound matches for replies
+          // Replies are always let through if the original message
+          // was approved
+          checkAddAccceptedReplyAddress(message.replyAddress());
+          deliverMessage(sock, replyAddress, message);
+          info.handlerCount--;
         }
       };
     } else {
@@ -439,11 +417,9 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       if (authCache.containsKey(sessionID)) {
         res.setResult(true).setHandler(handler);
       } else {
-        eb.send(authAddress, message, new Handler<Message<JsonObject>>() {
-          public void handle(Message<JsonObject> reply) {
-            boolean authed = reply.body().getString("status").equals("ok");
-            res.setResult(authed).setHandler(handler);
-          }
+        eb.send(authAddress, message, (Message<JsonObject> reply) -> {
+          boolean authed = reply.body().getString("status").equals("ok");
+          res.setResult(authed).setHandler(handler);
         });
       }
     }
@@ -569,11 +545,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     private final long timerID;
 
     Auth(final String sessionID, final SockJSSocket sock) {
-      timerID = vertx.setTimer(authTimeout, new Handler<Long>() {
-        public void handle(Long id) {
-          uncacheAuthorisation(sessionID, sock);
-        }
-      });
+      timerID = vertx.setTimer(authTimeout, id -> uncacheAuthorisation(sessionID, sock));
     }
 
     void cancel() {

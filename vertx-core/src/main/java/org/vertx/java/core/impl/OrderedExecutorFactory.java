@@ -77,22 +77,20 @@ public class OrderedExecutorFactory {
      */
     public OrderedExecutor(Executor parent) {
       this.parent = parent;
-      runner = new Runnable() {
-        public void run() {
-          for (; ; ) {
-            final Runnable task;
-            synchronized (tasks) {
-              task = tasks.poll();
-              if (task == null) {
-                running = false;
-                return;
-              }
+      runner = () -> {
+        for (; ; ) {
+          final Runnable task;
+          synchronized (tasks) {
+            task = tasks.poll();
+            if (task == null) {
+              running = false;
+              return;
             }
-            try {
-              task.run();
-            } catch (Throwable t) {
-              log.error("Caught unexpected Throwable", t);
-            }
+          }
+          try {
+            task.run();
+          } catch (Throwable t) {
+            log.error("Caught unexpected Throwable", t);
           }
         }
       };

@@ -76,9 +76,9 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   private HttpPostRequestDecoder decoder;
   private boolean isURLEncoded;
 
-  DefaultHttpServerRequest(final ServerConnection conn,
-                           final HttpRequest request,
-                           final HttpServerResponse response) {
+  DefaultHttpServerRequest(ServerConnection conn,
+                           HttpRequest request,
+                           HttpServerResponse response) {
     this.conn = conn;
     this.request = request;
     this.response = response;
@@ -220,16 +220,8 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   @Override
   public HttpServerRequest bodyHandler(final Handler<Buffer> bodyHandler) {
     final Buffer body = new Buffer();
-    dataHandler(new Handler<Buffer>() {
-      public void handle(Buffer buff) {
-        body.appendBuffer(buff);
-      }
-    });
-    endHandler(new VoidHandler() {
-      public void handle() {
-        bodyHandler.handle(body);
-      }
-    });
+    dataHandler(body::appendBuffer);
+    endHandler(v -> bodyHandler.handle(body));
     return this;
   }
 
