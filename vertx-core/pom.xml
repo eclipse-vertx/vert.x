@@ -59,19 +59,26 @@
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.apache.directory.server</groupId>
+      <artifactId>apacheds-protocol-dns</artifactId>
+    </dependency>
   </dependencies>
 
   <build>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <excludes>
-            <exclude>JUnitAsyncHelperTest</exclude>
-          </excludes>
-        </configuration>
-      </plugin>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <configuration>
+            <systemPropertyVariables>
+              <vertx.test.timeout>60</vertx.test.timeout>
+              <vertx.clusterManagerFactory>org.vertx.java.fakecluster.FakeClusterManagerFactory</vertx.clusterManagerFactory>
+              <io.netty.leakDetectionLevel>PARANOID</io.netty.leakDetectionLevel>
+            </systemPropertyVariables>
+            <argLine>-server -Xms128m -Xmx1024m -XX:NewRatio=2</argLine>
+          </configuration>
+        </plugin>
     </plugins>
   </build>
 </project>

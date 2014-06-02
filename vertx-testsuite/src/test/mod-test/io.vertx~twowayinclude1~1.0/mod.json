@@ -1,4 +1,0 @@
-{
-  "main":"MainA.java",
-  "includes": "io.vertx~twowayinclude2~1.0,io.vertx~twowayinclude3~1.0"
-}

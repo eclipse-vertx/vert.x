@@ -1,9 +1,0 @@
-{
-  /*
-  Here is a multi-line C style comment
-   */
-  "main":"app1.js",
-
-  // Here is a single C style comment
-  "worker": true // Here is a single line comment at the end of the line
-}

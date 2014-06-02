@@ -61,15 +61,13 @@
     <log4j.version>1.2.16</log4j.version>
     <slf4j.version>1.6.2</slf4j.version>
     <junit.version>4.11</junit.version>
-    <vertx.testtools.version>2.0.3-final</vertx.testtools.version>
-    <vertx.testframework.version>2.0.0-final</vertx.testframework.version>
+    <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
   </properties>
 
   <modules>
     <module>vertx-core</module>
     <module>vertx-hazelcast</module>
     <module>vertx-platform</module>
-    <module>vertx-testsuite</module>
     <module>vertx-dist</module>
   </modules>
 
@@ -89,11 +87,6 @@
       <dependency>
         <groupId>io.vertx</groupId>
         <artifactId>vertx-platform</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.vertx</groupId>
-        <artifactId>vertx-testsuite</artifactId>
         <version>${project.version}</version>
       </dependency>
       <!-- 3rd party -->
@@ -135,15 +128,12 @@
         <scope>test</scope>
       </dependency>
       <dependency>
-        <groupId>io.vertx</groupId>
-        <artifactId>vertx-testframework</artifactId>
-        <version>${vertx.testframework.version}</version>
+        <groupId>org.apache.directory.server</groupId>
+        <artifactId>apacheds-protocol-dns</artifactId>
+        <version>${apacheds-protocol-dns.version}</version>
+        <scope>test</scope>
       </dependency>
-      <dependency>
-        <groupId>io.vertx</groupId>
-        <artifactId>testtools</artifactId>
-        <version>${vertx.testtools.version}</version>
-      </dependency>
+
     </dependencies>
   </dependencyManagement>
 
@@ -171,16 +161,6 @@
           <version>2.14</version>
           <configuration>
             <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
-            <includes>
-              <include>**/newtests/**</include>
-            </includes>
-            <!--
-              Exclude this test by default as it takes a little while to run.
-              Can still be run with -Dtest=AsyncTestBaseTest
-            -->
-            <excludes>
-              <exclude>**/AsyncTestBaseTest**</exclude>
-            </excludes>
           </configuration>
         </plugin>
       </plugins>

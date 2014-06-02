@@ -1,4 +1,0 @@
-{
-"main":"app1.js",
-"includes":"io.vertx~testmod2-2~1.0"
-}
