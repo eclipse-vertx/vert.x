@@ -20,7 +20,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.multipart.*;
-import io.netty.util.CharsetUtil;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.VoidHandler;
@@ -531,10 +530,6 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   @Override
   public InetSocketAddress localAddress() {
     return conn.localAddress();
-  }
-
-  private static String urlDecode(String str) {
-    return QueryStringDecoder.decodeComponent(str, CharsetUtil.UTF_8);
   }
 
   private class DataFactory extends DefaultHttpDataFactory {
