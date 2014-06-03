@@ -23,6 +23,7 @@ package org.vertx.java.core;
  *
  *  @author <a href="http://tfox.org">Tim Fox</a>
  */
+@FunctionalInterface
 public interface Handler<E> {
 
   /**

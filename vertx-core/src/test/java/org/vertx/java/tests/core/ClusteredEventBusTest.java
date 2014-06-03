@@ -23,6 +23,7 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxFactory;
+import org.vertx.java.core.eventbus.EventBusRegistration;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.fakecluster.FakeClusterManager;
 import org.vertx.java.fakecluster.FakeClusterManagerFactory;
@@ -151,9 +152,9 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       }
     }
     AtomicInteger registerCount = new AtomicInteger(0);
-    class MyRegisterHandler implements Handler<AsyncResult<Void>> {
+    class MyRegisterHandler implements Handler<AsyncResult<EventBusRegistration>> {
       @Override
-      public void handle(AsyncResult<Void> ar) {
+      public void handle(AsyncResult<EventBusRegistration> ar) {
         assertTrue(ar.succeeded());
         if (registerCount.incrementAndGet() == 2) {
           vertices[0].eventBus().publish(ADDRESS1, (T)null);
@@ -184,9 +185,9 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       }
     }
     AtomicInteger registerCount = new AtomicInteger(0);
-    class MyRegisterHandler implements Handler<AsyncResult<Void>> {
+    class MyRegisterHandler implements Handler<AsyncResult<EventBusRegistration>> {
       @Override
-      public void handle(AsyncResult<Void> ar) {
+      public void handle(AsyncResult<EventBusRegistration> ar) {
         assertTrue(ar.succeeded());
         if (registerCount.incrementAndGet() == 2) {
           vertices[0].eventBus().publish(ADDRESS1, (T)val);

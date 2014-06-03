@@ -19,6 +19,7 @@ package org.vertx.java.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.EventBusRegistration;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.WebSocketBase;
 import org.vertx.java.core.http.WebSocketFrame;
@@ -47,8 +48,8 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
   protected Handler<Throwable> exceptionHandler;
   protected Handler<Void> closeHandler;
   protected Handler<Void> endHandler;
-  protected Handler<Message<Buffer>> binaryHandler;
-  protected Handler<Message<String>> textHandler;
+  protected EventBusRegistration binaryHandlerRegistration;
+  protected EventBusRegistration textHandlerRegistration;
   protected boolean closed;
 
   protected WebSocketImplBase(VertxInternal vertx, ConnectionBase conn) {
@@ -56,18 +57,10 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
     this.textHandlerID = UUID.randomUUID().toString();
     this.binaryHandlerID = UUID.randomUUID().toString();
     this.conn = conn;
-    binaryHandler = new Handler<Message<Buffer>>() {
-      public void handle(Message<Buffer> msg) {
-        writeBinaryFrameInternal(msg.body());
-      }
-    };
-    vertx.eventBus().registerLocalHandler(binaryHandlerID, binaryHandler);
-    textHandler = new Handler<Message<String>>() {
-      public void handle(Message<String> msg) {
-        writeTextFrameInternal(msg.body());
-      }
-    };
-    vertx.eventBus().registerLocalHandler(textHandlerID, textHandler);
+    Handler<Message<Buffer>> binaryHandler = msg -> writeBinaryFrameInternal(msg.body());
+    binaryHandlerRegistration = vertx.eventBus().registerLocalHandler(binaryHandlerID, binaryHandler);
+    Handler<Message<String>> textHandler = msg -> writeTextFrameInternal(msg.body());
+    textHandlerRegistration = vertx.eventBus().registerLocalHandler(textHandlerID, textHandler);
   }
 
   public String binaryHandlerID() {
@@ -113,8 +106,8 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
 
   private void cleanupHandlers() {
     if (!closed) {
-      vertx.eventBus().unregisterHandler(binaryHandlerID, binaryHandler);
-      vertx.eventBus().unregisterHandler(textHandlerID, textHandler);
+      binaryHandlerRegistration.unregister();
+      textHandlerRegistration.unregister();
       closed = true;
     }
   }

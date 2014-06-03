@@ -46,7 +46,7 @@ public class JSONEventBusTest extends VertxTestBase {
     eb.registerHandler("foo", (Message<JsonObject> msg) -> {
       assertFalse(msg.body().containsField("b"));
       testComplete();
-    });
+    }, ar -> {});
     eb.send("foo", obj);
     obj.putString("b", "blurrgg");
     await();
@@ -57,7 +57,7 @@ public class JSONEventBusTest extends VertxTestBase {
     final JsonObject obj = new JsonObject();
     eb.registerHandler("foo", (Message<JsonObject> msg) -> {
       msg.body().putString("b", "uqwduihwqd");
-    });
+    }, ar -> {});
     eb.send("foo", obj);
     vertx.setTimer(1000, id -> {
       assertFalse(obj.containsField("b"));
@@ -75,7 +75,7 @@ public class JSONEventBusTest extends VertxTestBase {
         assertFalse(msg.body().containsField("b"));
         testComplete();
       });
-    });
+    }, ar -> {});
     eb.send("foo", obj);
     map.put("b", "uhqdihuqwd");
     await();
@@ -87,7 +87,7 @@ public class JSONEventBusTest extends VertxTestBase {
     eb.registerHandler("foo", (Message<JsonArray> msg) -> {
       assertEquals(0, msg.body().size());
       testComplete();
-    });
+    }, ar -> {});
     eb.send("foo", obj);
     obj.add("blah");
     await();
@@ -96,7 +96,7 @@ public class JSONEventBusTest extends VertxTestBase {
   @Test
   public void testChangesNotVisibleArray2() {
     final JsonArray obj = new JsonArray();
-    eb.registerHandler("foo", (Message<JsonArray> msg) ->  msg.body().add("blah"));
+    eb.registerHandler("foo", (Message<JsonArray> msg) ->  msg.body().add("blah"), ar -> {});
     eb.send("foo", obj);
     vertx.setTimer(1000, id -> {
       assertEquals(0, obj.size());
@@ -114,7 +114,7 @@ public class JSONEventBusTest extends VertxTestBase {
         assertEquals(0, msg.body().size());
         testComplete();
       });
-    });
+    }, ar -> {});
     eb.send("foo", obj);
     list.add("uhwqdiuh");
     await();

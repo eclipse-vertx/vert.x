@@ -562,8 +562,11 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
       sock.pause();
       Handler<Message<Buffer>> resumeHandler = (m) -> sock.resume();
-      vertx.eventBus().registerHandler("server_resume", resumeHandler);
-      sock.closeHandler(v -> vertx.eventBus().unregisterHandler("server_resume", resumeHandler));
+      vertx.eventBus().registerHandler("server_resume", resumeHandler, ar -> {
+        assertTrue(ar.succeeded());
+        sock.closeHandler(v -> ar.result().unregister());
+      });
+
     }).listen(listenHandler);
   }
 
@@ -583,8 +586,10 @@ public class NetTest extends VertxTestBase {
 
   void setHandlers(NetSocket sock) {
     Handler<Message<Buffer>> resumeHandler = m -> sock.resume();
-    vertx.eventBus().registerHandler("client_resume", resumeHandler);
-    sock.closeHandler(v -> vertx.eventBus().unregisterHandler("client_resume", resumeHandler));
+    vertx.eventBus().registerHandler("client_resume", resumeHandler, ar -> {
+      assertTrue(ar.succeeded());
+      sock.closeHandler(v -> ar.result().unregister());
+    });
   }
 
   void drainingServer(Handler<AsyncResult<NetServer>> listenHandler) {

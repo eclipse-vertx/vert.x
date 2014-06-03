@@ -1753,8 +1753,10 @@ public class HttpTest extends HttpTestBase {
       client.getNow(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
         resp.pause();
         Handler<Message<Buffer>> resumeHandler = msg -> resp.resume();
-        vertx.eventBus().registerHandler("client_resume", resumeHandler);
-        resp.endHandler(v -> vertx.eventBus().unregisterHandler("client_resume", resumeHandler));
+        vertx.eventBus().registerHandler("client_resume", resumeHandler, ar -> {
+          assertTrue(ar.succeeded());
+          resp.endHandler(v -> ar.result().unregister());
+        });
       });
     });
 
@@ -2694,9 +2696,9 @@ public class HttpTest extends HttpTestBase {
       req.response().setChunked(true);
       req.pause();
       Handler<Message<Buffer>> resumeHandler = msg -> req.resume();
-      vertx.eventBus().registerHandler("server_resume", resumeHandler);
-      req.endHandler(v -> {
-        vertx.eventBus().unregisterHandler("server_resume", resumeHandler);
+      vertx.eventBus().registerHandler("server_resume", resumeHandler, ar -> {
+        assertTrue(ar.succeeded());
+        req.endHandler(v -> ar.result().unregister());
       });
 
       req.dataHandler(buff -> {
