@@ -83,7 +83,7 @@ public class DefaultVertx implements VertxInternal {
   private final ConcurrentMap<Long, InternalTimerHandler> timeouts = new ConcurrentHashMap<>();
   private final AtomicLong timeoutCounter = new AtomicLong(0);
   private final ClusterManager clusterManager;
-  private final DeploymentManager deploymentManager = new DeploymentManager();
+  private final DeploymentManager deploymentManager = new DeploymentManager(this);
 
   public DefaultVertx() {
     this.eventBus = new DefaultEventBus(this);
@@ -172,17 +172,17 @@ public class DefaultVertx implements VertxInternal {
     return eventBus;
   }
 
-  public DefaultContext startOnEventLoop(final Runnable runnable) {
-    DefaultContext context  = createEventLoopContext();
-    context.execute(runnable);
-    return context;
-  }
-
-  public DefaultContext startInBackground(final Runnable runnable, final boolean multiThreaded) {
-    DefaultContext context  = createWorkerContext(multiThreaded);
-    context.execute(runnable);
-    return context;
-  }
+//  public DefaultContext startOnEventLoop(final Runnable runnable) {
+//    DefaultContext context  = createEventLoopContext();
+//    context.execute(runnable);
+//    return context;
+//  }
+//
+//  public DefaultContext startInBackground(final Runnable runnable, final boolean multiThreaded) {
+//    DefaultContext context  = createWorkerContext(multiThreaded);
+//    context.execute(runnable);
+//    return context;
+//  }
 
   public boolean isEventLoop() {
     DefaultContext context = getContext();
@@ -304,7 +304,7 @@ public class DefaultVertx implements VertxInternal {
     return timerId;
   }
 
-  private DefaultContext createWorkerContext(boolean multiThreaded) {
+  public Context createWorkerContext(boolean multiThreaded) {
     if (multiThreaded) {
       return new MultiThreadedWorkerContext(this, orderedFact.getExecutor(), backgroundPool);
     } else {
@@ -379,31 +379,31 @@ public class DefaultVertx implements VertxInternal {
 
   @Override
   public void deployVerticle(Verticle verticle) {
-    deploymentManager.deployVerticle(verticle, null, null);
+    deploymentManager.deployVerticle(verticle, null, false, null);
   }
 
   @Override
   public void deployVerticle(Verticle verticle, JsonObject config) {
-    deploymentManager.deployVerticle(verticle, config, null);
+    deploymentManager.deployVerticle(verticle, config, false, null);
   }
 
   @Override
   public void deployVerticle(Verticle verticle, Handler<AsyncResult<VerticleDeployment>> doneHandler) {
-    deploymentManager.deployVerticle(verticle, null, doneHandler);
+    deploymentManager.deployVerticle(verticle, null, false, doneHandler);
   }
 
   @Override
   public void deployVerticle(Verticle verticle, JsonObject config, Handler<AsyncResult<VerticleDeployment>> doneHandler) {
-    deploymentManager.deployVerticle(verticle, config, doneHandler);
+    deploymentManager.deployVerticle(verticle, config, false, doneHandler);
   }
 
   @Override
-  public void deployVerticle(String verticleClass, int instances, Handler<AsyncResult<VerticleDeployment>> doneHandler) {
+  public void deployVerticle(String verticleClass, Handler<AsyncResult<VerticleDeployment>> doneHandler) {
 
   }
 
   @Override
-  public void deployVerticle(String verticleClass, int instances, JsonObject config, Handler<AsyncResult<VerticleDeployment>> doneHandler) {
+  public void deployVerticle(String verticleClass, JsonObject config, Handler<AsyncResult<VerticleDeployment>> doneHandler) {
 
   }
 

@@ -168,11 +168,9 @@ public interface Vertx {
                       Handler<AsyncResult<VerticleDeployment>> doneHandler);
 
   void deployVerticle(String verticleClass,
-                      int instances,
                       Handler<AsyncResult<VerticleDeployment>> doneHandler);
 
   void deployVerticle(String verticleClass,
-                      int instances,
                       JsonObject config,
                       Handler<AsyncResult<VerticleDeployment>> doneHandler);
 

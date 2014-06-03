@@ -29,8 +29,6 @@ public interface VerticleDeployment {
 
   void undeploy(Handler<AsyncResult<Void>> doneHandler);
 
-  int instances();
-
   JsonObject config();
 
   /**

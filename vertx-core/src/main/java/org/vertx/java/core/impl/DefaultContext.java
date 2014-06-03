@@ -107,14 +107,11 @@ public abstract class DefaultContext implements Context {
       // Copy to avoid ConcurrentModificationException
       for (Closeable hook: new HashSet<>(closeHooks)) {
         try {
-          hook.close(new AsyncResultHandler<Void>() {
-            @Override
-            public void handle(AsyncResult<Void> asyncResult) {
-              if (asyncResult.failed()) {
-                aggHandler.failed(asyncResult.cause());
-              } else {
-                aggHandler.complete();
-              }
+          hook.close(ar -> {
+            if (ar.failed()) {
+              aggHandler.failed(ar.cause());
+            } else {
+              aggHandler.complete();
             }
           });
         } catch (Throwable t) {
@@ -139,11 +136,7 @@ public abstract class DefaultContext implements Context {
   }
 
   public void runOnContext(final Handler<Void> task) {
-    execute(new Runnable() {
-      public void run() {
-        task.handle(null);
-      }
-    });
+    execute(() -> task.handle(null));
   }
 
   public EventLoop getEventLoop() {
@@ -166,25 +159,23 @@ public abstract class DefaultContext implements Context {
   }
 
   protected Runnable wrapTask(final Runnable task) {
-    return new Runnable() {
-      public void run() {
-        Thread currentThread = Thread.currentThread();
-        String threadName = currentThread.getName();
-        try {
-          vertx.setContext(DefaultContext.this);
-          task.run();
-        } catch (Throwable t) {
-          reportException(t);
-        } finally {
-          if (!threadName.equals(currentThread.getName())) {
-            currentThread.setName(threadName);
-          }
+    return () -> {
+      Thread currentThread = Thread.currentThread();
+      String threadName = currentThread.getName();
+      try {
+        vertx.setContext(DefaultContext.this);
+        task.run();
+      } catch (Throwable t) {
+        reportException(t);
+      } finally {
+        if (!threadName.equals(currentThread.getName())) {
+          currentThread.setName(threadName);
         }
-        if (closed) {
-          // We allow tasks to be run after the context is closed but we make sure we unset the context afterwards
-          // to avoid any leaks
-          unsetContext();
-        }
+      }
+      if (closed) {
+        // We allow tasks to be run after the context is closed but we make sure we unset the context afterwards
+        // to avoid any leaks
+        unsetContext();
       }
     };
   }

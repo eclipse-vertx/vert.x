@@ -79,7 +79,6 @@ public class HttpTest extends HttpTestBase {
     assertNull(client.getKeyStorePath());
     assertNull(client.getTrustStorePassword());
     assertNull(client.getTrustStorePath());
-    testComplete();
   }
 
   @Test
@@ -167,8 +166,6 @@ public class HttpTest extends HttpTestBase {
     int trafficClass = new Random().nextInt(10000000);
     assertTrue(client.setTrafficClass(trafficClass) == client);
     assertEquals(trafficClass, client.getTrafficClass());
-
-    testComplete();
   }
 
   @Test
@@ -179,7 +176,6 @@ public class HttpTest extends HttpTestBase {
     assertNull(server.getTrustStorePassword());
     assertNull(server.getTrustStorePath());
     assertTrue(server.isReuseAddress());
-    testComplete();
   }
 
   @Test
@@ -188,7 +184,6 @@ public class HttpTest extends HttpTestBase {
     assertFalse(server.isSSL());
     assertTrue(server.setSSL(true) == server);
     assertTrue(server.isSSL());
-
 
     String pwd = randomUnicodeString(10);
     assertTrue(server.setKeyStorePassword(pwd) == server);
@@ -263,8 +258,6 @@ public class HttpTest extends HttpTestBase {
     int trafficClass = new Random().nextInt(10000000);
     assertTrue(server.setTrafficClass(trafficClass) == server);
     assertEquals(trafficClass, server.getTrafficClass());
-
-    testComplete();
   }
 
   @Test

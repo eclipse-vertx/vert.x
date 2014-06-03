@@ -90,7 +90,6 @@ public class NetTest extends VertxTestBase {
     assertEquals(false, client.isUsePooledBuffers());
     assertEquals(SocketDefaults.instance.isReuseAddress(), client.isReuseAddress());
     assertEquals(-1, client.getTrafficClass());
-    testComplete();
   }
 
   @Test
@@ -210,8 +209,6 @@ public class NetTest extends VertxTestBase {
     int trafficClass = new Random().nextInt(10000000);
     assertEquals(client, client.setTrafficClass(trafficClass));
     assertEquals(trafficClass, client.getTrafficClass());
-
-    testComplete();
   }
 
   @Test
@@ -231,7 +228,6 @@ public class NetTest extends VertxTestBase {
     assertEquals(false, server.isUsePooledBuffers());
     assertEquals(true, server.isReuseAddress());
     assertEquals(-1, server.getTrafficClass());
-    testComplete();
   }
 
   @Test
@@ -329,8 +325,6 @@ public class NetTest extends VertxTestBase {
     int trafficClass = new Random().nextInt(10000000);
     assertEquals(server, server.setTrafficClass(trafficClass));
     assertEquals(trafficClass, server.getTrafficClass());
-
-    testComplete();
   }
 
   @Test

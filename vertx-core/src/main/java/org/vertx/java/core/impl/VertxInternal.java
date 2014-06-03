@@ -18,6 +18,7 @@ package org.vertx.java.core.impl;
 
 
 import io.netty.channel.EventLoopGroup;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.http.impl.DefaultHttpServer;
 import org.vertx.java.core.net.impl.DefaultNetServer;
 import org.vertx.java.core.net.impl.ServerID;
@@ -40,9 +41,9 @@ public interface VertxInternal extends VertxSPI {
 
   ExecutorService getBackgroundPool();
 
-  DefaultContext startOnEventLoop(Runnable runnable);
-
-  DefaultContext startInBackground(Runnable runnable, boolean multiThreaded);
+//  DefaultContext startOnEventLoop(Runnable runnable);
+//
+//  DefaultContext startInBackground(Runnable runnable, boolean multiThreaded);
 
   DefaultContext getOrCreateContext();
 
@@ -67,6 +68,11 @@ public interface VertxInternal extends VertxSPI {
    * @return event loop context
    */
   EventLoopContext createEventLoopContext();
+
+  /**
+   * @return worker loop context
+   */
+  Context createWorkerContext(boolean multiThreaded);
 
   ClusterManager clusterManager();
 }

@@ -32,41 +32,64 @@ public class DeploymentManager {
 
   private static final Logger log = LoggerFactory.getLogger(DeploymentManager.class);
 
-  private Set<VerticleDeployment> deployments = new ConcurrentHashSet<>();
+  private final VertxInternal vertx;
+  private final Set<VerticleDeployment> deployments = new ConcurrentHashSet<>();
 
-  public void deployVerticle(Verticle verticle, JsonObject config,
-                             Handler<AsyncResult<VerticleDeployment>> doneHandler) {
-    doDeploy(new Verticle[] {verticle}, config, doneHandler);
+  public DeploymentManager(VertxInternal vertx) {
+    this.vertx = vertx;
   }
 
-  private <T> void reportFailure(Throwable t, Handler<AsyncResult<T>> doneHandler) {
+  public void deployVerticle(Verticle verticle, JsonObject config, boolean worker,
+                             Handler<AsyncResult<VerticleDeployment>> doneHandler) {
+    Context currentContext = vertx.getOrCreateContext();
+    doDeploy(verticle, config, worker, currentContext, doneHandler);
+  }
+
+  private <T> void reportFailure(Throwable t, Context context, Handler<AsyncResult<T>> doneHandler) {
     if (doneHandler != null) {
-      doneHandler.handle(new DefaultFutureResult<>(t));
+      reportResult(context, doneHandler, new DefaultFutureResult<>(t));
     } else {
       log.error(t.getMessage(), t);
     }
   }
 
+  private <T> void reportSuccess(T result, Context context, Handler<AsyncResult<T>> doneHandler) {
+    if (doneHandler != null) {
+      reportResult(context, doneHandler, new DefaultFutureResult<>(result));
+    }
+  }
+
+  private <T> void reportResult(Context context, Handler<AsyncResult<T>> doneHandler, AsyncResult<T> result) {
+    context.runOnContext(v -> {
+      try {
+        doneHandler.handle(result);
+      } catch (Throwable t) {
+        log.error("Failure in calling handler", t);
+      }
+    });
+  }
+
   public void deployVerticle(String verticleClass,
-                             int instances,
+                             JsonObject config,
+                             boolean worker,
                              Handler<AsyncResult<VerticleDeployment>> doneHandler) {
+    Context currentContext = vertx.getOrCreateContext();
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
     if (cl == null) {
       cl = getClass().getClassLoader();
     }
     Class clazz;
-    Verticle[] verticles = new Verticle[instances];
+    Verticle verticle;
     try {
       clazz = cl.loadClass(verticleClass);
-      for (int i = 0; i < instances; i++) {
-        try {
-          verticles[i] = (Verticle)clazz.newInstance();
-        } catch (Exception e) {
-          reportFailure(e, doneHandler);
-        }
+      try {
+        verticle = (Verticle)clazz.newInstance();
+        doDeploy(verticle, config, worker, currentContext, doneHandler);
+      } catch (Exception e) {
+        reportFailure(e, currentContext, doneHandler);
       }
     } catch (ClassNotFoundException e) {
-      reportFailure(e, doneHandler);
+      reportFailure(e, currentContext, doneHandler);
     }
   }
 
@@ -74,35 +97,34 @@ public class DeploymentManager {
     return Collections.unmodifiableSet(deployments);
   }
 
-  private void doDeploy(Verticle[] verticles, JsonObject config, Handler<AsyncResult<VerticleDeployment>> doneHandler) {
-    boolean failed = false;
-    Deployment deployment = new Deployment(verticles.length, config, verticles);
-    for (Verticle verticle: verticles) {
+  private void doDeploy(Verticle verticle, JsonObject config, boolean worker,
+                        Context currentContext,
+                        Handler<AsyncResult<VerticleDeployment>> doneHandler) {
+    Context context = worker ? vertx.createWorkerContext(false) : vertx.createEventLoopContext();
+    VerticleDeployment deployment = new Deployment(config, context, verticle);
+
+    context.runOnContext(v -> {
       try {
-        //TODO set context
         verticle.start(deployment);
+        deployments.add(deployment);
+        reportSuccess(deployment, currentContext, doneHandler);
       } catch (Throwable t) {
-        failed = true;
-        reportFailure(t, doneHandler);
-        break;
+        reportFailure(t, currentContext, doneHandler);
       }
-    }
-    deployments.add(deployment);
-    if (!failed) {
-      doneHandler.handle(new DefaultFutureResult<VerticleDeployment>(deployment));
-    }
+    });
   }
 
   private class Deployment implements VerticleDeployment {
 
-    final int instances;
     final JsonObject config;
-    final Verticle[] verticles;
+    final Context context;
+    final Verticle verticle;
+    boolean undeployed;
 
-    private Deployment(int instances, JsonObject config, Verticle[] verticles) {
-      this.instances = instances;
+    private Deployment(JsonObject config, Context context, Verticle verticle) {
       this.config = config;
-      this.verticles = verticles;
+      this.context = context;
+      this.verticle = verticle;
     }
 
     @Override
@@ -112,24 +134,21 @@ public class DeploymentManager {
 
     @Override
     public void undeploy(Handler<AsyncResult<Void>> doneHandler) {
-      boolean failed = false;
-      for (Verticle verticle: verticles) {
-        try {
-          verticle.stop();
-        } catch (Throwable t) {
-          failed = true;
-          reportFailure(t, doneHandler);
-        }
+      Context currentContext = vertx.getOrCreateContext();
+      if (!undeployed) {
+        undeployed = true;
+        deployments.remove(Deployment.this);
+        context.runOnContext(v -> {
+          try {
+            verticle.stop();
+            reportSuccess(null, currentContext, doneHandler);
+          } catch (Throwable t) {
+            reportFailure(t, currentContext, doneHandler);
+          }
+        });
+      } else {
+        reportFailure(new IllegalStateException("Already undeployed"), currentContext, doneHandler);
       }
-      deployments.remove(this);
-      if (!failed) {
-        doneHandler.handle(new DefaultFutureResult<>((Void)null));
-      }
-    }
-
-    @Override
-    public int instances() {
-      return instances;
     }
 
     @Override
