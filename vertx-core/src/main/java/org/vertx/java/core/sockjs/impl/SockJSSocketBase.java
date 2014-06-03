@@ -19,6 +19,7 @@ package org.vertx.java.core.sockjs.impl;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.Registration;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
@@ -26,7 +27,7 @@ import java.util.UUID;
 
 public abstract class SockJSSocketBase implements SockJSSocket {
 
-  private final Handler<Message<Buffer>> writeHandler;
+  private final Registration registration;
   protected final Vertx vertx;
 
   /**
@@ -40,13 +41,9 @@ public abstract class SockJSSocketBase implements SockJSSocket {
 
   protected SockJSSocketBase(Vertx vertx) {
     this.vertx = vertx;
-    this.writeHandler = new Handler<Message<Buffer>>() {
-      public void handle(Message<Buffer> buff) {
-        write(buff.body());
-      }
-    };
+    Handler<Message<Buffer>> writeHandler = buff -> write(buff.body());
     this.writeHandlerID = UUID.randomUUID().toString();
-    vertx.eventBus().registerLocalHandler(writeHandlerID, writeHandler);
+    this.registration = vertx.eventBus().registerLocalHandler(writeHandlerID, writeHandler);
   }
 
   @Override
@@ -56,6 +53,6 @@ public abstract class SockJSSocketBase implements SockJSSocket {
 
   @Override
   public void close() {
-    vertx.eventBus().unregisterHandler(writeHandlerID, writeHandler);
+    registration.unregister();
   }
 }

@@ -21,6 +21,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
+import org.vertx.java.core.eventbus.Registration;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.impl.FutureResultImpl;
 import org.vertx.java.core.json.JsonArray;
@@ -120,13 +121,12 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     this.replyTimeout = conf.getLong("reply_timeout", DEFAULT_REPLY_TIMEOUT);
   }
 
-  private void handleSocketClosed(SockJSSocket sock, Map<String, Handler<Message>> handlers) {
+  private void handleSocketClosed(SockJSSocket sock, Map<String, Registration> registrations) {
     // On close unregister any handlers that haven't been unregistered
-    for (Map.Entry<String, Handler<Message>> entry: handlers.entrySet()) {
-      //call hook
+    registrations.entrySet().forEach(entry -> {
       handleUnregister(sock, entry.getKey());
-      eb.unregisterHandler(entry.getKey(), entry.getValue());
-    }
+      entry.getValue().unregister();
+    });
 
     //Close any cached authorisations for this connection
     SockInfo info = sockInfos.remove(sock);
@@ -149,7 +149,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     handleSocketClosed(sock);
   }
 
-  private void handleSocketData(SockJSSocket sock, Buffer data, Map<String, Handler<Message>> handlers) {
+  private void handleSocketData(SockJSSocket sock, Buffer data, Map<String, Registration> registrations) {
     JsonObject msg = new JsonObject(data.toString());
 
     String type = getMandatoryString(msg, "type");
@@ -164,11 +164,11 @@ public class EventBusBridge implements Handler<SockJSSocket> {
         break;
       case "register":
         address = getMandatoryString(msg, "address");
-        internalHandleRegister(sock, msg, address, handlers);
+        internalHandleRegister(sock, msg, address, registrations);
         break;
       case "unregister":
         address = getMandatoryString(msg, "address");
-        internalHandleUnregister(sock, address, handlers);
+        internalHandleUnregister(sock, address, registrations);
         break;
       case "ping":
         internalHandlePing(sock);
@@ -193,7 +193,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     }
   }
 
-  private void internalHandleRegister(final SockJSSocket sock, JsonObject message, final String address, Map<String, Handler<Message>> handlers) {
+  private void internalHandleRegister(final SockJSSocket sock, JsonObject message, final String address, Map<String, Registration> registrations) {
     if (address.length() > maxAddressLength) {
       log.error("Refusing to register as address length > max_address_length");
       return;
@@ -225,8 +225,8 @@ public class EventBusBridge implements Handler<SockJSSocket> {
             }
           }
         };
-        handlers.put(address, handler);
-        eb.registerHandler(address, handler);
+        Registration reg = eb.registerHandler(address, handler);
+        registrations.put(address, reg);
         handlePostRegister(sock, address);
         info.handlerCount++;
       } else {
@@ -238,12 +238,11 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     }
   }
 
-  private void internalHandleUnregister(SockJSSocket sock, String address, Map<String,
-      Handler<Message>> handlers) {
+  private void internalHandleUnregister(SockJSSocket sock, String address, Map<String, Registration> registrations) {
     if (handleUnregister(sock, address)) {
-      Handler<Message> handler = handlers.remove(address);
-      if (handler != null) {
-        eb.unregisterHandler(address, handler);
+      Registration reg = registrations.remove(address);
+      if (reg != null) {
+        reg.unregister();
         SockInfo info = sockInfos.get(sock);
         info.handlerCount--;
       }
@@ -261,10 +260,10 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     if (!handleSocketCreated(sock)) {
       sock.close();
     } else {
-      final Map<String, Handler<Message>> handlers = new HashMap<>();
+      final Map<String, Registration> registrations = new HashMap<>();
 
-      sock.endHandler(v ->  handleSocketClosed(sock, handlers));
-      sock.dataHandler(data ->  handleSocketData(sock, data, handlers));
+      sock.endHandler(v ->  handleSocketClosed(sock, registrations));
+      sock.dataHandler(data ->  handleSocketData(sock, data, registrations));
 
       // Start a checker to check for pings
       final PingInfo pingInfo = new PingInfo();

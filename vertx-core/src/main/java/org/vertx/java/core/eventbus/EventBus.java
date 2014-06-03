@@ -498,46 +498,21 @@ public interface EventBus {
   EventBus publish(String address, Byte message);
 
   /**
-   * Unregisters a handler given the address and the handler
-   * @param address The address the handler was registered at
-   * @param handler The handler
-   * @param resultHandler Optional completion handler. If specified, when the unregister has been
-   * propagated to all nodes of the event bus, the handler will be called.
-   */
-  EventBus unregisterHandler(String address, Handler<? extends Message> handler,
-                            Handler<AsyncResult<Void>> resultHandler);
-
-  /**
-   * Unregisters a handler given the address and the handler
-   * @param address The address the handler was registered at
-   * @param handler The handler
-   */
-  EventBus unregisterHandler(String address, Handler<? extends Message> handler);
-
-  /**
    * Registers a handler against the specified address
    * @param address The address to register it at
    * @param handler The handler
-   * @param resultHandler Optional completion handler. If specified, when the register has been
-   * propagated to all nodes of the event bus, the handler will be called.
+   * @return the event bus registration
    */
-  EventBus registerHandler(String address, Handler<? extends Message> handler,
-                           Handler<AsyncResult<Void>> resultHandler);
-
-  /**
-   * Registers a handler against the specified address
-   * @param address The address to register it at
-   * @param handler The handler
-   */
-  EventBus registerHandler(String address, Handler<? extends Message> handler);
+  Registration registerHandler(String address, Handler<? extends Message> handler);
 
   /**
    * Registers a local handler against the specified address. The handler info won't
    * be propagated across the cluster
    * @param address The address to register it at
    * @param handler The handler
+   * @return the event bus registration
    */
-  EventBus registerLocalHandler(String address, Handler<? extends Message> handler);
+  Registration registerLocalHandler(String address, Handler<? extends Message> handler);
 
   /**
    * Sets a default timeout, in ms, for replies. If a messages is sent specify a reply handler
