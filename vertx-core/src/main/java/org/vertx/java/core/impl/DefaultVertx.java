@@ -34,6 +34,7 @@ import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.impl.DefaultHttpClient;
 import org.vertx.java.core.http.impl.DefaultHttpServer;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetClient;
@@ -49,10 +50,7 @@ import org.vertx.java.core.spi.cluster.ClusterManager;
 import org.vertx.java.core.spi.cluster.ClusterManagerFactory;
 
 import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.ServiceLoader;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
@@ -85,6 +83,7 @@ public class DefaultVertx implements VertxInternal {
   private final ConcurrentMap<Long, InternalTimerHandler> timeouts = new ConcurrentHashMap<>();
   private final AtomicLong timeoutCounter = new AtomicLong(0);
   private final ClusterManager clusterManager;
+  private final DeploymentManager deploymentManager = new DeploymentManager();
 
   public DefaultVertx() {
     this.eventBus = new DefaultEventBus(this);
@@ -376,6 +375,41 @@ public class DefaultVertx implements VertxInternal {
     eventBus.close(doneHandler);
 
     setContext(null);
+  }
+
+  @Override
+  public void deployVerticle(Verticle verticle) {
+    deploymentManager.deployVerticle(verticle, null, null);
+  }
+
+  @Override
+  public void deployVerticle(Verticle verticle, JsonObject config) {
+    deploymentManager.deployVerticle(verticle, config, null);
+  }
+
+  @Override
+  public void deployVerticle(Verticle verticle, Handler<AsyncResult<VerticleDeployment>> doneHandler) {
+    deploymentManager.deployVerticle(verticle, null, doneHandler);
+  }
+
+  @Override
+  public void deployVerticle(Verticle verticle, JsonObject config, Handler<AsyncResult<VerticleDeployment>> doneHandler) {
+    deploymentManager.deployVerticle(verticle, config, doneHandler);
+  }
+
+  @Override
+  public void deployVerticle(String verticleClass, int instances, Handler<AsyncResult<VerticleDeployment>> doneHandler) {
+
+  }
+
+  @Override
+  public void deployVerticle(String verticleClass, int instances, JsonObject config, Handler<AsyncResult<VerticleDeployment>> doneHandler) {
+
+  }
+
+  @Override
+  public Set<VerticleDeployment> deployments() {
+    return deploymentManager.deployments();
   }
 
   @Override

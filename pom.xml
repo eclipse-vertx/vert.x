@@ -67,7 +67,6 @@
   <modules>
     <module>vertx-core</module>
     <module>vertx-hazelcast</module>
-    <module>vertx-platform</module>
     <module>vertx-dist</module>
   </modules>
 
@@ -82,11 +81,6 @@
       <dependency>
         <groupId>io.vertx</groupId>
         <artifactId>vertx-hazelcast</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.vertx</groupId>
-        <artifactId>vertx-platform</artifactId>
         <version>${project.version}</version>
       </dependency>
       <!-- 3rd party -->

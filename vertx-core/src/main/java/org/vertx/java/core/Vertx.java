@@ -23,12 +23,15 @@ import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
 
 import java.net.InetSocketAddress;
+import java.net.URL;
+import java.util.Set;
 
 /**
  * The control centre of the Vert.x Core API.<p>
@@ -151,4 +154,29 @@ public interface Vertx {
    * Stop the eventbus and any resource managed by the eventbus.
    */
   void stop(Handler<AsyncResult<Void>> doneHandler);
+
+  void deployVerticle(Verticle verticle);
+
+  void deployVerticle(Verticle verticle,
+                      JsonObject config);
+
+  void deployVerticle(Verticle verticle,
+                      Handler<AsyncResult<VerticleDeployment>> doneHandler);
+
+  void deployVerticle(Verticle verticle,
+                      JsonObject config,
+                      Handler<AsyncResult<VerticleDeployment>> doneHandler);
+
+  void deployVerticle(String verticleClass,
+                      int instances,
+                      Handler<AsyncResult<VerticleDeployment>> doneHandler);
+
+  void deployVerticle(String verticleClass,
+                      int instances,
+                      JsonObject config,
+                      Handler<AsyncResult<VerticleDeployment>> doneHandler);
+
+  Set<VerticleDeployment> deployments();
+
+
 }
