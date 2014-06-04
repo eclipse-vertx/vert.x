@@ -30,7 +30,6 @@ import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
 
 import java.net.InetSocketAddress;
-import java.net.URL;
 import java.util.Set;
 
 /**
@@ -161,20 +160,31 @@ public interface Vertx {
                       JsonObject config);
 
   void deployVerticle(Verticle verticle,
-                      Handler<AsyncResult<VerticleDeployment>> doneHandler);
+                      Handler<AsyncResult<String>> doneHandler);
 
   void deployVerticle(Verticle verticle,
                       JsonObject config,
-                      Handler<AsyncResult<VerticleDeployment>> doneHandler);
+                      Handler<AsyncResult<String>> doneHandler);
+
+  void deployVerticle(Verticle verticle,
+                      boolean worker,
+                      Handler<AsyncResult<String>> doneHandler);
+
+  void deployVerticle(Verticle verticle,
+                      JsonObject config,
+                      boolean worker,
+                      Handler<AsyncResult<String>> doneHandler);
+
 
   void deployVerticle(String verticleClass,
-                      Handler<AsyncResult<VerticleDeployment>> doneHandler);
+                      Handler<AsyncResult<String>> doneHandler);
 
   void deployVerticle(String verticleClass,
                       JsonObject config,
-                      Handler<AsyncResult<VerticleDeployment>> doneHandler);
+                      Handler<AsyncResult<String>> doneHandler);
 
-  Set<VerticleDeployment> deployments();
+  void undeployVerticle(String deploymentID, Handler<AsyncResult<Void>> doneHandler);
 
+  Set<String> deployments();
 
 }

@@ -72,7 +72,7 @@ public interface VertxInternal extends VertxSPI {
   /**
    * @return worker loop context
    */
-  Context createWorkerContext(boolean multiThreaded);
+  DefaultContext createWorkerContext(boolean multiThreaded);
 
   ClusterManager clusterManager();
 }

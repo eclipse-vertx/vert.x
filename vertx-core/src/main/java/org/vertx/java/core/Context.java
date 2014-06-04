@@ -22,5 +22,6 @@ package org.vertx.java.core;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface Context {
+
   void runOnContext(Handler<Void> action);
 }

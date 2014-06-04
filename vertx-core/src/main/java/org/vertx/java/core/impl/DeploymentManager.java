@@ -21,11 +21,17 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ *
+ * TODO
+ *
+ * child parent hierarchy
+ * closehooks on undeploy
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class DeploymentManager {
@@ -33,15 +39,15 @@ public class DeploymentManager {
   private static final Logger log = LoggerFactory.getLogger(DeploymentManager.class);
 
   private final VertxInternal vertx;
-  private final Set<VerticleDeployment> deployments = new ConcurrentHashSet<>();
+  private final Map<String, Deployment> deployments = new ConcurrentHashMap<>();
 
   public DeploymentManager(VertxInternal vertx) {
     this.vertx = vertx;
   }
 
   public void deployVerticle(Verticle verticle, JsonObject config, boolean worker,
-                             Handler<AsyncResult<VerticleDeployment>> doneHandler) {
-    Context currentContext = vertx.getOrCreateContext();
+                             Handler<AsyncResult<String>> doneHandler) {
+    DefaultContext currentContext = vertx.getOrCreateContext();
     doDeploy(verticle, config, worker, currentContext, doneHandler);
   }
 
@@ -72,8 +78,8 @@ public class DeploymentManager {
   public void deployVerticle(String verticleClass,
                              JsonObject config,
                              boolean worker,
-                             Handler<AsyncResult<VerticleDeployment>> doneHandler) {
-    Context currentContext = vertx.getOrCreateContext();
+                             Handler<AsyncResult<String>> doneHandler) {
+    DefaultContext currentContext = vertx.getOrCreateContext();
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
     if (cl == null) {
       cl = getClass().getClassLoader();
@@ -93,103 +99,118 @@ public class DeploymentManager {
     }
   }
 
-  public Set<VerticleDeployment> deployments() {
-    return Collections.unmodifiableSet(deployments);
+  public void undeployVerticle(String deploymentID, Handler<AsyncResult<Void>> doneHandler) {
+    Deployment deployment = deployments.get(deploymentID);
+    Context currentContext = vertx.getOrCreateContext();
+    if (deployment == null) {
+      reportFailure(new IllegalStateException("Unknown deployment"), currentContext, doneHandler);
+    } else {
+      deployment.undeploy(doneHandler);
+    }
+  }
+
+  public Set<String> deployments() {
+    return Collections.unmodifiableSet(deployments.keySet());
   }
 
   private void doDeploy(Verticle verticle, JsonObject config, boolean worker,
-                        Context currentContext,
-                        Handler<AsyncResult<VerticleDeployment>> doneHandler) {
-    Context context = worker ? vertx.createWorkerContext(false) : vertx.createEventLoopContext();
-    VerticleDeployment deployment = new Deployment(config, context, verticle);
-
+                        DefaultContext currentContext,
+                        Handler<AsyncResult<String>> doneHandler) {
+    DefaultContext context = worker ? vertx.createWorkerContext(false) : vertx.createEventLoopContext();
+    String deploymentID = UUID.randomUUID().toString();
+    DeploymentImpl deployment = new DeploymentImpl(deploymentID, context, verticle);
+    context.setDeployment(deployment);
+    Deployment parent = currentContext.getDeployment();
+    if (parent != null) {
+      parent.addChild(deployment);
+    }
     context.runOnContext(v -> {
       try {
-        verticle.start(deployment);
-        deployments.add(deployment);
-        reportSuccess(deployment, currentContext, doneHandler);
+        verticle.setVertx(vertx);
+        verticle.setConfig(config);
+        Future<Void> startFuture = new DefaultFutureResult<>();
+        verticle.start(startFuture);
+        startFuture.setHandler(ar -> {
+          if (ar.succeeded()) {
+            deployments.put(deploymentID, deployment);
+            reportSuccess(deploymentID, currentContext, doneHandler);
+          } else {
+            reportFailure(ar.cause(), currentContext, doneHandler);
+          }
+        });
+
       } catch (Throwable t) {
         reportFailure(t, currentContext, doneHandler);
       }
     });
   }
 
-  private class Deployment implements VerticleDeployment {
+  private class DeploymentImpl implements Deployment {
 
-    final JsonObject config;
-    final Context context;
-    final Verticle verticle;
-    boolean undeployed;
+    private final String id;
+    private final Context context;
+    private final Verticle verticle;
+    private final Set<Deployment> children = new ConcurrentHashSet<>();
+    private boolean undeployed;
 
-    private Deployment(JsonObject config, Context context, Verticle verticle) {
-      this.config = config;
+    private DeploymentImpl(String id, Context context, Verticle verticle) {
+      this.id = id;
       this.context = context;
       this.verticle = verticle;
     }
 
     @Override
-    public String getID() {
-      return null;
-    }
-
-    @Override
     public void undeploy(Handler<AsyncResult<Void>> doneHandler) {
-      Context currentContext = vertx.getOrCreateContext();
+      DefaultContext currentContext = vertx.getOrCreateContext();
       if (!undeployed) {
-        undeployed = true;
-        deployments.remove(Deployment.this);
-        context.runOnContext(v -> {
-          try {
-            verticle.stop();
-            reportSuccess(null, currentContext, doneHandler);
-          } catch (Throwable t) {
-            reportFailure(t, currentContext, doneHandler);
-          }
-        });
+        doUndeploy(currentContext, doneHandler);
       } else {
         reportFailure(new IllegalStateException("Already undeployed"), currentContext, doneHandler);
       }
     }
 
-    @Override
-    public JsonObject config() {
-      return config;
+    public void doUndeploy(DefaultContext undeployingContext, Handler<AsyncResult<Void>> doneHandler) {
+
+      if (!children.isEmpty()) {
+        final int size = children.size();
+        AtomicInteger childCount = new AtomicInteger();
+        for (Deployment childDeployment: new HashSet<>(children)) {
+          childDeployment.doUndeploy(undeployingContext, ar -> {
+            children.remove(childDeployment);
+            if (ar.failed()) {
+              reportFailure(ar.cause(), undeployingContext, doneHandler);
+            } else if (childCount.incrementAndGet() == size) {
+              // All children undeployed
+              doUndeploy(undeployingContext, doneHandler);
+            }
+          });
+        }
+      } else {
+        undeployed = true;
+        context.runOnContext(v -> {
+          try {
+            Future<Void> stopFuture = new DefaultFutureResult<>();
+            verticle.stop(stopFuture);
+            stopFuture.setHandler(ar -> {
+              deployments.remove(id);
+              if (ar.succeeded()) {
+                reportSuccess(null, undeployingContext, doneHandler);
+              } else {
+                reportFailure(ar.cause(), undeployingContext, doneHandler);
+              }
+            });
+          } catch (Throwable t) {
+            deployments.remove(id);
+            reportFailure(t, undeployingContext, doneHandler);
+          }
+        });
+      }
     }
 
-    // TODO - do we really need this?
     @Override
-    public Map<String, String> env() {
-      return System.getenv();
+    public void addChild(Deployment deployment) {
+      children.add(deployment);
     }
 
-    @Override
-    public void setAsyncStart() {
-
-    }
-
-    @Override
-    public void setAsyncStop() {
-
-    }
-
-    @Override
-    public void startComplete() {
-
-    }
-
-    @Override
-    public void stopComplete() {
-
-    }
-
-    @Override
-    public void setFailure(Throwable t) {
-
-    }
-
-    @Override
-    public void setFailure(String message) {
-
-    }
   }
 }

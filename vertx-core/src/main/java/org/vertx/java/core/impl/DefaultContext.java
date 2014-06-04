@@ -18,10 +18,7 @@ package org.vertx.java.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.Context;
-import org.vertx.java.core.Handler;
+import org.vertx.java.core.*;
 import org.vertx.java.core.file.impl.PathResolver;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -38,7 +35,7 @@ public abstract class DefaultContext implements Context {
   private static final Logger log = LoggerFactory.getLogger(DefaultContext.class);
 
   protected final VertxInternal vertx;
-  private DeploymentHandle deploymentContext;
+  private Deployment deployment;
   private PathResolver pathResolver;
   private Set<Closeable> closeHooks;
   private final ClassLoader tccl;
@@ -63,12 +60,12 @@ public abstract class DefaultContext implements Context {
     Thread.currentThread().setContextClassLoader(tccl);
   }
 
-  public void setDeploymentHandle(DeploymentHandle deploymentHandle) {
-    this.deploymentContext = deploymentHandle;
+  public void setDeployment(Deployment deployment) {
+    this.deployment = deployment;
   }
 
-  public DeploymentHandle getDeploymentHandle() {
-    return deploymentContext;
+  public Deployment getDeployment() {
+    return deployment;
   }
 
   public PathResolver getPathResolver() {
@@ -80,11 +77,7 @@ public abstract class DefaultContext implements Context {
   }
 
   public void reportException(Throwable t) {
-    if (deploymentContext != null) {
-      deploymentContext.reportException(t);
-    } else {
-      log.error("Unhandled exception", t);
-    }
+    log.error("Unhandled exception", t);
   }
 
   public void addCloseHook(Closeable hook) {

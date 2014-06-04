@@ -18,34 +18,51 @@ package org.vertx.java.core;
 
 import org.vertx.java.core.json.JsonObject;
 
-import java.util.Map;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface VerticleDeployment {
+public abstract class AbstractVerticle implements Verticle {
 
-  String getID();
+  protected Vertx vertx;
+  protected JsonObject config;
 
-  void undeploy(Handler<AsyncResult<Void>> doneHandler);
+  @Override
+  public JsonObject getConfig() {
+    return config;
+  }
 
-  JsonObject config();
+  @Override
+  public Vertx getVertx() {
+    return vertx;
+  }
 
-  /**
-   * Get an unmodifiable map of system, environment variables.
-   * @return The map
-   */
-  Map<String, String> env();
+  @Override
+  public void setVertx(Vertx vertx) {
+    this.vertx = vertx;
+  }
 
-  void setAsyncStart();
+  @Override
+  public void setConfig(JsonObject config) {
+    this.config = config;
+  }
 
-  void setAsyncStop();
+  @Override
+  public void start(Future<Void> startFuture) throws Exception {
+    start();
+    startFuture.setResult(null);
+  }
 
-  void startComplete();
+  @Override
+  public void stop(Future<Void> stopFuture) throws Exception {
+    stop();
+    stopFuture.setResult(null);
+  }
 
-  void stopComplete();
+  public void start() throws Exception {
+  }
 
-  void setFailure(Throwable t);
+  public void stop() throws Exception {
+  }
 
-  void setFailure(String message);
+
 }
