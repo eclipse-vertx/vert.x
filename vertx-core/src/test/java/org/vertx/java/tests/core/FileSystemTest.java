@@ -24,7 +24,9 @@ import org.junit.Test;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.file.*;
+import org.vertx.java.core.file.AsyncFile;
+import org.vertx.java.core.file.FileProps;
+import org.vertx.java.core.file.FileSystemProps;
 import org.vertx.java.core.file.impl.DefaultAsyncFile;
 import org.vertx.java.core.impl.Windows;
 import org.vertx.java.core.streams.Pump;
@@ -39,7 +41,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.vertx.java.tests.core.TestUtils.*;
+import static org.vertx.java.tests.core.TestUtils.buffersEqual;
+import static org.vertx.java.tests.core.TestUtils.randomByteArray;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

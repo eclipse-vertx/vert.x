@@ -27,12 +27,12 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.fakecluster.FakeClusterManager;
 import org.vertx.java.fakecluster.FakeClusterManagerFactory;
 
-import static org.vertx.java.tests.core.TestUtils.*;
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+
+import static org.vertx.java.tests.core.TestUtils.randomUnicodeString;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

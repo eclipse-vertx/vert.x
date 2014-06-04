@@ -16,10 +16,6 @@
 
 package org.vertx.java.fakedns;
 
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
-
 import org.apache.directory.server.dns.DnsServer;
 import org.apache.directory.server.dns.io.encoder.DnsMessageEncoder;
 import org.apache.directory.server.dns.io.encoder.ResourceRecordEncoder;
@@ -35,6 +31,10 @@ import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.*;
 import org.apache.mina.transport.socket.DatagramAcceptor;
 import org.apache.mina.transport.socket.DatagramSessionConfig;
+
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
