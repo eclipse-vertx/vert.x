@@ -77,11 +77,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
           context.reportException(t);
         }
       } else {
-        context.execute(new Runnable() {
-          public void run() {
-            conn.handleInterestedOpsChanged();
-          }
-        });
+        context.execute(() -> conn.handleInterestedOpsChanged());
       }
     }
   }
@@ -93,16 +89,14 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     final C connection = connectionMap.get(ch);
     if (connection != null) {
       DefaultContext context = getContext(connection);
-      context.execute(ch.eventLoop(), new Runnable() {
-        public void run() {
-          try {
-            if (ch.isOpen()) {
-              ch.close();
-            }
-          } catch (Throwable ignore) {
+      context.execute(ch.eventLoop(), () ->{
+        try {
+          if (ch.isOpen()) {
+            ch.close();
           }
-          connection.handleException(t);
+        } catch (Throwable ignore) {
         }
+        connection.handleException(t);
       });
     } else {
       // Ignore - any exceptions before a channel exists will be passed manually via the failed(...) method
@@ -116,11 +110,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     final C connection = connectionMap.remove(ch);
     if (connection != null) {
       DefaultContext context = getContext(connection);
-      context.execute(ch.eventLoop(), new Runnable() {
-        public void run() {
-          connection.handleClosed();
-        }
-      });
+      context.execute(ch.eventLoop(), () -> connection.handleClosed());
     }
   }
 

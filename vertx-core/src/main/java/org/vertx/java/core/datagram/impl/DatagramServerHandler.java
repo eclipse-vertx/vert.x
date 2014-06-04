@@ -55,13 +55,11 @@ final class DatagramServerHandler extends VertxHandler<DefaultDatagramSocket> {
         context.reportException(t);
       }
     } else {
-      context.execute(new Runnable() {
-        public void run() {
-          try {
-            server.handleMessage((org.vertx.java.core.datagram.DatagramPacket) msg);
-          } catch (Throwable t) {
-            context.reportException(t);
-          }
+      context.execute(() -> {
+        try {
+          server.handleMessage((org.vertx.java.core.datagram.DatagramPacket) msg);
+        } catch (Throwable t) {
+          context.reportException(t);
         }
       });
     }

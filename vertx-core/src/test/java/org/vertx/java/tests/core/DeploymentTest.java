@@ -18,18 +18,24 @@ package org.vertx.java.tests.core;
 
 import org.junit.Test;
 import org.vertx.java.core.*;
+import org.vertx.java.core.impl.Closeable;
+import org.vertx.java.core.impl.DefaultContext;
+import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.WorkerContext;
 import org.vertx.java.core.json.JsonObject;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 /**
+ * TODO
+ * isolation groups
+ *
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class DeploymentTest extends VertxTestBase {
@@ -206,8 +212,6 @@ public class DeploymentTest extends VertxTestBase {
     await();
   }
 
-  //undeploy with wrong id
-
   @Test
   public void testDeployExceptionInStart() throws Exception {
     MyVerticle verticle = new MyVerticle(true, false);
@@ -292,16 +296,18 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testSimpleChildDeployment() throws Exception {
-    Verticle verticle = new TestVerticle2(() -> {
+    Verticle verticle = new MyAsyncVerticle(f -> {
       Context parentContext = vertx.currentContext();
-      Verticle child1 = new TestVerticle2(() -> {
+      Verticle child1 = new MyAsyncVerticle(f2 -> {
         Context childContext = vertx.currentContext();
         assertNotSame(parentContext, childContext);
+        f2.setResult(null);
         testComplete();
       }, null);
       vertx.deployVerticle(child1, ar -> {
         assertTrue(ar.succeeded());
       });
+      f.setResult(null);
     }, null);
     vertx.deployVerticle(verticle, ar -> {
       assertTrue(ar.succeeded());
@@ -313,69 +319,47 @@ public class DeploymentTest extends VertxTestBase {
   public void testSimpleChildUndeploymentOrder() throws Exception {
     AtomicBoolean childStopCalled = new AtomicBoolean();
     AtomicBoolean parentStopCalled = new AtomicBoolean();
+    AtomicReference<String> parentDepID = new AtomicReference<>();
+    AtomicReference<String> childDepID = new AtomicReference<>();
     CountDownLatch deployLatch = new CountDownLatch(1);
-    Verticle verticle = new TestVerticle2(() -> {
-      Verticle child1 = new TestVerticle2(null, () -> {
+    Verticle verticle = new MyAsyncVerticle(f -> {
+      Verticle child1 = new MyAsyncVerticle(f2 -> f2.setResult(null), f2 -> {
         // Child stop is called
         assertFalse(parentStopCalled.get());
         assertFalse(childStopCalled.get());
         childStopCalled.set(true);
+        f2.setResult(null);
       });
       vertx.deployVerticle(child1, ar -> {
         assertTrue(ar.succeeded());
+        childDepID.set(ar.result());
+        f.setResult(null);
       });
-    }, () -> {
+    }, f2 -> {
       // Parent stop is called
       assertFalse(parentStopCalled.get());
       assertTrue(childStopCalled.get());
+      assertTrue(vertx.deployments().contains(parentDepID.get()));
+      assertFalse(vertx.deployments().contains(childDepID.get()));
       parentStopCalled.set(true);
       testComplete();
+      f2.setResult(null);
     });
-    AtomicReference<String> depID = new AtomicReference<>();
     vertx.deployVerticle(verticle, ar -> {
-      depID.set(ar.result());
+      parentDepID.set(ar.result());
       assertTrue(ar.succeeded());
       deployLatch.countDown();
     });
     assertTrue(deployLatch.await(10, TimeUnit.SECONDS));
+    assertTrue(vertx.deployments().contains(parentDepID.get()));
+    assertTrue(vertx.deployments().contains(childDepID.get()));
+
     // Now they're deployed, undeploy them
-    vertx.undeployVerticle(depID.get(), ar -> {
+    vertx.undeployVerticle(parentDepID.get(), ar -> {
       assertTrue(ar.succeeded());
     });
     await();
   }
-
-  class DeploymentBuilder {
-    Set<DeploymentBuilder> deployments = new HashSet<>();
-    DeploymentBuilder addChildDeployment() {
-      DeploymentBuilder builder = new DeploymentBuilder();
-      deployments.add(builder);
-      return builder;
-    }
-
-    void assemble() {
-      TestVerticle2 parent = new TestVerticle2(() -> {
-        for (DeploymentBuilder builder: deployments) {
-          // blah
-        }
-      }, () -> {
-
-      });
-      vertx.deployVerticle(parent, ar -> {
-
-      });
-    }
-  }
-
-  /*
-  TODO - child undeploy tests
-  more child-parent types (multiple children)
-  failure in undeploy with child (make sure children are removed)
-  failure in deploy with child (make sure child is not added)
-  concurrent undeploy on same deployment
-  concurrent undeploy of children
-  order of undeployment
-   */
 
   @Test
   public void testAsyncDeployCalledSynchronously() throws Exception {
@@ -497,30 +481,34 @@ public class DeploymentTest extends VertxTestBase {
     await();
   }
 
-
-  class TestVerticle2 extends AbstractVerticle {
-
-    private Runnable startRunnable;
-    private Runnable stopRunnable;
-
-    TestVerticle2(Runnable startRunnable, Runnable stopRunnable) {
-      this.startRunnable = startRunnable;
-      this.stopRunnable = stopRunnable;
-    }
-
-    @Override
-    public void start() throws Exception {
-      if (startRunnable != null) {
-        startRunnable.run();
-      }
-    }
-
-    @Override
-    public void stop() throws Exception {
-      if (stopRunnable != null) {
-        stopRunnable.run();
-      }
-    }
+  @Test
+  public void testCloseHooksCalled() throws Exception {
+    AtomicInteger closedCount = new AtomicInteger();
+    Closeable myCloseable1 = doneHandler -> {
+      closedCount.incrementAndGet();
+      doneHandler.handle(new DefaultFutureResult<>((Void)null));
+    };
+    Closeable myCloseable2 = doneHandler -> {
+      closedCount.incrementAndGet();
+      doneHandler.handle(new DefaultFutureResult<>((Void)null));
+    };
+    MyAsyncVerticle verticle = new MyAsyncVerticle(f-> {
+      DefaultContext ctx = (DefaultContext)vertx.currentContext();
+      ctx.addCloseHook(myCloseable1);
+      ctx.addCloseHook(myCloseable2);
+      f.setResult(null);
+    }, f -> f.setResult(null));
+    vertx.deployVerticle(verticle, ar -> {
+      assertTrue(ar.succeeded());
+      assertEquals(0, closedCount.get());
+      // Now undeploy
+      vertx.undeployVerticle(ar.result(), ar2 -> {
+        assertTrue(ar2.succeeded());
+        assertEquals(2, closedCount.get());
+        testComplete();
+      });
+    });
+    await();
   }
 
   private void assertDeployment(int instances, MyVerticle verticle, JsonObject config, AsyncResult<String> ar) {

@@ -53,13 +53,11 @@ public class VertxNetHandler extends VertxHandler<DefaultNetSocket> {
           context.reportException(t);
         }
       } else {
-        context.execute(new Runnable() {
-          public void run() {
-            try {
-              sock.handleDataReceived(new Buffer(buf));
-            } catch (Throwable t) {
-              context.reportException(t);
-            }
+        context.execute(() -> {
+          try {
+            sock.handleDataReceived(new Buffer(buf));
+          } catch (Throwable t) {
+            context.reportException(t);
           }
         });
       }

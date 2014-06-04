@@ -19,6 +19,10 @@ package org.vertx.java.core.impl;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public interface Closeable {
+
   void close(Handler<AsyncResult<Void>> doneHandler);
 }

@@ -312,13 +312,11 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
           }
 
         } else {
-          context.execute(new Runnable() {
-            public void run() {
-              if (future.isSuccess()) {
-                handler.handle(null);
-              } else {
-                context.reportException(future.cause());
-              }
+          context.execute(() -> {
+            if (future.isSuccess()) {
+              handler.handle(null);
+            } else {
+              context.reportException(future.cause());
             }
           });
         }

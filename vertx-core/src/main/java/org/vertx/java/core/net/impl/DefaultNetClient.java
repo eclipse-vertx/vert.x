@@ -357,17 +357,15 @@ public class DefaultNetClient implements NetClient {
           }
         } else {
           if (remainingAttempts > 0 || remainingAttempts == -1) {
-            actualCtx.execute(ch.eventLoop(), new Runnable() {
-              public void run() {
-                log.debug("Failed to create connection. Will retry in " + reconnectInterval + " milliseconds");
-                //Set a timer to retry connection
-                vertx.setTimer(reconnectInterval, new Handler<Long>() {
-                  public void handle(Long timerID) {
-                    connect(port, host, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts
-                        - 1);
-                  }
-                });
-              }
+            actualCtx.execute(ch.eventLoop(), () -> {
+              log.debug("Failed to create connection. Will retry in " + reconnectInterval + " milliseconds");
+              //Set a timer to retry connection
+              vertx.setTimer(reconnectInterval, new Handler<Long>() {
+                public void handle(Long timerID) {
+                  connect(port, host, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts
+                      - 1);
+                }
+              });
             });
           } else {
             failed(ch, channelFuture.cause(), connectHandler);
@@ -378,11 +376,7 @@ public class DefaultNetClient implements NetClient {
   }
 
   private void connected(final Channel ch, final Handler<AsyncResult<NetSocket>> connectHandler) {
-    actualCtx.execute(ch.eventLoop(), new Runnable() {
-      public void run() {
-        doConnected(ch, connectHandler);
-      }
-    });
+    actualCtx.execute(ch.eventLoop(), () ->  doConnected(ch, connectHandler));
   }
 
   private void doConnected(Channel ch, final Handler<AsyncResult<NetSocket>> connectHandler) {
@@ -393,15 +387,11 @@ public class DefaultNetClient implements NetClient {
 
   private void failed(Channel ch, final Throwable t, final Handler<AsyncResult<NetSocket>> connectHandler) {
     ch.close();
-    actualCtx.execute(ch.eventLoop(), new Runnable() {
-      public void run() {
-        doFailed(connectHandler, t);
-      }
-    });
+    actualCtx.execute(ch.eventLoop(), () -> doFailed(connectHandler, t));
   }
 
   private static void doFailed(Handler<AsyncResult<NetSocket>> connectHandler, Throwable t) {
-    connectHandler.handle(new DefaultFutureResult<NetSocket>(t));
+    connectHandler.handle(new DefaultFutureResult<>(t));
   }
 }
 

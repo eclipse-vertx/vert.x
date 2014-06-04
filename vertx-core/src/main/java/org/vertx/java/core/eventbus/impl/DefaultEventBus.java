@@ -1072,6 +1072,7 @@ public class DefaultEventBus implements EventBus {
       unregisterHandler(this.address, this.handler);
       doneHandler.handle(new DefaultFutureResult<>((Void)null));
     }
+
   }
 }
 

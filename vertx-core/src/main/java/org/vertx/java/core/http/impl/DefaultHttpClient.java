@@ -299,12 +299,9 @@ public class DefaultHttpClient implements HttpClient {
             public NetSocket netSocket() {
               if (!resumed) {
                 resumed = true;
-                vertx.getContext().execute(new Runnable() {
-                  @Override
-                  public void run() {
-                    // resume the socket now as the user had the chance to register a dataHandler
-                    socket.resume();
-                  }
+                vertx.getContext().execute(() -> {
+                  // resume the socket now as the user had the chance to register a dataHandler
+                  socket.resume();
                 });
               }
               return socket;
@@ -729,11 +726,7 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   private void connected(final Channel ch, final Handler<ClientConnection> connectHandler) {
-    actualCtx.execute(ch.eventLoop(), new Runnable() {
-      public void run() {
-        createConn(ch, connectHandler);
-      }
-    });
+    actualCtx.execute(ch.eventLoop(), () -> createConn(ch, connectHandler));
   }
 
   private void createConn(Channel ch, Handler<ClientConnection> connectHandler) {
@@ -756,18 +749,16 @@ public class DefaultHttpClient implements HttpClient {
     // If no specific exception handler is provided, fall back to the HttpClient's exception handler.
     final Handler<Throwable> exHandler = connectionExceptionHandler == null ? exceptionHandler : connectionExceptionHandler;
 
-    actualCtx.execute(ch.eventLoop(), new Runnable() {
-      public void run() {
-        pool.connectionClosed(null);
-        try {
-          ch.close();
-        } catch (Exception ignore) {
-        }
-        if (exHandler != null) {
-          exHandler.handle(t);
-        } else {
-          actualCtx.reportException(t);
-        }
+    actualCtx.execute(ch.eventLoop(), () -> {
+      pool.connectionClosed(null);
+      try {
+        ch.close();
+      } catch (Exception ignore) {
+      }
+      if (exHandler != null) {
+        exHandler.handle(t);
+      } else {
+        actualCtx.reportException(t);
       }
     });
   }

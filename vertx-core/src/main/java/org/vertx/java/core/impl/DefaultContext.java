@@ -26,6 +26,8 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -95,16 +97,22 @@ public abstract class DefaultContext implements Context {
 
   public void runCloseHooks(Handler<AsyncResult<Void>> doneHandler) {
     if (closeHooks != null) {
-      final CountingCompletionHandler<Void> aggHandler = new CountingCompletionHandler<>(vertx, closeHooks.size());
-      aggHandler.setHandler(doneHandler);
+      final int num = closeHooks.size();
+      AtomicInteger count = new AtomicInteger();
+      AtomicBoolean failed = new AtomicBoolean();
       // Copy to avoid ConcurrentModificationException
       for (Closeable hook: new HashSet<>(closeHooks)) {
         try {
           hook.close(ar -> {
             if (ar.failed()) {
-              aggHandler.failed(ar.cause());
+              if (failed.compareAndSet(false, true)) {
+                // Only report one failure
+                doneHandler.handle(new DefaultFutureResult<>(ar.cause()));
+              }
             } else {
-              aggHandler.complete();
+              if (count.incrementAndGet() == num) {
+                doneHandler.handle(new DefaultFutureResult<>((Void)null));
+              }
             }
           });
         } catch (Throwable t) {

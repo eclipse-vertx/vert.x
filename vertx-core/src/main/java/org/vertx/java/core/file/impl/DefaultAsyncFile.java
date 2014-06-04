@@ -365,12 +365,10 @@ public class DefaultAsyncFile implements AsyncFile {
       final DefaultFutureResult<Buffer> result = new DefaultFutureResult<>();
 
       private void done() {
-        context.execute(new Runnable() {
-          public void run() {
-            buff.flip();
-            writeBuff.setBytes(offset, buff);
-            result.setResult(writeBuff).setHandler(handler);
-          }
+        context.execute(() -> {
+          buff.flip();
+          writeBuff.setBytes(offset, buff);
+          result.setResult(writeBuff).setHandler(handler);
         });
       }
 
@@ -438,11 +436,7 @@ public class DefaultAsyncFile implements AsyncFile {
     if (writesOutstanding == 0) {
       doClose(handler);
     } else {
-      closedDeferred = new Runnable() {
-        public void run() {
-          doClose(handler);
-        }
-      };
+      closedDeferred = () -> doClose(handler);
     }
   }
 

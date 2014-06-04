@@ -51,33 +51,10 @@ public class DeploymentManager {
     doDeploy(verticle, config, worker, currentContext, doneHandler);
   }
 
-  private <T> void reportFailure(Throwable t, Context context, Handler<AsyncResult<T>> doneHandler) {
-    if (doneHandler != null) {
-      reportResult(context, doneHandler, new DefaultFutureResult<>(t));
-    } else {
-      log.error(t.getMessage(), t);
-    }
-  }
-
-  private <T> void reportSuccess(T result, Context context, Handler<AsyncResult<T>> doneHandler) {
-    if (doneHandler != null) {
-      reportResult(context, doneHandler, new DefaultFutureResult<>(result));
-    }
-  }
-
-  private <T> void reportResult(Context context, Handler<AsyncResult<T>> doneHandler, AsyncResult<T> result) {
-    context.runOnContext(v -> {
-      try {
-        doneHandler.handle(result);
-      } catch (Throwable t) {
-        log.error("Failure in calling handler", t);
-      }
-    });
-  }
-
   public void deployVerticle(String verticleClass,
                              JsonObject config,
                              boolean worker,
+                             String isolationGroup,
                              Handler<AsyncResult<String>> doneHandler) {
     DefaultContext currentContext = vertx.getOrCreateContext();
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
@@ -111,6 +88,30 @@ public class DeploymentManager {
 
   public Set<String> deployments() {
     return Collections.unmodifiableSet(deployments.keySet());
+  }
+
+  private <T> void reportFailure(Throwable t, Context context, Handler<AsyncResult<T>> doneHandler) {
+    if (doneHandler != null) {
+      reportResult(context, doneHandler, new DefaultFutureResult<>(t));
+    } else {
+      log.error(t.getMessage(), t);
+    }
+  }
+
+  private <T> void reportSuccess(T result, Context context, Handler<AsyncResult<T>> doneHandler) {
+    if (doneHandler != null) {
+      reportResult(context, doneHandler, new DefaultFutureResult<>(result));
+    }
+  }
+
+  private <T> void reportResult(Context context, Handler<AsyncResult<T>> doneHandler, AsyncResult<T> result) {
+    context.runOnContext(v -> {
+      try {
+        doneHandler.handle(result);
+      } catch (Throwable t) {
+        log.error("Failure in calling handler", t);
+      }
+    });
   }
 
   private void doDeploy(Verticle verticle, JsonObject config, boolean worker,
@@ -148,12 +149,12 @@ public class DeploymentManager {
   private class DeploymentImpl implements Deployment {
 
     private final String id;
-    private final Context context;
+    private final DefaultContext context;
     private final Verticle verticle;
     private final Set<Deployment> children = new ConcurrentHashSet<>();
     private boolean undeployed;
 
-    private DeploymentImpl(String id, Context context, Verticle verticle) {
+    private DeploymentImpl(String id, DefaultContext context, Verticle verticle) {
       this.id = id;
       this.context = context;
       this.verticle = verticle;
@@ -188,20 +189,25 @@ public class DeploymentManager {
       } else {
         undeployed = true;
         context.runOnContext(v -> {
-          try {
-            Future<Void> stopFuture = new DefaultFutureResult<>();
-            verticle.stop(stopFuture);
-            stopFuture.setHandler(ar -> {
-              deployments.remove(id);
+          Future<Void> stopFuture = new DefaultFutureResult<>();
+          stopFuture.setHandler(ar -> {
+            deployments.remove(id);
+            context.runCloseHooks(ar2 -> {
+              if (ar2.failed()) {
+                // Log error but we report success anyway
+                log.error("Failed to run close hook", ar2.cause());
+              }
               if (ar.succeeded()) {
                 reportSuccess(null, undeployingContext, doneHandler);
               } else {
                 reportFailure(ar.cause(), undeployingContext, doneHandler);
               }
             });
+          });
+          try {
+            verticle.stop(stopFuture);
           } catch (Throwable t) {
-            deployments.remove(id);
-            reportFailure(t, undeployingContext, doneHandler);
+            stopFuture.setFailure(t);
           }
         });
       }

@@ -172,18 +172,6 @@ public class DefaultVertx implements VertxInternal {
     return eventBus;
   }
 
-//  public DefaultContext startOnEventLoop(final Runnable runnable) {
-//    DefaultContext context  = createEventLoopContext();
-//    context.execute(runnable);
-//    return context;
-//  }
-//
-//  public DefaultContext startInBackground(final Runnable runnable, final boolean multiThreaded) {
-//    DefaultContext context  = createWorkerContext(multiThreaded);
-//    context.execute(runnable);
-//    return context;
-//  }
-
   public boolean isEventLoop() {
     DefaultContext context = getContext();
     if (context != null) {
@@ -285,12 +273,7 @@ public class DefaultVertx implements VertxInternal {
       toRun = wrapped;
     } else {
       // On worker context
-      toRun = new Runnable() {
-        public void run() {
-          // Make sure the timer gets executed on the worker context
-          context.execute(wrapped);
-        }
-      };
+      toRun = () -> context.execute(wrapped);
     }
     Future<?> future;
     if (periodic) {
@@ -399,12 +382,12 @@ public class DefaultVertx implements VertxInternal {
 
   @Override
   public void deployVerticle(String verticleClass, Handler<AsyncResult<String>> doneHandler) {
-    deploymentManager.deployVerticle(verticleClass, null, false, doneHandler);
+    deploymentManager.deployVerticle(verticleClass, null, false, null, doneHandler);
   }
 
   @Override
   public void deployVerticle(String verticleClass, JsonObject config, Handler<AsyncResult<String>> doneHandler) {
-    deploymentManager.deployVerticle(verticleClass, config, false, doneHandler);
+    deploymentManager.deployVerticle(verticleClass, config, false, null, doneHandler);
   }
 
   @Override
