@@ -228,14 +228,4 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     }
   }
 
-  /*
-  Start two nodes and
-  test echo and reply between them for all types
-  and test round robin
-
-  Start three nodes and
-  test publish
-
-
-   */
 }

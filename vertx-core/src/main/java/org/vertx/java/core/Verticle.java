@@ -19,6 +19,7 @@ package org.vertx.java.core;
 import org.vertx.java.core.json.JsonObject;
 
 /**
+ * A verticle is the deployment unit of Vert.x
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

@@ -175,7 +175,6 @@ public interface Vertx {
                       boolean worker,
                       Handler<AsyncResult<String>> doneHandler);
 
-
   void deployVerticle(String verticleClass,
                       Handler<AsyncResult<String>> doneHandler);
 
@@ -190,6 +189,22 @@ public interface Vertx {
   void deployVerticle(String verticleClass,
                       JsonObject config,
                       String isolationGroup,
+                      Handler<AsyncResult<String>> doneHandler);
+
+  void deployVerticle(String verticleClass,
+                      JsonObject config,
+                      boolean worker,
+                      Handler<AsyncResult<String>> doneHandler);
+
+  void deployVerticle(String verticleClass,
+                      String isolationGroup,
+                      boolean worker,
+                      Handler<AsyncResult<String>> doneHandler);
+
+  void deployVerticle(String verticleClass,
+                      JsonObject config,
+                      String isolationGroup,
+                      boolean worker,
                       Handler<AsyncResult<String>> doneHandler);
 
   void undeployVerticle(String deploymentID, Handler<AsyncResult<Void>> doneHandler);

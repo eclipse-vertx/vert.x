@@ -53,6 +53,6 @@ public class VertxExecutorFactory {
   }
 
   public static int eventLoopSize() {
-      return Integer.getInteger("vertx.pool.eventloop.size", 2 * Runtime.getRuntime().availableProcessors());
+    return Integer.getInteger("vertx.pool.eventloop.size", 2 * Runtime.getRuntime().availableProcessors());
   }
 }

@@ -60,18 +60,7 @@ public class DeploymentTest extends VertxTestBase {
   public void testDeployFromTestThreadNoHandler() throws Exception {
     MyVerticle verticle = new MyVerticle();
     vertx.deployVerticle(verticle);
-    long start = System.currentTimeMillis();
-    long timeout = 2000;
-    while (true) {
-      if (vertx.deployments().size() == 1) {
-        break;
-      }
-      Thread.sleep(10);
-      long now = System.currentTimeMillis();
-      if (now - start > timeout) {
-        throw new IllegalStateException("Timed out");
-      }
-    }
+    waitUntil(() -> vertx.deployments().size() == 1);
   }
 
   @Test
@@ -558,18 +547,7 @@ public class DeploymentTest extends VertxTestBase {
     });
     awaitLatch(latch);
     // Wait until two entries in the map
-    long timeout = 2000;
-    long start = System.currentTimeMillis();
-    while (true) {
-      if (countMap.size() == 2) {
-        break;
-      }
-      Thread.sleep(10);
-      long now = System.currentTimeMillis();
-      if (now - start > timeout) {
-        throw new IllegalStateException("Timed out");
-      }
-    }
+    waitUntil(() -> countMap.size() == 2);
     assertEquals(count1, countMap.get(deploymentID1.get()).intValue());
     assertEquals(count2, countMap.get(deploymentID2.get()).intValue());
   }

@@ -99,9 +99,6 @@ public class DeploymentManager {
           }
           URLClassLoader urlc = (URLClassLoader)current;
           URL[] urls = urlc.getURLs();
-//          for (URL url: urls) {
-//            System.out.println(url);
-//          }
           // Copy the URLS into the isolating classloader
           cl = new IsolatingClassLoader(urls, getCurrentClassLoader());
           classloaders.put(isolationGroup, cl);

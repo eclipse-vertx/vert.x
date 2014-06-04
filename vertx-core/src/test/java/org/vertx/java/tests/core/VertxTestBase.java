@@ -12,6 +12,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 /**
@@ -61,6 +62,21 @@ public class VertxTestBase extends AsyncTestBase {
 
   protected void awaitLatch(CountDownLatch latch) throws InterruptedException {
     assertTrue(latch.await(10, TimeUnit.SECONDS));
+  }
+
+  protected void waitUntil(BooleanSupplier supplier) throws Exception {
+    long start = System.currentTimeMillis();
+    long timeout = 10000;
+    while (true) {
+      if (supplier.getAsBoolean()) {
+        break;
+      }
+      Thread.sleep(10);
+      long now = System.currentTimeMillis();
+      if (now - start > timeout) {
+        throw new IllegalStateException("Timed out");
+      }
+    }
   }
 
 }
