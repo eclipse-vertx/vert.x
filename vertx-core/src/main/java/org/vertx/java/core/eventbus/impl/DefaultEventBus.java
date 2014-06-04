@@ -441,6 +441,11 @@ public class DefaultEventBus implements EventBus {
   }
 
   @Override
+  public EventBus registerHandler(String address, Handler<? extends Message> handler) {
+    return registerHandler(address, handler, emptyHandler());
+  }
+
+  @Override
   public EventBusRegistration registerLocalHandler(String address, Handler<? extends Message> handler) {
     registerHandler(address, handler, null, false, true, -1);
     return new DefaultRegistration(address, handler);
@@ -1097,7 +1102,7 @@ public class DefaultEventBus implements EventBus {
 
     @Override
     public void unregister() {
-      unregister(ar -> {});
+      unregister(emptyHandler());
     }
 
     @Override

@@ -501,11 +501,18 @@ public interface EventBus {
    * Registers a handler against the specified address
    * @param address The address to register it at
    * @param handler The handler
-   * @param resultHandler When the register has been propogated to all nodes of the event bus, this handler
-   * will be called. If not in a cluster, resultHandler will be called immediately.
+   * @param resultHandler Optional completion handler. If specified, when the register has been
+   * propagated to all nodes of the event bus, the handler will be called.
    */
   EventBus registerHandler(String address, Handler<? extends Message> handler,
                            Handler<AsyncResult<EventBusRegistration>> resultHandler);
+
+  /**
+   * Registers a handler against the specified address
+   * @param address The address to register it at
+   * @param handler The handler
+   */
+  EventBus registerHandler(String address, Handler<? extends Message> handler);
 
   /**
    * Registers a local handler against the specified address. The handler info won't

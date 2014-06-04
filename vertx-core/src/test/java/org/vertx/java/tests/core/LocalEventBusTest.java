@@ -18,7 +18,6 @@ package org.vertx.java.tests.core;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
@@ -138,7 +137,7 @@ public class LocalEventBusTest extends EventBusTestBase {
           testComplete();
         }
       };
-      eb.registerHandler(ADDRESS1, handlers[i], ar -> {});
+      eb.registerHandler(ADDRESS1, handlers[i]);
     }
 
     for (int i = 0; i < numMessages; i++) {
@@ -192,9 +191,9 @@ public class LocalEventBusTest extends EventBusTestBase {
         testComplete();
       }
     };
-    eb.registerHandler(ADDRESS1, handler, ar -> {});
-    eb.registerHandler(ADDRESS1, handler, ar -> {});
-    eb.registerHandler(ADDRESS1, handler, ar -> {});
+    eb.registerHandler(ADDRESS1, handler);
+    eb.registerHandler(ADDRESS1, handler);
+    eb.registerHandler(ADDRESS1, handler);
 
     eb.send(ADDRESS1, str);
     eb.send(ADDRESS1, str);
@@ -215,13 +214,13 @@ public class LocalEventBusTest extends EventBusTestBase {
     AtomicInteger cnt = new AtomicInteger();
     eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
       fail("Should not receive message");
-    }, ar -> {});
+    });
     eb.registerHandler(ADDRESS2, (Message<String> msg) -> {
       assertEquals(str, msg.body());
       if (cnt.incrementAndGet() == 2) {
         testComplete();
       }
-    }, ar -> {});
+    });
     eb.send(ADDRESS2, str);
     eb.send(ADDRESS2, str);
     await();
@@ -233,7 +232,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
       assertEquals(str, msg.body());
       testComplete();
-    }, ar -> {});
+    });
     long timeout = 1000;
     eb.sendWithTimeout(ADDRESS1, str, timeout, ar -> {});
     await();
@@ -246,7 +245,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
       assertEquals(str, msg.body());
       msg.reply(reply);
-    }, ar -> {});
+    });
     eb.send(ADDRESS1, str, (Message<String>msg) -> {
       assertEquals(reply, msg.body());
       testComplete();
@@ -265,7 +264,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         assertEquals(replyReply, rep.body());
         testComplete();
       });
-    }, ar -> {});
+    });
     eb.send(ADDRESS1, str, (Message<String>msg) -> {
       assertEquals(reply, msg.body());
       msg.reply(replyReply);
@@ -292,7 +291,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         assertTrue(now - start >= timeout);
         testComplete();
       });
-    }, ar -> {});
+    });
     eb.send(ADDRESS1, str, (Message<String>msg) -> {
       assertEquals(reply, msg.body());
       // Now don't reply
@@ -313,7 +312,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         assertEquals(replyReply, ar.result().body());
         testComplete();
       });
-    }, ar -> {});
+    });
     eb.send(ADDRESS1, str, (Message<String>msg) -> {
       assertEquals(reply, msg.body());
       msg.reply(replyReply);
@@ -332,7 +331,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       assertEquals(str, msg.body());
       // reply after timeout
       vertx.setTimer((long)(timeout * 1.5), id -> msg.reply(reply));
-    }, ar -> {});
+    });
     eb.send(ADDRESS1, str, (Message<String>msg) -> {
       fail("Should not be called");
     });
@@ -346,7 +345,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
       assertEquals(str, msg.body());
       msg.reply(23);
-    }, ar -> {});
+    });
     long timeout = 1000;
     eb.sendWithTimeout(ADDRESS1, str, timeout, (AsyncResult<Message<Integer>> ar) -> {
       assertTrue(ar.succeeded());
@@ -361,7 +360,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     String str = randomUnicodeString(1000);
     eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
       assertEquals(str, msg.body());
-    }, ar -> {});
+    });
     long timeout = 1000;
     long start = System.currentTimeMillis();
     eb.sendWithTimeout(ADDRESS1, str, timeout, (AsyncResult<Message<Integer>> ar) -> {
@@ -402,7 +401,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
       assertEquals(str, msg.body());
       msg.fail(failureCode, failureMsg);
-    }, ar -> {});
+    });
     long timeout = 1000;
     eb.sendWithTimeout(ADDRESS1, str, timeout, (AsyncResult<Message<Integer>> ar) -> {
       assertFalse(ar.succeeded());
@@ -426,7 +425,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       vertx.setTimer((int)(timeout * 1.5), id -> {
         msg.reply("too late!");
       });
-    }, ar -> {});
+    });
     eb.sendWithTimeout(ADDRESS1, str, timeout, (AsyncResult<Message<Integer>> ar) -> {
       assertFalse(ar.succeeded());
       Throwable cause = ar.cause();
@@ -449,7 +448,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
       assertEquals(str, msg.body());
       testComplete();
-    }, ar -> {});
+    });
     eb.publish(ADDRESS1, str);
     await();
   }
@@ -463,13 +462,13 @@ public class LocalEventBusTest extends EventBusTestBase {
       if (count.incrementAndGet() == 2) {
         testComplete();
       }
-    }, ar -> {});
+    });
     eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
       assertEquals(str, msg.body());
       if (count.incrementAndGet() == 2) {
         testComplete();
       }
-    }, ar -> {});
+    });
     eb.publish(ADDRESS1, str);
     await();
   }
@@ -484,8 +483,8 @@ public class LocalEventBusTest extends EventBusTestBase {
         testComplete();
       }
     };
-    eb.registerHandler(ADDRESS1, handler, ar -> {});
-    eb.registerHandler(ADDRESS1, handler, ar -> {});
+    eb.registerHandler(ADDRESS1, handler);
+    eb.registerHandler(ADDRESS1, handler);
     eb.publish(ADDRESS1, str);
     await();
   }
@@ -519,10 +518,10 @@ public class LocalEventBusTest extends EventBusTestBase {
     eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
       assertEquals(str, msg.body());
       testComplete();
-    }, ar -> {});
+    });
     eb.registerHandler(ADDRESS2, (Message<String> msg) -> {
       fail("Should not receive message");
-    }, ar -> {});
+    });
     eb.publish(ADDRESS1, str);
     await();
   }
@@ -545,7 +544,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         consumer.accept(msg.body());
       }
       testComplete();
-    }, ar -> {});
+    });
     eb.send(ADDRESS1, val);
     await();
   }
@@ -555,7 +554,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     eb.registerHandler(ADDRESS1,msg -> {
       assertNull(msg.body());
       testComplete();
-    }, ar -> {});
+    });
     eb.send(ADDRESS1, (T)null);
     await();
   }
@@ -566,7 +565,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     eb.registerHandler(ADDRESS1, msg -> {
       assertEquals(str, msg.body());
       msg.reply(val);
-    }, ar -> {});
+    });
     eb.send(ADDRESS1, str, (Message<T>reply) -> {
       if (consumer == null) {
         assertEquals(val, reply.body());
@@ -584,7 +583,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     eb.registerHandler(ADDRESS1, msg -> {
       assertEquals(str, msg.body());
       msg.reply((T)null);
-    }, ar -> {});
+    });
     eb.send(ADDRESS1, str, (Message<T>reply) -> {
       assertNull(reply.body());
       testComplete();
@@ -604,8 +603,8 @@ public class LocalEventBusTest extends EventBusTestBase {
         }
       }
     }
-    eb.registerHandler(ADDRESS1, new MyHandler(), ar -> {});
-    eb.registerHandler(ADDRESS1, new MyHandler(), ar -> {});
+    eb.registerHandler(ADDRESS1, new MyHandler());
+    eb.registerHandler(ADDRESS1, new MyHandler());
     eb.publish(ADDRESS1, (T)null);
     await();
   }
@@ -626,8 +625,8 @@ public class LocalEventBusTest extends EventBusTestBase {
         }
       }
     }
-    eb.registerHandler(ADDRESS1, new MyHandler(), ar -> {});
-    eb.registerHandler(ADDRESS1, new MyHandler(), ar -> {});
+    eb.registerHandler(ADDRESS1, new MyHandler());
+    eb.registerHandler(ADDRESS1, new MyHandler());
     eb.publish(ADDRESS1, (T)val);
     await();
   }
