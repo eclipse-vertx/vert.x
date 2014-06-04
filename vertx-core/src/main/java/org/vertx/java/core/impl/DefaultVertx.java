@@ -391,6 +391,16 @@ public class DefaultVertx implements VertxInternal {
   }
 
   @Override
+  public void deployVerticle(String verticleClass, String isolationGroup, Handler<AsyncResult<String>> doneHandler) {
+    deploymentManager.deployVerticle(verticleClass, null, false, isolationGroup, doneHandler);
+  }
+
+  @Override
+  public void deployVerticle(String verticleClass, JsonObject config, String isolationGroup, Handler<AsyncResult<String>> doneHandler) {
+    deploymentManager.deployVerticle(verticleClass, config, false, isolationGroup, doneHandler);
+  }
+
+  @Override
   public void deployVerticle(Verticle verticle, boolean worker, Handler<AsyncResult<String>> doneHandler) {
     deploymentManager.deployVerticle(verticle, null, worker, doneHandler);
   }

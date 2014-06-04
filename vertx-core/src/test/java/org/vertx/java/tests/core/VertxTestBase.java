@@ -33,7 +33,7 @@ public class VertxTestBase extends AsyncTestBase {
       assertTrue(ar.succeeded());
       latch.countDown();
     });
-    assertTrue(latch.await(10, TimeUnit.SECONDS));
+    awaitLatch(latch);
   }
 
   protected String findFileOnClasspath(String fileName) {
@@ -57,6 +57,10 @@ public class VertxTestBase extends AsyncTestBase {
       assertFalse(result.succeeded());
       consumer.accept(result.result());
     };
+  }
+
+  protected void awaitLatch(CountDownLatch latch) throws InterruptedException {
+    assertTrue(latch.await(10, TimeUnit.SECONDS));
   }
 
 }

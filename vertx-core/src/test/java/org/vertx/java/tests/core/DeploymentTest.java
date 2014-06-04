@@ -16,14 +16,18 @@
 
 package org.vertx.java.tests.core;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.vertx.java.core.*;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.impl.Closeable;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.WorkerContext;
 import org.vertx.java.core.json.JsonObject;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,13 +36,15 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 /**
- * TODO
- * isolation groups
- *
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class DeploymentTest extends VertxTestBase {
+
+  @Before
+  public void before() {
+    TestVerticle.instanceCount.set(0);
+  }
 
   @Test
   public void testDeployFromTestThread() throws Exception {
@@ -511,11 +517,69 @@ public class DeploymentTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testIsolationGroup1() throws Exception {
+    vertx.deployVerticle(TestVerticle.class.getCanonicalName(), "somegroup", ar -> {
+      assertTrue(ar.succeeded());
+      assertEquals(0, TestVerticle.instanceCount.get());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testIsolationGroupSameGroup() throws Exception {
+    testIsolationGroup("somegroup", "somegroup", 1, 2);
+  }
+
+  @Test
+  public void testIsolationGroupDifferentGroup() throws Exception {
+    testIsolationGroup("somegroup", "someothergroup", 1, 1);
+  }
+
+  private void testIsolationGroup(String group1, String group2, int count1, int count2) throws Exception {
+    Map<String, Integer> countMap = new ConcurrentHashMap<>();
+    vertx.eventBus().registerHandler("testcounts", (Message<JsonObject> msg) -> {
+      countMap.put(msg.body().getString("deploymentID"), msg.body().getInteger("count"));
+    });
+    CountDownLatch latch = new CountDownLatch(1);
+    AtomicReference<String> deploymentID1 = new AtomicReference<>();
+    AtomicReference<String> deploymentID2 = new AtomicReference<>();
+    vertx.deployVerticle(TestVerticle.class.getCanonicalName(), group1, ar -> {
+      assertTrue(ar.succeeded());
+      deploymentID1.set(ar.result());
+      assertEquals(0, TestVerticle.instanceCount.get());
+      vertx.deployVerticle(TestVerticle.class.getCanonicalName(), group2, ar2 -> {
+        assertTrue(ar2.succeeded());
+        deploymentID2.set(ar2.result());
+        assertEquals(0, TestVerticle.instanceCount.get());
+        latch.countDown();
+      });
+    });
+    awaitLatch(latch);
+    // Wait until two entries in the map
+    long timeout = 2000;
+    long start = System.currentTimeMillis();
+    while (true) {
+      if (countMap.size() == 2) {
+        break;
+      }
+      Thread.sleep(10);
+      long now = System.currentTimeMillis();
+      if (now - start > timeout) {
+        throw new IllegalStateException("Timed out");
+      }
+    }
+    assertEquals(count1, countMap.get(deploymentID1.get()).intValue());
+    assertEquals(count2, countMap.get(deploymentID2.get()).intValue());
+  }
+
   private void assertDeployment(int instances, MyVerticle verticle, JsonObject config, AsyncResult<String> ar) {
     assertTrue(ar.succeeded());
     assertEquals(vertx, verticle.getVertx());
     String deploymentID = ar.result();
     assertNotNull(ar.result());
+    assertEquals(deploymentID, verticle.getDeploymentID());
     if (config == null) {
       assertNull(verticle.getConfig());
     } else {

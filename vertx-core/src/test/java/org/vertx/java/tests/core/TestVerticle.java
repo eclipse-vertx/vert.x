@@ -17,18 +17,27 @@
 package org.vertx.java.tests.core;
 
 import org.vertx.java.core.AbstractVerticle;
+import org.vertx.java.core.json.JsonObject;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class TestVerticle extends AbstractVerticle {
 
+  public static AtomicInteger instanceCount = new AtomicInteger();
+
+  public TestVerticle() {
+  }
+
   @Override
   public void start() throws Exception {
+    vertx.eventBus().send("testcounts",
+      new JsonObject().putString("deploymentID", getDeploymentID()).putNumber("count", instanceCount.incrementAndGet()));
   }
 
   @Override
   public void stop() throws Exception {
-
   }
 }

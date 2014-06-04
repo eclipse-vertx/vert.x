@@ -49,7 +49,7 @@ public class HttpTestBase extends VertxTestBase {
       assertTrue(asyncResult.succeeded());
       latch.countDown();
     });
-    assertTrue(latch.await(10, TimeUnit.SECONDS));
+    awaitLatch(latch);
   }
 
   @SuppressWarnings("unchecked")

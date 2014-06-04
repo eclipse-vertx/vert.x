@@ -2077,7 +2077,7 @@ public class HttpTest extends HttpTestBase {
     theServer.requestHandler(req -> {
       fail("Should not process request");
     }).listen(8081, onSuccess(s -> latch.countDown()));
-    assertTrue(latch.await(10, TimeUnit.SECONDS));
+    awaitLatch(latch);
 
     testSharedServersRoundRobin();
   }
@@ -2090,7 +2090,7 @@ public class HttpTest extends HttpTestBase {
     theServer.requestHandler(req -> {
       fail("Should not process request");
     }).listen(port, onSuccess(s -> latch.countDown()));
-    assertTrue(latch.await(10, TimeUnit.SECONDS));
+    awaitLatch(latch);
 
     CountDownLatch closeLatch = new CountDownLatch(1);
     theServer.close(ar -> {

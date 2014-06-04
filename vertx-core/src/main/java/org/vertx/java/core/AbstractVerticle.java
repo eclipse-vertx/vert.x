@@ -23,8 +23,19 @@ import org.vertx.java.core.json.JsonObject;
  */
 public abstract class AbstractVerticle implements Verticle {
 
+  protected String deploymentID;
   protected Vertx vertx;
   protected JsonObject config;
+
+  @Override
+  public String getDeploymentID() {
+    return deploymentID;
+  }
+
+  @Override
+  public void setDeploymentID(String deploymentID) {
+    this.deploymentID = deploymentID;
+  }
 
   @Override
   public JsonObject getConfig() {
@@ -63,6 +74,7 @@ public abstract class AbstractVerticle implements Verticle {
 
   public void stop() throws Exception {
   }
+
 
 
 }

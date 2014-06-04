@@ -183,6 +183,15 @@ public interface Vertx {
                       JsonObject config,
                       Handler<AsyncResult<String>> doneHandler);
 
+  void deployVerticle(String verticleClass,
+                      String isolationGroup,
+                      Handler<AsyncResult<String>> doneHandler);
+
+  void deployVerticle(String verticleClass,
+                      JsonObject config,
+                      String isolationGroup,
+                      Handler<AsyncResult<String>> doneHandler);
+
   void undeployVerticle(String deploymentID, Handler<AsyncResult<Void>> doneHandler);
 
   Set<String> deployments();

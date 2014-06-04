@@ -55,7 +55,7 @@ public class WebsocketTest extends VertxTestBase {
         assertTrue(ar.succeeded());
         latch.countDown();
       });
-      assertTrue(latch.await(10, TimeUnit.SECONDS));
+      awaitLatch(latch);
     }
   }
 
@@ -267,7 +267,7 @@ public class WebsocketTest extends VertxTestBase {
         fail("Failed to bind server");
       }
     });
-    assertTrue(latch.await(10, TimeUnit.SECONDS));
+    awaitLatch(latch);
     testSharedServersRoundRobin();
   }
 
@@ -285,7 +285,7 @@ public class WebsocketTest extends VertxTestBase {
         fail("Failed to bind server");
       }
     });
-    assertTrue(latch.await(10, TimeUnit.SECONDS));
+    awaitLatch(latch);
     CountDownLatch closeLatch = new CountDownLatch(1);
     theServer.close(ar -> {
       assertTrue(ar.succeeded());

@@ -56,7 +56,7 @@ public class EventBusBridgeTest extends VertxTestBase {
       assertTrue(ar.succeeded());
       latch.countDown();
     });
-    assertTrue(latch.await(10, TimeUnit.SECONDS));
+    awaitLatch(latch);
   }
 
   @Test

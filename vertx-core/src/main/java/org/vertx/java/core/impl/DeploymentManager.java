@@ -21,16 +21,13 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- *
- * TODO
- *
- * child parent hierarchy
- * closehooks on undeploy
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -40,6 +37,7 @@ public class DeploymentManager {
 
   private final VertxInternal vertx;
   private final Map<String, Deployment> deployments = new ConcurrentHashMap<>();
+  private final Map<String, ClassLoader> classloaders = new WeakHashMap<>();
 
   public DeploymentManager(VertxInternal vertx) {
     this.vertx = vertx;
@@ -57,10 +55,7 @@ public class DeploymentManager {
                              String isolationGroup,
                              Handler<AsyncResult<String>> doneHandler) {
     DefaultContext currentContext = vertx.getOrCreateContext();
-    ClassLoader cl = Thread.currentThread().getContextClassLoader();
-    if (cl == null) {
-      cl = getClass().getClassLoader();
-    }
+    ClassLoader cl = getClassLoader(isolationGroup);
     Class clazz;
     Verticle verticle;
     try {
@@ -89,6 +84,41 @@ public class DeploymentManager {
   public Set<String> deployments() {
     return Collections.unmodifiableSet(deployments.keySet());
   }
+
+  private ClassLoader getClassLoader(String isolationGroup) {
+    ClassLoader cl;
+    if (isolationGroup == null) {
+      cl = getCurrentClassLoader();
+    } else {
+      synchronized (this) {
+        cl = classloaders.get(isolationGroup);
+        if (cl == null) {
+          ClassLoader current = getCurrentClassLoader();
+          if (!(current instanceof URLClassLoader)) {
+            throw new IllegalStateException("Current classloader must be URLClassLoader");
+          }
+          URLClassLoader urlc = (URLClassLoader)current;
+          URL[] urls = urlc.getURLs();
+//          for (URL url: urls) {
+//            System.out.println(url);
+//          }
+          // Copy the URLS into the isolating classloader
+          cl = new IsolatingClassLoader(urls, getCurrentClassLoader());
+          classloaders.put(isolationGroup, cl);
+        }
+      }
+    }
+    return cl;
+  }
+
+  private ClassLoader getCurrentClassLoader() {
+    ClassLoader cl = Thread.currentThread().getContextClassLoader();
+    if (cl == null) {
+      cl = getClass().getClassLoader();
+    }
+    return cl;
+  }
+
 
   private <T> void reportFailure(Throwable t, Context context, Handler<AsyncResult<T>> doneHandler) {
     if (doneHandler != null) {
@@ -129,6 +159,7 @@ public class DeploymentManager {
       try {
         verticle.setVertx(vertx);
         verticle.setConfig(config);
+        verticle.setDeploymentID(deploymentID);
         Future<Void> startFuture = new DefaultFutureResult<>();
         verticle.start(startFuture);
         startFuture.setHandler(ar -> {
@@ -139,7 +170,6 @@ public class DeploymentManager {
             reportFailure(ar.cause(), currentContext, doneHandler);
           }
         });
-
       } catch (Throwable t) {
         reportFailure(t, currentContext, doneHandler);
       }
@@ -219,4 +249,58 @@ public class DeploymentManager {
     }
 
   }
+
+  /**
+   * Before delegating to the parent, this classloader attempts to load the class first
+   * (opposite of normal delegation model).
+   * This allows multiple versions of the same class to be loaded by different classloaders which allows
+   * us to isolate verticles so they can't easily interact
+   */
+  private static class IsolatingClassLoader extends URLClassLoader {
+
+    private IsolatingClassLoader(URL[] urls, ClassLoader parent) {
+      super(urls, parent);
+    }
+
+    @Override
+    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+      synchronized (getClassLoadingLock(name)) {
+        Class<?> c = findLoadedClass(name);
+        if (c == null) {
+          // We don't want to load Vert.x (or Vert.x dependency) classes from an isolating loader
+          if (isVertxOrSystemClass(name)) {
+            try {
+              c = super.loadClass(name, false);
+            } catch (ClassNotFoundException e) {
+              // Fall through
+            }
+          }
+          if (c == null) {
+            // Try and load with this classloader
+            try {
+              c = findClass(name);
+            } catch (ClassNotFoundException e) {
+              // Now try with parent
+              c = super.loadClass(name, false);
+            }
+          }
+        }
+        if (resolve) {
+          resolveClass(c);
+        }
+        return c;
+      }
+    }
+
+    private boolean isVertxOrSystemClass(String name) {
+      return
+        name.startsWith("java.") ||
+        name.startsWith("javax.") ||
+        name.startsWith("com.sun.") ||
+        name.startsWith("org.vertx.java.core") ||
+        name.startsWith("com.hazelcast") ||
+        name.startsWith("io.netty.");
+    }
+  }
+
 }

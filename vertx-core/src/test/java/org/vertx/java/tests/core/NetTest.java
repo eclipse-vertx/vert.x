@@ -58,7 +58,7 @@ public class NetTest extends VertxTestBase {
     server.close((asyncResult) -> {
       latch.countDown();
     });
-    assertTrue(latch.await(10, TimeUnit.SECONDS));
+    awaitLatch(latch);
   }
 
   @After
@@ -882,7 +882,7 @@ public class NetTest extends VertxTestBase {
         fail("Failed to bind server");
       }
     });
-    assertTrue(latch.await(10, TimeUnit.SECONDS));
+    awaitLatch(latch);
     testSharedServersRoundRobin();
   }
 
@@ -900,7 +900,7 @@ public class NetTest extends VertxTestBase {
         fail("Failed to bind server");
       }
     });
-    assertTrue(latch.await(10, TimeUnit.SECONDS));
+    awaitLatch(latch);
     CountDownLatch closeLatch = new CountDownLatch(1);
     server.close(ar -> {
       assertTrue(ar.succeeded());
@@ -932,7 +932,7 @@ public class NetTest extends VertxTestBase {
       assertTrue(ar.succeeded());
       latch.countDown();
     });
-    assertTrue(latch.await(10, TimeUnit.SECONDS));
+    awaitLatch(latch);
 
     int numConnections = 10;
     CountDownLatch connectLatch = new CountDownLatch(numConnections);
