@@ -23,12 +23,13 @@ import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxFactory;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.shareddata.SharedData;
-import static org.junit.Assert.*;
-import static org.vertx.java.tests.core.TestUtils.*;
 
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+
+import static org.junit.Assert.*;
+import static org.vertx.java.tests.core.TestUtils.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

@@ -51,8 +51,8 @@ class ClientConnection extends ConnectionBase {
   private final boolean ssl;
   private final String host;
   private final int port;
-  boolean keepAlive;
-  private boolean upgradedConnection;
+  private final boolean keepAlive;
+  private final boolean pipelining;
   private WebSocketClientHandshaker handshaker;
   private volatile DefaultHttpClientRequest currentRequest;
   // Requests can be pipelined so we need a queue to keep track of requests
@@ -63,6 +63,7 @@ class ClientConnection extends ConnectionBase {
   ClientConnection(VertxInternal vertx, DefaultHttpClient client, Channel channel, boolean ssl, String host,
                    int port,
                    boolean keepAlive,
+                   boolean pipelining,
                    DefaultContext context) {
     super(vertx, channel, context);
     this.client = client;
@@ -75,8 +76,8 @@ class ClientConnection extends ConnectionBase {
       this.hostHeader = host + ':' + port;
     }
     this.keepAlive = keepAlive;
+    this.pipelining = pipelining;
   }
-
 
   void toWebSocket(String uri,
                    final WebSocketVersion wsVersion,
@@ -135,8 +136,6 @@ class ClientConnection extends ConnectionBase {
           client.handleException((Exception) future.cause());
         }
       });
-      upgradedConnection = true;
-
     } catch (Exception e) {
       handleException(e);
     }
@@ -195,7 +194,7 @@ class ClientConnection extends ConnectionBase {
                     ctx.fireChannelRead(m);
                   }
                 } catch (WebSocketHandshakeException e) {
-                  actualClose();
+                  close();
                   handleException(e);
                 }
               }
@@ -231,22 +230,21 @@ class ClientConnection extends ConnectionBase {
     this.closeHandler = handler;
   }
 
-  @Override
-  public void close() {
-    if (upgradedConnection) {
-      // Close it
-      actualClose();
-    } else if (!keepAlive) {
-      // Close it
-      actualClose();
-    } else {
-      // Keep alive
+  void requestEnded() {
+    if (pipelining) {
+      // Return the connection to the pool now
       client.returnConnection(this);
     }
   }
 
-  void actualClose() {
-    super.close();
+  void responseEnded() {
+    if (!pipelining && keepAlive) {
+      // Return the connection to the pool
+      client.returnConnection(this);
+    } else if (!keepAlive) {
+      // Close it now
+      close();
+    }
   }
 
   boolean isClosed() {
@@ -308,9 +306,7 @@ class ClientConnection extends ConnectionBase {
     } catch (Throwable t) {
       handleHandlerException(t);
     }
-    if (!keepAlive) {
-      close();
-    }
+    responseEnded();
   }
 
   void handleWsFrame(WebSocketFrameInternal frame) {
@@ -355,17 +351,13 @@ class ClientConnection extends ConnectionBase {
     }
     currentRequest = null;
 
-    if (keepAlive) {
-      //Close just returns connection to the pool
-      close();
-    } else {
-      //The connection gets closed after the response is received
-    }
+    requestEnded();
+
+
   }
 
   NetSocket createNetSocket() {
     // connection was upgraded to raw TCP socket
-    upgradedConnection = true;
     DefaultNetSocket socket = new DefaultNetSocket(vertx, channel, context, client.tcpHelper, true);
     Map<Channel, DefaultNetSocket> connectionMap = new HashMap<>(1);
     connectionMap.put(channel, socket);

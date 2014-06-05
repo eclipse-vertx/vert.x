@@ -74,6 +74,10 @@ public interface HttpClient extends ClientSSLSupport<HttpClient>, TCPSupport<Htt
    */
   boolean isKeepAlive();
 
+  HttpClient setPipelining(boolean pipelining);
+
+  boolean isPipelining();
+
   /**
    * Set the port that the client will attempt to connect to the server on to {@code port}. The default value is
    * {@code 80}

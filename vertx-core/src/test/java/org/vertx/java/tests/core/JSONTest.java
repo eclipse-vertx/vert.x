@@ -17,12 +17,13 @@
 package org.vertx.java.tests.core;
 
 import org.junit.Test;
-import static org.junit.Assert.*;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonElement;
 import org.vertx.java.core.json.JsonObject;
 
 import java.util.Iterator;
+
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

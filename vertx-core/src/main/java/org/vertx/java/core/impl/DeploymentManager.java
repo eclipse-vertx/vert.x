@@ -85,6 +85,21 @@ public class DeploymentManager {
     return Collections.unmodifiableSet(deployments.keySet());
   }
 
+  public void undeployAll(Handler<AsyncResult<Void>> doneHandler) {
+    Set<String> deploymentIDs = new HashSet<>(deployments.keySet());
+    AtomicInteger count = new AtomicInteger(deploymentIDs.size());
+    for (String deploymentID: deploymentIDs) {
+      undeployVerticle(deploymentID, ar -> {
+        if (ar.failed()) {
+          log.error("Undeploy failed", ar.cause());
+        }
+        if (count.incrementAndGet() == deploymentIDs.size()) {
+          doneHandler.handle(new DefaultFutureResult<>((Void)null));
+        }
+      });
+    }
+  }
+
   private ClassLoader getClassLoader(String isolationGroup) {
     ClassLoader cl;
     if (isolationGroup == null) {

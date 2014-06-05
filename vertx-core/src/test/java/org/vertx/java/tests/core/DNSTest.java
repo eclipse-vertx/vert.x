@@ -18,6 +18,7 @@ package org.vertx.java.tests.core;
 
 import org.junit.Test;
 import org.vertx.java.core.dns.*;
+import org.vertx.java.fakedns.FakeDNSServer;
 
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -25,7 +26,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.List;
-import org.vertx.java.fakedns.FakeDNSServer;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>

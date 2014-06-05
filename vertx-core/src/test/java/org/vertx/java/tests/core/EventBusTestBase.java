@@ -24,8 +24,6 @@ import org.vertx.java.core.json.JsonObject;
 import java.util.function.Consumer;
 
 import static org.vertx.java.tests.core.TestUtils.*;
-import static org.vertx.java.tests.core.TestUtils.randomInt;
-import static org.vertx.java.tests.core.TestUtils.randomUnicodeString;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

@@ -20,11 +20,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.http.*;
+import org.vertx.java.core.http.HttpClient;
+import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.java.core.http.WebSocketVersion;
 import org.vertx.java.core.impl.ConcurrentHashSet;
 import org.vertx.java.core.json.impl.Base64;
 import org.vertx.java.core.net.NetSocket;
-import static org.vertx.java.tests.core.TestUtils.*;
 
 import java.security.MessageDigest;
 import java.util.*;
@@ -32,6 +34,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.vertx.java.tests.core.TestUtils.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

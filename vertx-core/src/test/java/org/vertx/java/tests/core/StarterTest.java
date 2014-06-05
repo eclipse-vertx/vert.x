@@ -34,6 +34,7 @@ public class StarterTest extends VertxTestBase {
   public void testVersion() throws Exception {
     String[] args = new String[] {"version"};
     Starter.main(args);
+    // TODO some way of getting this from the version in pom.xml
     assertEquals("3.0.0-SNAPSHOT", Starter.instance.getVersion());
   }
 

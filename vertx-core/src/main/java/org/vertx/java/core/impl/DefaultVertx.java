@@ -322,6 +322,9 @@ public class DefaultVertx implements VertxInternal {
 
   @Override
   public void stop(Handler<AsyncResult<Void>> doneHandler) {
+
+    // TODO call deploymentManager.undeployAll
+
     if (sharedHttpServers != null) {
       // Copy set to prevent ConcurrentModificationException
       for (HttpServer server : new HashSet<>(sharedHttpServers.values())) {

@@ -27,7 +27,8 @@ import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import static org.vertx.java.tests.core.TestUtils.*;
+
+import static org.vertx.java.tests.core.TestUtils.randomBuffer;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>

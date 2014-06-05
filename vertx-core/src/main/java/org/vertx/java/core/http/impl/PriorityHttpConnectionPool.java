@@ -38,7 +38,7 @@ public abstract class PriorityHttpConnectionPool implements HttpPool {
 
   private final Set<ClientConnection> available = new HashSet<>();
   private final Set<ClientConnection> allConnections = new ConcurrentHashSet<>();
-  private int maxPoolSize = 1;
+  private int maxPoolSize = 5;
   private int connectionCount;
   private final Queue<Waiter> waiters = new ArrayDeque<>();
 
@@ -84,12 +84,9 @@ public abstract class PriorityHttpConnectionPool implements HttpPool {
     if (conn != null) {
       handler.handle(conn);
     } else if (connect) {
-      connect(new Handler<ClientConnection>() {
-        @Override
-        public void handle(ClientConnection conn) {
-          allConnections.add(conn);
-          handler.handle(conn);
-        }
+      connect(conn2 -> {
+        allConnections.add(conn2);
+        handler.handle(conn2);
       }, connectExceptionHandler, context);
     }
   }
@@ -137,8 +134,7 @@ public abstract class PriorityHttpConnectionPool implements HttpPool {
       }
     }
     if (waiter != null) {
-      final Waiter w = waiter;
-      w.context.execute(() ->  w.handler.handle(conn));
+      waiter.context.execute(() ->  waiter.handler.handle(conn));
     }
   }
 
@@ -152,7 +148,7 @@ public abstract class PriorityHttpConnectionPool implements HttpPool {
     }
     for (ClientConnection conn: allConnections) {
       try {
-        conn.actualClose();
+        conn.close();
       } catch (Throwable t) {
         log.error("Failed to close connection", t);
       }
@@ -169,9 +165,9 @@ public abstract class PriorityHttpConnectionPool implements HttpPool {
     ClientConnection conn = null;
 
     if (!available.isEmpty()) {
-      final boolean useOccupiedConnections = connectionCount >= maxPoolSize;
+      boolean useOccupiedConnections = connectionCount >= maxPoolSize;
 
-      for (final ClientConnection c : available) {
+      for (ClientConnection c: available) {
 
         // Ideal situation for all cases, a cached but unoccupied connection.
         if (c.getOutstandingRequestCount() == 0 && !c.isClosed()) {

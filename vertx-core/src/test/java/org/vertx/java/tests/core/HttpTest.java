@@ -24,29 +24,15 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.http.HttpClientRequest;
-import org.vertx.java.core.http.HttpClientResponse;
-import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.http.HttpServerResponse;
-import org.vertx.java.core.http.HttpVersion;
+import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.HttpHeadersAdapter;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.streams.Pump;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLEncoder;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -1663,16 +1649,21 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testPooling() {
-    testPooling(true);
+  public void testPoolingKeepAliveAndPipelining() {
+    testPooling(true, true);
   }
 
   @Test
-  public void testPoolingNoKeepAlive() {
-    testPooling(false);
+  public void testPoolingKeepAliveNoPipelining() {
+    testPooling(true, false);
   }
 
-  private void testPooling(boolean keepAlive) {
+  @Test
+  public void testPoolingNoKeepAliveNoPipelining() {
+    testPooling(false, false);
+  }
+
+  private void testPooling(boolean keepAlive, boolean pipelining) {
     String path = "foo.txt";
     int numGets = 1000;
     int maxPoolSize = 10;
@@ -1684,7 +1675,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(port, onSuccess(s -> {
-      client.setKeepAlive(keepAlive).setMaxPoolSize(maxPoolSize);
+      client.setKeepAlive(keepAlive).setPipelining(pipelining).setMaxPoolSize(maxPoolSize);
 
       AtomicInteger cnt = new AtomicInteger(0);
       for (int i = 0; i < numGets; i++) {

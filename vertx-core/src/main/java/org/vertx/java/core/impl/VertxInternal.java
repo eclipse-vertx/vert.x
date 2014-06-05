@@ -18,7 +18,6 @@ package org.vertx.java.core.impl;
 
 
 import io.netty.channel.EventLoopGroup;
-import org.vertx.java.core.Context;
 import org.vertx.java.core.http.impl.DefaultHttpServer;
 import org.vertx.java.core.net.impl.DefaultNetServer;
 import org.vertx.java.core.net.impl.ServerID;

@@ -43,13 +43,11 @@ public class Starter {
 
   private static final Logger log = LoggerFactory.getLogger(Starter.class);
 
+  public static Starter instance = new Starter();
+
   public static void main(String[] args) {
     instance.run(args);
   }
-
-  public static Starter instance = new Starter();
-
-  private final CountDownLatch stopLatch = new CountDownLatch(1);
 
   public void run(String[] sargs) {
 
@@ -78,6 +76,8 @@ public class Starter {
       }
     }
   }
+
+  private final CountDownLatch stopLatch = new CountDownLatch(1);
 
   private String[] removeOptions(String[] args) {
     List<String> munged = new ArrayList<>();

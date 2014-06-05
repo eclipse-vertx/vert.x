@@ -18,6 +18,7 @@ package org.vertx.java.tests.core;
 
 import org.junit.Test;
 import org.vertx.java.core.buffer.Buffer;
+
 import static org.junit.Assert.*;
 import static org.vertx.java.tests.core.TestUtils.*;
 

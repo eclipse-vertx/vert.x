@@ -22,8 +22,10 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.Pump;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
-import static org.vertx.java.tests.core.TestUtils.*;
+
 import static org.junit.Assert.*;
+import static org.vertx.java.tests.core.TestUtils.buffersEqual;
+import static org.vertx.java.tests.core.TestUtils.randomBuffer;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
