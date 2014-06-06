@@ -21,8 +21,6 @@ import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
-import io.netty.handler.timeout.IdleState;
-import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -341,17 +339,7 @@ public class DefaultNetClient implements NetClient {
             // Only allIdleTime is enabled (different from 0) to trigger an event
             // when neither read nor write was performed for the specified period of time.
             pipeline.addLast("idle", new IdleStateHandler(0, 0, tcpHelper.getIdleTimeout()));
-            pipeline.addLast("closeIdle", new ChannelDuplexHandler() {
-              @Override
-              public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-                if (evt instanceof IdleStateEvent) {
-                  IdleStateEvent e = (IdleStateEvent) evt;
-                  if (e.state() == IdleState.ALL_IDLE) {
-                    ctx.close();
-                  }
-                }
-              }
-            });
+            pipeline.addLast("closeIdle", CloseIdleHandler.INSTANCE);
           }
 
           if (tcpHelper.isSSL()) {

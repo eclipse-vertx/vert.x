@@ -21,11 +21,9 @@ import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.netty.handler.timeout.IdleState;
-import io.netty.handler.timeout.IdleStateEvent;
-import io.netty.handler.timeout.IdleStateHandler;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
@@ -39,6 +37,7 @@ import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.net.impl.CloseIdleHandler;
 import org.vertx.java.core.net.impl.TCPSSLHelper;
 import org.vertx.java.core.net.impl.VertxEventLoopGroup;
 
@@ -694,17 +693,7 @@ public class DefaultHttpClient implements HttpClient {
             // Only allIdleTime is enabled (different from 0) to trigger an event
             // when neither read nor write was performed for the specified period of time.
             pipeline.addLast("idle", new IdleStateHandler(0, 0, tcpHelper.getIdleTimeout()));
-            pipeline.addLast("closeIdle", new ChannelDuplexHandler() {
-              @Override
-              public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-                if (evt instanceof IdleStateEvent) {
-                  IdleStateEvent e = (IdleStateEvent) evt;
-                  if (e.state() == IdleState.ALL_IDLE) {
-                    ctx.close();
-                  }
-                }
-              }
-            });
+            pipeline.addLast("closeIdle", CloseIdleHandler.INSTANCE);
           }
 
           pipeline.addLast("codec", new HttpClientCodec(4096, 8192, 8192, false, false));
