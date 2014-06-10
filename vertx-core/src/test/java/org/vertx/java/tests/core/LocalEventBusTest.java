@@ -24,7 +24,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxFactory;
 import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.EventBusRegistration;
+import org.vertx.java.core.eventbus.Registration;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.ReplyException;
 import org.vertx.java.core.eventbus.ReplyFailure;
@@ -81,7 +81,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     Handler<Message> handler = msg -> {};
     eb.registerHandler(ADDRESS1, handler, ar -> {
       assertTrue(ar.succeeded());
-      EventBusRegistration reg = ar.result();
+      Registration reg = ar.result();
       reg.unregister();
       reg.unregister(); // Ok to unregister twice
       testComplete();

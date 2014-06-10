@@ -21,7 +21,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.EventBusRegistration;
+import org.vertx.java.core.eventbus.Registration;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.json.JsonArray;
@@ -121,7 +121,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     this.replyTimeout = conf.getLong("reply_timeout", DEFAULT_REPLY_TIMEOUT);
   }
 
-  private void handleSocketClosed(SockJSSocket sock, Map<String, EventBusRegistration> registrationMap) {
+  private void handleSocketClosed(SockJSSocket sock, Map<String, Registration> registrationMap) {
     // On close unregister any handlers that haven't been unregistered
     registrationMap.entrySet().forEach(entry -> {
       handleUnregister(sock, entry.getKey());
@@ -149,7 +149,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     handleSocketClosed(sock);
   }
 
-  private void handleSocketData(SockJSSocket sock, Buffer data, Map<String, EventBusRegistration> registrationMap) {
+  private void handleSocketData(SockJSSocket sock, Buffer data, Map<String, Registration> registrationMap) {
     JsonObject msg = new JsonObject(data.toString());
 
     String type = getMandatoryString(msg, "type");
@@ -193,7 +193,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     }
   }
 
-  private void internalHandleRegister(final SockJSSocket sock, JsonObject message, final String address, Map<String, EventBusRegistration> registrationMap) {
+  private void internalHandleRegister(final SockJSSocket sock, JsonObject message, final String address, Map<String, Registration> registrationMap) {
     if (address.length() > maxAddressLength) {
       log.error("Refusing to register as address length > max_address_length");
       return;
@@ -243,9 +243,9 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     }
   }
 
-  private void internalHandleUnregister(SockJSSocket sock, String address, Map<String, EventBusRegistration> registrationMap) {
+  private void internalHandleUnregister(SockJSSocket sock, String address, Map<String, Registration> registrationMap) {
     if (handleUnregister(sock, address)) {
-      EventBusRegistration reg = registrationMap.remove(address);
+      Registration reg = registrationMap.remove(address);
       if (reg != null) {
         reg.unregister();
         SockInfo info = sockInfos.get(sock);
@@ -265,7 +265,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     if (!handleSocketCreated(sock)) {
       sock.close();
     } else {
-      final Map<String, EventBusRegistration> registrationMap = new HashMap<>();
+      final Map<String, Registration> registrationMap = new HashMap<>();
 
       sock.endHandler(v ->  handleSocketClosed(sock, registrationMap));
       sock.dataHandler(data ->  handleSocketData(sock, data, registrationMap));

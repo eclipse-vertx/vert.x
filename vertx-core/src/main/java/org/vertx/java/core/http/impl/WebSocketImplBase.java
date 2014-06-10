@@ -19,7 +19,7 @@ package org.vertx.java.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.eventbus.EventBusRegistration;
+import org.vertx.java.core.eventbus.Registration;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.WebSocketBase;
 import org.vertx.java.core.http.WebSocketFrame;
@@ -48,8 +48,8 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
   protected Handler<Throwable> exceptionHandler;
   protected Handler<Void> closeHandler;
   protected Handler<Void> endHandler;
-  protected EventBusRegistration binaryHandlerRegistration;
-  protected EventBusRegistration textHandlerRegistration;
+  protected Registration binaryHandlerRegistration;
+  protected Registration textHandlerRegistration;
   protected boolean closed;
 
   protected WebSocketImplBase(VertxInternal vertx, ConnectionBase conn) {

@@ -20,7 +20,7 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.EventBusRegistration;
+import org.vertx.java.core.eventbus.Registration;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.ReplyException;
 import org.vertx.java.core.eventbus.ReplyFailure;
@@ -436,7 +436,7 @@ public class DefaultEventBus implements EventBus {
 
   @Override
   public EventBus registerHandler(String address, Handler<? extends Message> handler,
-                              Handler<AsyncResult<EventBusRegistration>> resultHandler) {
+                              Handler<AsyncResult<Registration>> resultHandler) {
     return registerHandler(address, handler, resultHandler, false, false, -1);
   }
 
@@ -446,7 +446,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   @Override
-  public EventBusRegistration registerLocalHandler(String address, Handler<? extends Message> handler) {
+  public Registration registerLocalHandler(String address, Handler<? extends Message> handler) {
     registerHandler(address, handler, null, false, true, -1);
     return new DefaultRegistration(address, handler);
   }
@@ -733,7 +733,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   private EventBus registerHandler(String address, Handler<? extends Message> handler,
-                               Handler<AsyncResult<EventBusRegistration>> resultHandler,
+                               Handler<AsyncResult<Registration>> resultHandler,
                                boolean replyHandler, boolean localOnly, long timeoutID) {
     checkStarted();
     if (address == null) {
@@ -761,7 +761,7 @@ public class DefaultEventBus implements EventBus {
 
       handlers.list.add(new HandlerHolder(handler, replyHandler, localOnly, context, timeoutID));
       if (subs != null && !replyHandler && !localOnly) {
-        final Handler<AsyncResult<EventBusRegistration>> theResultHandler = resultHandler;
+        final Handler<AsyncResult<Registration>> theResultHandler = resultHandler;
         // Propagate the information
         subs.add(address, serverID, ar -> {
           if (ar.succeeded()) {
@@ -787,7 +787,7 @@ public class DefaultEventBus implements EventBus {
     return this;
   }
 
-  private void completeRegistration(String address, Handler<? extends Message> handler, Handler<AsyncResult<EventBusRegistration>> doneHandler) {
+  private void completeRegistration(String address, Handler<? extends Message> handler, Handler<AsyncResult<Registration>> doneHandler) {
     doneHandler.handle(new DefaultFutureResult<>(new DefaultRegistration(address, handler)));
   }
 
@@ -1086,7 +1086,7 @@ public class DefaultEventBus implements EventBus {
 
   }
 
-  private class DefaultRegistration implements EventBusRegistration {
+  private class DefaultRegistration implements Registration {
     private final String address;
     private final Handler<? extends Message> handler;
 

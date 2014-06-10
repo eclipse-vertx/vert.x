@@ -24,7 +24,7 @@ import org.vertx.java.core.Handler;
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface EventBusRegistration {
+public interface Registration {
 
   /**
    * @return The address the handler was registered with.

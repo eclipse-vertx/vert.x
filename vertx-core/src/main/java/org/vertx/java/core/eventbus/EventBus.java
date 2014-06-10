@@ -505,7 +505,7 @@ public interface EventBus {
    * propagated to all nodes of the event bus, the handler will be called.
    */
   EventBus registerHandler(String address, Handler<? extends Message> handler,
-                           Handler<AsyncResult<EventBusRegistration>> resultHandler);
+                           Handler<AsyncResult<Registration>> resultHandler);
 
   /**
    * Registers a handler against the specified address
@@ -521,7 +521,7 @@ public interface EventBus {
    * @param handler The handler
    * @return the event bus registration
    */
-  EventBusRegistration registerLocalHandler(String address, Handler<? extends Message> handler);
+  Registration registerLocalHandler(String address, Handler<? extends Message> handler);
 
   /**
    * Sets a default timeout, in ms, for replies. If a messages is sent specify a reply handler

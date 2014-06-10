@@ -19,7 +19,7 @@ package org.vertx.java.core.sockjs.impl;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.eventbus.EventBusRegistration;
+import org.vertx.java.core.eventbus.Registration;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
@@ -27,7 +27,7 @@ import java.util.UUID;
 
 public abstract class SockJSSocketBase implements SockJSSocket {
 
-  private final EventBusRegistration registration;
+  private final Registration registration;
   protected final Vertx vertx;
 
   /**

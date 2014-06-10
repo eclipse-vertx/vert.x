@@ -29,7 +29,7 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.eventbus.EventBusRegistration;
+import org.vertx.java.core.eventbus.Registration;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.file.impl.PathAdjuster;
 import org.vertx.java.core.impl.DefaultContext;
@@ -51,7 +51,7 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
-  private EventBusRegistration registration;
+  private Registration registration;
   private Queue<Buffer> pendingData;
   private boolean paused = false;
   private SSLHelper helper;
