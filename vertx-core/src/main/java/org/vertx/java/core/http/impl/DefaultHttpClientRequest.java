@@ -341,7 +341,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
   }
 
-  private void connected(ClientConnection conn) {
+  private synchronized void connected(ClientConnection conn) {
     conn.setCurrentRequest(this);
     this.conn = conn;
 
@@ -419,7 +419,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
   }
 
-  private DefaultHttpClientRequest write(ByteBuf buff, boolean end) {
+  private synchronized DefaultHttpClientRequest write(ByteBuf buff, boolean end) {
     int readableBytes = buff.readableBytes();
     if (readableBytes == 0 && !end) {
       // nothing to write to the connection just return
