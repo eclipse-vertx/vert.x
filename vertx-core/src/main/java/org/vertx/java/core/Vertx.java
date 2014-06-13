@@ -21,6 +21,7 @@ import org.vertx.java.core.datagram.InternetProtocolFamily;
 import org.vertx.java.core.dns.DnsClient;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.file.FileSystem;
+import org.vertx.java.core.http.ClientOptions;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.json.JsonObject;
@@ -65,7 +66,7 @@ public interface Vertx {
   /**
    * Create a HTTP/HTTPS client
    */
-  HttpClient createHttpClient();
+  HttpClient createHttpClient(ClientOptions options);
 
   /**
    * Create a new {@link DatagramSocket}.

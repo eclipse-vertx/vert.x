@@ -25,6 +25,7 @@ import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
+import org.vertx.java.core.http.RequestOptions;
 import org.vertx.java.core.impl.DefaultContext;
 
 import java.util.concurrent.TimeoutException;
@@ -34,6 +35,8 @@ import java.util.concurrent.TimeoutException;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class DefaultHttpClientRequest implements HttpClientRequest {
+
+  private final RequestOptions options;
   private final DefaultHttpClient client;
   private final HttpRequest request;
   private final Handler<HttpClientResponse> respHandler;
@@ -56,22 +59,22 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   private boolean exceptionOccurred;
   private long lastDataReceived;
 
-  DefaultHttpClientRequest(final DefaultHttpClient client, final String method, final String uri,
-                           final Handler<HttpClientResponse> respHandler,
-                           final DefaultContext context) {
-    this(client, method, uri, respHandler, context, false);
+  DefaultHttpClientRequest(DefaultHttpClient client, String method, RequestOptions options,
+                           Handler<HttpClientResponse> respHandler,
+                           DefaultContext context) {
+    this(client, method, options, respHandler, context, false);
   }
 
-  private DefaultHttpClientRequest(final DefaultHttpClient client, final String method, final String uri,
-                                   final Handler<HttpClientResponse> respHandler,
-                                   final DefaultContext context, final boolean raw) {
+  private DefaultHttpClientRequest(DefaultHttpClient client, String method, RequestOptions options,
+                                   Handler<HttpClientResponse> respHandler,
+                                   DefaultContext context, boolean raw) {
+    this.options = options;
     this.client = client;
-    this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method), uri, false);
+    this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method), options.getRequestURI(), false);
     this.chunked = false;
     this.respHandler = respHandler;
     this.context = context;
     this.raw = raw;
-
   }
 
   @Override
@@ -163,14 +166,11 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   }
 
   @Override
-  public HttpClientRequest exceptionHandler(final Handler<Throwable> handler) {
+  public HttpClientRequest exceptionHandler(Handler<Throwable> handler) {
     check();
-    this.exceptionHandler = new Handler<Throwable>() {
-      @Override
-      public void handle(Throwable event) {
-        cancelOutstandingTimeoutTimer();
-        handler.handle(event);
-      }
+    this.exceptionHandler = t -> {
+      cancelOutstandingTimeoutTimer();
+      handler.handle(t);
     };
     return this;
   }
@@ -221,9 +221,8 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     write(Unpooled.EMPTY_BUFFER, true);
   }
 
-
   @Override
-  public HttpClientRequest setTimeout(final long timeoutMs) {
+  public HttpClientRequest setTimeout(long timeoutMs) {
     cancelOutstandingTimeoutTimer();
     currentTimeoutTimerId = client.getVertx().setTimer(timeoutMs, id ->  handleTimeout(timeoutMs));
     return this;
@@ -259,11 +258,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   void handleException(Throwable t) {
     cancelOutstandingTimeoutTimer();
     exceptionOccurred = true;
-    if (exceptionHandler != null) {
-      exceptionHandler.handle(t);
-    } else {
-      context.reportException(t);
-    }
+    getExceptionHandler().handle(t);
   }
 
   void handleResponse(DefaultHttpClientResponse resp) {
@@ -282,6 +277,14 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
         handleException(t);
       }
     }
+  }
+
+  HttpRequest getRequest() {
+    return request;
+  }
+
+  private Handler<Throwable> getExceptionHandler() {
+    return exceptionHandler != null ? exceptionHandler : context::reportException;
   }
 
   private void cancelOutstandingTimeoutTimer() {
@@ -316,7 +319,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
       //We defer actual connection until the first part of body is written or end is called
       //This gives the user an opportunity to set an exception handler before connecting so
       //they can capture any exceptions on connection
-      client.getConnection(conn -> {
+      client.getConnection(options.getPort(), options.getHost(), conn -> {
         if (exceptionOccurred) {
           // The request already timed out before it has left the pool waiter queue
           // So return it
@@ -406,14 +409,14 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
         HttpHeaders.setTransferEncodingChunked(request);
       }
     }
-    if (client.getTryUseCompression() && request.headers().get(org.vertx.java.core.http.HttpHeaders.ACCEPT_ENCODING) == null) {
+    if (client.getOptions().isTryUseCompression() && request.headers().get(org.vertx.java.core.http.HttpHeaders.ACCEPT_ENCODING) == null) {
       // if compression should be used but nothing is specified by the user support deflate and gzip.
       request.headers().set(org.vertx.java.core.http.HttpHeaders.ACCEPT_ENCODING, org.vertx.java.core.http.HttpHeaders.DEFLATE_GZIP);
 
     }
   }
 
-  private synchronized void write(final ByteBuf buff, final boolean end) {
+  private synchronized void write(ByteBuf buff, boolean end) {
     int readableBytes = buff.readableBytes();
     if (readableBytes == 0 && !end) {
       // nothing to write to the connection just return

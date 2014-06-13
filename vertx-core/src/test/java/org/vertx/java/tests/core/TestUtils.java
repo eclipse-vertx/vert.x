@@ -95,6 +95,18 @@ public class TestUtils {
   }
 
   /**
+   * @return a random positive int
+   */
+  public static int randomPositiveInt() {
+    while (true) {
+      int rand = random.nextInt();
+      if (rand > 0) {
+        return rand;
+      }
+    }
+  }
+
+  /**
    * @return a random long
    */
   public static long randomLong() {

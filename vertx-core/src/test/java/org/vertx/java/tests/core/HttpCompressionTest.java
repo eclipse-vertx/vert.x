@@ -18,15 +18,18 @@ package org.vertx.java.tests.core;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.vertx.java.core.http.ClientOptions;
+import org.vertx.java.core.http.RequestOptions;
 
 /**
+ * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
 public class HttpCompressionTest extends HttpTestBase {
 
   @Before
   public void before() {
-    client.setTryUseCompression(true);
+    client = vertx.createHttpClient(new ClientOptions().setTryUseCompression(true));
     server.setCompressionSupported(true);
   }
 
@@ -34,13 +37,13 @@ public class HttpCompressionTest extends HttpTestBase {
   public void testDefaultRequestHeaders() {
     server.requestHandler(req -> {
       assertEquals(2, req.headers().size());
-      assertEquals("localhost:" + port, req.headers().get("host"));
+      assertEquals("localhost:" + DEFAULT_HTTP_PORT, req.headers().get("host"));
       assertNotNull(req.headers().get("Accept-Encoding"));
       req.response().end();
     });
 
-    server.listen(port, onSuccess(server -> {
-      client.getNow("some-uri", resp -> testComplete());
+    server.listen(DEFAULT_HTTP_PORT, onSuccess(server -> {
+      client.getNow(new RequestOptions().setRequestURI("some-uri").setPort(DEFAULT_HTTP_PORT), resp -> testComplete());
     }));
 
     await();

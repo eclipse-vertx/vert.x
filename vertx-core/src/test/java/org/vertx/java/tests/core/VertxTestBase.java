@@ -48,8 +48,11 @@ public class VertxTestBase extends AsyncTestBase {
 
   protected <T> Handler<AsyncResult<T>> onSuccess(Consumer<T> consumer) {
     return result -> {
-      assertTrue(result.succeeded());
-      consumer.accept(result.result());
+      if (result.failed()) {
+        fail(result.cause().getMessage());
+      } else {
+        consumer.accept(result.result());
+      }
     };
   }
 

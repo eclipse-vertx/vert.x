@@ -127,6 +127,8 @@ public abstract class ConnectionBase {
       } catch (Throwable t2) {
         handleHandlerException(t2);
       }
+    } else {
+      context.reportException(t);
     }
   }
 

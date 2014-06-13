@@ -18,10 +18,7 @@ package org.vertx.java.tests.core;
 
 import org.junit.Test;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.http.HttpClientRequest;
-import org.vertx.java.core.http.HttpClientResponse;
-import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.core.http.RouteMatcher;
+import org.vertx.java.core.http.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -237,6 +234,8 @@ public class HttpRouteMatcherTest extends HttpTestBase {
   private void testRoute(final boolean regex, final String pattern, final Map<String, String> params,
                          final String method, final String uri, final boolean shouldPass, final boolean noMatchHandler) {
 
+    client = vertx.createHttpClient(new ClientOptions());
+
     RouteMatcher matcher = new RouteMatcher();
 
     Handler<HttpServerRequest> handler = req -> {
@@ -338,33 +337,35 @@ public class HttpRouteMatcherTest extends HttpTestBase {
 
       final HttpClientRequest req;
 
+      RequestOptions options = new RequestOptions().setRequestURI(uri).setPort(DEFAULT_HTTP_PORT);
+
       switch (method) {
         case "GET":
-          req = client.get(uri, respHandler);
+          req = client.get(options, respHandler);
           break;
         case "PUT":
-          req = client.put(uri, respHandler);
+          req = client.put(options, respHandler);
           break;
         case "POST":
-          req = client.post(uri, respHandler);
+          req = client.post(options, respHandler);
           break;
         case "DELETE":
-          req = client.delete(uri, respHandler);
+          req = client.delete(options, respHandler);
           break;
         case "OPTIONS":
-          req = client.options(uri, respHandler);
+          req = client.options(options, respHandler);
           break;
         case "HEAD":
-          req = client.head(uri, respHandler);
+          req = client.head(options, respHandler);
           break;
         case "TRACE":
-          req = client.trace(uri, respHandler);
+          req = client.trace(options, respHandler);
           break;
         case "PATCH":
-          req = client.patch(uri, respHandler);
+          req = client.patch(options, respHandler);
           break;
         case "CONNECT":
-          req = client.connect(uri, respHandler);
+          req = client.connect(options, respHandler);
           break;
         default:
           throw new IllegalArgumentException("Invalid method:" + method);
@@ -375,4 +376,5 @@ public class HttpRouteMatcherTest extends HttpTestBase {
 
     await();
   }
+
 }

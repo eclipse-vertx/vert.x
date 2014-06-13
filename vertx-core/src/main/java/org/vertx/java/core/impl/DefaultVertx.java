@@ -30,6 +30,7 @@ import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.file.impl.DefaultFileSystem;
 import org.vertx.java.core.file.impl.WindowsFileSystem;
+import org.vertx.java.core.http.ClientOptions;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.impl.DefaultHttpClient;
@@ -160,8 +161,8 @@ public class DefaultVertx implements VertxInternal {
     return new DefaultHttpServer(this);
   }
 
-  public HttpClient createHttpClient() {
-    return new DefaultHttpClient(this);
+  public HttpClient createHttpClient(ClientOptions options) {
+    return new DefaultHttpClient(this, options);
   }
 
   public SockJSServer createSockJSServer(HttpServer httpServer) {

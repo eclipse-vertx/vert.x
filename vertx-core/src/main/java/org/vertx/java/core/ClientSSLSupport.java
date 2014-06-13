@@ -31,4 +31,6 @@ public interface ClientSSLSupport<T> extends SSLSupport<T> {
    * @return true if this client will trust all server certificates.
    */
   boolean isTrustAll();
+
+
 }

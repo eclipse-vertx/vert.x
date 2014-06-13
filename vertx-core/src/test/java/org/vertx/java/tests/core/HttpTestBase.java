@@ -25,24 +25,28 @@ import org.vertx.java.core.http.HttpServer;
 import java.util.concurrent.CountDownLatch;
 
 /**
+ * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
 public class HttpTestBase extends VertxTestBase {
-  private static final int DEFAULT_HTTP_PORT = Integer.getInteger("vertx.http.port", 8080);
+
+  public static final String DEFAULT_HTTP_HOST = "localhost";
+  public static final int DEFAULT_HTTP_PORT = 8080;
+  public static final String DEFAULT_TEST_URI = "some-uri";
 
   protected HttpServer server;
   protected HttpClient client;
-  protected int port = DEFAULT_HTTP_PORT;
 
   @Before
   public void beforeHttpTestBase() throws Exception {
     server = vertx.createHttpServer();
-    client = vertx.createHttpClient().setPort(port);
   }
 
   @After
   public void afterHttpTestBase() throws Exception {
-    client.close();
+    if (client != null) {
+      client.close();
+    }
     CountDownLatch latch = new CountDownLatch(1);
     server.close((asyncResult) -> {
       assertTrue(asyncResult.succeeded());

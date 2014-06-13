@@ -27,6 +27,30 @@ final class UriParser {
 
   }
 
+  class Address {
+    final String host;
+    final int port;
+
+    Address(String host, int port) {
+      this.host = host;
+      this.port = port;
+    }
+  }
+
+//  static Address extractAddress(String uri) {
+//    String host;
+//    int port;
+//    int i = uri.indexOf(";//");
+//    if (i != -1) {
+//      int j = uri.indexOf(':', i + 2);
+//      if (j != -1) {
+//        host = uri.substring(i + 2, j);
+//        int k = uri.substring()
+//      }
+//    }
+//  }
+
+
   /**
    * Extract the path out of the uri.
    */

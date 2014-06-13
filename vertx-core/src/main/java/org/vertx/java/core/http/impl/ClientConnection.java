@@ -23,9 +23,9 @@ import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.util.ReferenceCountUtil;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.WebSocket;
+import org.vertx.java.core.http.WebSocketConnectOptions;
 import org.vertx.java.core.http.WebSocketVersion;
 import org.vertx.java.core.http.impl.ws.WebSocketFrameInternal;
 import org.vertx.java.core.impl.DefaultContext;
@@ -51,20 +51,18 @@ class ClientConnection extends ConnectionBase {
   private final boolean ssl;
   private final String host;
   private final int port;
-  private final boolean keepAlive;
-  private final boolean pipelining;
+  private final ConnectionLifeCycleListener listener;
   private WebSocketClientHandshaker handshaker;
   private volatile DefaultHttpClientRequest currentRequest;
   // Requests can be pipelined so we need a queue to keep track of requests
   private final Queue<DefaultHttpClientRequest> requests = new ArrayDeque<>();
   private volatile DefaultHttpClientResponse currentResponse;
+  private volatile DefaultHttpClientRequest requestForResponse;
+
   private DefaultWebSocket ws;
 
   ClientConnection(VertxInternal vertx, DefaultHttpClient client, Channel channel, boolean ssl, String host,
-                   int port,
-                   boolean keepAlive,
-                   boolean pipelining,
-                   DefaultContext context) {
+                   int port, DefaultContext context, ConnectionLifeCycleListener listener) {
     super(vertx, channel, context);
     this.client = client;
     this.ssl = ssl;
@@ -75,50 +73,46 @@ class ClientConnection extends ConnectionBase {
     } else {
       this.hostHeader = host + ':' + port;
     }
-    this.keepAlive = keepAlive;
-    this.pipelining = pipelining;
+    this.listener = listener;
   }
 
-  void toWebSocket(String uri,
-                   final WebSocketVersion wsVersion,
-                   final MultiMap headers,
+  void toWebSocket(WebSocketConnectOptions options,
                    int maxWebSocketFrameSize,
-                   final Set<String> subProtocols,
                    final Handler<WebSocket> wsConnect) {
     if (ws != null) {
       throw new IllegalStateException("Already websocket");
     }
 
     try {
-      URI wsuri = new URI(uri);
+      URI wsuri = new URI(options.getRequestURI());
       if (!wsuri.isAbsolute()) {
         // Netty requires an absolute url
-        wsuri = new URI((ssl ? "https:" : "http:") + "//" + host + ":" + port + uri);
+        wsuri = new URI((ssl ? "https:" : "http:") + "//" + host + ":" + port + options.getRequestURI());
       }
       io.netty.handler.codec.http.websocketx.WebSocketVersion version;
-      if (wsVersion == WebSocketVersion.HYBI_00) {
+      if (options.getVersion() == WebSocketVersion.HYBI_00) {
         version = io.netty.handler.codec.http.websocketx.WebSocketVersion.V00;
-      } else if (wsVersion == WebSocketVersion.HYBI_08) {
+      } else if (options.getVersion() == WebSocketVersion.HYBI_08) {
         version = io.netty.handler.codec.http.websocketx.WebSocketVersion.V08;
-      } else if (wsVersion == WebSocketVersion.RFC6455) {
+      } else if (options.getVersion() == WebSocketVersion.RFC6455) {
         version = io.netty.handler.codec.http.websocketx.WebSocketVersion.V13;
       } else {
         throw new IllegalArgumentException("Invalid version");
       }
       HttpHeaders nettyHeaders;
-      if (headers != null) {
+      if (options.getHeaders() != null) {
         nettyHeaders = new DefaultHttpHeaders();
-        for (Map.Entry<String, String> entry: headers) {
+        for (Map.Entry<String, String> entry: options.getHeaders()) {
           nettyHeaders.add(entry.getKey(), entry.getValue());
         }
       } else {
         nettyHeaders = null;
       }
       String wsSubProtocols = null;
-      if (subProtocols != null && !subProtocols.isEmpty()) {
+      if (options.getSubProtocols() != null && !options.getSubProtocols().isEmpty()) {
         StringBuilder sb = new StringBuilder();
 
-        Iterator<String> protocols = subProtocols.iterator();
+        Iterator<String> protocols = options.getSubProtocols().iterator();
         while (protocols.hasNext()) {
           sb.append(protocols.next());
           if (protocols.hasNext()) {
@@ -230,22 +224,6 @@ class ClientConnection extends ConnectionBase {
     this.closeHandler = handler;
   }
 
-  void requestEnded() {
-    if (pipelining) {
-      // Return the connection to the pool now
-      client.returnConnection(this);
-    }
-  }
-
-  void responseEnded() {
-    if (!pipelining && keepAlive) {
-      // Return the connection to the pool
-      client.returnConnection(this);
-    } else if (!keepAlive) {
-      // Close it now
-      close();
-    }
-  }
 
   boolean isClosed() {
     return !channel.isOpen();
@@ -274,20 +252,19 @@ class ClientConnection extends ConnectionBase {
 
 
   void handleResponse(HttpResponse resp) {
-    DefaultHttpClientRequest req;
     if (resp.getStatus().code() == 100) {
       //If we get a 100 continue it will be followed by the real response later, so we don't remove it yet
-      req = requests.peek();
+      requestForResponse = requests.peek();
     } else {
-      req = requests.poll();
+      requestForResponse = requests.poll();
     }
-    if (req == null) {
+    if (requestForResponse == null) {
       throw new IllegalStateException("No response handler");
     }
     setContext();
-    DefaultHttpClientResponse nResp = new DefaultHttpClientResponse(vertx, req, this, resp);
+    DefaultHttpClientResponse nResp = new DefaultHttpClientResponse(vertx, requestForResponse, this, resp);
     currentResponse = nResp;
-    req.handleResponse(nResp);
+    requestForResponse.handleResponse(nResp);
   }
 
   void handleResponseChunk(Buffer buff) {
@@ -306,7 +283,11 @@ class ClientConnection extends ConnectionBase {
     } catch (Throwable t) {
       handleHandlerException(t);
     }
-    responseEnded();
+    // We don't signal response end for a 100-continue response as a real response will follow
+    // Also we keep the connection open for an HTTP CONNECT
+    if (currentResponse.statusCode() != 100 && requestForResponse.getRequest().getMethod() != HttpMethod.CONNECT) {
+      listener.responseEnded(this);
+    }
   }
 
   void handleWsFrame(WebSocketFrameInternal frame) {
@@ -350,15 +331,12 @@ class ClientConnection extends ConnectionBase {
       throw new IllegalStateException("No write in progress");
     }
     currentRequest = null;
-
-    requestEnded();
-
-
+    listener.requestEnded(this);
   }
 
   NetSocket createNetSocket() {
     // connection was upgraded to raw TCP socket
-    DefaultNetSocket socket = new DefaultNetSocket(vertx, channel, context, client.tcpHelper, true);
+    DefaultNetSocket socket = new DefaultNetSocket(vertx, channel, context, client.getSslHelper(), true);
     Map<Channel, DefaultNetSocket> connectionMap = new HashMap<>(1);
     connectionMap.put(channel, socket);
 
@@ -373,18 +351,18 @@ class ClientConnection extends ConnectionBase {
       pipeline.remove(inflater);
     }
     pipeline.remove("codec");
-    pipeline.replace("handler", "handler", new VertxNetHandler(client.vertx, connectionMap) {
+    pipeline.replace("handler", "handler", new VertxNetHandler(client.getVertx(), connectionMap) {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
         // remove from the real mapping
-        client.connectionMap.remove(channel);
+        client.removeChannel(channel);
         super.exceptionCaught(chctx, t);
       }
 
       @Override
       public void channelInactive(ChannelHandlerContext chctx) throws Exception {
         // remove from the real mapping
-        client.connectionMap.remove(channel);
+        client.removeChannel(channel);
         super.channelInactive(chctx);
       }
 

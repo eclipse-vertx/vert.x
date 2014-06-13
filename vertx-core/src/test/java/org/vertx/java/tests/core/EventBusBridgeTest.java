@@ -19,8 +19,10 @@ package org.vertx.java.tests.core;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.vertx.java.core.http.ClientOptions;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.core.http.WebSocketConnectOptions;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.sockjs.SockJSServer;
@@ -44,8 +46,6 @@ public class EventBusBridgeTest extends VertxTestBase {
     SockJSServer sockJSServer = vertx.createSockJSServer(server);
     sockJSServer.bridge(new JsonObject().putString("prefix", "/eventbus"), permitted, permitted);
 
-
-
   }
 
   @After
@@ -60,12 +60,13 @@ public class EventBusBridgeTest extends VertxTestBase {
 
   @Test
   public void testSimple() {
-    HttpClient client = vertx.createHttpClient().setPort(8080);
+    HttpClient client = vertx.createHttpClient(new ClientOptions());
 
-    server.listen(8080, ar -> {
+    server.listen(HttpTestBase.DEFAULT_HTTP_PORT, ar -> {
       assertTrue(ar.succeeded());
       // We use raw websocket transport
-      client.connectWebsocket("/eventbus/websocket", ws -> {
+      WebSocketConnectOptions options = new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI("/eventbus/websocket");
+      client.connectWebsocket(options, ws -> {
 
         // Register
         JsonObject msg = new JsonObject().putString("type", "register").putString("address", "someaddress");
