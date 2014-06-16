@@ -201,4 +201,39 @@ public class AsyncTestBaseTest extends AsyncTestBase {
     }
   }
 
+  @Test
+  public void testNoAssertionsNoTestComplete() {
+    // Deliberately empty test
+  }
+
+  @Test
+  public void testNoAssertionsTestComplete() {
+    testComplete();
+  }
+
+  @Test
+  public void testAssertionOKTestComplete() {
+    assertEquals("foo", "foo");
+    testComplete();
+  }
+
+  @Test
+  public void testAssertionFailedFromMainThreadWithNoTestComplete() {
+    try {
+      assertEquals("foo", "bar");
+    } catch (AssertionError e) {
+      // OK
+      testComplete();
+      try {
+        super.afterAsyncTestBase();
+      } catch (IllegalStateException e2) {
+        fail("Should not throw exception");
+      } finally {
+        // Cancel the error condition
+        clearThrown();
+      }
+    }
+  }
+
+
 }

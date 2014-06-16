@@ -17,9 +17,7 @@
 package org.vertx.java.core.net;
 
 import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.ClientSSLSupport;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.TCPSupport;
 
 /**
  * A TCP/SSL client.<p>
@@ -35,7 +33,7 @@ import org.vertx.java.core.TCPSupport;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface NetClient extends ClientSSLSupport<NetClient>, TCPSupport<NetClient> {
+public interface NetClient {
 
   /**
    * Attempt to open a connection to a server at the specific {@code port} and host {@code localhost}
@@ -52,39 +50,6 @@ public interface NetClient extends ClientSSLSupport<NetClient>, TCPSupport<NetCl
    * @return a reference to this so multiple method calls can be chained together
    */
   NetClient connect(int port, String host, Handler<AsyncResult<NetSocket>> connectHandler);
-
-  /**
-   * Set the number of reconnection attempts. In the event a connection attempt fails, the client will attempt
-   * to connect a further number of times, before it fails. Default value is zero.
-   */
-  NetClient setReconnectAttempts(int attempts);
-
-  /**
-   * Get the number of reconnect attempts
-   */
-  int getReconnectAttempts();
-
-  /**
-   * Set the reconnect interval, in milliseconds
-   */
-  NetClient setReconnectInterval(long interval);
-
-  /**
-   * Get the reconnect interval, in milliseconds.
-   */
-  long getReconnectInterval();
-
-  /**
-   * Set the connect timeout in milliseconds.
-   * @return a reference to this so multiple method calls can be chained together
-   */
-  NetClient setConnectTimeout(int timeout);
-
-  /**
-   *
-   * @return The connect timeout in milliseconds
-   */
-  int getConnectTimeout();
 
   /**
    * Close the client. Any sockets which have not been closed manually will be closed here.

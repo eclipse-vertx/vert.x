@@ -23,6 +23,7 @@ import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
@@ -32,10 +33,7 @@ import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.core.http.ServerWebSocket;
-import org.vertx.java.core.http.WebSocketFrame;
+import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.cgbystrom.FlashPolicyHandler;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.impl.ws.WebSocketFrameInternal;
@@ -52,7 +50,10 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -68,31 +69,30 @@ public class DefaultHttpServer implements HttpServer, Closeable {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultHttpServer.class);
 
-  final VertxInternal vertx;
-  final TCPSSLHelper tcpHelper = new TCPSSLHelper();
+  private final HttpServerOptions options;
+  private final VertxInternal vertx;
+  private final SSLHelper sslHelper;
   private final DefaultContext actualCtx;
+  private final Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
+  private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
-  final Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
   private ChannelGroup serverChannelGroup;
   private boolean listening;
   private String serverOrigin;
-  private boolean compressionSupported;
-  private int maxWebSocketFrameSize = 65536;
   private Set<String> webSocketSubProtocols = Collections.unmodifiableSet(Collections.<String>emptySet());
-
   private ChannelFuture bindFuture;
   private ServerID id;
   private DefaultHttpServer actualServer;
-  private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private HandlerManager<HttpServerRequest> reqHandlerManager = new HandlerManager<>(availableWorkers);
   private HandlerManager<ServerWebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
 
-  public DefaultHttpServer(VertxInternal vertx) {
+  public DefaultHttpServer(VertxInternal vertx, HttpServerOptions options) {
+    this.options = new HttpServerOptions(options);
     this.vertx = vertx;
     actualCtx = vertx.getOrCreateContext();
     actualCtx.addCloseHook(this);
-    tcpHelper.setReuseAddress(true);
+    sslHelper = new SSLHelper(options);
   }
 
   @Override
@@ -123,22 +123,33 @@ public class DefaultHttpServer implements HttpServer, Closeable {
     return wsHandler;
   }
 
-  public HttpServer listen(int port) {
-    listen(port, "0.0.0.0", null);
-    return this;
+  public HttpServer listen() {
+    return listen(null);
   }
 
-  public HttpServer listen(int port, String host) {
-    listen(port, host, null);
-    return this;
+  private void applyConnectionOptions(ServerBootstrap bootstrap) {
+    bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
+    if (options.getSendBufferSize() != -1) {
+      bootstrap.childOption(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
+    }
+    if (options.getReceiveBufferSize() != -1) {
+      bootstrap.childOption(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
+      bootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
+    }
+
+    bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
+    if (options.getTrafficClass() != -1) {
+      bootstrap.childOption(ChannelOption.IP_TOS, options.getTrafficClass());
+    }
+    bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+
+    bootstrap.childOption(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
+    bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
+    bootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());
   }
 
-  public HttpServer listen(int port, Handler<AsyncResult<HttpServer>> listenHandler) {
-    listen(port, "0.0.0.0", listenHandler);
-    return this;
-  }
 
-  public HttpServer listen(int port, String host, final Handler<AsyncResult<HttpServer>> listenHandler) {
+  public HttpServer listen(final Handler<AsyncResult<HttpServer>> listenHandler) {
     if (requestHandler == null && wsHandler == null) {
       throw new IllegalStateException("Set request or websocket handler first");
     }
@@ -148,9 +159,9 @@ public class DefaultHttpServer implements HttpServer, Closeable {
     listening = true;
 
     synchronized (vertx.sharedHttpServers()) {
-      id = new ServerID(port, host);
+      id = new ServerID(options.getPort(), options.getHost());
 
-      serverOrigin = (isSSL() ? "https" : "http") + "://" + host + ":" + port;
+      serverOrigin = (options.isSsl() ? "https" : "http") + "://" + options.getHost() + ":" + options.getPort();
 
       DefaultHttpServer shared = vertx.sharedHttpServers().get(id);
       if (shared == null) {
@@ -158,16 +169,16 @@ public class DefaultHttpServer implements HttpServer, Closeable {
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(availableWorkers);
         bootstrap.channel(NioServerSocketChannel.class);
-        tcpHelper.applyConnectionOptions(bootstrap);
-        tcpHelper.checkSSL(vertx);
+        applyConnectionOptions(bootstrap);
+        sslHelper.checkSSL(vertx);
         bootstrap.childHandler(new ChannelInitializer<Channel>() {
             @Override
             protected void initChannel(Channel ch) throws Exception {
               ChannelPipeline pipeline = ch.pipeline();
-              if (tcpHelper.isSSL()) {
-                SSLEngine engine = tcpHelper.getSSLContext().createSSLEngine();
+              if (sslHelper.isSSL()) {
+                SSLEngine engine = sslHelper.getSslContext().createSSLEngine();
                 engine.setUseClientMode(false);
-                switch (tcpHelper.getClientAuth()) {
+                switch (sslHelper.getClientAuth()) {
                   case REQUEST: {
                     engine.setWantClientAuth(true);
                     break;
@@ -186,10 +197,10 @@ public class DefaultHttpServer implements HttpServer, Closeable {
               pipeline.addLast("flashpolicy", new FlashPolicyHandler());
               pipeline.addLast("httpDecoder", new HttpRequestDecoder(4096, 8192, 8192, false));
               pipeline.addLast("httpEncoder", new VertxHttpResponseEncoder());
-              if (compressionSupported) {
+              if (options.isCompressionSupported()) {
                 pipeline.addLast("deflater", new HttpChunkContentCompressor());
               }
-              if (tcpHelper.isSSL() || compressionSupported) {
+              if (sslHelper.isSSL() || options.isCompressionSupported()) {
                 // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
                 pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
               }
@@ -199,7 +210,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
 
         addHandlers(this);
         try {
-          bindFuture = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
+          bindFuture = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(options.getHost()), options.getPort()));
           Channel serverChannel = bindFuture.channel();
           serverChannelGroup.add(serverChannel);
           bindFuture.addListener(new ChannelFutureListener() {
@@ -302,223 +313,12 @@ public class DefaultHttpServer implements HttpServer, Closeable {
     actualCtx.removeCloseHook(this);
   }
 
-  @Override
-  public HttpServer setSSL(boolean ssl) {
-    checkListening();
-    tcpHelper.setSSL(ssl);
-    return this;
+  SSLHelper getSslHelper() {
+    return sslHelper;
   }
 
-  @Override
-  public HttpServer setKeyStorePath(String path) {
-    checkListening();
-    tcpHelper.setKeyStorePath(path);
-    return this;
-  }
-
-  @Override
-  public HttpServer setKeyStorePassword(String pwd) {
-    checkListening();
-    tcpHelper.setKeyStorePassword(pwd);
-    return this;
-  }
-
-  @Override
-  public HttpServer setTrustStorePath(String path) {
-    checkListening();
-    tcpHelper.setTrustStorePath(path);
-    return this;
-  }
-
-  @Override
-  public HttpServer setTrustStorePassword(String pwd) {
-    checkListening();
-    tcpHelper.setTrustStorePassword(pwd);
-    return this;
-  }
-
-  @Override
-  public HttpServer setClientAuthRequired(boolean required) {
-    checkListening();
-    tcpHelper.setClientAuthRequired(required);
-    return this;
-  }
-
-  @Override
-  public HttpServer setTCPNoDelay(boolean tcpNoDelay) {
-    checkListening();
-    tcpHelper.setTCPNoDelay(tcpNoDelay);
-    return this;
-  }
-
-  @Override
-  public HttpServer setSendBufferSize(int size) {
-    checkListening();
-    tcpHelper.setSendBufferSize(size);
-    return this;
-  }
-
-  @Override
-  public HttpServer setReceiveBufferSize(int size) {
-    checkListening();
-    tcpHelper.setReceiveBufferSize(size);
-    return this;
-  }
-
-  @Override
-  public HttpServer setTCPKeepAlive(boolean keepAlive) {
-    checkListening();
-    tcpHelper.setTCPKeepAlive(keepAlive);
-    return this;
-  }
-
-  @Override
-  public HttpServer setReuseAddress(boolean reuse) {
-    checkListening();
-    tcpHelper.setReuseAddress(reuse);
-    return this;
-  }
-
-  @Override
-  public HttpServer setSoLinger(int linger) {
-    checkListening();
-    tcpHelper.setSoLinger(linger);
-    return this;
-  }
-
-  @Override
-  public HttpServer setTrafficClass(int trafficClass) {
-    checkListening();
-    tcpHelper.setTrafficClass(trafficClass);
-    return this;
-  }
-
-  @Override
-  public HttpServer setAcceptBacklog(int backlog) {
-    checkListening();
-    tcpHelper.setAcceptBacklog(backlog);
-    return this;
-  }
-
-  @Override
-  public boolean isTCPNoDelay() {
-    return tcpHelper.isTCPNoDelay();
-  }
-
-  @Override
-  public int getSendBufferSize() {
-
-    return tcpHelper.getSendBufferSize();
-  }
-
-  @Override
-  public int getReceiveBufferSize() {
-    return tcpHelper.getReceiveBufferSize();
-  }
-
-  @Override
-  public boolean isTCPKeepAlive() {
-    return tcpHelper.isTCPKeepAlive();
-  }
-
-  @Override
-  public boolean isReuseAddress() {
-    return tcpHelper.isReuseAddress();
-  }
-
-  @Override
-  public int getSoLinger() {
-    return tcpHelper.getSoLinger();
-  }
-
-  @Override
-  public int getTrafficClass() {
-    return tcpHelper.getTrafficClass();
-  }
-
-  @Override
-  public int getAcceptBacklog() {
-    return tcpHelper.getAcceptBacklog();
-  }
-
-  @Override
-  public boolean isSSL() {
-    return tcpHelper.isSSL();
-  }
-
-  @Override
-  public String getKeyStorePath() {
-    return tcpHelper.getKeyStorePath();
-  }
-
-  @Override
-  public String getKeyStorePassword() {
-    return tcpHelper.getKeyStorePassword();
-  }
-
-  @Override
-  public String getTrustStorePath() {
-    return tcpHelper.getTrustStorePath();
-  }
-
-  @Override
-  public String getTrustStorePassword() {
-    return tcpHelper.getTrustStorePassword();
-  }
-
-  @Override
-  public boolean isClientAuthRequired() {
-    return tcpHelper.getClientAuth() == TCPSSLHelper.ClientAuth.REQUIRED;
-  }
-
-  @Override
-  public HttpServer setUsePooledBuffers(boolean pooledBuffers) {
-    checkListening();
-    tcpHelper.setUsePooledBuffers(pooledBuffers);
-    return this;
-  }
-
-  @Override
-  public boolean isUsePooledBuffers() {
-    return tcpHelper.isUsePooledBuffers();
-  }
-
-  @Override
-  public HttpServer setCompressionSupported(boolean compressionSupported) {
-    checkListening();
-    this.compressionSupported = compressionSupported;
-    return this;
-  }
-
-  @Override
-  public boolean isCompressionSupported() {
-    return compressionSupported;
-  }
-
-  @Override
-  public HttpServer setMaxWebSocketFrameSize(int maxSize) {
-    maxWebSocketFrameSize = maxSize;
-    return this;
-  }
-
-  @Override
-  public int getMaxWebSocketFrameSize() {
-    return maxWebSocketFrameSize;
-  }
-
-  @Override
-  public HttpServer setWebSocketSubProtocols(String... subProtocols) {
-    if (subProtocols == null || subProtocols.length == 0) {
-      webSocketSubProtocols = Collections.unmodifiableSet(Collections.<String>emptySet());
-    } else {
-      webSocketSubProtocols = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(subProtocols)));
-    }
-    return this;
-  }
-
-  @Override
-  public Set<String> getWebSocketSubProtocols() {
-    return webSocketSubProtocols;
+  void removeChannel(Channel channel) {
+    connectionMap.remove(channel);
   }
 
   private void actualClose(final DefaultContext closeContext, final Handler<AsyncResult<Void>> done) {
@@ -627,7 +427,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
           if (conn == null) {
             HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
             if (reqHandler != null) {
-              conn = new ServerConnection(DefaultHttpServer.this, ch, reqHandler.context, serverOrigin);
+              conn = new ServerConnection(vertx, DefaultHttpServer.this, ch, reqHandler.context, serverOrigin);
               conn.requestHandler(reqHandler.handler);
               connectionMap.put(ch, conn);
               conn.handleMessage(msg);
@@ -712,12 +512,12 @@ public class DefaultHttpServer implements HttpServer, Closeable {
       }
       WebSocketServerHandshakerFactory factory =
           new WebSocketServerHandshakerFactory(getWebSocketLocation(ch.pipeline(), request), subProtocols, false,
-                                               maxWebSocketFrameSize);
+                                               options.getMaxWebsocketFrameSize());
       shake = factory.newHandshaker(request);
 
       if (shake == null) {
         log.error("Unrecognised websockets handshake");
-        WebSocketServerHandshakerFactory.sendUnsupportedWebSocketVersionResponse(ch);
+        WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ch);
         return;
       }
       HandlerHolder<ServerWebSocket> firstHandler = null;
@@ -734,7 +534,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
           throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
         }
 
-        final ServerConnection wsConn = new ServerConnection(DefaultHttpServer.this, ch, wsHandler.context, serverOrigin);
+        final ServerConnection wsConn = new ServerConnection(vertx, DefaultHttpServer.this, ch, wsHandler.context, serverOrigin);
         wsConn.wsHandler(wsHandler.handler);
 
         Runnable connectRunnable = () -> {

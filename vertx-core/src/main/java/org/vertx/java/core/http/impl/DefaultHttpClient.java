@@ -48,7 +48,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DefaultHttpClient implements HttpClient {
 
   private final VertxInternal vertx;
-  private final ClientOptions options;
+  private final HttpClientOptions options;
   private final Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<>();
   private final DefaultContext actualCtx;
   private final ConnectionManager pool;
@@ -58,9 +58,9 @@ public class DefaultHttpClient implements HttpClient {
   private boolean closed;
   private final SSLHelper sslHelper;
 
-  public DefaultHttpClient(VertxInternal vertx, ClientOptions options) {
+  public DefaultHttpClient(VertxInternal vertx, HttpClientOptions options) {
     this.vertx = vertx;
-    this.options = options;
+    this.options = new HttpClientOptions(options);
     this.sslHelper = new SSLHelper(options);
     actualCtx = vertx.getOrCreateContext();
     closeHook = doneHandler -> {
@@ -171,7 +171,7 @@ public class DefaultHttpClient implements HttpClient {
     closed = true;
   }
 
-  ClientOptions getOptions() {
+  HttpClientOptions getOptions() {
     return options;
   }
 

@@ -90,7 +90,7 @@ public class AsyncTestBase {
 
   private void handleThrowable(Throwable t) {
     throwable = t;
-      latch.countDown();
+    latch.countDown();
     if (t instanceof AssertionError) {
       throw (AssertionError)t;
     }

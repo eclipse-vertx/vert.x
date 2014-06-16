@@ -30,6 +30,7 @@ import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.ws.WebSocketFrameInternal;
 import org.vertx.java.core.impl.DefaultContext;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.ConnectionBase;
 import org.vertx.java.core.net.impl.DefaultNetSocket;
@@ -61,8 +62,8 @@ class ServerConnection extends ConnectionBase {
   private final DefaultHttpServer server;
   private ChannelFuture lastWriteFuture;
 
-  ServerConnection(DefaultHttpServer server, Channel channel, DefaultContext context, String serverOrigin) {
-    super(server.vertx, channel, context);
+  ServerConnection(VertxInternal vertx, DefaultHttpServer server, Channel channel, DefaultContext context, String serverOrigin) {
+    super(vertx, channel, context);
     this.serverOrigin = serverOrigin;
     this.server = server;
   }
@@ -123,7 +124,7 @@ class ServerConnection extends ConnectionBase {
   }
 
   NetSocket createNetSocket() {
-    DefaultNetSocket socket = new DefaultNetSocket(vertx, channel, context, server.tcpHelper, false);
+    DefaultNetSocket socket = new DefaultNetSocket(vertx, channel, context, server.getSslHelper(), false);
     Map<Channel, DefaultNetSocket> connectionMap = new HashMap<Channel, DefaultNetSocket>(1);
     connectionMap.put(channel, socket);
 
@@ -142,18 +143,18 @@ class ServerConnection extends ConnectionBase {
       pipeline.remove("chunkedWriter");
     }
 
-    channel.pipeline().replace("handler", "handler", new VertxNetHandler(server.vertx, connectionMap) {
+    channel.pipeline().replace("handler", "handler", new VertxNetHandler(vertx, connectionMap) {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
         // remove from the real mapping
-        server.connectionMap.remove(channel);
+        server.removeChannel(channel);
         super.exceptionCaught(chctx, t);
       }
 
       @Override
       public void channelInactive(ChannelHandlerContext chctx) throws Exception {
         // remove from the real mapping
-        server.connectionMap.remove(channel);
+        server.removeChannel(channel);
         super.channelInactive(chctx);
       }
 

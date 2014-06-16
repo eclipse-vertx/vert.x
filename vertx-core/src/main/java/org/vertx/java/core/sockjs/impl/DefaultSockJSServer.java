@@ -378,10 +378,10 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
   // For debug only
   public static void main(String[] args) throws Exception {
     Vertx vertx = VertxFactory.newVertx();
-    HttpServer httpServer = vertx.createHttpServer();
+    HttpServer httpServer = vertx.createHttpServer(new HttpServerOptions().setPort(8081));
     DefaultSockJSServer sjsServer = (DefaultSockJSServer)vertx.createSockJSServer(httpServer);
     sjsServer.installTestApplications();
-    httpServer.listen(8081);
+    httpServer.listen();
     Thread.sleep(Long.MAX_VALUE);
   }
 

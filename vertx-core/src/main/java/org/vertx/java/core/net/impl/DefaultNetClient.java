@@ -32,6 +32,7 @@ import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetClient;
+import org.vertx.java.core.net.NetClientOptions;
 import org.vertx.java.core.net.NetSocket;
 
 import java.net.InetSocketAddress;
@@ -46,30 +47,28 @@ public class DefaultNetClient implements NetClient {
   private static final Logger log = LoggerFactory.getLogger(DefaultNetClient.class);
 
   private final VertxInternal vertx;
+  private final NetClientOptions options;
   private final DefaultContext actualCtx;
-  private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
-  private Bootstrap bootstrap;
+  private final SSLHelper sslHelper;
   private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<>();
-  private int reconnectAttempts;
-  private long reconnectInterval = 1000;
-  private boolean configurable = true;
-  private final Closeable closeHook = new Closeable() {
-    @Override
-    public void close(Handler<AsyncResult<Void>> doneHandler) {
+  private final Closeable closeHook;
+  private Bootstrap bootstrap;
+
+  public DefaultNetClient(VertxInternal vertx, NetClientOptions options) {
+    this.vertx = vertx;
+    this.options = new NetClientOptions(options);
+    this.sslHelper = new SSLHelper(options);
+    actualCtx = vertx.getOrCreateContext();
+    this.closeHook = doneHandler -> {
       DefaultNetClient.this.close();
       doneHandler.handle(new DefaultFutureResult<>((Void)null));
-    }
-  };
-
-  public DefaultNetClient(VertxInternal vertx) {
-    this.vertx = vertx;
-    actualCtx = vertx.getOrCreateContext();
+    };
     actualCtx.addCloseHook(closeHook);
   }
 
   @Override
   public NetClient connect(int port, String host, final Handler<AsyncResult<NetSocket>> connectHandler) {
-    connect(port, host, connectHandler, reconnectAttempts);
+    connect(port, host, connectHandler, options.getReconnectAttempts());
     return this;
   }
 
@@ -87,226 +86,28 @@ public class DefaultNetClient implements NetClient {
     actualCtx.removeCloseHook(closeHook);
   }
 
-  @Override
-  public NetClient setReconnectAttempts(int attempts) {
-    checkConfigurable();
-    if (attempts < -1) {
-      throw new IllegalArgumentException("reconnect attempts must be >= -1");
+  private void applyConnectionOptions(Bootstrap bootstrap) {
+    bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
+    if (options.getSendBufferSize() != -1) {
+      bootstrap.option(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
     }
-    this.reconnectAttempts = attempts;
-    return this;
-  }
-
-  @Override
-  public int getReconnectAttempts() {
-    return reconnectAttempts;
-  }
-
-  @Override
-  public NetClient setReconnectInterval(long interval) {
-    checkConfigurable();
-    if (interval < 1) {
-      throw new IllegalArgumentException("reconnect interval nust be >= 1");
+    if (options.getReceiveBufferSize() != -1) {
+      bootstrap.option(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
+      bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
     }
-    this.reconnectInterval = interval;
-    return this;
-  }
-
-  @Override
-  public long getReconnectInterval() {
-    return reconnectInterval;
-  }
-
-  @Override
-  public boolean isTCPNoDelay() {
-    return tcpHelper.isTCPNoDelay();
-  }
-
-  @Override
-  public int getSendBufferSize() {
-    return tcpHelper.getSendBufferSize();
-  }
-
-  @Override
-  public int getReceiveBufferSize() {
-    return tcpHelper.getReceiveBufferSize();
-  }
-
-  @Override
-  public boolean isTCPKeepAlive() {
-    return tcpHelper.isTCPKeepAlive();
-  }
-
-  @Override
-  public boolean isReuseAddress() {
-    return tcpHelper.isReuseAddress();
-  }
-
-  @Override
-  public int getSoLinger() {
-    return tcpHelper.getSoLinger();
-  }
-
-  @Override
-  public int getTrafficClass() {
-    return tcpHelper.getTrafficClass();
-  }
-
-  @Override
-  public int getConnectTimeout() {
-    return tcpHelper.getConnectTimeout();
-  }
-
-  @Override
-  public NetClient setTCPNoDelay(boolean tcpNoDelay) {
-    checkConfigurable();
-    tcpHelper.setTCPNoDelay(tcpNoDelay);
-    return this;
-  }
-
-  @Override
-  public NetClient setSendBufferSize(int size) {
-    checkConfigurable();
-    tcpHelper.setSendBufferSize(size);
-    return this;
-  }
-
-  @Override
-  public NetClient setReceiveBufferSize(int size) {
-    checkConfigurable();
-    tcpHelper.setReceiveBufferSize(size);
-    return this;
-  }
-
-  @Override
-  public NetClient setTCPKeepAlive(boolean keepAlive) {
-    checkConfigurable();
-    tcpHelper.setTCPKeepAlive(keepAlive);
-    return this;
-  }
-
-  @Override
-  public NetClient setReuseAddress(boolean reuse) {
-    checkConfigurable();
-    tcpHelper.setReuseAddress(reuse);
-    return this;
-  }
-
-  @Override
-  public NetClient setSoLinger(int linger) {
-    checkConfigurable();
-    tcpHelper.setSoLinger(linger);
-    return this;
-  }
-
-  @Override
-  public NetClient setTrafficClass(int trafficClass) {
-    checkConfigurable();
-    tcpHelper.setTrafficClass(trafficClass);
-    return this;
-  }
-
-  @Override
-  public NetClient setConnectTimeout(int timeout) {
-    checkConfigurable();
-    tcpHelper.setConnectTimeout(timeout);
-    return this;
-  }
-
-  @Override
-  public boolean isSSL() {
-    return tcpHelper.isSSL();
-  }
-
-  @Override
-  public String getKeyStorePath() {
-    return tcpHelper.getKeyStorePath();
-  }
-
-  @Override
-  public String getKeyStorePassword() {
-    return tcpHelper.getKeyStorePassword();
-  }
-
-  @Override
-  public String getTrustStorePath() {
-    return tcpHelper.getTrustStorePath();
-  }
-
-  @Override
-  public String getTrustStorePassword() {
-    return tcpHelper.getTrustStorePassword();
-  }
-
-  @Override
-  public boolean isTrustAll() {
-    return tcpHelper.isTrustAll();
-  }
-
-  @Override
-  public NetClient setSSL(boolean ssl) {
-    checkConfigurable();
-    tcpHelper.setSSL(ssl);
-    return this;
-  }
-
-  @Override
-  public NetClient setKeyStorePath(String path) {
-    checkConfigurable();
-    tcpHelper.setKeyStorePath(path);
-    return this;
-  }
-
-  @Override
-  public NetClient setKeyStorePassword(String pwd) {
-    checkConfigurable();
-    tcpHelper.setKeyStorePassword(pwd);
-    return this;
-  }
-
-  @Override
-  public NetClient setTrustStorePath(String path) {
-    checkConfigurable();
-    tcpHelper.setTrustStorePath(path);
-    return this;
-  }
-
-  @Override
-  public NetClient setTrustStorePassword(String pwd) {
-    checkConfigurable();
-    tcpHelper.setTrustStorePassword(pwd);
-    return this;
-  }
-
-  @Override
-  public NetClient setTrustAll(boolean trustAll) {
-    checkConfigurable();
-    tcpHelper.setTrustAll(trustAll);
-    return this;
-  }
-
-  @Override
-  public NetClient setUsePooledBuffers(boolean pooledBuffers) {
-    checkConfigurable();
-    tcpHelper.setUsePooledBuffers(pooledBuffers);
-    return this;
-  }
-
-  @Override
-  public boolean isUsePooledBuffers() {
-    return tcpHelper.isUsePooledBuffers();
-  }
-
-  private void checkConfigurable() {
-    if (!configurable) {
-      throw new IllegalStateException("Can't set property after connect has been called");
+    bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
+    if (options.getTrafficClass() != -1) {
+      bootstrap.option(ChannelOption.IP_TOS, options.getTrafficClass());
     }
+    bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
+    bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+    bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
   }
 
   private void connect(final int port, final String host, final Handler<AsyncResult<NetSocket>> connectHandler,
                        final int remainingAttempts) {
     if (bootstrap == null) {
-      tcpHelper.checkSSL(vertx);
+      sslHelper.checkSSL(vertx);
 
       bootstrap = new Bootstrap();
       bootstrap.group(actualCtx.getEventLoop());
@@ -315,20 +116,19 @@ public class DefaultNetClient implements NetClient {
         @Override
         protected void initChannel(Channel ch) throws Exception {
           ChannelPipeline pipeline = ch.pipeline();
-          if (tcpHelper.isSSL()) {
-            SslHandler sslHandler = tcpHelper.createSslHandler(vertx, true);
+          if (sslHelper.isSSL()) {
+            SslHandler sslHandler = sslHelper.createSslHandler(vertx, true);
             pipeline.addLast("ssl", sslHandler);
           }
-          if (tcpHelper.isSSL()) {
+          if (sslHelper.isSSL()) {
             // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
             pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
           }
           pipeline.addLast("handler", new VertxNetHandler(vertx, socketMap));
         }
       });
-      configurable = false;
     }
-    tcpHelper.applyConnectionOptions(bootstrap);
+    applyConnectionOptions(bootstrap);
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
@@ -336,7 +136,7 @@ public class DefaultNetClient implements NetClient {
 
         if (channelFuture.isSuccess()) {
 
-          if (tcpHelper.isSSL()) {
+          if (sslHelper.isSSL()) {
             // TCP connected, so now we must do the SSL handshake
 
             SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
@@ -358,9 +158,9 @@ public class DefaultNetClient implements NetClient {
         } else {
           if (remainingAttempts > 0 || remainingAttempts == -1) {
             actualCtx.execute(ch.eventLoop(), () -> {
-              log.debug("Failed to create connection. Will retry in " + reconnectInterval + " milliseconds");
+              log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
               //Set a timer to retry connection
-              vertx.setTimer(reconnectInterval, new Handler<Long>() {
+              vertx.setTimer(options.getReconnectInterval(), new Handler<Long>() {
                 public void handle(Long timerID) {
                   connect(port, host, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts
                       - 1);
@@ -380,7 +180,7 @@ public class DefaultNetClient implements NetClient {
   }
 
   private void doConnected(Channel ch, final Handler<AsyncResult<NetSocket>> connectHandler) {
-    DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, actualCtx, tcpHelper, true);
+    DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, actualCtx, sslHelper, true);
     socketMap.put(ch, sock);
     connectHandler.handle(new DefaultFutureResult<NetSocket>(sock));
   }

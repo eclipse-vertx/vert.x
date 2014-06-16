@@ -37,6 +37,7 @@ import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetServer;
+import org.vertx.java.core.net.NetServerOptions;
 import org.vertx.java.core.net.NetSocket;
 
 import java.net.InetAddress;
@@ -54,26 +55,28 @@ public class DefaultNetServer implements NetServer, Closeable {
   private static final Logger log = LoggerFactory.getLogger(DefaultNetServer.class);
 
   private final VertxInternal vertx;
+  private final NetServerOptions options;
   private final DefaultContext actualCtx;
-  private final TCPSSLHelper tcpHelper = new TCPSSLHelper();
+  private final SSLHelper sslHelper;
   private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<>();
+  private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
+  private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
   private Handler<NetSocket> connectHandler;
-
   private ChannelGroup serverChannelGroup;
   private boolean listening;
   private volatile ServerID id;
   private DefaultNetServer actualServer;
-  private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
-  private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
-  private String host;
-  private volatile int port;
   private ChannelFuture bindFuture;
+  private int actualPort;
+  private Queue<Runnable> bindListeners = new ConcurrentLinkedQueue<>();
+  private boolean listenersRun;
 
-  public DefaultNetServer(VertxInternal vertx) {
+  public DefaultNetServer(VertxInternal vertx, NetServerOptions options) {
     this.vertx = vertx;
+    this.options = new NetServerOptions(options);
+    this.sslHelper = new SSLHelper(options);
     actualCtx = vertx.getOrCreateContext();
     actualCtx.addCloseHook(this);
-    tcpHelper.setReuseAddress(true);
   }
 
   @Override
@@ -82,22 +85,12 @@ public class DefaultNetServer implements NetServer, Closeable {
     return this;
   }
 
-  public NetServer listen(int port) {
-    listen(port, "0.0.0.0", null);
+  public NetServer listen() {
+    listen(null);
     return this;
   }
 
-  public NetServer listen(int port, Handler<AsyncResult<NetServer>> listenHandler) {
-    listen(port, "0.0.0.0", listenHandler);
-    return this;
-  }
-
-  public NetServer listen(int port, String host) {
-    listen(port, host, null);
-    return this;
-  }
-
-  public NetServer listen(final int port, final String host, final Handler<AsyncResult<NetServer>> listenHandler) {
+  public NetServer listen(Handler<AsyncResult<NetServer>> listenHandler) {
     if (connectHandler == null) {
       throw new IllegalStateException("Set connect handler first");
     }
@@ -105,28 +98,28 @@ public class DefaultNetServer implements NetServer, Closeable {
       throw new IllegalStateException("Listen already called");
     }
     listening = true;
-    this.host = host;
 
     synchronized (vertx.sharedNetServers()) {
-      id = new ServerID(port, host);
+      this.actualPort = options.getPort(); // Will be updated on bind for a wildcard port
+      id = new ServerID(options.getPort(), options.getHost());
       DefaultNetServer shared = vertx.sharedNetServers().get(id);
-      if (shared == null || port == 0) { // Wildcard port will imply a new actual server each time
+      if (shared == null || options.getPort() == 0) { // Wildcard port will imply a new actual server each time
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
 
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(availableWorkers);
         bootstrap.channel(NioServerSocketChannel.class);
-        tcpHelper.checkSSL(vertx);
+        sslHelper.checkSSL(vertx);
 
         bootstrap.childHandler(new ChannelInitializer<Channel>() {
           @Override
           protected void initChannel(Channel ch) throws Exception {
             ChannelPipeline pipeline = ch.pipeline();
-            if (tcpHelper.isSSL()) {
-              SslHandler sslHandler = tcpHelper.createSslHandler(vertx, false);
+            if (sslHelper.isSSL()) {
+              SslHandler sslHandler = sslHelper.createSslHandler(vertx, false);
               pipeline.addLast("ssl", sslHandler);
             }
-            if (tcpHelper.isSSL()) {
+            if (sslHelper.isSSL()) {
               // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
               pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
             }
@@ -134,15 +127,14 @@ public class DefaultNetServer implements NetServer, Closeable {
           }
         });
 
-        tcpHelper.applyConnectionOptions(bootstrap);
+        applyConnectionOptions(bootstrap);
 
         if (connectHandler != null) {
-          // Share the event loop thread to also serve the NetServer's network traffic.
           handlerManager.addHandler(connectHandler, actualCtx);
         }
 
         try {
-          InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(host), port);
+          InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(options.getHost()), options.getPort());
           bindFuture = bootstrap.bind(addr).addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
@@ -151,10 +143,10 @@ public class DefaultNetServer implements NetServer, Closeable {
           });
           this.addListener(() -> {
             if (bindFuture.isSuccess()) {
-              log.trace("Net server listening on " + host + ":" + bindFuture.channel().localAddress());
+              log.trace("Net server listening on " + options.getHost() + ":" + bindFuture.channel().localAddress());
               // Update port to actual port - wildcard port 0 might have been used
-              DefaultNetServer.this.port = ((InetSocketAddress)bindFuture.channel().localAddress()).getPort();
-              DefaultNetServer.this.id = new ServerID(DefaultNetServer.this.port, id.host);
+              DefaultNetServer.this.actualPort = ((InetSocketAddress)bindFuture.channel().localAddress()).getPort();
+              DefaultNetServer.this.id = new ServerID(DefaultNetServer.this.actualPort, id.host);
               vertx.sharedNetServers().put(id, DefaultNetServer.this);
             } else {
               vertx.sharedNetServers().remove(id);
@@ -172,15 +164,14 @@ public class DefaultNetServer implements NetServer, Closeable {
           listening = false;
           return this;
         }
-        if (port != 0) {
+        if (options.getPort() != 0) {
           vertx.sharedNetServers().put(id, this);
         }
         actualServer = this;
       } else {
         // Server already exists with that host/port - we will use that
-        checkConfigs(actualServer, this);
         actualServer = shared;
-        this.port = shared.port();
+        this.actualPort = shared.actualPort();
         if (connectHandler != null) {
           // Share the event loop thread to also serve the NetServer's network traffic.
           actualServer.handlerManager.addHandler(connectHandler, actualCtx);
@@ -208,9 +199,26 @@ public class DefaultNetServer implements NetServer, Closeable {
     return this;
   }
 
-  private Queue<Runnable> bindListeners = new ConcurrentLinkedQueue<>();
+  private void applyConnectionOptions(ServerBootstrap bootstrap) {
+    bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
+    if (options.getSendBufferSize() != -1) {
+      bootstrap.childOption(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
+    }
+    if (options.getReceiveBufferSize() != -1) {
+      bootstrap.childOption(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
+      bootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
+    }
 
-  private boolean listenersRun;
+    bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
+    if (options.getTrafficClass() != -1) {
+      bootstrap.childOption(ChannelOption.IP_TOS, options.getTrafficClass());
+    }
+    bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+
+    bootstrap.childOption(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
+    bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
+    bootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());
+  }
 
   private synchronized void addListener(Runnable runner) {
     if (!listenersRun) {
@@ -264,193 +272,8 @@ public class DefaultNetServer implements NetServer, Closeable {
   }
 
   @Override
-  public String host() {
-    return host;
-  }
-
-  @Override
-  public int port() {
-    return port;
-  }
-
-  @Override
-  public boolean isTCPNoDelay() {
-    return tcpHelper.isTCPNoDelay();
-  }
-
-  @Override
-  public int getSendBufferSize() {
-    return tcpHelper.getSendBufferSize();
-  }
-
-  @Override
-  public int getReceiveBufferSize() {
-    return tcpHelper.getReceiveBufferSize();
-  }
-
-  @Override
-  public boolean isTCPKeepAlive() {
-    return tcpHelper.isTCPKeepAlive();
-  }
-
-  @Override
-  public boolean isReuseAddress() {
-    return tcpHelper.isReuseAddress();
-  }
-
-  @Override
-  public int getSoLinger() {
-    return tcpHelper.getSoLinger();
-  }
-
-  @Override
-  public int getTrafficClass() {
-    return tcpHelper.getTrafficClass();
-  }
-
-  @Override
-  public int getAcceptBacklog() {
-    return tcpHelper.getAcceptBacklog();
-  }
-
-  @Override
-  public NetServer setTCPNoDelay(boolean tcpNoDelay) {
-    checkListening();
-    tcpHelper.setTCPNoDelay(tcpNoDelay);
-    return this;
-  }
-
-  @Override
-  public NetServer setSendBufferSize(int size) {
-    checkListening();
-    tcpHelper.setSendBufferSize(size);
-    return this;
-  }
-
-  @Override
-  public NetServer setReceiveBufferSize(int size) {
-    checkListening();
-    tcpHelper.setReceiveBufferSize(size);
-    return this;
-  }
-
-  @Override
-  public NetServer setTCPKeepAlive(boolean keepAlive) {
-    checkListening();
-    tcpHelper.setTCPKeepAlive(keepAlive);
-    return this;
-  }
-
-  @Override
-  public NetServer setReuseAddress(boolean reuse) {
-    checkListening();
-    tcpHelper.setReuseAddress(reuse);
-    return this;
-  }
-
-  @Override
-  public NetServer setSoLinger(int linger) {
-    checkListening();
-    tcpHelper.setSoLinger(linger);
-    return this;
-  }
-
-  @Override
-  public NetServer setTrafficClass(int trafficClass) {
-    checkListening();
-    tcpHelper.setTrafficClass(trafficClass);
-    return this;
-  }
-
-  @Override
-  public NetServer setAcceptBacklog(int backlog) {
-    checkListening();
-    tcpHelper.setAcceptBacklog(backlog);
-    return this;
-  }
-
-  @Override
-  public boolean isSSL() {
-    return tcpHelper.isSSL();
-  }
-
-  @Override
-  public String getKeyStorePath() {
-    return tcpHelper.getKeyStorePath();
-  }
-
-  @Override
-  public String getKeyStorePassword() {
-    return tcpHelper.getKeyStorePassword();
-  }
-
-  @Override
-  public String getTrustStorePath() {
-    return tcpHelper.getTrustStorePath();
-  }
-
-  @Override
-  public String getTrustStorePassword() {
-    return tcpHelper.getTrustStorePassword();
-  }
-
-  @Override
-  public boolean isClientAuthRequired() {
-    return tcpHelper.getClientAuth() == TCPSSLHelper.ClientAuth.REQUIRED;
-  }
-
-  @Override
-  public NetServer setSSL(boolean ssl) {
-    checkListening();
-    tcpHelper.setSSL(ssl);
-    return this;
-  }
-
-  @Override
-  public NetServer setKeyStorePath(String path) {
-    checkListening();
-    tcpHelper.setKeyStorePath(path);
-    return this;
-  }
-
-  @Override
-  public NetServer setKeyStorePassword(String pwd) {
-    checkListening();
-    tcpHelper.setKeyStorePassword(pwd);
-    return this;
-  }
-
-  @Override
-  public NetServer setTrustStorePath(String path) {
-    checkListening();
-    tcpHelper.setTrustStorePath(path);
-    return this;
-  }
-
-  @Override
-  public NetServer setTrustStorePassword(String pwd) {
-    checkListening();
-    tcpHelper.setTrustStorePassword(pwd);
-    return this;
-  }
-
-  @Override
-  public NetServer setClientAuthRequired(boolean required) {
-    checkListening();
-    tcpHelper.setClientAuthRequired(required);
-    return this;
-  }
-
-  @Override
-  public NetServer setUsePooledBuffers(boolean pooledBuffers) {
-    checkListening();
-    tcpHelper.setUsePooledBuffers(pooledBuffers);
-    return this;
-  }
-
-  @Override
-  public boolean isUsePooledBuffers() {
-    return tcpHelper.isUsePooledBuffers();
+  public int actualPort() {
+    return actualPort;
   }
 
   private void actualClose(final DefaultContext closeContext, final Handler<AsyncResult<Void>> done) {
@@ -470,10 +293,6 @@ public class DefaultNetServer implements NetServer, Closeable {
     ChannelGroupFuture fut = serverChannelGroup.close();
     fut.addListener(cg ->  executeCloseDone(closeContext, done, fut.cause()));
 
-  }
-
-  private void checkConfigs(DefaultNetServer currentServer, DefaultNetServer newServer) {
-    //TODO check configs are the same
   }
 
   private void executeCloseDone(final DefaultContext closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {
@@ -505,7 +324,7 @@ public class DefaultNetServer implements NetServer, Closeable {
         return;
       }
 
-      if (tcpHelper.isSSL()) {
+      if (sslHelper.isSSL()) {
         SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
 
         Future<Channel> fut = sslHandler.handshakeFuture();
@@ -529,7 +348,7 @@ public class DefaultNetServer implements NetServer, Closeable {
     }
 
     private void doConnected(Channel ch, HandlerHolder<NetSocket> handler) {
-      DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, handler.context, tcpHelper, false);
+      DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, handler.context, sslHelper, false);
       socketMap.put(ch, sock);
       handler.handler.handle(sock);
     }

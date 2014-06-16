@@ -233,8 +233,8 @@ public class HttpRouteMatcherTest extends HttpTestBase {
 
   private void testRoute(final boolean regex, final String pattern, final Map<String, String> params,
                          final String method, final String uri, final boolean shouldPass, final boolean noMatchHandler) {
-
-    client = vertx.createHttpClient(new ClientOptions());
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    client = vertx.createHttpClient(new HttpClientOptions());
 
     RouteMatcher matcher = new RouteMatcher();
 
@@ -318,7 +318,7 @@ public class HttpRouteMatcherTest extends HttpTestBase {
       matcher.noMatch(req -> req.response().end(noMatchResponseBody));
     }
 
-    server.requestHandler(matcher).listen(8080, "localhost", onSuccess(s -> {
+    server.requestHandler(matcher).listen(onSuccess(s -> {
       Handler<HttpClientResponse> respHandler = resp -> {
         if (shouldPass) {
           assertEquals(200, resp.statusCode());

@@ -18,6 +18,7 @@ package org.vertx.java.core.http;
 
 import org.vertx.java.core.MultiMap;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -53,6 +54,21 @@ public class WebSocketConnectOptions extends RequestOptions {
 
   public WebSocketConnectOptions setSubProtocols(Set<String> subProtocols) {
     this.subProtocols = subProtocols;
+    return this;
+  }
+
+  public WebSocketConnectOptions addSubProtocol(String subProtocol) {
+    if (subProtocols == null) {
+      subProtocols = new HashSet<>();
+    }
+    subProtocols.add(subProtocol);
+    return this;
+  }
+
+  public WebSocketConnectOptions removeSubProtocol(String subProtocol) {
+    if (subProtocols != null) {
+      subProtocols.remove(subProtocol);
+    }
     return this;
   }
 

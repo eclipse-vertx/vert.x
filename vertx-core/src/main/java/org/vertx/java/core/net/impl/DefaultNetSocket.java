@@ -54,25 +54,12 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   private Queue<Buffer> pendingData;
   private boolean paused = false;
   private SSLHelper helper;
-  private TCPSSLHelper oldHelper;
+  //private TCPSSLHelper oldHelper;
   private boolean client;
 
   public DefaultNetSocket(VertxInternal vertx, Channel channel, DefaultContext context, SSLHelper helper, boolean client) {
     super(vertx, channel, context);
     this.helper = helper;
-    this.client = client;
-    this.writeHandlerID = UUID.randomUUID().toString();
-    writeHandler = new Handler<Message<Buffer>>() {
-      public void handle(Message<Buffer> msg) {
-        write(msg.body());
-      }
-    };
-    vertx.eventBus().registerLocalHandler(writeHandlerID, writeHandler);
-  }
-
-  public DefaultNetSocket(VertxInternal vertx, Channel channel, DefaultContext context, TCPSSLHelper helper, boolean client) {
-    super(vertx, channel, context);
-    this.oldHelper = helper;
     this.client = client;
     this.writeHandlerID = UUID.randomUUID().toString();
     writeHandler = new Handler<Message<Buffer>>() {
@@ -307,11 +294,7 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   public NetSocket ssl(final Handler<Void> handler) {
     SslHandler sslHandler = channel.pipeline().get(SslHandler.class);
     if (sslHandler == null) {
-      if (helper != null) {
-        sslHandler = helper.createSslHandler(vertx, client);
-      } else if (oldHelper != null) {
-        sslHandler = oldHelper.createSslHandler(vertx, client);
-      }
+      sslHandler = helper.createSslHandler(vertx, client);
       channel.pipeline().addFirst(sslHandler);
     }
     sslHandler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {

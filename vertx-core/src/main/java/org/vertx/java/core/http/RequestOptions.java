@@ -23,11 +23,8 @@ import org.vertx.java.core.MultiMap;
  */
 public class RequestOptions {
 
-  public static final int DEFAULT_PORT = 80;
-  public static final String DEFAULT_HOST = "localhost";
-
-  private int port = DEFAULT_PORT;
-  private String host = DEFAULT_HOST;
+  private int port = 80;
+  private String host = "localhost";
   private MultiMap headers;
   private String requestURI;
   private String uri;

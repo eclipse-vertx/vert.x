@@ -21,12 +21,15 @@ import org.vertx.java.core.datagram.InternetProtocolFamily;
 import org.vertx.java.core.dns.DnsClient;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.file.FileSystem;
-import org.vertx.java.core.http.ClientOptions;
 import org.vertx.java.core.http.HttpClient;
+import org.vertx.java.core.http.HttpClientOptions;
 import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.core.http.HttpServerOptions;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.net.NetClient;
+import org.vertx.java.core.net.NetClientOptions;
 import org.vertx.java.core.net.NetServer;
+import org.vertx.java.core.net.NetServerOptions;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
 
@@ -48,25 +51,27 @@ import java.util.Set;
  */
 public interface Vertx {
 
+  //Http http();
+
   /**
    * Create a TCP/SSL server
    */
-  NetServer createNetServer();
+  NetServer createNetServer(NetServerOptions options);
 
   /**
    * Create a TCP/SSL client
    */
-  NetClient createNetClient();
+  NetClient createNetClient(NetClientOptions options);
 
   /**
    * Create an HTTP/HTTPS server
    */
-  HttpServer createHttpServer();
+  HttpServer createHttpServer(HttpServerOptions options);
 
   /**
    * Create a HTTP/HTTPS client
    */
-  HttpClient createHttpClient(ClientOptions options);
+  HttpClient createHttpClient(HttpClientOptions options);
 
   /**
    * Create a new {@link DatagramSocket}.

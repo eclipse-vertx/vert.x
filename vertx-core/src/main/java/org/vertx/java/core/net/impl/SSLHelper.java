@@ -18,10 +18,12 @@ package org.vertx.java.core.net.impl;
 
 import io.netty.handler.ssl.SslHandler;
 import org.vertx.java.core.file.impl.PathAdjuster;
-import org.vertx.java.core.http.ClientOptions;
+import org.vertx.java.core.http.HttpClientOptions;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.net.NetClientOptions;
+import org.vertx.java.core.net.NetServerOptions;
 
 import javax.net.ssl.*;
 import java.io.File;
@@ -41,7 +43,6 @@ public class SSLHelper {
   private static final Logger log = LoggerFactory.getLogger(SSLHelper.class);
 
   private boolean ssl;
-  private boolean verifyHost = true;
   private String keyStorePath;
   private String keyStorePassword;
   private String trustStorePath;
@@ -49,17 +50,33 @@ public class SSLHelper {
   private boolean trustAll;
   private ClientAuth clientAuth = ClientAuth.NONE;
 
-
   private SSLContext sslContext;
 
-  public SSLHelper(ClientOptions options) {
+  public SSLHelper(NetClientOptions options) {
     this.ssl = options.isSsl();
-    this.verifyHost = options.isVerifyHost();
     this.keyStorePath = options.getKeyStorePath();
     this.keyStorePassword = options.getKeyStorePassword();
     this.trustStorePath = options.getTrustStorePath();
     this.trustStorePassword = options.getTrustStorePassword();
     this.trustAll = options.isTrustAll();
+  }
+
+  public SSLHelper(HttpClientOptions options) {
+    this.ssl = options.isSsl();
+    this.keyStorePath = options.getKeyStorePath();
+    this.keyStorePassword = options.getKeyStorePassword();
+    this.trustStorePath = options.getTrustStorePath();
+    this.trustStorePassword = options.getTrustStorePassword();
+    this.trustAll = options.isTrustAll();
+  }
+
+  public SSLHelper(NetServerOptions options) {
+    this.ssl = options.isSsl();
+    this.keyStorePath = options.getKeyStorePath();
+    this.keyStorePassword = options.getKeyStorePassword();
+    this.trustStorePath = options.getTrustStorePath();
+    this.trustStorePassword = options.getTrustStorePassword();
+    this.clientAuth = options.isClientAuthRequired() ? ClientAuth.REQUIRED : ClientAuth.NONE;
   }
 
   public SSLHelper() {
@@ -79,64 +96,8 @@ public class SSLHelper {
     return ssl;
   }
 
-  public boolean isVerifyHost() {
-    return verifyHost;
-  }
-
-  public String getKeyStorePath() {
-    return keyStorePath;
-  }
-
-  public String getKeyStorePassword() {
-    return keyStorePassword;
-  }
-
-  public String getTrustStorePath() {
-    return trustStorePath;
-  }
-
-  public String getTrustStorePassword() {
-    return trustStorePassword;
-  }
-
   public ClientAuth getClientAuth() {
     return clientAuth;
-  }
-
-  public boolean isTrustAll() {
-    return trustAll;
-  }
-
-  public void setSSL(boolean ssl) {
-    this.ssl = ssl;
-  }
-
-  public void setVerifyHost(boolean verifyHost) {
-    this.verifyHost = verifyHost;
-  }
-
-  public void setKeyStorePath(String path) {
-    this.keyStorePath = path;
-  }
-
-  public void setKeyStorePassword(String pwd) {
-    this.keyStorePassword = pwd;
-  }
-
-  public void setTrustStorePath(String path) {
-    this.trustStorePath = path;
-  }
-
-  public void setTrustStorePassword(String pwd) {
-    this.trustStorePassword = pwd;
-  }
-
-  public void setClientAuthRequired(boolean required) {
-    clientAuth = required ? ClientAuth.REQUIRED : ClientAuth.NONE;
-  }
-
-  public void setTrustAll(boolean trustAll) {
-    this.trustAll = trustAll;
   }
 
   /*

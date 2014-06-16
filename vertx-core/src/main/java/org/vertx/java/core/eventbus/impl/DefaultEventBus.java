@@ -32,9 +32,7 @@ import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.net.NetClient;
-import org.vertx.java.core.net.NetServer;
-import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.net.*;
 import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.parsetools.RecordParser;
 import org.vertx.java.core.spi.cluster.AsyncMultiMap;
@@ -569,7 +567,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   private NetServer setServer(int port, String hostName, Handler<AsyncResult<Void>> listenHandler) {
-    NetServer server = vertx.createNetServer().connectHandler(socket -> {
+    NetServer server = vertx.createNetServer(new NetServerOptions().setPort(port).setHost(hostName)).connectHandler(socket -> {
       RecordParser parser = RecordParser.newFixed(4, null);
       Handler<Buffer> handler = new Handler<Buffer>() {
         int size = -1;
@@ -594,14 +592,14 @@ public class DefaultEventBus implements EventBus {
       socket.dataHandler(parser);
     });
 
-    server.listen(port, hostName, asyncResult -> {
+    server.listen(asyncResult -> {
       if (asyncResult.succeeded()) {
         // Obtain system configured public host/port
         int publicPort = Integer.getInteger("vertx.cluster.public.port", -1);
         String publicHost = System.getProperty("vertx.cluster.public.host", null);
 
         // If using a wilcard port (0) then we ask the server for the actual port:
-        int serverPort = (publicPort == -1) ? server.port() : publicPort;
+        int serverPort = (publicPort == -1) ? server.actualPort() : publicPort;
         String serverHost = (publicHost == null) ? hostName : publicHost;
         DefaultEventBus.this.serverID = new ServerID(serverPort, serverHost);
       }
@@ -828,10 +826,9 @@ public class DefaultEventBus implements EventBus {
     // tricky
     ConnectionHolder holder = connections.get(theServerID);
     if (holder == null) {
-      NetClient client = vertx.createNetClient();
+      NetClient client = vertx.createNetClient(new NetClientOptions().setConnectTimeout(60 * 1000));
       // When process is creating a lot of connections this can take some time
       // so increase the timeout
-      client.setConnectTimeout(60 * 1000);
       holder = new ConnectionHolder(client);
       ConnectionHolder prevHolder = connections.putIfAbsent(theServerID, holder);
       if (prevHolder != null) {

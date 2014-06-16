@@ -30,16 +30,19 @@ import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.file.impl.DefaultFileSystem;
 import org.vertx.java.core.file.impl.WindowsFileSystem;
-import org.vertx.java.core.http.ClientOptions;
 import org.vertx.java.core.http.HttpClient;
+import org.vertx.java.core.http.HttpClientOptions;
 import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.core.http.HttpServerOptions;
 import org.vertx.java.core.http.impl.DefaultHttpClient;
 import org.vertx.java.core.http.impl.DefaultHttpServer;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetClient;
+import org.vertx.java.core.net.NetClientOptions;
 import org.vertx.java.core.net.NetServer;
+import org.vertx.java.core.net.NetServerOptions;
 import org.vertx.java.core.net.impl.DefaultNetClient;
 import org.vertx.java.core.net.impl.DefaultNetServer;
 import org.vertx.java.core.net.impl.ServerID;
@@ -141,12 +144,12 @@ public class DefaultVertx implements VertxInternal {
     return new DefaultDatagramSocket(this, family);
   }
 
-  public NetServer createNetServer() {
-    return new DefaultNetServer(this);
+  public NetServer createNetServer(NetServerOptions options) {
+    return new DefaultNetServer(this, options);
   }
 
-  public NetClient createNetClient() {
-    return new DefaultNetClient(this);
+  public NetClient createNetClient(NetClientOptions options) {
+    return new DefaultNetClient(this, options);
   }
 
   public FileSystem fileSystem() {
@@ -157,11 +160,11 @@ public class DefaultVertx implements VertxInternal {
     return sharedData;
   }
 
-  public HttpServer createHttpServer() {
-    return new DefaultHttpServer(this);
+  public HttpServer createHttpServer(HttpServerOptions serverOptions) {
+    return new DefaultHttpServer(this, serverOptions);
   }
 
-  public HttpClient createHttpClient(ClientOptions options) {
+  public HttpClient createHttpClient(HttpClientOptions options) {
     return new DefaultHttpClient(this, options);
   }
 

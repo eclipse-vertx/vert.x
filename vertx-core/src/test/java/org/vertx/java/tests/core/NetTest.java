@@ -25,15 +25,16 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.impl.ConcurrentHashSet;
-import org.vertx.java.core.net.NetClient;
-import org.vertx.java.core.net.NetServer;
-import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.net.*;
 import org.vertx.java.core.net.impl.SocketDefaults;
 
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -53,8 +54,8 @@ public class NetTest extends VertxTestBase {
 
   @Before
   public void before() throws Exception {
-    client = vertx.createNetClient();
-    server = vertx.createNetServer();
+    client = vertx.createNetClient(new NetClientOptions().setConnectTimeout(1000));
+    server = vertx.createNetServer(new NetServerOptions().setPort(1234).setHost("localhost"));
   }
 
   protected void awaitClose(NetServer server) throws InterruptedException {
@@ -76,259 +77,254 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testClientDefaults() {
-    assertFalse(client.isSSL());
-    assertNull(client.getKeyStorePassword());
-    assertNull(client.getKeyStorePath());
-    assertNull(client.getTrustStorePassword());
-    assertNull(client.getTrustStorePath());
-    assertFalse(client.isTrustAll());
-    assertEquals(0, client.getReconnectAttempts());
-    assertEquals(1000, client.getReconnectInterval());
-    assertEquals(60000, client.getConnectTimeout());
-    assertEquals(-1, client.getReceiveBufferSize());
-    assertEquals(-1, client.getSendBufferSize());
-    assertEquals(SocketDefaults.instance.isTcpKeepAlive(), client.isTCPKeepAlive());
-    assertEquals(true, client.isTCPNoDelay());
-    assertEquals(SocketDefaults.instance.getSoLinger(), client.getSoLinger());
-    assertEquals(false, client.isUsePooledBuffers());
-    assertEquals(SocketDefaults.instance.isReuseAddress(), client.isReuseAddress());
-    assertEquals(-1, client.getTrafficClass());
+  public void testClientOptions() {
+    NetClientOptions options = new NetClientOptions();
+
+    assertEquals(-1, options.getSendBufferSize());
+    int rand = randomPositiveInt();
+    assertEquals(options, options.setSendBufferSize(rand));
+    assertEquals(rand, options.getSendBufferSize());
+    try {
+      options.setSendBufferSize(0);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      options.setSendBufferSize(-123);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+
+    assertEquals(-1, options.getReceiveBufferSize());
+    rand = randomPositiveInt();
+    assertEquals(options, options.setReceiveBufferSize(rand));
+    assertEquals(rand, options.getReceiveBufferSize());
+    try {
+      options.setReceiveBufferSize(0);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      options.setReceiveBufferSize(-123);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+
+    assertTrue(options.isReuseAddress());
+    assertEquals(options, options.setReuseAddress(false));
+    assertFalse(options.isReuseAddress());
+
+    assertEquals(-1, options.getTrafficClass());
+    rand = 23;
+    assertEquals(options, options.setTrafficClass(rand));
+    assertEquals(rand, options.getTrafficClass());
+    try {
+      options.setTrafficClass(-1);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      options.setTrafficClass(256);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+
+    assertTrue(options.isTcpNoDelay());
+    assertEquals(options, options.setTcpNoDelay(false));
+    assertFalse(options.isTcpNoDelay());
+
+    boolean tcpKeepAlive = SocketDefaults.instance.isTcpKeepAlive();
+    assertEquals(tcpKeepAlive, options.isTcpKeepAlive());
+    assertEquals(options, options.setTcpKeepAlive(!tcpKeepAlive));
+    assertEquals(!tcpKeepAlive, options.isTcpKeepAlive());
+
+    int soLinger = SocketDefaults.instance.getSoLinger();
+    assertEquals(soLinger, options.getSoLinger());
+    rand = randomPositiveInt();
+    assertEquals(options, options.setSoLinger(rand));
+    assertEquals(rand, options.getSoLinger());
+    try {
+      options.setSoLinger(-1);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+
+    assertFalse(options.isUsePooledBuffers());
+    assertEquals(options, options.setUsePooledBuffers(true));
+    assertTrue(options.isUsePooledBuffers());
+
+    assertFalse(options.isSsl());
+    assertEquals(options, options.setSsl(true));
+    assertTrue(options.isSsl());
+
+    assertNull(options.getKeyStorePath());
+    String randString = randomAlphaString(100);
+    assertEquals(options, options.setKeyStorePath(randString));
+    assertEquals(randString, options.getKeyStorePath());
+
+    assertNull(options.getKeyStorePassword());
+    randString = randomAlphaString(100);
+    assertEquals(options, options.setKeyStorePassword(randString));
+    assertEquals(randString, options.getKeyStorePassword());
+
+    assertNull(options.getTrustStorePath());
+    randString = randomAlphaString(100);
+    assertEquals(options, options.setTrustStorePath(randString));
+    assertEquals(randString, options.getTrustStorePath());
+
+    assertNull(options.getTrustStorePassword());
+    randString = randomAlphaString(100);
+    assertEquals(options, options.setTrustStorePassword(randString));
+    assertEquals(randString, options.getTrustStorePassword());
+
+    assertFalse(options.isTrustAll());
+    assertEquals(options, options.setTrustAll(true));
+    assertTrue(options.isTrustAll());
+
+    assertEquals(0, options.getReconnectAttempts());
+    rand = randomPositiveInt();
+    assertEquals(options, options.setReconnectAttempts(rand));
+    assertEquals(rand, options.getReconnectAttempts());
+
+    assertEquals(1000, options.getReconnectInterval());
+    rand = randomPositiveInt();
+    assertEquals(options, options.setReconnectInterval(rand));
+    assertEquals(rand, options.getReconnectInterval());
+
+
+    testComplete();
   }
 
   @Test
-  public void testClientAttributes() {
+  public void testServerOptions() {
+    NetServerOptions options = new NetServerOptions();
 
-    assertEquals(client, client.setSSL(false));
-    assertFalse(client.isSSL());
-
-    assertEquals(client, client.setSSL(true));
-    assertTrue(client.isSSL());
-
-    String pwd = TestUtils.randomUnicodeString(10);
-    assertEquals(client, client.setKeyStorePassword(pwd));
-    assertEquals(pwd, client.getKeyStorePassword());
-
-    String path = TestUtils.randomUnicodeString(10);
-    assertEquals(client, client.setKeyStorePath(path));
-    assertEquals(path, client.getKeyStorePath());
-
-    pwd = TestUtils.randomUnicodeString(10);
-    assertEquals(client, client.setTrustStorePassword(pwd));
-    assertEquals(pwd, client.getTrustStorePassword());
-
-    path = TestUtils.randomUnicodeString(10);
-    assertEquals(client, client.setTrustStorePath(path));
-    assertEquals(path, client.getTrustStorePath());
-
-    assertEquals(client, client.setReuseAddress(true));
-    assertTrue(client.isReuseAddress());
-    assertEquals(client, client.setReuseAddress(false));
-    assertTrue(!client.isReuseAddress());
-
-    assertEquals(client, client.setSoLinger(10));
-    assertEquals(10, client.getSoLinger());
-
-    assertEquals(client, client.setTCPKeepAlive(true));
-    assertTrue(client.isTCPKeepAlive());
-    assertEquals(client, client.setTCPKeepAlive(false));
-    assertFalse(client.isTCPKeepAlive());
-
-    assertEquals(client, client.setTCPNoDelay(true));
-    assertTrue(client.isTCPNoDelay());
-    assertEquals(client, client.setTCPNoDelay(false));
-    assertFalse(client.isTCPNoDelay());
-
-    assertEquals(client, client.setUsePooledBuffers(true));
-    assertTrue(client.isUsePooledBuffers());
-    assertEquals(client, client.setUsePooledBuffers(false));
-    assertFalse(client.isUsePooledBuffers());
-
-    int reconnectAttempts = new Random().nextInt(1000) + 1;
-    assertEquals(client, client.setReconnectAttempts(reconnectAttempts));
-    assertEquals(reconnectAttempts, client.getReconnectAttempts());
-
+    assertEquals(-1, options.getSendBufferSize());
+    int rand = randomPositiveInt();
+    assertEquals(options, options.setSendBufferSize(rand));
+    assertEquals(rand, options.getSendBufferSize());
     try {
-      client.setReconnectAttempts(-2);
+      options.setSendBufferSize(0);
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
-      //OK
+      // OK
     }
-
-    int reconnectDelay = new Random().nextInt(1000) + 1;
-    assertEquals(client, client.setReconnectInterval(reconnectDelay));
-    assertEquals(reconnectDelay, client.getReconnectInterval());
-
     try {
-      client.setReconnectInterval(-1);
+      options.setSendBufferSize(-123);
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
-      //OK
+      // OK
     }
 
+    assertEquals(-1, options.getReceiveBufferSize());
+    rand = randomPositiveInt();
+    assertEquals(options, options.setReceiveBufferSize(rand));
+    assertEquals(rand, options.getReceiveBufferSize());
     try {
-      client.setReconnectInterval(0);
+      options.setReceiveBufferSize(0);
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
-      //OK
+      // OK
     }
-
-
-    int rbs = new Random().nextInt(1024 * 1024) + 1;
-    assertEquals(client, client.setReceiveBufferSize(rbs));
-    assertEquals(rbs, client.getReceiveBufferSize());
-
     try {
-      client.setReceiveBufferSize(0);
+      options.setReceiveBufferSize(-123);
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
-      //OK
+      // OK
     }
 
+    assertTrue(options.isReuseAddress());
+    assertEquals(options, options.setReuseAddress(false));
+    assertFalse(options.isReuseAddress());
+
+    assertEquals(-1, options.getTrafficClass());
+    rand = 23;
+    assertEquals(options, options.setTrafficClass(rand));
+    assertEquals(rand, options.getTrafficClass());
     try {
-      client.setReceiveBufferSize(-1);
+      options.setTrafficClass(-1);
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
-      //OK
+      // OK
     }
-
-    int sbs = new Random().nextInt(1024 * 1024);
-    assertEquals(client, client.setSendBufferSize(sbs));
-    assertEquals(sbs, client.getSendBufferSize());
-
     try {
-      client.setSendBufferSize(0);
+      options.setTrafficClass(256);
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
-      //OK
+      // OK
     }
 
+    assertTrue(options.isTcpNoDelay());
+    assertEquals(options, options.setTcpNoDelay(false));
+    assertFalse(options.isTcpNoDelay());
+
+    boolean tcpKeepAlive = SocketDefaults.instance.isTcpKeepAlive();
+    assertEquals(tcpKeepAlive, options.isTcpKeepAlive());
+    assertEquals(options, options.setTcpKeepAlive(!tcpKeepAlive));
+    assertEquals(!tcpKeepAlive, options.isTcpKeepAlive());
+
+    int soLinger = SocketDefaults.instance.getSoLinger();
+    assertEquals(soLinger, options.getSoLinger());
+    rand = randomPositiveInt();
+    assertEquals(options, options.setSoLinger(rand));
+    assertEquals(rand, options.getSoLinger());
     try {
-      client.setSendBufferSize(-1);
+      options.setSoLinger(-1);
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
-      //OK
+      // OK
     }
 
-    int trafficClass = new Random().nextInt(10000000);
-    assertEquals(client, client.setTrafficClass(trafficClass));
-    assertEquals(trafficClass, client.getTrafficClass());
-  }
+    assertFalse(options.isUsePooledBuffers());
+    assertEquals(options, options.setUsePooledBuffers(true));
+    assertTrue(options.isUsePooledBuffers());
 
-  @Test
-  public void testServerDefaults() {
-    assertFalse(server.isSSL());
-    assertNull(server.getKeyStorePassword());
-    assertNull(server.getKeyStorePath());
-    assertNull(server.getTrustStorePassword());
-    assertNull(server.getTrustStorePath());
-    assertFalse(server.isClientAuthRequired());
-    assertEquals(1024, server.getAcceptBacklog());
-    assertEquals(-1, server.getReceiveBufferSize());
-    assertEquals(-1, server.getSendBufferSize());
-    assertEquals(SocketDefaults.instance.isTcpKeepAlive(), server.isTCPKeepAlive());
-    assertEquals(true, server.isTCPNoDelay());
-    assertEquals(SocketDefaults.instance.getSoLinger(), server.getSoLinger());
-    assertEquals(false, server.isUsePooledBuffers());
-    assertEquals(true, server.isReuseAddress());
-    assertEquals(-1, server.getTrafficClass());
-  }
+    assertFalse(options.isSsl());
+    assertEquals(options, options.setSsl(true));
+    assertTrue(options.isSsl());
 
-  @Test
-  public void testServerAttributes() {
+    assertNull(options.getKeyStorePath());
+    String randString = randomAlphaString(100);
+    assertEquals(options, options.setKeyStorePath(randString));
+    assertEquals(randString, options.getKeyStorePath());
 
-    assertEquals(server, server.setSSL(false));
-    assertFalse(server.isSSL());
+    assertNull(options.getKeyStorePassword());
+    randString = randomAlphaString(100);
+    assertEquals(options, options.setKeyStorePassword(randString));
+    assertEquals(randString, options.getKeyStorePassword());
 
-    assertEquals(server, server.setSSL(true));
-    assertTrue(server.isSSL());
+    assertNull(options.getTrustStorePath());
+    randString = randomAlphaString(100);
+    assertEquals(options, options.setTrustStorePath(randString));
+    assertEquals(randString, options.getTrustStorePath());
 
-    String pwd = TestUtils.randomUnicodeString(10);
-    assertEquals(server, server.setKeyStorePassword(pwd));
-    assertEquals(pwd, server.getKeyStorePassword());
+    assertNull(options.getTrustStorePassword());
+    randString = randomAlphaString(100);
+    assertEquals(options, options.setTrustStorePassword(randString));
+    assertEquals(randString, options.getTrustStorePassword());
 
-    String path = TestUtils.randomUnicodeString(10);
-    assertEquals(server, server.setKeyStorePath(path));
-    assertEquals(path, server.getKeyStorePath());
+    assertEquals(1024, options.getAcceptBacklog());
+    rand = randomPositiveInt();
+    assertEquals(options, options.setAcceptBacklog(rand));
+    assertEquals(rand, options.getAcceptBacklog());
 
-    pwd = TestUtils.randomUnicodeString(10);
-    assertEquals(server, server.setTrustStorePassword(pwd));
-    assertEquals(pwd, server.getTrustStorePassword());
+    assertEquals(0, options.getPort());
+    rand = randomPositiveInt();
+    assertEquals(options, options.setPort(rand));
+    assertEquals(rand, options.getPort());
 
-    path = TestUtils.randomUnicodeString(10);
-    assertEquals(server, server.setTrustStorePath(path));
-    assertEquals(path, server.getTrustStorePath());
-
-    assertEquals(server, server.setClientAuthRequired(true));
-    assertTrue(server.isClientAuthRequired());
-    assertEquals(server, server.setClientAuthRequired(false));
-    assertFalse(server.isClientAuthRequired());
-
-    assertEquals(server, server.setAcceptBacklog(10));
-    assertEquals(10, server.getAcceptBacklog());
-
-    assertEquals(server, server.setReuseAddress(true));
-    assertTrue(server.isReuseAddress());
-    assertEquals(server, server.setReuseAddress(false));
-    assertTrue(!server.isReuseAddress());
-
-    assertEquals(server, server.setSoLinger(10));
-    assertEquals(10, server.getSoLinger());
-
-    assertEquals(server, server.setTCPKeepAlive(true));
-    assertTrue(server.isTCPKeepAlive());
-    assertEquals(server, server.setTCPKeepAlive(false));
-    assertFalse(server.isTCPKeepAlive());
-
-    assertEquals(server, server.setTCPNoDelay(true));
-    assertTrue(server.isTCPNoDelay());
-    assertEquals(server, server.setTCPNoDelay(false));
-    assertFalse(server.isTCPNoDelay());
-
-    assertEquals(server, server.setUsePooledBuffers(true));
-    assertTrue(server.isUsePooledBuffers());
-    assertEquals(server, server.setUsePooledBuffers(false));
-    assertFalse(server.isUsePooledBuffers());
-
-    int rbs = new Random().nextInt(1024 * 1024) + 1;
-    assertEquals(server, server.setReceiveBufferSize(rbs));
-    assertEquals(rbs, server.getReceiveBufferSize());
-
-    try {
-      server.setReceiveBufferSize(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      //OK
-    }
-
-    try {
-      server.setReceiveBufferSize(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      //OK
-    }
-
-    int sbs = new Random().nextInt(1024 * 1024);
-    assertEquals(server, server.setSendBufferSize(sbs));
-    assertEquals(sbs, server.getSendBufferSize());
-
-    try {
-      server.setSendBufferSize(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      //OK
-    }
-
-    try {
-      server.setSendBufferSize(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      //OK
-    }
-
-    int trafficClass = new Random().nextInt(10000000);
-    assertEquals(server, server.setTrafficClass(trafficClass));
-    assertEquals(trafficClass, server.getTrafficClass());
+    assertEquals("0.0.0.0", options.getHost());
+    randString = randomUnicodeString(100);
+    assertEquals(options, options.setHost(randString));
+    assertEquals(randString, options.getHost());
+    testComplete();
   }
 
   @Test
@@ -386,7 +382,7 @@ public class NetTest extends VertxTestBase {
 
   void startEchoServer(Handler<AsyncResult<NetServer>> listenHandler ) {
     Handler<NetSocket> serverHandler = socket -> socket.dataHandler(socket::write);
-    server.connectHandler(serverHandler).listen(1234, "localhost", listenHandler);
+    server.connectHandler(serverHandler).listen(listenHandler);
   }
 
   @Test
@@ -435,7 +431,6 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testConnectInvalidHost() {
-    client.setConnectTimeout(1000);
     client.connect(1234, "127.0.0.2", res -> {
       assertTrue(res.failed());
       assertFalse(res.succeeded());
@@ -447,7 +442,9 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testListenInvalidPort() {
-    server.connectHandler((netSocket) -> {}).listen(80, ar -> {
+    server.close();
+    server = vertx.createNetServer(new NetServerOptions().setPort(80));
+    server.connectHandler((netSocket) -> {}).listen(ar -> {
       assertTrue(ar.failed());
       assertFalse(ar.succeeded());
       assertNotNull(ar.cause());
@@ -458,7 +455,9 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testListenInvalidHost() {
-    server.connectHandler(netSocket -> {}).listen(80, "uhqwduhqwudhqwuidhqwiudhqwudqwiuhd", ar -> {
+    server.close();
+    server = vertx.createNetServer(new NetServerOptions().setPort(1234).setHost("uhqwduhqwudhqwuidhqwiudhqwudqwiuhd"));
+    server.connectHandler(netSocket -> {}).listen(ar -> {
       assertTrue(ar.failed());
       assertFalse(ar.succeeded());
       assertNotNull(ar.cause());
@@ -469,11 +468,13 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testListenOnWildcardPort() {
-    server.connectHandler((netSocket) -> {}).listen(0, ar -> {
+    server.close();
+    server = vertx.createNetServer(new NetServerOptions().setPort(0));
+    server.connectHandler((netSocket) -> {}).listen(ar -> {
       assertFalse(ar.failed());
       assertTrue(ar.succeeded());
       assertNull(ar.cause());
-      assertTrue(server.port() > 1024);
+      assertTrue(server.actualPort() > 1024);
       assertEquals(server, ar.result());
       testComplete();
     });
@@ -488,7 +489,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testClientCloseHandlersCloseFromServer() {
-    server.connectHandler((netSocket) -> netSocket.close() ).listen(1234, (s) -> clientCloseHandlers(false));
+    server.connectHandler((netSocket) -> netSocket.close() ).listen((s) -> clientCloseHandlers(false));
     await();
   }
 
@@ -530,7 +531,7 @@ public class NetTest extends VertxTestBase {
       if (closeFromServer) {
         sock.close();
       }
-    }).listen(1234, listenHandler);
+    }).listen(listenHandler);
   }
 
   @Test
@@ -564,7 +565,7 @@ public class NetTest extends VertxTestBase {
       Handler<Message<Buffer>> resumeHandler = (m) -> sock.resume();
       vertx.eventBus().registerHandler("server_resume", resumeHandler);
       sock.closeHandler(v -> vertx.eventBus().unregisterHandler("server_resume", resumeHandler));
-    }).listen(1234, listenHandler);
+    }).listen(listenHandler);
   }
 
   @Test
@@ -608,7 +609,7 @@ public class NetTest extends VertxTestBase {
           vertx.eventBus().send("client_resume", "");
         }
       });
-    }).listen(1234, listenHandler);
+    }).listen( listenHandler);
   }
 
   @Test
@@ -622,8 +623,8 @@ public class NetTest extends VertxTestBase {
   }
 
   void reconnectAttempts(int attempts) {
-    client.setReconnectAttempts(attempts);
-    client.setReconnectInterval(10);
+    client.close();
+    client = vertx.createNetClient(new NetClientOptions().setReconnectAttempts(attempts).setReconnectInterval(10));
 
     //The server delays starting for a a few seconds, but it should still connect
     client.connect(1234, (res) -> {
@@ -640,8 +641,8 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testReconnectAttemptsNotEnough() {
-    client.setReconnectAttempts(100);
-    client.setReconnectInterval(10);
+    client.close();
+    client = vertx.createNetClient(new NetClientOptions().setReconnectAttempts(100).setReconnectInterval(10));
 
     client.connect(1234, (res) -> {
       assertFalse(res.succeeded());
@@ -704,19 +705,22 @@ public class NetTest extends VertxTestBase {
                 boolean serverCert, boolean serverTrust,
                 boolean requireClientAuth, boolean clientTrustAll,
                 boolean shouldPass, boolean startTLS) throws Exception {
-
+    server.close();
+    NetServerOptions options = new NetServerOptions();
     if (!startTLS) {
-      server.setSSL(true);
+      options.setSsl(true);
     }
     if (serverTrust) {
-      server.setTrustStorePath(findFileOnClasspath("tls/server-truststore.jks")).setTrustStorePassword("wibble");
+      options.setTrustStorePath(findFileOnClasspath("tls/server-truststore.jks")).setTrustStorePassword("wibble");
     }
     if (serverCert) {
-      server.setKeyStorePath(findFileOnClasspath("tls/server-keystore.jks")).setKeyStorePassword("wibble");
+      options.setKeyStorePath(findFileOnClasspath("tls/server-keystore.jks")).setKeyStorePassword("wibble");
     }
     if (requireClientAuth) {
-      server.setClientAuthRequired(true);
+      options.setClientAuthRequired(true);
     }
+    options.setPort(4043);
+    server = vertx.createNetServer(options);
     Handler<NetSocket> serverHandler = socket -> {
       AtomicBoolean upgradedServer = new AtomicBoolean();
       socket.dataHandler(buff -> {
@@ -730,19 +734,22 @@ public class NetTest extends VertxTestBase {
         }
       });
     };
-    server.connectHandler(serverHandler).listen(4043, "localhost", ar -> {
+    server.connectHandler(serverHandler).listen(ar -> {
+      client.close();
+      NetClientOptions clientOptions = new NetClientOptions();
       if (!startTLS) {
-        client.setSSL(true);
+        clientOptions.setSsl(true);
         if (clientTrustAll) {
-          client.setTrustAll(true);
+          clientOptions.setTrustAll(true);
         }
         if (clientTrust) {
-          client.setTrustStorePath(findFileOnClasspath("tls/client-truststore.jks")).setTrustStorePassword("wibble");
+          clientOptions.setTrustStorePath(findFileOnClasspath("tls/client-truststore.jks")).setTrustStorePassword("wibble");
         }
         if (clientCert) {
-          client.setKeyStorePath(findFileOnClasspath("tls/client-keystore.jks")).setKeyStorePassword("wibble");
+          clientOptions.setKeyStorePath(findFileOnClasspath("tls/client-keystore.jks")).setKeyStorePassword("wibble");
         }
       }
+      client = vertx.createNetClient(clientOptions);
       client.connect(4043, ar2 -> {
         if (ar2.succeeded()) {
           if (!shouldPass) {
@@ -812,7 +819,7 @@ public class NetTest extends VertxTestBase {
     CountDownLatch latchListen = new CountDownLatch(numServers);
     CountDownLatch latchConns = new CountDownLatch(numConnections);
     for (int i = 0; i < numServers; i++) {
-      NetServer theServer = vertx.createNetServer();
+      NetServer theServer = vertx.createNetServer(new NetServerOptions().setHost("localhost").setPort(1234));
       servers.add(theServer);
       theServer.connectHandler(sock -> {
         connectedServers.add(theServer);
@@ -821,7 +828,7 @@ public class NetTest extends VertxTestBase {
         icnt++;
         connectCount.put(theServer, icnt);
         latchConns.countDown();
-      }).listen(1234, "localhost", ar -> {
+      }).listen(ar -> {
         if (ar.succeeded()) {
           latchListen.countDown();
         } else {
@@ -832,6 +839,8 @@ public class NetTest extends VertxTestBase {
     assertTrue(latchListen.await(10, TimeUnit.SECONDS));
 
     // Create a bunch of connections
+    client.close();
+    client = vertx.createNetClient(new NetClientOptions());
     CountDownLatch latchClient = new CountDownLatch(numConnections);
     for (int i = 0; i < numConnections; i++) {
       client.connect(1234, "localhost", res -> {
@@ -841,6 +850,7 @@ public class NetTest extends VertxTestBase {
           });
           res.result().close();
         } else {
+          res.cause().printStackTrace();
           fail("Failed to connect");
         }
       });
@@ -874,13 +884,14 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testSharedServersRoundRobinWithOtherServerRunningOnDifferentPort() throws Exception {
-    // Have a server running on a different port to make sure it doesn't interact
     CountDownLatch latch = new CountDownLatch(1);
-    NetServer theServer = vertx.createNetServer();
-    theServer.connectHandler(sock -> {
+    // Have a server running on a different port to make sure it doesn't interact
+    server.close();
+    server = vertx.createNetServer(new NetServerOptions().setPort(4321));
+    server.connectHandler(sock -> {
       fail("Should not connect");
-    }).listen(4321, "localhost", ar -> {
-      if (ar.succeeded()) {
+    }).listen(ar2 -> {
+      if (ar2.succeeded()) {
         latch.countDown();
       } else {
         fail("Failed to bind server");
@@ -893,11 +904,12 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testSharedServersRoundRobinButFirstStartAndStopServer() throws Exception {
     // Start and stop a server on the same port/host before hand to make sure it doesn't interact
+    server.close();
     CountDownLatch latch = new CountDownLatch(1);
-    NetServer theServer = vertx.createNetServer();
-    theServer.connectHandler(sock -> {
+    server = vertx.createNetServer(new NetServerOptions().setPort(1234));
+    server.connectHandler(sock -> {
       fail("Should not connect");
-    }).listen(4321, "localhost", ar -> {
+    }).listen(ar -> {
       if (ar.succeeded()) {
         latch.countDown();
       } else {
@@ -932,7 +944,7 @@ public class NetTest extends VertxTestBase {
         connections.remove(socket.writeHandlerID());
       });
     });
-    server.listen(1234, ar -> {
+    server.listen(ar -> {
       assertTrue(ar.succeeded());
       latch.countDown();
     });
@@ -965,9 +977,9 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(socket -> {
       InetSocketAddress addr = socket.remoteAddress();
       assertTrue(addr.getHostName().startsWith("localhost"));
-    }).listen(1234, ar -> {
+    }).listen(ar -> {
       assertTrue(ar.succeeded());
-      vertx.createNetClient().connect(1234, result -> {
+      vertx.createNetClient(new NetClientOptions()).connect(1234, result -> {
         NetSocket socket = result.result();
         InetSocketAddress addr = socket.remoteAddress();
         assertEquals(addr.getHostName(), "localhost");
@@ -980,7 +992,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testWriteSameBufferMoreThanOnce() throws Exception {
-    vertx.createNetServer().connectHandler(socket -> {
+    server.connectHandler(socket -> {
       final Buffer received = new Buffer();
       socket.dataHandler(buff -> {
         received.appendBuffer(buff);
@@ -988,7 +1000,7 @@ public class NetTest extends VertxTestBase {
           testComplete();
         }
       });
-    }).listen(1234, ar -> {
+    }).listen(ar -> {
       assertTrue(ar.succeeded());
       client.connect(1234, result -> {
         NetSocket socket = result.result();
@@ -1004,10 +1016,10 @@ public class NetTest extends VertxTestBase {
   public void testSendFileDirectory() throws Exception {
     final File fDir = Files.createTempDirectory("vertx-test").toFile();
     fDir.deleteOnExit();
-    vertx.createNetServer().connectHandler(socket -> {
+    server.connectHandler(socket -> {
       InetSocketAddress addr = socket.remoteAddress();
       assertTrue(addr.getHostName().startsWith("localhost"));
-    }).listen(1234, ar -> {
+    }).listen(ar -> {
       assertTrue(ar.succeeded());
       client.connect(1234, result -> {
         assertTrue(result.succeeded());
@@ -1019,6 +1031,44 @@ public class NetTest extends VertxTestBase {
         } catch (IllegalArgumentException e) {
           testComplete();
         }
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testServerOptionsCopiedBeforeUse() {
+    server.close();
+    NetServerOptions options = new NetServerOptions().setPort(1234);
+    NetServer server = vertx.createNetServer(options);
+    // Now change something - but server should still listen at previous port
+    options.setPort(1235);
+    server.connectHandler(sock -> {
+      testComplete();
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.connect(1234, ar2 -> {
+        assertTrue(ar2.succeeded());
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testClientOptionsCopiedBeforeUse() {
+    client.close();
+    NetClientOptions options = new NetClientOptions();
+    client = vertx.createNetClient(options);
+    options.setSsl(true);
+    // Now change something - but server should ignore this
+    server.connectHandler(sock -> {
+      testComplete();
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.connect(1234, ar2 -> {
+        assertTrue(ar2.succeeded());
       });
     });
     await();

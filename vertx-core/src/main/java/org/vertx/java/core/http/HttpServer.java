@@ -18,10 +18,6 @@ package org.vertx.java.core.http;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.ServerSSLSupport;
-import org.vertx.java.core.ServerTCPSupport;
-
-import java.util.Set;
 
 /**
  * An HTTP and WebSockets server<p>
@@ -34,7 +30,7 @@ import java.util.Set;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface HttpServer extends ServerSSLSupport<HttpServer>, ServerTCPSupport<HttpServer> {
+public interface HttpServer {
 
   /**
    * Set the request handler for the server to {@code requestHandler}. As HTTP requests are received by the server,
@@ -65,30 +61,34 @@ public interface HttpServer extends ServerSSLSupport<HttpServer>, ServerTCPSuppo
   Handler<ServerWebSocket> websocketHandler();
 
 
-  /**
-   * Tell the server to start listening on all available interfaces and port {@code port}. Be aware this is an
-   * async operation and the server may not bound on return of the method.
-   */
-  HttpServer listen(int port);
+//  /**
+//   * Tell the server to start listening on all available interfaces and port {@code port}. Be aware this is an
+//   * async operation and the server may not bound on return of the method.
+//   */
+//  HttpServer listen(int port);
+//
+//  /**
+//   * Tell the server to start listening on all available interfaces and port {@code port}
+//   *
+//   */
+//  HttpServer listen(int port, Handler<AsyncResult<HttpServer>> listenHandler);
+//
+//  /**
+//   * Tell the server to start listening on port {@code port} and hostname or ip address given by {@code host}. Be aware this is an
+//   * async operation and the server may not bound on return of the method.
+//   *
+//   */
+//  HttpServer listen(int port, String host);
+//
+//  /**
+//   * Tell the server to start listening on port {@code port} and hostname or ip address given by {@code host}.
+//   *
+//   */
+//  HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler);
 
-  /**
-   * Tell the server to start listening on all available interfaces and port {@code port}
-   *
-   */
-  HttpServer listen(int port, Handler<AsyncResult<HttpServer>> listenHandler);
+  HttpServer listen();
 
-  /**
-   * Tell the server to start listening on port {@code port} and hostname or ip address given by {@code host}. Be aware this is an
-   * async operation and the server may not bound on return of the method.
-   *
-   */
-  HttpServer listen(int port, String host);
-
-  /**
-   * Tell the server to start listening on port {@code port} and hostname or ip address given by {@code host}.
-   *
-   */
-  HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler);
+  HttpServer listen(Handler<AsyncResult<HttpServer>> listenHandler);
   
   /**
    * Close the server. Any open HTTP connections will be closed.
@@ -101,35 +101,35 @@ public interface HttpServer extends ServerSSLSupport<HttpServer>, ServerTCPSuppo
    */
   void close(Handler<AsyncResult<Void>> doneHandler);
 
-  /**
-   * Set if the {@link HttpServer} should compress the http response if the connected client supports it.
-   */
-  HttpServer setCompressionSupported(boolean compressionSupported);
-
-  /**
-   * Returns {@code true} if the {@link HttpServer} should compress the http response if the connected client supports it.
-   */
-  boolean isCompressionSupported();
-
-  /**
-   * Sets the maximum websocket frame size in bytes. Default is 65536 bytes.
-   * @param maxSize The size in bytes
-   */
-  HttpServer setMaxWebSocketFrameSize(int maxSize);
-
-  /**
-   * Get the maximum websocket frame size in bytes.
-   */
-  int getMaxWebSocketFrameSize();
-
-  /**
-   * Set the supported websocket subprotocols. Using null to disable support of subprotocols.
-   */
-  HttpServer setWebSocketSubProtocols(String... subProtocols);
-
-  /**
-   * Returns a immutable {@link Set} which holds all the supported subprotocols. An empty set is returned if
-   * non are supported. This is the default.
-   */
-  Set<String> getWebSocketSubProtocols();
+//  /**
+//   * Set if the {@link HttpServer} should compress the http response if the connected client supports it.
+//   */
+//  HttpServer setCompressionSupported(boolean compressionSupported);
+//
+//  /**
+//   * Returns {@code true} if the {@link HttpServer} should compress the http response if the connected client supports it.
+//   */
+//  boolean isCompressionSupported();
+//
+//  /**
+//   * Sets the maximum websocket frame size in bytes. Default is 65536 bytes.
+//   * @param maxSize The size in bytes
+//   */
+//  HttpServer setMaxWebSocketFrameSize(int maxSize);
+//
+//  /**
+//   * Get the maximum websocket frame size in bytes.
+//   */
+//  int getMaxWebSocketFrameSize();
+//
+//  /**
+//   * Set the supported websocket subprotocols. Using null to disable support of subprotocols.
+//   */
+//  HttpServer setWebSocketSubProtocols(String... subProtocols);
+//
+//  /**
+//   * Returns a immutable {@link Set} which holds all the supported subprotocols. An empty set is returned if
+//   * non are supported. This is the default.
+//   */
+//  Set<String> getWebSocketSubProtocols();
 }

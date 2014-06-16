@@ -18,8 +18,6 @@ package org.vertx.java.core.net;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.ServerSSLSupport;
-import org.vertx.java.core.ServerTCPSupport;
 
 /**
  * Represents a TCP or SSL server<p>
@@ -32,7 +30,7 @@ import org.vertx.java.core.ServerTCPSupport;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface NetServer extends ServerSSLSupport<NetServer>, ServerTCPSupport<NetServer> {
+public interface NetServer {
 
   /**
    * Supply a connect handler for this server. The server can only have at most one connect handler at any one time.
@@ -42,29 +40,12 @@ public interface NetServer extends ServerSSLSupport<NetServer>, ServerTCPSupport
    */
   NetServer connectHandler(Handler<NetSocket> connectHandler);
 
-  /**
-   * Tell the server to start listening on all available interfaces and port {@code port}. Be aware this is an
-   * async operation and the server may not bound on return of the method.
-   */
-  NetServer listen(int port);
+  NetServer listen();
 
   /**
    * Instruct the server to listen for incoming connections on the specified {@code port} and all available interfaces.
    */
-  NetServer listen(int port, Handler<AsyncResult<NetServer>> listenHandler);
-
-  /**
-   * Tell the server to start listening on port {@code port} and hostname or ip address given by {@code host}. Be aware this is an
-   * async operation and the server may not bound on return of the method.
-   *
-   */
-  NetServer listen(int port, String host);
-
-  /**
-   * Instruct the server to listen for incoming connections on the specified {@code port} and {@code host}. {@code host} can
-   * be a host name or an IP address.
-   */
-  NetServer listen(int port, String host, Handler<AsyncResult<NetServer>> listenHandler);
+  NetServer listen(Handler<AsyncResult<NetServer>> listenHandler);
 
   /**
    * Close the server. This will close any currently open connections.
@@ -81,10 +62,5 @@ public interface NetServer extends ServerSSLSupport<NetServer>, ServerTCPSupport
    * The actual port the server is listening on. This is useful if you bound the server specifying 0 as port number
    * signifying an ephemeral port
    */
-  int port();
-
-  /**
-   * The host
-   */
-  String host();
+  int actualPort();
 }

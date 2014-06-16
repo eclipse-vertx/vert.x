@@ -21,6 +21,7 @@ import org.junit.Before;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.core.http.HttpServerOptions;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -39,7 +40,7 @@ public class HttpTestBase extends VertxTestBase {
 
   @Before
   public void beforeHttpTestBase() throws Exception {
-    server = vertx.createHttpServer();
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
   }
 
   @After
@@ -47,12 +48,14 @@ public class HttpTestBase extends VertxTestBase {
     if (client != null) {
       client.close();
     }
-    CountDownLatch latch = new CountDownLatch(1);
-    server.close((asyncResult) -> {
-      assertTrue(asyncResult.succeeded());
-      latch.countDown();
-    });
-    awaitLatch(latch);
+    if (server != null) {
+      CountDownLatch latch = new CountDownLatch(1);
+      server.close((asyncResult) -> {
+        assertTrue(asyncResult.succeeded());
+        latch.countDown();
+      });
+      awaitLatch(latch);
+    }
   }
 
   @SuppressWarnings("unchecked")
