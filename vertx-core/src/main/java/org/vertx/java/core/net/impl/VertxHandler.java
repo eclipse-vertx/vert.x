@@ -22,7 +22,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
-import org.vertx.java.core.impl.DefaultContext;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.impl.VertxInternal;
 
 import java.util.Map;
@@ -38,7 +38,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     this.connectionMap = connectionMap;
   }
 
-  protected DefaultContext getContext(C connection) {
+  protected ContextImpl getContext(C connection) {
     return connection.getContext();
   }
 
@@ -68,7 +68,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     final C conn = connectionMap.get(ch);
     if (conn != null) {
       conn.setWritable(ctx.channel().isWritable());
-      DefaultContext context = getContext(conn);
+      ContextImpl context = getContext(conn);
       if (context.isOnCorrectWorker(ch.eventLoop())) {
         try {
           vertx.setContext(context);
@@ -88,7 +88,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     // Don't remove the connection at this point, or the handleClosed won't be called when channelInactive is called!
     final C connection = connectionMap.get(ch);
     if (connection != null) {
-      DefaultContext context = getContext(connection);
+      ContextImpl context = getContext(connection);
       context.execute(ch.eventLoop(), () ->{
         try {
           if (ch.isOpen()) {
@@ -109,7 +109,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     final Channel ch = chctx.channel();
     final C connection = connectionMap.remove(ch);
     if (connection != null) {
-      DefaultContext context = getContext(connection);
+      ContextImpl context = getContext(connection);
       context.execute(ch.eventLoop(), () -> connection.handleClosed());
     }
   }
@@ -118,7 +118,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
     C conn = connectionMap.get(ctx.channel());
     if (conn != null) {
-      DefaultContext context = getContext(conn);
+      ContextImpl context = getContext(conn);
       // Only mark end read if its not a WorkerVerticle
       if (context.isOnCorrectWorker(ctx.channel().eventLoop())) {
         conn.endReadAndFlush();
@@ -131,7 +131,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     final Object message = safeObject(msg, chctx.alloc());
     final C connection = connectionMap.get(chctx.channel());
 
-    DefaultContext context;
+    ContextImpl context;
     if (connection != null) {
       context = getContext(connection);
       // Only mark start read if we are on the correct worker. This is needed as while we are in read this may will
@@ -146,7 +146,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     channelRead(connection, context, chctx, message);
   }
 
-  protected abstract void channelRead(C connection, DefaultContext context, ChannelHandlerContext chctx, Object msg) throws Exception;
+  protected abstract void channelRead(C connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception;
 
   protected abstract Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception;
 }

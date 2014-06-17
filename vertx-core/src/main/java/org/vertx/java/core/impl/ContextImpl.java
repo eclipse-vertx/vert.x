@@ -34,9 +34,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class DefaultContext implements Context {
+public abstract class ContextImpl implements Context {
 
-  private static final Logger log = LoggerFactory.getLogger(DefaultContext.class);
+  private static final Logger log = LoggerFactory.getLogger(ContextImpl.class);
 
   protected final VertxInternal vertx;
   private Deployment deployment;
@@ -47,7 +47,7 @@ public abstract class DefaultContext implements Context {
   private final EventLoop eventLoop;
   protected final Executor orderedBgExec;
 
-  protected DefaultContext(VertxInternal vertx, Executor orderedBgExec) {
+  protected ContextImpl(VertxInternal vertx, Executor orderedBgExec) {
     this.vertx = vertx;
     this.orderedBgExec = orderedBgExec;
     EventLoopGroup group = vertx.getEventLoopGroup();
@@ -109,11 +109,11 @@ public abstract class DefaultContext implements Context {
             if (ar.failed()) {
               if (failed.compareAndSet(false, true)) {
                 // Only report one failure
-                doneHandler.handle(new DefaultFutureResult<>(ar.cause()));
+                doneHandler.handle(new FutureResultImpl<>(ar.cause()));
               }
             } else {
               if (count.incrementAndGet() == num) {
-                doneHandler.handle(new DefaultFutureResult<>((Void)null));
+                doneHandler.handle(new FutureResultImpl<>((Void)null));
               }
             }
           });
@@ -122,7 +122,7 @@ public abstract class DefaultContext implements Context {
         }
       }
     } else {
-      doneHandler.handle(new DefaultFutureResult<>((Void)null));
+      doneHandler.handle(new FutureResultImpl<>((Void)null));
     }
   }
 
@@ -166,7 +166,7 @@ public abstract class DefaultContext implements Context {
       Thread currentThread = Thread.currentThread();
       String threadName = currentThread.getName();
       try {
-        vertx.setContext(DefaultContext.this);
+        vertx.setContext(ContextImpl.this);
         task.run();
       } catch (Throwable t) {
         reportException(t);

@@ -17,16 +17,16 @@
 package org.vertx.java.core.net.impl;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.impl.DefaultContext;
+import org.vertx.java.core.impl.ContextImpl;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HandlerHolder<T> {
-  public final DefaultContext context;
+  public final ContextImpl context;
   public final Handler<T> handler;
 
-  HandlerHolder(DefaultContext context, Handler<T> handler) {
+  HandlerHolder(ContextImpl context, Handler<T> handler) {
     this.context = context;
     this.handler = handler;
   }

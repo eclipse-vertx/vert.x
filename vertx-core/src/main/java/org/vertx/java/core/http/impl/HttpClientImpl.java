@@ -26,11 +26,11 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
-import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
+import org.vertx.java.core.http.impl.ws.WebSocketFrameImpl;
 import org.vertx.java.core.http.impl.ws.WebSocketFrameInternal;
 import org.vertx.java.core.impl.Closeable;
-import org.vertx.java.core.impl.DefaultContext;
-import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.impl.ContextImpl;
+import org.vertx.java.core.impl.FutureResultImpl;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.PartialPooledByteBufAllocator;
@@ -45,12 +45,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DefaultHttpClient implements HttpClient {
+public class HttpClientImpl implements HttpClient {
 
   private final VertxInternal vertx;
   private final HttpClientOptions options;
   private final Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<>();
-  private final DefaultContext actualCtx;
+  private final ContextImpl actualCtx;
   private final ConnectionManager pool;
   private Bootstrap bootstrap;
   private Handler<Throwable> exceptionHandler;
@@ -58,18 +58,18 @@ public class DefaultHttpClient implements HttpClient {
   private boolean closed;
   private final SSLHelper sslHelper;
 
-  public DefaultHttpClient(VertxInternal vertx, HttpClientOptions options) {
+  public HttpClientImpl(VertxInternal vertx, HttpClientOptions options) {
     this.vertx = vertx;
     this.options = new HttpClientOptions(options);
     this.sslHelper = new SSLHelper(options);
     actualCtx = vertx.getOrCreateContext();
     closeHook = doneHandler -> {
-      DefaultHttpClient.this.close();
-      doneHandler.handle(new DefaultFutureResult<>((Void)null));
+      HttpClientImpl.this.close();
+      doneHandler.handle(new FutureResultImpl<>((Void)null));
     };
     actualCtx.addCloseHook(closeHook);
     pool = new ConnectionManager(vertx)  {
-      protected void connect(String host, int port, Handler<ClientConnection> connectHandler, Handler<Throwable> connectErrorHandler, DefaultContext context,
+      protected void connect(String host, int port, Handler<ClientConnection> connectHandler, Handler<Throwable> connectErrorHandler, ContextImpl context,
                              ConnectionLifeCycleListener listener) {
         internalConnect(port, host, connectHandler, connectErrorHandler, listener);
       }
@@ -80,7 +80,7 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   // @Override
-  public DefaultHttpClient exceptionHandler(Handler<Throwable> handler) {
+  public HttpClientImpl exceptionHandler(Handler<Throwable> handler) {
     checkClosed();
     this.exceptionHandler = handler;
     return this;
@@ -176,7 +176,7 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   void getConnection(int port, String host, Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
-                     DefaultContext context) {
+                     ContextImpl context) {
     pool.getConnection(port, host, handler, connectionExceptionHandler, context);
   }
 
@@ -285,7 +285,7 @@ public class DefaultHttpClient implements HttpClient {
 
   private HttpClientRequest doRequest(String method, RequestOptions options, Handler<HttpClientResponse> responseHandler) {
     checkClosed();
-    HttpClientRequest req = new DefaultHttpClientRequest(this, method, options, responseHandler, actualCtx);
+    HttpClientRequest req = new HttpClientRequestImpl(this, method, options, responseHandler, actualCtx);
     if (options.getHeaders() != null) {
       req.headers().set(options.getHeaders());
     }
@@ -303,7 +303,7 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   private void createConn(int port, String host, Channel ch, Handler<ClientConnection> connectHandler, ConnectionLifeCycleListener listener) {
-    ClientConnection conn = new ClientConnection(vertx, DefaultHttpClient.this, ch,
+    ClientConnection conn = new ClientConnection(vertx, HttpClientImpl.this, ch,
         options.isSsl(), host, port, actualCtx, listener);
     conn.closeHandler(v -> {
       // The connection has been closed - tell the pool about it, this allows the pool to create more
@@ -430,11 +430,11 @@ public class DefaultHttpClient implements HttpClient {
     private boolean closeFrameSent;
 
     public ClientHandler() {
-      super(vertx, DefaultHttpClient.this.connectionMap);
+      super(vertx, HttpClientImpl.this.connectionMap);
     }
 
     @Override
-    protected DefaultContext getContext(ClientConnection connection) {
+    protected ContextImpl getContext(ClientConnection connection) {
       return actualCtx;
     }
 
@@ -469,7 +469,7 @@ public class DefaultHttpClient implements HttpClient {
             break;
           case PING:
             // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
-            ctx.writeAndFlush(new DefaultWebSocketFrame(WebSocketFrame.FrameType.PONG, frame.getBinaryData()));
+            ctx.writeAndFlush(new WebSocketFrameImpl(WebSocketFrame.FrameType.PONG, frame.getBinaryData()));
             break;
           case CLOSE:
             if (!closeFrameSent) {

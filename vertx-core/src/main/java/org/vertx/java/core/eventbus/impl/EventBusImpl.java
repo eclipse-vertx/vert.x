@@ -24,8 +24,8 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.ReplyException;
 import org.vertx.java.core.eventbus.ReplyFailure;
 import org.vertx.java.core.impl.Closeable;
-import org.vertx.java.core.impl.DefaultContext;
-import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.impl.ContextImpl;
+import org.vertx.java.core.impl.FutureResultImpl;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.impl.management.ManagementRegistry;
 import org.vertx.java.core.json.JsonArray;
@@ -53,9 +53,9 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultEventBus implements EventBus {
+public class EventBusImpl implements EventBus {
 
-  private static final Logger log = LoggerFactory.getLogger(DefaultEventBus.class);
+  private static final Logger log = LoggerFactory.getLogger(EventBusImpl.class);
 
   private static final Buffer PONG = new Buffer(new byte[] { (byte)1 });
   private static final long PING_INTERVAL = 20000;
@@ -70,7 +70,7 @@ public class DefaultEventBus implements EventBus {
   private final ClusterManager clusterMgr;
   private final AtomicLong replySequence = new AtomicLong(0);
 
-  public DefaultEventBus(VertxInternal vertx) {
+  public EventBusImpl(VertxInternal vertx) {
     // Just some dummy server ID
     this.vertx = vertx;
     this.serverID = new ServerID(-1, "localhost");
@@ -80,12 +80,12 @@ public class DefaultEventBus implements EventBus {
     ManagementRegistry.registerEventBus(serverID);
   }
 
-  public DefaultEventBus(VertxInternal vertx, int port, String hostname, ClusterManager clusterManager) {
+  public EventBusImpl(VertxInternal vertx, int port, String hostname, ClusterManager clusterManager) {
     this(vertx, port, hostname, clusterManager, null);
   }
 
-  public DefaultEventBus(VertxInternal vertx, int port, String hostname, ClusterManager clusterManager,
-                         Handler<AsyncResult<Void>> listenHandler) {
+  public EventBusImpl(VertxInternal vertx, int port, String hostname, ClusterManager clusterManager,
+                      Handler<AsyncResult<Void>> listenHandler) {
     this.vertx = vertx;
     this.clusterMgr = clusterManager;
     this.subs = clusterMgr.getAsyncMultiMap("subs");
@@ -502,7 +502,7 @@ public class DefaultEventBus implements EventBus {
 		if (server != null) {
 			server.close(doneHandler);
 		} else if (doneHandler != null) {
-      vertx.runOnContext(v-> doneHandler.handle(new DefaultFutureResult<>((Void)null)));
+      vertx.runOnContext(v-> doneHandler.handle(new FutureResultImpl<>((Void)null)));
     }
   }
 
@@ -601,13 +601,13 @@ public class DefaultEventBus implements EventBus {
         // If using a wilcard port (0) then we ask the server for the actual port:
         int serverPort = (publicPort == -1) ? server.actualPort() : publicPort;
         String serverHost = (publicHost == null) ? hostName : publicHost;
-        DefaultEventBus.this.serverID = new ServerID(serverPort, serverHost);
+        EventBusImpl.this.serverID = new ServerID(serverPort, serverHost);
       }
       if (listenHandler != null) {
         if (asyncResult.succeeded()) {
-          listenHandler.handle(new DefaultFutureResult<>((Void)null));
+          listenHandler.handle(new FutureResultImpl<>((Void)null));
         } else {
-          listenHandler.handle(new DefaultFutureResult<>(asyncResult.cause()));
+          listenHandler.handle(new FutureResultImpl<>(asyncResult.cause()));
         }
       } else if (asyncResult.failed()) {
         log.error("Failed to listen", asyncResult.cause());
@@ -667,7 +667,7 @@ public class DefaultEventBus implements EventBus {
   private <T, U> void sendOrPub(ServerID replyDest, BaseMessage<U> message, Handler<Message<T>> replyHandler,
                                 Handler<AsyncResult<Message<T>>> asyncResultHandler, long timeout) {
     checkStarted();
-    DefaultContext context = vertx.getOrCreateContext();
+    ContextImpl context = vertx.getOrCreateContext();
     if (timeout == -1) {
       timeout = defaultReplyTimeout;
     }
@@ -682,7 +682,7 @@ public class DefaultEventBus implements EventBus {
             log.warn("Message reply handler timed out as no reply was received - it will be removed");
             unregisterHandler(message.replyAddress, replyHandler);
             if (asyncResultHandler != null) {
-              asyncResultHandler.handle(new DefaultFutureResult<>(new ReplyException(ReplyFailure.TIMEOUT, "Timed out waiting for reply")));
+              asyncResultHandler.handle(new FutureResultImpl<>(new ReplyException(ReplyFailure.TIMEOUT, "Timed out waiting for reply")));
             }
           });
         }
@@ -726,12 +726,12 @@ public class DefaultEventBus implements EventBus {
 
   private <T> Handler<Message<T>> convertHandler(Handler<AsyncResult<Message<T>>> handler) {
     return reply -> {
-      DefaultFutureResult<Message<T>> result;
+      FutureResultImpl<Message<T>> result;
       if (reply.body() instanceof ReplyException) {
         // This is kind of clunky - but hey-ho
-        result = new DefaultFutureResult<>((ReplyException)reply.body());
+        result = new FutureResultImpl<>((ReplyException)reply.body());
       } else {
-        result = new DefaultFutureResult<>(reply);
+        result = new FutureResultImpl<>(reply);
       }
       handler.handle(result);
     };
@@ -744,7 +744,7 @@ public class DefaultEventBus implements EventBus {
     if (address == null) {
       throw new NullPointerException("address");
     }
-    DefaultContext context = vertx.getContext();
+    ContextImpl context = vertx.getContext();
     boolean hasContext = context != null;
     if (!hasContext) {
       context = vertx.createEventLoopContext();
@@ -783,7 +783,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   private void callCompletionHandler(Handler<AsyncResult<Void>> completionHandler) {
-    completionHandler.handle(new DefaultFutureResult<>((Void) null));
+    completionHandler.handle(new FutureResultImpl<>((Void) null));
   }
 
   private void cleanSubsForServerID(ServerID theServerID) {
@@ -894,7 +894,7 @@ public class DefaultEventBus implements EventBus {
     vertx.runOnContext(new Handler<Void>() {
       @Override
       public void handle(Void v) {
-        handler.handle(new DefaultFutureResult<>(new ReplyException(ReplyFailure.NO_HANDLERS)));
+        handler.handle(new FutureResultImpl<>(new ReplyException(ReplyFailure.NO_HANDLERS)));
       }
     });
   }
@@ -926,14 +926,14 @@ public class DefaultEventBus implements EventBus {
   }
 
   private static class HandlerHolder<T> {
-    final DefaultContext context;
+    final ContextImpl context;
     final Handler<Message<T>> handler;
     final boolean replyHandler;
     final boolean localOnly;
     final long timeoutID;
     boolean removed;
 
-    HandlerHolder(Handler<Message<T>> handler, boolean replyHandler, boolean localOnly, DefaultContext context, long timeoutID) {
+    HandlerHolder(Handler<Message<T>> handler, boolean replyHandler, boolean localOnly, ContextImpl context, long timeoutID) {
       this.context = context;
       this.handler = handler;
       this.replyHandler = replyHandler;
@@ -1065,7 +1065,7 @@ public class DefaultEventBus implements EventBus {
     // Called by context on undeploy
     public void close(Handler<AsyncResult<Void>> doneHandler) {
       unregisterHandler(this.address, this.handler);
-      doneHandler.handle(new DefaultFutureResult<>((Void)null));
+      doneHandler.handle(new FutureResultImpl<>((Void)null));
     }
 
   }

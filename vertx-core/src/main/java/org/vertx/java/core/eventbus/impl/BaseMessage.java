@@ -35,7 +35,7 @@ public abstract class BaseMessage<U> implements Message<U> {
 
   protected U body;
   protected ServerID sender;
-  protected DefaultEventBus bus;
+  protected EventBusImpl bus;
   protected String address;
   protected String replyAddress;
   protected boolean send; // Is it a send or a publish?
@@ -63,7 +63,7 @@ public abstract class BaseMessage<U> implements Message<U> {
 
   @Override
   public void reply() {
-    sendReply(DefaultEventBus.createMessage(true, replyAddress, null), null);
+    sendReply(EventBusImpl.createMessage(true, replyAddress, null), null);
   }
 
   @Override
@@ -133,22 +133,22 @@ public abstract class BaseMessage<U> implements Message<U> {
 
   @Override
   public <T> void reply(Handler<Message<T>> replyHandler) {
-    sendReply(DefaultEventBus.createMessage(true, replyAddress, null), replyHandler);
+    sendReply(EventBusImpl.createMessage(true, replyAddress, null), replyHandler);
   }
 
   @Override
   public <T> void replyWithTimeout(long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendReplyWithTimeout(DefaultEventBus.createMessage(true, replyAddress, null), timeout, replyHandler);
+    sendReplyWithTimeout(EventBusImpl.createMessage(true, replyAddress, null), timeout, replyHandler);
   }
 
   @Override
   public <T> void reply(Object message, Handler<Message<T>> replyHandler) {
-    sendReply(DefaultEventBus.createMessage(true, replyAddress, message), replyHandler);
+    sendReply(EventBusImpl.createMessage(true, replyAddress, message), replyHandler);
   }
 
   @Override
   public <T> void replyWithTimeout(Object message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendReplyWithTimeout(DefaultEventBus.createMessage(true, replyAddress, message), timeout, replyHandler);
+    sendReplyWithTimeout(EventBusImpl.createMessage(true, replyAddress, message), timeout, replyHandler);
   }
 
   @Override

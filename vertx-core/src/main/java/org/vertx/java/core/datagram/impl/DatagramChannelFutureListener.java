@@ -20,8 +20,8 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.impl.DefaultContext;
-import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.impl.ContextImpl;
+import org.vertx.java.core.impl.FutureResultImpl;
 import org.vertx.java.core.impl.VertxInternal;
 
 /**
@@ -30,10 +30,10 @@ import org.vertx.java.core.impl.VertxInternal;
 final class DatagramChannelFutureListener<T> implements ChannelFutureListener {
   private final Handler<AsyncResult<T>> handler;
   private final T result;
-  private final DefaultContext context;
+  private final ContextImpl context;
   private final VertxInternal vertx;
 
-  DatagramChannelFutureListener(T result, Handler<AsyncResult<T>> handler, VertxInternal vertx, DefaultContext context) {
+  DatagramChannelFutureListener(T result, Handler<AsyncResult<T>> handler, VertxInternal vertx, ContextImpl context) {
     this.handler = handler;
     this.result = result;
     this.context = context;
@@ -57,9 +57,9 @@ final class DatagramChannelFutureListener<T> implements ChannelFutureListener {
 
   private void notifyHandler(ChannelFuture future) {
     if (future.isSuccess()) {
-      handler.handle(new DefaultFutureResult<>(result));
+      handler.handle(new FutureResultImpl<>(result));
     } else {
-      handler.handle(new DefaultFutureResult<>(future.cause()));
+      handler.handle(new FutureResultImpl<>(future.cause()));
     }
   }
 }

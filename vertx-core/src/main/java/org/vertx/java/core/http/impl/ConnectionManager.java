@@ -2,7 +2,7 @@ package org.vertx.java.core.http.impl;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.impl.DefaultContext;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -27,7 +27,7 @@ public abstract class ConnectionManager {
     this.vertx = vertx;
   }
 
-  public void getConnection(int port, String host, Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, DefaultContext context) {
+  public void getConnection(int port, String host, Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl context) {
     if (!keepAlive && pipelining) {
       connectionExceptionHandler.handle(new IllegalStateException("Cannot have pipelining with no keep alive"));
     } else {
@@ -44,7 +44,7 @@ public abstract class ConnectionManager {
     }
   }
 
-  protected abstract void connect(String host, int port, Handler<ClientConnection> connectHandler, Handler<Throwable> connectErrorHandler, DefaultContext context,
+  protected abstract void connect(String host, int port, Handler<ClientConnection> connectHandler, Handler<Throwable> connectErrorHandler, ContextImpl context,
                                   ConnectionLifeCycleListener listener);
 
   public int getMaxSockets() {
@@ -89,7 +89,7 @@ public abstract class ConnectionManager {
       this.address = address;
     }
 
-    public synchronized void getConnection(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, DefaultContext context) {
+    public synchronized void getConnection(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl context) {
       if (connCount == maxSockets) {
         // Wait in queue
         waiters.add(new Waiter(handler, connectionExceptionHandler, context));
@@ -160,7 +160,7 @@ public abstract class ConnectionManager {
       }
     }
 
-    private void createNewConnection(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, DefaultContext context) {
+    private void createNewConnection(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl context) {
       connCount++;
       connect(address.host, address.port, conn -> {
         allConnections.add(conn);
@@ -216,9 +216,9 @@ public abstract class ConnectionManager {
   private static class Waiter {
     final Handler<ClientConnection> handler;
     final Handler<Throwable> connectionExceptionHandler;
-    final DefaultContext context;
+    final ContextImpl context;
 
-    private Waiter(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, DefaultContext context) {
+    private Waiter(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl context) {
       this.handler = handler;
       this.connectionExceptionHandler = connectionExceptionHandler;
       this.context = context;

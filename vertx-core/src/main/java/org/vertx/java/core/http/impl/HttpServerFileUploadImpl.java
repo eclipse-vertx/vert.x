@@ -31,7 +31,7 @@ import java.nio.charset.Charset;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-class DefaultHttpServerFileUpload implements HttpServerFileUpload {
+class HttpServerFileUploadImpl implements HttpServerFileUpload {
 
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
@@ -52,9 +52,9 @@ class DefaultHttpServerFileUpload implements HttpServerFileUpload {
   private Buffer pauseBuff;
   private boolean complete;
 
-  DefaultHttpServerFileUpload(Vertx vertx, HttpServerRequest req, String name, String filename, String contentType,
-                              String contentTransferEncoding,
-                              Charset charset, long size) {
+  HttpServerFileUploadImpl(Vertx vertx, HttpServerRequest req, String name, String filename, String contentType,
+                           String contentTransferEncoding,
+                           Charset charset, long size) {
     this.vertx = vertx;
     this.req = req;
     this.name = name;
@@ -144,7 +144,7 @@ class DefaultHttpServerFileUpload implements HttpServerFileUpload {
         if (ar.succeeded()) {
           file =  ar.result();
 
-          Pump p = Pump.createPump(DefaultHttpServerFileUpload.this, ar.result());
+          Pump p = Pump.createPump(HttpServerFileUploadImpl.this, ar.result());
           p.start();
 
           resume();

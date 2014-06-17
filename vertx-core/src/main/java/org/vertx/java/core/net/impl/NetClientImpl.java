@@ -26,8 +26,8 @@ import io.netty.util.concurrent.GenericFutureListener;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.Closeable;
-import org.vertx.java.core.impl.DefaultContext;
-import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.impl.ContextImpl;
+import org.vertx.java.core.impl.FutureResultImpl;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -42,26 +42,26 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultNetClient implements NetClient {
+public class NetClientImpl implements NetClient {
 
-  private static final Logger log = LoggerFactory.getLogger(DefaultNetClient.class);
+  private static final Logger log = LoggerFactory.getLogger(NetClientImpl.class);
 
   private final VertxInternal vertx;
   private final NetClientOptions options;
-  private final DefaultContext actualCtx;
+  private final ContextImpl actualCtx;
   private final SSLHelper sslHelper;
-  private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<>();
+  private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
   private final Closeable closeHook;
   private Bootstrap bootstrap;
 
-  public DefaultNetClient(VertxInternal vertx, NetClientOptions options) {
+  public NetClientImpl(VertxInternal vertx, NetClientOptions options) {
     this.vertx = vertx;
     this.options = new NetClientOptions(options);
     this.sslHelper = new SSLHelper(options);
     actualCtx = vertx.getOrCreateContext();
     this.closeHook = doneHandler -> {
-      DefaultNetClient.this.close();
-      doneHandler.handle(new DefaultFutureResult<>((Void)null));
+      NetClientImpl.this.close();
+      doneHandler.handle(new FutureResultImpl<>((Void)null));
     };
     actualCtx.addCloseHook(closeHook);
   }
@@ -180,9 +180,9 @@ public class DefaultNetClient implements NetClient {
   }
 
   private void doConnected(Channel ch, final Handler<AsyncResult<NetSocket>> connectHandler) {
-    DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, actualCtx, sslHelper, true);
+    NetSocketImpl sock = new NetSocketImpl(vertx, ch, actualCtx, sslHelper, true);
     socketMap.put(ch, sock);
-    connectHandler.handle(new DefaultFutureResult<NetSocket>(sock));
+    connectHandler.handle(new FutureResultImpl<NetSocket>(sock));
   }
 
   private void failed(Channel ch, final Throwable t, final Handler<AsyncResult<NetSocket>> connectHandler) {
@@ -191,7 +191,7 @@ public class DefaultNetClient implements NetClient {
   }
 
   private static void doFailed(Handler<AsyncResult<NetSocket>> connectHandler, Throwable t) {
-    connectHandler.handle(new DefaultFutureResult<>(t));
+    connectHandler.handle(new FutureResultImpl<>(t));
   }
 }
 

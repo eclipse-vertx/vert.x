@@ -20,7 +20,7 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 
-public class DefaultFutureResult<T> implements Future<T> {
+public class FutureResultImpl<T> implements Future<T> {
   private boolean failed;
   private boolean succeeded;
   private Handler<AsyncResult<T>> handler;
@@ -30,14 +30,14 @@ public class DefaultFutureResult<T> implements Future<T> {
   /**
    * Create a FutureResult that hasn't completed yet
    */
-  public DefaultFutureResult() {
+  public FutureResultImpl() {
   }
 
   /**
    * Create a VoidResult that has already completed
    * @param t The Throwable or null if succeeded
    */
-  public DefaultFutureResult(Throwable t) {
+  public FutureResultImpl(Throwable t) {
     if (t == null) {
       setResult(null);
     } else {
@@ -49,7 +49,7 @@ public class DefaultFutureResult<T> implements Future<T> {
    * Create a FutureResult that has already succeeded
    * @param result The result
    */
-  public DefaultFutureResult(T result) {
+  public FutureResultImpl(T result) {
     setResult(result);
   }
 
@@ -91,7 +91,7 @@ public class DefaultFutureResult<T> implements Future<T> {
   /**
    * Set a handler for the result. It will get called when it's complete
    */
-  public DefaultFutureResult<T> setHandler(Handler<AsyncResult<T>> handler) {
+  public FutureResultImpl<T> setHandler(Handler<AsyncResult<T>> handler) {
     this.handler = handler;
     checkCallHandler();
     return this;
@@ -100,7 +100,7 @@ public class DefaultFutureResult<T> implements Future<T> {
   /**
    * Set the result. Any handler will be called, if there is one
    */
-  public DefaultFutureResult<T> setResult(T result) {
+  public FutureResultImpl<T> setResult(T result) {
     this.result = result;
     succeeded = true;
     checkCallHandler();
@@ -110,7 +110,7 @@ public class DefaultFutureResult<T> implements Future<T> {
   /**
    * Set the failure. Any handler will be called, if there is one
    */
-  public DefaultFutureResult<T> setFailure(Throwable throwable) {
+  public FutureResultImpl<T> setFailure(Throwable throwable) {
     this.throwable = throwable;
     failed = true;
     checkCallHandler();

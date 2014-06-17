@@ -26,9 +26,9 @@ import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.*;
-import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
+import org.vertx.java.core.http.impl.ws.WebSocketFrameImpl;
 import org.vertx.java.core.http.impl.ws.WebSocketFrameInternal;
-import org.vertx.java.core.impl.DefaultContext;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.impl.ConnectionBase;
 import org.vertx.java.core.net.impl.VertxHandler;
@@ -51,7 +51,7 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
   }
 
   @Override
-  protected void channelRead(final C connection, final DefaultContext context, final ChannelHandlerContext chctx, final Object msg) throws Exception {
+  protected void channelRead(final C connection, final ContextImpl context, final ChannelHandlerContext chctx, final Object msg) throws Exception {
     if (connection != null) {
       // we are reading from the channel
       Channel ch = chctx.channel();
@@ -114,7 +114,7 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
       } else {
         throw new IllegalStateException("Unsupported websocket msg " + msg);
       }
-      return new DefaultWebSocketFrame(frameType, payload, isFinal);
+      return new WebSocketFrameImpl(frameType, payload, isFinal);
     }
     return msg;
   }

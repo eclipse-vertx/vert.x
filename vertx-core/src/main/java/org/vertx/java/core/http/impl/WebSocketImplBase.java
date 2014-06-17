@@ -22,7 +22,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.WebSocketBase;
 import org.vertx.java.core.http.WebSocketFrame;
-import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
+import org.vertx.java.core.http.impl.ws.WebSocketFrameImpl;
 import org.vertx.java.core.http.impl.ws.WebSocketFrameInternal;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.SocketAddress;
@@ -101,12 +101,12 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
 
   protected void writeBinaryFrameInternal(Buffer data) {
     ByteBuf buf = data.getByteBuf();
-    WebSocketFrame frame = new DefaultWebSocketFrame(WebSocketFrame.FrameType.BINARY, buf);
+    WebSocketFrame frame = new WebSocketFrameImpl(WebSocketFrame.FrameType.BINARY, buf);
     writeFrame(frame);
   }
 
   protected void writeTextFrameInternal(String str) {
-    WebSocketFrame frame = new DefaultWebSocketFrame(str);
+    WebSocketFrame frame = new WebSocketFrameImpl(str);
     writeFrame(frame);
   }
 

@@ -20,7 +20,7 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.impl.BlockingAction;
-import org.vertx.java.core.impl.DefaultContext;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -29,7 +29,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author Juergen Donnerstag
  */
-public class WindowsFileSystem extends DefaultFileSystem {
+public class WindowsFileSystem extends FileSystemImpl {
 
   private static final Logger log = LoggerFactory.getLogger(WindowsFileSystem.class);
 
@@ -65,9 +65,9 @@ public class WindowsFileSystem extends DefaultFileSystem {
 
   @Override
   protected AsyncFile doOpen(String path, String perms, boolean read, boolean write, boolean createNew, boolean flush,
-                             DefaultContext context) {
+                             ContextImpl context) {
     logInternal(perms);
-    return new DefaultAsyncFile(vertx, path, null, read, write, createNew, flush, context);
+    return new AsyncFileImpl(vertx, path, null, read, write, createNew, flush, context);
   }
 
   @Override

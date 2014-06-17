@@ -22,7 +22,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Date;
 
 
-public class DefaultFileProps implements FileProps {
+public class FilePropsImpl implements FileProps {
   
   private final Date creationTime;
   private final Date lastAccessTime;
@@ -33,7 +33,7 @@ public class DefaultFileProps implements FileProps {
   private final boolean isSymbolicLink;
   private final long size;
 
-  public DefaultFileProps(BasicFileAttributes attrs) {
+  public FilePropsImpl(BasicFileAttributes attrs) {
     creationTime = new Date(attrs.creationTime().toMillis());
     lastModifiedTime = new Date(attrs.lastModifiedTime().toMillis());
     lastAccessTime = new Date(attrs.lastAccessTime().toMillis());

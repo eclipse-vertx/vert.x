@@ -24,7 +24,7 @@ import org.vertx.java.core.http.WebSocketFrame;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.impl.ConnectionBase;
 
-public class DefaultServerWebSocket extends WebSocketImplBase<ServerWebSocket> implements ServerWebSocket {
+public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> implements ServerWebSocket {
 
   private final String uri;
   private final String path;
@@ -34,8 +34,8 @@ public class DefaultServerWebSocket extends WebSocketImplBase<ServerWebSocket> i
   private boolean rejected;
   private final MultiMap headers;
 
-  public DefaultServerWebSocket(VertxInternal vertx, String uri, String path, String query, MultiMap headers,
-                                ConnectionBase conn, Runnable connectRunnable) {
+  public ServerWebSocketImpl(VertxInternal vertx, String uri, String path, String query, MultiMap headers,
+                             ConnectionBase conn, Runnable connectRunnable) {
     super(vertx, conn);
     this.uri = uri;
     this.path = path;

@@ -41,9 +41,9 @@ import java.util.*;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequest> {
+public class SockJSServerImpl implements SockJSServer, Handler<HttpServerRequest> {
 
-  private static final Logger log = LoggerFactory.getLogger(DefaultSockJSServer.class);
+  private static final Logger log = LoggerFactory.getLogger(SockJSServerImpl.class);
 
   private final VertxInternal vertx;
   private RouteMatcher rm = new RouteMatcher();
@@ -52,7 +52,7 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
   private EventBusBridgeHook hook;
   private long timerID;
 
-  public DefaultSockJSServer(final VertxInternal vertx, final HttpServer httpServer) {
+  public SockJSServerImpl(final VertxInternal vertx, final HttpServer httpServer) {
     this.vertx = vertx;
     this.sessions = vertx.sharedData().getMap("_vertx.sockjssessions");
     // Any previous request and websocket handlers will become default handlers
@@ -76,7 +76,7 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
         if (httpServer.requestHandler() == null) {
           // Implies server is closed - cancel timer id
           vertx.cancelTimer(timerID);
-        } else if (httpServer.requestHandler() != DefaultSockJSServer.this) {
+        } else if (httpServer.requestHandler() != SockJSServerImpl.this) {
           log.warn("You have overwritten the Http server request handler AFTER the SockJSServer has been created " +
                    "which will stop the SockJSServer from functioning. Make sure you set http request handler BEFORE " +
                    "you create the SockJSServer");
@@ -379,7 +379,7 @@ public class DefaultSockJSServer implements SockJSServer, Handler<HttpServerRequ
   public static void main(String[] args) throws Exception {
     Vertx vertx = VertxFactory.newVertx();
     HttpServer httpServer = vertx.createHttpServer(new HttpServerOptions().setPort(8081));
-    DefaultSockJSServer sjsServer = (DefaultSockJSServer)vertx.createSockJSServer(httpServer);
+    SockJSServerImpl sjsServer = (SockJSServerImpl)vertx.createSockJSServer(httpServer);
     sjsServer.installTestApplications();
     httpServer.listen();
     Thread.sleep(Long.MAX_VALUE);

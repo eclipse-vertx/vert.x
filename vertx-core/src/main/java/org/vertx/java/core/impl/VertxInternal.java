@@ -18,8 +18,8 @@ package org.vertx.java.core.impl;
 
 
 import io.netty.channel.EventLoopGroup;
-import org.vertx.java.core.http.impl.DefaultHttpServer;
-import org.vertx.java.core.net.impl.DefaultNetServer;
+import org.vertx.java.core.http.impl.HttpServerImpl;
+import org.vertx.java.core.net.impl.NetServerImpl;
 import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.spi.VertxSPI;
 import org.vertx.java.core.spi.cluster.ClusterManager;
@@ -44,24 +44,24 @@ public interface VertxInternal extends VertxSPI {
 //
 //  DefaultContext startInBackground(Runnable runnable, boolean multiThreaded);
 
-  DefaultContext getOrCreateContext();
+  ContextImpl getOrCreateContext();
 
   void reportException(Throwable t);
 
-  Map<ServerID, DefaultHttpServer> sharedHttpServers();
+  Map<ServerID, HttpServerImpl> sharedHttpServers();
 
-  Map<ServerID, DefaultNetServer> sharedNetServers();
+  Map<ServerID, NetServerImpl> sharedNetServers();
 
 	/**
 	 * Get the current context
 	 * @return the context
 	 */
-	DefaultContext getContext();
+	ContextImpl getContext();
 
 	/**
 	 * Set the current context
 	 */
-  void setContext(DefaultContext context);
+  void setContext(ContextImpl context);
 
   /**
    * @return event loop context
@@ -71,7 +71,7 @@ public interface VertxInternal extends VertxSPI {
   /**
    * @return worker loop context
    */
-  DefaultContext createWorkerContext(boolean multiThreaded);
+  ContextImpl createWorkerContext(boolean multiThreaded);
 
   ClusterManager clusterManager();
 }

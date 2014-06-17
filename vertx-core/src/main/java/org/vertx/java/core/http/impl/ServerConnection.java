@@ -29,11 +29,11 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.impl.ws.WebSocketFrameInternal;
-import org.vertx.java.core.impl.DefaultContext;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.ConnectionBase;
-import org.vertx.java.core.net.impl.DefaultNetSocket;
+import org.vertx.java.core.net.impl.NetSocketImpl;
 import org.vertx.java.core.net.impl.VertxNetHandler;
 
 import java.io.File;
@@ -51,18 +51,18 @@ class ServerConnection extends ConnectionBase {
 
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
-  private DefaultHttpServerRequest currentRequest;
-  private DefaultHttpServerResponse pendingResponse;
-  private DefaultServerWebSocket ws;
+  private HttpServerRequestImpl currentRequest;
+  private HttpServerResponseImpl pendingResponse;
+  private ServerWebSocketImpl ws;
   private boolean channelPaused;
   private boolean paused;
   private boolean sentCheck;
   private final Queue<Object> pending = new ArrayDeque<>(8);
   private final String serverOrigin;
-  private final DefaultHttpServer server;
+  private final HttpServerImpl server;
   private ChannelFuture lastWriteFuture;
 
-  ServerConnection(VertxInternal vertx, DefaultHttpServer server, Channel channel, DefaultContext context, String serverOrigin) {
+  ServerConnection(VertxInternal vertx, HttpServerImpl server, Channel channel, ContextImpl context, String serverOrigin) {
     super(vertx, channel, context);
     this.serverOrigin = serverOrigin;
     this.server = server;
@@ -124,8 +124,8 @@ class ServerConnection extends ConnectionBase {
   }
 
   NetSocket createNetSocket() {
-    DefaultNetSocket socket = new DefaultNetSocket(vertx, channel, context, server.getSslHelper(), false);
-    Map<Channel, DefaultNetSocket> connectionMap = new HashMap<Channel, DefaultNetSocket>(1);
+    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, server.getSslHelper(), false);
+    Map<Channel, NetSocketImpl> connectionMap = new HashMap<Channel, NetSocketImpl>(1);
     connectionMap.put(channel, socket);
 
     // Flush out all pending data
@@ -182,7 +182,7 @@ class ServerConnection extends ConnectionBase {
     return socket;
   }
 
-  private void handleRequest(DefaultHttpServerRequest req, DefaultHttpServerResponse resp) {
+  private void handleRequest(HttpServerRequestImpl req, HttpServerResponseImpl resp) {
     setContext();
     try {
       this.currentRequest = req;
@@ -230,7 +230,7 @@ class ServerConnection extends ConnectionBase {
     }
   }
 
-  void handleWebsocketConnect(DefaultServerWebSocket ws) {
+  void handleWebsocketConnect(ServerWebSocketImpl ws) {
     try {
       if (wsHandler != null) {
         setContext();
@@ -263,7 +263,7 @@ class ServerConnection extends ConnectionBase {
     }
   }
 
-  protected DefaultContext getContext() {
+  protected ContextImpl getContext() {
     return super.getContext();
   }
 
@@ -297,8 +297,8 @@ class ServerConnection extends ConnectionBase {
   private void processMessage(Object msg) {
     if (msg instanceof HttpRequest) {
       HttpRequest request = (HttpRequest) msg;
-      DefaultHttpServerResponse resp = new DefaultHttpServerResponse(vertx, this, request);
-      DefaultHttpServerRequest req = new DefaultHttpServerRequest(this, request, resp);
+      HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
+      HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
       handleRequest(req, resp);
     }
     if (msg instanceof HttpContent) {

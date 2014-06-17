@@ -35,11 +35,11 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.cgbystrom.FlashPolicyHandler;
-import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
+import org.vertx.java.core.http.impl.ws.WebSocketFrameImpl;
 import org.vertx.java.core.http.impl.ws.WebSocketFrameInternal;
 import org.vertx.java.core.impl.Closeable;
-import org.vertx.java.core.impl.DefaultContext;
-import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.impl.ContextImpl;
+import org.vertx.java.core.impl.FutureResultImpl;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -65,14 +65,14 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultHttpServer implements HttpServer, Closeable {
+public class HttpServerImpl implements HttpServer, Closeable {
 
-  private static final Logger log = LoggerFactory.getLogger(DefaultHttpServer.class);
+  private static final Logger log = LoggerFactory.getLogger(HttpServerImpl.class);
 
   private final HttpServerOptions options;
   private final VertxInternal vertx;
   private final SSLHelper sslHelper;
-  private final DefaultContext actualCtx;
+  private final ContextImpl actualCtx;
   private final Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private Handler<HttpServerRequest> requestHandler;
@@ -83,11 +83,11 @@ public class DefaultHttpServer implements HttpServer, Closeable {
   private Set<String> webSocketSubProtocols = Collections.unmodifiableSet(Collections.<String>emptySet());
   private ChannelFuture bindFuture;
   private ServerID id;
-  private DefaultHttpServer actualServer;
+  private HttpServerImpl actualServer;
   private HandlerManager<HttpServerRequest> reqHandlerManager = new HandlerManager<>(availableWorkers);
   private HandlerManager<ServerWebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
 
-  public DefaultHttpServer(VertxInternal vertx, HttpServerOptions options) {
+  public HttpServerImpl(VertxInternal vertx, HttpServerOptions options) {
     this.options = new HttpServerOptions(options);
     this.vertx = vertx;
     actualCtx = vertx.getOrCreateContext();
@@ -163,7 +163,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
 
       serverOrigin = (options.isSsl() ? "https" : "http") + "://" + options.getHost() + ":" + options.getPort();
 
-      DefaultHttpServer shared = vertx.sharedHttpServers().get(id);
+      HttpServerImpl shared = vertx.sharedHttpServers().get(id);
       if (shared == null) {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
         ServerBootstrap bootstrap = new ServerBootstrap();
@@ -224,7 +224,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
         } catch (final Throwable t) {
           // Make sure we send the exception back through the handler (if any)
           if (listenHandler != null) {
-            vertx.runOnContext(v -> listenHandler.handle(new DefaultFutureResult<>(t)));
+            vertx.runOnContext(v -> listenHandler.handle(new FutureResultImpl<>(t)));
           } else {
             // No handler - log so user can see failure
             actualCtx.reportException(t);
@@ -245,9 +245,9 @@ public class DefaultHttpServer implements HttpServer, Closeable {
           if (listenHandler != null) {
             final AsyncResult<HttpServer> res;
             if (future.isSuccess()) {
-              res = new DefaultFutureResult<HttpServer>(DefaultHttpServer.this);
+              res = new FutureResultImpl<HttpServer>(HttpServerImpl.this);
             } else {
-              res = new DefaultFutureResult<>(future.cause());
+              res = new FutureResultImpl<>(future.cause());
               listening = false;
             }
             actualCtx.execute(future.channel().eventLoop(), () -> listenHandler.handle(res));
@@ -262,7 +262,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
     return this;
   }
 
-  private void addHandlers(DefaultHttpServer server) {
+  private void addHandlers(HttpServerImpl server) {
     if (requestHandler != null) {
       server.reqHandlerManager.addHandler(requestHandler, actualCtx);
     }
@@ -321,7 +321,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
     connectionMap.remove(channel);
   }
 
-  private void actualClose(final DefaultContext closeContext, final Handler<AsyncResult<Void>> done) {
+  private void actualClose(final ContextImpl closeContext, final Handler<AsyncResult<Void>> done) {
     if (id != null) {
       vertx.sharedHttpServers().remove(id);
     }
@@ -349,9 +349,9 @@ public class DefaultHttpServer implements HttpServer, Closeable {
     executeCloseDone(closeContext, done, fut.cause());
   }
 
-  private void executeCloseDone(final DefaultContext closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {
+  private void executeCloseDone(final ContextImpl closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {
     if (done != null) {
-      closeContext.execute(() -> done.handle(new DefaultFutureResult<>(e)));
+      closeContext.execute(() -> done.handle(new FutureResultImpl<>(e)));
     }
   }
 
@@ -365,7 +365,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
     private boolean closeFrameSent;
 
     public ServerHandler() {
-      super(vertx, DefaultHttpServer.this.connectionMap);
+      super(vertx, HttpServerImpl.this.connectionMap);
     }
 
     private void sendError(CharSequence err, HttpResponseStatus status, Channel ch) {
@@ -427,7 +427,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
           if (conn == null) {
             HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
             if (reqHandler != null) {
-              conn = new ServerConnection(vertx, DefaultHttpServer.this, ch, reqHandler.context, serverOrigin);
+              conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin);
               conn.requestHandler(reqHandler.handler);
               connectionMap.put(ch, conn);
               conn.handleMessage(msg);
@@ -449,7 +449,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
             break;
           case PING:
             // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
-            ch.writeAndFlush(new DefaultWebSocketFrame(WebSocketFrame.FrameType.PONG, wsFrame.getBinaryData()));
+            ch.writeAndFlush(new WebSocketFrameImpl(WebSocketFrame.FrameType.PONG, wsFrame.getBinaryData()));
             break;
           case CLOSE:
             if (!closeFrameSent) {
@@ -498,7 +498,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
     private void handshake(final FullHttpRequest request, final Channel ch, ChannelHandlerContext ctx) throws Exception {
       final WebSocketServerHandshaker shake;
       String subProtocols = null;
-      Set<String> webSocketSubProtocols = DefaultHttpServer.this.webSocketSubProtocols;
+      Set<String> webSocketSubProtocols = HttpServerImpl.this.webSocketSubProtocols;
       if (!webSocketSubProtocols.isEmpty()) {
         StringBuilder sb = new StringBuilder();
         Iterator<String> protocols = webSocketSubProtocols.iterator();
@@ -534,7 +534,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
           throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
         }
 
-        final ServerConnection wsConn = new ServerConnection(vertx, DefaultHttpServer.this, ch, wsHandler.context, serverOrigin);
+        final ServerConnection wsConn = new ServerConnection(vertx, HttpServerImpl.this, ch, wsHandler.context, serverOrigin);
         wsConn.wsHandler(wsHandler.handler);
 
         Runnable connectRunnable = () -> {
@@ -548,7 +548,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
           }
         };
 
-        final DefaultServerWebSocket ws = new DefaultServerWebSocket(vertx, theURI.toString(), theURI.getPath(),
+        final ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
             theURI.getQuery(), new HttpHeadersAdapter(request.headers()), wsConn, connectRunnable);
         wsConn.handleWebsocketConnect(ws);
         if (ws.isRejected()) {

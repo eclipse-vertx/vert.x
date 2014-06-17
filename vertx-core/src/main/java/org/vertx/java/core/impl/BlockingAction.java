@@ -28,7 +28,7 @@ import org.vertx.java.core.Handler;
  */
 public abstract class BlockingAction<T>  {
 
-  protected DefaultContext context;
+  protected ContextImpl context;
 
   private final VertxInternal vertx;
   private final Handler<AsyncResult<T>> handler;
@@ -44,7 +44,7 @@ public abstract class BlockingAction<T>  {
   public void run() {
     context = vertx.getOrCreateContext();
     context.executeOnOrderedWorkerExec(() -> {
-      final DefaultFutureResult<T> res = new DefaultFutureResult<>();
+      final FutureResultImpl<T> res = new FutureResultImpl<>();
       try {
         res.setResult(action());
       } catch (Exception e) {

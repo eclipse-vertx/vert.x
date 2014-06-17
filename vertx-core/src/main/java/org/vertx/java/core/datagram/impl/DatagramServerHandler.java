@@ -21,7 +21,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.impl.DefaultContext;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.impl.VertxHandler;
 
@@ -30,11 +30,11 @@ import java.util.HashMap;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-final class DatagramServerHandler extends VertxHandler<DefaultDatagramSocket> {
-  private final DefaultDatagramSocket server;
+final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl> {
+  private final DatagramSocketImpl server;
 
-  DatagramServerHandler(VertxInternal vertx, DefaultDatagramSocket server) {
-        super(vertx, new HashMap<Channel, DefaultDatagramSocket>());
+  DatagramServerHandler(VertxInternal vertx, DatagramSocketImpl server) {
+        super(vertx, new HashMap<Channel, DatagramSocketImpl>());
     this.server = server;
   }
 
@@ -46,7 +46,7 @@ final class DatagramServerHandler extends VertxHandler<DefaultDatagramSocket> {
 
   @SuppressWarnings("unchecked")
   @Override
-  protected void channelRead(final DefaultDatagramSocket server, final DefaultContext context, ChannelHandlerContext chctx, final Object msg) throws Exception {
+  protected void channelRead(final DatagramSocketImpl server, final ContextImpl context, ChannelHandlerContext chctx, final Object msg) throws Exception {
     if (context.isOnCorrectWorker(chctx.channel().eventLoop())) {
       try {
         vertx.setContext(context);
@@ -73,7 +73,7 @@ final class DatagramServerHandler extends VertxHandler<DefaultDatagramSocket> {
       if (content.isDirect())  {
         content = safeBuffer(content, allocator);
       }
-      return new DefaultDatagramPacket(packet.sender(), new Buffer(content));
+      return new DatagramPacketImpl(packet.sender(), new Buffer(content));
     }
     return msg;
   }

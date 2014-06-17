@@ -28,7 +28,7 @@ import io.netty.util.ReferenceCounted;
  * @author <a href="http://gleamynode.net/">Trustin Lee</a>
  * @version $Rev: 2080 $, $Date: 2010-01-26 18:04:19 +0900 (Tue, 26 Jan 2010) $
  */
-public class DefaultWebSocketFrame implements WebSocketFrameInternal, ReferenceCounted {
+public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCounted {
 
   private final FrameType type;
   private final boolean isFinalFrame;
@@ -37,28 +37,28 @@ public class DefaultWebSocketFrame implements WebSocketFrameInternal, ReferenceC
   /**
    * Creates a new empty text frame.
    */
-  public DefaultWebSocketFrame() {
+  public WebSocketFrameImpl() {
     this(null, Unpooled.EMPTY_BUFFER, true);
   }
 
   /**
    * Creates a new empty text frame.
    */
-  public DefaultWebSocketFrame(FrameType frameType) {
+  public WebSocketFrameImpl(FrameType frameType) {
     this(frameType, Unpooled.EMPTY_BUFFER, true);
   }
 
   /**
    * Creates a new text frame from with the specified string.
    */
-  public DefaultWebSocketFrame(String textData) {
+  public WebSocketFrameImpl(String textData) {
     this(textData, true);
   }
 
   /**
    * Creates a new text frame from with the specified string.
    */
-  public DefaultWebSocketFrame(String textData, boolean isFinalFrame) {
+  public WebSocketFrameImpl(String textData, boolean isFinalFrame) {
     this.type = FrameType.TEXT;
     this.isFinalFrame = isFinalFrame;
     this.binaryData = Unpooled.copiedBuffer(textData, CharsetUtil.UTF_8);
@@ -73,7 +73,7 @@ public class DefaultWebSocketFrame implements WebSocketFrameInternal, ReferenceC
    * @throws IllegalArgumentException if If <tt>(type &amp; 0x80 == 0)</tt> and the data is not encoded
    *                                  in UTF-8
    */
-  public DefaultWebSocketFrame(FrameType type, ByteBuf binaryData) {
+  public WebSocketFrameImpl(FrameType type, ByteBuf binaryData) {
     this(type, binaryData, true);
   }
 
@@ -87,7 +87,7 @@ public class DefaultWebSocketFrame implements WebSocketFrameInternal, ReferenceC
    * @throws IllegalArgumentException if If <tt>(type &amp; 0x80 == 0)</tt> and the data is not encoded
    *                                  in UTF-8
    */
-  public DefaultWebSocketFrame(FrameType type, ByteBuf binaryData, boolean isFinalFrame) {
+  public WebSocketFrameImpl(FrameType type, ByteBuf binaryData, boolean isFinalFrame) {
     this.type = type;
     this.isFinalFrame = isFinalFrame;
     this.binaryData = Unpooled.unreleasableBuffer(binaryData);

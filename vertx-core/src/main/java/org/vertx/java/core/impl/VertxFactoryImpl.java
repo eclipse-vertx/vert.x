@@ -13,39 +13,37 @@
  *
  * You may elect to redistribute this code under either of these licenses.
  */
-package org.vertx.java.core.dns.impl;
+package org.vertx.java.core.impl;
 
-import org.vertx.java.core.dns.MxRecord;
-import org.vertx.java.core.dns.impl.netty.decoder.record.MailExchangerRecord;
-
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxFactory;
 
 /**
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
+ * @author pidster
+ *
  */
-final class DefaultMxRecord implements MxRecord, Comparable<MxRecord> {
-  private final MailExchangerRecord record;
+public class VertxFactoryImpl extends VertxFactory {
 
-  DefaultMxRecord(MailExchangerRecord record) {
-    this.record = record;
+  @Override
+  public Vertx createVertx() {
+    return new VertxImpl();
   }
 
   @Override
-  public int priority() {
-    return record.priority();
+  public Vertx createVertx(String hostname) {
+    return new VertxImpl(hostname);
   }
 
   @Override
-  public String name() {
-    return record.name();
+  public Vertx createVertx(int port, String hostname) {
+    return new VertxImpl(port, hostname, null);
   }
 
   @Override
-  public String toString() {
-    return priority() + " " + name();
+  public void createVertx(int port, String hostname, final Handler<AsyncResult<Vertx>> resultHandler) {
+    new VertxImpl(port, hostname, resultHandler);
   }
 
-  @Override
-  public int compareTo(MxRecord o) {
-    return Integer.valueOf(priority()).compareTo(o.priority());
-  }
 }

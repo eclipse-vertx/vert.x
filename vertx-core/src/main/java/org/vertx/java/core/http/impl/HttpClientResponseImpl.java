@@ -36,11 +36,11 @@ import java.util.Queue;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultHttpClientResponse implements HttpClientResponse  {
+public class HttpClientResponseImpl implements HttpClientResponse  {
 
   private final int statusCode;
   private final String statusMessage;
-  private final DefaultHttpClientRequest request;
+  private final HttpClientRequestImpl request;
   private final Vertx vertx;
   private final ClientConnection conn;
 
@@ -60,7 +60,7 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
   private MultiMap trailers;
   private List<String> cookies;
 
-  DefaultHttpClientResponse(Vertx vertx, DefaultHttpClientRequest request, ClientConnection conn, HttpResponse response) {
+  HttpClientResponseImpl(Vertx vertx, HttpClientRequestImpl request, ClientConnection conn, HttpResponse response) {
     this.vertx = vertx;
     this.statusCode = response.getStatus().code();
     this.statusMessage = response.getStatus().reasonPhrase();

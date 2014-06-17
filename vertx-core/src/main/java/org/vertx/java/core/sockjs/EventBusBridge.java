@@ -22,7 +22,7 @@ import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.impl.FutureResultImpl;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -415,7 +415,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
                            final Handler<AsyncResult<Boolean>> handler) {
     if (!handleAuthorise(message, sessionID, handler)) {
       // If session id is in local cache we'll consider them authorised
-      final DefaultFutureResult<Boolean> res = new DefaultFutureResult<>();
+      final FutureResultImpl<Boolean> res = new FutureResultImpl<>();
       if (authCache.containsKey(sessionID)) {
         res.setResult(true).setHandler(handler);
       } else {

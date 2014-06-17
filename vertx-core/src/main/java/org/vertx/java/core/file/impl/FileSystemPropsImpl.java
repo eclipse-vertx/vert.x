@@ -18,13 +18,13 @@ package org.vertx.java.core.file.impl;
 
 import org.vertx.java.core.file.FileSystemProps;
 
-public class DefaultFileSystemProps implements FileSystemProps {
+public class FileSystemPropsImpl implements FileSystemProps {
 
   private final long totalSpace;
   private final long unallocatedSpace;
   private final long usableSpace;
 
-  public DefaultFileSystemProps(long totalSpace, long unallocatedSpace, long usableSpace) {
+  public FileSystemPropsImpl(long totalSpace, long unallocatedSpace, long usableSpace) {
     this.totalSpace = totalSpace;
     this.unallocatedSpace = unallocatedSpace;
     this.usableSpace = usableSpace;

@@ -23,9 +23,9 @@ import org.vertx.java.core.http.WebSocketFrame;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.impl.ConnectionBase;
 
-public class DefaultWebSocket extends WebSocketImplBase<WebSocket> implements WebSocket {
+public class WebSocketImpl extends WebSocketImplBase<WebSocket> implements WebSocket {
 
-  public DefaultWebSocket(VertxInternal vertx, ConnectionBase conn) {
+  public WebSocketImpl(VertxInternal vertx, ConnectionBase conn) {
     super(vertx, conn);
   }
 

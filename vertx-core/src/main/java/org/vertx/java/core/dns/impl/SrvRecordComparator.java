@@ -15,19 +15,19 @@
  */
 package org.vertx.java.core.dns.impl;
 
-
 import java.util.Comparator;
+
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-final class DefaultMxRecordComparator implements Comparator<DefaultMxRecord> {
-  static final Comparator<DefaultMxRecord> INSTANCE = new DefaultMxRecordComparator();
+final class SrvRecordComparator implements Comparator<SrcRecordImpl> {
+  static final Comparator<SrcRecordImpl> INSTANCE = new SrvRecordComparator();
 
-  private DefaultMxRecordComparator() {}
+  private SrvRecordComparator() {}
 
   @Override
-  public int compare(DefaultMxRecord o1, DefaultMxRecord o2) {
+  public int compare(SrcRecordImpl o1, SrcRecordImpl o2) {
     return o1.compareTo(o2);
   }
 }

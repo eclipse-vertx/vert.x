@@ -31,8 +31,8 @@ import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.file.impl.PathAdjuster;
-import org.vertx.java.core.impl.DefaultContext;
-import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.impl.ContextImpl;
+import org.vertx.java.core.impl.FutureResultImpl;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.SocketAddress;
@@ -43,7 +43,7 @@ import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.UUID;
 
-public class DefaultNetSocket extends ConnectionBase implements NetSocket {
+public class NetSocketImpl extends ConnectionBase implements NetSocket {
 
   private final String writeHandlerID;
 
@@ -57,7 +57,7 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   //private TCPSSLHelper oldHelper;
   private boolean client;
 
-  public DefaultNetSocket(VertxInternal vertx, Channel channel, DefaultContext context, SSLHelper helper, boolean client) {
+  public NetSocketImpl(VertxInternal vertx, Channel channel, ContextImpl context, SSLHelper helper, boolean client) {
     super(vertx, channel, context);
     this.helper = helper;
     this.client = client;
@@ -181,9 +181,9 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
         public void operationComplete(ChannelFuture future) throws Exception {
           final AsyncResult<Void> res;
           if (future.isSuccess()) {
-            res = new DefaultFutureResult<>((Void)null);
+            res = new FutureResultImpl<>((Void)null);
           } else {
-            res = new DefaultFutureResult<>(future.cause());
+            res = new FutureResultImpl<>(future.cause());
           }
           vertx.runOnContext(new Handler<Void>() {
             @Override
@@ -230,7 +230,7 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
     }
   }
 
-  protected DefaultContext getContext() {
+  protected ContextImpl getContext() {
     return super.getContext();
   }
 

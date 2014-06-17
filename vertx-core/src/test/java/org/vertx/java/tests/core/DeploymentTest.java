@@ -21,8 +21,8 @@ import org.junit.Test;
 import org.vertx.java.core.*;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.impl.Closeable;
-import org.vertx.java.core.impl.DefaultContext;
-import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.impl.ContextImpl;
+import org.vertx.java.core.impl.FutureResultImpl;
 import org.vertx.java.core.impl.WorkerContext;
 import org.vertx.java.core.json.JsonObject;
 
@@ -481,14 +481,14 @@ public class DeploymentTest extends VertxTestBase {
     AtomicInteger closedCount = new AtomicInteger();
     Closeable myCloseable1 = doneHandler -> {
       closedCount.incrementAndGet();
-      doneHandler.handle(new DefaultFutureResult<>((Void)null));
+      doneHandler.handle(new FutureResultImpl<>((Void)null));
     };
     Closeable myCloseable2 = doneHandler -> {
       closedCount.incrementAndGet();
-      doneHandler.handle(new DefaultFutureResult<>((Void)null));
+      doneHandler.handle(new FutureResultImpl<>((Void)null));
     };
     MyAsyncVerticle verticle = new MyAsyncVerticle(f-> {
-      DefaultContext ctx = (DefaultContext)vertx.currentContext();
+      ContextImpl ctx = (ContextImpl)vertx.currentContext();
       ctx.addCloseHook(myCloseable1);
       ctx.addCloseHook(myCloseable2);
       f.setResult(null);

@@ -25,12 +25,12 @@ import java.net.InetSocketAddress;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-final class DefaultDatagramPacket implements DatagramPacket {
+final class DatagramPacketImpl implements DatagramPacket {
   private final InetSocketAddress sender;
   private final Buffer buffer;
   private SocketAddress senderAddress;
 
-  DefaultDatagramPacket(InetSocketAddress sender, Buffer buffer) {
+  DatagramPacketImpl(InetSocketAddress sender, Buffer buffer) {
     this.sender = sender;
     this.buffer = buffer;
   }

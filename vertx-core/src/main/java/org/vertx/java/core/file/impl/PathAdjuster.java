@@ -16,7 +16,7 @@
 
 package org.vertx.java.core.file.impl;
 
-import org.vertx.java.core.impl.DefaultContext;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.impl.VertxInternal;
 
 import java.nio.file.Path;
@@ -28,7 +28,7 @@ import java.nio.file.Paths;
 public class PathAdjuster {
 
   public static Path adjust(final VertxInternal vertx, Path path) {
-    DefaultContext context = vertx.getContext();
+    ContextImpl context = vertx.getContext();
     if (context != null) {
       PathResolver resolver = context.getPathResolver();
       if (resolver != null) {

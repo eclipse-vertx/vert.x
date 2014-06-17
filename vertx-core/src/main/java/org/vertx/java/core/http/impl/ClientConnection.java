@@ -28,13 +28,13 @@ import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.core.http.WebSocketConnectOptions;
 import org.vertx.java.core.http.WebSocketVersion;
 import org.vertx.java.core.http.impl.ws.WebSocketFrameInternal;
-import org.vertx.java.core.impl.DefaultContext;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.ConnectionBase;
-import org.vertx.java.core.net.impl.DefaultNetSocket;
+import org.vertx.java.core.net.impl.NetSocketImpl;
 import org.vertx.java.core.net.impl.VertxNetHandler;
 
 import java.net.URI;
@@ -46,23 +46,23 @@ import java.util.*;
 class ClientConnection extends ConnectionBase {
   private static final Logger log = LoggerFactory.getLogger(ClientConnection.class);
 
-  final DefaultHttpClient client;
+  final HttpClientImpl client;
   final String hostHeader;
   private final boolean ssl;
   private final String host;
   private final int port;
   private final ConnectionLifeCycleListener listener;
   private WebSocketClientHandshaker handshaker;
-  private volatile DefaultHttpClientRequest currentRequest;
+  private volatile HttpClientRequestImpl currentRequest;
   // Requests can be pipelined so we need a queue to keep track of requests
-  private final Queue<DefaultHttpClientRequest> requests = new ArrayDeque<>();
-  private volatile DefaultHttpClientResponse currentResponse;
-  private volatile DefaultHttpClientRequest requestForResponse;
+  private final Queue<HttpClientRequestImpl> requests = new ArrayDeque<>();
+  private volatile HttpClientResponseImpl currentResponse;
+  private volatile HttpClientRequestImpl requestForResponse;
 
-  private DefaultWebSocket ws;
+  private WebSocketImpl ws;
 
-  ClientConnection(VertxInternal vertx, DefaultHttpClient client, Channel channel, boolean ssl, String host,
-                   int port, DefaultContext context, ConnectionLifeCycleListener listener) {
+  ClientConnection(VertxInternal vertx, HttpClientImpl client, Channel channel, boolean ssl, String host,
+                   int port, ContextImpl context, ConnectionLifeCycleListener listener) {
     super(vertx, channel, context);
     this.client = client;
     this.ssl = ssl;
@@ -137,7 +137,7 @@ class ClientConnection extends ConnectionBase {
 
   private final class HandshakeInboundHandler extends ChannelInboundHandlerAdapter {
     private final Handler<WebSocket> wsConnect;
-    private final DefaultContext context;
+    private final ContextImpl context;
     private FullHttpResponse response;
     private boolean handshaking = true;
     private final Queue<Object> buffered = new ArrayDeque<>();
@@ -213,7 +213,7 @@ class ClientConnection extends ConnectionBase {
         // remove decompressor as its not needed anymore once connection was upgraded to websockets
         ctx.pipeline().remove(handler);
       }
-      ws = new DefaultWebSocket(vertx, ClientConnection.this);
+      ws = new WebSocketImpl(vertx, ClientConnection.this);
       handshaker.finishHandshake(channel, response);
       log.debug("WebSocket handshake complete");
       wsConnect.handle(ws);
@@ -262,7 +262,7 @@ class ClientConnection extends ConnectionBase {
       throw new IllegalStateException("No response handler");
     }
     setContext();
-    DefaultHttpClientResponse nResp = new DefaultHttpClientResponse(vertx, requestForResponse, this, resp);
+    HttpClientResponseImpl nResp = new HttpClientResponseImpl(vertx, requestForResponse, this, resp);
     currentResponse = nResp;
     requestForResponse.handleResponse(nResp);
   }
@@ -304,7 +304,7 @@ class ClientConnection extends ConnectionBase {
     }
   }
 
-  protected DefaultContext getContext() {
+  protected ContextImpl getContext() {
     return super.getContext();
   }
 
@@ -318,7 +318,7 @@ class ClientConnection extends ConnectionBase {
     }
   }
 
-  void setCurrentRequest(DefaultHttpClientRequest req) {
+  void setCurrentRequest(HttpClientRequestImpl req) {
     if (currentRequest != null) {
       throw new IllegalStateException("Connection is already writing a request");
     }
@@ -336,8 +336,8 @@ class ClientConnection extends ConnectionBase {
 
   NetSocket createNetSocket() {
     // connection was upgraded to raw TCP socket
-    DefaultNetSocket socket = new DefaultNetSocket(vertx, channel, context, client.getSslHelper(), true);
-    Map<Channel, DefaultNetSocket> connectionMap = new HashMap<>(1);
+    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, client.getSslHelper(), true);
+    Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
     connectionMap.put(channel, socket);
 
     // Flush out all pending data

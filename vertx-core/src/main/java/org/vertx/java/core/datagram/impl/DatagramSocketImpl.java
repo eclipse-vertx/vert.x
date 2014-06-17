@@ -26,7 +26,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.datagram.DatagramSocket;
 import org.vertx.java.core.datagram.DatagramSocketOptions;
-import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.impl.FutureResultImpl;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.SocketAddress;
 import org.vertx.java.core.net.impl.ConnectionBase;
@@ -36,14 +36,14 @@ import java.net.*;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public class DefaultDatagramSocket extends ConnectionBase
+public class DatagramSocketImpl extends ConnectionBase
         implements DatagramSocket {
 
   private Handler<Void> drainHandler;
   private Handler<org.vertx.java.core.datagram.DatagramPacket> dataHandler;
 
-  public DefaultDatagramSocket(VertxInternal vertx, org.vertx.java.core.datagram.InternetProtocolFamily family,
-                               DatagramSocketOptions options) {
+  public DatagramSocketImpl(VertxInternal vertx, org.vertx.java.core.datagram.InternetProtocolFamily family,
+                            DatagramSocketOptions options) {
     super(vertx, createChannel(family, options), vertx.getOrCreateContext());
     channel().config().setOption(ChannelOption.DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION, true);
     context.getEventLoop().register(channel);
@@ -291,12 +291,12 @@ public class DefaultDatagramSocket extends ConnectionBase
     if (context.isOnCorrectWorker(channel().eventLoop())) {
       try {
         vertx.setContext(context);
-        handler.handle(new DefaultFutureResult<>(cause));
+        handler.handle(new FutureResultImpl<>(cause));
       } catch (Throwable t) {
         context.reportException(t);
       }
     } else {
-      context.execute(() -> handler.handle(new DefaultFutureResult<>(cause)));
+      context.execute(() -> handler.handle(new FutureResultImpl<>(cause)));
     }
   }
 }

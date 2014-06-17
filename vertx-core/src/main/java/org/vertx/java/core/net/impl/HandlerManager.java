@@ -18,7 +18,7 @@ package org.vertx.java.core.net.impl;
 
 import io.netty.channel.EventLoop;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.impl.DefaultContext;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -54,7 +54,7 @@ public class HandlerManager<T> {
     return handlers == null ? null : handlers.chooseHandler();
   }
 
-  public void addHandler(Handler<T> handler, DefaultContext context) {
+  public void addHandler(Handler<T> handler, ContextImpl context) {
     EventLoop worker = context.getEventLoop();
     availableWorkers.addWorker(worker);
     Handlers<T> handlers = new Handlers<T>();
@@ -66,7 +66,7 @@ public class HandlerManager<T> {
     handlerCount++;
   }
 
-  public void removeHandler(Handler<T> handler, DefaultContext context) {
+  public void removeHandler(Handler<T> handler, ContextImpl context) {
     EventLoop worker = context.getEventLoop();
     Handlers<T> handlers = handlerMap.get(worker);
     if (!handlers.removeHandler(new HandlerHolder<>(context, handler))) {

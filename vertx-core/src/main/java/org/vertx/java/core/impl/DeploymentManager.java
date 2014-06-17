@@ -45,7 +45,7 @@ public class DeploymentManager {
 
   public void deployVerticle(Verticle verticle, JsonObject config, boolean worker,
                              Handler<AsyncResult<String>> doneHandler) {
-    DefaultContext currentContext = vertx.getOrCreateContext();
+    ContextImpl currentContext = vertx.getOrCreateContext();
     doDeploy(verticle, config, worker, currentContext, doneHandler);
   }
 
@@ -54,7 +54,7 @@ public class DeploymentManager {
                              boolean worker,
                              String isolationGroup,
                              Handler<AsyncResult<String>> doneHandler) {
-    DefaultContext currentContext = vertx.getOrCreateContext();
+    ContextImpl currentContext = vertx.getOrCreateContext();
     ClassLoader cl = getClassLoader(isolationGroup);
     Class clazz;
     Verticle verticle;
@@ -94,7 +94,7 @@ public class DeploymentManager {
           log.error("Undeploy failed", ar.cause());
         }
         if (count.incrementAndGet() == deploymentIDs.size()) {
-          doneHandler.handle(new DefaultFutureResult<>((Void)null));
+          doneHandler.handle(new FutureResultImpl<>((Void)null));
         }
       });
     }
@@ -134,7 +134,7 @@ public class DeploymentManager {
 
   private <T> void reportFailure(Throwable t, Context context, Handler<AsyncResult<T>> doneHandler) {
     if (doneHandler != null) {
-      reportResult(context, doneHandler, new DefaultFutureResult<>(t));
+      reportResult(context, doneHandler, new FutureResultImpl<>(t));
     } else {
       log.error(t.getMessage(), t);
     }
@@ -142,7 +142,7 @@ public class DeploymentManager {
 
   private <T> void reportSuccess(T result, Context context, Handler<AsyncResult<T>> doneHandler) {
     if (doneHandler != null) {
-      reportResult(context, doneHandler, new DefaultFutureResult<>(result));
+      reportResult(context, doneHandler, new FutureResultImpl<>(result));
     }
   }
 
@@ -157,9 +157,9 @@ public class DeploymentManager {
   }
 
   private void doDeploy(Verticle verticle, JsonObject config, boolean worker,
-                        DefaultContext currentContext,
+                        ContextImpl currentContext,
                         Handler<AsyncResult<String>> doneHandler) {
-    DefaultContext context = worker ? vertx.createWorkerContext(false) : vertx.createEventLoopContext();
+    ContextImpl context = worker ? vertx.createWorkerContext(false) : vertx.createEventLoopContext();
     String deploymentID = UUID.randomUUID().toString();
     DeploymentImpl deployment = new DeploymentImpl(deploymentID, context, verticle);
     context.setDeployment(deployment);
@@ -172,7 +172,7 @@ public class DeploymentManager {
         verticle.setVertx(vertx);
         verticle.setConfig(config);
         verticle.setDeploymentID(deploymentID);
-        Future<Void> startFuture = new DefaultFutureResult<>();
+        Future<Void> startFuture = new FutureResultImpl<>();
         verticle.start(startFuture);
         startFuture.setHandler(ar -> {
           if (ar.succeeded()) {
@@ -191,12 +191,12 @@ public class DeploymentManager {
   private class DeploymentImpl implements Deployment {
 
     private final String id;
-    private final DefaultContext context;
+    private final ContextImpl context;
     private final Verticle verticle;
     private final Set<Deployment> children = new ConcurrentHashSet<>();
     private boolean undeployed;
 
-    private DeploymentImpl(String id, DefaultContext context, Verticle verticle) {
+    private DeploymentImpl(String id, ContextImpl context, Verticle verticle) {
       this.id = id;
       this.context = context;
       this.verticle = verticle;
@@ -204,7 +204,7 @@ public class DeploymentManager {
 
     @Override
     public void undeploy(Handler<AsyncResult<Void>> doneHandler) {
-      DefaultContext currentContext = vertx.getOrCreateContext();
+      ContextImpl currentContext = vertx.getOrCreateContext();
       if (!undeployed) {
         doUndeploy(currentContext, doneHandler);
       } else {
@@ -212,7 +212,7 @@ public class DeploymentManager {
       }
     }
 
-    public void doUndeploy(DefaultContext undeployingContext, Handler<AsyncResult<Void>> doneHandler) {
+    public void doUndeploy(ContextImpl undeployingContext, Handler<AsyncResult<Void>> doneHandler) {
 
       if (!children.isEmpty()) {
         final int size = children.size();
@@ -231,7 +231,7 @@ public class DeploymentManager {
       } else {
         undeployed = true;
         context.runOnContext(v -> {
-          Future<Void> stopFuture = new DefaultFutureResult<>();
+          Future<Void> stopFuture = new FutureResultImpl<>();
           stopFuture.setHandler(ar -> {
             deployments.remove(id);
             context.runCloseHooks(ar2 -> {

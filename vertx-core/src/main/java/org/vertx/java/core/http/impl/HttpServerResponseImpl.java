@@ -27,7 +27,7 @@ import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.impl.PathAdjuster;
 import org.vertx.java.core.http.HttpServerResponse;
-import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.impl.FutureResultImpl;
 import org.vertx.java.core.impl.VertxInternal;
 
 import java.io.File;
@@ -36,7 +36,7 @@ import java.io.File;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultHttpServerResponse implements HttpServerResponse {
+public class HttpServerResponseImpl implements HttpServerResponse {
 
   private static final Buffer NOT_FOUND = new Buffer("<html><body>Resource not found</body><html>");
   private static final Buffer FORBIDDEN = new Buffer("<html><body>Forbidden</body><html>");
@@ -58,7 +58,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   private LastHttpContent trailing;
   private MultiMap trailers;
 
-  DefaultHttpServerResponse(final VertxInternal vertx, ServerConnection conn, HttpRequest request) {
+  HttpServerResponseImpl(final VertxInternal vertx, ServerConnection conn, HttpRequest request) {
   	this.vertx = vertx;
   	this.conn = conn;
     this.version = request.getProtocolVersion();
@@ -109,7 +109,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   }
 
   @Override
-  public DefaultHttpServerResponse setChunked(boolean chunked) {
+  public HttpServerResponseImpl setChunked(boolean chunked) {
     checkWritten();
     // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
     if (version != HttpVersion.HTTP_1_0) {
@@ -124,28 +124,28 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   }
 
   @Override
-  public DefaultHttpServerResponse putHeader(String key, String value) {
+  public HttpServerResponseImpl putHeader(String key, String value) {
     checkWritten();
     headers().set(key, value);
     return this;
   }
 
   @Override
-  public DefaultHttpServerResponse putHeader(String key, Iterable<String> values) {
+  public HttpServerResponseImpl putHeader(String key, Iterable<String> values) {
     checkWritten();
     headers().set(key, values);
     return this;
   }
 
   @Override
-  public DefaultHttpServerResponse putTrailer(String key, String value) {
+  public HttpServerResponseImpl putTrailer(String key, String value) {
     checkWritten();
     trailers().set(key, value);
     return this;
   }
 
   @Override
-  public DefaultHttpServerResponse putTrailer(String key, Iterable<String> values) {
+  public HttpServerResponseImpl putTrailer(String key, Iterable<String> values) {
     checkWritten();
     trailers().set(key, values);
     return this;
@@ -215,18 +215,18 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   }
 
   @Override
-  public DefaultHttpServerResponse write(Buffer chunk) {
+  public HttpServerResponseImpl write(Buffer chunk) {
     ByteBuf buf = chunk.getByteBuf();
     return write(buf, null);
   }
 
   @Override
-  public DefaultHttpServerResponse write(String chunk, String enc) {
+  public HttpServerResponseImpl write(String chunk, String enc) {
     return write(new Buffer(chunk, enc).getByteBuf(),  null);
   }
 
   @Override
-  public DefaultHttpServerResponse write(String chunk) {
+  public HttpServerResponseImpl write(String chunk) {
     return write(new Buffer(chunk).getByteBuf(), null);
   }
 
@@ -307,12 +307,12 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   }
 
   @Override
-  public DefaultHttpServerResponse sendFile(String filename) {
+  public HttpServerResponseImpl sendFile(String filename) {
     return sendFile(filename, (String)null);
   }
 
   @Override
-  public DefaultHttpServerResponse sendFile(String filename, String notFoundResource) {
+  public HttpServerResponseImpl sendFile(String filename, String notFoundResource) {
     doSendFile(filename, notFoundResource, null);
     return this;
   }
@@ -371,9 +371,9 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
           public void operationComplete(ChannelFuture future) throws Exception {
             final AsyncResult<Void> res;
             if (future.isSuccess()) {
-              res = new DefaultFutureResult<>((Void)null);
+              res = new FutureResultImpl<>((Void)null);
             } else {
-              res = new DefaultFutureResult<>(future.cause());
+              res = new FutureResultImpl<>(future.cause());
             }
             vertx.runOnContext(new Handler<Void>() {
               @Override
@@ -465,7 +465,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   }
 
 
-  private DefaultHttpServerResponse write(ByteBuf chunk, final Handler<AsyncResult<Void>> doneHandler) {
+  private HttpServerResponseImpl write(ByteBuf chunk, final Handler<AsyncResult<Void>> doneHandler) {
     checkWritten();
     if (!headWritten && version != HttpVersion.HTTP_1_0 && !chunked && !contentLengthSet()) {
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "

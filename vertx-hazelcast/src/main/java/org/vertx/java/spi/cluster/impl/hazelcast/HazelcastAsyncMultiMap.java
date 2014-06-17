@@ -21,7 +21,7 @@ import com.hazelcast.core.EntryListener;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.impl.FutureResultImpl;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.spi.Action;
@@ -90,7 +90,7 @@ class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryListener
   @Override
   public void get(final K k, final Handler<AsyncResult<ChoosableIterable<V>>> resultHandler) {
     ChoosableSet<V> entries = cache.get(k);
-    DefaultFutureResult<ChoosableIterable<V>> result = new DefaultFutureResult<>();
+    FutureResultImpl<ChoosableIterable<V>> result = new FutureResultImpl<>();
     if (entries != null && entries.isInitialised()) {
       result.setResult(entries).setHandler(resultHandler);
     } else {
@@ -100,7 +100,7 @@ class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryListener
           }
         }, new AsyncResultHandler<Collection<V>>() {
           public void handle(AsyncResult<Collection<V>> result) {
-            DefaultFutureResult<ChoosableIterable<V>> sresult = new DefaultFutureResult<>();
+            FutureResultImpl<ChoosableIterable<V>> sresult = new FutureResultImpl<>();
             if (result.succeeded()) {
               Collection<V> entries = result.result();
               ChoosableSet<V> sids;

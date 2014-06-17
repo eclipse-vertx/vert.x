@@ -23,30 +23,30 @@ import org.vertx.java.core.*;
 import org.vertx.java.core.datagram.DatagramSocket;
 import org.vertx.java.core.datagram.DatagramSocketOptions;
 import org.vertx.java.core.datagram.InternetProtocolFamily;
-import org.vertx.java.core.datagram.impl.DefaultDatagramSocket;
+import org.vertx.java.core.datagram.impl.DatagramSocketImpl;
 import org.vertx.java.core.dns.DnsClient;
-import org.vertx.java.core.dns.impl.DefaultDnsClient;
+import org.vertx.java.core.dns.impl.DnsClientImpl;
 import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.impl.DefaultEventBus;
+import org.vertx.java.core.eventbus.impl.EventBusImpl;
 import org.vertx.java.core.file.FileSystem;
-import org.vertx.java.core.file.impl.DefaultFileSystem;
+import org.vertx.java.core.file.impl.FileSystemImpl;
 import org.vertx.java.core.file.impl.WindowsFileSystem;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientOptions;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerOptions;
-import org.vertx.java.core.http.impl.DefaultHttpClient;
-import org.vertx.java.core.http.impl.DefaultHttpServer;
+import org.vertx.java.core.http.impl.HttpClientImpl;
+import org.vertx.java.core.http.impl.HttpServerImpl;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.*;
-import org.vertx.java.core.net.impl.DefaultNetClient;
-import org.vertx.java.core.net.impl.DefaultNetServer;
+import org.vertx.java.core.net.impl.NetClientImpl;
+import org.vertx.java.core.net.impl.NetServerImpl;
 import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
-import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
+import org.vertx.java.core.sockjs.impl.SockJSServerImpl;
 import org.vertx.java.core.spi.Action;
 import org.vertx.java.core.spi.cluster.ClusterManager;
 import org.vertx.java.core.spi.cluster.ClusterManagerFactory;
@@ -59,9 +59,9 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultVertx implements VertxInternal {
+public class VertxImpl implements VertxInternal {
 
-  private static final Logger log = LoggerFactory.getLogger(DefaultVertx.class);
+  private static final Logger log = LoggerFactory.getLogger(VertxImpl.class);
 
   static {
     // Netty resource leak detection has a performance overhead and we do not need it in Vert.x
@@ -78,24 +78,24 @@ public class DefaultVertx implements VertxInternal {
   private final OrderedExecutorFactory orderedFact = new OrderedExecutorFactory(backgroundPool);
   private EventLoopGroup eventLoopGroup = VertxExecutorFactory.eventLoopGroup("vert.x-eventloop-thread-");
 
-  private Map<ServerID, DefaultHttpServer> sharedHttpServers = new HashMap<>();
-  private Map<ServerID, DefaultNetServer> sharedNetServers = new HashMap<>();
+  private Map<ServerID, HttpServerImpl> sharedHttpServers = new HashMap<>();
+  private Map<ServerID, NetServerImpl> sharedNetServers = new HashMap<>();
 
   private final ConcurrentMap<Long, InternalTimerHandler> timeouts = new ConcurrentHashMap<>();
   private final AtomicLong timeoutCounter = new AtomicLong(0);
   private final ClusterManager clusterManager;
   private final DeploymentManager deploymentManager = new DeploymentManager(this);
 
-  public DefaultVertx() {
-    this.eventBus = new DefaultEventBus(this);
+  public VertxImpl() {
+    this.eventBus = new EventBusImpl(this);
     this.clusterManager = null;
   }
 
-  public DefaultVertx(String hostname) {
+  public VertxImpl(String hostname) {
     this(0, hostname, null);
   }
 
-  public DefaultVertx(int port, String hostname, final Handler<AsyncResult<Vertx>> resultHandler) {
+  public VertxImpl(int port, String hostname, final Handler<AsyncResult<Vertx>> resultHandler) {
     ClusterManagerFactory factory;
     String clusterManagerFactoryClassName = System.getProperty("vertx.clusterManagerFactory");
     if (clusterManagerFactoryClassName != null) {
@@ -116,12 +116,12 @@ public class DefaultVertx implements VertxInternal {
     this.clusterManager = factory.createClusterManager(this);
     this.clusterManager.join();
     final Vertx inst = this;
-    this.eventBus = new DefaultEventBus(this, port, hostname, clusterManager, res -> {
+    this.eventBus = new EventBusImpl(this, port, hostname, clusterManager, res -> {
       if (resultHandler != null) {
         if (res.succeeded()) {
-          resultHandler.handle(new DefaultFutureResult<>(inst));
+          resultHandler.handle(new FutureResultImpl<>(inst));
         } else {
-          resultHandler.handle(new DefaultFutureResult<>(res.cause()));
+          resultHandler.handle(new FutureResultImpl<>(res.cause()));
         }
       } else if (res.failed()) {
         log.error("Failed to start event bus", res.cause());
@@ -133,20 +133,20 @@ public class DefaultVertx implements VertxInternal {
    * @return The FileSystem implementation for the OS
    */
   protected FileSystem getFileSystem() {
-  	return Windows.isWindows() ? new WindowsFileSystem(this) : new DefaultFileSystem(this);
+  	return Windows.isWindows() ? new WindowsFileSystem(this) : new FileSystemImpl(this);
   }
 
   @Override
   public DatagramSocket createDatagramSocket(InternetProtocolFamily family, DatagramSocketOptions options) {
-    return new DefaultDatagramSocket(this, family, options);
+    return new DatagramSocketImpl(this, family, options);
   }
 
   public NetServer createNetServer(NetServerOptions options) {
-    return new DefaultNetServer(this, options);
+    return new NetServerImpl(this, options);
   }
 
   public NetClient createNetClient(NetClientOptions options) {
-    return new DefaultNetClient(this, options);
+    return new NetClientImpl(this, options);
   }
 
   public FileSystem fileSystem() {
@@ -158,15 +158,15 @@ public class DefaultVertx implements VertxInternal {
   }
 
   public HttpServer createHttpServer(HttpServerOptions serverOptions) {
-    return new DefaultHttpServer(this, serverOptions);
+    return new HttpServerImpl(this, serverOptions);
   }
 
   public HttpClient createHttpClient(HttpClientOptions options) {
-    return new DefaultHttpClient(this, options);
+    return new HttpClientImpl(this, options);
   }
 
   public SockJSServer createSockJSServer(HttpServer httpServer) {
-    return new DefaultSockJSServer(this, httpServer);
+    return new SockJSServerImpl(this, httpServer);
   }
 
   public EventBus eventBus() {
@@ -174,7 +174,7 @@ public class DefaultVertx implements VertxInternal {
   }
 
   public boolean isEventLoop() {
-    DefaultContext context = getContext();
+    ContextImpl context = getContext();
     if (context != null) {
       return context instanceof EventLoopContext;
     }
@@ -182,7 +182,7 @@ public class DefaultVertx implements VertxInternal {
   }
 
   public boolean isWorker() {
-    DefaultContext context = getContext();
+    ContextImpl context = getContext();
     if (context != null) {
       return context instanceof WorkerContext;
     }
@@ -198,7 +198,7 @@ public class DefaultVertx implements VertxInternal {
   }
 
   public void runOnContext(final Handler<Void> task) {
-    DefaultContext context = getOrCreateContext();
+    ContextImpl context = getOrCreateContext();
     context.runOnContext(task);
   }
 
@@ -215,8 +215,8 @@ public class DefaultVertx implements VertxInternal {
     return eventLoopGroup;
   }
 
-  public DefaultContext getOrCreateContext() {
-    DefaultContext ctx = getContext();
+  public ContextImpl getOrCreateContext() {
+    ContextImpl ctx = getContext();
     if (ctx == null) {
       // Create a context
       ctx = createEventLoopContext();
@@ -225,7 +225,7 @@ public class DefaultVertx implements VertxInternal {
   }
 
   public void reportException(Throwable t) {
-    DefaultContext ctx = getContext();
+    ContextImpl ctx = getContext();
     if (ctx != null) {
       ctx.reportException(t);
     } else {
@@ -233,11 +233,11 @@ public class DefaultVertx implements VertxInternal {
     }
   }
 
-  public Map<ServerID, DefaultHttpServer> sharedHttpServers() {
+  public Map<ServerID, HttpServerImpl> sharedHttpServers() {
     return sharedHttpServers;
   }
 
-  public Map<ServerID, DefaultNetServer> sharedNetServers() {
+  public Map<ServerID, NetServerImpl> sharedNetServers() {
     return sharedNetServers;
   }
 
@@ -257,10 +257,10 @@ public class DefaultVertx implements VertxInternal {
 
   @Override
   public DnsClient createDnsClient(SocketAddress... dnsServers) {
-    return new DefaultDnsClient(this, dnsServers);
+    return new DnsClientImpl(this, dnsServers);
   }
 
-  private long scheduleTimeout(final DefaultContext context, final Handler<Long> handler, long delay, boolean periodic) {
+  private long scheduleTimeout(final ContextImpl context, final Handler<Long> handler, long delay, boolean periodic) {
     if (delay < 1) {
       throw new IllegalArgumentException("Cannot schedule a timer with delay < 1 ms");
     }
@@ -288,7 +288,7 @@ public class DefaultVertx implements VertxInternal {
     return timerId;
   }
 
-  public DefaultContext createWorkerContext(boolean multiThreaded) {
+  public ContextImpl createWorkerContext(boolean multiThreaded) {
     if (multiThreaded) {
       return new MultiThreadedWorkerContext(this, orderedFact.getExecutor(), backgroundPool);
     } else {
@@ -296,7 +296,7 @@ public class DefaultVertx implements VertxInternal {
     }
   }
 
-  public void setContext(DefaultContext context) {
+  public void setContext(ContextImpl context) {
     Thread current = Thread.currentThread();
     if (current instanceof VertxThread) {
       ((VertxThread)current).setContext(context);
@@ -308,7 +308,7 @@ public class DefaultVertx implements VertxInternal {
     }
   }
 
-  public DefaultContext getContext() {
+  public ContextImpl getContext() {
     Thread current = Thread.currentThread();
     if (current instanceof VertxThread) {
       return ((VertxThread)current).getContext();
@@ -441,9 +441,9 @@ public class DefaultVertx implements VertxInternal {
 
   @Override
   public <T> void executeBlocking(final Action<T> action, final Handler<AsyncResult<T>> resultHandler) {
-    final DefaultContext context = getOrCreateContext();
+    final ContextImpl context = getOrCreateContext();
     context.executeOnOrderedWorkerExec(() -> {
-      DefaultFutureResult<T> res = new DefaultFutureResult<>();
+      FutureResultImpl<T> res = new FutureResultImpl<>();
       try {
         T result = action.perform();
         res.setResult(result);
@@ -464,7 +464,7 @@ public class DefaultVertx implements VertxInternal {
     final Handler<Long> handler;
     final boolean periodic;
     final long timerID;
-    final DefaultContext context;
+    final ContextImpl context;
     volatile Future<?> future;
     boolean cancelled;
 
@@ -473,7 +473,7 @@ public class DefaultVertx implements VertxInternal {
       return future.cancel(false);
     }
 
-    InternalTimerHandler(long timerID, Handler<Long> runnable, boolean periodic, DefaultContext context) {
+    InternalTimerHandler(long timerID, Handler<Long> runnable, boolean periodic, ContextImpl context) {
       this.context = context;
       this.timerID = timerID;
       this.handler = runnable;
@@ -494,16 +494,16 @@ public class DefaultVertx implements VertxInternal {
     }
 
     private void cleanupNonPeriodic() {
-      DefaultVertx.this.timeouts.remove(timerID);
-      DefaultContext context = getContext();
+      VertxImpl.this.timeouts.remove(timerID);
+      ContextImpl context = getContext();
       context.removeCloseHook(this);
     }
 
     // Called via Context close hook when Verticle is undeployed
     public void close(Handler<AsyncResult<Void>> doneHandler) {
-      DefaultVertx.this.timeouts.remove(timerID);
+      VertxImpl.this.timeouts.remove(timerID);
       cancel();
-      doneHandler.handle(new DefaultFutureResult<>((Void)null));
+      doneHandler.handle(new FutureResultImpl<>((Void)null));
     }
 
   }

@@ -26,7 +26,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.RequestOptions;
-import org.vertx.java.core.impl.DefaultContext;
+import org.vertx.java.core.impl.ContextImpl;
 
 import java.util.concurrent.TimeoutException;
 
@@ -34,14 +34,14 @@ import java.util.concurrent.TimeoutException;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultHttpClientRequest implements HttpClientRequest {
+public class HttpClientRequestImpl implements HttpClientRequest {
 
   private final RequestOptions options;
-  private final DefaultHttpClient client;
+  private final HttpClientImpl client;
   private final HttpRequest request;
   private final Handler<HttpClientResponse> respHandler;
   private Handler<Void> continueHandler;
-  private final DefaultContext context;
+  private final ContextImpl context;
   private final boolean raw;
   private boolean chunked;
   private ClientConnection conn;
@@ -59,15 +59,15 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   private boolean exceptionOccurred;
   private long lastDataReceived;
 
-  DefaultHttpClientRequest(DefaultHttpClient client, String method, RequestOptions options,
-                           Handler<HttpClientResponse> respHandler,
-                           DefaultContext context) {
+  HttpClientRequestImpl(HttpClientImpl client, String method, RequestOptions options,
+                        Handler<HttpClientResponse> respHandler,
+                        ContextImpl context) {
     this(client, method, options, respHandler, context, false);
   }
 
-  private DefaultHttpClientRequest(DefaultHttpClient client, String method, RequestOptions options,
-                                   Handler<HttpClientResponse> respHandler,
-                                   DefaultContext context, boolean raw) {
+  private HttpClientRequestImpl(HttpClientImpl client, String method, RequestOptions options,
+                                Handler<HttpClientResponse> respHandler,
+                                ContextImpl context, boolean raw) {
     this.options = options;
     this.client = client;
     this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method), options.getRequestURI(), false);
@@ -78,7 +78,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   }
 
   @Override
-  public DefaultHttpClientRequest setChunked(boolean chunked) {
+  public HttpClientRequestImpl setChunked(boolean chunked) {
     check();
     if (written > 0) {
       throw new IllegalStateException("Cannot set chunked after data has been written on request");
@@ -115,7 +115,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   }
 
   @Override
-  public DefaultHttpClientRequest write(Buffer chunk) {
+  public HttpClientRequestImpl write(Buffer chunk) {
     check();
     ByteBuf buf = chunk.getByteBuf();
     write(buf, false);
@@ -123,13 +123,13 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   }
 
   @Override
-  public DefaultHttpClientRequest write(String chunk) {
+  public HttpClientRequestImpl write(String chunk) {
     check();
     return write(new Buffer(chunk));
   }
 
   @Override
-  public DefaultHttpClientRequest write(String chunk, String enc) {
+  public HttpClientRequestImpl write(String chunk, String enc) {
     check();
     return write(new Buffer(chunk, enc));
   }
@@ -183,7 +183,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
   }
 
   @Override
-  public DefaultHttpClientRequest sendHead() {
+  public HttpClientRequestImpl sendHead() {
     check();
     if (conn != null) {
       if (!headWritten) {
@@ -261,7 +261,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     getExceptionHandler().handle(t);
   }
 
-  void handleResponse(DefaultHttpClientResponse resp) {
+  void handleResponse(HttpClientResponseImpl resp) {
     // If an exception occurred (e.g. a timeout fired) we won't receive the response.
     if (!exceptionOccurred) {
       cancelOutstandingTimeoutTimer();

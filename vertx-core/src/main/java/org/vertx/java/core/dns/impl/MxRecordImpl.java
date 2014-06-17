@@ -15,17 +15,17 @@
  */
 package org.vertx.java.core.dns.impl;
 
-import org.vertx.java.core.dns.SrvRecord;
-import org.vertx.java.core.dns.impl.netty.decoder.record.ServiceRecord;
+import org.vertx.java.core.dns.MxRecord;
+import org.vertx.java.core.dns.impl.netty.decoder.record.MailExchangerRecord;
 
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-final class DefaultSrvRecord implements SrvRecord, Comparable<SrvRecord>{
-  private final ServiceRecord record;
+final class MxRecordImpl implements MxRecord, Comparable<MxRecord> {
+  private final MailExchangerRecord record;
 
-  DefaultSrvRecord(ServiceRecord record) {
+  MxRecordImpl(MailExchangerRecord record) {
     this.record = record;
   }
 
@@ -35,37 +35,17 @@ final class DefaultSrvRecord implements SrvRecord, Comparable<SrvRecord>{
   }
 
   @Override
-  public int weight() {
-    return record.weight();
-  }
-
-  @Override
-  public int port() {
-    return record.port();
-  }
-
-  @Override
   public String name() {
     return record.name();
   }
 
   @Override
-  public String protocol() {
-    return record.protocol();
+  public String toString() {
+    return priority() + " " + name();
   }
 
   @Override
-  public String service() {
-    return record.service();
-  }
-
-  @Override
-  public String target() {
-    return record.target();
-  }
-
-  @Override
-  public int compareTo(SrvRecord o) {
+  public int compareTo(MxRecord o) {
     return Integer.valueOf(priority()).compareTo(o.priority());
   }
 }

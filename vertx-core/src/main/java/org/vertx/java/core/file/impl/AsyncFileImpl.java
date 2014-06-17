@@ -23,8 +23,8 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.file.FileSystemException;
 import org.vertx.java.core.impl.BlockingAction;
-import org.vertx.java.core.impl.DefaultContext;
-import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.impl.ContextImpl;
+import org.vertx.java.core.impl.FutureResultImpl;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -45,14 +45,14 @@ import java.util.Iterator;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultAsyncFile implements AsyncFile {
+public class AsyncFileImpl implements AsyncFile {
 
   private static final Logger log = LoggerFactory.getLogger(AsyncFile.class);
   public static final int BUFFER_SIZE = 8192;
 
   private final VertxInternal vertx;
   private final AsynchronousFileChannel ch;
-  private final DefaultContext context;
+  private final ContextImpl context;
   private boolean closed;
   private Runnable closedDeferred;
   private long writesOutstanding;
@@ -70,8 +70,8 @@ public class DefaultAsyncFile implements AsyncFile {
   private int readPos;
   private boolean readInProgress;
 
-  DefaultAsyncFile(final VertxInternal vertx, final String path, String perms, final boolean read, final boolean write, final boolean createNew,
-            final boolean flush, final DefaultContext context) {
+  AsyncFileImpl(final VertxInternal vertx, final String path, String perms, final boolean read, final boolean write, final boolean createNew,
+                final boolean flush, final ContextImpl context) {
     if (!read && !write) {
       throw new FileSystemException("Cannot open file for neither reading nor writing");
     }
@@ -340,7 +340,7 @@ public class DefaultAsyncFile implements AsyncFile {
           // It's been fully written
           context.execute(() -> {
             writesOutstanding -= buff.limit();
-            handler.handle(new DefaultFutureResult<Void>().setResult(null));
+            handler.handle(new FutureResultImpl<Void>().setResult(null));
           });
         }
       }
@@ -348,7 +348,7 @@ public class DefaultAsyncFile implements AsyncFile {
       public void failed(Throwable exc, Object attachment) {
         if (exc instanceof Exception) {
           final Exception e = (Exception) exc;
-          context.execute(() -> handler.handle(new DefaultFutureResult<Void>().setResult(null)));
+          context.execute(() -> handler.handle(new FutureResultImpl<Void>().setResult(null)));
         } else {
           log.error("Error occurred", exc);
         }
@@ -362,7 +362,7 @@ public class DefaultAsyncFile implements AsyncFile {
 
       long pos = position;
 
-      final DefaultFutureResult<Buffer> result = new DefaultFutureResult<>();
+      final FutureResultImpl<Buffer> result = new FutureResultImpl<>();
 
       private void done() {
         context.execute(() -> {
@@ -416,7 +416,7 @@ public class DefaultAsyncFile implements AsyncFile {
   }
 
   private void doClose(Handler<AsyncResult<Void>> handler) {
-    DefaultFutureResult<Void> res = new DefaultFutureResult<>();
+    FutureResultImpl<Void> res = new FutureResultImpl<>();
     try {
       ch.close();
       res.setResult(null);

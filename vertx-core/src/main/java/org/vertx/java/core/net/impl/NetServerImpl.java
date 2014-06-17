@@ -31,8 +31,8 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.Closeable;
-import org.vertx.java.core.impl.DefaultContext;
-import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.impl.ContextImpl;
+import org.vertx.java.core.impl.FutureResultImpl;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -50,28 +50,28 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultNetServer implements NetServer, Closeable {
+public class NetServerImpl implements NetServer, Closeable {
 
-  private static final Logger log = LoggerFactory.getLogger(DefaultNetServer.class);
+  private static final Logger log = LoggerFactory.getLogger(NetServerImpl.class);
 
   private final VertxInternal vertx;
   private final NetServerOptions options;
-  private final DefaultContext actualCtx;
+  private final ContextImpl actualCtx;
   private final SSLHelper sslHelper;
-  private final Map<Channel, DefaultNetSocket> socketMap = new ConcurrentHashMap<>();
+  private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
   private Handler<NetSocket> connectHandler;
   private ChannelGroup serverChannelGroup;
   private boolean listening;
   private volatile ServerID id;
-  private DefaultNetServer actualServer;
+  private NetServerImpl actualServer;
   private ChannelFuture bindFuture;
   private int actualPort;
   private Queue<Runnable> bindListeners = new ConcurrentLinkedQueue<>();
   private boolean listenersRun;
 
-  public DefaultNetServer(VertxInternal vertx, NetServerOptions options) {
+  public NetServerImpl(VertxInternal vertx, NetServerOptions options) {
     this.vertx = vertx;
     this.options = new NetServerOptions(options);
     this.sslHelper = new SSLHelper(options);
@@ -102,7 +102,7 @@ public class DefaultNetServer implements NetServer, Closeable {
     synchronized (vertx.sharedNetServers()) {
       this.actualPort = options.getPort(); // Will be updated on bind for a wildcard port
       id = new ServerID(options.getPort(), options.getHost());
-      DefaultNetServer shared = vertx.sharedNetServers().get(id);
+      NetServerImpl shared = vertx.sharedNetServers().get(id);
       if (shared == null || options.getPort() == 0) { // Wildcard port will imply a new actual server each time
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
 
@@ -145,9 +145,9 @@ public class DefaultNetServer implements NetServer, Closeable {
             if (bindFuture.isSuccess()) {
               log.trace("Net server listening on " + options.getHost() + ":" + bindFuture.channel().localAddress());
               // Update port to actual port - wildcard port 0 might have been used
-              DefaultNetServer.this.actualPort = ((InetSocketAddress)bindFuture.channel().localAddress()).getPort();
-              DefaultNetServer.this.id = new ServerID(DefaultNetServer.this.actualPort, id.host);
-              vertx.sharedNetServers().put(id, DefaultNetServer.this);
+              NetServerImpl.this.actualPort = ((InetSocketAddress)bindFuture.channel().localAddress()).getPort();
+              NetServerImpl.this.id = new ServerID(NetServerImpl.this.actualPort, id.host);
+              vertx.sharedNetServers().put(id, NetServerImpl.this);
             } else {
               vertx.sharedNetServers().remove(id);
             }
@@ -156,7 +156,7 @@ public class DefaultNetServer implements NetServer, Closeable {
         } catch (final Throwable t) {
           // Make sure we send the exception back through the handler (if any)
           if (listenHandler != null) {
-            vertx.runOnContext(v ->  listenHandler.handle(new DefaultFutureResult<>(t)));
+            vertx.runOnContext(v ->  listenHandler.handle(new FutureResultImpl<>(t)));
           } else {
             // No handler - log so user can see failure
             actualCtx.reportException(t);
@@ -183,10 +183,10 @@ public class DefaultNetServer implements NetServer, Closeable {
         if (listenHandler != null) {
           final AsyncResult<NetServer> res;
           if (actualServer.bindFuture.isSuccess()) {
-            res = new DefaultFutureResult<NetServer>(DefaultNetServer.this);
+            res = new FutureResultImpl<NetServer>(NetServerImpl.this);
           } else {
             listening = false;
-            res = new DefaultFutureResult<>(actualServer.bindFuture.cause());
+            res = new FutureResultImpl<>(actualServer.bindFuture.cause());
           }
           actualCtx.execute(actualServer.bindFuture.channel().eventLoop(), () -> listenHandler.handle(res));
         } else if (!actualServer.bindFuture.isSuccess()) {
@@ -276,12 +276,12 @@ public class DefaultNetServer implements NetServer, Closeable {
     return actualPort;
   }
 
-  private void actualClose(final DefaultContext closeContext, final Handler<AsyncResult<Void>> done) {
+  private void actualClose(final ContextImpl closeContext, final Handler<AsyncResult<Void>> done) {
     if (id != null) {
       vertx.sharedNetServers().remove(id);
     }
 
-    for (DefaultNetSocket sock : socketMap.values()) {
+    for (NetSocketImpl sock : socketMap.values()) {
       sock.close();
     }
 
@@ -295,9 +295,9 @@ public class DefaultNetServer implements NetServer, Closeable {
 
   }
 
-  private void executeCloseDone(final DefaultContext closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {
+  private void executeCloseDone(final ContextImpl closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {
     if (done != null) {
-      closeContext.execute(() -> done.handle(new DefaultFutureResult<>(e)));
+      closeContext.execute(() -> done.handle(new FutureResultImpl<>(e)));
     }
   }
 
@@ -309,7 +309,7 @@ public class DefaultNetServer implements NetServer, Closeable {
 
   private class ServerHandler extends VertxNetHandler {
     public ServerHandler() {
-      super(DefaultNetServer.this.vertx, socketMap);
+      super(NetServerImpl.this.vertx, socketMap);
     }
 
     @Override
@@ -348,7 +348,7 @@ public class DefaultNetServer implements NetServer, Closeable {
     }
 
     private void doConnected(Channel ch, HandlerHolder<NetSocket> handler) {
-      DefaultNetSocket sock = new DefaultNetSocket(vertx, ch, handler.context, sslHelper, false);
+      NetSocketImpl sock = new NetSocketImpl(vertx, ch, handler.context, sslHelper, false);
       socketMap.put(ch, sock);
       handler.handler.handle(sock);
     }

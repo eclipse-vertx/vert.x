@@ -21,17 +21,17 @@ package org.vertx.java.core.impl;
  */
 final class VertxThread extends Thread {
 
-    private DefaultContext context;
+    private ContextImpl context;
 
     public VertxThread(Runnable target, String name) {
         super(target, name);
     }
 
-    DefaultContext getContext() {
+    ContextImpl getContext() {
         return context;
     }
 
-    void setContext(DefaultContext context) {
+    void setContext(ContextImpl context) {
         this.context = context;
     }
 }

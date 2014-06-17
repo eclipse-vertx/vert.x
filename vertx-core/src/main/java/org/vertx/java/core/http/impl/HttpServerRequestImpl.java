@@ -46,9 +46,9 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultHttpServerRequest implements HttpServerRequest {
+public class HttpServerRequestImpl implements HttpServerRequest {
 
-  private static final Logger log = LoggerFactory.getLogger(DefaultHttpServerRequest.class);
+  private static final Logger log = LoggerFactory.getLogger(HttpServerRequestImpl.class);
 
   private final ServerConnection conn;
   private final HttpRequest request;
@@ -75,9 +75,9 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   private HttpPostRequestDecoder decoder;
   private boolean isURLEncoded;
 
-  DefaultHttpServerRequest(ServerConnection conn,
-                           HttpRequest request,
-                           HttpServerResponse response) {
+  HttpServerRequestImpl(ServerConnection conn,
+                        HttpRequest request,
+                        HttpServerResponse response) {
     this.conn = conn;
     this.request = request;
     this.response = response;
@@ -328,7 +328,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
 
   private final static class NettyFileUpload implements FileUpload {
 
-    private final DefaultHttpServerFileUpload upload;
+    private final HttpServerFileUploadImpl upload;
 
 
     private String name;
@@ -338,7 +338,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
     private Charset charset;
     private boolean completed;
 
-    private NettyFileUpload(DefaultHttpServerFileUpload upload, String name, String filename, String contentType, String contentTransferEncoding, Charset charset) {
+    private NettyFileUpload(HttpServerFileUploadImpl upload, String name, String filename, String contentType, String contentTransferEncoding, Charset charset) {
       this.upload = upload;
       this.name = name;
       this.filename = filename;
@@ -541,7 +541,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
 
     @Override
     public FileUpload createFileUpload(HttpRequest httpRequest, String name, String filename, String contentType, String contentTransferEncoding, Charset charset, long size) {
-      DefaultHttpServerFileUpload upload = new DefaultHttpServerFileUpload(conn.vertx(), DefaultHttpServerRequest.this, name, filename, contentType, contentTransferEncoding, charset,
+      HttpServerFileUploadImpl upload = new HttpServerFileUploadImpl(conn.vertx(), HttpServerRequestImpl.this, name, filename, contentType, contentTransferEncoding, charset,
           size);
       NettyFileUpload nettyUpload = new NettyFileUpload(upload, name, filename, contentType,
           contentTransferEncoding, charset);

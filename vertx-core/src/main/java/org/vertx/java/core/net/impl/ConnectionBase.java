@@ -21,8 +21,8 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.impl.DefaultContext;
-import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.impl.ContextImpl;
+import org.vertx.java.core.impl.FutureResultImpl;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.SocketAddress;
 
@@ -40,7 +40,7 @@ import java.net.InetSocketAddress;
  */
 public abstract class ConnectionBase {
 
-  protected ConnectionBase(VertxInternal vertx, Channel channel, DefaultContext context) {
+  protected ConnectionBase(VertxInternal vertx, Channel channel, ContextImpl context) {
     this.vertx = vertx;
     this.channel = channel;
     this.context = context;
@@ -48,7 +48,7 @@ public abstract class ConnectionBase {
 
   protected final VertxInternal vertx;
   protected final Channel channel;
-  protected final DefaultContext context;
+  protected final ContextImpl context;
 
   protected Handler<Throwable> exceptionHandler;
   protected Handler<Void> closeHandler;
@@ -116,7 +116,7 @@ public abstract class ConnectionBase {
     this.writable = writable;
   }
 
-  protected DefaultContext getContext() {
+  protected ContextImpl getContext() {
     return context;
   }
 
@@ -150,9 +150,9 @@ public abstract class ConnectionBase {
         if (doneHandler != null) {
           context.execute(() -> {
             if (channelFuture.isSuccess()) {
-              doneHandler.handle(new DefaultFutureResult<>((Void)null));
+              doneHandler.handle(new FutureResultImpl<>((Void)null));
             } else {
-              doneHandler.handle(new DefaultFutureResult<>(channelFuture.cause()));
+              doneHandler.handle(new FutureResultImpl<>(channelFuture.cause()));
             }
           });
         } else if (!channelFuture.isSuccess()) {

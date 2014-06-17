@@ -27,8 +27,8 @@ import org.vertx.java.core.dns.impl.netty.*;
 import org.vertx.java.core.dns.impl.netty.decoder.RecordDecoderFactory;
 import org.vertx.java.core.dns.impl.netty.decoder.record.MailExchangerRecord;
 import org.vertx.java.core.dns.impl.netty.decoder.record.ServiceRecord;
-import org.vertx.java.core.impl.DefaultContext;
-import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.impl.ContextImpl;
+import org.vertx.java.core.impl.FutureResultImpl;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.SocketAddress;
 import org.vertx.java.core.net.impl.PartialPooledByteBufAllocator;
@@ -43,15 +43,15 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public final class DefaultDnsClient implements DnsClient {
+public final class DnsClientImpl implements DnsClient {
 
   private final Bootstrap bootstrap;
   private final List<InetSocketAddress> dnsServers;
   private static final char[] HEX_TABLE = "0123456789abcdef".toCharArray();
-  private final DefaultContext actualCtx;
+  private final ContextImpl actualCtx;
   private final VertxInternal vertx;
 
-  public DefaultDnsClient(VertxInternal vertx, SocketAddress... addresses) {
+  public DnsClientImpl(VertxInternal vertx, SocketAddress... addresses) {
     if (addresses == null || addresses.length == 0) {
       throw new IllegalArgumentException("Need at least one default DNS Server");
     }
@@ -112,10 +112,10 @@ public final class DefaultDnsClient implements DnsClient {
 
   @Override
   public DnsClient resolveMX(String name, final Handler<AsyncResult<List<MxRecord>>> handler) {
-    lookup(name, new ConvertingHandler<MailExchangerRecord, MxRecord>(handler, DefaultMxRecordComparator.INSTANCE) {
+    lookup(name, new ConvertingHandler<MailExchangerRecord, MxRecord>(handler, MxRecordComparator.INSTANCE) {
       @Override
       protected MxRecord convert(MailExchangerRecord entry) {
-        return new DefaultMxRecord(entry);
+        return new MxRecordImpl(entry);
       }
     }, DnsEntry.TYPE_MX);
     return this;
@@ -135,7 +135,7 @@ public final class DefaultDnsClient implements DnsClient {
           for (List<String> txt: records) {
             txts.addAll(txt);
           }
-          handler.handle(new DefaultFutureResult(txts));
+          handler.handle(new FutureResultImpl(txts));
         }
       }
     }, DnsEntry.TYPE_TXT);
@@ -162,10 +162,10 @@ public final class DefaultDnsClient implements DnsClient {
 
   @Override
   public DnsClient resolveSRV(String name, final Handler<AsyncResult<List<SrvRecord>>> handler) {
-    lookup(name, new ConvertingHandler<ServiceRecord, SrvRecord>(handler, DefaultSrvRecordComparator.INSTANCE) {
+    lookup(name, new ConvertingHandler<ServiceRecord, SrvRecord>(handler, SrvRecordComparator.INSTANCE) {
       @Override
       protected SrvRecord convert(ServiceRecord entry) {
-        return new DefaultSrvRecord(entry);
+        return new SrcRecordImpl(entry);
       }
     }, DnsEntry.TYPE_SRV);
     return this;
@@ -202,29 +202,29 @@ public final class DefaultDnsClient implements DnsClient {
 
       return resolvePTR(reverseName.toString(), ar -> {
           if (ar.failed()) {
-            handler.handle(new DefaultFutureResult<>(ar.cause()));
+            handler.handle(new FutureResultImpl<>(ar.cause()));
           } else {
             String result = ar.result();
-            handler.handle(new DefaultFutureResult<>(result));
+            handler.handle(new FutureResultImpl<>(result));
           }
         });
     } catch (final UnknownHostException e) {
       // Should never happen as we work with ip addresses as input
       // anyway just in case notify the handler
-      actualCtx.execute(() -> handler.handle(new DefaultFutureResult<>(e)));
+      actualCtx.execute(() -> handler.handle(new FutureResultImpl<>(e)));
     }
     return this;
   }
 
   @SuppressWarnings("unchecked")
   private void lookup(final String name, final Handler handler, final int... types) {
-    final DefaultFutureResult result = new DefaultFutureResult<>();
+    final FutureResultImpl result = new FutureResultImpl<>();
     result.setHandler(handler);
     lookup(dnsServers.iterator(), name, result, types);
   }
 
   @SuppressWarnings("unchecked")
-  private void lookup(final Iterator<InetSocketAddress> dns, final String name, final DefaultFutureResult result, final int... types) {
+  private void lookup(final Iterator<InetSocketAddress> dns, final String name, final FutureResultImpl result, final int... types) {
     bootstrap.connect(dns.next()).addListener(new RetryChannelFutureListener(dns, name, result, types) {
       @Override
       public void onSuccess(ChannelFuture future) throws Exception {
@@ -271,7 +271,7 @@ public final class DefaultDnsClient implements DnsClient {
   }
 
   @SuppressWarnings("unchecked")
-  private void setResult(final DefaultFutureResult r, EventLoop loop, final Object result) {
+  private void setResult(final FutureResultImpl r, EventLoop loop, final Object result) {
     if (r.complete()) {
       return;
     }
@@ -312,9 +312,9 @@ public final class DefaultDnsClient implements DnsClient {
       } else {
         List<T> result = event.result();
         if (result.isEmpty()) {
-          handler.handle(new DefaultFutureResult<>((T)null));
+          handler.handle(new FutureResultImpl<>((T)null));
         } else {
-          handler.handle(new DefaultFutureResult<>(result.get(0)));
+          handler.handle(new FutureResultImpl<>(result.get(0)));
         }
       }
     }
@@ -342,7 +342,7 @@ public final class DefaultDnsClient implements DnsClient {
         }
 
         Collections.sort(records, comparator);
-        handler.handle(new DefaultFutureResult(records));
+        handler.handle(new FutureResultImpl(records));
       }
     }
 
@@ -352,10 +352,10 @@ public final class DefaultDnsClient implements DnsClient {
   private abstract class RetryChannelFutureListener implements ChannelFutureListener {
     private final Iterator<InetSocketAddress> dns;
     private final String name;
-    private final DefaultFutureResult result;
+    private final FutureResultImpl result;
     private final int[] types;
 
-    RetryChannelFutureListener(final Iterator<InetSocketAddress> dns, final String name, final DefaultFutureResult result, final int... types) {
+    RetryChannelFutureListener(final Iterator<InetSocketAddress> dns, final String name, final FutureResultImpl result, final int... types) {
       this.dns = dns;
       this.name = name;
       this.result = result;

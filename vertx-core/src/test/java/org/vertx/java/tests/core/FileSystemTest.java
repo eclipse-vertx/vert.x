@@ -27,7 +27,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.file.FileProps;
 import org.vertx.java.core.file.FileSystemProps;
-import org.vertx.java.core.file.impl.DefaultAsyncFile;
+import org.vertx.java.core.file.impl.AsyncFileImpl;
 import org.vertx.java.core.impl.Windows;
 import org.vertx.java.core.streams.Pump;
 import org.vertx.java.core.streams.ReadStream;
@@ -1100,7 +1100,7 @@ public class FileSystemTest extends VertxTestBase {
     String fileName2 = "some-other-file.dat";
 
     //Non integer multiple of buffer size
-    int fileSize = (int) (DefaultAsyncFile.BUFFER_SIZE * 1000.3);
+    int fileSize = (int) (AsyncFileImpl.BUFFER_SIZE * 1000.3);
     byte[] content = randomByteArray(fileSize);
     createFile(fileName1, content);
 

@@ -23,7 +23,7 @@ import org.vertx.java.core.file.*;
 import org.vertx.java.core.file.FileSystem;
 import org.vertx.java.core.file.FileSystemException;
 import org.vertx.java.core.impl.BlockingAction;
-import org.vertx.java.core.impl.DefaultContext;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -41,14 +41,14 @@ import java.util.regex.Pattern;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class DefaultFileSystem implements FileSystem {
+public class FileSystemImpl implements FileSystem {
 
   @SuppressWarnings("unused")
-  private static final Logger log = LoggerFactory.getLogger(DefaultFileSystem.class);
+  private static final Logger log = LoggerFactory.getLogger(FileSystemImpl.class);
 
   protected final VertxInternal vertx;
 
-  public DefaultFileSystem(VertxInternal vertx) {
+  public FileSystemImpl(VertxInternal vertx) {
     this.vertx = vertx;
   }
 
@@ -532,7 +532,7 @@ public class DefaultFileSystem implements FileSystem {
           } else {
             attrs = Files.readAttributes(target, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
           }
-          return new DefaultFileProps(attrs);
+          return new FilePropsImpl(attrs);
         } catch (IOException e) {
           throw new FileSystemException(e);
         }
@@ -760,8 +760,8 @@ public class DefaultFileSystem implements FileSystem {
   }
 
   protected AsyncFile doOpen(String path, String perms, boolean read, boolean write, boolean createNew,
-                             boolean flush, DefaultContext context) {
-    return new DefaultAsyncFile(vertx, path, perms, read, write, createNew, flush, context);
+                             boolean flush, ContextImpl context) {
+    return new AsyncFileImpl(vertx, path, perms, read, write, createNew, flush, context);
   }
 
   private BlockingAction<Void> createFileInternal(String path, Handler<AsyncResult<Void>> handler) {
@@ -803,7 +803,7 @@ public class DefaultFileSystem implements FileSystem {
       public FileSystemProps action() {
         try {
           FileStore fs = Files.getFileStore(target);
-          return new DefaultFileSystemProps(fs.getTotalSpace(), fs.getUnallocatedSpace(), fs.getUsableSpace());
+          return new FileSystemPropsImpl(fs.getTotalSpace(), fs.getUnallocatedSpace(), fs.getUsableSpace());
         } catch (IOException e) {
           throw new FileSystemException(e);
         }

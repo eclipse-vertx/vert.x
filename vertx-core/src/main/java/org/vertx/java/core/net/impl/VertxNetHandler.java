@@ -21,7 +21,7 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.impl.DefaultContext;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.impl.VertxInternal;
 
 import java.util.Map;
@@ -29,14 +29,14 @@ import java.util.Map;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public class VertxNetHandler extends VertxHandler<DefaultNetSocket> {
+public class VertxNetHandler extends VertxHandler<NetSocketImpl> {
 
-  public VertxNetHandler(VertxInternal vertx, Map<Channel, DefaultNetSocket> connectionMap) {
+  public VertxNetHandler(VertxInternal vertx, Map<Channel, NetSocketImpl> connectionMap) {
     super(vertx, connectionMap);
   }
 
   @Override
-  protected void channelRead(final DefaultNetSocket sock, final DefaultContext context, ChannelHandlerContext chctx, Object msg) throws Exception {
+  protected void channelRead(final NetSocketImpl sock, final ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
     if (sock != null) {
       final ByteBuf buf = (ByteBuf) msg;
       Channel ch = chctx.channel();
