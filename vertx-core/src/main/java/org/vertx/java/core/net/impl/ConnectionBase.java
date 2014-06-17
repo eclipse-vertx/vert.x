@@ -24,6 +24,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.net.SocketAddress;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
@@ -217,13 +218,17 @@ public abstract class ConnectionBase {
     }
   }
 
-  public InetSocketAddress remoteAddress() {
-    return (InetSocketAddress)channel.remoteAddress();
+  public SocketAddress remoteAddress() {
+    InetSocketAddress addr = (InetSocketAddress)channel.remoteAddress();
+    return new SocketAddress(addr.getPort(), addr.getAddress().getHostAddress());
   }
 
-  public InetSocketAddress localAddress() {
-    return (InetSocketAddress) channel.localAddress();
+  public SocketAddress localAddress() {
+    InetSocketAddress addr = (InetSocketAddress)channel.localAddress();
+    return new SocketAddress(addr.getPort(), addr.getAddress().getHostAddress());
   }
+
+
 
   protected abstract void handleInterestedOpsChanged();
 }

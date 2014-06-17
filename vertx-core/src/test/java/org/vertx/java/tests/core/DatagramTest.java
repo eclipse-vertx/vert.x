@@ -22,7 +22,10 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.datagram.DatagramSocket;
 import org.vertx.java.core.datagram.InternetProtocolFamily;
 
-import java.net.*;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -64,7 +67,7 @@ public class DatagramTest extends VertxTestBase {
     peer1 = vertx.createDatagramSocket(null);
     peer2 = vertx.createDatagramSocket(null);
     peer2.exceptionHandler(t -> fail(t.getMessage()));
-    peer2.listen("127.0.0.1", 1234, ar -> {
+    peer2.listen(1234, "127.0.0.1", ar -> {
       assertTrue(ar.succeeded());
       Buffer buffer = randomBuffer(128);
       peer2.dataHandler(packet -> {
@@ -79,7 +82,7 @@ public class DatagramTest extends VertxTestBase {
   @Test
   public void testListenHostPort() {
     peer2 = vertx.createDatagramSocket(null);
-    peer2.listen("127.0.0.1", 1234, ar -> {
+    peer2.listen(1234, "127.0.0.1", ar -> {
       assertTrue(ar.succeeded());
       testComplete();
     });
@@ -99,7 +102,7 @@ public class DatagramTest extends VertxTestBase {
   @Test
   public void testListenInetSocketAddress() {
     peer2 = vertx.createDatagramSocket(null);
-    peer2.listen(new InetSocketAddress("127.0.0.1", 1234), ar -> {
+    peer2.listen(1234, "127.0.0.1", ar -> {
       assertTrue(ar.succeeded());
       testComplete();
     });
@@ -126,18 +129,20 @@ public class DatagramTest extends VertxTestBase {
     peer2 = vertx.createDatagramSocket(null);
     peer1.exceptionHandler(t -> fail(t.getMessage()));
     peer2.exceptionHandler(t -> fail(t.getMessage()));
-    peer2.listen("127.0.0.1", 1234, ar -> {
+    peer2.listen(1234, "127.0.0.1", ar -> {
       assertTrue(ar.succeeded());
       Buffer buffer = randomBuffer(128);
       peer2.dataHandler(packet -> {
-        assertEquals(new InetSocketAddress("127.0.0.1", 1235), packet.sender());
+        assertEquals("127.0.0.1", packet.sender().getHostAddress());
+        assertEquals(1235, packet.sender().getPort());
         assertEquals(buffer, packet.data());
         peer2.send(packet.data(), "127.0.0.1", 1235, ar2 -> assertTrue(ar2.succeeded()));
       });
-      peer1.listen("127.0.0.1", 1235, ar2 -> {
+      peer1.listen(1235, "127.0.0.1", ar2 -> {
         peer1.dataHandler(packet -> {
           assertEquals(buffer, packet.data());
-          assertEquals(new InetSocketAddress("127.0.0.1", 1234), packet.sender());
+          assertEquals("127.0.0.1", packet.sender().getHostAddress());
+          assertEquals(1234, packet.sender().getPort());
           testComplete();
         });
         peer1.send(buffer, "127.0.0.1", 1234, ar3 -> assertTrue(ar3.succeeded()));
@@ -175,7 +180,7 @@ public class DatagramTest extends VertxTestBase {
     peer2.exceptionHandler(t -> fail(t.getMessage()));
     peer2.setBroadcast(true);
     peer1.setBroadcast(true);
-    peer2.listen(new InetSocketAddress(1234), ar1 -> {
+    peer2.listen(1234, "0.0.0.0", ar1 -> {
       assertTrue(ar1.succeeded());
       Buffer buffer = randomBuffer(128);
       peer2.dataHandler(packet -> {
@@ -223,14 +228,7 @@ public class DatagramTest extends VertxTestBase {
   @Test
   public void testConfigureAfterListen() {
     peer1 = vertx.createDatagramSocket(null);
-    peer1.listen("127.0.0.1", 1234, null);
-    checkConfigure(peer1);
-  }
-
-  @Test
-  public void testConfigureAfterListenWithInetSocketAddress() {
-    peer1 = vertx.createDatagramSocket(null);
-    peer1.listen(new InetSocketAddress("127.0.0.1", 1234), null);
+    peer1.listen(1234, "127.0.0.1", null);
     checkConfigure(peer1);
   }
 

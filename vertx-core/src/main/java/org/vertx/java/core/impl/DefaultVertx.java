@@ -39,10 +39,7 @@ import org.vertx.java.core.http.impl.DefaultHttpServer;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.net.NetClient;
-import org.vertx.java.core.net.NetClientOptions;
-import org.vertx.java.core.net.NetServer;
-import org.vertx.java.core.net.NetServerOptions;
+import org.vertx.java.core.net.*;
 import org.vertx.java.core.net.impl.DefaultNetClient;
 import org.vertx.java.core.net.impl.DefaultNetServer;
 import org.vertx.java.core.net.impl.ServerID;
@@ -53,7 +50,6 @@ import org.vertx.java.core.spi.Action;
 import org.vertx.java.core.spi.cluster.ClusterManager;
 import org.vertx.java.core.spi.cluster.ClusterManagerFactory;
 
-import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.Future;
@@ -259,7 +255,7 @@ public class DefaultVertx implements VertxInternal {
   }
 
   @Override
-  public DnsClient createDnsClient(InetSocketAddress... dnsServers) {
+  public DnsClient createDnsClient(SocketAddress... dnsServers) {
     return new DefaultDnsClient(this, dnsServers);
   }
 

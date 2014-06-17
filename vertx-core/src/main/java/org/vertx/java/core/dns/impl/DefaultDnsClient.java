@@ -30,9 +30,13 @@ import org.vertx.java.core.dns.impl.netty.decoder.record.ServiceRecord;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.net.SocketAddress;
 import org.vertx.java.core.net.impl.PartialPooledByteBufAllocator;
 
-import java.net.*;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -47,13 +51,19 @@ public final class DefaultDnsClient implements DnsClient {
   private final DefaultContext actualCtx;
   private final VertxInternal vertx;
 
-  public DefaultDnsClient(VertxInternal vertx, InetSocketAddress... dnsServers) {
-    if (dnsServers == null || dnsServers.length == 0) {
+  public DefaultDnsClient(VertxInternal vertx, SocketAddress... addresses) {
+    if (addresses == null || addresses.length == 0) {
       throw new IllegalArgumentException("Need at least one default DNS Server");
     }
 
     // use LinkedList as we will traverse it all the time
-    this.dnsServers = new LinkedList<>(Arrays.asList(dnsServers));
+
+    this.dnsServers = new LinkedList<>();
+    for (SocketAddress addr: addresses) {
+      dnsServers.add(new InetSocketAddress(addr.getHostAddress(), addr.getPort()));
+    }
+
+   // this.dnsServers = new LinkedList<>(Arrays.asList(dnsServers));
     actualCtx = vertx.getOrCreateContext();
     this.vertx = vertx;
     bootstrap = new Bootstrap();
@@ -71,25 +81,25 @@ public final class DefaultDnsClient implements DnsClient {
   }
 
   @Override
-  public DnsClient lookup4(String name, final Handler<AsyncResult<Inet4Address>> handler) {
-    lookup(name, new HandlerAdapter<Inet4Address>(handler), DnsEntry.TYPE_A);
+  public DnsClient lookup4(String name, final Handler<AsyncResult<String>> handler) {
+    lookup(name, new HandlerAdapter<String>(handler), DnsEntry.TYPE_A);
     return this;
   }
 
   @Override
-  public DnsClient lookup6(String name, final Handler<AsyncResult<Inet6Address>> handler) {
-    lookup(name, new HandlerAdapter<Inet6Address>(handler), DnsEntry.TYPE_AAAA);
+  public DnsClient lookup6(String name, final Handler<AsyncResult<String>> handler) {
+    lookup(name, new HandlerAdapter<String>(handler), DnsEntry.TYPE_AAAA);
     return this;
   }
 
   @Override
-  public DnsClient lookup(String name, final Handler<AsyncResult<InetAddress>> handler) {
-    lookup(name, new HandlerAdapter<InetAddress>(handler), DnsEntry.TYPE_A, DnsEntry.TYPE_AAAA);
+  public DnsClient lookup(String name, final Handler<AsyncResult<String>> handler) {
+    lookup(name, new HandlerAdapter<String>(handler), DnsEntry.TYPE_A, DnsEntry.TYPE_AAAA);
     return this;
   }
 
   @Override
-  public DnsClient resolveA(String name, final Handler<AsyncResult<List<Inet4Address>>> handler) {
+  public DnsClient resolveA(String name, final Handler<AsyncResult<List<String>>> handler) {
     lookup(name, handler, DnsEntry.TYPE_A);
     return this;
   }
@@ -139,7 +149,7 @@ public final class DefaultDnsClient implements DnsClient {
   }
 
   @Override
-  public DnsClient resolveAAAA(String name, Handler<AsyncResult<List<Inet6Address>>> handler) {
+  public DnsClient resolveAAAA(String name, Handler<AsyncResult<List<String>>> handler) {
     lookup(name, handler, DnsEntry.TYPE_AAAA);
     return this;
   }
@@ -162,7 +172,7 @@ public final class DefaultDnsClient implements DnsClient {
   }
 
   @Override
-  public DnsClient reverseLookup(String address, final Handler<AsyncResult<InetAddress>> handler) {
+  public DnsClient reverseLookup(String address, final Handler<AsyncResult<String>> handler) {
     // TODO:  Check if the given address is a valid ip address before pass it to InetAddres.getByName(..)
     //        This is need as otherwise it may try to perform a DNS lookup.
     //        An other option would be to change address to be of type InetAddress.
@@ -195,12 +205,7 @@ public final class DefaultDnsClient implements DnsClient {
             handler.handle(new DefaultFutureResult<>(ar.cause()));
           } else {
             String result = ar.result();
-            try {
-              handler.handle(new DefaultFutureResult<>(InetAddress.getByAddress(result, inetAddress.getAddress())));
-            } catch (UnknownHostException e) {
-              // Should never happen
-              handler.handle(new DefaultFutureResult<>(e));
-            }
+            handler.handle(new DefaultFutureResult<>(result));
           }
         });
     } catch (final UnknownHostException e) {
@@ -240,6 +245,9 @@ public final class DefaultDnsClient implements DnsClient {
                   List<Object> records = new ArrayList<>(resources.size());
                   for (DnsResource resource : msg.getAnswers()) {
                     Object record = RecordDecoderFactory.getFactory().decode(resource.type(), msg, resource);
+                    if (record instanceof InetAddress) {
+                      record = ((InetAddress)record).getHostAddress();
+                    }
                     records.add(record);
                   }
 

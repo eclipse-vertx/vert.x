@@ -29,13 +29,13 @@ import org.vertx.java.core.http.HttpVersion;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.net.SocketAddress;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
@@ -189,7 +189,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   }
 
   @Override
-  public InetSocketAddress remoteAddress() {
+  public SocketAddress remoteAddress() {
     return conn.remoteAddress();
   }
 
@@ -525,7 +525,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   }
 
   @Override
-  public InetSocketAddress localAddress() {
+  public SocketAddress localAddress() {
     return conn.localAddress();
   }
 

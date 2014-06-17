@@ -27,6 +27,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.datagram.DatagramSocket;
 import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.net.SocketAddress;
 import org.vertx.java.core.net.impl.ConnectionBase;
 
 import java.net.*;
@@ -136,21 +137,20 @@ public class DefaultDatagramSocket extends ConnectionBase
   }
 
   @Override
-  public DatagramSocket listen(String address, int port, Handler<AsyncResult<DatagramSocket>> handler) {
+  public DatagramSocket listen(int port, String address, Handler<AsyncResult<DatagramSocket>> handler) {
     configurable = false;
-    return listen(new InetSocketAddress(address, port), handler);
+    return listen(new SocketAddress(port, address), handler);
   }
 
   @Override
   public DatagramSocket listen(int port, Handler<AsyncResult<DatagramSocket>> handler) {
     configurable = false;
-    return listen(new InetSocketAddress(port), handler);
+    return listen(new SocketAddress(port, "0.0.0.0"), handler);
   }
 
-  @Override
-  public DatagramSocket listen(InetSocketAddress local, Handler<AsyncResult<DatagramSocket>> handler) {
+  private DatagramSocket listen(SocketAddress local, Handler<AsyncResult<DatagramSocket>> handler) {
     configurable = false;
-    ChannelFuture future = channel().bind(local);
+    ChannelFuture future = channel().bind(new InetSocketAddress(local.getHostAddress(), local.getPort()));
     addListener(future, handler);
     return this;
   }
@@ -355,7 +355,6 @@ public class DefaultDatagramSocket extends ConnectionBase
   @SuppressWarnings("unchecked")
   public DatagramSocket setMulticastNetworkInterface(String iface) {
     checkConfigurable();
-
     try {
       channel().config().setNetworkInterface(NetworkInterface.getByName(iface));
     } catch (SocketException e) {

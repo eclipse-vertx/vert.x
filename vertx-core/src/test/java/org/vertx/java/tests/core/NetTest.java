@@ -29,7 +29,6 @@ import org.vertx.java.core.net.*;
 import org.vertx.java.core.net.impl.SocketDefaults;
 
 import java.io.File;
-import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
@@ -975,14 +974,14 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testRemoteAddress() throws Exception {
     server.connectHandler(socket -> {
-      InetSocketAddress addr = socket.remoteAddress();
-      assertTrue(addr.getHostName().startsWith("localhost"));
+      SocketAddress addr = socket.remoteAddress();
+      assertEquals("127.0.0.1", addr.getHostAddress());
     }).listen(ar -> {
       assertTrue(ar.succeeded());
       vertx.createNetClient(new NetClientOptions()).connect(1234, result -> {
         NetSocket socket = result.result();
-        InetSocketAddress addr = socket.remoteAddress();
-        assertEquals(addr.getHostName(), "localhost");
+        SocketAddress addr = socket.remoteAddress();
+        assertEquals("127.0.0.1", addr.getHostAddress());
         assertEquals(addr.getPort(), 1234);
         testComplete();
       });
@@ -1017,8 +1016,8 @@ public class NetTest extends VertxTestBase {
     final File fDir = Files.createTempDirectory("vertx-test").toFile();
     fDir.deleteOnExit();
     server.connectHandler(socket -> {
-      InetSocketAddress addr = socket.remoteAddress();
-      assertTrue(addr.getHostName().startsWith("localhost"));
+      SocketAddress addr = socket.remoteAddress();
+      assertEquals("127.0.0.1", addr.getHostAddress());
     }).listen(ar -> {
       assertTrue(ar.succeeded());
       client.connect(1234, result -> {

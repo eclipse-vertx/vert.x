@@ -18,10 +18,9 @@ package org.vertx.java.core.http;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.net.SocketAddress;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
-
-import java.net.InetSocketAddress;
 
 /**
  * Represents an HTML 5 Websocket<p>
@@ -82,11 +81,11 @@ public interface WebSocketBase<T> extends ReadStream<T>, WriteStream<T> {
   /**
    * Return the remote address for this socket
    */
-  InetSocketAddress remoteAddress();
+  SocketAddress remoteAddress();
 
   /**
    * Return the local address for this socket
    */
-  InetSocketAddress localAddress();
+  SocketAddress localAddress();
 
 }

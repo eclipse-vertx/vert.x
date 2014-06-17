@@ -25,9 +25,9 @@ import org.vertx.java.core.http.WebSocketFrame;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.impl.ws.WebSocketFrameInternal;
 import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.net.SocketAddress;
 import org.vertx.java.core.net.impl.ConnectionBase;
 
-import java.net.InetSocketAddress;
 import java.util.UUID;
 
 /**
@@ -90,12 +90,12 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
   }
 
   @Override
-  public InetSocketAddress localAddress() {
+  public SocketAddress localAddress() {
     return conn.localAddress();
   }
 
   @Override
-  public InetSocketAddress remoteAddress() {
+  public SocketAddress remoteAddress() {
     return conn.remoteAddress();
   }
 

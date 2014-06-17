@@ -19,11 +19,9 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.NetworkSupport;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.net.SocketAddress;
 import org.vertx.java.core.streams.DrainSupport;
 import org.vertx.java.core.streams.ReadSupport;
-
-import java.net.InetSocketAddress;
-
 
 /**
  * A Datagram socket which can be used to send {@link DatagramPacket}'s to remote Datagram servers and receive {@link DatagramPacket}s .
@@ -39,7 +37,7 @@ import java.net.InetSocketAddress;
 public interface DatagramSocket extends DrainSupport<DatagramSocket>, NetworkSupport<DatagramSocket>, ReadSupport<DatagramSocket, DatagramPacket> {
 
   /**
-   * Write the given {@link org.vertx.java.core.buffer.Buffer} to the {@link java.net.InetSocketAddress}. The {@link org.vertx.java.core.Handler} will be notified once the
+   * Write the given {@link org.vertx.java.core.buffer.Buffer} to the {@link SocketAddress}. The {@link org.vertx.java.core.Handler} will be notified once the
    * write completes.
    *
    *
@@ -52,7 +50,7 @@ public interface DatagramSocket extends DrainSupport<DatagramSocket>, NetworkSup
   DatagramSocket send(Buffer packet, String host, int port, Handler<AsyncResult<DatagramSocket>> handler);
 
   /**
-   * Write the given {@link String} to the {@link InetSocketAddress} using UTF8 encoding. The {@link Handler} will be notified once the
+   * Write the given {@link String} to the {@link org.vertx.java.core.net.SocketAddress} using UTF8 encoding. The {@link Handler} will be notified once the
    * write completes.
    *
    *
@@ -65,7 +63,7 @@ public interface DatagramSocket extends DrainSupport<DatagramSocket>, NetworkSup
   DatagramSocket send(String str, String host, int port, Handler<AsyncResult<DatagramSocket>> handler);
 
   /**
-   * Write the given {@link String} to the {@link InetSocketAddress} using the given encoding. The {@link Handler} will be notified once the
+   * Write the given {@link String} to the {@link org.vertx.java.core.net.SocketAddress} using the given encoding. The {@link Handler} will be notified once the
    * write completes.
    *
    *
@@ -134,9 +132,9 @@ public interface DatagramSocket extends DrainSupport<DatagramSocket>, NetworkSup
   void close();
 
   /**
-   * Return the {@link InetSocketAddress} to which this {@link DatagramSocket} is bound too.
+   * Return the {@link org.vertx.java.core.net.SocketAddress} to which this {@link DatagramSocket} is bound too.
    */
-  InetSocketAddress localAddress();
+  SocketAddress localAddress();
 
   /**
    * Joins a multicast group and so start listen for packets send to it. The {@link Handler} is notified once the operation completes.
@@ -219,23 +217,8 @@ public interface DatagramSocket extends DrainSupport<DatagramSocket>, NetworkSup
           String multicastAddress, String networkInterface,
           String sourceToBlock, Handler<AsyncResult<DatagramSocket>> handler);
 
-  /**
-   * @see #listen(java.net.InetSocketAddress, org.vertx.java.core.Handler)
-   */
-  DatagramSocket listen(String address, int port, Handler<AsyncResult<DatagramSocket>> handler);
+  DatagramSocket listen(int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
 
-  /**
-   * @see #listen(java.net.InetSocketAddress, org.vertx.java.core.Handler)
-   */
   DatagramSocket listen(int port, Handler<AsyncResult<DatagramSocket>> handler);
 
-  /**
-   * Makes this {@link DatagramSocket} listen to the given {@link InetSocketAddress}. Once the operation completes
-   * the {@link Handler} is notified.
-   *
-   * @param local     the {@link InetSocketAddress} on which the {@link DatagramSocket} will listen for {@link DatagramPacket}s.
-   * @param handler   the {@link Handler} to notify once the operation completes
-   * @return this     itself for method-chaining
-   */
-  DatagramSocket listen(InetSocketAddress local, Handler<AsyncResult<DatagramSocket>> handler);
 }

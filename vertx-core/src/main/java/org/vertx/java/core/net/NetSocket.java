@@ -22,8 +22,6 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.streams.ReadStream;
 import org.vertx.java.core.streams.WriteStream;
 
-import java.net.InetSocketAddress;
-
 /**
  * Represents a socket-like interface to a TCP/SSL connection on either the
  * client or the server side.<p>
@@ -80,12 +78,12 @@ public interface NetSocket extends ReadStream<NetSocket>, WriteStream<NetSocket>
   /**
    * Return the remote address for this socket
    */
-  InetSocketAddress remoteAddress();
+  SocketAddress remoteAddress();
 
   /**
    * Return the local address for this socket
    */
-  InetSocketAddress localAddress();
+  SocketAddress localAddress();
 
   /**
    * Close the NetSocket

@@ -18,13 +18,10 @@ package org.vertx.java.tests.core;
 
 import org.junit.Test;
 import org.vertx.java.core.dns.*;
+import org.vertx.java.core.net.SocketAddress;
 import org.vertx.java.fakedns.FakeDNSServer;
 
-import java.net.Inet4Address;
-import java.net.Inet6Address;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -32,9 +29,6 @@ import java.util.List;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class DNSTest extends VertxTestBase {
-
-  // bytes representation of ::1
-  private static final byte[] IP6_BYTES = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
 
   private FakeDNSServer dnsServer;
 
@@ -44,11 +38,11 @@ public class DNSTest extends VertxTestBase {
     DnsClient dns = prepareDns(FakeDNSServer.testResolveA(ip));
 
     dns.resolveA("vertx.io", ar -> {
-      List<Inet4Address> result = ar.result();
+      List<String> result = ar.result();
       assertNotNull(result);
       assertFalse(result.isEmpty());
       assertEquals(1, result.size());
-      assertEquals(ip, result.get(0).getHostAddress());
+      assertEquals(ip, result.get(0));
       testComplete();
     });
     await();
@@ -59,11 +53,11 @@ public class DNSTest extends VertxTestBase {
     DnsClient dns = prepareDns(FakeDNSServer.testResolveAAAA("::1"));
 
     dns.resolveAAAA("vertx.io", ar -> {
-      List<Inet6Address> result = ar.result();
+      List<String> result = ar.result();
       assertNotNull(result);
       assertFalse(result.isEmpty());
       assertEquals(1, result.size());
-      assertTrue(Arrays.equals(IP6_BYTES, result.get(0).getAddress()));
+      assertEquals("0:0:0:0:0:0:0:1", result.get(0));
       testComplete();
     });
     await();
@@ -185,9 +179,9 @@ public class DNSTest extends VertxTestBase {
     DnsClient dns = prepareDns(FakeDNSServer.testLookup4(ip));
 
     dns.lookup4("vertx.io", ar -> {
-      InetAddress result = ar.result();
+      String result = ar.result();
       assertNotNull(result);
-      assertEquals(ip, result.getHostAddress());
+      assertEquals(ip, result);
       testComplete();
     });
     await();
@@ -198,9 +192,9 @@ public class DNSTest extends VertxTestBase {
     DnsClient dns = prepareDns(FakeDNSServer.testLookup6());
 
     dns.lookup6("vertx.io", ar -> {
-      Inet6Address result = ar.result();
+      String result = ar.result();
       assertNotNull(result);
-      assertTrue(Arrays.equals(IP6_BYTES, result.getAddress()));
+      assertEquals("0:0:0:0:0:0:0:1", result);
       testComplete();
     });
     await();
@@ -212,9 +206,9 @@ public class DNSTest extends VertxTestBase {
     DnsClient dns = prepareDns(FakeDNSServer.testLookup(ip));
 
     dns.lookup("vertx.io", ar -> {
-      InetAddress result = ar.result();
+      String result = ar.result();
       assertNotNull(result);
-      assertEquals(ip, result.getHostAddress());
+      assertEquals(ip, result);
       testComplete();
     });
     await();
@@ -233,16 +227,14 @@ public class DNSTest extends VertxTestBase {
 
   @Test
   public void testReverseLookupIpv4() throws Exception {
-    final byte[] address = InetAddress.getByName("10.0.0.1").getAddress();
+    String address = "10.0.0.1";
     final String ptr = "ptr.vertx.io";
     DnsClient dns = prepareDns(FakeDNSServer.testReverseLookup(ptr));
 
-    dns.reverseLookup("10.0.0.1", ar -> {
-      InetAddress result = ar.result();
+    dns.reverseLookup(address, ar -> {
+      String result = ar.result();
       assertNotNull(result);
-      assertTrue(result instanceof Inet4Address);
-      assertEquals(ptr, result.getHostName());
-      assertTrue(Arrays.equals(address, result.getAddress()));
+      assertEquals(ptr, result);
       testComplete();
     });
     await();
@@ -250,17 +242,14 @@ public class DNSTest extends VertxTestBase {
 
   @Test
   public void testReverseLookupIpv6() throws Exception {
-    final byte[] address = InetAddress.getByName("::1").getAddress();
     final String ptr = "ptr.vertx.io";
 
     DnsClient dns = prepareDns(FakeDNSServer.testReverseLookup(ptr));
 
     dns.reverseLookup("::1", ar -> {
-      InetAddress result = ar.result();
+      String result = ar.result();
       assertNotNull(result);
-      assertTrue(result instanceof Inet6Address);
-      assertEquals(ptr, result.getHostName());
-      assertTrue(Arrays.equals(address, result.getAddress()));
+      assertEquals(ptr, result);
       testComplete();
     });
     await();
@@ -270,7 +259,7 @@ public class DNSTest extends VertxTestBase {
     dnsServer = server;
     dnsServer.start();
     InetSocketAddress addr = (InetSocketAddress) dnsServer.getTransports()[0].getAcceptor().getLocalAddress();
-    return vertx.createDnsClient(addr);
+    return vertx.createDnsClient(new SocketAddress(addr.getPort(), addr.getAddress().getHostAddress()));
   }
 
 }

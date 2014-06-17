@@ -35,9 +35,9 @@ import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.net.SocketAddress;
 
 import java.io.File;
-import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -199,11 +199,11 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   }
 
   @Override
-  public InetSocketAddress remoteAddress() {
+  public SocketAddress remoteAddress() {
     return super.remoteAddress();
   }
 
-  public InetSocketAddress localAddress() {
+  public SocketAddress localAddress() {
     return super.localAddress();
   }
 

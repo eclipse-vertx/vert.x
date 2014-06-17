@@ -23,10 +23,10 @@ import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.net.SocketAddress;
 import org.vertx.java.core.shareddata.Shareable;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
-import java.net.InetSocketAddress;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
@@ -62,8 +62,8 @@ class Session extends SockJSSocketBase implements Shareable {
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
   private boolean handleCalled;
-  private InetSocketAddress localAddress;
-  private InetSocketAddress remoteAddress;
+  private SocketAddress localAddress;
+  private SocketAddress remoteAddress;
   private String uri;
   private MultiMap headers;
 
@@ -176,12 +176,12 @@ class Session extends SockJSSocketBase implements Shareable {
   }
 
   @Override
-  public InetSocketAddress remoteAddress() {
+  public SocketAddress remoteAddress() {
     return remoteAddress;
   }
 
   @Override
-  public InetSocketAddress localAddress() {
+  public SocketAddress localAddress() {
     return localAddress;
   }
 
@@ -367,7 +367,7 @@ class Session extends SockJSSocketBase implements Shareable {
     openWritten = true;
   }
 
-  void setInfo(InetSocketAddress localAddress, InetSocketAddress remoteAddress, String uri,
+  void setInfo(SocketAddress localAddress, SocketAddress remoteAddress, String uri,
                MultiMap headers) {
     this.localAddress = localAddress;
     this.remoteAddress = remoteAddress;

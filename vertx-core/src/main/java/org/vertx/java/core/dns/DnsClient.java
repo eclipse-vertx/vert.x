@@ -21,7 +21,6 @@ import org.vertx.java.core.Handler;
 
 import java.net.Inet4Address;
 import java.net.Inet6Address;
-import java.net.InetAddress;
 import java.util.List;
 
 /**
@@ -36,12 +35,12 @@ public interface DnsClient {
    *
    * @param name      The name to resolve
    * @param handler   the {@link Handler} to notify with the {@link AsyncResult}. The {@link AsyncResult} will get
-   *                  notified with the resolved {@link InetAddress} if a record was found. If non was found it will
+   *                  notified with the resolved address if a record was found. If non was found it will
    *                  get notifed with {@code null}.
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
-  DnsClient lookup(String name, Handler<AsyncResult<InetAddress>> handler);
+  DnsClient lookup(String name, Handler<AsyncResult<String>> handler);
 
   /**
    * Try to lookup the A (ipv4) record for the given name. The first found will be used.
@@ -53,7 +52,7 @@ public interface DnsClient {
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
-  DnsClient lookup4(String name, Handler<AsyncResult<Inet4Address>> handler);
+  DnsClient lookup4(String name, Handler<AsyncResult<String>> handler);
 
   /**
    * Try to lookup the AAAA (ipv6) record for the given name. The first found will be used.
@@ -65,7 +64,7 @@ public interface DnsClient {
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
-  DnsClient lookup6(String name, Handler<AsyncResult<Inet6Address>> handler);
+  DnsClient lookup6(String name, Handler<AsyncResult<String>> handler);
 
   /**
    * Try to resolve all A (ipv4) records for the given name.
@@ -79,7 +78,7 @@ public interface DnsClient {
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
-  DnsClient resolveA(String name, Handler<AsyncResult<List<Inet4Address>>> handler);
+  DnsClient resolveA(String name, Handler<AsyncResult<List<String>>> handler);
 
   /**
    * Try to resolve all AAAA (ipv6) records for the given name.
@@ -92,7 +91,7 @@ public interface DnsClient {
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
-  DnsClient resolveAAAA(String name, Handler<AsyncResult<List<Inet6Address>>> handler);
+  DnsClient resolveAAAA(String name, Handler<AsyncResult<List<String>>> handler);
 
   /**
    * Try to resolve the CNAME record for the given name.
@@ -178,5 +177,5 @@ public interface DnsClient {
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
-  DnsClient reverseLookup(String ipaddress, Handler<AsyncResult<InetAddress>> handler);
+  DnsClient reverseLookup(String ipaddress, Handler<AsyncResult<String>> handler);
 }

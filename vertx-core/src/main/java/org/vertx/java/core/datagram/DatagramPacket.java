@@ -16,8 +16,7 @@
 package org.vertx.java.core.datagram;
 
 import org.vertx.java.core.buffer.Buffer;
-
-import java.net.InetSocketAddress;
+import org.vertx.java.core.net.SocketAddress;
 
 /**
  * A received Datagram packet (UDP) which contains the data and information about the sender of the data itself.
@@ -27,9 +26,9 @@ import java.net.InetSocketAddress;
 public interface DatagramPacket {
 
   /**
-   * Returns the {@link InetSocketAddress} of the sender that send this {@link DatagramPacket}.
+   * Returns the {@link SocketAddress} of the sender that send this {@link DatagramPacket}.
    */
-  InetSocketAddress sender();
+  SocketAddress sender();
 
   /**
    * Returns the data of the {@link DatagramPacket}

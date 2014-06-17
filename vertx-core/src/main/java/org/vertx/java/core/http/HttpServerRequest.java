@@ -20,11 +20,11 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.net.SocketAddress;
 import org.vertx.java.core.streams.ReadStream;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
-import java.net.InetSocketAddress;
 import java.net.URI;
 
 /**
@@ -90,12 +90,12 @@ public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
   /**
    * Return the remote (client side) address of the request
    */
-  InetSocketAddress remoteAddress();
+  SocketAddress remoteAddress();
 
   /**
    * Return the local (server side) address of the server that handles the request
    */
-  InetSocketAddress localAddress();
+  SocketAddress localAddress();
 
   /**
    * @return an array of the peer certificates.  Returns null if connection is
