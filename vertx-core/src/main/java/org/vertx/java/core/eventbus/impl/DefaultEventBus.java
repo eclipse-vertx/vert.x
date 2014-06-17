@@ -20,6 +20,7 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
+import org.vertx.java.core.eventbus.Registration;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.ReplyException;
 import org.vertx.java.core.eventbus.ReplyFailure;
@@ -40,6 +41,7 @@ import org.vertx.java.core.spi.cluster.ChoosableIterable;
 import org.vertx.java.core.spi.cluster.ClusterManager;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -433,27 +435,16 @@ public class DefaultEventBus implements EventBus {
   }
 
   @Override
-  public EventBus registerHandler(String address, Handler<? extends Message> handler,
-                              Handler<AsyncResult<Void>> completionHandler) {
-    registerHandler(address, handler, completionHandler, false, false, -1);
-    return this;
+  public Registration registerHandler(String address, Handler<? extends Message> handler) {
+    return registerHandler(address, handler, false, false, -1);
   }
 
   @Override
-  public EventBus registerHandler(String address, Handler<? extends Message> handler) {
-    registerHandler(address, handler, null);
-    return this;
+  public Registration registerLocalHandler(String address, Handler<? extends Message> handler) {
+    return registerHandler(address, handler, false, true, -1);
   }
 
-  @Override
-  public EventBus registerLocalHandler(String address, Handler<? extends Message> handler) {
-    registerHandler(address, handler, null, false, true, -1);
-    return this;
-  }
-
-  @Override
-  public EventBus unregisterHandler(String address, Handler<? extends Message> handler,
-                                    Handler<AsyncResult<Void>> completionHandler) {
+  private void unregisterHandler(String address, Handler<? extends Message> handler, Handler<AsyncResult<Void>> completionHandler) {
     checkStarted();
     Handlers handlers = handlerMap.get(address);
     if (handlers != null) {
@@ -480,18 +471,15 @@ public class DefaultEventBus implements EventBus {
               callCompletionHandler(completionHandler);
             }
             holder.context.removeCloseHook(new HandlerEntry(address, handler));
-            return this;
+            break;
           }
         }
       }
     }
-    return this;
   }
 
-  @Override
-  public EventBus unregisterHandler(String address, Handler<? extends Message> handler) {
-    unregisterHandler(address, handler, null);
-    return this;
+  private void unregisterHandler(String address, Handler<? extends Message> handler) {
+    unregisterHandler(address, handler, emptyHandler());
   }
 
   @Override
@@ -676,17 +664,17 @@ public class DefaultEventBus implements EventBus {
       long timeoutID = -1;
       if (replyHandler != null) {
         message.replyAddress = generateReplyAddress();
+        Registration registration = registerHandler(message.replyAddress, replyHandler, true, true, timeoutID);
         if (timeout != -1) {
           // Add a timeout to remove the reply handler to prevent leaks in case a reply never comes
           timeoutID = vertx.setTimer(timeout, timerID -> {
             log.warn("Message reply handler timed out as no reply was received - it will be removed");
-            unregisterHandler(message.replyAddress, replyHandler);
+            registration.unregister();
             if (asyncResultHandler != null) {
               asyncResultHandler.handle(new DefaultFutureResult<>(new ReplyException(ReplyFailure.TIMEOUT, "Timed out waiting for reply")));
             }
           });
         }
-        registerHandler(message.replyAddress, replyHandler, null, true, true, timeoutID);
       }
       if (replyDest != null) {
         if (!replyDest.equals(this.serverID)) {
@@ -737,18 +725,17 @@ public class DefaultEventBus implements EventBus {
     };
   }
 
-  private void registerHandler(String address, Handler<? extends Message> handler,
-                               Handler<AsyncResult<Void>> completionHandler,
-                               boolean replyHandler, boolean localOnly, long timeoutID) {
+  private Registration registerHandler(String address, Handler<? extends Message> handler,
+                                       boolean replyHandler, boolean localOnly, long timeoutID) {
     checkStarted();
     if (address == null) {
       throw new NullPointerException("address");
     }
-    DefaultContext context = vertx.getContext();
-    boolean hasContext = context != null;
-    if (!hasContext) {
-      context = vertx.createEventLoopContext();
-    }
+    //TODO: Pretty sure this is what we want to do (looking at previous logic)
+    DefaultContext context = vertx.getOrCreateContext();
+    HandlerEntry entry = new HandlerEntry(address, handler);
+    context.addCloseHook(entry);
+
     Handlers handlers = handlerMap.get(address);
     if (handlers == null) {
       handlers = new Handlers();
@@ -756,30 +743,12 @@ public class DefaultEventBus implements EventBus {
       if (prevHandlers != null) {
         handlers = prevHandlers;
       }
-      if (completionHandler == null) {
-        completionHandler = asyncResult -> {
-          if (asyncResult.failed()) {
-            log.error("Failed to remove entry", asyncResult.cause());
-          }
-        };
-      }
-      handlers.list.add(new HandlerHolder(handler, replyHandler, localOnly, context, timeoutID));
-      if (subs != null && !replyHandler && !localOnly) {
-        // Propagate the information
-        subs.add(address, serverID, completionHandler);
-      } else {
-        callCompletionHandler(completionHandler);
-      }
-    } else {
-      handlers.list.add(new HandlerHolder(handler, replyHandler, localOnly, context, timeoutID));
-      if (completionHandler != null) {
-        callCompletionHandler(completionHandler);
-      }
     }
-    if (hasContext) {
-      HandlerEntry entry = new HandlerEntry(address, handler);
-      context.addCloseHook(entry);
-    }
+
+    @SuppressWarnings("unchecked")
+    HandlerHolder<?> holder = new HandlerHolder<>((Handler<Message<Object>>) handler, replyHandler, localOnly, context, timeoutID);
+    handlers.list.add(holder);
+    return new DefaultRegistration(address, holder);
   }
 
   private void callCompletionHandler(Handler<AsyncResult<Void>> completionHandler) {
@@ -925,6 +894,13 @@ public class DefaultEventBus implements EventBus {
     }
   }
 
+  private static final Handler<?> _emptyHandler = e -> {};
+
+  @SuppressWarnings("unchecked")
+  private static <T> Handler<T> emptyHandler() {
+    return (Handler<T>) _emptyHandler;
+  }
+
   private static class HandlerHolder<T> {
     final DefaultContext context;
     final Handler<Message<T>> handler;
@@ -1064,10 +1040,69 @@ public class DefaultEventBus implements EventBus {
 
     // Called by context on undeploy
     public void close(Handler<AsyncResult<Void>> doneHandler) {
-      unregisterHandler(this.address, this.handler);
+      unregisterHandler(this.address, this.handler, emptyHandler());
       doneHandler.handle(new DefaultFutureResult<>((Void)null));
     }
 
+  }
+
+  private class DefaultRegistration implements Registration {
+    private final String address;
+    private final Handler<? extends Message> handler;
+    private AsyncResult<Void> result;
+    private Handler<AsyncResult<Void>> completionHandler;
+
+    public DefaultRegistration(String address, HandlerHolder<?> holder) {
+      this.address = address;
+      this.handler = holder.handler;
+      this.completionHandler = ar -> {
+        if (!ar.succeeded()) {
+          log.error("Failed to propagate registration for handler " + handler, ar.cause());
+        }
+      };
+      if (subs != null && !holder.localOnly && !holder.replyHandler) {
+        subs.add(address, serverID, ar -> {
+          synchronized (this) {
+            result = ar;
+            if (ar.succeeded()) {
+              completionHandler.handle(new DefaultFutureResult<>((Void) null));
+            } else {
+              completionHandler.handle(new DefaultFutureResult<>(ar.cause()));
+            }
+          }
+        });
+      } else {
+        result = new DefaultFutureResult<>((Void) null);
+      }
+    }
+
+    @Override
+    public String address() {
+      return address;
+    }
+
+    @Override
+    public void onCompletion(Handler<AsyncResult<Void>> completionHandler) {
+      Objects.requireNonNull(completionHandler);
+      synchronized (this) {
+        if (result != null) {
+          completionHandler.handle(result);
+        } else {
+          this.completionHandler = completionHandler;
+        }
+      }
+    }
+
+    @Override
+    public void unregister() {
+      unregister(emptyHandler());
+    }
+
+    @Override
+    public void unregister(Handler<AsyncResult<Void>> doneHandler) {
+      Objects.requireNonNull(doneHandler);
+      unregisterHandler(address, handler, doneHandler);
+    }
   }
 }
 

@@ -23,6 +23,7 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxFactory;
+import org.vertx.java.core.eventbus.Registration;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.fakecluster.FakeClusterManager;
 import org.vertx.java.fakecluster.FakeClusterManagerFactory;
@@ -69,14 +70,15 @@ public class ClusteredEventBusTest extends EventBusTestBase {
   @Override
   protected <T> void testSend(T val, Consumer<T> consumer) {
     startNodes(2);
-    vertices[1].eventBus().registerHandler(ADDRESS1, (Message<T> msg) -> {
+    Registration reg = vertices[1].eventBus().registerHandler(ADDRESS1, (Message<T> msg) -> {
       if (consumer == null) {
         assertEquals(val, msg.body());
       } else {
         consumer.accept(msg.body());
       }
       testComplete();
-    }, ar -> {
+    });
+    reg.onCompletion(ar -> {
       assertTrue(ar.succeeded());
       vertices[0].eventBus().send(ADDRESS1, val);
     });
@@ -86,10 +88,11 @@ public class ClusteredEventBusTest extends EventBusTestBase {
   @Override
   protected <T> void testSendNull(T obj) {
     startNodes(2);
-    vertices[1].eventBus().registerHandler(ADDRESS1, (Message<T> msg) -> {
+    Registration reg = vertices[1].eventBus().registerHandler(ADDRESS1, (Message<T> msg) -> {
       assertNull(msg.body());
       testComplete();
-    }, ar -> {
+    });
+    reg.onCompletion(ar -> {
       assertTrue(ar.succeeded());
       vertices[0].eventBus().send(ADDRESS1, (T)null);
     });
@@ -100,10 +103,11 @@ public class ClusteredEventBusTest extends EventBusTestBase {
   protected <T> void testReply(T val, Consumer<T> consumer) {
     startNodes(2);
     String str = randomUnicodeString(1000);
-    vertices[1].eventBus().registerHandler(ADDRESS1, msg -> {
+    Registration reg = vertices[1].eventBus().registerHandler(ADDRESS1, msg -> {
       assertEquals(str, msg.body());
       msg.reply(val);
-    }, ar -> {
+    });
+    reg.onCompletion(ar -> {
       assertTrue(ar.succeeded());
       vertices[0].eventBus().send(ADDRESS1, str, (Message<T> reply) -> {
         if (consumer == null) {
@@ -122,10 +126,11 @@ public class ClusteredEventBusTest extends EventBusTestBase {
   protected <T> void testReplyNull(T val) {
     startNodes(2);
     String str = randomUnicodeString(1000);
-    vertices[1].eventBus().registerHandler(ADDRESS1, msg -> {
+    Registration reg = vertices[1].eventBus().registerHandler(ADDRESS1, msg -> {
       assertEquals(str, msg.body());
       msg.reply((T)null);
-    }, ar -> {
+    });
+    reg.onCompletion(ar -> {
       assertTrue(ar.succeeded());
       vertices[0].eventBus().send(ADDRESS1, str, (Message<T>reply) -> {
         assertNull(reply.body());
@@ -160,8 +165,10 @@ public class ClusteredEventBusTest extends EventBusTestBase {
         }
       }
     }
-    vertices[2].eventBus().registerHandler(ADDRESS1, new MyHandler(), new MyRegisterHandler());
-    vertices[1].eventBus().registerHandler(ADDRESS1, new MyHandler(), new MyRegisterHandler());
+    Registration reg = vertices[2].eventBus().registerHandler(ADDRESS1, new MyHandler());
+    reg.onCompletion(new MyRegisterHandler());
+    reg = vertices[1].eventBus().registerHandler(ADDRESS1, new MyHandler());
+    reg.onCompletion(new MyRegisterHandler());
     await();
   }
 
@@ -193,8 +200,10 @@ public class ClusteredEventBusTest extends EventBusTestBase {
         }
       }
     }
-    vertices[2].eventBus().registerHandler(ADDRESS1, new MyHandler(), new MyRegisterHandler());
-    vertices[1].eventBus().registerHandler(ADDRESS1, new MyHandler(), new MyRegisterHandler());
+    Registration reg = vertices[2].eventBus().registerHandler(ADDRESS1, new MyHandler());
+    reg.onCompletion(new MyRegisterHandler());
+    reg = vertices[1].eventBus().registerHandler(ADDRESS1, new MyHandler());
+    reg.onCompletion(new MyRegisterHandler());
     vertices[0].eventBus().publish(ADDRESS1, (T)val);
     await();
   }
