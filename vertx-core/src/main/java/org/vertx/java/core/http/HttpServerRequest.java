@@ -108,7 +108,7 @@ public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
    * Get the absolute URI corresponding to the the HTTP request
    * @return the URI
    */
-  URI absoluteURI();
+  String absoluteURI();
 
   /**
    * Convenience method for receiving the entire request body in one piece. This saves the user having to manually

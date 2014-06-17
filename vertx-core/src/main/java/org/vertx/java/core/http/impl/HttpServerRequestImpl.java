@@ -66,7 +66,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   //Cache this for performance
   private MultiMap params;
   private MultiMap headers;
-  private URI absoluteURI;
+  private String absoluteURI;
 
   private NetSocket netSocket;
   private Handler<HttpServerFileUpload> uploadHandler;
@@ -194,15 +194,15 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public URI absoluteURI() {
+  public String absoluteURI() {
     if (absoluteURI == null) {
       try {
         URI uri = new URI(uri());
         String scheme = uri.getScheme();
         if (scheme != null && (scheme.equals("http") || scheme.equals("https"))) {
-          absoluteURI = uri;
+          absoluteURI = uri.toString();
         } else {
-          absoluteURI = new URI(conn.getServerOrigin() + uri);
+          absoluteURI = new URI(conn.getServerOrigin() + uri).toString();
         }
       } catch (URISyntaxException e) {
         log.error("Failed to create abs uri", e);
