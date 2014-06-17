@@ -20,7 +20,7 @@ package org.vertx.java.core.net;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 
-public class NetServerOptions extends OptionsBase {
+public class NetServerOptions extends TCPOptions {
 
   // Server specific HTTP stuff
 
@@ -33,6 +33,7 @@ public class NetServerOptions extends OptionsBase {
   private boolean clientAuthRequired;
 
   public NetServerOptions() {
+    super();
   }
 
   public NetServerOptions(NetServerOptions other) {

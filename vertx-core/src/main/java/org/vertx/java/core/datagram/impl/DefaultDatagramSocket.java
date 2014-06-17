@@ -25,6 +25,7 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.datagram.DatagramSocket;
+import org.vertx.java.core.datagram.DatagramSocketOptions;
 import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.SocketAddress;
@@ -39,10 +40,11 @@ public class DefaultDatagramSocket extends ConnectionBase
         implements DatagramSocket {
 
   private Handler<Void> drainHandler;
-  protected boolean configurable = true;
   private Handler<org.vertx.java.core.datagram.DatagramPacket> dataHandler;
-  public DefaultDatagramSocket(VertxInternal vertx, org.vertx.java.core.datagram.InternetProtocolFamily family) {
-    super(vertx, createChannel(family), vertx.getOrCreateContext());
+
+  public DefaultDatagramSocket(VertxInternal vertx, org.vertx.java.core.datagram.InternetProtocolFamily family,
+                               DatagramSocketOptions options) {
+    super(vertx, createChannel(family, options), vertx.getOrCreateContext());
     channel().config().setOption(ChannelOption.DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION, true);
     context.getEventLoop().register(channel);
     channel.pipeline().addLast("handler", new DatagramServerHandler(this.vertx, this));
@@ -51,7 +53,6 @@ public class DefaultDatagramSocket extends ConnectionBase
 
   @Override
   public DatagramSocket listenMulticastGroup(String multicastAddress, Handler<AsyncResult<DatagramSocket>> handler) {
-    configurable = false;
     try {
       addListener(channel().joinGroup(InetAddress.getByName(multicastAddress)), handler);
     } catch (UnknownHostException e) {
@@ -62,7 +63,6 @@ public class DefaultDatagramSocket extends ConnectionBase
 
   @Override
   public DatagramSocket listenMulticastGroup(String multicastAddress, String networkInterface, String source, Handler<AsyncResult<DatagramSocket>> handler) {
-    configurable = false;
     try {
       InetAddress sourceAddress;
       if (source == null) {
@@ -80,7 +80,6 @@ public class DefaultDatagramSocket extends ConnectionBase
 
   @Override
   public DatagramSocket unlistenMulticastGroup(String multicastAddress, Handler<AsyncResult<DatagramSocket>> handler) {
-    configurable = false;
     try {
       addListener(channel().leaveGroup(InetAddress.getByName(multicastAddress)), handler);
     } catch (UnknownHostException e) {
@@ -91,7 +90,6 @@ public class DefaultDatagramSocket extends ConnectionBase
 
   @Override
   public DatagramSocket unlistenMulticastGroup(String multicastAddress, String networkInterface, String source, Handler<AsyncResult<DatagramSocket>> handler) {
-    configurable = false;
     try {
       InetAddress sourceAddress;
       if (source == null) {
@@ -109,7 +107,6 @@ public class DefaultDatagramSocket extends ConnectionBase
 
   @Override
   public DatagramSocket blockMulticastGroup(String multicastAddress, String networkInterface, String sourceToBlock, Handler<AsyncResult<DatagramSocket>> handler) {
-    configurable = false;
     try {
       InetAddress sourceAddress;
       if (sourceToBlock == null) {
@@ -127,7 +124,6 @@ public class DefaultDatagramSocket extends ConnectionBase
 
   @Override
   public DatagramSocket blockMulticastGroup(String multicastAddress, String sourceToBlock, Handler<AsyncResult<DatagramSocket>> handler) {
-    configurable = false;
     try {
       addListener(channel().block(InetAddress.getByName(multicastAddress), InetAddress.getByName(sourceToBlock)), handler);
     } catch (UnknownHostException e) {
@@ -138,19 +134,17 @@ public class DefaultDatagramSocket extends ConnectionBase
 
   @Override
   public DatagramSocket listen(int port, String address, Handler<AsyncResult<DatagramSocket>> handler) {
-    configurable = false;
     return listen(new SocketAddress(port, address), handler);
   }
 
   @Override
   public DatagramSocket listen(int port, Handler<AsyncResult<DatagramSocket>> handler) {
-    configurable = false;
     return listen(new SocketAddress(port, "0.0.0.0"), handler);
   }
 
   private DatagramSocket listen(SocketAddress local, Handler<AsyncResult<DatagramSocket>> handler) {
-    configurable = false;
-    ChannelFuture future = channel().bind(new InetSocketAddress(local.getHostAddress(), local.getPort()));
+    InetSocketAddress is = new InetSocketAddress(local.getHostAddress(), local.getPort());
+    ChannelFuture future = channel().bind(is);
     addListener(future, handler);
     return this;
   }
@@ -171,12 +165,6 @@ public class DefaultDatagramSocket extends ConnectionBase
   public DatagramSocket exceptionHandler(Handler<Throwable> handler) {
     exceptionHandler = handler;
     return this;
-  }
-
-  private void checkConfigurable() {
-    if (!configurable) {
-      throw new IllegalStateException("Can't set property after connect or bind has been called");
-    }
   }
 
   @SuppressWarnings("unchecked")
@@ -226,143 +214,21 @@ public class DefaultDatagramSocket extends ConnectionBase
 
   @Override
   @SuppressWarnings("unchecked")
-  public DatagramSocket send(Buffer packet, String host, int port, Handler<AsyncResult<DatagramSocket>> handler) {
-    configurable = false;
+  public DatagramSocket send(Buffer packet, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
     ChannelFuture future = channel().writeAndFlush(new DatagramPacket(packet.getByteBuf(), new InetSocketAddress(host, port)));
     addListener(future, handler);
     return this;
   }
 
   @Override
-  public DatagramSocket send(String str, String host, int port, Handler<AsyncResult<DatagramSocket>> handler) {
-    return send(new Buffer(str), host, port, handler);
+  public DatagramSocket send(String str, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
+    return send(new Buffer(str), port, host, handler);
   }
 
   @Override
-  public DatagramSocket send(String str, String enc, String host, int port, Handler<AsyncResult<DatagramSocket>> handler) {
-    return send(new Buffer(str, enc), host, port, handler);
+  public DatagramSocket send(String str, String enc, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
+    return send(new Buffer(str, enc), port, host, handler);
   }
-
-
-  @Override
-  public int getSendBufferSize() {
-    return channel().config().getSendBufferSize();
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public DatagramSocket setSendBufferSize(int sendBufferSize) {
-    checkConfigurable();
-
-    channel().config().setSendBufferSize(sendBufferSize);
-    return this;
-  }
-
-  @Override
-  public int getReceiveBufferSize() {
-    return channel().config().getReceiveBufferSize();
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public DatagramSocket setReceiveBufferSize(int receiveBufferSize) {
-    checkConfigurable();
-
-    channel().config().setReceiveBufferSize(receiveBufferSize);
-    return this;
-  }
-
-  @Override
-  public int getTrafficClass() {
-    return channel().config().getTrafficClass();
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public DatagramSocket setTrafficClass(int trafficClass) {
-    checkConfigurable();
-
-    channel().config().setTrafficClass(trafficClass);
-    return this;
-  }
-
-  @Override
-  public boolean isReuseAddress() {
-    return channel().config().isReuseAddress();
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public DatagramSocket setReuseAddress(boolean reuseAddress) {
-    checkConfigurable();
-
-    channel().config().setReuseAddress(reuseAddress);
-    return this;
-  }
-
-  @Override
-  public boolean isBroadcast() {
-    return channel().config().isBroadcast();
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public DatagramSocket setBroadcast(boolean broadcast) {
-    checkConfigurable();
-
-    channel().config().setBroadcast(broadcast);
-    return this;
-  }
-
-  @Override
-  public boolean isMulticastLoopbackMode() {
-    return channel().config().isLoopbackModeDisabled();
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public DatagramSocket setMulticastLoopbackMode(boolean loopbackModeDisabled) {
-    checkConfigurable();
-
-    channel().config().setLoopbackModeDisabled(loopbackModeDisabled);
-    return this;
-  }
-
-  @Override
-  public int getMulticastTimeToLive() {
-    return channel().config().getTimeToLive();
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public DatagramSocket setMulticastTimeToLive(int ttl) {
-    checkConfigurable();
-
-    channel().config().setTimeToLive(ttl);
-    return this;
-  }
-
-  @Override
-  public String getMulticastNetworkInterface() {
-    NetworkInterface iface =  channel().config().getNetworkInterface();
-    if (iface == null) {
-      return null;
-    }
-    return iface.getName();
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public DatagramSocket setMulticastNetworkInterface(String iface) {
-    checkConfigurable();
-    try {
-      channel().config().setNetworkInterface(NetworkInterface.getByName(iface));
-    } catch (SocketException e) {
-      throw new IllegalArgumentException("Could not find network interface with name " + iface, e);
-    }
-    return this;
-  }
-
 
   @Override
   public void close(final Handler<AsyncResult<Void>> handler) {
@@ -378,18 +244,46 @@ public class DefaultDatagramSocket extends ConnectionBase
     return (DatagramChannel) channel;
   }
 
-  private static NioDatagramChannel createChannel(org.vertx.java.core.datagram.InternetProtocolFamily family) {
+  private static NioDatagramChannel createChannel(org.vertx.java.core.datagram.InternetProtocolFamily family,
+                                                  DatagramSocketOptions options) {
+    NioDatagramChannel channel;
     if (family == null) {
-      return new NioDatagramChannel();
+      channel = new NioDatagramChannel();
+    } else {
+      switch (family) {
+        case IPv4:
+          channel = new NioDatagramChannel(InternetProtocolFamily.IPv4);
+          break;
+        case IPv6:
+          channel = new NioDatagramChannel(InternetProtocolFamily.IPv6);
+          break;
+        default:
+          channel = new NioDatagramChannel();
+      }
     }
-    switch (family) {
-      case IPv4:
-        return new NioDatagramChannel(InternetProtocolFamily.IPv4);
-      case IPv6:
-        return new NioDatagramChannel(InternetProtocolFamily.IPv6);
-      default:
-        return new NioDatagramChannel();
+    if (options.getSendBufferSize() != -1) {
+      channel.config().setSendBufferSize(options.getSendBufferSize());
     }
+    if (options.getReceiveBufferSize() != -1) {
+      channel.config().setReceiveBufferSize(options.getReceiveBufferSize());
+    }
+    channel.config().setReuseAddress(options.isReuseAddress());
+    if (options.getTrafficClass() != -1) {
+      channel.config().setTrafficClass(options.getTrafficClass());
+    }
+    channel.config().setBroadcast(options.isBroadcast());
+    channel.config().setLoopbackModeDisabled(options.isLoopbackModeDisabled());
+    if (options.getMulticastTimeToLive() != -1) {
+      channel.config().setTimeToLive(options.getMulticastTimeToLive());
+    }
+    if (options.getMulticastNetworkInterface() != null) {
+      try {
+        channel.config().setNetworkInterface(NetworkInterface.getByName(options.getMulticastNetworkInterface()));
+      } catch (SocketException e) {
+        throw new IllegalArgumentException("Could not find network interface with name " + options.getMulticastNetworkInterface());
+      }
+    }
+    return channel;
   }
 
 

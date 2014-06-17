@@ -19,12 +19,13 @@ package org.vertx.java.core.net;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class NetClientOptions extends ClientOptionsBase {
+public class NetClientOptions extends ClientOptions {
 
   private int reconnectAttempts;
   private long reconnectInterval = 1000;
 
   public NetClientOptions() {
+    super();
   }
 
   public NetClientOptions(NetClientOptions other) {

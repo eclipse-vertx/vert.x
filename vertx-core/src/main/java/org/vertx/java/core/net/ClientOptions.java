@@ -19,7 +19,7 @@ package org.vertx.java.core.net;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ClientOptionsBase extends OptionsBase {
+public class ClientOptions extends TCPOptions {
 
   // Client specific TCP stuff
 
@@ -29,10 +29,11 @@ public class ClientOptionsBase extends OptionsBase {
 
   private boolean trustAll;
 
-  public ClientOptionsBase() {
+  public ClientOptions() {
+    super();
   }
 
-  public ClientOptionsBase(ClientOptionsBase other) {
+  public ClientOptions(ClientOptions other) {
     super(other);
     this.connectTimeout = other.connectTimeout;
     this.trustAll = other.trustAll;
@@ -42,7 +43,7 @@ public class ClientOptionsBase extends OptionsBase {
     return trustAll;
   }
 
-  public ClientOptionsBase setTrustAll(boolean trustAll) {
+  public ClientOptions setTrustAll(boolean trustAll) {
     this.trustAll = trustAll;
     return this;
   }
@@ -51,7 +52,7 @@ public class ClientOptionsBase extends OptionsBase {
     return connectTimeout;
   }
 
-  public ClientOptionsBase setConnectTimeout(int connectTimeout) {
+  public ClientOptions setConnectTimeout(int connectTimeout) {
     if (connectTimeout < 0) {
       throw new IllegalArgumentException("connectTimeout must be >= 0");
     }

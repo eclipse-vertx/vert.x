@@ -21,6 +21,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.util.ResourceLeakDetector;
 import org.vertx.java.core.*;
 import org.vertx.java.core.datagram.DatagramSocket;
+import org.vertx.java.core.datagram.DatagramSocketOptions;
 import org.vertx.java.core.datagram.InternetProtocolFamily;
 import org.vertx.java.core.datagram.impl.DefaultDatagramSocket;
 import org.vertx.java.core.dns.DnsClient;
@@ -136,8 +137,8 @@ public class DefaultVertx implements VertxInternal {
   }
 
   @Override
-  public DatagramSocket createDatagramSocket(InternetProtocolFamily family) {
-    return new DefaultDatagramSocket(this, family);
+  public DatagramSocket createDatagramSocket(InternetProtocolFamily family, DatagramSocketOptions options) {
+    return new DefaultDatagramSocket(this, family, options);
   }
 
   public NetServer createNetServer(NetServerOptions options) {

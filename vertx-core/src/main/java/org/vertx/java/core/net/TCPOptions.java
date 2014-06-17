@@ -21,15 +21,10 @@ import org.vertx.java.core.net.impl.SocketDefaults;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class OptionsBase {
+public class TCPOptions extends NetworkOptions {
 
   // TCP stuff
   private static SocketDefaults SOCK_DEFAULTS = SocketDefaults.instance;
-
-  private int sendBufferSize = -1;
-  private int receiveBufferSize = -1;
-  private boolean reuseAddress = true;
-  private int trafficClass = -1;
 
   private boolean tcpNoDelay = true;
   private boolean tcpKeepAlive = SOCK_DEFAULTS.isTcpKeepAlive();
@@ -44,11 +39,8 @@ public class OptionsBase {
   private String trustStorePath;
   private String trustStorePassword;
 
-  public OptionsBase(OptionsBase other) {
-    this.sendBufferSize = other.sendBufferSize;
-    this.receiveBufferSize = other.receiveBufferSize;
-    this.reuseAddress = other.reuseAddress;
-    this.trafficClass = other.trafficClass;
+  public TCPOptions(TCPOptions other) {
+    super(other);
     this.tcpNoDelay = other.tcpNoDelay;
     this.tcpKeepAlive = other.tcpKeepAlive;
     this.soLinger = other.soLinger;
@@ -60,59 +52,15 @@ public class OptionsBase {
     this.trustStorePassword = other.trustStorePassword;
   }
 
-  public OptionsBase() {
-  }
-
-  public int getSendBufferSize() {
-    return sendBufferSize;
-  }
-
-  public OptionsBase setSendBufferSize(int sendBufferSize) {
-    if (sendBufferSize < 1) {
-      throw new IllegalArgumentException("sendBufferSize must be > 0");
-    }
-    this.sendBufferSize = sendBufferSize;
-    return this;
-  }
-
-  public int getReceiveBufferSize() {
-    return receiveBufferSize;
-  }
-
-  public OptionsBase setReceiveBufferSize(int receiveBufferSize) {
-    if (receiveBufferSize < 1) {
-      throw new IllegalArgumentException("receiveBufferSize must be > 0");
-    }
-    this.receiveBufferSize = receiveBufferSize;
-    return this;
-  }
-
-  public boolean isReuseAddress() {
-    return reuseAddress;
-  }
-
-  public OptionsBase setReuseAddress(boolean reuseAddress) {
-    this.reuseAddress = reuseAddress;
-    return this;
-  }
-
-  public int getTrafficClass() {
-    return trafficClass;
-  }
-
-  public OptionsBase setTrafficClass(int trafficClass) {
-    if (trafficClass < 0 || trafficClass > 255) {
-      throw new IllegalArgumentException("trafficClass tc must be 0 <= tc <= 255");
-    }
-    this.trafficClass = trafficClass;
-    return this;
+  public TCPOptions() {
+    super();
   }
 
   public boolean isTcpNoDelay() {
     return tcpNoDelay;
   }
 
-  public OptionsBase setTcpNoDelay(boolean tcpNoDelay) {
+  public TCPOptions setTcpNoDelay(boolean tcpNoDelay) {
     this.tcpNoDelay = tcpNoDelay;
     return this;
   }
@@ -121,7 +69,7 @@ public class OptionsBase {
     return tcpKeepAlive;
   }
 
-  public OptionsBase setTcpKeepAlive(boolean tcpKeepAlive) {
+  public TCPOptions setTcpKeepAlive(boolean tcpKeepAlive) {
     this.tcpKeepAlive = tcpKeepAlive;
     return this;
   }
@@ -130,7 +78,7 @@ public class OptionsBase {
     return soLinger;
   }
 
-  public OptionsBase setSoLinger(int soLinger) {
+  public TCPOptions setSoLinger(int soLinger) {
     if (soLinger < 0) {
       throw new IllegalArgumentException("soLinger must be >= 0");
     }
@@ -142,7 +90,7 @@ public class OptionsBase {
     return usePooledBuffers;
   }
 
-  public OptionsBase setUsePooledBuffers(boolean usePooledBuffers) {
+  public TCPOptions setUsePooledBuffers(boolean usePooledBuffers) {
     this.usePooledBuffers = usePooledBuffers;
     return this;
   }
@@ -151,7 +99,7 @@ public class OptionsBase {
     return ssl;
   }
 
-  public OptionsBase setSsl(boolean ssl) {
+  public TCPOptions setSsl(boolean ssl) {
     this.ssl = ssl;
     return this;
   }
@@ -160,7 +108,7 @@ public class OptionsBase {
     return keyStorePath;
   }
 
-  public OptionsBase setKeyStorePath(String keyStorePath) {
+  public TCPOptions setKeyStorePath(String keyStorePath) {
     this.keyStorePath = keyStorePath;
     return this;
   }
@@ -169,7 +117,7 @@ public class OptionsBase {
     return keyStorePassword;
   }
 
-  public OptionsBase setKeyStorePassword(String keyStorePassword) {
+  public TCPOptions setKeyStorePassword(String keyStorePassword) {
     this.keyStorePassword = keyStorePassword;
     return this;
   }
@@ -178,7 +126,7 @@ public class OptionsBase {
     return trustStorePath;
   }
 
-  public OptionsBase setTrustStorePath(String trustStorePath) {
+  public TCPOptions setTrustStorePath(String trustStorePath) {
     this.trustStorePath = trustStorePath;
     return this;
   }
@@ -187,8 +135,9 @@ public class OptionsBase {
     return trustStorePassword;
   }
 
-  public OptionsBase setTrustStorePassword(String trustStorePassword) {
+  public TCPOptions setTrustStorePassword(String trustStorePassword) {
     this.trustStorePassword = trustStorePassword;
     return this;
   }
+
 }

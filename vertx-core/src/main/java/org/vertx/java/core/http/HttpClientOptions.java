@@ -16,12 +16,12 @@
 
 package org.vertx.java.core.http;
 
-import org.vertx.java.core.net.ClientOptionsBase;
+import org.vertx.java.core.net.ClientOptions;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpClientOptions extends ClientOptionsBase {
+public class HttpClientOptions extends ClientOptions {
 
   // Client specific SSL stuff
 
@@ -35,6 +35,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private boolean tryUseCompression;
 
   public HttpClientOptions() {
+    super();
   }
 
   public HttpClientOptions(HttpClientOptions other) {

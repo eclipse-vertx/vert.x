@@ -17,7 +17,6 @@ package org.vertx.java.core.datagram;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.NetworkSupport;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.SocketAddress;
 import org.vertx.java.core.streams.DrainSupport;
@@ -34,7 +33,7 @@ import org.vertx.java.core.streams.ReadSupport;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public interface DatagramSocket extends DrainSupport<DatagramSocket>, NetworkSupport<DatagramSocket>, ReadSupport<DatagramSocket, DatagramPacket> {
+public interface DatagramSocket extends DrainSupport<DatagramSocket>, ReadSupport<DatagramSocket, DatagramPacket> {
 
   /**
    * Write the given {@link org.vertx.java.core.buffer.Buffer} to the {@link SocketAddress}. The {@link org.vertx.java.core.Handler} will be notified once the
@@ -47,7 +46,7 @@ public interface DatagramSocket extends DrainSupport<DatagramSocket>, NetworkSup
    * @param handler   the {@link org.vertx.java.core.Handler} to notify once the write completes.
    * @return self     itself for method chaining
    */
-  DatagramSocket send(Buffer packet, String host, int port, Handler<AsyncResult<DatagramSocket>> handler);
+  DatagramSocket send(Buffer packet, int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
 
   /**
    * Write the given {@link String} to the {@link org.vertx.java.core.net.SocketAddress} using UTF8 encoding. The {@link Handler} will be notified once the
@@ -60,7 +59,7 @@ public interface DatagramSocket extends DrainSupport<DatagramSocket>, NetworkSup
    * @param handler   the {@link org.vertx.java.core.Handler} to notify once the write completes.
    * @return self     itself for method chaining
    */
-  DatagramSocket send(String str, String host, int port, Handler<AsyncResult<DatagramSocket>> handler);
+  DatagramSocket send(String str, int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
 
   /**
    * Write the given {@link String} to the {@link org.vertx.java.core.net.SocketAddress} using the given encoding. The {@link Handler} will be notified once the
@@ -74,52 +73,7 @@ public interface DatagramSocket extends DrainSupport<DatagramSocket>, NetworkSup
    * @param handler   the {@link org.vertx.java.core.Handler} to notify once the write completes.
    * @return self     itself for method chaining
    */
-  DatagramSocket send(String str, String enc, String host, int port, Handler<AsyncResult<DatagramSocket>> handler);
-
-  /**
-   * Gets the {@link java.net.StandardSocketOptions#SO_BROADCAST} option.
-   */
-  boolean isBroadcast();
-
-  /**
-   * Sets the {@link java.net.StandardSocketOptions#SO_BROADCAST} option.
-   */
-  DatagramSocket setBroadcast(boolean broadcast);
-
-  /**
-   * Gets the {@link java.net.StandardSocketOptions#IP_MULTICAST_LOOP} option.
-   *
-   * @return {@code true} if and only if the loopback mode has been disabled
-   */
-  boolean isMulticastLoopbackMode();
-
-  /**
-   * Sets the {@link java.net.StandardSocketOptions#IP_MULTICAST_LOOP} option.
-   *
-   * @param loopbackModeDisabled
-   *        {@code true} if and only if the loopback mode has been disabled
-   */
-  DatagramSocket setMulticastLoopbackMode(boolean loopbackModeDisabled);
-
-  /**
-   * Gets the {@link java.net.StandardSocketOptions#IP_MULTICAST_TTL} option.
-   */
-  int getMulticastTimeToLive();
-
-  /**
-   * Sets the {@link java.net.StandardSocketOptions#IP_MULTICAST_TTL} option.
-   */
-  DatagramSocket setMulticastTimeToLive(int ttl);
-
-  /**
-   * Gets the {@link java.net.StandardSocketOptions#IP_MULTICAST_IF} option.
-   */
-  String getMulticastNetworkInterface();
-
-  /**
-   * Sets the {@link java.net.StandardSocketOptions#IP_MULTICAST_IF} option.
-   */
-  DatagramSocket setMulticastNetworkInterface(String iface);
+  DatagramSocket send(String str, String enc, int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
 
   /**
    * Close the {@link DatagramSocket} implementation asynchronous and notifies the handler once done.

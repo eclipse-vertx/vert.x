@@ -17,6 +17,7 @@
 package org.vertx.java.core;
 
 import org.vertx.java.core.datagram.DatagramSocket;
+import org.vertx.java.core.datagram.DatagramSocketOptions;
 import org.vertx.java.core.datagram.InternetProtocolFamily;
 import org.vertx.java.core.dns.DnsClient;
 import org.vertx.java.core.eventbus.EventBus;
@@ -76,7 +77,7 @@ public interface Vertx {
    *                operation system to detect it's default.
    * @return socket the created {@link DatagramSocket}.
    */
-  DatagramSocket createDatagramSocket(InternetProtocolFamily family);
+  DatagramSocket createDatagramSocket(InternetProtocolFamily family, DatagramSocketOptions options);
 
   /**
    * Create a SockJS server that wraps an HTTP server

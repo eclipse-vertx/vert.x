@@ -34,6 +34,7 @@ public class HttpServerOptions extends NetServerOptions {
   private int port = 80; // Default port is 80 for HTTP not 0 from NetServerOptions
 
   public HttpServerOptions() {
+    super();
   }
 
   public HttpServerOptions(HttpServerOptions other) {
