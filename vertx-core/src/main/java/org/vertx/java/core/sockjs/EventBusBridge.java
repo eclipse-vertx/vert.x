@@ -121,9 +121,9 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     this.replyTimeout = conf.getLong("reply_timeout", DEFAULT_REPLY_TIMEOUT);
   }
 
-  private void handleSocketClosed(SockJSSocket sock, Map<String, Registration> registrationMap) {
+  private void handleSocketClosed(SockJSSocket sock, Map<String, Registration> registrations) {
     // On close unregister any handlers that haven't been unregistered
-    registrationMap.entrySet().forEach(entry -> {
+    registrations.entrySet().forEach(entry -> {
       handleUnregister(sock, entry.getKey());
       entry.getValue().unregister();
     });
@@ -149,7 +149,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     handleSocketClosed(sock);
   }
 
-  private void handleSocketData(SockJSSocket sock, Buffer data, Map<String, Registration> registrationMap) {
+  private void handleSocketData(SockJSSocket sock, Buffer data, Map<String, Registration> registrations) {
     JsonObject msg = new JsonObject(data.toString());
 
     String type = getMandatoryString(msg, "type");
@@ -164,11 +164,11 @@ public class EventBusBridge implements Handler<SockJSSocket> {
         break;
       case "register":
         address = getMandatoryString(msg, "address");
-        internalHandleRegister(sock, msg, address, registrationMap);
+        internalHandleRegister(sock, msg, address, registrations);
         break;
       case "unregister":
         address = getMandatoryString(msg, "address");
-        internalHandleUnregister(sock, address, registrationMap);
+        internalHandleUnregister(sock, address, registrations);
         break;
       case "ping":
         internalHandlePing(sock);
@@ -193,7 +193,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     }
   }
 
-  private void internalHandleRegister(final SockJSSocket sock, JsonObject message, final String address, Map<String, Registration> registrationMap) {
+  private void internalHandleRegister(final SockJSSocket sock, JsonObject message, final String address, Map<String, Registration> registrations) {
     if (address.length() > maxAddressLength) {
       log.error("Refusing to register as address length > max_address_length");
       return;
@@ -225,15 +225,9 @@ public class EventBusBridge implements Handler<SockJSSocket> {
             }
           }
         };
-        eb.registerHandler(address, handler, ar -> {
-          if (ar.succeeded()) {
-            registrationMap.put(address, ar.result());
-            handlePostRegister(sock, address);
-            info.handlerCount++;
-          } else {
-            log.error("Could not register handler for address " + address, ar.cause());
-          }
-        });
+        Registration reg = eb.registerHandler(address, handler);
+        registrations.put(address, reg);
+        handlePostRegister(sock, address);
       } else {
         // inbound match failed
         if (debug) {
@@ -243,9 +237,9 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     }
   }
 
-  private void internalHandleUnregister(SockJSSocket sock, String address, Map<String, Registration> registrationMap) {
+  private void internalHandleUnregister(SockJSSocket sock, String address, Map<String, Registration> registrations) {
     if (handleUnregister(sock, address)) {
-      Registration reg = registrationMap.remove(address);
+      Registration reg = registrations.remove(address);
       if (reg != null) {
         reg.unregister();
         SockInfo info = sockInfos.get(sock);
@@ -265,10 +259,10 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     if (!handleSocketCreated(sock)) {
       sock.close();
     } else {
-      final Map<String, Registration> registrationMap = new HashMap<>();
+      final Map<String, Registration> registrations = new HashMap<>();
 
-      sock.endHandler(v ->  handleSocketClosed(sock, registrationMap));
-      sock.dataHandler(data ->  handleSocketData(sock, data, registrationMap));
+      sock.endHandler(v ->  handleSocketClosed(sock, registrations));
+      sock.dataHandler(data ->  handleSocketData(sock, data, registrations));
 
       // Start a checker to check for pings
       final PingInfo pingInfo = new PingInfo();

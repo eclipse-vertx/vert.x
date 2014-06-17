@@ -24,6 +24,7 @@ import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.eventbus.Registration;
 import org.vertx.java.core.impl.ConcurrentHashSet;
 import org.vertx.java.core.net.*;
 import org.vertx.java.core.net.impl.SocketDefaults;
@@ -562,11 +563,8 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
       sock.pause();
       Handler<Message<Buffer>> resumeHandler = (m) -> sock.resume();
-      vertx.eventBus().registerHandler("server_resume", resumeHandler, ar -> {
-        assertTrue(ar.succeeded());
-        sock.closeHandler(v -> ar.result().unregister());
-      });
-
+      Registration reg = vertx.eventBus().registerHandler("server_resume", resumeHandler);
+      sock.closeHandler(v -> reg.unregister());
     }).listen(listenHandler);
   }
 
@@ -586,10 +584,8 @@ public class NetTest extends VertxTestBase {
 
   void setHandlers(NetSocket sock) {
     Handler<Message<Buffer>> resumeHandler = m -> sock.resume();
-    vertx.eventBus().registerHandler("client_resume", resumeHandler, ar -> {
-      assertTrue(ar.succeeded());
-      sock.closeHandler(v -> ar.result().unregister());
-    });
+    Registration reg = vertx.eventBus().registerHandler("client_resume", resumeHandler);
+    sock.closeHandler(v -> reg.unregister());
   }
 
   void drainingServer(Handler<AsyncResult<NetServer>> listenHandler) {

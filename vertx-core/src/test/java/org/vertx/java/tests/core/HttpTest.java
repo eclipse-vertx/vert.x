@@ -24,6 +24,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.eventbus.Registration;
 import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.HttpHeadersAdapter;
 import org.vertx.java.core.net.NetClientOptions;
@@ -1753,10 +1754,8 @@ public class HttpTest extends HttpTestBase {
       client.getNow(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
         resp.pause();
         Handler<Message<Buffer>> resumeHandler = msg -> resp.resume();
-        vertx.eventBus().registerHandler("client_resume", resumeHandler, ar -> {
-          assertTrue(ar.succeeded());
-          resp.endHandler(v -> ar.result().unregister());
-        });
+        Registration reg = vertx.eventBus().registerHandler("client_resume", resumeHandler);
+        resp.endHandler(v -> reg.unregister());
       });
     });
 
@@ -2696,10 +2695,8 @@ public class HttpTest extends HttpTestBase {
       req.response().setChunked(true);
       req.pause();
       Handler<Message<Buffer>> resumeHandler = msg -> req.resume();
-      vertx.eventBus().registerHandler("server_resume", resumeHandler, ar -> {
-        assertTrue(ar.succeeded());
-        req.endHandler(v -> ar.result().unregister());
-      });
+      Registration reg = vertx.eventBus().registerHandler("server_resume", resumeHandler);
+      req.endHandler(v -> reg.unregister());
 
       req.dataHandler(buff -> {
         req.response().write(buff);

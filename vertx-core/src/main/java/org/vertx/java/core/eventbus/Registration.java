@@ -32,6 +32,13 @@ public interface Registration {
   String address();
 
   /**
+   * Optional method which can be called to indicate when the registration has been propagated across the cluster.
+   *
+   * @param completionHandler the completion handler
+   */
+  void onCompletion(Handler<AsyncResult<Void>> completionHandler);
+
+  /**
    * Unregisters the handler which created this registration
    */
   void unregister();

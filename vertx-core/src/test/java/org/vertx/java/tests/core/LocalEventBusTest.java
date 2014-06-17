@@ -66,10 +66,8 @@ public class LocalEventBusTest extends EventBusTestBase {
   public void testRegisterUnregister() {
     String str = randomUnicodeString(100);
     Handler<Message> handler = msg -> fail("Should not receive message");
-    eb.registerHandler(ADDRESS1, handler, ar -> {
-      assertTrue(ar.succeeded());
-      ar.result().unregister();
-    });
+    Registration reg = eb.registerHandler(ADDRESS1, handler);
+    reg.unregister();
     eb.send(ADDRESS1, str);
     vertx.setTimer(1000, id -> testComplete());
     await();
@@ -77,16 +75,11 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Test
   public void testUnregisterTwice() {
-    Handler<Message<String>> h = msg -> System.out.println(msg.body());
     Handler<Message> handler = msg -> {};
-    eb.registerHandler(ADDRESS1, handler, ar -> {
-      assertTrue(ar.succeeded());
-      Registration reg = ar.result();
-      reg.unregister();
-      reg.unregister(); // Ok to unregister twice
-      testComplete();
-    });
-    await();
+    Registration reg = eb.registerHandler(ADDRESS1, handler);
+    reg.unregister();
+    reg.unregister(); // Ok to unregister twice
+    testComplete();
   }
 
   @Test
@@ -103,10 +96,11 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testRegisterWithCompletionHandler() {
     String str = randomUnicodeString(100);
-    eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
+    Registration reg = eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
       assertEquals(str, msg.body());
       testComplete();
-    }, ar -> {
+    });
+    reg.onCompletion(ar -> {
       assertTrue(ar.succeeded());
       eb.send(ADDRESS1, str);
     });
@@ -165,18 +159,12 @@ public class LocalEventBusTest extends EventBusTestBase {
       }
     };
 
-    eb.registerHandler(ADDRESS1, handler1, ar -> {
-      assertTrue(ar.succeeded());
-      eb.registerHandler(ADDRESS1, handler2, ar2 -> {
-        assertTrue(ar2.succeeded());
-        eb.registerHandler(ADDRESS1, handler3, ar3 -> {
-          assertTrue(ar3.succeeded());
-          ar.result().unregister();
-          eb.send(ADDRESS1, str);
-          eb.send(ADDRESS1, str);
-        });
-      });
-    });
+    Registration reg = eb.registerHandler(ADDRESS1, handler1);
+    eb.registerHandler(ADDRESS1, handler2);
+    eb.registerHandler(ADDRESS1, handler3);
+    reg.unregister();
+    eb.send(ADDRESS1, str);
+    eb.send(ADDRESS1, str);
 
     await();
   }
@@ -500,14 +488,10 @@ public class LocalEventBusTest extends EventBusTestBase {
       fail("Should not be called");
     };
 
-    eb.registerHandler(ADDRESS1, handler1, ar -> {
-      assertTrue(ar.succeeded());
-      eb.registerHandler(ADDRESS1, handler2, ar2 -> {
-        assertTrue(ar2.succeeded());
-        ar2.result().unregister();
-        eb.publish(ADDRESS1, str);
-      });
-    });
+    eb.registerHandler(ADDRESS1, handler1);
+    Registration reg = eb.registerHandler(ADDRESS1, handler2);
+    reg.unregister();
+    eb.publish(ADDRESS1, str);
 
     await();
   }
