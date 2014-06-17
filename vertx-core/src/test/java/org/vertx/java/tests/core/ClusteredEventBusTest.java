@@ -86,20 +86,6 @@ public class ClusteredEventBusTest extends EventBusTestBase {
   }
 
   @Override
-  protected <T> void testSendNull(T obj) {
-    startNodes(2);
-    Registration reg = vertices[1].eventBus().registerHandler(ADDRESS1, (Message<T> msg) -> {
-      assertNull(msg.body());
-      testComplete();
-    });
-    reg.onCompletion(ar -> {
-      assertTrue(ar.succeeded());
-      vertices[0].eventBus().send(ADDRESS1, (T)null);
-    });
-    await();
-  }
-
-  @Override
   protected <T> void testReply(T val, Consumer<T> consumer) {
     startNodes(2);
     String str = randomUnicodeString(1000);
@@ -119,56 +105,6 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       });
     });
 
-    await();
-  }
-
-  @Override
-  protected <T> void testReplyNull(T val) {
-    startNodes(2);
-    String str = randomUnicodeString(1000);
-    Registration reg = vertices[1].eventBus().registerHandler(ADDRESS1, msg -> {
-      assertEquals(str, msg.body());
-      msg.reply((T)null);
-    });
-    reg.onCompletion(ar -> {
-      assertTrue(ar.succeeded());
-      vertices[0].eventBus().send(ADDRESS1, str, (Message<T>reply) -> {
-        assertNull(reply.body());
-        testComplete();
-      });
-    });
-    await();
-  }
-
-
-  @Override
-  protected <T> void testPublishNull(T val) {
-    int numNodes = 3;
-    startNodes(numNodes);
-    AtomicInteger count = new AtomicInteger();
-    class MyHandler implements Handler<Message<T>> {
-      @Override
-      public void handle(Message<T> msg) {
-        assertNull(msg.body());
-        if (count.incrementAndGet() == numNodes - 1) {
-          testComplete();
-        }
-      }
-    }
-    AtomicInteger registerCount = new AtomicInteger(0);
-    class MyRegisterHandler implements Handler<AsyncResult<Void>> {
-      @Override
-      public void handle(AsyncResult<Void> ar) {
-        assertTrue(ar.succeeded());
-        if (registerCount.incrementAndGet() == 2) {
-          vertices[0].eventBus().publish(ADDRESS1, (T)null);
-        }
-      }
-    }
-    Registration reg = vertices[2].eventBus().registerHandler(ADDRESS1, new MyHandler());
-    reg.onCompletion(new MyRegisterHandler());
-    reg = vertices[1].eventBus().registerHandler(ADDRESS1, new MyHandler());
-    reg.onCompletion(new MyRegisterHandler());
     await();
   }
 

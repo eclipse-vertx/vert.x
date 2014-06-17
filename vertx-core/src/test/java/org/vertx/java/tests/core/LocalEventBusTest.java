@@ -534,16 +534,6 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Override
-  protected <T> void testSendNull(T obj) {
-    eb.registerHandler(ADDRESS1,msg -> {
-      assertNull(msg.body());
-      testComplete();
-    });
-    eb.send(ADDRESS1, (T)null);
-    await();
-  }
-
-  @Override
   protected <T> void testReply(T val, Consumer<T> consumer) {
     String str = randomUnicodeString(1000);
     eb.registerHandler(ADDRESS1, msg -> {
@@ -558,38 +548,6 @@ public class LocalEventBusTest extends EventBusTestBase {
       }
       testComplete();
     });
-    await();
-  }
-
-  @Override
-  protected <T> void testReplyNull(T val) {
-    String str = randomUnicodeString(1000);
-    eb.registerHandler(ADDRESS1, msg -> {
-      assertEquals(str, msg.body());
-      msg.reply((T)null);
-    });
-    eb.send(ADDRESS1, str, (Message<T>reply) -> {
-      assertNull(reply.body());
-      testComplete();
-    });
-    await();
-  }
-
-  @Override
-  protected <T> void testPublishNull(T val) {
-    AtomicInteger count = new AtomicInteger();
-    class MyHandler implements Handler<Message<T>> {
-      @Override
-      public void handle(Message<T> msg) {
-        assertNull(msg.body());
-        if (count.incrementAndGet() == 2) {
-          testComplete();
-        }
-      }
-    }
-    eb.registerHandler(ADDRESS1, new MyHandler());
-    eb.registerHandler(ADDRESS1, new MyHandler());
-    eb.publish(ADDRESS1, (T)null);
     await();
   }
 
@@ -614,8 +572,5 @@ public class LocalEventBusTest extends EventBusTestBase {
     eb.publish(ADDRESS1, (T)val);
     await();
   }
-
-
-
 }
 

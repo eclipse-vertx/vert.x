@@ -34,14 +34,24 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   protected static final String ADDRESS2 = "some-address2";
 
   @Test
-  public void testSendString() {
-    String str = randomUnicodeString(100);
-    testSend(str);
+  public void testSendNull() {
+    testSend(null);
   }
 
   @Test
-  public void testSendNullString() {
-    testSendNull((String)null);
+  public void testReplyNull() {
+    testReply(null);
+  }
+
+  @Test
+  public void testPublishNull() {
+    testPublish(null);
+  }
+
+  @Test
+  public void testSendString() {
+    String str = randomUnicodeString(100);
+    testSend(str);
   }
 
   @Test
@@ -51,19 +61,9 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   }
 
   @Test
-  public void testReplyNullString() {
-    testReplyNull((String) null);
-  }
-
-  @Test
   public void testPublishString() {
     String str = randomUnicodeString(100);
     testPublish(str);
-  }
-
-  @Test
-  public void testPublishNullString() {
-    testPublishNull((String)null);
   }
 
   @Test
@@ -77,11 +77,6 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   }
 
   @Test
-  public void testSendNullBoolean() {
-    testSendNull((Boolean)null);
-  }
-
-  @Test
   public void testReplyBooleanTrue() {
     testReply(true);
   }
@@ -89,11 +84,6 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   @Test
   public void testReplyBooleanFalse() {
     testReply(false);
-  }
-
-  @Test
-  public void testReplyNullBoolean() {
-    testReplyNull((Boolean) null);
   }
 
   @Test
@@ -107,22 +97,12 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   }
 
   @Test
-  public void testPublishNullBoolean() {
-    testPublishNull((Boolean) null);
-  }
-
-  @Test
   public void testSendBuffer() {
     Buffer sent = randomBuffer(100);
     testSend(sent, (buffer) -> {
       buffersEqual(sent, buffer);
       assertFalse(sent == buffer); // Make sure it's copied
     });
-  }
-
-  @Test
-  public void testSendNullBuffer() {
-    testSendNull((Buffer)null);
   }
 
   @Test
@@ -135,11 +115,6 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   }
 
   @Test
-  public void testReplyNullBuffer() {
-    testReplyNull((Buffer) null);
-  }
-
-  @Test
   public void testPublishBuffer() {
     Buffer sent = randomBuffer(100);
     testPublish(sent, (buffer) -> {
@@ -149,18 +124,8 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   }
 
   @Test
-  public void testPublishNullBuffer() {
-    testPublishNull((Buffer)null);
-  }
-
-  @Test
   public void testSendByte() {
     testSend(randomByte());
-  }
-
-  @Test
-  public void testSendNullByte() {
-    testSendNull((Byte) null);
   }
 
   @Test
@@ -169,18 +134,8 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   }
 
   @Test
-  public void testReplyNullByte() {
-    testReplyNull((Byte) null);
-  }
-
-  @Test
   public void testPublishByte() {
     testPublish(randomByte());
-  }
-
-  @Test
-  public void testPublishNullByte() {
-    testPublish((Byte)null);
   }
 
   @Test
@@ -193,22 +148,12 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   }
 
   @Test
-  public void testSendNullByteArray() {
-    testSendNull((byte[])null);
-  }
-
-  @Test
   public void testReplyByteArray() {
     byte[] sent = randomByteArray(100);
     testReply(sent, (bytes) -> {
       byteArraysEqual(sent, bytes);
       assertFalse(sent == bytes); // Make sure it's copied
     });
-  }
-
-  @Test
-  public void testReplyNullByteArray() {
-    testReplyNull((byte[]) null);
   }
 
   @Test
@@ -221,18 +166,8 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   }
 
   @Test
-  public void testPublishNullByteArray() {
-    testPublishNull((byte[])null);
-  }
-
-  @Test
   public void testSendCharacter() {
     testSend(randomChar());
-  }
-
-  @Test
-  public void testSendNullCharacter() {
-    testSendNull((Character)null);
   }
 
   @Test
@@ -241,18 +176,8 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   }
 
   @Test
-  public void testReplyNullCharacter() {
-    testReplyNull((Character) null);
-  }
-
-  @Test
   public void testPublishCharacter() {
     testPublish(randomChar());
-  }
-
-  @Test
-  public void testPublishNullCharacter() {
-    testPublishNull((Character)null);
   }
 
   @Test
@@ -261,18 +186,8 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   }
 
   @Test
-  public void testSendNullDouble() {
-    testSendNull((Double)null);
-  }
-
-  @Test
   public void testReplyDouble() {
     testReply(randomDouble());
-  }
-
-  @Test
-  public void testReplyNullDouble() {
-    testReplyNull((Double) null);
   }
 
   @Test
@@ -281,18 +196,8 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   }
 
   @Test
-  public void testPublishNullDouble() {
-    testPublishNull((Double)null);
-  }
-
-  @Test
   public void testSendFloat() {
     testSend(randomFloat());
-  }
-
-  @Test
-  public void testSendNullFloat() {
-    testSendNull((Float)null);
   }
 
   @Test
@@ -301,18 +206,8 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   }
 
   @Test
-  public void testReplyNullFloat() {
-    testReplyNull((Float) null);
-  }
-
-  @Test
   public void testPublishFloat() {
     testPublish(randomFloat());
-  }
-
-  @Test
-  public void testPublishNullFloat() {
-    testPublishNull((Float)null);
   }
 
   @Test
@@ -321,18 +216,8 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   }
 
   @Test
-  public void testSendNullInteger() {
-    testSendNull((Integer)null);
-  }
-
-  @Test
   public void testReplyInteger() {
     testReply(randomInt());
-  }
-
-  @Test
-  public void testReplyNullInteger() {
-    testReplyNull((Integer) null);
   }
 
   @Test
@@ -341,18 +226,8 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   }
 
   @Test
-  public void testPublishNullInteger() {
-    testPublishNull((Integer)null);
-  }
-
-  @Test
   public void testSendLong() {
     testSend(randomLong());
-  }
-
-  @Test
-  public void testSendNullLong() {
-    testSendNull((Long)null);
   }
 
   @Test
@@ -361,18 +236,8 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   }
 
   @Test
-  public void testReplyNullLong() {
-    testReplyNull((Long) null);
-  }
-
-  @Test
   public void testPublishLong() {
     testPublish(randomLong());
-  }
-
-  @Test
-  public void testPublishNullLong() {
-    testPublishNull((Long)null);
   }
 
   @Test
@@ -381,28 +246,13 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   }
 
   @Test
-  public void testSendNullShort() {
-    testSendNull((Short)null);
-  }
-
-  @Test
   public void testReplyShort() {
     testReply(randomShort());
   }
 
   @Test
-  public void testReplyNullShort() {
-    testReplyNull((Short) null);
-  }
-
-  @Test
   public void testPublishShort() {
     testPublish(randomShort());
-  }
-
-  @Test
-  public void testPublishNullShort() {
-    testPublishNull((Short)null);
   }
 
   @Test
@@ -416,11 +266,6 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   }
 
   @Test
-  public void testSendNullJsonArray() {
-    testSendNull((JsonArray)null);
-  }
-
-  @Test
   public void testReplyJsonArray() {
     JsonArray arr = new JsonArray();
     arr.add(randomUnicodeString(100)).add(randomInt()).add(randomBoolean());
@@ -428,11 +273,6 @@ public abstract class EventBusTestBase extends AsyncTestBase {
       assertEquals(arr, received);
       assertFalse(arr == received); // Make sure it's copied
     });
-  }
-
-  @Test
-  public void testReplyNullJsonArray() {
-    testReplyNull((JsonArray) null);
   }
 
   @Test
@@ -446,11 +286,6 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   }
 
   @Test
-  public void testPublishNullJsonArray() {
-    testPublishNull((JsonArray)null);
-  }
-
-  @Test
   public void testSendJsonObject() {
     JsonObject obj = new JsonObject();
     obj.putString(randomUnicodeString(100), randomUnicodeString(100)).putNumber(randomUnicodeString(100), randomInt());
@@ -458,11 +293,6 @@ public abstract class EventBusTestBase extends AsyncTestBase {
       assertEquals(obj, received);
       assertFalse(obj == received); // Make sure it's copied
     });
-  }
-
-  @Test
-  public void testSendNullJsonObject() {
-    testSendNull((JsonObject)null);
   }
 
   @Test
@@ -476,11 +306,6 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   }
 
   @Test
-  public void testReplyNullJsonObject() {
-    testReplyNull((JsonObject) null);
-  }
-
-  @Test
   public void testPublishJsonObject() {
     JsonObject obj = new JsonObject();
     obj.putString(randomUnicodeString(100), randomUnicodeString(100)).putNumber(randomUnicodeString(100), randomInt());
@@ -490,18 +315,11 @@ public abstract class EventBusTestBase extends AsyncTestBase {
     });
   }
 
-  @Test
-  public void testPublishNullJsonObject() {
-    testPublishNull((JsonObject)null);
-  }
-
   protected <T> void testSend(T val) {
     testSend(val, null);
   }
 
   protected abstract <T> void testSend(T val, Consumer<T> consumer);
-
-  protected abstract <T> void testSendNull(T obj);
 
   protected <T> void testReply(T val) {
     testReply(val, null);
@@ -509,13 +327,9 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   protected abstract <T> void testReply(T val, Consumer<T> consumer);
 
-  protected abstract <T> void testReplyNull(T val);
-
   protected <T> void testPublish(T val) {
     testPublish(val, null);
   }
-
-  protected abstract <T> void testPublishNull(T val) ;
 
   protected abstract <T> void testPublish(T val, Consumer<T> consumer);
 }
