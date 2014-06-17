@@ -228,6 +228,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
         Registration reg = eb.registerHandler(address, handler);
         registrations.put(address, reg);
         handlePostRegister(sock, address);
+        info.handlerCount++;
       } else {
         // inbound match failed
         if (debug) {
