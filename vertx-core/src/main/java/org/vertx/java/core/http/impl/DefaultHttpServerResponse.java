@@ -57,6 +57,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   private MultiMap headers;
   private LastHttpContent trailing;
   private MultiMap trailers;
+  private boolean statusMessageSet;
 
   DefaultHttpServerResponse(final VertxInternal vertx, ServerConnection conn, HttpRequest request) {
   	this.vertx = vertx;
@@ -93,7 +94,13 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
 
   @Override
   public HttpServerResponse setStatusCode(int statusCode) {
-    this.response.setStatus(new HttpResponseStatus(statusCode, response.getStatus().reasonPhrase()));
+    HttpResponseStatus status;
+    if(statusMessageSet) {
+      status = new HttpResponseStatus(statusCode, response.getStatus().reasonPhrase());
+    } else {
+      status = HttpResponseStatus.valueOf(statusCode);
+    }
+    this.response.setStatus(status);
     return this;
   }
 
@@ -105,6 +112,7 @@ public class DefaultHttpServerResponse implements HttpServerResponse {
   @Override
   public HttpServerResponse setStatusMessage(String statusMessage) {
     this.response.setStatus(new HttpResponseStatus(response.getStatus().code(), statusMessage));
+    statusMessageSet = true;
     return this;
   }
 
