@@ -17,7 +17,6 @@
 package org.vertx.java.core.sockjs.impl;
 
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.json.DecodeException;
@@ -26,7 +25,6 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.shareddata.Shareable;
 import org.vertx.java.core.sockjs.SockJSSocket;
 
-import java.net.InetSocketAddress;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
@@ -40,7 +38,7 @@ import java.util.Queue;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class Session extends SockJSSocketBase implements Shareable {
+abstract class Session extends SockJSSocketBase implements Shareable {
 
   private static final Logger log = LoggerFactory.getLogger(Session.class);
   private final Map<String, Session> sessions;
@@ -62,10 +60,6 @@ class Session extends SockJSSocketBase implements Shareable {
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
   private boolean handleCalled;
-  private InetSocketAddress localAddress;
-  private InetSocketAddress remoteAddress;
-  private String uri;
-  private MultiMap headers;
 
   Session(VertxInternal vertx, Map<String, Session> sessions, long heartbeatPeriod,
           Handler<SockJSSocket> sockHandler) {
@@ -173,26 +167,6 @@ class Session extends SockJSSocketBase implements Shareable {
     if (listener != null && handleCalled) {
       listener.sessionClosed();
     }
-  }
-
-  @Override
-  public InetSocketAddress remoteAddress() {
-    return remoteAddress;
-  }
-
-  @Override
-  public InetSocketAddress localAddress() {
-    return localAddress;
-  }
-
-  @Override
-  public MultiMap headers() {
-    return headers;
-  }
-
-  @Override
-  public String uri() {
-    return uri;
   }
 
   synchronized boolean isClosed() {
@@ -365,13 +339,5 @@ class Session extends SockJSSocketBase implements Shareable {
     StringBuilder sb = new StringBuilder("o");
     lst.sendFrame(sb.toString());
     openWritten = true;
-  }
-
-  void setInfo(InetSocketAddress localAddress, InetSocketAddress remoteAddress, String uri,
-               MultiMap headers) {
-    this.localAddress = localAddress;
-    this.remoteAddress = remoteAddress;
-    this.uri = uri;
-    this.headers = BaseTransport.removeCookieHeaders(headers);
   }
 }

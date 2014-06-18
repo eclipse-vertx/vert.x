@@ -16,6 +16,9 @@
 
 package org.vertx.java.core.http.impl;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
+
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
@@ -62,6 +65,11 @@ public class DefaultServerWebSocket extends WebSocketImplBase<ServerWebSocket> i
   @Override
   public MultiMap headers() {
     return headers;
+  }
+  
+  @Override
+  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
+    return conn.getPeerCertificateChain();
   }
 
   @Override

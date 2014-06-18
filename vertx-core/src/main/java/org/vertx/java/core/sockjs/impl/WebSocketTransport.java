@@ -16,6 +16,8 @@
 
 package org.vertx.java.core.sockjs.impl;
 
+import java.util.Map;
+
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
@@ -28,8 +30,6 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.sockjs.SockJSSocket;
-
-import java.util.Map;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -49,8 +49,7 @@ class WebSocketTransport extends BaseTransport {
 
       public void handle(final WebSocketMatcher.Match match) {
         if (log.isTraceEnabled()) log.trace("WS, handler");
-        final Session session = new Session(vertx, sessions, config.getLong("heartbeat_period"), sockHandler);
-        session.setInfo(match.ws.localAddress(), match.ws.remoteAddress(), match.ws.uri(), match.ws.headers());
+        final Session session = new WebSocketSession(vertx, sessions, config.getLong("heartbeat_period"), sockHandler, match.ws);
         session.register(new WebSocketListener(match.ws, session));
       }
     });
