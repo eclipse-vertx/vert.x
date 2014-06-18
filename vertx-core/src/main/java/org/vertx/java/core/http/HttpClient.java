@@ -58,11 +58,12 @@ public interface HttpClient extends ClientSSLSupport<HttpClient>, TCPSupport<Htt
   int getMaxPoolSize();
 
   /**
-   * If {@code keepAlive} is {@code true} then, after the request has ended the connection will be returned to the pool
-   * where it can be used by another request. In this manner, many HTTP requests can be pipe-lined over an HTTP connection.
+   * If {@code keepAlive} is {@code true} then the connection will be returned to the pool after the request has ended (if
+   * {@code pipelining} is {@code true}), or after both request and response have ended (if {@code pipelining} is
+   * {@code false}). In this manner, many HTTP requests can reuse the same HTTP connection.
    * Keep alive connections will not be closed until the {@link #close() close()} method is invoked.<p>
    * If {@code keepAlive} is {@code false} then a new connection will be created for each request and it won't ever go in the pool,
-   * the connection will closed after the response has been received. Even with no keep alive,
+   * the connection will get closed after the response has been received. Even with no keep alive,
    * the client will not allow more than {@link #getMaxPoolSize()} connections to be created at any one time. <p>
    * @return A reference to this, so multiple invocations can be chained together.
    */
@@ -73,6 +74,22 @@ public interface HttpClient extends ClientSSLSupport<HttpClient>, TCPSupport<Htt
    * @return Is the client keep alive?
    */
   boolean isKeepAlive();
+
+  /**
+   * If {@code pipelining} is {@code true} and {@code keepAlive} is also {@code true} then, after the request has ended the
+   * connection will be returned to the pool where it can be used by another request. In this manner, many HTTP requests can
+   * be pipelined over an HTTP connection. If {@code pipelining} is {@code false} and {@code keepAlive} is {@code true}, then
+   * the connection will be returned to the pool when both request and response have ended. If {@code keepAlive} is false,
+   * then pipelining value is ignored.
+   * @return A reference to this, so multiple invocations can be chained together.
+   */
+  HttpClient setPipelining(boolean pipelining);
+
+  /**
+   *
+   * @return Is enabled HTTP pipelining?
+   */
+  boolean isPipelining();
 
   /**
    * Set the port that the client will attempt to connect to the server on to {@code port}. The default value is
