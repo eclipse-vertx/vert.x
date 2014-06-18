@@ -25,6 +25,10 @@ public interface HttpPool {
 
   int getMaxPoolSize();
 
+  void setMaxWaiterQueueSize(int maxWaiterQueueSize);
+
+  int getMaxWaiterQueueSize();
+
   void close();
 
   void getConnection(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, DefaultContext context);
