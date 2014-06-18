@@ -11,9 +11,6 @@ if "%OS%"=="Windows_NT" setlocal
 @rem Add default JVM options here. You can also use JAVA_OPTS and VERTX_OPTS to pass JVM options to this script.
 @rem set VERTX_OPTS=-Dvertx.serialiseBlockingActions=true -Dvertx.javaCompilerOptions=-Xlint:deprecation
 
-set JVM_OPTS=
-
-set JMX_OPTS=
 @rem To enable JMX uncomment the following
 @rem set JMX_OPTS=-Dcom.sun.management.jmxremote -Dvertx.management.jmx=true -Dhazelcast.jmx=true
 
