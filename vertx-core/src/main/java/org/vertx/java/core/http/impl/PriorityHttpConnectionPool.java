@@ -88,7 +88,7 @@ public abstract class PriorityHttpConnectionPool implements HttpPool {
           break outer;
         }
         // Add to waiters
-        if(maxWaiterQueueSize == -1 || maxWaiterQueueSize > waiters.size()){
+        if (maxWaiterQueueSize == -1 || maxWaiterQueueSize > waiters.size()) {
           waiters.add(new Waiter(handler, connectExceptionHandler, context));  
         } else {
           // There are too many requests in waiter queue. Return exception to avoid OOM.
