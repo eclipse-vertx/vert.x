@@ -21,6 +21,7 @@ import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import org.vertx.java.core.AsyncResult;
@@ -305,6 +306,18 @@ public class DefaultNetClient implements NetClient {
     return tcpHelper.isUsePooledBuffers();
   }
 
+  @Override
+  public NetClient setIdleTimeout(int idleTimeout) {
+    checkConfigurable();
+    tcpHelper.setIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  @Override
+  public int getIdleTimeout() {
+    return tcpHelper.getIdleTimeout();
+  }
+
   private void checkConfigurable() {
     if (!configurable) {
       throw new IllegalStateException("Can't set property after connect has been called");
@@ -327,6 +340,16 @@ public class DefaultNetClient implements NetClient {
             SslHandler sslHandler = tcpHelper.createSslHandler(vertx, true);
             pipeline.addLast("ssl", sslHandler);
           }
+
+          // Handlers to close connections in idle state (inactivity during a period of time)
+          if (tcpHelper.getIdleTimeout() > 0 && !tcpHelper.isTCPKeepAlive()) {
+            // IdleStateHandler accepts 3 parameters: readerIdleTime, writerIdleTime, and allIdleTime.
+            // Only allIdleTime is enabled (different from 0) to trigger an event
+            // when neither read nor write was performed for the specified period of time.
+            pipeline.addLast("idle", new IdleStateHandler(0, 0, tcpHelper.getIdleTimeout()));
+            pipeline.addLast("closeIdle", CloseIdleHandler.INSTANCE);
+          }
+
           if (tcpHelper.isSSL()) {
             // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
             pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support

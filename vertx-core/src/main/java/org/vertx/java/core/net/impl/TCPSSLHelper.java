@@ -66,6 +66,7 @@ public class TCPSSLHelper {
   private int acceptBackLog = 1024;
   private int connectTimeout = 60000;
   private boolean usePooledBuffers;
+  private int idleTimeout = 0;
 
   private SSLContext sslContext;
 
@@ -285,6 +286,14 @@ public class TCPSSLHelper {
 
   public boolean isUsePooledBuffers() {
     return usePooledBuffers;
+  }
+
+  public void setIdleTimeout(int idleTimeout) {
+    this.idleTimeout = idleTimeout;
+  }
+
+  public int getIdleTimeout() {
+    return idleTimeout;
   }
 
   /*

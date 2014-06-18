@@ -26,6 +26,7 @@ import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.GlobalEventExecutor;
@@ -129,6 +130,16 @@ public class DefaultNetServer implements NetServer, Closeable {
               SslHandler sslHandler = tcpHelper.createSslHandler(vertx, false);
               pipeline.addLast("ssl", sslHandler);
             }
+
+            // Handlers to close connections in idle state (inactivity during a period of time)
+            if (tcpHelper.getIdleTimeout() > 0 && !tcpHelper.isTCPKeepAlive()) {
+              // IdleStateHandler accepts 3 parameters: readerIdleTime, writerIdleTime, and allIdleTime.
+              // Only allIdleTime is enabled (different from 0) to trigger an event
+              // when neither read nor write was performed for the specified period of time.
+              pipeline.addLast("idle", new IdleStateHandler(0, 0, tcpHelper.getIdleTimeout()));
+              pipeline.addLast("closeIdle", CloseIdleHandler.INSTANCE);
+            }
+
             if (tcpHelper.isSSL()) {
               // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
               pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
@@ -477,6 +488,18 @@ public class DefaultNetServer implements NetServer, Closeable {
   @Override
   public boolean isUsePooledBuffers() {
     return tcpHelper.isUsePooledBuffers();
+  }
+
+  @Override
+  public NetServer setIdleTimeout(int idleTimeout) {
+    checkListening();
+    tcpHelper.setIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  @Override
+  public int getIdleTimeout() {
+    return tcpHelper.getIdleTimeout();
   }
 
   private void actualClose(final DefaultContext closeContext, final Handler<AsyncResult<Void>> done) {

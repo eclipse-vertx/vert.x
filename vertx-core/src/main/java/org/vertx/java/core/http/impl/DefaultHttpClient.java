@@ -21,6 +21,7 @@ import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import org.vertx.java.core.AsyncResult;
@@ -36,6 +37,7 @@ import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.net.impl.CloseIdleHandler;
 import org.vertx.java.core.net.impl.TCPSSLHelper;
 import org.vertx.java.core.net.impl.VertxEventLoopGroup;
 
@@ -625,6 +627,20 @@ public class DefaultHttpClient implements HttpClient {
   }
 
   @Override
+  public HttpClient setIdleTimeout(int idleTimeout) {
+    checkClosed();
+    checkConfigurable();
+    tcpHelper.setIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  @Override
+  public int getIdleTimeout() {
+    checkClosed();
+    return tcpHelper.getIdleTimeout();
+  }
+
+  @Override
   public HttpClient setTryUseCompression(boolean tryUseCompression) {
     checkClosed();
     this.tryUseCompression = tryUseCompression;
@@ -693,6 +709,15 @@ public class DefaultHttpClient implements HttpClient {
             }
             engine.setUseClientMode(true); //We are on the client side of the connection
             pipeline.addLast("ssl", new SslHandler(engine));
+          }
+
+          // Handlers to close connections in idle state (inactivity during a period of time)
+          if (tcpHelper.getIdleTimeout() > 0 && !tcpHelper.isTCPKeepAlive()) {
+            // IdleStateHandler accepts 3 parameters: readerIdleTime, writerIdleTime, and allIdleTime.
+            // Only allIdleTime is enabled (different from 0) to trigger an event
+            // when neither read nor write was performed for the specified period of time.
+            pipeline.addLast("idle", new IdleStateHandler(0, 0, tcpHelper.getIdleTimeout()));
+            pipeline.addLast("closeIdle", CloseIdleHandler.INSTANCE);
           }
 
           pipeline.addLast("codec", new HttpClientCodec(4096, 8192, 8192, false, false));

@@ -30,6 +30,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import org.vertx.java.core.AsyncResult;
@@ -187,6 +188,16 @@ public class DefaultHttpServer implements HttpServer, Closeable {
                 }
                 pipeline.addLast("ssl", new SslHandler(engine));
               }
+
+              // Handlers to close connections in idle state (inactivity during a period of time)
+              if (tcpHelper.getIdleTimeout() > 0 && !tcpHelper.isTCPKeepAlive()) {
+                // IdleStateHandler accepts 3 parameters: readerIdleTime, writerIdleTime, and allIdleTime.
+                // Only allIdleTime is enabled (different from 0) to trigger an event
+                // when neither read nor write was performed for the specified period of time.
+                pipeline.addLast("idle", new IdleStateHandler(0, 0, tcpHelper.getIdleTimeout()));
+                pipeline.addLast("closeIdle", CloseIdleHandler.INSTANCE);
+              }
+
               pipeline.addLast("flashpolicy", new FlashPolicyHandler());
               pipeline.addLast("httpDecoder", new HttpRequestDecoder(4096, 8192, 8192, false));
               pipeline.addLast("httpEncoder", new VertxHttpResponseEncoder());
@@ -502,6 +513,18 @@ public class DefaultHttpServer implements HttpServer, Closeable {
   @Override
   public boolean isUsePooledBuffers() {
     return tcpHelper.isUsePooledBuffers();
+  }
+
+  @Override
+  public HttpServer setIdleTimeout(int idleTimeout) {
+    checkListening();
+    tcpHelper.setIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  @Override
+  public int getIdleTimeout() {
+    return tcpHelper.getIdleTimeout();
   }
 
   @Override
