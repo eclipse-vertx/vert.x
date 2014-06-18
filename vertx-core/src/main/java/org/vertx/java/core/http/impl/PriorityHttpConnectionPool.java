@@ -191,9 +191,9 @@ public abstract class PriorityHttpConnectionPool implements HttpPool {
     if (!available.isEmpty()) {
       final boolean useOccupiedConnections = connectionCount >= maxPoolSize;
       final Iterator<ClientConnection> clientConnectionIterator = available.iterator();
-      while (clientConnectionIterator.hasNext()){
+      while (clientConnectionIterator.hasNext()) {
         final ClientConnection c = clientConnectionIterator.next();
-        if(c.isClosed()){
+        if (c.isClosed()) {
           // remove closed connections from pool
           clientConnectionIterator.remove();
           continue;
@@ -207,8 +207,8 @@ public abstract class PriorityHttpConnectionPool implements HttpPool {
 
         // prevent a fully occupied from picking more requests since in this case the new incoming requests will probably time out.
         if (c.isFullyOccupied()) {
-            clientConnectionIterator.remove();
-            continue;
+          clientConnectionIterator.remove();
+          continue;
         }
 
         if (useOccupiedConnections) {
