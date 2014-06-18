@@ -1,5 +1,7 @@
 ## What is vert.x?
 
+**Please note that the master branch is currently the development branch for Vert.x 3.0. For Vert.x 2, please see the 2.x branch**
+
 Vert.x is a polyglot, non-blocking, event-driven application platform that runs on the JVM.
 
 Some of the key highlights include:
