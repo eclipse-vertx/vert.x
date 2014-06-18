@@ -22,10 +22,12 @@ import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
+
 import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.Queue;
 import java.util.Set;
+import java.util.Iterator;
 
 /**
  *
@@ -40,6 +42,7 @@ public abstract class PriorityHttpConnectionPool implements HttpPool {
   private final Set<ClientConnection> allConnections = new ConcurrentHashSet<>();
   private int maxPoolSize = 1;
   private int connectionCount;
+  private int maxWaiterQueueSize = -1;
   private final Queue<Waiter> waiters = new ArrayDeque<>();
 
   /**
@@ -55,6 +58,14 @@ public abstract class PriorityHttpConnectionPool implements HttpPool {
    */
   public int getMaxPoolSize() {
     return maxPoolSize;
+  }
+
+  public void setMaxWaiterQueueSize(final int maxWaiterQueueSize) {
+    this.maxWaiterQueueSize = maxWaiterQueueSize;
+  }
+
+  public int getMaxWaiterQueueSize() {
+    return maxWaiterQueueSize;
   }
 
   public synchronized void report() {
@@ -77,7 +88,12 @@ public abstract class PriorityHttpConnectionPool implements HttpPool {
           break outer;
         }
         // Add to waiters
-        waiters.add(new Waiter(handler, connectExceptionHandler, context));
+        if (maxWaiterQueueSize == -1 || maxWaiterQueueSize > waiters.size()) {
+          waiters.add(new Waiter(handler, connectExceptionHandler, context));
+        } else {
+          // There are too many requests in waiter queue. Return exception to avoid OOM.
+          connectExceptionHandler.handle(new ConnectionPoolTooBusyException("Too many requests to be handled. The request will be cancelled to avoid OOM."));
+        } 
       }
     }
     // We do this outside the sync block to minimise the critical section
@@ -174,13 +190,25 @@ public abstract class PriorityHttpConnectionPool implements HttpPool {
 
     if (!available.isEmpty()) {
       final boolean useOccupiedConnections = connectionCount >= maxPoolSize;
-
-      for (final ClientConnection c : available) {
+      final Iterator<ClientConnection> clientConnectionIterator = available.iterator();
+      while (clientConnectionIterator.hasNext()){
+        final ClientConnection c = clientConnectionIterator.next();
+        if(c.isClosed()){
+          // remove closed connections from pool
+          clientConnectionIterator.remove();
+          continue;
+        }
 
         // Ideal situation for all cases, a cached but unoccupied connection.
-        if (c.getOutstandingRequestCount() == 0 && !c.isClosed()) {
+        if (c.getOutstandingRequestCount() < 1) {
           conn = c;
           break;
+        }
+
+        // prevent a fully occupied from picking more requests since in this case the new incoming requests will probably time out.
+        if (c.isFullyOccupied()) {
+            clientConnectionIterator.remove();
+            continue;
         }
 
         if (useOccupiedConnections) {
@@ -188,7 +216,7 @@ public abstract class PriorityHttpConnectionPool implements HttpPool {
           // even though we don't have any good way to know how long the requests in the front of this one might take
           // it's still better than the old behavior which seems to glob all the requests into the first connection
           // in the available list.
-          if (conn == null || (conn.getOutstandingRequestCount() > c.getOutstandingRequestCount() && !c.isClosed())) {
+          if (conn == null || conn.getOutstandingRequestCount() > c.getOutstandingRequestCount()) {
             conn = c;
           }
         }
