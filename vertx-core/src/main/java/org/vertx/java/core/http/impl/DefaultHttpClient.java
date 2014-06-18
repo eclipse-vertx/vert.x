@@ -39,6 +39,7 @@ import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.TCPSSLHelper;
 import org.vertx.java.core.net.impl.VertxEventLoopGroup;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLParameters;
@@ -68,6 +69,7 @@ public class DefaultHttpClient implements HttpClient {
     }
   };
   private boolean keepAlive = true;
+  private boolean pipelining = true;
   private boolean configurable = true;
   private boolean closed;
   private final Closeable closeHook = new Closeable() {
@@ -117,6 +119,20 @@ public class DefaultHttpClient implements HttpClient {
   public boolean isKeepAlive() {
     checkClosed();
     return keepAlive;
+  }
+
+  @Override
+  public DefaultHttpClient setPipelining(boolean pipelining) {
+    checkClosed();
+    checkConfigurable();
+    this.pipelining = pipelining;
+    return this;
+  }
+
+  @Override
+  public boolean isPipelining() {
+    checkClosed();
+    return pipelining;
   }
 
   @Override
@@ -389,6 +405,14 @@ public class DefaultHttpClient implements HttpClient {
     checkClosed();
     checkConfigurable();
     tcpHelper.setVerifyHost(verifyHost);
+    return this;
+  }
+
+  @Override
+  public HttpClient setSSLContext(SSLContext sslContext) {
+    checkClosed();
+    checkConfigurable();
+    tcpHelper.setExternalSSLContext(sslContext);
     return this;
   }
 
@@ -738,7 +762,7 @@ public class DefaultHttpClient implements HttpClient {
 
   private void createConn(Channel ch, Handler<ClientConnection> connectHandler) {
     final ClientConnection conn = new ClientConnection(vertx, DefaultHttpClient.this, ch,
-        tcpHelper.isSSL(), host, port, keepAlive, actualCtx);
+        tcpHelper.isSSL(), host, port, keepAlive, pipelining, actualCtx);
     conn.closeHandler(new VoidHandler() {
       public void handle() {
         // The connection has been closed - tell the pool about it, this allows the pool to create more
