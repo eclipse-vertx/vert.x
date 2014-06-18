@@ -106,5 +106,10 @@ public interface NetSocket extends ReadStream<NetSocket>, WriteStream<NetSocket>
    * Returns {@code true} if this {@link NetSocket} is encrypted via SSL/TLS.
    */
   boolean isSsl();
+
+  /**
+   * Try to flush all data to the remote-peer that was not written yet.
+   */
+  NetSocket flush();
 }
 
