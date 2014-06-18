@@ -20,7 +20,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.multipart.*;
-import io.netty.util.CharsetUtil;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.VoidHandler;
@@ -74,7 +73,6 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   private Handler<Void> endHandler;
   private MultiMap attributes;
   private HttpPostRequestDecoder decoder;
-  private boolean isURLEncoded;
 
   DefaultHttpServerRequest(final ServerConnection conn,
                            final HttpRequest request,
@@ -262,7 +260,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
       if (contentType != null) {
         HttpMethod method = request.getMethod();
         String lowerCaseContentType = contentType.toLowerCase();
-        isURLEncoded = lowerCaseContentType.startsWith(HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
+        boolean isURLEncoded = lowerCaseContentType.startsWith(HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
         if ((lowerCaseContentType.startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA) || isURLEncoded) &&
             (method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.PATCH))) {
           decoder = new HttpPostRequestDecoder(new DataFactory(), request);
@@ -297,11 +295,7 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
           if (data instanceof Attribute) {
             Attribute attr = (Attribute) data;
             try {
-              if (isURLEncoded) {
-                attributes().add(urlDecode(attr.getName()), urlDecode(attr.getValue()));
-              } else {
-                attributes().add(attr.getName(), attr.getValue());
-              }
+              attributes().add(attr.getName(), attr.getValue());
             } catch (Exception e) {
               // Will never happen, anyway handle it somehow just in case
               handleException(e);
@@ -536,10 +530,6 @@ public class DefaultHttpServerRequest implements HttpServerRequest {
   @Override
   public InetSocketAddress localAddress() {
     return conn.localAddress();
-  }
-
-  private static String urlDecode(String str) {
-    return QueryStringDecoder.decodeComponent(str, CharsetUtil.UTF_8);
   }
 
   private class DataFactory extends DefaultHttpDataFactory {

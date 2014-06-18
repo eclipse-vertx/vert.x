@@ -16,6 +16,8 @@
 
 package org.vertx.java.core;
 
+import javax.net.ssl.SSLContext;
+
 public interface SSLSupport<T> {
 
   /**
@@ -29,6 +31,15 @@ public interface SSLSupport<T> {
    * @return Is SSL enabled?
    */
   boolean isSSL();
+
+  /**
+   * Set the SSL context explicitly.  This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}
+   * has been set to {@code true}.<p>
+   * The SSL context has to be properly initialized.
+   * Only use this method if you have very special requirements concerning your key managers, trust managers and/or
+   * corresponding stores.
+   */
+  T setSSLContext(SSLContext sslContext);
 
   /**
    * Set the path to the SSL key store. This method should only be used in SSL mode, i.e. after {@link #setSSL(boolean)}

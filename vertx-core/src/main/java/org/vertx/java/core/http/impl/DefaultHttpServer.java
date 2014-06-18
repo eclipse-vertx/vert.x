@@ -50,6 +50,7 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.net.impl.*;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -319,6 +320,13 @@ public class DefaultHttpServer implements HttpServer, Closeable {
   public HttpServer setSSL(boolean ssl) {
     checkListening();
     tcpHelper.setSSL(ssl);
+    return this;
+  }
+
+  @Override
+  public HttpServer setSSLContext(SSLContext sslContext) {
+    checkListening();
+    tcpHelper.setExternalSSLContext(sslContext);
     return this;
   }
 

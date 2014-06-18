@@ -51,7 +51,8 @@ class ClientConnection extends ConnectionBase {
   private final boolean ssl;
   private final String host;
   private final int port;
-  boolean keepAlive;
+  private boolean keepAlive;
+  private boolean pipelining;
   private boolean upgradedConnection;
   private WebSocketClientHandshaker handshaker;
   private volatile DefaultHttpClientRequest currentRequest;
@@ -65,6 +66,7 @@ class ClientConnection extends ConnectionBase {
   ClientConnection(VertxInternal vertx, DefaultHttpClient client, Channel channel, boolean ssl, String host,
                    int port,
                    boolean keepAlive,
+                   boolean pipelining,
                    DefaultContext context) {
     super(vertx, channel, context);
     this.client = client;
@@ -77,6 +79,7 @@ class ClientConnection extends ConnectionBase {
       this.hostHeader = host + ':' + port;
     }
     this.keepAlive = keepAlive;
+    this.pipelining = pipelining;
   }
 
 
@@ -326,7 +329,9 @@ class ClientConnection extends ConnectionBase {
     } catch (Throwable t) {
       handleHandlerException(t);
     }
-    if (!keepAlive) {
+    if (!keepAlive || !pipelining) {
+      // If keepAlive is true and pipelining is true, then the connection was returned to the
+      // pool in endRequest
       close();
     }
   }
@@ -373,11 +378,14 @@ class ClientConnection extends ConnectionBase {
     }
     currentRequest = null;
 
-    if (keepAlive) {
+    // If keepAlive is true and pipelining is true, then return the connection to the
+    // pool so that other requests can use the same HTTP connection without waiting for
+    // the response of the current request (HTTP pipelining). Otherwise the connection
+    // is closed (if keepAlive is false) or returned to the pool (if keepAlive is true)
+    // after receiving the response
+    if (keepAlive && pipelining) {
       //Close just returns connection to the pool
       close();
-    } else {
-      //The connection gets closed after the response is received
     }
   }
 

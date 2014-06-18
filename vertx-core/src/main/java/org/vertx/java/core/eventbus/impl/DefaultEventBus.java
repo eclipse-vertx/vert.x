@@ -654,6 +654,10 @@ public class DefaultEventBus implements EventBus {
 
   private <T, U> void sendOrPubWithTimeout(BaseMessage<U> message,
                                            Handler<AsyncResult<Message<T>>> asyncResultHandler, long timeout) {
+    if (asyncResultHandler == null) {
+      throw new IllegalArgumentException(
+          "Cannot sendWithTimeout using a null reply handler on the event bus");
+    }
     Handler<Message<T>> handler = convertHandler(asyncResultHandler);
     sendOrPub(null, message, handler, asyncResultHandler, timeout);
   }

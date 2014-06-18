@@ -17,6 +17,7 @@
 package vertx.tests.core.http;
 
 import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.QueryStringEncoder;
 import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
@@ -2486,18 +2487,23 @@ public class HttpTestClient extends TestClientBase {
   }
 
   public void testPooling() throws Exception {
-    testPooling(true);
+    testPooling(true, true);
+  }
+
+  public void testPoolingNoPipelining() throws Exception {
+    testPooling(true, false);
   }
 
   public void testPoolingNoKeepAlive() throws Exception {
-    testPooling(false);
+    testPooling(false, false);
+    testPooling(false, true);
   }
 
-  private void testPooling(final boolean keepAlive) throws Exception {
+  private void testPooling(final boolean keepAlive, final boolean pipelining) throws Exception {
     final String path = "foo.txt";
     final int numGets = 1000;
     int maxPoolSize = 10;
-    client.setKeepAlive(keepAlive).setMaxPoolSize(maxPoolSize);
+    client.setKeepAlive(keepAlive).setPipelining(pipelining).setMaxPoolSize(maxPoolSize);
     final AtomicInteger cnt = new AtomicInteger(0);
     for (int i = 0; i < numGets; i++) {
       final int theCount = i;
@@ -3379,6 +3385,50 @@ public class HttpTestClient extends TestClientBase {
           @Override
           public void handle(AsyncResult<Void> event) {
             req.response().sendFile("testdirectory");
+          }
+        });
+      }
+    }, handler);
+  }
+
+  public void testParamsDecode() throws Exception {
+    final String email = "a0!#$%&'*+/=?^_`{|}~-.a0!#$%&'*+/=?^_`{|}~-@vertx.io";
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
+      @Override
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
+        HttpClientRequest req = client.post("some-uri", new Handler<HttpClientResponse>() {
+          public void handle(final HttpClientResponse response) {
+            tu.azzert(response.statusCode() == 200);
+            tu.testComplete();
+          }
+        });
+        req.headers().add(HttpHeaders.CONTENT_TYPE,"application/x-www-form-urlencoded; charset=utf-8");
+        QueryStringEncoder enc = new QueryStringEncoder("");
+        enc.addParam("email", email);
+        String encodedBody = enc.toString().substring(1);
+        req.end(new Buffer(encodedBody));
+      }
+    };
+
+    startServer(new Handler<HttpServerRequest>() {
+      public void handle(final HttpServerRequest req) {
+        req.expectMultiPart(true);
+        req.exceptionHandler(new Handler<Throwable>() {
+
+          @Override
+          public void handle(Throwable t) {
+            t.printStackTrace();
+            tu.azzert(false);
+          }
+        });
+        req.endHandler(new Handler<Void>() {
+          @Override
+          public void handle(Void v) {
+            MultiMap attributes = req.formAttributes();
+            tu.azzert(attributes.size() == 1);
+            tu.azzert(email.equals(attributes.get("email")));
+            req.response().end();
           }
         });
       }
