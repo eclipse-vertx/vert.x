@@ -60,18 +60,18 @@ public class AsyncFileImpl implements AsyncFile {
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> drainHandler;
 
-  private int writePos;
+  private long writePos;
   private int maxWrites = 128 * 1024;    // TODO - we should tune this for best performance
   private int lwm = maxWrites / 2;
 
   private boolean paused;
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
-  private int readPos;
+  private long readPos;
   private boolean readInProgress;
 
-  AsyncFileImpl(final VertxInternal vertx, final String path, String perms, final boolean read, final boolean write, final boolean createNew,
-                final boolean flush, final ContextImpl context) {
+  AsyncFileImpl(VertxInternal vertx, String path, String perms, boolean read, boolean write, boolean createNew,
+                boolean flush, ContextImpl context) {
     if (!read && !write) {
       throw new FileSystemException("Cannot open file for neither reading nor writing");
     }
@@ -106,11 +106,11 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
-  public AsyncFile write(Buffer buffer, long position, final Handler<AsyncResult<Void>> handler) {
+  public AsyncFile write(Buffer buffer, long position,  Handler<AsyncResult<Void>> handler) {
     check();
-    final ByteBuf buf = buffer.getByteBuf();
+     ByteBuf buf = buffer.getByteBuf();
     if (buf.nioBufferCount() > 1) {
-      final Iterator<ByteBuffer> buffers = Arrays.asList(buf.nioBuffers()).iterator();
+       Iterator<ByteBuffer> buffers = Arrays.asList(buf.nioBuffers()).iterator();
       doWrite(buffers, position, handler);
     } else {
       ByteBuffer bb = buf.nioBuffer();
@@ -119,9 +119,9 @@ public class AsyncFileImpl implements AsyncFile {
     return this;
   }
 
-  private void doWrite(final Iterator<ByteBuffer> buffers, final long position, final Handler<AsyncResult<Void>> handler) {
-    final ByteBuffer b = buffers.next();
-    final int limit = b.limit();
+  private void doWrite( Iterator<ByteBuffer> buffers, long position, Handler<AsyncResult<Void>> handler) {
+     ByteBuffer b = buffers.next();
+     int limit = b.limit();
     doWrite(b, position, limit, ar -> {
       if (ar.failed()) {
         handler.handle(ar);
@@ -145,7 +145,7 @@ public class AsyncFileImpl implements AsyncFile {
   @Override
   public AsyncFile write(Buffer buffer) {
     check();
-    final int length = buffer.length();
+    int length = buffer.length();
     Handler<AsyncResult<Void>> handler = ar -> {
       if (ar.succeeded()) {
         checkContext();
@@ -160,7 +160,7 @@ public class AsyncFileImpl implements AsyncFile {
 
     ByteBuf buf = buffer.getByteBuf();
     if (buf.nioBufferCount() > 1) {
-      final Iterator<ByteBuffer> buffers = Arrays.asList(buf.nioBuffers()).iterator();
+      Iterator<ByteBuffer> buffers = Arrays.asList(buf.nioBuffers()).iterator();
       doWrite(buffers, writePos, handler);
     } else {
       ByteBuffer bb = buf.nioBuffer();
@@ -318,12 +318,12 @@ public class AsyncFileImpl implements AsyncFile {
     }.run();
   }
 
-  private void doWrite(final ByteBuffer buff, final long position, final long toWrite, final Handler<AsyncResult<Void>> handler) {
+  private void doWrite(ByteBuffer buff, long position, long toWrite, Handler<AsyncResult<Void>> handler) {
     writesOutstanding += toWrite;
     writeInternal(buff, position, handler);
   }
 
-  private void writeInternal(final ByteBuffer buff, final long position, final Handler<AsyncResult<Void>> handler) {
+  private void writeInternal(ByteBuffer buff, long position, Handler<AsyncResult<Void>> handler) {
 
     ch.write(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
 
@@ -347,7 +347,7 @@ public class AsyncFileImpl implements AsyncFile {
 
       public void failed(Throwable exc, Object attachment) {
         if (exc instanceof Exception) {
-          final Exception e = (Exception) exc;
+          Exception e = (Exception) exc;
           context.execute(() -> handler.handle(new FutureResultImpl<Void>().setResult(null)));
         } else {
           log.error("Error occurred", exc);
@@ -356,13 +356,13 @@ public class AsyncFileImpl implements AsyncFile {
     });
   }
 
-  private void doRead(final Buffer writeBuff, final int offset, final ByteBuffer buff, final long position, final Handler<AsyncResult<Buffer>> handler) {
+  private void doRead(Buffer writeBuff, int offset, ByteBuffer buff, long position, Handler<AsyncResult<Buffer>> handler) {
 
     ch.read(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
 
       long pos = position;
 
-      final FutureResultImpl<Buffer> result = new FutureResultImpl<>();
+      FutureResultImpl<Buffer> result = new FutureResultImpl<>();
 
       private void done() {
         context.execute(() -> {
@@ -387,7 +387,7 @@ public class AsyncFileImpl implements AsyncFile {
         }
       }
 
-      public void failed(final Throwable t, Object attachment) {
+      public void failed(Throwable t, Object attachment) {
         context.execute(new Runnable() {
           public void run() {
             result.setFailure(t).setHandler(handler);
@@ -428,7 +428,7 @@ public class AsyncFileImpl implements AsyncFile {
     }
   }
 
-  private void closeInternal(final Handler<AsyncResult<Void>> handler) {
+  private void closeInternal(Handler<AsyncResult<Void>> handler) {
     check();
 
     closed = true;
