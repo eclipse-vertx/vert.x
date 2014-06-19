@@ -17,6 +17,9 @@
 package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.MessageCodec;
+
+import java.util.Map;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -37,9 +40,10 @@ public class MessageFactory {
   static final byte TYPE_STRING = 11;
   static final byte TYPE_JSON_OBJECT = 12;
   static final byte TYPE_JSON_ARRAY = 13;
+  static final byte TYPE_OBJECT = 14;
   static final byte TYPE_REPLY_FAILURE = 100;
 
-  static BaseMessage read(Buffer buff) {
+  static BaseMessage read(Buffer buff, Map<String, MessageCodec<?>> codecMap) {
     byte type = buff.getByte(0);
     switch (type) {
       case TYPE_PING:
@@ -70,6 +74,10 @@ public class MessageFactory {
         return new JsonObjectMessage(buff);
       case TYPE_JSON_ARRAY:
         return new JsonArrayMessage(buff);
+      case TYPE_OBJECT:
+        @SuppressWarnings("unchecked")
+        ObjectMessage<?> om = new ObjectMessage(buff, codecMap);
+        return om;
       case TYPE_REPLY_FAILURE:
         return new ReplyFailureMessage(buff);
       default:

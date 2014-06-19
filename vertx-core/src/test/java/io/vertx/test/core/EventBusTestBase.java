@@ -17,9 +17,12 @@
 package io.vertx.test.core;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.shareddata.Shareable;
 import org.junit.Test;
+import io.vertx.core.eventbus.MessageCodec;
 
 import java.util.function.Consumer;
 
@@ -313,6 +316,33 @@ public abstract class EventBusTestBase extends AsyncTestBase {
     });
   }
 
+  @Test
+  public void testSendPojo() {
+    SomePojo pojo = new SomePojo("foo", 100);
+    testSend(pojo, recieved -> {
+      assertEquals(pojo, recieved);
+      assertFalse(pojo == recieved); // Make sure it's copied
+    });
+  }
+
+  @Test
+  public void testPublishPojo() {
+    SomePojo pojo = new SomePojo("foo", 100);
+    testPublish(pojo, recieved -> {
+      assertEquals(pojo, recieved);
+      assertFalse(pojo == recieved); // Make sure it's copied
+    });
+  }
+
+  @Test
+  public void testReplyPojo() {
+    SomePojo pojo = new SomePojo("foo", 100);
+    testReply(pojo, recieved -> {
+      assertEquals(pojo, recieved);
+      assertFalse(pojo == recieved); // Make sure it's copied
+    });
+  }
+
   protected <T> void testSend(T val) {
     testSend(val, null);
   }
@@ -330,4 +360,101 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   }
 
   protected abstract <T> void testPublish(T val, Consumer<T> consumer);
+
+  protected void registerCodecs(EventBus bus) {
+    bus.registerCodec(SomePojo.class, new SomePojoCodec());
+    bus.registerCodec(ShareablePojo.class, new ShareablePojoCodec());
+  }
+
+  protected static class SomePojo implements Cloneable {
+    private final String string;
+    private final int number;
+
+    protected SomePojo(String string, int number) {
+      this.string = string;
+      this.number = number;
+    }
+
+    public String string() {
+      return string;
+    }
+
+    public int number() {
+      return number;
+    }
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+      return super.clone();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      SomePojo pojo = (SomePojo) o;
+
+      if (number != pojo.number) return false;
+      if (!string.equals(pojo.string)) return false;
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      int result = string.hashCode();
+      result = 31 * result + number;
+      return result;
+    }
+  }
+
+  protected static class SomePojoCodec implements MessageCodec<SomePojo> {
+    @Override
+    public Buffer encode(SomePojo pojo) {
+      return new Buffer().appendInt(pojo.number).appendString(pojo.string);
+    }
+
+    @Override
+    public SomePojo decode(Buffer buffer) {
+      return new SomePojo(buffer.getString(4, buffer.length()), buffer.getInt(0));
+    }
+  }
+
+  protected static class ShareablePojo implements Shareable {
+    private final String string;
+
+    public ShareablePojo(String string) {
+      this.string = string;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      ShareablePojo that = (ShareablePojo) o;
+
+      if (!string.equals(that.string)) return false;
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return string.hashCode();
+    }
+  }
+
+  protected static class ShareablePojoCodec implements MessageCodec<ShareablePojo> {
+    @Override
+    public Buffer encode(ShareablePojo object) {
+      return new Buffer().appendString(object.string);
+    }
+
+    @Override
+    public ShareablePojo decode(Buffer buffer) {
+      return new ShareablePojo(buffer.getString(0, buffer.length()));
+    }
+  }
 }

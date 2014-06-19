@@ -23,8 +23,10 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxFactory;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.Registration;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
@@ -521,6 +523,80 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
+  public void testSendPojoShareable() {
+    ShareablePojo pojo = new ShareablePojo("foo");
+    testPublish(pojo, recieved -> {
+      assertEquals(pojo, recieved);
+      assertTrue(pojo == recieved); // Make sure it's *not* copied, since it implements Shareable
+    });
+  }
+
+  @Test
+  public void testPublishPojoShareable() {
+    ShareablePojo pojo = new ShareablePojo("foo");
+    testPublish(pojo, recieved -> {
+      assertEquals(pojo, recieved);
+      assertTrue(pojo == recieved); // Make sure it's *not* copied, since it implements Shareable
+    });
+  }
+
+  @Test
+  public void testReplyPojoShareable() {
+    ShareablePojo pojo = new ShareablePojo("foo");
+    testPublish(pojo, recieved -> {
+      assertEquals(pojo, recieved);
+      assertTrue(pojo == recieved); // Make sure it's *not* copied, since it implements Shareable
+    });
+  }
+
+  @Test
+  public void testSendNonCloneable() {
+    class Foo {
+    }
+    eb.registerCodec(Foo.class, new MessageCodec<Foo>() {
+      @Override
+      public Buffer encode(Foo object) {
+        return null;
+      }
+
+      @Override
+      public Foo decode(Buffer buffer) {
+        return null;
+      }
+    });
+
+    eb.registerHandler("foo", msg -> {
+      fail("Should not have gotten here");
+    });
+
+    try {
+      eb.send("foo", new Foo());
+      fail("Should not be able to send object Foo");
+    } catch (IllegalArgumentException e) {
+      testComplete();
+    }
+
+    await();
+  }
+
+  @Test
+  public void testNonRegisteredCodecType() {
+    class Boom {
+    }
+    eb.registerHandler("foo", msg -> {
+      fail("Should not have gotten here");
+    });
+
+    try {
+      eb.send("foo", new Boom());
+    } catch (IllegalArgumentException e) {
+      testComplete();
+    }
+
+    await();
+  }
+
+  @Test
   public void testCloseEventBus() {
     eb.close(ar -> {
       assertTrue(ar.succeeded());
@@ -675,6 +751,8 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Override
   protected <T> void testSend(T val, Consumer<T> consumer) {
+    registerCodecs(eb);
+
     eb.registerHandler(ADDRESS1, (Message<T> msg) -> {
       if (consumer == null) {
         assertEquals(val, msg.body());
@@ -690,11 +768,12 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Override
   protected <T> void testReply(T val, Consumer<T> consumer) {
     String str = TestUtils.randomUnicodeString(1000);
+    registerCodecs(eb);
     eb.registerHandler(ADDRESS1, msg -> {
       assertEquals(str, msg.body());
       msg.reply(val);
     });
-    eb.send(ADDRESS1, str, (Message<T>reply) -> {
+    eb.send(ADDRESS1, str, (Message<T> reply) -> {
       if (consumer == null) {
         assertEquals(val, reply.body());
       } else {
@@ -707,6 +786,8 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Override
   protected <T> void testPublish(T val, Consumer<T> consumer) {
+    registerCodecs(eb);
+
     AtomicInteger count = new AtomicInteger();
     class MyHandler implements Handler<Message<T>> {
       @Override

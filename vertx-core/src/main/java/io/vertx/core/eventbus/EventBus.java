@@ -105,6 +105,10 @@ public interface EventBus {
    */
   Registration registerLocalHandler(String address, Handler<? extends Message> handler);
 
+  <T> EventBus registerCodec(Class<T> type, MessageCodec<T> codec);
+
+  <T> EventBus unregisterCodec(Class<T> type);
+
   /**
    * Sets a default timeout, in ms, for replies. If a messages is sent specify a reply handler
    * but without specifying a timeout, then the reply handler is timed out, i.e. it is automatically unregistered
