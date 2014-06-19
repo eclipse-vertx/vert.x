@@ -43,6 +43,7 @@ public class DatagramSocketOptions extends NetworkOptions {
     this.loopbackModeDisabled = other.loopbackModeDisabled;
     this.multicastTimeToLive = other.multicastTimeToLive;
     this.multicastNetworkInterface = other.multicastNetworkInterface;
+    this.reuseAddress = other.reuseAddress;
   }
 
   public boolean isBroadcast() {
@@ -68,6 +69,9 @@ public class DatagramSocketOptions extends NetworkOptions {
   }
 
   public DatagramSocketOptions setMulticastTimeToLive(int multicastTimeToLive) {
+    if (multicastTimeToLive < 0) {
+      throw new IllegalArgumentException("multicastTimeToLive must be >= 0");
+    }
     this.multicastTimeToLive = multicastTimeToLive;
     return this;
   }

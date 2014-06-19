@@ -19,6 +19,7 @@ package org.vertx.java.tests.core;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
 import org.vertx.java.core.impl.ConcurrentHashSet;
@@ -294,6 +295,76 @@ public class WebsocketTest extends VertxTestBase {
     });
     assertTrue(closeLatch.await(10, TimeUnit.SECONDS));
     testSharedServersRoundRobin();
+  }
+
+  @Test
+  public void testOptions() throws Exception {
+    WebSocketConnectOptions options = new WebSocketConnectOptions();
+    assertEquals(80, options.getPort());
+    assertEquals(options, options.setPort(1234));
+    assertEquals(1234, options.getPort());
+    try {
+      options.setPort(0);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      options.setPort(-1);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      options.setPort(65536);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    assertEquals("localhost", options.getHost());
+    String randString = randomUnicodeString(100);
+    assertEquals(options, options.setHost(randString));
+    assertEquals(randString, options.getHost());
+    MultiMap headers = new CaseInsensitiveMultiMap();
+    assertNull(options.getHeaders());
+    assertEquals(options, options.setHeaders(headers));
+    assertSame(headers, options.getHeaders());
+    randString = randomUnicodeString(100);
+    assertEquals("/", options.getRequestURI());
+    assertEquals(options, options.setRequestURI(randString));
+    assertEquals(randString, options.getRequestURI());
+    options.putHeader("foo", "bar");
+    assertNotNull(options.getHeaders());
+    assertEquals("bar", options.getHeaders().get("foo"));
+    assertEquals(65536, options.getMaxWebsocketFrameSize());
+    int rand = randomPositiveInt();
+    assertEquals(options, options.setMaxWebsocketFrameSize(rand));
+    assertEquals(rand, options.getMaxWebsocketFrameSize());
+    try {
+      options.setMaxWebsocketFrameSize(0);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      //OK
+    }
+    try {
+      options.setMaxWebsocketFrameSize(-1);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      //OK
+    }
+    assertEquals(WebSocketVersion.RFC6455, options.getVersion());
+    assertEquals(options, options.setVersion(WebSocketVersion.HYBI_00));
+    assertEquals(WebSocketVersion.HYBI_00, options.getVersion());
+    Set<String> protocols = new HashSet<>();
+    assertNull(options.getSubProtocols());
+    assertEquals(options, options.setSubProtocols(protocols));
+    assertSame(protocols, options.getSubProtocols());
+    options = new WebSocketConnectOptions();
+    options.addSubProtocol("foo");
+    assertNotNull(options.getSubProtocols());
+    assertTrue(options.getSubProtocols().contains("foo"));
+    assertEquals(options, options.removeSubProtocol("foo"));
+    assertFalse(options.getSubProtocols().contains("foo"));
   }
 
   private String sha1(String s) {

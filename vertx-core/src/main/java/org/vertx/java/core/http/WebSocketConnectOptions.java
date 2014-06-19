@@ -35,6 +35,9 @@ public class WebSocketConnectOptions extends RequestOptions {
   }
 
   public WebSocketConnectOptions setMaxWebsocketFrameSize(int maxWebsocketFrameSize) {
+    if (maxWebsocketFrameSize < 1) {
+      throw new IllegalArgumentException("maxWebsocketFrameSize must be > 0");
+    }
     this.maxWebsocketFrameSize = maxWebsocketFrameSize;
     return this;
   }
@@ -93,12 +96,6 @@ public class WebSocketConnectOptions extends RequestOptions {
   @Override
   public WebSocketConnectOptions setRequestURI(String requestURI) {
     super.setRequestURI(requestURI);
-    return this;
-  }
-
-  @Override
-  public WebSocketConnectOptions setUri(String uri) {
-    super.setUri(uri);
     return this;
   }
 

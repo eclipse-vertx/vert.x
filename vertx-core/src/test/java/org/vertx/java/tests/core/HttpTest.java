@@ -26,6 +26,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.HttpHeadersAdapter;
+import org.vertx.java.core.impl.ConcurrentHashSet;
 import org.vertx.java.core.net.NetClientOptions;
 import org.vertx.java.core.net.NetServerOptions;
 import org.vertx.java.core.net.NetSocket;
@@ -355,6 +356,8 @@ public class HttpTest extends HttpTestBase {
     randString = randomUnicodeString(100);
     assertEquals(options, options.setHost(randString));
     assertEquals(randString, options.getHost());
+
+
     testComplete();
   }
 
@@ -451,6 +454,38 @@ public class HttpTest extends HttpTestBase {
       req.end();
     }));
 
+    await();
+  }
+
+  @Test
+  public void testHeadersOnRequestOptions() {
+    server.requestHandler(req -> {
+      assertEquals("bar", req.headers().get("foo"));
+      req.response().end();
+    });
+    server.listen(onSuccess(server -> {
+      MultiMap headers = new CaseInsensitiveMultiMap();
+      headers.add("foo", "bar");
+      client.getNow(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI).setHeaders(headers), resp -> {
+        assertEquals(200, resp.statusCode());
+        testComplete();
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testPutHeadersOnRequestOptions() {
+    server.requestHandler(req -> {
+      assertEquals("bar", req.headers().get("foo"));
+      req.response().end();
+    });
+    server.listen(onSuccess(server -> {
+      client.getNow(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI).putHeader("foo", "bar"), resp -> {
+        assertEquals(200, resp.statusCode());
+        testComplete();
+      });
+    }));
     await();
   }
 
@@ -1507,8 +1542,9 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testPipelining() {
-    // FIXME - is this really pipeliing?
+  public void testPipeliningOrder() {
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true).setPipelining(true).setMaxPoolSize(1));
     int requests = 100;
 
     AtomicInteger reqCount = new AtomicInteger(0);
@@ -1549,6 +1585,64 @@ public class HttpTest extends HttpTestBase {
     }));
 
     await();
+  }
+
+  @Test
+  public void testKeepAlive() throws Exception {
+    testKeepAlive(true, 5, 10, 5);
+  }
+
+  @Test
+  public void testNoKeepAlive() throws Exception {
+    testKeepAlive(false, 5, 10, 10);
+  }
+
+  private void testKeepAlive(boolean keepAlive, int poolSize, int numServers, int expectedConnectedServers) throws Exception {
+    client.close();
+    server.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(keepAlive).setPipelining(false).setMaxPoolSize(poolSize));
+    int requests = 100;
+
+    // Start the servers
+    HttpServer[] servers = new HttpServer[numServers];
+    CountDownLatch startServerLatch = new CountDownLatch(numServers);
+    Set<HttpServer> connectedServers = new ConcurrentHashSet<>();
+    for (int i = 0; i < numServers; i++) {
+      HttpServer server = vertx.createHttpServer(new HttpServerOptions().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT));
+      server.requestHandler(req -> {
+        connectedServers.add(server);
+        req.response().end();
+      });
+      server.listen(ar -> {
+        assertTrue(ar.succeeded());
+        startServerLatch.countDown();
+      });
+      servers[i] = server;
+    }
+
+    awaitLatch(startServerLatch);
+
+    CountDownLatch reqLatch = new CountDownLatch(requests);
+    for (int count = 0; count < requests; count++) {
+      client.getNow(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+        assertEquals(200, resp.statusCode());
+        reqLatch.countDown();
+      });
+    }
+
+    awaitLatch(reqLatch);
+
+    assertEquals(expectedConnectedServers, connectedServers.size());
+
+    CountDownLatch serverCloseLatch = new CountDownLatch(numServers);
+    for (HttpServer server: servers) {
+      server.close(ar -> {
+        assertTrue(ar.succeeded());
+        serverCloseLatch.countDown();
+      });
+    }
+
+    awaitLatch(serverCloseLatch);
   }
 
   @Test
@@ -2687,6 +2781,48 @@ public class HttpTest extends HttpTestBase {
       });
     });
     await();
+  }
+
+  @Test
+  public void testRequestOptions() {
+    RequestOptions options = new RequestOptions();
+    assertEquals(80, options.getPort());
+    assertEquals(options, options.setPort(1234));
+    assertEquals(1234, options.getPort());
+    try {
+      options.setPort(0);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      options.setPort(-1);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      options.setPort(65536);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    assertEquals("localhost", options.getHost());
+    String randString = randomUnicodeString(100);
+    assertEquals(options, options.setHost(randString));
+    assertEquals(randString, options.getHost());
+    MultiMap headers = new CaseInsensitiveMultiMap();
+    assertNull(options.getHeaders());
+    assertEquals(options, options.setHeaders(headers));
+    assertSame(headers, options.getHeaders());
+    randString = randomUnicodeString(100);
+    assertEquals("/", options.getRequestURI());
+    assertEquals(options, options.setRequestURI(randString));
+    assertEquals(randString, options.getRequestURI());
+    options.putHeader("foo", "bar");
+    assertNotNull(options.getHeaders());
+    assertEquals("bar", options.getHeaders().get("foo"));
+    testComplete();
   }
 
   private void pausingServer(Consumer<HttpServer> consumer) {

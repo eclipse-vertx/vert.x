@@ -22,6 +22,7 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.datagram.DatagramSocket;
 import org.vertx.java.core.datagram.DatagramSocketOptions;
 import org.vertx.java.core.datagram.InternetProtocolFamily;
+import org.vertx.java.core.net.impl.SocketDefaults;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -32,7 +33,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.vertx.java.tests.core.TestUtils.randomBuffer;
+import static org.vertx.java.tests.core.TestUtils.*;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -202,6 +203,7 @@ public class DatagramTest extends VertxTestBase {
     });
     await();
   }
+
   @Test
   public void testMulticastJoinLeave() throws Exception {
     Buffer buffer = randomBuffer(128);
@@ -247,5 +249,90 @@ public class DatagramTest extends VertxTestBase {
       });
     });
     await();
+  }
+
+  @Test
+  public void testOptions() {
+    DatagramSocketOptions options = new DatagramSocketOptions();
+    assertEquals(-1, options.getSendBufferSize());
+    int rand = randomPositiveInt();
+    assertEquals(options, options.setSendBufferSize(rand));
+    assertEquals(rand, options.getSendBufferSize());
+    try {
+      options.setSendBufferSize(0);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      options.setSendBufferSize(-123);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+
+    assertEquals(-1, options.getReceiveBufferSize());
+    rand = randomPositiveInt();
+    assertEquals(options, options.setReceiveBufferSize(rand));
+    assertEquals(rand, options.getReceiveBufferSize());
+    try {
+      options.setReceiveBufferSize(0);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      options.setReceiveBufferSize(-123);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+
+    assertFalse(options.isReuseAddress());
+    assertEquals(options, options.setReuseAddress(true));
+    assertTrue(options.isReuseAddress());
+
+    assertEquals(-1, options.getTrafficClass());
+    rand = 23;
+    assertEquals(options, options.setTrafficClass(rand));
+    assertEquals(rand, options.getTrafficClass());
+    try {
+      options.setTrafficClass(-1);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      options.setTrafficClass(256);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+
+    assertFalse(options.isBroadcast());
+    assertEquals(options, options.setBroadcast(true));
+    assertTrue(options.isBroadcast());
+
+    assertTrue(options.isLoopbackModeDisabled());
+    assertEquals(options, options.setLoopbackModeDisabled(false));
+    assertFalse(options.isLoopbackModeDisabled());
+
+    assertEquals(-1, options.getMulticastTimeToLive());
+    rand = randomPositiveInt();
+    assertEquals(options, options.setMulticastTimeToLive(rand));
+    assertEquals(rand, options.getMulticastTimeToLive());
+    try {
+      options.setMulticastTimeToLive(-1);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+
+    assertNull(options.getMulticastNetworkInterface());
+    String randString = randomUnicodeString(100);
+    assertEquals(options, options.setMulticastNetworkInterface(randString));
+    assertEquals(randString, options.getMulticastNetworkInterface());
+
+    testComplete();
   }
 }

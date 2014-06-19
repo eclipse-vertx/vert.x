@@ -26,24 +26,17 @@ public class RequestOptions {
   private int port = 80;
   private String host = "localhost";
   private MultiMap headers;
-  private String requestURI;
-  private String uri;
-
-  private int state = STATE_DEFAULT;
-  private static final int STATE_DEFAULT = 0;
-  private static final int STATE_CONF_FROM_URI = 1;
-  private static final int STATE_CONF_EXPL = 2;
+  private String requestURI = "/";
 
   public int getPort() {
     return port;
   }
 
   public RequestOptions setPort(int port) {
-    if (state == STATE_CONF_FROM_URI) {
-      throw new IllegalStateException("The port is determined from the URI you provided");
+    if (port < 1|| port > 65535) {
+      throw new IllegalArgumentException("port p must be in range 1 <=p <= 65535");
     }
     this.port = port;
-    this.state = STATE_CONF_EXPL;
     return this;
   }
 
@@ -52,11 +45,7 @@ public class RequestOptions {
   }
 
   public RequestOptions setHost(String host) {
-    if (state == STATE_CONF_FROM_URI) {
-      throw new IllegalStateException("The host is determined from the URI you provided");
-    }
     this.host = host;
-    this.state = STATE_CONF_EXPL;
     return this;
   }
 
@@ -78,20 +67,13 @@ public class RequestOptions {
     return this;
   }
 
-  public String getUri() {
-    return uri;
-  }
-
-  public RequestOptions setUri(String uri) {
-    if (state == STATE_CONF_EXPL) {
-      throw new IllegalStateException("You have already configured host/port");
-    }
-    this.uri = uri;
-    state = STATE_CONF_FROM_URI;
-    return this;
-  }
-
   public RequestOptions putHeader(CharSequence name, CharSequence value) {
+    if (name == null) {
+      throw new NullPointerException("name");
+    }
+    if (value == null) {
+      throw new NullPointerException("value");
+    }
     if (headers == null) {
       headers = new CaseInsensitiveMultiMap();
     }
