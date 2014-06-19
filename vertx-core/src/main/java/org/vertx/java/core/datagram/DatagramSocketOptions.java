@@ -27,6 +27,11 @@ public class DatagramSocketOptions extends NetworkOptions {
   private boolean loopbackModeDisabled = true;
   private int multicastTimeToLive = -1;
   private String multicastNetworkInterface;
+  private boolean reuseAddress = false; // We override this as default is different for DatagramSocket
+
+  public DatagramSocketOptions(NetworkOptions other) {
+    super(other);
+  }
 
   public DatagramSocketOptions() {
     super();
@@ -75,5 +80,35 @@ public class DatagramSocketOptions extends NetworkOptions {
     this.multicastNetworkInterface = multicastNetworkInterface;
     return this;
   }
+
+  @Override
+  public DatagramSocketOptions setSendBufferSize(int sendBufferSize) {
+    super.setSendBufferSize(sendBufferSize);
+    return this;
+  }
+
+  @Override
+  public DatagramSocketOptions setReceiveBufferSize(int receiveBufferSize) {
+    super.setReceiveBufferSize(receiveBufferSize);
+    return this;
+  }
+
+  @Override
+  public boolean isReuseAddress() {
+    return reuseAddress;
+  }
+
+  @Override
+  public DatagramSocketOptions setReuseAddress(boolean reuseAddress) {
+    this.reuseAddress = reuseAddress;
+    return this;
+  }
+
+  @Override
+  public DatagramSocketOptions setTrafficClass(int trafficClass) {
+    super.setTrafficClass(trafficClass);
+    return this;
+  }
+
 
 }
