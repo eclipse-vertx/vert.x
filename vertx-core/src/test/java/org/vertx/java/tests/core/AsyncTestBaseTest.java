@@ -35,6 +35,7 @@ public class AsyncTestBaseTest extends AsyncTestBase {
 
   @Before
   public void before() {
+    disableThreadChecks();
     executor = Executors.newFixedThreadPool(10);
   }
 

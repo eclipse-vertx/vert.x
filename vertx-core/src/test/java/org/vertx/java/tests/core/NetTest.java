@@ -24,11 +24,15 @@ import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.http.RequestOptions;
 import org.vertx.java.core.impl.ConcurrentHashSet;
 import org.vertx.java.core.net.*;
 import org.vertx.java.core.net.impl.SocketDefaults;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
@@ -992,7 +996,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testWriteSameBufferMoreThanOnce() throws Exception {
     server.connectHandler(socket -> {
-      final Buffer received = new Buffer();
+      Buffer received = new Buffer();
       socket.dataHandler(buff -> {
         received.appendBuffer(buff);
         if (received.toString().equals("foofoo")) {
@@ -1012,8 +1016,64 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  public void sendFileClientToServer() throws Exception {
+    File fDir = Files.createTempDirectory("vertx-test").toFile();
+    String content = randomUnicodeString(10000);
+    File file = setupFile(fDir.toString(), "some-file.txt", content);
+    Buffer expected = new Buffer(content);
+    Buffer received = new Buffer();
+    server.connectHandler(sock -> {
+      sock.dataHandler(buff -> {
+        received.appendBuffer(buff);
+        if (received.length() == expected.length()) {
+          assertTrue(buffersEqual(expected, received));
+          testComplete();
+        }
+      });
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.connect(1234, ar2 -> {
+        assertTrue(ar2.succeeded());
+        NetSocket sock = ar2.result();
+        sock.sendFile(file.getAbsolutePath());
+      });
+    });
+
+    await();
+  }
+
+  @Test
+  public void sendFileServerToClient() throws Exception {
+    File fDir = Files.createTempDirectory("vertx-test").toFile();
+    String content = randomUnicodeString(10000);
+    File file = setupFile(fDir.toString(), "some-file.txt", content);
+    Buffer expected = new Buffer(content);
+    Buffer received = new Buffer();
+    server.connectHandler(sock -> {
+      sock.sendFile(file.getAbsolutePath());
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.connect(1234, ar2 -> {
+        assertTrue(ar2.succeeded());
+        NetSocket sock = ar2.result();
+        sock.dataHandler(buff -> {
+          received.appendBuffer(buff);
+          if (received.length() == expected.length()) {
+            assertTrue(buffersEqual(expected, received));
+            testComplete();
+          }
+        });
+      });
+    });
+
+    await();
+  }
+
+  @Test
   public void testSendFileDirectory() throws Exception {
-    final File fDir = Files.createTempDirectory("vertx-test").toFile();
+    File fDir = Files.createTempDirectory("vertx-test").toFile();
     fDir.deleteOnExit();
     server.connectHandler(socket -> {
       SocketAddress addr = socket.remoteAddress();
@@ -1141,7 +1201,8 @@ public class NetTest extends VertxTestBase {
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       try {
-        server.listen(sock -> {});
+        server.listen(sock -> {
+        });
         fail("Should throw exception");
       } catch (IllegalStateException e) {
         // OK
@@ -1149,6 +1210,107 @@ public class NetTest extends VertxTestBase {
       testComplete();
     });
     await();
+  }
+
+  private void checkContext() {
+
+  }
+
+//  /*
+//  Make sure all the different handlers are called on the right context
+//   */
+//  @Test
+//  public void testContext() throws Exception {
+//    File fDir = Files.createTempDirectory("vertx-test").toFile();
+//    String content = randomUnicodeString(10000);
+//    File file = setupFile(fDir.toString(), "some-file.txt", content);
+//    /*
+//    create conn to server
+//
+//     */
+//
+//    server.connectHandler(sock -> {
+//
+//      checkContext();
+//
+//      sock.ssl(v -> {
+//        checkContext();
+//
+//      });
+//
+//      sock.sendFile(file.getAbsolutePath(), ar -> {
+//        checkContext();
+//        assertTrue(ar.succeeded());
+//      });
+//
+//
+//      sock.dataHandler(buff -> {
+//        sock.write(buff);
+//
+//      });
+//
+//      sock.endHandler(v -> {
+//
+//      });
+//      sock.closeHandler(v -> {
+//
+//      });
+//
+//
+//      sock.drainHandler(v -> {
+//
+//      });
+//      sock.exceptionHandler(t -> {
+//
+//      });
+//
+//    });
+//
+//    server.listen(ar -> {
+//
+//    });
+//
+//    client.connect(1234, ar -> {
+//      assertTrue(ar.succeeded());
+//      NetSocket sock = ar.result();
+//      sock.dataHandler(buff -> {
+//
+//
+//      });
+//      sock.endHandler(v -> {
+//
+//      });
+//      sock.closeHandler(v -> {
+//
+//      });
+//      sock.sendFile(file.getAbsolutePath(), ar -> {
+//
+//      });
+//      sock.ssl(v -> {
+//
+//      });
+//      sock.drainHandler(v -> {
+//
+//      });
+//      sock.exceptionHandler(t -> {
+//
+//      });
+//    });
+//
+//
+//    await();
+//  }
+
+  private File setupFile(String testDir, String fileName, String content) throws Exception {
+    File file = new File(testDir, fileName);
+    if (file.exists()) {
+      file.delete();
+    }
+    file.deleteOnExit();
+    BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
+    out.write(content);
+    out.close();
+    return file;
   }
 
 }

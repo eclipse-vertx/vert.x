@@ -130,10 +130,21 @@ public abstract class ContextImpl implements Context {
 
   public abstract boolean isOnCorrectWorker(EventLoop worker);
 
+  // FIXME - make sure this is right and get rid of worker param
   public void execute(EventLoop worker, Runnable handler) {
-    if (isOnCorrectWorker(worker)) {
+    boolean correctThread;
+    Thread thread = Thread.currentThread();
+    if (thread instanceof VertxThread) {
+      VertxThread vthread = (VertxThread)thread;
+      Context ctx = vthread.getContext();
+      correctThread = ctx == this;
+    } else {
+      correctThread = false;
+    }
+    if (correctThread) {
       wrapTask(handler).run();
     } else {
+      //System.out.println("Wrong thread, will execute on correct one: " + Thread.currentThread());
       execute(handler);
     }
   }
