@@ -158,7 +158,108 @@ public class WebsocketTest extends VertxTestBase {
 
   // TODO close and exception tests
   // TODO pause/resume/drain tests
-  // TODO websockets over HTTPS tests
+
+  @Test
+  // Client trusts all server certs
+  public void testTLSClientTrustAll() throws Exception {
+    testTLS(false, false, true, false, false, true, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts (not trust all)
+  public void testTLSClientTrustServerCert() throws Exception {
+    testTLS(false, true, true, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client doesn't trust
+  public void testTLSClientUntrustedServer() throws Exception {
+    testTLS(false, false, true, false, false, false, false);
+  }
+
+  @Test
+  //Client specifies cert even though it's not required
+  public void testTLSClientCertNotRequired() throws Exception {
+    testTLS(true, true, true, true, false, false, true);
+  }
+
+  @Test
+  //Client specifies cert and it's not required
+  public void testTLSClientCertRequired() throws Exception {
+    testTLS(true, true, true, true, true, false, true);
+  }
+
+  @Test
+  //Client doesn't specify cert but it's required
+  public void testTLSClientCertRequiredNoClientCert() throws Exception {
+    testTLS(false, true, true, true, true, false, false);
+  }
+
+  @Test
+  //Client specifies cert but it's not trusted
+  public void testTLSClientCertClientNotTrusted() throws Exception {
+    testTLS(true, true, true, false, true, false, false);
+  }
+
+  private void testTLS(boolean clientCert, boolean clientTrust,
+                       boolean serverCert, boolean serverTrust,
+                       boolean requireClientAuth, boolean clientTrustAll,
+                       boolean shouldPass) throws Exception {
+    HttpClientOptions options = new HttpClientOptions();
+    options.setSsl(true);
+    if (clientTrustAll) {
+      options.setTrustAll(true);
+    }
+    if (clientTrust) {
+      options.setTrustStorePath(findFileOnClasspath("tls/client-truststore.jks")).setTrustStorePassword("wibble");
+    }
+    if (clientCert) {
+      options.setKeyStorePath(findFileOnClasspath("tls/client-keystore.jks")).setKeyStorePassword("wibble");
+    }
+    client = vertx.createHttpClient(options);
+    HttpServerOptions serverOptions = new HttpServerOptions();
+    serverOptions.setSsl(true);
+    if (serverTrust) {
+      serverOptions.setTrustStorePath(findFileOnClasspath("tls/server-truststore.jks")).setTrustStorePassword("wibble");
+    }
+    if (serverCert) {
+      serverOptions.setKeyStorePath(findFileOnClasspath("tls/server-keystore.jks")).setKeyStorePassword("wibble");
+    }
+    if (requireClientAuth) {
+      serverOptions.setClientAuthRequired(true);
+    }
+    server = vertx.createHttpServer(serverOptions.setPort(4043));
+    server.websocketHandler(ws -> {
+      ws.dataHandler(ws::write);
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+
+      client.exceptionHandler(t -> {
+        if (shouldPass) {
+          t.printStackTrace();
+          fail("Should not throw exception");
+        } else {
+          testComplete();
+        }
+      });
+      client.connectWebsocket(new WebSocketConnectOptions().setPort(4043), ws -> {
+        int size = 100;
+        Buffer received = new Buffer();
+        ws.dataHandler(data -> {
+          received.appendBuffer(data);
+          if (received.length() == size) {
+            ws.close();
+            testComplete();
+          }
+        });
+        Buffer buff = new Buffer(randomByteArray(size));
+        ws.writeBinaryFrame(buff);
+      });
+    });
+    await();
+  }
+
 
   @Test
   // Let's manually handle the websocket handshake and write a frame to the client
@@ -414,27 +515,27 @@ public class WebsocketTest extends VertxTestBase {
       int sends = 10;
 
       client.connectWebsocket(new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path + "?" + query).setVersion(version), ws -> {
-          final Buffer received = new Buffer();
-          ws.dataHandler(data -> {
-            received.appendBuffer(data);
-            if (received.length() == bsize * sends) {
-              ws.close();
-              testComplete();
-            }
-          });
-          final Buffer sent = new Buffer();
-          for (int i = 0; i < sends; i++) {
-            if (binary) {
-              Buffer buff = new Buffer(randomByteArray(bsize));
-              ws.writeBinaryFrame(buff);
-              sent.appendBuffer(buff);
-            } else {
-              String str = randomAlphaString(bsize);
-              ws.writeTextFrame(str);
-              sent.appendBuffer(new Buffer(str, "UTF-8"));
-            }
+        final Buffer received = new Buffer();
+        ws.dataHandler(data -> {
+          received.appendBuffer(data);
+          if (received.length() == bsize * sends) {
+            ws.close();
+            testComplete();
           }
         });
+        final Buffer sent = new Buffer();
+        for (int i = 0; i < sends; i++) {
+          if (binary) {
+            Buffer buff = new Buffer(randomByteArray(bsize));
+            ws.writeBinaryFrame(buff);
+            sent.appendBuffer(buff);
+          } else {
+            String str = randomAlphaString(bsize);
+            ws.writeTextFrame(str);
+            sent.appendBuffer(new Buffer(str, "UTF-8"));
+          }
+        }
+      });
     });
     await();
   }
