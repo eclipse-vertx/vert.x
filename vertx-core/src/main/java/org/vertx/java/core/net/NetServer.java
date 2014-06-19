@@ -40,6 +40,8 @@ public interface NetServer {
    */
   NetServer connectHandler(Handler<NetSocket> connectHandler);
 
+  Handler<NetSocket> connectHandler();
+
   NetServer listen();
 
   /**

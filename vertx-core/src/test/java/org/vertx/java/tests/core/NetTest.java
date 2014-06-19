@@ -1073,4 +1073,82 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testListenWithNoHandler() {
+    try {
+      server.listen();
+      fail("Should throw exception");
+    } catch (IllegalStateException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testListenWithNoHandler2() {
+    try {
+      server.listen(ar -> {
+        assertFalse(ar.succeeded());
+      });
+      fail("Should throw exception");
+    } catch (IllegalStateException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testSetHandlerAfterListen() {
+    server.connectHandler(sock -> {});
+    server.listen();
+    try {
+      server.connectHandler(sock -> {});
+      fail("Should throw exception");
+    } catch (IllegalStateException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testSetHandlerAfterListen2() {
+    server.connectHandler(sock -> {});
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      try {
+        server.connectHandler(sock -> {});
+        fail("Should throw exception");
+      } catch (IllegalStateException e) {
+        // OK
+      }
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testListenTwice() {
+    server.connectHandler(sock -> {});
+    server.listen();
+    try {
+      server.listen(sock -> {});
+      fail("Should throw exception");
+    } catch (IllegalStateException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testListenTwice2() {
+    server.connectHandler(sock -> {});
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      try {
+        server.listen(sock -> {});
+        fail("Should throw exception");
+      } catch (IllegalStateException e) {
+        // OK
+      }
+      testComplete();
+    });
+    await();
+  }
+
 }

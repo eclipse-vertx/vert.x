@@ -81,15 +81,24 @@ public class NetServerImpl implements NetServer, Closeable {
 
   @Override
   public NetServer connectHandler(Handler<NetSocket> connectHandler) {
+    if (listening) {
+      throw new IllegalStateException("Cannot set connectHandler when server is listening");
+    }
     this.connectHandler = connectHandler;
     return this;
   }
 
+  public Handler<NetSocket> connectHandler() {
+    return connectHandler;
+  }
+
+  @Override
   public NetServer listen() {
     listen(null);
     return this;
   }
 
+  @Override
   public NetServer listen(Handler<AsyncResult<NetServer>> listenHandler) {
     if (connectHandler == null) {
       throw new IllegalStateException("Set connect handler first");

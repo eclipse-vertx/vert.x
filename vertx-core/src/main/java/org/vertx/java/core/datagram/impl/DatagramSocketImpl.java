@@ -44,7 +44,7 @@ public class DatagramSocketImpl extends ConnectionBase
 
   public DatagramSocketImpl(VertxInternal vertx, org.vertx.java.core.datagram.InternetProtocolFamily family,
                             DatagramSocketOptions options) {
-    super(vertx, createChannel(family, options), vertx.getOrCreateContext());
+    super(vertx, createChannel(family, new DatagramSocketOptions(options)), vertx.getOrCreateContext());
     channel().config().setOption(ChannelOption.DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION, true);
     context.getEventLoop().register(channel);
     channel.pipeline().addLast("handler", new DatagramServerHandler(this.vertx, this));

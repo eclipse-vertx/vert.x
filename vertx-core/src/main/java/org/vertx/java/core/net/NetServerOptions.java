@@ -16,6 +16,8 @@
 
 package org.vertx.java.core.net;
 
+import org.vertx.java.core.Handler;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

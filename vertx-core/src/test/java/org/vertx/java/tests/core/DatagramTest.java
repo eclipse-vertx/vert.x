@@ -335,4 +335,23 @@ public class DatagramTest extends VertxTestBase {
 
     testComplete();
   }
+
+  @Test
+  public void testOptionsCopied() {
+    DatagramSocketOptions options = new DatagramSocketOptions();
+    options.setReuseAddress(true);
+    peer1 = vertx.createDatagramSocket(null, options);
+    peer2 = vertx.createDatagramSocket(null, options);
+    // Listening on same address:port so will only work if reuseAddress = true
+    // Set to false, but because options are copied internally should still work
+    options.setReuseAddress(false);
+    peer1.listen(1234, "127.0.0.1", ar -> {
+      assertTrue(ar.succeeded());
+      peer2.listen(1234, "127.0.0.1", ar2 -> {
+        assertTrue(ar2.succeeded());
+        testComplete();
+      });
+    });
+    await();
+  }
 }

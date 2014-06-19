@@ -2221,6 +2221,74 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testSetHandlersAfterListening2() throws Exception {
+    server.requestHandler(noOpHandler());
+
+    server.listen();
+    try {
+      server.requestHandler(noOpHandler());
+      fail("Should throw exception");
+    } catch (IllegalStateException e) {
+      //Ok
+    }
+    try {
+      server.websocketHandler(noOpHandler());
+      fail("Should throw exception");
+    } catch (IllegalStateException e) {
+      //Ok
+    }
+  }
+
+  @Test
+  public void testListenNoHandlers() throws Exception {
+    try {
+      server.listen(ar -> {
+      });
+      fail("Should throw exception");
+    } catch (IllegalStateException e) {
+      //Ok
+    }
+  }
+
+  @Test
+  public void testListenNoHandlers2() throws Exception {
+    try {
+      server.listen();
+      fail("Should throw exception");
+    } catch (IllegalStateException e) {
+      //Ok
+    }
+  }
+
+  @Test
+  public void testListenTwice() throws Exception {
+    server.requestHandler(noOpHandler());
+    server.listen();
+    try {
+      server.listen();
+      fail("Should throw exception");
+    } catch (IllegalStateException e) {
+      //Ok
+    }
+  }
+
+  @Test
+  public void testListenTwice2() throws Exception {
+    server.requestHandler(noOpHandler());
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      try {
+        server.listen();
+        fail("Should throw exception");
+      } catch (IllegalStateException e) {
+        //Ok
+      }
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
   public void testSharedServersRoundRobin() throws Exception {
     client.close();
     server.close();
