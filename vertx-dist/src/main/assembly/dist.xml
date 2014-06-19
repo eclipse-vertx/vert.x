@@ -30,13 +30,6 @@
       </excludes>
       <outputDirectory>/</outputDirectory>
     </fileSet>
-    <fileSet>
-      <directory>${project.basedir}/../vertx-platform/src/main/resources</directory>
-      <includes>
-        <include>**/META-INF/**</include>
-      </includes>
-      <outputDirectory>/conf</outputDirectory>
-    </fileSet>
   </fileSets>
   <!-- TODO: Include javadoc -->
   <dependencySets>
@@ -46,7 +39,6 @@
       <includes>
         <include>io.vertx:vertx-core</include>
         <include>io.vertx:vertx-hazelcast</include>
-        <include>io.vertx:vertx-platform</include>
       </includes>
     </dependencySet>
   </dependencySets>
@@ -59,21 +51,11 @@
     <file>
       <outputDirectory>/conf</outputDirectory>
       <destName>cluster.xml</destName>
-      <source>${project.basedir}/../vertx-platform/src/main/resources/default-cluster.xml</source>
+      <source>${project.basedir}/../vertx-hazelcast/src/main/resources/default-cluster.xml</source>
     </file>
     <file>
       <outputDirectory>/conf</outputDirectory>
-      <destName>langs.properties</destName>
-      <source>${project.basedir}/../vertx-platform/src/main/resources/default-langs.properties</source>
-    </file>
-    <file>
-      <outputDirectory>/conf</outputDirectory>
-      <destName>repos.txt</destName>
-      <source>${project.basedir}/../vertx-platform/src/main/resources/default-repos.txt</source>
-    </file>
-    <file>
-      <outputDirectory>/conf</outputDirectory>
-      <source>${project.basedir}/../vertx-platform/src/main/resources/logging.properties</source>
+      <source>${project.basedir}/../vertx-core/src/main/resources/logging.properties</source>
     </file>
   </files>
 </assembly>
