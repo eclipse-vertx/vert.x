@@ -21,6 +21,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.eventbus.Registration;
 import org.vertx.java.core.eventbus.ReplyException;
 import org.vertx.java.core.eventbus.ReplyFailure;
 import org.vertx.java.core.impl.Closeable;
@@ -32,7 +33,11 @@ import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.net.*;
+import org.vertx.java.core.net.NetClient;
+import org.vertx.java.core.net.NetClientOptions;
+import org.vertx.java.core.net.NetServer;
+import org.vertx.java.core.net.NetServerOptions;
+import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.parsetools.RecordParser;
 import org.vertx.java.core.spi.cluster.AsyncMultiMap;
@@ -40,6 +45,7 @@ import org.vertx.java.core.spi.cluster.ChoosableIterable;
 import org.vertx.java.core.spi.cluster.ClusterManager;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -94,404 +100,36 @@ public class EventBusImpl implements EventBus {
   }
 
   @Override
-  public EventBus send(String address, Object message, Handler<Message> replyHandler) {
-    // In order to fool the type system we need to wrap the handler - at run time the Message<String> handler
-    // will happily handle non String types as types are erased at run-time
-    Handler<Message<String>> wrapped = replyHandler == null ? null : replyHandler::handle;
-    sendOrPub(createMessage(true, address, message), wrapped);
+  public <T> EventBus send(String address, T message) {
+    return send(address, message, null);
+  }
+
+  @Override
+  public <T, R> EventBus send(String address, T message, Handler<Message<R>> replyHandler) {
+    sendOrPub(createMessage(true, address, message), replyHandler);
     return this;
   }
 
   @Override
-  public <T> EventBus sendWithTimeout(String address, Object message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
+  public <T, R> EventBus sendWithTimeout(String address, T message, long timeout, Handler<AsyncResult<Message<R>>> replyHandler) {
     sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
     return this;
   }
 
   @Override
-  public EventBus send(String address, Object message) {
-    sendOrPub(createMessage(true, address, message), null);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus send(String address, JsonObject message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new JsonObjectMessage(true, address, message), replyHandler);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus sendWithTimeout(String address, JsonObject message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
-    return this;
-  }
-
-  @Override
-  public EventBus send(String address, JsonObject message) {
-    sendOrPub(new JsonObjectMessage(true, address, message), null);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus send(String address, JsonArray message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new JsonArrayMessage(true, address, message), replyHandler);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus sendWithTimeout(String address, JsonArray message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
-    return this;
-  }
-
-  @Override
-  public EventBus send(String address, JsonArray message) {
-    sendOrPub(new JsonArrayMessage(true, address, message), null);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus send(String address, Buffer message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new BufferMessage(true, address, message), replyHandler);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus sendWithTimeout(String address, Buffer message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
-    return this;
-  }
-
-  @Override
-  public EventBus send(String address, Buffer message) {
-    sendOrPub(new BufferMessage(true, address, message), null);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus send(String address, byte[] message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new ByteArrayMessage(true, address, message), replyHandler);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus sendWithTimeout(String address, byte[] message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
-    return this;
-  }
-
-  @Override
-  public EventBus send(String address, byte[] message) {
-    sendOrPub(new ByteArrayMessage(true, address, message), null);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus send(String address, String message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new StringMessage(true, address, message), replyHandler);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus sendWithTimeout(String address, String message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
-    return this;
-  }
-
-  @Override
-  public EventBus send(String address, String message) {
-    sendOrPub(new StringMessage(true, address, message), null);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus send(String address, Integer message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new IntMessage(true, address, message), replyHandler);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus sendWithTimeout(String address, Integer message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
-    return this;
-  }
-
-  @Override
-  public EventBus send(String address, Integer message) {
-    sendOrPub(new IntMessage(true, address, message), null);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus send(String address, Long message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new LongMessage(true, address, message), replyHandler);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus sendWithTimeout(String address, Long message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
-    return this;
-  }
-
-  @Override
-  public EventBus send(String address, Long message) {
-    sendOrPub(new LongMessage(true, address, message), null);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus send(String address, Float message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new FloatMessage(true, address, message), replyHandler);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus sendWithTimeout(String address, Float message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
-    return this;
-  }
-
-  @Override
-  public EventBus send(String address, Float message) {
-    sendOrPub(new FloatMessage(true, address, message), null);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus send(String address, Double message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new DoubleMessage(true, address, message), replyHandler);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus sendWithTimeout(String address, Double message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
-    return this;
-  }
-
-  @Override
-  public EventBus send(String address, Double message) {
-    sendOrPub(new DoubleMessage(true, address, message), null);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus send(String address, Boolean message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new BooleanMessage(true, address, message), replyHandler);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus sendWithTimeout(String address, Boolean message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
-    return this;
-  }
-
-  @Override
-  public EventBus send(String address, Boolean message) {
-    sendOrPub(new BooleanMessage(true, address, message), null);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus send(String address, Short message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new ShortMessage(true, address, message), replyHandler);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus sendWithTimeout(String address, Short message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
-    return this;
-  }
-
-  @Override
-  public EventBus send(String address, Short message) {
-    sendOrPub(new ShortMessage(true, address, message), null);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus send(String address, Character message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new CharacterMessage(true, address, message), replyHandler);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus sendWithTimeout(String address, Character message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
-    return this;
-  }
-
-  @Override
-  public EventBus send(String address, Character message) {
-    sendOrPub(new CharacterMessage(true, address, message), null);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus send(String address, Byte message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new ByteMessage(true, address, message), replyHandler);
-    return this;
-  }
-
-  @Override
-  public <T> EventBus sendWithTimeout(String address, Byte message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
-    return this;
-  }
-
-  @Override
-  public EventBus send(String address, Byte message) {
-    sendOrPub(new ByteMessage(true, address, message), null);
-    return this;
-  }
-
-  @Override
-  public EventBus publish(String address, Object message) {
+  public <T> EventBus publish(String address, T message) {
     sendOrPub(createMessage(false, address, message), null);
     return this;
   }
 
   @Override
-  public EventBus publish(String address, JsonObject message) {
-    sendOrPub(new JsonObjectMessage(false, address, message), null);
-    return this;
+  public Registration registerHandler(String address, Handler<? extends Message> handler) {
+    return registerHandler(address, handler, false, false, -1);
   }
 
   @Override
-  public EventBus publish(String address, JsonArray message) {
-    sendOrPub(new JsonArrayMessage(false, address, message), null);
-    return this;
-  }
-
-  @Override
-  public EventBus publish(String address, Buffer message) {
-    sendOrPub(new BufferMessage(false, address, message), null);
-    return this;
-  }
-
-  @Override
-  public EventBus publish(String address, byte[] message) {
-    sendOrPub(new ByteArrayMessage(false, address, message), null);
-    return this;
-  }
-
-  @Override
-  public EventBus publish(String address, String message) {
-    sendOrPub(new StringMessage(false, address, message), null);
-    return this;
-  }
-
-  @Override
-  public EventBus publish(String address, Integer message) {
-    sendOrPub(new IntMessage(false, address, message), null);
-    return this;
-  }
-
-  @Override
-  public EventBus publish(String address, Long message) {
-    sendOrPub(new LongMessage(false, address, message), null);
-    return this;
-  }
-
-  @Override
-  public EventBus publish(String address, Float message) {
-    sendOrPub(new FloatMessage(false, address, message), null);
-    return this;
-  }
-
-  @Override
-  public EventBus publish(String address, Double message) {
-    sendOrPub(new DoubleMessage(false, address, message), null);
-    return this;
-  }
-
-  @Override
-  public EventBus publish(String address, Boolean message) {
-    sendOrPub(new BooleanMessage(false, address, message), null);
-    return this;
-  }
-
-  @Override
-  public EventBus publish(String address, Short message) {
-    sendOrPub(new ShortMessage(false, address, message), null);
-    return this;
-  }
-
-  @Override
-  public EventBus publish(String address, Character message) {
-    sendOrPub(new CharacterMessage(false, address, message), null);
-    return this;
-  }
-
-  @Override
-  public EventBus publish(String address, Byte message) {
-    sendOrPub(new ByteMessage(false, address, message), null);
-    return this;
-  }
-
-  @Override
-  public EventBus registerHandler(String address, Handler<? extends Message> handler,
-                              Handler<AsyncResult<Void>> completionHandler) {
-    registerHandler(address, handler, completionHandler, false, false, -1);
-    return this;
-  }
-
-  @Override
-  public EventBus registerHandler(String address, Handler<? extends Message> handler) {
-    registerHandler(address, handler, null);
-    return this;
-  }
-
-  @Override
-  public EventBus registerLocalHandler(String address, Handler<? extends Message> handler) {
-    registerHandler(address, handler, null, false, true, -1);
-    return this;
-  }
-
-  @Override
-  public EventBus unregisterHandler(String address, Handler<? extends Message> handler,
-                                    Handler<AsyncResult<Void>> completionHandler) {
-    checkStarted();
-    Handlers handlers = handlerMap.get(address);
-    if (handlers != null) {
-      synchronized (handlers) {
-        int size = handlers.list.size();
-        // Requires a list traversal. This is tricky to optimise since we can't use a set since
-        // we need fast ordered traversal for the round robin
-        for (int i = 0; i < size; i++) {
-          HandlerHolder holder = handlers.list.get(i);
-          if (holder.handler == handler) {
-            if (holder.timeoutID != -1) {
-              vertx.cancelTimer(holder.timeoutID);
-            }
-            handlers.list.remove(i);
-            holder.removed = true;
-            if (handlers.list.isEmpty()) {
-              handlerMap.remove(address);
-              if (subs != null && !holder.localOnly) {
-                removeSub(address, serverID, completionHandler);
-              } else if (completionHandler != null) {
-                callCompletionHandler(completionHandler);
-              }
-            } else if (completionHandler != null) {
-              callCompletionHandler(completionHandler);
-            }
-            holder.context.removeCloseHook(new HandlerEntry(address, handler));
-            return this;
-          }
-        }
-      }
-    }
-    return this;
-  }
-
-  @Override
-  public EventBus unregisterHandler(String address, Handler<? extends Message> handler) {
-    unregisterHandler(address, handler, null);
-    return this;
+  public Registration registerLocalHandler(String address, Handler<? extends Message> handler) {
+    return registerHandler(address, handler, false, true, -1);
   }
 
   @Override
@@ -676,17 +314,17 @@ public class EventBusImpl implements EventBus {
       long timeoutID = -1;
       if (replyHandler != null) {
         message.replyAddress = generateReplyAddress();
+        Registration registration = registerHandler(message.replyAddress, replyHandler, true, true, timeoutID);
         if (timeout != -1) {
           // Add a timeout to remove the reply handler to prevent leaks in case a reply never comes
           timeoutID = vertx.setTimer(timeout, timerID -> {
             log.warn("Message reply handler timed out as no reply was received - it will be removed");
-            unregisterHandler(message.replyAddress, replyHandler);
+            registration.unregister();
             if (asyncResultHandler != null) {
               asyncResultHandler.handle(new FutureResultImpl<>(new ReplyException(ReplyFailure.TIMEOUT, "Timed out waiting for reply")));
             }
           });
         }
-        registerHandler(message.replyAddress, replyHandler, null, true, true, timeoutID);
       }
       if (replyDest != null) {
         if (!replyDest.equals(this.serverID)) {
@@ -737,9 +375,8 @@ public class EventBusImpl implements EventBus {
     };
   }
 
-  private void registerHandler(String address, Handler<? extends Message> handler,
-                               Handler<AsyncResult<Void>> completionHandler,
-                               boolean replyHandler, boolean localOnly, long timeoutID) {
+  private Registration registerHandler(String address, Handler<? extends Message> handler,
+                                       boolean replyHandler, boolean localOnly, long timeoutID) {
     checkStarted();
     if (address == null) {
       throw new NullPointerException("address");
@@ -749,6 +386,10 @@ public class EventBusImpl implements EventBus {
     if (!hasContext) {
       context = vertx.createEventLoopContext();
     }
+    @SuppressWarnings("unchecked")
+    HandlerHolder<?> holder = new HandlerHolder<>((Handler<Message<Object>>) handler, replyHandler, localOnly, context, timeoutID);
+    HandlerRegistration registration = new HandlerRegistration(address, handler);
+
     Handlers handlers = handlerMap.get(address);
     if (handlers == null) {
       handlers = new Handlers();
@@ -756,30 +397,62 @@ public class EventBusImpl implements EventBus {
       if (prevHandlers != null) {
         handlers = prevHandlers;
       }
-      if (completionHandler == null) {
-        completionHandler = asyncResult -> {
-          if (asyncResult.failed()) {
-            log.error("Failed to remove entry", asyncResult.cause());
-          }
-        };
-      }
-      handlers.list.add(new HandlerHolder(handler, replyHandler, localOnly, context, timeoutID));
       if (subs != null && !replyHandler && !localOnly) {
         // Propagate the information
-        subs.add(address, serverID, completionHandler);
+        subs.add(address, serverID, registration::setResult);
       } else {
-        callCompletionHandler(completionHandler);
+        registration.result = new FutureResultImpl<>((Void) null);
       }
     } else {
-      handlers.list.add(new HandlerHolder(handler, replyHandler, localOnly, context, timeoutID));
-      if (completionHandler != null) {
-        callCompletionHandler(completionHandler);
-      }
+      registration.result = new FutureResultImpl<>((Void) null);
     }
+
+    handlers.list.add(holder);
+
     if (hasContext) {
       HandlerEntry entry = new HandlerEntry(address, handler);
       context.addCloseHook(entry);
     }
+
+    return registration;
+  }
+
+  private void unregisterHandler(String address, Handler<? extends Message> handler, Handler<AsyncResult<Void>> completionHandler) {
+    checkStarted();
+    Handlers handlers = handlerMap.get(address);
+    if (handlers != null) {
+      synchronized (handlers) {
+        int size = handlers.list.size();
+        // Requires a list traversal. This is tricky to optimise since we can't use a set since
+        // we need fast ordered traversal for the round robin
+        for (int i = 0; i < size; i++) {
+          HandlerHolder holder = handlers.list.get(i);
+          if (holder.handler == handler) {
+            if (holder.timeoutID != -1) {
+              vertx.cancelTimer(holder.timeoutID);
+            }
+            handlers.list.remove(i);
+            holder.removed = true;
+            if (handlers.list.isEmpty()) {
+              handlerMap.remove(address);
+              if (subs != null && !holder.localOnly) {
+                removeSub(address, serverID, completionHandler);
+              } else if (completionHandler != null) {
+                callCompletionHandler(completionHandler);
+              }
+            } else if (completionHandler != null) {
+              callCompletionHandler(completionHandler);
+            }
+            holder.context.removeCloseHook(new HandlerEntry(address, handler));
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  private void unregisterHandler(String address, Handler<? extends Message> handler) {
+    unregisterHandler(address, handler, emptyHandler());
   }
 
   private void callCompletionHandler(Handler<AsyncResult<Void>> completionHandler) {
@@ -788,7 +461,8 @@ public class EventBusImpl implements EventBus {
 
   private void cleanSubsForServerID(ServerID theServerID) {
     if (subs != null) {
-      subs.removeAllForValue(theServerID, ar -> {});
+      subs.removeAllForValue(theServerID, ar -> {
+      });
     }
   }
 
@@ -923,6 +597,13 @@ public class EventBusImpl implements EventBus {
     if (serverID == null) {
       throw new IllegalStateException("Event Bus is not started");
     }
+  }
+
+  private static final Handler<?> _emptyHandler = e -> {};
+
+  @SuppressWarnings("unchecked")
+  private static <T> Handler<T> emptyHandler() {
+    return (Handler<T>) _emptyHandler;
   }
 
   private static class HandlerHolder<T> {
@@ -1064,7 +745,7 @@ public class EventBusImpl implements EventBus {
 
     // Called by context on undeploy
     public void close(Handler<AsyncResult<Void>> doneHandler) {
-      unregisterHandler(this.address, this.handler);
+      unregisterHandler(this.address, this.handler, emptyHandler());
       doneHandler.handle(new FutureResultImpl<>((Void)null));
     }
 
@@ -1077,6 +758,53 @@ public class EventBusImpl implements EventBus {
     // which could make the JVM run out of file handles.
     close(ar -> {});
     super.finalize();
+  }
+
+  private class HandlerRegistration implements Registration {
+    private final String address;
+    private final Handler<? extends Message> handler;
+    private AsyncResult<Void> result;
+    private Handler<AsyncResult<Void>> completionHandler;
+
+    public HandlerRegistration(String address, Handler<? extends Message> handler) {
+      this.address = address;
+      this.handler = handler;
+    }
+
+    @Override
+    public String address() {
+      return address;
+    }
+
+    @Override
+    public synchronized void onCompletion(Handler<AsyncResult<Void>> completionHandler) {
+      Objects.requireNonNull(completionHandler);
+      if (result != null) {
+        completionHandler.handle(result);
+      } else {
+        this.completionHandler = completionHandler;
+      }
+    }
+
+    @Override
+    public void unregister() {
+      unregister(emptyHandler());
+    }
+
+    @Override
+    public void unregister(Handler<AsyncResult<Void>> doneHandler) {
+      Objects.requireNonNull(doneHandler);
+      unregisterHandler(address, handler, doneHandler);
+    }
+
+    private synchronized void setResult(AsyncResult<Void> result) {
+      this.result = result;
+      if (completionHandler != null) {
+        completionHandler.handle(result);
+      } else if (result.failed()) {
+        log.error("Failed to propagate registration for handler " + handler + " and address " + address);
+      }
+    }
   }
 }
 

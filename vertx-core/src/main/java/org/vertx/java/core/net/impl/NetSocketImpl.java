@@ -29,6 +29,7 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.Registration;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.file.impl.PathAdjuster;
 import org.vertx.java.core.impl.ContextImpl;
@@ -50,7 +51,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
-  private final Handler<Message<Buffer>> writeHandler;
+  private Registration registration;
   private Queue<Buffer> pendingData;
   private boolean paused = false;
   private SSLHelper helper;
@@ -62,12 +63,8 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     this.helper = helper;
     this.client = client;
     this.writeHandlerID = UUID.randomUUID().toString();
-    writeHandler = new Handler<Message<Buffer>>() {
-      public void handle(Message<Buffer> msg) {
-        write(msg.body());
-      }
-    };
-    vertx.eventBus().registerLocalHandler(writeHandlerID, writeHandler);
+    Handler<Message<Buffer>> writeHandler = msg -> write(msg.body());
+    registration = vertx.eventBus().registerLocalHandler(writeHandlerID, writeHandler);
   }
 
   @Override
@@ -245,7 +242,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     }
     super.handleClosed();
     if (vertx.eventBus() != null) {
-      vertx.eventBus().unregisterHandler(writeHandlerID, writeHandler);
+      registration.unregister();
     }
   }
 

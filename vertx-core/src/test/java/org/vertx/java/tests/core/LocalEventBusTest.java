@@ -24,6 +24,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxFactory;
 import org.vertx.java.core.eventbus.EventBus;
+import org.vertx.java.core.eventbus.Registration;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.ReplyException;
 import org.vertx.java.core.eventbus.ReplyFailure;
@@ -65,8 +66,8 @@ public class LocalEventBusTest extends EventBusTestBase {
   public void testRegisterUnregister() {
     String str = randomUnicodeString(100);
     Handler<Message> handler = msg -> fail("Should not receive message");
-    eb.registerHandler(ADDRESS1, handler);
-    eb.unregisterHandler(ADDRESS1, handler);
+    Registration reg = eb.registerHandler(ADDRESS1, handler);
+    reg.unregister();
     eb.send(ADDRESS1, str);
     vertx.setTimer(1000, id -> testComplete());
     await();
@@ -75,16 +76,9 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testUnregisterTwice() {
     Handler<Message> handler = msg -> {};
-    eb.registerHandler(ADDRESS1, handler);
-    eb.unregisterHandler(ADDRESS1, handler);
-    eb.unregisterHandler(ADDRESS1, handler);  // Ok to unregister twice
-    testComplete();
-  }
-
-  @Test
-  public void testUnregisterUnknown() {
-    Handler<Message> handler = msg -> {};
-    eb.unregisterHandler(ADDRESS1, handler);
+    Registration reg = eb.registerHandler(ADDRESS1, handler);
+    reg.unregister();
+    reg.unregister(); // Ok to unregister twice
     testComplete();
   }
 
@@ -102,10 +96,11 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testRegisterWithCompletionHandler() {
     String str = randomUnicodeString(100);
-    eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
+    Registration reg = eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
       assertEquals(str, msg.body());
       testComplete();
-    }, ar -> {
+    });
+    reg.onCompletion(ar -> {
       assertTrue(ar.succeeded());
       eb.send(ADDRESS1, str);
     });
@@ -149,26 +144,28 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testSendRegisterSomeUnregisterOne() {
     String str = randomUnicodeString(100);
-    Handler<Message> handler1 = msg -> fail("Should not receive message");
-    eb.registerHandler(ADDRESS1, handler1);
     AtomicInteger totalCount = new AtomicInteger();
-    Handler<Message<String>> handler2 = (Message<String> msg) -> {
+    Handler<Message> handler1 = msg -> fail("Should not receive message");
+    Handler<Message<String>> handler2 = msg -> {
       assertEquals(str, msg.body());
       if (totalCount.incrementAndGet() == 2) {
         testComplete();
       }
     };
+    Handler<Message<String>> handler3 = msg -> {
+      assertEquals(str, msg.body());
+      if (totalCount.incrementAndGet() == 2) {
+        testComplete();
+      }
+    };
+
+    Registration reg = eb.registerHandler(ADDRESS1, handler1);
     eb.registerHandler(ADDRESS1, handler2);
-    Handler<Message<String>> handler3 = (Message<String> msg) -> {
-      assertEquals(str, msg.body());
-      if (totalCount.incrementAndGet() == 2) {
-        testComplete();
-      }
-    };
     eb.registerHandler(ADDRESS1, handler3);
-    eb.unregisterHandler(ADDRESS1, handler1);
+    reg.unregister();
     eb.send(ADDRESS1, str);
     eb.send(ADDRESS1, str);
+
     await();
   }
 
@@ -487,13 +484,15 @@ public class LocalEventBusTest extends EventBusTestBase {
       assertEquals(str, msg.body());
       testComplete();
     };
-    eb.registerHandler(ADDRESS1, handler1);
     Handler<Message<String>> handler2 = (Message<String> msg) -> {
       fail("Should not be called");
     };
-    eb.registerHandler(ADDRESS1, handler2);
-    eb.unregisterHandler(ADDRESS1, handler2);
+
+    eb.registerHandler(ADDRESS1, handler1);
+    Registration reg = eb.registerHandler(ADDRESS1, handler2);
+    reg.unregister();
     eb.publish(ADDRESS1, str);
+
     await();
   }
 
@@ -535,16 +534,6 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Override
-  protected <T> void testSendNull(T obj) {
-    eb.registerHandler(ADDRESS1,msg -> {
-      assertNull(msg.body());
-      testComplete();
-    });
-    eb.send(ADDRESS1, (T)null);
-    await();
-  }
-
-  @Override
   protected <T> void testReply(T val, Consumer<T> consumer) {
     String str = randomUnicodeString(1000);
     eb.registerHandler(ADDRESS1, msg -> {
@@ -559,38 +548,6 @@ public class LocalEventBusTest extends EventBusTestBase {
       }
       testComplete();
     });
-    await();
-  }
-
-  @Override
-  protected <T> void testReplyNull(T val) {
-    String str = randomUnicodeString(1000);
-    eb.registerHandler(ADDRESS1, msg -> {
-      assertEquals(str, msg.body());
-      msg.reply((T)null);
-    });
-    eb.send(ADDRESS1, str, (Message<T>reply) -> {
-      assertNull(reply.body());
-      testComplete();
-    });
-    await();
-  }
-
-  @Override
-  protected <T> void testPublishNull(T val) {
-    AtomicInteger count = new AtomicInteger();
-    class MyHandler implements Handler<Message<T>> {
-      @Override
-      public void handle(Message<T> msg) {
-        assertNull(msg.body());
-        if (count.incrementAndGet() == 2) {
-          testComplete();
-        }
-      }
-    }
-    eb.registerHandler(ADDRESS1, new MyHandler());
-    eb.registerHandler(ADDRESS1, new MyHandler());
-    eb.publish(ADDRESS1, (T)null);
     await();
   }
 
@@ -615,8 +572,5 @@ public class LocalEventBusTest extends EventBusTestBase {
     eb.publish(ADDRESS1, (T)val);
     await();
   }
-
-
-
 }
 
