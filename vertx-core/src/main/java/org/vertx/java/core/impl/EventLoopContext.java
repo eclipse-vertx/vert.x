@@ -16,7 +16,6 @@
 
 package org.vertx.java.core.impl;
 
-import io.netty.channel.EventLoop;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -29,16 +28,46 @@ public class EventLoopContext extends ContextImpl {
 
   private static final Logger log = LoggerFactory.getLogger(EventLoopContext.class);
 
+  private Thread contextThread;
+
   public EventLoopContext(VertxInternal vertx, Executor bgExec) {
     super(vertx, bgExec);
   }
 
-  public void execute(Runnable task) {
-    getEventLoop().execute(wrapTask(task));
+  public void doExecute(ContextTask task) {
+    getEventLoop().execute(wrapTask(task, false, true));
   }
 
-  public boolean isOnCorrectWorker(EventLoop worker) {
-    return getEventLoop() == worker;
+  @Override
+  public boolean isEventLoopContext() {
+    return true;
+  }
+
+
+  @Override
+  protected void setThread(Thread thread) {
+    // Sanity check - make sure Netty is really delivering events on the correct thread
+    if (this.contextThread == null) {
+      this.contextThread = thread;
+    } else if (this.contextThread != thread) {
+      //log.warn("Uh oh! Event loop context executing with wrong thread! Expected " + this.thread + " got " + thread);
+      throw new IllegalStateException("Uh oh! Event loop context executing with wrong thread! Expected " + this.contextThread + " got " + thread);
+    }
+  }
+
+  @Override
+  protected boolean isOnCorrectContextThread(boolean expectRightThread) {
+    Thread current = Thread.currentThread();
+    boolean correct = current == contextThread;
+    if (expectRightThread) {
+      if (!(current instanceof VertxThread)) {
+        log.warn("Expected to be on Vert.x thread, but actually on: " + current);
+      } else if (!correct && contextThread != null) {
+        log.warn("Event delivered on unexpected thread " + current + " expected: " + contextThread);
+        new Exception().printStackTrace();
+      }
+    }
+    return correct;
   }
 
 }

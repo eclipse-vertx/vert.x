@@ -69,16 +69,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     if (conn != null) {
       conn.setWritable(ctx.channel().isWritable());
       ContextImpl context = getContext(conn);
-      if (context.isOnCorrectWorker(ch.eventLoop())) {
-        try {
-          vertx.setContext(context);
-          conn.handleInterestedOpsChanged();
-        } catch (Throwable t) {
-          context.reportException(t);
-        }
-      } else {
-        context.execute(() -> conn.handleInterestedOpsChanged());
-      }
+      context.execute(conn::handleInterestedOpsChanged, true);
     }
   }
 
@@ -89,7 +80,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     final C connection = connectionMap.get(ch);
     if (connection != null) {
       ContextImpl context = getContext(connection);
-      context.execute(ch.eventLoop(), () ->{
+      context.execute(() ->{
         try {
           if (ch.isOpen()) {
             ch.close();
@@ -97,7 +88,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
         } catch (Throwable ignore) {
         }
         connection.handleException(t);
-      });
+      }, true);
     } else {
       // Ignore - any exceptions before a channel exists will be passed manually via the failed(...) method
       // Any exceptions after a channel is closed can be ignored
@@ -110,7 +101,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     final C connection = connectionMap.remove(ch);
     if (connection != null) {
       ContextImpl context = getContext(connection);
-      context.execute(ch.eventLoop(), () -> connection.handleClosed());
+      context.execute(() -> connection.handleClosed(), true);
     }
   }
 
@@ -120,8 +111,8 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     if (conn != null) {
       ContextImpl context = getContext(conn);
       // Only mark end read if its not a WorkerVerticle
-      if (context.isOnCorrectWorker(ctx.channel().eventLoop())) {
-        conn.endReadAndFlush();
+      if (context.isEventLoopContext()) {
+        context.execute(conn::endReadAndFlush, true);
       }
     }
   }
@@ -137,8 +128,8 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
       // Only mark start read if we are on the correct worker. This is needed as while we are in read this may will
       // delay flushes, which is a problem when we are no on the correct worker. This is mainly a problem as
       // WorkerVerticle may block.
-      if (context.isOnCorrectWorker(chctx.channel().eventLoop())) {
-        connection.startRead();
+      if (context.isEventLoopContext()) {
+        context.execute(connection::startRead, true);
       }
     } else {
       context = null;

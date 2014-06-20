@@ -300,27 +300,13 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     sslHandler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
       @Override
       public void operationComplete(final Future<Channel> future) throws Exception {
-        if (context.isOnCorrectWorker(channel.eventLoop())) {
+        context.execute(() -> {
           if (future.isSuccess()) {
-            try {
-              vertx.setContext(context);
-              handler.handle(null);
-            } catch (Throwable t) {
-              context.reportException(t);
-            }
+            handler.handle(null);
           } else {
             context.reportException(future.cause());
           }
-
-        } else {
-          context.execute(() -> {
-            if (future.isSuccess()) {
-              handler.handle(null);
-            } else {
-              context.reportException(future.cause());
-            }
-          });
-        }
+        }, true);
       }
     });
     return this;

@@ -35,7 +35,6 @@ import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.PartialPooledByteBufAllocator;
 import org.vertx.java.core.net.impl.SSLHelper;
-import org.vertx.java.core.net.impl.VertxEventLoopGroup;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLHandshakeException;
@@ -50,9 +49,8 @@ public class HttpClientImpl implements HttpClient {
   private final VertxInternal vertx;
   private final HttpClientOptions options;
   private final Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<>();
-  private final ContextImpl actualCtx;
+  private final ContextImpl creatingContext;
   private final ConnectionManager pool;
-  private Bootstrap bootstrap;
   private Handler<Throwable> exceptionHandler;
   private final Closeable closeHook;
   private boolean closed;
@@ -62,16 +60,18 @@ public class HttpClientImpl implements HttpClient {
     this.vertx = vertx;
     this.options = new HttpClientOptions(options);
     this.sslHelper = new SSLHelper(options);
-    actualCtx = vertx.getOrCreateContext();
+    this.creatingContext = vertx.getContext();
     closeHook = doneHandler -> {
       HttpClientImpl.this.close();
       doneHandler.handle(new FutureResultImpl<>((Void)null));
     };
-    actualCtx.addCloseHook(closeHook);
+    if (creatingContext != null) {
+      creatingContext.addCloseHook(closeHook);
+    }
     pool = new ConnectionManager(vertx)  {
       protected void connect(String host, int port, Handler<ClientConnection> connectHandler, Handler<Throwable> connectErrorHandler, ContextImpl context,
                              ConnectionLifeCycleListener listener) {
-        internalConnect(port, host, connectHandler, connectErrorHandler, listener);
+        internalConnect(context, port, host, connectHandler, connectErrorHandler, listener);
       }
     };
     pool.setKeepAlive(options.isKeepAlive());
@@ -89,13 +89,14 @@ public class HttpClientImpl implements HttpClient {
   @Override
   public HttpClient connectWebsocket(WebSocketConnectOptions wsOptions, Handler<WebSocket> wsConnect) {
     checkClosed();
+    ContextImpl context = vertx.getOrCreateContext();
     getConnection(wsOptions.getPort(), wsOptions.getHost(), conn -> {
       if (!conn.isClosed()) {
         conn.toWebSocket(wsOptions, wsOptions.getMaxWebsocketFrameSize(), wsConnect);
       } else {
         connectWebsocket(wsOptions, wsConnect);
       }
-    }, exceptionHandler, actualCtx);
+    }, exceptionHandler, context);
     return this;
   }
 
@@ -167,7 +168,9 @@ public class HttpClientImpl implements HttpClient {
     for (ClientConnection conn : connectionMap.values()) {
       conn.close();
     }
-    actualCtx.removeCloseHook(closeHook);
+    if (creatingContext != null) {
+      creatingContext.removeCloseHook(closeHook);
+    }
     closed = true;
   }
 
@@ -221,38 +224,34 @@ public class HttpClientImpl implements HttpClient {
     bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
   }
 
-  private void internalConnect(int port, String host, Handler<ClientConnection> connectHandler, Handler<Throwable> connectErrorHandler,
-                       ConnectionLifeCycleListener listener) {
-    if (bootstrap == null) {
-      VertxEventLoopGroup pool = new VertxEventLoopGroup();
-      pool.addWorker(actualCtx.getEventLoop());
-      bootstrap = new Bootstrap();
-      bootstrap.group(pool);
-      bootstrap.channel(NioSocketChannel.class);
-      sslHelper.checkSSL(vertx);
-      bootstrap.handler(new ChannelInitializer<Channel>() {
-        @Override
-        protected void initChannel(Channel ch) throws Exception {
-          ChannelPipeline pipeline = ch.pipeline();
-          if (options.isSsl()) {
-            SSLEngine engine = sslHelper.getSslContext().createSSLEngine(host, port);
-            if (options.isVerifyHost()) {
-              SSLParameters sslParameters = engine.getSSLParameters();
-              sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
-              engine.setSSLParameters(sslParameters);
-            }
-            engine.setUseClientMode(true); //We are on the client side of the connection
-            pipeline.addLast("ssl", new SslHandler(engine));
+  private void internalConnect(ContextImpl context, int port, String host, Handler<ClientConnection> connectHandler, Handler<Throwable> connectErrorHandler,
+                               ConnectionLifeCycleListener listener) {
+    Bootstrap bootstrap = new Bootstrap();
+    bootstrap.group(context.getEventLoop());
+    bootstrap.channel(NioSocketChannel.class);
+    sslHelper.checkSSL(vertx);
+    bootstrap.handler(new ChannelInitializer<Channel>() {
+      @Override
+      protected void initChannel(Channel ch) throws Exception {
+        ChannelPipeline pipeline = ch.pipeline();
+        if (options.isSsl()) {
+          SSLEngine engine = sslHelper.getSslContext().createSSLEngine(host, port);
+          if (options.isVerifyHost()) {
+            SSLParameters sslParameters = engine.getSSLParameters();
+            sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+            engine.setSSLParameters(sslParameters);
           }
-
-          pipeline.addLast("codec", new HttpClientCodec(4096, 8192, 8192, false, false));
-          if (options.isTryUseCompression()) {
-            pipeline.addLast("inflater", new HttpContentDecompressor(true));
-          }
-          pipeline.addLast("handler", new ClientHandler());
+          engine.setUseClientMode(true); //We are on the client side of the connection
+          pipeline.addLast("ssl", new SslHandler(engine));
         }
-      });
-    }
+
+        pipeline.addLast("codec", new HttpClientCodec(4096, 8192, 8192, false, false));
+        if (options.isTryUseCompression()) {
+          pipeline.addLast("inflater", new HttpContentDecompressor(true));
+        }
+        pipeline.addLast("handler", new ClientHandler(context));
+      }
+    });
     applyConnectionOptions(bootstrap);
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
     future.addListener(new ChannelFutureListener() {
@@ -267,17 +266,17 @@ public class HttpClientImpl implements HttpClient {
             Future<Channel> fut = sslHandler.handshakeFuture();
             fut.addListener(future -> {
               if (future.isSuccess()) {
-                connected(port, host, ch, connectHandler, listener);
+                connected(context, port, host, ch, connectHandler, listener);
               } else {
-                connectionFailed(ch, connectErrorHandler, new SSLHandshakeException("Failed to create SSL connection"),
+                connectionFailed(context, ch, connectErrorHandler, new SSLHandshakeException("Failed to create SSL connection"),
                                  listener);
               }
             });
           } else {
-            connected(port, host, ch, connectHandler, listener);
+            connected(context, port, host, ch, connectHandler, listener);
           }
         } else {
-          connectionFailed(ch, connectErrorHandler, channelFuture.cause(), listener);
+          connectionFailed(context, ch, connectErrorHandler, channelFuture.cause(), listener);
         }
       }
     });
@@ -285,7 +284,8 @@ public class HttpClientImpl implements HttpClient {
 
   private HttpClientRequest doRequest(String method, RequestOptions options, Handler<HttpClientResponse> responseHandler) {
     checkClosed();
-    HttpClientRequest req = new HttpClientRequestImpl(this, method, options, responseHandler, actualCtx);
+    ContextImpl context = vertx.getOrCreateContext();
+    HttpClientRequest req = new HttpClientRequestImpl(this, method, options, responseHandler, context);
     if (options.getHeaders() != null) {
       req.headers().set(options.getHeaders());
     }
@@ -298,13 +298,13 @@ public class HttpClientImpl implements HttpClient {
     }
   }
 
-  private void connected(int port, String host, Channel ch, Handler<ClientConnection> connectHandler, ConnectionLifeCycleListener listener) {
-    actualCtx.execute(ch.eventLoop(), () -> createConn(port, host, ch, connectHandler, listener));
+  private void connected(ContextImpl context, int port, String host, Channel ch, Handler<ClientConnection> connectHandler, ConnectionLifeCycleListener listener) {
+    context.execute(() -> createConn(context, port, host, ch, connectHandler, listener), true);
   }
 
-  private void createConn(int port, String host, Channel ch, Handler<ClientConnection> connectHandler, ConnectionLifeCycleListener listener) {
+  private void createConn(ContextImpl context, int port, String host, Channel ch, Handler<ClientConnection> connectHandler, ConnectionLifeCycleListener listener) {
     ClientConnection conn = new ClientConnection(vertx, HttpClientImpl.this, ch,
-        options.isSsl(), host, port, actualCtx, listener);
+        options.isSsl(), host, port, context, listener);
     conn.closeHandler(v -> {
       // The connection has been closed - tell the pool about it, this allows the pool to create more
       // connections. Note the pool doesn't actually remove the connection, when the next person to get a connection
@@ -315,14 +315,14 @@ public class HttpClientImpl implements HttpClient {
     connectHandler.handle(conn);
   }
 
-  private void connectionFailed(Channel ch, Handler<Throwable> connectionExceptionHandler,
+  private void connectionFailed(ContextImpl context, Channel ch, Handler<Throwable> connectionExceptionHandler,
                                 Throwable t, ConnectionLifeCycleListener listener) {
     // If no specific exception handler is provided, fall back to the HttpClient's exception handler.
     // If that doesn't exist just log it
     Handler<Throwable> exHandler =
-      connectionExceptionHandler == null ? (exceptionHandler == null ? actualCtx::reportException : exceptionHandler ): connectionExceptionHandler;
+      connectionExceptionHandler == null ? (exceptionHandler == null ? context::reportException : exceptionHandler ): connectionExceptionHandler;
 
-    actualCtx.execute(ch.eventLoop(), () -> {
+    context.execute(() -> {
       listener.connectionClosed(null);
       try {
         ch.close();
@@ -331,9 +331,9 @@ public class HttpClientImpl implements HttpClient {
       if (exHandler != null) {
         exHandler.handle(t);
       } else {
-        actualCtx.reportException(t);
+        context.reportException(t);
       }
-    });
+    }, true);
   }
 
   private Handler<HttpClientResponse> connectHandler(Handler<HttpClientResponse> responseHandler) {
@@ -384,7 +384,7 @@ public class HttpClientImpl implements HttpClient {
           public NetSocket netSocket() {
             if (!resumed) {
               resumed = true;
-              vertx.getContext().execute(socket::resume); // resume the socket now as the user had the chance to register a dataHandler
+              vertx.getContext().execute(socket::resume, false); // resume the socket now as the user had the chance to register a dataHandler
             }
             return socket;
           }
@@ -428,14 +428,16 @@ public class HttpClientImpl implements HttpClient {
 
   private class ClientHandler extends VertxHttpHandler<ClientConnection> {
     private boolean closeFrameSent;
+    private ContextImpl context;
 
-    public ClientHandler() {
+    public ClientHandler(ContextImpl context) {
       super(vertx, HttpClientImpl.this.connectionMap);
+      this.context = context;
     }
 
     @Override
     protected ContextImpl getContext(ClientConnection connection) {
-      return actualCtx;
+      return context;
     }
 
     @Override

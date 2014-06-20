@@ -72,7 +72,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
   private final HttpServerOptions options;
   private final VertxInternal vertx;
   private final SSLHelper sslHelper;
-  private final ContextImpl actualCtx;
+  private final ContextImpl creatingContext;
   private final Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private Handler<HttpServerRequest> requestHandler;
@@ -86,12 +86,15 @@ public class HttpServerImpl implements HttpServer, Closeable {
   private HttpServerImpl actualServer;
   private HandlerManager<HttpServerRequest> reqHandlerManager = new HandlerManager<>(availableWorkers);
   private HandlerManager<ServerWebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
+  private ContextImpl listenContext;
 
   public HttpServerImpl(VertxInternal vertx, HttpServerOptions options) {
     this.options = new HttpServerOptions(options);
     this.vertx = vertx;
-    actualCtx = vertx.getOrCreateContext();
-    actualCtx.addCloseHook(this);
+    this.creatingContext = vertx.getContext();
+    if (creatingContext != null) {
+      creatingContext.addCloseHook(this);
+    }
     sslHelper = new SSLHelper(options);
   }
 
@@ -148,14 +151,14 @@ public class HttpServerImpl implements HttpServer, Closeable {
     bootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());
   }
 
-
   public HttpServer listen(final Handler<AsyncResult<HttpServer>> listenHandler) {
     if (requestHandler == null && wsHandler == null) {
       throw new IllegalStateException("Set request or websocket handler first");
     }
     if (listening) {
-      throw new IllegalStateException("Listen already called");
+      throw new IllegalStateException("Already listening");
     }
+    listenContext = vertx.getOrCreateContext();
     listening = true;
 
     synchronized (vertx.sharedHttpServers()) {
@@ -208,7 +211,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
             }
         });
 
-        addHandlers(this);
+        addHandlers(this, listenContext);
         try {
           bindFuture = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(options.getHost()), options.getPort()));
           Channel serverChannel = bindFuture.channel();
@@ -227,7 +230,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
             vertx.runOnContext(v -> listenHandler.handle(new FutureResultImpl<>(t)));
           } else {
             // No handler - log so user can see failure
-            actualCtx.reportException(t);
+            listenContext.reportException(t);
           }
           listening = false;
           return this;
@@ -237,7 +240,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
       } else {
         // Server already exists with that host/port - we will use that
         actualServer = shared;
-        addHandlers(actualServer);
+        addHandlers(actualServer, listenContext);
       }
       actualServer.bindFuture.addListener(new ChannelFutureListener() {
         @Override
@@ -250,11 +253,11 @@ public class HttpServerImpl implements HttpServer, Closeable {
               res = new FutureResultImpl<>(future.cause());
               listening = false;
             }
-            actualCtx.execute(future.channel().eventLoop(), () -> listenHandler.handle(res));
+            listenContext.execute(() -> listenHandler.handle(res), true);
           } else if (!future.isSuccess()) {
             listening  = false;
             // No handler - log so user can see failure
-            actualCtx.reportException(future.cause());
+            listenContext.reportException(future.cause());
           }
         }
       });
@@ -262,12 +265,12 @@ public class HttpServerImpl implements HttpServer, Closeable {
     return this;
   }
 
-  private void addHandlers(HttpServerImpl server) {
+  private void addHandlers(HttpServerImpl server, ContextImpl context) {
     if (requestHandler != null) {
-      server.reqHandlerManager.addHandler(requestHandler, actualCtx);
+      server.reqHandlerManager.addHandler(requestHandler, context);
     }
     if (wsHandler != null) {
-      server.wsHandlerManager.addHandler(wsHandler, actualCtx);
+      server.wsHandlerManager.addHandler(wsHandler, context);
     }
   }
 
@@ -278,8 +281,9 @@ public class HttpServerImpl implements HttpServer, Closeable {
 
   @Override
   public void close(final Handler<AsyncResult<Void>> done) {
+    ContextImpl context = vertx.getOrCreateContext();
     if (!listening) {
-      executeCloseDone(actualCtx, done, null);
+      executeCloseDone(context, done, null);
       return;
     }
     listening = false;
@@ -289,28 +293,30 @@ public class HttpServerImpl implements HttpServer, Closeable {
       if (actualServer != null) {
 
         if (requestHandler != null) {
-          actualServer.reqHandlerManager.removeHandler(requestHandler, actualCtx);
+          actualServer.reqHandlerManager.removeHandler(requestHandler, listenContext);
         }
         if (wsHandler != null) {
-          actualServer.wsHandlerManager.removeHandler(wsHandler, actualCtx);
+          actualServer.wsHandlerManager.removeHandler(wsHandler, listenContext);
         }
 
         if (actualServer.reqHandlerManager.hasHandlers() || actualServer.wsHandlerManager.hasHandlers()) {
           // The actual server still has handlers so we don't actually close it
           if (done != null) {
-            executeCloseDone(actualCtx, done, null);
+            executeCloseDone(context, done, null);
           }
         } else {
           // No Handlers left so close the actual server
           // The done handler needs to be executed on the context that calls close, NOT the context
           // of the actual server
-          actualServer.actualClose(actualCtx, done);
+          actualServer.actualClose(context, done);
         }
       }
     }
     requestHandler = null;
     wsHandler = null;
-    actualCtx.removeCloseHook(this);
+    if (creatingContext != null) {
+      creatingContext.removeCloseHook(this);
+    }
   }
 
   SSLHelper getSslHelper() {
@@ -351,7 +357,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
 
   private void executeCloseDone(final ContextImpl closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {
     if (done != null) {
-      closeContext.execute(() -> done.handle(new FutureResultImpl<>(e)));
+      closeContext.execute(() -> done.handle(new FutureResultImpl<>(e)), false);
     }
   }
 

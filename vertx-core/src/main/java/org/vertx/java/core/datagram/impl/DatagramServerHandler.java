@@ -47,22 +47,7 @@ final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl> {
   @SuppressWarnings("unchecked")
   @Override
   protected void channelRead(final DatagramSocketImpl server, final ContextImpl context, ChannelHandlerContext chctx, final Object msg) throws Exception {
-    if (context.isOnCorrectWorker(chctx.channel().eventLoop())) {
-      try {
-        vertx.setContext(context);
-        server.handleMessage((org.vertx.java.core.datagram.DatagramPacket) msg);
-      } catch (Throwable t) {
-        context.reportException(t);
-      }
-    } else {
-      context.execute(() -> {
-        try {
-          server.handleMessage((org.vertx.java.core.datagram.DatagramPacket) msg);
-        } catch (Throwable t) {
-          context.reportException(t);
-        }
-      });
-    }
+    context.execute(() -> server.handleMessage((org.vertx.java.core.datagram.DatagramPacket) msg), true);
   }
 
   @Override

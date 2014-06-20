@@ -916,7 +916,7 @@ public class EventBusImpl implements EventBus {
           unregisterHandler(msg.address, holder.handler);
         }
       }
-    });
+    }, false);
   }
 
   private void checkStarted() {

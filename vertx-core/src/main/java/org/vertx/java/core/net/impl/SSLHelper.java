@@ -83,7 +83,7 @@ public class SSLHelper {
   }
 
   public void checkSSL(VertxInternal vertx) {
-    if (ssl) {
+    if (ssl && sslContext == null) {
       sslContext = createContext(vertx, keyStorePath, keyStorePassword, trustStorePath, trustStorePassword, trustAll);
     }
   }

@@ -211,7 +211,7 @@ public final class DnsClientImpl implements DnsClient {
     } catch (final UnknownHostException e) {
       // Should never happen as we work with ip addresses as input
       // anyway just in case notify the handler
-      actualCtx.execute(() -> handler.handle(new FutureResultImpl<>(e)));
+      actualCtx.execute(() -> handler.handle(new FutureResultImpl<>(e)), false);
     }
     return this;
   }
@@ -275,26 +275,13 @@ public final class DnsClientImpl implements DnsClient {
     if (r.complete()) {
       return;
     }
-    if (actualCtx.isOnCorrectWorker(loop)) {
-      try {
-        vertx.setContext(actualCtx);
-        if (result instanceof Throwable) {
-          r.setFailure((Throwable) result);
-        } else {
-          r.setResult(result);
-        }
-      } catch (Throwable t) {
-        actualCtx.reportException(t);
+    actualCtx.execute(() -> {
+      if (result instanceof Throwable) {
+        r.setFailure((Throwable) result);
+      } else {
+        r.setResult(result);
       }
-    } else {
-      actualCtx.execute(() -> {
-        if (result instanceof Throwable) {
-          r.setFailure((Throwable) result);
-        } else {
-          r.setResult(result);
-        }
-      });
-    }
+    }, true);
   }
 
   private static final class HandlerAdapter<T> implements Handler<AsyncResult<List<T>>> {

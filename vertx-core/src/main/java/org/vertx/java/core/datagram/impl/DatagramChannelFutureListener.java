@@ -15,7 +15,6 @@
  */
 package org.vertx.java.core.datagram.impl;
 
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import org.vertx.java.core.AsyncResult;
@@ -42,17 +41,7 @@ final class DatagramChannelFutureListener<T> implements ChannelFutureListener {
 
   @Override
   public void operationComplete(final ChannelFuture future) throws Exception {
-    Channel ch = future.channel();
-    if (context.isOnCorrectWorker(ch.eventLoop())) {
-      try {
-        vertx.setContext(context);
-        notifyHandler(future);
-      } catch (Throwable t) {
-        context.reportException(t);
-      }
-    } else {
-      context.execute(() -> notifyHandler(future));
-    }
+    context.execute(() -> notifyHandler(future), true);
   }
 
   private void notifyHandler(ChannelFuture future) {

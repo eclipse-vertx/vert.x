@@ -288,15 +288,6 @@ public class DatagramSocketImpl extends ConnectionBase
 
 
   private void notifyException(final Handler<AsyncResult<DatagramSocket>> handler, final Throwable cause) {
-    if (context.isOnCorrectWorker(channel().eventLoop())) {
-      try {
-        vertx.setContext(context);
-        handler.handle(new FutureResultImpl<>(cause));
-      } catch (Throwable t) {
-        context.reportException(t);
-      }
-    } else {
-      context.execute(() -> handler.handle(new FutureResultImpl<>(cause)));
-    }
+    context.execute(() -> handler.handle(new FutureResultImpl<>(cause)), true);
   }
 }

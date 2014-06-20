@@ -16,8 +16,6 @@
 
 package org.vertx.java.core.impl;
 
-import io.netty.channel.EventLoop;
-
 import java.util.concurrent.Executor;
 
 /**
@@ -29,11 +27,18 @@ public class WorkerContext extends ContextImpl {
     super(vertx, orderedBgExec);
   }
 
-  public void execute(Runnable task) {
-    executeOnOrderedWorkerExec(wrapTask(task));
+  public void doExecute(ContextTask task) {
+    executeOnOrderedWorkerExec(task);
   }
 
-  public boolean isOnCorrectWorker(EventLoop worker) {
+  @Override
+  public boolean isEventLoopContext() {
     return false;
   }
+
+  @Override
+  protected boolean isOnCorrectContextThread(boolean expectRightThread) {
+    return false;
+  }
+
 }

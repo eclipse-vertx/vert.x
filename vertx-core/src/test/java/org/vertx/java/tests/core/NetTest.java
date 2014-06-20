@@ -24,7 +24,6 @@ import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.http.RequestOptions;
 import org.vertx.java.core.impl.ConcurrentHashSet;
 import org.vertx.java.core.net.*;
 import org.vertx.java.core.net.impl.SocketDefaults;
@@ -1030,13 +1029,17 @@ public class NetTest extends VertxTestBase {
           testComplete();
         }
       });
+      // Send some data to the client to trigger the sendfile
+      sock.write("foo");
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       client.connect(1234, ar2 -> {
         assertTrue(ar2.succeeded());
         NetSocket sock = ar2.result();
-        sock.sendFile(file.getAbsolutePath());
+        sock.dataHandler(buf -> {
+          sock.sendFile(file.getAbsolutePath());
+        });
       });
     });
 
@@ -1051,7 +1054,9 @@ public class NetTest extends VertxTestBase {
     Buffer expected = new Buffer(content);
     Buffer received = new Buffer();
     server.connectHandler(sock -> {
-      sock.sendFile(file.getAbsolutePath());
+      sock.dataHandler(buf -> {
+        sock.sendFile(file.getAbsolutePath());
+      });
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
@@ -1065,6 +1070,7 @@ public class NetTest extends VertxTestBase {
             testComplete();
           }
         });
+        sock.write("foo");
       });
     });
 

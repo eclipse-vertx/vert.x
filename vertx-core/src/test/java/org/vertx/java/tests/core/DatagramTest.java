@@ -22,13 +22,9 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.datagram.DatagramSocket;
 import org.vertx.java.core.datagram.DatagramSocketOptions;
 import org.vertx.java.core.datagram.InternetProtocolFamily;
-import org.vertx.java.core.net.impl.SocketDefaults;
 
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;

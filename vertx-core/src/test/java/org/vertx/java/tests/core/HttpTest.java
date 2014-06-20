@@ -1542,7 +1542,7 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testPipeliningOrder() {
+  public void testPipeliningOrder() throws Exception {
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true).setPipelining(true).setMaxPoolSize(1));
     int requests = 100;
@@ -1555,8 +1555,8 @@ public class HttpTest extends HttpTestBase {
       req.response().setChunked(true);
       req.bodyHandler(buff -> {
         assertEquals("This is content " + theCount, buff.toString());
-        //We write the response back after a random time to increase the chances of responses written in the
-        //wrong order if we didn't implement pipelining correctly
+        // We write the response back after a random time to increase the chances of responses written in the
+        // wrong order if we didn't implement pipelining correctly
         vertx.setTimer(1 + (long) (10 * Math.random()), id -> {
           req.response().headers().set("count", String.valueOf(theCount));
           req.response().write(buff);
@@ -1565,26 +1565,32 @@ public class HttpTest extends HttpTestBase {
       });
     });
 
+
+    CountDownLatch latch = new CountDownLatch(requests);
+    AtomicInteger cnt = new AtomicInteger(0);
+
     server.listen(onSuccess(s -> {
-      for (int count = 0; count < requests; count++) {
-        int theCount = count;
-        HttpClientRequest req = client.post(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
-          assertEquals(theCount, Integer.parseInt(resp.headers().get("count")));
-          resp.bodyHandler(buff -> {
-            assertEquals("This is content " + theCount, buff.toString());
-            if (theCount == requests - 1) {
-              testComplete();
-            }
+      vertx.setTimer(500, id -> {
+        for (int count = 0; count < requests; count++) {
+          int theCount = count;
+          HttpClientRequest req = client.post(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+            assertEquals(theCount, Integer.parseInt(resp.headers().get("count")));
+            resp.bodyHandler(buff -> {
+              assertEquals("This is content " + theCount, buff.toString());
+              latch.countDown();
+            });
           });
-        });
-        req.setChunked(true);
-        req.headers().set("count", String.valueOf(count));
-        req.write("This is content " + count);
-        req.end();
-      }
+          req.setChunked(true);
+          req.headers().set("count", String.valueOf(count));
+          req.write("This is content " + count);
+          req.end();
+        }
+      });
+
     }));
 
-    await();
+    awaitLatch(latch);
+
   }
 
   @Test
@@ -1607,6 +1613,7 @@ public class HttpTest extends HttpTestBase {
     HttpServer[] servers = new HttpServer[numServers];
     CountDownLatch startServerLatch = new CountDownLatch(numServers);
     Set<HttpServer> connectedServers = new ConcurrentHashSet<>();
+    AtomicInteger res = new AtomicInteger(0);
     for (int i = 0; i < numServers; i++) {
       HttpServer server = vertx.createHttpServer(new HttpServerOptions().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT));
       server.requestHandler(req -> {
@@ -1623,6 +1630,7 @@ public class HttpTest extends HttpTestBase {
     awaitLatch(startServerLatch);
 
     CountDownLatch reqLatch = new CountDownLatch(requests);
+    AtomicInteger reqs = new AtomicInteger(0);
     for (int count = 0; count < requests; count++) {
       client.getNow(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
         assertEquals(200, resp.statusCode());

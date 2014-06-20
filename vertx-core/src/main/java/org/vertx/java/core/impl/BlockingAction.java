@@ -51,7 +51,7 @@ public abstract class BlockingAction<T>  {
         res.setFailure(e);
       }
       if (handler != null) {
-        context.execute(() -> res.setHandler(handler));
+        context.execute(() -> res.setHandler(handler), false);
       }
     });
   }

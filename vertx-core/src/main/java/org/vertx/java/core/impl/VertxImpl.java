@@ -95,7 +95,7 @@ public class VertxImpl implements VertxInternal {
     this(0, hostname, null);
   }
 
-  public VertxImpl(int port, String hostname, final Handler<AsyncResult<Vertx>> resultHandler) {
+  public VertxImpl(int port, String hostname, Handler<AsyncResult<Vertx>> resultHandler) {
     ClusterManagerFactory factory;
     String clusterManagerFactoryClassName = System.getProperty("vertx.clusterManagerFactory");
     if (clusterManagerFactoryClassName != null) {
@@ -115,7 +115,7 @@ public class VertxImpl implements VertxInternal {
     }
     this.clusterManager = factory.createClusterManager(this);
     this.clusterManager.join();
-    final Vertx inst = this;
+    Vertx inst = this;
     this.eventBus = new EventBusImpl(this, port, hostname, clusterManager, res -> {
       if (resultHandler != null) {
         if (res.succeeded()) {
@@ -189,15 +189,15 @@ public class VertxImpl implements VertxInternal {
     return false;
   }
 
-  public long setPeriodic(long delay, final Handler<Long> handler) {
+  public long setPeriodic(long delay, Handler<Long> handler) {
     return scheduleTimeout(getOrCreateContext(), handler, delay, true);
   }
 
-  public long setTimer(long delay, final Handler<Long> handler) {
+  public long setTimer(long delay, Handler<Long> handler) {
     return scheduleTimeout(getOrCreateContext(), handler, delay, false);
   }
 
-  public void runOnContext(final Handler<Void> task) {
+  public void runOnContext(Handler<Void> task) {
     ContextImpl context = getOrCreateContext();
     context.runOnContext(task);
   }
@@ -260,22 +260,14 @@ public class VertxImpl implements VertxInternal {
     return new DnsClientImpl(this, dnsServers);
   }
 
-  private long scheduleTimeout(final ContextImpl context, final Handler<Long> handler, long delay, boolean periodic) {
+  private long scheduleTimeout(ContextImpl context, Handler<Long> handler, long delay, boolean periodic) {
     if (delay < 1) {
       throw new IllegalArgumentException("Cannot schedule a timer with delay < 1 ms");
     }
     long timerId = timeoutCounter.getAndIncrement();
-    final InternalTimerHandler task = new InternalTimerHandler(timerId, handler, periodic, context);
-    final Runnable wrapped = context.wrapTask(task);
-
-    final Runnable toRun;
-    final EventLoop el = context.getEventLoop();
-    if (context instanceof EventLoopContext) {
-      toRun = wrapped;
-    } else {
-      // On worker context
-      toRun = () -> context.execute(wrapped);
-    }
+    InternalTimerHandler task = new InternalTimerHandler(timerId, handler, periodic, context);
+    Runnable toRun = () -> context.execute(task, false);
+    EventLoop el = context.getEventLoop();
     Future<?> future;
     if (periodic) {
       future = el.scheduleAtFixedRate(toRun, delay, delay, TimeUnit.MILLISECONDS);
@@ -440,8 +432,8 @@ public class VertxImpl implements VertxInternal {
   }
 
   @Override
-  public <T> void executeBlocking(final Action<T> action, final Handler<AsyncResult<T>> resultHandler) {
-    final ContextImpl context = getOrCreateContext();
+  public <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
+    ContextImpl context = getOrCreateContext();
     context.executeOnOrderedWorkerExec(() -> {
       FutureResultImpl<T> res = new FutureResultImpl<>();
       try {
@@ -451,7 +443,7 @@ public class VertxImpl implements VertxInternal {
         res.setFailure(e);
       }
       if (resultHandler != null) {
-        context.execute(() -> res.setHandler(resultHandler));
+        context.execute(() -> res.setHandler(resultHandler), false);
       }
     });
   }
@@ -460,7 +452,7 @@ public class VertxImpl implements VertxInternal {
     return clusterManager;
   }
 
-  private class InternalTimerHandler implements Runnable, Closeable {
+  private class InternalTimerHandler implements ContextTask, Closeable {
     final Handler<Long> handler;
     final boolean periodic;
     final long timerID;
@@ -480,7 +472,7 @@ public class VertxImpl implements VertxInternal {
       this.periodic = periodic;
     }
 
-    public void run() {
+    public void run() throws Exception {
       if (!cancelled) {
         try {
           handler.handle(timerID);

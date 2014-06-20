@@ -56,7 +56,7 @@ public class NetServerImpl implements NetServer, Closeable {
 
   private final VertxInternal vertx;
   private final NetServerOptions options;
-  private final ContextImpl actualCtx;
+  private final ContextImpl creatingContext;
   private final SSLHelper sslHelper;
   private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
@@ -70,13 +70,16 @@ public class NetServerImpl implements NetServer, Closeable {
   private int actualPort;
   private Queue<Runnable> bindListeners = new ConcurrentLinkedQueue<>();
   private boolean listenersRun;
+  private ContextImpl listenContext;
 
   public NetServerImpl(VertxInternal vertx, NetServerOptions options) {
     this.vertx = vertx;
     this.options = new NetServerOptions(options);
     this.sslHelper = new SSLHelper(options);
-    actualCtx = vertx.getOrCreateContext();
-    actualCtx.addCloseHook(this);
+    this.creatingContext = vertx.getContext();
+    if (creatingContext != null) {
+      creatingContext.addCloseHook(this);
+    }
   }
 
   @Override
@@ -107,6 +110,8 @@ public class NetServerImpl implements NetServer, Closeable {
       throw new IllegalStateException("Listen already called");
     }
     listening = true;
+
+    listenContext = vertx.getOrCreateContext();
 
     synchronized (vertx.sharedNetServers()) {
       this.actualPort = options.getPort(); // Will be updated on bind for a wildcard port
@@ -139,7 +144,7 @@ public class NetServerImpl implements NetServer, Closeable {
         applyConnectionOptions(bootstrap);
 
         if (connectHandler != null) {
-          handlerManager.addHandler(connectHandler, actualCtx);
+          handlerManager.addHandler(connectHandler, listenContext);
         }
 
         try {
@@ -168,7 +173,7 @@ public class NetServerImpl implements NetServer, Closeable {
             vertx.runOnContext(v ->  listenHandler.handle(new FutureResultImpl<>(t)));
           } else {
             // No handler - log so user can see failure
-            actualCtx.reportException(t);
+            listenContext.reportException(t);
           }
           listening = false;
           return this;
@@ -182,8 +187,7 @@ public class NetServerImpl implements NetServer, Closeable {
         actualServer = shared;
         this.actualPort = shared.actualPort();
         if (connectHandler != null) {
-          // Share the event loop thread to also serve the NetServer's network traffic.
-          actualServer.handlerManager.addHandler(connectHandler, actualCtx);
+          actualServer.handlerManager.addHandler(connectHandler, listenContext);
         }
       }
 
@@ -197,10 +201,10 @@ public class NetServerImpl implements NetServer, Closeable {
             listening = false;
             res = new FutureResultImpl<>(actualServer.bindFuture.cause());
           }
-          actualCtx.execute(actualServer.bindFuture.channel().eventLoop(), () -> listenHandler.handle(res));
+          listenContext.execute(() -> listenHandler.handle(res), true);
         } else if (!actualServer.bindFuture.isSuccess()) {
           // No handler - log so user can see failure
-          actualCtx.reportException(actualServer.bindFuture.cause());
+          listenContext.reportException(actualServer.bindFuture.cause());
           listening = false;
         }
       });
@@ -252,9 +256,10 @@ public class NetServerImpl implements NetServer, Closeable {
 
   @Override
   public void close(final Handler<AsyncResult<Void>> done) {
+    ContextImpl context = vertx.getOrCreateContext();
     if (!listening) {
       if (done != null) {
-        executeCloseDone(actualCtx, done, null);
+        executeCloseDone(context, done, null);
       }
       return;
     }
@@ -262,22 +267,24 @@ public class NetServerImpl implements NetServer, Closeable {
     synchronized (vertx.sharedNetServers()) {
 
       if (actualServer != null) {
-        actualServer.handlerManager.removeHandler(connectHandler, actualCtx);
+        actualServer.handlerManager.removeHandler(connectHandler, listenContext);
 
         if (actualServer.handlerManager.hasHandlers()) {
           // The actual server still has handlers so we don't actually close it
           if (done != null) {
-            executeCloseDone(actualCtx, done, null);
+            executeCloseDone(context, done, null);
           }
         } else {
           // No Handlers left so close the actual server
           // The done handler needs to be executed on the context that calls close, NOT the context
           // of the actual server
-          actualServer.actualClose(actualCtx, done);
+          actualServer.actualClose(context, done);
         }
       }
     }
-    actualCtx.removeCloseHook(this);
+    if (creatingContext != null) {
+      creatingContext.removeCloseHook(this);
+    }
   }
 
   @Override
@@ -306,7 +313,7 @@ public class NetServerImpl implements NetServer, Closeable {
 
   private void executeCloseDone(final ContextImpl closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {
     if (done != null) {
-      closeContext.execute(() -> done.handle(new FutureResultImpl<>(e)));
+      closeContext.execute(() -> done.handle(new FutureResultImpl<>(e)), false);
     }
   }
 
@@ -353,7 +360,7 @@ public class NetServerImpl implements NetServer, Closeable {
     }
 
     private void connected(final Channel ch, final HandlerHolder<NetSocket> handler) {
-      handler.context.execute(ch.eventLoop(), () -> doConnected(ch, handler));
+      handler.context.execute(() -> doConnected(ch, handler), true);
     }
 
     private void doConnected(Channel ch, HandlerHolder<NetSocket> handler) {

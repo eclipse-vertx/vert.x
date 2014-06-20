@@ -41,26 +41,7 @@ public class VertxNetHandler extends VertxHandler<NetSocketImpl> {
       final ByteBuf buf = (ByteBuf) msg;
       Channel ch = chctx.channel();
       // We need to do this since it's possible the server is being used from a worker context
-      if (context.isOnCorrectWorker(ch.eventLoop())) {
-        try {
-          vertx.setContext(context);
-          try {
-            sock.handleDataReceived(new Buffer(buf));
-          } catch (Throwable t) {
-            context.reportException(t);
-          }
-        } catch (Throwable t) {
-          context.reportException(t);
-        }
-      } else {
-        context.execute(() -> {
-          try {
-            sock.handleDataReceived(new Buffer(buf));
-          } catch (Throwable t) {
-            context.reportException(t);
-          }
-        });
-      }
+      context.execute(() -> sock.handleDataReceived(new Buffer(buf)), true);
     } else {
       // just discard
     }

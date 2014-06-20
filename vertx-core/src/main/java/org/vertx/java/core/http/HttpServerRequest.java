@@ -25,7 +25,6 @@ import org.vertx.java.core.streams.ReadStream;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
-import java.net.URI;
 
 /**
  * Represents a server-side HTTP request.<p>

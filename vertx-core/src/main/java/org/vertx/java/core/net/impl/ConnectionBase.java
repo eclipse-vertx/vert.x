@@ -154,7 +154,7 @@ public abstract class ConnectionBase {
             } else {
               doneHandler.handle(new FutureResultImpl<>(channelFuture.cause()));
             }
-          });
+          }, true);
         } else if (!channelFuture.isSuccess()) {
           handleException(channelFuture.cause());
         }

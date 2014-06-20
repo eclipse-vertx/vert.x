@@ -56,26 +56,12 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
       // we are reading from the channel
       Channel ch = chctx.channel();
       // We need to do this since it's possible the server is being used from a worker context
-      if (context.isOnCorrectWorker(ch.eventLoop())) {
-        try {
-          vertx.setContext(context);
-          doMessageReceived(connection, chctx, msg);
-        } catch (Throwable t) {
-          context.reportException(t);
-        }
-      } else {
-        context.execute(() -> {
-          try {
-            doMessageReceived(connection, chctx, msg);
-          } catch (Throwable t) {
-            context.reportException(t);
-          }
-        });
-      }
+      context.execute(() -> doMessageReceived(connection, chctx, msg), true);
+
     } else {
       try {
         doMessageReceived(connection, chctx, msg);
-      }  catch (Throwable t) {
+      } catch (Throwable t) {
         chctx.pipeline().fireExceptionCaught(t);
       }
     }

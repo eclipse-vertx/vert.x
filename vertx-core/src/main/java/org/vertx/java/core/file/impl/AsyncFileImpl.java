@@ -341,14 +341,14 @@ public class AsyncFileImpl implements AsyncFile {
           context.execute(() -> {
             writesOutstanding -= buff.limit();
             handler.handle(new FutureResultImpl<Void>().setResult(null));
-          });
+          }, false);
         }
       }
 
       public void failed(Throwable exc, Object attachment) {
         if (exc instanceof Exception) {
           Exception e = (Exception) exc;
-          context.execute(() -> handler.handle(new FutureResultImpl<Void>().setResult(null)));
+          context.execute(() -> handler.handle(new FutureResultImpl<Void>().setResult(null)), false);
         } else {
           log.error("Error occurred", exc);
         }
@@ -369,7 +369,7 @@ public class AsyncFileImpl implements AsyncFile {
           buff.flip();
           writeBuff.setBytes(offset, buff);
           result.setResult(writeBuff).setHandler(handler);
-        });
+        }, false);
       }
 
       public void completed(Integer bytesRead, Object attachment) {
@@ -388,11 +388,7 @@ public class AsyncFileImpl implements AsyncFile {
       }
 
       public void failed(Throwable t, Object attachment) {
-        context.execute(new Runnable() {
-          public void run() {
-            result.setFailure(t).setHandler(handler);
-          }
-        });
+        context.execute(() -> result.setFailure(t).setHandler(handler), false);
       }
     });
   }
