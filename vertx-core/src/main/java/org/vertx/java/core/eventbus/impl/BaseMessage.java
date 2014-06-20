@@ -23,24 +23,22 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.ReplyException;
 import org.vertx.java.core.eventbus.ReplyFailure;
-import org.vertx.java.core.json.JsonArray;
-import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.ServerID;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class BaseMessage<U> implements Message<U> {
+public abstract class BaseMessage<T> implements Message<T> {
 
-  protected U body;
+  protected T body;
   protected ServerID sender;
   protected EventBusImpl bus;
   protected String address;
   protected String replyAddress;
   protected boolean send; // Is it a send or a publish?
 
-  protected BaseMessage(boolean send, String address, U body) {
+  protected BaseMessage(boolean send, String address, T body) {
     this.send = send;
     this.body = body;
     this.address = address;
@@ -52,7 +50,7 @@ public abstract class BaseMessage<U> implements Message<U> {
   }
 
   @Override
-  public U body() {
+  public T body() {
     return body;
   }
 
@@ -72,203 +70,23 @@ public abstract class BaseMessage<U> implements Message<U> {
   }
 
   @Override
-  public void reply(JsonObject message) {
-    reply(message, null);
-  }
-
-  @Override
-  public void reply(JsonArray message) {
-    reply(message, null);
-  }
-
-  @Override
-  public void reply(String message) {
-    reply(message, null);
-  }
-
-  @Override
-  public void reply(Buffer message) {
-    reply(message, null);
-  }
-
-  @Override
-  public void reply(byte[] message) {
-    reply(message, null);
-  }
-
-  @Override
-  public void reply(Integer message) {
-    reply(message, null);
-  }
-
-  @Override
-  public void reply(Long message) {
-    reply(message, null);
-  }
-
-  @Override
-  public void reply(Short message) {
-    reply(message, null);
-  }
-
-  @Override
-  public void reply(Character message) {
-    reply(message, null);
-  }
-
-  @Override
-  public void reply(Boolean message) {
-    reply(message, null);
-  }
-
-  @Override
-  public void reply(Float message) {
-    reply(message, null);
-  }
-
-  @Override
-  public void reply(Double message) {
-    reply(message, null);
-  }
-
-  @Override
-  public <T> void reply(Handler<Message<T>> replyHandler) {
+  public <R> void reply(Handler<Message<R>> replyHandler) {
     sendReply(EventBusImpl.createMessage(true, replyAddress, null), replyHandler);
   }
 
   @Override
-  public <T> void replyWithTimeout(long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
+  public <R> void replyWithTimeout(long timeout, Handler<AsyncResult<Message<R>>> replyHandler) {
     sendReplyWithTimeout(EventBusImpl.createMessage(true, replyAddress, null), timeout, replyHandler);
   }
 
   @Override
-  public <T> void reply(Object message, Handler<Message<T>> replyHandler) {
+  public <R> void reply(Object message, Handler<Message<R>> replyHandler) {
     sendReply(EventBusImpl.createMessage(true, replyAddress, message), replyHandler);
   }
 
   @Override
-  public <T> void replyWithTimeout(Object message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
+  public <R> void replyWithTimeout(Object message, long timeout, Handler<AsyncResult<Message<R>>> replyHandler) {
     sendReplyWithTimeout(EventBusImpl.createMessage(true, replyAddress, message), timeout, replyHandler);
-  }
-
-  @Override
-  public <T> void reply(JsonObject message, Handler<Message<T>> replyHandler) {
-    sendReply(new JsonObjectMessage(true, replyAddress, message), replyHandler);
-  }
-
-  @Override
-  public <T> void replyWithTimeout(JsonObject message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendReplyWithTimeout(new JsonObjectMessage(true, replyAddress, message), timeout, replyHandler);
-  }
-
-  @Override
-  public <T> void reply(JsonArray message, Handler<Message<T>> replyHandler) {
-    sendReply(new JsonArrayMessage(true, replyAddress, message), replyHandler);
-  }
-
-  @Override
-  public <T> void replyWithTimeout(JsonArray message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendReplyWithTimeout(new JsonArrayMessage(true, replyAddress, message), timeout, replyHandler);
-  }
-
-  @Override
-  public <T> void reply(String message, Handler<Message<T>> replyHandler) {
-    sendReply(new StringMessage(true, replyAddress, message), replyHandler);
-  }
-
-  @Override
-  public <T> void replyWithTimeout(String message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendReplyWithTimeout(new StringMessage(true, replyAddress, message), timeout, replyHandler);
-  }
-
-  @Override
-  public <T> void reply(Buffer message, Handler<Message<T>> replyHandler) {
-    sendReply(new BufferMessage(true, replyAddress, message), replyHandler);
-  }
-
-  @Override
-  public <T> void replyWithTimeout(Buffer message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendReplyWithTimeout(new BufferMessage(true, replyAddress, message), timeout, replyHandler);
-  }
-
-  @Override
-  public <T> void reply(byte[] message, Handler<Message<T>> replyHandler) {
-    sendReply(new ByteArrayMessage(true, replyAddress, message),  replyHandler);
-  }
-
-  @Override
-  public <T> void replyWithTimeout(byte[] message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendReplyWithTimeout(new ByteArrayMessage(true, replyAddress, message), timeout, replyHandler);
-  }
-
-  @Override
-  public <T> void reply(Integer message, Handler<Message<T>> replyHandler) {
-    sendReply(new IntMessage(true, replyAddress, message), replyHandler);
-  }
-
-  @Override
-  public <T> void replyWithTimeout(Integer message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendReplyWithTimeout(new IntMessage(true, replyAddress, message), timeout, replyHandler);
-  }
-
-  @Override
-  public <T> void reply(Long message, Handler<Message<T>> replyHandler) {
-    sendReply(new LongMessage(true, replyAddress, message), replyHandler);
-  }
-
-  @Override
-  public <T> void replyWithTimeout(Long message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendReplyWithTimeout(new LongMessage(true, replyAddress, message), timeout, replyHandler);
-  }
-
-  @Override
-  public <T> void reply(Short message, Handler<Message<T>> replyHandler) {
-    sendReply(new ShortMessage(true, replyAddress, message), replyHandler);
-  }
-
-  @Override
-  public <T> void replyWithTimeout(Short message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendReplyWithTimeout(new ShortMessage(true, replyAddress, message), timeout, replyHandler);
-  }
-
-  @Override
-  public <T> void reply(Character message, Handler<Message<T>> replyHandler) {
-    sendReply(new CharacterMessage(true, replyAddress, message), replyHandler);
-  }
-
-  @Override
-  public <T> void replyWithTimeout(Character message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendReplyWithTimeout(new CharacterMessage(true, replyAddress, message), timeout, replyHandler);
-  }
-
-  @Override
-  public <T> void reply(Boolean message, Handler<Message<T>> replyHandler) {
-    sendReply(new BooleanMessage(true, replyAddress, message), replyHandler);
-  }
-
-  @Override
-  public <T> void replyWithTimeout(Boolean message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendReplyWithTimeout(new BooleanMessage(true, replyAddress, message), timeout, replyHandler);
-  }
-
-  @Override
-  public <T> void reply(Float message, Handler<Message<T>> replyHandler) {
-    sendReply(new FloatMessage(true, replyAddress, message), replyHandler);
-  }
-
-  @Override
-  public <T> void replyWithTimeout(Float message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendReplyWithTimeout(new FloatMessage(true, replyAddress, message), timeout, replyHandler);
-  }
-
-  @Override
-  public <T> void reply(Double message, Handler<Message<T>> replyHandler) {
-    sendReply(new DoubleMessage(true, replyAddress, message), replyHandler);
-  }
-
-  @Override
-  public <T> void replyWithTimeout(Double message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendReplyWithTimeout(new DoubleMessage(true, replyAddress, message), timeout, replyHandler);
   }
 
   @Override
@@ -335,7 +153,7 @@ public abstract class BaseMessage<U> implements Message<U> {
 
   protected abstract byte type();
 
-  protected abstract Message<U> copy();
+  protected abstract Message<T> copy();
 
   protected abstract void readBody(int pos, Buffer readBuff);
 
