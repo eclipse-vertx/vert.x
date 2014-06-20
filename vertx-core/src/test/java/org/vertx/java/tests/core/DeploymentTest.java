@@ -124,13 +124,23 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testDeployFromContextExceptionInStart() throws Exception {
+    testDeployFromThrowableInStart(MyVerticle.THROW_EXCEPTION, Exception.class);
+  }
+
+  @Test
+  public void testDeployFromContextErrorInStart() throws Exception {
+    testDeployFromThrowableInStart(MyVerticle.THROW_ERROR, Error.class);
+  }
+
+  private void testDeployFromThrowableInStart(int startAction, Class<? extends Throwable> expectedThrowable) throws Exception {
     MyVerticle verticle = new MyVerticle();
     vertx.deployVerticle(verticle, ar -> {
       assertTrue(ar.succeeded());
       Context ctx = vertx.currentContext();
-      MyVerticle verticle2 = new MyVerticle(true, false);
+      MyVerticle verticle2 = new MyVerticle(startAction, MyVerticle.NOOP);
       vertx.deployVerticle(verticle2, ar2 -> {
         assertFalse(ar2.succeeded());
+        assertEquals(expectedThrowable, ar2.cause().getClass());
         assertEquals("FooBar!", ar2.cause().getMessage());
         assertEquals(1, vertx.deployments().size());
         Context ctx2 = vertx.currentContext();
@@ -143,15 +153,25 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testDeployFromContextExceptonInStop() throws Exception {
+    testDeployFromContextThrowableInStop(MyVerticle.THROW_EXCEPTION, Exception.class);
+  }
+
+  @Test
+  public void testDeployFromContextErrorInStop() throws Exception {
+    testDeployFromContextThrowableInStop(MyVerticle.THROW_ERROR, Error.class);
+  }
+
+  private void testDeployFromContextThrowableInStop(int stopAction, Class<? extends Throwable> expectedThrowable) throws Exception {
     MyVerticle verticle = new MyVerticle();
     vertx.deployVerticle(verticle, ar -> {
       assertTrue(ar.succeeded());
       Context ctx = vertx.currentContext();
-      MyVerticle verticle2 = new MyVerticle(false, true);
+      MyVerticle verticle2 = new MyVerticle(MyVerticle.NOOP, stopAction);
       vertx.deployVerticle(verticle2, ar2 -> {
         assertTrue(ar2.succeeded());
         vertx.undeployVerticle(ar2.result(), ar3 -> {
           assertFalse(ar3.succeeded());
+          assertEquals(expectedThrowable, ar3.cause().getClass());
           assertEquals("BooFar!", ar3.cause().getMessage());
           assertEquals(1, vertx.deployments().size());
           assertEquals(ctx, vertx.currentContext());
@@ -209,9 +229,19 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testDeployExceptionInStart() throws Exception {
-    MyVerticle verticle = new MyVerticle(true, false);
+    testDeployThrowableInStart(MyVerticle.THROW_EXCEPTION, Exception.class);
+  }
+
+  @Test
+  public void testDeployErrorInStart() throws Exception {
+    testDeployThrowableInStart(MyVerticle.THROW_ERROR, Error.class);
+  }
+
+  private void testDeployThrowableInStart(int startAction, Class<? extends Throwable> expectedThrowable) throws Exception {
+    MyVerticle verticle = new MyVerticle(startAction, MyVerticle.NOOP);
     vertx.deployVerticle(verticle, ar -> {
       assertFalse(ar.succeeded());
+      assertEquals(expectedThrowable, ar.cause().getClass());
       assertEquals("FooBar!", ar.cause().getMessage());
       assertTrue(vertx.deployments().isEmpty());
       testComplete();
@@ -221,11 +251,21 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testUndeployExceptionInStop() throws Exception {
-    MyVerticle verticle = new MyVerticle(false, true);
+    testUndeployThrowableInStop(MyVerticle.THROW_EXCEPTION, Exception.class);
+  }
+
+  @Test
+  public void testUndeployErrorInStop() throws Exception {
+    testUndeployThrowableInStop(MyVerticle.THROW_ERROR, Error.class);
+  }
+
+  private void testUndeployThrowableInStop(int stopAction, Class<? extends Throwable> expectedThrowable) throws Exception {
+    MyVerticle verticle = new MyVerticle(MyVerticle.NOOP, stopAction);
     vertx.deployVerticle(verticle, ar -> {
       assertTrue(ar.succeeded());
       vertx.undeployVerticle(ar.result(), ar2 -> {
         assertFalse(ar2.succeeded());
+        assertEquals(expectedThrowable, ar2.cause().getClass());
         assertEquals("BooFar!", ar2.cause().getMessage());
         assertTrue(vertx.deployments().isEmpty());
         testComplete();
@@ -576,41 +616,50 @@ public class DeploymentTest extends VertxTestBase {
       .putObject("obj", new JsonObject().putString("quux", "flip"));
   }
 
-
   public class MyVerticle extends AbstractVerticle {
+
+    static final int NOOP = 0, THROW_EXCEPTION = 1, THROW_ERROR = 2;
 
     boolean startCalled;
     boolean stopCalled;
     Context startContext;
     Context stopContext;
-    boolean exceptionInStart;
-    boolean exceptionInStop;
+    int startAction;
+    int stopAction;
 
     MyVerticle() {
-      this(false, false);
+      this(NOOP, NOOP);
     }
 
-    MyVerticle(boolean exceptionInStart, boolean exceptionInStop) {
-      this.exceptionInStart = exceptionInStart;
-      this.exceptionInStop = exceptionInStop;
+    MyVerticle(int startAction, int stopAction) {
+      this.startAction = startAction;
+      this.stopAction = stopAction;
     }
 
     @Override
     public void start() throws Exception {
-      if (exceptionInStart) {
-        throw new Exception("FooBar!");
+      switch (startAction) {
+        case THROW_EXCEPTION:
+          throw new Exception("FooBar!");
+        case THROW_ERROR:
+          throw new Error("FooBar!");
+        default:
+          startCalled = true;
+          startContext = vertx.currentContext();
       }
-      startCalled = true;
-      startContext = vertx.currentContext();
     }
 
     @Override
     public void stop() throws Exception {
-      if (exceptionInStop) {
-        throw new Exception("BooFar!");
+      switch (stopAction) {
+        case THROW_EXCEPTION:
+          throw new Exception("BooFar!");
+        case THROW_ERROR:
+          throw new Error("BooFar!");
+        default:
+          stopCalled = true;
+          stopContext = vertx.currentContext();
       }
-      stopCalled = true;
-      stopContext = vertx.currentContext();
     }
   }
 
