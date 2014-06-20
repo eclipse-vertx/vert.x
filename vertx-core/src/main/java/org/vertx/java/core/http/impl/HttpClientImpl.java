@@ -79,8 +79,8 @@ public class HttpClientImpl implements HttpClient {
     pool.setMaxSockets(options.getMaxPoolSize());
   }
 
-  // @Override
-  public HttpClientImpl exceptionHandler(Handler<Throwable> handler) {
+  @Override
+  public synchronized HttpClientImpl exceptionHandler(Handler<Throwable> handler) {
     checkClosed();
     this.exceptionHandler = handler;
     return this;
@@ -162,7 +162,7 @@ public class HttpClientImpl implements HttpClient {
   }
 
   @Override
-  public void close() {
+  public synchronized void close() {
     checkClosed();
     pool.close();
     for (ClientConnection conn : connectionMap.values()) {
@@ -292,7 +292,7 @@ public class HttpClientImpl implements HttpClient {
     return req;
   }
 
-  private void checkClosed() {
+  private synchronized void checkClosed() {
     if (closed) {
       throw new IllegalStateException("Client is closed");
     }

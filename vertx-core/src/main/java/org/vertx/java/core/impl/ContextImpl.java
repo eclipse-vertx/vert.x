@@ -167,7 +167,7 @@ public abstract class ContextImpl implements Context {
   }
 
   protected Runnable wrapTask(ContextTask task, boolean checkThreadName, boolean setThread) {
-    checkThreadName = true;
+    checkThreadName = false; // For now never check thread name
     if (checkThreadName) {
       return () -> {
         Thread currentThread = Thread.currentThread();
@@ -193,6 +193,10 @@ public abstract class ContextImpl implements Context {
       };
     } else {
       return () -> {
+        if (setThread) {
+          Thread currentThread = Thread.currentThread();
+          setThread(currentThread);
+        }
         try {
           vertx.setContext(ContextImpl.this);
           task.run();

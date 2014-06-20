@@ -52,6 +52,7 @@ public class NetClientImpl implements NetClient {
   private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
   private final Closeable closeHook;
   private final ContextImpl creatingContext;
+  private boolean closed;
 
   public NetClientImpl(VertxInternal vertx, NetClientOptions options) {
     this.vertx = vertx;
@@ -68,24 +69,35 @@ public class NetClientImpl implements NetClient {
   }
 
   @Override
-  public NetClient connect(int port, String host, final Handler<AsyncResult<NetSocket>> connectHandler) {
+  public synchronized NetClient connect(int port, String host, final Handler<AsyncResult<NetSocket>> connectHandler) {
+    checkClosed();
     connect(port, host, connectHandler, options.getReconnectAttempts());
     return this;
   }
 
   @Override
-  public NetClient connect(int port, final Handler<AsyncResult<NetSocket>> connectCallback) {
+  public synchronized NetClient connect(int port, final Handler<AsyncResult<NetSocket>> connectCallback) {
+    checkClosed();
     connect(port, "localhost", connectCallback);
     return this;
   }
 
   @Override
-  public void close() {
-    for (NetSocket sock : socketMap.values()) {
-      sock.close();
+  public synchronized void close() {
+    if (!closed) {
+      for (NetSocket sock : socketMap.values()) {
+        sock.close();
+      }
+      if (creatingContext != null) {
+        creatingContext.removeCloseHook(closeHook);
+      }
+      closed = true;
     }
-    if (creatingContext != null) {
-      creatingContext.removeCloseHook(closeHook);
+  }
+
+  private void checkClosed() {
+    if (closed) {
+      throw new IllegalStateException("Client is closed");
     }
   }
 
@@ -192,6 +204,15 @@ public class NetClientImpl implements NetClient {
 
   private static void doFailed(Handler<AsyncResult<NetSocket>> connectHandler, Throwable t) {
     connectHandler.handle(new FutureResultImpl<>(t));
+  }
+
+  @Override
+  protected void finalize() throws Throwable {
+    // Make sure this gets cleaned up if there are no more references to it
+    // so as not to leave connections and resources dangling until the system is shutdown
+    // which could make the JVM run out of file handles.
+    close();
+    super.finalize();
   }
 }
 

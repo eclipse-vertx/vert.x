@@ -49,7 +49,6 @@ public final class DnsClientImpl implements DnsClient {
   private final List<InetSocketAddress> dnsServers;
   private static final char[] HEX_TABLE = "0123456789abcdef".toCharArray();
   private final ContextImpl actualCtx;
-  private final VertxInternal vertx;
 
   public DnsClientImpl(VertxInternal vertx, SocketAddress... addresses) {
     if (addresses == null || addresses.length == 0) {
@@ -65,7 +64,6 @@ public final class DnsClientImpl implements DnsClient {
 
    // this.dnsServers = new LinkedList<>(Arrays.asList(dnsServers));
     actualCtx = vertx.getOrCreateContext();
-    this.vertx = vertx;
     bootstrap = new Bootstrap();
     bootstrap.group(actualCtx.getEventLoop());
     bootstrap.channel(NioDatagramChannel.class);
@@ -368,6 +366,5 @@ public final class DnsClientImpl implements DnsClient {
 
     protected abstract void onSuccess(ChannelFuture future) throws Exception;
   }
-
 
 }

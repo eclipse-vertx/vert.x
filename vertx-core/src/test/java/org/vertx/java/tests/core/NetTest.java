@@ -1218,94 +1218,24 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
-  private void checkContext() {
-
+  @Test
+  public void testCloseTwice() {
+    client.close();
+    client.close(); // OK
   }
 
-//  /*
-//  Make sure all the different handlers are called on the right context
-//   */
-//  @Test
-//  public void testContext() throws Exception {
-//    File fDir = Files.createTempDirectory("vertx-test").toFile();
-//    String content = randomUnicodeString(10000);
-//    File file = setupFile(fDir.toString(), "some-file.txt", content);
-//    /*
-//    create conn to server
-//
-//     */
-//
-//    server.connectHandler(sock -> {
-//
-//      checkContext();
-//
-//      sock.ssl(v -> {
-//        checkContext();
-//
-//      });
-//
-//      sock.sendFile(file.getAbsolutePath(), ar -> {
-//        checkContext();
-//        assertTrue(ar.succeeded());
-//      });
-//
-//
-//      sock.dataHandler(buff -> {
-//        sock.write(buff);
-//
-//      });
-//
-//      sock.endHandler(v -> {
-//
-//      });
-//      sock.closeHandler(v -> {
-//
-//      });
-//
-//
-//      sock.drainHandler(v -> {
-//
-//      });
-//      sock.exceptionHandler(t -> {
-//
-//      });
-//
-//    });
-//
-//    server.listen(ar -> {
-//
-//    });
-//
-//    client.connect(1234, ar -> {
-//      assertTrue(ar.succeeded());
-//      NetSocket sock = ar.result();
-//      sock.dataHandler(buff -> {
-//
-//
-//      });
-//      sock.endHandler(v -> {
-//
-//      });
-//      sock.closeHandler(v -> {
-//
-//      });
-//      sock.sendFile(file.getAbsolutePath(), ar -> {
-//
-//      });
-//      sock.ssl(v -> {
-//
-//      });
-//      sock.drainHandler(v -> {
-//
-//      });
-//      sock.exceptionHandler(t -> {
-//
-//      });
-//    });
-//
-//
-//    await();
-//  }
+  @Test
+  public void testAttemptConnectAfterClose() {
+    client.close();
+    try {
+      client.connect(1234, ar -> {
+      });
+      fail("Should throw exception");
+    } catch (IllegalStateException e) {
+      //OK
+    }
+  }
+
 
   private File setupFile(String testDir, String fileName, String content) throws Exception {
     File file = new File(testDir, fileName);

@@ -83,7 +83,7 @@ public class NetServerImpl implements NetServer, Closeable {
   }
 
   @Override
-  public NetServer connectHandler(Handler<NetSocket> connectHandler) {
+  public synchronized NetServer connectHandler(Handler<NetSocket> connectHandler) {
     if (listening) {
       throw new IllegalStateException("Cannot set connectHandler when server is listening");
     }
@@ -91,18 +91,18 @@ public class NetServerImpl implements NetServer, Closeable {
     return this;
   }
 
-  public Handler<NetSocket> connectHandler() {
+  public synchronized Handler<NetSocket> connectHandler() {
     return connectHandler;
   }
 
   @Override
-  public NetServer listen() {
+  public synchronized NetServer listen() {
     listen(null);
     return this;
   }
 
   @Override
-  public NetServer listen(Handler<AsyncResult<NetServer>> listenHandler) {
+  public synchronized NetServer listen(Handler<AsyncResult<NetServer>> listenHandler) {
     if (connectHandler == null) {
       throw new IllegalStateException("Set connect handler first");
     }
@@ -212,6 +212,48 @@ public class NetServerImpl implements NetServer, Closeable {
     return this;
   }
 
+  public synchronized void close() {
+    close(null);
+  }
+
+  @Override
+  public synchronized void close(final Handler<AsyncResult<Void>> done) {
+    ContextImpl context = vertx.getOrCreateContext();
+    if (!listening) {
+      if (done != null) {
+        executeCloseDone(context, done, null);
+      }
+      return;
+    }
+    listening = false;
+    synchronized (vertx.sharedNetServers()) {
+
+      if (actualServer != null) {
+        actualServer.handlerManager.removeHandler(connectHandler, listenContext);
+
+        if (actualServer.handlerManager.hasHandlers()) {
+          // The actual server still has handlers so we don't actually close it
+          if (done != null) {
+            executeCloseDone(context, done, null);
+          }
+        } else {
+          // No Handlers left so close the actual server
+          // The done handler needs to be executed on the context that calls close, NOT the context
+          // of the actual server
+          actualServer.actualClose(context, done);
+        }
+      }
+    }
+    if (creatingContext != null) {
+      creatingContext.removeCloseHook(this);
+    }
+  }
+
+  @Override
+  public synchronized int actualPort() {
+    return actualPort;
+  }
+
   private void applyConnectionOptions(ServerBootstrap bootstrap) {
     bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
     if (options.getSendBufferSize() != -1) {
@@ -248,48 +290,6 @@ public class NetServerImpl implements NetServer, Closeable {
       runner.run();
     }
     listenersRun = true;
-  }
-
-  public void close() {
-    close(null);
-  }
-
-  @Override
-  public void close(final Handler<AsyncResult<Void>> done) {
-    ContextImpl context = vertx.getOrCreateContext();
-    if (!listening) {
-      if (done != null) {
-        executeCloseDone(context, done, null);
-      }
-      return;
-    }
-    listening = false;
-    synchronized (vertx.sharedNetServers()) {
-
-      if (actualServer != null) {
-        actualServer.handlerManager.removeHandler(connectHandler, listenContext);
-
-        if (actualServer.handlerManager.hasHandlers()) {
-          // The actual server still has handlers so we don't actually close it
-          if (done != null) {
-            executeCloseDone(context, done, null);
-          }
-        } else {
-          // No Handlers left so close the actual server
-          // The done handler needs to be executed on the context that calls close, NOT the context
-          // of the actual server
-          actualServer.actualClose(context, done);
-        }
-      }
-    }
-    if (creatingContext != null) {
-      creatingContext.removeCloseHook(this);
-    }
-  }
-
-  @Override
-  public int actualPort() {
-    return actualPort;
   }
 
   private void actualClose(final ContextImpl closeContext, final Handler<AsyncResult<Void>> done) {
@@ -368,5 +368,14 @@ public class NetServerImpl implements NetServer, Closeable {
       socketMap.put(ch, sock);
       handler.handler.handle(sock);
     }
+  }
+
+  @Override
+  protected void finalize() throws Throwable {
+    // Make sure this gets cleaned up if there are no more references to it
+    // so as not to leave connections and resources dangling until the system is shutdown
+    // which could make the JVM run out of file handles.
+    close();
+    super.finalize();
   }
 }

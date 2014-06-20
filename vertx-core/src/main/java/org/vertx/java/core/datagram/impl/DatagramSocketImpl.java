@@ -36,8 +36,7 @@ import java.net.*;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public class DatagramSocketImpl extends ConnectionBase
-        implements DatagramSocket {
+public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket {
 
   private Handler<Void> drainHandler;
   private Handler<org.vertx.java.core.datagram.DatagramPacket> dataHandler;
@@ -289,5 +288,14 @@ public class DatagramSocketImpl extends ConnectionBase
 
   private void notifyException(final Handler<AsyncResult<DatagramSocket>> handler, final Throwable cause) {
     context.execute(() -> handler.handle(new FutureResultImpl<>(cause)), true);
+  }
+
+  @Override
+  protected void finalize() throws Throwable {
+    // Make sure this gets cleaned up if there are no more references to it
+    // so as not to leave connections and resources dangling until the system is shutdown
+    // which could make the JVM run out of file handles.
+    close();
+    super.finalize();
   }
 }

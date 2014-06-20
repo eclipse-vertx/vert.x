@@ -99,7 +99,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
   }
 
   @Override
-  public HttpServer requestHandler(Handler<HttpServerRequest> requestHandler) {
+  public synchronized HttpServer requestHandler(Handler<HttpServerRequest> requestHandler) {
     if (listening) {
       throw new IllegalStateException("Please set handler before server is listening");
     }
@@ -108,12 +108,12 @@ public class HttpServerImpl implements HttpServer, Closeable {
   }
 
   @Override
-  public Handler<HttpServerRequest> requestHandler() {
+  public synchronized Handler<HttpServerRequest> requestHandler() {
     return requestHandler;
   }
 
   @Override
-  public HttpServer websocketHandler(Handler<ServerWebSocket> wsHandler) {
+  public synchronized HttpServer websocketHandler(Handler<ServerWebSocket> wsHandler) {
     if (listening) {
       throw new IllegalStateException("Please set handler before server is listening");
     }
@@ -122,7 +122,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
   }
 
   @Override
-  public Handler<ServerWebSocket> websocketHandler() {
+  public synchronized Handler<ServerWebSocket> websocketHandler() {
     return wsHandler;
   }
 
@@ -130,28 +130,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
     return listen(null);
   }
 
-  private void applyConnectionOptions(ServerBootstrap bootstrap) {
-    bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
-    if (options.getSendBufferSize() != -1) {
-      bootstrap.childOption(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
-    }
-    if (options.getReceiveBufferSize() != -1) {
-      bootstrap.childOption(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
-      bootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
-    }
-
-    bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
-    if (options.getTrafficClass() != -1) {
-      bootstrap.childOption(ChannelOption.IP_TOS, options.getTrafficClass());
-    }
-    bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
-
-    bootstrap.childOption(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
-    bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
-    bootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());
-  }
-
-  public HttpServer listen(final Handler<AsyncResult<HttpServer>> listenHandler) {
+  public synchronized  HttpServer listen(final Handler<AsyncResult<HttpServer>> listenHandler) {
     if (requestHandler == null && wsHandler == null) {
       throw new IllegalStateException("Set request or websocket handler first");
     }
@@ -265,22 +244,13 @@ public class HttpServerImpl implements HttpServer, Closeable {
     return this;
   }
 
-  private void addHandlers(HttpServerImpl server, ContextImpl context) {
-    if (requestHandler != null) {
-      server.reqHandlerManager.addHandler(requestHandler, context);
-    }
-    if (wsHandler != null) {
-      server.wsHandlerManager.addHandler(wsHandler, context);
-    }
-  }
-
   @Override
   public void close() {
     close(null);
   }
 
   @Override
-  public void close(final Handler<AsyncResult<Void>> done) {
+  public synchronized void close(final Handler<AsyncResult<Void>> done) {
     ContextImpl context = vertx.getOrCreateContext();
     if (!listening) {
       executeCloseDone(context, done, null);
@@ -325,6 +295,37 @@ public class HttpServerImpl implements HttpServer, Closeable {
 
   void removeChannel(Channel channel) {
     connectionMap.remove(channel);
+  }
+
+  private void applyConnectionOptions(ServerBootstrap bootstrap) {
+    bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
+    if (options.getSendBufferSize() != -1) {
+      bootstrap.childOption(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
+    }
+    if (options.getReceiveBufferSize() != -1) {
+      bootstrap.childOption(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
+      bootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
+    }
+
+    bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
+    if (options.getTrafficClass() != -1) {
+      bootstrap.childOption(ChannelOption.IP_TOS, options.getTrafficClass());
+    }
+    bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+
+    bootstrap.childOption(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
+    bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
+    bootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());
+  }
+
+
+  private void addHandlers(HttpServerImpl server, ContextImpl context) {
+    if (requestHandler != null) {
+      server.reqHandlerManager.addHandler(requestHandler, context);
+    }
+    if (wsHandler != null) {
+      server.wsHandlerManager.addHandler(wsHandler, context);
+    }
   }
 
   private void actualClose(final ContextImpl closeContext, final Handler<AsyncResult<Void>> done) {
@@ -573,5 +574,14 @@ public class HttpServerImpl implements HttpServer, Closeable {
       }
       ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, BAD_GATEWAY));
     }
+  }
+
+  @Override
+  protected void finalize() throws Throwable {
+    // Make sure this gets cleaned up if there are no more references to it
+    // so as not to leave connections and resources dangling until the system is shutdown
+    // which could make the JVM run out of file handles.
+    close();
+    super.finalize();
   }
 }
