@@ -5,7 +5,7 @@ mavenLocal:~/.m2/repository
 maven:http://repo2.maven.org/maven2
 
 # Sonatype snapshots
-maven:http://oss.sonatype.org/content/repositories/snapshots
+maven:https://oss.sonatype.org/content/repositories/snapshots
 
 # Bintray
 bintray:http://dl.bintray.com
