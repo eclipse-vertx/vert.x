@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
+ * Copyright (c) 2014 The original author or authors.
  * ------------------------------------------------------
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -16,25 +16,19 @@
 
 package org.vertx.java.core.http.impl;
 
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.impl.DefaultContext;
+import org.vertx.java.core.VertxException;
 
-public interface HttpPool {
+/**
+ * Exception thrown by the ConnectionPool class
+ *
+ * @author <a href="mailto:wangjunbo924@gmail.com">Junbo Wang</a>
+ */
+public class ConnectionPoolTooBusyException extends VertxException {
 
-  void setMaxPoolSize(int size);
-
-  int getMaxPoolSize();
-
-  void setMaxWaiterQueueSize(int maxWaiterQueueSize);
-
-  int getMaxWaiterQueueSize();
-
-  void close();
-
-  void getConnection(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, DefaultContext context);
-
-  void connectionClosed(ClientConnection conn);
-
-  void returnConnection(ClientConnection conn);
-
+  /**
+   * Construct a {@code ConnectionPoolTooBusyException} with a message as specified by {@code msg}
+   */
+  public ConnectionPoolTooBusyException(String msg) {
+    super(msg);
+  }
 }

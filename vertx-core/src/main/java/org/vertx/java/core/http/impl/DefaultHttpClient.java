@@ -70,6 +70,7 @@ public class DefaultHttpClient implements HttpClient {
   };
   private boolean keepAlive = true;
   private boolean pipelining = true;
+  private int connectionMaxOutstandingRequest = -1;
   private boolean configurable = true;
   private boolean closed;
   private final Closeable closeHook = new Closeable() {
@@ -647,12 +648,41 @@ public class DefaultHttpClient implements HttpClient {
     return maxWebSocketFrameSize;
   }
 
+  @Override
+  public HttpClient setMaxWaiterQueueSize(int maxWaiterQueueSize) {
+    checkClosed();
+    pool.setMaxWaiterQueueSize(maxWaiterQueueSize);
+    return this;
+  }
+
+  @Override
+  public int getMaxWaiterQueueSize() {
+    checkClosed();
+    return pool.getMaxWaiterQueueSize();
+  }
+
+  @Override
+  public HttpClient setConnectionMaxOutstandingRequestCount(int connectionMaxOutstandingRequestCount) {
+    checkClosed();
+    connectionMaxOutstandingRequest = connectionMaxOutstandingRequestCount;
+    return this;
+  }
+
+  @Override
+  public int getConnectionMaxOutstandingRequestCount() {
+    checkClosed();
+    return connectionMaxOutstandingRequest;
+  }
+
   void getConnection(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, DefaultContext context) {
     pool.getConnection(handler, connectionExceptionHandler, context);
   }
 
   void returnConnection(final ClientConnection conn) {
-    pool.returnConnection(conn);
+    // prevent connection from taking more requests if it's fully occupied.
+    if (!conn.isFullyOccupied()) {
+      pool.returnConnection(conn);
+    }
   }
 
   void handleException(Exception e) {
@@ -771,6 +801,7 @@ public class DefaultHttpClient implements HttpClient {
         pool.connectionClosed(conn);
       }
     });
+    conn.setMaxOutstandingRequestCount(connectionMaxOutstandingRequest);
     connectionMap.put(ch, conn);
     connectHandler.handle(conn);
   }
