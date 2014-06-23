@@ -31,6 +31,7 @@ import org.vertx.java.core.streams.ReadSupport;
  *
  * You can send data to ipv4 or ipv6 addresses, which also include multicast addresses.
  *
+ *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public interface DatagramSocket extends DrainSupport<DatagramSocket>, ReadSupport<DatagramSocket, DatagramPacket> {

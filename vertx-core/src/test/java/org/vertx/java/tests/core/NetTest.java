@@ -1248,6 +1248,43 @@ public class NetTest extends VertxTestBase {
     }
   }
 
+  @Test
+  public void testClientMultiThreaded() throws Exception {
+    int numThreads = 10;
+    Thread[] threads = new Thread[numThreads];
+    CountDownLatch latch = new CountDownLatch(numThreads);
+    server.connectHandler(socket -> {
+      socket.dataHandler(socket::write);
+    }).listen(ar -> {
+      assertTrue(ar.succeeded());
+      for (int i = 0; i < numThreads; i++) {
+        threads[i] = new Thread() {
+          public void run() {
+            client.connect(1234, result -> {
+              assertTrue(result.succeeded());
+              Buffer buff = randomBuffer(100000);
+              NetSocket sock = result.result();
+              sock.write(buff);
+              Buffer received = new Buffer();
+              sock.dataHandler(rec -> {
+                received.appendBuffer(rec);
+                if (received.length() == buff.length()) {
+                  assertTrue(buffersEqual(buff, received));
+                  latch.countDown();
+                }
+              });
+            });
+          }
+        };
+        threads[i].start();
+      }
+    });
+    awaitLatch(latch);
+    for (int i = 0; i < numThreads; i++) {
+      threads[i].join();
+    }
+  }
+
 
   private File setupFile(String testDir, String fileName, String content) throws Exception {
     File file = new File(testDir, fileName);

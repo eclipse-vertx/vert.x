@@ -317,12 +317,6 @@ public class NetServerImpl implements NetServer, Closeable {
     }
   }
 
-  private void checkListening() {
-    if (listening) {
-      throw new IllegalStateException("Can't set property when server is listening");
-    }
-  }
-
   private class ServerHandler extends VertxNetHandler {
     public ServerHandler() {
       super(NetServerImpl.this.vertx, socketMap);

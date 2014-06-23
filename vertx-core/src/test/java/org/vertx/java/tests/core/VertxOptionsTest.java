@@ -19,7 +19,6 @@ package org.vertx.java.tests.core;
 import org.junit.Test;
 import org.vertx.java.core.VertxOptions;
 import static org.vertx.java.tests.core.TestUtils.*;
-import org.vertx.java.tests.core.VertxTestBase;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

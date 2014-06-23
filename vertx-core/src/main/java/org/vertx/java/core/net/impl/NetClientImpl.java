@@ -69,14 +69,14 @@ public class NetClientImpl implements NetClient {
   }
 
   @Override
-  public synchronized NetClient connect(int port, String host, final Handler<AsyncResult<NetSocket>> connectHandler) {
+  public NetClient connect(int port, String host, final Handler<AsyncResult<NetSocket>> connectHandler) {
     checkClosed();
     connect(port, host, connectHandler, options.getReconnectAttempts());
     return this;
   }
 
   @Override
-  public synchronized NetClient connect(int port, final Handler<AsyncResult<NetSocket>> connectCallback) {
+  public NetClient connect(int port, final Handler<AsyncResult<NetSocket>> connectCallback) {
     checkClosed();
     connect(port, "localhost", connectCallback);
     return this;

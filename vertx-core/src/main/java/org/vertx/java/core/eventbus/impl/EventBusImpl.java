@@ -75,6 +75,7 @@ public class EventBusImpl implements EventBus {
   private final ConcurrentMap<String, Handlers> handlerMap = new ConcurrentHashMap<>();
   private final ClusterManager clusterMgr;
   private final AtomicLong replySequence = new AtomicLong(0);
+  private boolean closed;
 
   public EventBusImpl(VertxInternal vertx) {
     // Just some dummy server ID

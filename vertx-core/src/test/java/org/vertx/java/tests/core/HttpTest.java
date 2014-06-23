@@ -2913,6 +2913,37 @@ public class HttpTest extends HttpTestBase {
     testComplete();
   }
 
+  @Test
+  public void testClientMultiThreaded() throws Exception {
+    int numThreads = 10;
+    Thread[] threads = new Thread[numThreads];
+    CountDownLatch latch = new CountDownLatch(numThreads);
+    server.requestHandler(req -> {
+      req.response().putHeader("count", req.headers().get("count"));
+      req.response().end();
+    }).listen(ar -> {
+      assertTrue(ar.succeeded());
+      for (int i = 0; i < numThreads; i++) {
+        int index = i;
+        threads[i] = new Thread() {
+          public void run() {
+            client.getNow(new RequestOptions().setPort(DEFAULT_HTTP_PORT).putHeader("count", String.valueOf(index)), res -> {
+              assertEquals(200, res.statusCode());
+              assertEquals(String.valueOf(index), res.headers().get("count"));
+              latch.countDown();
+            });
+
+          }
+        };
+        threads[i].start();
+      }
+    });
+    awaitLatch(latch);
+    for (int i = 0; i < numThreads; i++) {
+      threads[i].join();
+    }
+  }
+
   private void pausingServer(Consumer<HttpServer> consumer) {
     server.requestHandler(req -> {
       req.response().setChunked(true);
