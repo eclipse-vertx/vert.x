@@ -28,7 +28,7 @@ public class MultiThreadedWorkerContext extends WorkerContext {
   }
 
   public void execute(ContextTask task) {
-    bgExec.execute(wrapTask(task, false, true));
+    bgExec.execute(wrapTask(task, false));
   }
 
   @Override

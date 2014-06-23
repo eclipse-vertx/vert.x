@@ -132,7 +132,7 @@ public abstract class ContextImpl implements Context {
 
   public void execute(ContextTask task, boolean expectRightThread) {
     if (isOnCorrectContextThread(expectRightThread)) {
-      wrapTask(task, false, true).run();
+      wrapTask(task, true).run();
     } else {
       doExecute(task);
     }
@@ -151,7 +151,7 @@ public abstract class ContextImpl implements Context {
   // This executes the task in the worker pool using the ordered executor of the context
   // It's used e.g. from BlockingActions
   protected void executeOnOrderedWorkerExec(ContextTask task) {
-    orderedBgExec.execute(wrapTask(task, false, false));
+    orderedBgExec.execute(wrapTask(task, false));
   }
 
   public void close() {
@@ -163,53 +163,35 @@ public abstract class ContextImpl implements Context {
     vertx.setContext(null);
   }
 
-  protected void setThread(Thread thread) {
+  protected void executeStart(Thread thread) {
   }
 
-  protected Runnable wrapTask(ContextTask task, boolean checkThreadName, boolean setThread) {
-    checkThreadName = false; // For now never check thread name
-    if (checkThreadName) {
-      return () -> {
+  protected void executeEnd() {
+  }
+
+  protected Runnable wrapTask(ContextTask task, boolean checkThread) {
+    return () -> {
+      if (checkThread) {
         Thread currentThread = Thread.currentThread();
-        if (setThread) {
-          setThread(currentThread);
+        executeStart(currentThread);
+      }
+      try {
+        vertx.setContext(ContextImpl.this);
+        task.run();
+      } catch (Throwable t) {
+        reportException(t);
+      } finally {
+        // TODO - we might have to restore the thread name in case it's been changed during the execution
+        if (checkThread) {
+          executeEnd();
         }
-        String threadName = currentThread.getName();
-        try {
-          vertx.setContext(ContextImpl.this);
-          task.run();
-        } catch (Throwable t) {
-          reportException(t);
-        } finally {
-          if (!threadName.equals(currentThread.getName())) {
-            currentThread.setName(threadName);
-          }
-        }
-        if (closed) {
-          // We allow tasks to be run after the context is closed but we make sure we unset the context afterwards
-          // to avoid any leaks
-          unsetContext();
-        }
-      };
-    } else {
-      return () -> {
-        if (setThread) {
-          Thread currentThread = Thread.currentThread();
-          setThread(currentThread);
-        }
-        try {
-          vertx.setContext(ContextImpl.this);
-          task.run();
-        } catch (Throwable t) {
-          reportException(t);
-        }
-        if (closed) {
-          // We allow tasks to be run after the context is closed but we make sure we unset the context afterwards
-          // to avoid any leaks
-          unsetContext();
-        }
-      };
-    }
+      }
+      if (closed) {
+        // We allow tasks to be run after the context is closed but we make sure we unset the context afterwards
+        // to avoid any leaks
+        unsetContext();
+      }
+    };
   }
 
 }

@@ -21,17 +21,32 @@ package org.vertx.java.core.impl;
  */
 final class VertxThread extends Thread {
 
-    private ContextImpl context;
+  private ContextImpl context;
 
-    public VertxThread(Runnable target, String name) {
-        super(target, name);
-    }
+  public VertxThread(Runnable target, String name) {
+    super(target, name);
+  }
 
-    ContextImpl getContext() {
-        return context;
-    }
+  ContextImpl getContext() {
+    return context;
+  }
 
-    void setContext(ContextImpl context) {
-        this.context = context;
-    }
+  void setContext(ContextImpl context) {
+    this.context = context;
+  }
+
+  private long execStart;
+
+  public void executeStart() {
+    execStart = System.nanoTime();
+  }
+
+  public void executeEnd() {
+    execStart = 0;
+  }
+
+  public long startTime() {
+    return execStart;
+  }
+
 }

@@ -70,5 +70,24 @@ public class VertxOptionsTest extends VertxTestBase {
     String randString = randomUnicodeString(100);
     assertEquals(options, options.setClusterHost(randString));
     assertEquals(randString, options.getClusterHost());
+    assertEquals(1000, options.getBlockedThreadCheckPeriod());
+    rand = randomPositiveInt();
+    assertEquals(options, options.setBlockedThreadCheckPeriod(rand));
+    assertEquals(rand, options.getBlockedThreadCheckPeriod());
+    try {
+      options.setBlockedThreadCheckPeriod(0);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    rand = randomPositiveInt();
+    assertEquals(options, options.setMaxEventLoopExecuteTime(rand));
+    assertEquals(rand, options.getMaxEventLoopExecuteTime());
+    try {
+      options.setMaxEventLoopExecuteTime(0);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
   }
 }

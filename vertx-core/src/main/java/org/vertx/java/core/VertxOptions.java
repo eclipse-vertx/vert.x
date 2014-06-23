@@ -26,6 +26,8 @@ public class VertxOptions {
   private boolean clustered;
   private String clusterHost = "localhost";
   private int clusterPort = 0;
+  private long blockedThreadCheckPeriod = 1000;
+  private long maxEventLoopExecuteTime = 2000;
 
   public int getEventLoopPoolSize() {
     return eventLoopPoolSize;
@@ -78,6 +80,30 @@ public class VertxOptions {
       throw new IllegalArgumentException("clusterPort p must be in range 0 <= p <= 65535");
     }
     this.clusterPort = clusterPort;
+    return this;
+  }
+
+  public long getBlockedThreadCheckPeriod() {
+    return blockedThreadCheckPeriod;
+  }
+
+  public VertxOptions setBlockedThreadCheckPeriod(long blockedThreadCheckPeriod) {
+    if (blockedThreadCheckPeriod < 1) {
+      throw new IllegalArgumentException("blockedThreadCheckPeriod must be > 0");
+    }
+    this.blockedThreadCheckPeriod = blockedThreadCheckPeriod;
+    return this;
+  }
+
+  public long getMaxEventLoopExecuteTime() {
+    return maxEventLoopExecuteTime;
+  }
+
+  public VertxOptions setMaxEventLoopExecuteTime(long maxEventLoopExecuteTime) {
+    if (maxEventLoopExecuteTime < 1) {
+      throw new IllegalArgumentException("maxEventLoopExecuteTime must be > 0");
+    }
+    this.maxEventLoopExecuteTime = maxEventLoopExecuteTime;
     return this;
   }
 }

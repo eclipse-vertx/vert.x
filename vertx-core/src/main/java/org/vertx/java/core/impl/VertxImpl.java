@@ -18,6 +18,7 @@ package org.vertx.java.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.ResourceLeakDetector;
 import org.vertx.java.core.*;
 import org.vertx.java.core.datagram.DatagramSocket;
@@ -77,6 +78,7 @@ public class VertxImpl implements VertxInternal {
   private ExecutorService backgroundPool;
   private OrderedExecutorFactory orderedFact;
   private EventLoopGroup eventLoopGroup;
+  private BlockedThreadChecker checker;
 
   private Map<ServerID, HttpServerImpl> sharedHttpServers = new HashMap<>();
   private Map<ServerID, NetServerImpl> sharedNetServers = new HashMap<>();
@@ -354,6 +356,8 @@ public class VertxImpl implements VertxInternal {
 
     eventBus.close(doneHandler);
 
+    checker.close();
+
     setContext(null);
   }
 
@@ -454,9 +458,12 @@ public class VertxImpl implements VertxInternal {
   }
 
   private void configurePools(VertxOptions options) {
-    backgroundPool = VertxExecutorFactory.workerPool("vert.x-worker-thread-", options.getWorkerPoolSize());
+    backgroundPool = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
+                                                  new VertxThreadFactory("vert.x-worker-thread-"));
     orderedFact = new OrderedExecutorFactory(backgroundPool);
-    eventLoopGroup = VertxExecutorFactory.eventLoopGroup("vert.x-eventloop-thread-", options.getEventLoopPoolSize());
+    checker = new BlockedThreadChecker(options.getBlockedThreadCheckPeriod(), options.getMaxEventLoopExecuteTime());
+    eventLoopGroup = new NioEventLoopGroup(options.getEventLoopPoolSize(),
+                                           new VertxThreadFactory("vert.x-eventloop-thread-", checker));
   }
 
   private class InternalTimerHandler implements ContextTask, Closeable {
