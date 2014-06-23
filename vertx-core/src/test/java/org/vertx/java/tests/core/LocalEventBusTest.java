@@ -29,6 +29,7 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.ReplyException;
 import org.vertx.java.core.eventbus.ReplyFailure;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -518,6 +519,56 @@ public class LocalEventBusTest extends EventBusTestBase {
     });
     await();
   }
+
+  @Test
+  public void testSendUnsupportedObject() {
+    try {
+      eb.send(ADDRESS1, new Object());
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      eb.send(ADDRESS1, new HashMap<>());
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testSendWithReplyUnsupportedObject() {
+    try {
+      eb.send(ADDRESS1, new Object(), reply -> {});
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      eb.send(ADDRESS1, new HashMap<>(), reply -> {});
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testSendWithTimeoutUnsupportedObject() {
+    try {
+      eb.sendWithTimeout(ADDRESS1, new Object(), 1, reply -> {});
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      eb.sendWithTimeout(ADDRESS1, new HashMap<>(), 1, reply -> {});
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+  }
+
+
 
   @Override
   protected <T> void testSend(T val, Consumer<T> consumer) {
