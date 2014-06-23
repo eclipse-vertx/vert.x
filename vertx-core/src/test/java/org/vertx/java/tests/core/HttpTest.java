@@ -349,9 +349,20 @@ public class HttpTest extends HttpTestBase {
     assertEquals(rand, options.getMaxWebsocketFrameSize());
 
     assertEquals(80, options.getPort());
-    rand = randomPositiveInt();
-    assertEquals(options, options.setPort(rand));
-    assertEquals(rand, options.getPort());
+    assertEquals(options, options.setPort(1234));
+    assertEquals(1234, options.getPort());
+    try {
+      options.setPort(-1);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      options.setPort(65536);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
 
     assertEquals("0.0.0.0", options.getHost());
     randString = randomUnicodeString(100);
@@ -2443,7 +2454,7 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testListenInvalidPort() {
     server.close();
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(1128371831));
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(7));
     server.requestHandler(noOpHandler()).listen(onFailure(server -> {
       testComplete();
     }));

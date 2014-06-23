@@ -319,9 +319,20 @@ public class NetTest extends VertxTestBase {
     assertEquals(rand, options.getAcceptBacklog());
 
     assertEquals(0, options.getPort());
-    rand = randomPositiveInt();
-    assertEquals(options, options.setPort(rand));
-    assertEquals(rand, options.getPort());
+    assertEquals(options, options.setPort(1234));
+    assertEquals(1234, options.getPort());
+    try {
+      options.setPort(-1);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      options.setPort(65536);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
 
     assertEquals("0.0.0.0", options.getHost());
     randString = randomUnicodeString(100);

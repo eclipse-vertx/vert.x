@@ -74,9 +74,9 @@ public class VertxImpl implements VertxInternal {
   private final EventBus eventBus;
   private final SharedData sharedData = new SharedData();
 
-  private ExecutorService backgroundPool = VertxExecutorFactory.workerPool("vert.x-worker-thread-");
-  private final OrderedExecutorFactory orderedFact = new OrderedExecutorFactory(backgroundPool);
-  private EventLoopGroup eventLoopGroup = VertxExecutorFactory.eventLoopGroup("vert.x-eventloop-thread-");
+  private ExecutorService backgroundPool;
+  private OrderedExecutorFactory orderedFact;
+  private EventLoopGroup eventLoopGroup;
 
   private Map<ServerID, HttpServerImpl> sharedHttpServers = new HashMap<>();
   private Map<ServerID, NetServerImpl> sharedNetServers = new HashMap<>();
@@ -87,15 +87,17 @@ public class VertxImpl implements VertxInternal {
   private final DeploymentManager deploymentManager = new DeploymentManager(this);
 
   public VertxImpl() {
-    this.eventBus = new EventBusImpl(this);
+    this(new VertxOptions());
+  }
+
+  public VertxImpl(VertxOptions options) {
     this.clusterManager = null;
+    this.eventBus = new EventBusImpl(this);
+    configurePools(options);
   }
 
-  public VertxImpl(String hostname) {
-    this(0, hostname, null);
-  }
-
-  public VertxImpl(int port, String hostname, Handler<AsyncResult<Vertx>> resultHandler) {
+  public VertxImpl(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
+    configurePools(options);
     ClusterManagerFactory factory;
     String clusterManagerFactoryClassName = System.getProperty("vertx.clusterManagerFactory");
     if (clusterManagerFactoryClassName != null) {
@@ -116,7 +118,7 @@ public class VertxImpl implements VertxInternal {
     this.clusterManager = factory.createClusterManager(this);
     this.clusterManager.join();
     Vertx inst = this;
-    this.eventBus = new EventBusImpl(this, port, hostname, clusterManager, res -> {
+    this.eventBus = new EventBusImpl(this, options.getClusterPort(), options.getClusterHost(), clusterManager, res -> {
       if (resultHandler != null) {
         if (res.succeeded()) {
           resultHandler.handle(new FutureResultImpl<>(inst));
@@ -341,7 +343,6 @@ public class VertxImpl implements VertxInternal {
     try {
       if (backgroundPool != null) {
         backgroundPool.awaitTermination(20, TimeUnit.SECONDS);
-        backgroundPool = null;
       }
     } catch (InterruptedException ex) {
       // ignore
@@ -450,6 +451,12 @@ public class VertxImpl implements VertxInternal {
 
   public ClusterManager clusterManager() {
     return clusterManager;
+  }
+
+  private void configurePools(VertxOptions options) {
+    backgroundPool = VertxExecutorFactory.workerPool("vert.x-worker-thread-", options.getWorkerPoolSize());
+    orderedFact = new OrderedExecutorFactory(backgroundPool);
+    eventLoopGroup = VertxExecutorFactory.eventLoopGroup("vert.x-eventloop-thread-", options.getEventLoopPoolSize());
   }
 
   private class InternalTimerHandler implements ContextTask, Closeable {

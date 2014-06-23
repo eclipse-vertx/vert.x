@@ -101,7 +101,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       assertEquals(str, msg.body());
       testComplete();
     });
-    reg.onCompletion(ar -> {
+    reg.doneHandler(ar -> {
       assertTrue(ar.succeeded());
       eb.send(ADDRESS1, str);
     });
@@ -223,7 +223,8 @@ public class LocalEventBusTest extends EventBusTestBase {
       testComplete();
     });
     long timeout = 1000;
-    eb.sendWithTimeout(ADDRESS1, str, timeout, ar -> {});
+    eb.sendWithTimeout(ADDRESS1, str, timeout, ar -> {
+    });
     await();
   }
 
@@ -235,7 +236,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       assertEquals(str, msg.body());
       msg.reply(reply);
     });
-    eb.send(ADDRESS1, str, (Message<String>msg) -> {
+    eb.send(ADDRESS1, str, (Message<String> msg) -> {
       assertEquals(reply, msg.body());
       testComplete();
     });
@@ -274,7 +275,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         assertFalse(ar.succeeded());
         Throwable cause = ar.cause();
         assertTrue(cause instanceof ReplyException);
-        ReplyException re = (ReplyException)cause;
+        ReplyException re = (ReplyException) cause;
         assertEquals(-1, re.failureCode());
         assertEquals(ReplyFailure.TIMEOUT, re.failureType());
         assertTrue(now - start >= timeout);
@@ -321,7 +322,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       // reply after timeout
       vertx.setTimer((long)(timeout * 1.5), id -> msg.reply(reply));
     });
-    eb.send(ADDRESS1, str, (Message<String>msg) -> {
+    eb.send(ADDRESS1, str, (Message<String> msg) -> {
       fail("Should not be called");
     });
     vertx.setTimer(timeout * 2, id -> testComplete());
@@ -338,7 +339,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     long timeout = 1000;
     eb.sendWithTimeout(ADDRESS1, str, timeout, (AsyncResult<Message<Integer>> ar) -> {
       assertTrue(ar.succeeded());
-      assertEquals(23, (int)ar.result().body());
+      assertEquals(23, (int) ar.result().body());
       testComplete();
     });
     await();
@@ -620,7 +621,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     }
     eb.registerHandler(ADDRESS1, new MyHandler());
     eb.registerHandler(ADDRESS1, new MyHandler());
-    eb.publish(ADDRESS1, (T)val);
+    eb.publish(ADDRESS1, (T) val);
     await();
   }
 }

@@ -26,39 +26,16 @@ import java.util.ServiceLoader;
  */
 public abstract class VertxFactory {
 
-  /**
-   * Create a non clustered Vertx instance
-   */
   public static Vertx newVertx() {
     return loadFactory().createVertx();
   }
 
-  /**
-   * Create a clustered Vertx instance listening for cluster connections on the default port 25500
-   * @param hostname The hostname or ip address to listen for cluster connections
-   */
-  public static Vertx newVertx(String hostname) {
-    return loadFactory().createVertx(hostname);
+  public static Vertx newVertx(VertxOptions options) {
+    return loadFactory().createVertx(options);
   }
 
-  /**
-   * Create a clustered Vertx instance.
-   * Note that the event bus might not be listening until some time after this method has returned
-   * @param port The port to listen for cluster connections
-   * @param hostname The hostname or ip address to listen for cluster connections
-   */
-  public static Vertx newVertx(int port, String hostname) {
-    return loadFactory().createVertx(port, hostname);
-  }
-
-  /**
-   * Create a clustered Vertx instance returning the instance asynchronously in the resultHandler
-   * when the event bus is ready and listening
-   * @param port The port to listen for cluster connections
-   * @param hostname The hostname or ip address to listen for cluster connections
-   */
-  public static void newVertx(int port, String hostname, Handler<AsyncResult<Vertx>> resultHandler) {
-    loadFactory().createVertx(port, hostname, resultHandler);
+  public static void newVertx(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
+    loadFactory().createVertx(options, resultHandler);
   }
 
   private static VertxFactory loadFactory() {
@@ -70,14 +47,11 @@ public abstract class VertxFactory {
     return null;
   }
 
-  protected Vertx createVertx(String hostname) {
+  protected Vertx createVertx(VertxOptions options) {
     return null;
   }
 
-  protected Vertx createVertx(int port, String hostname) {
-    return null;
+  protected void createVertx(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
   }
 
-  protected void createVertx(int port, String hostname, Handler<AsyncResult<Vertx>> resultHandler) {
-  }
 }

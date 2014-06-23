@@ -15,10 +15,7 @@
  */
 package org.vertx.java.core.impl;
 
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxFactory;
+import org.vertx.java.core.*;
 
 /**
  * @author pidster
@@ -32,18 +29,13 @@ public class VertxFactoryImpl extends VertxFactory {
   }
 
   @Override
-  public Vertx createVertx(String hostname) {
-    return new VertxImpl(hostname);
+  public Vertx createVertx(VertxOptions options) {
+    return new VertxImpl(options);
   }
 
   @Override
-  public Vertx createVertx(int port, String hostname) {
-    return new VertxImpl(port, hostname, null);
-  }
-
-  @Override
-  public void createVertx(int port, String hostname, final Handler<AsyncResult<Vertx>> resultHandler) {
-    new VertxImpl(port, hostname, resultHandler);
+  public void createVertx(VertxOptions options, final Handler<AsyncResult<Vertx>> resultHandler) {
+    new VertxImpl(options, resultHandler);
   }
 
 }

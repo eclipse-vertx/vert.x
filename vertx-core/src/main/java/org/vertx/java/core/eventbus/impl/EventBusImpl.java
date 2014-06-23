@@ -381,6 +381,9 @@ public class EventBusImpl implements EventBus {
     if (address == null) {
       throw new NullPointerException("address");
     }
+    if (handler == null) {
+      throw new NullPointerException("handler");
+    }
     ContextImpl context = vertx.getContext();
     boolean hasContext = context != null;
     if (!hasContext) {
@@ -777,7 +780,7 @@ public class EventBusImpl implements EventBus {
     }
 
     @Override
-    public synchronized void onCompletion(Handler<AsyncResult<Void>> completionHandler) {
+    public synchronized void doneHandler(Handler<AsyncResult<Void>> completionHandler) {
       Objects.requireNonNull(completionHandler);
       if (result != null) {
         completionHandler.handle(result);

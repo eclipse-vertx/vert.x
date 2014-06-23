@@ -66,6 +66,9 @@ public class NetServerOptions extends TCPOptions {
   }
 
   public NetServerOptions setPort(int port) {
+    if (port < 0 || port > 65535) {
+      throw new IllegalArgumentException("port p must be in range 0 <= p <= 65535");
+    }
     this.port = port;
     return this;
   }

@@ -55,7 +55,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private Queue<Buffer> pendingData;
   private boolean paused = false;
   private SSLHelper helper;
-  //private TCPSSLHelper oldHelper;
   private boolean client;
 
   public NetSocketImpl(VertxInternal vertx, Channel channel, ContextImpl context, SSLHelper helper, boolean client) {

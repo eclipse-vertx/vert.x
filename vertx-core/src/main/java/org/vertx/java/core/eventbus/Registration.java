@@ -36,7 +36,7 @@ public interface Registration {
    *
    * @param completionHandler the completion handler
    */
-  void onCompletion(Handler<AsyncResult<Void>> completionHandler);
+  void doneHandler(Handler<AsyncResult<Void>> completionHandler);
 
   /**
    * Unregisters the handler which created this registration

@@ -19,10 +19,7 @@ package org.vertx.java.tests.core;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxFactory;
+import org.vertx.java.core.*;
 import org.vertx.java.core.eventbus.Registration;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.fakecluster.FakeClusterManager;
@@ -78,7 +75,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       }
       testComplete();
     });
-    reg.onCompletion(ar -> {
+    reg.doneHandler(ar -> {
       assertTrue(ar.succeeded());
       vertices[0].eventBus().send(ADDRESS1, val);
     });
@@ -93,7 +90,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       assertEquals(str, msg.body());
       msg.reply(val);
     });
-    reg.onCompletion(ar -> {
+    reg.doneHandler(ar -> {
       assertTrue(ar.succeeded());
       vertices[0].eventBus().send(ADDRESS1, str, (Message<T> reply) -> {
         if (consumer == null) {
@@ -137,9 +134,9 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       }
     }
     Registration reg = vertices[2].eventBus().registerHandler(ADDRESS1, new MyHandler());
-    reg.onCompletion(new MyRegisterHandler());
+    reg.doneHandler(new MyRegisterHandler());
     reg = vertices[1].eventBus().registerHandler(ADDRESS1, new MyHandler());
-    reg.onCompletion(new MyRegisterHandler());
+    reg.doneHandler(new MyRegisterHandler());
     vertices[0].eventBus().publish(ADDRESS1, (T)val);
     await();
   }
@@ -160,7 +157,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     vertices = new Vertx[numNodes];
     for (int i = 0; i < numNodes; i++) {
       int index = i;
-      VertxFactory.newVertx(0, "localhost", ar -> {
+      VertxFactory.newVertx(new VertxOptions().setClusterHost("localhost").setClusterPort(0), ar -> {
         assertTrue("Failed to start node", ar.succeeded());
         vertices[index] = ar.result();
         latch.countDown();

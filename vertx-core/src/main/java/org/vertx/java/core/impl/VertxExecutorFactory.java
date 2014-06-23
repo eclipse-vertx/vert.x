@@ -36,23 +36,17 @@ import java.util.concurrent.Executors;
  */
 public class VertxExecutorFactory {
 
-  public static final int WORKER_POOL_MAX_SIZE = 20;
-
   // The worker pool needs to be fixed with a backing queue
-  public static ExecutorService workerPool(String poolName) {
-    int maxSize = Integer.getInteger("vertx.pool.worker.size", WORKER_POOL_MAX_SIZE);
-    ExecutorService exec = Executors.newFixedThreadPool(maxSize, new VertxThreadFactory(poolName));
+  public static ExecutorService workerPool(String poolName, int poolSize) {
+    ExecutorService exec = Executors.newFixedThreadPool(poolSize, new VertxThreadFactory(poolName));
     ManagementRegistry.registerThreadPool("Worker", exec);
     return exec;
   }
 
   // The acceptor pools need to be fixed with a backing queue
 
-  public static EventLoopGroup eventLoopGroup(String poolName) {
-    return new NioEventLoopGroup(eventLoopSize(), new VertxThreadFactory(poolName));
+  public static EventLoopGroup eventLoopGroup(String poolName, int poolSize) {
+    return new NioEventLoopGroup(poolSize, new VertxThreadFactory(poolName));
   }
 
-  public static int eventLoopSize() {
-    return Integer.getInteger("vertx.pool.eventloop.size", 2 * Runtime.getRuntime().availableProcessors());
-  }
 }
