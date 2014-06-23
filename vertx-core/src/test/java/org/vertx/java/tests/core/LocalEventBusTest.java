@@ -19,15 +19,15 @@ package org.vertx.java.tests.core;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxFactory;
+import org.vertx.java.core.*;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Registration;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.ReplyException;
 import org.vertx.java.core.eventbus.ReplyFailure;
+import org.vertx.java.core.http.HttpClientOptions;
+import org.vertx.java.core.http.HttpServerOptions;
+import org.vertx.java.core.http.RequestOptions;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -556,17 +556,42 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testSendWithTimeoutUnsupportedObject() {
     try {
-      eb.sendWithTimeout(ADDRESS1, new Object(), 1, reply -> {});
+      eb.sendWithTimeout(ADDRESS1, new Object(), 1, reply -> {
+      });
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       // OK
     }
     try {
-      eb.sendWithTimeout(ADDRESS1, new HashMap<>(), 1, reply -> {});
+      eb.sendWithTimeout(ADDRESS1, new HashMap<>(), 1, reply -> {
+      });
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       // OK
     }
+  }
+
+  @Test
+  public void testInVerticle() throws Exception {
+    class MyVerticle extends AbstractVerticle {
+      AtomicInteger cnt = new AtomicInteger();
+      @Override
+      public void start() {
+        Thread thr = Thread.currentThread();
+        vertx.eventBus().registerHandler(ADDRESS1, msg -> {
+          assertSame(thr, Thread.currentThread());
+          msg.reply("bar");
+        });
+        vertx.eventBus().send(ADDRESS1, "foo", reply -> {
+          assertSame(thr, Thread.currentThread());
+          assertEquals("bar", reply.body());
+          testComplete();
+        });
+      }
+    }
+    MyVerticle verticle = new MyVerticle();
+    vertx.deployVerticle(verticle);
+    await();
   }
 
 

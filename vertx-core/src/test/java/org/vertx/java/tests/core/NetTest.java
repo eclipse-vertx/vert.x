@@ -19,12 +19,15 @@ package org.vertx.java.tests.core;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.vertx.java.core.AbstractVerticle;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.Registration;
+import org.vertx.java.core.http.HttpClientOptions;
+import org.vertx.java.core.http.HttpServerOptions;
 import org.vertx.java.core.impl.ConcurrentHashSet;
 import org.vertx.java.core.net.*;
 import org.vertx.java.core.net.impl.SocketDefaults;
@@ -1283,6 +1286,46 @@ public class NetTest extends VertxTestBase {
     for (int i = 0; i < numThreads; i++) {
       threads[i].join();
     }
+  }
+
+  @Test
+  public void testInVerticle() throws Exception {
+    client.close();
+    server.close();
+    class MyVerticle extends AbstractVerticle {
+      @Override
+      public void start() {
+        Thread thr = Thread.currentThread();
+        server = vertx.createNetServer(new NetServerOptions().setPort(1234));
+        server.connectHandler(sock -> {
+          sock.dataHandler(sock::write);
+          assertSame(thr, Thread.currentThread());
+        });
+        server.listen(ar -> {
+          assertTrue(ar.succeeded());
+          assertSame(thr, Thread.currentThread());
+          client = vertx.createNetClient(new NetClientOptions());
+          client.connect(1234, ar2 -> {
+            assertSame(thr, Thread.currentThread());
+            assertTrue(ar2.succeeded());
+            NetSocket sock = ar2.result();
+            Buffer buff = randomBuffer(10000);
+            sock.write(buff);
+            Buffer brec = new Buffer();
+            sock.dataHandler(rec -> {
+              assertSame(thr, Thread.currentThread());
+              brec.appendBuffer(rec);
+              if (brec.length() == buff.length()) {
+                testComplete();
+              }
+            });
+          });
+        });
+      }
+    }
+    MyVerticle verticle = new MyVerticle();
+    vertx.deployVerticle(verticle);
+    await();
   }
 
 

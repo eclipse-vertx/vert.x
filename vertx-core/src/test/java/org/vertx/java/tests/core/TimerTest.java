@@ -17,8 +17,10 @@
 package org.vertx.java.tests.core;
 
 import org.junit.Test;
+import org.vertx.java.core.AbstractVerticle;
 import org.vertx.java.core.Handler;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -51,6 +53,32 @@ public class TimerTest extends VertxTestBase {
       vertx.cancelTimer(timerID);
       testComplete();
     });
+    await();
+  }
+
+  @Test
+  public void testInVerticle() throws Exception {
+    class MyVerticle extends AbstractVerticle {
+      AtomicInteger cnt = new AtomicInteger();
+      @Override
+      public void start() {
+        Thread thr = Thread.currentThread();
+        vertx.setTimer(1, id -> {
+          assertSame(thr, Thread.currentThread());
+          if (cnt.incrementAndGet() == 5) {
+            testComplete();
+          }
+        });
+        vertx.setPeriodic(2, id -> {
+          assertSame(thr, Thread.currentThread());
+          if (cnt.incrementAndGet() == 5) {
+            testComplete();
+          }
+        });
+      }
+    }
+    MyVerticle verticle = new MyVerticle();
+    vertx.deployVerticle(verticle);
     await();
   }
 

@@ -19,6 +19,7 @@ package org.vertx.java.tests.core;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import org.junit.Before;
 import org.junit.Test;
+import org.vertx.java.core.AbstractVerticle;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
@@ -2942,6 +2943,37 @@ public class HttpTest extends HttpTestBase {
     for (int i = 0; i < numThreads; i++) {
       threads[i].join();
     }
+  }
+
+  @Test
+  public void testInVerticle() throws Exception {
+    client.close();
+    server.close();
+    class MyVerticle extends AbstractVerticle {
+      @Override
+      public void start() {
+        Thread thr = Thread.currentThread();
+        server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
+        server.requestHandler(req -> {
+          req.response().end();
+          assertSame(thr, Thread.currentThread());
+        });
+        server.listen(ar -> {
+          assertTrue(ar.succeeded());
+          assertSame(thr, Thread.currentThread());
+          client = vertx.createHttpClient(new HttpClientOptions());
+          client.getNow(new RequestOptions().setPort(DEFAULT_HTTP_PORT), res -> {
+            assertSame(thr, Thread.currentThread());
+            assertSame(thr, Thread.currentThread());
+            assertEquals(200, res.statusCode());
+            testComplete();
+          });
+        });
+      }
+    }
+    MyVerticle verticle = new MyVerticle();
+    vertx.deployVerticle(verticle);
+    await();
   }
 
   private void pausingServer(Consumer<HttpServer> consumer) {
