@@ -100,24 +100,24 @@ public class EventBusImpl implements EventBus {
   }
 
   @Override
-  public <T> EventBus send(String address, T message) {
+  public EventBus send(String address, Object message) {
     return send(address, message, null);
   }
 
   @Override
-  public <T, R> EventBus send(String address, T message, Handler<Message<R>> replyHandler) {
+  public <T> EventBus send(String address, Object message, Handler<Message<T>> replyHandler) {
     sendOrPub(createMessage(true, address, message), replyHandler);
     return this;
   }
 
   @Override
-  public <T, R> EventBus sendWithTimeout(String address, T message, long timeout, Handler<AsyncResult<Message<R>>> replyHandler) {
+  public <T> EventBus sendWithTimeout(String address, Object message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
     sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
     return this;
   }
 
   @Override
-  public <T> EventBus publish(String address, T message) {
+  public EventBus publish(String address, Object message) {
     sendOrPub(createMessage(false, address, message), null);
     return this;
   }

@@ -62,7 +62,7 @@ public interface EventBus {
    * @param address The address to send it to
    * @param message The message
    */
-  <T> EventBus send(String address, T message);
+  EventBus send(String address, Object message);
 
   /**
    * Send a message
@@ -70,7 +70,7 @@ public interface EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  <T, R> EventBus send(String address, T message, Handler<Message<R>> replyHandler);
+  <T> EventBus send(String address, Object message, Handler<Message<T>> replyHandler);
 
   /**
    * Send an object as a message
@@ -79,14 +79,14 @@ public interface EventBus {
    * @param timeout - Timeout in ms. If no reply received within the timeout then the reply handler will be unregistered
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
-  <T, R> EventBus sendWithTimeout(String address, T message, long timeout, Handler<AsyncResult<Message<R>>> replyHandler);
+  <T> EventBus sendWithTimeout(String address, Object message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler);
 
   /**
    * Publish a message
    * @param address The address to publish it to
    * @param message The message
    */
-  <T> EventBus publish(String address, T message);
+  EventBus publish(String address, Object message);
 
   /**
    * Registers a handler against the specified address
