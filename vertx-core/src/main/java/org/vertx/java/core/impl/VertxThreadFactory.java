@@ -27,19 +27,16 @@ public class VertxThreadFactory implements ThreadFactory {
   private final String prefix;
   private final AtomicInteger threadCount = new AtomicInteger(0);
   private final BlockedThreadChecker checker;
+  private final boolean worker;
 
-  VertxThreadFactory(String prefix) {
-    this.prefix = prefix;
-    this.checker = null;
-  }
-
-  VertxThreadFactory(String prefix, BlockedThreadChecker checker) {
+  VertxThreadFactory(String prefix, BlockedThreadChecker checker, boolean worker) {
     this.prefix = prefix;
     this.checker = checker;
+    this.worker = worker;
   }
 
   public Thread newThread(Runnable runnable) {
-    VertxThread t = new VertxThread(runnable, prefix + threadCount.getAndIncrement());
+    VertxThread t = new VertxThread(runnable, prefix + threadCount.getAndIncrement(), worker);
     // All vert.x threads are daemons
     t.setDaemon(true);
     if (checker != null) {

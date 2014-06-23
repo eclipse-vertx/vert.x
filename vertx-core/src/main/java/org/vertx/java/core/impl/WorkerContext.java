@@ -28,7 +28,7 @@ public class WorkerContext extends ContextImpl {
   }
 
   public void doExecute(ContextTask task) {
-    executeOnOrderedWorkerExec(task);
+    orderedBgExec.execute(wrapTask(task, true));
   }
 
   @Override

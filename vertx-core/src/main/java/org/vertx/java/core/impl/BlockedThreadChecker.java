@@ -35,7 +35,7 @@ public class BlockedThreadChecker {
   private Map<VertxThread, Object> threads = new WeakHashMap<>();
   private final Timer timer; // Need to use our own timer - can't use event loop for this
 
-  BlockedThreadChecker(long interval, long maxExecTime) {
+  BlockedThreadChecker(long interval, long maxEventLoopExecTime, long maxWorkerExecTime) {
     timer = new Timer("vertx-blocked-thread-checker", true);
     timer.schedule(new TimerTask() {
       @Override
@@ -44,8 +44,8 @@ public class BlockedThreadChecker {
         for (VertxThread thread: threads.keySet()) {
           long execStart = thread.startTime();
           long dur = now - execStart;
-          if (execStart != 0 && dur > maxExecTime) {
-            log.warn("Thread " + thread + " has been blocked for " + (dur / 1000000) + " ms");
+          if (execStart != 0 && dur > (thread.isWorker() ? maxWorkerExecTime : maxEventLoopExecTime)) {
+            log.warn("Thread " + thread + " has been blocked for " + (dur / 1000000) + " ms" + " time " + maxEventLoopExecTime);
           }
         }
       }

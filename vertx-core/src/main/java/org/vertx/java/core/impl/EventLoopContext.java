@@ -28,8 +28,6 @@ public class EventLoopContext extends ContextImpl {
 
   private static final Logger log = LoggerFactory.getLogger(EventLoopContext.class);
 
-  private VertxThread contextThread;
-
   public EventLoopContext(VertxInternal vertx, Executor bgExec) {
     super(vertx, bgExec);
   }
@@ -41,27 +39,6 @@ public class EventLoopContext extends ContextImpl {
   @Override
   public boolean isEventLoopContext() {
     return true;
-  }
-
-  @Override
-  protected void executeStart(Thread thread) {
-    // Sanity check - make sure Netty is really delivering events on the correct thread
-    if (this.contextThread == null) {
-      if (thread instanceof VertxThread) {
-        this.contextThread = (VertxThread)thread;
-      } else {
-        throw new IllegalStateException("Not a vert.x thread!");
-      }
-    } else if (this.contextThread != thread) {
-      //log.warn("Uh oh! Event loop context executing with wrong thread! Expected " + this.thread + " got " + thread);
-      throw new IllegalStateException("Uh oh! Event loop context executing with wrong thread! Expected " + this.contextThread + " got " + thread);
-    }
-    contextThread.executeStart();
-  }
-
-  @Override
-  protected void executeEnd() {
-    contextThread.executeEnd();
   }
 
   @Override

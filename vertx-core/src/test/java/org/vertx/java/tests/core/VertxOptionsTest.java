@@ -80,11 +80,22 @@ public class VertxOptionsTest extends VertxTestBase {
     } catch (IllegalArgumentException e) {
       // OK
     }
+    assertEquals(2000l * 1000000, options.getMaxEventLoopExecuteTime()); // 2 seconds in nano seconds
     rand = randomPositiveInt();
     assertEquals(options, options.setMaxEventLoopExecuteTime(rand));
     assertEquals(rand, options.getMaxEventLoopExecuteTime());
     try {
       options.setMaxEventLoopExecuteTime(0);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    assertEquals(1l * 60 * 1000 * 1000000, options.getMaxWorkerExecuteTime()); // 1 minute in nano seconds
+    rand = randomPositiveInt();
+    assertEquals(options, options.setMaxWorkerExecuteTime(rand));
+    assertEquals(rand, options.getMaxWorkerExecuteTime());
+    try {
+      options.setMaxWorkerExecuteTime(0);
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       // OK

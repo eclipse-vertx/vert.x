@@ -21,10 +21,13 @@ package org.vertx.java.core.impl;
  */
 final class VertxThread extends Thread {
 
+  private final boolean worker;
   private ContextImpl context;
+  private long execStart;
 
-  public VertxThread(Runnable target, String name) {
+  public VertxThread(Runnable target, String name, boolean worker) {
     super(target, name);
+    this.worker = worker;
   }
 
   ContextImpl getContext() {
@@ -34,8 +37,6 @@ final class VertxThread extends Thread {
   void setContext(ContextImpl context) {
     this.context = context;
   }
-
-  private long execStart;
 
   public void executeStart() {
     execStart = System.nanoTime();
@@ -47,6 +48,10 @@ final class VertxThread extends Thread {
 
   public long startTime() {
     return execStart;
+  }
+
+  public boolean isWorker() {
+    return worker;
   }
 
 }

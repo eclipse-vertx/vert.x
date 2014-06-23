@@ -46,6 +46,7 @@ public abstract class ContextImpl implements Context {
   private boolean closed;
   private final EventLoop eventLoop;
   protected final Executor orderedBgExec;
+  protected VertxThread contextThread;
 
   protected ContextImpl(VertxInternal vertx, Executor orderedBgExec) {
     this.vertx = vertx;
@@ -72,12 +73,9 @@ public abstract class ContextImpl implements Context {
     return deployment;
   }
 
+  // FIXME - can we get rid of this?
   public PathResolver getPathResolver() {
     return pathResolver;
-  }
-
-  public void setPathResolver(PathResolver pathResolver) {
-    this.pathResolver = pathResolver;
   }
 
   public void reportException(Throwable t) {
@@ -163,17 +161,29 @@ public abstract class ContextImpl implements Context {
     vertx.setContext(null);
   }
 
-  protected void executeStart(Thread thread) {
+  protected void executeStart() {
+    Thread thread = Thread.currentThread();
+    // Sanity check - make sure Netty is really delivering events on the correct thread
+    if (this.contextThread == null) {
+      if (thread instanceof VertxThread) {
+        this.contextThread = (VertxThread)thread;
+      } else {
+        throw new IllegalStateException("Not a vert.x thread!");
+      }
+    } else if (this.contextThread != thread && !this.contextThread.isWorker()) {
+      throw new IllegalStateException("Uh oh! Event loop context executing with wrong thread! Expected " + this.contextThread + " got " + thread);
+    }
+    this.contextThread.executeStart();
   }
 
   protected void executeEnd() {
+    contextThread.executeEnd();
   }
 
   protected Runnable wrapTask(ContextTask task, boolean checkThread) {
     return () -> {
       if (checkThread) {
-        Thread currentThread = Thread.currentThread();
-        executeStart(currentThread);
+        executeStart();
       }
       try {
         vertx.setContext(ContextImpl.this);

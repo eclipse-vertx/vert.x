@@ -27,7 +27,22 @@ public class VertxOptions {
   private String clusterHost = "localhost";
   private int clusterPort = 0;
   private long blockedThreadCheckPeriod = 1000;
-  private long maxEventLoopExecuteTime = 2000;
+  private long maxEventLoopExecuteTime = 2000l * 1000000;
+  private long maxWorkerExecuteTime = 1l * 60 * 1000 * 1000000;
+
+  public VertxOptions() {
+  }
+
+  public VertxOptions(VertxOptions other) {
+    this.eventLoopPoolSize = other.eventLoopPoolSize;
+    this.workerPoolSize = other.workerPoolSize;
+    this.clustered = other.clustered;
+    this.clusterHost = other.clusterHost;
+    this.clusterPort = other.clusterPort;
+    this.blockedThreadCheckPeriod = other.blockedThreadCheckPeriod;
+    this.maxEventLoopExecuteTime = other.maxEventLoopExecuteTime;
+    this.maxWorkerExecuteTime = other.maxWorkerExecuteTime;
+  }
 
   public int getEventLoopPoolSize() {
     return eventLoopPoolSize;
@@ -104,6 +119,18 @@ public class VertxOptions {
       throw new IllegalArgumentException("maxEventLoopExecuteTime must be > 0");
     }
     this.maxEventLoopExecuteTime = maxEventLoopExecuteTime;
+    return this;
+  }
+
+  public long getMaxWorkerExecuteTime() {
+    return maxWorkerExecuteTime;
+  }
+
+  public VertxOptions setMaxWorkerExecuteTime(long maxWorkerExecuteTime) {
+    if (maxWorkerExecuteTime < 1) {
+      throw new IllegalArgumentException("maxWorkerpExecuteTime must be > 0");
+    }
+    this.maxWorkerExecuteTime = maxWorkerExecuteTime;
     return this;
   }
 }

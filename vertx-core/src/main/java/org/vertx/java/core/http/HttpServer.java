@@ -61,31 +61,6 @@ public interface HttpServer {
   Handler<ServerWebSocket> websocketHandler();
 
 
-//  /**
-//   * Tell the server to start listening on all available interfaces and port {@code port}. Be aware this is an
-//   * async operation and the server may not bound on return of the method.
-//   */
-//  HttpServer listen(int port);
-//
-//  /**
-//   * Tell the server to start listening on all available interfaces and port {@code port}
-//   *
-//   */
-//  HttpServer listen(int port, Handler<AsyncResult<HttpServer>> listenHandler);
-//
-//  /**
-//   * Tell the server to start listening on port {@code port} and hostname or ip address given by {@code host}. Be aware this is an
-//   * async operation and the server may not bound on return of the method.
-//   *
-//   */
-//  HttpServer listen(int port, String host);
-//
-//  /**
-//   * Tell the server to start listening on port {@code port} and hostname or ip address given by {@code host}.
-//   *
-//   */
-//  HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler);
-
   HttpServer listen();
 
   HttpServer listen(Handler<AsyncResult<HttpServer>> listenHandler);
@@ -101,35 +76,4 @@ public interface HttpServer {
    */
   void close(Handler<AsyncResult<Void>> doneHandler);
 
-//  /**
-//   * Set if the {@link HttpServer} should compress the http response if the connected client supports it.
-//   */
-//  HttpServer setCompressionSupported(boolean compressionSupported);
-//
-//  /**
-//   * Returns {@code true} if the {@link HttpServer} should compress the http response if the connected client supports it.
-//   */
-//  boolean isCompressionSupported();
-//
-//  /**
-//   * Sets the maximum websocket frame size in bytes. Default is 65536 bytes.
-//   * @param maxSize The size in bytes
-//   */
-//  HttpServer setMaxWebSocketFrameSize(int maxSize);
-//
-//  /**
-//   * Get the maximum websocket frame size in bytes.
-//   */
-//  int getMaxWebSocketFrameSize();
-//
-//  /**
-//   * Set the supported websocket subprotocols. Using null to disable support of subprotocols.
-//   */
-//  HttpServer setWebSocketSubProtocols(String... subProtocols);
-//
-//  /**
-//   * Returns a immutable {@link Set} which holds all the supported subprotocols. An empty set is returned if
-//   * non are supported. This is the default.
-//   */
-//  Set<String> getWebSocketSubProtocols();
 }

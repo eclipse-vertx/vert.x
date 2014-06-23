@@ -458,12 +458,13 @@ public class VertxImpl implements VertxInternal {
   }
 
   private void configurePools(VertxOptions options) {
-    backgroundPool = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
-                                                  new VertxThreadFactory("vert.x-worker-thread-"));
-    orderedFact = new OrderedExecutorFactory(backgroundPool);
-    checker = new BlockedThreadChecker(options.getBlockedThreadCheckPeriod(), options.getMaxEventLoopExecuteTime());
+    checker = new BlockedThreadChecker(options.getBlockedThreadCheckPeriod(), options.getMaxEventLoopExecuteTime(),
+                                       options.getMaxWorkerExecuteTime());
     eventLoopGroup = new NioEventLoopGroup(options.getEventLoopPoolSize(),
-                                           new VertxThreadFactory("vert.x-eventloop-thread-", checker));
+                                           new VertxThreadFactory("vert.x-eventloop-thread-", checker, false));
+    backgroundPool = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
+      new VertxThreadFactory("vert.x-worker-thread-", checker, true));
+    orderedFact = new OrderedExecutorFactory(backgroundPool);
   }
 
   private class InternalTimerHandler implements ContextTask, Closeable {
