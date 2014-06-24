@@ -260,8 +260,8 @@ public class VertxImpl implements VertxInternal {
   }
 
   @Override
-  public DnsClient createDnsClient(SocketAddress... dnsServers) {
-    return new DnsClientImpl(this, dnsServers);
+  public DnsClient createDnsClient(int port, String host) {
+    return new DnsClientImpl(this, port, host);
   }
 
   private long scheduleTimeout(ContextImpl context, Handler<Long> handler, long delay, boolean periodic) {

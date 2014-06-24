@@ -26,7 +26,6 @@ import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientOptions;
 import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerOptions;
-import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.net.*;
 import org.vertx.java.core.shareddata.SharedData;
 import org.vertx.java.core.sockjs.SockJSServer;
@@ -97,7 +96,7 @@ public interface Vertx {
   /**
    * Return the {@link DnsClient}
    */
-  DnsClient createDnsClient(SocketAddress... dnsServers);
+  DnsClient createDnsClient(int port, String host);
 
   /**
    * The shared data object

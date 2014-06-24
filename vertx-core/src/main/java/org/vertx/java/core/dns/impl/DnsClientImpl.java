@@ -46,29 +46,19 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class DnsClientImpl implements DnsClient {
 
   private final Bootstrap bootstrap;
-  private final List<InetSocketAddress> dnsServers;
+  private final InetSocketAddress dnsServer;
   private static final char[] HEX_TABLE = "0123456789abcdef".toCharArray();
   private final ContextImpl actualCtx;
 
-  public DnsClientImpl(VertxInternal vertx, SocketAddress... addresses) {
+  public DnsClientImpl(VertxInternal vertx, int port, String host) {
 
     ContextImpl creatingContext = vertx.getContext();
     if (creatingContext != null && creatingContext.isMultithreaded()) {
       throw new IllegalStateException("Cannot use DnsClient in a multi-threaded worker verticle");
     }
 
-    if (addresses == null || addresses.length == 0) {
-      throw new IllegalArgumentException("Need at least one default DNS Server");
-    }
+    this.dnsServer = new InetSocketAddress(host, port);
 
-    // use LinkedList as we will traverse it all the time
-
-    this.dnsServers = new LinkedList<>();
-    for (SocketAddress addr: addresses) {
-      dnsServers.add(new InetSocketAddress(addr.getHostAddress(), addr.getPort()));
-    }
-
-   // this.dnsServers = new LinkedList<>(Arrays.asList(dnsServers));
     actualCtx = vertx.getOrCreateContext();
     bootstrap = new Bootstrap();
     bootstrap.group(actualCtx.getEventLoop());
@@ -85,25 +75,25 @@ public final class DnsClientImpl implements DnsClient {
   }
 
   @Override
-  public DnsClient lookup4(String name, final Handler<AsyncResult<String>> handler) {
+  public DnsClient lookup4(String name, Handler<AsyncResult<String>> handler) {
     lookup(name, new HandlerAdapter<String>(handler), DnsEntry.TYPE_A);
     return this;
   }
 
   @Override
-  public DnsClient lookup6(String name, final Handler<AsyncResult<String>> handler) {
+  public DnsClient lookup6(String name, Handler<AsyncResult<String>> handler) {
     lookup(name, new HandlerAdapter<String>(handler), DnsEntry.TYPE_AAAA);
     return this;
   }
 
   @Override
-  public DnsClient lookup(String name, final Handler<AsyncResult<String>> handler) {
+  public DnsClient lookup(String name, Handler<AsyncResult<String>> handler) {
     lookup(name, new HandlerAdapter<String>(handler), DnsEntry.TYPE_A, DnsEntry.TYPE_AAAA);
     return this;
   }
 
   @Override
-  public DnsClient resolveA(String name, final Handler<AsyncResult<List<String>>> handler) {
+  public DnsClient resolveA(String name, Handler<AsyncResult<List<String>>> handler) {
     lookup(name, handler, DnsEntry.TYPE_A);
     return this;
   }
@@ -115,7 +105,7 @@ public final class DnsClientImpl implements DnsClient {
   }
 
   @Override
-  public DnsClient resolveMX(String name, final Handler<AsyncResult<List<MxRecord>>> handler) {
+  public DnsClient resolveMX(String name, Handler<AsyncResult<List<MxRecord>>> handler) {
     lookup(name, new ConvertingHandler<MailExchangerRecord, MxRecord>(handler, MxRecordComparator.INSTANCE) {
       @Override
       protected MxRecord convert(MailExchangerRecord entry) {
@@ -126,7 +116,7 @@ public final class DnsClientImpl implements DnsClient {
   }
 
   @Override
-  public DnsClient resolveTXT(String name, final Handler<AsyncResult<List<String>>> handler) {
+  public DnsClient resolveTXT(String name, Handler<AsyncResult<List<String>>> handler) {
     lookup(name, new Handler<AsyncResult>() {
       @SuppressWarnings("unchecked")
       @Override
@@ -147,7 +137,7 @@ public final class DnsClientImpl implements DnsClient {
   }
 
   @Override
-  public DnsClient resolvePTR(String name, final Handler<AsyncResult<String>> handler) {
+  public DnsClient resolvePTR(String name, Handler<AsyncResult<String>> handler) {
     lookup(name, new HandlerAdapter<String>(handler), DnsEntry.TYPE_PTR);
     return this;
   }
@@ -165,7 +155,7 @@ public final class DnsClientImpl implements DnsClient {
   }
 
   @Override
-  public DnsClient resolveSRV(String name, final Handler<AsyncResult<List<SrvRecord>>> handler) {
+  public DnsClient resolveSRV(String name, Handler<AsyncResult<List<SrvRecord>>> handler) {
     lookup(name, new ConvertingHandler<ServiceRecord, SrvRecord>(handler, SrvRecordComparator.INSTANCE) {
       @Override
       protected SrvRecord convert(ServiceRecord entry) {
@@ -176,12 +166,12 @@ public final class DnsClientImpl implements DnsClient {
   }
 
   @Override
-  public DnsClient reverseLookup(String address, final Handler<AsyncResult<String>> handler) {
+  public DnsClient reverseLookup(String address, Handler<AsyncResult<String>> handler) {
     // TODO:  Check if the given address is a valid ip address before pass it to InetAddres.getByName(..)
     //        This is need as otherwise it may try to perform a DNS lookup.
     //        An other option would be to change address to be of type InetAddress.
     try {
-      final InetAddress inetAddress = InetAddress.getByName(address);
+      InetAddress inetAddress = InetAddress.getByName(address);
       byte[] addr = inetAddress.getAddress();
 
       StringBuilder reverseName = new StringBuilder(64);
@@ -212,7 +202,7 @@ public final class DnsClientImpl implements DnsClient {
             handler.handle(new FutureResultImpl<>(result));
           }
         });
-    } catch (final UnknownHostException e) {
+    } catch (UnknownHostException e) {
       // Should never happen as we work with ip addresses as input
       // anyway just in case notify the handler
       actualCtx.execute(() -> handler.handle(new FutureResultImpl<>(e)), false);
@@ -221,22 +211,22 @@ public final class DnsClientImpl implements DnsClient {
   }
 
   @SuppressWarnings("unchecked")
-  private void lookup(final String name, final Handler handler, final int... types) {
-    final FutureResultImpl result = new FutureResultImpl<>();
+  private void lookup(String name, Handler handler, int... types) {
+    FutureResultImpl result = new FutureResultImpl<>();
     result.setHandler(handler);
-    lookup(dnsServers.iterator(), name, result, types);
+    lookup(name, result, types);
   }
 
   @SuppressWarnings("unchecked")
-  private void lookup(final Iterator<InetSocketAddress> dns, final String name, final FutureResultImpl result, final int... types) {
-    bootstrap.connect(dns.next()).addListener(new RetryChannelFutureListener(dns, name, result, types) {
+  private void lookup(String name, FutureResultImpl result, int... types) {
+    bootstrap.connect(dnsServer).addListener(new RetryChannelFutureListener(result) {
       @Override
       public void onSuccess(ChannelFuture future) throws Exception {
         DnsQuery query = new DnsQuery(ThreadLocalRandom.current().nextInt());
         for (int type: types) {
           query.addQuestion(new DnsQuestion(name, type));
         }
-        future.channel().writeAndFlush(query).addListener(new RetryChannelFutureListener(dns, name, result, types) {
+        future.channel().writeAndFlush(query).addListener(new RetryChannelFutureListener(result) {
           @Override
           public void onSuccess(ChannelFuture future) throws Exception {
             future.channel().pipeline().addLast(new SimpleChannelInboundHandler<DnsResponse>() {
@@ -275,7 +265,7 @@ public final class DnsClientImpl implements DnsClient {
   }
 
   @SuppressWarnings("unchecked")
-  private void setResult(final FutureResultImpl r, EventLoop loop, final Object result) {
+  private void setResult(FutureResultImpl r, EventLoop loop, Object result) {
     if (r.complete()) {
       return;
     }
@@ -288,7 +278,7 @@ public final class DnsClientImpl implements DnsClient {
     }, true);
   }
 
-  private static final class HandlerAdapter<T> implements Handler<AsyncResult<List<T>>> {
+  private static class HandlerAdapter<T> implements Handler<AsyncResult<List<T>>> {
     private final Handler handler;
 
     HandlerAdapter(Handler handler) {
@@ -341,29 +331,17 @@ public final class DnsClientImpl implements DnsClient {
   }
 
   private abstract class RetryChannelFutureListener implements ChannelFutureListener {
-    private final Iterator<InetSocketAddress> dns;
-    private final String name;
     private final FutureResultImpl result;
-    private final int[] types;
 
-    RetryChannelFutureListener(final Iterator<InetSocketAddress> dns, final String name, final FutureResultImpl result, final int... types) {
-      this.dns = dns;
-      this.name = name;
+    RetryChannelFutureListener(final FutureResultImpl result) {
       this.result = result;
-      this.types = types;
     }
 
     @Override
     public final void operationComplete(ChannelFuture future) throws Exception {
       if (!future.isSuccess()) {
         if (!result.complete()) {
-          if (dns.hasNext()) {
-            // try next dns server
-            lookup(dns, name, result, types);
-          } else {
-            // TODO: maybe use a special exception ?
-            result.setFailure(future.cause());
-          }
+          result.setFailure(future.cause());
         }
       } else {
         onSuccess(future);

@@ -264,7 +264,7 @@ public class DNSTest extends VertxTestBase {
       @Override
       public void start() {
         try {
-          vertx.createDnsClient(new SocketAddress(1234, "localhost"));
+          vertx.createDnsClient(1234, "localhost");
           fail("Should throw exception");
         } catch (IllegalStateException e) {
           // OK
@@ -281,7 +281,7 @@ public class DNSTest extends VertxTestBase {
     dnsServer = server;
     dnsServer.start();
     InetSocketAddress addr = (InetSocketAddress) dnsServer.getTransports()[0].getAcceptor().getLocalAddress();
-    return vertx.createDnsClient(new SocketAddress(addr.getPort(), addr.getAddress().getHostAddress()));
+    return vertx.createDnsClient(addr.getPort(), addr.getAddress().getHostAddress());
   }
 
 }
