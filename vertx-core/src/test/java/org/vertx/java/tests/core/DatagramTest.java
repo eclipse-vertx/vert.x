@@ -18,10 +18,14 @@ package org.vertx.java.tests.core;
 
 import org.junit.After;
 import org.junit.Test;
+import org.vertx.java.core.AbstractVerticle;
+import org.vertx.java.core.DeploymentOptions;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.datagram.DatagramSocket;
 import org.vertx.java.core.datagram.DatagramSocketOptions;
 import org.vertx.java.core.datagram.InternetProtocolFamily;
+import org.vertx.java.core.http.HttpClientOptions;
+import org.vertx.java.core.http.HttpServerOptions;
 
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -348,6 +352,25 @@ public class DatagramTest extends VertxTestBase {
         testComplete();
       });
     });
+    await();
+  }
+
+  @Test
+  public void testUseInMultithreadedWorker() throws Exception {
+    class MyVerticle extends AbstractVerticle {
+      @Override
+      public void start() {
+        try {
+          peer1 = vertx.createDatagramSocket(null, new DatagramSocketOptions());
+          fail("Should throw exception");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+        testComplete();
+      }
+    }
+    MyVerticle verticle = new MyVerticle();
+    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(true).setMultiThreaded(true));
     await();
   }
 }

@@ -40,7 +40,6 @@ public abstract class ContextImpl implements Context {
 
   protected final VertxInternal vertx;
   private Deployment deployment;
-  private PathResolver pathResolver;
   private Set<Closeable> closeHooks;
   private final ClassLoader tccl;
   private boolean closed;
@@ -75,7 +74,7 @@ public abstract class ContextImpl implements Context {
 
   // FIXME - can we get rid of this?
   public PathResolver getPathResolver() {
-    return pathResolver;
+    return null;
   }
 
   public void reportException(Throwable t) {
@@ -127,6 +126,8 @@ public abstract class ContextImpl implements Context {
   public abstract void doExecute(ContextTask task);
 
   public abstract boolean isEventLoopContext();
+
+  public abstract boolean isMultithreaded();
 
   public void execute(ContextTask task, boolean expectRightThread) {
     if (isOnCorrectContextThread(expectRightThread)) {

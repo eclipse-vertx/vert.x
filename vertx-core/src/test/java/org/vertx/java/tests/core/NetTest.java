@@ -19,10 +19,7 @@ package org.vertx.java.tests.core;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.vertx.java.core.AbstractVerticle;
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.AsyncResultHandler;
-import org.vertx.java.core.Handler;
+import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.Registration;
@@ -1325,6 +1322,31 @@ public class NetTest extends VertxTestBase {
     }
     MyVerticle verticle = new MyVerticle();
     vertx.deployVerticle(verticle);
+    await();
+  }
+
+  @Test
+  public void testUseInMultithreadedWorker() throws Exception {
+    class MyVerticle extends AbstractVerticle {
+      @Override
+      public void start() {
+        try {
+          server = vertx.createNetServer(new NetServerOptions());
+          fail("Should throw exception");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+        try {
+          client = vertx.createNetClient(new NetClientOptions());
+          fail("Should throw exception");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+        testComplete();
+      }
+    }
+    MyVerticle verticle = new MyVerticle();
+    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(true).setMultiThreaded(true));
     await();
   }
 

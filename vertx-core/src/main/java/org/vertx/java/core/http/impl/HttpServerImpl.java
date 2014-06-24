@@ -93,6 +93,9 @@ public class HttpServerImpl implements HttpServer, Closeable {
     this.vertx = vertx;
     this.creatingContext = vertx.getContext();
     if (creatingContext != null) {
+      if (creatingContext.isMultithreaded()) {
+        throw new IllegalStateException("Cannot use HttpServer in a multi-threaded worker verticle");
+      }
       creatingContext.addCloseHook(this);
     }
     sslHelper = new SSLHelper(options);

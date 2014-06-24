@@ -78,6 +78,9 @@ public class NetServerImpl implements NetServer, Closeable {
     this.sslHelper = new SSLHelper(options);
     this.creatingContext = vertx.getContext();
     if (creatingContext != null) {
+      if (creatingContext.isMultithreaded()) {
+        throw new IllegalStateException("Cannot use NetServer in a multi-threaded worker verticle");
+      }
       creatingContext.addCloseHook(this);
     }
   }

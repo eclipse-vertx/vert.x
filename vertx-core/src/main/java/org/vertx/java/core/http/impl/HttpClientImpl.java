@@ -66,6 +66,9 @@ public class HttpClientImpl implements HttpClient {
       doneHandler.handle(new FutureResultImpl<>((Void)null));
     };
     if (creatingContext != null) {
+      if (creatingContext.isMultithreaded()) {
+        throw new IllegalStateException("Cannot use HttpClient in a multi-threaded worker verticle");
+      }
       creatingContext.addCloseHook(closeHook);
     }
     pool = new ConnectionManager(vertx)  {

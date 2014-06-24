@@ -27,12 +27,18 @@ public class WorkerContext extends ContextImpl {
     super(vertx, orderedBgExec);
   }
 
+  @Override
   public void doExecute(ContextTask task) {
     orderedBgExec.execute(wrapTask(task, true));
   }
 
   @Override
   public boolean isEventLoopContext() {
+    return false;
+  }
+
+  @Override
+  public boolean isMultithreaded() {
     return false;
   }
 

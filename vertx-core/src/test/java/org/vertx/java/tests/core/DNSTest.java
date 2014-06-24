@@ -17,6 +17,9 @@
 package org.vertx.java.tests.core;
 
 import org.junit.Test;
+import org.vertx.java.core.AbstractVerticle;
+import org.vertx.java.core.DeploymentOptions;
+import org.vertx.java.core.datagram.DatagramSocketOptions;
 import org.vertx.java.core.dns.*;
 import org.vertx.java.core.net.SocketAddress;
 import org.vertx.java.fakedns.FakeDNSServer;
@@ -252,6 +255,25 @@ public class DNSTest extends VertxTestBase {
       assertEquals(ptr, result);
       testComplete();
     });
+    await();
+  }
+
+  @Test
+  public void testUseInMultithreadedWorker() throws Exception {
+    class MyVerticle extends AbstractVerticle {
+      @Override
+      public void start() {
+        try {
+          vertx.createDnsClient(new SocketAddress(1234, "localhost"));
+          fail("Should throw exception");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+        testComplete();
+      }
+    }
+    MyVerticle verticle = new MyVerticle();
+    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(true).setMultiThreaded(true));
     await();
   }
 

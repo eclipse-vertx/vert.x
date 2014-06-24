@@ -51,6 +51,12 @@ public final class DnsClientImpl implements DnsClient {
   private final ContextImpl actualCtx;
 
   public DnsClientImpl(VertxInternal vertx, SocketAddress... addresses) {
+
+    ContextImpl creatingContext = vertx.getContext();
+    if (creatingContext != null && creatingContext.isMultithreaded()) {
+      throw new IllegalStateException("Cannot use DnsClient in a multi-threaded worker verticle");
+    }
+
     if (addresses == null || addresses.length == 0) {
       throw new IllegalArgumentException("Need at least one default DNS Server");
     }

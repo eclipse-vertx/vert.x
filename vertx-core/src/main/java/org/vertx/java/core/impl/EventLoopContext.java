@@ -42,6 +42,11 @@ public class EventLoopContext extends ContextImpl {
   }
 
   @Override
+  public boolean isMultithreaded() {
+    return false;
+  }
+
+  @Override
   protected boolean isOnCorrectContextThread(boolean expectRightThread) {
     Thread current = Thread.currentThread();
     boolean correct = current == contextThread;

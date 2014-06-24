@@ -22,10 +22,12 @@ import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.datagram.DatagramSocket;
 import org.vertx.java.core.datagram.DatagramSocketOptions;
+import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.impl.FutureResultImpl;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.SocketAddress;
@@ -44,6 +46,10 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   public DatagramSocketImpl(VertxInternal vertx, org.vertx.java.core.datagram.InternetProtocolFamily family,
                             DatagramSocketOptions options) {
     super(vertx, createChannel(family, new DatagramSocketOptions(options)), vertx.getOrCreateContext());
+    ContextImpl creatingContext = vertx.getContext();
+    if (creatingContext != null && creatingContext.isMultithreaded()) {
+      throw new IllegalStateException("Cannot use DatagramSocket in a multi-threaded worker verticle");
+    }
     channel().config().setOption(ChannelOption.DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION, true);
     context.getEventLoop().register(channel);
     channel.pipeline().addLast("handler", new DatagramServerHandler(this.vertx, this));
