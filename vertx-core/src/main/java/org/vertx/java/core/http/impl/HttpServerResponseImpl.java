@@ -189,14 +189,14 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public boolean writeQueueFull() {
     checkWritten();
-    return conn.doWriteQueueFull();
+    return conn.isNotWritable();
   }
 
   @Override
   public HttpServerResponse drainHandler(Handler<Void> handler) {
     checkWritten();
     this.drainHandler = handler;
-    conn.handleInterestedOpsChanged(); //If the channel is already drained, we want to call it immediately
+    conn.getContext().execute(conn::handleInterestedOpsChanged, false);
     return this;
   }
 

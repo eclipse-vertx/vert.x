@@ -151,7 +151,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   @Override
   public boolean writeQueueFull() {
     checkClosed();
-    return conn.doWriteQueueFull();
+    return conn.isNotWritable();
   }
 
   @Override

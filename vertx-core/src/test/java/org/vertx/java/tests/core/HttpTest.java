@@ -26,6 +26,8 @@ import org.vertx.java.core.eventbus.Registration;
 import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.HttpHeadersAdapter;
 import org.vertx.java.core.impl.ConcurrentHashSet;
+import org.vertx.java.core.impl.ContextImpl;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.NetClientOptions;
 import org.vertx.java.core.net.NetServerOptions;
 import org.vertx.java.core.net.NetSocket;
@@ -62,6 +64,7 @@ public class HttpTest extends HttpTestBase {
     testDir.deleteOnExit();
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
     client = vertx.createHttpClient(new HttpClientOptions());
+    System.out.println("====================================================");
   }
 
   @Test
@@ -2320,10 +2323,19 @@ public class HttpTest extends HttpTestBase {
 
     CountDownLatch latchListen = new CountDownLatch(numServers);
     CountDownLatch latchConns = new CountDownLatch(numRequests);
+    Set<Context> contexts = new ConcurrentHashSet<>();
     for (int i = 0; i < numServers; i++) {
       HttpServer theServer = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
       servers.add(theServer);
+      final AtomicReference<Context> context = new AtomicReference<>();
       theServer.requestHandler(req -> {
+        Context ctx = vertx.currentContext();
+        if (context.get() != null) {
+          assertSame(ctx, context.get());
+        } else {
+          context.set(ctx);
+          contexts.add(ctx);
+        }
         connectedServers.add(theServer);
         Integer cnt = requestCount.get(theServer);
         int icnt = cnt == null ? 0 : cnt;
@@ -2353,6 +2365,7 @@ public class HttpTest extends HttpTestBase {
     for (int cnt : requestCount.values()) {
       assertEquals(numRequests / numServers, cnt);
     }
+    assertEquals(numServers, contexts.size());
 
     CountDownLatch closeLatch = new CountDownLatch(numServers);
 
@@ -2930,7 +2943,6 @@ public class HttpTest extends HttpTestBase {
               assertEquals(String.valueOf(index), res.headers().get("count"));
               latch.countDown();
             });
-
           }
         };
         threads[i].start();
@@ -2995,6 +3007,62 @@ public class HttpTest extends HttpTestBase {
     }
     MyVerticle verticle = new MyVerticle();
     vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(true).setMultiThreaded(true));
+    await();
+  }
+
+  @Test
+  public void testContexts() throws Exception {
+    Set<ContextImpl> contexts = new ConcurrentHashSet<>();
+    AtomicInteger cnt = new AtomicInteger();
+    AtomicReference<ContextImpl> serverRequestContext = new AtomicReference<>();
+    // Server connect handler should always be called with same context
+    server.requestHandler(req -> {
+      ContextImpl serverContext = ((VertxInternal) vertx).getContext();
+      if (serverRequestContext.get() != null) {
+        assertSame(serverRequestContext.get(), serverContext);
+      } else {
+        serverRequestContext.set(serverContext);
+      }
+      req.response().end();
+    });
+    CountDownLatch latch = new CountDownLatch(1);
+    AtomicReference<ContextImpl> listenContext = new AtomicReference<>();
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      listenContext.set(((VertxInternal) vertx).getContext());
+      latch.countDown();
+    });
+    awaitLatch(latch);
+    CountDownLatch latch2 = new CountDownLatch(1);
+    int numReqs = 16;
+    int numConns = 8;
+    // There should be a context per *connection*
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(numConns));
+    for (int i = 0; i < numReqs; i++) {
+      client.getNow(new RequestOptions().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT), resp -> {
+        assertEquals(200, resp.statusCode());
+        contexts.add(((VertxInternal) vertx).getContext());
+        if (cnt.incrementAndGet() == numReqs) {
+          // Some connections might get closed if response comes back quick enough hence the >=
+          assertTrue(contexts.size() >= numConns);
+          latch2.countDown();
+        }
+      });
+    }
+    awaitLatch(latch2);
+    // Close should be in own context
+    server.close(ar -> {
+      assertTrue(ar.succeeded());
+      ContextImpl closeContext = ((VertxInternal) vertx).getContext();
+      assertFalse(contexts.contains(closeContext));
+      assertNotSame(serverRequestContext.get(), closeContext);
+      assertFalse(contexts.contains(listenContext.get()));
+      assertSame(serverRequestContext.get(), listenContext.get());
+      testComplete();
+    });
+
+    server = null;
     await();
   }
 

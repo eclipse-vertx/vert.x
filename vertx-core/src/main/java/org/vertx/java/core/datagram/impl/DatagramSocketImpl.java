@@ -22,7 +22,6 @@ import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.datagram.DatagramSocket;
@@ -207,7 +206,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
 
   @Override
   public boolean writeQueueFull() {
-    return doWriteQueueFull();
+    return isNotWritable();
   }
 
   @Override

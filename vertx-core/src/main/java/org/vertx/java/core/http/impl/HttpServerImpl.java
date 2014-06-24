@@ -437,6 +437,8 @@ public class HttpServerImpl implements HttpServer, Closeable {
           if (conn == null) {
             HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
             if (reqHandler != null) {
+              // We need to set the context manually as this is executed directly, not via context.execute()
+              vertx.setContext(reqHandler.context);
               conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin);
               conn.requestHandler(reqHandler.handler);
               connectionMap.put(ch, conn);
@@ -532,6 +534,8 @@ public class HttpServerImpl implements HttpServer, Closeable {
       }
       HandlerHolder<ServerWebSocket> firstHandler = null;
       HandlerHolder<ServerWebSocket> wsHandler = wsHandlerManager.chooseHandler(ch.eventLoop());
+      // Set context manually
+      vertx.setContext(wsHandler.context);
       while (true) {
         if (wsHandler == null || firstHandler == wsHandler) {
           break;

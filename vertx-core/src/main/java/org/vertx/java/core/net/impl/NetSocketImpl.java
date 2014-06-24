@@ -139,7 +139,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
 
   @Override
   public boolean writeQueueFull() {
-    return doWriteQueueFull();
+    return isNotWritable();
   }
 
   @Override
@@ -231,7 +231,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   }
 
   protected void handleClosed() {
-    setContext();
+    checkContext();
     if (endHandler != null) {
       try {
         endHandler.handle(null);
@@ -246,11 +246,12 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   }
 
   public void handleInterestedOpsChanged() {
-    setContext();
+    checkContext();
     callDrainHandler();
   }
 
   void handleDataReceived(Buffer data) {
+    checkContext();
     if (paused) {
       if (pendingData == null) {
         pendingData = new ArrayDeque<>();
@@ -259,7 +260,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
       return;
     }
     if (dataHandler != null) {
-      setContext();
       try {
         dataHandler.handle(data);
       } catch (Throwable t) {

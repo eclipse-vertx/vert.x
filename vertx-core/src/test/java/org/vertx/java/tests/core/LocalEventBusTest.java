@@ -28,9 +28,13 @@ import org.vertx.java.core.eventbus.ReplyFailure;
 import org.vertx.java.core.http.HttpClientOptions;
 import org.vertx.java.core.http.HttpServerOptions;
 import org.vertx.java.core.http.RequestOptions;
+import org.vertx.java.core.impl.ConcurrentHashSet;
+import org.vertx.java.core.impl.ContextImpl;
+import org.vertx.java.core.impl.VertxInternal;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -594,7 +598,39 @@ public class LocalEventBusTest extends EventBusTestBase {
     await();
   }
 
-
+  @Test
+  public void testContextsSend() throws Exception {
+    Set<ContextImpl> contexts = new ConcurrentHashSet<>();
+    vertx.eventBus().registerHandler(ADDRESS1, msg -> {
+      msg.reply("bar");
+      contexts.add(((VertxInternal) vertx).getContext());
+    });
+    vertx.eventBus().send(ADDRESS1, "foo", reply -> {
+      assertEquals("bar", reply.body());
+      contexts.add(((VertxInternal) vertx).getContext());
+      assertEquals(2, contexts.size());
+      testComplete();
+    });
+    await();
+  }
+  
+  @Test
+  public void testContextsPublish() throws Exception {
+    Set<ContextImpl> contexts = new ConcurrentHashSet<>();
+    AtomicInteger cnt = new AtomicInteger();
+    int numHandlers = 10;
+    for (int i = 0; i < numHandlers; i++) {
+      vertx.eventBus().registerHandler(ADDRESS1, msg -> {
+        contexts.add(((VertxInternal) vertx).getContext());
+        if (cnt.incrementAndGet() == numHandlers) {
+          assertEquals(numHandlers, contexts.size());
+          testComplete();
+        }
+      });
+    }
+    vertx.eventBus().publish(ADDRESS1, "foo");
+    await();
+  }
 
   @Override
   protected <T> void testSend(T val, Consumer<T> consumer) {

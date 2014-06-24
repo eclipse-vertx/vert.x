@@ -26,7 +26,6 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.RequestOptions;
-import org.vertx.java.core.impl.ContextImpl;
 import org.vertx.java.core.impl.VertxInternal;
 
 import java.util.concurrent.TimeoutException;
@@ -141,7 +140,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   public boolean writeQueueFull() {
     check();
     if (conn != null) {
-      return conn.doWriteQueueFull();
+      return conn.isNotWritable();
     } else {
       return false;
     }
@@ -152,7 +151,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     check();
     this.drainHandler = handler;
     if (conn != null) {
-      conn.handleInterestedOpsChanged(); //If the channel is already drained, we want to call it immediately
+      conn.getContext().execute(conn::handleInterestedOpsChanged, false);
     }
     return this;
   }

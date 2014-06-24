@@ -23,9 +23,9 @@ import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.Registration;
-import org.vertx.java.core.http.HttpClientOptions;
-import org.vertx.java.core.http.HttpServerOptions;
 import org.vertx.java.core.impl.ConcurrentHashSet;
+import org.vertx.java.core.impl.ContextImpl;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.*;
 import org.vertx.java.core.net.impl.SocketDefaults;
 
@@ -43,6 +43,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static org.vertx.java.tests.core.TestUtils.*;
@@ -344,7 +345,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testEchoBytes() {
     Buffer sent = randomBuffer(100);
-    testEcho(sock -> sock.write(sent), buff -> buffersEqual(sent, buff) ,sent.length());
+    testEcho(sock -> sock.write(sent), buff -> buffersEqual(sent, buff), sent.length());
   }
 
   @Test
@@ -390,11 +391,11 @@ public class NetTest extends VertxTestBase {
         fail("failed to connect");
       }
     };
-    startEchoServer(s -> client.connect(1234, "localhost", clientHandler) );
+    startEchoServer(s -> client.connect(1234, "localhost", clientHandler));
     await();
   }
 
-  void startEchoServer(Handler<AsyncResult<NetServer>> listenHandler ) {
+  void startEchoServer(Handler<AsyncResult<NetServer>> listenHandler) {
     Handler<NetSocket> serverHandler = socket -> socket.dataHandler(socket::write);
     server.connectHandler(serverHandler).listen(listenHandler);
   }
@@ -458,7 +459,8 @@ public class NetTest extends VertxTestBase {
   public void testListenInvalidPort() {
     server.close();
     server = vertx.createNetServer(new NetServerOptions().setPort(80));
-    server.connectHandler((netSocket) -> {}).listen(ar -> {
+    server.connectHandler((netSocket) -> {
+    }).listen(ar -> {
       assertTrue(ar.failed());
       assertFalse(ar.succeeded());
       assertNotNull(ar.cause());
@@ -471,7 +473,8 @@ public class NetTest extends VertxTestBase {
   public void testListenInvalidHost() {
     server.close();
     server = vertx.createNetServer(new NetServerOptions().setPort(1234).setHost("uhqwduhqwudhqwuidhqwiudhqwudqwiuhd"));
-    server.connectHandler(netSocket -> {}).listen(ar -> {
+    server.connectHandler(netSocket -> {
+    }).listen(ar -> {
       assertTrue(ar.failed());
       assertFalse(ar.succeeded());
       assertNotNull(ar.cause());
@@ -484,7 +487,8 @@ public class NetTest extends VertxTestBase {
   public void testListenOnWildcardPort() {
     server.close();
     server = vertx.createNetServer(new NetServerOptions().setPort(0));
-    server.connectHandler((netSocket) -> {}).listen(ar -> {
+    server.connectHandler((netSocket) -> {
+    }).listen(ar -> {
       assertFalse(ar.failed());
       assertTrue(ar.succeeded());
       assertNull(ar.cause());
@@ -503,7 +507,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testClientCloseHandlersCloseFromServer() {
-    server.connectHandler((netSocket) -> netSocket.close() ).listen((s) -> clientCloseHandlers(false));
+    server.connectHandler((netSocket) -> netSocket.close()).listen((s) -> clientCloseHandlers(false));
     await();
   }
 
@@ -537,10 +541,10 @@ public class NetTest extends VertxTestBase {
   void serverCloseHandlers(boolean closeFromServer, Handler<AsyncResult<NetServer>> listenHandler) {
     server.connectHandler((sock) -> {
       AtomicInteger counter = new AtomicInteger(0);
-      sock.endHandler(v ->  assertEquals(1, counter.incrementAndGet()));
+      sock.endHandler(v -> assertEquals(1, counter.incrementAndGet()));
       sock.closeHandler(v -> {
-          assertEquals(2, counter.incrementAndGet());
-          testComplete();
+        assertEquals(2, counter.incrementAndGet());
+        testComplete();
       });
       if (closeFromServer) {
         sock.close();
@@ -623,7 +627,7 @@ public class NetTest extends VertxTestBase {
           vertx.eventBus().send("client_resume", "");
         }
       });
-    }).listen( listenHandler);
+    }).listen(listenHandler);
   }
 
   @Test
@@ -648,7 +652,8 @@ public class NetTest extends VertxTestBase {
     });
 
     // Start the server after a delay
-    vertx.setTimer(2000, id -> startEchoServer(s -> {}));
+    vertx.setTimer(2000, id -> startEchoServer(s -> {
+    }));
 
     await();
   }
@@ -716,9 +721,9 @@ public class NetTest extends VertxTestBase {
   }
 
   void testTLS(boolean clientCert, boolean clientTrust,
-                boolean serverCert, boolean serverTrust,
-                boolean requireClientAuth, boolean clientTrustAll,
-                boolean shouldPass, boolean startTLS) throws Exception {
+               boolean serverCert, boolean serverTrust,
+               boolean requireClientAuth, boolean clientTrustAll,
+               boolean shouldPass, boolean startTLS) throws Exception {
     server.close();
     NetServerOptions options = new NetServerOptions();
     if (!startTLS) {
@@ -874,17 +879,17 @@ public class NetTest extends VertxTestBase {
     assertTrue(latchConns.await(10, TimeUnit.SECONDS));
 
     assertEquals(numServers, connectedServers.size());
-    for (NetServer server: servers) {
+    for (NetServer server : servers) {
       assertTrue(connectedServers.contains(server));
     }
     assertEquals(numServers, connectCount.size());
-    for (int cnt: connectCount.values()) {
+    for (int cnt : connectCount.values()) {
       assertEquals(numConnections / numServers, cnt);
     }
 
     CountDownLatch closeLatch = new CountDownLatch(numServers);
 
-    for (NetServer server: servers) {
+    for (NetServer server : servers) {
       server.close(ar -> {
         assertTrue(ar.succeeded());
         closeLatch.countDown();
@@ -1175,10 +1180,12 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testSetHandlerAfterListen() {
-    server.connectHandler(sock -> {});
+    server.connectHandler(sock -> {
+    });
     server.listen();
     try {
-      server.connectHandler(sock -> {});
+      server.connectHandler(sock -> {
+      });
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // OK
@@ -1187,11 +1194,13 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testSetHandlerAfterListen2() {
-    server.connectHandler(sock -> {});
+    server.connectHandler(sock -> {
+    });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       try {
-        server.connectHandler(sock -> {});
+        server.connectHandler(sock -> {
+        });
         fail("Should throw exception");
       } catch (IllegalStateException e) {
         // OK
@@ -1203,10 +1212,12 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testListenTwice() {
-    server.connectHandler(sock -> {});
+    server.connectHandler(sock -> {
+    });
     server.listen();
     try {
-      server.listen(sock -> {});
+      server.listen(sock -> {
+      });
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // OK
@@ -1215,7 +1226,8 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testListenTwice2() {
-    server.connectHandler(sock -> {});
+    server.connectHandler(sock -> {
+    });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       try {
@@ -1347,6 +1359,57 @@ public class NetTest extends VertxTestBase {
     }
     MyVerticle verticle = new MyVerticle();
     vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(true).setMultiThreaded(true));
+    await();
+  }
+
+  @Test
+  public void testContexts() throws Exception {
+    Set<ContextImpl> contexts = new ConcurrentHashSet<>();
+    AtomicInteger cnt = new AtomicInteger();
+    AtomicReference<ContextImpl> serverConnectContext = new AtomicReference<>();
+    // Server connect handler should always be called with same context
+    server.connectHandler(sock -> {
+      sock.dataHandler(sock::write);
+      ContextImpl serverContext = ((VertxInternal) vertx).getContext();
+      if (serverConnectContext.get() != null) {
+        assertSame(serverConnectContext.get(), serverContext);
+      } else {
+        serverConnectContext.set(serverContext);
+      }
+    });
+    CountDownLatch latch = new CountDownLatch(1);
+    AtomicReference<ContextImpl> listenContext = new AtomicReference<>();
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      listenContext.set(((VertxInternal) vertx).getContext());
+      latch.countDown();
+    });
+    awaitLatch(latch);
+    CountDownLatch latch2 = new CountDownLatch(1);
+    int numConns = 10;
+    // Each connect should be in its own context
+    for (int i = 0; i < numConns; i++) {
+      client.connect(1234, conn -> {
+        contexts.add(((VertxInternal) vertx).getContext());
+        if (cnt.incrementAndGet() == numConns) {
+          assertEquals(numConns, contexts.size());
+          latch2.countDown();
+        }
+      });
+    }
+    awaitLatch(latch2);
+    // Close should be in own context
+    server.close(ar -> {
+      assertTrue(ar.succeeded());
+      ContextImpl closeContext = ((VertxInternal) vertx).getContext();
+      assertFalse(contexts.contains(closeContext));
+      assertNotSame(serverConnectContext.get(), closeContext);
+      assertFalse(contexts.contains(listenContext.get()));
+      assertSame(serverConnectContext.get(), listenContext.get());
+      testComplete();
+    });
+
+    server = null;
     await();
   }
 

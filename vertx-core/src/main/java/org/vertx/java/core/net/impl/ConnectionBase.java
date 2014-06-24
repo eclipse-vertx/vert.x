@@ -52,12 +52,20 @@ public abstract class ConnectionBase {
 
   protected Handler<Throwable> exceptionHandler;
   protected Handler<Void> closeHandler;
-  private volatile boolean writable = true;
+  private boolean writable = true;
 
   private boolean read;
   private boolean needsFlush;
 
+  protected void checkContext() {
+    // Sanity check
+    if (context != vertx.getContext()) {
+      throw new IllegalStateException("Wrong context!");
+    }
+  }
+
   public final void startRead() {
+    checkContext();
     read = true;
   }
 
@@ -108,7 +116,7 @@ public abstract class ConnectionBase {
     channel.config().setWriteBufferHighWaterMark(size);
   }
 
-  public boolean doWriteQueueFull() {
+  public boolean isNotWritable() {
     return !writable;
   }
 
@@ -122,12 +130,7 @@ public abstract class ConnectionBase {
 
   protected void handleException(Throwable t) {
     if (exceptionHandler != null) {
-      setContext();
-      try {
-        exceptionHandler.handle(t);
-      } catch (Throwable t2) {
-        handleHandlerException(t2);
-      }
+      context.execute(() -> exceptionHandler.handle(t), false);
     } else {
       context.reportException(t);
     }
@@ -135,7 +138,6 @@ public abstract class ConnectionBase {
 
   protected void handleClosed() {
     if (closeHandler != null) {
-      setContext();
       try {
         closeHandler.handle(null);
       } catch (Throwable t) {
@@ -162,9 +164,9 @@ public abstract class ConnectionBase {
     }
   }
 
-  protected void setContext() {
-    vertx.setContext(context);
-  }
+//  protected void setContext() {
+//    vertx.setContext(context);
+//  }
 
   protected void handleHandlerException(Throwable t) {
     vertx.reportException(t);

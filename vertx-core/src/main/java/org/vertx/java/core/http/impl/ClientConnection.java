@@ -237,9 +237,8 @@ class ClientConnection extends ConnectionBase {
   @Override
   public void handleInterestedOpsChanged() {
     try {
-      if (!doWriteQueueFull()) {
+      if (!isNotWritable()) {
         if (currentRequest != null) {
-          setContext();
           currentRequest.handleDrained();
         } else if (ws != null) {
           ws.writable();
@@ -261,14 +260,12 @@ class ClientConnection extends ConnectionBase {
     if (requestForResponse == null) {
       throw new IllegalStateException("No response handler");
     }
-    setContext();
     HttpClientResponseImpl nResp = new HttpClientResponseImpl(vertx, requestForResponse, this, resp);
     currentResponse = nResp;
     requestForResponse.handleResponse(nResp);
   }
 
   void handleResponseChunk(Buffer buff) {
-    setContext();
     try {
       currentResponse.handleChunk(buff);
     } catch (Throwable t) {
@@ -277,7 +274,6 @@ class ClientConnection extends ConnectionBase {
   }
 
   void handleResponseEnd(LastHttpContent trailer) {
-    setContext();
     try {
       currentResponse.handleEnd(trailer);
     } catch (Throwable t) {
@@ -292,7 +288,6 @@ class ClientConnection extends ConnectionBase {
 
   void handleWsFrame(WebSocketFrameInternal frame) {
     if (ws != null) {
-      setContext();
       ws.handleFrame(frame);
     }
   }

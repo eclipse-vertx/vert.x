@@ -73,7 +73,7 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
 
   public boolean writeQueueFull() {
     checkClosed();
-    return conn.doWriteQueueFull();
+    return conn.isNotWritable();
   }
 
   public void close() {

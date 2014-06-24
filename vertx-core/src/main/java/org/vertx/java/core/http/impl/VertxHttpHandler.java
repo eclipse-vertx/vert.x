@@ -54,11 +54,11 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
   protected void channelRead(final C connection, final ContextImpl context, final ChannelHandlerContext chctx, final Object msg) throws Exception {
     if (connection != null) {
       // we are reading from the channel
-      Channel ch = chctx.channel();
       // We need to do this since it's possible the server is being used from a worker context
       context.execute(() -> doMessageReceived(connection, chctx, msg), true);
-
     } else {
+      // We execute this directly as we don't have a context yet, the context will have to be set manually
+      // inside doMessageReceived();
       try {
         doMessageReceived(connection, chctx, msg);
       } catch (Throwable t) {
