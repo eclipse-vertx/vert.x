@@ -27,6 +27,7 @@ import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.RequestOptions;
 import org.vertx.java.core.impl.ContextImpl;
+import org.vertx.java.core.impl.VertxInternal;
 
 import java.util.concurrent.TimeoutException;
 
@@ -41,8 +42,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private final HttpRequest request;
   private final Handler<HttpClientResponse> respHandler;
   private Handler<Void> continueHandler;
-  private final ContextImpl context;
-  private final boolean raw;
+  private final VertxInternal vertx;
   private boolean chunked;
   private ClientConnection conn;
   private Handler<Void> drainHandler;
@@ -60,21 +60,13 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private long lastDataReceived;
 
   HttpClientRequestImpl(HttpClientImpl client, String method, RequestOptions options,
-                        Handler<HttpClientResponse> respHandler,
-                        ContextImpl context) {
-    this(client, method, options, respHandler, context, false);
-  }
-
-  private HttpClientRequestImpl(HttpClientImpl client, String method, RequestOptions options,
-                                Handler<HttpClientResponse> respHandler,
-                                ContextImpl context, boolean raw) {
+                        Handler<HttpClientResponse> respHandler, VertxInternal vertx) {
     this.options = options;
     this.client = client;
     this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method), options.getRequestURI(), false);
     this.chunked = false;
     this.respHandler = respHandler;
-    this.context = context;
-    this.raw = raw;
+    this.vertx = vertx;
   }
 
   @Override
@@ -284,7 +276,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   private Handler<Throwable> getExceptionHandler() {
-    return exceptionHandler != null ? exceptionHandler : context::reportException;
+    return exceptionHandler != null ? exceptionHandler : conn.getContext()::reportException;
   }
 
   private void cancelOutstandingTimeoutTimer() {
@@ -316,9 +308,9 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
   private void connect() {
     if (!connecting) {
-      //We defer actual connection until the first part of body is written or end is called
-      //This gives the user an opportunity to set an exception handler before connecting so
-      //they can capture any exceptions on connection
+      // We defer actual connection until the first part of body is written or end is called
+      // This gives the user an opportunity to set an exception handler before connecting so
+      // they can capture any exceptions on connection
       client.getConnection(options.getPort(), options.getHost(), conn -> {
         if (exceptionOccurred) {
           // The request already timed out before it has left the pool waiter queue
@@ -332,7 +324,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
           // that is done asynchronously in the connection closeHandler()
           connect();
         }
-      }, exceptionHandler, context);
+      }, exceptionHandler, vertx.getOrCreateContext());
 
       connecting = true;
     }
@@ -401,18 +393,15 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private void prepareHeaders() {
     HttpHeaders headers = request.headers();
     headers.remove(org.vertx.java.core.http.HttpHeaders.TRANSFER_ENCODING);
-    if (!raw) {
-      if (!headers.contains(org.vertx.java.core.http.HttpHeaders.HOST)) {
-        request.headers().set(org.vertx.java.core.http.HttpHeaders.HOST, conn.hostHeader);
-      }
-      if (chunked) {
-        HttpHeaders.setTransferEncodingChunked(request);
-      }
+    if (!headers.contains(org.vertx.java.core.http.HttpHeaders.HOST)) {
+      request.headers().set(org.vertx.java.core.http.HttpHeaders.HOST, conn.hostHeader);
+    }
+    if (chunked) {
+      HttpHeaders.setTransferEncodingChunked(request);
     }
     if (client.getOptions().isTryUseCompression() && request.headers().get(org.vertx.java.core.http.HttpHeaders.ACCEPT_ENCODING) == null) {
       // if compression should be used but nothing is specified by the user support deflate and gzip.
       request.headers().set(org.vertx.java.core.http.HttpHeaders.ACCEPT_ENCODING, org.vertx.java.core.http.HttpHeaders.DEFLATE_GZIP);
-
     }
   }
 
@@ -426,7 +415,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     if (end) {
       completed = true;
     }
-    if (!end && !raw && !chunked && !contentLengthSet()) {
+    if (!end && !chunked && !contentLengthSet()) {
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
               + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
     }

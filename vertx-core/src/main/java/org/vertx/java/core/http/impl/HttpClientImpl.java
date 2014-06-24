@@ -71,7 +71,7 @@ public class HttpClientImpl implements HttpClient {
       }
       creatingContext.addCloseHook(closeHook);
     }
-    pool = new ConnectionManager(vertx)  {
+    pool = new ConnectionManager()  {
       protected void connect(String host, int port, Handler<ClientConnection> connectHandler, Handler<Throwable> connectErrorHandler, ContextImpl context,
                              ConnectionLifeCycleListener listener) {
         internalConnect(context, port, host, connectHandler, connectErrorHandler, listener);
@@ -287,8 +287,7 @@ public class HttpClientImpl implements HttpClient {
 
   private HttpClientRequest doRequest(String method, RequestOptions options, Handler<HttpClientResponse> responseHandler) {
     checkClosed();
-    ContextImpl context = vertx.getOrCreateContext();
-    HttpClientRequest req = new HttpClientRequestImpl(this, method, options, responseHandler, context);
+    HttpClientRequest req = new HttpClientRequestImpl(this, method, options, responseHandler, vertx);
     if (options.getHeaders() != null) {
       req.headers().set(options.getHeaders());
     }

@@ -17,15 +17,10 @@ public abstract class ConnectionManager {
 
   private static final Logger log = LoggerFactory.getLogger(ConnectionManager.class);
 
-  private final Vertx vertx;
   private int maxSockets = 5;
   private boolean keepAlive = true;
   private boolean pipelining = false;
   private final Map<TargetAddress, ConnQueue> connQueues = new ConcurrentHashMap<>();
-
-  public ConnectionManager(Vertx vertx) {
-    this.vertx = vertx;
-  }
 
   public void getConnection(int port, String host, Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl context) {
     if (!keepAlive && pipelining) {
@@ -47,24 +42,12 @@ public abstract class ConnectionManager {
   protected abstract void connect(String host, int port, Handler<ClientConnection> connectHandler, Handler<Throwable> connectErrorHandler, ContextImpl context,
                                   ConnectionLifeCycleListener listener);
 
-  public int getMaxSockets() {
-    return maxSockets;
-  }
-
   public void setMaxSockets(int maxSockets) {
     this.maxSockets = maxSockets;
   }
 
-  public boolean isKeepAlive() {
-    return keepAlive;
-  }
-
   public void setKeepAlive(boolean keepAlive) {
     this.keepAlive = keepAlive;
-  }
-
-  public boolean isPipelining() {
-    return pipelining;
   }
 
   public void setPipelining(boolean pipelining) {
@@ -105,13 +88,7 @@ public abstract class ConnectionManager {
         // Maybe the connection can be reused
         Waiter waiter = waiters.poll();
         if (waiter != null) {
-          vertx.runOnContext(v -> {
-            try {
-              waiter.handler.handle(conn);
-            } catch (Throwable t) {
-              log.error("Unhandled exception", t);
-            }
-          });
+          conn.getContext().execute(() -> waiter.handler.handle(conn), true);
         }
       }
     }
@@ -126,7 +103,7 @@ public abstract class ConnectionManager {
       } else if (keepAlive) {
         // Maybe the connection can be reused
         checkReuseConnection(conn);
-      } else if (!keepAlive) {
+      } else {
         // Close it now
         conn.close();
       }
@@ -146,13 +123,7 @@ public abstract class ConnectionManager {
     private void checkReuseConnection(ClientConnection conn) {
       Waiter waiter = waiters.poll();
       if (waiter != null) {
-        vertx.runOnContext(v -> {
-          try {
-            waiter.handler.handle(conn);
-          } catch (Throwable t) {
-            log.error("Unhandled exception", t);
-          }
-        });
+        conn.getContext().execute(() -> waiter.handler.handle(conn), true);
       } else {
         // Close it - we don't keep connections hanging around - even keep alive ones if there are
         // no pending requests
