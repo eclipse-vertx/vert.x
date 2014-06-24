@@ -47,7 +47,7 @@ public class SharedDataTest {
 
   @After
   public void teardown() {
-    vertx.stop();
+    vertx.close();
   }
 
   @Test

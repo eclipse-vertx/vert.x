@@ -183,7 +183,7 @@ public class Starter {
     boolean worker = args.map.get("-worker") != null;
     String message = (worker) ? "deploying worker verticle" : "deploying verticle";
     for (int i = 0; i < instances; i++) {
-      vertx.deployVerticle(main, conf, worker, createLoggingHandler(message, res -> {
+      vertx.deployVerticle(main, new DeploymentOptions().setConfig(conf).setWorker(worker), createLoggingHandler(message, res -> {
         if (res.failed()) {
           // Failed to deploy
           unblock();
@@ -211,7 +211,7 @@ public class Starter {
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
         final CountDownLatch latch = new CountDownLatch(1);
-        vertx.stop(ar -> {
+        vertx.close(ar -> {
           if (!ar.succeeded()) {
             log.error("Failure in stopping Vert.x", ar.cause());
           }

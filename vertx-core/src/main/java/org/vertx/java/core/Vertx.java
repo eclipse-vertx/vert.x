@@ -136,79 +136,30 @@ public interface Vertx {
   void runOnContext(Handler<Void> action);
 
   /**
-   * Is the current thread an event loop thread?
-   * @return true if current thread is an event loop thread
-   */
-  boolean isEventLoop();
-
-  /**
-   * Is the current thread an worker thread?
-   * @return true if current thread is an worker thread
-   */
-  boolean isWorker();
-
-  /**
 	 * Stop the eventbus and any resource managed by the eventbus.
 	 */
-	void stop();
+	void close();
 
   /**
    * Stop the eventbus and any resource managed by the eventbus.
    */
-  void stop(Handler<AsyncResult<Void>> doneHandler);
+  void close(Handler<AsyncResult<Void>> doneHandler);
 
   void deployVerticle(Verticle verticle);
 
-  void deployVerticle(Verticle verticle,
-                      JsonObject config);
+  void deployVerticle(String verticleClass);
 
-  void deployVerticle(Verticle verticle,
-                      Handler<AsyncResult<String>> doneHandler);
+  void deployVerticle(Verticle verticle, Handler<AsyncResult<String>> doneHandler);
 
-  void deployVerticle(Verticle verticle,
-                      JsonObject config,
-                      Handler<AsyncResult<String>> doneHandler);
+  void deployVerticle(String verticleClass, Handler<AsyncResult<String>> doneHandler);
 
-  void deployVerticle(Verticle verticle,
-                      boolean worker,
-                      Handler<AsyncResult<String>> doneHandler);
+  void deployVerticle(Verticle verticle, DeploymentOptions options);
 
-  void deployVerticle(Verticle verticle,
-                      JsonObject config,
-                      boolean worker,
-                      Handler<AsyncResult<String>> doneHandler);
+  void deployVerticle(String verticleClass, DeploymentOptions options);
 
-  void deployVerticle(String verticleClass,
-                      Handler<AsyncResult<String>> doneHandler);
+  void deployVerticle(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> doneHandler);
 
-  void deployVerticle(String verticleClass,
-                      JsonObject config,
-                      Handler<AsyncResult<String>> doneHandler);
-
-  void deployVerticle(String verticleClass,
-                      String isolationGroup,
-                      Handler<AsyncResult<String>> doneHandler);
-
-  void deployVerticle(String verticleClass,
-                      JsonObject config,
-                      String isolationGroup,
-                      Handler<AsyncResult<String>> doneHandler);
-
-  void deployVerticle(String verticleClass,
-                      JsonObject config,
-                      boolean worker,
-                      Handler<AsyncResult<String>> doneHandler);
-
-  void deployVerticle(String verticleClass,
-                      String isolationGroup,
-                      boolean worker,
-                      Handler<AsyncResult<String>> doneHandler);
-
-  void deployVerticle(String verticleClass,
-                      JsonObject config,
-                      String isolationGroup,
-                      boolean worker,
-                      Handler<AsyncResult<String>> doneHandler);
+  void deployVerticle(String verticleClass, DeploymentOptions options, Handler<AsyncResult<String>> doneHandler);
 
   void undeployVerticle(String deploymentID, Handler<AsyncResult<Void>> doneHandler);
 

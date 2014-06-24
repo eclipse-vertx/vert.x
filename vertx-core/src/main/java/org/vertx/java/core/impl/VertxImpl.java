@@ -313,12 +313,12 @@ public class VertxImpl implements VertxInternal {
   }
 
   @Override
-  public void stop() {
-    stop(null);
+  public void close() {
+    close(null);
   }
 
   @Override
-  public void stop(Handler<AsyncResult<Void>> doneHandler) {
+  public void close(Handler<AsyncResult<Void>> doneHandler) {
 
     // TODO call deploymentManager.undeployAll
 
@@ -363,67 +363,42 @@ public class VertxImpl implements VertxInternal {
 
   @Override
   public void deployVerticle(Verticle verticle) {
-    deploymentManager.deployVerticle(verticle, null, false, null);
+    deploymentManager.deployVerticle(verticle, new DeploymentOptions(), null);
   }
 
   @Override
-  public void deployVerticle(Verticle verticle, JsonObject config) {
-    deploymentManager.deployVerticle(verticle, config, false, null);
+  public void deployVerticle(String verticleClass) {
+    deploymentManager.deployVerticle(verticleClass, new DeploymentOptions(), null);
   }
 
   @Override
   public void deployVerticle(Verticle verticle, Handler<AsyncResult<String>> doneHandler) {
-    deploymentManager.deployVerticle(verticle, null, false, doneHandler);
-  }
-
-  @Override
-  public void deployVerticle(Verticle verticle, JsonObject config, Handler<AsyncResult<String>> doneHandler) {
-    deploymentManager.deployVerticle(verticle, config, false, doneHandler);
+    deploymentManager.deployVerticle(verticle, new DeploymentOptions(), doneHandler);
   }
 
   @Override
   public void deployVerticle(String verticleClass, Handler<AsyncResult<String>> doneHandler) {
-    deploymentManager.deployVerticle(verticleClass, null, false, null, doneHandler);
+    deploymentManager.deployVerticle(verticleClass, new DeploymentOptions(), doneHandler);
   }
 
   @Override
-  public void deployVerticle(String verticleClass, JsonObject config, Handler<AsyncResult<String>> doneHandler) {
-    deploymentManager.deployVerticle(verticleClass, config, false, null, doneHandler);
+  public void deployVerticle(Verticle verticle, DeploymentOptions options) {
+    deploymentManager.deployVerticle(verticle, options, null);
   }
 
   @Override
-  public void deployVerticle(String verticleClass, String isolationGroup, Handler<AsyncResult<String>> doneHandler) {
-    deploymentManager.deployVerticle(verticleClass, null, false, isolationGroup, doneHandler);
+  public void deployVerticle(String verticleClass, DeploymentOptions options) {
+    deploymentManager.deployVerticle(verticleClass, options, null);
   }
 
   @Override
-  public void deployVerticle(String verticleClass, JsonObject config, String isolationGroup, Handler<AsyncResult<String>> doneHandler) {
-    deploymentManager.deployVerticle(verticleClass, config, false, isolationGroup, doneHandler);
+  public void deployVerticle(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> doneHandler) {
+    deploymentManager.deployVerticle(verticle, options, doneHandler);
   }
 
   @Override
-  public void deployVerticle(String verticleClass, JsonObject config, boolean worker, Handler<AsyncResult<String>> doneHandler) {
-    deploymentManager.deployVerticle(verticleClass, config, worker, null, doneHandler);
-  }
-
-  @Override
-  public void deployVerticle(String verticleClass, String isolationGroup, boolean worker, Handler<AsyncResult<String>> doneHandler) {
-    deploymentManager.deployVerticle(verticleClass, null, worker, isolationGroup, doneHandler);
-  }
-
-  @Override
-  public void deployVerticle(String verticleClass, JsonObject config, String isolationGroup, boolean worker, Handler<AsyncResult<String>> doneHandler) {
-    deploymentManager.deployVerticle(verticleClass, config, worker, isolationGroup, doneHandler);
-  }
-
-  @Override
-  public void deployVerticle(Verticle verticle, boolean worker, Handler<AsyncResult<String>> doneHandler) {
-    deploymentManager.deployVerticle(verticle, null, worker, doneHandler);
-  }
-
-  @Override
-  public void deployVerticle(Verticle verticle, JsonObject config, boolean worker, Handler<AsyncResult<String>> doneHandler) {
-    deploymentManager.deployVerticle(verticle, config, worker, doneHandler);
+  public void deployVerticle(String verticleClass, DeploymentOptions options, Handler<AsyncResult<String>> doneHandler) {
+    deploymentManager.deployVerticle(verticleClass, options, doneHandler);
   }
 
   @Override

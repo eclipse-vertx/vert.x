@@ -40,10 +40,6 @@ public interface VertxInternal extends VertxSPI {
 
   ExecutorService getBackgroundPool();
 
-//  DefaultContext startOnEventLoop(Runnable runnable);
-//
-//  DefaultContext startInBackground(Runnable runnable, boolean multiThreaded);
-
   ContextImpl getOrCreateContext();
 
   void reportException(Throwable t);
@@ -72,6 +68,4 @@ public interface VertxInternal extends VertxSPI {
    * @return worker loop context
    */
   ContextImpl createWorkerContext(boolean multiThreaded);
-
-  ClusterManager clusterManager();
 }

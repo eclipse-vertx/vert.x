@@ -18,6 +18,8 @@ package org.vertx.java.core.eventbus;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.streams.ReadStream;
+import org.vertx.java.core.streams.WriteStream;
 
 /**
  * A distributed lightweight event bus which can encompass multiple vert.x instances.
@@ -118,5 +120,6 @@ public interface EventBus {
    * Return the value for default send timeout
    */
   long getDefaultReplyTimeout();
+
 }
 

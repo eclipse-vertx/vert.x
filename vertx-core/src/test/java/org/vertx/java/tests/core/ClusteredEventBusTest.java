@@ -52,7 +52,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     if (vertices != null) {
       for (Vertx vertx: vertices) {
         if (vertx != null) {
-          vertx.stop(ar -> {
+          vertx.close(ar -> {
             assertTrue(ar.succeeded());
             latch.countDown();
           });

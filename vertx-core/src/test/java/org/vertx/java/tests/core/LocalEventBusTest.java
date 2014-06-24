@@ -56,7 +56,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   @After
   public void after() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
-    vertx.stop(ar -> {
+    vertx.close(ar -> {
       assertTrue(ar.succeeded());
       latch.countDown();
     });

@@ -20,10 +20,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.vertx.java.core.*;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.impl.Closeable;
-import org.vertx.java.core.impl.ContextImpl;
-import org.vertx.java.core.impl.FutureResultImpl;
-import org.vertx.java.core.impl.WorkerContext;
+import org.vertx.java.core.impl.*;
 import org.vertx.java.core.json.JsonObject;
 
 import java.util.Map;
@@ -47,6 +44,25 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
+  public void testOptions() {
+    DeploymentOptions options = new DeploymentOptions();
+    assertNull(options.getConfig());
+    JsonObject config = new JsonObject().putString("foo", "bar").putObject("obj", new JsonObject().putNumber("quux", 123));
+    assertEquals(options, options.setConfig(config));
+    assertEquals(config, options.getConfig());
+    assertFalse(options.isWorker());
+    assertEquals(options, options.setWorker(true));
+    assertTrue(options.isWorker());
+    assertFalse(options.isMultiThreaded());
+    assertEquals(options, options.setMultiThreaded(true));
+    assertTrue(options.isMultiThreaded());
+    assertNull(options.getIsolationGroup());
+    String rand = TestUtils.randomUnicodeString(1000);
+    assertEquals(options, options.setIsolationGroup(rand));
+    assertEquals(rand, options.getIsolationGroup());
+  }
+
+  @Test
   public void testDeployFromTestThread() throws Exception {
     MyVerticle verticle = new MyVerticle();
     vertx.deployVerticle(verticle, ar -> {
@@ -67,7 +83,7 @@ public class DeploymentTest extends VertxTestBase {
   public void testDeployWithConfig() throws Exception {
     MyVerticle verticle = new MyVerticle();
     JsonObject config = generateJSONObject();
-    vertx.deployVerticle(verticle, config, ar -> {
+    vertx.deployVerticle(verticle, new DeploymentOptions().setConfig(config), ar -> {
       assertDeployment(1, verticle, config, ar);
       testComplete();
     });
@@ -94,7 +110,7 @@ public class DeploymentTest extends VertxTestBase {
   @Test
   public void testDeployWorkerFromTestThread() throws Exception {
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticle(verticle, true, ar -> {
+    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(true), ar -> {
       assertDeployment(1, verticle, null, ar);
       assertTrue(verticle.startContext instanceof WorkerContext);
       vertx.undeployVerticle(ar.result(), ar2 -> {
@@ -110,7 +126,7 @@ public class DeploymentTest extends VertxTestBase {
   public void testDeployWorkerWithConfig() throws Exception {
     MyVerticle verticle = new MyVerticle();
     JsonObject conf = generateJSONObject();
-    vertx.deployVerticle(verticle, conf, true, ar -> {
+    vertx.deployVerticle(verticle, new DeploymentOptions().setConfig(conf).setWorker(true), ar -> {
       assertDeployment(1, verticle, conf, ar);
       assertTrue(verticle.startContext instanceof WorkerContext);
       vertx.undeployVerticle(ar.result(), ar2 -> {
@@ -120,6 +136,33 @@ public class DeploymentTest extends VertxTestBase {
       });
     });
     await();
+  }
+
+  @Test
+  public void testDeployMultithreadedWorkerWithConfig() throws Exception {
+    MyVerticle verticle = new MyVerticle();
+    JsonObject conf = generateJSONObject();
+    vertx.deployVerticle(verticle, new DeploymentOptions().setConfig(conf).setWorker(true).setMultiThreaded(true), ar -> {
+      assertDeployment(1, verticle, conf, ar);
+      assertTrue(verticle.startContext instanceof MultiThreadedWorkerContext);
+      vertx.undeployVerticle(ar.result(), ar2 -> {
+        assertTrue(ar2.succeeded());
+        assertEquals(verticle.startContext, verticle.stopContext);
+        testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testDeployMultithreadedNotWorker() throws Exception {
+    MyVerticle verticle = new MyVerticle();
+    try {
+      vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(false).setMultiThreaded(true), ar -> {});
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
   }
 
   @Test
@@ -312,7 +355,7 @@ public class DeploymentTest extends VertxTestBase {
   @Test
   public void testDeployUsingClassAndConfig() throws Exception {
     JsonObject config = generateJSONObject();
-    vertx.deployVerticle(TestVerticle.class.getCanonicalName(), config, ar -> {
+    vertx.deployVerticle(TestVerticle.class.getCanonicalName(), new DeploymentOptions().setConfig(config), ar -> {
       assertTrue(ar.succeeded());
       testComplete();
     });
@@ -548,9 +591,19 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testIsolationGroup1() throws Exception {
-    vertx.deployVerticle(TestVerticle.class.getCanonicalName(), "somegroup", ar -> {
+    vertx.deployVerticle(TestVerticle.class.getCanonicalName(), new DeploymentOptions().setIsolationGroup("somegroup"), ar -> {
       assertTrue(ar.succeeded());
       assertEquals(0, TestVerticle.instanceCount.get());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testNullIsolationGroup() throws Exception {
+    vertx.deployVerticle(TestVerticle.class.getCanonicalName(), new DeploymentOptions().setIsolationGroup(null), ar -> {
+      assertTrue(ar.succeeded());
+      assertEquals(1, TestVerticle.instanceCount.get());
       testComplete();
     });
     await();
@@ -566,6 +619,11 @@ public class DeploymentTest extends VertxTestBase {
     testIsolationGroup("somegroup", "someothergroup", 1, 1);
   }
 
+  // TODO
+
+  // Multi-threaded workers
+  // undeploy all
+
   private void testIsolationGroup(String group1, String group2, int count1, int count2) throws Exception {
     Map<String, Integer> countMap = new ConcurrentHashMap<>();
     vertx.eventBus().registerHandler("testcounts", (Message<JsonObject> msg) -> {
@@ -574,11 +632,11 @@ public class DeploymentTest extends VertxTestBase {
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<String> deploymentID1 = new AtomicReference<>();
     AtomicReference<String> deploymentID2 = new AtomicReference<>();
-    vertx.deployVerticle(TestVerticle.class.getCanonicalName(), group1, ar -> {
+    vertx.deployVerticle(TestVerticle.class.getCanonicalName(), new DeploymentOptions().setIsolationGroup(group1), ar -> {
       assertTrue(ar.succeeded());
       deploymentID1.set(ar.result());
       assertEquals(0, TestVerticle.instanceCount.get());
-      vertx.deployVerticle(TestVerticle.class.getCanonicalName(), group2, ar2 -> {
+      vertx.deployVerticle(TestVerticle.class.getCanonicalName(), new DeploymentOptions().setIsolationGroup(group2), ar2 -> {
         assertTrue(ar2.succeeded());
         deploymentID2.set(ar2.result());
         assertEquals(0, TestVerticle.instanceCount.get());

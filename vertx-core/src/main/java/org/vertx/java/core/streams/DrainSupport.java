@@ -19,7 +19,7 @@ import org.vertx.java.core.Handler;
 
 /**
  * Allows to set a {@link Handler} which is notified once the write queue is drained again.
- * This way you can stop writing once the write queue consumes to much memory and so prevent
+ * This way you can stop writing once the write queue consumes too much memory and so prevent
  * an OutOfMemoryError.
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>

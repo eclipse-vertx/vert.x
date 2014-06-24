@@ -30,7 +30,7 @@ public class VertxTestBase extends AsyncTestBase {
   @After
   public void afterVertxTestBase() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
-    vertx.stop(ar -> {
+    vertx.close(ar -> {
       assertTrue(ar.succeeded());
       latch.countDown();
     });

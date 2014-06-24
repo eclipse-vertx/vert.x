@@ -43,26 +43,24 @@ public class DeploymentManager {
     this.vertx = vertx;
   }
 
-  public void deployVerticle(Verticle verticle, JsonObject config, boolean worker,
+  public void deployVerticle(Verticle verticle, DeploymentOptions options,
                              Handler<AsyncResult<String>> doneHandler) {
     ContextImpl currentContext = vertx.getOrCreateContext();
-    doDeploy(verticle, config, worker, currentContext, doneHandler);
+    doDeploy(verticle, options, currentContext, doneHandler);
   }
 
   public void deployVerticle(String verticleClass,
-                             JsonObject config,
-                             boolean worker,
-                             String isolationGroup,
+                             DeploymentOptions options,
                              Handler<AsyncResult<String>> doneHandler) {
     ContextImpl currentContext = vertx.getOrCreateContext();
-    ClassLoader cl = getClassLoader(isolationGroup);
+    ClassLoader cl = getClassLoader(options.getIsolationGroup());
     Class clazz;
     Verticle verticle;
     try {
       clazz = cl.loadClass(verticleClass);
       try {
         verticle = (Verticle)clazz.newInstance();
-        doDeploy(verticle, config, worker, currentContext, doneHandler);
+        doDeploy(verticle, options, currentContext, doneHandler);
       } catch (Exception e) {
         reportFailure(e, currentContext, doneHandler);
       }
@@ -156,10 +154,13 @@ public class DeploymentManager {
     });
   }
 
-  private void doDeploy(Verticle verticle, JsonObject config, boolean worker,
+  private void doDeploy(Verticle verticle, DeploymentOptions options,
                         ContextImpl currentContext,
                         Handler<AsyncResult<String>> doneHandler) {
-    ContextImpl context = worker ? vertx.createWorkerContext(false) : vertx.createEventLoopContext();
+    if (options.isMultiThreaded() && !options.isWorker()) {
+      throw new IllegalArgumentException("If multi-threaded then must be worker too");
+    }
+    ContextImpl context = options.isWorker() ? vertx.createWorkerContext(options.isMultiThreaded()) : vertx.createEventLoopContext();
     String deploymentID = UUID.randomUUID().toString();
     DeploymentImpl deployment = new DeploymentImpl(deploymentID, context, verticle);
     context.setDeployment(deployment);
@@ -167,10 +168,11 @@ public class DeploymentManager {
     if (parent != null) {
       parent.addChild(deployment);
     }
+    JsonObject conf = options.getConfig() == null ? null : options.getConfig().copy(); // Copy it
     context.runOnContext(v -> {
       try {
         verticle.setVertx(vertx);
-        verticle.setConfig(config);
+        verticle.setConfig(conf);
         verticle.setDeploymentID(deploymentID);
         Future<Void> startFuture = new FutureResultImpl<>();
         verticle.start(startFuture);
