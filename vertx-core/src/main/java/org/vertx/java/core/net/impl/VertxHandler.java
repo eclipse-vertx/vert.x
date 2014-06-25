@@ -105,8 +105,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
         }
       });
     } else {
-      // Ignore - any exceptions before a channel exists will be passed manually via the failed(...) method
-      // Any exceptions after a channel is closed can be ignored
+      ch.close();
     }
   }
 
