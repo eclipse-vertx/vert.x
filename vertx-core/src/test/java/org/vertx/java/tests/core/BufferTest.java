@@ -446,6 +446,17 @@ public class BufferTest {
   }
 
   @Test
+  public void testGetString() throws Exception {
+    String str = randomAlphaString(100);
+    Buffer b = new Buffer(str, "UTF-8"); // encode ascii as UTF-8 so one byte per char
+    assertEquals(100, b.length());
+    String substr = b.getString(10, 20);
+    assertEquals(str.substring(10, 20), substr);
+    substr = b.getString(10, 20, "UTF-8");
+    assertEquals(str.substring(10, 20), substr);
+  }
+
+  @Test
   public void testGetBytes() throws Exception {
     byte[] bytes = randomByteArray(100);
     Buffer b = new Buffer(bytes);
