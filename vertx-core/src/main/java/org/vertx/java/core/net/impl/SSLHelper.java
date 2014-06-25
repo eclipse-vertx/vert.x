@@ -34,6 +34,7 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Set;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -49,6 +50,7 @@ public class SSLHelper {
   private String trustStorePassword;
   private boolean trustAll;
   private ClientAuth clientAuth = ClientAuth.NONE;
+  private Set<String> enabledCipherSuites;
 
   private SSLContext sslContext;
 
@@ -59,6 +61,7 @@ public class SSLHelper {
     this.trustStorePath = options.getTrustStorePath();
     this.trustStorePassword = options.getTrustStorePassword();
     this.trustAll = options.isTrustAll();
+    this.enabledCipherSuites = options.getEnabledCipherSuites();
   }
 
   public SSLHelper(HttpClientOptions options) {
@@ -68,6 +71,7 @@ public class SSLHelper {
     this.trustStorePath = options.getTrustStorePath();
     this.trustStorePassword = options.getTrustStorePassword();
     this.trustAll = options.isTrustAll();
+    this.enabledCipherSuites = options.getEnabledCipherSuites();
   }
 
   public SSLHelper(NetServerOptions options) {
@@ -77,9 +81,7 @@ public class SSLHelper {
     this.trustStorePath = options.getTrustStorePath();
     this.trustStorePassword = options.getTrustStorePassword();
     this.clientAuth = options.isClientAuthRequired() ? ClientAuth.REQUIRED : ClientAuth.NONE;
-  }
-
-  public SSLHelper() {
+    this.enabledCipherSuites = options.getEnabledCipherSuites();
   }
 
   public synchronized void checkSSL(VertxInternal vertx) {
@@ -187,7 +189,19 @@ public class SSLHelper {
       sslContext = createContext(vertx, keyStorePath, keyStorePassword, trustStorePath, trustStorePassword, trustAll);
     }
     SSLEngine engine = sslContext.createSSLEngine();
+    String[] current = engine.getSupportedCipherSuites();
+    System.out.println("Enabled cipher suites:");
+    for (String str: current) {
+      System.out.println("\"" + str+ "\",");
+    }
+
+    if (enabledCipherSuites != null && !enabledCipherSuites.isEmpty()) {
+      String[] toUse = enabledCipherSuites.toArray(new String[enabledCipherSuites.size()]);
+      engine.setEnabledCipherSuites(toUse);
+    }
+
     engine.setUseClientMode(client);
+
     if (!client) {
       switch (getClientAuth()) {
         case REQUEST: {

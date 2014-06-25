@@ -18,6 +18,8 @@ package org.vertx.java.core.http;
 
 import org.vertx.java.core.net.ClientOptions;
 
+import java.util.Set;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -194,5 +196,12 @@ public class HttpClientOptions extends ClientOptions {
     super.setTrustStorePassword(trustStorePassword);
     return this;
   }
+
+  @Override
+  public HttpClientOptions addEnabledCipherSuite(String suite) {
+    super.addEnabledCipherSuite(suite);
+    return this;
+  }
+
 
 }

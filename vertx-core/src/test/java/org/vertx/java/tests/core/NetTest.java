@@ -200,6 +200,12 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setReconnectInterval(rand));
     assertEquals(rand, options.getReconnectInterval());
 
+    assertNull(options.getEnabledCipherSuites());
+    assertEquals(options, options.addEnabledCipherSuite("foo"));
+    assertEquals(options, options.addEnabledCipherSuite("bar"));
+    assertNotNull(options.getEnabledCipherSuites());
+    assertTrue(options.getEnabledCipherSuites().contains("foo"));
+    assertTrue(options.getEnabledCipherSuites().contains("bar"));
 
     testComplete();
   }
@@ -337,6 +343,14 @@ public class NetTest extends VertxTestBase {
     randString = randomUnicodeString(100);
     assertEquals(options, options.setHost(randString));
     assertEquals(randString, options.getHost());
+
+    assertNull(options.getEnabledCipherSuites());
+    assertEquals(options, options.addEnabledCipherSuite("foo"));
+    assertEquals(options, options.addEnabledCipherSuite("bar"));
+    assertNotNull(options.getEnabledCipherSuites());
+    assertTrue(options.getEnabledCipherSuites().contains("foo"));
+    assertTrue(options.getEnabledCipherSuites().contains("bar"));
+
     testComplete();
   }
 
@@ -718,10 +732,17 @@ public class NetTest extends VertxTestBase {
     testTLS(true, true, true, false, true, false, false, false);
   }
 
+  @Test
+  // Specify some cipher suites
+  public void testTLSCipherSuites() throws Exception {
+    testTLS(false, false, true, false, false, true, true, false, ENABLED_CIPHER_SUITES);
+  }
+
   void testTLS(boolean clientCert, boolean clientTrust,
                boolean serverCert, boolean serverTrust,
                boolean requireClientAuth, boolean clientTrustAll,
-               boolean shouldPass, boolean startTLS) throws Exception {
+               boolean shouldPass, boolean startTLS,
+               String... enabledCipherSuites) throws Exception {
     server.close();
     NetServerOptions options = new NetServerOptions();
     if (!startTLS) {
@@ -736,6 +757,10 @@ public class NetTest extends VertxTestBase {
     if (requireClientAuth) {
       options.setClientAuthRequired(true);
     }
+    for (String suite: enabledCipherSuites) {
+      options.addEnabledCipherSuite(suite);
+    }
+
     options.setPort(4043);
     server = vertx.createNetServer(options);
     Handler<NetSocket> serverHandler = socket -> {
@@ -764,6 +789,9 @@ public class NetTest extends VertxTestBase {
         }
         if (clientCert) {
           clientOptions.setKeyStorePath(findFileOnClasspath("tls/client-keystore.jks")).setKeyStorePassword("wibble");
+        }
+        for (String suite: enabledCipherSuites) {
+          clientOptions.addEnabledCipherSuite(suite);
         }
       }
       client = vertx.createNetClient(clientOptions);

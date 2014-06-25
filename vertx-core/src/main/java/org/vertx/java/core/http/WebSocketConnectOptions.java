@@ -51,15 +51,6 @@ public class WebSocketConnectOptions extends RequestOptions {
     return this;
   }
 
-  public Set<String> getSubProtocols() {
-    return subProtocols;
-  }
-
-  public WebSocketConnectOptions setSubProtocols(Set<String> subProtocols) {
-    this.subProtocols = subProtocols;
-    return this;
-  }
-
   public WebSocketConnectOptions addSubProtocol(String subProtocol) {
     if (subProtocols == null) {
       subProtocols = new HashSet<>();
@@ -68,11 +59,8 @@ public class WebSocketConnectOptions extends RequestOptions {
     return this;
   }
 
-  public WebSocketConnectOptions removeSubProtocol(String subProtocol) {
-    if (subProtocols != null) {
-      subProtocols.remove(subProtocol);
-    }
-    return this;
+  public Set<String> getSubProtocols() {
+    return subProtocols;
   }
 
   @Override

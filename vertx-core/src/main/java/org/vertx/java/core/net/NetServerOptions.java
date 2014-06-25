@@ -16,6 +16,8 @@
 
 package org.vertx.java.core.net;
 
+import java.util.Set;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -161,5 +163,12 @@ public class NetServerOptions extends TCPOptions {
     super.setTrustStorePassword(trustStorePassword);
     return this;
   }
+
+  @Override
+  public NetServerOptions addEnabledCipherSuite(String suite) {
+    super.addEnabledCipherSuite(suite);
+    return this;
+  }
+
 
 }

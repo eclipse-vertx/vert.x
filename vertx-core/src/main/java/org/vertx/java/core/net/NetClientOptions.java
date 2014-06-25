@@ -157,4 +157,10 @@ public class NetClientOptions extends ClientOptions {
     super.setTrustStorePassword(trustStorePassword);
     return this;
   }
+
+  @Override
+  public NetClientOptions addEnabledCipherSuite(String suite) {
+    super.addEnabledCipherSuite(suite);
+    return this;
+  }
 }

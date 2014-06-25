@@ -63,15 +63,6 @@ public class HttpServerOptions extends NetServerOptions {
     return this;
   }
 
-  public Set<String> getWebsocketSubProtocols() {
-    return websocketSubProtocols;
-  }
-
-  public HttpServerOptions setWebsocketSubProtocols(Set<String> websocketSubProtocols) {
-    this.websocketSubProtocols = websocketSubProtocols;
-    return this;
-  }
-
   public HttpServerOptions addWebsocketSubProtocol(String subProtocol) {
     if (websocketSubProtocols == null) {
       websocketSubProtocols = new HashSet<>();
@@ -80,11 +71,8 @@ public class HttpServerOptions extends NetServerOptions {
     return this;
   }
 
-  public HttpServerOptions removeWebsocketSubProtocol(String subProtocol) {
-    if (websocketSubProtocols != null) {
-      websocketSubProtocols.remove(subProtocol);
-    }
-    return this;
+  public Set<String> getWebsocketSubProtocols() {
+    return websocketSubProtocols;
   }
 
   // Override common implementation
@@ -198,4 +186,11 @@ public class HttpServerOptions extends NetServerOptions {
     super.setTrustStorePassword(trustStorePassword);
     return this;
   }
+
+  @Override
+  public HttpServerOptions addEnabledCipherSuite(String suite) {
+    super.addEnabledCipherSuite(suite);
+    return this;
+  }
+
 }

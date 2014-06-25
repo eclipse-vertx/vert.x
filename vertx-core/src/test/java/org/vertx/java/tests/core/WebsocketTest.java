@@ -201,10 +201,17 @@ public class WebsocketTest extends VertxTestBase {
     testTLS(true, true, true, false, true, false, false);
   }
 
+  @Test
+  // Test with cipher suites
+  public void testTLSCipherSuites() throws Exception {
+    testTLS(false, false, true, false, false, true, true, ENABLED_CIPHER_SUITES);
+  }
+
   private void testTLS(boolean clientCert, boolean clientTrust,
                        boolean serverCert, boolean serverTrust,
                        boolean requireClientAuth, boolean clientTrustAll,
-                       boolean shouldPass) throws Exception {
+                       boolean shouldPass,
+                       String... enabledCipherSuites) throws Exception {
     HttpClientOptions options = new HttpClientOptions();
     options.setSsl(true);
     if (clientTrustAll) {
@@ -215,6 +222,9 @@ public class WebsocketTest extends VertxTestBase {
     }
     if (clientCert) {
       options.setKeyStorePath(findFileOnClasspath("tls/client-keystore.jks")).setKeyStorePassword("wibble");
+    }
+    for (String suite: enabledCipherSuites) {
+      options.addEnabledCipherSuite(suite);
     }
     client = vertx.createHttpClient(options);
     HttpServerOptions serverOptions = new HttpServerOptions();
@@ -227,6 +237,9 @@ public class WebsocketTest extends VertxTestBase {
     }
     if (requireClientAuth) {
       serverOptions.setClientAuthRequired(true);
+    }
+    for (String suite: enabledCipherSuites) {
+      serverOptions.addEnabledCipherSuite(suite);
     }
     server = vertx.createHttpServer(serverOptions.setPort(4043));
     server.websocketHandler(ws -> {
@@ -456,16 +469,13 @@ public class WebsocketTest extends VertxTestBase {
     assertEquals(WebSocketVersion.RFC6455, options.getVersion());
     assertEquals(options, options.setVersion(WebSocketVersion.HYBI_00));
     assertEquals(WebSocketVersion.HYBI_00, options.getVersion());
-    Set<String> protocols = new HashSet<>();
+
     assertNull(options.getSubProtocols());
-    assertEquals(options, options.setSubProtocols(protocols));
-    assertSame(protocols, options.getSubProtocols());
-    options = new WebSocketConnectOptions();
-    options.addSubProtocol("foo");
+    assertEquals(options, options.addSubProtocol("foo"));
+    assertEquals(options, options.addSubProtocol("bar"));
     assertNotNull(options.getSubProtocols());
     assertTrue(options.getSubProtocols().contains("foo"));
-    assertEquals(options, options.removeSubProtocol("foo"));
-    assertFalse(options.getSubProtocols().contains("foo"));
+    assertTrue(options.getSubProtocols().contains("bar"));
   }
 
   private String sha1(String s) {
@@ -618,7 +628,7 @@ public class WebsocketTest extends VertxTestBase {
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      client.connectWebsocket(new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version).setSubProtocols(Collections.singleton(subProtocol)), ws -> {
+      client.connectWebsocket(new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version).addSubProtocol(subProtocol), ws -> {
         final Buffer received = new Buffer();
         ws.dataHandler(data -> {
           received.appendBuffer(data);
@@ -644,7 +654,7 @@ public class WebsocketTest extends VertxTestBase {
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      client.connectWebsocket(new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version).setSubProtocols(Collections.singleton(subProtocol)), ws -> {
+      client.connectWebsocket(new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version).addSubProtocol(subProtocol), ws -> {
         final Buffer received = new Buffer();
         ws.dataHandler(data -> {
           received.appendBuffer(data);

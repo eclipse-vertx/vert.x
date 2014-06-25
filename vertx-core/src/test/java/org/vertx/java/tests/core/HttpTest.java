@@ -220,6 +220,13 @@ public class HttpTest extends HttpTestBase {
     assertEquals(options, options.setTryUseCompression(true));
     assertEquals(true, options.isTryUseCompression());
 
+    assertNull(options.getEnabledCipherSuites());
+    assertEquals(options, options.addEnabledCipherSuite("foo"));
+    assertEquals(options, options.addEnabledCipherSuite("bar"));
+    assertNotNull(options.getEnabledCipherSuites());
+    assertTrue(options.getEnabledCipherSuites().contains("foo"));
+    assertTrue(options.getEnabledCipherSuites().contains("bar"));
+
     testComplete();
   }
 
@@ -366,6 +373,20 @@ public class HttpTest extends HttpTestBase {
     randString = randomUnicodeString(100);
     assertEquals(options, options.setHost(randString));
     assertEquals(randString, options.getHost());
+
+    assertNull(options.getWebsocketSubProtocols());
+    assertEquals(options, options.addWebsocketSubProtocol("foo"));
+    assertEquals(options, options.addWebsocketSubProtocol("bar"));
+    assertNotNull(options.getWebsocketSubProtocols());
+    assertTrue(options.getWebsocketSubProtocols().contains("foo"));
+    assertTrue(options.getWebsocketSubProtocols().contains("bar"));
+
+    assertNull(options.getEnabledCipherSuites());
+    assertEquals(options, options.addEnabledCipherSuite("foo"));
+    assertEquals(options, options.addEnabledCipherSuite("bar"));
+    assertNotNull(options.getEnabledCipherSuites());
+    assertTrue(options.getEnabledCipherSuites().contains("foo"));
+    assertTrue(options.getEnabledCipherSuites().contains("bar"));
 
 
     testComplete();
@@ -2142,10 +2163,17 @@ public class HttpTest extends HttpTestBase {
     testTLS(true, true, true, false, true, false, false);
   }
 
+  @Test
+  // Specify some cipher suites
+  public void testTLSCipherSuites() throws Exception {
+    testTLS(false, false, true, false, false, true, true, ENABLED_CIPHER_SUITES);
+  }
+
   private void testTLS(boolean clientCert, boolean clientTrust,
                        boolean serverCert, boolean serverTrust,
                        boolean requireClientAuth, boolean clientTrustAll,
-                       boolean shouldPass) throws Exception {
+                       boolean shouldPass,
+                       String... enabledCipherSuites) throws Exception {
     client.close();
     server.close();
     HttpClientOptions options = new HttpClientOptions();
@@ -2159,6 +2187,9 @@ public class HttpTest extends HttpTestBase {
     if (clientCert) {
       options.setKeyStorePath(findFileOnClasspath("tls/client-keystore.jks")).setKeyStorePassword("wibble");
     }
+    for (String suite: enabledCipherSuites) {
+      options.addEnabledCipherSuite(suite);
+    }
     client = vertx.createHttpClient(options);
     HttpServerOptions serverOptions = new HttpServerOptions();
     serverOptions.setSsl(true);
@@ -2170,6 +2201,9 @@ public class HttpTest extends HttpTestBase {
     }
     if (requireClientAuth) {
       serverOptions.setClientAuthRequired(true);
+    }
+    for (String suite: enabledCipherSuites) {
+      serverOptions.addEnabledCipherSuite(suite);
     }
     server = vertx.createHttpServer(serverOptions.setPort(4043));
     server.requestHandler(req -> {

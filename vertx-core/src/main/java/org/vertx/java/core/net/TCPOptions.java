@@ -18,6 +18,9 @@ package org.vertx.java.core.net;
 
 import org.vertx.java.core.net.impl.SocketDefaults;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -38,6 +41,7 @@ public class TCPOptions extends NetworkOptions {
   private String keyStorePassword;
   private String trustStorePath;
   private String trustStorePassword;
+  private Set<String> enabledCipherSuites;
 
   public TCPOptions(TCPOptions other) {
     super(other);
@@ -50,6 +54,7 @@ public class TCPOptions extends NetworkOptions {
     this.keyStorePassword = other.keyStorePassword;
     this.trustStorePath = other.trustStorePath;
     this.trustStorePassword = other.trustStorePassword;
+    this.enabledCipherSuites = other.enabledCipherSuites == null ? null : new HashSet<>(other.enabledCipherSuites);
   }
 
   public TCPOptions() {
@@ -138,6 +143,18 @@ public class TCPOptions extends NetworkOptions {
   public TCPOptions setTrustStorePassword(String trustStorePassword) {
     this.trustStorePassword = trustStorePassword;
     return this;
+  }
+
+  public TCPOptions addEnabledCipherSuite(String suite) {
+    if (enabledCipherSuites == null) {
+      enabledCipherSuites = new HashSet<>();
+    }
+    enabledCipherSuites.add(suite);
+    return this;
+  }
+
+  public Set<String> getEnabledCipherSuites() {
+    return enabledCipherSuites;
   }
 
 }
